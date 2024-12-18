@@ -91,17 +91,26 @@ await test('basic', async (t) => {
     'sort by age asc',
   )
 
-  // // for (let i = 0; i < 1e6; i++) {
-  // //   const mrZ = db.create('user', {
-  // //     name: 'mr z',
-  // //     age: 1,
-  // //     email: i + '@z.z',
-  // //   })
-  // // }
-  // db.drain()
-  // // const d = Date.now()
+  // for (let i = 0; i < 10e6; i++) {
+  //   const mrZ = db.create('user', {
+  //     name: 'mr z',
+  //     age: 1 + i,
+  //     email: i + '@z.z',
+  //   })
+  // }
+  // console.log(db.drain(), 'db time')
+  // const d = Date.now()
+
+  // await db
+  //   .query('user')
+  //   .include('age', 'name')
+  //   .range(0, 1e5)
+  //   .filter('age', '>', 1e6 - 1e5)
+  //   .get()
+  //   .then((v) => v.inspect())
+
   db.server.createSortIndex('user', 'email')
-  // // console.log(Date.now() - d, 'ms')
+  // console.log(Date.now() - d, 'ms')
 
   deepEqual(
     (
@@ -195,266 +204,266 @@ await test('basic', async (t) => {
     'sort by email after updating email',
   )
 
-  // db.update(
-  //   'user',
-  //   mrX,
-  //   {
-  //     age: 1e6,
-  //   },
-  //   true,
-  // )
+  db.update(
+    'user',
+    mrX,
+    {
+      age: 1e6,
+    },
+    true,
+  )
 
-  // db.drain()
+  db.drain()
 
-  // deepEqual(
-  //   (
-  //     await db.query('user').sort('age').include('email', 'age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 5, email: 'z@z.z', age: 1 },
-  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-  //     { id: 6, email: 'dd@dd.dd', age: 1e6 },
-  //   ],
-  //   'sort by age after update',
-  // )
+  deepEqual(
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
+    [
+      { id: 5, email: 'z@z.z', age: 1 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+      { id: 6, email: 'dd@dd.dd', age: 1e6 },
+    ],
+    'sort by age after update',
+  )
 
-  // db.update('user', mrX, {
-  //   age: 0,
-  // })
+  db.update('user', mrX, {
+    age: 0,
+  })
 
-  // await db.drain()
+  await db.drain()
 
-  // deepEqual(
-  //   (
-  //     await db.query('user').sort('age').include('email', 'age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 6, email: 'dd@dd.dd', age: 0 },
-  //     { id: 5, email: 'z@z.z', age: 1 },
-  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-  //   ],
-  //   'update mrX to age 0',
-  // )
+  deepEqual(
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
+    [
+      { id: 6, email: 'dd@dd.dd', age: 0 },
+      { id: 5, email: 'z@z.z', age: 1 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+    ],
+    'update mrX to age 0',
+  )
 
-  // deepEqual(
-  //   (
-  //     await db.query('user').sort('age').include('email', 'age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 6, email: 'dd@dd.dd', age: 0 },
-  //     { id: 5, email: 'z@z.z', age: 1 },
-  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-  //   ],
-  // )
+  deepEqual(
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
+    [
+      { id: 6, email: 'dd@dd.dd', age: 0 },
+      { id: 5, email: 'z@z.z', age: 1 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+    ],
+  )
 
-  // const ids = []
-  // for (let i = 0; i < 10; i++) {
-  //   ids.push(i)
-  //   db.create('user', {
-  //     name: 'mr ' + i,
-  //     age: i + 300,
-  //     email: i + '@z.z',
-  //   })
-  // }
+  const ids = []
+  for (let i = 0; i < 10; i++) {
+    ids.push(i)
+    db.create('user', {
+      name: 'mr ' + i,
+      age: i + 300,
+      email: i + '@z.z',
+    })
+  }
 
-  // db.drain()
+  db.drain()
 
-  // deepEqual(
-  //   (
-  //     await db.query('user', ids).include('name', 'age').sort('age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 6, name: 'mr x', age: 0 },
-  //     { id: 5, name: 'mr z', age: 1 },
-  //     { id: 2, name: 'mr flap', age: 50 },
-  //     { id: 3, name: 'mr snurp', age: 99 },
-  //     { id: 4, name: 'mr nurp', age: 200 },
-  //     { id: 1, name: 'mr blap', age: 201 },
-  //     { id: 7, name: 'mr 0', age: 300 },
-  //     { id: 8, name: 'mr 1', age: 301 },
-  //     { id: 9, name: 'mr 2', age: 302 },
-  //   ],
-  // )
+  deepEqual(
+    (
+      await db.query('user', ids).include('name', 'age').sort('age').get()
+    ).toObject(),
+    [
+      { id: 6, name: 'mr x', age: 0 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 9, name: 'mr 2', age: 302 },
+    ],
+  )
 
-  // deepEqual(
-  //   (
-  //     await db
-  //       .query('user', ids)
-  //       .include('name', 'age')
-  //       .sort('age', 'desc')
-  //       .get()
-  //   ).toObject(),
-  //   [
-  //     { id: 9, name: 'mr 2', age: 302 },
-  //     { id: 8, name: 'mr 1', age: 301 },
-  //     { id: 7, name: 'mr 0', age: 300 },
-  //     { id: 1, name: 'mr blap', age: 201 },
-  //     { id: 4, name: 'mr nurp', age: 200 },
-  //     { id: 3, name: 'mr snurp', age: 99 },
-  //     { id: 2, name: 'mr flap', age: 50 },
-  //     { id: 5, name: 'mr z', age: 1 },
-  //     { id: 6, name: 'mr x', age: 0 },
-  //   ],
-  // )
+  deepEqual(
+    (
+      await db
+        .query('user', ids)
+        .include('name', 'age')
+        .sort('age', 'desc')
+        .get()
+    ).toObject(),
+    [
+      { id: 9, name: 'mr 2', age: 302 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 6, name: 'mr x', age: 0 },
+    ],
+  )
 
-  // const ids2 = []
-  // for (let i = 1; i < 1000; i++) {
-  //   ids2.push(i)
-  // }
+  const ids2 = []
+  for (let i = 1; i < 1000; i++) {
+    ids2.push(i)
+  }
 
-  // deepEqual(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age')
-  //       .sort('age', 'asc')
-  //       .get()
-  //   ).toObject(),
-  //   [
-  //     { id: 6, name: 'mr x', age: 0 },
-  //     { id: 5, name: 'mr z', age: 1 },
-  //     { id: 2, name: 'mr flap', age: 50 },
-  //     { id: 3, name: 'mr snurp', age: 99 },
-  //     { id: 4, name: 'mr nurp', age: 200 },
-  //     { id: 1, name: 'mr blap', age: 201 },
-  //     { id: 7, name: 'mr 0', age: 300 },
-  //     { id: 8, name: 'mr 1', age: 301 },
-  //     { id: 9, name: 'mr 2', age: 302 },
-  //     { id: 10, name: 'mr 3', age: 303 },
-  //     { id: 11, name: 'mr 4', age: 304 },
-  //     { id: 12, name: 'mr 5', age: 305 },
-  //     { id: 13, name: 'mr 6', age: 306 },
-  //     { id: 14, name: 'mr 7', age: 307 },
-  //     { id: 15, name: 'mr 8', age: 308 },
-  //     { id: 16, name: 'mr 9', age: 309 },
-  //   ],
-  // )
+  deepEqual(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age')
+        .sort('age', 'asc')
+        .get()
+    ).toObject(),
+    [
+      { id: 6, name: 'mr x', age: 0 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 9, name: 'mr 2', age: 302 },
+      { id: 10, name: 'mr 3', age: 303 },
+      { id: 11, name: 'mr 4', age: 304 },
+      { id: 12, name: 'mr 5', age: 305 },
+      { id: 13, name: 'mr 6', age: 306 },
+      { id: 14, name: 'mr 7', age: 307 },
+      { id: 15, name: 'mr 8', age: 308 },
+      { id: 16, name: 'mr 9', age: 309 },
+    ],
+  )
 
-  // db.remove('user', mrX)
+  db.remove('user', mrX)
 
-  // await db.drain()
+  await db.drain()
 
-  // deepEqual(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age')
-  //       .sort('age', 'asc')
-  //       .get()
-  //   ).toObject(),
-  //   [
-  //     { id: 5, name: 'mr z', age: 1 },
-  //     { id: 2, name: 'mr flap', age: 50 },
-  //     { id: 3, name: 'mr snurp', age: 99 },
-  //     { id: 4, name: 'mr nurp', age: 200 },
-  //     { id: 1, name: 'mr blap', age: 201 },
-  //     { id: 7, name: 'mr 0', age: 300 },
-  //     { id: 8, name: 'mr 1', age: 301 },
-  //     { id: 9, name: 'mr 2', age: 302 },
-  //     { id: 10, name: 'mr 3', age: 303 },
-  //     { id: 11, name: 'mr 4', age: 304 },
-  //     { id: 12, name: 'mr 5', age: 305 },
-  //     { id: 13, name: 'mr 6', age: 306 },
-  //     { id: 14, name: 'mr 7', age: 307 },
-  //     { id: 15, name: 'mr 8', age: 308 },
-  //     { id: 16, name: 'mr 9', age: 309 },
-  //   ],
-  // )
+  deepEqual(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age')
+        .sort('age', 'asc')
+        .get()
+    ).toObject(),
+    [
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 9, name: 'mr 2', age: 302 },
+      { id: 10, name: 'mr 3', age: 303 },
+      { id: 11, name: 'mr 4', age: 304 },
+      { id: 12, name: 'mr 5', age: 305 },
+      { id: 13, name: 'mr 6', age: 306 },
+      { id: 14, name: 'mr 7', age: 307 },
+      { id: 15, name: 'mr 8', age: 308 },
+      { id: 16, name: 'mr 9', age: 309 },
+    ],
+  )
 
-  // const mrBlurp = db.create('user', {
-  //   age: 99,
-  // })
+  const mrBlurp = db.create('user', {
+    age: 99,
+  })
 
-  // await db.drain()
+  await db.drain()
 
-  // equal(
-  //   (await db.query('user', ids2).include('name', 'age', 'email').get()).length,
-  //   16,
-  //   'Check default query after remove',
-  // )
+  equal(
+    (await db.query('user', ids2).include('name', 'age', 'email').get()).length,
+    16,
+    'Check default query after remove',
+  )
 
-  // equal(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age', 'email')
-  //       .sort('email')
-  //       .get()
-  //   ).length,
-  //   16,
-  //   'Check email index len after removal',
-  // )
+  equal(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
+    16,
+    'Check email index len after removal',
+  )
 
-  // equal(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age', 'email')
-  //       .sort('name')
-  //       .get()
-  //   ).length,
-  //   16,
-  //   'Check name index len after removal',
-  // )
+  equal(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('name')
+        .get()
+    ).length,
+    16,
+    'Check name index len after removal',
+  )
 
-  // db.remove('user', mrBlurp)
+  db.remove('user', mrBlurp)
 
-  // await db.drain()
+  await db.drain()
 
-  // equal(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age', 'email')
-  //       .sort('name')
-  //       .get()
-  //   ).length,
-  //   15,
-  //   'Check name index len after removal (2)',
-  // )
+  equal(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('name')
+        .get()
+    ).length,
+    15,
+    'Check name index len after removal (2)',
+  )
 
-  // db.update('user', mrZ, {
-  //   email: '',
-  // })
+  db.update('user', mrZ, {
+    email: '',
+  })
 
-  // await db.drain()
+  await db.drain()
 
-  // equal(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age', 'email')
-  //       .sort('email')
-  //       .get()
-  //   ).length,
-  //   15,
-  //   'Check email index len after removal (2)',
-  // )
+  equal(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
+    15,
+    'Check email index len after removal (2)',
+  )
 
-  // db.remove('user', mrZ)
+  db.remove('user', mrZ)
 
-  // await db.drain()
+  await db.drain()
 
-  // equal(
-  //   (
-  //     await db
-  //       .query('user', ids2)
-  //       .include('name', 'age', 'email')
-  //       .sort('email')
-  //       .get()
-  //   ).length,
-  //   14,
-  //   'Check email index len after removal (3)',
-  // )
+  equal(
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
+    14,
+    'Check email index len after removal (3)',
+  )
 })
 
 await test('sort - from start (1.5M items)', async (t) => {

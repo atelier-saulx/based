@@ -30,7 +30,7 @@ endif
 ifeq ($(uname_S),Darwin)
 LDFLAGS := -Wl,-rpath,@executable_path/../../../../build
 endif
-LDFLAGS += -L ../../../build -ldeflate -lz -lzstd
+LDFLAGS += -L ../../../build -ldeflate -lz
 
 # Location of punit makefile
 # Do not touch
