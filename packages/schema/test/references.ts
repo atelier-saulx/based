@@ -1,8 +1,8 @@
 import test from 'node:test'
-import { throws } from 'node:assert'
+import { deepEqual, throws } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('references', () => {
+test('references', (t) => {
   parse({
     types: {
       article: {
@@ -19,6 +19,91 @@ test('references', () => {
             items: {
               ref: 'article',
               prop: 'writer',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  deepEqual(
+    parse({
+      types: {
+        article: {
+          props: {
+            writer: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {},
+        },
+      },
+    }).schema,
+    {
+      types: {
+        article: {
+          props: {
+            writer: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              readOnly: true,
+              items: {
+                ref: 'article',
+                prop: 'writer',
+              },
+            },
+          },
+        },
+      },
+    },
+  )
+
+  const { schema } = parse({
+    types: {
+      article: {
+        props: {
+          writers: {
+            items: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+      author: {
+        props: {},
+      },
+    },
+  })
+
+  deepEqual(schema, {
+    types: {
+      article: {
+        props: {
+          writers: {
+            items: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+      author: {
+        props: {
+          articles: {
+            readOnly: true,
+            items: {
+              ref: 'article',
+              prop: 'writers',
             },
           },
         },
@@ -89,6 +174,31 @@ test('references', () => {
       },
     })
   }, 'Disallow mixed ref types')
+
+  throws(() => {
+    parse({
+      types: {
+        article: {
+          props: {
+            author: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              items: {
+                ref: 'article',
+                prop: 'author',
+              },
+            },
+          },
+        },
+      },
+    })
+  }, 'Disallow incorrect location of required prop')
 })
 
 test('edges', () => {

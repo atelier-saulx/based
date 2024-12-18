@@ -408,81 +408,88 @@ void selva_sort_remove(struct SelvaSortCtx *ctx, const void *p)
 
     if (item) {
         (void)RB_REMOVE(SelvaSortTreeNone, &ctx->out_none, item);
+        mempool_return(&ctx->mempool, item);
     }
 
-    mempool_return(&ctx->mempool, item);
 }
 
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
 {
     struct SelvaSortItem *item = find_i64(ctx, v, p);
+    if (item) {
+        switch (ctx->order) {
+        case SELVA_SORT_ORDER_I64_ASC:
+            (void)RB_REMOVE(SelvaSortTreeAscI64, &ctx->out_ai64, item);
+            break;
+        case SELVA_SORT_ORDER_I64_DESC:
+            (void)RB_REMOVE(SelvaSortTreeDescI64, &ctx->out_di64, item);
+            break;
+        default:
+            abort();
+        }
 
-    switch (ctx->order) {
-    case SELVA_SORT_ORDER_I64_ASC:
-        (void)RB_REMOVE(SelvaSortTreeAscI64, &ctx->out_ai64, item);
-        break;
-    case SELVA_SORT_ORDER_I64_DESC:
-        (void)RB_REMOVE(SelvaSortTreeDescI64, &ctx->out_di64, item);
-        break;
-    default:
-        abort();
+        mempool_return(&ctx->mempool, item);
     }
-
-    mempool_return(&ctx->mempool, item);
 }
 
 void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p)
 {
     struct SelvaSortItem *item = find_double(ctx, d, p);
 
-    switch (ctx->order) {
-    case SELVA_SORT_ORDER_DOUBLE_ASC:
-        (void)RB_REMOVE(SelvaSortTreeAscDouble, &ctx->out_ad, item);
-        break;
-    case SELVA_SORT_ORDER_DOUBLE_DESC:
-        (void)RB_REMOVE(SelvaSortTreeDescDouble, &ctx->out_dd, item);
-        break;
-    default:
-        abort();
-    }
+    if (item) {
+        switch (ctx->order) {
+        case SELVA_SORT_ORDER_DOUBLE_ASC:
+            (void)RB_REMOVE(SelvaSortTreeAscDouble, &ctx->out_ad, item);
+            break;
+        case SELVA_SORT_ORDER_DOUBLE_DESC:
+            (void)RB_REMOVE(SelvaSortTreeDescDouble, &ctx->out_dd, item);
+            break;
+        default:
+            abort();
+        }
 
-    mempool_return(&ctx->mempool, item);
+        mempool_return(&ctx->mempool, item);
+    }
 }
 
 void selva_sort_remove_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
 {
     struct SelvaSortItem *item = find_buffer(ctx, buf, len, p);
 
-    switch (ctx->order) {
-    case SELVA_SORT_ORDER_BUFFER_ASC:
-        (void)RB_REMOVE(SelvaSortTreeAscBuffer, &ctx->out_ab, item);
-        break;
-    case SELVA_SORT_ORDER_BUFFER_DESC:
-        (void)RB_REMOVE(SelvaSortTreeDescBuffer, &ctx->out_db, item);
-        break;
-    default:
-        abort();
-    }
+    if (item) {
+        switch (ctx->order) {
+        case SELVA_SORT_ORDER_BUFFER_ASC:
+            (void)RB_REMOVE(SelvaSortTreeAscBuffer, &ctx->out_ab, item);
+            break;
+        case SELVA_SORT_ORDER_BUFFER_DESC:
+            (void)RB_REMOVE(SelvaSortTreeDescBuffer, &ctx->out_db, item);
+            break;
+        default:
+            abort();
+        }
 
-    selva_free(item);
+        selva_free(item);
+    }
 }
 
 void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
 {
     struct SelvaSortItem *item = find_text(ctx, str, len, p);
 
-    switch (ctx->order) {
-    case SELVA_SORT_ORDER_TEXT_ASC:
-        (void)RB_REMOVE(SelvaSortTreeAscText, &ctx->out_at, item);
-        break;
-    case SELVA_SORT_ORDER_TEXT_DESC:
-        (void)RB_REMOVE(SelvaSortTreeDescText, &ctx->out_dt, item);
-        break;
-    default:
-        abort();
-    }
+    if (item) {
+        switch (ctx->order) {
+        case SELVA_SORT_ORDER_TEXT_ASC:
+            (void)RB_REMOVE(SelvaSortTreeAscText, &ctx->out_at, item);
+            break;
+        case SELVA_SORT_ORDER_TEXT_DESC:
+            (void)RB_REMOVE(SelvaSortTreeDescText, &ctx->out_dt, item);
+            break;
+        default:
+            abort();
+        }
 
-    selva_free(item);
+        selva_free(item);
+    }
 }
 
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)

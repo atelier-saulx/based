@@ -1,4 +1,4 @@
-import { Schema } from '@based/schema'
+import { StrictSchema } from '@based/schema'
 import { BasedDb } from '../../index.js'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -8,7 +8,7 @@ import native from '../../native.js'
 import './worker.js'
 export const migrate = async (
   fromDb: BasedDb,
-  toSchema: Schema,
+  toSchema: StrictSchema,
   transform?: (type: string, node: Record<string, any>) => Record<string, any>,
 ) => {
   const toDb = new BasedDb({

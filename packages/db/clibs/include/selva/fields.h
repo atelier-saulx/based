@@ -22,8 +22,7 @@ struct selva_string;
  */
 #define SELVA_FIELDS_RESERVED 255
 
-/* RFE Not good? */
-struct XXH3_state_s;
+struct XXH3_state_s; /* RFE Not good? */
 
 #ifndef __zig
 struct SelvaTextField {
@@ -68,8 +67,7 @@ struct SelvaFieldsAny {
     union {
         bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
         double number; /*!< SELVA_FIELD_TYPE_NUMBER */
-        int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP */
-        int32_t integer; /*!< SELVA_FIELD_TYPE_INTEGER */
+        int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
         int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
         uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
@@ -80,12 +78,14 @@ struct SelvaFieldsAny {
         int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
         uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
         uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
+#if 0
         struct SelvaTextField *text; /*!< SELVA_FIELD_TYPE_TEXT */
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
         struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
         struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
         struct SelvaMicroBuffer *smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
+#endif
     };
 };
 
@@ -101,6 +101,11 @@ struct SelvaFieldsPointer {
 __purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
+
+#if __has_c_attribute(reproducible)
+[[reproducible]]
+#endif
+void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
 /**
  * Set field value.
@@ -257,16 +262,6 @@ int selva_fields_get_text(
         enum selva_lang_code lang,
         const char **str,
         size_t *len);
-
-/**
- * Get field value.
- * Strings and references are returned as direct pointers to the data.
- */
-SELVA_EXPORT
-struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t field);
-
-SELVA_EXPORT
-struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);

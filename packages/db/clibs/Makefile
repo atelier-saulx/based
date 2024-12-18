@@ -27,9 +27,6 @@ all: | $(LIBS) nodeselva locale
 $(LIBS):
 	$(MAKE) -C $@
 
-nodeselva:
-	$(MAKE) -C lib/selva NAPI=1
-
 ifeq ($(uname_S),Linux)
 locale: locale-linux
 endif

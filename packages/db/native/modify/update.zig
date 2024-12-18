@@ -108,3 +108,116 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
     return len;
 }
+
+fn incrementBuf(
+    op: types.ModOp,
+    T: type,
+    aU8: []u8,
+    bU8: []u8,
+) usize {
+    const a = readInt(T, aU8, 0);
+    const b = readInt(T, bU8, 0);
+    const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
+
+    if (T == f64) {
+        aU8[0..8].* = @bitCast(v);
+        return 8;
+    } else {
+        const size = @divExact(@typeInfo(T).Int.bits, 8);
+        aU8[0..size].* = @bitCast(v);
+        return size;
+    }
+}
+
+pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
+    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    const fieldType: types.Prop = @enumFromInt(readInt(u8, data, 0));
+    const start = readInt(u16, data, 1);
+    const addition = data[3..];
+    const value = currentData[start .. start + addition.len];
+    var size: usize = 0;
+
+    switch (fieldType) {
+        types.Prop.INT8 => {
+            size = incrementBuf(
+                op,
+                i8,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT8 => {
+            size = incrementBuf(
+                op,
+                u8,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT16 => {
+            size = incrementBuf(
+                op,
+                i16,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT16 => {
+            size = incrementBuf(
+                op,
+                u16,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT32 => {
+            size = incrementBuf(
+                op,
+                i32,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT32 => {
+            size = incrementBuf(
+                op,
+                u32,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT64 => {
+            size = incrementBuf(
+                op,
+                u64,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT64, types.Prop.TIMESTAMP => {
+            size = incrementBuf(
+                op,
+                i64,
+                value,
+                addition,
+            );
+        },
+        types.Prop.NUMBER => {
+            size = incrementBuf(
+                op,
+                f64,
+                value,
+                addition,
+            );
+        },
+        else => {},
+    }
+
+    // if (sort.hasMainSortIndexes(ctx.db, ctx.typeId) and ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
+    //     const sortIndex = try sort.getSortIndex(ctx, start);
+    //     try sort.deleteField(ctx.id, currentData, sortIndex.?);
+    //     try sort.writeField(ctx.id, value, sortIndex.?);
+    // }
+
+    return size + 3;
+}

@@ -16,6 +16,7 @@ const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const dbSort = @import("../db//sort.zig");
+const increment = Update.increment;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -45,7 +46,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     var offset: u32 = 0;
     while (i < batch.len) {
-        // delete
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
         switch (op) {
@@ -112,6 +112,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.UPDATE_PARTIAL => {
                 i += try updatePartialField(&ctx, operation) + offset;
+            },
+            types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
+                i += try increment(&ctx, operation, op) + 1;
             },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });

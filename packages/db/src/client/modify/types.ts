@@ -5,6 +5,8 @@ export const UPDATE = 6
 export const DELETE = 11
 export const MERGE_MAIN = 4
 export const RANGE_ERR = 1
+export const INCREMENT = 12
+export const DECREMENT = 13
 
 export type ModifyErr = typeof RANGE_ERR | ModifyError | void
-export type ModifyOp = typeof CREATE | typeof UPDATE
+export type ModifyOp = typeof CREATE | typeof UPDATE | typeof INCREMENT

@@ -2,7 +2,7 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { parse, Schema } from '@based/schema'
+import { parse, Schema, StrictSchema } from '@based/schema'
 import { SchemaTypeDef } from './schema/types.js'
 import { genId } from './schema/utils.js'
 import { createSchemaTypeDef } from './schema/typeDef.js'
@@ -66,7 +66,7 @@ export class DbWorker {
 export class DbServer {
   modifyBuf: SharedArrayBuffer
   dbCtxExternal: any
-  schema: Schema & { lastId: number } = { lastId: 0, types: {} }
+  schema: StrictSchema & { lastId: number } = { lastId: 0, types: {} }
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   fileSystemPath: string
   maxModifySize: number
@@ -170,15 +170,18 @@ export class DbServer {
     )
   }
 
-  putSchema(schema: Schema, fromStart: boolean = false): Schema {
-    if (!fromStart) {
-      parse(schema)
-    }
+  putSchema(
+    schema: Schema | StrictSchema,
+    fromStart: boolean = false,
+  ): StrictSchema {
+    const strictSchema = fromStart
+      ? (schema as StrictSchema)
+      : parse(schema).schema
 
     const { lastId } = this.schema
     this.schema = {
       lastId,
-      ...schema,
+      ...strictSchema,
     }
 
     this.updateTypeDefs()

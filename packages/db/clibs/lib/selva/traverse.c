@@ -126,7 +126,6 @@ int selva_traverse_field_bfs(
         struct SelvaNode *head,
         const struct SelvaTraversalParam *cb) {
     BFS_TRAVERSE_BEGIN(db, head, cb) {
-        struct SelvaFieldsAny any;
         int res;
 
         res = BFS_VISIT_NODE(db, cb);
@@ -134,24 +133,30 @@ int selva_traverse_field_bfs(
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
 
-            any = selva_fields_get2(&node->fields, field);
-            if (any.type == SELVA_FIELD_TYPE_NULL) {
-                continue;
-            }
+            const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
+            if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
+                struct SelvaNodeReference *reference;
 
-            if (any.type == SELVA_FIELD_TYPE_REFERENCE) {
-                struct SelvaFields *edge_data = any.reference->meta;
-                struct SelvaNode *adj = any.reference->dst;
+                reference = selva_fields_get_reference(node, field);
+                if (!reference) {
+                    continue;
+                }
+
+                struct SelvaFields *edge_data = reference->meta;
+                struct SelvaNode *adj = reference->dst;
 
                 if (adj) {
                     BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
                 }
-            } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
-                if (any.references && any.references->refs) {
-                    const size_t nr_refs = any.references->nr_refs;
+            } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+                struct SelvaNodeReferences *references;
+
+                references = selva_fields_get_references(node, field);
+                if (references && references->refs) {
+                    const size_t nr_refs = references->nr_refs;
 
                     for (size_t i = 0; i < nr_refs; i++) {
-                        struct SelvaNodeReference *ref = &any.references->refs[i];
+                        struct SelvaNodeReference *ref = &references->refs[i];
                         struct SelvaFields *edge_data = ref->meta;
                         struct SelvaNode *adj = ref->dst;
 
@@ -160,19 +165,26 @@ int selva_traverse_field_bfs(
                         }
                     }
                 }
-            } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
-                struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_reference);
+            } else if (fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
+                struct SelvaNodeWeakReference weak_reference;
+
+                weak_reference = selva_fields_get_weak_reference(&node->fields, field);
+
+                struct SelvaNode *dst_node = weak_ref2node(db, node, field, &weak_reference);
                 if (dst_node) {
                     struct SelvaFields *edge_data = nullptr;
 
                     BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                 }
                 return SELVA_ENOTSUP;
-            } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
-                const size_t nr_refs = any.weak_references.nr_refs;
+            } else if (fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+                struct SelvaNodeWeakReferences weak_references;
+
+                weak_references = selva_fields_get_weak_references(&node->fields, field);
+                const size_t nr_refs = weak_references.nr_refs;
 
                 for (size_t i = 0; i < nr_refs; i++) {
-                    struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_references.refs[i]);
+                    struct SelvaNode *dst_node = weak_ref2node(db, node, field, &weak_references.refs[i]);
                     if (dst_node) {
                         struct SelvaFields *edge_data = nullptr;
 
