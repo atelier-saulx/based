@@ -267,7 +267,7 @@ export class DbServer {
           type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockCapacity = DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
+        def.blockCapacity = field === '_root' ? 2 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
         this.schemaTypesParsed[field] = def
       }
     }
