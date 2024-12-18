@@ -172,6 +172,7 @@ type Letter =
   | 'y'
   | 'z'
 
+type AllowedKey = `${Letter}${string}`
 type QueryFn = Function
 type PropValues = { type?: string; default?: any }
 type Prop<V extends PropValues> = {
@@ -355,7 +356,7 @@ export type SchemaPropOneWay<isStrict = false> =
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
 export type SchemaProps<isStrict = false> = Record<
-  string,
+  AllowedKey,
   SchemaProp<isStrict>
 > & { id?: never }
 
@@ -378,11 +379,11 @@ export type SchemaType<isStrict = false> = isStrict extends true
       | (SchemaProps & { props?: never })
 
 export type SchemaTypes<isStrict = false> = Record<
-  `${Letter}${string}`,
+  AllowedKey,
   SchemaType<isStrict>
 >
 export type SchemaPropsOneWay<isStrict = false> = Record<
-  `${Letter}${string}`,
+  AllowedKey,
   SchemaPropOneWay<isStrict>
 > & { id?: never }
 

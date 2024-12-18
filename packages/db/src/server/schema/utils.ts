@@ -22,21 +22,16 @@ export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
   return false
 }
 
-export const genId = (db: DbServer): number => {
-  db.schema.lastId++
-
+const genIdFromInt = (n: number): number => {
   const buf = Buffer.allocUnsafe(2)
-
-  buf.writeUInt16LE(db.schema.lastId)
-
-  // console.log(new Uint8Array(buf))
+  buf.writeUInt16LE(n)
 
   if (buf[1] == 255) {
-    return genId(db)
+    return genIdFromInt(n + 1)
   }
 
   if (buf[0] == 255) {
-    return genId(db)
+    return genIdFromInt(n + 1)
   }
 
   if (buf[1] == 0) {
@@ -48,8 +43,14 @@ export const genId = (db: DbServer): number => {
   }
 
   const cnt = buf.readUInt16LE()
-
-  // console.log({ cnt })
-
   return cnt
+}
+
+export const genRootId = () => {
+  return genIdFromInt(1)
+}
+
+export const genId = (db: DbServer): number => {
+  db.schema.lastId++
+  return genIdFromInt(db.schema.lastId)
 }

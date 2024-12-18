@@ -15,6 +15,19 @@ await test('rootProps', async (t) => {
     props: {
       myString: 'string',
       myBoolean: 'boolean',
+      bestArticles: {
+        items: {
+          ref: 'article',
+        },
+      },
+    },
+    types: {
+      article: {
+        props: {
+          name: 'string',
+          body: 'string',
+        },
+      },
     },
   })
 
@@ -22,9 +35,26 @@ await test('rootProps', async (t) => {
     myString: 'im the root',
     myBoolean: true,
   }
+
   await db.update(rootData)
 
-  const rootRes = (await db.query().get()).toObject()
+  let rootRes = (await db.query().get()).toObject()
 
   deepEqual(rootRes, { id: 1, ...rootData })
+
+  const article = await db.create('article', {
+    name: 'best article',
+    body: 'success',
+  })
+
+  await db.update({
+    bestArticles: [article],
+  })
+
+  rootRes = (await db.query().include('bestArticles').get()).toObject()
+
+  deepEqual(rootRes, {
+    id: 1,
+    bestArticles: [{ id: 1, name: 'best article', body: 'success' }],
+  })
 })

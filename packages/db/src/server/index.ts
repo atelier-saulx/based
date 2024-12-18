@@ -2,9 +2,9 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { parse, Schema, StrictSchema } from '@based/schema'
+import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
 import { SchemaTypeDef } from './schema/types.js'
-import { genId } from './schema/utils.js'
+import { genId, genRootId } from './schema/utils.js'
 import { createSchemaTypeDef } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
@@ -18,7 +18,6 @@ import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
-import { create } from '../client/modify/create.js'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -31,7 +30,6 @@ const transferList = new Array(1)
 export class DbWorker {
   constructor(address: BigInt, db: DbServer) {
     const { port1, port2 } = new MessageChannel()
-
     this.db = db
     this.channel = port1
     this.worker = new Worker(workerPath, {
@@ -67,7 +65,10 @@ export class DbWorker {
 export class DbServer {
   modifyBuf: SharedArrayBuffer
   dbCtxExternal: any
-  schema: StrictSchema & { lastId: number } = { lastId: 0, types: {} }
+  schema: StrictSchema & { lastId: number } = {
+    lastId: 1, // we reserve one for root props
+    types: {},
+  }
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   fileSystemPath: string
   maxModifySize: number
@@ -187,8 +188,39 @@ export class DbServer {
 
     if (strictSchema.props) {
       this.schema.types ??= {}
+      const props = { ...strictSchema.props }
+      for (const key in props) {
+        const prop = props[key]
+        const propType = getPropType(prop)
+        let refProp
+        if (propType === 'reference') {
+          refProp = prop
+        } else if (propType === 'references') {
+          refProp = prop.items
+        }
+        if (refProp) {
+          const type = this.schema.types[refProp.ref]
+          const inverseKey = '_' + key
+          this.schema.types[refProp.ref] = {
+            ...type,
+            props: {
+              ...type.props,
+              [inverseKey]: {
+                items: {
+                  ref: '_root',
+                  prop: key,
+                },
+              },
+            },
+          }
+          refProp.prop = inverseKey
+        }
+      }
       // @ts-ignore This creates an internal type to use for root props
-      this.schema.types._root = { props: strictSchema.props }
+      this.schema.types._root = {
+        id: genRootId(),
+        props,
+      }
       delete this.schema.props
     }
 
@@ -212,7 +244,10 @@ export class DbServer {
         }
       }
 
-      this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+      if (strictSchema.props) {
+        // insert a root node
+        this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+      }
     }
 
     return this.schema
