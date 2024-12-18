@@ -91,14 +91,14 @@ await test('basic', async (t) => {
     'sort by age asc',
   )
 
-  // for (let i = 0; i < 1e6; i++) {
-  //   const mrZ = db.create('user', {
-  //     name: 'mr z',
-  //     age: 1 + i,
-  //     email: i + '@z.z',
-  //   })
-  // }
-  // console.log(db.drain(), 'db time')
+  for (let i = 0; i < 1e6; i++) {
+    const mrZ = db.create('user', {
+      name: 'mr z',
+      age: 1 + i,
+      email: i + '@z.z',
+    })
+  }
+  console.log(db.drain(), 'db time')
 
   // await db
   //   .query('user')
@@ -108,12 +108,12 @@ await test('basic', async (t) => {
   //   .get()
   //   .then((v) => v.inspect())
 
-  // const d = Date.now()
-  // db.server.createSortIndex('user', 'email')
-  // console.log(Date.now() - d, 'ms')
-
-  db.drain()
+  const d = Date.now()
   db.server.createSortIndex('user', 'email')
+  console.log(Date.now() - d, 'ms')
+
+  // db.drain()
+  // db.server.createSortIndex('user', 'email')
 
   deepEqual(
     (
