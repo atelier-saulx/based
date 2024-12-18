@@ -354,7 +354,10 @@ export type SchemaPropOneWay<isStrict = false> =
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
-export type SchemaProps<isStrict = false> = Record<string, SchemaProp<isStrict>>
+export type SchemaProps<isStrict = false> = Record<
+  string,
+  SchemaProp<isStrict>
+> & { id?: never }
 
 type GenericSchemaType<isStrict = false> = {
   hooks?: {
@@ -374,11 +377,14 @@ export type SchemaType<isStrict = false> = isStrict extends true
       | GenericSchemaType<false>
       | (SchemaProps & { props?: never })
 
-export type SchemaTypes<isStrict = false> = Record<string, SchemaType<isStrict>>
+export type SchemaTypes<isStrict = false> = Record<
+  `${Letter}${string}`,
+  SchemaType<isStrict>
+>
 export type SchemaPropsOneWay<isStrict = false> = Record<
   `${Letter}${string}`,
   SchemaPropOneWay<isStrict>
->
+> & { id?: never }
 
 type GenericSchema<isStrict = false> = {
   types?: SchemaTypes<isStrict>

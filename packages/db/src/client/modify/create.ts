@@ -5,7 +5,6 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
-// import { BasedDbClient } from '../index.js'
 
 type Payload = Record<string, any>
 
@@ -58,7 +57,6 @@ const appendCreate = (
   }
 }
 
-// let cnt = 100
 export const create = (
   db: BasedDb,
   type: string,

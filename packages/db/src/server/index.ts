@@ -18,6 +18,7 @@ import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { create } from '../client/modify/create.js'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -184,6 +185,13 @@ export class DbServer {
       ...strictSchema,
     }
 
+    if (strictSchema.props) {
+      this.schema.types ??= {}
+      // @ts-ignore This creates an internal type to use for root props
+      this.schema.types._root = { props: strictSchema.props }
+      delete this.schema.props
+    }
+
     this.updateTypeDefs()
 
     if (!fromStart) {
@@ -203,6 +211,8 @@ export class DbServer {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
       }
+
+      this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
     }
 
     return this.schema

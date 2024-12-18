@@ -1,4 +1,4 @@
-import { langCodes, LangCode } from '@based/schema'
+import { langCodesMap, LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
 import { ModifyOp, ModifyErr } from './types.js'
 import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
@@ -13,7 +13,7 @@ export function writeText(
   modifyOp: ModifyOp,
 ): ModifyErr {
   for (const lang in value) {
-    const langCode: LangCode = langCodes[lang] || langCodes['en'] // TODO use proper fallback
+    const langCode: LangCode = langCodesMap.get(lang) || langCodesMap.get('en') // TODO use proper fallback
     const s = value[lang]
 
     // TODO put langCode
