@@ -23,7 +23,11 @@ struct mempool_slab {
  * A structure describing a chunk allocation.
  */
 struct mempool_chunk {
-    struct mempool_slab *slab; /*!< A pointer back the slab. */
+    /**
+     * A pointer back the slab.
+     * The first bit is used to mark that the chunk is in use.
+     */
+    uintptr_t slab;
     /**
      * A list entry pointing to the next free chunk if this object is in the
      * free list.
@@ -97,6 +101,12 @@ void mempool_gc(struct mempool *mempool)
     __attribute__((access(read_write, 1)));
 
 /**
+ * Defragment and sort chunks within slabs.
+ * This operation will affect the object pointers.
+ */
+void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*));
+
+/**
  * Get a new object from the pool.
  */
 [[nodiscard]]
@@ -157,6 +167,15 @@ static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restri
  * For each chunk on the slab.
  * The current chunk will be available as the pointer variable `chunk`.
  * Must be terminated with MEMPOOL_FOREACH_CHUNK_END().
+ *
+ * **Example**
+ * ```c
+ * MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
+ *     MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+ *         bool inuse = chunk->slab & 1;
+ *         if (inuse) {
+ *             void *obj = mempool_get_obj(pool, chunk);
+ * ```
  * @param slab_nfo is a `struct slab_info` from `mempool_slab_info()`.
  * @param slab is a mempool slab. It can be retrieved from any mempool object by calling `mempool_get_slab()`.
  */

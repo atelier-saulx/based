@@ -100,7 +100,7 @@ pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSc
             return @as([*]u8, undefined)[0..0];
         }
         // const alias = selva.selva_get_next_alias(aliasIterator);
-        var len: selva.user_size_t = 0;
+        var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
     }
@@ -113,7 +113,7 @@ pub fn setTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
 }
 
 pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8) !?*u8 {
-    var len: selva.user_size_t = 0;
+    var len: usize = 0;
     var str: [len]u8 = undefined;
     errors.selva(selva.selva_fields_get_text(ctx.selva, node, selvaFieldSchema, lang.ptr, &str, &len));
     return str;
@@ -200,7 +200,7 @@ pub fn insertReference(
     value: Node,
     target: Node,
     fieldSchema: FieldSchema,
-    index: selva.user_ssize_t,
+    index: isize,
 ) !*selva.SelvaNodeReference {
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
@@ -225,8 +225,8 @@ pub fn insertReference(
 pub fn moveReference(
     node: Node,
     fieldSchema: FieldSchema,
-    index_old: selva.user_ssize_t,
-    index_new: selva.user_ssize_t,
+    index_old: isize,
+    index_new: isize,
 ) !void {
     try errors.selva(selva.selva_fields_references_move(
         node,

@@ -26,6 +26,21 @@ test('references', (t) => {
     },
   })
 
+  parse({
+    props: {
+      articles: {
+        items: {
+          ref: 'article',
+        },
+      },
+    },
+    types: {
+      article: {
+        name: 'string',
+      },
+    },
+  })
+
   deepEqual(
     parse({
       types: {
@@ -188,8 +203,12 @@ test('references', (t) => {
         },
         author: {
           props: {
+            // @ts-ignore
             articles: {
+              // @ts-ignore
               items: {
+                // @ts-ignore
+                required: true,
                 ref: 'article',
                 prop: 'author',
               },

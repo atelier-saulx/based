@@ -28,9 +28,8 @@ pub usingnamespace @cImport({
 
     @cInclude("libdeflate.h");
 
-    @cInclude("selva/selva_lang.h");
-
     @cInclude("selva_lang_code.h");
+    @cInclude("selva/selva_lang.h");
 
     @cInclude("selva/strsearch.h");
 });

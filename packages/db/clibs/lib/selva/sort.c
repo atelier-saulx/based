@@ -8,7 +8,14 @@
 #include "tree.h"
 #include "util/mempool.h"
 #include "selva/selva_lang.h"
+#include "selva_error.h"
 #include "selva/sort.h"
+
+#if 0
+#define SORT_TEST
+#define SORT_TEST_I64
+#define SORT_TEST_BUF
+#endif
 
 struct SelvaSortItem {
     RB_ENTRY(SelvaSortItem) _entry;
@@ -550,12 +557,132 @@ SELVA_SORT_FOREACH(i64_reverse, RB_PREV, i64)
 SELVA_SORT_FOREACH(double, RB_NEXT, d)
 SELVA_SORT_FOREACH(double_reverse, RB_PREV, d)
 
+void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+{
+    struct SelvaSortItem *cur = ctx->iterator.next;
+
+    if (!cur) return nullptr;
+
+    ctx->iterator.next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
+
+    *buf = cur->data;
+    *len = cur->data_len;
+    return (void *)cur->p;
+}
+
+void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+{
+    struct SelvaSortItem *cur = ctx->iterator.next;
+
+    if (!cur) return nullptr;
+
+    ctx->iterator.next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
+
+    *buf = cur->data;
+    *len = cur->data_len;
+    return (void *)cur->p;
+}
+
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
 {
     return !ctx->iterator.next;
 }
 
-#if 0
+static void reinsert_items(struct SelvaSortCtx *ctx)
+{
+    struct mempool *mempool = &ctx->mempool;
+    struct mempool_slab_info slab_nfo = mempool_slab_info(mempool);
+    const enum SelvaSortOrder order = ctx->order;
+
+    MEMPOOL_FOREACH_SLAB_BEGIN(&ctx->mempool) {
+        MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+            const bool inuse = chunk->slab & 1;
+            if (inuse) {
+                struct SelvaSortItem *item = (struct SelvaSortItem *)mempool_get_obj(mempool, chunk);
+                switch (order) {
+                case SELVA_SORT_ORDER_NONE:
+                    (void)RB_INSERT(SelvaSortTreeNone, &ctx->out_none, item);
+                    break;
+                case SELVA_SORT_ORDER_I64_ASC:
+                    (void)RB_INSERT(SelvaSortTreeAscI64, &ctx->out_ai64, item);
+                    break;
+                case SELVA_SORT_ORDER_I64_DESC:
+                    (void)RB_INSERT(SelvaSortTreeDescI64, &ctx->out_di64, item);
+                    break;
+                case SELVA_SORT_ORDER_DOUBLE_ASC:
+                    (void)RB_INSERT(SelvaSortTreeAscDouble, &ctx->out_ad, item);
+                    break;
+                case SELVA_SORT_ORDER_DOUBLE_DESC:
+                    (void)RB_INSERT(SelvaSortTreeDescDouble, &ctx->out_dd, item);
+                    break;
+                case SELVA_SORT_ORDER_BUFFER_ASC:
+                case SELVA_SORT_ORDER_BUFFER_DESC:
+                case SELVA_SORT_ORDER_TEXT_ASC:
+                case SELVA_SORT_ORDER_TEXT_DESC:
+                    abort();
+                }
+            }
+        } MEMPOOL_FOREACH_CHUNK_END();
+    } MEMPOOL_FOREACH_SLAB_END();
+}
+
+static int defrag_cmp_none(const void *a, const void *b)
+{
+    return selva_sort_cmp_none(a, b);
+}
+
+static int defrag_cmp_asc_i64(const void *a, const void *b)
+{
+    return selva_sort_cmp_asc_i64(a, b);
+}
+
+static int defrag_cmp_desc_i64(const void *a, const void *b)
+{
+    return selva_sort_cmp_desc_i64(a, b);
+}
+
+static int defrag_cmp_asc_d(const void *a, const void *b)
+{
+    return selva_sort_cmp_asc_d(a, b);
+}
+
+static int defrag_cmp_desc_d(const void *a, const void *b)
+{
+    return selva_sort_cmp_desc_d(a, b);
+}
+
+int selva_sort_defrag(struct SelvaSortCtx *ctx)
+{
+    int (*cmp)(const void *, const void *b);
+
+    switch (ctx->order) {
+    case SELVA_SORT_ORDER_NONE:
+        cmp = defrag_cmp_none;
+        break;
+    case SELVA_SORT_ORDER_I64_ASC:
+        cmp = defrag_cmp_asc_i64;
+        break;
+    case SELVA_SORT_ORDER_I64_DESC:
+        cmp = defrag_cmp_desc_i64;
+        break;
+    case SELVA_SORT_ORDER_DOUBLE_ASC:
+        cmp = defrag_cmp_asc_d;
+        break;
+    case SELVA_SORT_ORDER_DOUBLE_DESC:
+        cmp = defrag_cmp_desc_d;
+        break;
+    default:
+        return SELVA_ENOTSUP;
+    }
+
+    RB_INIT(&ctx->out_none);
+    mempool_defrag(&ctx->mempool, cmp);
+    reinsert_items(ctx);
+
+    return 0;
+}
+
+#ifdef SORT_TEST
 #include <stdio.h>
 #include <unistd.h>
 #include "util/ctime.h"
@@ -585,19 +712,22 @@ static void print_time(char *msg, struct timespec * restrict ts_start, struct ti
 
     fprintf(stderr, "%s: %.2f %s\n", msg, t, t_unit);
 }
+#endif
 
+#ifdef SORT_TEST_I64
 __constructor
-static void test(void)
+static void test_i64(void)
 {
     struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC);
     struct timespec ts_start, ts_end;
-    unsigned seed = 100;
+    uint64_t seed = 100;
 
+    fprintf(stderr, "%s:\n", __func__);
     ts_monotime(&ts_start);
-    for (int64_t i = 0; i < 100'000; i++) {
+    for (int64_t i = 0; i < 1'000'000; i++) {
         seed = (214013 * seed + 2531011);
-        unsigned x = (seed >> 16) & 0x7FFF;
-        selva_sort_insert_i64(sort, x, (void *)i);
+        uint64_t x = (seed >> 16) & 0x7FFF;
+        selva_sort_insert_i64(sort, (uint64_t)x <<31, (void *)i);
     }
     ts_monotime(&ts_end);
     print_time("inserts", &ts_start, &ts_end);
@@ -605,10 +735,103 @@ static void test(void)
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
     while (!selva_sort_foreach_done(sort)) {
+#if 0
         __unused const void *item = selva_sort_foreach(sort);
+#endif
+        int64_t v;
+        __unused const void *item = selva_sort_foreach_i64(sort, &v);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
     }
     ts_monotime(&ts_end);
     print_time("foreach", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_defrag(sort);
+    ts_monotime(&ts_end);
+    print_time("defrag", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+#if 0
+        __unused const void *item = selva_sort_foreach(sort);
+#endif
+        int64_t v;
+        __unused const void *item = selva_sort_foreach_i64(sort, &v);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach2", &ts_start, &ts_end);
+
+    selva_sort_destroy(sort);
+}
+#endif
+
+#ifdef SORT_TEST_BUF
+__constructor
+static void test_buf(void)
+{
+    struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_BUFFER_ASC);
+    struct timespec ts_start, ts_end;
+    uint64_t seed = 100;
+
+    fprintf(stderr, "%s:\n", __func__);
+    ts_monotime(&ts_start);
+    for (int64_t i = 0; i < 1'000'000; i++) {
+        char buf[80];
+        for (size_t i = 0; i < num_elem(buf) - 1; i++) {
+            seed = (214013 * seed + 2531011);
+            char c = (char)(((seed >> 16) & 0x7FFF) % (126 - 32 + 1) + 32);
+            buf[i] = c;
+        }
+        buf[num_elem(buf) - 1] = '\0';
+
+        selva_sort_insert_buf(sort, buf, sizeof(buf), (void *)i);
+    }
+    ts_monotime(&ts_end);
+    print_time("inserts", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+#if 0
+        __unused const void *item = selva_sort_foreach(sort);
+#endif
+        void *buf;
+        size_t len;
+        __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach", &ts_start, &ts_end);
+
+#if 0
+    ts_monotime(&ts_start);
+    selva_sort_defrag(sort);
+    ts_monotime(&ts_end);
+    print_time("defrag", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+#if 0
+        __unused const void *item = selva_sort_foreach(sort);
+#endif
+        int64_t v;
+        __unused const void *item = selva_sort_foreach_i64(sort, &v);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach2", &ts_start, &ts_end);
+#endif
 
     selva_sort_destroy(sort);
 }

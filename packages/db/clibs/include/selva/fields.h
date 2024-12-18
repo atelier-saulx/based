@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <sys/types.h>
 #include "selva/_export.h"
 #ifdef __zig
 struct selva_string;
@@ -174,7 +175,7 @@ int selva_fields_references_insert_tail_wupsert(
         struct SelvaTypeEntry *te_dst,
         const node_id_t ids[],
         size_t nr_ids)
-    __attribute__((access(read_only, 6, 7)));
+    __attribute__((access(read_only, 5, 6)));
 
 /**
  * Move reference from old to new index in a references field array.

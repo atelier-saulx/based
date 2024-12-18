@@ -294,7 +294,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        case SELVA_FIELD_TYPE_SPARE1:
+        case SELVA_FIELD_TYPE_HLL:
             /* NOP */
             break;
         }
@@ -406,6 +406,7 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
 
     node = selva_nfind_node(te, start);
     if (!node || node->node_id > end) {
+        *start_node = nullptr;
         return 0;
     }
 
@@ -656,7 +657,7 @@ static void load_reference_meta(
             db_panic("Muffer not supported in edge meta");
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        case SELVA_FIELD_TYPE_SPARE1:
+        case SELVA_FIELD_TYPE_HLL:
             /* NOP */
             break;
         }
@@ -862,7 +863,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        case SELVA_FIELD_TYPE_SPARE1:
+        case SELVA_FIELD_TYPE_HLL:
             /* NOP */
             break;
         }

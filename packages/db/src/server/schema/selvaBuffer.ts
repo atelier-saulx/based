@@ -7,7 +7,6 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
-  ALIAS,
   BINARY,
 } from './types.js'
 

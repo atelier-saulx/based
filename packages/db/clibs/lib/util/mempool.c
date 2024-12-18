@@ -2,6 +2,11 @@
  * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#if defined(__STDC_LIB_EXT1__)
+#define __STDC_WANT_LIB_EXT1__ 1
+#elif defined(__linux__)
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <assert.h>
 #include <stddef.h>
@@ -39,16 +44,21 @@ static struct mempool_chunk *get_chunk(const struct mempool *mempool, void *obj)
     return (struct mempool_chunk *)p;
 }
 
+static struct mempool_slab *get_slab(const struct mempool_chunk *chunk)
+{
+    return (struct mempool_slab *)(chunk->slab & ~(uintptr_t)1);
+}
+
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj) {
-    return get_chunk(mempool, obj)->slab;
+    return get_slab(get_chunk(mempool, obj));
 }
 
 struct mempool_slab_info mempool_slab_info(const struct mempool *mempool) {
-    const size_t slab_size = mempool->slab_size_kb * 1024;
+    const size_t slab_size = (size_t)mempool->slab_size_kb * 1024;
     const size_t chunk_size = ALIGNED_SIZE(
             sizeof(struct mempool_chunk) +
-            PAD(sizeof(struct mempool_chunk), mempool->obj_align) +
-            mempool->obj_size,
+            PAD(sizeof(struct mempool_chunk), (size_t)mempool->obj_align) +
+            (size_t)mempool->obj_size,
             alignof(struct mempool_chunk));
     const size_t nr_total = (slab_size - sizeof(struct mempool_slab)) / chunk_size;
 
@@ -131,6 +141,81 @@ void mempool_gc(struct mempool *mempool) {
     } MEMPOOL_FOREACH_SLAB_END();
 }
 
+struct mempool_defrag_ctx {
+    struct mempool *mempool;
+    int (*obj_compar)(const void *, const void*);
+};
+
+#if defined(__STDC_LIB_EXT1__) || defined(__linux__)
+static int defrag_cmp(const void *a, const void *b, void *ctx_)
+#elif defined(__APPLE__)
+static int defrag_cmp(void *ctx_, const void *a, const void *b)
+#else
+#error "No qsort with ctx available"
+#endif
+{
+    struct mempool_defrag_ctx *ctx = ctx_;
+    struct mempool_chunk *chunk_a = (typeof(chunk_a))a;
+    struct mempool_chunk *chunk_b = (typeof(chunk_b))b;
+    const int inuse_a = chunk_a->slab & 1;
+    const int inuse_b = chunk_b->slab & 1;
+
+    //fprintf(stderr, "%p %p %d %d\n", chunk_a, chunk_b, inuse_a, inuse_b);
+    if (chunk_a == chunk_b) {
+        return 0;
+    } else if (inuse_a && inuse_b) {
+        return ctx->obj_compar(mempool_get_obj(ctx->mempool, chunk_a), mempool_get_obj(ctx->mempool, chunk_b));
+    } else if (inuse_b) { /* a or b depending if we keep empty at the beginning or end. */
+        return 1;
+    } else if (inuse_a) {
+        return -1;
+    }
+    return chunk_a < chunk_b;
+}
+
+void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*)) {
+    struct mempool_slab_info slab_nfo = mempool_slab_info(mempool);
+    struct mempool_defrag_ctx ctx = {
+        .mempool = mempool,
+        .obj_compar = obj_compar,
+    };
+
+    MEMPOOL_FOREACH_SLAB_BEGIN(mempool) {
+        if (slab->nr_free != slab_nfo.nr_objects) {
+            /*
+             * Temporarly remove all free chunks of this slab from the free list
+             * so we can reorder them safely.
+             */
+            MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+                if (!(chunk->slab & (uintptr_t)1)) {
+                    LIST_REMOVE(chunk, next_free);
+                }
+            } MEMPOOL_FOREACH_CHUNK_END();
+
+            struct mempool_chunk *first = get_first_chunk(slab);
+            size_t n = slab_nfo.nr_objects;
+#if defined(__STDC_LIB_EXT1__)
+            (void)qsort_s(first, n, slab_nfo.chunk_size, defrag_cmp, &ctx);
+#elif defined(__linux__)
+            qsort_r(first, n, slab_nfo.chunk_size, defrag_cmp, &ctx);
+#elif defined(__APPLE__)
+            qsort_r(first, n, slab_nfo.chunk_size, &ctx, defrag_cmp);
+#else
+#error "No qsort with ctx available"
+#endif
+
+            /*
+             * Add the free chunks back to the free list.
+             */
+            MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+                if (!(chunk->slab & (uintptr_t)1)) {
+                    LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+                }
+            } MEMPOOL_FOREACH_CHUNK_END();
+        }
+    } MEMPOOL_FOREACH_SLAB_END();
+}
+
 /**
  * Allocate a new slab using mmap().
  */
@@ -189,9 +274,10 @@ retry:
 
     /*
      * Add all new objects to the list of free objects in the pool.
+     * TODO Should this be reverse?
      */
     MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
-        chunk->slab = slab;
+        chunk->slab = (uintptr_t)slab; /* also marked as free. */
         LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
     } MEMPOOL_FOREACH_CHUNK_END();
 
@@ -214,7 +300,8 @@ void *mempool_get(struct mempool *mempool) {
 
     next = LIST_FIRST(&mempool->free_chunks);
     LIST_REMOVE(next, next_free);
-    next->slab->nr_free--;
+    get_slab(next)->nr_free--;
+    next->slab |= 1;
 
     return mempool_get_obj(mempool, next);
 }
@@ -223,7 +310,8 @@ void mempool_return(struct mempool *mempool, void *p) {
     struct mempool_chunk *chunk = get_chunk(mempool, p);
 
     LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
-    chunk->slab->nr_free++;
+    get_slab(chunk)->nr_free++;
+    chunk->slab ^= 1;
 
     /*
      * Note that we never free slabs here. Slabs are only removed when the user

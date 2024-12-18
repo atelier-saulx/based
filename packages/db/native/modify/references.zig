@@ -83,16 +83,13 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
-    // std.debug.print("put refs len: {d}\n", .{len});
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
-    // TODO maybe pass index?
     const address = @intFromPtr(data.ptr);
     const delta = (address + 1) & 3;
     const offset = if (delta == 0) 0 else 4 - delta;
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
-    // std.debug.print("put refs: {any}\n", .{u32ids});
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),

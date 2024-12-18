@@ -7,6 +7,7 @@ pub const Prop = enum(u8) {
     CREATED = 2,
     UPDATED = 3,
     NUMBER = 4,
+    HLL = 5,
     INT8 = 20,
     UINT8 = 6,
     INT16 = 21,
