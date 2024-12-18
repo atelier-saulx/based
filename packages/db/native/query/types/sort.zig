@@ -36,17 +36,17 @@ pub fn default(
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     if (queryType == 4) {
-        selva.selva_sort_foreach_begin_reverse(sI);
+        selva.selva_sort_foreach_begin_reverse(sI.index);
     } else {
-        selva.selva_sort_foreach_begin(sI);
+        selva.selva_sort_foreach_begin(sI.index);
     }
     var correctedForOffset: u32 = offset;
-    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
+    checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
         if (queryType == 4) {
-            node = @ptrCast(selva.selva_sort_foreach_reverse(sI));
+            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index));
         } else {
-            node = @ptrCast(selva.selva_sort_foreach(sI));
+            node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
         if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;

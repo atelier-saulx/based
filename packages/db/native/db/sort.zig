@@ -6,17 +6,18 @@ const napi = @import("../napi.zig");
 const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
-pub const MainSortIndex = struct {
+pub const SortIndexMeta = struct {
     prop: types.Prop,
-    len: u16,
+    len: u16, // len can be added somewhere else
     index: *selva.SelvaSortCtx,
 };
 
-pub const MainSortIndexes = std.AutoHashMap(u16, *MainSortIndex);
-pub const BuffSortIndexes = std.AutoHashMap(u8, *selva.SelvaSortCtx);
+// key of main sort indexes is START, key of buffSort is u8
+pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
+pub const FieldSortIndexes = std.AutoHashMap(u8, *SortIndexMeta);
 
 pub const TypeIndex = struct {
-    string: BuffSortIndexes,
+    field: FieldSortIndexes,
     main: MainSortIndexes,
 };
 
@@ -49,53 +50,42 @@ pub fn createSortIndex(
     start: u16,
     len: u16,
     prop: types.Prop,
-) !*selva.SelvaSortCtx {
+) !*SortIndexMeta {
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
-
     if (typeIndexes == null) {
         typeIndexes = try dbCtx.allocator.create(TypeIndex);
         typeIndexes.?.* = .{
-            .string = BuffSortIndexes.init(dbCtx.allocator),
+            .field = FieldSortIndexes.init(dbCtx.allocator),
             .main = MainSortIndexes.init(dbCtx.allocator),
         };
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
-
     const tI: *TypeIndex = typeIndexes.?;
-
     var sortIndex = getSortIndex(typeIndexes, field, start);
-
     var sortIndexType: u8 = undefined;
     if (prop == types.Prop.STRING) {
         sortIndexType = selva.SELVA_SORT_ORDER_BUFFER_ASC;
     } else {
         sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
     }
-
-    var main: ?*MainSortIndex = null;
-
     if (sortIndex == null) {
-        sortIndex.? = selva.selva_sort_init(sortIndexType).?;
-        if (prop == types.Prop.STRING) {
-            try tI.string.put(field, sortIndex.?);
+        sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
+        sortIndex.?.* = .{
+            .index = selva.selva_sort_init(sortIndexType).?,
+            .len = len,
+            .prop = prop,
+        };
+        if (field == 0) {
+            try tI.main.put(start, sortIndex.?);
         } else {
-            main = try dbCtx.allocator.create(MainSortIndex);
-            main.?.* = .{
-                .index = sortIndex.?,
-                .len = len,
-                .prop = prop,
-            };
-            try tI.main.put(start, main.?);
+            try tI.field.put(field, sortIndex.?);
         }
-    } else if (len != 0 and field == 0) {}
-
+    }
     const sI = sortIndex.?;
     const typeEntry = try db.getType(dbCtx, typeId);
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
-
     var node = db.getFirstNode(typeEntry);
     var first = true;
-
     if (field != 0) {
         if (types.Prop.isBuffer(prop)) {
             while (node != null) {
@@ -122,10 +112,9 @@ pub fn createSortIndex(
                 break;
             }
             const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
-            addMainSortIndex(main.?, data, start, node.?);
+            addMainSortIndex(sI, data, start, node.?);
         }
     }
-
     return sI;
 }
 
@@ -133,19 +122,15 @@ pub fn getSortIndex(
     typeSortIndexes: ?*TypeIndex,
     field: u8,
     start: u16,
-) ?*selva.SelvaSortCtx {
+) ?*SortIndexMeta {
     if (typeSortIndexes == null) {
         return null;
     }
     const tI = typeSortIndexes.?;
     if (field == 0) {
-        const main = tI.main.get(start);
-        if (main == null) {
-            return null;
-        }
-        return main.?.index;
+        return tI.main.get(start);
     } else {
-        return tI.string.get(field);
+        return tI.field.get(field);
     }
 }
 
@@ -157,7 +142,7 @@ pub fn getTypeSortIndexes(
 }
 
 pub fn addToStringSortIndex(
-    sortIndex: *selva.SelvaSortCtx,
+    sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
 ) void {
@@ -168,14 +153,14 @@ pub fn addToStringSortIndex(
     const maxStrLen = if (data.len < 10) data.len else 10;
     if (data[1] == 0) {
         const slice = data[2..maxStrLen];
-        selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
+        selva.selva_sort_insert_buf(sortIndex.index, slice.ptr, slice.len - 2, node);
     } else {
         // need decompress so sad...
     }
 }
 
 pub fn removeFromStringSortIndex(
-    _: *selva.SelvaSortCtx,
+    _: *SortIndexMeta,
     _: []u8,
     _: db.Node,
 ) void {
@@ -193,7 +178,7 @@ pub fn removeFromStringSortIndex(
 }
 
 pub fn addMainSortIndex(
-    mainIndex: *MainSortIndex,
+    mainIndex: *SortIndexMeta,
     data: []u8,
     start: u16,
     node: db.Node,

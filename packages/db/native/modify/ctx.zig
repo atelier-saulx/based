@@ -7,7 +7,7 @@ const sort = @import("../db/sort.zig");
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
-    currentSortIndex: ?*selva.SelvaSortCtx,
+    currentSortIndex: ?*sort.SortIndexMeta,
     typeSortIndex: ?*sort.TypeIndex,
     typeId: db.TypeId,
     typeEntry: ?db.Type,
