@@ -252,19 +252,26 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     if (err) {
         return err;
     }
-
-    if (nfo.block_capacity == 0) {
+    
+    if (nfo.block_capacity == 0)
+    {
         return SELVA_EINVAL;
     }
+
+    
 
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
+    
+
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
+
+    
     te->type = type;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
@@ -273,6 +280,8 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
         selva_free(te);
         return err;
     }
+
+    
 
     te->blocks = alloc_blocks(nfo.block_capacity);
     for (size_t i = 0; i < te->blocks->len; i++) {
@@ -286,7 +295,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
 
 #if 0
     struct mempool_slab_info slab_info = mempool_slab_info(&te->nodepool);
-    printf("\ntype: %d\n"
+    
            "node_size: %zu\n"
            "slab_size: %zu\n"
            "chunk_size: %zu\n"

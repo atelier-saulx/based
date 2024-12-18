@@ -3,6 +3,7 @@ import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import { ModifyOp, ModifyErr, UPDATE, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
+import { crc32 } from '../string.js'
 
 export function writeHll(
   value: string | null | Buffer,
@@ -49,14 +50,8 @@ function addHll(
   modifyOp: ModifyOp,
   addOrPut: 0 | 1,
 ): ModifyErr {
-  let nullStr = ''
-  for (const str of value) {
-    if (typeof str !== 'string') {
-      return new ModifyError(t, value)
-    }
-    nullStr += str + '\0'
-  }
-  let size = Buffer.byteLength(nullStr, 'utf8') + 1
+  let size = value.length * 4 + 1
+
   if (ctx.len + size + 11 > ctx.max) {
     return RANGE_ERR
   }
@@ -68,5 +63,14 @@ function addHll(
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = addOrPut
-  ctx.buf.write(nullStr, 'utf-8')
+  for (const str of value) {
+    if (typeof str !== 'string') {
+      return new ModifyError(t, value)
+    }
+    let hash = crc32(Buffer.from(str))
+    ctx.buf[ctx.len++] = hash
+    ctx.buf[ctx.len++] = hash >>>= 8
+    ctx.buf[ctx.len++] = hash >>>= 8
+    ctx.buf[ctx.len++] = hash >>>= 8
+  }
 }

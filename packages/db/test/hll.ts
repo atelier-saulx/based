@@ -24,19 +24,17 @@ await test('hll', async (t) => {
 
   console.log('------- create --------')
 
-  const myArticle = db.create('article', {
+  const myArticle = await db.create('article', {
     myUniqueValuesCount: ['myCoolValue'],
   })
 
-  console.log('------- update --------')
+  // console.log('------- update --------')
 
-  // db.update('article', myArticle, {
-  //   myUniqueValuesCount: {
-  //     delete: ['myCoolValue'],
-  //   },
-  // })
-
-  db.drain()
+  // // db.update('article', myArticle, {
+  // //   myUniqueValuesCount: {
+  // //     delete: ['myCoolValue'],
+  // //   },
+  // // })
 
   console.log('---------------')
 

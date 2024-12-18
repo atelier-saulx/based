@@ -38,7 +38,7 @@ export class SchemaParser {
     this.lvl--
   }
 
-  parseProps(props, schemaType: SchemaType = null) {
+  parseProps(props: any, schemaType: SchemaType = null) {
     this.path[this.lvl++] = 'props'
     expectObject(props)
     this.type = schemaType

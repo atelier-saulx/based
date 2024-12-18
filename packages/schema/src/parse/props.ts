@@ -16,7 +16,6 @@ import {
   stringFormats,
   dateDisplays,
   numberDisplays,
-  Schema,
 } from '../types.js'
 import {
   expectBoolean,

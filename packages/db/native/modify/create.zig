@@ -36,9 +36,19 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.HLL => {
-            std.debug.print("here we go: {any}", .{data});
             const len = readInt(u32, data, 0);
-            return len + 4;
+            if (data[5] == 0) {
+                std.debug.print("\nput HLL: {any}", .{data});
+            } else {
+                std.debug.print("\nadd HLL: {any}", .{data});
+            }
+
+            var i: usize = 1;
+            while (i < len) : (i += 4) {
+                const id = readInt(u32, data, i + 4);
+                std.debug.print("\nitem: HLL: {any}", .{id});
+            }
+            return len;
         },
         else => {
             const len = readInt(u32, data, 0);
