@@ -66,12 +66,7 @@ pub fn createSortIndex(
     }
     const tI: *TypeIndex = typeIndexes.?;
     var sortIndex = getSortIndex(typeIndexes, field, start);
-    var sortIndexType: u8 = undefined;
-    if (prop == types.Prop.STRING) {
-        sortIndexType = selva.SELVA_SORT_ORDER_BUFFER_ASC;
-    } else {
-        sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
-    }
+    const sortIndexType: selva.SelvaSortOrder = try db.getSortFlag(prop, false);
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
         sortIndex.?.* = .{

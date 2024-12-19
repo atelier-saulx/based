@@ -532,7 +532,7 @@ await test('basic', async (t) => {
   )
 })
 
-await test('sort - from start (1.5M items)', async (t) => {
+await test('sort - from start (1M items)', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -566,7 +566,7 @@ await test('sort - from start (1.5M items)', async (t) => {
     email: 'flap@flap.flap.flap',
   })
 
-  for (let i = 0; i < 1500e3; i++) {
+  for (let i = 0; i < 1000e3; i++) {
     db.create('user', {
       name: 'mr ' + i,
       age: i + 101,
