@@ -130,6 +130,25 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
+inline fn parseString(data: []u8) [*]u8 {
+    if (data.len < 10) {
+        var arr: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
+        var i: usize = 2;
+        while (i < data.len) : (i += 1) {
+            arr[i - 2] = data[i];
+        }
+        return &arr;
+    } else {
+        if (data[1] == 0) {
+            const slice = data[2..10];
+            return slice.ptr;
+        } else {
+            // need decompress so sad...
+        }
+    }
+    return EMPTY_CHAR_SLICE.ptr;
+}
+
 pub fn addToSortIndex(
     sortIndex: *SortIndexMeta,
     data: []u8,
@@ -143,22 +162,7 @@ pub fn addToSortIndex(
         const specialScore: i64 = readInt(u32, data, sortIndex.start);
         selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.STRING) {
-        // fix sortIndex.start
-        if (data.len < 10) {
-            var arr: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
-            var i: usize = 2;
-            while (i < data.len) : (i += 1) {
-                arr[i - 2] = data[i];
-            }
-            selva.selva_sort_insert_buf(sortIndex.index, &arr, 8, node);
-        } else {
-            if (data[1] == 0) {
-                const slice = data[2..10];
-                selva.selva_sort_insert_buf(sortIndex.index, slice.ptr, 8, node);
-            } else {
-                // need decompress so sad...
-            }
-        }
+        selva.selva_sort_insert_buf(sortIndex.index, parseString(data), 8, node);
     }
 }
 
@@ -175,6 +179,6 @@ pub fn removeFromSortIndex(
         const specialScore: i64 = readInt(u32, data, sortIndex.start);
         selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.STRING) {
-        std.debug.print("derp derp REMOVE STRING \n", .{});
+        selva.selva_sort_remove_buf(sortIndex.index, parseString(data), 8, node);
     }
 }
