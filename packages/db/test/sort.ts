@@ -296,6 +296,7 @@ await test('basic', async (t) => {
     'sort by age after update',
   )
 
+  console.log('UPDATE MR X AGE')
   db.update('user', mrX, {
     age: 0,
   })

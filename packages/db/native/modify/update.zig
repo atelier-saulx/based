@@ -80,24 +80,24 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u32, data, 0);
     const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-
     if (currentData.len != 0) {
         var j: usize = 0;
-        // const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.db, ctx.typeId));
         while (j < len) {
             const operation = slice[j..];
             const start = readInt(u16, operation, 0);
             const l = readInt(u16, operation, 2);
             if (ctx.field == 0) {
-                // if (hasSortIndex and ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
-                //     const sortIndex = try getSortIndex(ctx, start);
-                //     try sort.deleteField(ctx.id, currentData, sortIndex.?);
-                //     try sort.writeField(ctx.id, operation[4 .. l + 4], sortIndex.?);
-                // }
+                if (ctx.typeSortIndex != null) {
+                    const sI = ctx.typeSortIndex.?.main.get(start);
+                    if (sI != null) {
+                        sort.removeFromSortIndex(sI.?, currentData, ctx.node.?);
+                        sort.addToSortIndex(sI.?, slice[4..], ctx.node.?);
+                    }
+                }
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else if (ctx.currentSortIndex != null) {
-                // try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
-                // try sort.writeField(ctx.id, currentData, ctx.currentSortIndex.?);
+                sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.addToSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else {
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
