@@ -85,9 +85,7 @@ export class BasedDb {
     this.server.markNodeDirty(schema, nodeId)
   }
 
-  create(type: string, value: any, unsafe?: boolean): ModifyRes {
-    return create(this, type, value, unsafe)
-  }
+  create = create
 
   upserting: Map<
     string,
@@ -125,9 +123,9 @@ export class BasedDb {
       p: q.get().then((res) => {
         this.upserting.delete(id)
         if (res.length === 0) {
-          return create(this, type, store.o)
+          return this.create(type, store.o)
         } else {
-          return update(this, type, res.toObject()[0].id, store.o)
+          return this.update(type, res.toObject()[0].id, store.o)
         }
       }),
     }

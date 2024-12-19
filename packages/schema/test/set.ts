@@ -55,16 +55,6 @@ test('set', () => {
     },
   })
 
-  // parse({
-  //   props: {
-  //     myRefs: {
-  //       items: {
-  //         ref: 'user'
-  //       },
-  //     },
-  //   },
-  // })
-
   throws(() => {
     parse({
       types: {

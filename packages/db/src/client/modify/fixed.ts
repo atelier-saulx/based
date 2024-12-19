@@ -19,7 +19,11 @@ import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
-const map = {}
+const map: Record<
+  number,
+  (ctx: ModifyCtx, val: any, def: PropDef | PropDefEdge) => ModifyErr
+> = {}
+
 map[BINARY] = (ctx, val, def) => {
   const buf = getBuffer(val)
   if (buf === undefined) {
@@ -114,6 +118,7 @@ map[UINT8] = (ctx, val, def) => {
   }
   ctx.buf[ctx.len++] = val
 }
+
 map[TIMESTAMP] = map[NUMBER]
 map[INT32] = map[UINT32]
 map[INT16] = map[UINT16]
