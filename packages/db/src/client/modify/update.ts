@@ -84,6 +84,9 @@ export const update = (
     ctx.len = pos
 
     if (err === RANGE_ERR) {
+      if (pos === 0) {
+        throw new Error('out of range')
+      }
       flushBuffer(db)
       return update(db, type, id, obj, overwrite)
     }

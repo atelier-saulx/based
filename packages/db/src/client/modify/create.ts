@@ -108,6 +108,9 @@ export function create(
     ctx.len = pos
 
     if (err === RANGE_ERR) {
+      if (pos === 0) {
+        throw new Error('out of range')
+      }
       flushBuffer(this)
       return this.create(type, obj, unsafe)
     }
