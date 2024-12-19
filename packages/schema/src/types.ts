@@ -316,7 +316,9 @@ type SetItems<isStrict = false> =
   | SchemaNumber
   | SchemaString
   | SchemaEnum
-  | (isStrict extends true ? never : SchemaPropShorthand)
+  | (isStrict extends true
+      ? never
+      : 'timestamp' | 'binary' | 'boolean' | 'string' | NumberType | EnumItem[])
 
 export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
   type?: 'set'
