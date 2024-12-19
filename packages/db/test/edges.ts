@@ -187,6 +187,7 @@ await test('multiple references', async (t) => {
         contributors: [{ id: 1 }],
       },
     ],
+    'Buffer edge value',
   )
 
   let lastArticle = 0
