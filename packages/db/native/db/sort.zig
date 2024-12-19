@@ -12,6 +12,9 @@ pub const SortIndexMeta = struct {
     index: *selva.SelvaSortCtx,
 };
 
+pub const EMPTY_CHAR: [8]u8 = .{0};
+pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..8];
+
 // key of main sort indexes is START, key of buffSort is u8
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
 pub const FieldSortIndexes = std.AutoHashMap(u8, *SortIndexMeta);
@@ -146,16 +149,20 @@ pub fn addToStringSortIndex(
     data: []u8,
     node: db.Node,
 ) void {
-    if (data.len < 2) {
-        // TODO HANDLE UNDEFINED
-        return;
-    }
-    const maxStrLen = if (data.len < 10) data.len else 10;
-    if (data[1] == 0) {
-        const slice = data[2..maxStrLen];
-        selva.selva_sort_insert_buf(sortIndex.index, slice.ptr, slice.len - 2, node);
+    if (data.len < 10) {
+        var arr: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
+        var i: usize = 2;
+        while (i < data.len) : (i += 1) {
+            arr[i - 2] = data[i];
+        }
+        selva.selva_sort_insert_buf(sortIndex.index, &arr, 8, node);
     } else {
-        // need decompress so sad...
+        if (data[1] == 0) {
+            const slice = data[2..10];
+            selva.selva_sort_insert_buf(sortIndex.index, slice.ptr, 8, node);
+        } else {
+            // need decompress so sad...
+        }
     }
 }
 
