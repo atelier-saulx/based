@@ -162,19 +162,18 @@ pub fn addToSortIndex(
 }
 
 pub fn removeFromSortIndex(
-    _: *SortIndexMeta,
-    _: []u8,
-    _: db.Node,
+    sortIndex: *SortIndexMeta,
+    data: []u8,
+    node: db.Node,
 ) void {
-    // if (data.len < 2) {
-    //     // TODO HANDLE UNDEFINED
-    //     return;
-    // }
-    // const maxStrLen = if (data.len < 10) data.len else 10;
-    // if (data[1] == 0) {
-    //     const slice = data[2..maxStrLen];
-    //     // selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
-    // } else {
-    //     // need decompress so sad...
-    // }
+    const prop = sortIndex.prop;
+    if (prop == types.Prop.TIMESTAMP) {
+        const specialScore: i64 = readInt(i64, data, sortIndex.start);
+        selva.selva_sort_remove_i64(sortIndex, specialScore, node);
+    } else if (prop == types.Prop.UINT32) {
+        const specialScore: i64 = readInt(u32, data, sortIndex.start);
+        selva.selva_sort_remove_i64(sortIndex, specialScore, node);
+    } else if (prop == types.Prop.STRING) {
+        std.debug.print("derp derp REMOVE STRING \n", .{});
+    }
 }

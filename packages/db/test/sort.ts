@@ -83,10 +83,7 @@ await test('1M', async (t) => {
 
   // add main strings (simple just use the prop field in sort index)
 
-  // maybe this for chars..
-  // pub const EMPTY_CHAR: [1]u8 = .{0};
-  // pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
-  // for numbers allways zero
+  // add partial update
 })
 
 await test('basic', async (t) => {
