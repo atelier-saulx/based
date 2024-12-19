@@ -127,6 +127,8 @@ export type SchemaTypeDef = {
   stringProps: Buffer // size will be max field
   stringPropsCurrent: Buffer // size will be max field
   stringPropsLoop: PropDef[]
+  createTs?: PropDef[]
+  updateTs?: PropDef[]
 }
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {

@@ -1,8 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 
-await test('number', async (t) => {
+await test('timestamp', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -31,25 +30,32 @@ await test('number', async (t) => {
     },
   })
 
-  db.create('user', {
+  const now = Date.now()
+  const youzi = await db.create('user', {
     name: 'youzi',
   })
 
-  db.create('user', {
-    name: 'jamex',
+  let res = (await db.query('user').get()).toObject()
+
+  if (typeof res[0].createdAt !== 'number') {
+    throw 'should be number'
+  }
+
+  if (res[0].createdAt < now) {
+    throw 'should be Date.now()'
+  }
+
+  if (res[0].createdAt !== res[0].updatedAt) {
+    throw 'createdAt should equal updatedAt after creation'
+  }
+
+  await db.update('user', youzi, {
+    name: 'youzi1',
   })
 
-  db.drain() // will become async
+  res = (await db.query('user').get()).toObject()
 
-  // const res = db.query('user').get().toObject()
-
-  // deepEqual(
-  //   db.query('user').get().toObject(),
-  //   payloads.map((payload, index) => {
-  //     return {
-  //       id: index + 1,
-  //       ...payload,
-  //     }
-  //   }),
-  // )
+  if (!(res[0].updatedAt > res[0].createdAt)) {
+    throw 'updatedAt should be updated after update'
+  }
 })

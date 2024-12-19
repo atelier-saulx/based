@@ -5,6 +5,7 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
+import { writeFixedValue } from './fixed.js'
 
 type Payload = Record<string, any>
 
@@ -16,7 +17,7 @@ const appendCreate = (
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
-  const err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
+  let err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
 
   if (err) {
     return err
@@ -27,6 +28,27 @@ const appendCreate = (
       return RANGE_ERR
     }
     setCursor(ctx, def, 0, res.tmpId, CREATE)
+  }
+
+  if (def.createTs) {
+    const createTs = Date.now()
+    for (const prop of def.createTs) {
+      if (ctx.lastMain === -1) {
+        let mainLenU32 = def.mainLen
+        setCursor(ctx, def, prop.prop, res.tmpId, CREATE)
+        ctx.buf[ctx.len++] = CREATE
+        ctx.buf[ctx.len++] = mainLenU32
+        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+        ctx.lastMain = ctx.len
+        ctx.buf.fill(0, ctx.len, (ctx.len += def.mainLen))
+      }
+      err = writeFixedValue(ctx, createTs, prop, ctx.lastMain + prop.start)
+      if (err) {
+        return err
+      }
+    }
   }
 
   // if touched lets see perf impact here
@@ -57,13 +79,13 @@ const appendCreate = (
   }
 }
 
-export const create = (
-  db: BasedDb,
+export function create(
+  this: BasedDb,
   type: string,
   obj: Payload,
   unsafe?: boolean,
-): ModifyRes => {
-  const def = db.schemaTypesParsed[type]
+): ModifyRes {
+  const def = this.schemaTypesParsed[type]
 
   let id: number
   if ('id' in obj) {
@@ -76,8 +98,8 @@ export const create = (
     id = def.lastId + 1
   }
 
-  const ctx = db.modifyCtx
-  const res = new ModifyState(id, db)
+  const ctx = this.modifyCtx
+  const res = new ModifyState(id, this)
   const pos = ctx.len
   const err = appendCreate(ctx, def, obj, res, unsafe)
 
@@ -86,8 +108,8 @@ export const create = (
     ctx.len = pos
 
     if (err === RANGE_ERR) {
-      flushBuffer(db)
-      return create(db, type, obj, unsafe)
+      flushBuffer(this)
+      return this.create(type, obj, unsafe)
     }
 
     res.error = err
@@ -95,8 +117,8 @@ export const create = (
     return res
   }
 
-  if (!db.isDraining) {
-    startDrain(db)
+  if (!this.isDraining) {
+    startDrain(this)
   }
 
   if (id > def.lastId) {

@@ -167,14 +167,26 @@ export const createSchemaTypeDef = (
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
         addEdges(prop, schemaProp)
-      } else if (
-        typeof schemaProp === 'object' &&
-        (isPropType('string', schemaProp) || isPropType('text', schemaProp))
-      ) {
-        prop.compression =
-          'compression' in schemaProp && schemaProp.compression === 'none'
-            ? 0
-            : 1
+      } else if (typeof schemaProp === 'object') {
+        if (
+          isPropType('string', schemaProp) ||
+          isPropType('text', schemaProp)
+        ) {
+          prop.compression =
+            'compression' in schemaProp && schemaProp.compression === 'none'
+              ? 0
+              : 1
+        } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
+          if (schemaProp.on[0] === 'c') {
+            result.createTs ??= []
+            result.createTs.push(prop)
+          } else if (schemaProp.on[0] === 'u') {
+            result.createTs ??= []
+            result.createTs.push(prop)
+            result.updateTs ??= []
+            result.updateTs.push(prop)
+          }
+        }
       }
       result.props[propPath.join('.')] = prop
       if (isseparate) {

@@ -18,15 +18,27 @@ const appendUpdate = (
 ) => {
   const err = modify(ctx, res, obj, def, UPDATE, def.tree, overwrite)
 
+  if (err) {
+    return err
+  }
+
+  if (def.updateTs) {
+    const updateTs = Date.now()
+    for (const prop of def.updateTs) {
+      if (ctx.mergeMain) {
+        ctx.mergeMain.push(prop, updateTs)
+        ctx.mergeMainSize += prop.len + 4
+      } else {
+        ctx.mergeMain = [prop, updateTs]
+        ctx.mergeMainSize = prop.len + 4
+      }
+    }
+  }
+
   if (ctx.mergeMain) {
     let { mergeMain, mergeMainSize } = ctx
     ctx.mergeMainSize = 0
     ctx.mergeMain = null
-
-    if (err) {
-      return err
-    }
-
     if (ctx.len + 15 + mergeMain.length * 4 > ctx.max) {
       return RANGE_ERR
     }
@@ -51,8 +63,6 @@ const appendUpdate = (
         return err
       }
     }
-  } else if (err) {
-    return err
   }
 }
 
