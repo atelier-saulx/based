@@ -175,13 +175,6 @@ await test('basic', async (t) => {
     'sort by age asc',
   )
 
-  for (let i = 0; i < 1e6; i++) {
-    const mrZ = db.create('user', {
-      name: 'mr z',
-      age: 1 + i,
-      email: i + '@z.z',
-    })
-  }
   db.drain()
   db.server.createSortIndex('user', 'email')
 

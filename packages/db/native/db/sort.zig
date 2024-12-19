@@ -103,6 +103,7 @@ pub fn createSortIndex(
         const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
         addToSortIndex(sI, data, node.?);
     }
+    _ = selva.selva_sort_defrag(sI.index);
     return sI;
 }
 
