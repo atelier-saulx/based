@@ -82,14 +82,14 @@ await test('save simple range', async (t) => {
   equal(firstHash.equals(secondHash), false)
 
   const ls = await readdir(t.tmp)
-  equal(ls.length, N / 100_000 + 4)
+  equal(ls.length, N / 100_000 + 3)
+
   deepEqual(ls, [
-    '65281_100001_200000.sdb',
-    '65281_1_100000.sdb',
-    '65281_200001_300000.sdb',
-    '65281_300001_400000.sdb',
+    '65282_100001_200000.sdb',
+    '65282_1_100000.sdb',
+    '65282_200001_300000.sdb',
+    '65282_300001_400000.sdb',
     'common.sdb',
-    'data.mdb',
     'schema.json',
     'writelog.json',
   ])
@@ -183,11 +183,11 @@ await test('delete a range', async (t) => {
     return { hash, left, right }
   }
 
-  await db.drain()
+  db.drain()
   db.server.updateMerkleTree()
   const first = fun()
   db.remove('user', 100_001)
-  await db.drain()
+  db.drain()
   db.server.updateMerkleTree()
   const second = fun()
 
