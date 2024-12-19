@@ -2,9 +2,9 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { parse, Schema, StrictSchema } from '@based/schema'
+import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
 import { SchemaTypeDef } from './schema/types.js'
-import { genId } from './schema/utils.js'
+import { genId, genRootId } from './schema/utils.js'
 import { createSchemaTypeDef } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
@@ -30,7 +30,6 @@ const transferList = new Array(1)
 export class DbWorker {
   constructor(address: BigInt, db: DbServer) {
     const { port1, port2 } = new MessageChannel()
-
     this.db = db
     this.channel = port1
     this.worker = new Worker(workerPath, {
@@ -66,7 +65,10 @@ export class DbWorker {
 export class DbServer {
   modifyBuf: SharedArrayBuffer
   dbCtxExternal: any
-  schema: StrictSchema & { lastId: number } = { lastId: 0, types: {} }
+  schema: StrictSchema & { lastId: number } = {
+    lastId: 1, // we reserve one for root props
+    types: {},
+  }
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   fileSystemPath: string
   maxModifySize: number
@@ -184,6 +186,44 @@ export class DbServer {
       ...strictSchema,
     }
 
+    if (strictSchema.props) {
+      this.schema.types ??= {}
+      const props = { ...strictSchema.props }
+      for (const key in props) {
+        const prop = props[key]
+        const propType = getPropType(prop)
+        let refProp
+        if (propType === 'reference') {
+          refProp = prop
+        } else if (propType === 'references') {
+          refProp = prop.items
+        }
+        if (refProp) {
+          const type = this.schema.types[refProp.ref]
+          const inverseKey = '_' + key
+          this.schema.types[refProp.ref] = {
+            ...type,
+            props: {
+              ...type.props,
+              [inverseKey]: {
+                items: {
+                  ref: '_root',
+                  prop: key,
+                },
+              },
+            },
+          }
+          refProp.prop = inverseKey
+        }
+      }
+      // @ts-ignore This creates an internal type to use for root props
+      this.schema.types._root = {
+        id: genRootId(),
+        props,
+      }
+      delete this.schema.props
+    }
+
     this.updateTypeDefs()
 
     if (!fromStart) {
@@ -202,6 +242,11 @@ export class DbServer {
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
+      }
+
+      if (strictSchema.props) {
+        // insert a root node
+        this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
       }
     }
 
@@ -222,7 +267,7 @@ export class DbServer {
           type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockCapacity = DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
+        def.blockCapacity = field === '_root' ? 2 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
         this.schemaTypesParsed[field] = def
       }
     }

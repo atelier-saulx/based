@@ -3,6 +3,7 @@ import { isPropType, StrictSchema } from './types.js'
 
 export const mermaid = (schema: StrictSchema) => {
   let mermaid = 'classDiagram'
+
   if (schema.types) {
     for (const type in schema.types) {
       for (const key in schema.types[type].props) {
@@ -18,5 +19,6 @@ export const mermaid = (schema: StrictSchema) => {
       }
     }
   }
+
   return mermaid
 }

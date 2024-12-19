@@ -12,31 +12,31 @@ export const expectObject = (obj: any, msg?: string) => {
   }
 }
 
-export const expectString = (obj) => {
+export const expectString = (obj: any) => {
   if (typeof obj !== 'string') {
     throw Error(EXPECTED_STR)
   }
 }
 
-export const expectBoolean = (v) => {
+export const expectBoolean = (v: any) => {
   if (v !== true && v !== false) {
     throw Error(EXPECTED_BOOL)
   }
 }
 
-export const expectFunction = (v) => {
+export const expectFunction = (v: any) => {
   if (typeof v !== 'function') {
     throw Error(EXPECTED_FN)
   }
 }
 
-export const expectNumber = (v) => {
+export const expectNumber = (v: any) => {
   if (typeof v !== 'number') {
     throw Error(EXPECTED_NUM)
   }
 }
 
-export const expectPositiveNumber = (v) => {
+export const expectPositiveNumber = (v: any) => {
   expectNumber(v)
   if (v < 0) {
     throw Error('Expected positive number')
