@@ -155,9 +155,6 @@ pub fn addToSortIndex(
     node: db.Node,
 ) void {
     const prop = sortIndex.prop;
-
-    std.debug.print("ADD TO SI {any} d: {any} id: {d} \n", .{ prop, data, db.getNodeId(node) });
-
     if (prop == types.Prop.TIMESTAMP) {
         const specialScore: i64 = readInt(i64, data, sortIndex.start);
         selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
@@ -175,9 +172,6 @@ pub fn removeFromSortIndex(
     node: db.Node,
 ) void {
     const prop = sortIndex.prop;
-
-    std.debug.print("REMOVE FROM SI {any} d: {any} id: {d} \n", .{ prop, data, db.getNodeId(node) });
-
     if (prop == types.Prop.TIMESTAMP) {
         const specialScore: i64 = readInt(i64, data, sortIndex.start);
         selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);

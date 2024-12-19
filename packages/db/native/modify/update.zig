@@ -57,7 +57,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         }
                         const sI = entry.value_ptr.*;
                         sort.removeFromSortIndex(sI, currentData.?, ctx.node.?);
-                        sort.addToSortIndex(sI, currentData.?, ctx.node.?);
+                        sort.addToSortIndex(sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {

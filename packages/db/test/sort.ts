@@ -296,7 +296,6 @@ await test('basic', async (t) => {
     'sort by age after update',
   )
 
-  console.log('UPDATE MR X AGE')
   db.update('user', mrX, {
     age: 0,
   })
@@ -576,6 +575,9 @@ await test('sort - from start (1.5M items)', async (t) => {
 
   await db.drain()
 
+  db.server.createSortIndex('user', 'age')
+  db.server.createSortIndex('user', 'name')
+
   deepEqual(
     (
       await db.query('user').include('name').sort('age').range(0, 2).get()
@@ -605,10 +607,7 @@ await test('sort - from start (1.5M items)', async (t) => {
         id: 3,
         name: 'mr 0',
       },
-      {
-        id: 4,
-        name: 'mr 1',
-      },
+      { id: 10003, name: 'mr 10000' },
     ],
   )
 
@@ -619,6 +618,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   })
 
   await newDb.start()
+
+  newDb.server.createSortIndex('user', 'age')
+  newDb.server.createSortIndex('user', 'name')
 
   t.after(() => {
     return newDb.destroy()
@@ -634,8 +636,8 @@ await test('sort - from start (1.5M items)', async (t) => {
         name: 'mr 0',
       },
       {
-        id: 4,
-        name: 'mr 1',
+        id: 10003,
+        name: 'mr 10000',
       },
     ],
   )
