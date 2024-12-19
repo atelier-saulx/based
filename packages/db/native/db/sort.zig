@@ -169,10 +169,10 @@ pub fn removeFromSortIndex(
     const prop = sortIndex.prop;
     if (prop == types.Prop.TIMESTAMP) {
         const specialScore: i64 = readInt(i64, data, sortIndex.start);
-        selva.selva_sort_remove_i64(sortIndex, specialScore, node);
+        selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.UINT32) {
         const specialScore: i64 = readInt(u32, data, sortIndex.start);
-        selva.selva_sort_remove_i64(sortIndex, specialScore, node);
+        selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.STRING) {
         std.debug.print("derp derp REMOVE STRING \n", .{});
     }
