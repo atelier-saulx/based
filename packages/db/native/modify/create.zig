@@ -57,14 +57,12 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 if (ctx.typeSortIndex != null) {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
-                        const mainIndex = entry.value_ptr.*;
-                        const start = entry.key_ptr.*;
-                        sort.addMainSortIndex(mainIndex, slice, start, ctx.node.?);
+                        const sI = entry.value_ptr.*;
+                        sort.addToSortIndex(sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                // add correct prop type...
-                sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.addToSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
