@@ -41,6 +41,7 @@ pub fn default(
         selva.selva_sort_foreach_begin(sI.index);
     }
     var correctedForOffset: u32 = offset;
+
     checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
         if (queryType == 4) {
