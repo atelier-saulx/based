@@ -48,22 +48,23 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = readInt(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
-                // if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-                //     const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-                //     var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-                //     while (it.next()) |key| {
-                //         const start = key.*;
-                //         const sortIndex = (try getSortIndex(ctx, start)).?;
-                //         try sort.deleteField(ctx.id, currentData, sortIndex);
-                //         try sort.writeField(ctx.id, slice, sortIndex);
-                //     }
-                // }
+                if (ctx.typeSortIndex != null) {
+                    var currentData: ?[]u8 = null;
+                    var it = ctx.typeSortIndex.?.main.iterator();
+                    while (it.next()) |entry| {
+                        if (currentData == null) {
+                            currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                        }
+                        const sI = entry.value_ptr.*;
+                        sort.removeFromSortIndex(sI, currentData.?, ctx.node.?);
+                        sort.addToSortIndex(sI, currentData.?, ctx.node.?);
+                    }
+                }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
                 sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.addToSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
-
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
             } else {

@@ -16,7 +16,7 @@ pub const SortIndexMeta = struct {
 pub const EMPTY_CHAR: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
 pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..8];
 
-// key of main sort indexes is START, key of buffSort is u8
+// key of main sort indexes is START, key of buffSort is field
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
 pub const FieldSortIndexes = std.AutoHashMap(u8, *SortIndexMeta);
 

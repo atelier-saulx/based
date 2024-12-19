@@ -9,6 +9,9 @@ const ModifyCtx = Modify.ModifyCtx;
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u16, data, 0);
     var i: usize = 0;
+    if (ctx.typeSortIndex == null) {
+        return len + 2;
+    }
     while (i < len) : (i += 1) {
         const field = data[i + 2];
         const sI = sort.getSortIndex(ctx.typeSortIndex, field, 0);
@@ -16,5 +19,6 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             sort.addToSortIndex(sI.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
         }
     }
+
     return len + 2;
 }
