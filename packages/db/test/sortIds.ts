@@ -33,7 +33,7 @@ await test('ids', async (t) => {
     ids.push(
       db.create('user', {
         age: ~~(Math.random() * 100000),
-        name: 'Mr Dinkelburry ' + i,
+        name: i + ' Mr Dinkelburry',
         email: 'blap@blap.blap.blap',
         flap: i,
         blurf: Math.random() * 10000,

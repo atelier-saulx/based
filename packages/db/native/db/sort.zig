@@ -150,8 +150,11 @@ pub fn addToSortIndex(
     node: db.Node,
 ) void {
     const prop = sortIndex.prop;
-    if (prop == types.Prop.TIMESTAMP) {
+    if (prop == types.Prop.TIMESTAMP or prop == types.Prop.NUMBER) {
         const specialScore: i64 = readInt(i64, data, sortIndex.start);
+        selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
+    } else if (prop == types.Prop.ENUM or prop == types.Prop.UINT8) {
+        const specialScore: i64 = data[sortIndex.start];
         selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.UINT32) {
         const specialScore: i64 = @intCast(readInt(u32, data, sortIndex.start));
@@ -167,8 +170,11 @@ pub fn removeFromSortIndex(
     node: db.Node,
 ) void {
     const prop = sortIndex.prop;
-    if (prop == types.Prop.TIMESTAMP) {
+    if (prop == types.Prop.TIMESTAMP or prop == types.Prop.NUMBER) {
         const specialScore: i64 = readInt(i64, data, sortIndex.start);
+        selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
+    } else if (prop == types.Prop.ENUM or prop == types.Prop.UINT8) {
+        const specialScore: i64 = data[sortIndex.start];
         selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.UINT32) {
         const specialScore: i64 = @intCast(readInt(u32, data, sortIndex.start));
