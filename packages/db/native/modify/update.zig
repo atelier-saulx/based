@@ -60,8 +60,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 // }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-                sort.removeFromStringSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
-                sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.addToSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
             if (ctx.fieldType == types.Prop.ALIAS) {
