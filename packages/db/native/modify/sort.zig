@@ -14,7 +14,7 @@ pub fn addEmptyToSortIndex(_: *ModifyCtx, data: []u8) !usize {
     var i: usize = 0;
     while (i < len) : (i += 1) {
         // const field = data[i + 2];
-        // std.debug.print("hello add empty f: {d} \n", .{field});
+        std.debug.print("hello add empty \n", .{});
 
         // const sortIndexName = sort.getSortName(ctx.typeId, field, 0);
         // if (sort.hasReadSortIndex(ctx.db, sortIndexName)) {
