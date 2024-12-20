@@ -114,7 +114,7 @@ export const devServer = async ({
       '<primary>▶</primary>',
     )
     .line()
-  console.log('cloud', cloud)
+
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
     context,
     functions,

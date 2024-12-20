@@ -240,8 +240,8 @@ _Example:_ `npx @based/cli deploy [options]`
 
 | Option | Description |
 |--------|-------------|
-| `-w, --watch` | watch mode |
-| `-f, --functions <functions...>` | function names to deploy (variadic) |
+| `-w, --watch` | To deploy in watch mode. |
+| `-f, --functions <functions...>` | The function names to be served (variadic). |
 
 ### Dev
 
@@ -252,5 +252,6 @@ _Example:_ `npx @based/cli dev [options]`
 | Option | Description |
 |--------|-------------|
 | `--port <port>` | To set manually the Based Dev Server port. |
+| `--cloud` | To connect to Based Cloud instead. |
 | `-f, --function <functions...>` | The function names to be served (variadic). |
 
