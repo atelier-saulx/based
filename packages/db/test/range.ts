@@ -31,6 +31,22 @@ await test('range', async (t) => {
     },
   })
 
+  db.putSchema({
+    types: {
+      user: {
+        name: 'string',
+        email: 'string',
+        age: 'uint32',
+        nr: 'uint32',
+        location: {
+          props: {
+            address: 'string',
+          },
+        },
+      },
+    },
+  })
+
   db.create('user', {
     age: 12,
     nr: 1,

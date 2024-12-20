@@ -55,7 +55,7 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
 
   // not doing this yet
   // this.modifyBuf = new SharedArrayBuffer(this.maxModifySize)
-  this.dbCtxExternal = native.start(path, false, id)
+  this.dbCtxExternal = native.start(id)
 
   let writelog: Writelog = null
   try {

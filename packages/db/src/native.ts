@@ -29,9 +29,8 @@ export default {
     return db.getQueryBuf(dbCtx, q)
   },
 
-  start: (path: string, readOnly: boolean, id: number) => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.start(buf, readOnly, id)
+  start: (id: number) => {
+    return db.start(id)
   },
 
   stop: (dbCtx: any) => {

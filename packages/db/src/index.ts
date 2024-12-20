@@ -19,7 +19,6 @@ export class BasedDb {
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModifyCtx
   server: DbServer
-
   id: number
   // total write time until .drain is called manualy
   writeTime: number = 0

@@ -114,7 +114,7 @@ export type SchemaTypeDef = {
   reverseProps: {
     [field: string]: PropDef
   }
-  id: number
+  id: number // u16 number
   idUint8: Uint8Array
   separate: PropDef[]
   main: {

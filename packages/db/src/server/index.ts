@@ -64,7 +64,7 @@ export class DbWorker {
 
 export class DbServer {
   modifyBuf: SharedArrayBuffer
-  dbCtxExternal: any
+  dbCtxExternal: any // pointer to zig dbCtx
   schema: StrictSchema & { lastId: number } = {
     lastId: 1, // we reserve one for root props
     types: {},
@@ -73,7 +73,6 @@ export class DbServer {
   fileSystemPath: string
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
-
   dirtyRanges = new Set<number>()
   csmtHashFun = native.createHash()
   workers: DbWorker[] = []
