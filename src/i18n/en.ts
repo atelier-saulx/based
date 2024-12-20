@@ -623,11 +623,11 @@ export default {
       options: [
         {
           parameter: '-w, --watch',
-          description: 'watch mode',
+          description: 'To deploy in watch mode.',
         },
         {
           parameter: '-f, --functions <functions...>',
-          description: 'function names to deploy (variadic)',
+          description: 'The function names to be served (variadic).',
         },
       ],
     },
@@ -638,6 +638,10 @@ export default {
         {
           parameter: '--port <port>',
           description: 'To set manually the Based Dev Server port.',
+        },
+        {
+          parameter: '--cloud',
+          description: 'To connect to Based Cloud instead.',
         },
         {
           parameter: '-f, --function <functions...>',

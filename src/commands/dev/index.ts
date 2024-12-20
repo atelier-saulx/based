@@ -42,8 +42,10 @@ export const dev = async (program: Command) => {
     .command('dev')
     .option(
       '-f, --functions <functions...>',
-      'function names to deploy (variadic)',
+      'The function names to be served (variadic).',
     )
+    .option('--port <port>', 'To set manually the Based Dev Server port.')
+    .option('--cloud', 'To connect to Based Cloud instead.')
 
   cmd.action(devServer)
 }
@@ -78,16 +80,22 @@ const basedOptsScript = (opts) => {
   return `<script>window.BASED=window.BASED||{};window.BASED.opts={${JSON.stringify(opts).replace(/":/g, ':').replace(/,"/g, ',').slice(2, -1)}}</script>`
 }
 
-export const devServer = async ({ functions }) => {
+export const devServer = async ({
+  functions,
+  port,
+  cloud,
+}: { functions?: string[]; port?: string; cloud?: boolean }) => {
   process.on('SIGINT', () => {
     context.print.pipe().fail(context.i18n('methods.aborted'), true)
   })
   const context: AppContext = AppContext.getInstance()
   await context.getProgram()
   const basedClient = await context.getBasedClient()
+  const newPort =
+    port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
   const { BasedServer } = await import('@based/server')
   const [devPort, filePort, _staticPort, lrPort] = await Promise.all([
-    getPort({ port: 1234 }),
+    getPort({ port: newPort || 1234 }),
     getPort({ port: 2000 }),
     getPort({ port: 3000 }),
     getPort({ port: 4000 }),
@@ -106,13 +114,15 @@ export const devServer = async ({ functions }) => {
       '<primary>▶</primary>',
     )
     .line()
-
+  console.log('cloud', cloud)
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
     context,
     functions,
     update,
     publicPath,
     devServerWSPath,
+    'development',
+    cloud,
   )
 
   const client = basedClient.get('project')

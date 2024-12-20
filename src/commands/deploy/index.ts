@@ -192,6 +192,8 @@ export const parseFunctions = async (
   onChange,
   publicPath: string,
   staticPath: string,
+  environment: 'development' | 'production',
+  connectToCloud: boolean = false,
 ) => {
   let { targets, schema } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
@@ -379,12 +381,16 @@ export const parseFunctions = async (
     throw context.print.fail(context.i18n('methods.aborted'), true)
   }
 
-  const replaceBasedConfigPlugin = (newConfig) => ({
+  const replaceBasedConfigPlugin = ({ cloud, url }) => ({
     name: 'replace-based-config',
     setup(build) {
       build.onLoad({ filter: /based\.(js|ts|json)$/ }, async () => {
+        if (cloud) {
+          return null
+        }
+
         return {
-          contents: `export default ${JSON.stringify(newConfig)};`,
+          contents: `export default ${JSON.stringify({ url })};`,
           loader: 'js',
         }
       })
@@ -426,18 +432,20 @@ export const parseFunctions = async (
           watch: browserWatch,
           sourcemap: true,
           platform: 'browser',
+          minify: environment !== 'development',
           bundle: true,
           ...(staticPath && {
             plugins: [
               ...browserEsbuildPlugins,
               replaceBasedConfigPlugin({
+                cloud: connectToCloud,
                 url: staticPath,
               }),
             ],
           }),
           define: {
             global: 'window',
-            'process.env.NODE_ENV': '"production"',
+            'process.env.NODE_ENV': `"${environment}"`,
           },
         },
         onChange,
@@ -474,6 +482,7 @@ export const deploy = async (program: Command) => {
           watch && update,
           publicPath,
           '',
+          'production',
         )
 
       const assetsMap: Record<string, string> = {}

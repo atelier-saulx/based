@@ -264,9 +264,7 @@ export const projectInit = async (program: Command): Promise<void> => {
       })
 
       if (dev) {
-        return devServer({
-          functions: undefined,
-        })
+        return devServer({})
       }
 
       basedClient.destroy()
