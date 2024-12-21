@@ -49,6 +49,8 @@ export function writeString(
       ctx.hasStringField++
     }
     setCursor(ctx, def, t.prop, parentId, modifyOp)
+    // TODO if buffer check if second byte is zero or one
+    // modOp | size u32 | stringprotocol | string
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {

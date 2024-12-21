@@ -13,6 +13,7 @@ pub fn updateSchema(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
     };
 }
 
+// TODO olli: add binary protocol here
 fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const typeId = try napi.get(u16, env, args[0]);

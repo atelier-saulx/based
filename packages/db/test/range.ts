@@ -24,6 +24,13 @@ await test('range', async (t) => {
           location: {
             props: {
               address: { type: 'string' },
+              props: {
+                location: {
+                  props: {
+                    address: { type: 'string' },
+                  },
+                },
+              },
             },
           },
         },
@@ -31,25 +38,9 @@ await test('range', async (t) => {
     },
   })
 
-  db.putSchema({
-    types: {
-      user: {
-        name: 'string',
-        email: 'string',
-        age: 'uint32',
-        nr: 'uint32',
-        location: {
-          props: {
-            address: 'string',
-          },
-        },
-      },
-    },
-  })
-
   db.create('user', {
-    age: 12,
-    nr: 1,
+    age: 12, // first pass, inits the main and puts
+    nr: 1, // second
     email: 'merp_1@once.net',
     location: {
       address: 'Derpstreet 1',
