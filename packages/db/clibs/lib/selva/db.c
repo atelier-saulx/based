@@ -217,6 +217,10 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
 
+    for (size_t i = 0; i < nr_blocks; i++) {
+        RB_INIT(&blocks->blocks[i].nodes);
+    }
+
     return blocks;
 }
 
@@ -283,10 +287,6 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     }
 
     te->blocks = alloc_blocks(nfo.block_capacity);
-    for (size_t i = 0; i < te->blocks->len; i++) {
-        RB_INIT(&te->blocks->blocks[i].nodes);
-    }
-
     selva_init_aliases(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
