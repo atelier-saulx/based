@@ -211,7 +211,8 @@ static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const char *sch
 
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 {
-    size_t nr_blocks = (4294967296ull + (block_capacity - 1)) / block_capacity;
+    assert(block_capacity >= 2);
+    size_t nr_blocks = 4294967295ull / block_capacity;
     struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), nr_blocks * sizeof(*blocks));
 
     blocks->block_capacity = block_capacity;
