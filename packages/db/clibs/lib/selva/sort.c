@@ -727,7 +727,7 @@ static void test_i64(void)
     for (int64_t i = 0; i < 1'000'000; i++) {
         seed = (214013 * seed + 2531011);
         uint64_t x = (seed >> 16) & 0x7FFF;
-        selva_sort_insert_i64(sort, (uint64_t)x <<31, (void *)i);
+        selva_sort_insert_i64(sort, (uint64_t)x << 31, (void *)i);
     }
     ts_monotime(&ts_end);
     print_time("inserts", &ts_start, &ts_end);
