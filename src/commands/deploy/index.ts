@@ -195,6 +195,7 @@ export const parseFunctions = async (
   environment: 'development' | 'production',
   connectToCloud: boolean = false,
 ) => {
+  const isProduction: boolean = environment === 'production'
   let { targets, schema } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
 
@@ -385,7 +386,7 @@ export const parseFunctions = async (
     name: 'replace-based-config',
     setup(build) {
       build.onLoad({ filter: /based\.(js|ts|json)$/ }, async () => {
-        if (cloud) {
+        if (cloud || !url) {
           return null
         }
 
@@ -432,17 +433,15 @@ export const parseFunctions = async (
           watch: browserWatch,
           sourcemap: true,
           platform: 'browser',
-          minify: environment !== 'development',
+          minify: isProduction,
           bundle: true,
-          ...(staticPath && {
-            plugins: [
-              ...browserEsbuildPlugins,
-              replaceBasedConfigPlugin({
-                cloud: connectToCloud,
-                url: staticPath,
-              }),
-            ],
-          }),
+          plugins: [
+            ...browserEsbuildPlugins,
+            replaceBasedConfigPlugin({
+              cloud: connectToCloud,
+              url: staticPath,
+            }),
+          ],
           define: {
             global: 'window',
             'process.env.NODE_ENV': `"${environment}"`,
