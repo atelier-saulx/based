@@ -1,11 +1,9 @@
 import test from 'node:test'
 import { parse } from '@based/schema'
+import { throws } from 'node:assert'
 
-test('dependancy', () => {
+test('dependency', () => {
   parse({
-    locales: {
-      en: {},
-    },
     types: {
       user: {
         name: 'string',
