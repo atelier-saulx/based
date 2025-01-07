@@ -76,14 +76,6 @@ await test('1M', async (t) => {
     true,
     'creating string sort index should not take longer then 250s',
   )
-
-  // add update for undefined usecase
-
-  // add update for integer keys (timestamp as well)
-
-  // add main strings (simple just use the prop field in sort index)
-
-  // add partial update
 })
 
 await test('basic', async (t) => {
