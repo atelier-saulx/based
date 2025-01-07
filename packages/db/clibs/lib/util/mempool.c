@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #if defined(__STDC_LIB_EXT1__)
