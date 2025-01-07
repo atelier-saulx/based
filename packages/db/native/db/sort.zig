@@ -13,8 +13,8 @@ pub const SortIndexMeta = struct {
     index: *selva.SelvaSortCtx,
 };
 
-pub const EMPTY_CHAR: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
-pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..8];
+pub const EMPTY_CHAR: [16]u8 = [_]u8{0} ** 16;
+pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..16];
 
 // key of main sort indexes is START, key of buffSort is field
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
@@ -70,7 +70,9 @@ pub fn createSortIndex(
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
         sortIndex.?.* = .{
-            .index = selva.selva_sort_init(sortIndexType).?,
+            .index = selva.selva_sort_init2(sortIndexType,
+            // TODO marco test difference bewteen speed if (types.Prop.isBuffer(prop)) 16 else 0,
+            0).?,
             .len = len,
             .start = start,
             .prop = prop,
@@ -126,8 +128,8 @@ pub fn getTypeSortIndexes(
 }
 
 inline fn parseString(data: []u8) [*]u8 {
-    if (data.len < 10) {
-        var arr: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
+    if (data.len < 18) {
+        var arr: [16]u8 = [_]u8{0} ** 16;
         var i: usize = 2;
         while (i < data.len) : (i += 1) {
             arr[i - 2] = data[i];
@@ -135,7 +137,7 @@ inline fn parseString(data: []u8) [*]u8 {
         return &arr;
     } else {
         if (data[1] == 0) {
-            const slice = data[2..10];
+            const slice = data[2..18];
             return slice.ptr;
         } else {
             // need decompress so sad...
