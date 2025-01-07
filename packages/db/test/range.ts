@@ -25,6 +25,11 @@ await test('range', async (t) => {
           location: {
             props: {
               address: { type: 'string' },
+              location: {
+                props: {
+                  address: { type: 'string' },
+                },
+              },
             },
           },
         },
@@ -33,8 +38,8 @@ await test('range', async (t) => {
   })
 
   db.create('user', {
-    age: 12,
-    nr: 1,
+    age: 12, // first pass, inits the main and puts
+    nr: 1, // second
     email: 'merp_1@once.net',
     location: {
       address: 'Derpstreet 1',

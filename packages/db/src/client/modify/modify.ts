@@ -76,7 +76,7 @@ function _modify(
         if (ctx.lastMain === -1) {
           let mainLenU32 = schema.mainLen
           setCursor(ctx, schema, def.prop, res.tmpId, mod)
-          ctx.buf[ctx.len++] = overwrite ? mod : MERGE_MAIN
+          ctx.buf[ctx.len++] = mod
           ctx.buf[ctx.len++] = mainLenU32
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8

@@ -8,5 +8,10 @@ export const RANGE_ERR = 1
 export const INCREMENT = 12
 export const DECREMENT = 13
 
+export const SWITCH_TYPE = 2
+export const SWITCH_FIELD = 0
+export const SWITCH_ID_CREATE = 9
+export const SWITCH_ID_UPDATE = 1
+
 export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 export type ModifyOp = typeof CREATE | typeof UPDATE | typeof INCREMENT
