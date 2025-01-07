@@ -33,6 +33,18 @@
  */
 #define HUGE_PAGES HUGE_PAGES_SOFT
 
+/**
+ * Selects whether the free chucks are inserted from smallest address to the largest
+ * or vice versa.
+ * Growing might seem like a more natural selection and it's indeed slightly
+ * easier for stream buffers/sequential prefetching to work it out on reads but
+ * on the other hand, insertions might get slightly more costly.
+ * As reads are almost equally fast both ways, it might make sense to keep this
+ * knob turned off.
+ */
+#if 0
+#define MEMPOOL_GROWING_FREE_LIST 1
+#endif
 
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk) {
     return ((char *)chunk) + sizeof(struct mempool_chunk) + PAD(sizeof(struct mempool_chunk), mempool->obj_align);
@@ -183,7 +195,7 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
     MEMPOOL_FOREACH_SLAB_BEGIN(mempool) {
         if (slab->nr_free != slab_nfo.nr_objects) {
             /*
-             * Temporarly remove all free chunks of this slab from the free list
+             * Temporarily remove all free chunks of this slab from the free list
              * so we can reorder them safely.
              */
             MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
@@ -207,9 +219,21 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
             /*
              * Add the free chunks back to the free list.
              */
+#ifdef MEMPOOL_GROWING_FREE_LIST
+    struct mempool_chunk *prev = NULL;
+#endif
             MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
                 if (!(chunk->slab & (uintptr_t)1)) {
-                    LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+                    if (prev) {
+                        LIST_INSERT_AFTER(prev, chunk, next_free);
+                    } else {
+#endif
+                        LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+                    }
+                    prev = chunk;
+#endif
                 }
             } MEMPOOL_FOREACH_CHUNK_END();
         }
@@ -274,11 +298,22 @@ retry:
 
     /*
      * Add all new objects to the list of free objects in the pool.
-     * TODO Should this be reverse?
      */
+#ifdef MEMPOOL_GROWING_FREE_LIST
+    struct mempool_chunk *prev = NULL;
+#endif
     MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
         chunk->slab = (uintptr_t)slab; /* also marked as free. */
-        LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+        if (prev) {
+            LIST_INSERT_AFTER(prev, chunk, next_free);
+        } else {
+#endif
+            LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+        }
+        prev = chunk;
+#endif
     } MEMPOOL_FOREACH_CHUNK_END();
 
     SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);

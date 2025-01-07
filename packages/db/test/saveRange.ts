@@ -119,6 +119,15 @@ await test('save simple range', async (t) => {
       },
     ],
   )
+  deepEqual(
+    (await newDb.query('user').include('age').range(200000, 1).get()).toObject(),
+    [
+      {
+        id: 200001,
+        age: 200001,
+      },
+    ],
+  )
 
   deepEqual(
     (await newDb.query('user').include('name').range(0, 2).get()).toObject(),

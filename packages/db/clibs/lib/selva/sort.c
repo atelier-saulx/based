@@ -15,7 +15,10 @@
 #define SORT_TEST
 #define SORT_TEST_I64
 #define SORT_TEST_BUF
+#define SORT_TEST_FIXED_BUF
 #endif
+
+#define SORT_SLAB_SIZE 4'194'304
 
 struct SelvaSortItem {
     RB_ENTRY(SelvaSortItem) _entry;
@@ -41,6 +44,7 @@ struct SelvaSortCtx {
         RB_HEAD(SelvaSortTreeAscText, SelvaSortItem) out_at;
         RB_HEAD(SelvaSortTreeDescText, SelvaSortItem) out_dt;
     };
+    size_t fixed_size; /*!< 0 if dynamic. */
     struct mempool mempool;
     struct {
         struct SelvaSortItem *next;
@@ -144,15 +148,23 @@ static bool use_mempool(enum SelvaSortOrder order)
 
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order)
 {
+    return selva_sort_init2(order, 0);
+}
+
+struct SelvaSortCtx *selva_sort_init2(enum SelvaSortOrder order, size_t fixed_size)
+{
     struct SelvaSortCtx *ctx = selva_malloc(sizeof(*ctx));
 
     ctx->order = order;
     RB_INIT(&ctx->out_none);
+    ctx->fixed_size = fixed_size;
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
-    if (use_mempool(order)) {
-        mempool_init(&ctx->mempool, 4'194'304, sizeof(struct SelvaSortItem), alignof(struct SelvaSortItem));
+    if (fixed_size) {
+        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, sizeof_wflex(struct SelvaSortItem, data, fixed_size), alignof(struct SelvaSortItem));
+    } else if (use_mempool(order)) {
+        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, sizeof(struct SelvaSortItem), alignof(struct SelvaSortItem));
     }
 
     return ctx;
@@ -171,7 +183,7 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
     struct SelvaSortTreeNone *head = &ctx->out_none;
     struct SelvaSortItem *item;
     struct SelvaSortItem *tmp;
-    bool pool = use_mempool(ctx->order);
+    bool pool = use_mempool(ctx->order) || ctx->fixed_size;
 
     RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
         if (pool) {
@@ -181,7 +193,7 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
         }
     }
 
-    if (use_mempool(ctx->order)) {
+    if (pool) {
         mempool_destroy(&ctx->mempool);
     }
     selva_free(ctx);
@@ -227,6 +239,17 @@ static struct SelvaSortItem *create_item_buffer(const void *buf, size_t len, con
     return item;
 }
 
+static struct SelvaSortItem *create_item_fixed_buffer(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
+{
+    struct SelvaSortItem *item = mempool_get(&ctx->mempool);
+
+    item->data_len = len;
+    memcpy(item->data, buf, len);
+    item->p = p;
+
+    return item;
+}
+
 static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
 {
     struct SelvaSortItem *item;
@@ -238,7 +261,11 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
 
         size_t data_len = strxfrm_l(NULL, str, 0, ctx->loc);
 
-        item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
+        if (ctx->fixed_size) {
+            item = mempool_get(&ctx->mempool);
+        } else {
+            item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
+        }
         strxfrm_l(item->data, str, len, ctx->loc);
         item->data_len = data_len;
 
@@ -246,7 +273,11 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
             selva_free((char *)str);
         }
     } else {
-        item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, 1));
+        if (ctx->fixed_size) {
+            item = mempool_get(&ctx->mempool);
+        } else {
+            item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, 1));
+        }
         item->data_len = 0;
     }
 
@@ -294,7 +325,9 @@ void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p)
 
 void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
 {
-    struct SelvaSortItem *item = create_item_buffer(buf, len, p);
+    struct SelvaSortItem *item = ctx->fixed_size
+        ? create_item_fixed_buffer(ctx, buf, min(ctx->fixed_size, len), p)
+        : create_item_buffer(buf, len, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_BUFFER_ASC:
@@ -310,7 +343,8 @@ void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
 
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
 {
-    struct SelvaSortItem *item = create_item_text(ctx, str, len, p);
+    size_t new_len = ctx->fixed_size ? min(ctx->fixed_size, len) : len;
+    struct SelvaSortItem *item = create_item_text(ctx, str, new_len, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_TEXT_ASC:
@@ -475,7 +509,11 @@ void selva_sort_remove_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
             abort();
         }
 
-        selva_free(item);
+        if (ctx->fixed_size) {
+            mempool_return(&ctx->mempool, item);
+        } else {
+            selva_free(item);
+        }
     }
 }
 
@@ -495,7 +533,11 @@ void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t le
             abort();
         }
 
-        selva_free(item);
+        if (ctx->fixed_size) {
+            mempool_return(&ctx->mempool, item);
+        } else {
+            selva_free(item);
+        }
     }
 }
 
@@ -616,10 +658,21 @@ static void reinsert_items(struct SelvaSortCtx *ctx)
                     (void)RB_INSERT(SelvaSortTreeDescDouble, &ctx->out_dd, item);
                     break;
                 case SELVA_SORT_ORDER_BUFFER_ASC:
+                    assert(ctx->fixed_size);
+                    (void)RB_INSERT(SelvaSortTreeAscBuffer, &ctx->out_ab, item);
+                    break;
                 case SELVA_SORT_ORDER_BUFFER_DESC:
+                    assert(ctx->fixed_size);
+                    (void)RB_INSERT(SelvaSortTreeDescBuffer, &ctx->out_db, item);
+                    break;
                 case SELVA_SORT_ORDER_TEXT_ASC:
+                    assert(ctx->fixed_size);
+                    (void)RB_INSERT(SelvaSortTreeAscText, &ctx->out_at, item);
+                    break;
                 case SELVA_SORT_ORDER_TEXT_DESC:
-                    abort();
+                    assert(ctx->fixed_size);
+                    (void)RB_INSERT(SelvaSortTreeDescText, &ctx->out_dt, item);
+                    break;
                 }
             }
         } MEMPOOL_FOREACH_CHUNK_END();
@@ -651,6 +704,26 @@ static int defrag_cmp_desc_d(const void *a, const void *b)
     return selva_sort_cmp_desc_d(a, b);
 }
 
+static int defrag_cmp_asc_fixed_buf(const void *a, const void *b)
+{
+    return selva_sort_cmp_asc_buffer(a, b);
+}
+
+static int defrag_cmp_desc_fixed_buf(const void *a, const void *b)
+{
+    return selva_sort_cmp_desc_buffer(a, b);
+}
+
+static int defrag_cmp_asc_fixed_text(const void *a, const void *b)
+{
+    return selva_sort_cmp_asc_text(a, b);
+}
+
+static int defrag_cmp_desc_fixed_text(const void *a, const void *b)
+{
+    return selva_sort_cmp_desc_text(a, b);
+}
+
 int selva_sort_defrag(struct SelvaSortCtx *ctx)
 {
     int (*cmp)(const void *, const void *b);
@@ -672,7 +745,26 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
         cmp = defrag_cmp_desc_d;
         break;
     default:
-        return SELVA_ENOTSUP;
+        if (ctx->fixed_size) {
+            switch (ctx->order) {
+            case SELVA_SORT_ORDER_BUFFER_ASC:
+                cmp = defrag_cmp_asc_fixed_buf;
+                break;
+            case SELVA_SORT_ORDER_BUFFER_DESC:
+                cmp = defrag_cmp_desc_fixed_buf;
+                break;
+            case SELVA_SORT_ORDER_TEXT_ASC:
+                cmp = defrag_cmp_asc_fixed_text;
+                break;
+            case SELVA_SORT_ORDER_TEXT_DESC:
+                cmp = defrag_cmp_desc_fixed_text;
+                break;
+            default:
+                return SELVA_ENOTSUP;
+            }
+        } else {
+            return SELVA_ENOTSUP;
+        }
     }
 
     RB_INIT(&ctx->out_none);
@@ -727,7 +819,7 @@ static void test_i64(void)
     for (int64_t i = 0; i < 1'000'000; i++) {
         seed = (214013 * seed + 2531011);
         uint64_t x = (seed >> 16) & 0x7FFF;
-        selva_sort_insert_i64(sort, (uint64_t)x <<31, (void *)i);
+        selva_sort_insert_i64(sort, (uint64_t)x << 31, (void *)i);
     }
     ts_monotime(&ts_end);
     print_time("inserts", &ts_start, &ts_end);
@@ -811,7 +903,44 @@ static void test_buf(void)
     ts_monotime(&ts_end);
     print_time("foreach", &ts_start, &ts_end);
 
-#if 0
+    selva_sort_destroy(sort);
+}
+#endif
+
+#ifdef SORT_TEST_FIXED_BUF
+__constructor
+static void test_fixed_buf(void)
+{
+    struct SelvaSortCtx *sort = selva_sort_init2(SELVA_SORT_ORDER_BUFFER_ASC, 16);
+    struct timespec ts_start, ts_end;
+    uint64_t seed = 100;
+
+    fprintf(stderr, "%s:\n", __func__);
+    ts_monotime(&ts_start);
+    for (int64_t i = 0; i < 1'000'000; i++) {
+        char buf[16];
+        for (size_t i = 0; i < num_elem(buf) - 1; i++) {
+            seed = (214013 * seed + 2531011);
+            char c = (char)(((seed >> 16) & 0x7FFF) % (126 - 32 + 1) + 32);
+            buf[i] = c;
+        }
+        buf[num_elem(buf) - 1] = '\0';
+
+        selva_sort_insert_buf(sort, buf, sizeof(buf), (void *)i);
+    }
+    ts_monotime(&ts_end);
+    print_time("inserts", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+        void *buf;
+        size_t len;
+        __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach", &ts_start, &ts_end);
+
     ts_monotime(&ts_start);
     selva_sort_defrag(sort);
     ts_monotime(&ts_end);
@@ -820,18 +949,12 @@ static void test_buf(void)
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
     while (!selva_sort_foreach_done(sort)) {
-#if 0
-        __unused const void *item = selva_sort_foreach(sort);
-#endif
-        int64_t v;
-        __unused const void *item = selva_sort_foreach_i64(sort, &v);
-#if 0
-        fprintf(stderr, "%lld\n", v);
-#endif
+        void *buf;
+        size_t len;
+        __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
     }
     ts_monotime(&ts_end);
     print_time("foreach2", &ts_start, &ts_end);
-#endif
 
     selva_sort_destroy(sort);
 }

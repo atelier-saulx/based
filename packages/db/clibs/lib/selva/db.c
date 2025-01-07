@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -211,18 +211,24 @@ static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const char *sch
 
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 {
-    size_t nr_blocks = (4294967296ull + (block_capacity - 1)) / block_capacity;
+    assert(block_capacity >= 2);
+    size_t nr_blocks = 4294967295ull / block_capacity;
     struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), nr_blocks * sizeof(*blocks));
 
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
+
+    for (size_t i = 0; i < nr_blocks; i++) {
+        RB_INIT(&blocks->blocks[i].nodes);
+    }
 
     return blocks;
 }
 
 static block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
-    return (node_id - (node_id % blocks->block_capacity)) / blocks->block_capacity;
+    assert(node_id > 0);
+    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
 }
 
 static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
@@ -252,26 +258,26 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     if (err) {
         return err;
     }
-    
+
     if (nfo.block_capacity == 0)
     {
         return SELVA_EINVAL;
     }
 
-    
+
 
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
-    
+
 
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
 
-    
+
     te->type = type;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
@@ -281,13 +287,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
         return err;
     }
 
-    
-
     te->blocks = alloc_blocks(nfo.block_capacity);
-    for (size_t i = 0; i < te->blocks->len; i++) {
-        RB_INIT(&te->blocks->blocks[i].nodes);
-    }
-
     selva_init_aliases(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
@@ -295,7 +295,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
 
 #if 0
     struct mempool_slab_info slab_info = mempool_slab_info(&te->nodepool);
-    
+
            "node_size: %zu\n"
            "slab_size: %zu\n"
            "chunk_size: %zu\n"
