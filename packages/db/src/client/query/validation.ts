@@ -29,13 +29,12 @@ export const checkMaxBufferSize = (buff: Buffer):void => {
   }
 }
 
-// TODO: Yet, to analyze if it performs!!!
 // TODO: Should be validated in zig?
 export const checkTotalBufferSize = (buffers: ArrayBufferLike[]):void => {
   let totalSize = 0
 
-  for (const buff of buffers){
-    totalSize += buff.byteLength
+  for (let i = 0; i < buffers.length; i++) {
+    totalSize += buffers[i].byteLength
 
     if ( totalSize > MAX_BUFFER_SIZE) {
       throw new Error(`The total buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
