@@ -325,7 +325,7 @@ await test('basic', async (t) => {
 
   const ids = []
   for (let i = 0; i < 10; i++) {
-    ids.push(i)
+    ids.push(i + 1)
     db.create('user', {
       name: 'mr ' + i,
       age: i + 300,
@@ -349,7 +349,9 @@ await test('basic', async (t) => {
       { id: 7, name: 'mr 0', age: 300 },
       { id: 8, name: 'mr 1', age: 301 },
       { id: 9, name: 'mr 2', age: 302 },
+      { id: 10, name: 'mr 3', age: 303 },
     ],
+    'Sort by ids after creation (asc)',
   )
 
   deepEqual(
@@ -361,6 +363,7 @@ await test('basic', async (t) => {
         .get()
     ).toObject(),
     [
+      { id: 10, name: 'mr 3', age: 303 },
       { id: 9, name: 'mr 2', age: 302 },
       { id: 8, name: 'mr 1', age: 301 },
       { id: 7, name: 'mr 0', age: 300 },
@@ -371,6 +374,7 @@ await test('basic', async (t) => {
       { id: 5, name: 'mr z', age: 1 },
       { id: 6, name: 'mr x', age: 0 },
     ],
+    'Sort by ids after creation (desc)',
   )
 
   const ids2 = []
@@ -408,7 +412,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrX)
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
