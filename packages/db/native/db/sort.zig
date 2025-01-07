@@ -70,7 +70,9 @@ pub fn createSortIndex(
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
         sortIndex.?.* = .{
-            .index = selva.selva_sort_init(sortIndexType).?,
+            .index = selva.selva_sort_init2(sortIndexType,
+            // TODO marco test difference bewteen speed if (types.Prop.isBuffer(prop)) 16 else 0,
+            0).?,
             .len = len,
             .start = start,
             .prop = prop,
