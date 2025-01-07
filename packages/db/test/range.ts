@@ -24,11 +24,9 @@ await test('range', async (t) => {
           location: {
             props: {
               address: { type: 'string' },
-              props: {
-                location: {
-                  props: {
-                    address: { type: 'string' },
-                  },
+              location: {
+                props: {
+                  address: { type: 'string' },
                 },
               },
             },
