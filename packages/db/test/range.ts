@@ -13,6 +13,7 @@ await test('range', async (t) => {
     return db.destroy()
   })
 
+  // schema
   db.putSchema({
     types: {
       user: {
@@ -25,22 +26,6 @@ await test('range', async (t) => {
             props: {
               address: { type: 'string' },
             },
-          },
-        },
-      },
-    },
-  })
-
-  db.putSchema({
-    types: {
-      user: {
-        name: 'string',
-        email: 'string',
-        age: 'uint32',
-        nr: 'uint32',
-        location: {
-          props: {
-            address: 'string',
           },
         },
       },
