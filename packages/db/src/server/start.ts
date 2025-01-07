@@ -2,16 +2,12 @@ import { stringHash } from '@saulx/hash'
 import { DbServer, DbWorker } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { createTree } from './csmt/index.js'
 import { foreachBlock } from './tree.js'
 import { availableParallelism } from 'node:os'
-import { Worker, MessageChannel } from 'node:worker_threads'
 import './worker.js'
-import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -125,7 +121,7 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
 
   // start workers
   let i = availableParallelism()
-  const address = native.intFromExternal(this.dbCtxExternal)
+  const address: BigInt = native.intFromExternal(this.dbCtxExternal)
 
   this.workers = new Array(i)
 

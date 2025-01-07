@@ -13,6 +13,7 @@ await test('range', async (t) => {
     return db.destroy()
   })
 
+  // schema
   db.putSchema({
     types: {
       user: {

@@ -270,6 +270,7 @@ export type SchemaReference = Prop<{
   default?: string
   ref: string
   prop: string
+  dependent?: boolean
   mime?: Mime
 }> &
   Record<`$${string}`, SchemaPropOneWay>
