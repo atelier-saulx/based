@@ -46,6 +46,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         else => {
             const len = readInt(u32, data, 0);
+            if (ctx.node == null) {
+                std.log.err("Field update id: {d} node does not exist \n", .{ctx.id});
+                return len;
+            }
+
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (ctx.typeSortIndex != null) {
@@ -78,6 +83,10 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u32, data, 0);
+    if (ctx.node == null) {
+        std.log.err("Partial update id: {d} node does not exist \n", .{ctx.id});
+        return len;
+    }
     const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
     if (currentData.len != 0) {

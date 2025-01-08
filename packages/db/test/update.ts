@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('update', async (t) => {
   const db = new BasedDb({
@@ -185,11 +186,12 @@ await test('update', async (t) => {
 
   // ------------------------------
   const ids = []
-  for (let i = 1; i <= 1e6; i++) {
-    ids.push(i)
+  let snurpId = 1
+  for (; snurpId <= 1e6; snurpId++) {
+    ids.push(snurpId)
     db.create('snurp', {
-      a: i,
-      name: 'mr snurp ' + i,
+      a: snurpId,
+      name: 'mr snurp ' + snurpId,
       nested: {
         derp: 'b',
       },
@@ -247,4 +249,13 @@ await test('update', async (t) => {
     true,
     'Is at least faster then 1 second for 100k separate updates and query',
   )
+
+  const nonExistingId = snurpId + 10
+
+  console.log('-----------------')
+  await setTimeout(1e3)
+  await db.update('snurp', nonExistingId, {
+    a: nonExistingId,
+    name: 'mr snurp ' + nonExistingId,
+  })
 })

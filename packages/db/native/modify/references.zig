@@ -12,9 +12,14 @@ const edge = @import("./edges.zig");
 
 // 0 overwrite, 1 add, 2 delete, 3 update, 4 put
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
+    const len: usize = readInt(u32, data, 0);
+    if (ctx.node == null) {
+        std.log.err("References update id: {d} node does not exist \n", .{ctx.id});
+        return len;
+    }
+
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
-    const len: usize = readInt(u32, data, 0);
     const refsLen: usize = readInt(u32, data, 5);
     var i: usize = 9;
 
@@ -65,6 +70,12 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
+
+    if (ctx.node == null) {
+        std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
+        return len;
+    }
+
     var i: usize = 1;
 
     // std.debug.print("del refs: {d}\n", .{len});
@@ -83,11 +94,17 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
-    const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const address = @intFromPtr(data.ptr);
     const delta = (address + 1) & 3;
     const offset = if (delta == 0) 0 else 4 - delta;
+
+    if (ctx.node == null) {
+        std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
+        return len + offset;
+    }
+
+    const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
     try db.putReferences(
