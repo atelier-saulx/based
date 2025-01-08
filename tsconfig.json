@@ -3,5 +3,6 @@
   "compilerOptions": {
     "outDir": "dist",
     "noEmit": true
-  }
+  },
+  "include": ["packages/*/src", "packages/*/test"]
 }

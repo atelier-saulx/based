@@ -14,6 +14,7 @@ test('string', () => {
   throws(() => {
     parse({
       props: {
+        // @ts-expect-error
         myEnum: {
           enum: [{ invalidObj: true }],
         },
