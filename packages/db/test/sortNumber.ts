@@ -76,12 +76,30 @@ await test('numbers', async (t) => {
       .sort('animal')
       .include('animal')
       .get()
-      .then((v) =>
-        v
-          .inspect(10)
-          .toObject()
-          .map((v) => v.animal),
-      ),
+      .then((v) => v.toObject().map((v) => v.animal)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
+  )
+
+  db.server.createSortIndex('example', 'isNice')
+
+  deepEqual(
+    await db
+      .query('example')
+      .sort('isNice')
+      .include('isNice')
+      .get()
+      .then((v) => v.toObject().map((v) => v)),
+    [
+      { id: 9, isNice: false },
+      { id: 7, isNice: false },
+      { id: 5, isNice: false },
+      { id: 3, isNice: false },
+      { id: 1, isNice: false },
+      { id: 10, isNice: true },
+      { id: 8, isNice: true },
+      { id: 6, isNice: true },
+      { id: 4, isNice: true },
+      { id: 2, isNice: true },
+    ],
   )
 })

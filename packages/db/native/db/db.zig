@@ -471,6 +471,7 @@ pub fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder 
         types.Prop.UINT32,
         types.Prop.INT64,
         types.Prop.UINT64,
+        types.Prop.BOOLEAN,
         types.Prop.ENUM,
         => {
             if (desc) {
