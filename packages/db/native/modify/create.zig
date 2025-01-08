@@ -58,11 +58,11 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
                         const sI = entry.value_ptr.*;
-                        sort.addToSortIndex(sI, slice, ctx.node.?);
+                        sort.addToSortIndex(ctx.db, sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                sort.addToSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.addToSortIndex(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);

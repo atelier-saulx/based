@@ -1,4 +1,5 @@
 const db = @import("./db.zig");
+const decompressFirstBytes = @import("./decompress.zig").decompressFirstBytes;
 const selva = @import("../selva.zig");
 const c = @import("../c.zig");
 const std = @import("std");
@@ -98,7 +99,7 @@ pub fn createSortIndex(
             break;
         }
         const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
-        addToSortIndex(sI, data, node.?);
+        addToSortIndex(dbCtx, sI, data, node.?);
     }
     _ = selva.selva_sort_defrag(sI.index);
     return sI;
@@ -127,7 +128,7 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(data: []u8) [*]u8 {
+inline fn parseString(dbCtx: *db.DbCtx, data: []u8) [*]u8 {
     if (data.len < 18) {
         var arr: [16]u8 = [_]u8{0} ** 16;
         var i: usize = 2;
@@ -140,13 +141,15 @@ inline fn parseString(data: []u8) [*]u8 {
             const slice = data[2..18];
             return slice.ptr;
         } else {
-            // need decompress so sad...
+            const slice = decompressFirstBytes(dbCtx, data)[0..16];
+            return slice.ptr;
         }
     }
     return EMPTY_CHAR_SLICE.ptr;
 }
 
 pub fn addToSortIndex(
+    dbCtx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -162,11 +165,12 @@ pub fn addToSortIndex(
         const specialScore: i64 = @intCast(readInt(u32, data, sortIndex.start));
         selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.STRING) {
-        selva.selva_sort_insert_buf(sortIndex.index, parseString(data), 8, node);
+        selva.selva_sort_insert_buf(sortIndex.index, parseString(dbCtx, data), 8, node);
     }
 }
 
 pub fn removeFromSortIndex(
+    dbCtx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -182,6 +186,6 @@ pub fn removeFromSortIndex(
         const specialScore: i64 = @intCast(readInt(u32, data, sortIndex.start));
         selva.selva_sort_remove_i64(sortIndex.index, specialScore, node);
     } else if (prop == types.Prop.STRING) {
-        selva.selva_sort_remove_buf(sortIndex.index, parseString(data), 8, node);
+        selva.selva_sort_remove_buf(sortIndex.index, parseString(dbCtx, data), 8, node);
     }
 }

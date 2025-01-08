@@ -16,7 +16,7 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
         const field = data[i + 2];
         const sI = sort.getSortIndex(ctx.typeSortIndex, field, 0);
         if (sI != null) {
-            sort.addToSortIndex(sI.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
+            sort.addToSortIndex(ctx.db, sI.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
         }
     }
 
