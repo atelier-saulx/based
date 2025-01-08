@@ -44,4 +44,25 @@ await test('numbers', async (t) => {
   await db.update('example', 1, {
     age: { increment: 1e9 },
   })
+
+  deepEqual(
+    await db
+      .query('example')
+      .sort('age')
+      .include('age')
+      .get()
+      .then((v) => v.inspect(len).toObject()),
+    [
+      { id: 2, age: 1 },
+      { id: 3, age: 2 },
+      { id: 4, age: 3 },
+      { id: 5, age: 4 },
+      { id: 6, age: 5 },
+      { id: 7, age: 6 },
+      { id: 8, age: 7 },
+      { id: 9, age: 8 },
+      { id: 10, age: 9 },
+      { id: 1, age: 1000000000 },
+    ],
+  )
 })
