@@ -314,7 +314,8 @@ const binaryOpts = {
     expectNumber(val)
   },
   compression(val) {
-    return !(val === 'none' || val === 'deflate')
+    // return the actualy string!
+    return val
   },
 }
 

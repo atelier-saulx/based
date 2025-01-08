@@ -30,7 +30,9 @@ await test('advanced', async (t) => {
     const value = opts.value ?? ''
     db = new BasedDb({
       path: t.tmp,
+      // noCompression: true,
     })
+    console.log('COMPRESSION', opts.compression != false ? 'deflate' : 'none')
     await db.start({ clean: true })
     db.putSchema({
       types: {
@@ -52,6 +54,8 @@ await test('advanced', async (t) => {
       const n = ~~(Math.random() * 9)
       const article =
         n +
+        ' ' +
+        ~~(Math.random() * 9) +
         (random ? randomString(random, { noSpecials: true }) : '') +
         value +
         i
@@ -125,5 +129,6 @@ await test('advanced', async (t) => {
 
   await testCase('long string strings uncompressed', {
     value: text,
+    compression: false,
   })
 })
