@@ -64,12 +64,10 @@ await test('advanced', async (t) => {
       results.push(p)
     }
     const dbTime = db.drain()
-    console.log('db modify + compress', dbTime, 'ms')
     equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
     let d = Date.now()
     db.server.createSortIndex('article', 'article')
     let siTime = Date.now() - d
-    console.log('create sort index (string)', siTime, 'ms')
     equal(
       siTime < 500,
       true,
@@ -116,4 +114,16 @@ await test('advanced', async (t) => {
   }
 
   await testCase('short strings')
+
+  await testCase('10 len random strings', {
+    random: 10,
+  })
+
+  await testCase('32 len random strings', {
+    random: 32,
+  })
+
+  await testCase('long string strings uncompressed', {
+    value: text,
+  })
 })
