@@ -14,23 +14,11 @@ test('string', () => {
   throws(() => {
     parse({
       props: {
+        // @ts-expect-error
         myEnum: {
-          // @ts-ignore
           enum: [{ invalidObj: true }],
         },
       },
     })
   }, 'should throw with non primitive enum')
-
-  // HANDLE THIS
-  // console.log(
-  //   parse({
-  //     props: {
-  //       myString: {
-  //         type: 'string',
-  //         compression: 'none',
-  //       },
-  //     },
-  //   }),
-  // )
 })
