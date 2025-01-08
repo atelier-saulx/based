@@ -3,7 +3,7 @@ import {
   MIN_ID_VALUE,
   MAX_ID_VALUE,
   MAX_BUFFER_SIZE,
-} from './threshoulds.js'
+} from './thresholds.js'
 
 
 export const isValidId = (id: number): void => {
@@ -21,7 +21,6 @@ export const checkMaxIdsPerQuery = (ids: number[]):void => {
   }
 }
 
-// TODO: Should be validated in zig?
 export const checkMaxBufferSize = (buff: Buffer):void => {
   if (buff.byteLength > MAX_BUFFER_SIZE) {
     throw new Error(`The buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
@@ -29,12 +28,11 @@ export const checkMaxBufferSize = (buff: Buffer):void => {
   }
 }
 
-// TODO: Should be validated in zig?
-export const checkTotalBufferSize = (buffers: ArrayBufferLike[]):void => {
+export const checkTotalBufferSize = (buffers: Buffer[]):void => {
   let totalSize = 0
 
-  for (let i = 0; i < buffers.length; i++) {
-    totalSize += buffers[i].byteLength
+  for (const buffer of buffers) {
+    totalSize += buffer.byteLength
 
     if ( totalSize > MAX_BUFFER_SIZE) {
       throw new Error(`The total buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
