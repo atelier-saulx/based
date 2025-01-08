@@ -32,7 +32,6 @@ await test('advanced', async (t) => {
       path: t.tmp,
       // noCompression: true,
     })
-    console.log('COMPRESSION', opts.compression != false ? 'deflate' : 'none')
     await db.start({ clean: true })
     db.putSchema({
       types: {
@@ -84,16 +83,8 @@ await test('advanced', async (t) => {
         .sort('article')
         .range(0, len)
         .get()
-        .then((v) => v.toObject()),
-      results.sort((a, b) => {
-        if (a.article < b.article) {
-          return -1
-        }
-        if (a.article > b.article) {
-          return 1
-        }
-        return 0
-      }),
+        .then((v) => v.toObject().map((v) => v.nr)),
+      results.sort((a, b) => a.nr - b.nr).map((v) => v.nr),
       name,
     )
     deepEqual(
@@ -103,16 +94,8 @@ await test('advanced', async (t) => {
         .sort('article', 'desc')
         .range(0, len)
         .get()
-        .then((v) => v.toObject()),
-      results.sort((b, a) => {
-        if (a.article < b.article) {
-          return -1
-        }
-        if (a.article > b.article) {
-          return 1
-        }
-        return 0
-      }),
+        .then((v) => v.toObject().map((v) => v.nr)),
+      results.sort((b, a) => a.nr - b.nr).map((v) => v.nr),
       name + ' desc',
     )
   }
