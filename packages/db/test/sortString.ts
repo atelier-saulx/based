@@ -114,4 +114,8 @@ await test('advanced', async (t) => {
     value: text,
     compression: false,
   })
+
+  await testCase('long string strings compressed', {
+    value: text,
+  })
 })
