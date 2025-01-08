@@ -119,7 +119,6 @@ fn incrementBuf(
     const a = readInt(T, aU8, 0);
     const b = readInt(T, bU8, 0);
     const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
-
     if (T == f64) {
         aU8[0..8].* = @bitCast(v);
         return 8;
@@ -137,6 +136,17 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     const addition = data[3..];
     const value = currentData[start .. start + addition.len];
     var size: usize = 0;
+
+    if (ctx.field == 0) {
+        if (ctx.typeSortIndex != null) {
+            const sI = ctx.typeSortIndex.?.main.get(start);
+            if (sI != null) {
+                sort.removeFromSortIndex(ctx.db, sI.?, value, ctx.node.?);
+            }
+        }
+    } else if (ctx.currentSortIndex != null) {
+        sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+    }
 
     switch (fieldType) {
         types.Prop.INT8 => {
@@ -214,11 +224,16 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         else => {},
     }
 
-    // if (sort.hasMainSortIndexes(ctx.db, ctx.typeId) and ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
-    //     const sortIndex = try sort.getSortIndex(ctx, start);
-    //     try sort.deleteField(ctx.id, currentData, sortIndex.?);
-    //     try sort.writeField(ctx.id, value, sortIndex.?);
-    // }
+    if (ctx.field == 0) {
+        if (ctx.typeSortIndex != null) {
+            const sI = ctx.typeSortIndex.?.main.get(start);
+            if (sI != null) {
+                sort.addToSortIndex(ctx.db, sI.?, value, ctx.node.?);
+            }
+        }
+    } else if (ctx.currentSortIndex != null) {
+        sort.addToSortIndex(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+    }
 
     return size + 3;
 }
