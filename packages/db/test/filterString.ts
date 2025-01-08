@@ -330,7 +330,7 @@ await test('has uncompressed', async (t) => {
     await db
       .query('italy')
       .filter('headline', 'has', 'pager')
-      .include('id', 'headline', 'body')
+      .include('id', 'headline')
       .range(0, 1e3)
       .get()
       .then((v) => v.toObject()),
