@@ -51,7 +51,7 @@ await test('numbers', async (t) => {
       .sort('age')
       .include('age')
       .get()
-      .then((v) => v.inspect(len).toObject()),
+      .then((v) => v.toObject()),
     [
       { id: 2, age: 1 },
       { id: 3, age: 2 },
