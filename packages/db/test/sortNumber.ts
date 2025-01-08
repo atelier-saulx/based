@@ -32,10 +32,10 @@ await test('numbers', async (t) => {
   const len = 10
 
   for (let i = 0; i < len; i++) {
-    db.create('example', {
+    await db.create('example', {
       age: i,
       animal: animals[i % animals.length],
-      isNice: i % 2,
+      isNice: i % 2 > 0,
     })
   }
 
