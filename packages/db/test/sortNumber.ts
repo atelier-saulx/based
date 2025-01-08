@@ -17,8 +17,7 @@ await test('increment', async (t) => {
     types: {
       user: {
         props: {
-          name: { type: 'string' },
-          email: { type: 'string' },
+          animal: ['pony', 'whale', 'dolphin', 'dog'],
           age: { type: 'uint32' },
         },
       },
