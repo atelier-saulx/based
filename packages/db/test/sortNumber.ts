@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
-await test('increment', async (t) => {
+await test('numbers', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -13,22 +13,35 @@ await test('increment', async (t) => {
     return db.destroy()
   })
 
+  const animals = ['pony', 'whale', 'dolphin', 'dog']
+
   db.putSchema({
     types: {
-      user: {
+      example: {
         props: {
-          animal: ['pony', 'whale', 'dolphin', 'dog'],
+          animal: animals,
           age: { type: 'uint32' },
+          isNice: { type: 'boolean' },
         },
       },
     },
   })
 
-  for (let i = 0; i < 1e6; i++) {
-    db.create('user', {
-      name: 'mr z',
-      age: 1 + i,
-      email: i + '@z.z',
+  db.server.createSortIndex('example', 'age')
+
+  const len = 10
+
+  for (let i = 0; i < len; i++) {
+    db.create('example', {
+      age: i,
+      animal: animals[i % animals.length],
+      isNice: i % 2,
     })
   }
+
+  db.drain()
+
+  await db.update('example', 1, {
+    age: { increment: 1e9 },
+  })
 })
