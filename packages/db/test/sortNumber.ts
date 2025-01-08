@@ -30,13 +30,15 @@ await test('numbers', async (t) => {
   db.server.createSortIndex('example', 'age')
 
   const len = 10
-
+  const animalsResult: string[] = []
   for (let i = 0; i < len; i++) {
+    const animal = animals[i % animals.length]
     await db.create('example', {
       age: i,
-      animal: animals[i % animals.length],
+      animal,
       isNice: i % 2 > 0,
     })
+    animalsResult.push(animal)
   }
 
   db.drain()
@@ -64,5 +66,22 @@ await test('numbers', async (t) => {
       { id: 10, age: 9 },
       { id: 1, age: 1000000000 },
     ],
+  )
+
+  db.server.createSortIndex('example', 'animal')
+
+  deepEqual(
+    await db
+      .query('example')
+      .sort('animal')
+      .include('animal')
+      .get()
+      .then((v) =>
+        v
+          .inspect(10)
+          .toObject()
+          .map((v) => v.animal),
+      ),
+    animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
 })
