@@ -1,6 +1,5 @@
 import test from 'node:test'
 import { parse } from '@based/schema'
-import { throws } from 'node:assert'
 
 test('dependency', () => {
   parse({
