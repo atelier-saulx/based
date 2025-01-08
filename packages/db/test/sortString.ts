@@ -4,70 +4,116 @@ import { deepEqual, equal } from './shared/assert.js'
 import { text } from './shared/examples.js'
 import { randomString } from '@saulx/utils'
 
-await test('compressed', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
+await test('advanced', async (t) => {
+  let db: BasedDb
   t.after(() => {
-    return db.destroy()
+    if (db) {
+      return db.destroy()
+    }
   })
 
-  db.putSchema({
-    types: {
-      article: {
-        props: {
-          name: { type: 'string' },
-          article: { type: 'string', compression: 'none' },
-          nr: { type: 'uint32' },
+  const testCase = async (
+    name: string,
+    opts: {
+      value?: string
+      random?: number
+      amount?: number
+      compression?: boolean
+    } = {},
+  ) => {
+    if (db) {
+      await db.destroy()
+      db = null
+    }
+    const len = opts.amount ?? 5
+    const random = opts.random ?? 0
+    const value = opts.value ?? ''
+    db = new BasedDb({
+      path: t.tmp,
+    })
+    await db.start({ clean: true })
+    db.putSchema({
+      types: {
+        article: {
+          props: {
+            name: { type: 'string' },
+            article: {
+              type: 'string',
+              compression: opts.compression != false ? 'deflate' : 'none',
+            },
+            nr: { type: 'uint32' },
+          },
         },
       },
-    },
-  })
-
-  const results: { id: number; nr: number; article: string; name: string }[] =
-    []
-
-  const len = 5
-
-  for (let i = 0; i < len; i++) {
-    const n = ~~(Math.random() * 9)
-    const article = n + randomString(10, { noSpecials: true })
-    const p: any = {
-      name: 'Article ' + n,
-      article: article,
-      nr: n,
+    })
+    const results: { id: number; nr: number; article: string; name: string }[] =
+      []
+    for (let i = 0; i < len; i++) {
+      const n = ~~(Math.random() * 9)
+      const article =
+        n +
+        (random ? randomString(random, { noSpecials: true }) : '') +
+        value +
+        i
+      const p: any = {
+        name: 'Article ' + n,
+        article: article,
+        nr: n,
+      }
+      p.id = Number(db.create('article', p))
+      results.push(p)
     }
-    p.id = Number(db.create('article', p))
-    results.push(p)
+    const dbTime = db.drain()
+    console.log('db modify + compress', dbTime, 'ms')
+    equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
+    let d = Date.now()
+    db.server.createSortIndex('article', 'article')
+    let siTime = Date.now() - d
+    console.log('create sort index (string)', siTime, 'ms')
+    equal(
+      siTime < 500,
+      true,
+      name + ' creating string sort index should not take longer then 500ms',
+    )
+    deepEqual(
+      await db
+        .query('article')
+        .include('name', 'article', 'nr')
+        .sort('article')
+        .range(0, len)
+        .get()
+        .then((v) => v.toObject()),
+      results.sort((a, b) => {
+        if (a.article < b.article) {
+          return -1
+        }
+        if (a.article > b.article) {
+          return 1
+        }
+        return 0
+      }),
+      name,
+    )
+    deepEqual(
+      await db
+        .query('article')
+        .include('name', 'article', 'nr')
+        .sort('article', 'desc')
+        .range(0, len)
+        .get()
+        .then((v) => v.toObject()),
+      results.sort((b, a) => {
+        if (a.article < b.article) {
+          return -1
+        }
+        if (a.article > b.article) {
+          return 1
+        }
+        return 0
+      }),
+      name + ' desc',
+    )
   }
 
-  const dbTime = db.drain()
-  console.log('db modify + compress', dbTime, 'ms')
-  equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
-
-  let d = Date.now()
-  db.server.createSortIndex('article', 'article')
-  let siTime = Date.now() - d
-  console.log('create sort index (string)', siTime, 'ms')
-  equal(
-    siTime < 500,
-    true,
-    'creating string sort index should not take longer then 500ms',
-  )
-
-  const r = await db
-    .query('article')
-    .include('name', 'article', 'nr')
-    .range(0, 10)
-    .sort('article')
-    .get()
-    .then((v) => v.inspect(10))
-
-  deepEqual(
-    r.toObject(),
-    results.sort((a, b) => a.nr - b.nr),
-  )
+  await testCase('short strings')
 })
