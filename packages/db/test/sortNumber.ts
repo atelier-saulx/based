@@ -21,6 +21,7 @@ await test('numbers', async (t) => {
         props: {
           animal: animals,
           age: { type: 'uint32' },
+          smurp: { type: 'uint8' },
           isNice: { type: 'boolean' },
         },
       },
@@ -35,6 +36,7 @@ await test('numbers', async (t) => {
     const animal = animals[i % animals.length]
     await db.create('example', {
       age: i,
+      smurp: i,
       animal,
       isNice: i % 2 > 0,
     })
@@ -100,6 +102,29 @@ await test('numbers', async (t) => {
       { id: 6, isNice: true },
       { id: 4, isNice: true },
       { id: 2, isNice: true },
+    ],
+  )
+
+  db.server.createSortIndex('example', 'smurp')
+
+  deepEqual(
+    await db
+      .query('example')
+      .sort('smurp')
+      .include('smurp')
+      .get()
+      .then((v) => v.toObject()),
+    [
+      { id: 1, smurp: 0 },
+      { id: 2, smurp: 1 },
+      { id: 3, smurp: 2 },
+      { id: 4, smurp: 3 },
+      { id: 5, smurp: 4 },
+      { id: 6, smurp: 5 },
+      { id: 7, smurp: 6 },
+      { id: 8, smurp: 7 },
+      { id: 9, smurp: 8 },
+      { id: 10, smurp: 9 },
     ],
   )
 })
