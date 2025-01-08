@@ -4,7 +4,7 @@ import { deepEqual, equal } from './shared/assert.js'
 import { text } from './shared/examples.js'
 import { randomString } from '@saulx/utils'
 
-await test('advanced', async (t) => {
+await test('compression / large strings', async (t) => {
   let db: BasedDb
   t.after(() => {
     if (db) {
@@ -110,12 +110,17 @@ await test('advanced', async (t) => {
     random: 32,
   })
 
-  await testCase('long string strings uncompressed', {
+  await testCase('large string uncompressed', {
     value: text,
     compression: false,
   })
 
-  await testCase('long string strings compressed', {
+  await testCase('large string compressed', {
     value: text,
+  })
+
+  await testCase('large string compressed randomized', {
+    value: text,
+    random: 32,
   })
 })
