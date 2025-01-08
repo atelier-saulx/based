@@ -15,14 +15,14 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                 if (currentData == null) {
                     currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
                 }
-                sort.removeFromSortIndex(entry.value_ptr.*, currentData.?, ctx.node.?);
+                sort.removeFromSortIndex(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
             }
         }
         return 0;
     }
     if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-        sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     }
     return 0;
 }
@@ -30,7 +30,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-        sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     }
     return 0;
 }
@@ -38,7 +38,7 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
 pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-        sort.removeFromSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     }
     try db.deleteField(ctx.db, ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
     return 0;

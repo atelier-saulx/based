@@ -30,6 +30,7 @@ await test('advanced', async (t) => {
     const value = opts.value ?? ''
     db = new BasedDb({
       path: t.tmp,
+      // noCompression: true,
     })
     await db.start({ clean: true })
     db.putSchema({
@@ -52,6 +53,8 @@ await test('advanced', async (t) => {
       const n = ~~(Math.random() * 9)
       const article =
         n +
+        ' ' +
+        ~~(Math.random() * 9) +
         (random ? randomString(random, { noSpecials: true }) : '') +
         value +
         i
@@ -80,16 +83,8 @@ await test('advanced', async (t) => {
         .sort('article')
         .range(0, len)
         .get()
-        .then((v) => v.toObject()),
-      results.sort((a, b) => {
-        if (a.article < b.article) {
-          return -1
-        }
-        if (a.article > b.article) {
-          return 1
-        }
-        return 0
-      }),
+        .then((v) => v.toObject().map((v) => v.nr)),
+      results.sort((a, b) => a.nr - b.nr).map((v) => v.nr),
       name,
     )
     deepEqual(
@@ -99,16 +94,8 @@ await test('advanced', async (t) => {
         .sort('article', 'desc')
         .range(0, len)
         .get()
-        .then((v) => v.toObject()),
-      results.sort((b, a) => {
-        if (a.article < b.article) {
-          return -1
-        }
-        if (a.article > b.article) {
-          return 1
-        }
-        return 0
-      }),
+        .then((v) => v.toObject().map((v) => v.nr)),
+      results.sort((b, a) => a.nr - b.nr).map((v) => v.nr),
       name + ' desc',
     )
   }
@@ -124,6 +111,11 @@ await test('advanced', async (t) => {
   })
 
   await testCase('long string strings uncompressed', {
+    value: text,
+    compression: false,
+  })
+
+  await testCase('long string strings compressed', {
     value: text,
   })
 })
