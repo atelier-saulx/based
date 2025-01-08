@@ -2,6 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { text } from './shared/examples.js'
+import { randomString } from '@saulx/utils'
 
 await test('compressed', async (t) => {
   const db = new BasedDb({
@@ -19,17 +20,28 @@ await test('compressed', async (t) => {
       article: {
         props: {
           name: { type: 'string' },
-          article: { type: 'string' },
+          article: { type: 'string', compression: 'none' },
+          nr: { type: 'uint32' },
         },
       },
     },
   })
 
-  for (let i = 0; i < 10e3; i++) {
-    db.create('article', {
-      name: 'Article ' + i,
-      article: i + 'derp ' + text,
-    })
+  const results: { id: number; nr: number; article: string; name: string }[] =
+    []
+
+  const len = 5
+
+  for (let i = 0; i < len; i++) {
+    const n = ~~(Math.random() * 9)
+    const article = n + randomString(10, { noSpecials: true })
+    const p: any = {
+      name: 'Article ' + n,
+      article: article,
+      nr: n,
+    }
+    p.id = Number(db.create('article', p))
+    results.push(p)
   }
 
   const dbTime = db.drain()
@@ -48,9 +60,14 @@ await test('compressed', async (t) => {
 
   const r = await db
     .query('article')
-    .include('name', 'article')
+    .include('name', 'article', 'nr')
     .range(0, 10)
     .sort('article')
     .get()
-    .then((v) => v.inspect())
+    .then((v) => v.inspect(10))
+
+  deepEqual(
+    r.toObject(),
+    results.sort((a, b) => a.nr - b.nr),
+  )
 })
