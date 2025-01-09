@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023, 2025 SAULX
  * Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -151,6 +151,21 @@ struct punit_test {
             __FILE__, __LINE__, #left, #right, (size_t)(left), (size_t)(right)); \
         return message; }                                                      \
 } while(0)
+
+/**
+ * Buffer equal.
+ * Checks if left and right strings are equal (memcmp).
+ * @param message shown if assert fails.
+ * @param left null-terminated string.
+ * @param right null-terminated string.
+ */
+#define pu_assert_buf_equal(message, left, right, len) do {     \
+    if (memcmp(left, right, len) != 0) {                        \
+        printf("FAILED: %s:%d: %s equals %s\n"                  \
+               "\tleft:\t\"%s\"\n\tright:\t\"%s\"\n",           \
+            __FILE__, __LINE__, #left, #right, left, right);    \
+    return message; }                                           \
+} while (0)
 
 /**
  * String equal.
