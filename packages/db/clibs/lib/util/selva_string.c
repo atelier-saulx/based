@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -644,9 +644,7 @@ const uint8_t *selva_string_to_buf(const struct selva_string *s, size_t *size)
 
 const char *selva_string_to_str(const struct selva_string *s, size_t *len)
 {
-    if (len) {
-        *len = s->len;
-    }
+    *len = s->len;
     return get_buf(s);
 }
 
