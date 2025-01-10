@@ -595,7 +595,7 @@ await test('sort - from start (1M items)', async (t) => {
         id: 3,
         name: 'mr 0',
       },
-      { id: 10003, name: 'mr 10000' },
+      { id: 100003, name: 'mr 100000' },
     ],
   )
 
@@ -624,8 +624,8 @@ await test('sort - from start (1M items)', async (t) => {
         name: 'mr 0',
       },
       {
-        id: 10003,
-        name: 'mr 10000',
+        id: 100003,
+        name: 'mr 100000',
       },
     ],
   )
