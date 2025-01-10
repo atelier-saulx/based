@@ -245,7 +245,10 @@ pub fn remove(
             const d = if (sortIndex.len > 0) data[start..sortIndex.len] else data;
             selva.selva_sort_remove_buf(index, parseString(dbCtx, d), 8, node);
         },
-        types.Prop.TIMESTAMP, types.Prop.NUMBER, types.Prop.INT64 => {
+        types.Prop.NUMBER => {
+            selva.selva_sort_remove_double(index, @floatFromInt(readInt(u64, data, start)), node);
+        },
+        types.Prop.TIMESTAMP, types.Prop.INT64 => {
             removeFromIntIndex(i64, data, sortIndex, node);
         },
         types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
@@ -278,7 +281,10 @@ pub fn insert(
             const d = if (sortIndex.len > 0) data[start..sortIndex.len] else data;
             selva.selva_sort_insert_buf(index, parseString(dbCtx, d), 8, node);
         },
-        types.Prop.TIMESTAMP, types.Prop.NUMBER, types.Prop.INT64 => {
+        types.Prop.NUMBER => {
+            selva.selva_sort_insert_double(index, @floatFromInt(readInt(u64, data, start)), node);
+        },
+        types.Prop.TIMESTAMP, types.Prop.INT64 => {
             insertIntIndex(i64, data, sortIndex, node);
         },
         types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),

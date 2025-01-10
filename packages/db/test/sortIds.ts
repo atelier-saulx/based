@@ -46,11 +46,11 @@ await test('ids', async (t) => {
 
   isSorted(await db.query('user', ids).sort('age').get(), 'age')
 
-  // isSorted(await db.query('user', ids).sort('name').get(), 'name')
+  isSorted(await db.query('user', ids).sort('name').get(), 'name')
 
-  // isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
+  isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
 
-  // isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
+  isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
 
   // isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
 })
