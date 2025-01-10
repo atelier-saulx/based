@@ -38,9 +38,6 @@ pub fn sort(
     // --------------------------------
     var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, queryType == 10);
     const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
-
-    std.debug.print("{any} \n", .{sortProp});
-
     sortItem: while (i < ids.len) : (i += 4) {
         const id = readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
@@ -53,18 +50,14 @@ pub fn sort(
         const value = db.getField(typeEntry, id, node.?, fieldSchema);
         dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
     }
-
-    // --------------------------------
+    // ------------------------------
     selva.selva_sort_foreach_begin(metaSortIndex.index);
-
     while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
         const node: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
-
         ctx.totalResults += 1;
         if (offset != 0 and ctx.totalResults <= offset) {
             continue;
         }
-        // 2 opts if ids are more
         const size = try getFields(
             node,
             ctx,
@@ -85,7 +78,6 @@ pub fn sort(
     if (offset != 0) {
         ctx.totalResults -= offset;
     }
-
     selva.selva_sort_destroy(metaSortIndex.index);
 }
 
