@@ -19,6 +19,5 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             sort.addToSortIndex(ctx.db, sI.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
         }
     }
-
     return len + 2;
 }

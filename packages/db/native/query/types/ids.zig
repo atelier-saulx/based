@@ -1,4 +1,5 @@
 const db = @import("../../db/db.zig");
+const dbSort = @import("../../db/sort.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
@@ -33,9 +34,18 @@ pub fn sort(
         start = 0;
         len = 0;
     }
-    const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
 
+    // --------------------------------
+    // check difference between
+    const sortFlag = try dbSort.getSortFlag(sortFieldType, queryType == 10);
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
+    var s: dbSort.SortIndexMeta = .{
+        .len = len,
+        .start = start,
+        .index = sortCtx,
+        .prop = sortFieldType,
+    };
+    const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
@@ -45,9 +55,10 @@ pub fn sort(
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :sortItem;
         }
-        const value = db.getField(typeEntry, id, node.?, try db.getFieldSchema(sortField, typeEntry));
-        db.insertSort(sortCtx, node.?, sortFieldType, value, start, len);
+        const value = db.getField(typeEntry, id, node.?, fieldSchema);
+        dbSort.insert(ctx.db, &s, value, node.?);
     }
+    // --------------------------------
 
     selva.selva_sort_foreach_begin(sortCtx);
 
@@ -61,6 +72,7 @@ pub fn sort(
             continue;
         }
 
+        // 2 opts if ids are more
         const size = try getFields(
             node,
             ctx,

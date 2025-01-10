@@ -1,5 +1,6 @@
 const readInt = @import("../../../utils.zig").readInt;
 const db = @import("../../../db/db.zig");
+const dbSort = @import("../../../db/sort.zig");
 const QueryCtx = @import("../../ctx.zig").QueryCtx;
 const getFields = @import("../include.zig").getFields;
 const queryTypes = @import("../types.zig");
@@ -39,11 +40,18 @@ pub fn sortedReferences(
         start = 0;
         len = 0;
     }
-    const sortFlag = db.getSortFlag(sortFieldType, sortBuffer[0] == 1) catch {
+
+    // --------------------------------
+    const sortFlag = dbSort.getSortFlag(sortFieldType, sortBuffer[0] == 1) catch {
         return result;
     };
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
-
+    var s: dbSort.SortIndexMeta = .{
+        .len = len,
+        .start = start,
+        .index = sortCtx,
+        .prop = sortFieldType,
+    };
     checkItem: while (i < refs.nr_refs) : (i += 1) {
         const refNode = refs.refs[i].dst.?;
         if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
@@ -53,8 +61,9 @@ pub fn sortedReferences(
             return result;
         };
         const value = db.getField(typeEntry, 0, refNode, fs);
-        db.insertSort(sortCtx, refNode, sortFieldType, value, start, len);
+        dbSort.insert(ctx.db, &s, value, refNode);
     }
+    // --------------------------------
 
     selva.selva_sort_foreach_begin(sortCtx);
     while (!selva.selva_sort_foreach_done(sortCtx)) {
