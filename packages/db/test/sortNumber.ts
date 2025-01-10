@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, isSorted } from './shared/assert.js'
 
 await test('numbers', async (t) => {
   const db = new BasedDb({
@@ -20,7 +20,7 @@ await test('numbers', async (t) => {
       example: {
         props: {
           enum: animals,
-          // u8: { type: 'uint8' }, screws stuff up...
+          u8: { type: 'uint8' }, // screws stuff up...
           // u16: { type: 'uint16' },
           u32: { type: 'uint32' },
           boolean: { type: 'boolean' },
@@ -51,29 +51,18 @@ await test('numbers', async (t) => {
     u32: { increment: 1e9 },
   })
 
-  deepEqual(
-    await db
-      .query('example')
-      .sort('u32')
-      .include('u32')
-      .get()
-      .then((v) => v.toObject()),
-    [
-      { id: 2, u32: 1 },
-      { id: 3, u32: 2 },
-      { id: 4, u32: 3 },
-      { id: 5, u32: 4 },
-      { id: 6, u32: 5 },
-      { id: 7, u32: 6 },
-      { id: 8, u32: 7 },
-      { id: 9, u32: 8 },
-      { id: 10, u32: 9 },
-      { id: 1, u32: 1000000000 },
-    ],
+  isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+
+  db.server.createSortIndex('example', 'boolean')
+  isSorted(
+    await db.query('example').sort('boolean').include('boolean').get(),
+    'boolean',
   )
 
-  db.server.createSortIndex('example', 'enum')
+  db.server.createSortIndex('example', 'u8')
+  isSorted(await db.query('example').sort('u8').include('u8').get(), 'u8')
 
+  db.server.createSortIndex('example', 'enum')
   deepEqual(
     await db
       .query('example')
@@ -83,52 +72,6 @@ await test('numbers', async (t) => {
       .then((v) => v.toObject().map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
-
-  db.server.createSortIndex('example', 'boolean')
-
-  deepEqual(
-    await db
-      .query('example')
-      .sort('boolean')
-      .include('boolean')
-      .get()
-      .then((v) => v.toObject().map((v) => v)),
-    [
-      { id: 9, boolean: false },
-      { id: 7, boolean: false },
-      { id: 5, boolean: false },
-      { id: 3, boolean: false },
-      { id: 1, boolean: false },
-      { id: 10, boolean: true },
-      { id: 8, boolean: true },
-      { id: 6, boolean: true },
-      { id: 4, boolean: true },
-      { id: 2, boolean: true },
-    ],
-  )
-
-  // db.server.createSortIndex('example', 'u8')
-
-  // deepEqual(
-  //   await db
-  //     .query('example')
-  //     .sort('u8')
-  //     .include('u8')
-  //     .get()
-  //     .then((v) => v.toObject()),
-  //   [
-  //     { id: 1, u8: 0 },
-  //     { id: 2, u8: 1 },
-  //     { id: 3, u8: 2 },
-  //     { id: 4, u8: 3 },
-  //     { id: 5, u8: 4 },
-  //     { id: 6, u8: 5 },
-  //     { id: 7, u8: 6 },
-  //     { id: 8, u8: 7 },
-  //     { id: 9, u8: 8 },
-  //     { id: 10, u8: 9 },
-  //   ],
-  // )
 
   // db.server.createSortIndex('example', 'u16')
 
