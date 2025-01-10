@@ -20,10 +20,15 @@ await test('numbers', async (t) => {
       example: {
         props: {
           enum: animals,
-          u8: { type: 'uint8' }, // screws stuff up...
-          u16: { type: 'uint16' },
-          u32: { type: 'uint32' },
-          boolean: { type: 'boolean' },
+          u8: 'uint8', // screws stuff up...
+          u16: 'uint16',
+          u32: 'uint32',
+          boolean: 'boolean',
+          number: 'number',
+          timestamp: 'timestamp',
+          i8: 'int8',
+          i16: 'int16',
+          i32: 'int32',
         },
       },
     },
@@ -32,6 +37,7 @@ await test('numbers', async (t) => {
   db.server.createSortIndex('example', 'u32')
 
   const len = 10
+  const now = Date.now()
   const animalsResult: string[] = []
   for (let i = 0; i < len; i++) {
     const animal = animals[i % animals.length]
@@ -41,6 +47,11 @@ await test('numbers', async (t) => {
       u32: i,
       enum: animal,
       boolean: i % 2 > 0,
+      number: i,
+      timestamp: now + i,
+      i8: i,
+      i16: i,
+      i32: i,
     })
     animalsResult.push(animal)
   }
@@ -62,6 +73,27 @@ await test('numbers', async (t) => {
   db.server.createSortIndex('example', 'u8')
   isSorted(await db.query('example').sort('u8').include('u8').get(), 'u8')
 
+  db.server.createSortIndex('example', 'i8')
+  isSorted(await db.query('example').sort('i8').include('i8').get(), 'i8')
+
+  db.server.createSortIndex('example', 'i16')
+  isSorted(await db.query('example').sort('i16').include('i16').get(), 'i16')
+
+  db.server.createSortIndex('example', 'i32')
+  isSorted(await db.query('example').sort('i32').include('i32').get(), 'i32')
+
+  db.server.createSortIndex('example', 'number')
+  isSorted(
+    await db.query('example').sort('number').include('number').get(),
+    'number',
+  )
+
+  db.server.createSortIndex('example', 'timestamp')
+  isSorted(
+    await db.query('example').sort('timestamp').include('timestamp').get(),
+    'timestamp',
+  )
+
   db.server.createSortIndex('example', 'enum')
   deepEqual(
     await db
@@ -72,27 +104,4 @@ await test('numbers', async (t) => {
       .then((v) => v.toObject().map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
-
-  // db.server.createSortIndex('example', 'u16')
-
-  // deepEqual(
-  //   await db
-  //     .query('example')
-  //     .sort('u16')
-  //     .include('u16')
-  //     .get()
-  //     .then((v) => v.toObject()),
-  //   [
-  //     { id: 1, u16: 0 },
-  //     { id: 2, u16: 1 },
-  //     { id: 3, u16: 2 },
-  //     { id: 4, u16: 3 },
-  //     { id: 5, u16: 4 },
-  //     { id: 6, u16: 5 },
-  //     { id: 7, u16: 6 },
-  //     { id: 8, u16: 7 },
-  //     { id: 9, u16: 8 },
-  //     { id: 10, u16: 9 },
-  //   ],
-  // )
 })
