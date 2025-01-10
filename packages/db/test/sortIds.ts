@@ -52,7 +52,7 @@ await test('ids', async (t) => {
 
   isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
 
-  // isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
+  isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
 })
 
 await test('references', async (t) => {
