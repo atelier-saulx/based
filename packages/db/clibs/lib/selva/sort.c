@@ -473,7 +473,7 @@ void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
     }
 }
 
-void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p)
+void selva_sort_remove_double(struct SelvaSortCtx *ctx, double d, const void *p)
 {
     struct SelvaSortItem *item = find_double(ctx, d, p);
 

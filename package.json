@@ -23,14 +23,14 @@
   ],
   "prettier": "@saulx/prettier-config",
   "scripts": {
-    "watch": "turbo run watch --parallel --no-cache",
-    "build": "turbo run build",
+    "watch": "(cd packages/schema && npm run watch) & (cd packages/db && npm run watch)",
+    "build": "(cd packages/schema && npm run build) && (cd packages/db && npm run build)",
     "build-c": "sh scripts/build-c.sh",
     "clean-c": "cd selvad; make mostlyclean",
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
     "testSubs": "cd packages/subs && npm run test",
-    "clean": "turbo run clean && rimraf node_modules",
+    "clean": "(cd packages/db && npm run clean) && rimraf ./node_modules",
     "knip": "knip"
   },
   "publishConfig": {
@@ -43,7 +43,6 @@
     "knip": "^5.36.3",
     "prettier": "^3.2.5",
     "rimraf": "^3.0.2",
-    "turbo": "1.6.3",
     "typescript": "^5.6.3"
   }
 }

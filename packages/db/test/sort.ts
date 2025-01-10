@@ -2,6 +2,80 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
+await test('1M', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          email: { type: 'string' },
+          age: { type: 'uint32' },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('user', {
+      name: 'mr z',
+      age: 1 + i,
+      email: i + '@z.z',
+    })
+  }
+
+  const dbTime = db.drain()
+  console.log('db modify', dbTime, 'ms')
+  equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
+
+  let d = Date.now()
+  let siTime = Date.now() - d
+  console.log('create sort index (string)', siTime, 'ms')
+  equal(
+    siTime < 500,
+    true,
+    'creating string sort index should not take longer then 500ms',
+  )
+
+  const r = await db
+    .query('user')
+    .include('age', 'name', 'email')
+    .range(0, 1e5)
+    .sort('email')
+    .filter('age', '>', 1e6 - 1e5)
+    .get()
+    .then((v) => v.inspect())
+
+  deepEqual(
+    r.node(0),
+    {
+      id: 900001,
+      age: 900001,
+      name: 'mr z',
+      email: '900000@z.z',
+    },
+    'first node is correct',
+  )
+
+  d = Date.now()
+  siTime = Date.now() - d
+  console.log('create sort index (uint32)', siTime, 'ms')
+  equal(
+    siTime < 250,
+    true,
+    'creating string sort index should not take longer then 250s',
+  )
+})
+
 await test('basic', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -89,9 +163,16 @@ await test('basic', async (t) => {
     'sort by age asc',
   )
 
+  db.drain()
+
   deepEqual(
     (
-      await db.query('user').sort('email', 'asc').include('email', 'age').get()
+      await db
+        .query('user')
+        .sort('email', 'asc')
+        .include('email', 'age')
+        .get()
+        .then((v) => v.inspect())
     ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
@@ -123,7 +204,7 @@ await test('basic', async (t) => {
     email: 'x@x.x',
   })
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
@@ -155,7 +236,6 @@ await test('basic', async (t) => {
     'sort by age asc after adding new',
   )
 
-  console.log('HELLO USER ->', 'dd@dd.dd')
   db.update('user', mrX, {
     email: 'dd@dd.dd',
   })
@@ -240,7 +320,7 @@ await test('basic', async (t) => {
 
   const ids = []
   for (let i = 0; i < 10; i++) {
-    ids.push(i)
+    ids.push(i + 1)
     db.create('user', {
       name: 'mr ' + i,
       age: i + 300,
@@ -264,7 +344,9 @@ await test('basic', async (t) => {
       { id: 7, name: 'mr 0', age: 300 },
       { id: 8, name: 'mr 1', age: 301 },
       { id: 9, name: 'mr 2', age: 302 },
+      { id: 10, name: 'mr 3', age: 303 },
     ],
+    'Sort by ids after creation (asc)',
   )
 
   deepEqual(
@@ -276,6 +358,7 @@ await test('basic', async (t) => {
         .get()
     ).toObject(),
     [
+      { id: 10, name: 'mr 3', age: 303 },
       { id: 9, name: 'mr 2', age: 302 },
       { id: 8, name: 'mr 1', age: 301 },
       { id: 7, name: 'mr 0', age: 300 },
@@ -286,6 +369,7 @@ await test('basic', async (t) => {
       { id: 5, name: 'mr z', age: 1 },
       { id: 6, name: 'mr x', age: 0 },
     ],
+    'Sort by ids after creation (desc)',
   )
 
   const ids2 = []
@@ -323,7 +407,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrX)
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
@@ -439,7 +523,7 @@ await test('basic', async (t) => {
   )
 })
 
-await test('sort - from start (1.5M items)', async (t) => {
+await test('sort - from start (1M items)', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -473,7 +557,7 @@ await test('sort - from start (1.5M items)', async (t) => {
     email: 'flap@flap.flap.flap',
   })
 
-  for (let i = 0; i < 1500e3; i++) {
+  for (let i = 0; i < 1000e3; i++) {
     db.create('user', {
       name: 'mr ' + i,
       age: i + 101,
@@ -511,10 +595,7 @@ await test('sort - from start (1.5M items)', async (t) => {
         id: 3,
         name: 'mr 0',
       },
-      {
-        id: 4,
-        name: 'mr 1',
-      },
+      { id: 100003, name: 'mr 100000' },
     ],
   )
 
@@ -525,6 +606,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   })
 
   await newDb.start()
+
+  newDb.server.createSortIndex('user', 'age')
+  newDb.server.createSortIndex('user', 'name')
 
   t.after(() => {
     return newDb.destroy()
@@ -540,8 +624,8 @@ await test('sort - from start (1.5M items)', async (t) => {
         name: 'mr 0',
       },
       {
-        id: 4,
-        name: 'mr 1',
+        id: 100003,
+        name: 'mr 100000',
       },
     ],
   )

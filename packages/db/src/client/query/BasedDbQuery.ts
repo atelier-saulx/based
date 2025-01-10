@@ -19,6 +19,11 @@ import { createOrGetRefQueryDef } from './include/utils.js'
 import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search } from './search/index.js'
+import {
+  isValidId,
+  checkMaxIdsPerQuery,
+  checkTotalBufferSize,
+} from './validation.js'
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
@@ -146,11 +151,17 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const target: QueryTarget = {
       type,
     }
+
     if (id) {
       if (Array.isArray(id)) {
+        checkMaxIdsPerQuery(id)
         target.ids = new Uint32Array(id)
+        for (const id of target.ids) {
+          isValidId(id)
+        }
         target.ids.sort()
       } else {
+        isValidId(id)
         target.id = id
       }
     }
@@ -163,6 +174,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       includeFields(this.def, ['*'])
     }
     const b = defToBuffer(this.db, this.def)
+    checkTotalBufferSize(b)
     const d = performance.now()
     const res = await this.db.server.getQueryBuf(Buffer.concat(b))
     if (res instanceof Error) {
@@ -177,6 +189,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       includeFields(this.def, ['*'])
     }
     const b = defToBuffer(this.db, this.def)
+    checkTotalBufferSize(b)
     return Buffer.concat(b)
   }
 }

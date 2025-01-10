@@ -46,8 +46,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
-        .highScore = 255,
-        .lowScore = 255,
     };
 
     const q = try napi.get([]u8, env, args[1]);
@@ -75,13 +73,13 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
             const s = sortBuf[1..sortBuf.len];
             const isAsc = sortBuf[0] == 0;
             if (searchSize > 0) {
-                const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                const searchCtx = &createSearchCtx(search);
-                if (isAsc) {
-                    try QuerySort.search(3, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                } else {
-                    try QuerySort.search(4, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                }
+                // const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
+                // const searchCtx = &createSearchCtx(search);
+                // if (isAsc) {
+                //     try QuerySort.search(3, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                // } else {
+                //     try QuerySort.search(4, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                // }
             } else if (isAsc) {
                 try QuerySort.default(3, &ctx, offset, limit, typeId, filterBuf, include, s);
             } else {

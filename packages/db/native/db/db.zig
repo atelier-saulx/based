@@ -7,7 +7,6 @@ const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
 pub const TypeId = u16;
-pub const StartSet = std.AutoHashMap(u16, u8);
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
@@ -15,7 +14,6 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
 var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-// does not need to be a global one
 const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
@@ -23,21 +21,10 @@ pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: std.heap.ArenaAllocator,
-    readTxn: *c.MDB_txn,
-    readTxnCreated: bool,
-    env: ?*c.MDB_env,
-    sortIndexes: sort.Indexes,
-    mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
-    readOnly: bool,
+    sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
-
     decompressor: *selva.libdeflate_decompressor,
     libdeflate_block_state: selva.libdeflate_block_state,
-    // shared block here derp
-
-    // add decompressor
-    // add compressor here
-    // preallocated decompressor block thingy buffer
 };
 
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
@@ -52,29 +39,17 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
-
-    // magic with allocators
-    const sortIndexes2 = sort.Indexes.init(allocator);
-    const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator);
-
     const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
         .arena = arena.*,
         .allocator = allocator,
-        .readTxn = undefined,
-        .env = undefined,
-        .sortIndexes = sortIndexes2,
-        .mainSortIndexes = mainSortIndexes2,
-        .readTxnCreated = false,
+        .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
-        .readOnly = false,
         .selva = null,
         .decompressor = selva.libdeflate_alloc_decompressor().?,
-        // .libdeflate_block_state = selva.libdeflate_block_state_init(100000),
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
-
     try dbHashmap.put(id, b);
     return b;
 }
@@ -410,116 +385,4 @@ pub fn delAliasByName(typeEntry: Type, aliasName: [*]u8) !void {
 
 pub fn getAliasByName(typeEntry: Type, aliasName: [*]u8) ?Node {
     return selva.selva_get_alias(typeEntry, aliasName.ptr, aliasName.len);
-}
-
-pub fn insertSort(
-    sortCtx: *selva.SelvaSortCtx,
-    node: Node,
-    sortFieldType: types.Prop,
-    value: []u8,
-    start: u16,
-    len: u16,
-) void {
-    if (sortFieldType == types.Prop.TIMESTAMP) {
-        selva.selva_sort_insert_i64(sortCtx, readInt(i64, value, start), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.STRING) {
-        if (start > 0 and len > 0) {
-            selva.selva_sort_insert_buf(sortCtx, value[start .. start + len].ptr, value.len, node);
-        } else {
-            selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
-        }
-        return;
-    }
-
-    if (sortFieldType == types.Prop.NUMBER) {
-        selva.selva_sort_insert_double(sortCtx, @floatFromInt(readInt(u64, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.INT8) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i8, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.INT16) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i16, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.INT32) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i32, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.INT64) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i64, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.UINT8) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u8, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.UINT16) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u16, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.UINT32) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u32, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.UINT64) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u64, value, start)), node);
-        return;
-    }
-
-    if (sortFieldType == types.Prop.ENUM) {
-        selva.selva_sort_insert_i64(sortCtx, @intCast(value[start]), node);
-        return;
-    }
-}
-
-pub fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
-    switch (sortFieldType) {
-        types.Prop.TIMESTAMP,
-        types.Prop.INT8,
-        types.Prop.UINT8,
-        types.Prop.INT16,
-        types.Prop.UINT16,
-        types.Prop.INT32,
-        types.Prop.UINT32,
-        types.Prop.INT64,
-        types.Prop.UINT64,
-        types.Prop.ENUM,
-        => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        types.Prop.NUMBER => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
-            }
-        },
-        types.Prop.STRING => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_BUFFER_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_BUFFER_ASC;
-            }
-        },
-        else => {
-            return errors.DbError.WRONG_SORTFIELD_TYPE;
-        },
-    }
 }

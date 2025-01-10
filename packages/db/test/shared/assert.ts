@@ -6,9 +6,9 @@ export const deepEqual = (a, b, msg?: string) => {
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
-${util.inspect(b, { depth: 10 })}
+${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 ------------------- ACTUAL -----------------------
-${util.inspect(a, { depth: 10 })}
+${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 --------------------------------------------------`
     throw new Error(m)
   }
@@ -33,18 +33,18 @@ export const isSorted = (
       if (typeof last === 'string') {
         if (order === 'asc') {
           if (last.localeCompare(current) == 1) {
-            throw new Error(msg || SORT_ERR_MSG + ' String')
+            throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
           }
         } else if (last.localeCompare(current) == -1) {
-          throw new Error(msg || SORT_ERR_MSG + ' String')
+          throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
         }
       } else {
         if (order === 'asc') {
           if (last > current) {
-            throw new Error(msg || SORT_ERR_MSG)
+            throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
           }
         } else if (last < current) {
-          throw new Error(msg || SORT_ERR_MSG)
+          throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
         }
       }
     }

@@ -4,7 +4,6 @@ const selva = @import("../selva.zig");
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
@@ -14,10 +13,9 @@ const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const readInt = @import("../utils.zig").readInt;
 const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
-const getShard = Modify.getShard;
-const getSortIndex = Modify.getSortIndex;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
+const dbSort = @import("../db//sort.zig");
 const increment = Update.increment;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -28,21 +26,17 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 }
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(3, env, info);
+    const args = try napi.getArgs(2, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
 
-    const allocator = arena.allocator();
     var i: usize = 0;
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = undefined,
         .id = undefined,
-        .sortWriteTxn = null,
         .currentSortIndex = null,
-        .sortIndexes = sort.Indexes.init(allocator), // only init this when you need it
+        .typeSortIndex = null,
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
@@ -59,11 +53,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // SWITCH FIELD
                 ctx.field = operation[0];
                 i = i + 2;
+
                 if (ctx.field != 0) {
-                    ctx.currentSortIndex = try getSortIndex(&ctx, 0);
+                    ctx.currentSortIndex = dbSort.getSortIndex(ctx.typeSortIndex, ctx.field, 0);
                 } else {
                     ctx.currentSortIndex = null;
                 }
+
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
                 ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
                 if (ctx.fieldType == types.Prop.REFERENCE) {
@@ -92,6 +88,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // SWITCH TYPE
                 ctx.typeId = readInt(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
+                ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
@@ -101,7 +98,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try deleteFieldOnly(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP_ONLY_REAL => {
-                // std.debug.print("delete field: {d}\n", .{ctx.field});
                 i += try deleteFieldOnlyReal(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP => {
@@ -125,10 +121,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 break;
             },
         }
-    }
-
-    if (ctx.sortWriteTxn != null) {
-        try sort.commitTxn(ctx.sortWriteTxn);
     }
 
     return null;

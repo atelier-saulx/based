@@ -7,7 +7,6 @@ import { create, remove, update } from './client/modify/index.js'
 import { migrate } from './server/migrate/index.js'
 import { compress, decompress } from './client/string.js'
 import { DbServer } from './server/index.js'
-import { BasedQueryResponse } from './client/query/BasedIterable.js'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -20,7 +19,6 @@ export class BasedDb {
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModifyCtx
   server: DbServer
-
   id: number
   // total write time until .drain is called manualy
   writeTime: number = 0
@@ -86,9 +84,7 @@ export class BasedDb {
     this.server.markNodeDirty(schema, nodeId)
   }
 
-  create(type: string, value: any, unsafe?: boolean): ModifyRes {
-    return create(this, type, value, unsafe)
-  }
+  create = create
 
   upserting: Map<
     string,
@@ -126,9 +122,9 @@ export class BasedDb {
       p: q.get().then((res) => {
         this.upserting.delete(id)
         if (res.length === 0) {
-          return create(this, type, store.o)
+          return this.create(type, store.o)
         } else {
-          return update(this, type, res.toObject()[0].id, store.o)
+          return this.update(type, res.toObject()[0].id, store.o)
         }
       }),
     }
@@ -142,14 +138,23 @@ export class BasedDb {
     id: number | ModifyRes,
     value: any,
     overwrite?: boolean,
+  ): ModifyRes
+
+  update(value: any, overwrite?: boolean): ModifyRes
+
+  update(
+    typeOrValue: string | any,
+    idOrOverwrite: number | ModifyRes | boolean,
+    value?: any,
+    overwrite?: boolean,
   ): ModifyRes {
-    return update(
-      this,
-      type,
-      typeof id === 'number' ? id : id.tmpId,
-      value,
-      overwrite,
-    )
+    if (typeof typeOrValue === 'string') {
+      const id =
+        typeof idOrOverwrite === 'object' ? idOrOverwrite.tmpId : idOrOverwrite
+      return update(this, typeOrValue, id as number, value, overwrite)
+    }
+    // else it is rootProps
+    return update(this, '_root', 1, typeOrValue, idOrOverwrite as boolean)
   }
 
   remove(type: string, id: number | ModifyRes) {
@@ -159,7 +164,17 @@ export class BasedDb {
   query(
     type: string,
     id?: number | ModifyRes | (number | ModifyRes)[],
+  ): BasedDbQuery
+
+  query(): BasedDbQuery
+
+  query(
+    type?: string,
+    id?: number | ModifyRes | (number | ModifyRes)[],
   ): BasedDbQuery {
+    if (type === undefined) {
+      return new BasedDbQuery(this, '_root', 1)
+    }
     if (Array.isArray(id)) {
       let i = id.length
       while (i--) {

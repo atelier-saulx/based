@@ -314,7 +314,8 @@ const binaryOpts = {
     expectNumber(val)
   },
   compression(val) {
-    return !(val === 'none' || val === 'deflate')
+    // return the actualy string!
+    return val
   },
 }
 
@@ -464,7 +465,14 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         return
       }
 
-      throw Error('ref edge not supported on root or edge p')
+      throw Error('ref edge not supported on root or edge property')
+    },
+    dependent(val, prop, ctx, key) {
+      expectBoolean(val)
+      const dependentAllowed = ctx.type && !ctx.inQuery
+      if (!dependentAllowed) {
+        throw Error('ref dependency not supported on root or edge property')
+      }
     },
   },
 )

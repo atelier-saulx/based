@@ -36,13 +36,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.HLL => {
+            // TODO MARCO: make it to 8 bytes crc32 + len
             const len = readInt(u32, data, 0);
             if (data[5] == 0) {
                 std.debug.print("\nput HLL: {any}", .{data});
             } else {
                 std.debug.print("\nadd HLL: {any}", .{data});
             }
-
             var i: usize = 1;
             while (i < len) : (i += 4) {
                 const id = readInt(u32, data, i + 4);
@@ -54,17 +54,16 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = readInt(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
-                if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-                    var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-                    while (it.next()) |start| {
-                        const sortIndex = try getSortIndex(ctx, start.*);
-                        try sort.writeField(ctx.id, slice, sortIndex.?);
+                if (ctx.typeSortIndex != null) {
+                    var it = ctx.typeSortIndex.?.main.iterator();
+                    while (it.next()) |entry| {
+                        const sI = entry.value_ptr.*;
+                        sort.insert(ctx.db, sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
+                sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
-
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
             } else {

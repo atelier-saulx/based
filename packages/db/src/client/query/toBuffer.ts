@@ -30,6 +30,8 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
   if (def.type === QueryDefType.Root) {
+    // start here before we share sort indexes
+
     let filter: Buffer
     let filterSize = 0
 

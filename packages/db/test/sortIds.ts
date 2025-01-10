@@ -23,6 +23,7 @@ await test('ids', async (t) => {
           flap: 'uint32',
           blurf: 'number',
           bla: [0, 1, 2, 3, 4, 5],
+          mep: { type: 'string', maxBytes: 10 },
         },
       },
     },
@@ -33,11 +34,12 @@ await test('ids', async (t) => {
     ids.push(
       db.create('user', {
         age: ~~(Math.random() * 100000),
-        name: 'Mr Dinkelburry ' + i,
+        name: i + ' Mr Dinkelburry',
         email: 'blap@blap.blap.blap',
         flap: i,
         blurf: Math.random() * 10000,
         bla: ~~(Math.random() * 5),
+        mep: i + 'X',
       }).tmpId,
     )
   }
@@ -45,14 +47,11 @@ await test('ids', async (t) => {
   db.drain()
 
   isSorted(await db.query('user', ids).sort('age').get(), 'age')
-
   isSorted(await db.query('user', ids).sort('name').get(), 'name')
-
   isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
-
   isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
-
   isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
+  isSorted(await db.query('user', ids).sort('mep').get(), 'mep')
 })
 
 await test('references', async (t) => {
@@ -110,12 +109,11 @@ await test('references', async (t) => {
     contributors: ids,
   })
 
-  console.log(
-    db
-      .query('article', id)
-      .include((s) => s('contributors').sort('flap'))
-      .get(),
-  )
+  await db
+    .query('article', id)
+    .include((s) => s('contributors').sort('flap'))
+    .get()
+    .then((v) => v.inspect())
 
   isSorted(
     (

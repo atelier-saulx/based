@@ -1,5 +1,6 @@
 const readInt = @import("../../../utils.zig").readInt;
 const db = @import("../../../db/db.zig");
+const dbSort = @import("../../../db/sort.zig");
 const QueryCtx = @import("../../ctx.zig").QueryCtx;
 const getFields = @import("../include.zig").getFields;
 const queryTypes = @import("../types.zig");
@@ -31,7 +32,7 @@ pub fn sortedReferences(
     var len: u16 = undefined;
 
     const sortField: u8 = sortBuffer[1];
-    const sortFieldType: types.Prop = @enumFromInt(sortBuffer[2]);
+    const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
     if (sortBuffer.len == 7) {
         start = readInt(u16, sortBuffer, 3);
         len = readInt(u16, sortBuffer, 5);
@@ -39,11 +40,11 @@ pub fn sortedReferences(
         start = 0;
         len = 0;
     }
-    const sortFlag = db.getSortFlag(sortFieldType, sortBuffer[0] == 1) catch {
+
+    var metaSortIndex = dbSort.createSortIndexMeta(start, len, sortProp, sortBuffer[0] == 1) catch {
         return result;
     };
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
-
+    // --------------------------------
     checkItem: while (i < refs.nr_refs) : (i += 1) {
         const refNode = refs.refs[i].dst.?;
         if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
@@ -53,12 +54,13 @@ pub fn sortedReferences(
             return result;
         };
         const value = db.getField(typeEntry, 0, refNode, fs);
-        db.insertSort(sortCtx, refNode, sortFieldType, value, start, len);
+        dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
     }
+    // --------------------------------
 
-    selva.selva_sort_foreach_begin(sortCtx);
-    while (!selva.selva_sort_foreach_done(sortCtx)) {
-        const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
+    selva.selva_sort_foreach_begin(metaSortIndex.index);
+    while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
+        const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
         result.cnt += 1;
         if (offset != 0 and result.cnt <= offset) {
             continue;
@@ -77,6 +79,6 @@ pub fn sortedReferences(
             break;
         }
     }
-    selva.selva_sort_destroy(sortCtx);
+    selva.selva_sort_destroy(metaSortIndex.index);
     return result;
 }

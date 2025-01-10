@@ -6,7 +6,7 @@ CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L../../../build \
-		   -ljemalloc_selva -ldeflate -lutil -lxxhash -lzstd
+		   -ljemalloc_selva -ldeflate -lutil -lxxhash
 
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -ldl -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN'

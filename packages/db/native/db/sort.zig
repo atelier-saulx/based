@@ -1,197 +1,170 @@
-const c = @import("../c.zig");
-const errors = @import("../errors.zig");
-const types = @import("../types.zig");
-const std = @import("std");
 const db = @import("./db.zig");
+const decompressFirstBytes = @import("./decompress.zig").decompressFirstBytes;
+const selva = @import("../selva.zig");
+const c = @import("../c.zig");
+const std = @import("std");
+const napi = @import("../napi.zig");
 const readInt = @import("../utils.zig").readInt;
+const types = @import("../types.zig");
+const errors = @import("../errors.zig");
 
-pub const EMPTY_CHAR: [1]u8 = .{0};
-pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
-
-pub inline fn commitTxn(txn: ?*c.MDB_txn) !void {
-    try errors.mdb(c.mdb_txn_commit(txn));
-}
-
-pub inline fn renewTx(txn: ?*c.MDB_txn) void {
-    errors.mdb(c.mdb_txn_renew(txn)) catch {};
-}
-
-pub inline fn resetTxn(txn: ?*c.MDB_txn) void {
-    c.mdb_txn_reset(txn);
-}
-
-pub inline fn readDataPart(v: c.MDB_val, start: u16, len: u16) []u8 {
-    return @as([*]u8, @ptrCast(v.mv_data))[start .. len + start];
-}
-
-pub inline fn readData(v: c.MDB_val) []u8 {
-    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-}
-
-pub const SortDbiName = [6]u8;
-
-pub const SortIndex = struct {
-    field: u8,
-    dbi: c.MDB_dbi,
-    cursor: ?*c.MDB_cursor,
-    queryId: u32,
-    len: u16,
+pub const SortIndexMeta = struct {
+    prop: types.Prop,
     start: u16,
+    len: u16, // len can be added somewhere else
+    index: *selva.SelvaSortCtx,
 };
 
-pub const Indexes = std.AutoHashMap(SortDbiName, SortIndex);
+const SIZE = 16;
 
-pub fn createTransaction(comptime readOnly: bool, ctx: *db.DbCtx) !?*c.MDB_txn {
-    var txn: ?*c.MDB_txn = null;
-    if (readOnly == true) {
-        try errors.mdb(c.mdb_txn_begin(ctx.env, null, c.MDB_RDONLY, &txn));
-    } else {
-        try errors.mdb(c.mdb_txn_begin(ctx.env, null, 0, &txn));
+pub const EMPTY_CHAR: [SIZE]u8 = [_]u8{0} ** SIZE;
+pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..SIZE];
+
+// key of main sort indexes is START, key of buffSort is field
+pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
+pub const FieldSortIndexes = std.AutoHashMap(u8, *SortIndexMeta);
+
+pub const TypeIndex = struct {
+    field: FieldSortIndexes,
+    main: MainSortIndexes,
+};
+
+pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
+
+fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
+    switch (sortFieldType) {
+        types.Prop.TIMESTAMP,
+        types.Prop.INT8,
+        types.Prop.UINT8,
+        types.Prop.INT16,
+        types.Prop.UINT16,
+        types.Prop.INT32,
+        types.Prop.UINT32,
+        types.Prop.INT64,
+        types.Prop.UINT64,
+        types.Prop.BOOLEAN,
+        types.Prop.ENUM,
+        => {
+            if (desc) {
+                return selva.SELVA_SORT_ORDER_I64_DESC;
+            } else {
+                return selva.SELVA_SORT_ORDER_I64_ASC;
+            }
+        },
+        types.Prop.NUMBER => {
+            if (desc) {
+                return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
+            } else {
+                return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
+            }
+        },
+        types.Prop.STRING => {
+            if (desc) {
+                return selva.SELVA_SORT_ORDER_BUFFER_DESC;
+            } else {
+                return selva.SELVA_SORT_ORDER_BUFFER_ASC;
+            }
+        },
+        else => {
+            return errors.DbError.WRONG_SORTFIELD_TYPE;
+        },
     }
-    return txn.?;
 }
 
-pub fn initReadTxn(ctx: *db.DbCtx) !*c.MDB_txn {
-    if (ctx.readTxnCreated) {
-        return ctx.readTxn;
-    }
-    ctx.readTxnCreated = true;
-    const tmpTxn = try createTransaction(true, ctx);
-    ctx.readTxn = tmpTxn.?;
-    return ctx.readTxn;
+pub fn createSortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return createSortIndexNodeInternal(env, info) catch return null;
 }
 
-pub fn getPrefix(typeId: db.TypeId) [2]u8 {
-    // potential make it 3 bytes
-    var typePrefix: [2]u8 = @bitCast(typeId);
-    if (typePrefix[0] == 0) {
-        typePrefix[0] = 255;
-    }
-    if (typePrefix[1] == 0) {
-        typePrefix[1] = 255;
-    }
-    return typePrefix;
+inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    const buf = try napi.get([]u8, env, args[1]);
+    // size [2 type] [1 field] [2 start] [2 len] [1 typeIndex]
+    const typeId = readInt(u16, buf, 0);
+    const field = buf[2];
+    const start = readInt(u16, buf, 3);
+    const len = readInt(u16, buf, 5);
+    const typeIndex = buf[7];
+    const index = try createSortIndex(
+        dbCtx,
+        typeId,
+        field,
+        start,
+        len,
+        @enumFromInt(typeIndex),
+        true,
+        false,
+    );
+    var externalNapi: c.napi_value = undefined;
+    _ = c.napi_create_external(env, index, null, null, &externalNapi);
+    return externalNapi;
 }
 
-pub fn getSortName(
+pub fn createSortIndexMeta(
+    start: u16,
+    len: u16,
+    prop: types.Prop,
+    desc: bool,
+) !SortIndexMeta {
+    const sortFlag = try getSortFlag(prop, desc);
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
+    const s: SortIndexMeta = .{
+        .len = len,
+        .start = start,
+        .index = sortCtx,
+        .prop = prop,
+    };
+    return s;
+}
+
+fn getOrCreateFromCtx(
+    dbCtx: *db.DbCtx,
     typeId: db.TypeId,
     field: u8,
     start: u16,
-) SortDbiName {
-    const startCasted: [2]u8 = @bitCast(start);
-    const typePrefix = getPrefix(typeId);
-    const name: SortDbiName = .{
-        typePrefix[0],
-        typePrefix[1],
-        field + 1,
-        startCasted[0],
-        startCasted[1],
-        0,
-    };
-    return name;
-}
-
-pub fn writeField(id: u32, buf: []u8, sortIndex: SortIndex) !void {
-    const field: u8 = sortIndex.field;
-    const len = sortIndex.len;
-    const start = sortIndex.start;
-    var key: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-    if (len > 0) {
-        var selectiveValue: c.MDB_val = .{
-            .mv_size = len,
-            .mv_data = buf[start .. start + len].ptr,
+    len: u16,
+    prop: types.Prop,
+    comptime desc: bool,
+) !*SortIndexMeta {
+    var sortIndex: ?*SortIndexMeta = undefined;
+    var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
+    if (typeIndexes == null) {
+        typeIndexes = try dbCtx.allocator.create(TypeIndex);
+        typeIndexes.?.* = .{
+            .field = FieldSortIndexes.init(dbCtx.allocator),
+            .main = MainSortIndexes.init(dbCtx.allocator),
         };
-        try errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &selectiveValue, &key, 0));
-    } else if (field != 0 and buf.len > 16) {
-        var selectiveValue: c.MDB_val = .{ .mv_size = 16, .mv_data = buf[0..16].ptr };
-        try errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &selectiveValue, &key, 0));
-    } else {
-        var value: c.MDB_val = .{ .mv_size = buf.len, .mv_data = buf.ptr };
-        try errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &value, &key, 0));
+        try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
+    const tI: *TypeIndex = typeIndexes.?;
+    sortIndex = getSortIndex(typeIndexes, field, start);
+    if (sortIndex == null) {
+        sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
+        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc);
+        if (field == 0) {
+            try tI.main.put(start, sortIndex.?);
+        } else {
+            try tI.field.put(field, sortIndex.?);
+        }
+    }
+    return sortIndex.?;
 }
 
-pub fn writeToSortIndex(
-    value: [*c]c.MDB_val,
-    key: [*c]c.MDB_val,
+pub fn createSortIndex(
+    dbCtx: *db.DbCtx,
+    typeId: db.TypeId,
+    field: u8,
     start: u16,
     len: u16,
-    cursor: ?*c.MDB_cursor,
-    field: u8,
-) !void {
-    if (len > 0) {
-        const mainValue = @as([*]u8, @ptrCast(value.*.mv_data))[start .. start + len];
-        var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
-        try errors.mdb(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
-    } else if (field != 0 and value.*.mv_size > 16) {
-        const fieldValue = @as([*]u8, @ptrCast(value.*.mv_data))[0..16];
-        var selectiveValue: c.MDB_val = .{ .mv_size = 16, .mv_data = fieldValue.ptr };
-        try errors.mdb(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
-    } else {
-        try errors.mdb(c.mdb_cursor_put(cursor, value, key, 0));
-    }
-}
-
-pub fn writeDataToSortIndex(
-    id: u32,
-    data: []u8,
-    start: u16,
-    len: u16,
-    cursor: ?*c.MDB_cursor,
-    field: u8,
-) !void {
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-    var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
-
-    if (data.len == 0) {
-        v.mv_size = 1;
-        v.mv_data = EMPTY_CHAR_SLICE.ptr;
-    }
-    try writeToSortIndex(&v, &k, start, len, cursor, field);
-}
-
-fn createSortIndex(
-    ctx: *db.DbCtx,
-    name: SortDbiName,
-    start: u16,
-    len: u16,
-    field: u8,
-    fieldType: types.Prop,
-) !void {
-    const txn = try createTransaction(false, ctx);
-    const typePrefix: [2]u8 = .{ name[0], name[1] };
-    const typeId: u16 = @bitCast(typePrefix);
-
-    var dbi: c.MDB_dbi = 0;
-    var cursor: ?*c.MDB_cursor = null;
-    var flags: c_uint = c.MDB_CREATE;
-    flags |= c.MDB_DUPSORT;
-    flags |= c.MDB_DUPFIXED;
-    flags |= c.MDB_INTEGERDUP;
-
-    if (fieldType == types.Prop.TIMESTAMP //
-    or fieldType == types.Prop.NUMBER //
-    or fieldType == types.Prop.INT8 //
-    or fieldType == types.Prop.UINT8 //
-    or fieldType == types.Prop.INT16 //
-    or fieldType == types.Prop.UINT16 //
-    or fieldType == types.Prop.INT32 //
-    or fieldType == types.Prop.UINT32 //
-    or fieldType == types.Prop.INT64 //
-    or fieldType == types.Prop.UINT64 //
-    ) {
-        flags |= c.MDB_INTEGERKEY;
-    }
-
-    try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
-    try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
-
-    const typeEntry = try db.getType(ctx, typeId);
+    prop: types.Prop,
+    comptime defrag: bool,
+    comptime desc: bool,
+) !*SortIndexMeta {
+    const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, field, start, len, prop, desc);
+    const typeEntry = try db.getType(dbCtx, typeId);
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
-
     var node = db.getFirstNode(typeEntry);
     var first = true;
-
     while (node != null) {
         if (first) {
             first = false;
@@ -201,139 +174,146 @@ fn createSortIndex(
         if (node == null) {
             break;
         }
-        const id = db.getNodeId(node.?);
-        const data = db.getField(typeEntry, id, node.?, fieldSchema);
-        try writeDataToSortIndex(id, data, start, len, cursor, field);
+        const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
+        insert(dbCtx, sortIndex, data, node.?);
     }
-
-    try commitTxn(txn);
-
-    if (len > 0) {
-        if (!ctx.mainSortIndexes.contains(typePrefix)) {
-            const startSet = try ctx.allocator.create(db.StartSet);
-            startSet.* = db.StartSet.init(ctx.allocator);
-            try ctx.mainSortIndexes.put(typePrefix, startSet);
-        }
-        const s: ?*db.StartSet = ctx.mainSortIndexes.get(typePrefix);
-        try s.?.*.put(start, 0);
+    if (defrag) {
+        _ = selva.selva_sort_defrag(sortIndex.index);
     }
+    return sortIndex;
 }
 
-pub fn createReadSortIndex(ctx: *db.DbCtx, name: SortDbiName, queryId: u32, len: u16, start: u16) !SortIndex {
-    var dbi: c.MDB_dbi = 0;
-    var cursor: ?*c.MDB_cursor = null;
-
-    // TODO: optmize calling this at the start BUT after the creation of a write TXN (else it crashes)
-    _ = try initReadTxn(ctx);
-
-    resetTxn(ctx.readTxn);
-
-    try errors.mdb(c.mdb_txn_renew(ctx.readTxn));
-    try errors.mdb(c.mdb_dbi_open(ctx.readTxn, &name, 0, &dbi));
-    try errors.mdb(c.mdb_cursor_open(ctx.readTxn, dbi, &cursor));
-
-    return .{
-        .field = name[2] - 1,
-        .dbi = dbi,
-        .queryId = queryId,
-        .cursor = cursor,
-        .len = len,
-        .start = start,
-    };
-}
-
-pub fn getOrCreateReadSortIndex(
-    ctx: *db.DbCtx,
-    typeId: db.TypeId,
-    sort: []u8,
-    queryId: u32,
-) !SortIndex {
-    const field: u8 = sort[0];
-    const fieldType: types.Prop = @enumFromInt(sort[1]);
-    var start: u16 = undefined;
-    var len: u16 = undefined;
-
-    if (sort.len == 6) {
-        start = readInt(u16, sort, 2);
-        len = readInt(u16, sort, 4);
-    } else {
-        start = 0;
-        len = 0;
+pub fn getSortIndex(
+    typeSortIndexes: ?*TypeIndex,
+    field: u8,
+    start: u16,
+) ?*SortIndexMeta {
+    if (typeSortIndexes == null) {
+        return null;
     }
-
-    const name = getSortName(typeId, field, start);
-
-    var s = ctx.sortIndexes.get(name);
-
-    if (s == null) {
-        createSortIndex(ctx, name, start, len, field, fieldType) catch |err| {
-            std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
-            return err;
-        };
-
-        const newSortIndex = createReadSortIndex(ctx, name, queryId, len, start) catch |err| {
-            std.log.err("Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
-            return err;
-        };
-        try ctx.sortIndexes.put(name, newSortIndex);
-        return newSortIndex;
-    }
-    if (s.?.queryId != queryId) {
-        _ = c.mdb_cursor_renew(ctx.readTxn, s.?.cursor);
-        s.?.queryId = queryId;
-    }
-    return s.?;
-}
-
-pub fn getReadSortIndex(ctx: *db.DbCtx, name: SortDbiName) ?SortIndex {
-    return ctx.sortIndexes.get(name);
-}
-
-pub fn hasReadSortIndex(ctx: *db.DbCtx, name: SortDbiName) bool {
-    return ctx.sortIndexes.contains(name);
-}
-
-pub fn hasMainSortIndexes(ctx: *db.DbCtx, typeId: db.TypeId) bool {
-    return ctx.mainSortIndexes.contains(getPrefix(typeId));
-}
-
-pub fn createWriteSortIndex(ctx: *db.DbCtx, name: SortDbiName, txn: ?*c.MDB_txn) !SortIndex {
-    var dbi: c.MDB_dbi = 0;
-    var cursor: ?*c.MDB_cursor = null;
-    var len: u16 = 0;
-    const field = name[2] - 1;
-    const startBytes: [2]u8 = .{ name[3], name[4] };
-    const start: u16 = @bitCast(startBytes);
+    const tI = typeSortIndexes.?;
     if (field == 0) {
-        len = getReadSortIndex(ctx, name).?.len;
+        return tI.main.get(start);
+    } else {
+        return tI.field.get(field);
     }
-    try errors.mdb(c.mdb_dbi_open(txn, &name, 0, &dbi));
-    try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
-    const writeIndex = .{
-        .dbi = dbi,
-        .cursor = cursor,
-        .queryId = 0,
-        .len = len,
-        .start = start,
-        .field = field,
-    };
-    return writeIndex;
 }
 
-pub fn deleteField(id: u32, d: []u8, sortIndex: SortIndex) !void {
-    var data: []u8 = d;
-    if (data.len == 0) {
-        return;
+pub fn getTypeSortIndexes(
+    dbCtx: *db.DbCtx,
+    typeId: db.TypeId,
+) ?*TypeIndex {
+    return dbCtx.sortIndexes.get(typeId);
+}
+
+inline fn parseString(
+    dbCtx: *db.DbCtx,
+    data: []u8,
+) [*]u8 {
+    if (data.len < SIZE + 2) {
+        var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
+        var i: usize = 2;
+        while (i < data.len) : (i += 1) {
+            arr[i - 2] = data[i];
+        }
+        return &arr;
+    } else {
+        if (data[1] == 0) {
+            const slice = data[2 .. SIZE + 2];
+            return slice.ptr;
+        } else {
+            const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
+            return slice.ptr;
+        }
     }
-    if (sortIndex.len > 0) {
-        data = data[sortIndex.start .. sortIndex.start + sortIndex.len];
-    }
-    var sortValue: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
-    var sortKey: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-    if (data.len > 16) {
-        // std.de
-        sortValue.mv_data = data[0..16].ptr;
-    }
-    try errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH));
-    try errors.mdb(c.mdb_cursor_del(sortIndex.cursor, 0));
+    return EMPTY_CHAR_SLICE.ptr;
+}
+
+inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
+    selva.selva_sort_remove_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
+}
+
+pub fn remove(
+    dbCtx: *db.DbCtx,
+    sortIndex: *SortIndexMeta,
+    data: []u8,
+    node: db.Node,
+) void {
+    const prop = sortIndex.prop;
+    const start = sortIndex.start;
+    const index = sortIndex.index;
+    return switch (prop) {
+        types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
+            selva.selva_sort_remove_i64(index, data[start], node);
+        },
+        types.Prop.STRING => {
+            if (sortIndex.len > 0) {
+                selva.selva_sort_remove_buf(
+                    index,
+                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
+                    sortIndex.len - 1,
+                    node,
+                );
+            } else {
+                selva.selva_sort_remove_buf(index, parseString(dbCtx, data), SIZE, node);
+            }
+        },
+        types.Prop.NUMBER => {
+            selva.selva_sort_remove_double(index, @floatFromInt(readInt(u64, data, start)), node);
+        },
+        types.Prop.TIMESTAMP, types.Prop.INT64 => {
+            removeFromIntIndex(i64, data, sortIndex, node);
+        },
+        types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
+        types.Prop.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
+        types.Prop.UINT64 => removeFromIntIndex(u64, data, sortIndex, node),
+        types.Prop.UINT32 => removeFromIntIndex(u32, data, sortIndex, node),
+        types.Prop.UINT16 => removeFromIntIndex(u16, data, sortIndex, node),
+        else => {},
+    };
+}
+
+inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
+    selva.selva_sort_insert_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
+}
+
+pub fn insert(
+    dbCtx: *db.DbCtx,
+    sortIndex: *SortIndexMeta,
+    data: []u8,
+    node: db.Node,
+) void {
+    const prop = sortIndex.prop;
+    const start = sortIndex.start;
+    const index = sortIndex.index;
+    return switch (prop) {
+        types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
+            selva.selva_sort_insert_i64(index, data[start], node);
+        },
+        types.Prop.STRING => {
+            const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
+            if (sortIndex.len > 0) {
+                selva.selva_sort_insert_buf(
+                    index,
+                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
+                    sortIndex.len - 1,
+                    node,
+                );
+            } else {
+                selva.selva_sort_insert_buf(index, parseString(dbCtx, d), SIZE, node);
+            }
+        },
+        types.Prop.NUMBER => {
+            selva.selva_sort_insert_double(index, @floatFromInt(readInt(u64, data, start)), node);
+        },
+        types.Prop.TIMESTAMP, types.Prop.INT64 => {
+            insertIntIndex(i64, data, sortIndex, node);
+        },
+        types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
+        types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
+        types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),
+        types.Prop.UINT32 => insertIntIndex(u32, data, sortIndex, node),
+        types.Prop.UINT16 => insertIntIndex(u16, data, sortIndex, node),
+        else => {},
+    };
 }

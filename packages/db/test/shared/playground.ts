@@ -210,7 +210,7 @@ const makeDb = async (path: string) => {
     .query('article')
     .range(0, 10)
     .sort('publishDate', 'desc')
-    .include(['id', 'headline', 'publishDate', 'abstract'])
+    .include('id', 'headline', 'publishDate', 'abstract')
     .search(query, {
       headline: 0,
       abstract: 1,
@@ -220,6 +220,7 @@ const makeDb = async (path: string) => {
     .then((v) => {
       // console.dir(v.toObject(), { depth: 10 })
       v.inspect(4)
+      // v.debug()
     })
 
   const start = performance.now()

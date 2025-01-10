@@ -1,5 +1,5 @@
 import { Schema, SchemaProps, SchemaType, StrictSchema } from '../types.js'
-import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
+import { INVALID_KEY, INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
@@ -24,11 +24,16 @@ export class SchemaParser {
     const { types } = this.schema
     expectObject(types)
     for (const type in types) {
+      this.lvl++
+      if (type[0] === '_') {
+        throw new Error(INVALID_KEY)
+      }
       this.path[this.lvl] = type
       expectObject(types[type])
       if (!('props' in types[type])) {
         types[type] = { props: types[type] } as SchemaProps
       }
+      this.lvl--
     }
     for (const type in types) {
       this.path[this.lvl++] = type
@@ -43,6 +48,9 @@ export class SchemaParser {
     expectObject(props)
     this.type = schemaType
     for (const key in props) {
+      if (key[0] === '_') {
+        throw new Error(INVALID_KEY)
+      }
       const prop = props[key]
       const type = getPropType(prop, props, key)
       this.path[this.lvl++] = key

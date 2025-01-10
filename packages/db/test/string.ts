@@ -337,3 +337,116 @@ await test('Big string disable compression', async (t) => {
     'Get multiple big strings (uncompressed)',
   )
 })
+
+await test('Big string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      file: {
+        props: {
+          name: { type: 'string', max: 20 },
+          contents: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const file = db.create('file', {
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  equal(
+    (await db.query('file', file).get()).node().contents,
+    euobserver,
+    'Get single id',
+  )
+
+  db.create('file', {
+    name: 'file 2',
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  deepEqual(
+    (await db.query('file').get()).toObject(),
+    [
+      {
+        id: 1,
+        name: '',
+        contents: euobserver,
+      },
+      {
+        id: 2,
+        name: 'file 2',
+        contents: euobserver,
+      },
+    ],
+    'Get multiple big strings',
+  )
+})
+
+await test('schema compression prop', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      file: {
+        props: {
+          contentsUncompressed: { type: 'string', compression: 'none' },
+          contentsCompressed: { type: 'string', compression: 'deflate' },
+        },
+      },
+    },
+  })
+
+  db.create('file', {
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  db.create('file', {
+    contentsUncompressed: euobserver,
+    contentsCompressed: euobserver,
+  })
+
+  db.drain()
+
+  const uncompressedSize = await db
+    .query('file')
+    .include('contentsUncompressed')
+    .get()
+    .then((v) => v.size)
+
+  const compressedSize = await db
+    .query('file')
+    .include('contentsCompressed')
+    .get()
+    .then((v) => v.size)
+
+  equal(
+    compressedSize != uncompressedSize,
+    true,
+    'sizes of uncompressed and compressed are not equal',
+  )
+})

@@ -8,6 +8,7 @@ const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
+const sort = @import("./db/sort.zig");
 const string = @import("./string.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
@@ -103,6 +104,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "decompress", string.decompress) catch return null;
     registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
-
+    registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
     return exports;
 }

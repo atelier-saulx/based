@@ -1,6 +1,13 @@
 import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef } from '../../server/schema/types.js'
-import { CREATE, ModifyOp } from './types.js'
+import {
+  CREATE,
+  ModifyOp,
+  SWITCH_FIELD,
+  SWITCH_ID_CREATE,
+  SWITCH_ID_UPDATE,
+  SWITCH_TYPE,
+} from './types.js'
 
 export const setCursor = (
   ctx: ModifyCtx,
@@ -13,9 +20,9 @@ export const setCursor = (
   const prefix0 = schema.idUint8[0]
   const prefix1 = schema.idUint8[1]
   if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
-    ctx.buf[ctx.len++] = 2
-    ctx.buf[ctx.len++] = prefix0
-    ctx.buf[ctx.len++] = prefix1
+    ctx.buf[ctx.len++] = SWITCH_TYPE // switch node type
+    ctx.buf[ctx.len++] = prefix0 // type1
+    ctx.buf[ctx.len++] = prefix1 // type2
     ctx.prefix0 = prefix0
     ctx.prefix1 = prefix1
     ctx.field = -1
@@ -24,15 +31,17 @@ export const setCursor = (
   }
 
   if (!ignoreField && ctx.field !== field) {
-    ctx.buf[ctx.len++] = 0
-    ctx.buf[ctx.len++] = field
+    ctx.buf[ctx.len++] = SWITCH_FIELD // switch field
+    ctx.buf[ctx.len++] = field // actual field
+    // add start and len if its main
     ctx.field = field
   }
 
   if (ctx.id !== id) {
     ctx.id = id
     ctx.lastMain = -1
-    ctx.buf[ctx.len++] = modifyOp === CREATE ? 9 : 1
+    ctx.buf[ctx.len++] =
+      modifyOp === CREATE ? SWITCH_ID_CREATE : SWITCH_ID_UPDATE // swtch id
     ctx.buf[ctx.len++] = id
     ctx.buf[ctx.len++] = id >>>= 8
     ctx.buf[ctx.len++] = id >>>= 8

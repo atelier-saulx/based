@@ -11,6 +11,7 @@ await test('variable size (string/binary)', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+
   t.after(() => {
     return db.destroy()
   })
@@ -20,6 +21,7 @@ await test('variable size (string/binary)', async (t) => {
         props: {
           type: ['opinion', 'politcis', 'gossip'],
           code: { type: 'string', maxBytes: 2 },
+          age: { type: 'uint32' },
           name: { type: 'string' },
           body: { type: 'string' }, // big compressed string...
           stuff: 'binary',
@@ -38,7 +40,8 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
-  for (let i = 0; i < 1e3; i++) {
+
+  for (let i = 0; i < 1000; i++) {
     const str = 'en'
     db.create('article', {
       type: 'gossip',
