@@ -54,6 +54,8 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
         var fieldIt = index.value_ptr.*.field.iterator();
         while (fieldIt.next()) |field| {
             std.debug.print("DESTROY SORT INDEX {any} \n", .{field.value_ptr.*});
+            // _ = selva.selva_sort_defrag(field.value_ptr.*.index);
+            // TODO FIX THIS
             selva.selva_sort_destroy(field.value_ptr.*.index);
             std.debug.print("DESTROY SORT INDEX SUCCEEDED \n", .{});
         }
