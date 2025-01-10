@@ -39,20 +39,30 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     const args = try napi.getArgs(1, napi_env, info);
     const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
 
+    var it = ctx.sortIndexes.iterator();
+    while (it.next()) |index| {
+        var it2 = index.value_ptr.*.main.iterator();
+        while (it2.next()) |index2| {
+            selva.selva_sort_destroy(index2.value_ptr.*.index);
+        }
+        var it3 = index.value_ptr.*.field.iterator();
+        while (it3.next()) |index3| {
+            selva.selva_sort_destroy(index3.value_ptr.*.index);
+        }
+    }
+
     if (ctx.selva != null) {
         selva.selva_db_destroy(ctx.selva);
     }
 
     ctx.selva = null;
 
-    // something goes wrong here...
     selva.libdeflate_block_state_deinit(&ctx.libdeflate_block_state);
     selva.libdeflate_free_decompressor(ctx.decompressor);
 
-    // REMOVE / DE-INIT SORT INDEXES
-
-    // delete instance
     _ = db.dbHashmap.remove(ctx.id);
+
+    // free mem
     ctx.arena.deinit();
 
     return null;
