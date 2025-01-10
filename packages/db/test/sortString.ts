@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual, equal, isSorted } from './shared/assert.js'
 import { text } from './shared/examples.js'
 import { randomString } from '@saulx/utils'
 
@@ -123,4 +123,37 @@ await test('compression / large strings', async (t) => {
     value: text,
     random: 32,
   })
+})
+
+await test('fixed len strings', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
+  t.after(() => db.destroy())
+  await db.start({ clean: true })
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          name: { type: 'string', maxBytes: 20 },
+          nr: { type: 'uint32' },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    db.create('article', {
+      name: i + ' flap',
+      nr: i,
+    })
+  }
+
+  db.drain()
+
+  db.server.createSortIndex('article', 'name')
+
+  isSorted(
+    await db.query('article').include('name', 'nr').sort('name', 'desc').get(),
+    'name',
+    'desc',
+  )
 })
