@@ -286,6 +286,33 @@ export class DbServer {
         this.queryQueue.set(resolve, buf)
       })
     } else {
+      // MOVE THIS WHEN SPLITTING UP COMPLETLY (NEED RECIEVE QUERY FN)
+
+      // add more
+      if (buf[0] == 2) {
+        const fLen = buf.readUint16LE(11)
+        const sortLen = buf.readUint16LE(13 + fLen)
+        if (sortLen) {
+          const sortBuffer = buf.slice(15 + fLen, 15 + fLen + sortLen)
+          const field = sortBuffer[1]
+          const start = sortBuffer.readUint16LE(2 + 1)
+          const typeId = buf.readUint16LE(1)
+
+          console.log(field, start, typeId)
+
+          // sortIndexes: {
+          //   [type: number]: {
+          //     [field: number]: {
+          //       [start: number]: any
+          //     }
+          //   }
+          // }
+
+          // check for sortIndexes
+          // do it
+        }
+      }
+
       this.processingQueries++
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length

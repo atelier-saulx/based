@@ -27,10 +27,13 @@ pub fn default(
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
-    // const propType: types.Prop = @enumFromInt(sortBuffer[2]);
     const start = readInt(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
+        std.debug.print(
+            "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",
+            .{ typeId, field, start },
+        );
         return;
     }
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -41,7 +44,6 @@ pub fn default(
         selva.selva_sort_foreach_begin(sI.index);
     }
     var correctedForOffset: u32 = offset;
-
     checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
         if (queryType == 4) {

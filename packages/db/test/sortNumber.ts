@@ -107,4 +107,11 @@ await test('numbers', async (t) => {
 
   db.remove('example', 1)
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+
+  console.info('-------------------')
+  await db
+    .query('example')
+    .include('enum')
+    .get()
+    .then((v) => v.toObject().map((v) => v.enum))
 })

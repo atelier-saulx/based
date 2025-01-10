@@ -19,10 +19,10 @@ import { createOrGetRefQueryDef } from './include/utils.js'
 import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search } from './search/index.js'
-import { 
-  isValidId, 
+import {
+  isValidId,
   checkMaxIdsPerQuery,
-  checkTotalBufferSize
+  checkTotalBufferSize,
 } from './validation.js'
 
 // fix nested type...
