@@ -1225,7 +1225,7 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
         }
 
         if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
-            db_panic("Can't happen, right");
+            continue; /* already inserted. */
         }
 
         fn(db, src, dst, fs_src, fs_dst);
