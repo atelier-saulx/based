@@ -144,13 +144,14 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     const start = readInt(u16, data, 1);
     const addition = data[3..];
     const value = currentData[start .. start + addition.len];
+
     var size: usize = 0;
 
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.remove(ctx.db, sI.?, value, ctx.node.?);
+                sort.remove(ctx.db, sI.?, currentData, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
@@ -237,7 +238,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.insert(ctx.db, sI.?, value, ctx.node.?);
+                sort.insert(ctx.db, sI.?, currentData, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {

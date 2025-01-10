@@ -33,18 +33,18 @@ export const isSorted = (
       if (typeof last === 'string') {
         if (order === 'asc') {
           if (last.localeCompare(current) == 1) {
-            throw new Error(msg || SORT_ERR_MSG + ' String')
+            throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
           }
         } else if (last.localeCompare(current) == -1) {
-          throw new Error(msg || SORT_ERR_MSG + ' String')
+          throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
         }
       } else {
         if (order === 'asc') {
           if (last > current) {
-            throw new Error(msg || SORT_ERR_MSG)
+            throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
           }
         } else if (last < current) {
-          throw new Error(msg || SORT_ERR_MSG)
+          throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
         }
       }
     }

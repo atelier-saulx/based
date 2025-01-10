@@ -21,7 +21,7 @@ await test('numbers', async (t) => {
         props: {
           enum: animals,
           u8: { type: 'uint8' }, // screws stuff up...
-          // u16: { type: 'uint16' },
+          u16: { type: 'uint16' },
           u32: { type: 'uint32' },
           boolean: { type: 'boolean' },
         },
@@ -36,8 +36,8 @@ await test('numbers', async (t) => {
   for (let i = 0; i < len; i++) {
     const animal = animals[i % animals.length]
     await db.create('example', {
-      // u8: i,
-      // u16: i,
+      u8: i,
+      u16: i,
       u32: i,
       enum: animal,
       boolean: i % 2 > 0,
@@ -48,7 +48,7 @@ await test('numbers', async (t) => {
   db.drain()
 
   await db.update('example', 1, {
-    u32: { increment: 1e9 },
+    u32: { increment: 100 },
   })
 
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
