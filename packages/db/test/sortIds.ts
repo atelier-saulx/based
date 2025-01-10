@@ -23,6 +23,7 @@ await test('ids', async (t) => {
           flap: 'uint32',
           blurf: 'number',
           bla: [0, 1, 2, 3, 4, 5],
+          mep: { type: 'string', maxBytes: 10 },
         },
       },
     },
@@ -38,6 +39,7 @@ await test('ids', async (t) => {
         flap: i,
         blurf: Math.random() * 10000,
         bla: ~~(Math.random() * 5),
+        mep: i + 'X',
       }).tmpId,
     )
   }
@@ -53,6 +55,8 @@ await test('ids', async (t) => {
   isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
 
   isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
+
+  isSorted(await db.query('user', ids).sort('mep').get(), 'mep')
 })
 
 await test('references', async (t) => {

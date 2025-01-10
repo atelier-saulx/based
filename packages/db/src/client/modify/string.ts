@@ -57,6 +57,7 @@ export function writeString(
       ctx.buf.set(value, ctx.len)
     } else {
       const isNoCompression = ctx.db.noCompression || t.compression === 0
+      // @ts-ignore stupid str
       size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
     let sizepos = ctx.len + 1 - 5

@@ -15,8 +15,10 @@ pub const SortIndexMeta = struct {
     index: *selva.SelvaSortCtx,
 };
 
-pub const EMPTY_CHAR: [16]u8 = [_]u8{0} ** 16;
-pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..16];
+const SIZE = 16;
+
+pub const EMPTY_CHAR: [SIZE]u8 = [_]u8{0} ** SIZE;
+pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..SIZE];
 
 // key of main sort indexes is START, key of buffSort is field
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
@@ -204,9 +206,12 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(dbCtx: *db.DbCtx, data: []u8) [*]u8 {
-    if (data.len < 18) {
-        var arr: [16]u8 = [_]u8{0} ** 16;
+inline fn parseString(
+    dbCtx: *db.DbCtx,
+    data: []u8,
+) [*]u8 {
+    if (data.len < SIZE + 2) {
+        var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
         var i: usize = 2;
         while (i < data.len) : (i += 1) {
             arr[i - 2] = data[i];
@@ -214,10 +219,10 @@ inline fn parseString(dbCtx: *db.DbCtx, data: []u8) [*]u8 {
         return &arr;
     } else {
         if (data[1] == 0) {
-            const slice = data[2..18];
+            const slice = data[2 .. SIZE + 2];
             return slice.ptr;
         } else {
-            const slice = decompressFirstBytes(dbCtx, data)[0..16];
+            const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
             return slice.ptr;
         }
     }
@@ -242,8 +247,16 @@ pub fn remove(
             selva.selva_sort_remove_i64(index, data[start], node);
         },
         types.Prop.STRING => {
-            const d = if (sortIndex.len > 0) data[start..sortIndex.len] else data;
-            selva.selva_sort_remove_buf(index, parseString(dbCtx, d), 8, node);
+            if (sortIndex.len > 0) {
+                selva.selva_sort_remove_buf(
+                    index,
+                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
+                    sortIndex.len - 1,
+                    node,
+                );
+            } else {
+                selva.selva_sort_remove_buf(index, parseString(dbCtx, data), SIZE, node);
+            }
         },
         types.Prop.NUMBER => {
             selva.selva_sort_remove_double(index, @floatFromInt(readInt(u64, data, start)), node);
@@ -278,8 +291,17 @@ pub fn insert(
             selva.selva_sort_insert_i64(index, data[start], node);
         },
         types.Prop.STRING => {
-            const d = if (sortIndex.len > 0) data[start..sortIndex.len] else data;
-            selva.selva_sort_insert_buf(index, parseString(dbCtx, d), 8, node);
+            const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
+            if (sortIndex.len > 0) {
+                selva.selva_sort_insert_buf(
+                    index,
+                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
+                    sortIndex.len - 1,
+                    node,
+                );
+            } else {
+                selva.selva_sort_insert_buf(index, parseString(dbCtx, d), SIZE, node);
+            }
         },
         types.Prop.NUMBER => {
             selva.selva_sort_insert_double(index, @floatFromInt(readInt(u64, data, start)), node);
