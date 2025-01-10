@@ -38,7 +38,6 @@ await test('1M', async (t) => {
   equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
 
   let d = Date.now()
-  db.server.createSortIndex('user', 'email')
   let siTime = Date.now() - d
   console.log('create sort index (string)', siTime, 'ms')
   equal(
@@ -68,7 +67,6 @@ await test('1M', async (t) => {
   )
 
   d = Date.now()
-  db.server.createSortIndex('user', 'age')
   siTime = Date.now() - d
   console.log('create sort index (uint32)', siTime, 'ms')
   equal(
@@ -137,8 +135,6 @@ await test('basic', async (t) => {
 
   db.drain()
 
-  db.server.createSortIndex('user', 'age')
-
   deepEqual(
     (
       await db.query('user').sort('age', 'desc').include('email', 'age').get()
@@ -168,7 +164,6 @@ await test('basic', async (t) => {
   )
 
   db.drain()
-  db.server.createSortIndex('user', 'email')
 
   deepEqual(
     (
@@ -570,9 +565,6 @@ await test('sort - from start (1M items)', async (t) => {
   }
 
   await db.drain()
-
-  db.server.createSortIndex('user', 'age')
-  db.server.createSortIndex('user', 'name')
 
   deepEqual(
     (

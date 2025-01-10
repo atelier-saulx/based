@@ -339,10 +339,11 @@ export class DbServer {
         const sortLen = buf.readUint16LE(s)
         if (sortLen) {
           const sortBuf = buf.slice(s + 2, s + 2 + sortLen)
+          // TODO WITH YUZ - have to add these to modify buffer
           this.createSortIndexBuffer(buf.readUint16LE(1), sortBuf)
         }
       } else if (queryType == 1) {
-        // MAKE THIS!
+        // This will be more advanced - sometimes has indexes / sometimes not
       }
       this.processingQueries++
       this.availableWorkerIndex =

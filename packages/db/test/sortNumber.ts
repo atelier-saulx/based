@@ -61,25 +61,18 @@ await test('numbers', async (t) => {
   })
 
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
-
   isSorted(
     await db.query('example').sort('boolean').include('boolean').get(),
     'boolean',
   )
-
   isSorted(await db.query('example').sort('u8').include('u8').get(), 'u8')
-
   isSorted(await db.query('example').sort('i8').include('i8').get(), 'i8')
-
   isSorted(await db.query('example').sort('i16').include('i16').get(), 'i16')
-
   isSorted(await db.query('example').sort('i32').include('i32').get(), 'i32')
-
   isSorted(
     await db.query('example').sort('number').include('number').get(),
     'number',
   )
-
   isSorted(
     await db.query('example').sort('timestamp').include('timestamp').get(),
     'timestamp',
@@ -98,7 +91,6 @@ await test('numbers', async (t) => {
   db.remove('example', 1)
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
 
-  console.info('-------------------')
   await db
     .query('example')
     .include('enum')

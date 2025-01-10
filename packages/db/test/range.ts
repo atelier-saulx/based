@@ -70,8 +70,6 @@ await test('range', async (t) => {
 
   deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
 
-  db.server.createSortIndex('user', 'email')
-
   const result2 = await db
     .query('user')
     .include('nr')

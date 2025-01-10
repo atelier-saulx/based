@@ -69,7 +69,6 @@ await test('compression / large strings', async (t) => {
     const dbTime = db.drain()
     equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
     let d = Date.now()
-    db.server.createSortIndex('article', 'article')
     let siTime = Date.now() - d
     equal(
       siTime < 500,
@@ -148,8 +147,6 @@ await test('fixed len strings', async (t) => {
   }
 
   db.drain()
-
-  db.server.createSortIndex('article', 'name')
 
   isSorted(
     await db.query('article').include('name', 'nr').sort('name', 'desc').get(),
