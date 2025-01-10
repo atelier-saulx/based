@@ -29,7 +29,7 @@ pub const TypeIndex = struct {
 
 pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
 
-pub fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
+fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
         types.Prop.TIMESTAMP,
         types.Prop.INT8,
@@ -98,6 +98,23 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     return externalNapi;
 }
 
+pub fn createSortIndexMeta(
+    start: u16,
+    len: u16,
+    prop: types.Prop,
+    desc: bool,
+) !SortIndexMeta {
+    const sortFlag = try getSortFlag(prop, desc);
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
+    const s: SortIndexMeta = .{
+        .len = len,
+        .start = start,
+        .index = sortCtx,
+        .prop = prop,
+    };
+    return s;
+}
+
 fn getOrCreateFromCtx(
     dbCtx: *db.DbCtx,
     typeId: db.TypeId,
@@ -119,15 +136,9 @@ fn getOrCreateFromCtx(
     }
     const tI: *TypeIndex = typeIndexes.?;
     sortIndex = getSortIndex(typeIndexes, field, start);
-    const sortIndexType: selva.SelvaSortOrder = try getSortFlag(prop, desc);
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = .{
-            .index = selva.selva_sort_init2(sortIndexType, 0).?,
-            .len = len,
-            .start = start,
-            .prop = prop,
-        };
+        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc);
         if (field == 0) {
             try tI.main.put(start, sortIndex.?);
         } else {
@@ -162,7 +173,7 @@ pub fn createSortIndex(
             break;
         }
         const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
-        addToSortIndex(dbCtx, sortIndex, data, node.?);
+        insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -213,32 +224,11 @@ inline fn parseString(dbCtx: *db.DbCtx, data: []u8) [*]u8 {
     return EMPTY_CHAR_SLICE.ptr;
 }
 
-pub fn addToSortIndex(
-    dbCtx: *db.DbCtx,
-    sortIndex: *SortIndexMeta,
-    data: []u8,
-    node: db.Node,
-) void {
-    const prop = sortIndex.prop;
-    if (prop == types.Prop.TIMESTAMP or prop == types.Prop.NUMBER) {
-        const specialScore: i64 = readInt(i64, data, sortIndex.start);
-        selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
-    } else if (prop == types.Prop.ENUM or prop == types.Prop.UINT8 or prop == types.Prop.BOOLEAN) {
-        const specialScore: i64 = data[sortIndex.start];
-        selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
-    } else if (prop == types.Prop.UINT32) {
-        const specialScore: i64 = @intCast(readInt(u32, data, sortIndex.start));
-        selva.selva_sort_insert_i64(sortIndex.index, specialScore, node);
-    } else if (prop == types.Prop.STRING) {
-        selva.selva_sort_insert_buf(sortIndex.index, parseString(dbCtx, data), 8, node);
-    }
-}
-
 inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
     selva.selva_sort_remove_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
 }
 
-pub fn removeFromSortIndex(
+pub fn remove(
     dbCtx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
@@ -267,7 +257,7 @@ pub fn removeFromSortIndex(
     };
 }
 
-inline fn instertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
+inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
     selva.selva_sort_insert_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
 }
 
@@ -289,13 +279,13 @@ pub fn insert(
             selva.selva_sort_insert_buf(index, parseString(dbCtx, d), 8, node);
         },
         types.Prop.TIMESTAMP, types.Prop.NUMBER, types.Prop.INT64 => {
-            removeFromIntIndex(i64, data, sortIndex, node);
+            insertIntIndex(i64, data, sortIndex, node);
         },
-        types.Prop.INT32 => instertIntIndex(i32, data, sortIndex, node),
-        types.Prop.INT16 => instertIntIndex(i16, data, sortIndex, node),
-        types.Prop.UINT64 => instertIntIndex(u64, data, sortIndex, node),
-        types.Prop.UINT32 => instertIntIndex(u32, data, sortIndex, node),
-        types.Prop.UINT16 => instertIntIndex(u16, data, sortIndex, node),
+        types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
+        types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
+        types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),
+        types.Prop.UINT32 => insertIntIndex(u32, data, sortIndex, node),
+        types.Prop.UINT16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},
     };
 }

@@ -9,6 +9,7 @@ const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const search = @import("../filter/search.zig");
 const readInt = @import("../../utils.zig").readInt;
+const std = @import("std");
 
 pub fn sort(
     comptime queryType: comptime_int,
@@ -26,7 +27,7 @@ pub fn sort(
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
-    const sortFieldType: types.Prop = @enumFromInt(sortBuffer[1]);
+    const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
     if (sortBuffer.len == 6) {
         start = readInt(u16, sortBuffer, 2);
         len = readInt(u16, sortBuffer, 4);
@@ -34,18 +35,12 @@ pub fn sort(
         start = 0;
         len = 0;
     }
-
     // --------------------------------
-    // check difference between
-    const sortFlag = try dbSort.getSortFlag(sortFieldType, queryType == 10);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
-    var s: dbSort.SortIndexMeta = .{
-        .len = len,
-        .start = start,
-        .index = sortCtx,
-        .prop = sortFieldType,
-    };
+    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, queryType == 10);
     const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
+
+    std.debug.print("{any} \n", .{sortProp});
+
     sortItem: while (i < ids.len) : (i += 4) {
         const id = readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
@@ -56,22 +51,19 @@ pub fn sort(
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema);
-        dbSort.insert(ctx.db, &s, value, node.?);
+        dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
     }
+
     // --------------------------------
+    selva.selva_sort_foreach_begin(metaSortIndex.index);
 
-    selva.selva_sort_foreach_begin(sortCtx);
-
-    while (!selva.selva_sort_foreach_done(sortCtx)) {
-        // if @limit stop
-        const node: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
+    while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
 
         ctx.totalResults += 1;
-
         if (offset != 0 and ctx.totalResults <= offset) {
             continue;
         }
-
         // 2 opts if ids are more
         const size = try getFields(
             node,
@@ -83,21 +75,18 @@ pub fn sort(
             null,
             false,
         );
-
         if (size > 0) {
             ctx.size += size;
         }
-
         if (ctx.totalResults - offset >= limit) {
             break;
         }
     }
-
     if (offset != 0) {
         ctx.totalResults -= offset;
     }
 
-    selva.selva_sort_destroy(sortCtx);
+    selva.selva_sort_destroy(metaSortIndex.index);
 }
 
 pub fn default(

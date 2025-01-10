@@ -61,14 +61,14 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                             currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
                         }
                         const sI = entry.value_ptr.*;
-                        sort.removeFromSortIndex(ctx.db, sI, currentData.?, ctx.node.?);
-                        sort.addToSortIndex(ctx.db, sI, slice, ctx.node.?);
+                        sort.remove(ctx.db, sI, currentData.?, ctx.node.?);
+                        sort.insert(ctx.db, sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-                sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
-                sort.addToSortIndex(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
@@ -99,14 +99,14 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                 if (ctx.typeSortIndex != null) {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
-                        sort.removeFromSortIndex(ctx.db, sI.?, currentData, ctx.node.?);
-                        sort.addToSortIndex(ctx.db, sI.?, slice[4..], ctx.node.?);
+                        sort.remove(ctx.db, sI.?, currentData, ctx.node.?);
+                        sort.insert(ctx.db, sI.?, slice[4..], ctx.node.?);
                     }
                 }
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else if (ctx.currentSortIndex != null) {
-                sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
-                sort.addToSortIndex(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else {
                 @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
@@ -150,11 +150,11 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.removeFromSortIndex(ctx.db, sI.?, value, ctx.node.?);
+                sort.remove(ctx.db, sI.?, value, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        sort.removeFromSortIndex(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+        sort.remove(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
     }
 
     switch (fieldType) {
@@ -237,11 +237,11 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.addToSortIndex(ctx.db, sI.?, value, ctx.node.?);
+                sort.insert(ctx.db, sI.?, value, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        sort.addToSortIndex(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+        sort.insert(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
     }
 
     return size + 3;
