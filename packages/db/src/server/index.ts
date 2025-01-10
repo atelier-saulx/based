@@ -139,9 +139,7 @@ export class DbServer {
     return sortIndex
   }
 
-  createSortIndexBuffer(typeId: number, sort: Buffer): any {
-    const field = sort[1]
-    const start = sort.readUint16LE(2 + 1)
+  hasSortIndex(typeId: number, field: number, start: number): boolean {
     let types = this.sortIndexes[typeId]
     if (!types) {
       types = this.sortIndexes[typeId] = {}
@@ -152,10 +150,13 @@ export class DbServer {
     }
     let sortIndex = fields[start]
     if (sortIndex) {
-      return sortIndex
+      return true
     }
+    return false
+  }
+
+  createSortIndexBuffer(typeId: number, field: number, start: number): any {
     const buf = Buffer.allocUnsafe(8)
-    // size [2 type] [1 field] [2 start] [2 len]
     buf.writeUint16LE(typeId, 0)
     buf[2] = field
     buf.writeUint16LE(start, 3)
@@ -182,7 +183,10 @@ export class DbServer {
     }
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
-    sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    // put in modify stuff
+    const sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    const types = this.sortIndexes[typeId]
+    const fields = types[field]
     fields[start] = sortIndex
     return sortIndex
   }
@@ -338,9 +342,18 @@ export class DbServer {
         const s = 13 + buf.readUint16LE(11)
         const sortLen = buf.readUint16LE(s)
         if (sortLen) {
-          const sortBuf = buf.slice(s + 2, s + 2 + sortLen)
-          // TODO WITH YUZ - have to add these to modify buffer
-          this.createSortIndexBuffer(buf.readUint16LE(1), sortBuf)
+          const typeId = buf.readUint16LE(1)
+          const sort = buf.slice(s + 2, s + 2 + sortLen)
+          const field = sort[1]
+          const start = sort.readUint16LE(2 + 1)
+          if (!this.hasSortIndex(typeId, field, start)) {
+            if (this.processingQueries) {
+              return new Promise((resolve) => {
+                this.queryQueue.set(resolve, buf)
+              })
+            }
+            this.createSortIndexBuffer(typeId, field, start)
+          }
         }
       } else if (queryType == 1) {
         // This will be more advanced - sometimes has indexes / sometimes not
