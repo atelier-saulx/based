@@ -3,7 +3,7 @@ import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
-import { SchemaTypeDef } from './schema/types.js'
+import { PropDef, SchemaTypeDef } from './schema/types.js'
 import { genId, genRootId } from './schema/utils.js'
 import { createSchemaTypeDef } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
@@ -127,7 +127,6 @@ export class DbServer {
     if (sortIndex) {
       return sortIndex
     }
-
     const buf = Buffer.allocUnsafe(8)
     // size [2 type] [1 field] [2 start] [2 len]
     buf.writeUint16LE(t.id, 0)
@@ -137,6 +136,54 @@ export class DbServer {
     buf[7] = prop.typeIndex
     sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
     fields[prop.start] = sortIndex
+    return sortIndex
+  }
+
+  createSortIndexBuffer(typeId: number, sort: Buffer): any {
+    const field = sort[1]
+    const start = sort.readUint16LE(2 + 1)
+    let types = this.sortIndexes[typeId]
+    if (!types) {
+      types = this.sortIndexes[typeId] = {}
+    }
+    let fields = types[field]
+    if (!fields) {
+      fields = types[field] = {}
+    }
+    let sortIndex = fields[start]
+    if (sortIndex) {
+      return sortIndex
+    }
+    const buf = Buffer.allocUnsafe(8)
+    // size [2 type] [1 field] [2 start] [2 len]
+    buf.writeUint16LE(typeId, 0)
+    buf[2] = field
+    buf.writeUint16LE(start, 3)
+    let typeDef: SchemaTypeDef
+    let prop: PropDef
+    for (const t in this.schemaTypesParsed) {
+      typeDef = this.schemaTypesParsed[t]
+      if (typeDef.id == typeId) {
+        for (const p in typeDef.props) {
+          const propDef = typeDef.props[p]
+          if (propDef.prop == field && propDef.start == start) {
+            prop = propDef
+            break
+          }
+        }
+        break
+      }
+    }
+    if (!typeDef) {
+      throw new Error(`Cannot find type id on db from query for sort ${typeId}`)
+    }
+    if (!prop) {
+      throw new Error(`Cannot find prop on db from query for sort ${field}`)
+    }
+    buf.writeUint16LE(prop.len, 5)
+    buf[7] = prop.typeIndex
+    sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    fields[start] = sortIndex
     return sortIndex
   }
 
@@ -286,33 +333,17 @@ export class DbServer {
         this.queryQueue.set(resolve, buf)
       })
     } else {
-      // MOVE THIS WHEN SPLITTING UP COMPLETLY (NEED RECIEVE QUERY FN)
-
-      // add more
-      if (buf[0] == 2) {
-        const fLen = buf.readUint16LE(11)
-        const sortLen = buf.readUint16LE(13 + fLen)
+      const queryType = buf[0]
+      if (queryType == 2) {
+        const s = 13 + buf.readUint16LE(11)
+        const sortLen = buf.readUint16LE(s)
         if (sortLen) {
-          const sortBuffer = buf.slice(15 + fLen, 15 + fLen + sortLen)
-          const field = sortBuffer[1]
-          const start = sortBuffer.readUint16LE(2 + 1)
-          const typeId = buf.readUint16LE(1)
-
-          console.log(field, start, typeId)
-
-          // sortIndexes: {
-          //   [type: number]: {
-          //     [field: number]: {
-          //       [start: number]: any
-          //     }
-          //   }
-          // }
-
-          // check for sortIndexes
-          // do it
+          const sortBuf = buf.slice(s + 2, s + 2 + sortLen)
+          this.createSortIndexBuffer(buf.readUint16LE(1), sortBuf)
         }
+      } else if (queryType == 1) {
+        // MAKE THIS!
       }
-
       this.processingQueries++
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length

@@ -34,8 +34,6 @@ await test('numbers', async (t) => {
     },
   })
 
-  db.server.createSortIndex('example', 'u32')
-
   const len = 10
   const now = Date.now()
   const animalsResult: string[] = []
@@ -64,37 +62,29 @@ await test('numbers', async (t) => {
 
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
 
-  db.server.createSortIndex('example', 'boolean')
   isSorted(
     await db.query('example').sort('boolean').include('boolean').get(),
     'boolean',
   )
 
-  db.server.createSortIndex('example', 'u8')
   isSorted(await db.query('example').sort('u8').include('u8').get(), 'u8')
 
-  db.server.createSortIndex('example', 'i8')
   isSorted(await db.query('example').sort('i8').include('i8').get(), 'i8')
 
-  db.server.createSortIndex('example', 'i16')
   isSorted(await db.query('example').sort('i16').include('i16').get(), 'i16')
 
-  db.server.createSortIndex('example', 'i32')
   isSorted(await db.query('example').sort('i32').include('i32').get(), 'i32')
 
-  db.server.createSortIndex('example', 'number')
   isSorted(
     await db.query('example').sort('number').include('number').get(),
     'number',
   )
 
-  db.server.createSortIndex('example', 'timestamp')
   isSorted(
     await db.query('example').sort('timestamp').include('timestamp').get(),
     'timestamp',
   )
 
-  db.server.createSortIndex('example', 'enum')
   deepEqual(
     await db
       .query('example')
