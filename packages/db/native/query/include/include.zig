@@ -30,9 +30,7 @@ pub fn getFields(
     includeField: while (includeIterator < include.len) {
         const op: IncludeOp = @enumFromInt(include[includeIterator]);
         includeIterator += 1;
-
         const operation = include[includeIterator..];
-
         if (op == IncludeOp.edge) {
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
@@ -40,6 +38,9 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
+
+            std.debug.print("Edge... {any} \n", .{edges});
+
             size += try getFields(node, ctx, id, typeEntry, edges, .{
                 .reference = ref.?.reference,
                 .edgeConstaint = ref.?.edgeConstaint,

@@ -2,7 +2,7 @@ import { BasedDb } from '../../index.js'
 import { createSortBuffer } from './sort.js'
 import { QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
-import { filterToBuffer, debug } from './query.js'
+import { filterToBuffer, debug, debugQueryDef } from './query.js'
 import { searchToBuffer } from './search/index.js'
 
 const byteSize = (arr: Buffer[]) => {
@@ -25,6 +25,8 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
   if (def.edges) {
     edges = includeToBuffer(db, def.edges)
     edgesSize = byteSize(edges)
+    debugQueryDef(def)
+    console.info({ edges, edgesSize })
   }
 
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)

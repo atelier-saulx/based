@@ -90,4 +90,17 @@ await test('references', async (t) => {
       },
     ],
   })
+
+  // single ref
+  console.log(
+    new Uint8Array(
+      await db.query('article').include('contributors.$friend').toBuffer(),
+    ),
+  )
+
+  await db
+    .query('article')
+    .include('contributors.$friend')
+    .get()
+    .then((v) => v.inspect().debug())
 })
