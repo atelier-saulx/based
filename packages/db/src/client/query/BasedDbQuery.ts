@@ -133,8 +133,12 @@ export class QueryBranch<T> {
             // @ts-ignore
             return new QueryBranch(this.db, refDef)
           }
+          throw new Error(`No ref field named ${field}`)
         })
       } else if (Array.isArray(f)) {
+        for (const field of f) {
+          hasField(field)
+        }
         includeFields(this.def, f)
       } else if (f !== undefined) {
         throw new Error(
