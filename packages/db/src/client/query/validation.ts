@@ -1,3 +1,4 @@
+import { PropDef, PropDefEdge } from '../../server/schema/types.js'
 import {
   MAX_IDS_PER_QUERY,
   MIN_ID_VALUE,
@@ -45,13 +46,15 @@ export const checkTotalBufferSize = (buffers: Buffer[]): void => {
   }
 }
 
-export const hasFields = (fields: any): void => {
+export const hasFields = (
+  fields: { [key: string]: PropDefEdge } | { [path: string]: PropDef },
+): void => {
   if (Object.keys(fields).length === 0) {
     throw new Error('No fields available to include')
   }
 }
 
-export const hasField = (field: any): void => {
+export const hasField = (field: string): void => {
   if (!field) {
     throw new Error(`Field '${field}' does not exist in the definition`)
   }
