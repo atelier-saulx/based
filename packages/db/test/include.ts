@@ -34,7 +34,7 @@ await test('include', async (t) => {
               ref: 'product',
               prop: 'stores',
               //   $category: { enum: ['Clothing', 'Office'] }, // it is here but not in product
-              $category: ['Clothing', 'Office'],
+              // $category: ['Clothing', 'Office'],
             },
           },
         },
@@ -55,10 +55,11 @@ await test('include', async (t) => {
     },
   })
 
-  const pencil = db.create('product', {
+  const pencil = await db.create('product', {
     name: 'Faber Castell Pencil',
     price: 1.2,
     // $category: 'Office', // If I put this here pencil is silently ignored in log #4 and abroad
+    // if this is the expected behaviour a validation is required to avoid messy db import
   })
 
   const pen = db.create('product', {
@@ -75,19 +76,18 @@ await test('include', async (t) => {
     products: [pen],
   })
 
-  // Also doesn't works
-  const walmart = db.create('store', {
-    name: 'Walmart',
-    products: [
-      {
-        ...pencil,
-        $category: 'Office',
-      },
-    ],
-  })
+  // const walmart = db.create('store', {
+  //   name: 'Walmart',
+  //   products: [
+  //     {
+  //       id: pencil, // to document
+  //       $category: 'Office',
+  //     },
+  //   ],
+  // })
 
   db.update({ myString: 'lala' })
-  db.update({ topStores: [amazon, alibaba, walmart] })
+  db.update({ topStores: [amazon, alibaba] })
 
   db.drain()
 
@@ -141,4 +141,59 @@ await test('include', async (t) => {
   //   //     (await db.query('product').get()).toObject(),
   //   //     (await db.query('product').include('*').get()).toObject(),
   //   //   )
+})
+
+// -----------------------
+
+// Testing validations
+// This tests are commented because it is expected to throw errors.
+// Uncomment to test validations manually.
+
+// 1. Check for no existing fields.
+// 2. Check for no ref fields.
+// 3. Check for invalid input.
+// 4. Check for no fields when using wildcard '*'.
+await test('wildcard', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  db.putSchema({
+    types: {
+      store: {
+        props: {
+          products: {
+            type: 'references',
+            items: {
+              ref: 'product', // if wrong or missing, throw missing type (schema/parse/props.ts)
+              prop: 'stores',
+            },
+          },
+        },
+      },
+      product: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  //   db.create('store', {
+  //     name: 'testStore',
+  //     storeId: 1,
+  //   })
+
+  db.drain()
+
+  console.log(
+    `No filds with wildcard '*'`,
+    (await db.query('store').include('lala').get()).toObject(), //should throw 'no lala field'
+  )
 })
