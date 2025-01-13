@@ -24,8 +24,12 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
 
   if (def.edges) {
     edges = includeToBuffer(db, def.edges)
+    def.edges.references.forEach((ref) => {
+      edges.push(...defToBuffer(db, ref))
+    })
     edgesSize = byteSize(edges)
-    debugQueryDef(def)
+
+    // debugQueryDef(def)
     console.info({ edges, edgesSize })
   }
 
