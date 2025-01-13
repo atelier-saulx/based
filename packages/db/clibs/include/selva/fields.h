@@ -155,6 +155,7 @@ int selva_fields_references_insert(
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         ssize_t index,
+        bool reorder,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out)

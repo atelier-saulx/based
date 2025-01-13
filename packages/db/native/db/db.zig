@@ -208,6 +208,7 @@ pub fn insertReference(
         target,
         fieldSchema,
         index,
+        false,
         te_dst,
         value,
         &ref,
