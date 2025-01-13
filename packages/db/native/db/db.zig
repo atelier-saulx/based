@@ -131,7 +131,8 @@ pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
 }
 
 pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
-    return selva.selva_fields_get_references(node, field);
+    const result = selva.selva_fields_get_references(node, field);
+    return result;
 }
 
 pub fn clearReferences(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) void {

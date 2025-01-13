@@ -82,6 +82,8 @@ pub inline fn getRefsFields(
 
     var result: types.RefsResult = undefined;
 
+    std.debug.print("refs: {any}", .{refs.?});
+
     if (sortArr != null) {
         if (hasFilter) {
             result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);

@@ -236,7 +236,7 @@ function appendRefs(
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
-      } else {
+      } else if (typeof index === 'number') {
         if (ctx.len + 13 > ctx.max) {
           return RANGE_ERR
         }
@@ -249,6 +249,8 @@ function appendRefs(
         ctx.buf[ctx.len++] = index >>>= 8
         ctx.buf[ctx.len++] = index >>>= 8
         ctx.buf[ctx.len++] = index >>>= 8
+      } else {
+        return new ModifyError(def, refs)
       }
       let sizepos = ctx.len
       ctx.len += 4
@@ -270,7 +272,7 @@ function appendRefs(
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
-    } else if (index >= 0) {
+    } else if (typeof index === 'number') {
       if (ctx.len + 9 > ctx.max) {
         return RANGE_ERR
       }

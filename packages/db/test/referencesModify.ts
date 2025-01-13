@@ -102,22 +102,4 @@ await test('references modify', async (t) => {
     ],
     'delete',
   )
-
-  await db.update('user', john, {
-    friends: [1, 2],
-  })
-
-  console.log(
-    '----',
-    (await db.query('user').include('*', 'friends').get()).toObject(),
-  )
-
-  await db.update('user', john, {
-    friends: [1],
-  })
-
-  console.log(
-    '----',
-    (await db.query('user').include('*', 'friends').get()).toObject(),
-  )
 })
