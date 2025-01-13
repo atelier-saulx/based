@@ -123,9 +123,9 @@ await test('references', async (t) => {
     .get()
     .then((v) => v.debug())
 
-  await db
-    .query('article')
-    .include('contributors.$plonki')
-    .get()
-    .then((v) => v.inspect())
+  // await db
+  //   .query('article')
+  //   .include('contributors.$plonki')
+  //   .get()
+  //   .then((v) => v.inspect())
 })
