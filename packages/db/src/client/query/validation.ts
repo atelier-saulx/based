@@ -1,3 +1,4 @@
+import { PropDef, PropDefEdge } from '../../server/schema/types.js'
 import {
   MAX_IDS_PER_QUERY,
   MIN_ID_VALUE,
@@ -5,38 +6,56 @@ import {
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
 
-
 export const isValidId = (id: number): void => {
-  if (typeof id != 'number' ) {
+  if (typeof id != 'number') {
     throw new Error('Id has to be a number')
-  }
-  else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
-    throw new Error(`Invalid Id: The Id should range between ${MIN_ID_VALUE} and ${MAX_ID_VALUE}.)`)
+  } else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
+    throw new Error(
+      `Invalid Id: The Id should range between ${MIN_ID_VALUE} and ${MAX_ID_VALUE}.)`,
+    )
   }
 }
 
-export const checkMaxIdsPerQuery = (ids: number[]):void => {
+export const checkMaxIdsPerQuery = (ids: number[]): void => {
   if (ids.length > MAX_IDS_PER_QUERY) {
     throw new Error(`The number of IDs cannot exceed ${MAX_IDS_PER_QUERY}.`)
   }
 }
 
-export const checkMaxBufferSize = (buff: Buffer):void => {
+export const checkMaxBufferSize = (buff: Buffer): void => {
   if (buff.byteLength > MAX_BUFFER_SIZE) {
-    throw new Error(`The buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
-      `Crrent size is ${buff.byteLength} bytes.`)
+    throw new Error(
+      `The buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
+        `Crrent size is ${buff.byteLength} bytes.`,
+    )
   }
 }
 
-export const checkTotalBufferSize = (buffers: Buffer[]):void => {
+export const checkTotalBufferSize = (buffers: Buffer[]): void => {
   let totalSize = 0
 
   for (const buffer of buffers) {
     totalSize += buffer.byteLength
 
-    if ( totalSize > MAX_BUFFER_SIZE) {
-      throw new Error(`The total buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
-        `Crrent size is ${totalSize} bytes.`)
+    if (totalSize > MAX_BUFFER_SIZE) {
+      throw new Error(
+        `The total buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
+          `Crrent size is ${totalSize} bytes.`,
+      )
     }
+  }
+}
+
+export const hasFields = (
+  fields: { [key: string]: PropDefEdge } | { [path: string]: PropDef },
+): void => {
+  if (Object.keys(fields).length === 0) {
+    throw new Error('No fields available to include')
+  }
+}
+
+export const hasField = (field: string): void => {
+  if (!field) {
+    throw new Error(`Field '${field}' does not exist in the definition`)
   }
 }
