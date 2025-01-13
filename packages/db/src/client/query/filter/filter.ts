@@ -25,6 +25,11 @@ const referencesFilter = (
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
+
+  hasField(fieldStr)
+  checkOperator(operator)
+  checkValue(value, operator)
+
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]
@@ -82,15 +87,21 @@ export const filterRaw = (
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
-  let field = schema.props[filter[0]]
-  if (!field) {
-    if (filter[0] === 'id') {
-      field = ID_FIELD_DEF
-      return primitiveFilter(field, filter, conditions)
+  const [field, operator, value] = filter
+
+  hasField(field) // Valida se o campo é uma string não vazia
+  checkOperator(operator) // Valida se o operador é válido
+  checkValue(value, operator) // Valida o valor com base no operador
+
+  let fieldDef = schema.props[field]
+  if (!fieldDef) {
+    if (field === 'id') {
+      fieldDef = ID_FIELD_DEF
+      return primitiveFilter(fieldDef, filter, conditions)
     }
     return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(field, filter, conditions)
+  return primitiveFilter(fieldDef, filter, conditions)
 }
 
 export const filter = (
