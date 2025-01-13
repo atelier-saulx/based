@@ -127,7 +127,6 @@ export class QueryBranch<T> {
         }
       } else if (typeof f === 'function') {
         f((field: string) => {
-          hasField(field)
           const prop = this.def.props[field]
           if (prop && (prop.typeIndex === 13 || prop.typeIndex === 14)) {
             const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
@@ -136,9 +135,6 @@ export class QueryBranch<T> {
           }
         })
       } else if (Array.isArray(f)) {
-        for (const field of f) {
-          hasField(field)
-        }
         includeFields(this.def, f)
       } else if (f !== undefined) {
         throw new Error(
