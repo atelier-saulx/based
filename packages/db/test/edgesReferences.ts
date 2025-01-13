@@ -81,6 +81,14 @@ await test('references', async (t) => {
     name: 'Mr Derp',
   })
 
+  const mrDerp2 = db.create('user', {
+    name: 'Mr Derp2',
+  })
+
+  const mrDerp3 = db.create('user', {
+    name: 'Mr Derp3',
+  })
+
   db.drain()
 
   await db.create('article', {
@@ -88,7 +96,7 @@ await test('references', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        $friend: mrDerp,
+        $friend: mrDerp3, // id 5
         $derp: 99,
         $age: 66,
       },

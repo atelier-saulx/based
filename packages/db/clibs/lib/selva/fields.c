@@ -773,6 +773,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
             return SELVA_EINVAL;
         }
 copy:
+        printf("\nC --> IS WEAK REF c fields set %u %zu",  *(unsigned *)value, len);
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
@@ -795,7 +796,6 @@ copy:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
-
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
         return set_field_smb(fields, nfo, value, len);
@@ -805,6 +805,8 @@ copy:
     case SELVA_FIELD_TYPE_HLL:
         return SELVA_ENOTSUP;
     }
+
+    printf("DONE c fields set %d %zu \n\n", type, len);
 
     return 0;
 }
@@ -1580,9 +1582,13 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
 
+    printf("IS NOT WEAK REF %d field: %d fieldType: %d \n", nfo->type != SELVA_FIELD_TYPE_WEAK_REFERENCE, field, nfo->type);
+
+
     if (field >= fields->nr_fields || nfo->type != SELVA_FIELD_TYPE_WEAK_REFERENCE) {
         return (struct SelvaNodeWeakReference){};
     }
+
 
     memcpy(&weak_ref, nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReference));
 

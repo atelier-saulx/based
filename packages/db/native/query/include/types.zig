@@ -15,7 +15,7 @@ pub fn Refs(comptime isEdge: bool) type {
 // Tmake this optional isEdge
 pub const RefStruct = struct {
     reference: ?*selva.SelvaNodeReference,
-    edgeReference: ?selva.SelvaNodeWeakReferences,
+    edgeReference: ?selva.SelvaNodeWeakReference,
     edgeConstaint: db.EdgeFieldConstraint,
 };
 
