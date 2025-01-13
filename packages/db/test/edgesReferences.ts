@@ -50,6 +50,7 @@ await test('references', async (t) => {
               prop: 'articles',
               $derp: 'uint8',
               $age: 'uint32',
+              $plonki: 'uint32',
               $friend: {
                 ref: 'user',
               },
@@ -121,4 +122,10 @@ await test('references', async (t) => {
     .include('contributors.$friend')
     .get()
     .then((v) => v.debug())
+
+  await db
+    .query('article')
+    .include('contributors.$plonki')
+    .get()
+    .then((v) => v.inspect())
 })
