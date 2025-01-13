@@ -132,6 +132,7 @@ pub fn filter(
                 .{
                     .reference = @ptrCast(selvaRef.?),
                     .edgeConstaint = edgeConstrain,
+                    .edgeReference = null,
                 },
                 null,
                 i + 6,
@@ -155,7 +156,7 @@ pub fn filter(
                 if (edgeFieldSchema == null) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
-                value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
+                value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema.?);
                 if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }

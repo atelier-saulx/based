@@ -48,6 +48,8 @@ await test('references', async (t) => {
             items: {
               ref: 'user',
               prop: 'articles',
+              $derp: 'uint8',
+              $age: 'uint32',
               $friend: {
                 ref: 'user',
               },
@@ -87,20 +89,28 @@ await test('references', async (t) => {
       {
         id: mrSnurp,
         $friend: mrDerp,
+        $derp: 99,
+        $age: 66,
       },
     ],
   })
 
   // single ref
-  console.log(
-    new Uint8Array(
-      await db.query('article').include('contributors.$friend').toBuffer(),
-    ),
-  )
+  // console.log(
+  //   new Uint8Array(
+  //     await db.query('article').include('contributors.$derp').toBuffer(),
+  //   ),
+  // )
+
+  await db
+    .query('article')
+    .include('contributors.$age')
+    .get()
+    .then((v) => v.debug())
 
   await db
     .query('article')
     .include('contributors.$friend')
     .get()
-    .then((v) => v.inspect().debug())
+    .then((v) => v.debug())
 })

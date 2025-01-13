@@ -62,12 +62,12 @@ pub inline fn getRefsFields(
             ref.?.edgeConstaint.*.fields_schema,
             refField - 1,
         );
-        if (ref.?.reference.meta != null) {
-            const resultRaw = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
+        if (ref.?.reference.?.meta != null) {
+            const resultRaw = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
             std.debug.print(" resultRaw {any} \n", .{resultRaw});
         }
         // this is wrong
-        refs = db.getEdgeReferences(ref.?.reference, refField - 1);
+        refs = db.getEdgeReferences(ref.?.reference.?, refField - 1);
         std.debug.print(" refs {any} \n", .{refs});
         return 0;
     } else {

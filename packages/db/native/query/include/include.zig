@@ -16,7 +16,7 @@ pub fn getFields(
     id: u32,
     typeEntry: db.Type,
     include: []u8,
-    ref: ?types.RefStruct,
+    edgeRef: ?types.RefStruct,
     score: ?u8,
     comptime isEdge: bool,
 ) !usize {
@@ -38,12 +38,10 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-
-            std.debug.print("Edge... {any} \n", .{edges});
-
             size += try getFields(node, ctx, id, typeEntry, edges, .{
-                .reference = ref.?.reference,
-                .edgeConstaint = ref.?.edgeConstaint,
+                .reference = edgeRef.?.reference,
+                .edgeConstaint = edgeRef.?.edgeConstaint,
+                .edgeReference = null,
             }, null, true);
             includeIterator += edgeSize + 2;
             continue :includeField;
@@ -65,7 +63,7 @@ pub fn getFields(
                 multiRefs,
                 node,
                 typeEntry,
-                ref,
+                edgeRef,
                 isEdge,
             );
             continue :includeField;
@@ -75,9 +73,6 @@ pub fn getFields(
             const refSize = readInt(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
-            if (isEdge) {
-                std.debug.print("need to handle isEdge single refs (write edge field here) \n", .{});
-            }
             if (!idIsSet) {
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
@@ -87,7 +82,7 @@ pub fn getFields(
                 singleRef,
                 node,
                 typeEntry,
-                ref,
+                edgeRef,
                 isEdge,
             );
             continue :includeField;
@@ -107,9 +102,9 @@ pub fn getFields(
         var value: []u8 = undefined;
 
         if (isEdge) {
-            const edgeFieldSchema = try db.getEdgeFieldSchema(ref.?.edgeConstaint, field);
+            const edgeFieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(edgeFieldSchema.*.type);
-            value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
+            value = db.getEdgeProp(edgeRef.?.reference.?, edgeFieldSchema);
         } else {
             value = db.getField(
                 typeEntry,

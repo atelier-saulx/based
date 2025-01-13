@@ -40,6 +40,13 @@ pub fn createResultsBuffer(
     for (ctx.results.items) |*item| {
         if (item.refType != null) {
             if (item.refType == 254) {
+                std.debug.print("DERP DERP 2 \n", .{});
+                if (item.isEdge != t.Prop.NULL) {
+                    std.debug.print("DERP \n", .{});
+                    data[i] = 252;
+                    i += 1;
+                }
+
                 // SINGLE REF
                 // op, field, bytes
                 // [254, 2, 4531] // NULL if zero length
@@ -77,10 +84,13 @@ pub fn createResultsBuffer(
         }
 
         if (item.val == null) {
+            std.debug.print("DERP DERP \n", .{});
+
             continue;
         }
 
         if (item.isEdge != t.Prop.NULL) {
+            std.debug.print("DERP \n", .{});
             data[i] = 252;
             i += 1;
         }

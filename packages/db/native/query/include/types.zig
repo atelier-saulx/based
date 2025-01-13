@@ -12,8 +12,10 @@ pub fn Refs(comptime isEdge: bool) type {
     return *selva.SelvaNodeReferences;
 }
 
+// Tmake this optional isEdge
 pub const RefStruct = struct {
-    reference: *selva.SelvaNodeReference,
+    reference: ?*selva.SelvaNodeReference,
+    edgeReference: ?selva.SelvaNodeWeakReferences,
     edgeConstaint: db.EdgeFieldConstraint,
 };
 
@@ -32,10 +34,14 @@ pub inline fn RefResult(
         return .{
             .reference = @ptrCast(&refs.?.refs[i]),
             .edgeConstaint = edgeConstrain.?,
+            .edgeReference = null,
         };
     }
-    // else do later
-    return null;
+    return .{
+        .reference = null,
+        .edgeConstaint = @ptrCast(&refs.?.refs[i]),
+        .edgeReference = null,
+    };
 }
 
 pub const IncludeOp = enum(u8) {
