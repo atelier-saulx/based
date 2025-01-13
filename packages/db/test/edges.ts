@@ -49,14 +49,14 @@ await test('multiple references', async (t) => {
             items: {
               ref: 'user',
               prop: 'articles',
-              // $friend: {
-              //   ref: 'user',
-              // },
-              // $countries: {
-              //   items: {
-              //     ref: 'country',
-              //   },
-              // },
+              $friend: {
+                ref: 'user',
+              },
+              $countries: {
+                items: {
+                  ref: 'country',
+                },
+              },
               $file: 'binary',
               $lang: 'string',
               $bigString: 'string',
@@ -88,7 +88,7 @@ await test('multiple references', async (t) => {
 
   db.drain()
 
-  const strudel = await db.create('article', {
+  await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -102,7 +102,7 @@ await test('multiple references', async (t) => {
     ],
   })
 
-  const flurp = await db.create('article', {
+  await db.create('article', {
     name: 'Italy',
     contributors: [
       {

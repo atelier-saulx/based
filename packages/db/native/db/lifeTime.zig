@@ -51,14 +51,14 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
         while (mainIt.next()) |main| {
             selva.selva_sort_destroy(main.value_ptr.*.index);
         }
-        var fieldIt = index.value_ptr.*.field.iterator();
-        while (fieldIt.next()) |field| {
-            std.debug.print("DESTROY SORT INDEX {any} \n", .{field.value_ptr.*});
-            // _ = selva.selva_sort_defrag(field.value_ptr.*.index);
-            // TODO FIX THIS BUG
-            // selva.selva_sort_destroy(field.value_ptr.*.index);
-            std.debug.print("DESTROY SORT INDEX SUCCEEDED \n", .{});
-        }
+        // var fieldIt = index.value_ptr.*.field.iterator();
+        // while (fieldIt.next()) |field| {
+        // std.debug.print("DESTROY SORT INDEX {any} \n", .{field.value_ptr.*});
+        // _ = selva.selva_sort_defrag(field.value_ptr.*.index);
+        // TODO FIX THIS BUG
+        // selva.selva_sort_destroy(field.value_ptr.*.index);
+        // std.debug.print("DESTROY SORT INDEX SUCCEEDED \n", .{});
+        // }
     }
 
     selva.libdeflate_block_state_deinit(&ctx.libdeflate_block_state);
