@@ -194,13 +194,7 @@ pub fn putReferences(ctx: *DbCtx, ids: []u32, target: Node, fieldSchema: FieldSc
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(
-    ctx: *DbCtx,
-    value: Node,
-    target: Node,
-    fieldSchema: FieldSchema,
-    index: isize,
-) !*selva.SelvaNodeReference {
+pub fn insertReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema, index: isize, reorder: bool) !*selva.SelvaNodeReference {
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
     var ref: [*c]selva.SelvaNodeReference = undefined;
@@ -209,7 +203,7 @@ pub fn insertReference(
         target,
         fieldSchema,
         index,
-        false,
+        reorder,
         te_dst,
         value,
         &ref,

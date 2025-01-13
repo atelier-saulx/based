@@ -78,4 +78,32 @@ await test('references modify', async (t) => {
       ],
     },
   )
+
+  const billy = db.create('user', {
+    name: 'billy',
+  })
+
+  await db.update('user', john, {
+    friends: {
+      add: [
+        {
+          id: billy,
+          $index: 0,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [
+        { id: 4, name: 'billy' },
+        { id: 2, name: 'marie' },
+        { id: 1, name: 'bob' },
+      ],
+    },
+  )
 })
