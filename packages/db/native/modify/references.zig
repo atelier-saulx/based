@@ -43,9 +43,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const id = readInt(u32, data, i + 1);
         const index: i32 = if (hasIndex) readInt(i32, data, i + 5) else -1;
         const node = try db.upsertNode(id, refTypeEntry);
-
-        std.debug.print("\ninsert id: {d} at index: {d}\n", .{ id, index });
-
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {

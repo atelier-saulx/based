@@ -106,4 +106,89 @@ await test('references modify', async (t) => {
       ],
     },
   )
+
+  const malcolm = db.create('user', {
+    name: 'malcolm',
+  })
+
+  await db.update('user', john, {
+    friends: {
+      add: [
+        {
+          id: malcolm,
+          $index: 2,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [
+        { id: 4, name: 'billy' },
+        { id: 2, name: 'marie' },
+        { id: 5, name: 'malcolm' },
+        { id: 1, name: 'bob' },
+      ],
+    },
+  )
+
+  await db.update('user', john, {
+    friends: {
+      add: [
+        {
+          id: malcolm,
+          $index: -1,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [
+        { id: 4, name: 'billy' },
+        { id: 2, name: 'marie' },
+        { id: 1, name: 'bob' },
+        { id: 5, name: 'malcolm' },
+      ],
+    },
+  )
+
+  await db.update('user', john, {
+    friends: {
+      delete: [marie, malcolm],
+    },
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [
+        { id: 4, name: 'billy' },
+        { id: 1, name: 'bob' },
+      ],
+    },
+  )
+
+  await db.update('user', john, {
+    friends: null,
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [],
+    },
+  )
 })
