@@ -307,7 +307,7 @@ pub fn writeEdgeProp(
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
-    std.debug.print("WRITE EDGE WEAK REF {any} {d} {any} {any} \n", .{ data, data.len, ref, field });
+    std.debug.print("\nWRITE EDGE WEAK REF {any} {d} {any} {any}", .{ data, data.len, ref, field });
 
     try errors.selva(selva.selva_fields_set_reference_meta(
         node,

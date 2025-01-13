@@ -773,8 +773,9 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
             return SELVA_EINVAL;
         }
 copy:
-        printf("\nC --> IS WEAK REF c fields set %u %zu",  *(unsigned *)value, len);
+        printf("\nC IS WEAK REF c fields set %u %zu",  *(unsigned *)value, len);
         memcpy(nfo2p(fields, nfo), value, len);
+        printf("\n  value set -> set %u",  *(unsigned *)nfo2p(fields, nfo));
         break;
     case SELVA_FIELD_TYPE_STRING:
         return set_field_string(fields, fs, nfo, value, len);
@@ -806,7 +807,7 @@ copy:
         return SELVA_ENOTSUP;
     }
 
-    printf("DONE c fields set %d %zu \n\n", type, len);
+    printf("\n  DONE c fields set type: %d len: %zu \n\n", type, len);
 
     return 0;
 }
