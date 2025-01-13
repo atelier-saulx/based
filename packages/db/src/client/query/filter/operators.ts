@@ -1,3 +1,18 @@
+export const validOperators = [
+  '=',
+  'has',
+  '!has',
+  '<',
+  '>',
+  '!=',
+  'like',
+  '>=',
+  '<=',
+  '..',
+  '!..',
+  'hasLoose',
+] as const
+
 export type Operator =
   | '='
   | 'has'

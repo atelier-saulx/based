@@ -10,6 +10,7 @@ import { BasedDb } from '../../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
+import { hasField, checkOperator, check, checkValue } from '../validation.js'
 
 export { Operator, Filter }
 
@@ -130,6 +131,10 @@ export const convertFilter = (
   operator?: Operator | boolean,
   value?: any,
 ): FilterAst => {
+  hasField(field)
+  const checkedOperator = checkOperator(operator)
+  const checkedValue = checkValue(value, checkedOperator)
+
   if (operator === undefined) {
     operator = '='
     value = true
@@ -137,20 +142,17 @@ export const convertFilter = (
     value = operator
     operator = '='
   }
-  if (operator == '!..') {
-    if (!Array.isArray(value)) {
-      throw new Error('Invalid filter')
-    }
-    return [[field, '>', value[1]], [[field, '<', value[0]]]]
-  } else if (operator === '..') {
-    if (!Array.isArray(value)) {
-      throw new Error('Invalid filter')
-    }
+  if (checkedOperator === '!..') {
     return [
-      [field, '>', value[0]],
-      [field, '<', value[1]],
+      [field, '>', checkedValue[1]],
+      [field, '<', checkedValue[0]],
+    ]
+  } else if (checkedOperator === '..') {
+    return [
+      [field, '>', checkedValue[0]],
+      [field, '<', checkedValue[1]],
     ]
   } else {
-    return [[field, operator, value]]
+    return [[field, checkedOperator, checkedValue]]
   }
 }

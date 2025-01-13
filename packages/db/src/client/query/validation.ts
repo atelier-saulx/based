@@ -5,6 +5,7 @@ import {
   MAX_ID_VALUE,
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
+import { validOperators, Operator } from './filter/operators.js'
 
 export const isValidId = (id: number): void => {
   if (typeof id != 'number') {
@@ -56,6 +57,40 @@ export const hasFields = (
 
 export const hasField = (field: string): void => {
   if (!field) {
-    throw new Error(`Field '${field}' does not exist in the definition`)
+    throw new Error(`Invalid field: ${field}`)
+  } else if (typeof field !== 'string' || field.trim() === '') {
+    throw new Error('Field must be a non-empty string')
   }
+  // // TODO: checar se é mesmo def.fields direto ou props e mudar tipo de any->def
+  // else if (!def.fields.includes(field)) {
+  //   throw new Error(`Field '${field}' does not exist in the definition`)
+  // }
+}
+// Besides do checking, it also normalizes it to boolean,
+// shall change to a better name?
+export const checkOperator = (operator: Operator | boolean): Operator => {
+  if (operator === undefined) {
+    return '='
+  } else if (typeof operator === 'boolean') {
+    return '='
+  } else if (!validOperators.includes(operator)) {
+    throw new Error(`Invalid operator: ${operator}`)
+  }
+  return operator
+}
+
+// Besides do checking, it also normalizes it when boolean,
+// shall change to a better name?
+export const checkValue = (value: any, operator: Operator): any => {
+  if (operator === '..' || operator === '!..') {
+    if (!Array.isArray(value) || value.length !== 2) {
+      throw new Error(
+        `Invalid value for operator ${operator}: expected an array with two elements`,
+      )
+    }
+    return value
+  } else if (operator === '=' && value === undefined) {
+    return true
+  }
+  return value
 }
