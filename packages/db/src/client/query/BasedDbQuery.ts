@@ -23,6 +23,8 @@ import {
   isValidId,
   checkMaxIdsPerQuery,
   checkTotalBufferSize,
+  hasField,
+  hasFields,
 } from './validation.js'
 
 // fix nested type...
@@ -118,24 +120,30 @@ export class QueryBranch<T> {
     for (const f of fields) {
       if (typeof f === 'string') {
         if (f === '*') {
+          hasFields(this.def.props)
           includeFields(this.def, getAll(this.def.props))
         } else {
           this.def.include.stringFields.add(f)
         }
       } else if (typeof f === 'function') {
         f((field: string) => {
+          hasField(field)
           const prop = this.def.props[field]
           if (prop && (prop.typeIndex === 13 || prop.typeIndex === 14)) {
             const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
             // @ts-ignore
             return new QueryBranch(this.db, refDef)
           }
-          throw new Error(`No ref field named ${field}`)
         })
       } else if (Array.isArray(f)) {
+        for (const field of f) {
+          hasField(field)
+        }
         includeFields(this.def, f)
       } else if (f !== undefined) {
-        throw new Error('Invalid include statement')
+        throw new Error(
+          'Invalid include statement: expected props, refs and edges (string or array) or function',
+        )
       }
     }
 
