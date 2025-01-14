@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -68,7 +68,7 @@ struct SelvaFieldSchema {
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
         } string; /*!< SELVA_FIELD_TYPE_STRING */
-        struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE and SELVA_FIELD_TYPE_REFERENCES. */
+        struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
         struct {
             uint16_t len;
         } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
