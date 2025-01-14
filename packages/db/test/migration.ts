@@ -1,8 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
-import { euobserver } from './shared/examples.js'
 import { setTimeout } from 'node:timers/promises'
+
 await test('migration', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -39,7 +38,7 @@ await test('migration', async (t) => {
   let allUsers = (await db.query('user').range(0, 5_000_000).get()).toObject()
 
   const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
-  const migrationPromise = db.migrateSchema(
+  let migrationPromise = db.migrateSchema(
     {
       types: {
         user: {
@@ -52,13 +51,13 @@ await test('migration', async (t) => {
     },
     (type, node) => {
       if (type === 'user') {
-        node = { ...node }
         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
         return node
       }
     },
   )
 
+  console.time('migration time')
   db.create('user', {
     name: 'newuser',
   })
@@ -88,6 +87,7 @@ await test('migration', async (t) => {
   })
 
   await migrationPromise
+  console.timeEnd('migration time')
 
   allUsers = (await db.query('user').range(0, 6_000_000).get()).toObject()
   console.log(allUsers[0], allUsers.at(-1))

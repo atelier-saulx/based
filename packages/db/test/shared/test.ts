@@ -48,7 +48,7 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
     )
 
     const msg =
-      (err.stack ?? err.msg)
+      (err.stack ?? err.msg ?? err)
         .replaceAll('.js', '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
