@@ -24,6 +24,7 @@ export const migrate = async (
 
   await toDb.start({ clean: true })
   if (abort()) {
+    toDb.destroy()
     return
   }
   toDb.putSchema(toSchema)
@@ -90,9 +91,11 @@ export const migrate = async (
     }
   }
 
-  fromDbServer.putSchema(toSchema, true)
-  fromDbServer.dbCtxExternal = toCtx
-  toDb.server.dbCtxExternal = fromCtx
+  if (!abort()) {
+    fromDbServer.putSchema(toSchema, true)
+    fromDbServer.dbCtxExternal = toCtx
+    toDb.server.dbCtxExternal = fromCtx
+  }
 
   const promises: Promise<any>[] = fromDbServer.workers.map((worker) =>
     worker.updateCtx(toAddress),
