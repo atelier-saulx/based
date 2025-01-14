@@ -38,7 +38,10 @@ pub fn getSingleRefFields(
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
-    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ref.?.edgeConstaint, refField) catch {
+        return 0;
+    } else db.getFieldSchema(refField, originalType) catch null;
+    std.debug.print("HELLO {d} {any} \n", .{ refField, fieldSchema });
 
     var edgeRefStruct: types.RefStruct = undefined;
     var node: ?db.Node = undefined;
@@ -59,25 +62,11 @@ pub fn getSingleRefFields(
             .edgeReference = selvaRef,
         };
 
-        const ts = selva.selva_get_fs_type(fieldSchema);
-
-        std.debug.print(
-            "\n\nGURPx: {any} \n",
-            .{ts},
-        );
-
-        const edgeType = db.getType(ctx.db, ts) catch {
-            return 6 + size;
-        };
-
-        node = db.getNode(selvaRef.?.dst_id, edgeType);
-
-        std.debug.print(
-            "\n\nGURP: {any} {any} \n",
-            .{ selvaRef, node },
-        );
+        // std.debug.print("{any}  \n", .{selvaRef});
+        node = selva.selva_fields_resolve_weak_reference(ctx.db.selva, fieldSchema, &selvaRef.?);
 
         if (node == null) {
+            std.debug.print("DERP! \n", .{});
             return 6 + size;
         }
     } else {
