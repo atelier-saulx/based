@@ -154,40 +154,40 @@ await test('search', async (t) => {
   equal(
     await db
       .query('italy')
-      .search('kindom', { body: 0, title: 1 })
+      .search('kingdom', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .range(0, amount)
       .get()
       .then((v) => v.length),
     amount - 2,
-    'Search body "kindom"',
+    'Search body "kingdom"',
   )
 
-  // equal(
-  //   await db
-  //     .query('italy')
-  //     .search('Netherlands', { body: 0, title: 1 })
-  //     .include('id', 'date')
-  //     .sort('date')
-  //     .range(0, 1e3)
-  //     .get()
-  //     .then((v) => v.length),
-  //   amount - 2,
-  //   'Search body "netherlands" sorted',
-  // )
+  equal(
+    await db
+      .query('italy')
+      .search('Netherlands', { body: 0, title: 1 })
+      .include('id', 'date')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    amount - 2,
+    'Search body "netherlands" sorted',
+  )
 
-  // equal(
-  //   await db
-  //     .query('italy')
-  //     .search('giraffe', { body: 0, title: 1 })
-  //     .include('id', 'date', 'title')
-  //     .range(0, 1e3)
-  //     .sort('date')
-  //     .get()
-  //     .then((v) => v.length),
-  //   2,
-  //   'Search body "giraffe" sorted',
-  // )
+  equal(
+    await db
+      .query('italy')
+      .search('giraffe', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .sort('date')
+      .get()
+      .then((v) => v.length),
+    2,
+    'Search body "giraffe" sorted',
+  )
 
   // equal(
   //   await db
