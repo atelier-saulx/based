@@ -282,8 +282,6 @@ pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
-    std.debug.print("GET WEAK REF {any} {any} \n", .{ ref, field });
-
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
             ref.meta,

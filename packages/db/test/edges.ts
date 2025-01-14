@@ -238,9 +238,7 @@ await test('multiple references', async (t) => {
             .include('$bigString'),
         )
         .get()
-    )
-      .inspect(10)
-      .toObject(),
+    ).toObject(),
     [
       {
         id: 1,
