@@ -265,7 +265,6 @@ pub fn getEdgeFieldSchema(edgeConstaint: *const selva.EdgeFieldConstraint, field
     return edgeFieldSchema;
 }
 
-// TODO fix this
 pub fn getEdgeReferences(
     ref: *selva.SelvaNodeReference,
     field: u8,
@@ -273,13 +272,12 @@ pub fn getEdgeReferences(
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_references(
             ref.meta,
-            field,
+            field - 1,
         );
     }
     return null;
 }
 
-// TODO fix this
 pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
     field: u8,
@@ -289,7 +287,7 @@ pub fn getEdgeReference(
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
             ref.meta,
-            field,
+            field - 1,
         );
     }
     return null;
@@ -302,13 +300,11 @@ pub fn writeEdgeProp(
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
-    std.debug.print("\nWRITE EDGE WEAK REF {any} {d} {any} {any}", .{ data, data.len, ref, field });
-
     try errors.selva(selva.selva_fields_set_reference_meta(
         node,
         ref,
         efc,
-        field,
+        field - 1,
         data.ptr,
         data.len,
     ));

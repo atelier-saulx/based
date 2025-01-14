@@ -67,7 +67,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         // if isEdge ref can be set to NULL if isEdge
-        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField - 1);
+        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }

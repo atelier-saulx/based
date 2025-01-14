@@ -27,7 +27,6 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
     def.edges.references.forEach((ref) => {
       edges.push(...defToBuffer(db, ref))
     })
-    // debugQueryDef(def)
     edgesSize = byteSize(edges)
   }
 
