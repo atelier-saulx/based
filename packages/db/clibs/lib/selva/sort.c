@@ -158,6 +158,7 @@ struct SelvaSortCtx *selva_sort_init2(enum SelvaSortOrder order, size_t fixed_si
     ctx->order = order;
     RB_INIT(&ctx->out_none);
     ctx->fixed_size = fixed_size;
+    memset(&ctx->iterator, 0, sizeof(ctx->iterator));
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
