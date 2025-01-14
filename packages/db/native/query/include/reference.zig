@@ -44,6 +44,7 @@ pub fn getSingleRefFields(
     var node: ?db.Node = undefined;
 
     if (isEdge) {
+        size += 1;
         // if isEdge ref can be set to NULL if isEdge
         const selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
@@ -57,16 +58,28 @@ pub fn getSingleRefFields(
             .edgeConstaint = edgeConstrain,
             .edgeReference = selvaRef,
         };
+
+        const ts = selva.selva_get_fs_type(fieldSchema);
+
         std.debug.print(
-            "\n\nGURP: {any} {any} id: {any} {any} \n",
-            .{ selvaRef, ref.?.reference.?, db.getNodeId(ref.?.reference.?.dst.?), fieldSchema },
+            "\n\nGURPx: {any} \n",
+            .{ts},
         );
 
-        node = db.getNode(selvaRef.?.dst_id, db.getType(ctx.db, selva.selva_get_fs_type(fieldSchema)));
+        const edgeType = db.getType(ctx.db, ts) catch {
+            return 6 + size;
+        };
+
+        node = db.getNode(selvaRef.?.dst_id, edgeType);
+
+        std.debug.print(
+            "\n\nGURP: {any} {any} \n",
+            .{ selvaRef, node },
+        );
+
         if (node == null) {
             return 6 + size;
         }
-        return 7;
     } else {
         const selvaRef = db.getSingleReference(originalNode, refField);
         if (selvaRef == null) {
