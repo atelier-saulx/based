@@ -1,5 +1,5 @@
 const results = @import("../results.zig");
-const QueryCtx = @import("../ctx.zig").QueryCtx;
+const QueryCtx = @import("../types.zig").QueryCtx;
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;

@@ -3,7 +3,7 @@ const db = @import("../../../db/db.zig");
 const selva = @import("../../../selva.zig");
 
 const results = @import("../../results.zig");
-const QueryCtx = @import("../../ctx.zig").QueryCtx;
+const QueryCtx = @import("../../types.zig").QueryCtx;
 
 const getFields = @import("../include.zig");
 const addIdOnly = @import("../addIdOnly.zig").addIdOnly;

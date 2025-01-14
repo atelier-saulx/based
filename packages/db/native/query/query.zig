@@ -5,7 +5,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
-const QueryCtx = @import("./ctx.zig").QueryCtx;
+const QueryCtx = @import("./types.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 
@@ -76,14 +76,14 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
                 const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
                 const searchCtx = &createSearchCtx(search);
                 if (isAsc) {
-                    try QuerySort.search(3, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    try QuerySort.search(false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
                 } else {
-                    try QuerySort.search(4, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    try QuerySort.search(true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
                 }
             } else if (isAsc) {
-                try QuerySort.default(3, &ctx, offset, limit, typeId, filterBuf, include, s);
+                try QuerySort.default(false, &ctx, offset, limit, typeId, filterBuf, include, s);
             } else {
-                try QuerySort.default(4, &ctx, offset, limit, typeId, filterBuf, include, s);
+                try QuerySort.default(true, &ctx, offset, limit, typeId, filterBuf, include, s);
             }
         }
     } else if (queryType == QueryType.id) {
@@ -102,20 +102,16 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const sortSize = readInt(u16, q, 17 + filterSize + idsSize);
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
         const searchSize = readInt(u16, q, 19 + idsSize + filterSize + sortSize);
-
         const include = q[21 + idsSize + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
-            // const searchBuf = q[21 + idsSize + filterSize + sortSize .. 21 + idsSize + filterSize + sortSize];
-            // const searchCtx = createSearchCtx(search);
-            // if ()
-
-            // if (searchSize)
-
             try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
-        } else if (sortBuf[0] == 0) {
-            try QueryIds.sort(9, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
         } else {
-            try QueryIds.sort(10, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+            const isAsc = sortBuf[0] == 0;
+            if (isAsc) {
+                try QueryIds.sort(false, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+            } else {
+                try QueryIds.sort(true, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+            }
         }
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;

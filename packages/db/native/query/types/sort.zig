@@ -4,7 +4,7 @@ const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../ctx.zig").QueryCtx;
+const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const sort = @import("../../db/sort.zig");
 const types = @import("../../types.zig");
@@ -16,7 +16,7 @@ const s = @import("./search.zig");
 const std = @import("std");
 
 pub fn default(
-    comptime queryType: comptime_int,
+    comptime desc: bool,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
@@ -38,7 +38,7 @@ pub fn default(
     }
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
-    if (queryType == 4) {
+    if (desc) {
         selva.selva_sort_foreach_begin_reverse(sI.index);
     } else {
         selva.selva_sort_foreach_begin(sI.index);
@@ -46,7 +46,7 @@ pub fn default(
     var correctedForOffset: u32 = offset;
     checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
-        if (queryType == 4) {
+        if (desc) {
             node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index));
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
@@ -71,7 +71,7 @@ pub fn default(
 }
 
 pub fn search(
-    comptime queryType: comptime_int,
+    comptime desc: bool,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
@@ -94,7 +94,7 @@ pub fn search(
     }
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
-    if (queryType == 4) {
+    if (desc) {
         selva.selva_sort_foreach_begin_reverse(sI.index);
     } else {
         selva.selva_sort_foreach_begin(sI.index);
@@ -102,7 +102,7 @@ pub fn search(
     var searchCtxC = s.createSearchCtx(offset);
     while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
-        if (queryType == 4) {
+        if (desc) {
             node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index));
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
