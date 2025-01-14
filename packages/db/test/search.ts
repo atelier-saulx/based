@@ -65,6 +65,32 @@ await test('like filter', async (t) => {
     ).length,
     1e3,
   )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', 'kxngdom')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1e3,
+    'kxngdom 1000 results',
+  )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', 'derperp')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    0,
+    'derp no results',
+  )
 })
 
 await test('search', async (t) => {
