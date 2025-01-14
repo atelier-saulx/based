@@ -83,7 +83,6 @@ pub fn getSingleRefFields(
             "\n\nGURP: {any} {any} id: {any} {any} \n",
             .{ selvaRef, ref.?.reference.?, db.getNodeId(ref.?.reference.?.dst.?), fieldSchema },
         );
-
         // node = db.getNode(selvaRef.?.dst_id, db.getType(ctx.db, fieldSchema.type));
         // if (node == null) {
         //     return 6 + size;
@@ -115,8 +114,6 @@ pub fn getSingleRefFields(
     };
 
     const includeNested = include[3..include.len];
-
-    // edge on edge will not rly work....
 
     const resultSizeNest = getFields(
         node.?,
