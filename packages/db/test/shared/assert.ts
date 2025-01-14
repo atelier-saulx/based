@@ -64,5 +64,7 @@ export const throws = async (fn: () => Promise<any>, label?: string) => {
       (label ?? fn.toString().replace('() =>', '') + '\n\n should throw \n') +
       e.stack.split('\n').slice(-1).join('')
     throw e
-  } catch (err) {}
+  } catch (err) {
+    console.log(err)
+  }
 }

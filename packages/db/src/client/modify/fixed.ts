@@ -46,7 +46,7 @@ map[STRING] = (ctx, val, def) => {
   }
   const size = Buffer.byteLength(val, 'utf8')
   if (size + 1 > def.len) {
-    return new ModifyError(def, val)
+    return new ModifyError(def, val, `max length of ${def.len - 1},`)
   }
   if (ctx.len + size + 1 > ctx.max) {
     return RANGE_ERR
