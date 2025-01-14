@@ -117,12 +117,14 @@ await test('references', async (t) => {
     .get()
     .then((v) => v.debug())
 
-  await db
-    .query('article')
-    .include('contributors.$friend')
-    .get()
-    .then((v) => v.debug())
-
+  console.dir(
+    await db
+      .query('article')
+      .include('contributors.$friend')
+      .get()
+      .then((v) => v.debug().toObject()),
+    { depth: 10 },
+  )
   // await db
   //   .query('article')
   //   .include('contributors.$plonki')

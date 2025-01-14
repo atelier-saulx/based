@@ -168,32 +168,59 @@ export const readAllFields = (
       return i - offset
     }
     if (index === 252) {
-      const prop = result[i]
-      const edgeDef = q.edges.reverseProps[prop]
-      const t = edgeDef.typeIndex
-      if (t === BINARY) {
+      let prop = result[i]
+
+      if (prop === 254) {
+        i++
+        const field = result[i]
         i++
         const size = result.readUint32LE(i)
-        addField(edgeDef, new Uint8Array(result.buffer, i + 6, size - 6), item)
-        i += size + 4
-      } else if (t === STRING || t === ALIAS || t === ALIASES) {
-        i++
-        const size = result.readUint32LE(i)
+        i += 4
+        const ref = q.edges.references.get(field)
         if (size === 0) {
-          addField(edgeDef, '', item)
+          // @ts-ignore
+          addField(ref.target.propDef, null, item)
+          i += size
         } else {
-          // read
-          addField(edgeDef, read(result, i + 4, size), item)
+          i++
+          let id = result.readUInt32LE(i)
+          i += 4
+          const refItem: Item = {
+            id,
+          }
+          readAllFields(ref, result, i, size + i - 5, refItem, id)
+          // @ts-ignore
+          addField(ref.target.propDef, refItem, item)
+          i += size - 5
         }
-        i += size + 4
-      } else if (t === REFERENCE) {
-        // handle later
-      } else if (t === REFERENCES) {
-        // handle later
+      } else if (prop === 253) {
+        // ----------------
       } else {
-        i++
-        readMainValue(edgeDef, result, i, item)
-        i += edgeDef.len
+        const edgeDef = q.edges.reverseProps[prop]
+        const t = edgeDef.typeIndex
+        if (t === BINARY) {
+          i++
+          const size = result.readUint32LE(i)
+          addField(
+            edgeDef,
+            new Uint8Array(result.buffer, i + 6, size - 6),
+            item,
+          )
+          i += size + 4
+        } else if (t === STRING || t === ALIAS || t === ALIASES) {
+          i++
+          const size = result.readUint32LE(i)
+          if (size === 0) {
+            addField(edgeDef, '', item)
+          } else {
+            addField(edgeDef, read(result, i + 4, size), item)
+          }
+          i += size + 4
+        } else {
+          i++
+          readMainValue(edgeDef, result, i, item)
+          i += edgeDef.len
+        }
       }
     } else if (index === 254) {
       const field = result[i]
@@ -212,14 +239,7 @@ export const readAllFields = (
         const refItem: Item = {
           id,
         }
-        readAllFields(
-          q.references.get(field),
-          result,
-          i,
-          size + i - 5,
-          refItem,
-          id,
-        )
+        readAllFields(ref, result, i, size + i - 5, refItem, id)
         // @ts-ignore
         addField(ref.target.propDef, refItem, item)
         i += size - 5
