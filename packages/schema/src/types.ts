@@ -381,8 +381,9 @@ export type SchemaType<isStrict = false> = isStrict extends true
       | GenericSchemaType<false>
       | (SchemaProps & { props?: never })
 
+export type SchemaTypeName = AllowedKey
 export type SchemaTypes<isStrict = false> = Record<
-  AllowedKey,
+  SchemaTypeName,
   SchemaType<isStrict>
 >
 export type SchemaPropsOneWay<isStrict = false> = Record<
