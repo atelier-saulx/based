@@ -26,6 +26,7 @@ import {
   hasField,
   hasFields,
 } from './validation.js'
+import native from '../../native.js'
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
@@ -188,6 +189,21 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (res instanceof Error) {
       throw res
     }
+    const result = Buffer.from(res)
+    return new BasedQueryResponse(this.def, result, performance.now() - d)
+  }
+
+  _getSync() {
+    if (!this.def.include.stringFields.size && !this.def.references.size) {
+      includeFields(this.def, ['*'])
+    }
+    const b = defToBuffer(this.db, this.def)
+    checkTotalBufferSize(b)
+    const d = performance.now()
+    const res = native.getQueryBuf(
+      Buffer.concat(b),
+      this.db.server.dbCtxExternal,
+    )
     const result = Buffer.from(res)
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }

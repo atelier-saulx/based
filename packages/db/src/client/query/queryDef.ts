@@ -35,6 +35,7 @@ export const createQueryDef = (
   type: QueryDefType,
   target: QueryTarget,
 ): QueryDef => {
+  console.log(type, target)
   const queryDef = createEmptySharedDef()
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget

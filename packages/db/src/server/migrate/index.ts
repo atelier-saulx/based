@@ -22,10 +22,12 @@ export const migrate = async (
   // TODO make a pool!
   const { port1, port2 } = new MessageChannel()
   const atomics = new Int32Array(new SharedArrayBuffer(4))
+  const fromAddress = native.intFromExternal(fromCtx)
+  const toAddress = native.intFromExternal(toCtx)
   const worker = new Worker('./dist/src/server/migrate/worker.js', {
     workerData: {
-      from: native.intFromExternal(fromCtx),
-      to: native.intFromExternal(toCtx),
+      from: fromAddress,
+      to: toAddress,
       fromSchema: fromDb.server.schema,
       toSchema,
       channel: port2,
@@ -36,10 +38,14 @@ export const migrate = async (
   })
 
   fromDb.server.updateMerkleTree()
+  fromDb.server.dirtyRanges.clear()
   fromDb.server.merkleTree.visitLeafNodes((leaf) => {
-    // console.log(leaf.data)
     port1.postMessage(leaf.data)
+    // // TODO dont mark everything dirty => specific
+    // fromDb.server.dirtyRanges.add(leaf.key)
   })
+
+  fromDb.migrating = true
   // wake up the worker
   atomics[0] = 1
   Atomics.notify(atomics, 0)
@@ -56,5 +62,11 @@ export const migrate = async (
     toDb.server.dbCtxExternal = fromCtx
   }
 
+  await Promise.all(
+    fromDb.server.workers.map((worker) => worker.updateCtx(toAddress)),
+  )
+
   await toDb.stop(true)
+
+  fromDb.migrating = false
 }

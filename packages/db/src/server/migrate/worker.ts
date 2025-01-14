@@ -1,6 +1,5 @@
 import {
   isMainThread,
-  parentPort,
   receiveMessageOnPort,
   workerData,
 } from 'node:worker_threads'
@@ -43,10 +42,10 @@ if (isMainThread) {
     const leafData: TreeNode['data'] = msg.message
     const typeStr = reverseTypeMap[leafData.typeId]
     const qstart = Date.now()
-    const nodes = await fromDb
+    const nodes = fromDb
       .query(typeStr)
       .range(leafData.start + offset, leafData.end - leafData.start)
-      .get()
+      ._getSync()
 
     queryExecTime = nodes.execTime
     queryTotalTime += Date.now() - qstart

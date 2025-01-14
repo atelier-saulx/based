@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
-
+import { setTimeout } from 'node:timers/promises'
 await test('migration', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -31,10 +31,6 @@ await test('migration', async (t) => {
     })
   }
 
-  console.log(await db.drain())
-
-  // console.log('BEFORE:', db.query('user').get().toObject())
-  // remove field
   await db.migrateSchema(
     {
       types: {
@@ -52,6 +48,4 @@ await test('migration', async (t) => {
       }
     },
   )
-
-  // console.log('AFTER2:', db.query('user').range(0, 1_000_000).get().toObject())
 })
