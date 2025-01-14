@@ -20,7 +20,6 @@ export class BasedDb {
   modifyCtx: ModifyCtx
   server: DbServer
   id: number
-  migrating: boolean = false
   // total write time until .drain is called manualy
   writeTime: number = 0
   fileSystemPath: string

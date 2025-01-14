@@ -38,32 +38,41 @@ export const migrate = async (
     transferList: [port2],
   })
 
+  worker.on('error', console.error)
+
+  let i = 0
+  let ranges = []
+
   fromDb.server.updateMerkleTree()
   fromDb.server.dirtyRanges.clear()
   fromDb.server.merkleTree.visitLeafNodes((leaf) => {
-    port1.postMessage(leaf.data)
+    ranges.push(leaf.data)
   })
 
-  fromDb.migrating = true
-  // wake up the worker
-  atomics[0] = 1
-  Atomics.notify(atomics, 0)
-
-  worker.on('error', console.error)
-
-  while (true) {
+  while (i < ranges.length) {
+    // block modifies
+    fromDb.server.processingQueries++
+    const leafData = ranges[i++]
+    port1.postMessage(leafData)
+    // wake up the worker
+    atomics[0] = 1
+    Atomics.notify(atomics, 0)
+    // wait until it's done
     await Atomics.waitAsync(atomics, 0, 1).value
-    if (fromDb.server.dirtyRanges.size) {
+    // exec queued modifies
+    fromDb.server.onQueryEnd()
+
+    if (i === ranges.length && fromDb.server.dirtyRanges.size) {
+      ranges = []
+      i = 0
       foreachDirtyBlock(fromDb.server, (_mtKey, typeId, start, end) => {
-        port1.postMessage({
+        ranges.push({
           typeId,
           start,
           end,
         })
       })
       fromDb.server.dirtyRanges.clear()
-    } else {
-      break
     }
   }
 
@@ -76,5 +85,4 @@ export const migrate = async (
   )
   promises.push(toDb.stop(true), worker.terminate())
   await Promise.all(promises)
-  fromDb.migrating = false
 }

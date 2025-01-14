@@ -24,18 +24,27 @@ await test('migration', async (t) => {
     },
   })
 
-  let i = 5_000_000
-  while (i--) {
+  let i = 0
+  while (true) {
     db.create('user', {
-      name: 'user ' + i,
+      name: 'user ' + ++i,
     })
+    if (i === 5_000_000) {
+      break
+    }
   }
 
+  db.drain()
+
+  let allUsers = (await db.query('user').range(0, 5_000_000).get()).toObject()
+
+  const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
   const migrationPromise = db.migrateSchema(
     {
       types: {
         user: {
           props: {
+            name: { type: 'string' },
             email: { type: 'string' },
           },
         },
@@ -43,6 +52,7 @@ await test('migration', async (t) => {
     },
     (type, node) => {
       if (type === 'user') {
+        node = { ...node }
         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
         return node
       }
@@ -53,10 +63,18 @@ await test('migration', async (t) => {
     name: 'newuser',
   })
 
+  db.update('user', 1, {
+    name: 'change1',
+  })
+
   await setTimeout(500)
 
   db.create('user', {
     name: 'newuser2',
+  })
+
+  await db.update('user', 1, {
+    name: 'change2',
   })
 
   await setTimeout(500)
@@ -65,23 +83,23 @@ await test('migration', async (t) => {
     name: 'newuser3',
   })
 
-  await setTimeout(500)
-
-  db.create('user', {
-    name: 'newuser4',
-  })
-
-  await setTimeout(500)
-
-  db.create('user', {
-    name: 'newuser5',
+  await db.update('user', 1, {
+    name: 'change3',
   })
 
   await migrationPromise
 
-  const allUsers = (await db.query('user').get()).toObject()
+  allUsers = (await db.query('user').range(0, 6_000_000).get()).toObject()
+  console.log(allUsers[0], allUsers.at(-1))
 
-  if (allUsers.every(({ email }) => !!email)) {
+  if (
+    allUsers.every((node) => {
+      if (!node.name) {
+        console.log(node)
+      }
+      return node.email === nameToEmail(node.name)
+    })
+  ) {
     console.log('success')
   } else {
     throw 'Missing email from migration'
