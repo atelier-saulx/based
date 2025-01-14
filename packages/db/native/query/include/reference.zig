@@ -21,28 +21,6 @@ pub fn getSingleRefFields(
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];
 
-    if (isEdge) {
-        std.debug.print("SINGLE REF {any} {d} \n", .{ ref.?.reference, refField });
-        size += 1;
-
-        // ctx.results.append(.{
-        //     .id = null,
-        //     .score = null,
-        //     .field = refField,
-        //     .val = null,
-        //     .refSize = 0,
-        //     .includeMain = null,
-        //     .refType = 254, // from result
-        //     .totalRefs = null,
-        //     .isEdge = t.Prop.REFERENCE,
-        // }) catch return 0;
-        // size += 6 + 1;
-
-        // return size;
-    }
-
-    // get from edge as well
-
     // SINGLE REF
     // op, field, bytes
     // u8, u8, u32
@@ -83,10 +61,11 @@ pub fn getSingleRefFields(
             "\n\nGURP: {any} {any} id: {any} {any} \n",
             .{ selvaRef, ref.?.reference.?, db.getNodeId(ref.?.reference.?.dst.?), fieldSchema },
         );
-        // node = db.getNode(selvaRef.?.dst_id, db.getType(ctx.db, fieldSchema.type));
-        // if (node == null) {
-        //     return 6 + size;
-        // }
+
+        node = db.getNode(selvaRef.?.dst_id, db.getType(ctx.db, selva.selva_get_fs_type(fieldSchema)));
+        if (node == null) {
+            return 6 + size;
+        }
         return 7;
     } else {
         const selvaRef = db.getSingleReference(originalNode, refField);
