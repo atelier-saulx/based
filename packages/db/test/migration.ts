@@ -31,7 +31,7 @@ await test('migration', async (t) => {
     })
   }
 
-  await db.migrateSchema(
+  const migrationPromise = db.migrateSchema(
     {
       types: {
         user: {
@@ -48,4 +48,42 @@ await test('migration', async (t) => {
       }
     },
   )
+
+  db.create('user', {
+    name: 'newuser',
+  })
+
+  await setTimeout(500)
+
+  db.create('user', {
+    name: 'newuser2',
+  })
+
+  await setTimeout(500)
+
+  db.create('user', {
+    name: 'newuser3',
+  })
+
+  await setTimeout(500)
+
+  db.create('user', {
+    name: 'newuser4',
+  })
+
+  await setTimeout(500)
+
+  db.create('user', {
+    name: 'newuser5',
+  })
+
+  await migrationPromise
+
+  const allUsers = (await db.query('user').get()).toObject()
+
+  if (allUsers.every(({ email }) => !!email)) {
+    console.log('success')
+  } else {
+    throw 'Missing email from migration'
+  }
 })
