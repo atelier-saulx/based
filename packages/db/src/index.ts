@@ -20,6 +20,7 @@ export class BasedDb {
   modifyCtx: ModifyCtx
   server: DbServer
   id: number
+  migrating: boolean = false
   // total write time until .drain is called manualy
   writeTime: number = 0
   fileSystemPath: string
@@ -42,9 +43,14 @@ export class BasedDb {
     this.modifyCtx = new ModifyCtx(this)
     this.noCompression = noCompression || false
     this.fileSystemPath = path
+    this.server = new DbServer({
+      path: this.fileSystemPath,
+      maxModifySize: this.maxModifySize,
+    })
+    this.schemaTypesParsed = this.server.schemaTypesParsed
   }
 
-  async start(opts: { clean?: boolean } = {}): Promise<
+  async start(opts: { clean?: boolean; dbCtxExternal?: any } = {}): Promise<
     {
       shard: number
       field: number
@@ -53,12 +59,7 @@ export class BasedDb {
       lastId: number
     }[]
   > {
-    this.server = new DbServer({
-      path: this.fileSystemPath,
-      maxModifySize: this.maxModifySize,
-    })
     await this.server.start(opts)
-    this.schemaTypesParsed = this.server.schemaTypesParsed
     return []
   }
 

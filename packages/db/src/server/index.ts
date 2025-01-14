@@ -55,6 +55,11 @@ export class DbWorker {
     this.resolvers.push(resolve)
   }
 
+  updateCtx(address: BigInt): Promise<void> {
+    this.channel.postMessage(address)
+    return new Promise(this.callback)
+  }
+
   getQueryBuf(buf): Promise<Buffer> {
     transferList[0] = buf.buffer
     this.channel.postMessage(buf, transferList)

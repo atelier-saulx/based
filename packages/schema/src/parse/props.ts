@@ -453,7 +453,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
       if (edgeAllowed) {
         let t: any = ctx.schema.types[prop.ref].props[prop.prop]
         t = t.items || t
-        if (t[key]) {
+        if (t[key] && t !== prop) {
           throw Error('Edge can not be defined on both props')
         }
 

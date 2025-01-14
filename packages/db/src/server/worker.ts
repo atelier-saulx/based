@@ -6,19 +6,26 @@ import {
 import native from '../native.js'
 
 if (isMainThread) {
-  console.warn('running worker.ts in mainthread')
+  console.warn('running query worker.ts in mainthread')
 } else {
-  const { address, channel } = workerData
-  const dbCtx = native.externalFromInt(address)
+  let { address, channel } = workerData
+  let dbCtx = native.externalFromInt(address)
 
   native.workerCtxInit()
 
   const transferList = new Array(1)
   const handleMsg = (msg) => {
     try {
-      const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
-      transferList[0] = arrayBuf
-      channel.postMessage(arrayBuf, transferList)
+      if (typeof msg === 'bigint') {
+        // it's a ctx address
+        address = msg
+        dbCtx = native.externalFromInt(address)
+        channel.postMessage()
+      } else {
+        const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
+        transferList[0] = arrayBuf
+        channel.postMessage(arrayBuf, transferList)
+      }
     } catch (e) {
       channel.postMessage(e)
     }
