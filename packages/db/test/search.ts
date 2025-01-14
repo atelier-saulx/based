@@ -189,17 +189,17 @@ await test('search', async (t) => {
     'Search body "giraffe" sorted',
   )
 
-  // equal(
-  //   await db
-  //     .query('italy')
-  //     .search('derp', { body: 0, title: 1 })
-  //     .include('id', 'date', 'title')
-  //     .range(0, 1e3)
-  //     .get()
-  //     .then((v) => v.length),
-  //   amount,
-  //   'Search title "derp"',
-  // )
+  equal(
+    await db
+      .query('italy')
+      .search('derp', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    amount,
+    'Search title "derp"',
+  )
 
   // // default + search
   // r = await db
