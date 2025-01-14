@@ -28,61 +28,29 @@ if (isMainThread) {
   for (const type in fromDb.schemaTypesParsed) {
     reverseTypeMap[fromDb.schemaTypesParsed[type].id] = type
   }
-  // put it to sleep
-  Atomics.wait(atomics, 0, 0)
 
-  let msg:
-    | {
-        message: any
-      }
-    | undefined
-  let offset = -1
   const transformFn = transform && eval(transform)
 
   while (true) {
-    const start = Date.now()
-    let queryExecTime = 0
-    let queryTotalTime = 0
-    let createTime = 0
+    let msg: any
     while ((msg = receiveMessageOnPort(channel))) {
       const leafData: TreeNode['data'] = msg.message
       const typeStr = reverseTypeMap[leafData.typeId]
-      const qstart = Date.now()
       const nodes = fromDb
         .query(typeStr)
-        .range(leafData.start + offset, leafData.end - leafData.start)
+        .range(leafData.start - 1, leafData.end - leafData.start + 1)
         ._getSync()
 
-      queryExecTime = nodes.execTime
-      queryTotalTime += Date.now() - qstart
-
-      const cstart = Date.now()
       for (const node of nodes) {
-        if (node.id > leafData.end) {
-          offset += node.id - leafData.end
-          break
-        }
         toDb.create(
           typeStr,
           (transformFn && transformFn(typeStr, node)) || node,
           true,
         )
       }
-
-      createTime += Date.now() - cstart
     }
 
-    const totalTime = Date.now() - start
-    const drainTime = toDb.drain()
-
-    console.log({
-      totalTime,
-      queryExecTime,
-      queryTotalTime,
-      drainTime,
-      createTime,
-    })
-
+    toDb.drain()
     // put it to sleep
     atomics[0] = 0
     Atomics.notify(atomics, 0)

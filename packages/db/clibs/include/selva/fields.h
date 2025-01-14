@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -276,6 +276,12 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields
 
 SELVA_EXPORT
 struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
+
+SELVA_EXPORT
+struct SelvaNode *selva_fields_resolve_weak_reference(
+        const struct SelvaDb *db,
+        const struct SelvaFieldSchema *fs,
+        const struct SelvaNodeWeakReference *weak_ref);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)

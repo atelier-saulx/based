@@ -18,6 +18,7 @@ import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { migrate } from './migrate/index.js'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -74,6 +75,7 @@ export class DbServer {
     lastId: 1, // we reserve one for root props
     types: {},
   }
+  migrating: number = null
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   fileSystemPath: string
   maxModifySize: number
@@ -158,6 +160,16 @@ export class DbServer {
       return true
     }
     return false
+  }
+
+  migrateSchema(
+    schema: StrictSchema,
+    transform?: (
+      type: string,
+      node: Record<string, any>,
+    ) => Record<string, any>,
+  ) {
+    return migrate(this, schema, transform)
   }
 
   createSortIndexBuffer(typeId: number, field: number, start: number): any {

@@ -4,7 +4,6 @@ import { ALIAS, SchemaTypeDef } from './server/schema/schema.js'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
 import { create, remove, update } from './client/modify/index.js'
-import { migrate } from './server/migrate/index.js'
 import { compress, decompress } from './client/string.js'
 import { DbServer } from './server/index.js'
 
@@ -20,7 +19,7 @@ export class BasedDb {
   modifyCtx: ModifyCtx
   server: DbServer
   id: number
-  migrating: boolean = false
+
   // total write time until .drain is called manualy
   writeTime: number = 0
   fileSystemPath: string
@@ -70,7 +69,7 @@ export class BasedDb {
       node: Record<string, any>,
     ) => Record<string, any>,
   ) {
-    return migrate(this, schema, transform)
+    return this.server.migrateSchema(schema, transform)
   }
 
   putSchema(schema: Schema, fromStart: boolean = false): StrictSchema {

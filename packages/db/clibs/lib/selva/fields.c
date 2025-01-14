@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -1619,6 +1619,27 @@ struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFiel
     memcpy(&weak_refs, nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReferences));
 
     return weak_refs;
+}
+
+struct SelvaNode *selva_fields_resolve_weak_reference(const struct SelvaDb *db, const struct SelvaFieldSchema *fs, const struct SelvaNodeWeakReference *weak_ref)
+{
+    enum SelvaFieldType field_type = fs->type;
+
+    if (unlikely(field_type != SELVA_FIELD_TYPE_REFERENCE &&
+        field_type != SELVA_FIELD_TYPE_REFERENCES &&
+        field_type != SELVA_FIELD_TYPE_WEAK_REFERENCE &&
+        field_type != SELVA_FIELD_TYPE_WEAK_REFERENCES)) {
+        return nullptr;
+    }
+
+    node_type_t type = fs->edge_constraint.dst_node_type;
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
+
+    if (unlikely(!te)) {
+        return nullptr;
+    }
+
+    return selva_find_node(te, weak_ref->dst_id);
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
