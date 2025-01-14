@@ -104,30 +104,31 @@ await test('references', async (t) => {
     ],
   })
 
-  // single ref
-  // console.log(
-  //   new Uint8Array(
-  //     await db.query('article').include('contributors.$derp').toBuffer(),
-  //   ),
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$age')
+      .get()
+      .then((v) => v.toObject()),
+    [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
+  )
 
-  await db
-    .query('article')
-    .include('contributors.$age')
-    .get()
-    .then((v) => v.debug())
-
-  console.dir(
+  deepEqual(
     await db
       .query('article')
       .include('contributors.$friend.name', 'contributors.$friend.location')
       .get()
       .then((v) => v.debug().toObject()),
-    { depth: 10 },
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $friend: { id: 5, location: { long: 0, lat: 0 }, name: 'Mr Derp3' },
+          },
+        ],
+      },
+    ],
   )
-  // await db
-  //   .query('article')
-  //   .include('contributors.$plonki')
-  //   .get()
-  //   .then((v) => v.inspect())
 })
