@@ -50,6 +50,7 @@ await test('references', async (t) => {
               prop: 'articles',
               $derp: 'uint8',
               $age: 'uint32',
+              $plonki: 'uint32',
               $friend: {
                 ref: 'user',
               },
@@ -81,6 +82,14 @@ await test('references', async (t) => {
     name: 'Mr Derp',
   })
 
+  const mrDerp2 = db.create('user', {
+    name: 'Mr Derp2',
+  })
+
+  const mrDerp3 = db.create('user', {
+    name: 'Mr Derp3',
+  })
+
   db.drain()
 
   await db.create('article', {
@@ -88,7 +97,7 @@ await test('references', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        $friend: mrDerp,
+        $friend: mrDerp3, // id 5
         $derp: 99,
         $age: 66,
       },
@@ -113,4 +122,10 @@ await test('references', async (t) => {
     .include('contributors.$friend')
     .get()
     .then((v) => v.debug())
+
+  // await db
+  //   .query('article')
+  //   .include('contributors.$plonki')
+  //   .get()
+  //   .then((v) => v.inspect())
 })

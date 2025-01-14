@@ -60,31 +60,52 @@ pub fn getSingleRefFields(
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
+    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
 
-    // if (isEdge) {
-    //     std.debug.print(
-    //         "need to handle isEdge single refs (write edge field here) {any} \n",
-    //         .{singleRef},
-    //     );
-    // }
-
-    var selvaRef: ?*selva.SelvaNodeReference = null;
+    var edgeRefStruct: types.RefStruct = undefined;
+    var node: ?db.Node = undefined;
 
     if (isEdge) {
         // if isEdge ref can be set to NULL if isEdge
-        // selvaRef = db.getEdgeReference(ref.?.reference, refField);
+        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField - 1);
+        if (selvaRef == null) {
+            return 6 + size;
+        }
+        const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(
+            fieldSchema,
+        );
+        edgeRefStruct = .{
+            .reference = null,
+            .edgeConstaint = edgeConstrain,
+            .edgeReference = selvaRef,
+        };
+        std.debug.print("\n\nGURP: {any} {any} id: {any} \n", .{
+            selvaRef,
+            ref.?.reference.?,
+            db.getNodeId(ref.?.reference.?.dst.?),
+        });
+        return 7;
+        // node = selvaRef.?.dst;
+        // if (node == null) {
+        //     return 6 + size;
+        // }
     } else {
-        selvaRef = db.getSingleReference(originalNode, refField);
-    }
-
-    if (selvaRef == null) {
-        return 6 + size;
-    }
-
-    const node: ?db.Node = selvaRef.?.*.dst;
-
-    if (node == null) {
-        return 6 + size;
+        const selvaRef = db.getSingleReference(originalNode, refField);
+        if (selvaRef == null) {
+            return 6 + size;
+        }
+        const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(
+            fieldSchema,
+        );
+        edgeRefStruct = .{
+            .reference = @ptrCast(selvaRef.?),
+            .edgeConstaint = edgeConstrain,
+            .edgeReference = null,
+        };
+        node = selvaRef.?.*.dst;
+        if (node == null) {
+            return 6 + size;
+        }
     }
 
     const refId = db.getNodeId(node.?);
@@ -94,12 +115,8 @@ pub fn getSingleRefFields(
     };
 
     const includeNested = include[3..include.len];
-    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
 
     // edge on edge will not rly work....
-    const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(
-        fieldSchema,
-    );
 
     const resultSizeNest = getFields(
         node.?,
@@ -107,11 +124,7 @@ pub fn getSingleRefFields(
         refId,
         typeEntry,
         includeNested,
-        .{
-            .reference = @ptrCast(selvaRef.?),
-            .edgeConstaint = edgeConstrain,
-            .edgeReference = null,
-        },
+        edgeRefStruct,
         null,
         false,
     ) catch 0;

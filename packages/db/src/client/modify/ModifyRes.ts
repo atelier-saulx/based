@@ -37,15 +37,24 @@ const parseVal = (val) => {
 }
 
 export class ModifyError {
-  constructor(prop: PropDef | PropDefEdge | SchemaPropTree, val: any) {
+  constructor(
+    prop: PropDef | PropDefEdge | SchemaPropTree,
+    val: any,
+    msg?: string,
+  ) {
     this.#prop = prop
     this.#val = val
+    this.#msg = msg
   }
+  #msg: string
   #prop: PropDef | PropDefEdge | SchemaPropTree
   #val: any
   toString() {
     if (isPropDef(this.#prop)) {
-      return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received ${parseVal(this.#val)}`
+      if (this.#msg) {
+        return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${this.#msg} received '${parseVal(this.#val)}'`
+      }
+      return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received '${parseVal(this.#val)}'`
     }
 
     return `Unknown property '${this.#val}'. Expected one of: ${Object.keys(this.#prop).join(', ')}`

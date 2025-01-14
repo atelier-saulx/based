@@ -284,6 +284,8 @@ pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
+    std.debug.print("GET WEAK REF {any} {any} \n", .{ ref, field });
+
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
             ref.meta,
@@ -300,6 +302,8 @@ pub fn writeEdgeProp(
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
+    std.debug.print("\nWRITE EDGE WEAK REF {any} {d} {any} {any}", .{ data, data.len, ref, field });
+
     try errors.selva(selva.selva_fields_set_reference_meta(
         node,
         ref,
