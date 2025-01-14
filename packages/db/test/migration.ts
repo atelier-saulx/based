@@ -18,6 +18,7 @@ await test('migration', async (t) => {
       user: {
         props: {
           name: { type: 'string' },
+          age: { type: 'uint32' },
         },
       },
     },
@@ -27,6 +28,7 @@ await test('migration', async (t) => {
   while (true) {
     db.create('user', {
       name: 'user ' + ++i,
+      age: i % 100,
     })
     if (i === 5_000_000) {
       break
@@ -41,10 +43,11 @@ await test('migration', async (t) => {
   let migrationPromise = db.migrateSchema(
     {
       types: {
-        user: {
+        cmsuser: {
           props: {
             name: { type: 'string' },
             email: { type: 'string' },
+            age: { type: 'uint8' },
           },
         },
       },
@@ -52,7 +55,7 @@ await test('migration', async (t) => {
     (type, node) => {
       if (type === 'user') {
         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
-        return node
+        return ['cmsuser', node]
       }
     },
   )
@@ -89,15 +92,14 @@ await test('migration', async (t) => {
   await migrationPromise
   console.timeEnd('migration time')
 
-  allUsers = (await db.query('user').range(0, 6_000_000).get()).toObject()
+  allUsers = (await db.query('cmsuser').range(0, 6_000_000).get()).toObject()
   console.log(allUsers[0], allUsers.at(-1))
 
   if (
     allUsers.every((node) => {
-      if (!node.name) {
-        console.log(node)
-      }
-      return node.email === nameToEmail(node.name)
+      return (
+        node.email === nameToEmail(node.name) && typeof node.age === 'number'
+      )
     })
   ) {
     console.log('success')

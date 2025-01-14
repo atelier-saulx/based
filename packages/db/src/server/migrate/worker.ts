@@ -41,12 +41,22 @@ if (isMainThread) {
         .range(leafData.start - 1, leafData.end - leafData.start + 1)
         ._getSync()
 
-      for (const node of nodes) {
-        toDb.create(
-          typeStr,
-          (transformFn && transformFn(typeStr, node)) || node,
-          true,
-        )
+      if (transformFn) {
+        for (const node of nodes) {
+          const res = transformFn(typeStr, node)
+          if (res === null) {
+            continue
+          }
+          if (Array.isArray(res)) {
+            toDb.create(res[0], res[1] || node, true)
+          } else {
+            toDb.create(typeStr, res || node, true)
+          }
+        }
+      } else {
+        for (const node of nodes) {
+          toDb.create(typeStr, node, true)
+        }
       }
     }
 
