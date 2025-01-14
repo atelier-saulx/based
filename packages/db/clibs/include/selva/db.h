@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -94,7 +94,7 @@ const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct S
 
 SELVA_EXPORT
 [[__reproducible__]]
-enum SelvaFieldType get_fs_type(const struct SelvaFieldSchema *fs);
+enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
 
 /**
  * Get the EdgeFieldConstraint from a ref field schema.

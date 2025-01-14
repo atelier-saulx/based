@@ -364,7 +364,7 @@ const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct S
     return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
-enum SelvaFieldType get_fs_type(const struct SelvaFieldSchema *fs)
+enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
 {
     return fs->type;
 }
