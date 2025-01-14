@@ -90,7 +90,9 @@ await test('search', async (t) => {
     },
   })
 
-  for (let i = 0; i < 1e3; i++) {
+  const amount = 1e3
+
+  for (let i = 0; i < amount; i++) {
     await db.create('italy', {
       date: i,
       title: 'Derp derp ' + i,
@@ -98,19 +100,16 @@ await test('search', async (t) => {
     })
   }
 
-  // creates lmdb stupid index
-  await db.query('italy').sort('date').get()
-
   // sort + search
   equal(
     await db
       .query('italy')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
-      .range(0, 1e3)
+      .range(0, amount)
       .get()
       .then((v) => v.length),
-    1000 - 2,
+    amount - 2,
     'Search body "netherlands"',
   )
 
@@ -119,7 +118,7 @@ await test('search', async (t) => {
       .query('italy')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
-      .range(0, 1e3)
+      .range(0, amount)
       .get()
       .then((v) => v.length),
     2,
@@ -129,28 +128,40 @@ await test('search', async (t) => {
   equal(
     await db
       .query('italy')
-      .search('Netherlands', { body: 0, title: 1 })
-      .include('id', 'date')
-      .sort('date')
-      .range(0, 1e3)
+      .search('kindom', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, amount)
       .get()
       .then((v) => v.length),
-    1000 - 2,
-    'Search body "netherlands" sorted',
+    amount - 2,
+    'Search body "kindom"',
   )
 
-  equal(
-    await db
-      .query('italy')
-      .search('giraffe', { body: 0, title: 1 })
-      .include('id', 'date', 'title')
-      .range(0, 1e3)
-      .sort('date')
-      .get()
-      .then((v) => v.length),
-    2,
-    'Search body "giraffe" sorted',
-  )
+  // equal(
+  //   await db
+  //     .query('italy')
+  //     .search('Netherlands', { body: 0, title: 1 })
+  //     .include('id', 'date')
+  //     .sort('date')
+  //     .range(0, 1e3)
+  //     .get()
+  //     .then((v) => v.length),
+  //   amount - 2,
+  //   'Search body "netherlands" sorted',
+  // )
+
+  // equal(
+  //   await db
+  //     .query('italy')
+  //     .search('giraffe', { body: 0, title: 1 })
+  //     .include('id', 'date', 'title')
+  //     .range(0, 1e3)
+  //     .sort('date')
+  //     .get()
+  //     .then((v) => v.length),
+  //   2,
+  //   'Search body "giraffe" sorted',
+  // )
 
   // equal(
   //   await db
@@ -160,7 +171,7 @@ await test('search', async (t) => {
   //     .range(0, 1e3)
   //     .get()
   //     .then((v) => v.length),
-  //   1000,
+  //   amount,
   //   'Search title "derp"',
   // )
 

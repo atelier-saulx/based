@@ -5,6 +5,7 @@ const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
+const std = @import("std");
 
 pub const SearchCtx = struct {
     score: u8,
