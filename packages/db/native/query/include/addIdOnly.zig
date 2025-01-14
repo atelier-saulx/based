@@ -1,4 +1,4 @@
-const QueryCtx = @import("../ctx.zig").QueryCtx;
+const QueryCtx = @import("../types.zig").QueryCtx;
 const t = @import("../../types.zig");
 
 pub fn addIdOnly(ctx: *QueryCtx, id: u32) !usize {

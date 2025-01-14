@@ -3,7 +3,7 @@ const dbSort = @import("../../db/sort.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../ctx.zig").QueryCtx;
+const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
@@ -12,7 +12,7 @@ const readInt = @import("../../utils.zig").readInt;
 const std = @import("std");
 
 pub fn sort(
-    comptime queryType: comptime_int,
+    comptime desc: bool,
     ids: []u8,
     ctx: *QueryCtx,
     typeId: db.TypeId,
@@ -36,7 +36,7 @@ pub fn sort(
         len = 0;
     }
     // --------------------------------
-    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, queryType == 10);
+    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc);
     const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = readInt(u32, ids, i);
