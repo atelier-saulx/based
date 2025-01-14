@@ -5,9 +5,11 @@ import {
   NUMBER,
   PropDef,
   PropDefEdge,
+  REFERENCE,
   STRING,
   TIMESTAMP,
   TypeIndex,
+  WEAK_REFERENCE,
 } from '../../server/schema/types.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 
@@ -129,13 +131,10 @@ const inspectObject = (
     }
 
     if (isEdge) {
-      // str += `${v}`
-      // str += ',\n'
+      // skip
     } else if (key === 'id') {
       // @ts-ignore
       str += v + picocolors.italic(picocolors.dim(` ${q.target.type}`))
-
-      // str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
       str += ',\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
@@ -191,11 +190,26 @@ const inspectObject = (
   }
 
   for (const edge of edges) {
-    str +=
-      prefixBody +
-      picocolors.bold(`${edge.k}: `) +
-      prettyPrintVal(edge.v, edge.def.typeIndex) +
-      ',\n'
+    if (edge.def.typeIndex === REFERENCE) {
+      str += prefixBody + picocolors.bold(`${edge.k}: `)
+      str +=
+        inspectObject(
+          edge.v,
+          q.edges.references.get(edge.def.prop),
+          '',
+          level + 2,
+          false,
+          false,
+          true,
+          depth,
+        ) + ''
+    } else {
+      str +=
+        prefixBody +
+        picocolors.bold(`${edge.k}: `) +
+        prettyPrintVal(edge.v, edge.def.typeIndex) +
+        ',\n'
+    }
   }
 
   if (isObject) {

@@ -88,6 +88,17 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
     return s.?;
 }
 
+pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
+        selva.selva_get_ns_by_te(typeEntry.?),
+        @bitCast(field),
+    );
+    if (s == null) {
+        return errors.SelvaError.SELVA_EINVAL;
+    }
+    return s.?;
+}
+
 pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
     if (fieldType == types.Prop.ALIAS) {
