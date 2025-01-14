@@ -76,10 +76,12 @@ await test('update', async (t) => {
     }),
   )
 
-  await throws(() =>
-    db.create('user', {
-      countryCode: 'nope',
-    }),
+  await throws(
+    () =>
+      db.create('user', {
+        countryCode: 'nope',
+      }),
+    true,
   )
 
   db.drain()
