@@ -38,7 +38,7 @@ await test('like filter', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).length,
     1e3,
   )
 
@@ -50,7 +50,7 @@ await test('like filter', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).length,
     0,
   )
 
@@ -62,7 +62,7 @@ await test('like filter', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).length,
     1e3,
   )
 })
