@@ -186,17 +186,20 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
     struct SelvaSortItem *tmp;
     bool pool = use_mempool(ctx->order) || ctx->fixed_size;
 
-    RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
-        if (pool) {
+    if (pool) {
+        RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
+            RB_REMOVE(SelvaSortTreeNone, head, item);
             mempool_return(&ctx->mempool, item);
-        } else {
+        }
+
+        mempool_destroy(&ctx->mempool);
+    } else {
+        RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
+            RB_REMOVE(SelvaSortTreeNone, head, item);
             selva_free(item);
         }
     }
 
-    if (pool) {
-        mempool_destroy(&ctx->mempool);
-    }
     selva_free(ctx);
 }
 
