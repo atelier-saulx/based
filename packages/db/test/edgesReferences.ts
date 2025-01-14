@@ -120,7 +120,7 @@ await test('references', async (t) => {
   console.dir(
     await db
       .query('article')
-      .include('contributors.$friend')
+      .include('contributors.$friend.name', 'contributors.$friend.location')
       .get()
       .then((v) => v.debug().toObject()),
     { depth: 10 },
