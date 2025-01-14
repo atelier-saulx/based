@@ -4,7 +4,6 @@ const readInt = @import("../../utils.zig").readInt;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
 const types = @import("../include//types.zig");
-const like = @import("./like.zig").default;
 const compressed = @import("./compressed.zig");
 const decompress = compressed.decompress;
 

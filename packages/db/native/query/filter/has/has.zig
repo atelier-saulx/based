@@ -1,5 +1,7 @@
 const default = @import("./default.zig").default;
 const loose = @import("./loose.zig").loose;
+const like = @import("./like.zig").like;
+
 const t = @import("../types.zig");
 const Op = t.Operator;
 const Prop = @import("../../../types.zig").Prop;
@@ -65,7 +67,9 @@ pub inline fn has(
     mainLen: u16,
     dbCtx: *db.DbCtx,
 ) bool {
-    if (op == Op.has) {
+    if (op == Op.like) {
+        return hasInner(isOr, like, mainLen, prop, value, query, dbCtx);
+    } else if (op == Op.has) {
         return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
     } else {
         return hasInner(isOr, loose, mainLen, prop, value, query, dbCtx);

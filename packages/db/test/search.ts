@@ -7,10 +7,13 @@ await test('like filter', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
   await db.start({ clean: true })
+
   t.after(() => {
     return db.destroy()
   })
+
   db.putSchema({
     types: {
       italy: {
@@ -20,6 +23,7 @@ await test('like filter', async (t) => {
       },
     },
   })
+
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       body: italy,
@@ -48,6 +52,18 @@ await test('like filter', async (t) => {
         .get()
     ).inspect().length,
     0,
+  )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', ['snurfelpants', 'italy'])
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).inspect().length,
+    1e3,
   )
 })
 

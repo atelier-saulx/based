@@ -2,7 +2,6 @@ const std = @import("std");
 const readInt = @import("../../utils.zig").readInt;
 const batch = @import("./batch.zig");
 const has = @import("./has/has.zig");
-const like = @import("./like.zig");
 const db = @import("../../db//db.zig");
 const num = @import("./numerical.zig");
 const t = @import("./types.zig");
@@ -30,15 +29,7 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
         value = v;
     }
 
-    // ----- later...
-    if (op == Op.like) {
-        // if (value[0] == 1) {
-        //     return .{ next, false };
-        // } else if (!search.default(value[1..value.len], query)) {
-        //     return .{ next, false };
-        // }
-        // -------------------
-    } else if (op == Op.equal) {
+    if (op == Op.equal) {
         var j: usize = 0;
         while (j < query.len) {
             const size = readInt(u16, query, j);
@@ -79,14 +70,7 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
     } else {
         value = v;
     }
-    if (op == Op.like) {
-        if (value[0] == 1) {
-            return .{ next, false };
-        } else if (!like.default(value[1..value.len], query)) {
-            return .{ next, false };
-        }
-        // -------------------
-    } else if (op == Op.equal) {
+    if (op == Op.equal) {
         if (value.len != valueSize) {
             pass = false;
         } else {
