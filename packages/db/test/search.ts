@@ -71,10 +71,13 @@ await test('search', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
   await db.start({ clean: true })
+
   t.after(() => {
     return db.destroy()
   })
+
   db.putSchema({
     types: {
       italy: {
@@ -87,14 +90,11 @@ await test('search', async (t) => {
     },
   })
 
-  const compressItaly = compress(italy)
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       date: i,
+      title: 'Derp derp ' + i,
       body: i == 0 ? 'Mr giraffe first' : i == 2 ? 'Mr giraffe second' : italy,
-      // body:
-      // italy +
-      // ' aaaaa amsterdam twitter ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
     })
   }
 
@@ -102,38 +102,90 @@ await test('search', async (t) => {
   await db.query('italy').sort('date').get()
 
   // sort + search
-  let r = await db
-    .query('italy')
-    .search('Netherlands', { body: 0, title: 1 })
-    .include('id', 'date')
-    .range(0, 1e3)
-    .sort('date')
-    .get()
+  equal(
+    await db
+      .query('italy')
+      .search('Netherlands', { body: 0, title: 1 })
+      .include('id', 'date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1000 - 2,
+    'Search body "netherlands"',
+  )
 
-  r.inspect()
+  equal(
+    await db
+      .query('italy')
+      .search('giraffe', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    2,
+    'Search body "giraffe"',
+  )
 
-  // default + search
-  r = await db
-    .query('italy')
-    .search('Netherlands', { body: 0, title: 1 })
-    .include('id', 'date')
-    .range(0, 1e3)
-    .get()
+  equal(
+    await db
+      .query('italy')
+      .search('Netherlands', { body: 0, title: 1 })
+      .include('id', 'date')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1000 - 2,
+    'Search body "netherlands" sorted',
+  )
 
-  r.inspect()
+  equal(
+    await db
+      .query('italy')
+      .search('giraffe', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .sort('date')
+      .get()
+      .then((v) => v.length),
+    2,
+    'Search body "giraffe" sorted',
+  )
 
-  // // ids + sort + search
+  // equal(
+  //   await db
+  //     .query('italy')
+  //     .search('derp', { body: 0, title: 1 })
+  //     .include('id', 'date', 'title')
+  //     .range(0, 1e3)
+  //     .get()
+  //     .then((v) => v.length),
+  //   1000,
+  //   'Search title "derp"',
+  // )
+
+  // // default + search
   // r = await db
-  //   .query('italy', [1, 2, 3])
-  //   .search('Netherlands', { body: 0 })
+  //   .query('italy')
+  //   .search('Netherlands', { body: 0, title: 1 })
   //   .include('id', 'date')
   //   .range(0, 1e3)
-  //   // .sort('date')
   //   .get()
 
   // r.inspect()
 
-  // // ids + search
+  // // // // ids + sort + search
+  // // r = await db
+  // //   .query('italy', [1, 2, 3])
+  // //   .search('Netherlands', { body: 0 })
+  // //   .include('id', 'date')
+  // //   .range(0, 1e3)
+  // //   // .sort('date')
+  // //   .get()
+
+  // // r.inspect()
+
+  // // // ids + search
   // r = await db
   //   .query('italy', [1, 2, 3])
   //   .search('Netherlands', { body: 0 })
