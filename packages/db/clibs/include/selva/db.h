@@ -92,6 +92,10 @@ const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSc
 SELVA_EXPORT
 const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field) __attribute__((nonnull, pure));
 
+SELVA_EXPORT
+[[__reproducible__]]
+enum SelvaFieldType get_fs_type(const struct SelvaFieldSchema *fs);
+
 /**
  * Get the EdgeFieldConstraint from a ref field schema.
  * struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(src_fs);
