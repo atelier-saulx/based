@@ -31,51 +31,61 @@ if (isMainThread) {
   // put it to sleep
   Atomics.wait(atomics, 0, 0)
 
-  let msg
+  let msg:
+    | {
+        message: any
+      }
+    | undefined
   let offset = -1
   const transformFn = transform && eval(transform)
-  const start = Date.now()
-  let queryExecTime = 0
-  let queryTotalTime = 0
-  let createTime = 0
-  while ((msg = receiveMessageOnPort(channel))) {
-    const leafData: TreeNode['data'] = msg.message
-    const typeStr = reverseTypeMap[leafData.typeId]
-    const qstart = Date.now()
-    const nodes = fromDb
-      .query(typeStr)
-      .range(leafData.start + offset, leafData.end - leafData.start)
-      ._getSync()
 
-    queryExecTime = nodes.execTime
-    queryTotalTime += Date.now() - qstart
+  while (true) {
+    const start = Date.now()
+    let queryExecTime = 0
+    let queryTotalTime = 0
+    let createTime = 0
+    while ((msg = receiveMessageOnPort(channel))) {
+      const leafData: TreeNode['data'] = msg.message
+      const typeStr = reverseTypeMap[leafData.typeId]
+      const qstart = Date.now()
+      const nodes = fromDb
+        .query(typeStr)
+        .range(leafData.start + offset, leafData.end - leafData.start)
+        ._getSync()
 
-    const cstart = Date.now()
-    for (const node of nodes) {
-      if (node.id > leafData.end) {
-        offset += node.id - leafData.end
-        break
+      queryExecTime = nodes.execTime
+      queryTotalTime += Date.now() - qstart
+
+      const cstart = Date.now()
+      for (const node of nodes) {
+        if (node.id > leafData.end) {
+          offset += node.id - leafData.end
+          break
+        }
+        toDb.create(
+          typeStr,
+          (transformFn && transformFn(typeStr, node)) || node,
+          true,
+        )
       }
-      toDb.create(
-        typeStr,
-        (transformFn && transformFn(typeStr, node)) || node,
-        true,
-      )
+
+      createTime += Date.now() - cstart
     }
 
-    createTime += Date.now() - cstart
+    const totalTime = Date.now() - start
+    const drainTime = toDb.drain()
+
+    console.log({
+      totalTime,
+      queryExecTime,
+      queryTotalTime,
+      drainTime,
+      createTime,
+    })
+
+    // put it to sleep
+    atomics[0] = 0
+    Atomics.notify(atomics, 0)
+    Atomics.wait(atomics, 0, 0)
   }
-
-  const totalTime = Date.now() - start
-  const drainTime = toDb.drain()
-
-  console.log({
-    totalTime,
-    queryExecTime,
-    queryTotalTime,
-    drainTime,
-    createTime,
-  })
-
-  process.exit(0)
 }

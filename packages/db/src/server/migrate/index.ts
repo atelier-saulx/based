@@ -6,6 +6,7 @@ import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 
 import './worker.js'
+import { foreachDirtyBlock } from '../tree.js'
 export const migrate = async (
   fromDb: BasedDb,
   toSchema: StrictSchema,
@@ -41,8 +42,6 @@ export const migrate = async (
   fromDb.server.dirtyRanges.clear()
   fromDb.server.merkleTree.visitLeafNodes((leaf) => {
     port1.postMessage(leaf.data)
-    // // TODO dont mark everything dirty => specific
-    // fromDb.server.dirtyRanges.add(leaf.key)
   })
 
   fromDb.migrating = true
@@ -51,22 +50,31 @@ export const migrate = async (
   Atomics.notify(atomics, 0)
 
   worker.on('error', console.error)
-  const exitCode = await new Promise((resolve) => {
-    worker.on('exit', resolve)
-  })
 
-  if (exitCode === 0) {
-    // success
-    fromDb.putSchema(toSchema, true)
-    fromDb.server.dbCtxExternal = toCtx
-    toDb.server.dbCtxExternal = fromCtx
+  while (true) {
+    await Atomics.waitAsync(atomics, 0, 1).value
+    if (fromDb.server.dirtyRanges.size) {
+      foreachDirtyBlock(fromDb.server, (_mtKey, typeId, start, end) => {
+        port1.postMessage({
+          typeId,
+          start,
+          end,
+        })
+      })
+      fromDb.server.dirtyRanges.clear()
+    } else {
+      break
+    }
   }
 
-  await Promise.all(
-    fromDb.server.workers.map((worker) => worker.updateCtx(toAddress)),
+  fromDb.putSchema(toSchema, true)
+  fromDb.server.dbCtxExternal = toCtx
+  toDb.server.dbCtxExternal = fromCtx
+
+  const promises: Promise<any>[] = fromDb.server.workers.map((worker) =>
+    worker.updateCtx(toAddress),
   )
-
-  await toDb.stop(true)
-
+  promises.push(toDb.stop(true), worker.terminate())
+  await Promise.all(promises)
   fromDb.migrating = false
 }
