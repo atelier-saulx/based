@@ -38,10 +38,11 @@ pub fn getSingleRefFields(
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
-    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ref.?.edgeConstaint, refField) catch {
+    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ref.?.edgeConstaint, refField) catch null else db.getFieldSchema(refField, originalType) catch null;
+
+    if (fieldSchema == null) {
         return 0;
-    } else db.getFieldSchema(refField, originalType) catch null;
-    std.debug.print("HELLO {d} {any} \n", .{ refField, fieldSchema });
+    }
 
     var edgeRefStruct: types.RefStruct = undefined;
     var node: ?db.Node = undefined;
@@ -61,12 +62,8 @@ pub fn getSingleRefFields(
             .edgeConstaint = edgeConstrain,
             .edgeReference = selvaRef,
         };
-
-        // std.debug.print("{any}  \n", .{selvaRef});
         node = selva.selva_fields_resolve_weak_reference(ctx.db.selva, fieldSchema, &selvaRef.?);
-
         if (node == null) {
-            std.debug.print("DERP! \n", .{});
             return 6 + size;
         }
     } else {
