@@ -1,4 +1,5 @@
 import { BasedDb } from '../../index.js'
+import { MAX_RANGE_PROP_LIMIT, MAX_RANGE_REF_LIMIT } from './thresholds.js'
 import {
   EdgeTarget,
   QueryDef,
@@ -56,10 +57,10 @@ export const createQueryDef = (
       if (t.ids) {
         q.range.limit = t.ids.length // 1k?
       } else {
-        q.range.limit = 1e3 // 1k?
+        q.range.limit = MAX_RANGE_PROP_LIMIT
       }
     } else if (type === QueryDefType.References) {
-      q.range.limit = 1e4 // 100k?
+      q.range.limit = MAX_RANGE_REF_LIMIT
     }
 
     return q

@@ -5,6 +5,7 @@ import {
   MAX_ID_VALUE,
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
+import { validOperators, Operator } from './filter/operators.js'
 
 export const isValidId = (id: number): void => {
   if (typeof id != 'number') {
@@ -56,6 +57,27 @@ export const hasFields = (
 
 export const hasField = (field: string): void => {
   if (!field) {
-    throw new Error(`Field '${field}' does not exist in the definition`)
+    throw new Error(`Invalid field: ${field}`)
+  } else if (typeof field !== 'string' || field.trim() === '') {
+    throw new Error('Field must be a non-empty string')
+  }
+}
+export const checkOperator = (operator: Operator | boolean): void => {
+  if (
+    operator !== undefined &&
+    typeof operator !== 'boolean' &&
+    !validOperators.includes(operator)
+  ) {
+    throw new Error(`Invalid operator: ${operator}`)
+  }
+}
+
+export const checkValue = (value: any, operator: Operator): void => {
+  if (operator === '..' || operator === '!..') {
+    if (!Array.isArray(value) || value.length !== 2) {
+      throw new Error(
+        `Invalid value for operator ${operator}: expected an array with two elements`,
+      )
+    }
   }
 }

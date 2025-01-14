@@ -11,6 +11,7 @@ import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
+import { checkOperator, checkValue } from '../validation.js'
 
 export const primitiveFilter = (
   prop: PropDef | PropDefEdge,
@@ -18,6 +19,10 @@ export const primitiveFilter = (
   conditions: QueryDefFilter,
 ) => {
   let [, operator, value] = filter
+
+  checkOperator(operator)
+  checkValue(value, operator)
+
   const fieldIndexChar = prop.prop
   let buf: Buffer
   const op = operationToByte(operator)

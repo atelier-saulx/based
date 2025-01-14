@@ -808,7 +808,7 @@ copy:
         return SELVA_ENOTSUP;
     }
 
-    printf("\n  DONE c fields set type: %d len: %zu \n\n", type, len);
+    printf("\n  DONE c fields set field: %d type: %d len: %zu \n\n", fs->field, type, len);
 
     return 0;
 }
