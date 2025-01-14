@@ -65,6 +65,32 @@ await test('like filter', async (t) => {
     ).length,
     1e3,
   )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', 'kxngdom')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1e3,
+    'kxngdom 1000 results',
+  )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', 'derperp')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    0,
+    'derp no results',
+  )
 })
 
 await test('search', async (t) => {
@@ -128,40 +154,40 @@ await test('search', async (t) => {
   equal(
     await db
       .query('italy')
-      .search('kindom', { body: 0, title: 1 })
+      .search('kingdom', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .range(0, amount)
       .get()
       .then((v) => v.length),
     amount - 2,
-    'Search body "kindom"',
+    'Search body "kingdom"',
   )
 
-  // equal(
-  //   await db
-  //     .query('italy')
-  //     .search('Netherlands', { body: 0, title: 1 })
-  //     .include('id', 'date')
-  //     .sort('date')
-  //     .range(0, 1e3)
-  //     .get()
-  //     .then((v) => v.length),
-  //   amount - 2,
-  //   'Search body "netherlands" sorted',
-  // )
+  equal(
+    await db
+      .query('italy')
+      .search('Netherlands', { body: 0, title: 1 })
+      .include('id', 'date')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    amount - 2,
+    'Search body "netherlands" sorted',
+  )
 
-  // equal(
-  //   await db
-  //     .query('italy')
-  //     .search('giraffe', { body: 0, title: 1 })
-  //     .include('id', 'date', 'title')
-  //     .range(0, 1e3)
-  //     .sort('date')
-  //     .get()
-  //     .then((v) => v.length),
-  //   2,
-  //   'Search body "giraffe" sorted',
-  // )
+  equal(
+    await db
+      .query('italy')
+      .search('giraffe', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .sort('date')
+      .get()
+      .then((v) => v.length),
+    2,
+    'Search body "giraffe" sorted',
+  )
 
   // equal(
   //   await db

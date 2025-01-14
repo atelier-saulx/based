@@ -45,6 +45,7 @@ void ref_save_map_destroy(struct ref_save_map *map)
     struct ref_save_map_item *tmp;
 
     RB_FOREACH_SAFE(item, ref_save_map, map, tmp) {
+        RB_REMOVE(ref_save_map, map, item);
         selva_free(item);
     }
 }

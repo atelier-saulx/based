@@ -43,7 +43,7 @@ pub fn writeEdges(
             ctx.node.?,
             selva.selva_get_edge_field_constraint(ctx.fieldSchema.?),
             ref,
-            prop - 1,
+            prop,
         );
 
         i += edgeLen + 2 + offset;

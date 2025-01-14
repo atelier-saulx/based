@@ -67,7 +67,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         // if isEdge ref can be set to NULL if isEdge
-        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField - 1);
+        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -79,16 +79,15 @@ pub fn getSingleRefFields(
             .edgeConstaint = edgeConstrain,
             .edgeReference = selvaRef,
         };
-        std.debug.print("\n\nGURP: {any} {any} id: {any} \n", .{
-            selvaRef,
-            ref.?.reference.?,
-            db.getNodeId(ref.?.reference.?.dst.?),
-        });
-        return 7;
-        // node = selvaRef.?.dst;
+        std.debug.print(
+            "\n\nGURP: {any} {any} id: {any} {any} \n",
+            .{ selvaRef, ref.?.reference.?, db.getNodeId(ref.?.reference.?.dst.?), fieldSchema },
+        );
+        // node = db.getNode(selvaRef.?.dst_id, db.getType(ctx.db, fieldSchema.type));
         // if (node == null) {
         //     return 6 + size;
         // }
+        return 7;
     } else {
         const selvaRef = db.getSingleReference(originalNode, refField);
         if (selvaRef == null) {
@@ -115,8 +114,6 @@ pub fn getSingleRefFields(
     };
 
     const includeNested = include[3..include.len];
-
-    // edge on edge will not rly work....
 
     const resultSizeNest = getFields(
         node.?,
