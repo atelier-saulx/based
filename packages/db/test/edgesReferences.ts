@@ -131,4 +131,29 @@ await test('references', async (t) => {
       },
     ],
   )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$friend')
+      .get()
+      .then((v) => v.debug().inspect().toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $friend: {
+              id: 5,
+              location: { long: 0, lat: 0 },
+              name: 'Mr Derp3',
+              email: '',
+              smurp: '',
+            },
+          },
+        ],
+      },
+    ],
+  )
 })
