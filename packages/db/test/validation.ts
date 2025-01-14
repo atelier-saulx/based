@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('update', async (t) => {
@@ -18,6 +18,7 @@ await test('update', async (t) => {
           rating: 'uint32',
           name: 'string',
           friend: { ref: 'user', prop: 'friend' },
+          countryCode: { type: 'string', maxBytes: 2 },
           connections: {
             items: {
               ref: 'user',
@@ -52,26 +53,34 @@ await test('update', async (t) => {
     rating: 'not a number',
   })
 
-  const a = await db.create('user', {
+  await db.create('user', {
     name: 'jame-z',
     friend: good,
     connections: [good],
   })
 
-  console.log('-------------------------------')
   db.create('user', {
-    name: 'nope',
-    randomField: true,
+    name: 'fred',
+    connections: [good, bad],
   })
-    .catch((e) => {
-      console.log('its wrong!!', e)
-      return 'commando power'
-    })
-    .then((res) => {
-      console.log('floops!', { res })
-    })
 
-  console.log('--------------- END ----------------')
+  db.create('user', {
+    name: 'wrongRating',
+    rating: 'not a number',
+  })
+
+  await throws(() =>
+    db.create('user', {
+      name: 'nope',
+      randomField: true,
+    }),
+  )
+
+  await throws(() =>
+    db.create('user', {
+      countryCode: 'nope',
+    }),
+  )
 
   db.drain()
 
@@ -84,6 +93,7 @@ await test('update', async (t) => {
         friend: {
           id: 2,
           rating: 0,
+          countryCode: '',
           name: 'jame-z',
         },
       },
@@ -93,6 +103,7 @@ await test('update', async (t) => {
         friend: {
           id: 1,
           rating: 0,
+          countryCode: '',
           name: 'youzi',
         },
       },

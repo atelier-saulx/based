@@ -54,3 +54,15 @@ export const isSorted = (
     throw new Error(msg ?? '' + ' isSorted empty result')
   }
 }
+
+export const throws = async (fn: () => Promise<any>, label?: string) => {
+  try {
+    await fn()
+    const e = new Error('')
+    e.stack =
+      '\n' +
+      (label ?? fn.toString().replace('() =>', '') + '\n\n should throw \n') +
+      e.stack.split('\n').slice(-1).join('')
+    throw e
+  } catch (err) {}
+}
