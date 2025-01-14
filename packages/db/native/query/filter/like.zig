@@ -1,28 +1,12 @@
 const std = @import("std");
 const simd = std.simd;
 const readInt = @import("../../utils.zig").readInt;
-const selva = @import("../../selva.zig");
+const strSearch = @import("./search.zig").strSearch;
 
 // extra value
 const dist = 1;
 // dist has to be in query....
-pub fn default(_: []u8, _: []u8) c_int {
-    // const x = selva.strsearch_has_u8(
-    //     @ptrCast(value.ptr),
-    //     value.len,
-    //     @ptrCast(query.ptr),
-    //     query.len,
-    //     dist,
-    //     false,
-    // );
-    // int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *needle, size_t needle_len, int good);
-
-    // std.debug.print("SEARCH {any} {any} x: {any} \n", .{ value.len, query, x });
-
-    // if (x <= dist) {
-    //     return x;
-    // }
-
-    // ADD SCORE
-    return 10;
+pub fn default(value: []const u8, query: []const u8) bool {
+    const x = strSearch(@constCast(value), @constCast(query));
+    return x <= dist;
 }

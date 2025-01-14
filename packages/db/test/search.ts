@@ -30,12 +30,24 @@ await test('like filter', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'like', 'derp')
+        .filter('body', 'like', 'italy')
         .include('id')
         .range(0, 1e3)
         .get()
     ).inspect().length,
     1e3,
+  )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'like', 'snurfelpants')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).inspect().length,
+    0,
   )
 })
 

@@ -82,7 +82,7 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
     if (op == Op.like) {
         if (value[0] == 1) {
             return .{ next, false };
-        } else if (like.default(value[1..value.len], query) < 2) {
+        } else if (!like.default(value[1..value.len], query)) {
             return .{ next, false };
         }
         // -------------------
