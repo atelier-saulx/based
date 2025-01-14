@@ -546,17 +546,13 @@ void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
 {
     struct SelvaSortTreeNone *head = &ctx->out_none;
 
-    if (!RB_EMPTY(head)) {
-        ctx->iterator.next = RB_MIN(SelvaSortTreeNone, head);
-    }
+    ctx->iterator.next = RB_EMPTY(head) ? nullptr : RB_MIN(SelvaSortTreeNone, head);
 }
 void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx)
 {
     struct SelvaSortTreeNone *head = &ctx->out_none;
 
-    if (!RB_EMPTY(head)) {
-        ctx->iterator.next = RB_MAX(SelvaSortTreeNone, head);
-    }
+    ctx->iterator.next = RB_EMPTY(head) ? nullptr : RB_MAX(SelvaSortTreeNone, head);
 }
 
 void *selva_sort_foreach(struct SelvaSortCtx *ctx)
