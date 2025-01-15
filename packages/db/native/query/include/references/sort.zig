@@ -7,6 +7,7 @@ const queryTypes = @import("../types.zig");
 const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
 const selva = @import("../../../selva.zig");
+const std = @import("std");
 
 pub fn sortedReferences(
     comptime isEdge: bool,
@@ -22,11 +23,9 @@ pub fn sortedReferences(
     limit: u32,
 ) queryTypes.RefsResult {
     var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
-
     var i: usize = 0;
     var start: u16 = undefined;
     var len: u16 = undefined;
-
     const sortField: u8 = sortBuffer[1];
     const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
     if (sortBuffer.len == 7) {
@@ -36,11 +35,9 @@ pub fn sortedReferences(
         start = 0;
         len = 0;
     }
-
     var metaSortIndex = dbSort.createSortIndexMeta(start, len, sortProp, sortBuffer[0] == 1) catch {
         return result;
     };
-    // --------------------------------
     checkItem: while (i < refs.nr_refs) : (i += 1) {
         if (queryTypes.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
@@ -53,15 +50,16 @@ pub fn sortedReferences(
             dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
         }
     }
-    // --------------------------------
-
+    i = 0;
     selva.selva_sort_foreach_begin(metaSortIndex.index);
     while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
         const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
         result.cnt += 1;
         if (offset != 0 and result.cnt <= offset) {
+            i += 1;
             continue;
         }
+        std.debug.print("GO GO GO {any} {d} \n", .{ refNode, i });
         result.size += getFields(
             refNode,
             ctx,
@@ -75,6 +73,7 @@ pub fn sortedReferences(
         if (result.cnt - offset >= limit) {
             break;
         }
+        i += 1;
     }
     selva.selva_sort_destroy(metaSortIndex.index);
     return result;
