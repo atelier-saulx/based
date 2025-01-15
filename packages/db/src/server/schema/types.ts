@@ -1,9 +1,3 @@
-// Reserved fields
-// 255: single ref in include
-// 254: multi ref in include
-// 253: to read multi refs in responses better to avoid
-// 0: main buffer
-
 export const NULL = 0
 export const TIMESTAMP = 1
 export const CREATED = 2
@@ -17,7 +11,6 @@ export const UINT16 = 22
 export const INT32 = 23
 export const UINT32 = 7
 export const INT64 = 24
-export const UINT64 = 8
 export const BOOLEAN = 9
 export const ENUM = 10
 export const STRING = 11

@@ -148,7 +148,7 @@ await test('alias - references', async (t) => {
     },
   })
 
-  deepEqual((await db.query('user').include('friends').get()).toObject(), [
+  deepEqual(await db.query('user').include('friends').get().toObject(), [
     {
       friends: [
         {
@@ -191,7 +191,7 @@ await test('alias - references', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user').include('friends', 'email').get()).toObject(),
+    await db.query('user').include('friends', 'email').get().toObject(),
     [
       {
         id: 1,
@@ -219,9 +219,11 @@ await test('alias - references', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').filter('email', 'hasLoose', 'youri').get()
-    ).toObject(),
+    await db
+      .query('user')
+      .filter('email', 'hasLoose', 'youri')
+      .get()
+      .toObject(),
     [
       {
         email: 'youri@saulx.com',

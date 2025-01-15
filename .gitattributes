@@ -1,7 +1,0 @@
-# Copyright (c) 2023 SAULX
-# SPDX-License-Identifier: MIT
-**/keys/** filter=git-crypt diff=git-crypt
-**/secrets/** filter=git-crypt diff=git-crypt
-*.key filter=git-crypt diff=git-crypt
-*.crt filter=git-crypt diff=git-crypt
-*.pem filter=git-crypt diff=git-crypt

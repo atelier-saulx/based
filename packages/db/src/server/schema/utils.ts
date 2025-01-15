@@ -1,14 +1,5 @@
-import { BasedDb } from '../../index.js'
 import { DbServer } from '../index.js'
-import {
-  INT16,
-  INT32,
-  INT64,
-  NUMBER,
-  INT8,
-  PropDef,
-  PropDefEdge,
-} from './types.js'
+import { INT16, INT32, INT64, INT8, PropDef, PropDefEdge } from './types.js'
 
 export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
   if (

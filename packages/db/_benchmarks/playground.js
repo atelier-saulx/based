@@ -1,6 +1,5 @@
 import { BasedDb } from '@based/db'
 import { tmpdir } from 'os'
-import { setTimeout } from 'node:timers/promises'
 
 const db = new BasedDb({
   path: tmpdir(),

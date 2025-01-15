@@ -17,19 +17,6 @@ await test('concurrency', async (t) => {
     types: {
       user: {
         props: {
-          // name: { type: 'string' },
-          // flap: 'uint32',
-          // email: { type: 'string', max: 15 },
-          // age: 'uint32',
-          // snurp: { type: 'string' },
-          // burp: 'uint32',
-          // location: {
-          //   props: {
-          //     label: { type: 'string' },
-          //     x: 'uint32',
-          //     y: 'uint32',
-          //   },
-          // },
           friends: {
             items: {
               ref: 'user',
