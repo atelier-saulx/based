@@ -118,7 +118,7 @@ await test('multi reference', async (t) => {
       .query('article')
       .include('contributors.$friend.name', 'contributors.$friend.location')
       .get()
-      .then((v) => v.debug().toObject()),
+      .then((v) => v.toObject()),
     [
       {
         id: 1,
@@ -137,7 +137,7 @@ await test('multi reference', async (t) => {
       .query('article')
       .include('contributors.$friend')
       .get()
-      .then((v) => v.debug().inspect().toObject()),
+      .then((v) => v.toObject()),
     [
       {
         id: 1,
@@ -175,11 +175,13 @@ await test('multiple references', async (t) => {
         props: {
           code: { type: 'string', maxBytes: 2 },
           name: 'string',
+          users: { items: { ref: 'user', prop: 'nationality' } },
         },
       },
       user: {
         props: {
           name: 'string',
+          nationality: { ref: 'country', prop: 'users' },
           articles: {
             items: {
               ref: 'article',
@@ -218,8 +220,19 @@ await test('multiple references', async (t) => {
     code: 'de',
   })
 
+  const nl = await db.create('country', {
+    name: 'Netherlands',
+    code: 'nl',
+  })
+
   const mrDerp = await db.create('user', {
     name: 'Mr Derp',
+    nationality: nl,
+  })
+
+  const mrFlap = await db.create('user', {
+    name: 'Mr Falp',
+    nationality: de,
   })
 
   await db.create('article', {
@@ -232,25 +245,140 @@ await test('multiple references', async (t) => {
     ],
   })
 
-  console.dir(
+  await db.create('article', {
+    name: 'The secrets of sourkraut',
+    contributors: [
+      {
+        id: mrFlap,
+        $countries: [nl, de],
+      },
+    ],
+  })
+
+  deepEqual(
     await db
       .query('article')
-      .include('contributors.name', 'contributors.$countries')
+      .include('contributors.id')
       .get()
-      .then((v) => v.debug().toObject()),
-    { depth: 10 },
+      .then((v) => v.toObject()),
+    [
+      { id: 1, contributors: [{ id: 1 }] },
+      { id: 2, contributors: [{ id: 2 }] },
+    ],
   )
 
-  console.dir(
+  deepEqual(
     await db
       .query('article')
-      .include((t) => {
-        // '$countries'
-        // '$countries'
-        t('contributors').include('$countries').include('name').sort('name')
-      })
+      .include('contributors.id', 'contributors.$countries.id')
       .get()
-      .then((v) => v.debug().toObject()),
-    { depth: 10 },
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $countries: [{ id: 1 }, { id: 2 }] }],
+      },
+      {
+        id: 2,
+        contributors: [{ id: 2, $countries: [{ id: 3 }, { id: 2 }] }],
+      },
+    ],
   )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.id', 'contributors.$countries.code')
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $countries: [
+              { id: 1, code: 'uk' },
+              { id: 2, code: 'de' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [
+          {
+            id: 2,
+            $countries: [
+              { id: 3, code: 'nl' },
+              { id: 2, code: 'de' },
+            ],
+          },
+        ],
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.id', 'contributors.$countries')
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $countries: [
+              { id: 1, code: 'uk', name: 'United Kingdom' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [
+          {
+            id: 2,
+            $countries: [
+              { id: 3, code: 'nl', name: 'Netherlands' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+          },
+        ],
+      },
+    ],
+  )
+
+  // console.dir(
+  //   await db
+  //     .query('article')
+  //     .include((t) => {
+  //       // '$countries'
+  //       // '$countries'
+  //       t('contributors').include('$countries').include('name').sort('name')
+  //     })
+  //     .get()
+  //     .then((v) => v.debug().toObject()),
+  //   { depth: 10 },
+  // )
+
+  // console.dir(
+  //   await db
+  //     .query('article')
+  //     .include((t) => {
+  //       // '$countries'
+  //       // '$countries'
+  //       t('contributors')
+  //         // .include('$countries')
+  //         .include('name')
+  //         .filter('nationality', '=', nl)
+  //     })
+  //     .get()
+  //     .then((v) => v.debug().toObject()),
+  //   { depth: 10 },
+  // )
 })
