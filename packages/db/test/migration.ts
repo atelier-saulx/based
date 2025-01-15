@@ -52,11 +52,11 @@ await test('migration', async (t) => {
         },
       },
     },
-    (type, node) => {
-      if (type === 'user') {
+    {
+      user(node) {
         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
         return ['cmsuser', node]
-      }
+      },
     },
   )
 
@@ -92,7 +92,10 @@ await test('migration', async (t) => {
   await migrationPromise
   console.timeEnd('migration time')
 
+  console.log('???')
+
   allUsers = (await db.query('cmsuser').range(0, 6_000_000).get()).toObject()
+
   console.log(allUsers[0], allUsers.at(-1))
 
   if (

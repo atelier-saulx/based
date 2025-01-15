@@ -20,7 +20,7 @@ if (isMainThread) {
         // it's a ctx address
         address = msg
         dbCtx = native.externalFromInt(address)
-        channel.postMessage()
+        channel.postMessage(null)
       } else {
         const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
         transferList[0] = arrayBuf
