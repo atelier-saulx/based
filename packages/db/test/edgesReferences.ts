@@ -448,4 +448,65 @@ await test('multiple references', async (t) => {
       },
     ],
   )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((s) => {
+        s('contributors')
+          .include('name')
+          .include((s) => {
+            s('$countries').include('code')
+          })
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [
+              { id: 1, code: 'uk' },
+              { id: 2, code: 'de' },
+            ],
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((s) => {
+        s('contributors')
+          .include('name')
+          .include((s) => {
+            s('$countries').include('code').filter('code', '=', 'de')
+          })
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [{ id: 2, code: 'de' }],
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+    ],
+  )
 })

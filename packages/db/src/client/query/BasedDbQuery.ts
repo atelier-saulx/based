@@ -12,10 +12,14 @@ import {
   getAll,
   filterOr,
   convertFilter,
+  debugQueryDef,
 } from './query.js'
 
 import { BasedQueryResponse } from './BasedIterable.js'
-import { createOrGetRefQueryDef } from './include/utils.js'
+import {
+  createOrGetEdgeRefQueryDef,
+  createOrGetRefQueryDef,
+} from './include/utils.js'
 import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search } from './search/index.js'
@@ -27,6 +31,7 @@ import {
   hasFields,
 } from './validation.js'
 import native from '../../native.js'
+import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
@@ -128,13 +133,38 @@ export class QueryBranch<T> {
         }
       } else if (typeof f === 'function') {
         f((field: string) => {
-          const prop = this.def.props[field]
-          if (prop && (prop.typeIndex === 13 || prop.typeIndex === 14)) {
-            const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
+          // console.log(this.def)
+
+          if (field[0] == '$') {
             // @ts-ignore
-            return new QueryBranch(this.db, refDef)
+            const prop = this.def.target?.propDef?.edges[field]
+            if (
+              prop &&
+              (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            ) {
+              const refDef = createOrGetEdgeRefQueryDef(this.db, this.def, prop)
+              // @ts-ignore
+              return new QueryBranch(this.db, refDef)
+            }
+            throw new Error(
+              `No edge reference or edge references field named "${field}"`,
+            )
+          } else {
+            const prop =
+              field[0] == '$'
+                ? // @ts-ignore
+                  this.def.target?.propDef?.edges[field]
+                : this.def.props[field]
+            if (
+              prop &&
+              (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            ) {
+              const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
+              // @ts-ignore
+              return new QueryBranch(this.db, refDef)
+            }
+            throw new Error(`No reference or references field named "${field}"`)
           }
-          throw new Error(`No ref field named ${field}`)
         })
       } else if (Array.isArray(f)) {
         for (const field of f) {
