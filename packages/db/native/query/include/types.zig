@@ -8,9 +8,15 @@ pub const IncludeError = error{
 
 pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
-        return struct { nr_refs: u32, weakRefs: selva.SelvaNodeWeakReferences, fs: db.FieldSchema };
+        return struct { weakRefs: selva.SelvaNodeWeakReferences, fs: db.FieldSchema };
     }
     return *selva.SelvaNodeReferences;
+}
+pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {
+    if (isEdge) {
+        return refs.weakRefs.nr_refs;
+    }
+    return refs.nr_refs;
 }
 
 // Tmake this optional isEdge

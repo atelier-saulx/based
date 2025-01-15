@@ -20,8 +20,8 @@ pub fn defaultReferences(
 ) types.RefsResult {
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
-
-    checkItem: while (i < refs.nr_refs and result.cnt < limit) : (i += 1) {
+    const refsCnt = types.getRefsCnt(isEdge, refs);
+    checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
         if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
             const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(

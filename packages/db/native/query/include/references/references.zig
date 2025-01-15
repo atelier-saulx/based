@@ -62,7 +62,7 @@ pub inline fn getRefsFields(
             const edgeFs = db.getEdgeFieldSchema(ref.?.edgeConstaint, refField) catch {
                 return 0;
             };
-            refs = .{ .weakRefs = r, .fs = edgeFs, .nr_refs = r.nr_refs };
+            refs = .{ .weakRefs = r, .fs = edgeFs };
         } else {
             return 0;
         }
