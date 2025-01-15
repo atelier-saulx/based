@@ -28,7 +28,6 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
     } else {
         value = v;
     }
-
     if (op == Op.equal) {
         var j: usize = 0;
         while (j < query.len) {
