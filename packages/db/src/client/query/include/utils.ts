@@ -2,6 +2,7 @@ import { BasedDb } from '../../../index.js'
 import {
   PropDef,
   PropDefEdge,
+  REFERENCE,
   SchemaPropTree,
 } from '../../../server/schema/types.js'
 import { createQueryDef } from '../queryDef.js'
@@ -29,7 +30,9 @@ const createRefQueryDef = (
 ) => {
   const defRef = createQueryDef(
     db,
-    t.typeIndex === 13 ? QueryDefType.Reference : QueryDefType.References,
+    t.typeIndex === REFERENCE
+      ? QueryDefType.Reference
+      : QueryDefType.References,
     {
       type: t.inverseTypeName,
       propDef: t,
@@ -48,4 +51,18 @@ export const createOrGetRefQueryDef = (
     return createRefQueryDef(db, def, t)
   }
   return def.references.get(t.prop)
+}
+
+export const createOrGetEdgeRefQueryDef = (
+  db: BasedDb,
+  def: QueryDef,
+  t: PropDef | PropDefEdge,
+) => {
+  if (!def.edges) {
+    def.edges = createQueryDef(db, QueryDefType.Edge, {
+      ref: t,
+    })
+  }
+  const refDef = createOrGetRefQueryDef(db, def.edges, t)
+  return refDef
 }

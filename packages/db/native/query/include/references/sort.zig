@@ -38,7 +38,8 @@ pub fn sortedReferences(
     var metaSortIndex = dbSort.createSortIndexMeta(start, len, sortProp, sortBuffer[0] == 1) catch {
         return result;
     };
-    checkItem: while (i < refs.nr_refs) : (i += 1) {
+    const refsCnt = queryTypes.getRefsCnt(isEdge, refs);
+    checkItem: while (i < refsCnt) : (i += 1) {
         if (queryTypes.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
@@ -59,7 +60,6 @@ pub fn sortedReferences(
             i += 1;
             continue;
         }
-        std.debug.print("GO GO GO {any} {d} \n", .{ refNode, i });
         result.size += getFields(
             refNode,
             ctx,

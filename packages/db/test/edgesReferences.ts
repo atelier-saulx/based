@@ -262,8 +262,8 @@ await test('multiple references', async (t) => {
       .get()
       .then((v) => v.toObject()),
     [
-      { id: 1, contributors: [{ id: 1 }] },
-      { id: 2, contributors: [{ id: 2 }] },
+      { id: 1, contributors: [{ id: mrDerp }] },
+      { id: 2, contributors: [{ id: mrFlap }] },
     ],
   )
 
@@ -276,11 +276,11 @@ await test('multiple references', async (t) => {
     [
       {
         id: 1,
-        contributors: [{ id: 1, $countries: [{ id: 1 }, { id: 2 }] }],
+        contributors: [{ id: mrDerp, $countries: [{ id: 1 }, { id: 2 }] }],
       },
       {
         id: 2,
-        contributors: [{ id: 2, $countries: [{ id: 3 }, { id: 2 }] }],
+        contributors: [{ id: mrFlap, $countries: [{ id: 3 }, { id: 2 }] }],
       },
     ],
   )
@@ -296,7 +296,7 @@ await test('multiple references', async (t) => {
         id: 1,
         contributors: [
           {
-            id: 1,
+            id: mrDerp,
             $countries: [
               { id: 1, code: 'uk' },
               { id: 2, code: 'de' },
@@ -308,7 +308,7 @@ await test('multiple references', async (t) => {
         id: 2,
         contributors: [
           {
-            id: 2,
+            id: mrFlap,
             $countries: [
               { id: 3, code: 'nl' },
               { id: 2, code: 'de' },
@@ -330,11 +330,48 @@ await test('multiple references', async (t) => {
         id: 1,
         contributors: [
           {
+            id: mrDerp,
+            $countries: [
+              { id: 1, code: 'uk', name: 'United Kingdom' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [
+          {
+            id: mrFlap,
+            $countries: [
+              { id: 3, code: 'nl', name: 'Netherlands' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+          },
+        ],
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((t) => {
+        t('contributors').include('$countries').include('name').sort('name')
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
             id: 1,
             $countries: [
               { id: 1, code: 'uk', name: 'United Kingdom' },
               { id: 2, code: 'de', name: 'Germany' },
             ],
+            name: 'Mr Derp',
           },
         ],
       },
@@ -347,38 +384,161 @@ await test('multiple references', async (t) => {
               { id: 3, code: 'nl', name: 'Netherlands' },
               { id: 2, code: 'de', name: 'Germany' },
             ],
+            name: 'Mr Falp',
           },
         ],
       },
     ],
   )
 
-  // console.dir(
-  //   await db
-  //     .query('article')
-  //     .include((t) => {
-  //       // '$countries'
-  //       // '$countries'
-  //       t('contributors').include('$countries').include('name').sort('name')
-  //     })
-  //     .get()
-  //     .then((v) => v.debug().toObject()),
-  //   { depth: 10 },
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((t) => {
+        t('contributors').include('name').filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [],
+      },
+    ],
+  )
 
-  // console.dir(
-  //   await db
-  //     .query('article')
-  //     .include((t) => {
-  //       // '$countries'
-  //       // '$countries'
-  //       t('contributors')
-  //         // .include('$countries')
-  //         .include('name')
-  //         .filter('nationality', '=', nl)
-  //     })
-  //     .get()
-  //     .then((v) => v.debug().toObject()),
-  //   { depth: 10 },
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((t) => {
+        t('contributors')
+          .include('name')
+          .include('$countries')
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [
+              { id: 1, code: 'uk', name: 'United Kingdom' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [],
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((s) => {
+        s('contributors')
+          .include('name')
+          .include((s) => {
+            s('$countries').include('code')
+          })
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [
+              { id: 1, code: 'uk' },
+              { id: 2, code: 'de' },
+            ],
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((s) => {
+        s('contributors')
+          .include('name')
+          .include((s) => {
+            s('$countries').include('code').filter('code', '=', 'de')
+          })
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [{ id: 2, code: 'de' }],
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((s) => {
+        s('contributors')
+          .include('name')
+          .include((s) => {
+            s('$countries').include('code').sort('code')
+          })
+          .sort('name')
+          .filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+            $countries: [
+              { id: 2, code: 'de' },
+              { id: 1, code: 'uk' },
+            ],
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+    ],
+  )
 })
