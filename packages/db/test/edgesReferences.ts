@@ -422,11 +422,12 @@ await test('multiple references', async (t) => {
       .include((t) => {
         t('contributors')
           .include('name')
+          .include('$countries')
           .sort('name')
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v.inspect().toObject()),
     [
       {
         id: 1,
@@ -434,6 +435,10 @@ await test('multiple references', async (t) => {
           {
             id: 1,
             name: 'Mr Derp',
+            $countries: [
+              { id: 1, code: 'uk', name: 'United Kingdom' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
           },
         ],
       },

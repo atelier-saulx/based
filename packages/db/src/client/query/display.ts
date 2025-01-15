@@ -6,6 +6,7 @@ import {
   PropDef,
   PropDefEdge,
   REFERENCE,
+  REFERENCES,
   STRING,
   TIMESTAMP,
   TypeIndex,
@@ -139,7 +140,7 @@ const inspectObject = (
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
     } else if ('__isPropDef' in def) {
-      if (def.typeIndex === 14) {
+      if (def.typeIndex === REFERENCES) {
         str += inspectData(
           v,
           q.references.get(def.prop),
@@ -147,7 +148,7 @@ const inspectObject = (
           false,
           depth,
         )
-      } else if (def.typeIndex === 13) {
+      } else if (def.typeIndex === REFERENCE) {
         if (!v || !v.id) {
           str += 'null,\n'
         } else {
@@ -181,7 +182,7 @@ const inspectObject = (
           str += v
         }
       }
-      if (def?.typeIndex !== 13) {
+      if (def?.typeIndex !== REFERENCE) {
         str += ',\n'
       }
     } else {
@@ -192,17 +193,26 @@ const inspectObject = (
   for (const edge of edges) {
     if (edge.def.typeIndex === REFERENCE) {
       str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str +=
-        inspectObject(
+      str += inspectObject(
+        edge.v,
+        q.edges.references.get(edge.def.prop),
+        '',
+        level + 2,
+        false,
+        false,
+        true,
+        depth,
+      )
+    } else if (edge.def.typeIndex === REFERENCES) {
+      str += prefixBody + picocolors.bold(`${edge.k}: `)
+      str += str +=
+        inspectData(
           edge.v,
           q.edges.references.get(edge.def.prop),
-          '',
           level + 2,
           false,
-          false,
-          true,
-          depth,
-        ) + ''
+          depth + 2,
+        ) + '\n'
     } else {
       str +=
         prefixBody +
