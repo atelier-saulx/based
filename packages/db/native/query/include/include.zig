@@ -55,9 +55,6 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            if (isEdge) {
-                std.debug.print("need to handle isEdge multi refs (write edge field here) \n", .{});
-            }
             size += getRefsFields(
                 ctx,
                 multiRefs,

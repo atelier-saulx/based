@@ -22,11 +22,12 @@ pub fn sortedReferences(
     offset: u32,
     limit: u32,
 ) queryTypes.RefsResult {
+    var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
+
     if (isEdge) {
-        return 0;
+        return result;
     }
 
-    var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = 0;
     var start: u16 = undefined;
     var len: u16 = undefined;

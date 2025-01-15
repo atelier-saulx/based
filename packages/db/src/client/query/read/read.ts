@@ -194,6 +194,16 @@ export const readAllFields = (
           i += size - 5
         }
       } else if (prop === 253) {
+        i++
+        const field = result[i]
+        i++
+        const ref = q.edges.references.get(field)
+        const size = result.readUint32LE(i)
+        i += 4
+        const refs = resultToObject(ref, result, size + i + 4, i)
+        // @ts-ignore
+        addField(ref.target.propDef, refs, item)
+        i += size + 4
         // ----------------
       } else {
         const edgeDef = q.edges.reverseProps[prop]

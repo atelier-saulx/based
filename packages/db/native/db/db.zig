@@ -289,6 +289,10 @@ pub fn getEdgeReferences(
     return null;
 }
 
+pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.SelvaNodeWeakReference) ?Node {
+    return selva.selva_fields_resolve_weak_reference(ctx.selva, fieldSchema, ref);
+}
+
 pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
     field: u8,

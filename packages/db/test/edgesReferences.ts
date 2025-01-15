@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('references', async (t) => {
+await test('multi reference', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -155,5 +155,89 @@ await test('references', async (t) => {
         ],
       },
     ],
+  )
+})
+
+await test('multiple references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  db.putSchema({
+    types: {
+      country: {
+        props: {
+          code: { type: 'string', maxBytes: 2 },
+          name: 'string',
+        },
+      },
+      user: {
+        props: {
+          name: 'string',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
+      },
+      article: {
+        props: {
+          name: 'string',
+          contributors: {
+            type: 'references',
+            items: {
+              ref: 'user',
+              prop: 'articles',
+              $countries: {
+                items: {
+                  ref: 'country',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const uk = await db.create('country', {
+    name: 'United Kingdom',
+    code: 'uk',
+  })
+
+  const de = await db.create('country', {
+    name: 'Germany',
+    code: 'de',
+  })
+
+  const mrDerp = await db.create('user', {
+    name: 'Mr Derp',
+  })
+
+  await db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: [
+      {
+        id: mrDerp,
+        $countries: [uk, de],
+      },
+    ],
+  })
+
+  console.dir(
+    await db
+      .query('article')
+      .include('contributors.name', 'contributors.$countries')
+      .get()
+      .then((v) => v.debug().toObject()),
+    { depth: 10 },
   )
 })

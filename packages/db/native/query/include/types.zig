@@ -1,5 +1,6 @@
 const selva = @import("../../selva.zig");
 const db = @import("../../db/db.zig");
+const QueryCtx = @import("../types.zig").QueryCtx;
 
 pub const IncludeError = error{
     Recursion,
@@ -7,7 +8,7 @@ pub const IncludeError = error{
 
 pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
-        return selva.SelvaNodeWeakReferences;
+        return struct { nr_refs: u32, weakRefs: selva.SelvaNodeWeakReferences, fs: db.FieldSchema };
     }
     return *selva.SelvaNodeReferences;
 }
@@ -18,6 +19,20 @@ pub const RefStruct = struct {
     edgeReference: ?selva.SelvaNodeWeakReference,
     edgeConstaint: db.EdgeFieldConstraint,
 };
+
+pub inline fn resolveRefsNode(
+    ctx: *QueryCtx,
+    comptime isEdge: bool,
+    refs: Refs(isEdge),
+    i: usize,
+) ?db.Node {
+    if (isEdge) {
+        var ref = refs.weakRefs.refs[i];
+        return db.resolveEdgeReference(ctx.db, refs.fs, &ref);
+    } else {
+        return refs.refs[i].dst;
+    }
+}
 
 pub const RefsResult = struct {
     size: usize,
@@ -39,8 +54,8 @@ pub inline fn RefResult(
     }
     return .{
         .reference = null,
-        .edgeConstaint = @ptrCast(&refs.?.refs[i]),
-        .edgeReference = null,
+        .edgeConstaint = edgeConstrain.?,
+        .edgeReference = refs.?.weakRefs.refs[i],
     };
 }
 

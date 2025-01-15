@@ -47,9 +47,9 @@ pub inline fn getRefsFields(
         .refSize = 0,
         .includeMain = null,
         .score = null,
-        .refType = 253, // from result types
+        .refType = 253,
         .totalRefs = 0,
-        .isEdge = t.Prop.NULL,
+        .isEdge = if (isEdge) t.Prop.WEAK_REFERENCES else t.Prop.NULL,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
@@ -58,26 +58,21 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-            ref.?.edgeConstaint.*.fields_schema,
-            refField - 1,
-        );
-        if (ref.?.reference.?.meta != null) {
-            const resultRaw = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
-            std.debug.print(" resultRaw {any} \n", .{resultRaw});
+        if (db.getEdgeReferences(ref.?.reference.?, refField)) |r| {
+            const edgeFs = db.getEdgeFieldSchema(ref.?.edgeConstaint, refField) catch {
+                return 0;
+            };
+            refs = .{ .weakRefs = r, .fs = edgeFs, .nr_refs = r.nr_refs };
+        } else {
+            return 0;
         }
-        // this is wrong
-        refs = db.getEdgeReferences(ref.?.reference.?, refField - 1);
-        std.debug.print(" refs {any} \n", .{refs});
-        return 0;
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(node, refField);
-    }
-
-    if (refs == null) {
-        return 0;
+        if (refs == null) {
+            return 0;
+        }
     }
 
     var result: types.RefsResult = undefined;
