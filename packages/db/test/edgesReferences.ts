@@ -246,7 +246,8 @@ await test('multiple references', async (t) => {
       .query('article')
       .include((t) => {
         // '$countries'
-        t('contributors').include('name', '$countries') //.sort('name')
+        // '$countries'
+        t('contributors').include('$countries').include('name').sort('name')
       })
       .get()
       .then((v) => v.debug().toObject()),
