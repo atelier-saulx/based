@@ -93,5 +93,9 @@ pub inline fn getRefsFields(
     r.*.refSize = result.size;
     r.*.totalRefs = result.cnt;
 
+    if (isEdge) {
+        result.size += 1;
+    }
+
     return result.size + 10;
 }
