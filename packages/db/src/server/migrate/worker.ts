@@ -10,7 +10,7 @@ import { TreeNode } from '../csmt/types.js'
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
 } else {
-  const { from, to, fromSchema, toSchema, channel, atomics, transform } =
+  const { from, to, fromSchema, toSchema, channel, atomics, transformFns } =
     workerData
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
@@ -29,24 +29,42 @@ if (isMainThread) {
     reverseTypeMap[fromDb.schemaTypesParsed[type].id] = type
   }
 
-  const transformFn = transform && eval(transform)
+  for (const type in transformFns) {
+    const fnOrNull = transformFns[type]
+    transformFns[type] = eval(`(${fnOrNull})`)
+  }
 
   while (true) {
     let msg: any
     while ((msg = receiveMessageOnPort(channel))) {
       const leafData: TreeNode['data'] = msg.message
       const typeStr = reverseTypeMap[leafData.typeId]
-      const nodes = fromDb
-        .query(typeStr)
-        .range(leafData.start - 1, leafData.end - leafData.start + 1)
-        ._getSync()
+      const typeTransformFn = transformFns[typeStr]
 
-      for (const node of nodes) {
-        toDb.create(
-          typeStr,
-          (transformFn && transformFn(typeStr, node)) || node,
-          true,
-        )
+      if (typeTransformFn) {
+        const nodes = fromDb
+          .query(typeStr)
+          .range(leafData.start - 1, leafData.end - leafData.start + 1)
+          ._getSync()
+        for (const node of nodes) {
+          const res = typeTransformFn(node)
+          if (res === null) {
+            continue
+          }
+          if (Array.isArray(res)) {
+            toDb.create(res[0], res[1] || node, true)
+          } else {
+            toDb.create(typeStr, res || node, true)
+          }
+        }
+      } else if (typeStr in toDb.schemaTypesParsed) {
+        const nodes = fromDb
+          .query(typeStr)
+          .range(leafData.start - 1, leafData.end - leafData.start + 1)
+          ._getSync()
+        for (const node of nodes) {
+          toDb.create(typeStr, node, true)
+        }
       }
     }
 

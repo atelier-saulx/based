@@ -53,6 +53,7 @@ export class DbWorker {
   resolvers: any[] = []
 
   callback = (resolve) => {
+    this.db.processingQueries++
     this.resolvers.push(resolve)
   }
 
@@ -164,10 +165,12 @@ export class DbServer {
 
   migrateSchema(
     schema: StrictSchema,
-    transform?: (
-      type: string,
-      node: Record<string, any>,
-    ) => Record<string, any>,
+    transform?: Record<
+      string,
+      (
+        node: Record<string, any>,
+      ) => Record<string, any> | [string, Record<string, any>]
+    >,
   ) {
     return migrate(this, schema, transform)
   }
@@ -375,7 +378,7 @@ export class DbServer {
       } else if (queryType == 1) {
         // This will be more advanced - sometimes has indexes / sometimes not
       }
-      this.processingQueries++
+
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length
       return this.workers[this.availableWorkerIndex].getQueryBuf(buf)

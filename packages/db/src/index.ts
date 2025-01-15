@@ -64,10 +64,12 @@ export class BasedDb {
 
   migrateSchema(
     schema: StrictSchema,
-    transform?: (
-      type: string,
-      node: Record<string, any>,
-    ) => Record<string, any>,
+    transform?: Record<
+      string,
+      (
+        node: Record<string, any>,
+      ) => Record<string, any> | [string, Record<string, any>]
+    >,
   ) {
     return this.server.migrateSchema(schema, transform)
   }
