@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
-    const base_dir = "../dist/";
+    const base_dir = "../dist/lib/";
     const output_dir = switch (target.result.cpu.arch) {
         .x86_64 => switch (target.result.os.tag) {
             .linux => base_dir ++ "linux_x86_64",
