@@ -59,7 +59,6 @@ pub fn sortedReferences(
             i += 1;
             continue;
         }
-        std.debug.print("GO GO GO {any} {d} \n", .{ refNode, i });
         result.size += getFields(
             refNode,
             ctx,

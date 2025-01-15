@@ -353,32 +353,66 @@ await test('multiple references', async (t) => {
     ],
   )
 
-  // console.dir(
-  //   await db
-  //     .query('article')
-  //     .include((t) => {
-  //       // '$countries'
-  //       // '$countries'
-  //       t('contributors').include('$countries').include('name').sort('name')
-  //     })
-  //     .get()
-  //     .then((v) => v.debug().toObject()),
-  //   { depth: 10 },
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((t) => {
+        t('contributors').include('$countries').include('name').sort('name')
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $countries: [
+              { id: 1, code: 'uk', name: 'United Kingdom' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+            name: 'Mr Derp',
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [
+          {
+            id: 2,
+            $countries: [
+              { id: 3, code: 'nl', name: 'Netherlands' },
+              { id: 2, code: 'de', name: 'Germany' },
+            ],
+            name: 'Mr Falp',
+          },
+        ],
+      },
+    ],
+  )
 
-  // console.dir(
-  //   await db
-  //     .query('article')
-  //     .include((t) => {
-  //       // '$countries'
-  //       // '$countries'
-  //       t('contributors')
-  //         // .include('$countries')
-  //         .include('name')
-  //         .filter('nationality', '=', nl)
-  //     })
-  //     .get()
-  //     .then((v) => v.debug().toObject()),
-  //   { depth: 10 },
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((t) => {
+        t('contributors').include('name').filter('nationality', '=', nl)
+      })
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            name: 'Mr Derp',
+          },
+        ],
+      },
+      {
+        id: 2,
+        contributors: [],
+      },
+    ],
+  )
 })
