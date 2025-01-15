@@ -87,8 +87,6 @@ export const migrate = async (
     ranges.push(leaf.data)
   })
 
-  console.log('ranges:', ranges.length)
-
   while (i < ranges.length) {
     // block modifies
     fromDbServer.processingQueries++

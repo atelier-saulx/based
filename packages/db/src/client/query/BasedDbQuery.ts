@@ -155,6 +155,13 @@ export class QueryBranch<T> {
 
 export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
+const resToObject = (res: BasedQueryResponse) => res.toObject()
+class GetPromise extends Promise<BasedQueryResponse> {
+  toObject() {
+    return this.then(resToObject)
+  }
+}
+
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(db: BasedDb, type: string, id?: number | number[]) {
     const target: QueryTarget = {
@@ -178,7 +185,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     super(db, def)
   }
 
-  async get() {
+  #getInternal = async (resolve, reject) => {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
@@ -187,10 +194,15 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const d = performance.now()
     const res = await this.db.server.getQueryBuf(Buffer.concat(b))
     if (res instanceof Error) {
-      throw res
+      reject(res)
+    } else {
+      const result = Buffer.from(res)
+      resolve(new BasedQueryResponse(this.def, result, performance.now() - d))
     }
-    const result = Buffer.from(res)
-    return new BasedQueryResponse(this.def, result, performance.now() - d)
+  }
+
+  get(): GetPromise {
+    return new GetPromise(this.#getInternal)
   }
 
   _getSync() {
