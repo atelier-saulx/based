@@ -46,14 +46,18 @@ pub fn createResultsBuffer(
                 }
                 // SINGLE REF
                 // op, field, bytes
-                // [254, 2, 4531] // NULL if zero length
+                // [254, 2, 4531]
                 data[i] = 254;
                 data[i + 1] = item.field;
                 writeInt(u32, data, i + 2, item.refSize.?);
                 i += 6;
             } else if (item.refType == 253) {
+                if (item.isEdge != t.Prop.NULL) {
+                    data[i] = 252;
+                    i += 1;
+                }
                 // MULTIPLE REFS
-                // op, field, bytes, len (u32)  (max 4.2GB)
+                // op, field, bytes, len (u32)
                 // [253, 2, 2124, 10]
                 data[i] = 253;
                 data[i + 1] = item.field;
@@ -68,7 +72,6 @@ pub fn createResultsBuffer(
                 i += 1;
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
-
                 if (item.score != null) {
                     data[i] = item.score.?;
                     i += 1;

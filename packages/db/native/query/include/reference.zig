@@ -49,8 +49,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        // if isEdge ref can be set to NULL if isEdge
-        const selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
+        var selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -62,7 +61,7 @@ pub fn getSingleRefFields(
             .edgeConstaint = edgeConstrain,
             .edgeReference = selvaRef,
         };
-        node = selva.selva_fields_resolve_weak_reference(ctx.db.selva, fieldSchema, &selvaRef.?);
+        node = db.resolveEdgeReference(ctx.db, fieldSchema.?, &selvaRef.?);
         if (node == null) {
             return 6 + size;
         }

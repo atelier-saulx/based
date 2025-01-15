@@ -4,7 +4,6 @@ const QueryCtx = @import("../../types.zig").QueryCtx;
 const getFields = @import("../include.zig").getFields;
 const types = @import("../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
-
 const std = @import("std");
 
 pub fn defaultReferences(
@@ -19,41 +18,35 @@ pub fn defaultReferences(
     offset: u32,
     limit: u32,
 ) types.RefsResult {
-    if (isEdge) {
-        // later...
-        return 0;
-    }
-
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
-
     checkItem: while (i < refs.nr_refs and result.cnt < limit) : (i += 1) {
-        const refNode = refs.refs[i].dst.?;
-        const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
-        if (hasFilter and !filter(
-            ctx.db,
-            refNode,
-            typeEntry,
-            filterArr,
-            refStruct,
-            null,
-            0,
-            false,
-        )) {
-            continue :checkItem;
+        if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
+            const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
+            if (hasFilter and !filter(
+                ctx.db,
+                refNode,
+                typeEntry,
+                filterArr,
+                refStruct,
+                null,
+                0,
+                false,
+            )) {
+                continue :checkItem;
+            }
+            result.cnt += 1;
+            result.size += getFields(
+                refNode,
+                ctx,
+                db.getNodeId(refNode),
+                typeEntry,
+                include,
+                refStruct,
+                null,
+                false,
+            ) catch 0;
         }
-        result.cnt += 1;
-        result.size += getFields(
-            refNode,
-            ctx,
-            db.getNodeId(refNode),
-            typeEntry,
-            include,
-            refStruct,
-            null,
-            false,
-        ) catch 0;
     }
-
     return result;
 }
