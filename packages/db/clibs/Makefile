@@ -23,6 +23,7 @@ export LIB_PATH
 
 # Build all libraries (ordered)
 all: | prepare $(LIBS) nodeselva locale
+	cp -R include "$(subst ../../,,$(LIB_PATH))/"
 
 prepare:
 	mkdir -p "$(subst ../../,,$(LIB_PATH))"
@@ -40,6 +41,9 @@ locale-linux:
 test:
 	$(MAKE) -C test
 
+platform:
+	@echo -n "$(PLATFORM)"
+
 clean:
 	find . -type f -name "*.d" -exec rm -f {} \;
 	find . -type f -name "*.o" -exec rm -f {} \;
@@ -49,5 +53,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all prapare clean lib $(LIBS) nodeselva locale locale-linux test
+.PHONY: all prapare clean lib $(LIBS) nodeselva locale locale-linux test platform
 .NOTPARALLEL:

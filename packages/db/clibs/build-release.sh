@@ -14,4 +14,5 @@ then
     make
     git clean -dfx .
     podman run -v $PWD/../../..:/usr/src/based-db based-db-clibs-build
+    git clean -dfx .
 fi
