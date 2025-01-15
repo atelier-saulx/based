@@ -240,4 +240,16 @@ await test('multiple references', async (t) => {
       .then((v) => v.debug().toObject()),
     { depth: 10 },
   )
+
+  console.dir(
+    await db
+      .query('article')
+      .include((t) => {
+        // '$countries'
+        t('contributors').include('name', '$countries') //.sort('name')
+      })
+      .get()
+      .then((v) => v.debug().toObject()),
+    { depth: 10 },
+  )
 })

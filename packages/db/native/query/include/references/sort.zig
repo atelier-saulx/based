@@ -6,7 +6,6 @@ const getFields = @import("../include.zig").getFields;
 const queryTypes = @import("../types.zig");
 const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
-
 const selva = @import("../../../selva.zig");
 
 pub fn sortedReferences(
@@ -23,10 +22,6 @@ pub fn sortedReferences(
     limit: u32,
 ) queryTypes.RefsResult {
     var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
-
-    if (isEdge) {
-        return result;
-    }
 
     var i: usize = 0;
     var start: u16 = undefined;
@@ -47,15 +42,16 @@ pub fn sortedReferences(
     };
     // --------------------------------
     checkItem: while (i < refs.nr_refs) : (i += 1) {
-        const refNode = refs.refs[i].dst.?;
-        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
-            continue :checkItem;
+        if (queryTypes.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
+            if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
+                continue :checkItem;
+            }
+            const fs = db.getFieldSchema(sortField, typeEntry) catch {
+                return result;
+            };
+            const value = db.getField(typeEntry, 0, refNode, fs);
+            dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
         }
-        const fs = db.getFieldSchema(sortField, typeEntry) catch {
-            return result;
-        };
-        const value = db.getField(typeEntry, 0, refNode, fs);
-        dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
     }
     // --------------------------------
 
