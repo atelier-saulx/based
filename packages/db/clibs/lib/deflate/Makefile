@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
@@ -17,7 +17,7 @@ CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 	$(call cc-option,-Wno-keyword-macro) \
 	$(call cc-option,-Wno-constant-logical-operand) \
 	-DNDEBUG
-LDFLAGS += -g -L../../../build
+LDFLAGS += -g -L$(LIB_PATH)
 
 OBJ := \
 	lib/deflate_compress.o \

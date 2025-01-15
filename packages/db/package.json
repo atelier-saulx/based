@@ -6,7 +6,7 @@
   "main": "./dist/src/index.js",
   "scripts": {
     "get-napi": "./scripts/download-node-headers.sh",
-    "build-selva": "mkdir -p build && make -C clibs",
+    "build-selva": "make -C clibs",
     "build": "npm run build-selva && zig build  && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "rm -rf build && make -C clibs clean",

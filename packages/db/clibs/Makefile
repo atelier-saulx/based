@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 
 SHELL := /bin/bash
@@ -18,11 +18,14 @@ LIBS := \
 		lib/util \
 		lib/selva
 
-LIB_PATH := ../../../build
+LIB_PATH := ../../../build/$(PLATFORM)
 export LIB_PATH
 
 # Build all libraries (ordered)
-all: | $(LIBS) nodeselva locale
+all: | prepare $(LIBS) nodeselva locale
+
+prepare:
+	mkdir -p "$(subst ../../,,$(LIB_PATH))"
 
 $(LIBS):
 	$(MAKE) -C $@
@@ -32,7 +35,7 @@ locale: locale-linux
 endif
 
 locale-linux:
-	$(MAKE) -C locale LOCPATH=../../build/locale
+	$(MAKE) -C locale LOCPATH=../../build/$(PLATFORM)/locale
 
 test:
 	$(MAKE) -C test
@@ -46,5 +49,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all clean lib $(LIBS) nodeselva locale locale-linux test
+.PHONY: all prapare clean lib $(LIBS) nodeselva locale locale-linux test
 .NOTPARALLEL:
