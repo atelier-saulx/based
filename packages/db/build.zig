@@ -1,6 +1,12 @@
 const std = @import("std");
+const download = @import("build_dw_node_headers.zig");
 
 pub fn build(b: *std.Build) void {
+    download.download_node_headers("v20.11.1") catch |err| {
+        std.debug.print("Fail dowloading node headers: {}\n", .{err});
+        return;
+    };
+
     const target = b.standardTargetOptions(.{});
 
     const base_dir = "../dist/lib/";
@@ -19,7 +25,7 @@ pub fn build(b: *std.Build) void {
     };
 
     if (std.mem.eql(u8, output_dir, "unknown_os")) {
-        std.debug.print("Unknown OS\n", .{});
+        std.debug.print("Unknown, unsupported OS\n", .{});
         return;
     }
 
