@@ -18,7 +18,7 @@ LIBS := \
 		lib/util \
 		lib/selva
 
-LIB_PATH := ../../../build/$(PLATFORM)
+LIB_PATH := ../../../dist/lib/$(PLATFORM)
 export LIB_PATH
 
 # Build all libraries (ordered)
@@ -35,7 +35,7 @@ locale: locale-linux
 endif
 
 locale-linux:
-	$(MAKE) -C locale LOCPATH=../../build/$(PLATFORM)/locale
+	$(MAKE) -C locale LOCPATH=../../dist/lib/$(PLATFORM)/locale
 
 test:
 	$(MAKE) -C test
