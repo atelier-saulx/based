@@ -1,11 +1,11 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
 CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
-		   -L../../../build \
+		   -L$(LIB_PATH) \
 		   -ljemalloc_selva -ldeflate -lutil -lxxhash
 
 ifeq ($(uname_S),Linux)

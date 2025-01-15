@@ -93,7 +93,9 @@ SELVA_EXPORT
 const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field) __attribute__((nonnull, pure));
 
 SELVA_EXPORT
-[[__reproducible__]]
+#if __has_c_attribute(reproducible)
+[[reproducible]]
+#endif
 enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
 
 /**
