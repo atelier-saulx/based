@@ -3,6 +3,26 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
+    const base_dir = "../dist/";
+    const output_dir = switch (target.result.cpu.arch) {
+        .x86_64 => switch (target.result.os.tag) {
+            .linux => base_dir ++ "linux_x86_64",
+            .macos => base_dir ++ "darwin_x86_64",
+            else => "unknown_os",
+        },
+        .aarch64 => switch (target.result.os.tag) {
+            .linux => base_dir ++ "linux_aarch64",
+            .macos => base_dir ++ "darwin_arm64",
+            else => "unknown_os",
+        },
+        else => "unknown_os",
+    };
+
+    if (std.mem.eql(u8, output_dir, "unknown_os")) {
+        std.debug.print("Unknown OS\n", .{});
+        return;
+    }
+
     const lib = b.addSharedLibrary(.{
         .name = "based-db-zig",
         .root_source_file = b.path("native/lib.zig"),
@@ -32,7 +52,12 @@ pub fn build(b: *std.Build) void {
 
     lib.linkLibC();
 
+    std.debug.print("is {any}\n", .{output_dir});
+
     const install_lib = b.addInstallArtifact(lib, .{
+        .dest_dir = .{
+            .override = .{ .custom = output_dir },
+        },
         .dest_sub_path = "./lib.node",
     });
 
