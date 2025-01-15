@@ -20,11 +20,8 @@ pub fn defaultReferences(
 ) types.RefsResult {
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
-    std.debug.print("\nDefault refs\n", .{});
-
     checkItem: while (i < refs.nr_refs and result.cnt < limit) : (i += 1) {
         if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
-            std.debug.print("GET NODE isEdge {any} {any} {any}\n", .{ isEdge, i, refNode });
             const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(
                 ctx.db,
@@ -51,6 +48,5 @@ pub fn defaultReferences(
             ) catch 0;
         }
     }
-
     return result;
 }
