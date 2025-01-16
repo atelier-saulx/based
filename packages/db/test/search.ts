@@ -132,11 +132,12 @@ await test('search', async (t) => {
       .query('italy')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
+      .sort('date')
       .range(0, amount)
       .get()
       .then((v) => v.length),
     amount - 2,
-    'Search body "netherlands"',
+    'Search sorted body "netherlands"',
   )
 
   equal(
@@ -144,11 +145,12 @@ await test('search', async (t) => {
       .query('italy')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
+      .sort('date')
       .range(0, amount)
       .get()
       .then((v) => v.length),
     2,
-    'Search body "giraffe"',
+    'Search sorted body "giraffe"',
   )
 
   equal(
@@ -156,11 +158,12 @@ await test('search', async (t) => {
       .query('italy')
       .search('kingdom', { body: 0, title: 1 })
       .include('id', 'date', 'title')
+      .sort('date')
       .range(0, amount)
       .get()
       .then((v) => v.length),
     amount - 2,
-    'Search body "kingdom"',
+    'Search sorted body "kingdom"',
   )
 
   equal(
@@ -173,7 +176,7 @@ await test('search', async (t) => {
       .get()
       .then((v) => v.length),
     amount - 2,
-    'Search body "netherlands" sorted',
+    'Search sorted body "netherlands" sorted',
   )
 
   equal(
@@ -181,12 +184,12 @@ await test('search', async (t) => {
       .query('italy')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
-      .range(0, 1e3)
       .sort('date')
+      .range(0, 1e3)
       .get()
       .then((v) => v.length),
     2,
-    'Search body "giraffe" sorted',
+    'Search sorted body "giraffe" sorted',
   )
 
   equal(
@@ -194,20 +197,104 @@ await test('search', async (t) => {
       .query('italy')
       .search('derp', { body: 0, title: 1 })
       .include('id', 'date', 'title')
+      .sort('date')
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
     amount,
-    'Search title "derp"',
+    'Search sorted title "derp"',
   )
 
-  // // default + search
-  // r = await db
-  //   .query('italy')
-  //   .search('Netherlands', { body: 0, title: 1 })
-  //   .include('id', 'date')
-  //   .range(0, 1e3)
-  //   .get()
+  equal(
+    await db
+      .query('italy')
+      .search('first', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search sorted title "first"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('second', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search sorted title "second"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('giraffe first', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    0,
+    'Search sorted combined "giraffe first"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('italy netherlands', { body: 0, title: 1 })
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search sorted combined "italy netherlands"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('italy netherlands', 'body', 'title')
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search (arg syntax) sorted combined "italy netherlands"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('italy netherlands', ['body', 'title'])
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search (array syntax) sorted combined "italy netherlands"',
+  )
+
+  equal(
+    await db
+      .query('italy')
+      .search('italy netherlands', 'body')
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search (array syntax) sorted combined "italy netherlands"',
+  )
 
   // r.inspect()
 
