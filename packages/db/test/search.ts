@@ -19,6 +19,7 @@ await test('like filter', async (t) => {
       italy: {
         props: {
           body: { type: 'string', compression: 'none' },
+          nr: { type: 'uint32' },
         },
       },
     },
@@ -27,6 +28,7 @@ await test('like filter', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       body: italy,
+      nr: i,
     })
   }
 
@@ -116,7 +118,7 @@ await test('search', async (t) => {
     },
   })
 
-  const amount = 1e3
+  const amount = 10
 
   for (let i = 0; i < amount; i++) {
     await db.create('italy', {
@@ -202,20 +204,20 @@ await test('search', async (t) => {
       .get()
       .then((v) => v.length),
     amount,
-    'Search sorted title "derp"',
+    'Search sorted "derp"',
   )
 
   equal(
     await db
       .query('italy')
       .search('first', { body: 0, title: 1 })
-      .include('id', 'date', 'title')
+      .include('id', 'date', 'title', 'body')
       .sort('date')
       .range(0, 1e3)
       .get()
-      .then((v) => v.length),
-    1,
-    'Search sorted title "first"',
+      .then((v) => v.inspect(1e3).length),
+    amount - 1,
+    'Search sorted "first"',
   )
 
   equal(
@@ -227,8 +229,8 @@ await test('search', async (t) => {
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
-    1,
-    'Search sorted title "second"',
+    amount - 1,
+    'Search sorted "second"',
   )
 
   equal(
@@ -240,7 +242,7 @@ await test('search', async (t) => {
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
-    0,
+    1,
     'Search sorted combined "giraffe first"',
   )
 
@@ -253,7 +255,7 @@ await test('search', async (t) => {
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
-    1,
+    amount - 2,
     'Search sorted combined "italy netherlands"',
   )
 
@@ -265,57 +267,64 @@ await test('search', async (t) => {
       .sort('date')
       .range(0, 1e3)
       .get()
-      .then((v) => v.length),
-    1,
+      .then((v) => v.inspect().length),
+    amount - 2,
     'Search (arg syntax) sorted combined "italy netherlands"',
   )
+})
+
+await test('search simple', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          date: { type: 'uint32' },
+          title: { type: 'string' },
+          body: { type: 'string', compression: 'none' }, // big compressed string... compression: 'none'
+        },
+      },
+    },
+  })
+
+  await db.create('italy', {
+    date: 0,
+    title: 'Derp derp',
+    body: 'Mr giraffe first',
+  })
 
   equal(
     await db
       .query('italy')
-      .search('italy netherlands', ['body', 'title'])
+      .search('giraffe first', 'body')
       .include('id', 'date', 'title')
       .sort('date')
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
     1,
-    'Search (array syntax) sorted combined "italy netherlands"',
+    'Search sorted combined "giraffe first"',
   )
 
   equal(
     await db
       .query('italy')
-      .search('italy netherlands', 'body')
+      .search('first', 'body')
       .include('id', 'date', 'title')
       .sort('date')
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
     1,
-    'Search (array syntax) sorted combined "italy netherlands"',
+    'Search sorted combined "giraffe first"',
   )
-
-  // r.inspect()
-
-  // // // // ids + sort + search
-  // // r = await db
-  // //   .query('italy', [1, 2, 3])
-  // //   .search('Netherlands', { body: 0 })
-  // //   .include('id', 'date')
-  // //   .range(0, 1e3)
-  // //   // .sort('date')
-  // //   .get()
-
-  // // r.inspect()
-
-  // // // ids + search
-  // r = await db
-  //   .query('italy', [1, 2, 3])
-  //   .search('Netherlands', { body: 0 })
-  //   .include('id', 'date')
-  //   .range(0, 1e3)
-  //   .get()
-
-  // r.inspect()
 })

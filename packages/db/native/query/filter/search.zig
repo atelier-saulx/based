@@ -117,7 +117,10 @@ pub fn strSearch(
     var d: u8 = 10;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
-            if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(seperatorChars, value[i - 1]) > 0)) {
+            if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(
+                seperatorChars,
+                value[i - 1],
+            ) > 0)) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
@@ -151,7 +154,10 @@ pub fn strSearch(
         }
     }
     while (i < l - 1) : (i += 1) {
-        if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
+        if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(
+            seperatorChars,
+            value[i],
+        ) > 0) {
             if (i + ql - 1 > l) {
                 return d;
             }
@@ -202,21 +208,34 @@ pub fn search(
         fieldLoop: while (j < fl) {
             const field = ctx.fields[j];
             const penalty = ctx.fields[j + 1];
+            // add START
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
-            const value = db.getField(typeEntry, 0, node, fieldSchema);
-            if (value.len < query.len) {
-                j += 2;
-                continue :fieldLoop;
-            }
-            const isCompressed = value[0] == 1;
             var score: u8 = 255;
-            if (isCompressed) {
-                _ = decompress(*u8, strSearchCompressed, query, value, dbCtx, &score);
-                score = score + penalty;
+            if (field == 0) {
+                const value = db.getField(typeEntry, 0, node, fieldSchema);
+                // needs start
+                // is fixed len string from MAIN BUFFER
+                std.debug.print("FIXED LEN FROM MAIN DO LATER '{any}' '{s}' '{s}' \n", .{ value, value, query });
             } else {
-                score = strSearch(value, query) + penalty;
+                const value = db.getField(typeEntry, 0, node, fieldSchema);
+
+                const isCompressed = value[0] == 1;
+                if (isCompressed) {
+                    if (value.len - 10 < query.len) {
+                        j += 2;
+                        continue :fieldLoop;
+                    }
+                    _ = decompress(*u8, strSearchCompressed, query, value[0 .. value.len - 4], dbCtx, &score);
+                    score = score + penalty;
+                } else {
+                    if (value.len - 6 < query.len) {
+                        j += 2;
+                        continue :fieldLoop;
+                    }
+                    score = strSearch(value[2 .. value.len - 4], query) + penalty;
+                }
             }
             if (score < bestScore) {
                 bestScore = score;
