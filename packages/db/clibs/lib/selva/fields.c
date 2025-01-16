@@ -255,11 +255,6 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
         .dst = dst,
     };
 
-#if 0
-    assert(type == SELVA_FIELD_TYPE_REFERENCE || type == SELVA_FIELD_TYPE_REFERENCES);
-    assert(fs->edge_constraint.dst_node_type == dst->type);
-#endif
-
     nfo = ensure_field(node, fields, fs);
     void *vp = nfo2p(fields, nfo);
 
