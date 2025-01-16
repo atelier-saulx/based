@@ -1001,16 +1001,13 @@ static bool add_to_refs_index_(
 
     nfo = ensure_field(node, &node->fields, fs);
     if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
-        void *p = nfo2p(&node->fields, nfo);
-        struct SelvaNodeReferences refs;
+        struct SelvaNodeReferences *refs = nfo2p(&node->fields, nfo);
         size_t nr_refs;
 
-        memcpy(&refs, p, sizeof(refs));
-        nr_refs = refs.nr_refs;
-        res = node_id_set_add(&refs.index, &nr_refs, dst);
+        nr_refs = refs->nr_refs;
+        res = node_id_set_add(&refs->index, &nr_refs, dst);
         if (res) {
-            assert(nr_refs > refs.nr_refs);
-            memcpy(p, &refs, sizeof(refs));
+            assert(nr_refs > refs->nr_refs);
         }
     }
 
@@ -1080,12 +1077,10 @@ int selva_fields_references_insert(
     } else if (reorder) {
         struct SelvaFields *fields = &node->fields;
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-        struct SelvaNodeReferences refs;
+        struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
         ssize_t index_old;
 
-        memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
-
-        index_old = fast_linear_search_references(refs.refs, refs.nr_refs, dst);
+        index_old = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
         if (index_old < 0) {
             return SELVA_EGENERAL;
         } else if (index_old == index) {
@@ -1160,29 +1155,23 @@ int selva_fields_reference_set(
 size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min)
 {
     struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo;
 
     if (unlikely(fs->type != SELVA_FIELD_TYPE_REFERENCES)) {
         db_panic("Invalid type: %s", selva_str_field_type(fs->type));
     }
 
-    nfo = ensure_field(node, fields, fs);
+    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
+    struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
-    void *vp = nfo2p(fields, nfo);
-    struct SelvaNodeReferences refs;
-
-    memcpy(&refs, vp, sizeof(refs));
-
-    if (refs.nr_refs >= nr_refs_min) {
+    if (refs->nr_refs >= nr_refs_min) {
         goto out;
     }
 
-    refs.refs = selva_realloc(refs.refs, nr_refs_min * sizeof(*refs.refs));
-    refs.index = selva_realloc(refs.index, nr_refs_min * sizeof(refs.index[0]));
-    memcpy(vp, &refs, sizeof(refs));
+    refs->refs = selva_realloc(refs->refs, nr_refs_min * sizeof(*refs->refs));
+    refs->index = selva_realloc(refs->index, nr_refs_min * sizeof(refs->index[0]));
 
 out:
-    return refs.nr_refs;
+    return refs->nr_refs;
 }
 
 static void selva_fields_references_insert_tail_wupsert_empty_src_field(
