@@ -420,9 +420,11 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
 
     ref = &refs->refs[i];
     reference_meta_destroy(db, efc, ref);
+
     if (!node_id_set_remove(&refs->index, &id_set_len, ref->dst->node_id)) {
         db_panic("node_id not found in refs: %u:%u\n", ref->dst->type, ref->dst->node_id);
     }
+    memset(ref, 0, sizeof(*ref));
     ref = nullptr;
 
     if (i < refs->nr_refs - 1) {
