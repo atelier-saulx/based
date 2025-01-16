@@ -69,9 +69,6 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     if (prop.typeIndex !== STRING) {
       throw new Error('Can only search trough strings')
     }
-    if (!prop.separate) {
-      throw new Error('Cant  search trough fixed len (yet)')
-    }
     def.search.size += 4
     def.search.fields.push({
       weight: s[key],

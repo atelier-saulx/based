@@ -198,7 +198,6 @@ pub fn search(
     var totalScore: u8 = 0;
     var j: usize = 0;
     var bestScore: u8 = 255;
-
     wordLoop: while (p < ctx.allQueries.len) {
         const qLen = readInt(u16, ctx.allQueries, p);
         const query = ctx.allQueries[p + 2 .. p + qLen + 2];
@@ -207,9 +206,6 @@ pub fn search(
         bestScore = 255;
         fieldLoop: while (j < fl) {
             const field = ctx.fields[j];
-
-            std.debug.print(" FIELD '{any}' \n", .{field});
-
             const penalty = ctx.fields[j + 1];
             // add START + use len as a start
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {

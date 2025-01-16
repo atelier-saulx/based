@@ -112,7 +112,7 @@ await test('search', async (t) => {
         props: {
           date: { type: 'uint32' },
           title: { type: 'string' },
-          body: { type: 'string', compression: 'none' }, // big compressed string... compression: 'none'
+          body: { type: 'string' },
         },
       },
     },
@@ -289,7 +289,7 @@ await test('search simple', async (t) => {
       italy: {
         props: {
           date: { type: 'uint32' },
-          title: { type: 'string' },
+          title: { type: 'string', maxBytes: 20 },
           body: { type: 'string', compression: 'none' }, // big compressed string... compression: 'none'
         },
       },
@@ -318,7 +318,7 @@ await test('search simple', async (t) => {
   equal(
     await db
       .query('italy')
-      .search('first', 'body')
+      .search('first', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
       .range(0, 1e3)
