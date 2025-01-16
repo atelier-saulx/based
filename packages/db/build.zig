@@ -18,8 +18,8 @@ pub fn build(b: *std.Build) !void {
             else => "unknown_os",
         },
         .aarch64 => switch (target.result.os.tag) {
-            .linux => base_dir ++ "linux_arm_64",
-            .macos => base_dir ++ "darwin_arm_64",
+            .linux => base_dir ++ "linux_aarch64",
+            .macos => base_dir ++ "darwin_arm64",
             else => "unknown_os",
         },
         else => "unknown_os",
