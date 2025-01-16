@@ -215,7 +215,7 @@ await test('search', async (t) => {
       .sort('date')
       .range(0, 1e3)
       .get()
-      .then((v) => v.inspect(1e3).length),
+      .then((v) => v.length),
     amount - 1,
     'Search sorted "first"',
   )
@@ -267,7 +267,7 @@ await test('search', async (t) => {
       .sort('date')
       .range(0, 1e3)
       .get()
-      .then((v) => v.inspect().length),
+      .then((v) => v.length),
     amount - 2,
     'Search (arg syntax) sorted combined "italy netherlands"',
   )
