@@ -7,6 +7,7 @@ const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
 const std = @import("std");
 
+// RENAME TOO CONFUSING
 pub const SearchCtx = struct {
     score: u8,
     totalSearchResults: usize,

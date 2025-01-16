@@ -64,6 +64,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         if (sortSize == 0) {
             if (searchSize > 0) {
                 const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
+
+                std.debug.print(" fuck shit '{any}' \n", .{searchSize});
+
                 const searchCtx = &createSearchCtx(search);
                 try QueryDefault.search(&ctx, offset, limit, typeId, filterBuf, include, searchCtx);
             } else {

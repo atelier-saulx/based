@@ -207,8 +207,11 @@ pub fn search(
         bestScore = 255;
         fieldLoop: while (j < fl) {
             const field = ctx.fields[j];
+
+            std.debug.print(" FIELD '{any}' \n", .{field});
+
             const penalty = ctx.fields[j + 1];
-            // add START
+            // add START + use len as a start
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
@@ -220,7 +223,6 @@ pub fn search(
                 std.debug.print("FIXED LEN FROM MAIN DO LATER '{any}' '{s}' '{s}' \n", .{ value, value, query });
             } else {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
-
                 const isCompressed = value[0] == 1;
                 if (isCompressed) {
                     if (value.len - 10 < query.len) {
@@ -244,7 +246,7 @@ pub fn search(
                     continue :wordLoop;
                 }
             }
-            j += 2;
+            j += 4;
         }
         totalScore += bestScore;
         if (totalScore > ctx.bad) {
