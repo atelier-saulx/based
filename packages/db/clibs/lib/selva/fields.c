@@ -647,21 +647,8 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     refs = nfo2p(fields, nfo);
     assert(((uintptr_t)refs & 7) == 0);
 
-    fprintf(stderr, "node: %d:%u field: %d Clearing %u refs\n", node->type, node->node_id, fs->field, refs->nr_refs);
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
-
-        if (refs->refs[i].dst) {
-        fprintf(stderr, "rem: %d:%u\n", refs->refs[i].dst->type, refs->refs[i].dst->node_id);
-        } else {
-            fprintf(stderr, "refs->refs[i].dst = nullptr\n");
-        }
-
-        if (!refs->refs[i].dst) {
-            assert(!refs->refs[i].meta);
-            refs->nr_refs--;
-            continue;
-        }
 
         /*
          * Deleting the last ref first is faster because a memmove() is not needed.
