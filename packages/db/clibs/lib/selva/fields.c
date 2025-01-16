@@ -1315,7 +1315,7 @@ int selva_fields_references_insert_tail_wupsert(
     return 0;
 }
 
-static int get_refs(struct SelvaNodeReferences *refs, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+static int clone_refs(struct SelvaNodeReferences *refs, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFieldInfo *nfo;
 
@@ -1341,7 +1341,7 @@ int selva_fields_references_move(
     struct SelvaNodeReferences refs;
     int err;
 
-    err = get_refs(&refs, &node->fields, fs);
+    err = clone_refs(&refs, &node->fields, fs);
     if (err) {
         return err;
     }
@@ -1418,7 +1418,7 @@ int selva_fields_references_swap(
     struct SelvaNodeReferences refs;
     int err;
 
-    err = get_refs(&refs, &node->fields, fs);
+    err = clone_refs(&refs, &node->fields, fs);
     if (err) {
         return err;
     }
