@@ -86,13 +86,11 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   search.fields.sort((a, b) => {
     return a.weight - b.weight
   })
-
   for (let i = 0; i < search.fields.length * 4; i += 4) {
     const f = search.fields[i / 4]
     result[i + offset] = f.field
     result[i + 1 + offset] = f.weight
     result.writeUInt16LE(f.start, i + 2 + offset)
   }
-
   return result
 }

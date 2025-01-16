@@ -318,13 +318,13 @@ await test('search simple', async (t) => {
   equal(
     await db
       .query('italy')
-      .search('first', 'body', 'title')
+      .search('derp derp', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
     1,
-    'Search sorted combined "giraffe first"',
+    'Search sorted combined "derp derp"',
   )
 })

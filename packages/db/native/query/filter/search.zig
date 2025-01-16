@@ -204,7 +204,7 @@ pub fn search(
         p += qLen + 2;
         j = 0;
         bestScore = 255;
-        fieldLoop: while (j < fl) {
+        fieldLoop: while (j < fl) : (j += 4) {
             const field = ctx.fields[j];
             const penalty = ctx.fields[j + 1];
             // add START + use len as a start
@@ -214,22 +214,24 @@ pub fn search(
             var score: u8 = 255;
             if (field == 0) {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
-                // needs start
-                // is fixed len string from MAIN BUFFER
-                std.debug.print("FIXED LEN FROM MAIN DO LATER '{any}' '{s}' '{s}' \n", .{ value, value, query });
+                const start = readInt(u16, ctx.fields, j + 2);
+                const len = value[start];
+                if (len < query.len) {
+                    continue :fieldLoop;
+                }
+                const str = value[start + 1 .. start + 1 + len];
+                score = strSearch(str, query) + penalty;
             } else {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
                 const isCompressed = value[0] == 1;
                 if (isCompressed) {
                     if (value.len - 10 < query.len) {
-                        j += 2;
                         continue :fieldLoop;
                     }
                     _ = decompress(*u8, strSearchCompressed, query, value[0 .. value.len - 4], dbCtx, &score);
                     score = score + penalty;
                 } else {
                     if (value.len - 6 < query.len) {
-                        j += 2;
                         continue :fieldLoop;
                     }
                     score = strSearch(value[2 .. value.len - 4], query) + penalty;
@@ -242,7 +244,6 @@ pub fn search(
                     continue :wordLoop;
                 }
             }
-            j += 4;
         }
         totalScore += bestScore;
         if (totalScore > ctx.bad) {
