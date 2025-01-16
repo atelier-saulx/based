@@ -1,11 +1,12 @@
 const std = @import("std");
 const download = @import("build_dw_node_headers.zig");
 
-pub fn build(b: *std.Build) void {
-    download.download_node_headers("v20.11.1") catch |err| {
-        std.debug.print("Fail dowloading node headers: {}\n", .{err});
-        return;
-    };
+pub fn build(b: *std.Build) !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const node_versions = [_][]const u8{ "v23.6.0", "v22.13.0", "v20.18.1" };
 
     const target = b.standardTargetOptions(.{});
 
@@ -17,8 +18,8 @@ pub fn build(b: *std.Build) void {
             else => "unknown_os",
         },
         .aarch64 => switch (target.result.os.tag) {
-            .linux => base_dir ++ "linux_aarch64",
-            .macos => base_dir ++ "darwin_arm64",
+            .linux => base_dir ++ "linux_arm_64",
+            .macos => base_dir ++ "darwin_arm_64",
             else => "unknown_os",
         },
         else => "unknown_os",
@@ -38,8 +39,8 @@ pub fn build(b: *std.Build) void {
     });
 
     lib.linker_allow_shlib_undefined = true;
-
-    lib.addSystemIncludePath(b.path("deps/node-v20.11.1/include/node/"));
+    lib.addSystemIncludePath(b.path(try std.fmt.allocPrint(allocator, "{s}/include/", .{output_dir})));
+    lib.addLibraryPath(b.path(output_dir));
 
     // Build selva
     //const make_clibs = b.addSystemCommand(
@@ -50,23 +51,27 @@ pub fn build(b: *std.Build) void {
     //    },
     //);
     //b.getInstallStep().dependOn(&make_clibs.step);
-    lib.addIncludePath(b.path("dist/lib/darwin_arm64/include/"));
-    lib.addLibraryPath(b.path("dist/lib/darwin_arm64"));
     // TODO Linux rpath
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("selva");
 
     lib.linkLibC();
 
-    std.debug.print("is {any}\n", .{output_dir});
+    for (node_versions) |version| {
+        download.download_node_headers(version) catch |err| {
+            std.debug.print("Failed downloading node headers for version {s}: {}\n", .{ version, err });
+            return;
+        };
 
-    const install_lib = b.addInstallArtifact(lib, .{
-        .dest_dir = .{
+        lib.addSystemIncludePath(b.path(try std.fmt.allocPrint(allocator, "deps/node-{s}/include/node/", .{version})));
+
+        const lib_name = try std.fmt.allocPrint(allocator, "./lib_node-{s}.node", .{version});
+
+        var install_lib = b.addInstallArtifact(lib, .{ .dest_dir = .{
             .override = .{ .custom = output_dir },
-        },
-        .dest_sub_path = "./lib.node",
-    });
+        }, .dest_sub_path = lib_name });
 
-    b.getInstallStep().dependOn(&install_lib.step);
-    b.installArtifact(lib);
+        b.getInstallStep().dependOn(&install_lib.step);
+        b.installArtifact(lib);
+    }
 }

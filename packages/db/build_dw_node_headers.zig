@@ -1,59 +1,78 @@
 const std = @import("std");
+const Child = std.process.Child;
 
-// Function to download and extract Node.js headers for a given version
 pub fn download_node_headers(version: []const u8) !void {
     const allocator = std.heap.page_allocator;
     var stdout = std.io.getStdOut().writer();
     var cwd = std.fs.cwd();
 
-    // Construct the headers URL based on the version
     const headers_url = try construct_headers_url(allocator, version);
     defer allocator.free(headers_url);
 
-    // Remove and create 'deps' directory
-    try cwd.deleteDir("deps");
+    try cwd.deleteTree("deps");
     try cwd.makeDir("deps");
 
-    // Determine tarball filename
     const tarball_name = std.fs.path.basename(headers_url);
     const headers_tarball = try std.fmt.allocPrint(allocator, "deps/{s}", .{tarball_name});
 
-    // Download tarball using wget or curl
-    // Executa o comando `wget` diretamente
-    var child = std.process.Child.init(&[_][]const u8{
-        "wget",
-        "--quiet",
-        "--show-progress",
-        "--output-document=" ++ headers_tarball,
-        headers_url,
-    }, allocator);
+    try stdout.print("Downloading {s}...\n", .{headers_url});
+    const proc = try Child.run(.{ .argv = &[_][]const u8{ "sh", "-c", "command -v wget > /dev/null" }, .allocator = allocator });
+    const has_wget = proc.term.Exited == 0;
 
-    // Configura o comportamento de stdin, stdout e stderr
-    child.stdin_behavior = .Ignore; // Ignora a entrada padrão
-    child.stdout_behavior = .Ignore; // Ignora a saída padrão
-    child.stderr_behavior = .Ignore; // Ignora a saída de erro
+    if (has_wget) {
+        const wget_argv = &[_][]const u8{
+            "wget",
+            "--quiet",
+            "--show-progress",
+            try std.fmt.allocPrint(allocator, "--output-document={s}", .{headers_tarball}),
+            headers_url,
+        };
+        const wget_proc = try Child.run(.{ .argv = wget_argv, .allocator = allocator });
+        if (wget_proc.term.Exited != 0) {
+            try stdout.print("Failed to download {s} with wget.\n", .{headers_url});
+            return;
+        }
+    } else {
+        const curl_argv = &[_][]const u8{
+            "curl",
+            "--silent",
+            "--progress-bar",
+            "--output",
+            headers_tarball,
+            headers_url,
+        };
+        const curl_proc = try Child.run(.{ .argv = curl_argv, .allocator = allocator });
+        if (curl_proc.term.Exited != 0) {
+            try stdout.print("Failed to download {s} with curl.\n", .{headers_url});
+            return;
+        }
+    }
 
-    // Inicia o processo
-    try child.spawn();
-
-    // Espera o processo terminar
-    _ = try child.wait();
-
-    // Extract tarball using tar
     try stdout.print("Extracting {s}...\n", .{headers_tarball});
-    try std.process.shell(try std.fmt.allocPrint(allocator, "tar -xf {s} -C deps", .{headers_tarball})).wait();
+    const extract_proc = try Child.run(.{
+        .argv = &[_][]const u8{
+            "tar",
+            "-xzf",
+            headers_tarball,
+            "-C",
+            "deps",
+        },
+        .allocator = allocator,
+    });
+    if (extract_proc.term.Exited != 0) {
+        try stdout.print("Extracting tarball {s} failed.\n", .{headers_tarball});
+        return;
+    }
 
-    // Remove tarball
-    try cwd.removePath(headers_tarball);
+    try stdout.print("Removing tarball...\n", .{});
+    try cwd.deleteFile(headers_tarball);
 }
 
-// Helper function to construct the headers URL based on the Node.js version
 fn construct_headers_url(allocator: std.mem.Allocator, version: []const u8) ![]const u8 {
     // Example URL pattern: https://nodejs.org/dist/v22.13.0/node-v22.13.0-headers.tar.gz
     return try std.fmt.allocPrint(allocator, "https://nodejs.org/dist/{s}/node-{s}-headers.tar.gz", .{ version, version });
 }
 
 pub fn main() !void {
-    // Replace "v22.13.0" with the desired Node.js version
     try download_node_headers("v20.11.1");
 }
