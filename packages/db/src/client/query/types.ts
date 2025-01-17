@@ -24,6 +24,7 @@ export type Target = {
   id?: number | void
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
+  alias?: QueryByAliasObj
 }
 
 export const isRefDef = (def: QueryDef): def is QueryDefRest => {
@@ -94,3 +95,13 @@ export type QueryDef = QueryDefEdges | QueryDefRest
 export type QueryTarget = EdgeTarget | Target
 
 export { QueryDefType }
+
+export type QueryByAliasObj = {
+  [key: string]: string | QueryByAliasObj
+}
+
+export const isAlias = (
+  id: QueryByAliasObj | number | (QueryByAliasObj | number)[],
+): id is QueryByAliasObj => {
+  return typeof id === 'object' && id !== null && !Array.isArray(id)
+}

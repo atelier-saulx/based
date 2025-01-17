@@ -232,12 +232,42 @@ await test('alias - references', async (t) => {
       },
     ],
   )
+})
 
-  // const res = await db
-  //   .query('user', {
-  //     email: 'youri@saulx.com',
-  //   })
-  //   .get()
+await test('Get single node by alias', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
 
-  // console.log(res)
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          email: 'alias',
+        },
+      },
+    },
+  })
+
+  await db.upsert('user', {
+    name: 'youri',
+    email: 'youri@saulx.com',
+  })
+
+  console.log('DERP DERP')
+
+  const res = await db
+    .query('user', {
+      email: 'youri@saulx.com',
+    })
+    .get()
+
+  console.log(res)
 })
