@@ -100,17 +100,30 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterSize = readInt(u16, q, idsSize + 15);
         const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
         const sortSize = readInt(u16, q, 17 + filterSize + idsSize);
+
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
+
+        const searchIndex = 21 + idsSize + filterSize + sortSize;
         const searchSize = readInt(u16, q, 19 + idsSize + filterSize + sortSize);
-        const include = q[21 + idsSize + filterSize + sortSize + searchSize .. q.len];
+        const include = q[searchIndex + searchSize .. q.len];
         if (sortSize == 0) {
-            try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
-        } else {
-            const isAsc = sortBuf[0] == 0;
-            if (isAsc) {
-                try QueryIds.sort(false, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+            if (searchSize > 0) {
+                const searchCtx = &createSearchCtx(q[searchIndex .. searchIndex + searchSize]);
+                try QueryIds.search(ids, &ctx, typeId, filterBuf, include, searchCtx);
             } else {
-                try QueryIds.sort(true, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+                try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
+            }
+        } else {
+            if (searchSize > 0) {
+                const searchCtx = &createSearchCtx(q[searchIndex .. searchIndex + searchSize]);
+                try QueryIds.search(ids, &ctx, typeId, filterBuf, include, searchCtx);
+            } else {
+                const isAsc = sortBuf[0] == 0;
+                if (isAsc) {
+                    try QueryIds.sort(false, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+                } else {
+                    try QueryIds.sort(true, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+                }
             }
         }
     } else {

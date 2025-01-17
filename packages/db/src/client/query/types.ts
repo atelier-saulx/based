@@ -47,7 +47,7 @@ export type QueryDefSearch = {
   size: number
   query: Buffer
   // has to be string or text
-  fields: { weight: number; field: number }[]
+  fields: { weight: number; field: number; start: number }[]
 }
 
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }

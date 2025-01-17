@@ -20,8 +20,6 @@ fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
     const schema = try napi.get([]u8, env, args[1]);
     const ctx = try napi.get(*db.DbCtx, env, args[2]);
 
-    // std.debug.print("new eq", .{})
-
     if (ctx.selva == null) {
         return errors.SelvaError.DB_NOT_CREATED;
     }
