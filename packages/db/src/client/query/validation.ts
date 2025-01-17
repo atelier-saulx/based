@@ -6,6 +6,7 @@ import {
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
 import { validOperators, Operator } from './filter/operators.js'
+import { QueryByAliasObj } from './types.js'
 
 export const isValidId = (id: number): void => {
   if (typeof id != 'number') {
@@ -17,7 +18,9 @@ export const isValidId = (id: number): void => {
   }
 }
 
-export const checkMaxIdsPerQuery = (ids: number[]): void => {
+export const checkMaxIdsPerQuery = (
+  ids: (number | QueryByAliasObj)[],
+): void => {
   if (ids.length > MAX_IDS_PER_QUERY) {
     throw new Error(`The number of IDs cannot exceed ${MAX_IDS_PER_QUERY}.`)
   }

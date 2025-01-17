@@ -182,7 +182,8 @@ export class BasedDb {
       | ModifyRes
       | (number | ModifyRes)[]
       | QueryByAliasObj
-      | QueryByAliasObj[],
+      | QueryByAliasObj[]
+      | { [alias: string]: string }, // alias
   ): BasedDbQuery {
     if (type === undefined) {
       return new BasedDbQuery(this, '_root', 1)

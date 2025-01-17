@@ -12,9 +12,9 @@ import {
   getAll,
   filterOr,
   convertFilter,
-  debugQueryDef,
+  QueryByAliasObj,
+  isAlias,
 } from './query.js'
-
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
   createOrGetEdgeRefQueryDef,
@@ -202,27 +202,40 @@ class GetPromise extends Promise<BasedQueryResponse> {
   }
 }
 
-export type QueryByAliasObj = {
-  [key: string]: string | QueryByAliasObj
-}
-
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
-  constructor(db: BasedDb, type: string, id?: number | number[]) {
+  constructor(
+    db: BasedDb,
+    type: string,
+    id?: QueryByAliasObj | number | (QueryByAliasObj | number)[],
+  ) {
+    console.log(id)
     const target: QueryTarget = {
       type,
     }
 
     if (id) {
-      if (Array.isArray(id)) {
-        checkMaxIdsPerQuery(id)
-        target.ids = new Uint32Array(id)
-        for (const id of target.ids) {
-          isValidId(id)
-        }
-        target.ids.sort()
+      if (isAlias(id)) {
+        target.alias = id
       } else {
-        isValidId(id)
-        target.id = id
+        if (Array.isArray(id)) {
+          checkMaxIdsPerQuery(id)
+          // const ids = id.filter((id) => typeof id === 'number')
+          // if (ids.length < id.length) {
+          //   throw new Error(
+          //     'Seems that aliases are part of ids in qeury not supported yet...',
+          //   )
+          // }
+          // TODO ADD MULTI ALIAS
+          // @ts-ignore
+          target.ids = new Uint32Array(id)
+          for (const id of target.ids) {
+            isValidId(id)
+          }
+          target.ids.sort()
+        } else {
+          isValidId(id)
+          target.id = id
+        }
       }
     }
 

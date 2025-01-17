@@ -13,6 +13,7 @@ const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
 const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
+const QueryAlias = @import("./types/alias.zig");
 
 const readInt = @import("../utils.zig").readInt;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
@@ -28,6 +29,7 @@ const QueryType = enum(u8) {
     id = 0,
     ids = 1,
     default = 2,
+    alias = 3,
 };
 
 pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
@@ -126,6 +128,14 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
                 }
             }
         }
+    } else if (queryType == QueryType.alias) {
+        const field = q[3];
+        const valueSize = readInt(u16, q, 4);
+        const value = q[6 .. 6 + valueSize];
+        const filterSize = readInt(u16, q, valueSize + 6);
+        const filterBuf = q[8 .. 8 + filterSize];
+        const include = q[8 + filterSize + valueSize .. q.len];
+        try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
