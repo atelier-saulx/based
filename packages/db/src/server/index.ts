@@ -324,6 +324,12 @@ export class DbServer {
   }
 
   updateTypeDefs() {
+    for (const field in this.schemaTypesParsed) {
+      if (field in this.schema.types) {
+        continue
+      }
+      delete this.schemaTypesParsed[field]
+    }
     for (const field in this.schema.types) {
       const type = this.schema.types[field]
       if (

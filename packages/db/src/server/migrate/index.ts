@@ -56,6 +56,7 @@ export const migrate = async (
 
   toDb.putSchema(toSchema)
 
+  const fromSchema = fromDbServer.schema
   const fromCtx = fromDbServer.dbCtxExternal
   const toCtx = toDb.server.dbCtxExternal
   const { port1, port2 } = new MessageChannel()
@@ -67,7 +68,7 @@ export const migrate = async (
     workerData: {
       from: fromAddress,
       to: toAddress,
-      fromSchema: fromDbServer.schema,
+      fromSchema,
       toSchema,
       channel: port2,
       atomics,
@@ -91,6 +92,7 @@ export const migrate = async (
     // block modifies
     fromDbServer.processingQueries++
     const leafData = ranges[i++]
+
     port1.postMessage(leafData)
     // wake up the worker
     atomics[0] = 1
@@ -102,7 +104,6 @@ export const migrate = async (
     fromDbServer.onQueryEnd()
 
     if (abort()) {
-      console.log('abort')
       break
     }
 

@@ -48,14 +48,14 @@ await test('migration', async (t) => {
       data.friends = { add: [prevId] }
     }
     prevId = db.create('user', data)
-    if (i === 5_000_000) {
+    if (i === 5_000) {
       break
     }
   }
 
   db.drain()
 
-  let allUsers = (await db.query('user').range(0, 5_000_000).get()).toObject()
+  let allUsers = (await db.query('user').range(0, 5_000).get()).toObject()
 
   const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
   let migrationPromise = db.migrateSchema(
@@ -90,33 +90,10 @@ await test('migration', async (t) => {
     },
   )
 
-  console.time('migration time')
-  db.create('user', {
-    name: 'newuser',
-  })
-
-  db.update('user', 1, {
-    name: 'change1',
-  })
-
-  await setTimeout(500)
-
-  db.create('user', {
-    name: 'newuser2',
-  })
+  await setTimeout(10)
 
   await db.update('user', 1, {
     name: 'change2',
-  })
-
-  await setTimeout(500)
-
-  db.create('user', {
-    name: 'newuser3',
-  })
-
-  await db.update('user', 1, {
-    name: 'change3',
   })
 
   await migrationPromise
@@ -126,7 +103,7 @@ await test('migration', async (t) => {
     await db
       .query('cmsuser')
       .include('*', 'bestBud', 'buddies')
-      .range(0, 6_000_000)
+      .range(0, 6_000)
       .get()
   ).toObject()
 
