@@ -2,6 +2,65 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { ModifyRes } from '../src/client/modify/ModifyRes.js'
+import { setTimeout } from 'timers/promises'
+
+await test('single special cases', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          bestBud: {
+            ref: 'user',
+            prop: 'bestBudOf',
+          },
+          buddies: {
+            items: {
+              ref: 'user',
+              prop: 'buddies',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  let j = 2
+  while (j--) {
+    let i = 0
+    let prevId
+    while (true) {
+      const data: any = {
+        name: 'user ' + ++i,
+        age: i % 100,
+      }
+      if (prevId) {
+        data.bestBud = prevId
+        data.buddies = [prevId]
+      }
+      prevId = db.create('user', data)
+      if (i === 5e3) {
+        break
+      }
+    }
+
+    db.drain()
+    await setTimeout(500)
+  }
+
+  await db.update('user', 1, {
+    name: 'change2',
+  })
+
+  await db.destroy()
+})
 
 await test('single simple', async (t) => {
   const db = new BasedDb({

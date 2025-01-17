@@ -388,10 +388,12 @@ pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
     selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
 
-pub fn delAliasByName(typeEntry: Type, aliasName: [*]u8) !void {
-    try errors.selva(selva.selva_del_alias_by_name(typeEntry, aliasName.ptr, aliasName.len));
+pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
+    const typeAliases = selva.selva_get_aliases(typeEntry, field);
+    try errors.selva(selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len));
 }
 
-pub fn getAliasByName(typeEntry: Type, aliasName: [*]u8) ?Node {
-    return selva.selva_get_alias(typeEntry, aliasName.ptr, aliasName.len);
+pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
+    const typeAliases = selva.selva_get_aliases(typeEntry, field);
+    return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
 }

@@ -150,27 +150,11 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
 
     nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
-        void *p;
-
         *nfo = alloc_block(fields, fs);
-        p = nfo2p(fields, nfo);
-
-        switch (type) {
-        case SELVA_FIELD_TYPE_STRING:
-            memset(p, 0, sizeof(struct selva_string));
-            break;
-        case SELVA_FIELD_TYPE_REFERENCE:
-            memset(p, 0, sizeof(struct SelvaNodeReference));
-            break;
-        case SELVA_FIELD_TYPE_REFERENCES:
-            memset(p, 0, sizeof(struct SelvaNodeReferences));
-            break;
-        default:
-            /* NOP */
-        }
+        memset(nfo2p(fields, nfo), 0, selva_fields_get_data_size(fs));
     } else if (unlikely(nfo->type != type)) {
         db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
-                 node->type, node->node_id, fs->field,
+                 node ? node->type : 0, node ? node->node_id : 0, fs->field,
                  selva_str_field_type(nfo->type), nfo->type,
                  selva_str_field_type(type), type);
     }

@@ -6,6 +6,17 @@
 #include "jemalloc.h"
 #include "selva/node_id_set.h"
 
+/*
+ * These are for valgrind.
+ */
+#if 0
+#define selva_malloc            malloc
+#define selva_calloc            calloc
+#define selva_realloc           realloc
+#define selva_free              free
+#define selva_sallocx(p, v)     0
+#endif
+
 ssize_t node_id_set_bsearch(const node_id_t *set, size_t n, node_id_t x)
 {
     ssize_t i = 0;

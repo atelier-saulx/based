@@ -1,11 +1,12 @@
 import { ModifyRes, ModifyState } from './client/modify/ModifyRes.js'
 import { Schema, StrictSchema } from '@based/schema'
 import { ALIAS, SchemaTypeDef } from './server/schema/schema.js'
-import { BasedDbQuery, QueryByAliasObj } from './client/query/BasedDbQuery.js'
+import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
 import { create, remove, update } from './client/modify/index.js'
 import { compress, decompress } from './client/string.js'
 import { DbServer } from './server/index.js'
+import { QueryByAliasObj } from './client/query/types.js'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -182,12 +183,14 @@ export class BasedDb {
       | ModifyRes
       | (number | ModifyRes)[]
       | QueryByAliasObj
-      | QueryByAliasObj[],
+      | QueryByAliasObj[]
+      | { [alias: string]: string }, // alias
   ): BasedDbQuery {
     if (type === undefined) {
       return new BasedDbQuery(this, '_root', 1)
     }
 
+    // this is now double resolve
     if (Array.isArray(id)) {
       let i = id.length
       while (i--) {

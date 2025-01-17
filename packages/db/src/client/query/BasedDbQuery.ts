@@ -12,9 +12,9 @@ import {
   getAll,
   filterOr,
   convertFilter,
-  debugQueryDef,
+  QueryByAliasObj,
+  isAlias,
 } from './query.js'
-
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
   createOrGetEdgeRefQueryDef,
@@ -32,6 +32,9 @@ import {
 } from './validation.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
+import { subscribe, OnData, OnError } from './subscription/index.js'
+
+export { QueryByAliasObj }
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
@@ -133,8 +136,6 @@ export class QueryBranch<T> {
         }
       } else if (typeof f === 'function') {
         f((field: string) => {
-          // console.log(this.def)
-
           if (field[0] == '$') {
             // @ts-ignore
             const prop = this.def.target?.propDef?.edges[field]
@@ -202,27 +203,39 @@ class GetPromise extends Promise<BasedQueryResponse> {
   }
 }
 
-export type QueryByAliasObj = {
-  [key: string]: string | QueryByAliasObj
-}
-
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
-  constructor(db: BasedDb, type: string, id?: number | number[]) {
+  constructor(
+    db: BasedDb,
+    type: string,
+    id?: QueryByAliasObj | number | (QueryByAliasObj | number)[],
+  ) {
     const target: QueryTarget = {
       type,
     }
 
     if (id) {
-      if (Array.isArray(id)) {
-        checkMaxIdsPerQuery(id)
-        target.ids = new Uint32Array(id)
-        for (const id of target.ids) {
-          isValidId(id)
-        }
-        target.ids.sort()
+      if (isAlias(id)) {
+        target.alias = id
       } else {
-        isValidId(id)
-        target.id = id
+        if (Array.isArray(id)) {
+          checkMaxIdsPerQuery(id)
+          // const ids = id.filter((id) => typeof id === 'number')
+          // if (ids.length < id.length) {
+          //   throw new Error(
+          //     'Seems that aliases are part of ids in qeury not supported yet...',
+          //   )
+          // }
+          // TODO ADD MULTI ALIAS
+          // @ts-ignore
+          target.ids = new Uint32Array(id)
+          for (const id of target.ids) {
+            isValidId(id)
+          }
+          target.ids.sort()
+        } else {
+          isValidId(id)
+          target.id = id
+        }
       }
     }
 
@@ -248,6 +261,17 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   get(): GetPromise {
     return new GetPromise(this.#getInternal)
+  }
+
+  subscribe(onData: OnData, onError?: OnError) {
+    return subscribe(
+      this,
+      onData,
+      onError ??
+        ((err) => {
+          console.error(err)
+        }),
+    )
   }
 
   _getSync() {
