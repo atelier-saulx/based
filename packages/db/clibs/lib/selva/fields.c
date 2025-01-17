@@ -501,28 +501,23 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
         dst = del_single_ref(db, &fs_src->edge_constraint, fields_src, nfo_src);
     } else if (nfo_src->type == SELVA_FIELD_TYPE_REFERENCES) {
-        struct SelvaNodeReferences refs;
+        struct SelvaNodeReferences *refs = nfo2p(fields_src, nfo_src);
 
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-        memcpy(&refs, nfo2p(fields_src, nfo_src), sizeof(refs));
         if (idx >= 0) {
-            dst = refs.refs[idx].dst;
-            del_multi_ref(db, &fs_src->edge_constraint, &refs, idx);
+            dst = refs->refs[idx].dst;
+            del_multi_ref(db, &fs_src->edge_constraint, refs, idx);
         } else {
             struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
             assert(dst_type);
             struct SelvaNode *orig_dst_node = selva_find_node(dst_type, orig_dst);
             assert(orig_dst_node);
 
-            ssize_t i = fast_linear_search_references(refs.refs, refs.nr_refs, orig_dst_node);
+            ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, orig_dst_node);
             if (i >= 0) {
-                dst = refs.refs[i].dst;
-                del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
+                dst = refs->refs[i].dst;
+                del_multi_ref(db, &fs_src->edge_constraint, refs, i);
             }
-        }
-
-        if (dst) {
-            memcpy(nfo2p(fields_src, nfo_src), &refs, sizeof(refs));
         }
     }
 
@@ -562,22 +557,20 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             removed = del_single_ref(db, &fs_dst->edge_constraint, fields_dst, nfo_dst);
             assert(removed == src);
         } else if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
-            struct SelvaNodeReferences refs;
+            struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
 
 #if 0
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #endif
-            memcpy(&refs, nfo2p(fields_dst, nfo_dst), sizeof(refs));
 
-            if (!node_id_set_has(refs.index, refs.nr_refs, src->node_id)) {
+            if (!node_id_set_has(refs->index, refs->nr_refs, src->node_id)) {
                 return;
             }
 
-            ssize_t i = fast_linear_search_references(refs.refs, refs.nr_refs, src);
+            ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, src);
             if (i >= 0) {
-                del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
+                del_multi_ref(db, &fs_dst->edge_constraint, refs, i);
             }
-            memcpy(nfo2p(fields_dst, nfo_dst), &refs, sizeof(refs));
         }
     }
 }
