@@ -677,7 +677,6 @@ static void remove_weak_references(struct SelvaFields *fields, const struct Selv
     memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
 
     selva_free(refs.refs - refs.offset);
-    memset(nfo, 0, sizeof(refs));
 }
 
 static int set_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
