@@ -7,9 +7,10 @@ const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
-const search = @import("../filter/search.zig");
 const readInt = @import("../../utils.zig").readInt;
 const std = @import("std");
+const searchStr = @import("../filter/search.zig");
+const s = @import("./search.zig");
 
 pub fn sort(
     comptime desc: bool,
@@ -114,4 +115,26 @@ pub fn default(
             ctx.totalResults += 1;
         }
     }
+}
+
+pub fn search(
+    ids: []u8,
+    ctx: *QueryCtx,
+    typeId: db.TypeId,
+    conditions: []u8,
+    include: []u8,
+    searchCtx: *const searchStr.SearchCtx,
+) !void {
+    const typeEntry = try db.getType(ctx.db, typeId);
+    var i: u32 = 0;
+    var searchCtxC = s.createSearchCtx(0);
+    checkItem: while (i < ids.len) : (i += 4) {
+        const id = readInt(u32, ids, i);
+        const node = db.getNode(id, typeEntry);
+        if (node == null) {
+            break :checkItem;
+        }
+        s.addToScore(&searchCtxC, ctx.db, node.?, typeEntry, conditions, searchCtx);
+    }
+    try s.addToResults(ctx, &searchCtxC, include, @as(u32, @truncate(ids.len)) / 4, typeEntry);
 }

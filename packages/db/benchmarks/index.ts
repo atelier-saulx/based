@@ -27,7 +27,6 @@ for (let dir of dirs) {
         })
           .toString()
           .trim()
-        // const { name, time } = eval('(' + res + ')')
         console.log(res)
       }
     }

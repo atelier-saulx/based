@@ -130,6 +130,9 @@ function _modify(
     }
 
     if (err) {
+      if (unsafe && err !== RANGE_ERR) {
+        continue
+      }
       return err
     }
   }

@@ -7,7 +7,7 @@ const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
 const std = @import("std");
 
-pub const SearchCtx = struct {
+pub const QuerySearchCtx = struct {
     score: u8,
     totalSearchResults: usize,
     scoreSortCtx: *selva.SelvaSortCtx,
@@ -15,7 +15,7 @@ pub const SearchCtx = struct {
     correctedForOffset: u32,
 };
 
-pub fn createSearchCtx(offset: u32) SearchCtx {
+pub fn createSearchCtx(offset: u32) QuerySearchCtx {
     return .{
         .score = 255,
         .totalSearchResults = 0,
@@ -26,7 +26,7 @@ pub fn createSearchCtx(offset: u32) SearchCtx {
 }
 
 pub fn addToScore(
-    ctx: *SearchCtx,
+    ctx: *QuerySearchCtx,
     dbCtx: *db.DbCtx,
     node: db.Node,
     typeEntry: db.Type,
@@ -54,7 +54,7 @@ pub fn addToScore(
 
 pub fn addToResults(
     ctx: *QueryCtx,
-    sCtx: *SearchCtx,
+    sCtx: *QuerySearchCtx,
     include: []u8,
     limit: u32,
     typeEntry: db.Type,

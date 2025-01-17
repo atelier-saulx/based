@@ -69,11 +69,12 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     if (prop.typeIndex !== STRING) {
       throw new Error('Can only search trough strings')
     }
-    if (!prop.separate) {
-      throw new Error('Cant  search trough fixed len (yet)')
-    }
-    def.search.size += 2
-    def.search.fields.push({ weight: s[key], field: prop.prop })
+    def.search.size += 4
+    def.search.fields.push({
+      weight: s[key],
+      field: prop.prop,
+      start: prop.start ?? 0,
+    })
   }
 }
 
@@ -85,10 +86,11 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   search.fields.sort((a, b) => {
     return a.weight - b.weight
   })
-  for (let i = 0; i < search.fields.length * 2; i += 2) {
-    const f = search.fields[i / 2]
+  for (let i = 0; i < search.fields.length * 4; i += 4) {
+    const f = search.fields[i / 4]
     result[i + offset] = f.field
     result[i + 1 + offset] = f.weight
+    result.writeUInt16LE(f.start, i + 2 + offset)
   }
   return result
 }

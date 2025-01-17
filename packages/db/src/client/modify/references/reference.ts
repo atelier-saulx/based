@@ -78,9 +78,12 @@ export function writeReference(
   value:
     | number
     | ModifyState
+    | { id: number; upsert?: Record<string, any> }
     | {
+        id?: number
         upsert: Record<string, any>
       },
+
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
@@ -103,7 +106,9 @@ export function writeReference(
   } else if (typeof value === 'object' && value !== null) {
     if (def.edges) {
       return singleReferenceEdges(value, ctx, schema, def, res.tmpId, modifyOp)
-    } else if (typeof value?.upsert === 'object' && value.upsert !== null) {
+    } else if (typeof value.id === 'number') {
+      return writeRef(value.id, ctx, schema, def, res.tmpId, modifyOp, false)
+    } else if (typeof value.upsert === 'object' && value.upsert !== null) {
       dbUpdateFromUpsert(
         ctx,
         schema,

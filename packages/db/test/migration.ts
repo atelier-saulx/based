@@ -19,17 +19,35 @@ await test('migration', async (t) => {
         props: {
           name: { type: 'string' },
           age: { type: 'uint32' },
+          meta: {
+            props: {
+              rating: {
+                type: 'uint8',
+              },
+            },
+          },
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
         },
       },
     },
   })
 
   let i = 0
+  let prevId
   while (true) {
-    db.create('user', {
+    const data: any = {
       name: 'user ' + ++i,
       age: i % 100,
-    })
+    }
+    if (prevId) {
+      data.friends = { add: [prevId] }
+    }
+    prevId = db.create('user', data)
     if (i === 5_000_000) {
       break
     }
@@ -48,6 +66,16 @@ await test('migration', async (t) => {
             name: { type: 'string' },
             email: { type: 'string' },
             age: { type: 'uint8' },
+            bestBud: {
+              ref: 'cmsuser',
+              prop: 'bestBudOf',
+            },
+            buddies: {
+              items: {
+                ref: 'cmsuser',
+                prop: 'buddies',
+              },
+            },
           },
         },
       },
@@ -55,6 +83,8 @@ await test('migration', async (t) => {
     {
       user(node) {
         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
+        node.buddies = node.friends
+        node.bestBud = node.friends?.[0]
         return ['cmsuser', node]
       },
     },
@@ -92,11 +122,15 @@ await test('migration', async (t) => {
   await migrationPromise
   console.timeEnd('migration time')
 
-  console.log('???')
+  allUsers = (
+    await db
+      .query('cmsuser')
+      .include('*', 'bestBud', 'buddies')
+      .range(0, 6_000_000)
+      .get()
+  ).toObject()
 
-  allUsers = (await db.query('cmsuser').range(0, 6_000_000).get()).toObject()
-
-  console.log(allUsers[0], allUsers.at(-1))
+  console.log(allUsers[0], allUsers[1], allUsers.at(-1))
 
   if (
     allUsers.every((node) => {
