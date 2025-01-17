@@ -16,7 +16,7 @@ await test('like filter', async (t) => {
 
   db.putSchema({
     types: {
-      italy: {
+      article: {
         props: {
           body: { type: 'string', compression: 'none' },
           nr: { type: 'uint32' },
@@ -26,7 +26,7 @@ await test('like filter', async (t) => {
   })
 
   for (let i = 0; i < 1e3; i++) {
-    await db.create('italy', {
+    await db.create('article', {
       body: italy,
       nr: i,
     })
@@ -35,8 +35,8 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query('italy')
-        .filter('body', 'like', 'italy')
+        .query('article')
+        .filter('body', 'like', 'article')
         .include('id')
         .range(0, 1e3)
         .get()
@@ -47,7 +47,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query('italy')
+        .query('article')
         .filter('body', 'like', 'snurfelpants')
         .include('id')
         .range(0, 1e3)
@@ -59,8 +59,8 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query('italy')
-        .filter('body', 'like', ['snurfelpants', 'italy'])
+        .query('article')
+        .filter('body', 'like', ['snurfelpants', 'article'])
         .include('id')
         .range(0, 1e3)
         .get()
@@ -71,7 +71,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query('italy')
+        .query('article')
         .filter('body', 'like', 'kxngdom')
         .include('id')
         .range(0, 1e3)
@@ -84,7 +84,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query('italy')
+        .query('article')
         .filter('body', 'like', 'derperp')
         .include('id')
         .range(0, 1e3)
@@ -95,7 +95,7 @@ await test('like filter', async (t) => {
   )
 })
 
-await test('search', async (t) => {
+await test('compressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -108,7 +108,7 @@ await test('search', async (t) => {
 
   db.putSchema({
     types: {
-      italy: {
+      article: {
         props: {
           date: { type: 'uint32' },
           title: { type: 'string' },
@@ -118,10 +118,10 @@ await test('search', async (t) => {
     },
   })
 
-  const amount = 10
+  const amount = 100
 
   for (let i = 0; i < amount; i++) {
-    await db.create('italy', {
+    await db.create('article', {
       date: i,
       title: 'Derp derp ' + i,
       body: i == 0 ? 'Mr giraffe first' : i == 2 ? 'Mr giraffe second' : italy,
@@ -131,7 +131,7 @@ await test('search', async (t) => {
   // sort + search
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
       .sort('date')
@@ -144,7 +144,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -157,7 +157,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('kingdom', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -170,7 +170,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
       .sort('date')
@@ -183,7 +183,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -196,7 +196,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('derp', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -209,7 +209,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('first', { body: 0, title: 1 })
       .include('id', 'date', 'title', 'body')
       .sort('date')
@@ -222,7 +222,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('second', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -235,7 +235,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('giraffe first', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -248,7 +248,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('italy netherlands', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -261,7 +261,7 @@ await test('search', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('italy netherlands', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
@@ -271,9 +271,23 @@ await test('search', async (t) => {
     amount - 2,
     'Search (arg syntax) sorted combined "italy netherlands"',
   )
+
+  equal(
+    await db
+      .query('article')
+      .search('italy netherlands', 'body', 'title')
+      .include('id', 'date', 'title')
+      .sort('date')
+      .filter('date', '>', amount - 10)
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    10 - 1,
+    'Search (arg syntax) sorted + filter combined "italy netherlands"',
+  )
 })
 
-await test('search simple', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -286,7 +300,7 @@ await test('search simple', async (t) => {
 
   db.putSchema({
     types: {
-      italy: {
+      article: {
         props: {
           date: { type: 'uint32' },
           title: { type: 'string', maxBytes: 20 },
@@ -296,7 +310,7 @@ await test('search simple', async (t) => {
     },
   })
 
-  await db.create('italy', {
+  await db.create('article', {
     date: 0,
     title: 'Derp derp',
     body: 'Mr giraffe first',
@@ -304,7 +318,7 @@ await test('search simple', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('giraffe first', 'body')
       .include('id', 'date', 'title')
       .sort('date')
@@ -317,7 +331,7 @@ await test('search simple', async (t) => {
 
   equal(
     await db
-      .query('italy')
+      .query('article')
       .search('derp derp', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
@@ -326,5 +340,62 @@ await test('search simple', async (t) => {
       .then((v) => v.length),
     1,
     'Search sorted combined "derp derp"',
+  )
+})
+
+await test('search ids', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          date: { type: 'uint32' },
+          title: { type: 'string', maxBytes: 20 },
+          body: { type: 'string', compression: 'none' }, // big compressed string... compression: 'none'
+        },
+      },
+    },
+  })
+
+  const first = await db.create('article', {
+    date: 1,
+    title: 'Derp derp',
+    body: 'Mr giraffe first',
+  })
+
+  const second = await db.create('article', {
+    date: 2,
+    title: 'Derp derp',
+    body: 'Mr giraffe second',
+  })
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('article', {
+      date: 3,
+      body: italy,
+      title: 'big time',
+    })
+  }
+
+  equal(
+    await db
+      .query('article', [first, second])
+      .search('first', 'body')
+      .include('id', 'date', 'title')
+      .sort('date')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search sorted combined "giraffe first"',
   )
 })

@@ -207,7 +207,6 @@ pub fn search(
         fieldLoop: while (j < fl) : (j += 4) {
             const field = ctx.fields[j];
             const penalty = ctx.fields[j + 1];
-            // add START + use len as a start
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
@@ -223,12 +222,16 @@ pub fn search(
                 score = strSearch(str, query) + penalty;
             } else {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
-                const isCompressed = value[0] == 1;
+                const isCompressed = value[1] == 1;
                 if (isCompressed) {
-                    if (value.len - 10 < query.len) {
-                        continue :fieldLoop;
-                    }
-                    _ = decompress(*u8, strSearchCompressed, query, value[0 .. value.len - 4], dbCtx, &score);
+                    _ = decompress(
+                        *u8,
+                        strSearchCompressed,
+                        query,
+                        value,
+                        dbCtx,
+                        &score,
+                    );
                     score = score + penalty;
                 } else {
                     if (value.len - 6 < query.len) {
