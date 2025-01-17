@@ -6,12 +6,12 @@ pub fn build(b: *std.Build) !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const node_versions = [_][]const u8{ "v23.6.0", "v22.13.0", "v20.18.1" };
+    const node_versions = [_][]const u8{ "v20.11.1", "v22.13.0" };
 
     const target = b.standardTargetOptions(.{});
 
     const base_dir = "../dist/lib/";
-    const output_dir = switch (target.result.cpu.arch) {
+    const install_dir = switch (target.result.cpu.arch) {
         .x86_64 => switch (target.result.os.tag) {
             .linux => base_dir ++ "linux_x86_64",
             .macos => base_dir ++ "darwin_x86_64",
@@ -24,6 +24,7 @@ pub fn build(b: *std.Build) !void {
         },
         else => "unknown_os",
     };
+    const output_dir = install_dir[3..];
 
     if (std.mem.eql(u8, output_dir, "unknown_os")) {
         std.debug.print("Unknown, unsupported OS\n", .{});
@@ -39,18 +40,13 @@ pub fn build(b: *std.Build) !void {
     });
 
     lib.linker_allow_shlib_undefined = true;
-    lib.addSystemIncludePath(b.path(try std.fmt.allocPrint(allocator, "{s}/include/", .{output_dir})));
+
     lib.addLibraryPath(b.path(output_dir));
 
-    // Build selva
-    //const make_clibs = b.addSystemCommand(
-    //    &[_][]const u8{
-    //        "make",
-    //        "-C",
-    //        "./clibs",
-    //    },
-    //);
-    //b.getInstallStep().dependOn(&make_clibs.step);
+    // Add include path for build
+    lib.addIncludePath(b.path(try std.fmt.allocPrint(allocator, "{s}/include/", .{output_dir})));
+    lib.addLibraryPath(b.path(output_dir));
+
     // TODO Linux rpath
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("selva");
@@ -65,11 +61,19 @@ pub fn build(b: *std.Build) !void {
 
         lib.addSystemIncludePath(b.path(try std.fmt.allocPrint(allocator, "deps/node-{s}/include/node/", .{version})));
 
-        const lib_name = try std.fmt.allocPrint(allocator, "./lib_node-{s}.node", .{version});
+        // Yes! that is uggly as hell but apparently zig expects that .dest_sub_path to be a pre-generated static string.
+        // Since there is no better solution for that, we will just hardcode the values here.
+        // TODO this code will be ported to TS to avoid this kind of problem.
+        const dest_sub_path = if (std.mem.eql(u8, version, "v20.11.1")) "lib_node-v20.11.1.node" else if (std.mem.eql(u8, version, "v22.13.0")) "lib_node-v22.13.0.node" else return error.InvalidNodeVersion;
 
-        var install_lib = b.addInstallArtifact(lib, .{ .dest_dir = .{
-            .override = .{ .custom = output_dir },
-        }, .dest_sub_path = lib_name });
+        std.debug.print("dest_sub_path: {s}\n", .{dest_sub_path});
+
+        var install_lib = b.addInstallArtifact(lib, .{
+            .dest_dir = .{
+                .override = .{ .custom = install_dir },
+            },
+            .dest_sub_path = dest_sub_path,
+        });
 
         b.getInstallStep().dependOn(&install_lib.step);
         b.installArtifact(lib);

@@ -69,7 +69,6 @@ pub fn download_node_headers(version: []const u8) !void {
 }
 
 fn construct_headers_url(allocator: std.mem.Allocator, version: []const u8) ![]const u8 {
-    // Example URL pattern: https://nodejs.org/dist/v22.13.0/node-v22.13.0-headers.tar.gz
     return try std.fmt.allocPrint(allocator, "https://nodejs.org/dist/{s}/node-{s}-headers.tar.gz", .{ version, version });
 }
 
