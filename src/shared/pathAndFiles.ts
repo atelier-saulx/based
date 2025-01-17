@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { isAbsolute, join, relative } from 'node:path'
+import { dirname, isAbsolute, join, relative } from 'node:path'
 
 export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']
@@ -80,6 +80,20 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
   return `{\n${entries.join(',\n')}\n${openBraceIndent}}`
 }
 
+const ensureDirectoryExists = async (filePath: string): Promise<void> => {
+  const directory = dirname(filePath)
+
+  try {
+    await stat(directory)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      await mkdir(directory, { recursive: true })
+    } else {
+      throw err
+    }
+  }
+}
+
 export const saveAsFile = async (
   obj: Record<string, unknown> | unknown[],
   filePath: string,
@@ -105,6 +119,8 @@ export const saveAsFile = async (
   }
 
   try {
+    await ensureDirectoryExists(filePath)
+
     await writeFile(filePath, content, 'utf8')
     return true
   } catch (error) {
