@@ -6,6 +6,7 @@ const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
 const s = @import("./search.zig");
+const std = @import("std");
 
 pub fn default(
     ctx: *QueryCtx,

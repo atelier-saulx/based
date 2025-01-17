@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 
 XXHASH_SRC_PATH := xxHash-0.8.2
@@ -15,11 +15,11 @@ ERR = $(error Unsupported platform!)
 err: ; $(ERR)
 
 linux: build
-	cp $(XXHASH_SRC_PATH)/libxxhash.so* ../../../build/
+	cp $(XXHASH_SRC_PATH)/libxxhash.so* $(LIB_PATH)
 
 darwin: build
-	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib ../../../build/
-	install_name_tool -id @rpath/libxxhash.dylib ../../../build/libxxhash.dylib
+	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib $(LIB_PATH)
+	install_name_tool -id @rpath/libxxhash.dylib $(LIB_PATH)/libxxhash.dylib
 
 build:
 	$(MAKE) -C $(XXHASH_SRC_PATH)

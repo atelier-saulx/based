@@ -126,7 +126,9 @@ const inspectObject = (
     if (k === '$searchScore') {
       edges.push({ k, v, def: { typeIndex: NUMBER } })
     } else if (isEdge) {
-      edges.push({ k, v, def: q.edges?.props?.[k] })
+      if (q.edges?.props?.[k]) {
+        edges.push({ k, v, def: q.edges?.props?.[k] })
+      }
     } else {
       str += prefixBody + `${k}: `
     }
@@ -205,11 +207,11 @@ const inspectObject = (
       )
     } else if (edge.def.typeIndex === REFERENCES) {
       str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str += str +=
+      str +=
         inspectData(
           edge.v,
           q.edges.references.get(edge.def.prop),
-          level + 2,
+          level + 3,
           false,
           depth + 2,
         ) + '\n'

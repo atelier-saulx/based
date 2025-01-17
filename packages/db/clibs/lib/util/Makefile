@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
@@ -8,7 +8,7 @@ CFLAGS += -Wno-unused-value
 ifeq ($(uname_S),Darwin)
 CFLAGS += -Wunused-comparison
 endif
-LDFLAGS += -g -L../../../build
+LDFLAGS += -g -L$(LIB_PATH)
 
 OBJ := \
 	array_field.o \

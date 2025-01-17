@@ -24,8 +24,8 @@ pub fn build(b: *std.Build) void {
     //    },
     //);
     //b.getInstallStep().dependOn(&make_clibs.step);
-    lib.addIncludePath(b.path("clibs/include/"));
-    lib.addLibraryPath(b.path("build"));
+    lib.addIncludePath(b.path("dist/lib/darwin_arm64/include/"));
+    lib.addLibraryPath(b.path("dist/lib/darwin_arm64"));
     // TODO Linux rpath
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("selva");

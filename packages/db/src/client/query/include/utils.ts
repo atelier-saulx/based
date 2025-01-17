@@ -56,13 +56,13 @@ export const createOrGetRefQueryDef = (
 export const createOrGetEdgeRefQueryDef = (
   db: BasedDb,
   def: QueryDef,
-  t: PropDef | PropDefEdge,
+  t: PropDefEdge,
 ) => {
-  if (!def.edges) {
-    def.edges = createQueryDef(db, QueryDefType.Edge, {
-      ref: t,
-    })
-  }
+  def.edges ??= createQueryDef(db, QueryDefType.Edge, {
+    ref: t,
+  })
+  def.edges.props ??= {}
+  def.edges.props[t.name] = t
   const refDef = createOrGetRefQueryDef(db, def.edges, t)
   return refDef
 }

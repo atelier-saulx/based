@@ -462,7 +462,8 @@ await test('multiple references', async (t) => {
           .filter('nationality', '=', nl)
       })
       .get()
-      .then((v) => v.toObject()),
+      .inspect()
+      .toObject(),
     [
       {
         id: 1,

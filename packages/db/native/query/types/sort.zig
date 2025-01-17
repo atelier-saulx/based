@@ -30,7 +30,7 @@ pub fn default(
     const start = readInt(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
-        std.debug.print(
+        std.log.err(
             "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",
             .{ typeId, field, start },
         );
@@ -86,7 +86,7 @@ pub fn search(
     const start = readInt(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
-        std.debug.print(
+        std.log.err(
             "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",
             .{ typeId, field, start },
         );
@@ -108,6 +108,9 @@ pub fn search(
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
         s.addToScore(&searchCtxC, ctx.db, node, typeEntry, conditions, searchCtx);
+        if ((searchCtxC.totalSearchResults >= limit)) {
+            break;
+        }
     }
     try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
 }

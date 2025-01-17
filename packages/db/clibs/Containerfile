@@ -1,0 +1,4 @@
+FROM gcc:14.2
+RUN apt-get update && \
+    apt-get install -y rsync git
+CMD ["/bin/bash", "-c", "cd /usr/src/based-db/packages/db/clibs && make"]

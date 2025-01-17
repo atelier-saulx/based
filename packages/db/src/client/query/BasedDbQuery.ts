@@ -185,10 +185,20 @@ export class QueryBranch<T> {
 
 export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
+const resToJSON = (res: BasedQueryResponse) => res.toJSON()
 const resToObject = (res: BasedQueryResponse) => res.toObject()
+const resInspect = (res: BasedQueryResponse) =>
+  new GetPromise((resolve) => resolve(res.inspect()))
+
 class GetPromise extends Promise<BasedQueryResponse> {
   toObject() {
     return this.then(resToObject)
+  }
+  toJSON() {
+    return this.then(resToJSON)
+  }
+  inspect() {
+    return this.then(resInspect) as GetPromise
   }
 }
 
