@@ -32,10 +32,14 @@ export class BasedQueryResponse {
   }
 
   [inspect.custom](depth: number) {
-    const hasId = 'id' in this.def.target
+    const hasId = 'id' in this.def.target || 'alias' in this.def.target
     const target = hasId
-      ? // @ts-ignore
-        this.def.schema.type + ':' + this.def.target.id
+      ? this.def.schema.type +
+        ':' +
+        ('alias' in this.def.target
+          ? inspect(this.def.target.alias)
+          : // @ts-ignore
+            this.def.target.id)
       : this.def.schema.type
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
@@ -60,7 +64,7 @@ export class BasedQueryResponse {
 
   node(index: number = 0): any {
     let i = 0
-    if ('id' in this.def.target) {
+    if ('id' in this.def.target || 'alias' in this.def.target) {
       return this.toObject()
     }
     if (index < 0) {

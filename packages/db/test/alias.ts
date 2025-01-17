@@ -1,6 +1,6 @@
-import { deepEqual } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
 
 await test('alias', async (t) => {
   const db = new BasedDb({
@@ -261,13 +261,18 @@ await test('Get single node by alias', async (t) => {
     email: 'youri@saulx.com',
   })
 
-  console.log('DERP DERP')
-
-  const res = await db
-    .query('user', {
+  deepEqual(
+    await db
+      .query('user', {
+        email: 'youri@saulx.com',
+      })
+      .get()
+      .inspect()
+      .toObject(),
+    {
+      id: 1,
+      name: 'youri',
       email: 'youri@saulx.com',
-    })
-    .get()
-
-  console.log(res)
+    },
+  )
 })

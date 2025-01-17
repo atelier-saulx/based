@@ -33,6 +33,8 @@ import {
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 
+export { QueryByAliasObj }
+
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
 
@@ -133,8 +135,6 @@ export class QueryBranch<T> {
         }
       } else if (typeof f === 'function') {
         f((field: string) => {
-          // console.log(this.def)
-
           if (field[0] == '$') {
             // @ts-ignore
             const prop = this.def.target?.propDef?.edges[field]
@@ -208,7 +208,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     type: string,
     id?: QueryByAliasObj | number | (QueryByAliasObj | number)[],
   ) {
-    console.log(id)
     const target: QueryTarget = {
       type,
     }

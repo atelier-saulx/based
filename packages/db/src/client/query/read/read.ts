@@ -326,7 +326,7 @@ export const resultToObject = (
     i += l
     items.push(item)
   }
-  if ('id' in q.target) {
+  if ('id' in q.target || 'alias' in q.target) {
     return items[0]
   }
   return items

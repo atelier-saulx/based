@@ -189,6 +189,7 @@ export class BasedDb {
       return new BasedDbQuery(this, '_root', 1)
     }
 
+    // this is now double resolve
     if (Array.isArray(id)) {
       let i = id.length
       while (i--) {

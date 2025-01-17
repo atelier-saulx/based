@@ -13,25 +13,23 @@ pub fn default(
     include: []u8,
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
-    const node = db.getNode(id, typeEntry);
-    if (node == null) {
-        return;
-    }
-    if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
-        return;
-    }
-    const size = try getFields(
-        node.?,
-        ctx,
-        id,
-        typeEntry,
-        include,
-        null,
-        null,
-        false,
-    );
-    if (size > 0) {
-        ctx.size += size;
-        ctx.totalResults += 1;
+    if (db.getNode(id, typeEntry)) |node| {
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+            return;
+        }
+        const size = try getFields(
+            node,
+            ctx,
+            id,
+            typeEntry,
+            include,
+            null,
+            null,
+            false,
+        );
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
     }
 }
