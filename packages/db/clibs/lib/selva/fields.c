@@ -756,12 +756,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
-        goto copy;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        if (len != sizeof(struct SelvaNodeWeakReference)) {
-            return SELVA_EINVAL;
-        }
-copy:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
