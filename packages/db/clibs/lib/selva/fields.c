@@ -20,6 +20,9 @@
 #include "selva/node_id_set.h"
 #include "selva/fields.h"
 
+/*
+ * These are for valgrind.
+ */
 #if 0
 #define selva_malloc            malloc
 #define selva_calloc            calloc
