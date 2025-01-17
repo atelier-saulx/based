@@ -421,7 +421,7 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
         return;
     }
 
-    assert(i > id_set_len);
+    assert(i < id_set_len);
 
     ref = &refs->refs[i];
     reference_meta_destroy(db, efc, ref);
