@@ -32,6 +32,7 @@ import {
 } from './validation.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
+import { subscribe, OnData, OnError } from './subscription/index.js'
 
 export { QueryByAliasObj }
 
@@ -260,6 +261,17 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   get(): GetPromise {
     return new GetPromise(this.#getInternal)
+  }
+
+  subscribe(onData: OnData, onError?: OnError) {
+    return subscribe(
+      this,
+      onData,
+      onError ??
+        ((err) => {
+          console.error(err)
+        }),
+    )
   }
 
   _getSync() {

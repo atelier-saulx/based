@@ -20,6 +20,7 @@ import {
 } from '../../../server/schema/types.js'
 import { QueryDef } from '../types.js'
 import { read } from '../../string.js'
+import { debugQueryDef } from '../debug.js'
 
 export type Item = {
   id: number
@@ -169,7 +170,6 @@ export const readAllFields = (
     }
     if (index === 252) {
       let prop = result[i]
-
       if (prop === 254) {
         i++
         const field = result[i]
@@ -268,6 +268,7 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
+
       if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
         const size = result.readUint32LE(i)

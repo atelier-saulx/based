@@ -1,0 +1,50 @@
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
+import { wait } from '@saulx/utils'
+
+await test('subscription', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          nr: 'uint32',
+        },
+      },
+    },
+  })
+
+  const update = () => {
+    for (let i = 1; i < 1e3; i++) {
+      db.update('user', i, { nr: ~~(Math.random() * 9999) })
+    }
+    db.drain()
+  }
+
+  for (let i = 1; i < 1e3; i++) {
+    db.create('user', { nr: i })
+  }
+  db.drain()
+
+  const close = db.query('user').subscribe((q) => {
+    console.log(q.toObject())
+  })
+
+  const interval = setInterval(() => {
+    update()
+  }, 100)
+
+  await wait(2e3)
+  clearInterval(interval)
+  close()
+})
