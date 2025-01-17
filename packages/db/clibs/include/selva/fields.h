@@ -159,7 +159,7 @@ int selva_fields_references_insert(
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out)
-    __attribute__((access(write_only, 7)));
+    __attribute__((access(write_only, 8)));
 
 /**
  * Prealloc a references field buffer.
