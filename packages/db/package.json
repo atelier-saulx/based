@@ -23,7 +23,7 @@
   },
   "sideEffects": false,
   "files": [
-    "dist/lib.node",
+    "dist/lib.node*",
     "dist/src",
     "README.md",
     "package.json"
