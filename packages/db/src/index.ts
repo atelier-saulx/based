@@ -1,7 +1,7 @@
-import { ModifyRes } from './client/modify/ModifyRes.js'
+import { ModifyRes, ModifyState } from './client/modify/ModifyRes.js'
 import { Schema, StrictSchema } from '@based/schema'
 import { ALIAS, SchemaTypeDef } from './server/schema/schema.js'
-import { BasedDbQuery } from './client/query/BasedDbQuery.js'
+import { BasedDbQuery, QueryByAliasObj } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
 import { create, remove, update } from './client/modify/index.js'
 import { compress, decompress } from './client/string.js'
@@ -165,29 +165,49 @@ export class BasedDb {
 
   query(
     type: string,
-    id?: number | ModifyRes | (number | ModifyRes)[],
+    id?:
+      | number
+      | ModifyRes
+      | (number | ModifyRes)[]
+      | QueryByAliasObj
+      | QueryByAliasObj[],
   ): BasedDbQuery
 
   query(): BasedDbQuery
 
   query(
     type?: string,
-    id?: number | ModifyRes | (number | ModifyRes)[],
+    id?:
+      | number
+      | ModifyRes
+      | (number | ModifyRes)[]
+      | QueryByAliasObj
+      | QueryByAliasObj[],
   ): BasedDbQuery {
     if (type === undefined) {
       return new BasedDbQuery(this, '_root', 1)
     }
+
     if (Array.isArray(id)) {
       let i = id.length
       while (i--) {
-        if (typeof id[i] == 'object') {
-          // @ts-ignore
-          id[i] = id[i].tmpId
+        if (typeof id[i] === 'object') {
+          if (id[i] instanceof ModifyState) {
+            // @ts-ignore
+            id[i] = id[i].tmpId
+          } else {
+            // it's get by alias
+          }
         }
       }
-    } else if (typeof id == 'object') {
-      id = id.tmpId
+    } else if (typeof id === 'object') {
+      if (id instanceof ModifyState) {
+        id = id.tmpId
+      } else {
+        // it's get by alias
+      }
     }
+
     return new BasedDbQuery(this, type, id as number | number[])
   }
 

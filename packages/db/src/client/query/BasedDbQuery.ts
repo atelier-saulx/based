@@ -192,6 +192,10 @@ class GetPromise extends Promise<BasedQueryResponse> {
   }
 }
 
+export type QueryByAliasObj = {
+  [key: string]: string | QueryByAliasObj
+}
+
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(db: BasedDb, type: string, id?: number | number[]) {
     const target: QueryTarget = {
@@ -211,6 +215,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         target.id = id
       }
     }
+
     const def = createQueryDef(db, QueryDefType.Root, target)
     super(db, def)
   }

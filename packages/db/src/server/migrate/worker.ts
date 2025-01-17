@@ -6,6 +6,7 @@ import {
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
+import { REFERENCE, REFERENCES } from '../schema/types.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -24,9 +25,21 @@ if (isMainThread) {
   fromDb.putSchema(fromSchema, true)
   toDb.putSchema(toSchema, true)
 
-  const reverseTypeMap = {}
+  const map: Record<number, { type: string; include: string[] }> = {}
   for (const type in fromDb.schemaTypesParsed) {
-    reverseTypeMap[fromDb.schemaTypesParsed[type].id] = type
+    const { id, props } = fromDb.schemaTypesParsed[type]
+    const include = Object.keys(props)
+    let i = include.length
+    while (i--) {
+      const path = include[i]
+      if (
+        props[path].typeIndex === REFERENCE ||
+        props[path].typeIndex === REFERENCES
+      ) {
+        include[i] = `${path}.id`
+      }
+    }
+    map[id] = { type, include }
   }
 
   for (const type in transformFns) {
@@ -38,12 +51,13 @@ if (isMainThread) {
     let msg: any
     while ((msg = receiveMessageOnPort(channel))) {
       const leafData: TreeNode['data'] = msg.message
-      const typeStr = reverseTypeMap[leafData.typeId]
-      const typeTransformFn = transformFns[typeStr]
+      const { type, include } = map[leafData.typeId]
+      const typeTransformFn = transformFns[type]
 
       if (typeTransformFn) {
         const nodes = fromDb
-          .query(typeStr)
+          .query(type)
+          .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
           ._getSync()
         for (const node of nodes) {
@@ -54,16 +68,17 @@ if (isMainThread) {
           if (Array.isArray(res)) {
             toDb.create(res[0], res[1] || node, true)
           } else {
-            toDb.create(typeStr, res || node, true)
+            toDb.create(type, res || node, true)
           }
         }
-      } else if (typeStr in toDb.schemaTypesParsed) {
+      } else if (type in toDb.schemaTypesParsed) {
         const nodes = fromDb
-          .query(typeStr)
+          .query(type)
+          .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
           ._getSync()
         for (const node of nodes) {
-          toDb.create(typeStr, node, true)
+          toDb.create(type, node, true)
         }
       }
     }

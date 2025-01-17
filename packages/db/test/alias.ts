@@ -232,4 +232,12 @@ await test('alias - references', async (t) => {
       },
     ],
   )
+
+  // const res = await db
+  //   .query('user', {
+  //     email: 'youri@saulx.com',
+  //   })
+  //   .get()
+
+  // console.log(res)
 })
