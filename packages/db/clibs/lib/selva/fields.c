@@ -417,9 +417,11 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
     struct SelvaNodeReference *ref;
     size_t id_set_len = refs->nr_refs;
 
-    if (!refs->refs) {
+    if (!refs->refs || id_set_len == 0) {
         return;
     }
+
+    assert(i < id_set_len);
 
     ref = &refs->refs[i];
     reference_meta_destroy(db, efc, ref);
@@ -505,6 +507,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
 
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         if (idx >= 0) {
+            assert(idx < refs->nr_refs);
             dst = refs->refs[idx].dst;
             del_multi_ref(db, &fs_src->edge_constraint, refs, idx);
         } else {
