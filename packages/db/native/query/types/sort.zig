@@ -108,6 +108,9 @@ pub fn search(
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
         s.addToScore(&searchCtxC, ctx.db, node, typeEntry, conditions, searchCtx);
+        if ((searchCtxC.totalSearchResults >= limit)) {
+            break;
+        }
     }
     try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
 }

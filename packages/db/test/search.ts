@@ -134,7 +134,6 @@ await test('compressed', async (t) => {
       .query('article')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
-      .sort('date')
       .range(0, amount)
       .get()
       .then((v) => v.length),
@@ -147,7 +146,6 @@ await test('compressed', async (t) => {
       .query('article')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
-      .sort('date')
       .range(0, amount)
       .get()
       .then((v) => v.length),
@@ -391,11 +389,23 @@ await test('search ids', async (t) => {
       .query('article', [first, second])
       .search('first', 'body')
       .include('id', 'date', 'title')
-      .sort('date')
       .range(0, 1e3)
       .get()
       .then((v) => v.length),
     1,
-    'Search sorted combined "giraffe first"',
+    'Search ids combined "giraffe first"',
+  )
+
+  equal(
+    await db
+      .query('article', [first, second])
+      .search('first', 'body')
+      .sort('date')
+      .include('id', 'date', 'title')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search ids sorted combined "giraffe first"',
   )
 })
