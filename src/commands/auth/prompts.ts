@@ -36,41 +36,45 @@ export const userSelect =
     input: string,
   ) =>
   async () => {
-    const itsNotMe = context.i18n('commands.auth.methods.newUser')
+    if (users?.length) {
+      const itsNotMe = context.i18n('commands.auth.methods.newUser')
 
-    const usersOptions = [
-      ...context.form.normalizeOptions(users, 'email', 'object'),
-      itsNotMe,
-    ]
+      const usersOptions = [
+        ...context.form.normalizeOptions(users, 'email', 'object'),
+        itsNotMe,
+      ]
 
-    const result = (await context.form.select({
-      message: context.i18n('commands.auth.methods.selectUser'),
-      input,
-      options: usersOptions,
-      required: true,
-      validation: [
-        context.form.collider(
-          isEmailValid,
-          context.i18n('commands.auth.methods.emailNotValid'),
-        ),
-      ],
-    })) as Based.Auth.AuthenticatedUser
+      const result = (await context.form.select({
+        message: context.i18n('commands.auth.methods.selectUser'),
+        input,
+        options: usersOptions,
+        required: true,
+        validation: [
+          context.form.collider(
+            isEmailValid,
+            context.i18n('commands.auth.methods.emailNotValid'),
+          ),
+        ],
+      })) as Based.Auth.AuthenticatedUser
 
-    if (result === itsNotMe.value) {
-      return newUserText(context, basedClient)()
+      if (result === itsNotMe.value) {
+        return newUserText(context, basedClient)()
+      }
+
+      const authorized = (await authByState(
+        context,
+        basedClient,
+        result,
+      )) as Based.Auth.AuthenticatedUser
+
+      if (!authorized) {
+        return newUserText(context, basedClient)()
+      }
+
+      return authorized
     }
 
-    const authorized = (await authByState(
-      context,
-      basedClient,
-      result,
-    )) as Based.Auth.AuthenticatedUser
-
-    if (!authorized) {
-      return newUserText(context, basedClient)()
-    }
-
-    return authorized
+    return newUserText(context, basedClient)()
   }
 
 export const orgSelect =

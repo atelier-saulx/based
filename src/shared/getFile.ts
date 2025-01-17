@@ -42,7 +42,7 @@ export const getFileByPath = async <T>(filePath: string): Promise<T> => {
     const data = await readFile(fullPath, 'utf-8')
 
     return JSON.parse(data)
-  } catch (err) {
-    throw new Error(`Error reading JSON file: ${err.message}`)
+  } catch {
+    return [] as T
   }
 }

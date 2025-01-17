@@ -96,6 +96,10 @@ export const updateLocalUsers = (
 export const getLastSession = (
   users: Based.Auth.AuthenticatedUser[],
 ): Based.Auth.AuthenticatedUser | false => {
+  if (!users.length) {
+    return false
+  }
+
   return (
     users.filter(({ ts }) => Boolean(ts)).sort((a, b) => b?.ts - a?.ts)[0] ||
     false
