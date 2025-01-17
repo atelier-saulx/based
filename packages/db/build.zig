@@ -66,7 +66,7 @@ pub fn build(b: *std.Build) !void {
         // TODO this code will be ported to TS to avoid this kind of problem.
         const dest_sub_path = if (std.mem.eql(u8, version, "v20.11.1")) "lib_node-v20.11.1.node" else if (std.mem.eql(u8, version, "v22.13.0")) "lib_node-v22.13.0.node" else return error.InvalidNodeVersion;
 
-        std.debug.print("dest_sub_path: {s}\n", .{dest_sub_path});
+        std.debug.print("Building {s}...\n", .{dest_sub_path});
 
         var install_lib = b.addInstallArtifact(lib, .{
             .dest_dir = .{
@@ -78,4 +78,5 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&install_lib.step);
         b.installArtifact(lib);
     }
+    std.debug.print("Done.\n", .{});
 }

@@ -72,6 +72,18 @@ fn construct_headers_url(allocator: std.mem.Allocator, version: []const u8) ![]c
     return try std.fmt.allocPrint(allocator, "https://nodejs.org/dist/{s}/node-{s}-headers.tar.gz", .{ version, version });
 }
 
+// You can run this program with `zig run build_dw_node_headers.zig -- v20.18.1`
 pub fn main() !void {
-    try download_node_headers("v20.11.1");
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer std.process.argsFree(std.heap.page_allocator, args);
+
+    if (args.len < 2) {
+        const stdout = std.io.getStdOut().writer();
+        const exe_name = std.fs.path.basename(args[0]);
+        try stdout.print("Usage: {s} <node_version>\n", .{exe_name});
+        return;
+    }
+
+    const node_version = args[1];
+    try download_node_headers(node_version);
 }
