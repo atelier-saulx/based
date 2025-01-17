@@ -13,7 +13,6 @@ export TARGET_CFLAGS
 LIBS := \
 		lib/jemalloc \
 		lib/deflate \
-		lib/nodeflate \
 		lib/xxHash \
 		lib/util \
 		lib/selva
