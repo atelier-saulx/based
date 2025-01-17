@@ -40,11 +40,12 @@ await test('subscription', async (t) => {
     console.log(q.toObject())
   })
 
-  const interval = setInterval(() => {
-    update()
-  }, 100)
+  //   const interval = setInterval(() => {
+  //   }, 100)
+
+  await wait(100)
+  update()
 
   await wait(2e3)
-  clearInterval(interval)
   close()
 })
