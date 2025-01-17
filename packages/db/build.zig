@@ -64,7 +64,7 @@ pub fn build(b: *std.Build) !void {
         // Yes! that is uggly as hell but apparently zig expects that .dest_sub_path to be a pre-generated static string.
         // Since there is no better solution for that, we will just hardcode the values here.
         // TODO this code will be ported to TS to avoid this kind of problem.
-        const dest_sub_path = if (std.mem.eql(u8, version, "v20.11.1")) "lib.node-v20.11.1" else if (std.mem.eql(u8, version, "v20.18.1")) "lib.node-v20.18.1" else if (std.mem.eql(u8, version, "v22.13.0")) "lib.node-v22.13.0" else return error.InvalidNodeVersion;
+        const dest_sub_path = if (std.mem.eql(u8, version, "v20.11.1")) "libnode-v20.11.1.node" else if (std.mem.eql(u8, version, "v20.18.1")) "libnode-v20.18.1.node" else if (std.mem.eql(u8, version, "v22.13.0")) "libnode-v22.13.0.node" else return error.InvalidNodeVersion;
 
         std.debug.print("Building {s}...\n", .{dest_sub_path});
 

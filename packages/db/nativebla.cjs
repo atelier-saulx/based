@@ -20,7 +20,7 @@ switch (platform) {
     throw new Error(`Unsupported platform: ${platform}`)
 }
 
-const libPath = path.join(baseDir, platformDir, `lib.node-${nodeVersion}`)
+const libPath = path.join(baseDir, platformDir, `libnode-${nodeVersion}.node`)
 const addon = require(libPath)
 
 module.exports = addon
