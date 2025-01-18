@@ -1,0 +1,144 @@
+import fs from 'fs'
+import path from 'path'
+import { execSync } from 'child_process'
+import axios from 'axios'
+import * as tar from 'tar'
+import rimraf from 'rimraf'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const PLATFORMS = [
+  //   { os: 'linux', arch: 'x86_64' },
+  { os: 'linux', arch: 'aarch64' },
+  //   { os: 'macos', arch: 'x86_64' },
+  //   { os: 'macos', arch: 'aarch64' },
+]
+const NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.join(dirname(__filename), '..')
+
+const DEPS_DIR = path.join(__dirname, 'deps')
+const PACKAGES_DIR = path.join(__dirname, 'dist', 'lib')
+
+// Ensure directories exist
+if (!fs.existsSync(DEPS_DIR)) fs.mkdirSync(DEPS_DIR, { recursive: true })
+if (!fs.existsSync(PACKAGES_DIR))
+  fs.mkdirSync(PACKAGES_DIR, { recursive: true })
+
+// Helper function to download and extract node.js headers
+async function downloadAndExtractNodeHeaders(version: string) {
+  const url = `https://nodejs.org/dist/${version}/node-${version}-headers.tar.gz`
+  const tarballPath = path.join(DEPS_DIR, `node-${version}-headers.tar.gz`)
+  const extractPath = path.join(DEPS_DIR, `node-${version}`)
+
+  console.log(`Downloading Node.js headers for version ${version}...`)
+  const response = await axios.get(url, { responseType: 'arraybuffer' })
+  fs.writeFileSync(tarballPath, response.data)
+
+  console.log(`Extracting Node.js headers for version ${version}...`)
+  await tar.x({ file: tarballPath, cwd: DEPS_DIR })
+
+  fs.unlinkSync(tarballPath)
+
+  return path.relative(__dirname, extractPath)
+}
+
+// Helper function to build the library using zig build
+function buildWithZig(
+  target: string,
+  nodeHeadersPath: string,
+  libSelvaPath: string,
+) {
+  console.log(`Building for target ${target}...`)
+  console.log(
+    `====> zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath}`,
+  )
+  execSync(
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/`,
+    {
+      stdio: 'inherit',
+    },
+  )
+}
+
+// Helper function to rename the library
+function renameLibrary(version: string) {
+  const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
+  const newPath = path.join(
+    __dirname,
+    'zig-out',
+    'lib',
+    `libnode-${version}.node`,
+  )
+
+  if (fs.existsSync(originalPath)) {
+    console.log(`Renaming library to ${newPath}...`)
+    fs.renameSync(originalPath, newPath)
+  } else {
+    throw new Error(`Library not found at ${originalPath}`)
+  }
+
+  return newPath
+}
+
+// Helper function to get the destination library path based on the platform
+function getDestinationLibraryPath(platform: {
+  os: string
+  arch: string
+}): string {
+  let osName = platform.os === 'macos' ? 'darwin' : platform.os
+  let archName =
+    platform.os === 'macos' && platform.arch === 'aarch64'
+      ? 'arm64'
+      : platform.arch
+
+  const platformDir = path.join(PACKAGES_DIR, `${osName}_${archName}`)
+  if (!fs.existsSync(platformDir))
+    fs.mkdirSync(platformDir, { recursive: true })
+
+  //   const destinationPath = path.join(platformDir, path.basename(libraryPath))
+  return platformDir
+}
+
+// Helper function to move the library to the specified destination path
+function moveLibraryToPlatformDir(
+  libraryPath: string,
+  destinationLibraryPath: string,
+) {
+  console.log(`Moving library to ${destinationLibraryPath}...`)
+  fs.renameSync(libraryPath, destinationLibraryPath)
+}
+
+async function main() {
+  for (const platform of PLATFORMS) {
+    const target = `${platform.arch}-${platform.os}${platform.os === 'linux' ? '-gnu' : ''}`
+
+    for (const version of NODE_VERSIONS) {
+      try {
+        const nodeHeadersPath = await downloadAndExtractNodeHeaders(version)
+        const destinationLibPath = getDestinationLibraryPath(platform)
+        console.log(`platformDir = ${destinationLibPath}`)
+
+        buildWithZig(target, nodeHeadersPath, destinationLibPath)
+        const tempLibraryPath = renameLibrary(destinationLibPath)
+        console.log(`platformDir = ${tempLibraryPath}`)
+
+        moveLibraryToPlatformDir(tempLibraryPath, destinationLibPath)
+        console.log('Cleaning up zig-out directory...')
+        rimraf.sync(path.join(__dirname, 'zig-out'))
+      } catch (error) {
+        console.error(
+          `Error processing version ${version} for platform ${target}:`,
+          error,
+        )
+        throw error
+      }
+    }
+  }
+}
+
+main().catch((err) => {
+  console.error('Error in cross-compiling zig:', err)
+  process.exit(1)
+})
