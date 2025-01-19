@@ -31,6 +31,10 @@ async function downloadAndExtractNodeHeaders(version: string) {
   const tarballPath = path.join(DEPS_DIR, `node-${version}-headers.tar.gz`)
   const extractPath = path.join(DEPS_DIR, `node-${version}`)
 
+  if (fs.existsSync(extractPath)) {
+    return path.relative(__dirname, extractPath)
+  }
+
   console.log(`Downloading Node.js headers for version ${version}...`)
   const response = await axios.get(url, { responseType: 'arraybuffer' })
   fs.writeFileSync(tarballPath, response.data)
