@@ -11,7 +11,7 @@ const PLATFORMS = [
   //   { os: 'linux', arch: 'x86_64' },
   { os: 'linux', arch: 'aarch64' },
   //   { os: 'macos', arch: 'x86_64' },
-  //   { os: 'macos', arch: 'aarch64' },
+  { os: 'macos', arch: 'aarch64' },
 ]
 const NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
 
@@ -19,12 +19,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.join(dirname(__filename), '..')
 
 const DEPS_DIR = path.join(__dirname, 'deps')
-const PACKAGES_DIR = path.join(__dirname, 'dist', 'lib')
+const DIST_DIR = path.join(__dirname, 'dist', 'lib')
 
 // Ensure directories exist
 if (!fs.existsSync(DEPS_DIR)) fs.mkdirSync(DEPS_DIR, { recursive: true })
-if (!fs.existsSync(PACKAGES_DIR))
-  fs.mkdirSync(PACKAGES_DIR, { recursive: true })
+if (!fs.existsSync(DIST_DIR)) fs.mkdirSync(DIST_DIR, { recursive: true })
 
 // Helper function to download and extract node.js headers
 async function downloadAndExtractNodeHeaders(version: string) {
@@ -52,10 +51,10 @@ function buildWithZig(
 ) {
   console.log(`Building for target ${target}...`)
   console.log(
-    `====> zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath}`,
+    `====> zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
   )
   execSync(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/`,
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
       stdio: 'inherit',
     },
@@ -63,14 +62,12 @@ function buildWithZig(
 }
 
 // Helper function to rename the library
-function renameLibrary(version: string) {
+function moveLibraryToPlatformDir(
+  destinationLibPath: string,
+  version: string,
+): void {
   const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
-  const newPath = path.join(
-    __dirname,
-    'zig-out',
-    'lib',
-    `libnode-${version}.node`,
-  )
+  const newPath = path.join(destinationLibPath, `libnode-${version}.node`)
 
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
@@ -78,8 +75,6 @@ function renameLibrary(version: string) {
   } else {
     throw new Error(`Library not found at ${originalPath}`)
   }
-
-  return newPath
 }
 
 // Helper function to get the destination library path based on the platform
@@ -93,21 +88,11 @@ function getDestinationLibraryPath(platform: {
       ? 'arm64'
       : platform.arch
 
-  const platformDir = path.join(PACKAGES_DIR, `${osName}_${archName}`)
+  const platformDir = path.join(DIST_DIR, `${osName}_${archName}`)
   if (!fs.existsSync(platformDir))
     fs.mkdirSync(platformDir, { recursive: true })
 
-  //   const destinationPath = path.join(platformDir, path.basename(libraryPath))
-  return platformDir
-}
-
-// Helper function to move the library to the specified destination path
-function moveLibraryToPlatformDir(
-  libraryPath: string,
-  destinationLibraryPath: string,
-) {
-  console.log(`Moving library to ${destinationLibraryPath}...`)
-  fs.renameSync(libraryPath, destinationLibraryPath)
+  return path.relative(__dirname, platformDir)
 }
 
 async function main() {
@@ -121,10 +106,8 @@ async function main() {
         console.log(`platformDir = ${destinationLibPath}`)
 
         buildWithZig(target, nodeHeadersPath, destinationLibPath)
-        const tempLibraryPath = renameLibrary(destinationLibPath)
-        console.log(`platformDir = ${tempLibraryPath}`)
+        moveLibraryToPlatformDir(destinationLibPath, version)
 
-        moveLibraryToPlatformDir(tempLibraryPath, destinationLibPath)
         console.log('Cleaning up zig-out directory...')
         rimraf.sync(path.join(__dirname, 'zig-out'))
       } catch (error) {

@@ -27,10 +27,11 @@ pub fn build(b: *std.Build) void {
     //);
     //b.getInstallStep().dependOn(&make_clibs.step);
 
-    const lib_selva_path = b.option([]const u8, "Dlibselvapath", "Path to the Selva Library") orelse "packages/db/dist/lib";
+    const lib_selva_path = b.option([]const u8, "libselvapath", "Path to the Selva Library") orelse "packages/db/dist/lib";
+    const headers_selva_path = b.option([]const u8, "headersselvapath", "Path to the Selva Headers") orelse "packages/db/dist/lib/include";
 
-    lib.addIncludePath(b.path("dist/lib/darwin_arm64/include/"));
-    lib.addLibraryPath(b.path("dist/lib/darwin_arm64"));
+    lib.addIncludePath(b.path(headers_selva_path));
+    lib.addLibraryPath(b.path(lib_selva_path));
     // TODO Linux rpath
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("selva");

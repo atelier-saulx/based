@@ -7,7 +7,8 @@
   "scripts": {
     "get-napi": "./scripts/download-node-headers.sh",
     "build-selva": "make -C clibs",
-    "build": "npm run build-selva && zig build  && tsc",
+    "build-zig": "npx tsx scripts/zig_cross_compile.ts",
+    "build": "npm run build-selva && npm run build zig && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "rm -rf build && make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
@@ -17,7 +18,7 @@
     "test": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
     "test-gdb": "npm run build && LOCPATH=./build/locale gdb -ex run --args node ./scripts/test.js",
     "test-fast": "LOCPATH=./build/locale node ./scripts/test.js",
-    "test-zig": "zig build && npm run test-fast",
+    "test-zig": "npm run build-zig && npm run test-fast",
     "test-ts": "tsc && node ./scripts/test.js",
     "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js"
   },
