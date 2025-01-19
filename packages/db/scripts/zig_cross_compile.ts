@@ -8,10 +8,10 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
 const PLATFORMS = [
-  //   { os: 'linux', arch: 'x86_64' },
   { os: 'linux', arch: 'aarch64' },
-  //   { os: 'macos', arch: 'x86_64' },
   { os: 'macos', arch: 'aarch64' },
+  //   { os: 'linux', arch: 'x86_64' },
+  //   { os: 'macos', arch: 'x86_64' },
 ]
 const NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
 
@@ -50,9 +50,6 @@ function buildWithZig(
   libSelvaPath: string,
 ) {
   console.log(`Building for target ${target}...`)
-  console.log(
-    `====> zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
-  )
   execSync(
     `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
@@ -61,7 +58,7 @@ function buildWithZig(
   )
 }
 
-// Helper function to rename the library
+// Helper function to move the library from zig-out to the platform directory
 function moveLibraryToPlatformDir(
   destinationLibPath: string,
   version: string,
