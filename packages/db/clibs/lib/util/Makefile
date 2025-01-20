@@ -42,8 +42,14 @@ ifeq ($(uname_M),x86_64)
 OBJ += \
 	crc32c/crc32c_x64.o
 else ifeq ($(uname_M),aarch64)
+# TODO This only works on Darwin currently
+ifeq ($(uname_S),Darwin)
 OBJ += \
 	crc32c/crc32c_arm64.o
+else
+OBJ += \
+	crc32c/crc32c.o
+endif
 else
 OBJ += \
 	crc32c/crc32c.o
