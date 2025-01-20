@@ -41,7 +41,7 @@ OBJ := \
 ifeq ($(uname_M),x86_64)
 OBJ += \
 	crc32c/crc32c_x64.o
-else ifeq ($(uname_M),arm64)
+else ifeq ($(uname_M),aarch64)
 OBJ += \
 	crc32c/crc32c_arm64.o
 else

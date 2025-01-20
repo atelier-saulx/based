@@ -8,7 +8,7 @@ lc = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(s
 
 # OS name (Linux, Darwin)
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-uname_M := $(shell sh -c 'uname -m 2>/dev/null || echo not')
+uname_M := $(subst arm64,aarch64,$(shell sh -c 'uname -m 2>/dev/null || echo not'))
 PLATFORM := $(call lc,$(uname_S))_$(call lc,$(uname_M))
 
 EN_VALGRIND_CFLAGS := -Dselva_malloc=malloc -Dselva_calloc=calloc -Dselva_realloc=realloc -Dselva_free=free
@@ -65,7 +65,7 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 			CFLAGS += -fcf-protection=full
 		endif
 	endif
-	ifeq ($(uname_M),arm64)
+	ifeq ($(uname_M),aarch64)
 		CFLAGS += -mcpu=apple-m1
 		CFLAGS += -mbranch-protection=standard
 	endif
