@@ -25,27 +25,30 @@ await test('subscription', async (t) => {
   })
 
   const update = () => {
-    for (let i = 1; i < 1e3; i++) {
+    for (let i = 1; i < 1e6; i++) {
       db.update('user', i, { nr: ~~(Math.random() * 9999) })
     }
     db.drain()
   }
 
-  for (let i = 1; i < 1e3; i++) {
+  for (let i = 1; i < 1e6; i++) {
     db.create('user', { nr: i })
   }
   db.drain()
 
-  const close = db.query('user').subscribe((q) => {
-    console.log(q.toObject())
-  })
+  const close = db
+    .query('user')
+    .range(0, 1e6)
+    .subscribe((q) => {
+      console.log(q)
+    })
 
   //   const interval = setInterval(() => {
   //   }, 100)
 
   await wait(100)
   update()
+  await wait(300)
 
-  await wait(2e3)
   close()
 })
