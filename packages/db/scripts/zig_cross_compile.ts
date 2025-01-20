@@ -72,8 +72,11 @@ function buildWithZig(
   libSelvaPath: string,
 ) {
   console.log(`Building for target ${target}...`)
+  console.log(
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
+  )
   execSync(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include -O ReleaseFast --strip`,
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
       stdio: 'inherit',
     },

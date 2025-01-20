@@ -7,10 +7,9 @@ pub fn build(b: *std.Build) void {
         .name = "based-db-zig",
         .root_source_file = b.path("native/lib.zig"),
         .target = target,
-        .optimize = .ReleaseSmall,
+        .optimize = .ReleaseFast,
         .link_libc = true,
     });
-
     lib.linker_allow_shlib_undefined = true;
 
     const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node/include/node/";
