@@ -21,7 +21,7 @@ LIB_PATH := ../../../dist/lib/$(PLATFORM)
 export LIB_PATH
 
 # Build all libraries (ordered)
-all: | prepare $(LIBS) nodeselva locale
+all: | prepare $(LIBS)
 	cp -R include "$(subst ../../,,$(LIB_PATH))/"
 
 prepare:
@@ -29,13 +29,6 @@ prepare:
 
 $(LIBS):
 	$(MAKE) -C $@
-
-ifeq ($(uname_S),Linux)
-locale: locale-linux
-endif
-
-locale-linux:
-	$(MAKE) -C locale LOCPATH=../../dist/lib/$(PLATFORM)/locale
 
 test:
 	$(MAKE) -C test
@@ -52,5 +45,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all prapare clean lib $(LIBS) nodeselva locale locale-linux test platform
+.PHONY: all prapare clean lib $(LIBS) test platform
 .NOTPARALLEL:

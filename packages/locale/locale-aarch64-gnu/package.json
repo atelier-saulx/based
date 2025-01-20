@@ -1,0 +1,12 @@
+{
+  "name": "@based/locale-aarch64-gnu",
+  "version": "0.0.1",
+  "license": "MIT",
+  "description": "Locales",
+  "main": "index.js",
+  "files": ["locale"],
+  "author": "Based",
+  "cpu": ["arm64"],
+  "os": ["linux"],
+  "libc": "glibc"
+}

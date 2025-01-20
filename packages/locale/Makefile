@@ -1,4 +1,4 @@
-# Copyright (c) 2022, 2024 SAULX
+# Copyright (c) 2022, 2024-2025 SAULX
 # SPDX-License-Identifier: MIT
 
 SUPPORTED_LOCALES := \
@@ -144,17 +144,23 @@ SUPPORTED_LOCALES := \
 	yo_NG \
 	zu_ZA
 
-LOCPATH ?= ../locale
+uname_M := $(subst arm64,aarch64,$(shell sh -c 'uname -m 2>/dev/null || echo not'))
+LOCPATH ?= locale-$(uname_M)-gnu/locale
 LOCALES := $(patsubst %,%.UTF-8,$(SUPPORTED_LOCALES))
 LOCALE_RES := $(addprefix $(LOCPATH)/,$(LOCALES))
 
 export I18NPATH = ./localedata
 
-all: $(LOCALE_RES)
+all: | .make-prerequisites $(LOCALE_RES) $(LOCPATH)/package.json
+
+.make-prerequisites:
+	@mkdir -p $(LOCPATH)
 
 $(LOCALE_RES): $(shell find localedata -type f)
-	@mkdir -p $(LOCPATH)
 	localedef -c --no-archive --no-hard-links -f UTF-8 -i $(subst .UTF-8,,$(notdir $@)) $@
+
+$(LOCPATH)/package.json:
+	cd "$(LOCPATH)" && npm init --init-license MIT --init-author-name Based --scope @based --init-version 0.0.1 -y
 
 clean:
 	$(RM) -r cache
