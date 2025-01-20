@@ -26,19 +26,19 @@ export const checkMaxIdsPerQuery = (
   }
 }
 
-export const checkMaxBufferSize = (buff: Buffer): void => {
-  if (buff.byteLength > MAX_BUFFER_SIZE) {
+export const checkMaxBufferSize = (buf: Buffer): void => {
+  if (buf.byteLength > MAX_BUFFER_SIZE) {
     throw new Error(
       `The buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
-        `Crrent size is ${buff.byteLength} bytes.`,
+        `Crrent size is ${buf.byteLength} bytes.`,
     )
   }
 }
 
-export const checkTotalBufferSize = (buffers: Buffer[]): void => {
+export const checkTotalBufferSize = (bufers: Buffer[]): void => {
   let totalSize = 0
 
-  for (const buffer of buffers) {
+  for (const buffer of bufers) {
     totalSize += buffer.byteLength
 
     if (totalSize > MAX_BUFFER_SIZE) {
