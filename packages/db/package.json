@@ -12,11 +12,11 @@
     "clean-selva": "make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
     "playground-nodebug": "npm run build && node ./dist/test/shared/playground.js",
-    "playground": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./dist/test/shared/playground.js",
+    "playground": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./dist/test/shared/playground.js",
     "playground-fast": "node ./dist/test/shared/playground.js",
-    "test": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
-    "test-gdb": "npm run build && LOCPATH=./build/locale gdb -ex run --args node ./scripts/test.js",
-    "test-fast": "LOCPATH=./build/locale node ./scripts/test.js",
+    "test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
+    "test-gdb": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js",
+    "test-fast": "LOCPATH=../locale/locale-x86_64-gnu/locale node ./scripts/test.js",
     "test-zig": "npm run build-zig && tsc && npm run test-fast",
     "test-ts": "tsc && node ./scripts/test.js",
     "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js"
@@ -33,6 +33,9 @@
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.3.2",
     "picocolors": "^1.0.1"
+  },
+  "optionalDependencies": {
+      "@based/locale-x86-64-gnu": "*"
   },
   "devDependencies": {
     "@types/node": "^22.5.3",
