@@ -25,7 +25,7 @@ OBJ := \
 	lib/deflate_decompress_stream.o \
 	lib/strings.o
 
-ifeq ($(uname_M),arm64)
+ifeq ($(uname_M),aarch64)
 	OBJ += lib/arm/cpu_features.o
 endif
 ifeq ($(uname_M),x86_64)

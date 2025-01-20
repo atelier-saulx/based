@@ -1,5 +1,5 @@
 // @ts-ignore
-import db from '../../nativebla.cjs'
+import db from '../../basedDbNative.cjs'
 
 var compressor: any = null
 var decompressor: any = null

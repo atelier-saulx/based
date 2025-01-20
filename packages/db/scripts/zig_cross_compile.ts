@@ -95,10 +95,7 @@ function getDestinationLibraryPath(platform: {
   arch: string
 }): string {
   let osName = platform.os === 'macos' ? 'darwin' : platform.os
-  let archName =
-    platform.os === 'macos' && platform.arch === 'aarch64'
-      ? 'arm64'
-      : platform.arch
+  let archName = platform.arch
 
   const platformDir = path.join(DIST_DIR, `${osName}_${archName}`)
   if (!fs.existsSync(platformDir))
