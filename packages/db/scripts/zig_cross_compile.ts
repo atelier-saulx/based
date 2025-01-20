@@ -25,7 +25,12 @@ const PLATFORMS = isRelease
   : [
       {
         os: os.platform() === 'darwin' ? 'macos' : os.platform(),
-        arch: ({ arm64: 'aarch64', aarch64: 'aarch64', x64: 'x86_64', x86_64: 'x86_64' })[os.arch()],
+        arch: {
+          arm64: 'aarch64',
+          aarch64: 'aarch64',
+          x64: 'x86_64',
+          x86_64: 'x86_64',
+        }[os.arch()],
       },
     ]
 
@@ -68,7 +73,7 @@ function buildWithZig(
 ) {
   console.log(`Building for target ${target}...`)
   execSync(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include -O ReleaseFast --strip`,
     {
       stdio: 'inherit',
     },
@@ -127,6 +132,7 @@ async function main() {
       }
     }
   }
+  console.log('Done Zig building!')
 }
 
 main().catch((err) => {
