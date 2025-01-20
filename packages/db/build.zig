@@ -31,8 +31,7 @@ pub fn build(b: *std.Build) void {
 
     lib.addIncludePath(b.path(headers_selva_path));
     lib.addLibraryPath(b.path(lib_selva_path));
-    // TODO Linux rpath
-    lib.root_module.addRPathSpecial("@loader_path");
+    // lib.root_module.addRPathSpecial("@loader_path/../lib");
     lib.linkSystemLibrary("selva");
 
     lib.linkLibC();

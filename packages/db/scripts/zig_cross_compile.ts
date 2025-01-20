@@ -30,7 +30,7 @@ const PLATFORMS = isRelease
           aarch64: 'aarch64',
           x64: 'x86_64',
           x86_64: 'x86_64',
-        }[os.arch()],
+        }[os.arch() as 'arm64' | 'aarch64' | 'x64' | 'x86_64'],
       },
     ]
 
@@ -72,9 +72,6 @@ function buildWithZig(
   libSelvaPath: string,
 ) {
   console.log(`Building for target ${target}...`)
-  console.log(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
-  )
   execSync(
     `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
