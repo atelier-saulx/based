@@ -11,7 +11,7 @@ let platformDir
 
 switch (platform) {
   case 'darwin':
-    platformDir = arch === 'arm64' ? 'darwin_arm64' : 'darwin_x86_64'
+    platformDir = arch === 'arm64' ? 'darwin_aarch64' : 'darwin_x86_64'
     break
   case 'linux':
     platformDir = arch === 'arm64' ? 'linux_aarch64' : 'linux_x86_64'
