@@ -16,7 +16,7 @@ JEMALLOC_CONFIG := --with-version=VERSION \
 JEMALLOC_CFLAGS := -std=gnu99 -fPIC -Wall -Wno-missing-braces -pipe -g3 -O3 -funroll-loops
 JEMALLOC_LDFLAGS := $(LDFLAGS)
 
-ifeq ($(uname_S),Darwin) # Assume x86-64 macOS
+ifeq ($(uname_S),Darwin)
 	JEMALLOC_LIBDIR := "@rpath"
 	# the configure script calls cpuid, but it does not work properly on Rosetta 2 and QEMU
 	JEMALLOC_CONFIG += --with-lg-vaddr=48
