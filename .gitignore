@@ -151,4 +151,5 @@ packages/server/selvad
 /deps.zig
 zig-cache
 zig-out
-/deps/node-*
+deps/node-*
+packages/db/*.o
