@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
 const PLATFORMS = [
-  { os: 'linux', arch: 'aarch64' },
+  // { os: 'linux', arch: 'aarch64' },
   { os: 'macos', arch: 'aarch64' },
   //   { os: 'linux', arch: 'x86_64' },
   //   { os: 'macos', arch: 'x86_64' },
