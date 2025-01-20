@@ -53,6 +53,8 @@ pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
     return v;
 }
 
+// return queryId
+
 pub fn createCompressor(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     const compressor: *selva.libdeflate_compressor = selva.libdeflate_alloc_compressor(3).?;
     var externalNapi: c.napi_value = undefined;
