@@ -25,6 +25,8 @@
   "scripts": {
     "watch": "(cd packages/schema && npm run watch) & (cd packages/db && npm run watch)",
     "build": "(cd packages/schema && npm run build) && (cd packages/db && npm run build)",
+    "build-podman": "cd podman && ./build.sh",
+    "build-locale": "cd packages/locale && ./build.sh",
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
     "testSubs": "cd packages/subs && npm run test",

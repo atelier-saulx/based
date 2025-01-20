@@ -151,16 +151,13 @@ LOCALE_RES := $(addprefix $(LOCPATH)/,$(LOCALES))
 
 export I18NPATH = ./localedata
 
-all: | .make-prerequisites $(LOCALE_RES) $(LOCPATH)/package.json
+all: | .make-prerequisites $(LOCALE_RES)
 
 .make-prerequisites:
 	@mkdir -p $(LOCPATH)
 
 $(LOCALE_RES): $(shell find localedata -type f)
 	localedef -c --no-archive --no-hard-links -f UTF-8 -i $(subst .UTF-8,,$(notdir $@)) $@
-
-$(LOCPATH)/package.json:
-	cd "$(LOCPATH)" && npm init --init-license MIT --init-author-name Based --scope @based --init-version 0.0.1 -y
 
 clean:
 	$(RM) -r cache
