@@ -25,8 +25,6 @@
   "scripts": {
     "watch": "(cd packages/schema && npm run watch) & (cd packages/db && npm run watch)",
     "build": "(cd packages/schema && npm run build) && (cd packages/db && npm run build)",
-    "build-c": "sh scripts/build-c.sh",
-    "clean-c": "cd selvad; make mostlyclean",
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
     "testSubs": "cd packages/subs && npm run test",
