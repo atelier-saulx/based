@@ -1,11 +1,7 @@
-// type 0 = no compression; 1 = deflate
-// [type] [uncompressed size 4] [compressed string] [crc32]
-
 import native from '../native.js'
 
-export const crc32 = (buf: Buffer) => {
-  return native.crc32(buf)
-}
+// type 0 = no compression; 1 = deflate
+// [type] [uncompressed size 4] [compressed string] [crc32]
 
 // var cnt = 0
 // var bytesSaved = 0

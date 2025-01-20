@@ -3,7 +3,7 @@ import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import { ModifyOp, ModifyErr, UPDATE, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { crc32 } from '../string.js'
+import { crc32 } from '../crc32.js'
 
 export function writeHll(
   value: string | null | Buffer,

@@ -1,9 +1,7 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
 import { includeFields } from '../query.js'
-import { defToBuffer } from '../toBuffer.js'
-import { QueryDef } from '../types.js'
-import { checkTotalBufferSize } from '../validation.js'
+import { registerQuery } from '../registerQuery.js'
 
 export type OnData = (res: BasedQueryResponse) => any
 
@@ -16,10 +14,6 @@ export const subscribe = (
   onData: OnData,
   onError: OnError,
 ): OnClose => {
-  //
-  // maybe add checksum
-  // bla
-
   let prevValue: any
   let zeit: any
   let closed = false
@@ -27,8 +21,8 @@ export const subscribe = (
   if (!q.def.include.stringFields.size && !q.def.references.size) {
     includeFields(q.def, ['*'])
   }
-  const b = defToBuffer(q.db, q.def)
-  checkTotalBufferSize(b)
+
+  const buf = registerQuery(q)
 
   const close = () => {
     closed = true
@@ -41,7 +35,7 @@ export const subscribe = (
   const runQuery = () => {
     const d = performance.now()
     q.db.server
-      .getQueryBuf(Buffer.concat(b))
+      .getQueryBuf(buf)
       .then((res) => {
         if (!closed) {
           if (res instanceof Error) {

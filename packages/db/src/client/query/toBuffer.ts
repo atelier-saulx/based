@@ -6,6 +6,9 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { ALIAS, PropDef } from '../../server/schema/types.js'
 
+import native from '../../native.js'
+import { crc32 } from '../crc32.js'
+
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
@@ -256,6 +259,8 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
     metaEdgeBuffer.writeUint16LE(edgesSize, 1)
     result.push(metaEdgeBuffer, ...edges)
   }
+
+  // 8 byte crc 32
 
   return result
 }

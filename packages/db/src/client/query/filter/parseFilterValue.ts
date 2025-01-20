@@ -9,8 +9,7 @@ import {
   STRING,
   BINARY,
 } from '../../../server/schema/types.js'
-import { crc32 } from '../../string.js'
-import { writeFixed } from './createFixedFilterBuffer.js'
+import { crc32 } from '../../crc32.js'
 
 // -------------------------------------------
 // conditions normal

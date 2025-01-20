@@ -33,6 +33,7 @@ import {
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
+import { registerQuery } from './registerQuery.js'
 
 export { QueryByAliasObj }
 
@@ -247,10 +248,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
-    const b = defToBuffer(this.db, this.def)
-    checkTotalBufferSize(b)
+    const buf = registerQuery(this)
     const d = performance.now()
-    const res = await this.db.server.getQueryBuf(Buffer.concat(b))
+    const res = await this.db.server.getQueryBuf(buf)
     if (res instanceof Error) {
       reject(res)
     } else {
@@ -278,13 +278,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
-    const b = defToBuffer(this.db, this.def)
-    checkTotalBufferSize(b)
+    const buf = registerQuery(this)
     const d = performance.now()
-    const res = native.getQueryBuf(
-      Buffer.concat(b),
-      this.db.server.dbCtxExternal,
-    )
+    const res = native.getQueryBuf(buf, this.db.server.dbCtxExternal)
     const result = Buffer.from(res)
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
