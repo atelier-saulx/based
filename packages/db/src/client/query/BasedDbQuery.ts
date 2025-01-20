@@ -259,8 +259,17 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
   }
 
+  // if !id not initialized yet
+  id: number
+
   get(): GetPromise {
     return new GetPromise(this.#getInternal)
+  }
+
+  buffer: Buffer
+
+  register() {
+    return registerQuery(this)
   }
 
   subscribe(onData: OnData, onError?: OnError) {
