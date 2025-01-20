@@ -25,7 +25,7 @@ const PLATFORMS = isRelease
   : [
       {
         os: os.platform() === 'darwin' ? 'macos' : os.platform(),
-        arch: os.arch() === 'arm64' ? 'aarch64' : os.arch(),
+        arch: ({ arm64: 'aarch64', aarch64: 'aarch64', x64: 'x86_64', x86_64: 'x86_64' })[os.arch()],
       },
     ]
 
