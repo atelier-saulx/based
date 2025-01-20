@@ -5,11 +5,9 @@
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
-    "get-napi": "./scripts/download-node-headers.sh",
-    "build-selva": "make -C clibs",
+    "build": "make -C clibs && npm run build-zig && tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
-    "build": "npm run build-selva && npm run build-zig && tsc",
-    "build-release": "npm run build-selva && npm run build-zig -- release && tsc",
+    "build-release": "cd clibs && ./build-release.sh && cd .. && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "rm -rf build && make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
