@@ -6,14 +6,30 @@ import * as tar from 'tar'
 import rimraf from 'rimraf'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import os from 'os'
 
-const PLATFORMS = [
-  // { os: 'linux', arch: 'aarch64' },
+const args = process.argv.slice(2)
+const isRelease = args.includes('release')
+
+const AVAILABLE_PLATFORMS = [
+  { os: 'linux', arch: 'aarch64' },
   { os: 'macos', arch: 'aarch64' },
-  //   { os: 'linux', arch: 'x86_64' },
+  { os: 'linux', arch: 'x86_64' },
   //   { os: 'macos', arch: 'x86_64' },
 ]
-const NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
+
+const AVAILABLE_NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
+
+const PLATFORMS = isRelease
+  ? AVAILABLE_PLATFORMS
+  : [
+      {
+        os: os.platform() === 'darwin' ? 'macos' : os.platform(),
+        arch: os.arch() === 'arm64' ? 'aarch64' : os.arch(),
+      },
+    ]
+
+const NODE_VERSIONS = isRelease ? AVAILABLE_NODE_VERSIONS : [process.version]
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.join(dirname(__filename), '..')
@@ -21,11 +37,9 @@ const __dirname = path.join(dirname(__filename), '..')
 const DEPS_DIR = path.join(__dirname, 'deps')
 const DIST_DIR = path.join(__dirname, 'dist', 'lib')
 
-// Ensure directories exist
 if (!fs.existsSync(DEPS_DIR)) fs.mkdirSync(DEPS_DIR, { recursive: true })
 if (!fs.existsSync(DIST_DIR)) fs.mkdirSync(DIST_DIR, { recursive: true })
 
-// Helper function to download and extract node.js headers
 async function downloadAndExtractNodeHeaders(version: string) {
   const url = `https://nodejs.org/dist/${version}/node-${version}-headers.tar.gz`
   const tarballPath = path.join(DEPS_DIR, `node-${version}-headers.tar.gz`)
@@ -47,7 +61,6 @@ async function downloadAndExtractNodeHeaders(version: string) {
   return path.relative(__dirname, extractPath)
 }
 
-// Helper function to build the library using zig build
 function buildWithZig(
   target: string,
   nodeHeadersPath: string,
@@ -62,7 +75,6 @@ function buildWithZig(
   )
 }
 
-// Helper function to move the library from zig-out to the platform directory
 function moveLibraryToPlatformDir(
   destinationLibPath: string,
   version: string,
@@ -78,7 +90,6 @@ function moveLibraryToPlatformDir(
   }
 }
 
-// Helper function to get the destination library path based on the platform
 function getDestinationLibraryPath(platform: {
   os: string
   arch: string
@@ -104,7 +115,6 @@ async function main() {
       try {
         const nodeHeadersPath = await downloadAndExtractNodeHeaders(version)
         const destinationLibPath = getDestinationLibraryPath(platform)
-        console.log(`platformDir = ${destinationLibPath}`)
 
         buildWithZig(target, nodeHeadersPath, destinationLibPath)
         moveLibraryToPlatformDir(destinationLibPath, version)
