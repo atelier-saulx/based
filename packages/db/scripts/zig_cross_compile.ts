@@ -64,11 +64,12 @@ async function downloadAndExtractNodeHeaders(version: string) {
 function buildWithZig(
   target: string,
   nodeHeadersPath: string,
+  rpath: string,
   libSelvaPath: string,
 ) {
   console.log(`Building for target ${target}...`)
   execSync(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
+    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
       stdio: 'inherit',
     },
@@ -107,13 +108,14 @@ function getDestinationLibraryPath(platform: {
 async function main() {
   for (const platform of PLATFORMS) {
     const target = `${platform.arch}-${platform.os}${platform.os === 'linux' ? '-gnu' : ''}`
+    const rpath = platform.os == 'macos' ? '@loader_path' : '$ORIGIN'
 
     for (const version of NODE_VERSIONS) {
       try {
         const nodeHeadersPath = await downloadAndExtractNodeHeaders(version)
         const destinationLibPath = getDestinationLibraryPath(platform)
 
-        buildWithZig(target, nodeHeadersPath, destinationLibPath)
+        buildWithZig(target, nodeHeadersPath, rpath, destinationLibPath)
         moveLibraryToPlatformDir(destinationLibPath, version)
 
         console.log('Cleaning up zig-out directory...')
