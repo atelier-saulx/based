@@ -13,25 +13,16 @@ pub fn build(b: *std.Build) void {
     lib.linker_allow_shlib_undefined = true;
 
     const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node/include/node/";
-
     lib.addIncludePath(b.path(node_hpath));
 
-    // Build selva
-    //const make_clibs = b.addSystemCommand(
-    //    &[_][]const u8{
-    //        "make",
-    //        "-C",
-    //        "./clibs",
-    //    },
-    //);
-    //b.getInstallStep().dependOn(&make_clibs.step);
-
+    const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "@loader_path";
     const lib_selva_path = b.option([]const u8, "libselvapath", "Path to the Selva Library") orelse "packages/db/dist/lib";
     const headers_selva_path = b.option([]const u8, "headersselvapath", "Path to the Selva Headers") orelse "packages/db/dist/lib/include";
 
+    lib.root_module.addRPathSpecial(rpath);
+
     lib.addIncludePath(b.path(headers_selva_path));
     lib.addLibraryPath(b.path(lib_selva_path));
-    // lib.root_module.addRPathSpecial("@loader_path/../lib");
     lib.linkSystemLibrary("selva");
 
     lib.linkLibC();

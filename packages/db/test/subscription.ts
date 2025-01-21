@@ -14,6 +14,7 @@ await test('subscription', async (t) => {
     return db.destroy()
   })
 
+  // bla
   db.putSchema({
     types: {
       user: {
