@@ -91,6 +91,14 @@ function moveLibraryToPlatformDir(
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
     fs.renameSync(originalPath, newPath)
+    if (destinationLibPath.includes('linux_x86_64')) {
+      execSync(
+          `podman run -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_x86_64 /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_x86_64/ && ../../../scripts/patch_libnode.sh ${version}"`,
+        {
+          stdio: 'inherit',
+        },
+      )
+    }
   } else {
     throw new Error(`Library not found at ${originalPath}`)
   }
