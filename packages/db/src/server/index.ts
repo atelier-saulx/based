@@ -62,8 +62,11 @@ export class DbWorker {
     return new Promise(this.callback)
   }
 
+  transferList = new Array(1)
+
   getQueryBuf(buf): Promise<Buffer> {
-    transferList[0] = buf.buffer
+    const arrayBuffer = buf.buffer.slice(0)
+    transferList[0] = arrayBuffer
     this.channel.postMessage(buf, transferList)
     return new Promise(this.callback)
   }
