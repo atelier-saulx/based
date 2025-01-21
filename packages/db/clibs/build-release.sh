@@ -13,9 +13,8 @@ then
     # TODO Should do this only on Darwin
     make
     git clean -dfx .
-    podman run -v "$PWD/../../..:/usr/src/based-db" based-db-clibs-build-linux_aarch64
+    podman run --rm -v "$PWD/../../..:/usr/src/based-db" based-db-clibs-build-linux_aarch64
     git clean -dfx .
-    podman run -v "$PWD/../../..:/usr/src/based-db" based-db-clibs-build-linux_x86_64
+    podman run --rm -v "$PWD/../../..:/usr/src/based-db" based-db-clibs-build-linux_x86_64
     git clean -dfx .
-    podman rm --all
 fi
