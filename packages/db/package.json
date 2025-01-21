@@ -7,7 +7,7 @@
   "scripts": {
     "build": "make -C clibs && npm run build-zig && tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
-    "build-release": "cd clibs && ./build-release.sh && cd .. && npm run build-zig -- release && tsc",
+    "build-release": "(cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
