@@ -66,7 +66,6 @@ await test('subscription id', async (t) => {
     return db.destroy()
   })
 
-  // bla
   db.putSchema({
     types: {
       user: {
@@ -99,16 +98,11 @@ await test('subscription id', async (t) => {
     console.log(q.id, q)
   })
 
-  //   const interval = setInterval(() => {
-  //   }, 100)
-
   await wait(100)
   update()
   await wait(100)
   update()
   await wait(300)
-
-  console.log('derp')
   await db.update('user', id, {
     nr: (await db.query('user', id).include('nr').get().toObject()).nr,
   })
