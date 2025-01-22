@@ -106,7 +106,6 @@ export const runSubscription = (subscription: Subscription) => {
         const buf = Buffer.from(res)
         if (subscription.res) {
           if (resultsAreEqual(subscription.res.result, buf)) {
-            console.log('sub = isEqual')
             return
           }
           subscription.res.execTime = performance.now() - d
