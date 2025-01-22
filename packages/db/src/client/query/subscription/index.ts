@@ -143,17 +143,36 @@ const startSubscription = (db: BasedDb) => {
 export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
   const t = db.modifySubscriptions.get(typeId)
   if (t && t.toCheck != 0) {
-    t.toCheck--
-    db.subscriptionsToRun.push(...t.filters.subs.values())
-    startSubscription(db)
+    if (t.filters.toCheck) {
+      t.toCheck -= t.filters.subs.size
+      t.filters.toCheck -= t.filters.subs.size
+      db.subscriptionsToRun.push(...t.filters.subs.values())
+      startSubscription(db)
+    }
   }
 }
 
 // subscriptionsInProgress
 
 // will add fields here
-export const checkIdSubscription = (typeId: number, id: number) => {
-  // step 1
+export const checkIdSubscription = (
+  db: BasedDb,
+  typeId: number,
+  id: number,
+) => {
+  const t = db.modifySubscriptions.get(typeId)
+  if (t && t.toCheck != 0) {
+    if (t.ids.toCheck != 0) {
+      const s = t.ids.subs.get(id)
+      if (s && s.toCheck != 0) {
+        s.toCheck -= s.subs.size
+        t.ids.toCheck -= s.subs.size
+        t.toCheck -= s.subs.size
+        db.subscriptionsToRun.push(...s.subs.values())
+        startSubscription(db)
+      }
+    }
+  }
 }
 
 export const checkAliasSubscription = () => {}
@@ -223,15 +242,24 @@ export const subscribe = (
       }
       const idModifySubscription = modifySubscriptionsType.ids.subs.get(id)
       idModifySubscription.subs.set(q.id, subscription)
+
       idModifySubscription.total++
       idModifySubscription.toCheck++
+
+      modifySubscriptionsType.ids.total++
+      modifySubscriptionsType.ids.toCheck++
+
+      modifySubscriptionsType.total++
+      modifySubscriptionsType.toCheck++
     } else if ('alias' in q.def.target) {
       // later
     } else {
       const filters = modifySubscriptionsType.filters
       filters.subs.set(q.id, subscription)
+
       filters.total++
       filters.toCheck++
+
       modifySubscriptionsType.total++
       modifySubscriptionsType.toCheck++
 
