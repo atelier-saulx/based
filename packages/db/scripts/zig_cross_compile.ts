@@ -87,16 +87,14 @@ function moveLibraryToPlatformDir(
 ): void {
   const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
 
-
   const newPath = path.join(destinationLibPath, `libnode-${version}.node`)
-
-
 
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
     fs.renameSync(originalPath, newPath)
-    // if (destinationLibPath.includes('linux_x86_64')) {
-    //   execSync(
+
+    // TODO: IF RELEASE DO THIS ELSE DONT
+    0 //   execSync(
     //       `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_x86_64 /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_x86_64/ && ../../../scripts/patch_libnode.sh ${version}"`,
     //     {
     //       stdio: 'inherit',
@@ -136,7 +134,8 @@ async function main() {
         moveLibraryToPlatformDir(destinationLibPath, version)
 
         console.log('Cleaning up zig-out directory...')
-        // rimraf.sync(path.join(__dirname, 'zig-out'))
+
+        rimraf.sync(path.join(__dirname, 'zig-out'))
       } catch (error) {
         console.error(
           `Error processing version ${version} for platform ${target}:`,
