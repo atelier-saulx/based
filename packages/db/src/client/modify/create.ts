@@ -6,6 +6,7 @@ import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
 import { writeFixedValue } from './fixed.js'
+import { checkFilterSubscription } from '../query/subscription/index.js'
 
 type Payload = Record<string, any>
 
@@ -127,6 +128,8 @@ export function create(
     def.lastId = id
     def.total++
   }
+
+  checkFilterSubscription(this, def.id)
 
   // @ts-ignore
   return res

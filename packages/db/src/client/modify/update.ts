@@ -6,6 +6,7 @@ import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
+import { checkFilterSubscription } from '../query/subscription/index.js'
 
 type Payload = Record<string, any>
 
@@ -100,6 +101,7 @@ export const update = (
     startDrain(db)
   }
 
+  checkFilterSubscription(db, def.id)
   // @ts-ignore
   return res
 }

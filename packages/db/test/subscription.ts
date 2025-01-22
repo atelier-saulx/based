@@ -25,14 +25,18 @@ await test('subscription', async (t) => {
     },
   })
 
+  const amount = 1e6
+
   const update = () => {
-    for (let i = 1; i < 1e6; i++) {
+    const x = Date.now()
+    for (let i = 1; i < amount; i++) {
       db.update('user', i, { nr: ~~(Math.random() * 9999) })
     }
+    console.log('Exec 1m', Date.now() - x, 'ms')
     db.drain()
   }
 
-  for (let i = 1; i < 1e6; i++) {
+  for (let i = 1; i < amount; i++) {
     db.create('user', { nr: i })
   }
   db.drain()
@@ -41,7 +45,7 @@ await test('subscription', async (t) => {
     .query('user')
     .range(0, 1e6)
     .subscribe((q) => {
-      console.log(q)
+      console.log(q.id, q)
     })
 
   //   const interval = setInterval(() => {

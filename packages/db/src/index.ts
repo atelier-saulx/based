@@ -7,6 +7,11 @@ import { create, remove, update } from './client/modify/index.js'
 import { compress, decompress } from './client/string.js'
 import { DbServer } from './server/index.js'
 import { QueryByAliasObj } from './client/query/types.js'
+import {
+  SubscriptionsMap,
+  ModifySubscriptionMap,
+  SubscriptionsToRun,
+} from './client/query/subscription/index.js'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -28,6 +33,15 @@ export class BasedDb {
   schemaTypesParsed: {
     [key: string]: SchemaTypeDef
   }
+
+  subscriptionsInProgress: boolean = false
+
+  subscriptions: SubscriptionsMap = new Map()
+
+  modifySubscriptions: ModifySubscriptionMap = new Map()
+
+  subscriptionsToRun: SubscriptionsToRun = []
+
   constructor({
     path,
     maxModifySize,

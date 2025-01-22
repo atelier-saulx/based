@@ -255,7 +255,14 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       reject(res)
     } else {
       const result = Buffer.from(res)
-      resolve(new BasedQueryResponse(this.def, result, performance.now() - d))
+      resolve(
+        new BasedQueryResponse(
+          this.id,
+          this.def,
+          result,
+          performance.now() - d,
+        ),
+      )
     }
   }
 
@@ -291,7 +298,12 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const d = performance.now()
     const res = native.getQueryBuf(buf, this.db.server.dbCtxExternal)
     const result = Buffer.from(res)
-    return new BasedQueryResponse(this.def, result, performance.now() - d)
+    return new BasedQueryResponse(
+      this.id,
+      this.def,
+      result,
+      performance.now() - d,
+    )
   }
 
   toBuffer() {

@@ -12,14 +12,17 @@ export class BasedQueryResponse {
   execTime: number
   offset: number
   end: number
+  id: number
 
   constructor(
+    id: number,
     def: QueryDef,
     result: Buffer,
     execTime: number,
     offset: number = 0,
     end: number = result.byteLength,
   ) {
+    this.id = id
     this.def = def
     this.result = result
     this.execTime = execTime
