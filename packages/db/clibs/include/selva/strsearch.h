@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -28,5 +28,16 @@ uint8_t strsearch_levenshtein_u8(const char * restrict s, size_t m, const char *
 SELVA_EXPORT
 uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, size_t m, const struct strsearch_wneedle *wneedle);
 
+/**
+ * Calculate the Hamming distance of two strings of the same length.
+ */
 SELVA_EXPORT
 uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, size_t n);
+
+/**
+ * Calculate the Hamming distance of two string of the same length.
+ * The input string mbs must be NFKD normalized and the string t must contain
+ * only ASCII characters.
+ */
+SELVA_EXPORT
+uint32_t strsearch_hamming_mbs(const char * restrict mbs, const char * restrict t, size_t n);
