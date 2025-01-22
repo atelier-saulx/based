@@ -87,6 +87,7 @@ export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
   if (a[aLen - 3] != b[bLen - 3]) return false
   if (a[aLen - 2] != b[bLen - 2]) return false
   if (a[aLen - 1] != b[bLen - 1]) return false
+  return true
 }
 
 export const runSubscription = (subscription: Subscription) => {
