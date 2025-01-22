@@ -35,9 +35,9 @@ SELVA_EXPORT
 uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, size_t n);
 
 /**
- * Calculate the Hamming distance of two string of the same length.
+ * Calculate the Hamming distance of two strings of the same length in code points.
  * The input string mbs must be NFKD normalized and the string t must contain
  * only ASCII characters.
  */
 SELVA_EXPORT
-uint32_t strsearch_hamming_mbs(const char * restrict mbs, const char * restrict t, size_t n);
+uint32_t strsearch_hamming_mbs(const char * restrict mbs, size_t mbs_len, const char * restrict t, size_t t_len);

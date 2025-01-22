@@ -126,12 +126,14 @@ uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, siz
     return dist;
 }
 
-uint32_t strsearch_hamming_mbs(const char * restrict mbs, const char * restrict t, size_t n)
+uint32_t strsearch_hamming_mbs(const char * restrict mbs, size_t mbs_len, const char * restrict t, size_t t_len)
 {
-    uint32_t dist = 0;
+    char buf[mbs_len];
+    size_t j = 0;
 
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < mbs_len; i++) {
         uint8_t x = *mbs++;
+
         if (x & 0x80) {
             unsigned l;
 #if __has_builtin(__builtin_clzg)
@@ -143,8 +145,18 @@ uint32_t strsearch_hamming_mbs(const char * restrict mbs, const char * restrict 
 #endif
             i += l;
             mbs += l;
-            x = *mbs++;
+            continue;
         }
+
+        buf[j++] = x;
+    }
+
+    char *s = buf;
+    const size_t n = min(j, t_len);
+    uint32_t dist = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        uint8_t x = *s++;
         uint8_t y = *t++;
 
         dist += __builtin_popcount(x ^ y);
