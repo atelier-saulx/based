@@ -14,6 +14,7 @@ export const write = (
   offset: number,
   noCompression: boolean,
 ): number => {
+  value = value.normalize('NFKD')
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
     buf[offset] = 0 // lang TODO we could actually set this
