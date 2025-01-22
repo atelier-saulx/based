@@ -119,8 +119,12 @@ export const runSubscription = (subscription: Subscription) => {
 
 const resetToCheckCounters = (db: BasedDb) => {
   db.modifySubscriptions.forEach((s) => {
-    // do this better
     s.filters.toCheck = s.filters.total
+    s.ids.toCheck = s.ids.total
+    s.toCheck = s.total
+    s.ids.subs.forEach((s) => {
+      s.toCheck = s.total
+    })
   })
 }
 

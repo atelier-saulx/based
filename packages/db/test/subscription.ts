@@ -50,6 +50,8 @@ await test('subscription filter / multiple', async (t) => {
 
   await wait(100)
   update()
+  await wait(100)
+  update()
   await wait(300)
 
   close()
@@ -100,6 +102,8 @@ await test('subscription id', async (t) => {
   //   const interval = setInterval(() => {
   //   }, 100)
 
+  await wait(100)
+  update()
   await wait(100)
   update()
   await wait(300)
