@@ -77,6 +77,19 @@ export type ModifySubscriptionMap = Map<
   }
 >
 
+export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
+  const aLen = a.byteLength
+  const bLen = b.byteLength
+  if (aLen != bLen) {
+    return false
+  }
+  if (a[aLen - 4] != b[bLen - 4]) return false
+  if (a[aLen - 3] != b[bLen - 3]) return false
+  if (a[aLen - 2] != b[bLen - 2]) return false
+  if (a[aLen - 1] != b[bLen - 1]) return false
+  return true
+}
+
 export const runSubscription = (subscription: Subscription) => {
   if (!subscription.inProgress) {
     subscription.inProgress = true
@@ -92,8 +105,7 @@ export const runSubscription = (subscription: Subscription) => {
         subscription.inProgress = false
         const buf = Buffer.from(res)
         if (subscription.res) {
-          if (buf.equals(subscription.res.result)) {
-            console.log('sub = isEqual')
+          if (resultsAreEqual(subscription.res.result, buf)) {
             return
           }
           subscription.res.execTime = performance.now() - d

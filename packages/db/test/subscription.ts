@@ -1,6 +1,5 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 import { wait } from '@saulx/utils'
 
 await test('subscription filter / multiple', async (t) => {
@@ -14,7 +13,6 @@ await test('subscription filter / multiple', async (t) => {
     return db.destroy()
   })
 
-  // bla
   db.putSchema({
     types: {
       user: {
@@ -68,7 +66,6 @@ await test('subscription id', async (t) => {
     return db.destroy()
   })
 
-  // bla
   db.putSchema({
     types: {
       user: {
@@ -95,18 +92,21 @@ await test('subscription id', async (t) => {
   }
   db.drain()
 
-  const close = db.query('user', 750e3).subscribe((q) => {
+  const id = 750e3
+
+  const close = db.query('user', id).subscribe((q) => {
     console.log(q.id, q)
   })
-
-  //   const interval = setInterval(() => {
-  //   }, 100)
 
   await wait(100)
   update()
   await wait(100)
   update()
   await wait(300)
+  await db.update('user', id, {
+    nr: (await db.query('user', id).include('nr').get().toObject()).nr,
+  })
+  await wait(100)
 
   close()
 })

@@ -10,7 +10,6 @@ export class BasedQueryResponse {
   result: Buffer
   def: QueryDef
   execTime: number
-  offset: number
   end: number
   id: number
 
@@ -19,14 +18,12 @@ export class BasedQueryResponse {
     def: QueryDef,
     result: Buffer,
     execTime: number,
-    offset: number = 0,
     end: number = result.byteLength,
   ) {
     this.id = id
     this.def = def
     this.result = result
     this.execTime = execTime
-    this.offset = offset
     this.end = end
   }
 
@@ -61,7 +58,7 @@ export class BasedQueryResponse {
   }
 
   debug() {
-    debug(this.result, this.offset, this.end)
+    debug(this.result, 0, this.end)
     return this
   }
 
@@ -85,7 +82,7 @@ export class BasedQueryResponse {
   *[Symbol.iterator]() {
     let i = 5
     const result = this.result
-    while (i < result.byteLength) {
+    while (i < result.byteLength - 4) {
       let id = result.readUInt32LE(i)
       i += 4
       const item: Item = {
@@ -95,7 +92,14 @@ export class BasedQueryResponse {
         item.$searchScore = result[i]
         i += 1
       }
-      const l = readAllFields(this.def, result, i, result.byteLength, item, id)
+      const l = readAllFields(
+        this.def,
+        result,
+        i,
+        result.byteLength - 4,
+        item,
+        id,
+      )
       i += l
       yield item
     }
@@ -122,12 +126,16 @@ export class BasedQueryResponse {
     return arr
   }
 
+  get checksum() {
+    return this.result.readUint32LE(this.result.byteLength - 4)
+  }
+
   get length() {
-    return this.result.readUint32LE(this.offset)
+    return this.result.readUint32LE(0)
   }
 
   toObject(): any {
-    return resultToObject(this.def, this.result, this.end, this.offset)
+    return resultToObject(this.def, this.result, this.end - 4, 0)
   }
 
   toJSON() {

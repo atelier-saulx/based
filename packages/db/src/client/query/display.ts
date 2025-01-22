@@ -247,6 +247,7 @@ export const inspectData = (
   const prefix = top ? '  ' : ''
   let str: string
   let i = 0
+
   if (hasId) {
     str = prefix
     level = level + 1
@@ -256,6 +257,7 @@ export const inspectData = (
   } else {
     str = prefix + '['
   }
+
   for (const x of q) {
     str += inspectObject(
       x,
