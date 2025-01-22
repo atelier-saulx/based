@@ -304,13 +304,14 @@ export const readAllFields = (
 export const resultToObject = (
   q: QueryDef,
   result: Buffer,
-  end: number = result.byteLength,
+  end: number,
   offset: number = 0,
 ) => {
   const len = result.readUint32LE(offset)
   if (len === 0) {
     return []
   }
+
   let items = []
   let i = 5 + offset
   while (i < end) {

@@ -54,7 +54,7 @@ fn hamming(
 ) u8 {
     const queryD = query[1..query.len];
     const ql = queryD.len;
-    // add normalization
+    // add normalization strsearch_hamming normalize
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
         queryD.ptr,

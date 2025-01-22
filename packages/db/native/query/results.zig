@@ -5,6 +5,7 @@ const QueryCtx = @import("./types.zig").QueryCtx;
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const std = @import("std");
+const selva = @import("../selva.zig");
 
 const readInt = utils.readInt;
 const writeInt = utils.writeInt;
@@ -28,11 +29,11 @@ pub fn createResultsBuffer(
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
+    if (c.napi_create_buffer(env, ctx.size + 8, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
 
-    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 8];
     var i: usize = 4;
 
     writeInt(u32, data, 0, ctx.totalResults);
@@ -125,6 +126,12 @@ pub fn createResultsBuffer(
             i += val.len;
         }
     }
+
+    // if (i > data.len - 4) {
+    //     std.log.err("Wrong writing of result buffer i:{d} \n", .{i});
+    // }
+
+    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
 
     return result;
 }
