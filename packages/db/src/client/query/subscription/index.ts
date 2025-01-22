@@ -96,6 +96,7 @@ export const runSubscription = (subscription: Subscription) => {
             console.log('sub = isEqual')
             return
           }
+          subscription.res.execTime = performance.now() - d
           subscription.res.result = buf
         } else {
           subscription.res = new BasedQueryResponse(
@@ -132,6 +133,8 @@ const startSubscription = (db: BasedDb) => {
       })
       db.subscriptionsToRun = []
       resetToCheckCounters(db)
+      db.subscriptionsInProgress = false
+      // sub time is configurable
     }, 20)
   }
 }
@@ -266,6 +269,8 @@ export const subscribe = (
   } else if (sub.res) {
     onData(sub.res)
   }
+
+  // TODO: optional await will wait for the first one!
 
   return close
 }
