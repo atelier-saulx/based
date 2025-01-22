@@ -143,6 +143,8 @@ const startSubscription = (db: BasedDb) => {
   }
 }
 
+// TODO hooks for update / create
+
 // will add fields here
 export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
   const t = db.modifySubscriptions.get(typeId)
