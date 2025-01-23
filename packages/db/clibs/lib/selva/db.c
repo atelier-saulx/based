@@ -516,33 +516,37 @@ struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = node_id2block_i(blocks, node->node_id);
     struct SelvaNode *prev;
 
     prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
     if (prev) {
         return prev;
-    } else if ( i > 0 && i - 1 < i) {
-        return selva_max_node_from(type, i - 1);
-    } else {
-        return nullptr;
     }
+
+    block_id_t i = node_id2block_i(blocks, node->node_id);
+    if ( i > 0 && i - 1 < i) {
+        return selva_max_node_from(type, i - 1);
+    }
+
+    return nullptr;
 }
 
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i_next = node_id2block_i(blocks, node->node_id) + 1;
     struct SelvaNode *next;
 
     next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
     if (next) {
         return next;
-    } else if (i_next < blocks->len) {
-        return selva_min_node_from(type, i_next);
-    } else {
-        return nullptr;
     }
+
+    block_id_t i_next = node_id2block_i(blocks, node->node_id) + 1;
+    if (i_next < blocks->len) {
+        return selva_min_node_from(type, i_next);
+    }
+
+    return nullptr;
 }
 
 static struct SelvaTypeCursors *find_cursors(struct SelvaTypeEntry *type, node_id_t node_id)
