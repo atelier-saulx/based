@@ -152,7 +152,7 @@ pub fn strSearch(
         return d;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
-    const queryVectorCaptial: @Vector(vectorLen, u8) = @splat(q2);
+    const queryVectorCapital: @Vector(vectorLen, u8) = @splat(q2);
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
@@ -162,7 +162,7 @@ pub fn strSearch(
                 return d;
             }
         }
-        matches = h == queryVectorCaptial;
+        matches = h == queryVectorCapital;
         if (@reduce(.Or, matches)) {
             d = resultMatcher(d, matches, i, value, query);
             if (d < minDist) {
