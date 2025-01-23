@@ -507,10 +507,7 @@ static struct SelvaNode *selva_max_node_from(struct SelvaTypeEntry *type, block_
 
 struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 {
-    const size_t len = type->blocks->len;
-
-    assert(len > 0);
-    return selva_max_node_from(type, len - 1);
+    return selva_max_node_from(type, type->blocks->len - 1);
 }
 
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
