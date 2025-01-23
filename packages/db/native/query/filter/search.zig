@@ -54,11 +54,27 @@ fn hamming(
 ) u8 {
     const queryD = query[1..query.len];
     const ql = queryD.len;
-    // add normalization strsearch_hamming normalize
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
         queryD.ptr,
         ql,
+    ));
+
+    return d;
+}
+
+fn hamming_mbs(
+    value: []u8,
+    i: usize,
+    len: usize, // Length of the mbs string in value.
+    query: []u8,
+) u8 {
+    const queryD = query[1..query.len];
+    const d: u8 = @truncate(selva.strsearch_hamming_mbs(
+        value[i + 1 .. i + 1 + len].ptr,
+        len,
+        queryD.ptr,
+        queryD.len,
     ));
 
     return d;
