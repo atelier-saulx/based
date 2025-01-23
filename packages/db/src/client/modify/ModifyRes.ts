@@ -71,6 +71,9 @@ export class ModifyState {
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
   }
+
+  subProps?: any
+
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
   tmpId: number

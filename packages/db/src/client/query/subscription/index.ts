@@ -24,6 +24,9 @@ export type SubscriptionsMap = Map<number, Subscription>
 
 export type SubscriptionsToRun = Subscription[]
 
+// for fields its very different
+// if shceduled need to remove from every field (-1 on each other field)
+
 // later replace this with native + buffer / externalID
 export type ModifySubscriptionMap = Map<
   number, // typeID
@@ -38,28 +41,13 @@ export type ModifySubscriptionMap = Map<
         {
           toCheck: number
           total: number
-          // nice to have fields here
-          // Buffer [0,1,2,3,4] // so full buffer and check if
-          subs: Map<
-            number, // SUB ID
-            Subscription
-          >
-        }
-      >
-    }
-    alias: {
-      toCheck: number
-      total: number
-      subs: Map<
-        string, // ALIAS
-        {
-          toCheck: number
-          total: number
-          // nice to have fields here
-          // Buffer [0,1,2,3,4] // so full buffer and check if
-          subs: Map<
-            number, // SUB ID
-            Subscription
+          props: Map<
+            string, // Props
+            {
+              total: number
+              toCheck: number
+              subs: Subscription[]
+            }
           >
         }
       >
@@ -67,12 +55,7 @@ export type ModifySubscriptionMap = Map<
     filters: {
       toCheck: number
       total: number
-      // nice to have fields here
-      // Buffer [0,1,2,3,4] // so full buffer and check if
-      subs: Map<
-        number, // SUB ID
-        Subscription
-      >
+      subs: Subscription[]
     }
   }
 >
@@ -162,9 +145,9 @@ export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
   const t = db.modifySubscriptions.get(typeId)
   if (t && t.toCheck != 0) {
     if (t.filters.toCheck) {
-      t.toCheck -= t.filters.subs.size
-      t.filters.toCheck -= t.filters.subs.size
-      db.subscriptionsToRun.push(...t.filters.subs.values())
+      t.toCheck -= t.filters.subs.length
+      t.filters.toCheck -= t.filters.subs.length
+      db.subscriptionsToRun.push(...t.filters.subs)
       startSubscription(db)
     }
   }
@@ -172,6 +155,7 @@ export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
 
 // subscriptionsInProgress
 
+// check for id before
 // will add fields here
 export const checkIdSubscription = (
   db: BasedDb,
@@ -183,14 +167,29 @@ export const checkIdSubscription = (
     if (t.ids.toCheck != 0) {
       const s = t.ids.subs.get(id)
       if (s && s.toCheck != 0) {
-        s.toCheck -= s.subs.size
-        t.ids.toCheck -= s.subs.size
-        t.toCheck -= s.subs.size
-        db.subscriptionsToRun.push(...s.subs.values())
-        startSubscription(db)
+        // if (s.all.toCheck != 0) {
+        //   s.all.toCheck -= s.all.toCheck
+        //   t.ids.toCheck -= s.all.toCheck
+        //   t.toCheck -= s.all.toCheck
+        //   db.subscriptionsToRun.push(...s.all.subs.values())
+        //   startSubscription(db)
+        // }
+        return s.props
       }
     }
   }
+}
+
+export const checkIdSubscriptionProp = (
+  db: BasedDb,
+  props: any,
+  prop: string,
+) => {
+  console.log(prop, props)
+}
+
+export const checkSubFields = (subs: Subscription[], field: number) => {
+  // blurf check them subs
 }
 
 export const checkAliasSubscription = () => {}
@@ -235,12 +234,7 @@ export const subscribe = (
         filters: {
           toCheck: 0,
           total: 0,
-          subs: new Map(),
-        },
-        alias: {
-          toCheck: 0,
-          total: 0,
-          subs: new Map(),
+          subs: [],
         },
       })
       //-----------
@@ -255,25 +249,35 @@ export const subscribe = (
         modifySubscriptionsType.ids.subs.set(id, {
           total: 0,
           toCheck: 0,
-          subs: new Map(),
+          props: new Map(),
         })
       }
       const idModifySubscription = modifySubscriptionsType.ids.subs.get(id)
-      idModifySubscription.subs.set(q.id, subscription)
 
-      idModifySubscription.total++
-      idModifySubscription.toCheck++
-
-      modifySubscriptionsType.ids.total++
-      modifySubscriptionsType.ids.toCheck++
-
-      modifySubscriptionsType.total++
-      modifySubscriptionsType.toCheck++
+      subscription.query.def.include.stringFields.forEach((key) => {
+        if (!idModifySubscription.props.has(key)) {
+          idModifySubscription.props.set(key, {
+            total: 0,
+            toCheck: 0,
+            subs: [],
+          })
+        }
+        const propSubs = idModifySubscription.props.get(key)
+        propSubs.subs.push(subscription)
+        propSubs.toCheck++
+        propSubs.total++
+        idModifySubscription.total++
+        idModifySubscription.toCheck++
+        modifySubscriptionsType.ids.total++
+        modifySubscriptionsType.ids.toCheck++
+        modifySubscriptionsType.total++
+        modifySubscriptionsType.toCheck++
+      })
     } else if ('alias' in q.def.target) {
       // later
     } else {
       const filters = modifySubscriptionsType.filters
-      filters.subs.set(q.id, subscription)
+      filters.subs.push(subscription)
 
       filters.total++
       filters.toCheck++

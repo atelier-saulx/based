@@ -50,6 +50,15 @@ function _modify(
 
     let err: ModifyErr
     if (isPropDef(def)) {
+      if (res.subProps) {
+        console.log(res.subProps, def)
+        // field + start shorter to check faster result
+        // or make the check even faster with a buffer of all fields with all potential space
+        // [0][1][2][3][4]
+        // if zero just pass prop to subs
+        // hardest will be references + ids (other wise can just be added)
+      }
+
       const val = obj[key]
       const type = def.typeIndex
       if (def.separate) {

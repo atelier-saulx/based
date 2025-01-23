@@ -81,6 +81,11 @@ export const update = (
   const ctx = db.modifyCtx
   const pos = ctx.len
   const res = new ModifyState(id, db)
+
+  // combine in one q
+  checkFilterSubscription(db, def.id)
+  res.subProps = checkIdSubscription(db, def.id, id)
+
   const err = appendUpdate(ctx, def, obj, res, overwrite)
 
   if (err) {
@@ -104,9 +109,6 @@ export const update = (
     startDrain(db)
   }
 
-  // combine in one q
-  checkFilterSubscription(db, def.id)
-  checkIdSubscription(db, def.id, id)
   // @ts-ignore
   return res
 }

@@ -90,8 +90,8 @@ await test('save simple range', async (t) => {
     '65282_200001_300000.sdb',
     '65282_300001_400000.sdb',
     'common.sdb',
-    'schema.json',
-    'writelog.json',
+    'schema.tson',
+    'writelog.tson',
   ])
 
   const load_start = performance.now()
@@ -120,7 +120,9 @@ await test('save simple range', async (t) => {
     ],
   )
   deepEqual(
-    (await newDb.query('user').include('age').range(200000, 1).get()).toObject(),
+    (
+      await newDb.query('user').include('age').range(200000, 1).get()
+    ).toObject(),
     [
       {
         id: 200001,

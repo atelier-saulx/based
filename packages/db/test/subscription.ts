@@ -71,6 +71,7 @@ await test('subscription id', async (t) => {
       user: {
         props: {
           nr: 'uint32',
+          flap: 'string',
         },
       },
     },
@@ -94,9 +95,12 @@ await test('subscription id', async (t) => {
 
   const id = 750e3
 
-  const close = db.query('user', id).subscribe((q) => {
-    console.log(q.id, q)
-  })
+  const close = db
+    .query('user', id)
+    .include('nr')
+    .subscribe((q) => {
+      console.log(q.id, q)
+    })
 
   await wait(100)
   update()

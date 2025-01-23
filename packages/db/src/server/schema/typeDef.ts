@@ -80,7 +80,6 @@ export const createSchemaTypeDef = (
     mainLen: 0,
     separate: [],
     tree: {},
-    // TODO will go to specific manager hub
     total: 0,
     lastId: 0,
     stringPropsSize: 0,
