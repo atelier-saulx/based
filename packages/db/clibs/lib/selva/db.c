@@ -522,7 +522,7 @@ struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode 
     prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
     if (prev) {
         return prev;
-    } else if (i - 1 < i) {
+    } else if ( i > 0 && i - 1 < i) {
         return selva_max_node_from(type, i - 1);
     } else {
         return nullptr;
@@ -532,14 +532,14 @@ struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode 
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = node_id2block_i(blocks, node->node_id);
+    block_id_t i_next = node_id2block_i(blocks, node->node_id) + 1;
     struct SelvaNode *next;
 
     next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
     if (next) {
         return next;
-    } else if (i + 1 < blocks->len) {
-        return selva_min_node_from(type, i + 1);
+    } else if (i_next < blocks->len) {
+        return selva_min_node_from(type, i_next);
     } else {
         return nullptr;
     }
