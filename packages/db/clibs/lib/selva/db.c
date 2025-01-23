@@ -214,6 +214,7 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     assert(block_capacity >= 2);
     size_t nr_blocks = 4294967295ull / block_capacity;
     struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), nr_blocks * sizeof(*blocks));
+    fprintf(stderr, "alloc %zu bytes for blocks block_capacity: %zu\n", nr_blocks * sizeof(*blocks), block_capacity);
 
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
@@ -259,24 +260,17 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
         return err;
     }
 
-    if (nfo.block_capacity == 0)
-    {
+    if (nfo.block_capacity == 0) {
         return SELVA_EINVAL;
     }
-
-
 
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
-
-
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
-
-
 
     te->type = type;
     te->schema_buf = schema_buf;
