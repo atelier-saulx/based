@@ -7,9 +7,14 @@ await test('rootProps', async (t) => {
     path: t.tmp,
   })
 
-  await db.start({ clean: true })
+ await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  t.after(async () => {
+    const d = performance.now()
+    await db.destroy()
+    console.log(performance.now() - d, 'ms')
+
+  })
 
   db.putSchema({
     props: {
@@ -35,6 +40,7 @@ await test('rootProps', async (t) => {
     myString: 'im the root',
     myBoolean: true,
   }
+
 
   await db.update(rootData)
 

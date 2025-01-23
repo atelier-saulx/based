@@ -14,27 +14,7 @@ export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
 }
 
 const genIdFromInt = (n: number): number => {
-  const buf = Buffer.allocUnsafe(2)
-  buf.writeUInt16LE(n)
-
-  if (buf[1] == 255) {
-    return genIdFromInt(n + 1)
-  }
-
-  if (buf[0] == 255) {
-    return genIdFromInt(n + 1)
-  }
-
-  if (buf[1] == 0) {
-    buf[1] = 255
-  }
-
-  if (buf[0] == 0) {
-    buf[0] = 255
-  }
-
-  const cnt = buf.readUInt16LE()
-  return cnt
+  return n
 }
 
 export const genRootId = () => {

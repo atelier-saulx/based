@@ -85,13 +85,13 @@ await test('save simple range', async (t) => {
   equal(ls.length, N / 100_000 + 3)
 
   deepEqual(ls, [
-    '65282_100001_200000.sdb',
-    '65282_1_100000.sdb',
-    '65282_200001_300000.sdb',
-    '65282_300001_400000.sdb',
+    '2_100001_200000.sdb',
+    '2_1_100000.sdb',
+    '2_200001_300000.sdb',
+    '2_300001_400000.sdb',
     'common.sdb',
-    'schema.json',
-    'writelog.json',
+    'schema.tson',
+    'writelog.tson'
   ])
 
   const load_start = performance.now()

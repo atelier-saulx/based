@@ -319,7 +319,7 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+        this.modify(Buffer.from([2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
       }
     }
 
