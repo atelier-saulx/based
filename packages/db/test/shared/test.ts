@@ -46,7 +46,7 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
 
     const msg =
       (err.stack ?? err.msg ?? err)
-        .replaceAll('.js', '.ts')
+        .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
     console.log(picocolors.red(msg))

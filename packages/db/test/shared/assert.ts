@@ -11,7 +11,8 @@ ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 ------------------- ACTUAL -----------------------
 ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 --------------------------------------------------`
-    throw new Error(m)
+    const error = new Error(m)
+    throw error
   }
 }
 
