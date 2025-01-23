@@ -145,8 +145,9 @@ struct SelvaDb *selva_db_create(void)
 static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
 {
     struct SelvaTypeBlocks *blocks = type->blocks;
+    block_id_t blocks_len = blocks->len;
 
-    for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+    for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
         struct SelvaNodeIndex *nodes = &blocks->blocks[block_i].nodes;
         struct SelvaNode *node;
         struct SelvaNode *tmp;
