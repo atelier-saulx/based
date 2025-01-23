@@ -153,6 +153,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
         struct SelvaNode *tmp;
 
         RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
+            fprintf(stderr, "del %p\n", node);
             selva_del_node(db, type, node);
         }
     }
@@ -215,7 +216,7 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     assert(block_capacity >= 2);
     size_t nr_blocks = 4294967295ull / block_capacity;
     struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), nr_blocks * sizeof(*blocks));
-    fprintf(stderr, "alloc %zu bytes for blocks block_capacity: %zu nr_blocks: %d\n", nr_blocks * sizeof(*blocks), block_capacity, (int)nr_blocks);
+    fprintf(stderr, "alloc %zu bytes for blocks block_capacity: %zu nr_blocks: %zu\n", nr_blocks * sizeof(*blocks), block_capacity, nr_blocks);
 
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
@@ -535,6 +536,7 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
     const struct SelvaTypeBlocks *blocks = type->blocks;
     struct SelvaNode *next;
 
+    fprintf(stderr, "node_id: %u block_i: %zu\n", node->node_id, (size_t)i);
     next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
     if (next) {
         return next;
