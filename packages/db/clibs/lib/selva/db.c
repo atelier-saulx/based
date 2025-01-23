@@ -536,7 +536,6 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
     const struct SelvaTypeBlocks *blocks = type->blocks;
     struct SelvaNode *next;
 
-    fprintf(stderr, "node_id: %u block_i: %zu\n", node->node_id, (size_t)i);
     next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
     if (next) {
         return next;
