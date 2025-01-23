@@ -15,7 +15,7 @@ const capitals: @Vector(vectorLen, u8) = @splat(32);
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
 
-fn isSeparator(ch: u8) bool {
+inline fn isSeparator(ch: u8) bool {
     return simd.countElementsWithValue(seperatorChars, ch) > 0;
 }
 
