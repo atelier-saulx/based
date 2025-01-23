@@ -15,6 +15,10 @@ const capitals: @Vector(vectorLen, u8) = @splat(32);
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 2; // 0,1 is fine
 
+fn isSeparator(ch: u8) bool {
+    return simd.countElementsWithValue(seperatorChars, ch) > 0;
+}
+
 pub const SearchCtx = struct {
     fields: []u8,
     len: u16,
@@ -95,7 +99,7 @@ fn resultMatcher(
     if (index + ql > l) {
         return d;
     }
-    if (index == 1 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
+    if (index == 1 or isSeparator(value[index - 1])) {
         const nd = hamming(value, index, query);
         if (nd < minDist) {
             return nd;
@@ -107,7 +111,7 @@ fn resultMatcher(
         var p: usize = index - i + 1;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
-                if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
+                if (isSeparator(value[p + i - 1])) {
                     const nd = hamming(value, p + i, query);
                     if (nd < minDist) {
                         return nd;
@@ -133,10 +137,7 @@ pub fn strSearch(
     var d: u8 = 10;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
-            if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(
-                seperatorChars,
-                value[i - 1],
-            ) > 0)) {
+            if ((value[i] == q1 or value[i] == q2) and (i == 1 or isSeparator(value[i - 1]))) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
@@ -170,10 +171,7 @@ pub fn strSearch(
         }
     }
     while (i < l - 1) : (i += 1) {
-        if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(
-            seperatorChars,
-            value[i],
-        ) > 0) {
+        if ((value[i + 1] == q1 or value[i + 1] == q2) and isSeparator(value[i])) {
             if (i + ql - 1 > l) {
                 return d;
             }
