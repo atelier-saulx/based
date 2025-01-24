@@ -137,6 +137,10 @@ export const filterOr = (
   return conditions.or
 }
 
+function normalizeNeedle(s: string): string {
+    return s.normalize('NFKD').split('').filter((ch: string) => ch.charCodeAt(0) <= 127).join('')
+}
+
 export const convertFilter = (
   field: string,
   operator?: Operator | boolean,
@@ -163,6 +167,13 @@ export const convertFilter = (
       [field, '<', value[1]],
     ]
   } else {
+    if (operator == 'like') {
+      if (value.normalize) {
+        value = normalizeNeedle(value)
+      } else {
+        value = value.map(normalizeNeedle)
+      }
+    }
     return [[field, operator, value]]
   }
 }
