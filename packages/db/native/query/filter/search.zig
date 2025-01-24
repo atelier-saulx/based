@@ -70,16 +70,11 @@ fn hamming(
 fn hamming_mbs(
     value: []u8,
     i: usize,
-    len: usize, // Length of the mbs string in value.
     query: []u8,
 ) u8 {
-    const queryD = query[1..query.len];
-    const d: u8 = @truncate(selva.strsearch_hamming_mbs(
-        value[i + 1 .. i + 1 + len].ptr,
-        len,
-        queryD.ptr,
-        queryD.len,
-    ));
+    const mbs = value[i + 1 .. value.len];
+    const t = query[1 .. query.len];
+    const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
 
     return d;
 }
