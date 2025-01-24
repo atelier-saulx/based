@@ -56,12 +56,12 @@ export type SubscriptionMarkers = {
 export type SubscriptionMarkerMap = {
   [typeID: string]: {
     ids: Map<number, SubscriptionMarkers>
-    filters: SubscriptionMarkers // prop want to add the filters
+    collection: SubscriptionMarkers // prop want to add the filters
   }
 }
 
 export type SubscriptionMarkersCheck = {
-  filter: SubscriptionMarkers | false
+  collection: SubscriptionMarkers | false
   ids: SubscriptionMarkers
 }
 

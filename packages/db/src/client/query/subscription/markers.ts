@@ -24,7 +24,7 @@ export const getSubscriptionMarkers = (
   if (!isCreate) {
     if (t.ids.has(id)) {
       const idMarkers = t.ids.get(id)
-      return { ids: idMarkers, filter: false }
+      return { ids: idMarkers, collection: false }
     }
   }
 
@@ -89,7 +89,7 @@ export const addSubscriptionMarkers = (
   if (!q.db.subscriptionMarkers[typeId]) {
     q.db.subscriptionMarkers[typeId] = {
       ids: new Map(),
-      filters: {
+      collection: {
         main: {},
         props: {},
       },
