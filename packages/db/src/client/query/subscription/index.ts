@@ -131,17 +131,6 @@ const startSubscription = (db: BasedDb) => {
 // --------------------------------------------
 // TODO hooks for update / create
 
-// will add fields here
-export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
-  const t = db.modifySubscriptions.get(typeId)
-}
-
-// subscriptionsInProgress
-
-// check for id before
-// will add fields here
-
-// if all fields immediatly stage for execution
 export const getSubscriptionMarkers: SubscriptionMarkers = (
   db: BasedDb,
   typeId: number,
@@ -151,20 +140,14 @@ export const getSubscriptionMarkers: SubscriptionMarkers = (
   const t = db.modifySubscriptions.get(typeId)
 }
 
-export const checkSubscriptionProp = (
+export const checkSubscriptionMarkers = (
   db: BasedDb,
-  props: any,
+  markers: SubscriptionMarkers,
   prop: PropDef | PropDefEdge, // number
 ) => {
-  console.log(prop, props)
+  console.log(prop, markers)
   // will check filters
 }
-
-export const checkSubFields = (subs: Subscription[], field: number) => {
-  // blurf check them subs
-}
-
-export const checkAliasSubscription = () => {}
 
 export const subscribe = (
   q: BasedDbQuery,

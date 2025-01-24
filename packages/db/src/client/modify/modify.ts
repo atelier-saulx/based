@@ -18,7 +18,6 @@ import { writeText } from './text.js'
 import {
   DECREMENT,
   INCREMENT,
-  MERGE_MAIN,
   ModifyErr,
   ModifyOp,
   RANGE_ERR,
@@ -28,6 +27,7 @@ import { setCursor } from './setCursor.js'
 import { appendFixedValue, writeFixedValue } from './fixed.js'
 import { writeAlias } from './alias.js'
 import { writeHll } from './hll.js'
+import { checkSubscriptionMarkers } from '../query/subscription/index.js'
 
 function _modify(
   ctx: ModifyCtx,
@@ -50,14 +50,9 @@ function _modify(
 
     let err: ModifyErr
     if (isPropDef(def)) {
-      // if (res.subProps) {
-      //   console.log(res.subProps, def)
-      //   // field + start shorter to check faster result
-      //   // or make the check even faster with a buffer of all fields with all potential space
-      //   // [0][1][2][3][4]
-      //   // if zero just pass prop to subs
-      //   // hardest will be references + ids (other wise can just be added)
-      // }
+      if (res.subMarkers) {
+        checkSubscriptionMarkers(ctx.db, res.subMarkers, def)
+      }
 
       const val = obj[key]
       const type = def.typeIndex
