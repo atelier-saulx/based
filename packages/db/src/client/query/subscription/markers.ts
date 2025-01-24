@@ -80,7 +80,10 @@ export const checkSubscriptionMarkers = (
     const markers = m.collection
     if (prop.separate) {
       const propSubs = markers.props[prop.prop]
-      if (propSubs) {
+      // @ts-ignore
+      if (propSubs && !propSubs.__handled) {
+        // @ts-ignore
+        propSubs.__handled = true
         for (const s of propSubs) {
           if (!s.inProgress) {
             newSub = true
@@ -90,13 +93,14 @@ export const checkSubscriptionMarkers = (
       }
     } else {
       const propSubs = markers.main[prop.start]
-      if (propSubs) {
-        if (propSubs) {
-          for (const s of propSubs) {
-            if (!s.inProgress) {
-              newSub = true
-              db.subscriptionsToRun.push(s)
-            }
+      // @ts-ignore
+      if (propSubs && !propSubs.__handled) {
+        // @ts-ignore
+        propSubs.__handled = true
+        for (const s of propSubs) {
+          if (!s.inProgress) {
+            newSub = true
+            db.subscriptionsToRun.push(s)
           }
         }
       }
@@ -202,6 +206,8 @@ export const addSubscriptionMarkers = (
         const p = String(k)
         if (!(p in marker.main)) {
           marker.main[p] = []
+          // @ts-ignore
+          marker.main[p].__handled = false
         }
         if (!main.include[p]) {
           marker.main[p].push(subscription)
@@ -211,6 +217,8 @@ export const addSubscriptionMarkers = (
         const p = String(k)
         if (!(p in marker.props)) {
           marker.props[p] = []
+          // @ts-ignore
+          marker.props[p].__handled = false
         }
         if (!props.has(k)) {
           marker.props[p].push(subscription)
@@ -221,11 +229,18 @@ export const addSubscriptionMarkers = (
 }
 
 export const resetSubscriptionMarkers = (db: BasedDb) => {
-  //   for (const typeId in db.subscriptionMarkers) {
-  // const t = db.subscriptionMarkers[typeId]
-  // t.collection.handled = false
-  //   }
-  // handle fields
+  for (const typeId in db.subscriptionMarkers) {
+    const t = db.subscriptionMarkers[typeId]
+
+    for (const k in t.collection.main) {
+      // @ts-ignore
+      t.collection.main[k].__handled = false
+    }
+    for (const k in t.collection.props) {
+      // @ts-ignore
+      t.collection.props[k].__handled = false
+    }
+  }
 }
 
 export const removeSubscriptionMarkers = (q: BasedDbQuery) => {

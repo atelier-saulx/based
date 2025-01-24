@@ -230,3 +230,65 @@ await test('subscription id', async (t) => {
 
   close()
 })
+
+await test('subscription mixed', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          nr: 'uint32',
+          flap: 'uint32',
+        },
+      },
+    },
+  })
+
+  const amount = 1e6
+
+  const update = () => {
+    const x = Date.now()
+    for (let i = 1; i < amount; i++) {
+      db.update('user', i, { nr: ~~(Math.random() * 9999) })
+    }
+    console.log('Exec 1m', Date.now() - x, 'ms')
+    db.drain()
+  }
+
+  for (let i = 1; i < amount; i++) {
+    db.create('user', { nr: i, name: 'Mr ' + i, flap: i })
+  }
+  db.drain()
+
+  for (let i = 0; i < 100; i++) {
+    const close = db
+      .query('user')
+      .range(0, 1e6)
+      .include('name')
+      .filter('flap', '=', i)
+      .filter('nr', '>', 9500)
+      .filter('name', 'has', 'Mr')
+      .or((f) => {
+        f.filter('nr', '=', 1e9)
+        f.or('nr', '>', 2e9)
+      })
+      .subscribe((q) => {
+        // console.log(q.id, q)
+      })
+  }
+  await wait(1000)
+  update()
+  await wait(1000)
+  update()
+  await wait(1000)
+})
