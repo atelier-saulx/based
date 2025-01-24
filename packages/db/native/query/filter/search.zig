@@ -12,8 +12,12 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 
-const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
+const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
+
+inline fn isSeparator(ch: u8) bool {
+    return simd.countElementsWithValue(seperatorChars, ch) > 0;
+}
 
 pub const SearchCtx = struct {
     fields: []u8,
@@ -54,11 +58,27 @@ fn hamming(
 ) u8 {
     const queryD = query[1..query.len];
     const ql = queryD.len;
-    // add normalization strsearch_hamming normalize
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
         queryD.ptr,
         ql,
+    ));
+
+    return d;
+}
+
+fn hamming_mbs(
+    value: []u8,
+    i: usize,
+    len: usize, // Length of the mbs string in value.
+    query: []u8,
+) u8 {
+    const queryD = query[1..query.len];
+    const d: u8 = @truncate(selva.strsearch_hamming_mbs(
+        value[i + 1 .. i + 1 + len].ptr,
+        len,
+        queryD.ptr,
+        queryD.len,
     ));
 
     return d;
@@ -79,7 +99,7 @@ fn resultMatcher(
     if (index + ql > l) {
         return d;
     }
-    if (index == 1 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
+    if (index == 1 or isSeparator(value[index - 1])) {
         const nd = hamming(value, index, query);
         if (nd < minDist) {
             return nd;
@@ -91,7 +111,7 @@ fn resultMatcher(
         var p: usize = index - i + 1;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
-                if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
+                if (isSeparator(value[p + i - 1])) {
                     const nd = hamming(value, p + i, query);
                     if (nd < minDist) {
                         return nd;
@@ -117,10 +137,7 @@ pub fn strSearch(
     var d: u8 = 10;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
-            if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(
-                seperatorChars,
-                value[i - 1],
-            ) > 0)) {
+            if ((value[i] == q1 or value[i] == q2) and (i == 1 or isSeparator(value[i - 1]))) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
@@ -135,7 +152,7 @@ pub fn strSearch(
         return d;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
-    const queryVectorCaptial: @Vector(vectorLen, u8) = @splat(q2);
+    const queryVectorCapital: @Vector(vectorLen, u8) = @splat(q2);
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
@@ -145,7 +162,7 @@ pub fn strSearch(
                 return d;
             }
         }
-        matches = h == queryVectorCaptial;
+        matches = h == queryVectorCapital;
         if (@reduce(.Or, matches)) {
             d = resultMatcher(d, matches, i, value, query);
             if (d < minDist) {
@@ -154,10 +171,7 @@ pub fn strSearch(
         }
     }
     while (i < l - 1) : (i += 1) {
-        if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(
-            seperatorChars,
-            value[i],
-        ) > 0) {
+        if ((value[i + 1] == q1 or value[i + 1] == q2) and isSeparator(value[i])) {
             if (i + ql - 1 > l) {
                 return d;
             }
