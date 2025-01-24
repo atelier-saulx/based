@@ -217,7 +217,6 @@ export const addSubscriptionMarkers = (
         }
       })
     }
-    console.dir(marker, { depth: 4 })
   }
 }
 
