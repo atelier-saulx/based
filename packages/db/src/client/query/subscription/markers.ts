@@ -9,6 +9,7 @@ import {
 } from './types.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { startSubscription } from './run.js'
+import { QueryDef } from '../types.js'
 
 export const getSubscriptionMarkers = (
   db: BasedDb,
@@ -107,13 +108,33 @@ export const checkSubscriptionMarkers = (
   }
 }
 
-export const removeSubscriptionMarkers = (q: BasedDbQuery) => {
-  // derp
-  console.log('remvoe markers!')
-}
-
 export const createSubscriptionMarkerMap = (): SubscriptionMarkerMap => {
   return {}
+}
+
+const getFilterFields = (
+  filter: QueryDef['filter'],
+  results: { main: Set<number>; props: Set<number> } = {
+    main: new Set(),
+    props: new Set(),
+  },
+) => {
+  const conditions = filter.conditions
+  if (conditions) {
+    conditions.forEach((v, k) => {
+      if (k === 0) {
+        for (const buf of v) {
+          results.main.add(buf.readUint16LE(4))
+        }
+      } else {
+        results.props.add(k)
+      }
+    })
+  }
+  if (filter.or) {
+    getFilterFields(filter.or, results)
+  }
+  return results
 }
 
 // resetting subs is a copy for now
@@ -175,9 +196,40 @@ export const addSubscriptionMarkers = (
       }
       marker.main[p].push(subscription)
     }
+    if (q.def.filter) {
+      const r = getFilterFields(q.def.filter)
+      r.main.forEach((k) => {
+        const p = String(k)
+        if (!(p in marker.main)) {
+          marker.main[p] = []
+        }
+        if (!main.include[p]) {
+          marker.main[p].push(subscription)
+        }
+      })
+      r.props.forEach((k) => {
+        const p = String(k)
+        if (!(p in marker.props)) {
+          marker.props[p] = []
+        }
+        if (!props.has(k)) {
+          marker.props[p].push(subscription)
+        }
+      })
+    }
+    console.dir(marker, { depth: 4 })
   }
 }
 
 export const resetSubscriptionMarkers = (db: BasedDb) => {
-  //   db.subscriptionMarkers.forEach((t) => {})
+  //   for (const typeId in db.subscriptionMarkers) {
+  // const t = db.subscriptionMarkers[typeId]
+  // t.collection.handled = false
+  //   }
+  // handle fields
+}
+
+export const removeSubscriptionMarkers = (q: BasedDbQuery) => {
+  // derp
+  console.log('remove markers!')
 }
