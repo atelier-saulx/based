@@ -9,6 +9,7 @@ import {
   OnClose,
 } from './types.js'
 import { runSubscription } from './run.js'
+import { addSubscriptionMarkers, removeSubscriptionMarkers } from './markers.js'
 
 export * from './types.js'
 export * from './markers.js'
@@ -26,8 +27,6 @@ export const subscribe = (
 
   registerQuery(q)
 
-  // TODO can use this in get as well!
-
   if (!q.db.subscriptions.has(q.id)) {
     const subscription: Subscription = {
       query: q,
@@ -35,35 +34,8 @@ export const subscribe = (
       inProgress: false,
       closed: false,
     }
-
     q.db.subscriptions.set(q.id, subscription)
-
-    const typeId = q.def.schema.id
-
-    if (!q.db.modifySubscriptions.has(typeId)) {
-      // if is id
-      // q.db.modifySubscriptions.set(typeId, {
-      //   toCheck: 0,
-      //   total: 0,
-      //   ids: {
-      //     subs: new Map(),
-      //   },
-      //   filters: {
-      //     subs: [],
-      //   },
-      // })
-      // //-----------
-    }
-
-    const modifySubscriptionsType = q.db.modifySubscriptions.get(typeId)
-
-    if ('id' in q.def.target) {
-    } else if ('alias' in q.def.target) {
-      // later
-    } else {
-      // FILTERS
-      // add specific stuff
-    }
+    addSubscriptionMarkers(q)
   }
 
   const fn: OnSubscription = (res, err) => {
@@ -81,9 +53,8 @@ export const subscribe = (
   const close = () => {
     sub.subs.delete(fn)
     if (sub.subs.size === 0) {
-      // sub.closed = true
-      // q.db.subscriptions.delete(q.id)
-      console.error('DELETE SUB!')
+      q.db.subscriptions.delete(q.id)
+      removeSubscriptionMarkers(q)
     }
     closed = true
     return q
@@ -96,8 +67,6 @@ export const subscribe = (
   } else if (sub.res) {
     onData(sub.res)
   }
-
-  // TODO: optional await will wait for the first one!
 
   return close
 }

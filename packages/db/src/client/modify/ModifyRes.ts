@@ -67,14 +67,18 @@ export class ModifyError {
 }
 
 export class ModifyState {
-  constructor(tmpId: number, db: BasedDb, subMarkers: SubscriptionMarkers) {
+  constructor(
+    tmpId: number,
+    db: BasedDb,
+    subMarkers: SubscriptionMarkers | false,
+  ) {
     this.tmpId = tmpId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
   }
 
-  subMarkers?: SubscriptionMarkers
+  subMarkers: SubscriptionMarkers | false
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
