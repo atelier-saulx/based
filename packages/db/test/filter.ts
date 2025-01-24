@@ -15,7 +15,7 @@ await test('simple', async (t) => {
 
   const status = ['error', 'danger', 'ok', '🦄']
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       org: {
         props: {
@@ -103,7 +103,7 @@ await test('simple', async (t) => {
     machines: m,
   })
 
-  db.drain()
+  await db.drain()
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
   equal(
@@ -268,14 +268,13 @@ await test('simple', async (t) => {
   )
 
   equal(
-    (
-      await db
-        .query('machine')
-        .include('id')
-        .filter('env', '=', env)
-        .range(0, 10)
-        .get()
-    ).toObject(),
+    await db
+      .query('machine')
+      .include('id')
+      .filter('env', '=', env)
+      .range(0, 10)
+      .get()
+      .toObject(),
     [
       { id: 2 },
       { id: 4 },
@@ -487,7 +486,7 @@ await test('or', async (t) => {
 
   const status = ['error', 'danger', 'ok', '🦄']
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       machine: {
         props: {
@@ -515,7 +514,7 @@ await test('or', async (t) => {
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
   }
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -636,7 +635,7 @@ await test('or numerical', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       machine: {
         props: {
@@ -651,7 +650,7 @@ await test('or numerical', async (t) => {
       temperature: ~~(Math.random() * 200) + 1,
     }).tmpId
   }
-  db.drain()
+  await db.drain()
 
   const r = (
     await db
@@ -706,7 +705,7 @@ await test('or numerical', async (t) => {
       db.remove('machine', 10000 + i)
     }
   }
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('machine').include('id').range(0, 3).get()).node(-1),

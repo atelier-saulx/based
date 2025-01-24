@@ -11,7 +11,7 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -84,7 +84,7 @@ await test('update', async (t) => {
     true,
   )
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('user').include('name', 'friend').get()).toObject(),

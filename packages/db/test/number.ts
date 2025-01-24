@@ -13,7 +13,7 @@ await test('number', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -72,7 +72,7 @@ await test('number', async (t) => {
     db.create('user', payload)
   }
 
-  db.drain() // will become async
+  await db.drain() // will become async
 
   deepEqual(
     (await db.query('user').get()).toObject(),

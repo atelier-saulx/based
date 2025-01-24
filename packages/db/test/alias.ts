@@ -13,7 +13,7 @@ await test('alias', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -32,7 +32,7 @@ await test('alias', async (t) => {
     externalId: 'cool2',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user', user1).get()).toObject(), {
     id: 1,
@@ -109,7 +109,7 @@ await test('alias - references', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -245,7 +245,7 @@ await test('Get single node by alias', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {

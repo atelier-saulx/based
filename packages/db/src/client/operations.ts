@@ -1,8 +1,9 @@
 import { BasedDb } from '../index.js'
 import { PropDef } from '../server/schema/types.js'
+import { DbClient } from './index.js'
 
 export class ModifyCtx {
-  constructor(db: BasedDb) {
+  constructor(db: DbClient) {
     this.max = db.maxModifySize
     this.db = db
     this.buf = Buffer.allocUnsafe(db.maxModifySize)
@@ -28,39 +29,42 @@ export class ModifyCtx {
   mergeMain: (PropDef | any)[] | null
   mergeMainSize: number
 
-  db: BasedDb
+  db: DbClient
 }
 
-export const flushBuffer = (db: BasedDb) => {
+export const flushBuffer = (db: DbClient) => {
   const ctx = db.modifyCtx
+  let flushPromise: Promise<void>
 
   if (ctx.len) {
     const d = Date.now()
-
-    try {
-      db.server.modify(ctx.buf.subarray(0, ctx.len))
-    } catch (e) {
-      console.error(e)
-    }
-
-    db.writeTime += Date.now() - d
+    flushPromise = db.hooks
+      .flushModify(ctx.buf.subarray(0, ctx.len))
+      .then(() => {
+        db.writeTime += Date.now() - d
+      })
 
     ctx.len = 0
     ctx.prefix0 = -1
     ctx.prefix1 = -1
 
     if (ctx.queue.size) {
-      for (const [resolve, payload] of ctx.queue) {
-        resolve(payload)
-      }
-      ctx.queue.clear()
+      const queue = ctx.queue
+      ctx.queue = new Map()
+      flushPromise.then(() => {
+        for (const [resolve, payload] of queue) {
+          resolve(payload)
+        }
+      })
     }
   }
 
   db.isDraining = false
+
+  return flushPromise
 }
 
-export const startDrain = (db: BasedDb) => {
+export const startDrain = (db: DbClient) => {
   db.isDraining = true
   process.nextTick(() => {
     flushBuffer(db)

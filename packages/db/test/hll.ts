@@ -12,7 +12,7 @@ await test.skip('hll', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         myUniqueValuesCount: 'hll',

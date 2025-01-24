@@ -13,7 +13,7 @@ await test('too large payload should throw, correct size should not', async (t) 
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -45,5 +45,5 @@ await test('too large payload should throw, correct size should not', async (t) 
     })
   }
 
-  db.drain()
+  await db.drain()
 })

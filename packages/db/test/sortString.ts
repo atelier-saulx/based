@@ -33,7 +33,7 @@ await test('compression / large strings', async (t) => {
       // noCompression: true,
     })
     await db.start({ clean: true })
-    db.putSchema({
+    await db.putSchema({
       types: {
         article: {
           props: {
@@ -66,7 +66,7 @@ await test('compression / large strings', async (t) => {
       p.id = Number(db.create('article', p))
       results.push(p)
     }
-    const dbTime = db.drain()
+    const dbTime = await db.drain()
     equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
     let d = Date.now()
     let siTime = Date.now() - d
@@ -128,7 +128,7 @@ await test('fixed len strings', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   t.after(() => db.destroy())
   await db.start({ clean: true })
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -146,7 +146,7 @@ await test('fixed len strings', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   isSorted(
     await db.query('article').include('name', 'nr').sort('name', 'desc').get(),

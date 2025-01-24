@@ -8,7 +8,7 @@ import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
 
 function writeRef(
   id: number,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,
@@ -30,7 +30,7 @@ function writeRef(
 
 function singleReferenceEdges(
   ref: RefModifyOpts,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,

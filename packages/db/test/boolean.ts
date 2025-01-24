@@ -13,7 +13,7 @@ await test('boolean', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -32,7 +32,7 @@ await test('boolean', async (t) => {
     isNice: false,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [
     { id: 1, isNice: false },

@@ -7,7 +7,6 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { BasedDb } from '../../index.js'
 import {
   PropDef,
   SchemaTypeDef,
@@ -15,6 +14,10 @@ import {
   TYPE_INDEX_MAP,
   PropDefEdge,
 } from './types.js'
+import { DbClient } from '../../client/index.js'
+import { DbServer } from '../index.js'
+import { genId } from './utils.js'
+import { DEFAULT_BLOCK_CAPACITY } from '../start.js'
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0
@@ -65,10 +68,36 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   }
 }
 
+export const updateTypeDefs = (db: DbClient | DbServer) => {
+  for (const field in db.schemaTypesParsed) {
+    if (field in db.schema.types) {
+      continue
+    }
+    delete db.schemaTypesParsed[field]
+  }
+  for (const field in db.schema.types) {
+    const type = db.schema.types[field]
+    if (
+      db.schemaTypesParsed[field] &&
+      db.schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
+    ) {
+      continue
+    } else {
+      if (!type.id) {
+        type.id = genId(db)
+      }
+      const def = createSchemaTypeDef(field, type, db.schemaTypesParsed)
+      def.blockCapacity =
+        field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
+      db.schemaTypesParsed[field] = def
+    }
+  }
+}
+
 export const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
-  parsed: BasedDb['schemaTypesParsed'],
+  parsed: DbClient['schemaTypesParsed'],
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),

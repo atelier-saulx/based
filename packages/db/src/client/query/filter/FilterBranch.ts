@@ -1,17 +1,17 @@
-import { BasedDb } from '../../../index.js'
+import { DbClient } from '../../index.js'
 import { QueryDefFilter, QueryDef } from '../types.js'
 import { convertFilter, filter, filterOr } from './filter.js'
 import { Operator } from './operators.js'
 import { FilterBranchFn } from './types.js'
 
 export class FilterBranch {
-  constructor(db: BasedDb, filterBranch: QueryDefFilter, def: QueryDef) {
+  constructor(db: DbClient, filterBranch: QueryDefFilter, def: QueryDef) {
     this.def = def
     this.filterBranch = filterBranch
     this.db = db
   }
 
-  db: BasedDb
+  db: DbClient
   filterBranch: QueryDefFilter
   def: QueryDef
 

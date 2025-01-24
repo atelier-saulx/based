@@ -1,5 +1,6 @@
 import { BasedDb } from '../../../index.js'
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
+import { DbClient } from '../../index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
 import { includeFields } from '../query.js'
@@ -77,7 +78,7 @@ export const runSubscription = (subscription: Subscription) => {
     const q = subscription.query
     const buf = q.buffer
     const d = performance.now()
-    q.db.server
+    q.db.hooks
       .getQueryBuf(buf)
       .then((res) => {
         if (subscription.closed) {
@@ -110,11 +111,11 @@ export const runSubscription = (subscription: Subscription) => {
   }
 }
 
-const resetModifySubs = (db: BasedDb) => {
+const resetModifySubs = (db: DbClient) => {
   db.modifySubscriptions.forEach((t) => {})
 }
 
-const startSubscription = (db: BasedDb) => {
+const startSubscription = (db: DbClient) => {
   if (!db.subscriptionsInProgress) {
     db.subscriptionsInProgress = true
     setTimeout(() => {
@@ -132,7 +133,7 @@ const startSubscription = (db: BasedDb) => {
 // TODO hooks for update / create
 
 // will add fields here
-export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
+export const checkFilterSubscription = (db: DbClient, typeId: number) => {
   const t = db.modifySubscriptions.get(typeId)
 }
 
@@ -143,7 +144,7 @@ export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
 
 // if all fields immediatly stage for execution
 export const getSubscriptionMarkers: SubscriptionMarkers = (
-  db: BasedDb,
+  db: DbClient,
   typeId: number,
   id: number,
   isCreate: boolean,

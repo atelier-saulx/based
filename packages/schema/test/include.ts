@@ -13,7 +13,7 @@ await test('include', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       store: {
         props: {
@@ -60,7 +60,7 @@ await test('include', async (t) => {
     products: [pen],
   })
 
-  db.drain()
+  await db.drain()
 
   console.log(
     '===> include tests: ',

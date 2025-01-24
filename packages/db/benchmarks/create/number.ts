@@ -16,7 +16,7 @@ benchmark('create 1m uint32', async (db) => {
     db.create('test', { uint32: i })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

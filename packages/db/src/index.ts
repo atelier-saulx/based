@@ -12,6 +12,7 @@ import {
   ModifySubscriptionMap,
   SubscriptionsToRun,
 } from './client/query/subscription/index.js'
+import { DbClient } from './client/index.js'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -20,12 +21,99 @@ export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
 
 export class BasedDb {
+  client: DbClient
+  server: DbServer
+  fileSystemPath: string
+  maxModifySize: number
+  constructor({
+    path,
+    maxModifySize,
+    noCompression,
+  }: {
+    path: string
+    maxModifySize?: number
+    noCompression?: boolean
+  }) {
+    this.server = new DbServer({
+      path,
+      maxModifySize: maxModifySize,
+    })
+    this.client = new DbClient({
+      hooks: {
+        putSchema: async (schema, fromStart) => {
+          return this.server.putSchema(schema, fromStart)
+        },
+        flushModify: async (buf) => {
+          this.server.modify(buf)
+          return { offset: 0 }
+        },
+        getQueryBuf: async (buf) => {
+          return this.server.getQueryBuf(buf)
+        },
+      },
+    })
+  }
+
+  // client
+  create: DbClient['create'] = function () {
+    return this.client.create.apply(this.client, arguments)
+  }
+
+  update: DbClient['update'] = function () {
+    return this.client.update.apply(this.client, arguments)
+  }
+
+  upsert: DbClient['upsert'] = function () {
+    return this.client.upsert.apply(this.client, arguments)
+  }
+
+  remove: DbClient['remove'] = function () {
+    return this.client.remove.apply(this.client, arguments)
+  }
+
+  query: DbClient['query'] = function () {
+    return this.client.query.apply(this.client, arguments)
+  }
+
+  putSchema: DbClient['putSchema'] = function () {
+    return this.client.putSchema.apply(this.client, arguments)
+  }
+
+  drain: DbClient['drain'] = function () {
+    return this.client.drain.apply(this.client, arguments)
+  }
+
+  // server
+  start: DbServer['start'] = function () {
+    return this.server.start.apply(this.server, arguments)
+  }
+
+  stop: DbServer['stop'] = function () {
+    this.client.stop()
+    return this.server.stop.apply(this.server, arguments)
+  }
+
+  save: DbServer['save'] = function () {
+    return this.server.save.apply(this.server, arguments)
+  }
+
+  migrateSchema: DbServer['migrateSchema'] = function () {
+    return this.server.migrateSchema.apply(this.server, arguments)
+  }
+
+  // both
+  destroy() {
+    this.client.destroy()
+    return this.server.destroy()
+  }
+}
+/*
+export class _BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModifyCtx
   server: DbServer
   id: number
-
   // total write time until .drain is called manualy
   writeTime: number = 0
   fileSystemPath: string
@@ -39,19 +127,19 @@ export class BasedDb {
   subscriptonThrottleMs: number = 20
 
   subscriptions: SubscriptionsMap = new Map()
-
   modifySubscriptions: ModifySubscriptionMap = new Map()
-
   subscriptionsToRun: SubscriptionsToRun = []
 
   constructor({
     path,
     maxModifySize,
     noCompression,
+    // hooks,
   }: {
     path: string
     maxModifySize?: number
     noCompression?: boolean
+    // hooks?: Hooks
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -180,6 +268,10 @@ export class BasedDb {
     return remove(this, type, typeof id === 'number' ? id : id.tmpId)
   }
 
+  flushModify() {
+    flushBuffer(this)
+  }
+
   query(
     type: string,
     id?:
@@ -252,3 +344,4 @@ export class BasedDb {
     await this.server.destroy()
   }
 }
+*/

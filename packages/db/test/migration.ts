@@ -14,7 +14,7 @@ await test('migration', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -54,7 +54,7 @@ await test('migration', async (t) => {
     }
   }
 
-  db.drain()
+  await db.drain()
 
   let allUsers = (await db.query('user').range(0, amount).get()).toObject()
 

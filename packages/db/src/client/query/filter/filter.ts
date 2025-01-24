@@ -11,11 +11,12 @@ import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
+import { DbClient } from '../../index.js'
 
 export { Operator, Filter }
 
 const referencesFilter = (
-  db: BasedDb,
+  db: DbClient,
   filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
@@ -81,7 +82,7 @@ const referencesFilter = (
 }
 
 export const filterRaw = (
-  db: BasedDb,
+  db: DbClient,
   filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
@@ -105,7 +106,7 @@ export const filterRaw = (
 }
 
 export const filter = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   filterAst: FilterAst,
   conditions: QueryDefFilter,
@@ -120,7 +121,7 @@ export const filter = (
 }
 
 export const filterOr = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   filterAst: FilterAst[],
   conditions: QueryDefFilter,

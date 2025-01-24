@@ -24,7 +24,7 @@ benchmark('create 1m items with 1 reference(s)', async (db) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })
@@ -56,7 +56,7 @@ benchmark('create 1m items with 100 reference(s)', async (db) => {
     prevIds.shift()
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

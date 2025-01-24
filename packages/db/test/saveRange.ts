@@ -15,7 +15,7 @@ await test('save simple range', async (t) => {
     //return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -172,7 +172,7 @@ await test('delete a range', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -194,11 +194,11 @@ await test('delete a range', async (t) => {
     return { hash, left, right }
   }
 
-  db.drain()
+  await db.drain()
   db.server.updateMerkleTree()
   const first = fun()
   db.remove('user', 100_001)
-  db.drain()
+  await db.drain()
   db.server.updateMerkleTree()
   const second = fun()
 

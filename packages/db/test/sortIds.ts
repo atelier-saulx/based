@@ -13,7 +13,7 @@ await test('ids', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -44,7 +44,7 @@ await test('ids', async (t) => {
     )
   }
 
-  db.drain()
+  await db.drain()
 
   isSorted(await db.query('user', ids).sort('age').get(), 'age')
   isSorted(await db.query('user', ids).sort('name').get(), 'name')
@@ -65,7 +65,7 @@ await test('references', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {

@@ -22,7 +22,7 @@ benchmark('create 1m single refs', async (db) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

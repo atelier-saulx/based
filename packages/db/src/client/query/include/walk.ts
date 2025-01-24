@@ -10,8 +10,9 @@ import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeFields, includeProp, includeAllProps } from './props.js'
+import { DbClient } from '../../index.js'
 
-export const walkDefs = (db: BasedDb, def: QueryDef, f: string) => {
+export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
   const path = f.split('.')
   if (!prop) {

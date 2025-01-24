@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from './schema/types.js'
 import { genId, genRootId } from './schema/utils.js'
-import { createSchemaTypeDef } from './schema/typeDef.js'
+import { createSchemaTypeDef, updateTypeDefs } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
@@ -21,7 +21,6 @@ import { setTimeout } from 'node:timers/promises'
 import { migrate } from './migrate/index.js'
 
 const SCHEMA_FILE = 'schema.json'
-const DEFAULT_BLOCK_CAPACITY = 100_000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
@@ -105,8 +104,12 @@ export class DbServer {
     this.sortIndexes = {}
   }
 
-  start = start
-  save = save
+  start(opts?: { clean?: boolean }) {
+    return start(this, opts)
+  }
+  save() {
+    return save(this)
+  }
 
   createCsmtHashFun = () => {
     // We can just reuse it as long as we only have one tree.
@@ -245,10 +248,7 @@ export class DbServer {
     )
   }
 
-  putSchema(
-    schema: Schema | StrictSchema,
-    fromStart: boolean = false,
-  ): StrictSchema {
+  putSchema(schema: Schema | StrictSchema, fromStart: boolean = false) {
     const strictSchema = fromStart
       ? (schema as StrictSchema)
       : parse(schema).schema
@@ -297,7 +297,7 @@ export class DbServer {
       delete this.schema.props
     }
 
-    this.updateTypeDefs()
+    updateTypeDefs(this)
 
     if (!fromStart) {
       writeFile(
@@ -324,32 +324,6 @@ export class DbServer {
     }
 
     return this.schema
-  }
-
-  updateTypeDefs() {
-    for (const field in this.schemaTypesParsed) {
-      if (field in this.schema.types) {
-        continue
-      }
-      delete this.schemaTypesParsed[field]
-    }
-    for (const field in this.schema.types) {
-      const type = this.schema.types[field]
-      if (
-        this.schemaTypesParsed[field] &&
-        this.schemaTypesParsed[field].checksum ===
-          hashObjectIgnoreKeyOrder(type) // bit weird..
-      ) {
-        continue
-      } else {
-        if (!type.id) {
-          type.id = genId(this)
-        }
-        const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
-        this.schemaTypesParsed[field] = def
-      }
-    }
   }
 
   modify(buf: Buffer) {

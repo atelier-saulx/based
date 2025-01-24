@@ -25,7 +25,7 @@ await test('update', async (t) => {
     uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
   */
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       mep: {
         props: {
@@ -67,7 +67,7 @@ await test('update', async (t) => {
     name: 'mr snurp 2',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('snurp').get()).toObject(), [
     {
@@ -103,7 +103,7 @@ await test('update', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   db.update('snurp', snurp2, {
     name: 'mr snurp 2!',
@@ -112,7 +112,7 @@ await test('update', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('snurp').get()).toObject(), [
     {
@@ -141,7 +141,7 @@ await test('update', async (t) => {
     },
   ])
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('snurp', 2).get()).toObject(), {
     a: 0,
@@ -198,7 +198,7 @@ await test('update', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   equal((await db.query('snurp', ids).get()).length, 1e6)
 

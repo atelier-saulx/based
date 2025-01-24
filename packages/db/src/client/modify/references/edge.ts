@@ -1,4 +1,4 @@
-import { BasedDb } from '../../../index.js'
+import { BasedDb, ModifyCtx } from '../../../index.js'
 import {
   BINARY,
   PropDef,
@@ -36,11 +36,7 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   return size
 }
 
-function appendRefs(
-  t: PropDefEdge,
-  ctx: BasedDb['modifyCtx'],
-  value: any[],
-): ModifyErr {
+function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
   for (let i = 0; i < value.length; i++) {
     let id = value[i]
     if (typeof id !== 'number') {
@@ -68,7 +64,7 @@ function appendRefs(
 export function writeEdges(
   t: PropDef,
   ref: RefModifyOpts,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
 ): ModifyErr {
   for (const key in t.edges) {
     if (key in ref) {

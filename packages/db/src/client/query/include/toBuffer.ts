@@ -1,10 +1,10 @@
-import { BasedDb } from '../../../index.js'
+import { DbClient } from '../../index.js'
 import { QueryDef } from '../types.js'
 import { walkDefs } from './walk.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
-export const includeToBuffer = (db: BasedDb, def: QueryDef): Buffer[] => {
+export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
   const result: Buffer[] = []
 
   if (

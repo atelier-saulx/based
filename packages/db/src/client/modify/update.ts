@@ -7,6 +7,7 @@ import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
+import { DbClient } from '../index.js'
 
 type Payload = Record<string, any>
 
@@ -68,7 +69,7 @@ const appendUpdate = (
 }
 
 export const update = (
-  db: BasedDb,
+  db: DbClient,
   type: string,
   id: number,
   obj: Payload,

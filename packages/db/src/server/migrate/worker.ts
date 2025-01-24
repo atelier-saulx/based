@@ -26,8 +26,8 @@ if (isMainThread) {
   toDb.putSchema(toSchema, true)
 
   const map: Record<number, { type: string; include: string[] }> = {}
-  for (const type in fromDb.schemaTypesParsed) {
-    const { id, props } = fromDb.schemaTypesParsed[type]
+  for (const type in fromDb.client.schemaTypesParsed) {
+    const { id, props } = fromDb.client.schemaTypesParsed[type]
     const include = Object.keys(props)
     let i = include.length
     while (i--) {
@@ -59,7 +59,7 @@ if (isMainThread) {
           .query(type)
           .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
-          ._getSync()
+          ._getSync(fromCtx)
         for (const node of nodes) {
           const res = typeTransformFn(node)
           if (res === null) {
@@ -71,12 +71,12 @@ if (isMainThread) {
             toDb.create(type, res || node, true)
           }
         }
-      } else if (type in toDb.schemaTypesParsed) {
+      } else if (type in toDb.client.schemaTypesParsed) {
         const nodes = fromDb
           .query(type)
           .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
-          ._getSync()
+          ._getSync(fromCtx)
         for (const node of nodes) {
           toDb.create(type, node, true)
         }
