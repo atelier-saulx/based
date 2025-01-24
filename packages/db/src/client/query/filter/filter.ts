@@ -138,7 +138,7 @@ export const filterOr = (
 }
 
 function normalizeNeedle(s: string): string {
-    return s.normalize('NFKD').split('').filter((ch: string) => ch.charCodeAt(0) <= 127).join('')
+  return s.normalize('NFKD').split('').filter((ch: string) => ch.charCodeAt(0) <= 127).join('')
 }
 
 export const convertFilter = (
