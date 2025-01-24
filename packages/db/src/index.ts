@@ -9,7 +9,7 @@ import { DbServer } from './server/index.js'
 import { QueryByAliasObj } from './client/query/types.js'
 import {
   SubscriptionsMap,
-  ModifySubscriptionMap,
+  SubscriptionMarkerMap,
   SubscriptionsToRun,
 } from './client/query/subscription/index.js'
 
@@ -40,7 +40,7 @@ export class BasedDb {
 
   subscriptions: SubscriptionsMap = new Map()
 
-  modifySubscriptions: ModifySubscriptionMap = new Map()
+  modifySubscriptions: SubscriptionMarkerMap = new Map()
 
   subscriptionsToRun: SubscriptionsToRun = []
 

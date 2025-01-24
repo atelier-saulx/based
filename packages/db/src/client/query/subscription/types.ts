@@ -49,7 +49,7 @@ export type SubscriptionMarkers = any
 // very simple
 // main: { start: subs }, props: { propNr: subs }, all: subs
 
-export type ModifySubscriptionMap = Map<
+export type SubscriptionMarkerMap = Map<
   number, // typeID
   {}
 >
