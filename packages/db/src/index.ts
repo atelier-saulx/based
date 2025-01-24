@@ -36,6 +36,8 @@ export class BasedDb {
 
   subscriptionsInProgress: boolean = false
 
+  subscriptonThrottleMs: number = 20
+
   subscriptions: SubscriptionsMap = new Map()
 
   modifySubscriptions: ModifySubscriptionMap = new Map()

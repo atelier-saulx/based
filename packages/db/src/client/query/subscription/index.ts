@@ -1,4 +1,5 @@
 import { BasedDb } from '../../../index.js'
+import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
 import { includeFields } from '../query.js'
@@ -17,64 +18,44 @@ export type Subscription = {
   subs: Set<OnSubscription>
   res?: BasedQueryResponse
   closed: boolean
-  inProgress: boolean // for remote
+  inProgress: boolean // dont need to check
+  // filter - realy nice to add
 }
 
 export type SubscriptionsMap = Map<number, Subscription>
 
 export type SubscriptionsToRun = Subscription[]
 
+export type SubscriptionMarkers = any
+
+// for fields its very different
+// if shceduled need to remove from every field (-1 on each other field)
+
 // later replace this with native + buffer / externalID
+
+// main fields buffer
+
+// counts have to be send upstream in modify buffer
+
+// TODO for later
+// handled x/y/z
+// type + id
+
+// Buffer[prop]: subs
+// Buffer[start]: subs
+
+// OPTION
+// IDS
+// very simple
+// main: { start: subs }, props: { propNr: subs }, all: subs
+
+// FILTER
+// very simple
+// main: { start: subs }, props: { propNr: subs }, all: subs
+
 export type ModifySubscriptionMap = Map<
   number, // typeID
-  {
-    toCheck: number
-    total: number
-    ids: {
-      toCheck: number
-      total: number
-      subs: Map<
-        number, // TARGET ID
-        {
-          toCheck: number
-          total: number
-          // nice to have fields here
-          // Buffer [0,1,2,3,4] // so full buffer and check if
-          subs: Map<
-            number, // SUB ID
-            Subscription
-          >
-        }
-      >
-    }
-    alias: {
-      toCheck: number
-      total: number
-      subs: Map<
-        string, // ALIAS
-        {
-          toCheck: number
-          total: number
-          // nice to have fields here
-          // Buffer [0,1,2,3,4] // so full buffer and check if
-          subs: Map<
-            number, // SUB ID
-            Subscription
-          >
-        }
-      >
-    }
-    filters: {
-      toCheck: number
-      total: number
-      // nice to have fields here
-      // Buffer [0,1,2,3,4] // so full buffer and check if
-      subs: Map<
-        number, // SUB ID
-        Subscription
-      >
-    }
-  }
+  {}
 >
 
 export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
@@ -129,15 +110,8 @@ export const runSubscription = (subscription: Subscription) => {
   }
 }
 
-const resetToCheckCounters = (db: BasedDb) => {
-  db.modifySubscriptions.forEach((s) => {
-    s.filters.toCheck = s.filters.total
-    s.ids.toCheck = s.ids.total
-    s.toCheck = s.total
-    s.ids.subs.forEach((s) => {
-      s.toCheck = s.total
-    })
-  })
+const resetModifySubs = (db: BasedDb) => {
+  db.modifySubscriptions.forEach((t) => {})
 }
 
 const startSubscription = (db: BasedDb) => {
@@ -148,49 +122,46 @@ const startSubscription = (db: BasedDb) => {
         runSubscription(s)
       })
       db.subscriptionsToRun = []
-      resetToCheckCounters(db)
+      resetModifySubs(db)
       db.subscriptionsInProgress = false
-      // sub time is configurable
-    }, 20)
+    }, db.subscriptonThrottleMs)
   }
 }
 
+// --------------------------------------------
 // TODO hooks for update / create
 
 // will add fields here
 export const checkFilterSubscription = (db: BasedDb, typeId: number) => {
   const t = db.modifySubscriptions.get(typeId)
-  if (t && t.toCheck != 0) {
-    if (t.filters.toCheck) {
-      t.toCheck -= t.filters.subs.size
-      t.filters.toCheck -= t.filters.subs.size
-      db.subscriptionsToRun.push(...t.filters.subs.values())
-      startSubscription(db)
-    }
-  }
 }
 
 // subscriptionsInProgress
 
+// check for id before
 // will add fields here
-export const checkIdSubscription = (
+
+// if all fields immediatly stage for execution
+export const getSubscriptionMarkers: SubscriptionMarkers = (
   db: BasedDb,
   typeId: number,
   id: number,
+  isCreate: boolean,
 ) => {
   const t = db.modifySubscriptions.get(typeId)
-  if (t && t.toCheck != 0) {
-    if (t.ids.toCheck != 0) {
-      const s = t.ids.subs.get(id)
-      if (s && s.toCheck != 0) {
-        s.toCheck -= s.subs.size
-        t.ids.toCheck -= s.subs.size
-        t.toCheck -= s.subs.size
-        db.subscriptionsToRun.push(...s.subs.values())
-        startSubscription(db)
-      }
-    }
-  }
+}
+
+export const checkSubscriptionProp = (
+  db: BasedDb,
+  props: any,
+  prop: PropDef | PropDefEdge, // number
+) => {
+  console.log(prop, props)
+  // will check filters
+}
+
+export const checkSubFields = (subs: Subscription[], field: number) => {
+  // blurf check them subs
 }
 
 export const checkAliasSubscription = () => {}
@@ -235,12 +206,7 @@ export const subscribe = (
         filters: {
           toCheck: 0,
           total: 0,
-          subs: new Map(),
-        },
-        alias: {
-          toCheck: 0,
-          total: 0,
-          subs: new Map(),
+          subs: [],
         },
       })
       //-----------
@@ -249,38 +215,10 @@ export const subscribe = (
     const modifySubscriptionsType = q.db.modifySubscriptions.get(typeId)
 
     if ('id' in q.def.target) {
-      const id = q.def.target.id as number
-      // derp
-      if (!modifySubscriptionsType.ids.subs.has(id)) {
-        modifySubscriptionsType.ids.subs.set(id, {
-          total: 0,
-          toCheck: 0,
-          subs: new Map(),
-        })
-      }
-      const idModifySubscription = modifySubscriptionsType.ids.subs.get(id)
-      idModifySubscription.subs.set(q.id, subscription)
-
-      idModifySubscription.total++
-      idModifySubscription.toCheck++
-
-      modifySubscriptionsType.ids.total++
-      modifySubscriptionsType.ids.toCheck++
-
-      modifySubscriptionsType.total++
-      modifySubscriptionsType.toCheck++
     } else if ('alias' in q.def.target) {
       // later
     } else {
-      const filters = modifySubscriptionsType.filters
-      filters.subs.set(q.id, subscription)
-
-      filters.total++
-      filters.toCheck++
-
-      modifySubscriptionsType.total++
-      modifySubscriptionsType.toCheck++
-
+      // FILTERS
       // add specific stuff
     }
   }
