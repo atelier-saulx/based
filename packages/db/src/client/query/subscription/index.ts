@@ -35,7 +35,7 @@ export const subscribe = (
       closed: false,
     }
     q.db.subscriptions.set(q.id, subscription)
-    addSubscriptionMarkers(q)
+    addSubscriptionMarkers(q, subscription)
   }
 
   const fn: OnSubscription = (res, err) => {

@@ -72,6 +72,13 @@ await test('subscription id', async (t) => {
         props: {
           nr: 'uint32',
           flap: 'string',
+          location: {
+            props: {
+              long: 'number',
+              lat: 'number',
+              name: 'string',
+            },
+          },
         },
       },
     },
@@ -97,18 +104,25 @@ await test('subscription id', async (t) => {
 
   const close = db
     .query('user', id)
-    .include('nr')
+    .include('nr', 'location.name', 'location.long')
     .subscribe((q) => {
       console.log(q.id, q)
     })
 
+  await wait(100)
+  await db.update('user', id, {
+    location: {
+      name: 'kanaalstraat 102a',
+    },
+  })
   await wait(100)
   update()
   await wait(100)
   update()
   await wait(300)
   await db.update('user', id, {
-    nr: (await db.query('user', id).include('nr').get().toObject()).nr,
+    nr: (await db.query('user', id).include('nr', 'location').get().toObject())
+      .nr,
   })
   await wait(100)
 

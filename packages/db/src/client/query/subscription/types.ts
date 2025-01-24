@@ -49,13 +49,14 @@ export type SubscriptionsToRun = Subscription[]
 
 export type SubscriptionMarkers = {
   main: Map<number, Set<Subscription>>
-  def: Map<number, Set<Subscription>>
+  props: Map<number, Set<Subscription>>
 }
 
 export type SubscriptionMarkerMap = Map<
   number, // typeID
   {
-    ids: SubscriptionMarkers
-    filters: SubscriptionMarkers
+    ids: Map<number, SubscriptionMarkers>
+    filters: Map<number, SubscriptionMarkers>
+    // TIME FILTERS using now
   }
 >

@@ -40,7 +40,7 @@ export class BasedDb {
 
   subscriptions: SubscriptionsMap = new Map()
 
-  modifySubscriptions: SubscriptionMarkerMap = new Map()
+  subscriptionMarkers: SubscriptionMarkerMap = new Map()
 
   subscriptionsToRun: SubscriptionsToRun = []
 
