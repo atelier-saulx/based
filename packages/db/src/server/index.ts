@@ -319,7 +319,7 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        this.modify(Buffer.from([2, 1, 255, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+        this.modify(Buffer.from([2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
       }
     }
 
@@ -346,7 +346,7 @@ export class DbServer {
           type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockCapacity = field === '_root' ? 2 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
+        def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
         this.schemaTypesParsed[field] = def
       }
     }

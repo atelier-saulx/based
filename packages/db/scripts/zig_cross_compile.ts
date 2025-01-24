@@ -6,10 +6,12 @@ import * as tar from 'tar'
 import rimraf from 'rimraf'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import os from 'os'
+import os, { platform } from 'os'
 
 const args = process.argv.slice(2)
 const isRelease = args.includes('release')
+
+type Platform = { os: string; arch: string }
 
 const AVAILABLE_PLATFORMS = [
   { os: 'linux', arch: 'aarch64' },
@@ -84,32 +86,29 @@ function buildWithZig(
 function moveLibraryToPlatformDir(
   destinationLibPath: string,
   version: string,
+  platform: Platform,
 ): void {
   const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
-
   const newPath = path.join(destinationLibPath, `libnode-${version}.node`)
 
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
     fs.renameSync(originalPath, newPath)
 
-    // TODO: IF RELEASE DO THIS ELSE DONT
-    0 //   execSync(
-    //       `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_x86_64 /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_x86_64/ && ../../../scripts/patch_libnode.sh ${version}"`,
-    //     {
-    //       stdio: 'inherit',
-    //     },
-    //   )
-    // }
+    if (isRelease && platform.os === 'linux') {
+      execSync(
+        `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${version}"`,
+        {
+          stdio: 'inherit',
+        },
+      )
+    }
   } else {
     throw new Error(`Library not found at ${originalPath}`)
   }
 }
 
-function getDestinationLibraryPath(platform: {
-  os: string
-  arch: string
-}): string {
+function getDestinationLibraryPath(platform: Platform): string {
   let osName = platform.os === 'macos' ? 'darwin' : platform.os
   let archName = platform.arch
 
@@ -131,10 +130,9 @@ async function main() {
         const destinationLibPath = getDestinationLibraryPath(platform)
 
         buildWithZig(target, nodeHeadersPath, rpath, destinationLibPath)
-        moveLibraryToPlatformDir(destinationLibPath, version)
+        moveLibraryToPlatformDir(destinationLibPath, version, platform)
 
         console.log('Cleaning up zig-out directory...')
-
         rimraf.sync(path.join(__dirname, 'zig-out'))
       } catch (error) {
         console.error(

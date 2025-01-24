@@ -87,6 +87,8 @@ export function create(
   unsafe?: boolean,
 ): ModifyRes {
   const def = this.schemaTypesParsed[type]
+
+
   let id: number
   if ('id' in obj) {
     if (unsafe) {

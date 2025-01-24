@@ -22,8 +22,8 @@ export class ModifyCtx {
   buf: Buffer
 
   field: number
-  prefix0: number
-  prefix1: number
+  prefix0: number = -1
+  prefix1: number = -1
 
   mergeMain: (PropDef | any)[] | null
   mergeMainSize: number
@@ -47,6 +47,7 @@ export const flushBuffer = (db: BasedDb) => {
 
     ctx.len = 0
     ctx.prefix0 = -1
+    ctx.prefix1 = -1
 
     if (ctx.queue.size) {
       for (const [resolve, payload] of ctx.queue) {

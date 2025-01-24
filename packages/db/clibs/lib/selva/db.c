@@ -145,8 +145,9 @@ struct SelvaDb *selva_db_create(void)
 static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
 {
     struct SelvaTypeBlocks *blocks = type->blocks;
+    block_id_t blocks_len = blocks->len;
 
-    for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+    for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
         struct SelvaNodeIndex *nodes = &blocks->blocks[block_i].nodes;
         struct SelvaNode *node;
         struct SelvaNode *tmp;
@@ -213,7 +214,7 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 {
     assert(block_capacity >= 2);
     size_t nr_blocks = 4294967295ull / block_capacity;
-    struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), nr_blocks * sizeof(*blocks));
+    struct SelvaTypeBlocks *blocks = selva_aligned_alloc(alignof(*blocks), sizeof_wflex(typeof(*blocks), blocks, nr_blocks));
 
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
@@ -259,24 +260,17 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
         return err;
     }
 
-    if (nfo.block_capacity == 0)
-    {
+    if (nfo.block_capacity == 0) {
         return SELVA_EINVAL;
     }
-
-
 
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
-
-
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
-
-
 
     te->type = type;
     te->schema_buf = schema_buf;
@@ -513,42 +507,43 @@ static struct SelvaNode *selva_max_node_from(struct SelvaTypeEntry *type, block_
 
 struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 {
-    const size_t len = type->blocks->len;
-
-    assert(len > 0);
-    return selva_max_node_from(type, len - 1);
+    return selva_max_node_from(type, type->blocks->len - 1);
 }
 
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = node_id2block_i(blocks, node->node_id);
     struct SelvaNode *prev;
 
     prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
     if (prev) {
         return prev;
-    } else if (i - 1 < i) {
-        return selva_max_node_from(type, i - 1);
-    } else {
-        return nullptr;
     }
+
+    block_id_t i = node_id2block_i(blocks, node->node_id);
+    if ( i > 0 && i - 1 < i) {
+        return selva_max_node_from(type, i - 1);
+    }
+
+    return nullptr;
 }
 
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = node_id2block_i(blocks, node->node_id);
     struct SelvaNode *next;
 
     next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
     if (next) {
         return next;
-    } else if (i + 1 < blocks->len) {
-        return selva_min_node_from(type, i + 1);
-    } else {
-        return nullptr;
     }
+
+    block_id_t i_next = node_id2block_i(blocks, node->node_id) + 1;
+    if (i_next < blocks->len) {
+        return selva_min_node_from(type, i_next);
+    }
+
+    return nullptr;
 }
 
 static struct SelvaTypeCursors *find_cursors(struct SelvaTypeEntry *type, node_id_t node_id)

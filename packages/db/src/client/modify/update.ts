@@ -78,6 +78,7 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
+
   const ctx = db.modifyCtx
   const pos = ctx.len
   const res = new ModifyState(id, db)
