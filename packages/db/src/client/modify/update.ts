@@ -6,10 +6,7 @@ import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
-import {
-  checkFilterSubscription,
-  checkIdSubscription,
-} from '../query/subscription/index.js'
+import { getSubscriptionMarkers } from '../query/subscription/index.js'
 
 type Payload = Record<string, any>
 
@@ -81,11 +78,11 @@ export const update = (
 
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const res = new ModifyState(id, db)
-
-  // combine in one q
-  checkFilterSubscription(db, def.id)
-  res.subProps = checkIdSubscription(db, def.id, id)
+  const res = new ModifyState(
+    id,
+    db,
+    getSubscriptionMarkers(db, def.id, id, false),
+  )
 
   const err = appendUpdate(ctx, def, obj, res, overwrite)
 

@@ -6,7 +6,10 @@ import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
 import { writeFixedValue } from './fixed.js'
-import { checkFilterSubscription } from '../query/subscription/index.js'
+import {
+  checkFilterSubscription,
+  getSubscriptionMarkers,
+} from '../query/subscription/index.js'
 
 type Payload = Record<string, any>
 
@@ -88,7 +91,6 @@ export function create(
 ): ModifyRes {
   const def = this.schemaTypesParsed[type]
 
-
   let id: number
   if ('id' in obj) {
     if (unsafe) {
@@ -101,7 +103,13 @@ export function create(
   }
 
   const ctx = this.modifyCtx
-  const res = new ModifyState(id, this)
+
+  const res = new ModifyState(
+    id,
+    this,
+    getSubscriptionMarkers(this, def.id, id, true),
+  )
+
   const pos = ctx.len
   const err = appendCreate(ctx, def, obj, res, unsafe)
 
