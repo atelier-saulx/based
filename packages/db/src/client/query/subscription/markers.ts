@@ -21,14 +21,24 @@ export const getSubscriptionMarkers = (
   }
   const t = db.subscriptionMarkers[typeId]
 
+  let subMarkersCheck: SubscriptionMarkersCheck | false = false
+
   if (!isCreate) {
     if (t.ids.has(id)) {
       const idMarkers = t.ids.get(id)
-      return { ids: idMarkers, collection: false }
+      subMarkersCheck = { ids: idMarkers, collection: false }
     }
   }
 
-  return false
+  if (t.collection) {
+    if (!subMarkersCheck) {
+      subMarkersCheck = { ids: false, collection: t.collection }
+    } else {
+      subMarkersCheck.collection = t.collection
+    }
+  }
+
+  return subMarkersCheck
 }
 
 export const checkSubscriptionMarkers = (
@@ -40,7 +50,6 @@ export const checkSubscriptionMarkers = (
 
   if (m.ids) {
     const markers = m.ids
-
     if (prop.separate) {
       const propSubs = markers.props[prop.prop]
       if (propSubs) {
@@ -64,15 +73,43 @@ export const checkSubscriptionMarkers = (
         }
       }
     }
+  }
 
-    if (newSub && !db.subscriptionsInProgress) {
-      startSubscription(db)
+  if (m.collection) {
+    const markers = m.collection
+    if (prop.separate) {
+      const propSubs = markers.props[prop.prop]
+      if (propSubs) {
+        for (const s of propSubs) {
+          if (!s.inProgress) {
+            newSub = true
+            db.subscriptionsToRun.push(s)
+          }
+        }
+      }
+    } else {
+      const propSubs = markers.main[prop.start]
+      if (propSubs) {
+        if (propSubs) {
+          for (const s of propSubs) {
+            if (!s.inProgress) {
+              newSub = true
+              db.subscriptionsToRun.push(s)
+            }
+          }
+        }
+      }
     }
+  }
+
+  if (newSub && !db.subscriptionsInProgress) {
+    startSubscription(db)
   }
 }
 
 export const removeSubscriptionMarkers = (q: BasedDbQuery) => {
   // derp
+  console.log('remvoe markers!')
 }
 
 export const createSubscriptionMarkerMap = (): SubscriptionMarkerMap => {
@@ -85,7 +122,6 @@ export const addSubscriptionMarkers = (
   subscription: Subscription,
 ) => {
   const typeId = q.def.schema.id
-
   if (!q.db.subscriptionMarkers[typeId]) {
     q.db.subscriptionMarkers[typeId] = {
       ids: new Map(),
@@ -95,49 +131,50 @@ export const addSubscriptionMarkers = (
       },
     }
   }
-
-  const modifySubscriptionsType = q.db.subscriptionMarkers[typeId]
-
+  const markerType = q.db.subscriptionMarkers[typeId]
   if ('id' in q.def.target) {
     const id = q.def.target.id as number
-
-    if (!modifySubscriptionsType.ids.has(id)) {
-      modifySubscriptionsType.ids.set(id, {
+    if (!markerType.ids.has(id)) {
+      markerType.ids.set(id, {
         main: {},
         props: {},
       })
     }
-
-    const idMarker = modifySubscriptionsType.ids.get(id)
-
-    // include
+    const marker = markerType.ids.get(id)
     const props = q.def.include.props
     const main = q.def.include.main
-
     for (const p of props) {
-      if (!(p in idMarker.props)) {
-        idMarker.props[p] = []
+      if (!(p in marker.props)) {
+        marker.props[p] = []
       }
-      const markerProps = idMarker.props[p]
+      const markerProps = marker.props[p]
       markerProps.push(subscription)
     }
-
     for (const p in main.include) {
-      if (!(p in idMarker.main)) {
-        idMarker.main[p] = []
+      if (!(p in marker.main)) {
+        marker.main[p] = []
       }
-      const markerProps = idMarker.main[p]
+      const markerProps = marker.main[p]
       markerProps.push(subscription)
     }
-
-    // references later
-    // needs ot do stuff with specific values if they are there...
   } else if ('alias' in q.def.target) {
     // later
   } else {
-    // FILTERS
-    // add specific stuff
-    // filter
+    const props = q.def.include.props
+    const main = q.def.include.main
+    const marker = markerType.collection
+    for (const p of props) {
+      if (!(p in marker.props)) {
+        marker.props[p] = []
+      }
+      marker.props[p].push(subscription)
+    }
+    for (const p in main.include) {
+      if (!(p in marker.main)) {
+        marker.main[p] = []
+      }
+      marker.main[p].push(subscription)
+    }
   }
 }
 

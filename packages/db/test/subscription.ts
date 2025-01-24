@@ -165,42 +165,5 @@ await test('subscription id', async (t) => {
   })
   await wait(100)
 
-  const bla = Buffer.allocUnsafe(10)
-  const bla2 = {}
-  const bla3 = new Map()
-
-  for (let i = 0; i < 10; i++) {
-    bla[i] = i % 2 ? 1 : 0
-    bla2[i] = i % 2 ? 1 : 0
-    bla3.set(i, i % 2 ? 1 : 0)
-  }
-
-  let x = Date.now()
-  let c = 0
-  for (let i = 0; i < 3e6; i++) {
-    if (bla[i % 10]) {
-      bla2[i]
-      // derp!
-      c++
-    }
-  }
-  console.log(c, Date.now() - x, 'ms')
-
-  x = Date.now()
-  for (let i = 0; i < 3e6; i++) {
-    if (bla2[i % 10]) {
-      c++
-    }
-  }
-  console.log(c, Date.now() - x, 'ms')
-
-  x = Date.now()
-  for (let i = 0; i < 3e6; i++) {
-    if (bla3.has(i % 10)) {
-      c++
-    }
-  }
-  console.log(c, Date.now() - x, 'ms')
-
   close()
 })

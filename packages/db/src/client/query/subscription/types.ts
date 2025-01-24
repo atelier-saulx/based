@@ -62,7 +62,7 @@ export type SubscriptionMarkerMap = {
 
 export type SubscriptionMarkersCheck = {
   collection: SubscriptionMarkers | false
-  ids: SubscriptionMarkers
+  ids: SubscriptionMarkers | false
 }
 
 // has sub
