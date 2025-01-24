@@ -22,8 +22,6 @@ export type SubscriptionsMap = Map<number, Subscription>
 
 export type SubscriptionsToRun = Subscription[]
 
-export type SubscriptionMarkers = any
-
 // for fields its very different
 // if shceduled need to remove from every field (-1 on each other field)
 
@@ -49,7 +47,19 @@ export type SubscriptionMarkers = any
 // very simple
 // main: { start: subs }, props: { propNr: subs }, all: subs
 
+// export type Marker = Set<Subscription>
+
+export type SubMarkersSubType = {
+  main: Map<number, Set<Subscription>>
+  def: Map<number, Set<Subscription>>
+}
+
 export type SubscriptionMarkerMap = Map<
   number, // typeID
-  {}
+  {
+    ids: SubMarkersSubType
+    filters: SubMarkersSubType
+  }
 >
+
+export type SubscriptionMarkers = any

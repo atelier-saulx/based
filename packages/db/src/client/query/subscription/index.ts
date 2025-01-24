@@ -42,21 +42,17 @@ export const subscribe = (
 
     if (!q.db.modifySubscriptions.has(typeId)) {
       // if is id
-      q.db.modifySubscriptions.set(typeId, {
-        toCheck: 0,
-        total: 0,
-        ids: {
-          toCheck: 0,
-          total: 0,
-          subs: new Map(),
-        },
-        filters: {
-          toCheck: 0,
-          total: 0,
-          subs: [],
-        },
-      })
-      //-----------
+      // q.db.modifySubscriptions.set(typeId, {
+      //   toCheck: 0,
+      //   total: 0,
+      //   ids: {
+      //     subs: new Map(),
+      //   },
+      //   filters: {
+      //     subs: [],
+      //   },
+      // })
+      // //-----------
     }
 
     const modifySubscriptionsType = q.db.modifySubscriptions.get(typeId)
