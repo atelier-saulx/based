@@ -11,6 +11,7 @@ import {
   SubscriptionsMap,
   SubscriptionMarkerMap,
   SubscriptionsToRun,
+  createSubscriptionMarkerMap,
 } from './client/query/subscription/index.js'
 
 export * from './server/schema/typeDef.js'
@@ -40,7 +41,7 @@ export class BasedDb {
 
   subscriptions: SubscriptionsMap = new Map()
 
-  subscriptionMarkers: SubscriptionMarkerMap = new Map()
+  subscriptionMarkers: SubscriptionMarkerMap = createSubscriptionMarkerMap()
 
   subscriptionsToRun: SubscriptionsToRun = []
 

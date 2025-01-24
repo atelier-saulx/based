@@ -7,7 +7,10 @@ import {
 } from '../../server/schema/types.js'
 import { BasedDb, ModifyCtx } from '../../index.js'
 import { inspect } from 'node:util'
-import { SubscriptionMarkers } from '../query/subscription/index.js'
+import {
+  SubscriptionMarkers,
+  SubscriptionMarkersCheck,
+} from '../query/subscription/index.js'
 
 export type ModifyRes = {
   tmpId: number
@@ -70,7 +73,7 @@ export class ModifyState {
   constructor(
     tmpId: number,
     db: BasedDb,
-    subMarkers: SubscriptionMarkers | false,
+    subMarkers: SubscriptionMarkersCheck | false,
   ) {
     this.tmpId = tmpId
     this.#buf = db.modifyCtx
@@ -78,7 +81,7 @@ export class ModifyState {
     this.subMarkers = subMarkers
   }
 
-  subMarkers: SubscriptionMarkers | false
+  subMarkers: SubscriptionMarkersCheck | false
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']

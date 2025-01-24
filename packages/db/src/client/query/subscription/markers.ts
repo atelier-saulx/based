@@ -2,7 +2,11 @@
 // TODO hooks for update / create
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
 import { BasedDb } from '../../../index.js'
-import { Subscription, SubscriptionMarkers } from './types.js'
+import {
+  Subscription,
+  SubscriptionMarkerMap,
+  SubscriptionMarkersCheck,
+} from './types.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { startSubscription } from './run.js'
 
@@ -11,16 +15,16 @@ export const getSubscriptionMarkers = (
   typeId: number,
   id: number,
   isCreate: boolean,
-): SubscriptionMarkers | false => {
-  const t = db.subscriptionMarkers.get(typeId)
-  if (!t) {
+): SubscriptionMarkersCheck | false => {
+  if (!(typeId in db.subscriptionMarkers)) {
     return false
   }
+  const t = db.subscriptionMarkers[typeId]
 
   if (!isCreate) {
-    const idMarkers = t.ids.get(id)
-    if (idMarkers) {
-      return idMarkers
+    if (t.ids.has(id)) {
+      const idMarkers = t.ids.get(id)
+      return { ids: idMarkers, filter: false }
     }
   }
 
@@ -29,53 +33,50 @@ export const getSubscriptionMarkers = (
 
 export const checkSubscriptionMarkers = (
   db: BasedDb,
-  markers: SubscriptionMarkers,
+  m: SubscriptionMarkersCheck,
   prop: PropDef | PropDefEdge, // number
 ) => {
-  if (prop.separate) {
-    const propSubs = markers.props.get(prop.prop)
-    if (propSubs) {
-      propSubs.forEach((s) => {
-        db.subscriptionsToRun.push(s)
-        // propSubs.delete(s)
-      })
+  let newSub = false
 
-      //   if (!propSubs.size) {
-      //     markers.props.delete(prop.prop)
-      //     if (markers.props.size === 0 && markers.main.size === 0) {
-      //       // db remove
-      //     }
-      //   }
+  if (m.ids) {
+    const markers = m.ids
 
-      if (!db.subscriptionsInProgress) {
-        startSubscription(db)
+    if (prop.separate) {
+      const propSubs = markers.props[prop.prop]
+      if (propSubs) {
+        for (const s of propSubs) {
+          if (!s.inProgress) {
+            newSub = true
+            db.subscriptionsToRun.push(s)
+          }
+        }
+      }
+    } else {
+      const propSubs = markers.main[prop.start]
+      if (propSubs) {
+        if (propSubs) {
+          for (const s of propSubs) {
+            if (!s.inProgress) {
+              newSub = true
+              db.subscriptionsToRun.push(s)
+            }
+          }
+        }
       }
     }
-  } else {
-    const propSubs = markers.main.get(prop.start)
-    if (propSubs) {
-      propSubs.forEach((s) => {
-        db.subscriptionsToRun.push(s)
-        // propSubs.delete(s)
-      })
 
-      //   if (!propSubs.size) {
-      //     markers.props.delete(prop.prop)
-      //     if (markers.props.size === 0 && markers.main.size === 0) {
-      //       // db remove
-      //     }
-      //   }
-
-      if (!db.subscriptionsInProgress) {
-        startSubscription(db)
-      }
+    if (newSub && !db.subscriptionsInProgress) {
+      startSubscription(db)
     }
   }
-  // will check filters
 }
 
 export const removeSubscriptionMarkers = (q: BasedDbQuery) => {
   // derp
+}
+
+export const createSubscriptionMarkerMap = (): SubscriptionMarkerMap => {
+  return {}
 }
 
 // resetting subs is a copy for now
@@ -85,22 +86,25 @@ export const addSubscriptionMarkers = (
 ) => {
   const typeId = q.def.schema.id
 
-  if (!q.db.subscriptionMarkers.has(typeId)) {
-    q.db.subscriptionMarkers.set(typeId, {
+  if (!q.db.subscriptionMarkers[typeId]) {
+    q.db.subscriptionMarkers[typeId] = {
       ids: new Map(),
-      filters: new Map(),
-    })
+      filters: {
+        main: {},
+        props: {},
+      },
+    }
   }
 
-  const modifySubscriptionsType = q.db.subscriptionMarkers.get(typeId)
+  const modifySubscriptionsType = q.db.subscriptionMarkers[typeId]
 
   if ('id' in q.def.target) {
     const id = q.def.target.id as number
 
     if (!modifySubscriptionsType.ids.has(id)) {
       modifySubscriptionsType.ids.set(id, {
-        main: new Map(),
-        props: new Map(),
+        main: {},
+        props: {},
       })
     }
 
@@ -111,20 +115,19 @@ export const addSubscriptionMarkers = (
     const main = q.def.include.main
 
     for (const p of props) {
-      if (!idMarker.props.has(p)) {
-        idMarker.props.set(p, new Set())
+      if (!(p in idMarker.props)) {
+        idMarker.props[p] = []
       }
-      const markerProps = idMarker.props.get(p)
-      markerProps.add(subscription)
+      const markerProps = idMarker.props[p]
+      markerProps.push(subscription)
     }
 
-    for (const key in main.include) {
-      const p = Number(key)
-      if (!idMarker.main.has(p)) {
-        idMarker.main.set(p, new Set())
+    for (const p in main.include) {
+      if (!(p in idMarker.main)) {
+        idMarker.main[p] = []
       }
-      const markerProps = idMarker.main.get(p)
-      markerProps.add(subscription)
+      const markerProps = idMarker.main[p]
+      markerProps.push(subscription)
     }
 
     // references later
@@ -139,5 +142,5 @@ export const addSubscriptionMarkers = (
 }
 
 export const resetSubscriptionMarkers = (db: BasedDb) => {
-  db.subscriptionMarkers.forEach((t) => {})
+  //   db.subscriptionMarkers.forEach((t) => {})
 }
