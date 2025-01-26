@@ -9,7 +9,7 @@ import { DbServer } from './server/index.js'
 import { QueryByAliasObj } from './client/query/types.js'
 import {
   SubscriptionsMap,
-  ModifySubscriptionMap,
+  SubscriptionMarkerMap,
   SubscriptionsToRun,
 } from './client/query/subscription/index.js'
 import { DbClient } from './client/index.js'
@@ -40,15 +40,15 @@ export class BasedDb {
     })
     this.client = new DbClient({
       hooks: {
-        putSchema: async (schema, fromStart) => {
-          return this.server.putSchema(schema, fromStart)
+        putSchema: (schema, fromStart) => {
+          return Promise.resolve(this.server.putSchema(schema, fromStart))
         },
-        flushModify: async (buf) => {
+        flushModify: (buf) => {
           this.server.modify(buf)
-          return { offset: 0 }
+          return Promise.resolve({ offset: 0 })
         },
-        getQueryBuf: async (buf) => {
-          return this.server.getQueryBuf(buf)
+        getQueryBuf: (buf) => {
+          return Promise.resolve(this.server.getQueryBuf(buf))
         },
       },
     })
@@ -127,7 +127,9 @@ export class _BasedDb {
   subscriptonThrottleMs: number = 20
 
   subscriptions: SubscriptionsMap = new Map()
-  modifySubscriptions: ModifySubscriptionMap = new Map()
+
+  modifySubscriptions: SubscriptionMarkerMap = new Map()
+
   subscriptionsToRun: SubscriptionsToRun = []
 
   constructor({

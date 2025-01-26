@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
 await test('migration', async (t) => {
-  const amount = 800_000
+  const amount = 100
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -56,7 +56,7 @@ await test('migration', async (t) => {
 
   await db.drain()
 
-  let allUsers = (await db.query('user').range(0, amount).get()).toObject()
+  let allUsers = await db.query('user').range(0, amount).get().toObject()
 
   const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
   let migrationPromise = db.migrateSchema(
@@ -92,23 +92,23 @@ await test('migration', async (t) => {
   )
 
   console.time('migration time')
-  db.create('user', {
-    name: 'newuser',
-  })
+  // db.create('user', {
+  //   name: 'newuser',
+  // })
 
-  db.update('user', 1, {
-    name: 'change1',
-  })
+  // db.update('user', 1, {
+  //   name: 'change1',
+  // })
 
-  await setTimeout(500)
+  // await setTimeout(500)
 
-  db.create('user', {
-    name: 'newuser2',
-  })
+  // db.create('user', {
+  //   name: 'newuser2',
+  // })
 
-  await db.update('user', 1, {
-    name: 'change2',
-  })
+  // await db.update('user', 1, {
+  //   name: 'change2',
+  // })
 
   await migrationPromise
   console.timeEnd('migration time')

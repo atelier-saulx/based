@@ -1,9 +1,9 @@
-import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
+import { parse, Schema, StrictSchema } from '@based/schema'
 import { create, CreateObj } from './modify/create.js'
-import { ALIAS, SchemaTypeDef } from '../server/schema/types.js'
+import { SchemaTypeDef } from '../server/schema/types.js'
 import { flushBuffer, ModifyCtx } from './operations.js'
 import {
-  ModifySubscriptionMap,
+  SubscriptionMarkerMap,
   SubscriptionsMap,
   SubscriptionsToRun,
 } from './query/subscription/index.js'
@@ -13,12 +13,7 @@ import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { remove } from './modify/remove.js'
-import { genId, genRootId } from '../server/schema/utils.js'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import {
-  createSchemaTypeDef,
-  updateTypeDefs,
-} from '../server/schema/typeDef.js'
+import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
 
 type Hooks = {
@@ -66,15 +61,19 @@ export class DbClient {
   subscriptionsInProgress: boolean = false
   subscriptonThrottleMs: number = 20
   subscriptions: SubscriptionsMap = new Map()
-  modifySubscriptions: ModifySubscriptionMap = new Map()
+  modifySubscriptions: SubscriptionMarkerMap = new Map()
   subscriptionsToRun: SubscriptionsToRun = []
 
   // merkle
   dirtyRanges = new Set<number>()
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    this.dirtyRanges.add(
-      makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId),
-    )
+    const key = makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
+    if (this.dirtyRanges.has(key)) {
+      return
+    }
+    this.dirtyRanges.add(key)
+    // reserve space in the end of the buf [...data, ...ranges, rangesSize]
+    this.modifyCtx.max = this.maxModifySize - this.dirtyRanges.size * 8 - 4
   }
 
   async putSchema(schema: Schema, fromStart?: boolean): Promise<StrictSchema> {
@@ -84,7 +83,7 @@ export class DbClient {
     return this.schema
   }
 
-  create(type: string, obj: CreateObj, unsafe?: boolean) {
+  create(type: string, obj: CreateObj, unsafe?: boolean): ModifyRes {
     return create(this, type, obj, unsafe)
   }
 

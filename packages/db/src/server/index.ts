@@ -220,6 +220,7 @@ export class DbServer {
   updateMerkleTree(): void {
     foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
       const oldLeaf = this.merkleTree.search(mtKey)
+
       const hash = Buffer.allocUnsafe(16)
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
@@ -240,12 +241,6 @@ export class DbServer {
       }
       this.merkleTree.insert(mtKey, hash, data)
     })
-  }
-
-  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    this.dirtyRanges.add(
-      makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId),
-    )
   }
 
   putSchema(schema: Schema | StrictSchema, fromStart: boolean = false) {
@@ -297,6 +292,7 @@ export class DbServer {
       delete this.schema.props
     }
 
+    console.log('update type defs!!')
     updateTypeDefs(this)
 
     if (!fromStart) {
@@ -330,8 +326,24 @@ export class DbServer {
     if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
-      native.modify(buf, this.dbCtxExternal)
+      this.#modify(buf)
     }
+  }
+
+  #modify(buf: Buffer) {
+    const rangesEnd = buf.length - 4
+    const rangesSize = buf.readUint32LE(rangesEnd)
+    let rangesIndex = rangesEnd - rangesSize * 8
+    const data = buf.subarray(0, rangesIndex)
+
+    while (rangesIndex < rangesEnd) {
+      const key = buf.readFloatLE(rangesIndex)
+      console.log('read:', { rangesIndex, key })
+      this.dirtyRanges.add(key)
+      rangesIndex += 8
+    }
+
+    native.modify(data, this.dbCtxExternal)
   }
 
   getQueryBuf(buf: Buffer): Promise<Uint8Array> {
@@ -373,7 +385,7 @@ export class DbServer {
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         for (const buf of this.modifyQueue) {
-          native.modify(buf, this.dbCtxExternal)
+          this.#modify(buf)
         }
         this.modifyQueue = []
       }

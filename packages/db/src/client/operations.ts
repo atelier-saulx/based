@@ -38,15 +38,30 @@ export const flushBuffer = (db: DbClient) => {
 
   if (ctx.len) {
     const d = Date.now()
-    flushPromise = db.hooks
-      .flushModify(ctx.buf.subarray(0, ctx.len))
-      .then(() => {
-        db.writeTime += Date.now() - d
-      })
+    let rangesSize = db.dirtyRanges.size
+
+    console.log({ rangesSize }, db.dirtyRanges)
+
+    const rangesEnd = ctx.len + rangesSize * 4
+    const data = ctx.buf.subarray(0, rangesEnd + 4)
+    data.writeUint32LE(rangesSize, rangesEnd)
+    let i = rangesEnd - 8
+    for (let key of db.dirtyRanges) {
+      console.log('write:', { i, key })
+      data.writeFloatLE(key, i)
+      i -= 8
+    }
+
+    db.dirtyRanges.clear()
+    // const data = ctx.buf.subarray(0, ctx.len)
+    flushPromise = db.hooks.flushModify(data).then(() => {
+      db.writeTime += Date.now() - d
+    })
 
     ctx.len = 0
     ctx.prefix0 = -1
     ctx.prefix1 = -1
+    ctx.max = db.maxModifySize
 
     if (ctx.queue.size) {
       const queue = ctx.queue

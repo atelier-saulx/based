@@ -50,11 +50,10 @@ export const migrate = async (
   await toDb.start({ clean: true })
 
   if (abort()) {
-    toDb.destroy()
-    return
+    return toDb.destroy()
   }
 
-  toDb.putSchema(toSchema)
+  await toDb.putSchema(toSchema)
 
   const fromSchema = fromDbServer.schema
   const fromCtx = fromDbServer.dbCtxExternal
@@ -92,7 +91,7 @@ export const migrate = async (
     // block modifies
     fromDbServer.processingQueries++
     const leafData = ranges[i++]
-
+    console.log('->', leafData)
     port1.postMessage(leafData)
     // wake up the worker
     atomics[0] = 1

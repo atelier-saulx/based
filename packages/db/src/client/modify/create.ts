@@ -6,10 +6,7 @@ import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
 import { writeFixedValue } from './fixed.js'
-import {
-  checkFilterSubscription,
-  getSubscriptionMarkers,
-} from '../query/subscription/index.js'
+import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 
 export type CreateObj = Record<string, any>
@@ -122,6 +119,7 @@ export function create(
         throw new Error('out of range')
       }
       flushBuffer(db)
+
       return db.create(type, obj, unsafe)
     }
 
@@ -138,8 +136,6 @@ export function create(
     def.lastId = id
     def.total++
   }
-
-  checkFilterSubscription(db, def.id)
 
   // @ts-ignore
   return res
