@@ -45,18 +45,14 @@ export async function foreachDirtyBlock(
   cb: (mtKey: number, typeId: number, start: number, end: number) => void,
 ) {
   const typeIdMap = {}
-  console.log('db.schemaTypesParsed:', db.schemaTypesParsed)
   for (const typeName in db.schemaTypesParsed) {
     const type = db.schemaTypesParsed[typeName]
     const typeId = type.id
     typeIdMap[typeId] = type
   }
 
-  console.log('typeIdMap:', typeIdMap, db.dirtyRanges)
-
   for (const mtKey of db.dirtyRanges) {
     const [typeId, start] = destructureCsmtKey(mtKey)
-    console.log({ typeId })
     const end = start + typeIdMap[typeId].blockCapacity - 1
     cb(mtKey, typeId, start, end)
   }

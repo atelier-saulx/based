@@ -38,12 +38,12 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(db: DbServer, { clean }: { clean?: boolean }) {
+export async function start(db: DbServer, opts: { clean?: boolean }) {
   const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
 
-  if (clean) {
+  if (opts?.clean) {
     await rm(path, { recursive: true, force: true }).catch(noop)
   }
 

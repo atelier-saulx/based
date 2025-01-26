@@ -90,9 +90,9 @@ export const filterRaw = (
 ): number => {
   const [field, operator, value] = filter
 
-  hasField(field) // Valida se o campo é uma string não vazia
-  checkOperator(operator) // Valida se o operador é válido
-  checkValue(value, operator) // Valida o valor com base no operador
+  hasField(field) // Validates if the field is a non-empty string
+  checkOperator(operator) // Validates if the operator is valid
+  checkValue(value, operator) // Validates the value based on the operator
 
   let fieldDef = schema.props[field]
   if (!fieldDef) {
@@ -139,7 +139,11 @@ export const filterOr = (
 }
 
 function normalizeNeedle(s: string): string {
-  return s.normalize('NFKD').split('').filter((ch: string) => ch.charCodeAt(0) <= 127).join('')
+  return s
+    .normalize('NFKD')
+    .split('')
+    .filter((ch: string) => ch.charCodeAt(0) <= 127)
+    .join('')
 }
 
 export const convertFilter = (

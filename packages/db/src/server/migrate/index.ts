@@ -53,7 +53,7 @@ export const migrate = async (
     return toDb.destroy()
   }
 
-  await toDb.putSchema(toSchema)
+  toSchema = await toDb.putSchema(toSchema)
 
   const fromSchema = fromDbServer.schema
   const fromCtx = fromDbServer.dbCtxExternal
@@ -63,6 +63,7 @@ export const migrate = async (
   const fromAddress = native.intFromExternal(fromCtx)
   const toAddress = native.intFromExternal(toCtx)
   const transformFns = parseTransform(transform)
+
   const worker = new Worker('./dist/src/server/migrate/worker.js', {
     workerData: {
       from: fromAddress,
@@ -91,7 +92,7 @@ export const migrate = async (
     // block modifies
     fromDbServer.processingQueries++
     const leafData = ranges[i++]
-    console.log('->', leafData)
+    // console.log('->', leafData)
     port1.postMessage(leafData)
     // wake up the worker
     atomics[0] = 1

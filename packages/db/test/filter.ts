@@ -269,13 +269,14 @@ await test('simple', async (t) => {
   )
 
   equal(
-    await db
-      .query('machine')
-      .include('id')
-      .filter('env', '=', env)
-      .range(0, 10)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id')
+        .filter('env', '=', env)
+        .range(0, 10)
+        .get()
+    ).toObject(),
     [
       { id: 2 },
       { id: 4 },

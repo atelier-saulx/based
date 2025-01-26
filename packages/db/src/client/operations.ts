@@ -44,9 +44,9 @@ export const flushBuffer = (db: DbClient) => {
 
     data.writeUint32LE(rangesSize, rangesEnd)
 
-    let i = rangesEnd - 4
+    let i = rangesEnd - 8
     for (let key of db.dirtyRanges) {
-      data.writeFloatLE(key, i)
+      data.writeDoubleLE(key, i)
       i -= 8
     }
 

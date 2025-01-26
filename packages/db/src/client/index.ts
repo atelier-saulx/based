@@ -15,6 +15,8 @@ import { update } from './modify/update.js'
 import { remove } from './modify/remove.js'
 import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
+import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
+import { deepEqual } from '@saulx/utils'
 
 type Hooks = {
   putSchema(
@@ -29,11 +31,13 @@ type Hooks = {
 
 type DbClientOpts = {
   hooks: Hooks
+  maxModifySize?: number
 }
 
 export class DbClient {
-  constructor({ hooks }: DbClientOpts) {
+  constructor({ hooks, maxModifySize = 100 * 1e3 * 1e3 }: DbClientOpts) {
     this.hooks = hooks
+    this.maxModifySize = maxModifySize
     this.modifyCtx = new ModifyCtx(this)
   }
 
@@ -48,10 +52,10 @@ export class DbClient {
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
   // modify
-  writeTime: number
+  writeTime: number = 0
   isDraining = false
   modifyCtx: ModifyCtx
-  maxModifySize: number = 100 * 1e3 * 1e3
+  maxModifySize: number
   upserting: Map<
     string,
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
@@ -77,9 +81,21 @@ export class DbClient {
   }
 
   async putSchema(schema: Schema, fromStart?: boolean): Promise<StrictSchema> {
-    const strictSchema = parse(schema).schema
-    this.schema = await this.hooks.putSchema(strictSchema, fromStart)
+    const strictSchema = fromStart ? schema : parse(schema).schema
+    const remoteSchema = await this.hooks.putSchema(
+      strictSchema as StrictSchema,
+      fromStart,
+    )
+    return this.putLocalSchema(remoteSchema)
+  }
+
+  putLocalSchema(schema) {
+    if (deepEqual(this.schema, schema)) {
+      return this.schema
+    }
+    this.schema = schema
     updateTypeDefs(this)
+    schemaToSelvaBuffer(this.schemaTypesParsed)
     return this.schema
   }
 

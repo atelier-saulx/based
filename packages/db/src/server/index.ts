@@ -12,6 +12,7 @@ import { start } from './start.js'
 import {
   CsmtNodeRange,
   foreachDirtyBlock,
+  makeCsmtKey,
   makeCsmtKeyFromNodeId,
 } from './tree.js'
 import { save } from './save.js'
@@ -71,6 +72,8 @@ export class DbWorker {
   }
 }
 
+type OnSchemaChange = (schema: StrictSchema) => void
+
 export class DbServer {
   modifyBuf: SharedArrayBuffer
   dbCtxExternal: any // pointer to zig dbCtx
@@ -91,17 +94,21 @@ export class DbServer {
   modifyQueue: Buffer[] = []
   queryQueue: Map<Function, Buffer> = new Map()
   stopped: boolean
+  onSchemaChange: OnSchemaChange
 
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
+    onSchemaChange,
   }: {
     path: string
     maxModifySize?: number
+    onSchemaChange?: OnSchemaChange
   }) {
     this.maxModifySize = maxModifySize
     this.fileSystemPath = path
     this.sortIndexes = {}
+    this.onSchemaChange = onSchemaChange
   }
 
   start(opts?: { clean?: boolean }) {
@@ -243,12 +250,9 @@ export class DbServer {
     })
   }
 
-  putSchema(schema: Schema | StrictSchema, fromStart: boolean = false) {
-    const strictSchema = fromStart
-      ? (schema as StrictSchema)
-      : parse(schema).schema
-
+  putSchema(strictSchema: StrictSchema, fromStart: boolean = false) {
     const { lastId } = this.schema
+
     this.schema = {
       lastId,
       ...strictSchema,
@@ -314,10 +318,20 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        this.modify(Buffer.from([2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+        const createRootNode = [2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]
+        const blockKey = makeCsmtKey(1, 0)
+        const buf = Buffer.alloc(createRootNode.length + 8 + 4)
+        // add content
+        buf.set(createRootNode)
+        // add dirty key
+        buf.writeDoubleLE(blockKey, createRootNode.length)
+        // add dirty keys amount
+        buf.writeUint32LE(1, createRootNode.length + 8)
+        this.modify(buf)
       }
     }
 
+    this.onSchemaChange?.(this.schema)
     return this.schema
   }
 
@@ -334,9 +348,8 @@ export class DbServer {
     const rangesSize = buf.readUint32LE(rangesEnd)
     let rangesIndex = rangesEnd - rangesSize * 8
     const data = buf.subarray(0, rangesIndex)
-
     while (rangesIndex < rangesEnd) {
-      const key = buf.readFloatLE(rangesIndex)
+      const key = buf.readDoubleLE(rangesIndex)
       this.dirtyRanges.add(key)
       rangesIndex += 8
     }

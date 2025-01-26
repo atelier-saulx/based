@@ -54,7 +54,6 @@ if (isMainThread) {
       const leafData: TreeNode['data'] = msg.message
       const { type, include } = map[leafData.typeId]
       const typeTransformFn = transformFns[type]
-
       if (typeTransformFn) {
         const nodes = fromDb
           .query(type)
