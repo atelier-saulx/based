@@ -7,7 +7,6 @@ import {
   SubscriptionsMap,
   SubscriptionsToRun,
 } from './query/subscription/index.js'
-import { makeCsmtKeyFromNodeId } from './tree.js'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
@@ -24,7 +23,7 @@ type Hooks = {
     fromStart?: boolean,
   ): Promise<DbServer['schema']>
   flushModify(buf: Buffer): Promise<{
-    offset: number
+    offsets: Record<number, number>
   }>
   getQueryBuf(buf: Buffer): Promise<Uint8Array>
 }
@@ -41,7 +40,6 @@ export class DbClient {
     this.modifyCtx = new ModifyCtx(this)
   }
 
-  noCompression = false
   hooks: Hooks
 
   // schema
@@ -68,17 +66,7 @@ export class DbClient {
   modifySubscriptions: SubscriptionMarkerMap = new Map()
   subscriptionsToRun: SubscriptionsToRun = []
 
-  // merkle
-  dirtyRanges = new Set<number>()
-  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    const key = makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
-    if (this.dirtyRanges.has(key)) {
-      return
-    }
-    this.dirtyRanges.add(key)
-    // reserve space in the end of the buf [...data, ...ranges, rangesSize]
-    this.modifyCtx.max = this.maxModifySize - this.dirtyRanges.size * 8 - 4
-  }
+  // merkle => move this to modifyctx
 
   async putSchema(schema: Schema, fromStart?: boolean): Promise<StrictSchema> {
     const strictSchema = fromStart ? schema : parse(schema).schema

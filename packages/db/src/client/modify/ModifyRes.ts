@@ -68,8 +68,14 @@ export class ModifyError {
 }
 
 export class ModifyState {
-  constructor(tmpId: number, db: DbClient, subMarkers: SubscriptionMarkers) {
+  constructor(
+    typeId: number,
+    tmpId: number,
+    db: DbClient,
+    subMarkers: SubscriptionMarkers,
+  ) {
     this.tmpId = tmpId
+    this.#typeId = typeId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
@@ -79,6 +85,7 @@ export class ModifyState {
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
+  #typeId: number
   tmpId: number
   error?: ModifyError
   promises?: Promise<any>[];
@@ -90,7 +97,8 @@ export class ModifyState {
       if (this.error) {
         reject(new Error(this.error.toString()))
       } else if ('offset' in this.#ctx) {
-        resolve(this.tmpId + this.#ctx.offset)
+        const offset = this.#ctx.offsets?.[this.#typeId] || 0
+        resolve(this.tmpId + offset)
       } else {
         this.#buf.queue.set(resolve, this.tmpId)
       }

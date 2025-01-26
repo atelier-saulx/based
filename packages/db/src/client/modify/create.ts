@@ -102,6 +102,7 @@ export function create(
 
   const ctx = db.modifyCtx
   const res = new ModifyState(
+    def.id,
     id,
     db,
     getSubscriptionMarkers(db, def.id, id, true),

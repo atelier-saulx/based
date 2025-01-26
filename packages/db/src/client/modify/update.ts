@@ -80,6 +80,7 @@ export const update = (
   const ctx = db.modifyCtx
   const pos = ctx.len
   const res = new ModifyState(
+    def.id,
     id,
     db,
     getSubscriptionMarkers(db, def.id, id, false),

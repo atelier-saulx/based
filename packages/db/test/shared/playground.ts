@@ -46,7 +46,6 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    noCompression: true,
   })
 
   await db.start({ clean: true })
@@ -232,7 +231,6 @@ const makeDb = async (path: string) => {
 const makeDb1 = async (path: string) => {
   const db = new BasedDb({
     path,
-    // noCompression: true,
   })
 
   await db.start({ clean: true })

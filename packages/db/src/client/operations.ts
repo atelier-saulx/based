@@ -1,6 +1,6 @@
-import { BasedDb } from '../index.js'
-import { PropDef } from '../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '../server/schema/types.js'
 import { DbClient } from './index.js'
+import { makeCsmtKeyFromNodeId } from './tree.js'
 
 export class ModifyCtx {
   constructor(db: DbClient) {
@@ -15,7 +15,7 @@ export class ModifyCtx {
   lastMain = -1
   hasStringField = -1
   queue = new Map<(payload: any) => void, any>()
-  ctx: { offset?: number } = {} // maybe make this different?
+  ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 
   payload: Buffer
 
@@ -30,6 +30,43 @@ export class ModifyCtx {
   mergeMainSize: number
 
   db: DbClient
+
+  dirtyRanges = new Set<number>()
+  dirtyTypes = new Set<SchemaTypeDef>()
+  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
+    const key = makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
+    if (this.dirtyRanges.has(key)) {
+      return
+    }
+    this.dirtyRanges.add(key)
+    this.updateMax()
+  }
+  markTypeDirty(schema: SchemaTypeDef) {
+    if (this.dirtyTypes.has(schema)) {
+      return
+    }
+    this.dirtyTypes.add(schema)
+    this.updateMax()
+  }
+  updateMax() {
+    // reserve space in the end of the buf [...data, ...ranges, rangesSize]
+    this.max = this.db.maxModifySize - this.dirtyRanges.size * 8 - 4
+  }
+  getData() {
+    let rangesSize = this.dirtyRanges.size
+    const rangesEnd = this.len + rangesSize * 8
+    const data = this.buf.subarray(0, rangesEnd + 4)
+
+    data.writeUint32LE(rangesSize, rangesEnd)
+
+    let i = rangesEnd - 8
+    for (let key of this.dirtyRanges) {
+      data.writeDoubleLE(key, i)
+      i -= 8
+    }
+
+    return data
+  }
 }
 
 export const flushBuffer = (db: DbClient) => {
@@ -38,24 +75,13 @@ export const flushBuffer = (db: DbClient) => {
 
   if (ctx.len) {
     const d = Date.now()
-    let rangesSize = db.dirtyRanges.size
-    const rangesEnd = ctx.len + rangesSize * 8
-    const data = ctx.buf.subarray(0, rangesEnd + 4)
+    const data = ctx.getData()
 
-    data.writeUint32LE(rangesSize, rangesEnd)
-
-    let i = rangesEnd - 8
-    for (let key of db.dirtyRanges) {
-      data.writeDoubleLE(key, i)
-      i -= 8
-    }
-
-    db.dirtyRanges.clear()
-    // const data = ctx.buf.subarray(0, ctx.len)
     flushPromise = db.hooks.flushModify(data).then(() => {
       db.writeTime += Date.now() - d
     })
 
+    ctx.dirtyRanges.clear()
     ctx.len = 0
     ctx.prefix0 = -1
     ctx.prefix1 = -1

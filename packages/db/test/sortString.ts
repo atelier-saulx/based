@@ -30,7 +30,6 @@ await test('compression / large strings', async (t) => {
     const value = opts.value ?? ''
     db = new BasedDb({
       path: t.tmp,
-      // noCompression: true,
     })
     await db.start({ clean: true })
     await db.putSchema({

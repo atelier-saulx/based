@@ -56,9 +56,12 @@ export async function save(db: DbServer) {
     }
     try {
       db.merkleTree.delete(mtKey)
-    } catch (err) {}
+    } catch (err) {
+      // console.error({ err })
+    }
     db.merkleTree.insert(mtKey, hash, data)
   })
+
   db.dirtyRanges.clear()
 
   const types: Writelog['types'] = {}

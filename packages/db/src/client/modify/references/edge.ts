@@ -108,7 +108,7 @@ export function writeEdges(
           }
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
-          let size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
+          let size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
           let sizeU32 = size
           ctx.buf[ctx.len++] = sizeU32
           ctx.buf[ctx.len++] = sizeU32 >>>= 8
