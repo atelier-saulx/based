@@ -29,7 +29,9 @@ export const setCursor = (
     ctx.field = -1
     ctx.id = -1
     ctx.lastMain = -1
-    ctx.markTypeDirty(schema)
+    if (modifyOp === CREATE) {
+      ctx.markTypeDirty(schema)
+    }
   }
 
   if (!ignoreField && ctx.field !== field) {

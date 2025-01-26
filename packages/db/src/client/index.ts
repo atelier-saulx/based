@@ -47,7 +47,9 @@ export class DbClient {
     lastId: 1, // we reserve one for root props
     types: {},
   }
-  schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+
+  schemaTypesParsed: Record<string, SchemaTypeDef> = {}
+  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
 
   // modify
   writeTime: number = 0

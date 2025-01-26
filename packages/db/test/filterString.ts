@@ -398,10 +398,12 @@ await test('hasLoose uncompressed', async (t) => {
   })
 
   for (let i = 0; i < 1e5; i++) {
-    await db.create('italy', {
+    db.create('italy', {
       body: capitals,
     })
   }
+
+  await db.drain()
 
   equal(
     (

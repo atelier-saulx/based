@@ -73,7 +73,9 @@ export const updateTypeDefs = (db: DbClient | DbServer) => {
     if (field in db.schema.types) {
       continue
     }
+    const id = db.schemaTypesParsed[field].id
     delete db.schemaTypesParsed[field]
+    delete db.schemaTypesParsedById[id]
   }
   for (const field in db.schema.types) {
     const type = db.schema.types[field]
@@ -90,6 +92,7 @@ export const updateTypeDefs = (db: DbClient | DbServer) => {
       def.blockCapacity =
         field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
       db.schemaTypesParsed[field] = def
+      db.schemaTypesParsedById[type.id] = def
     }
   }
 }

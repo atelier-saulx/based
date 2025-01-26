@@ -92,15 +92,18 @@ export class ModifyState {
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
+  getId(offsets: Record<number, number>) {
+    const offset = offsets[this.#typeId] || 0
+    return this.tmpId + offset
+  }
   then(resolve, reject) {
     const promise = new Promise((resolve) => {
       if (this.error) {
         reject(new Error(this.error.toString()))
-      } else if ('offset' in this.#ctx) {
-        const offset = this.#ctx.offsets?.[this.#typeId] || 0
-        resolve(this.tmpId + offset)
+      } else if ('offsets' in this.#ctx) {
+        resolve(this.getId(this.#ctx.offsets))
       } else {
-        this.#buf.queue.set(resolve, this.tmpId)
+        this.#buf.queue.set(resolve, this)
       }
     })
     if (this.promises?.length) {

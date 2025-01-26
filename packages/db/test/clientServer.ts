@@ -24,8 +24,7 @@ await test('client server', async (t) => {
       return server.putSchema(schema, fromStart)
     },
     async flushModify(buf) {
-      server.modify(buf)
-      const offsets = {}
+      const offsets = server.modify(buf)
       return { offsets }
     },
     async getQueryBuf(buf) {
@@ -49,15 +48,16 @@ await test('client server', async (t) => {
     },
   })
 
-  await client1.create('user', {
+  const youzi = await client1.create('user', {
     name: 'youzi',
   })
 
-  const res = await client2.create('user', {
+  const jamez = await client2.create('user', {
     name: 'jamez',
   })
 
-  console.log('??', res)
-
-  console.dir(await client2.query('user').get().toObject(), { depth: null })
+  deepEqual(await client2.query('user').get().toObject(), [
+    { id: 1, name: 'youzi' },
+    { id: 2, name: 'jamez' },
+  ])
 })

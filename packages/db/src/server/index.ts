@@ -83,6 +83,7 @@ export class DbServer {
   }
   migrating: number = null
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
   fileSystemPath: string
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
@@ -318,15 +319,17 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        const createRootNode = [2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]
+        const data = [2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 0)
-        const buf = Buffer.alloc(createRootNode.length + 8 + 4)
+        const buf = Buffer.alloc(data.length + 2 + 8 + 4)
         // add content
-        buf.set(createRootNode)
+        buf.set(data)
+        // add typesLen
+        buf.writeDoubleLE(0, data.length)
         // add dirty key
-        buf.writeDoubleLE(blockKey, createRootNode.length)
-        // add dirty keys amount
-        buf.writeUint32LE(1, createRootNode.length + 8)
+        buf.writeDoubleLE(blockKey, data.length + 2)
+        // add dataLen
+        buf.writeUint32LE(data.length, buf.length - 4)
         this.modify(buf)
       }
     }
@@ -335,27 +338,47 @@ export class DbServer {
     return this.schema
   }
 
-  modify(buf: Buffer) {
+  modify(buf: Buffer): Record<number, number> {
+    const offsets = {}
+    const dataLen = buf.readUint32LE(buf.length - 4)
+    let typesSize = buf.readUint16LE(dataLen)
+    let i = dataLen + 2
+    while (typesSize--) {
+      const typeId = buf.readUint16LE(i)
+      i += 2
+      const startId = buf.readUint32LE(i)
+      const def = this.schemaTypesParsedById[typeId]
+      const offset = def.lastId - startId
+      buf.writeUint32LE(offset, i)
+      i += 4
+      const lastId = buf.readUint32LE(i)
+      i += 4
+
+      def.lastId = lastId + offset
+      offsets[typeId] = offset
+    }
     if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
       this.#modify(buf)
     }
+    return offsets
   }
 
   #modify(buf: Buffer) {
-    const rangesEnd = buf.length - 4
-    const rangesSize = buf.readUint32LE(rangesEnd)
-    let rangesIndex = rangesEnd - rangesSize * 8
-    const data = buf.subarray(0, rangesIndex)
-    while (rangesIndex < rangesEnd) {
-      const key = buf.readDoubleLE(rangesIndex)
+    const end = buf.length - 4
+    const dataLen = buf.readUint32LE(end)
+    const typesSize = buf.readUint16LE(dataLen)
+    const typesLen = typesSize * 10
+    const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
+    const data = buf.subarray(0, dataLen)
+    let i = dataLen + 2 + typesLen
+    while (i < end) {
+      const key = buf.readDoubleLE(i)
       this.dirtyRanges.add(key)
-      rangesIndex += 8
+      i += 8
     }
-
-    native.modify(data, this.dbCtxExternal)
-    // native.modify(buf, this.dbCtxExternal)
+    native.modify(data, types, this.dbCtxExternal)
   }
 
   getQueryBuf(buf: Buffer): Promise<Uint8Array> {
