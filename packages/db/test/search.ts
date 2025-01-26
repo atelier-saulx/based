@@ -450,4 +450,15 @@ await test('like filter mbs', async (t) => {
     ).length,
     1,
   )
+  equal(
+    (
+      await db
+        .query('article')
+        .filter('body', 'like', 'mihailovitšin')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1,
+  )
 })
