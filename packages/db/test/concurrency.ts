@@ -13,7 +13,7 @@ await test('concurrency', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -58,7 +58,7 @@ await test('concurrency', async (t) => {
         friends: refs,
       })
       refs.push(++id)
-      db.drain()
+      await db.drain()
       await setTimeoutAsync()
     }
   }

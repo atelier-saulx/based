@@ -10,7 +10,7 @@ import './worker.js'
 
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
-const DEFAULT_BLOCK_CAPACITY = 100_000
+export const DEFAULT_BLOCK_CAPACITY = 100_000
 
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
@@ -38,20 +38,20 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(this: DbServer, { clean }: { clean?: boolean }) {
-  const path = this.fileSystemPath
+export async function start(db: DbServer, opts: { clean?: boolean }) {
+  const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
 
-  if (clean) {
+  if (opts?.clean) {
     await rm(path, { recursive: true, force: true }).catch(noop)
   }
 
   await mkdir(path, { recursive: true }).catch(noop)
 
-  // not doing this yet
-  // this.modifyBuf = new SharedArrayBuffer(this.maxModifySize)
-  this.dbCtxExternal = native.start(id)
+  // not doing db yet
+  // db.modifyBuf = new SharedArrayBuffer(db.maxModifySize)
+  db.dbCtxExternal = native.start(id)
 
   let writelog: Writelog = null
   try {
@@ -60,14 +60,14 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
     )
 
     // Load the common dump
-    native.loadCommon(join(path, writelog.commonDump), this.dbCtxExternal)
+    native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
 
     // Load all range dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       for (const dump of dumps) {
         const fname = dump.file
-        const err = native.loadRange(join(path, fname), this.dbCtxExternal)
+        const err = native.loadRange(join(path, fname), db.dbCtxExternal)
         if (err) {
           console.log(`Failed to load a range. file: "${fname}": ${err}`)
         }
@@ -77,25 +77,25 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
       // Prop need to not call setting in selva
-      this.putSchema(JSON.parse(schema.toString()), true)
+      db.putSchema(JSON.parse(schema.toString()), true)
     }
   } catch (err) {}
 
   // The merkle tree should be empty at start.
-  if (!this.merkleTree || this.merkleTree.getRoot()) {
-    this.merkleTree = createTree(this.createCsmtHashFun)
+  if (!db.merkleTree || db.merkleTree.getRoot()) {
+    db.merkleTree = createTree(db.createCsmtHashFun)
   }
 
-  for (const key in this.schemaTypesParsed) {
-    const def = this.schemaTypesParsed[key]
-    const [total, lastId] = native.getTypeInfo(def.id, this.dbCtxExternal)
+  for (const key in db.schemaTypesParsed) {
+    const def = db.schemaTypesParsed[key]
+    const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
 
     def.total = total
     def.lastId = writelog?.types[def.id].lastId || lastId
     def.blockCapacity =
       writelog?.types[def.id].blockCapacity || DEFAULT_BLOCK_CAPACITY
 
-    foreachBlock(this, def, (start, end, hash) => {
+    foreachBlock(db, def, (start, end, hash) => {
       const mtKey = makeCsmtKey(def.id, start)
       const file: string =
         writelog.rangeDumps[def.id].find((v) => v.start === start)?.file || ''
@@ -105,13 +105,13 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
         start,
         end,
       }
-      this.merkleTree.insert(mtKey, hash, data)
+      db.merkleTree.insert(mtKey, hash, data)
     })
   }
 
   if (writelog?.hash) {
     const oldHash = Buffer.from(writelog.hash, 'hex')
-    const newHash = this.merkleTree.getRoot()?.hash
+    const newHash = db.merkleTree.getRoot()?.hash
     if (!oldHash.equals(newHash)) {
       console.error(
         `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
@@ -121,11 +121,11 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
 
   // start workers
   let i = availableParallelism()
-  const address: BigInt = native.intFromExternal(this.dbCtxExternal)
+  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
 
-  this.workers = new Array(i)
+  db.workers = new Array(i)
 
   while (i--) {
-    this.workers[i] = new DbWorker(address, this)
+    db.workers[i] = new DbWorker(address, db)
   }
 }

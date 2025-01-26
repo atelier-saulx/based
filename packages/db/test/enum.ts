@@ -13,7 +13,7 @@ await test('enum', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -37,7 +37,7 @@ await test('enum', async (t) => {
 
   db.create('user', {})
 
-  db.drain() // will become async
+  await db.drain() // will become async
 
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'mid' },

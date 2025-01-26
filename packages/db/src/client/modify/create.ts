@@ -7,13 +7,14 @@ import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
+import { DbClient } from '../index.js'
 
-type Payload = Record<string, any>
+export type CreateObj = Record<string, any>
 
 const appendCreate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
-  obj: Payload,
+  obj: CreateObj,
   res: ModifyState,
   unsafe: boolean,
 ): ModifyErr => {
@@ -81,12 +82,12 @@ const appendCreate = (
 }
 
 export function create(
-  this: BasedDb,
+  db: DbClient,
   type: string,
-  obj: Payload,
+  obj: CreateObj,
   unsafe?: boolean,
 ): ModifyRes {
-  const def = this.schemaTypesParsed[type]
+  const def = db.schemaTypesParsed[type]
 
   let id: number
   if ('id' in obj) {
@@ -99,12 +100,12 @@ export function create(
     id = def.lastId + 1
   }
 
-  const ctx = this.modifyCtx
-
+  const ctx = db.modifyCtx
   const res = new ModifyState(
+    def.id,
     id,
-    this,
-    getSubscriptionMarkers(this, def.id, id, true),
+    db,
+    getSubscriptionMarkers(db, def.id, id, true),
   )
 
   const pos = ctx.len
@@ -118,8 +119,9 @@ export function create(
       if (pos === 0) {
         throw new Error('out of range')
       }
-      flushBuffer(this)
-      return this.create(type, obj, unsafe)
+      flushBuffer(db)
+
+      return db.create(type, obj, unsafe)
     }
 
     res.error = err
@@ -127,8 +129,8 @@ export function create(
     return res
   }
 
-  if (!this.isDraining) {
-    startDrain(this)
+  if (!db.isDraining) {
+    startDrain(db)
   }
 
   if (id > def.lastId) {

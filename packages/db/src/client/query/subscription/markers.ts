@@ -1,11 +1,11 @@
 // --------------------------------------------
 // TODO hooks for update / create
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
-import { BasedDb } from '../../../index.js'
 import { SubscriptionMarkers } from './types.js'
+import { DbClient } from '../../index.js'
 
 export const getSubscriptionMarkers: SubscriptionMarkers = (
-  db: BasedDb,
+  db: DbClient,
   typeId: number,
   id: number,
   isCreate: boolean,
@@ -14,7 +14,7 @@ export const getSubscriptionMarkers: SubscriptionMarkers = (
 }
 
 export const checkSubscriptionMarkers = (
-  db: BasedDb,
+  db: DbClient,
   markers: SubscriptionMarkers,
   prop: PropDef | PropDefEdge, // number
 ) => {

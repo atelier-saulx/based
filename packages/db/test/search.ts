@@ -14,7 +14,7 @@ await test('like filter', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -106,7 +106,7 @@ await test('compressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -296,7 +296,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -352,7 +352,7 @@ await test('search ids', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {

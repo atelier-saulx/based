@@ -46,14 +46,13 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    noCompression: true,
   })
 
   await db.start({ clean: true })
 
   console.log('\nJS GO DO BUT', Date.now(), path)
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
       user: {
@@ -232,14 +231,13 @@ const makeDb = async (path: string) => {
 const makeDb1 = async (path: string) => {
   const db = new BasedDb({
     path,
-    // noCompression: true,
   })
 
   await db.start({ clean: true })
 
   console.log('\nJS GO DO BUT', Date.now(), path)
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       financeBoi: {
         props: {

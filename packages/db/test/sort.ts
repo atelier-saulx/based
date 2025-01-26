@@ -13,7 +13,7 @@ await test('1M', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -33,7 +33,7 @@ await test('1M', async (t) => {
     })
   }
 
-  const dbTime = db.drain()
+  const dbTime = await db.drain()
   console.log('db modify', dbTime, 'ms')
   equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
 
@@ -87,7 +87,7 @@ await test('basic', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -117,7 +117,7 @@ await test('basic', async (t) => {
     email: 'snurp@snurp.snurp.snurp',
   })
 
-  db.drain()
+  await db.drain()
 
   db.create('user', {
     name: 'mr nurp',
@@ -125,7 +125,7 @@ await test('basic', async (t) => {
     email: 'nurp@nurp.nurp.nurp',
   })
 
-  db.drain()
+  await db.drain()
 
   const mrZ = db.create('user', {
     name: 'mr z',
@@ -133,7 +133,7 @@ await test('basic', async (t) => {
     email: 'z@z.z',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -163,7 +163,7 @@ await test('basic', async (t) => {
     'sort by age asc',
   )
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -204,7 +204,7 @@ await test('basic', async (t) => {
     email: 'x@x.x',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -240,7 +240,7 @@ await test('basic', async (t) => {
     email: 'dd@dd.dd',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -266,7 +266,7 @@ await test('basic', async (t) => {
     true,
   )
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -328,7 +328,7 @@ await test('basic', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -407,7 +407,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrX)
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -532,7 +532,7 @@ await test('sort - from start (1M items)', async (t) => {
 
   // db.blockSize = 1e5
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {

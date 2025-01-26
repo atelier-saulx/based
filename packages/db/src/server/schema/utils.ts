@@ -1,3 +1,4 @@
+import { DbClient } from '../../client/index.js'
 import { DbServer } from '../index.js'
 import { INT16, INT32, INT64, INT8, PropDef, PropDefEdge } from './types.js'
 
@@ -21,7 +22,7 @@ export const genRootId = () => {
   return genIdFromInt(1)
 }
 
-export const genId = (db: DbServer): number => {
+export const genId = (db: DbServer | DbClient): number => {
   db.schema.lastId++
   return genIdFromInt(db.schema.lastId)
 }

@@ -8,7 +8,7 @@ import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
 
 function writeRef(
   id: number,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,
@@ -18,7 +18,7 @@ function writeRef(
   if (ctx.len + 16 > ctx.max) {
     return RANGE_ERR
   }
-  ctx.db.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
+  ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
   setCursor(ctx, schema, def.prop, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = hasEdges ? 1 : 0
@@ -30,7 +30,7 @@ function writeRef(
 
 function singleReferenceEdges(
   ref: RefModifyOpts,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,

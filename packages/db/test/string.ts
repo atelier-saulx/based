@@ -15,7 +15,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -47,7 +47,7 @@ await test('simple', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [
     {
@@ -74,7 +74,7 @@ await test('string + refs', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -167,7 +167,7 @@ await test('string + refs', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -196,7 +196,7 @@ await test('string + refs', async (t) => {
     user: users[~~(Math.random() * users.length)],
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -233,7 +233,7 @@ await test('Big string', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       file: {
         props: {
@@ -248,7 +248,7 @@ await test('Big string', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   equal(
     (await db.query('file', file).get()).node().contents,
@@ -261,7 +261,7 @@ await test('Big string', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('file').get()).toObject(),
@@ -292,7 +292,7 @@ await test('Big string disable compression', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       file: {
         props: {
@@ -306,7 +306,7 @@ await test('Big string disable compression', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   equal(
     (await db.query('file', file).get()).node().contents,
@@ -318,7 +318,7 @@ await test('Big string disable compression', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   equal((await db.query('file').get()).size > 1000 * 1e3, true)
 
@@ -349,7 +349,7 @@ await test('Big string', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       file: {
         props: {
@@ -364,7 +364,7 @@ await test('Big string', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   equal(
     (await db.query('file', file).get()).node().contents,
@@ -377,7 +377,7 @@ await test('Big string', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('file').get()).toObject(),
@@ -408,7 +408,7 @@ await test('schema compression prop', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       file: {
         props: {
@@ -423,14 +423,14 @@ await test('schema compression prop', async (t) => {
     contents: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   db.create('file', {
     contentsUncompressed: euobserver,
     contentsCompressed: euobserver,
   })
 
-  db.drain()
+  await db.drain()
 
   const uncompressedSize = await db
     .query('file')

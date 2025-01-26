@@ -14,7 +14,7 @@ await test('range', async (t) => {
   })
 
   // schema
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -64,7 +64,7 @@ await test('range', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   const result = await db.query('user').include('nr').range(1, 1).get()
 

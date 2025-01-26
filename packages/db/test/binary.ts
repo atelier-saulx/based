@@ -14,7 +14,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -28,7 +28,7 @@ await test('simple', async (t) => {
     file: new Uint32Array([1, 2, 3, 4]),
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [
     {

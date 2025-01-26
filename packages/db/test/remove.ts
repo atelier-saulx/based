@@ -13,7 +13,7 @@ await test('remove', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       nurp: {
         props: {
@@ -36,17 +36,17 @@ await test('remove', async (t) => {
     email: 'snurp@snurp.snurp',
   })
 
-  db.drain()
+  await db.drain()
 
   db.remove('user', simple)
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const nurp = db.create('nurp', {})
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
     {
@@ -57,19 +57,19 @@ await test('remove', async (t) => {
 
   db.remove('nurp', nurp)
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').include('email').get()).toObject(), [])
 
   const nurp2 = db.create('nurp', { email: 'flippie' })
 
-  db.drain()
+  await db.drain()
 
   db.update('nurp', nurp2, {
     email: null,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
     {

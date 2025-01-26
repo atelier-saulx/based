@@ -152,6 +152,5 @@ export function modify(
   overwrite: boolean,
   unsafe: boolean = false,
 ): ModifyErr {
-  ctx.db.markNodeDirty(schema, res.tmpId)
   return _modify(ctx, res, obj, schema, mod, tree, overwrite, unsafe)
 }

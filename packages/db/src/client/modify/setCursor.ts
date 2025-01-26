@@ -19,6 +19,7 @@ export const setCursor = (
 ) => {
   const prefix0 = schema.idUint8[0]
   const prefix1 = schema.idUint8[1]
+
   if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
     ctx.buf[ctx.len++] = SWITCH_TYPE // switch node type
     ctx.buf[ctx.len++] = prefix0 // type1
@@ -28,6 +29,9 @@ export const setCursor = (
     ctx.field = -1
     ctx.id = -1
     ctx.lastMain = -1
+    if (modifyOp === CREATE) {
+      ctx.markTypeDirty(schema)
+    }
   }
 
   if (!ignoreField && ctx.field !== field) {
@@ -38,6 +42,7 @@ export const setCursor = (
   }
 
   if (ctx.id !== id) {
+    ctx.markNodeDirty(schema, id)
     ctx.id = id
     ctx.lastMain = -1
     ctx.buf[ctx.len++] =

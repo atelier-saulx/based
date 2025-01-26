@@ -34,6 +34,7 @@ import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
+import { DbClient } from '../index.js'
 
 export { QueryByAliasObj }
 
@@ -43,10 +44,10 @@ export type SelectFn = (field: string) => BasedDbReferenceQuery
 export type BranchInclude = (select: SelectFn) => any
 
 export class QueryBranch<T> {
-  db: BasedDb
+  db: DbClient
   def: QueryDef
 
-  constructor(db: BasedDb, def: QueryDef) {
+  constructor(db: DbClient, def: QueryDef) {
     this.db = db
     this.def = def
   }
@@ -206,7 +207,7 @@ class GetPromise extends Promise<BasedQueryResponse> {
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(
-    db: BasedDb,
+    db: DbClient,
     type: string,
     id?: QueryByAliasObj | number | (QueryByAliasObj | number)[],
   ) {
@@ -250,7 +251,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
     const buf = registerQuery(this)
     const d = performance.now()
-    const res = await this.db.server.getQueryBuf(buf)
+    // const res = await this.db.server.getQueryBuf(buf)
+    const res = await this.db.hooks.getQueryBuf(buf)
     if (res instanceof Error) {
       reject(res)
     } else {
@@ -290,13 +292,13 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     )
   }
 
-  _getSync() {
+  _getSync(dbCtxExternal: any) {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
     const buf = registerQuery(this)
     const d = performance.now()
-    const res = native.getQueryBuf(buf, this.db.server.dbCtxExternal)
+    const res = native.getQueryBuf(buf, dbCtxExternal)
     const result = Buffer.from(res)
     return new BasedQueryResponse(
       this.id,

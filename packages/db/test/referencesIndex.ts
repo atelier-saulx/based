@@ -13,7 +13,7 @@ await test('references modify', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -42,7 +42,7 @@ await test('references modify', async (t) => {
     friends: [bob, marie],
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('user', john).include('*', 'friends').get()).toObject(),

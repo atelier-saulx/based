@@ -13,7 +13,7 @@ await test('query', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -41,7 +41,7 @@ await test('query', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('user').include('id').get()).toObject(),

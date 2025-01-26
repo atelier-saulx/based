@@ -7,6 +7,7 @@ import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '../schema/types.js'
+import { setTimeout } from 'node:timers/promises'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -22,12 +23,12 @@ if (isMainThread) {
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
-  fromDb.putSchema(fromSchema, true)
-  toDb.putSchema(toSchema, true)
+  await fromDb.putSchema(fromSchema, true)
+  await toDb.putSchema(toSchema, true)
 
   const map: Record<number, { type: string; include: string[] }> = {}
-  for (const type in fromDb.schemaTypesParsed) {
-    const { id, props } = fromDb.schemaTypesParsed[type]
+  for (const type in fromDb.client.schemaTypesParsed) {
+    const { id, props } = fromDb.client.schemaTypesParsed[type]
     const include = Object.keys(props)
     let i = include.length
     while (i--) {
@@ -53,13 +54,12 @@ if (isMainThread) {
       const leafData: TreeNode['data'] = msg.message
       const { type, include } = map[leafData.typeId]
       const typeTransformFn = transformFns[type]
-
       if (typeTransformFn) {
         const nodes = fromDb
           .query(type)
           .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
-          ._getSync()
+          ._getSync(fromCtx)
         for (const node of nodes) {
           const res = typeTransformFn(node)
           if (res === null) {
@@ -71,19 +71,20 @@ if (isMainThread) {
             toDb.create(type, res || node, true)
           }
         }
-      } else if (type in toDb.schemaTypesParsed) {
+      } else if (type in toDb.client.schemaTypesParsed) {
         const nodes = fromDb
           .query(type)
           .include(include)
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
-          ._getSync()
+          ._getSync(fromCtx)
         for (const node of nodes) {
           toDb.create(type, node, true)
         }
       }
     }
 
-    toDb.drain()
+    await toDb.drain()
+    // await setTimeout()
     // put it to sleep
     atomics[0] = 0
     Atomics.notify(atomics, 0)

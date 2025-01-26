@@ -17,7 +17,7 @@ benchmark('create 1m 2char strings', async (db) => {
     db.create('test', { string })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })
@@ -39,7 +39,7 @@ benchmark('create 1m 1000char strings', async (db) => {
     db.create('test', { string })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

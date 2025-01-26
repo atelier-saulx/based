@@ -16,7 +16,7 @@ benchmark('create 1m items with an alias', async (db) => {
     db.create('test', { alias: String(i) })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

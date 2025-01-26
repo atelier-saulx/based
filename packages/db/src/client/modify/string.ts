@@ -56,7 +56,7 @@ export function writeString(
     if (isBuffer) {
       ctx.buf.set(value, ctx.len)
     } else {
-      const isNoCompression = ctx.db.noCompression || t.compression === 0
+      const isNoCompression = t.compression === 0
       // @ts-ignore stupid str
       size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
