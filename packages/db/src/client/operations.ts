@@ -39,15 +39,13 @@ export const flushBuffer = (db: DbClient) => {
   if (ctx.len) {
     const d = Date.now()
     let rangesSize = db.dirtyRanges.size
-
-    console.log({ rangesSize }, db.dirtyRanges)
-
-    const rangesEnd = ctx.len + rangesSize * 4
+    const rangesEnd = ctx.len + rangesSize * 8
     const data = ctx.buf.subarray(0, rangesEnd + 4)
+
     data.writeUint32LE(rangesSize, rangesEnd)
-    let i = rangesEnd - 8
+
+    let i = rangesEnd - 4
     for (let key of db.dirtyRanges) {
-      console.log('write:', { i, key })
       data.writeFloatLE(key, i)
       i -= 8
     }

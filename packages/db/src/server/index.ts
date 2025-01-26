@@ -292,7 +292,6 @@ export class DbServer {
       delete this.schema.props
     }
 
-    console.log('update type defs!!')
     updateTypeDefs(this)
 
     if (!fromStart) {
@@ -338,12 +337,12 @@ export class DbServer {
 
     while (rangesIndex < rangesEnd) {
       const key = buf.readFloatLE(rangesIndex)
-      console.log('read:', { rangesIndex, key })
       this.dirtyRanges.add(key)
       rangesIndex += 8
     }
 
     native.modify(data, this.dbCtxExternal)
+    // native.modify(buf, this.dbCtxExternal)
   }
 
   getQueryBuf(buf: Buffer): Promise<Uint8Array> {

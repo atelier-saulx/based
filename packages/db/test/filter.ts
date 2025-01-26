@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
+import { setTimeout } from 'timers/promises'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -514,6 +515,7 @@ await test('or', async (t) => {
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
   }
+
   await db.drain()
 
   deepEqual(
