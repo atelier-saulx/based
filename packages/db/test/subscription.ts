@@ -270,19 +270,32 @@ await test('subscription mixed', async (t) => {
   }
   db.drain()
 
-  for (let i = 0; i < 100; i++) {
-    const close = db
-      .query('user')
-      .range(0, 1e6)
-      .include('name')
+  let blarf = 0
+
+  const end = setInterval(() => {
+    console.log(blarf)
+  }, 100)
+
+  for (let i = 0; i < 3e4; i++) {
+    // const close = db.query('user', i + 1).subscribe((q) => {
+    //   // console.log(q.id, q)
+    //   blarf++
+    // })
+
+    db.query('user')
+      // .range(0, 1000)
+
+      .range(0, 1)
+      .include('name', 'nr')
       .filter('flap', '=', i)
-      .filter('nr', '>', 9500)
+      // .filter('nr', '>', 9500)
       .filter('name', 'has', 'Mr')
-      .or((f) => {
-        f.filter('nr', '=', 1e9)
-        f.or('nr', '>', 2e9)
-      })
+      // .or((f) => {
+      // f.filter('nr', '=', 1e9)
+      // f.or('nr', '>', 2e9)
+      // })
       .subscribe((q) => {
+        blarf++
         // console.log(q.id, q)
       })
   }
@@ -291,4 +304,6 @@ await test('subscription mixed', async (t) => {
   await wait(1000)
   update()
   await wait(1000)
+
+  clearInterval(end)
 })
