@@ -31,7 +31,7 @@ endif
 all: .make-prerequisites jemalloc-$(JEMALLOC_VER)/config.status
 	cd jemalloc-$(JEMALLOC_VER) && $(MAKE) CFLAGS="$(JEMALLOC_CFLAGS)" LDFLAGS="$(JEMALLOC_LDFLAGS)" LIBDIR="$(JEMALLOC_LIBDIR)" build_lib_shared
 	cp -P jemalloc-$(JEMALLOC_VER)/lib/* "$(LIB_PATH)"
-	rsync --checksum "jemalloc-$(JEMALLOC_VER)/include/jemalloc/jemalloc_selva.h" "../../include/jemalloc.h"
+	rsync --checksum "jemalloc-$(JEMALLOC_VER)/include/jemalloc/jemalloc_selva.h" "../../include/jemalloc_selva.h"
 
 jemalloc-$(JEMALLOC_VER)/config.status:
 	cd jemalloc-$(JEMALLOC_VER) && ./configure $(JEMALLOC_CONFIG) CFLAGS="$(JEMALLOC_CFLAGS)" LDFLAGS="$(JEMALLOC_LDFLAGS)" LIBDIR="$(JEMALLOC_LIBDIR)"

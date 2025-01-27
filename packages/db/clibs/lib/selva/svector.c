@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "mempool.h"
 #include "svector.h"
 

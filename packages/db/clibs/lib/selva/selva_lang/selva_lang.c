@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva_error.h"
 #include "selva/selva_lang.h"
 

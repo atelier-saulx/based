@@ -10,7 +10,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva/ctime.h"
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"

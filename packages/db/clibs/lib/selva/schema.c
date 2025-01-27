@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "tree.h"
 #include "selva/align.h"
 #include "selva/endian.h"

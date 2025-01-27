@@ -2,7 +2,7 @@
  * Copyright (c) 2021-2022, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva_error.h"
 #include "selva/bitmap.h"
 #include "ida.h"

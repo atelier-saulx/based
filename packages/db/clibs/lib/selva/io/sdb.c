@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "libdeflate.h"
 #include "selva/endian.h"
 #include "selva/selva_hash128.h"

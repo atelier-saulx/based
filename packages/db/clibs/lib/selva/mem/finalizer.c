@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include "cdefs.h"
 #include "queue.h"
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "../finalizer.h"
 
 /* TODO These are never freed */

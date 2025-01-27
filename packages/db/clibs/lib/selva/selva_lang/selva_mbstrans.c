@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _XOPEN_SOURCE 700
@@ -13,7 +13,7 @@
 #if __APPLE__
 #include <xlocale.h>
 #endif
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva/selva_lang.h"
 
 char *selva_mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)

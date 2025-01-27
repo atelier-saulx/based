@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tgmath.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva/poptop.h"
 
 /**

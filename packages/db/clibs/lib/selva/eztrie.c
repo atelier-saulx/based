@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "eztrie.h"
 
 void eztrie_init(struct eztrie *trie)

@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <punit.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva/selva_lang.h"
 
 static locale_t loc;

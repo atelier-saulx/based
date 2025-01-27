@@ -4,7 +4,7 @@
  */
 #include <assert.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "tree.h"
 #include "mempool.h"
 #include "selva/selva_lang.h"

@@ -6,7 +6,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "selva/align.h"
 #include "selva/selva_hash128.h"
 #include "selva/selva_lang.h"
