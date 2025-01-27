@@ -20,28 +20,22 @@ endif
 
 OBJ := \
 	alias.o \
-	auto_free.o \
 	backoff_timeout.o \
-	base64.o \
-	base64url.o \
 	bitmap.o \
-	cstrings.o \
-	ctime.o \
 	db.o \
 	db_panic.o \
 	eztrie.o \
 	fast_linear_search.o \
-	fast_memmem.o \
 	fields.o \
-	finalizer.o \
 	find.o \
 	ida.o \
 	idz.o \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
-	mempbrk.o \
-	mempool.o \
+	mem/auto_free.o \
+	mem/finalizer.o \
+	mem/mempool.o \
 	node_id_set.o \
 	poptop.o \
 	print_ready.o \
@@ -59,10 +53,16 @@ OBJ := \
 	selva_lang/selva_mbstrans.o \
 	selva_string.o \
 	sort.o \
-	strntol.o \
-	strsearch.o \
+	string/base64.o \
+	string/base64url.o \
+	string/cstrings.o \
+	string/fast_memmem.o \
+	string/mempbrk.o \
+	string/strntol.o \
+	string/strsearch.o \
 	svector.o \
-	timestamp.o \
+	time/ctime.o \
+	time/timestamp.o \
 	traverse.o \
 	trx.o \
 	types.o \
@@ -87,7 +87,7 @@ endif
 
 ifeq ($(uname_S),Darwin)
 	OBJ += \
-		memrchr.o
+		string/memrchr.o
 endif
 
 TARGET := $(LIB_PATH)/libselva$(LIB_SUFFIX)
