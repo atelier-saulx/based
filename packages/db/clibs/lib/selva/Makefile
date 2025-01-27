@@ -3,7 +3,7 @@
 include ../../common.mk
 
 CFLAGS += -fPIC -fvisibility=hidden \
-		  -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
+		  -iquote ../../include -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L$(LIB_PATH) \
 		   -ljemalloc_selva -ldeflate -lutil -lxxhash
