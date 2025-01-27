@@ -22,7 +22,6 @@ OBJ := \
 	eztrie.o \
 	fast_memmem.o \
 	finalizer.o \
-	hll.o \
 	ida.o \
 	mempbrk.o \
 	mempool.o \
