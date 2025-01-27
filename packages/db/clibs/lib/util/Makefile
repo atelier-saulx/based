@@ -28,7 +28,6 @@ OBJ := \
 	poptop.o \
 	queue_r.o \
 	selva_error.o \
-	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \
 	strntol.o \
