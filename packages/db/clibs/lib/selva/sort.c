@@ -6,7 +6,7 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "tree.h"
-#include "util/mempool.h"
+#include "mempool.h"
 #include "selva/selva_lang.h"
 #include "selva_error.h"
 #include "selva/sort.h"
@@ -777,8 +777,8 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
 #ifdef SORT_TEST
 #include <stdio.h>
 #include <unistd.h>
-#include "util/ctime.h"
-#include "util/timestamp.h"
+#include "selva/ctime.h"
+#include "selva/timestamp.h"
 
 static void print_time(char *msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
 {

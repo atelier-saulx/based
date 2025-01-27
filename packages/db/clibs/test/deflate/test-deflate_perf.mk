@@ -3,6 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 TEST_SRC += test-deflate_perf.c
-SRC-deflate_perf += ../../lib/util/timestamp.c
-SRC-deflate_perf += ../../lib/util/ctime.c
+SRC-deflate_perf += ../../lib/selva/timestamp.c
+SRC-deflate_perf += ../../lib/selva/ctime.c
 SRC-deflate_perf += ./util.c

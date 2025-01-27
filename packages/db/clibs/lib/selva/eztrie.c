@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Eztrie.
  * @section LICENSE
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022, 2025 SAULX
  * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "util/eztrie.h"
+#include "eztrie.h"
 
 void eztrie_init(struct eztrie *trie)
 {

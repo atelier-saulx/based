@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Saulx
+ * Copyright (C) 2024-2025 Saulx
  * Copyright 2017 The CRC32C Authors. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <string.h>
 #include <arm_acle.h>
 #include <arm_neon.h>
-#include "util/crc32c.h"
+#include "selva/crc32c.h"
 
 #define KBYTES 1032
 #define SEGMENTBYTES 256

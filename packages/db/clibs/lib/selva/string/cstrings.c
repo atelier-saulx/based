@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "util/cstrings.h"
+#include "../cstrings.h"
 
 static inline uint64_t b2digits(uint64_t x)
 {

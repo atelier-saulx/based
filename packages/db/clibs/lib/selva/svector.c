@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "util/mempool.h"
-#include "util/svector.h"
+#include "mempool.h"
+#include "svector.h"
 
 /**
  * Threshold to migrate from an SVECTOR_MODE_ARRAY to SVECTOR_MODE_RBTREE.

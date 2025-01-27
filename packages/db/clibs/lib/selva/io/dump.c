@@ -11,11 +11,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "jemalloc.h"
-#include "util/ctime.h"
-#include "util/selva_string.h"
-#include "util/timestamp.h"
+#include "selva/ctime.h"
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"
+#include "selva/selva_string.h"
+#include "selva/timestamp.h"
 #include "selva_error.h"
 #include "selva_lang_code.h"
 #include "../db.h"

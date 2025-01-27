@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -17,9 +17,9 @@
 #include "libdeflate_strings.h"
 #include "cdefs.h"
 #include "selva_error.h"
-#include "util/crc32c.h"
-#include "util/finalizer.h"
-#include "util/selva_string.h"
+#include "selva/crc32c.h"
+#include "selva/selva_string.h"
+#include "finalizer.h"
 
 /**
  * Don't use libdeflate_strings functions for compressed strings under this size.

@@ -12,9 +12,9 @@ pub usingnamespace @cImport({
 
     @cInclude("cdefs.h");
 
-    @cInclude("util/selva_string.h");
-    @cInclude("util/crc32c.h");
-    @cInclude("util/fast_memmem.h");
+    //@cInclude("selva/selva_string.h");
+    @cInclude("selva/crc32c.h");
+    @cInclude("selva/fast_memmem.h");
 
     @cInclude("selva/worker_ctx.h");
     @cInclude("selva/db.h");

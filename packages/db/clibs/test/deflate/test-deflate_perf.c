@@ -14,8 +14,8 @@
 #include <unistd.h>
 #include <punit.h>
 #include "libdeflate.h"
-#include "util/ctime.h"
-#include "util/timestamp.h"
+#include "selva/ctime.h"
+#include "selva/timestamp.h"
 #include "zstd.h"
 #include "util.h"
 

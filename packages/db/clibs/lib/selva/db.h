@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024, 205 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "tree.h"
-#include "util/mempool.h"
-#include "util/svector.h"
-#include "util/trx.h"
+#include "mempool.h"
+#include "svector.h"
+#include "trx.h"
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
 #include "ref_save_map.h"

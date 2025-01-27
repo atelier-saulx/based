@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023, 2025 SAULX
  * Copyright (c) 2018 ozonesecurity
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
 #include <stdint.h>
-#include "util/cstrings.h"
+#include "../cstrings.h"
 
 char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
 {

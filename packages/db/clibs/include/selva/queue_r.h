@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Thread-safe queue
  * @section LICENSE
- * Copyright (c) 2020-2021, 2023 SAULX
+ * Copyright (c) 2020-2021, 2023, 2025 SAULX
  * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -41,10 +41,9 @@
  */
 
 #pragma once
-#ifndef QUEUE_R_H
-#define QUEUE_R_H
 
 #include <stddef.h>
+#include "selva/_export.h"
 
 /**
  * Queue control block.
@@ -75,6 +74,7 @@ typedef struct queue_cb {
  * @param array_size the size of the data_array in bytes.
  * @return a new queue_cb_t queue control block structure.
  */
+SELVA_EXPORT
 queue_cb_t queue_create(void * data_array, size_t block_size,
                         size_t array_size)
     __attribute__((pure, access(read_only, 1, 3)));
@@ -87,6 +87,7 @@ queue_cb_t queue_create(void * data_array, size_t block_size,
  * @note element is always copied to the queue, so it is safe to remove the
  * original data after a push.
  */
+SELVA_EXPORT
 int queue_push(queue_cb_t * cb, const void * element)
     __attribute__((access(read_write, 1)));
 
@@ -95,6 +96,7 @@ int queue_push(queue_cb_t * cb, const void * element)
  * @param cb is a pointer to the queue control block.
  * @return A pointer to the element in the queue.
  */
+SELVA_EXPORT
 void * queue_alloc_get(queue_cb_t * cb)
     __attribute__((access(read_write, 1)));
 
@@ -103,6 +105,7 @@ void * queue_alloc_get(queue_cb_t * cb)
  * @note queue_push() should not be called between calls to queue_alloc_get()
  *       and queue_alloc_commit().
  */
+SELVA_EXPORT
 void queue_alloc_commit(queue_cb_t * cb)
     __attribute__((access(read_write, 1)));
 
@@ -112,6 +115,7 @@ void queue_alloc_commit(queue_cb_t * cb)
  * @param element is the location where element is copied to from the queue.
  * @return 0 if queue is empty; otherwise operation was succeed.
  */
+SELVA_EXPORT
 int queue_pop(queue_cb_t * cb, void * element)
     __attribute__((access(read_write, 1)));
 
@@ -121,6 +125,7 @@ int queue_pop(queue_cb_t * cb, void * element)
  * @param element is the location where element is copied to from the queue.
  * @return 0 if queue is empty; otherwise operation was succeed.
  */
+SELVA_EXPORT
 int queue_peek(queue_cb_t * cb, void ** element)
     __attribute__((access(read_only, 1), access(write_only, 2)));
 
@@ -129,6 +134,7 @@ int queue_peek(queue_cb_t * cb, void ** element)
  * @param cb is a pointer to the queue control block.
  * @return Returns the number of elements skipped.
  */
+SELVA_EXPORT
 int queue_skip(queue_cb_t * cb, size_t n)
     __attribute__((access(read_write, 1)));
 
@@ -137,6 +143,7 @@ int queue_skip(queue_cb_t * cb, size_t n)
  * This operation is considered safe when committed from the push end thread.
  * @param cb is a pointer to the queue control block.
  */
+SELVA_EXPORT
 void queue_clear_from_push_end(queue_cb_t * cb)
     __attribute__((access(read_write, 1)));
 
@@ -145,6 +152,7 @@ void queue_clear_from_push_end(queue_cb_t * cb)
  * This operation is considered safe when committed from the pop end thread.
  * @param cb is a pointer to the queue control block.
  */
+SELVA_EXPORT
 void queue_clear_from_pop_end(queue_cb_t * cb)
     __attribute__((access(read_write, 1)));
 
@@ -153,6 +161,7 @@ void queue_clear_from_pop_end(queue_cb_t * cb)
  * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not empty.
  */
+SELVA_EXPORT
 int queue_isempty(const queue_cb_t * cb)
     __attribute__((access(read_only, 1)));
 
@@ -161,6 +170,7 @@ int queue_isempty(const queue_cb_t * cb)
  * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not full.
  */
+SELVA_EXPORT
 int queue_isfull(const queue_cb_t * cb)
     __attribute__((access(read_only, 1)));
 
@@ -171,10 +181,9 @@ int queue_isfull(const queue_cb_t * cb)
  * @param[in] element returned element.
  * @return 0 if failed; otherwise succeed.
  */
+SELVA_EXPORT
 int seek(const queue_cb_t * cb, size_t i, void * element)
     __attribute__((access(read_only, 1), access(write_only, 3)));
-
-#endif /* QUEUE_R_H */
 
 /**
  * @}

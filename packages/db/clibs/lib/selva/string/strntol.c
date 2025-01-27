@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdio.h>
 #include <ctype.h>
 #include <stddef.h>
-#include "util/cstrings.h"
+#include "../cstrings.h"
 
 long int strntol(const char *s, size_t n, const char **end)
 {

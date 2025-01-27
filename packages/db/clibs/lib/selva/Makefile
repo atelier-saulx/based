@@ -20,7 +20,6 @@ endif
 
 OBJ := \
 	alias.o \
-	backoff_timeout.o \
 	bitmap.o \
 	db.o \
 	db_panic.o \
@@ -61,6 +60,7 @@ OBJ := \
 	string/strntol.o \
 	string/strsearch.o \
 	svector.o \
+	time/backoff_timeout.o \
 	time/ctime.o \
 	time/timestamp.o \
 	traverse.o \

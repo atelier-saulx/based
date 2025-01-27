@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include "util/align.h"
-#include "util/mempool.h"
+#include "selva/align.h"
+#include "../mempool.h"
 
 #define HUGE_PAGES_NA   0
 #define HUGE_PAGES_THP  1 /*!< Enable Transparent Huge Pages. */

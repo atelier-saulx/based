@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2022, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -7,7 +7,7 @@
 #include <string.h>
 #include <tgmath.h>
 #include "jemalloc.h"
-#include "util/poptop.h"
+#include "selva/poptop.h"
 
 /**
  * Struct used for the return value of poptop_find().

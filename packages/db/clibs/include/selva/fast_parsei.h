@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _UTIL_FAST_PARSEI_H_
-#define _UTIL_FAST_PARSEI_H_
 
 /**
  * Like atoi but faster and more unsafe.
@@ -36,5 +34,3 @@ static inline int fast_strtou(const char *str, const char **end)
     *end = str;
     return n;
 }
-
-#endif /* _UTIL_FAST_PARSEI_H_ */

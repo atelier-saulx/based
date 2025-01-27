@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <punit.h>
 #include "jemalloc.h"
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 static locale_t loc;
 

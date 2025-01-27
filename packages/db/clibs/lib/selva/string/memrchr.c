@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 SAULX
+ * Copyright (c) 2021, 2023, 2025 SAULX
  * Copyright (c) 2007 Todd C. Miller <Todd.Miller@courtesan.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -19,7 +19,7 @@
  */
 
 #include <string.h>
-#include "util/cstrings.h"
+#include "../cstrings.h"
 
 /*
  * Reverse memchr()

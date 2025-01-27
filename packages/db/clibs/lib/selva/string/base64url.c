@@ -1,6 +1,6 @@
 /*
  * Base64url encoding/decoding (RFC4648)
- * Copyright (c) 2021-2022, 2024 SAULX
+ * Copyright (c) 2021-2022, 2024-2025 SAULX
  * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "util/base64url.h"
+#include "selva/base64url.h"
 
 static const unsigned char base64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 

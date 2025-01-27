@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef SELVA_TIMESTAMP_H
-#define SELVA_TIMESTAMP_H
+
+#include "selva/_export.h"
 
 struct timespec;
 
@@ -13,12 +13,13 @@ struct timespec;
  */
 long long ts_now(void);
 
+SELVA_EXPORT
 void ts_monotime(struct timespec *spec)
     __attribute__((access(write_only, 1)));
 
+SELVA_EXPORT
 void ts_monorealtime(struct timespec *spec)
     __attribute__((access(write_only, 1)));
 
+SELVA_EXPORT
 long long ts_monorealtime_now(void);
-
-#endif /* SELVA_TIMESTAMP_H */

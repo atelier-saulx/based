@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2022, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include "jemalloc.h"
 #include "selva_error.h"
-#include "util/bitmap.h"
-#include "util/ida.h"
+#include "selva/bitmap.h"
+#include "ida.h"
 
 struct ida {
     struct bitmap id_map;

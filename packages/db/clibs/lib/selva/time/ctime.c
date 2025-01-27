@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Saulx
+ * Copyright (c) 2022, 2024-2025 Saulx
  * Copyright (c) 2014 - 2016, 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <time.h>
-#include "util/ctime.h"
+#include "selva/ctime.h"
 
 struct timespec *msec2timespec(struct timespec * ts, int64_t msec)
 {

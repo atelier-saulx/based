@@ -1,15 +1,14 @@
 /*
- * Copyright (c) 2021, 2023 SAULX
+ * Copyright (c) 2021, 2023, 2025 SAULX
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
 #pragma once
-#ifndef BITMAP_H
-#define BITMAP_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include "cdefs.h"
+#include "selva/_export.h"
 
 #if __SIZEOF_INT128__ != 16
 #error The compiler and architecture must have Tetra-Integer support
@@ -53,6 +52,7 @@ struct bitmap {
  * @param pos               is the bit position to be checked.
  * @return  Boolean value or -1.
  */
+SELVA_EXPORT
 int bitmap_get(const struct bitmap *bitmap, size_t pos)
     __attribute__((pure, access(read_only, 1)));
 
@@ -62,6 +62,7 @@ int bitmap_get(const struct bitmap *bitmap, size_t pos)
  * @param pos               is the bit position to be set.
  * @return  0 or -1.
  */
+SELVA_EXPORT
 int bitmap_set(struct bitmap *bitmap, size_t pos)
     __attribute__((access(read_write, 1)));
 
@@ -71,6 +72,7 @@ int bitmap_set(struct bitmap *bitmap, size_t pos)
  * @param pos               is the bit position to be cleared.
  * @return  0 or -1.
  */
+SELVA_EXPORT
 int bitmap_clear(struct bitmap *bitmap, size_t pos)
     __attribute__((access(read_write, 1)));
 
@@ -78,16 +80,17 @@ int bitmap_clear(struct bitmap *bitmap, size_t pos)
  * Erase the whole bitmap.
  * @param bitmap            is a pointer to a bitmap.
  */
+SELVA_EXPORT
 void bitmap_erase(struct bitmap *bitmap)
     __attribute__((access(read_write, 1)));
 
+SELVA_EXPORT
 long long bitmap_popcount(const struct bitmap *bitmap)
     __attribute__((pure, access(read_only, 1)));
 
 /**
  * Find first set.
  */
+SELVA_EXPORT
 int bitmap_ffs(const struct bitmap *bitmap)
     __attribute__((pure, access(read_only, 1)));
-
-#endif /* BITMAP_H */

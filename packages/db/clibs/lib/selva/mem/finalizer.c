@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
 #include "cdefs.h"
 #include "queue.h"
 #include "jemalloc.h"
-#include "util/finalizer.h"
+#include "../finalizer.h"
 
 /* TODO These are never freed */
 static __thread struct finalizer_stack free_list = SLIST_HEAD_INITIALIZER(free_list);

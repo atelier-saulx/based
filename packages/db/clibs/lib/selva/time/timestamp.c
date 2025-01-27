@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <tgmath.h>
 #include <time.h>
-#include "util/timestamp.h"
+#include "selva/timestamp.h"
 
 #if __MACH__ || __APPLE__
 #define MONOTIME_SOURCE CLOCK_MONOTONIC

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -10,8 +10,8 @@
 #include <sys/types.h>
 #include "jemalloc.h"
 #include "tree.h"
-#include "util/align.h"
-#include "util/endian.h"
+#include "selva/align.h"
+#include "selva/endian.h"
 #include "selva_error.h"
 #include "selva/fields.h"
 #include "ref_save_map.h"

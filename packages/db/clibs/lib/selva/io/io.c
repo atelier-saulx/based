@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define SELVA_IO_TYPE
@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "selva/selva_string.h"
 #include "selva_error.h"
-#include "util/selva_string.h"
 #include "../db_panic.h"
 #include "sdb.h"
 #include "../io.h"

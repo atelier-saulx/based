@@ -1,6 +1,6 @@
 /*
  * Base64 encoding/decoding (RFC1341)
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2022, 2025 SAULX
  * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "util/base64.h"
+#include "selva/base64.h"
 
 static const unsigned char base64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

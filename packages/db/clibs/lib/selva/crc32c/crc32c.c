@@ -17,14 +17,14 @@
  *
  * crc32c.c -- compute CRC-32C using the Intel crc32 instruction
  * Copyright (C) 2013, 2021 Mark Adler <madler@alumni.caltech.edu>
- * Copyright (C) 2023-2024 Saulx
+ * Copyright (C) 2023-2025 Saulx
  * SPDX-License-Identifier: Zlib
  */
 
 #include <stddef.h>
 #include <stdint.h>
 #include "crc32c_table.h"
-#include "util/crc32c.h"
+#include "selva/crc32c.h"
 
 /*
  * Software implementation.

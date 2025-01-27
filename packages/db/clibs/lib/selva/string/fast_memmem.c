@@ -5,7 +5,7 @@
 #define _GNU_SOURCE
 #include <stdint.h>
 #include <limits.h>
-#include "util/fast_memmem.h"
+#include "selva/fast_memmem.h"
 
 
 #define SS (sizeof(size_t))

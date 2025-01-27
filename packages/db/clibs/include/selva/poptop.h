@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2022, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _UTIL_POPTOP_H_
-#define _UTIL_POPTOP_H_
+
+#include "selva/_export.h"
 
 /**
  * An element in the poptop list.
@@ -71,12 +71,14 @@ struct poptop {
  * @param initial_cut is an initial value for the cut limit.
  * @returns 0 if succeed; Otherwise a non-zero value is returned.
  */
+SELVA_EXPORT
 int poptop_init(struct poptop *l, unsigned int max_size, float initial_cut);
 
 /**
  * Deinit a poptop structure.
  * @param l is a pointer to an initialized poptop structure.
  */
+SELVA_EXPORT
 void poptop_deinit(struct poptop *l);
 
 /**
@@ -84,12 +86,14 @@ void poptop_deinit(struct poptop *l);
  * If the element already exists the score is updated.
  * @param l is a pointer to the poptop structure.
  */
+SELVA_EXPORT
 void poptop_maybe_add(struct poptop * restrict l, float score, void * restrict p);
 
 /**
  * Remove an element from the top list.
  * @param l is a pointer to the poptop structure.
  */
+SELVA_EXPORT
 void poptop_remove(struct poptop * restrict l, const void * restrict p);
 
 /**
@@ -97,6 +101,7 @@ void poptop_remove(struct poptop * restrict l, const void * restrict p);
  * Find the median score and establish a new cut limit.
  * @param l is a pointer to the poptop structure.
  */
+SELVA_EXPORT
 int poptop_maintenance(struct poptop *l);
 
 /**
@@ -105,6 +110,5 @@ int poptop_maintenance(struct poptop *l);
  * @param l is a pointer to the poptop structure.
  * @returns a pointer to the element that was removed from the data structure l.
  */
+SELVA_EXPORT
 void *poptop_maintenance_drop(struct poptop *l);
-
-#endif /* _UTIL_POPTOP_H_ */

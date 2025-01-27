@@ -9,7 +9,7 @@
 #ifdef __zig
 struct selva_string;
 #else
-#include "util/selva_string.h"
+#include "selva/selva_string.h"
 #endif
 #include "selva/types.h"
 #include "selva_lang_code.h"

@@ -1,11 +1,11 @@
-// Copyright (c) 2022 SAULX
+// Copyright (c) 2022, 2025 SAULX
 //
 // SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include "util/cstrings.h"
+#include "../../cstrings.h"
 
 void *selva_malloc(size_t n)
 {

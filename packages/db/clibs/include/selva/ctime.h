@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
- * Copyright (c) 2022-2024 Saulx
+ * Copyright (c) 2022-2025 Saulx
  * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -37,12 +37,14 @@
 
 #include <stdint.h>
 #include <time.h>
+#include "selva/_export.h"
 
 /**
  * Conver an msec value to a timespec struct.
  * @param[out]  ts      is a pointer to the destination struct.
  * @param[in]   nsec    is the value in milliseconds.
  */
+SELVA_EXPORT
 struct timespec *msec2timespec(struct timespec * ts, int64_t msec);
 
 #define MSEC2TIMESPEC(msec) \
@@ -53,6 +55,7 @@ struct timespec *msec2timespec(struct timespec * ts, int64_t msec);
  * @param[out]  ts      is a pointer to the destination struct.
  * @param[in]   nsec    is the value in nanoseconds.
  */
+SELVA_EXPORT
 struct timespec *nsec2timespec(struct timespec * ts, int64_t nsec);
 
 #define NSEC2TIMESPEC(nsec) \
@@ -77,6 +80,7 @@ struct timespec *nsec2timespec(struct timespec * ts, int64_t nsec);
  * @param[in]   left    is a pointer to the left value.
  * @param[in]   right   is a pointer to the right value.
  */
+SELVA_EXPORT
 void timespec_add(struct timespec * sum, const struct timespec * left,
                   const struct timespec * right)
     __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
@@ -87,6 +91,7 @@ void timespec_add(struct timespec * sum, const struct timespec * left,
  * @param[in]   left    is a pointer to the left value.
  * @param[in]   right   is a pointer to the right value.
  */
+SELVA_EXPORT
 void timespec_sub(struct timespec * diff, const struct timespec * left,
                   const struct timespec * right)
     __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
@@ -97,6 +102,7 @@ void timespec_sub(struct timespec * diff, const struct timespec * left,
  * @param[in]   left    is a pointer to the left value.
  * @param[in]   right   is a pointer to the right value.
  */
+SELVA_EXPORT
 void timespec_mul(struct timespec * prod, const struct timespec * left,
                  const struct timespec * right)
     __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
@@ -107,6 +113,7 @@ void timespec_mul(struct timespec * prod, const struct timespec * left,
  * @param[in]   left    is a pointer to the left value.
  * @param[in]   right   is a pointer to the right value.
  */
+SELVA_EXPORT
 void timespec_div(struct timespec * quot, const struct timespec * left,
                   const struct timespec * right)
     __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
