@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/align.h"
-#include "util/array_field.h"
 #include "util/ptag.h"
 #include "selva/selva_lang.h"
 #include "util/selva_string.h"
@@ -1294,6 +1294,17 @@ static int clone_refs(struct SelvaNodeReferences *refs, struct SelvaFields *fiel
 
     memcpy(refs, nfo2p(fields, nfo), sizeof(*refs));
     return 0;
+}
+
+static size_t ary_idx_to_abs(ssize_t len, ssize_t ary_idx)
+{
+    if (ary_idx >= 0) {
+        return ary_idx;
+    } else if (len == 0) {
+        return 0;
+    } else {
+        return imaxabs((len + ary_idx) % len);
+    }
 }
 
 int selva_fields_references_move(

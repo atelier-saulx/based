@@ -11,7 +11,6 @@ endif
 LDFLAGS += -g -L$(LIB_PATH)
 
 OBJ := \
-	array_field.o \
 	auto_free.o \
 	backoff_timeout.o \
 	base64.o \
