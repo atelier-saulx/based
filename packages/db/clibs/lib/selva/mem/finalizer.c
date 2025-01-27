@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
-#include "cdefs.h"
 #include "queue.h"
 #include "jemalloc_selva.h"
 #include "../finalizer.h"

@@ -1,12 +1,8 @@
 /*
- * Copyright (c) 2020-2024 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _UTIL_TRX_H_
-#define _UTIL_TRX_H_
-
-#include "cdefs.h"
 
 #define TRX_BITS 8
 
@@ -94,5 +90,3 @@ static inline int Trx_Fin(const struct trx_state * restrict state) {
 static inline long long Trx_LabelAge(const struct trx_state * restrict state, const struct trx_label * restrict label) {
     return (long long)(state->id - label->id);
 }
-
-#endif /* _UTIL_TRX_H_ */

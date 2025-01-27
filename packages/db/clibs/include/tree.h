@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,6 @@
 #define	_SYS_TREE_H_
 
 #include <stdint.h>
-#include "cdefs.h"
 
 /*
  * This file defines data structures for different types of trees:
