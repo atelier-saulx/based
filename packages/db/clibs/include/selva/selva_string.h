@@ -118,8 +118,8 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
  * Create a new string.
  * @param str can be NULL.
  */
-SELVA_EXPORT
 [[nodiscard]]
+SELVA_EXPORT
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
     __attribute__((access(read_only, 1, 2)));
 
@@ -134,8 +134,8 @@ struct selva_string *selva_string_create_crc(const char *str, size_t len, enum s
 /**
  * Create a string using a printf format string.
  */
-SELVA_EXPORT
 [[nodiscard]]
+SELVA_EXPORT
 struct selva_string *selva_string_createf(const char *fmt, ...)
     __attribute__((format(printf, 1, 2)));
 
@@ -147,8 +147,8 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
  * end-of-file.
  * @param flags can be SELVA_STRING_CRC | SELVA_STRING_COMPRESS.
  */
-SELVA_EXPORT
 [[nodiscard]]
+SELVA_EXPORT
 struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string_flags flags);
 #endif
 
@@ -159,8 +159,8 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
  * @param flags Compressed strings can't handle most of the flags but notably
  *              SELVA_STRING_CRC is supported.
  */
-SELVA_EXPORT
 [[nodiscard]]
+SELVA_EXPORT
 struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
     __attribute__((access(read_only, 1, 2)));
 
@@ -181,8 +181,8 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
  * Duplicate a string.
  * @param s is a pointer to a selva_string.
  */
-SELVA_EXPORT
 [[nodiscard]]
+SELVA_EXPORT
 struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_string_flags flags)
     __attribute__((access(read_only, 1)));
 
