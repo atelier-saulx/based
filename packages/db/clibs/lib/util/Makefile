@@ -29,7 +29,6 @@ OBJ := \
 	queue_r.o \
 	selva_error.o \
 	selva_string.o \
-	sigstr.o \
 	strntol.o \
 	svector.o \
 	timestamp.o \

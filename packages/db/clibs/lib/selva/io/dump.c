@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -13,7 +13,6 @@
 #include "jemalloc.h"
 #include "util/ctime.h"
 #include "util/selva_string.h"
-#include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"
