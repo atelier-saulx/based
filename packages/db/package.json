@@ -31,7 +31,7 @@
     "@based/schema": "4.1.1",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.3.2",
-    "picocolors": "^1.0.1"
+    "picocolors": "^1.1.0"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
