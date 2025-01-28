@@ -1,5 +1,4 @@
-# Copyright (c) 2022-2024 SAULX
-#
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 
 include ../../common.mk
@@ -25,12 +24,12 @@ CFLAGS := $(CFLAGS) \
 		   -g3
 
 ifeq ($(uname_S),Linux)
-LDFLAGS := -Wl,-rpath,'$$ORIGIN'/../../../../build
+LDFLAGS := -Wl,-rpath,'$$ORIGIN'/../../../../dist/lib/$(PLATFORM)
 endif
 ifeq ($(uname_S),Darwin)
-LDFLAGS := -Wl,-rpath,@executable_path/../../../../build
+LDFLAGS := -Wl,-rpath,@executable_path/../../../../dist/lib/$(PLATFORM)
 endif
-LDFLAGS += -L ../../../build -ldeflate -lz
+LDFLAGS += -L ../../../dist/lib/$(PLATFORM) -ldeflate -lz
 
 # Location of punit makefile
 # Do not touch

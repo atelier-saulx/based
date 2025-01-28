@@ -1,13 +1,11 @@
 /**
  * @file test_queue_r.c
  * @brief Test generic thread-safe queue implementation.
- * Copyright (c) 2022-2023 SAULX
- *
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
-#include "util/queue_r.h"
+#include "selva/queue_r.h"
 
 static int tarr[5];
 static queue_cb_t queue;
@@ -37,7 +35,7 @@ PU_TEST(test_queue_single_push)
     pu_assert("error, push failed", err != 0);
     pu_assert_equal("error, value of x was not pushed to the first index", tarr[0], x);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_single_pop)
@@ -53,7 +51,7 @@ PU_TEST(test_queue_single_pop)
     pu_assert("error, pop failed", err != 0);
     pu_assert_equal("Returned value is same as pushed", x, y);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_pop_fail)
@@ -64,13 +62,13 @@ PU_TEST(test_queue_pop_fail)
     err = queue_pop(&queue, &y);
     pu_assert("pop should fail", err == 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_peek_ok)
 {
     int x = 5;
-    int *xp = NULL;
+    int *xp = nullptr;
     int err;
 
     err = queue_push(&queue, &x);
@@ -78,21 +76,21 @@ PU_TEST(test_queue_peek_ok)
 
     err = queue_peek(&queue, (void **)&xp);
     pu_assert("peek is ok", err != 0);
-    pu_assert("xp should be set", xp != NULL);
+    pu_assert("xp should be set", xp != nullptr);
     pu_assert_equal("Value of *xp is valid", *xp, x);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_peek_fail)
 {
-    int *xp = NULL;
+    int *xp = nullptr;
     int err;
 
     err = queue_peek(&queue, (void **)&xp);
     pu_assert("peek should fail due to an empty queue", err == 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_skip_one)
@@ -106,7 +104,7 @@ PU_TEST(test_queue_skip_one)
     ret = queue_skip(&queue, 1);
     pu_assert_equal("One element skipped", ret, 1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_alloc)
@@ -116,7 +114,7 @@ PU_TEST(test_queue_alloc)
     int err;
 
     p = queue_alloc_get(&queue);
-    pu_assert("Alloc not null", p);
+    pu_assert("Alloc not nullptr", p);
 
     *p = 5;
 
@@ -129,14 +127,14 @@ PU_TEST(test_queue_alloc)
     pu_assert("error, pop failed", err != 0);
     pu_assert_equal("Returned value is same as pushed", 5, y);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_is_empty)
 {
     pu_assert("Queue is empty", queue_isempty(&queue) != 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_queue_is_not_empty)
@@ -146,5 +144,5 @@ PU_TEST(test_queue_is_not_empty)
     queue_push(&queue, &x);
     pu_assert("Queue is empty", queue_isempty(&queue) == 0);
 
-    return NULL;
+    return nullptr;
 }

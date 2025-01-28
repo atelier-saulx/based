@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <punit.h>
 #include <zlib.h>
 #include "libdeflate.h"
 #include "util.h"

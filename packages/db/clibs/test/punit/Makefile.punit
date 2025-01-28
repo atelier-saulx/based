@@ -2,7 +2,7 @@
 # PUnit, a portable unit testing framework for C.
 # Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
 #
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2023, 2025 SAULX
 # Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
@@ -129,7 +129,7 @@ bin/%: %.c $(PU_OBJ)
 	@echo "Build test: $(TESTNAME)"
 	@echo "=================================================================="
 	$(eval DEPS := $(patsubst %,./$(ODIR)/%,$(notdir $(SRC-$(TESTNAME):.c=.o))))
-	$(CC)  -std=gnu2x -g3 -Wno-unknown-attributes $(LDFLAGS) $(IDIR) $(IDIR_TEST) $^ $(DEPS) -o ./$@
+	$(CC)  -std=gnu2x -g3 -Wno-unknown-attributes $(CFLAGS) $(LDFLAGS) $(IDIR) $(IDIR_TEST) -include punit.h $^ $(DEPS) -o ./$@
 	@echo "=================================================================="
 
 # Run tests

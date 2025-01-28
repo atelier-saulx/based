@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023, 2025 SAULX
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  *
  * SPDX-License-Identifier: BSD-2-Clause
@@ -8,15 +8,6 @@
 /* file test_arrays.c */
 
 #include <stdio.h>
-#include "punit.h"
-
-void setup(void)
-{
-}
-
-void teardown(void)
-{
-}
 
 PU_TEST(test_ok)
 {

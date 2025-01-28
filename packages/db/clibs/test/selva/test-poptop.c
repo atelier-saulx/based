@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2023, 2025 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <tgmath.h>
-#include "util/poptop.h"
+#include "selva/poptop.h"
 
 struct my_data {
     int v;
@@ -46,7 +45,7 @@ PU_TEST(test_add_rm)
         struct my_data * pd = el->p;
 
         if (!pd) {
-            /* el is only valid if pd is non-NULL. */
+            /* el is only valid if pd is non-nullptr. */
             continue;
         }
 
@@ -59,10 +58,10 @@ PU_TEST(test_add_rm)
     POPTOP_FOREACH(el, &l) {
         struct my_data * pd = el->p;
 
-        pu_assert_null("all null", pd);
+        pu_assert_nullptr("all nullptr", pd);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_add_too_many)
@@ -119,7 +118,7 @@ PU_TEST(test_add_too_many)
         pu_assert("expected v range", pd->v < 15);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_foreach)
@@ -203,7 +202,7 @@ PU_TEST(test_foreach)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_maintenance)
@@ -262,5 +261,5 @@ PU_TEST(test_maintenance)
 
     pu_assert_equal("dropped", drop_count, 5);
 
-    return NULL;
+    return nullptr;
 }

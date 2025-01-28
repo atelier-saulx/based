@@ -1,21 +1,11 @@
 /*
- * Copyright (c) 2022-2024 SAULX
- *
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "util/selva_string.h"
-
-void setup(void)
-{
-}
-
-void teardown(void)
-{
-}
+#include "selva/selva_string.h"
 
 PU_TEST(test_create)
 {
@@ -32,7 +22,7 @@ PU_TEST(test_create)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_createf)
@@ -49,7 +39,7 @@ PU_TEST(test_createf)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_createz)
@@ -67,7 +57,7 @@ PU_TEST(test_createz)
     pu_assert("cratio looks good", selva_string_getz_cratio(s2) > 1);
     pu_assert_equal("cmp", selva_string_cmp(s1, s2), 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_dup)
@@ -87,7 +77,7 @@ PU_TEST(test_dup)
     selva_string_free(s1);
     selva_string_free(s2);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_truncate)
@@ -105,7 +95,7 @@ PU_TEST(test_truncate)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_append)
@@ -122,7 +112,7 @@ PU_TEST(test_append)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_replace)
@@ -139,7 +129,7 @@ PU_TEST(test_replace)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_crc)
@@ -162,7 +152,7 @@ PU_TEST(test_crc)
 
     selva_string_free(s);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_cmp)
@@ -184,5 +174,5 @@ PU_TEST(test_cmp)
     selva_string_free(s2);
     selva_string_free(s3);
 
-    return NULL;
+    return nullptr;
 }
