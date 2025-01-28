@@ -219,3 +219,75 @@ await test('delete a range', async (t) => {
   //db.save()
   //console.log(db.server.merkleTree.getRoot())
 })
+
+await test('reference changes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          docs: { items: { ref: 'doc', prop: 'creator' } },
+        },
+      },
+      doc: {
+        props: {
+          title: { type: 'string' },
+          creator: { ref: 'user', prop: 'docs' },
+          related: { items: { ref: 'doc', prop: 'related' } },
+        },
+      },
+    },
+  })
+
+  for (let i = 1; i <= 10; i++) {
+    db.create('user', {
+      name: 'mr flop ' + i,
+    })
+  }
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 1, 'creating new users creates a dirty range')
+
+  db.create('doc', {
+    title: 'The Wonders of AI',
+    creator: 1,
+  })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'creating nodes in two types makes both dirty')
+
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  db.create('doc', {
+    title: 'The Slops of AI',
+  })
+  db.create('doc', {
+    title: 'The Hype of AI',
+  })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 1, 'creating docs makes the range dirty')
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  // Link user -> doc
+  db.update('user', 2, { docs: [2] })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'Linking a user to doc makes both dirty')
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  // Link doc -> user
+  db.update('doc', 3, { creator: [3] })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'Linking a doc to user makes both dirty');
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+})
