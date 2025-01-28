@@ -32,6 +32,7 @@ static inline size_t get_mid(size_t len)
 #define MAKE_FUN_S(TYPE, NAME, FIELD) \
     ssize_t NAME(const TYPE *arr[], size_t len, const TYPE *x) \
     { \
+        if (len == 0) return -1; \
         size_t mid = get_mid(len); \
         for (size_t i = 0, j = len - 1, k = mid, l = mid; i <= mid; i++, j--, k--, l++) { \
             typeof(x->FIELD) y = x->FIELD; \
@@ -49,6 +50,8 @@ MAKE_FUN_S(struct SelvaNode, fast_linear_search_node, node_id)
 
 ssize_t fast_linear_search_references(const struct SelvaNodeReference arr[], size_t len, const struct SelvaNode *x)
 {
+    if (len == 0) return -1;
+
     size_t mid = get_mid(len);
 
     for (size_t i = 0, j = len - 1, k = mid, l = mid; i <= mid; i++, j--, k--, l++) {
