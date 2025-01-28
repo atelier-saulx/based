@@ -10,18 +10,17 @@
 
 uint64_t seed = 100;
 
+static inline uint64_t next(void)
+{
+    return (seed = 214013 * seed + 2531011);
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-    seed = 214013 * seed + 2531011;
-
     const char *mbs = (const char *)Data;
     size_t mbs_len = Size;
-    const char *t = (const char *)Data + Size / 2;
-    size_t t_len = seed % 16;
-
-    if (Size / 2 + t_len > Size) {
-        return 0;
-    }
+    const char *t = (const char *)Data;
+    size_t t_len = mbs_len - mbs_len ? (next() % mbs_len) : 0;
 
     (void)strsearch_hamming_mbs(mbs, mbs_len, t, t_len);
 
