@@ -30,6 +30,10 @@ uint32_t strsearch_hamming_mbs(const char * restrict mbs, size_t mbs_len, const 
 	char buf[t_len];
 	size_t j = 0;
 
+    if (t_len == 0) {
+        return 0;
+    }
+
 	for (size_t i = 0; i < mbs_len; i++) {
 		uint8_t x = *mbs++;
 
