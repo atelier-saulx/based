@@ -56,7 +56,8 @@ uint64_t b10digits(uint64_t x)
     return digits + (x >= ten[digits]);
 }
 
-char *selva_strndup(const char *s, size_t n) {
+char *selva_strndup(const char *s, size_t n)
+{
   const size_t len = strnlen(s, n);
   char *copy = selva_malloc(len + 1);
 
@@ -66,7 +67,8 @@ char *selva_strndup(const char *s, size_t n) {
   return copy;
 }
 
-char *selva_strdup(const char *s) {
+char *selva_strdup(const char *s)
+{
     const size_t len = strlen(s);
     char *copy = selva_malloc(len + 1);
 
@@ -77,7 +79,8 @@ char *selva_strdup(const char *s) {
 }
 
 /* int is probably large enough for Selva users. */
-int strrnchr(const char *str, size_t len, char c) {
+int strrnchr(const char *str, size_t len, char c)
+{
     int i = len;
 
     while (i > 0) {
@@ -99,7 +102,8 @@ int str_endswith(const char *str, const char *suffix)
         : !strcmp(str + lenstr - lensuffix, suffix);
 }
 
-const char *sztok(const char *s, size_t size, size_t * restrict i) {
+const char *sztok(const char *s, size_t size, size_t * restrict i)
+{
 	const char *r;
     size_t j = *i;
 
@@ -114,7 +118,8 @@ const char *sztok(const char *s, size_t size, size_t * restrict i) {
 	return r;
 }
 
-int stringlist_search(const char *list, const char *str, size_t n, char wildcard) {
+int stringlist_search(const char *list, const char *str, size_t n, char wildcard)
+{
     const char *s1 = list;
 
     /* Never match if `str` is empty. */
@@ -176,7 +181,8 @@ next:
     return 0;
 }
 
-static char * prefixed_only_cpy(char *dst, const char *src, size_t len, const char *prefix_str, size_t prefix_len) {
+static char * prefixed_only_cpy(char *dst, const char *src, size_t len, const char *prefix_str, size_t prefix_len)
+{
     if (len > prefix_len && !strncmp(src, prefix_str, prefix_len)) {
         size_t cpy_len = len - prefix_len;
 
@@ -187,7 +193,8 @@ static char * prefixed_only_cpy(char *dst, const char *src, size_t len, const ch
     return dst;
 }
 
-void stringlist_remove_prefix(char *dst, const char *src, int len, const char *prefix_str, size_t prefix_len) {
+void stringlist_remove_prefix(char *dst, const char *src, int len, const char *prefix_str, size_t prefix_len)
+{
     const char *dst_start = dst;
     const char *s = src;
 
@@ -230,7 +237,8 @@ void stringlist_remove_prefix(char *dst, const char *src, int len, const char *p
     }
 }
 
-size_t substring_count(const char *string, const char *substring, size_t n) {
+size_t substring_count(const char *string, const char *substring, size_t n)
+{
     size_t l1, l2;
     size_t count = 0;
 
@@ -247,7 +255,8 @@ size_t substring_count(const char *string, const char *substring, size_t n) {
     return count;
 }
 
-int ch_count(const char *s, char ch) {
+int ch_count(const char *s, char ch)
+{
     size_t i = 0;
 
     while (*s) {
@@ -257,7 +266,8 @@ int ch_count(const char *s, char ch) {
     return i;
 }
 
-char *ch_replace(char *s, size_t n, char orig_ch, char new_ch) {
+char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
+{
     char * const e = s + n;
 
     for (char *p = s, c = *s; p != e && c != '\0'; c = *++p) {
