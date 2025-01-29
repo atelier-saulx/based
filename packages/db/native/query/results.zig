@@ -127,6 +127,7 @@ pub fn createResultsBuffer(
         }
     }
 
+    // nice to add this with comptime - debug or SAFE or something
     // if (i > data.len - 4) {
     //     std.log.err("Wrong writing of result buffer i:{d} \n", .{i});
     // }
