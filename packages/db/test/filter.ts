@@ -146,7 +146,7 @@ await test('simple', async (t) => {
     'multi ref OR filter up at 0.5 results',
   )
 
-  console.log('what??', measure / amount)
+  console.log('what??', measure, amount, measure / amount)
 
   equal(measure / amount < 10, true, 'multi ref OR filter lower then 10ms')
 
