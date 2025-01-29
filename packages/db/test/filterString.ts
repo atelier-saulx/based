@@ -15,7 +15,8 @@ await test('variable size (string/binary)', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  db.putSchema({
+
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -53,7 +54,7 @@ await test('variable size (string/binary)', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (
@@ -98,7 +99,7 @@ await test('variable size (string/binary)', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   const q = new Uint8Array(251)
   for (let i = 0; i < 250; i++) {
@@ -172,7 +173,7 @@ await test('has compressed', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -212,7 +213,7 @@ await test('has uncompressed', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -341,7 +342,7 @@ await test('main has (string/binary)', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -386,7 +387,7 @@ await test('hasLoose uncompressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -397,10 +398,12 @@ await test('hasLoose uncompressed', async (t) => {
   })
 
   for (let i = 0; i < 1e5; i++) {
-    await db.create('italy', {
+    db.create('italy', {
       body: capitals,
     })
   }
+
+  await db.drain()
 
   equal(
     (
@@ -424,7 +427,7 @@ await test('hasLoose compressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -464,7 +467,7 @@ await test('has OR uncompressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -539,7 +542,7 @@ await test('has OR compressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -583,7 +586,7 @@ await test('OR equal', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {
@@ -627,7 +630,7 @@ await test('OR equal main', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       italy: {
         props: {

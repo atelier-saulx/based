@@ -1,6 +1,6 @@
 import { Subscription } from './types.js'
-import { BasedDb } from '../../../index.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
+import { DbClient } from '../../index.js'
 import { resetSubscriptionMarkers } from './markers.js'
 
 export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
@@ -22,7 +22,7 @@ export const runSubscription = (subscription: Subscription) => {
     const q = subscription.query
     const buf = q.buffer
     const d = performance.now()
-    q.db.server
+    q.db.hooks
       .getQueryBuf(buf)
       .then((res) => {
         if (subscription.closed) {
@@ -55,7 +55,7 @@ export const runSubscription = (subscription: Subscription) => {
   }
 }
 
-export const startSubscription = (db: BasedDb) => {
+export const startSubscription = (db: DbClient) => {
   if (!db.subscriptionsInProgress) {
     db.subscriptionsInProgress = true
     setTimeout(() => {

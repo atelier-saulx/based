@@ -263,6 +263,7 @@ struct punit_test {
             __FILE__, __LINE__, #ptr);                       \
         return message; }                                    \
 } while (0)
+#define pu_assert_nullptr pu_assert_null
 /** \example test_null.c
  * This is an example of how to use the pu_assert_null.
  */
@@ -278,6 +279,7 @@ struct punit_test {
             __FILE__, __LINE__, #ptr);                              \
         return message; }                                           \
 } while (0)
+#define pu_assert_not_nullptr pu_assert_not_null
 /** \example test_null.c
  * This is an example of how to use the pu_assert_not_null.
  */

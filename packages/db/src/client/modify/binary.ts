@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
@@ -14,28 +14,27 @@ export function getBuffer(value): Buffer {
   }
 }
 
-export function writeBinaryRaw(value: Buffer, ctx: BasedDb['modifyCtx'])
-{
-    let size = value.byteLength + 6
-    let crc = native.crc32(value)
+export function writeBinaryRaw(value: Buffer, ctx: ModifyCtx) {
+  let size = value.byteLength + 6
+  let crc = native.crc32(value)
 
-    ctx.buf[ctx.len++] = size
-    ctx.buf[ctx.len++] = size >>>= 8
-    ctx.buf[ctx.len++] = size >>>= 8
-    ctx.buf[ctx.len++] = size >>>= 8
-    ctx.buf[ctx.len++] = 0
-    ctx.buf[ctx.len++] = 0
-    ctx.buf.set(value, ctx.len)
-    ctx.len += value.byteLength
-    ctx.buf[ctx.len++] = crc
-    ctx.buf[ctx.len++] = crc >>>= 8
-    ctx.buf[ctx.len++] = crc >>>= 8
-    ctx.buf[ctx.len++] = crc >>>= 8
+  ctx.buf[ctx.len++] = size
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = 0
+  ctx.buf[ctx.len++] = 0
+  ctx.buf.set(value, ctx.len)
+  ctx.len += value.byteLength
+  ctx.buf[ctx.len++] = crc
+  ctx.buf[ctx.len++] = crc >>>= 8
+  ctx.buf[ctx.len++] = crc >>>= 8
+  ctx.buf[ctx.len++] = crc >>>= 8
 }
 
 export function writeBinary(
   value: any,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   t: PropDef,
   parentId: number,

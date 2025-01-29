@@ -11,6 +11,7 @@ import {
   SubscriptionMarkers,
   SubscriptionMarkersCheck,
 } from '../query/subscription/index.js'
+import { DbClient } from '../index.js'
 
 export type ModifyRes = {
   tmpId: number
@@ -71,11 +72,13 @@ export class ModifyError {
 
 export class ModifyState {
   constructor(
+    typeId: number,
     tmpId: number,
-    db: BasedDb,
+    db: DbClient,
     subMarkers: SubscriptionMarkersCheck | false,
   ) {
     this.tmpId = tmpId
+    this.#typeId = typeId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
@@ -85,20 +88,25 @@ export class ModifyState {
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
+  #typeId: number
   tmpId: number
   error?: ModifyError
   promises?: Promise<any>[];
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
+  getId(offsets: Record<number, number>) {
+    const offset = offsets[this.#typeId] || 0
+    return this.tmpId + offset
+  }
   then(resolve, reject) {
     const promise = new Promise((resolve) => {
       if (this.error) {
         reject(new Error(this.error.toString()))
-      } else if ('offset' in this.#ctx) {
-        resolve(this.tmpId + this.#ctx.offset)
+      } else if ('offsets' in this.#ctx) {
+        resolve(this.getId(this.#ctx.offsets))
       } else {
-        this.#buf.queue.set(resolve, this.tmpId)
+        this.#buf.queue.set(resolve, this)
       }
     })
     if (this.promises?.length) {

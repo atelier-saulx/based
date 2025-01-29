@@ -1,4 +1,5 @@
 import { BasedDb } from '../../index.js'
+import { DbClient } from '../index.js'
 import { MAX_RANGE_PROP_LIMIT, MAX_RANGE_REF_LIMIT } from './thresholds.js'
 import {
   EdgeTarget,
@@ -31,7 +32,7 @@ const createEmptySharedDef = () => {
 }
 
 export const createQueryDef = (
-  db: BasedDb,
+  db: DbClient,
   type: QueryDefType,
   target: QueryTarget,
 ): QueryDef => {

@@ -51,7 +51,7 @@ pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
     };
 }
 
-fn hamming(
+fn hamming_ascii(
     value: []u8,
     i: usize,
     query: []u8,
@@ -77,6 +77,37 @@ fn hamming_mbs(
     const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
 
     return d;
+}
+
+inline fn min(a: usize, b: usize) usize {
+    if (a < b) return a;
+    return b;
+}
+
+fn hamming(
+    value: []u8,
+    i: usize,
+    query: []u8,
+) u8 {
+    var j: usize = 1;
+    const l = min(value.len, 5 * query.len);
+    var res: bool = false;
+
+    while (j < l) : (j += 8) {
+        const x: u64 = readInt(u64, value, j);
+        res = res or (x & 0x8080808080808080) != 0;
+    }
+    while (j < l) : (j += 4) {
+        const x: u32 = readInt(u32, value, j);
+        res = res or (x & 0x80808080) != 0;
+    }
+    while (j < l) : (j += 1) {
+        res = res or (value[j] & 0x80) != 0;
+    }
+    if (res) {
+        return hamming_mbs(value, i, query);
+    }
+    return hamming_ascii(value, i, query);
 }
 
 fn resultMatcher(

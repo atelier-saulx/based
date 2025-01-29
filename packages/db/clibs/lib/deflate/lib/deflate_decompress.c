@@ -1,7 +1,7 @@
 /*
  * deflate_decompress.c - a decompressor for DEFLATE
  *
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * Copyright 2023-2024 housisong
  * Copyright 2016 Eric Biggers
  *
@@ -46,7 +46,7 @@
  *   instructions enabled and is used automatically at runtime when supported.
  */
 
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "lib_common.h"
 #include "deflate_constants.h"
 

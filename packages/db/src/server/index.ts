@@ -5,13 +5,14 @@ import { dirname, join } from 'node:path'
 import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from './schema/types.js'
 import { genId, genRootId } from './schema/utils.js'
-import { createSchemaTypeDef } from './schema/typeDef.js'
+import { createSchemaTypeDef, updateTypeDefs } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
 import {
   CsmtNodeRange,
   foreachDirtyBlock,
+  makeCsmtKey,
   makeCsmtKeyFromNodeId,
 } from './tree.js'
 import { save } from './save.js'
@@ -21,7 +22,6 @@ import { setTimeout } from 'node:timers/promises'
 import { migrate } from './migrate/index.js'
 
 const SCHEMA_FILE = 'schema.json'
-const DEFAULT_BLOCK_CAPACITY = 100_000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
@@ -72,6 +72,8 @@ export class DbWorker {
   }
 }
 
+type OnSchemaChange = (schema: StrictSchema) => void
+
 export class DbServer {
   modifyBuf: SharedArrayBuffer
   dbCtxExternal: any // pointer to zig dbCtx
@@ -81,6 +83,7 @@ export class DbServer {
   }
   migrating: number = null
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
   fileSystemPath: string
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
@@ -92,21 +95,29 @@ export class DbServer {
   modifyQueue: Buffer[] = []
   queryQueue: Map<Function, Buffer> = new Map()
   stopped: boolean
+  onSchemaChange: OnSchemaChange
 
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
+    onSchemaChange,
   }: {
     path: string
     maxModifySize?: number
+    onSchemaChange?: OnSchemaChange
   }) {
     this.maxModifySize = maxModifySize
     this.fileSystemPath = path
     this.sortIndexes = {}
+    this.onSchemaChange = onSchemaChange
   }
 
-  start = start
-  save = save
+  start(opts?: { clean?: boolean }) {
+    return start(this, opts)
+  }
+  save() {
+    return save(this)
+  }
 
   createCsmtHashFun = () => {
     // We can just reuse it as long as we only have one tree.
@@ -217,6 +228,7 @@ export class DbServer {
   updateMerkleTree(): void {
     foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
       const oldLeaf = this.merkleTree.search(mtKey)
+
       const hash = Buffer.allocUnsafe(16)
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
@@ -239,21 +251,9 @@ export class DbServer {
     })
   }
 
-  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    this.dirtyRanges.add(
-      makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId),
-    )
-  }
-
-  putSchema(
-    schema: Schema | StrictSchema,
-    fromStart: boolean = false,
-  ): StrictSchema {
-    const strictSchema = fromStart
-      ? (schema as StrictSchema)
-      : parse(schema).schema
-
+  putSchema(strictSchema: StrictSchema, fromStart: boolean = false) {
     const { lastId } = this.schema
+
     this.schema = {
       lastId,
       ...strictSchema,
@@ -297,7 +297,7 @@ export class DbServer {
       delete this.schema.props
     }
 
-    this.updateTypeDefs()
+    updateTypeDefs(this)
 
     if (!fromStart) {
       writeFile(
@@ -319,45 +319,66 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        this.modify(Buffer.from([2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]))
+        const data = [2, 1, 0, 0, 0, 9, 1, 0, 0, 0, 7, 1, 0, 1]
+        const blockKey = makeCsmtKey(1, 0)
+        const buf = Buffer.alloc(data.length + 2 + 8 + 4)
+        // add content
+        buf.set(data)
+        // add typesLen
+        buf.writeDoubleLE(0, data.length)
+        // add dirty key
+        buf.writeDoubleLE(blockKey, data.length + 2)
+        // add dataLen
+        buf.writeUint32LE(data.length, buf.length - 4)
+        this.modify(buf)
       }
     }
 
+    this.onSchemaChange?.(this.schema)
     return this.schema
   }
 
-  updateTypeDefs() {
-    for (const field in this.schemaTypesParsed) {
-      if (field in this.schema.types) {
-        continue
-      }
-      delete this.schemaTypesParsed[field]
-    }
-    for (const field in this.schema.types) {
-      const type = this.schema.types[field]
-      if (
-        this.schemaTypesParsed[field] &&
-        this.schemaTypesParsed[field].checksum ===
-          hashObjectIgnoreKeyOrder(type) // bit weird..
-      ) {
-        continue
-      } else {
-        if (!type.id) {
-          type.id = genId(this)
-        }
-        const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
-        this.schemaTypesParsed[field] = def
-      }
-    }
-  }
+  modify(buf: Buffer): Record<number, number> {
+    const offsets = {}
+    const dataLen = buf.readUint32LE(buf.length - 4)
+    let typesSize = buf.readUint16LE(dataLen)
+    let i = dataLen + 2
+    while (typesSize--) {
+      const typeId = buf.readUint16LE(i)
+      i += 2
+      const startId = buf.readUint32LE(i)
+      const def = this.schemaTypesParsedById[typeId]
+      const offset = def.lastId - startId
+      buf.writeUint32LE(offset, i)
+      i += 4
+      const lastId = buf.readUint32LE(i)
+      i += 4
 
-  modify(buf: Buffer) {
+      def.lastId = lastId + offset
+      offsets[typeId] = offset
+    }
     if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
-      native.modify(buf, this.dbCtxExternal)
+      this.#modify(buf)
     }
+    return offsets
+  }
+
+  #modify(buf: Buffer) {
+    const end = buf.length - 4
+    const dataLen = buf.readUint32LE(end)
+    const typesSize = buf.readUint16LE(dataLen)
+    const typesLen = typesSize * 10
+    const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
+    const data = buf.subarray(0, dataLen)
+    let i = dataLen + 2 + typesLen
+    while (i < end) {
+      const key = buf.readDoubleLE(i)
+      this.dirtyRanges.add(key)
+      i += 8
+    }
+    native.modify(data, types, this.dbCtxExternal)
   }
 
   getQueryBuf(buf: Buffer): Promise<Uint8Array> {
@@ -399,7 +420,7 @@ export class DbServer {
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         for (const buf of this.modifyQueue) {
-          native.modify(buf, this.dbCtxExternal)
+          this.#modify(buf)
         }
         this.modifyQueue = []
       }

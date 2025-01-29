@@ -1,14 +1,13 @@
 import { BasedDb } from '../../index.js'
+import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
 
-export const remove = (db: BasedDb, type: string, id: number): boolean => {
+export const remove = (db: DbClient, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
   const schema = db.schemaTypesParsed[type]
   const separate = schema.separate
-
-  ctx.db.markNodeDirty(schema, id)
 
   if (separate) {
     const size = 12 + separate.length * 12

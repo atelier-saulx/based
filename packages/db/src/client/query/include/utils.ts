@@ -1,10 +1,10 @@
-import { BasedDb } from '../../../index.js'
 import {
   PropDef,
   PropDefEdge,
   REFERENCE,
   SchemaPropTree,
 } from '../../../server/schema/types.js'
+import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
 import { QueryDef, QueryDefType } from '../types.js'
 
@@ -24,7 +24,7 @@ export const getAllFieldFromObject = (
 }
 
 const createRefQueryDef = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
 ) => {
@@ -43,7 +43,7 @@ const createRefQueryDef = (
 }
 
 export const createOrGetRefQueryDef = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
 ) => {
@@ -54,7 +54,7 @@ export const createOrGetRefQueryDef = (
 }
 
 export const createOrGetEdgeRefQueryDef = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   t: PropDefEdge,
 ) => {

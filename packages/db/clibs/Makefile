@@ -14,7 +14,6 @@ LIBS := \
 		lib/jemalloc \
 		lib/deflate \
 		lib/xxHash \
-		lib/util \
 		lib/selva
 
 LIB_PATH := ../../../dist/lib/$(PLATFORM)

@@ -11,7 +11,7 @@ await test('single special cases', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -51,7 +51,7 @@ await test('single special cases', async (t) => {
       }
     }
 
-    db.drain()
+    await db.drain()
     await setTimeout(500)
   }
 
@@ -73,7 +73,7 @@ await test('single simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -103,7 +103,7 @@ await test('single simple', async (t) => {
     }),
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('simple').include('user.name').get()).toObject(), [
     {
@@ -127,7 +127,7 @@ await test('simple nested', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -169,7 +169,7 @@ await test('simple nested', async (t) => {
     }),
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('blup').include('flap').get()).toObject(), [
     {
@@ -201,7 +201,7 @@ await test('simple nested', async (t) => {
     user: null,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('simple').include('user').get()).toObject(), [
     {
@@ -229,7 +229,7 @@ await test('single reference object', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -286,7 +286,7 @@ await test('single reference object', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('simple').include('admin.user').get()).toObject(), [
     {
@@ -311,7 +311,7 @@ await test('nested', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -398,7 +398,7 @@ await test('nested', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('simple').include('id').range(0, 1).get()).toObject(),
@@ -623,7 +623,7 @@ await test('single reference multi refs strings', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -680,7 +680,7 @@ await test('single reference multi refs strings', async (t) => {
     lilBlup: blup,
   })
 
-  db.drain()
+  await db.drain()
 
   const result = await db
     .query('simple')
@@ -695,7 +695,7 @@ await test('single reference multi refs strings', async (t) => {
     age: 5,
   })
 
-  db.drain()
+  await db.drain()
 
   const result2 = await db
     .query('simple')

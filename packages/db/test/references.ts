@@ -13,7 +13,7 @@ await test('references', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -51,7 +51,7 @@ await test('references', async (t) => {
     flap: 20,
   })
 
-  db.drain()
+  await db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
@@ -63,7 +63,7 @@ await test('references', async (t) => {
     contributors: [mrSnurp, flippie],
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('article').include('contributors.name').get()).toObject(),
@@ -108,7 +108,7 @@ await test('one to many', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -139,7 +139,7 @@ await test('one to many', async (t) => {
     uid: 10,
     name: 'toor',
   })
-  db.drain()
+  await db.drain()
 
   for (let i = 0; i < 4; i++) {
     db.create('resource', {
@@ -148,7 +148,7 @@ await test('one to many', async (t) => {
       owner: ownerId,
     })
   }
-  db.drain()
+  await db.drain()
 
   deepEqual((await db.query('user').include('resources').get()).toObject(), [
     {
@@ -217,7 +217,7 @@ await test('update', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -255,20 +255,20 @@ await test('update', async (t) => {
     flap: 20,
   })
 
-  db.drain()
+  await db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [mrSnurp],
   })
 
-  db.drain()
+  await db.drain()
 
   db.update('article', strudelArticle, {
     contributors: [flippie],
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('article').include('contributors.name').get()).toObject(),
@@ -297,7 +297,7 @@ await test('filter', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -345,14 +345,14 @@ await test('filter', async (t) => {
     flap: 40,
   })
 
-  db.drain()
+  await db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [mrSnurp, flippie, derpie, dinkelDoink],
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (

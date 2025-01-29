@@ -26,9 +26,10 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 }
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(2, env, info);
+    const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
+    const typesInfo = try napi.get([]u8, env, args[1]);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
 
     var i: usize = 0;
     var ctx: ModifyCtx = .{
@@ -45,6 +46,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     };
 
     var offset: u32 = 0;
+    var idOffset: u32 = 0;
+
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
@@ -74,7 +77,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.CREATE_OR_GET => {
                 // create or get
-                ctx.id = readInt(u32, operation, 0);
+                ctx.id = readInt(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
@@ -89,6 +92,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.typeId = readInt(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
+                // store offset for this type
+                var j: usize = 0;
+                idOffset = 0;
+                while (j < typesInfo.len) : (j += 10) {
+                    const typeId = readInt(u16, typesInfo, j);
+                    if (typeId == ctx.typeId) {
+                        idOffset = readInt(u32, typesInfo, j + 2);
+                        break;
+                    }
+                }
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {

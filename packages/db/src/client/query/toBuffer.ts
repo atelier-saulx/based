@@ -8,6 +8,7 @@ import { ALIAS, PropDef } from '../../server/schema/types.js'
 
 import native from '../../native.js'
 import { crc32 } from '../crc32.js'
+import { DbClient } from '../index.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -37,7 +38,7 @@ const getAliasPropdef = (
   }
 }
 
-export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
+export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
   const result: Buffer[] = []
   const include = includeToBuffer(db, def)
 

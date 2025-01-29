@@ -11,11 +11,12 @@ import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
+import { DbClient } from '../../index.js'
 
 export { Operator, Filter }
 
 const referencesFilter = (
-  db: BasedDb,
+  db: DbClient,
   filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
@@ -81,7 +82,7 @@ const referencesFilter = (
 }
 
 export const filterRaw = (
-  db: BasedDb,
+  db: DbClient,
   filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
@@ -89,9 +90,9 @@ export const filterRaw = (
 ): number => {
   const [field, operator, value] = filter
 
-  hasField(field) // Valida se o campo é uma string não vazia
-  checkOperator(operator) // Valida se o operador é válido
-  checkValue(value, operator) // Valida o valor com base no operador
+  hasField(field) // Validates if the field is a non-empty string
+  checkOperator(operator) // Validates if the operator is valid
+  checkValue(value, operator) // Validates the value based on the operator
 
   let fieldDef = schema.props[field]
   if (!fieldDef) {
@@ -105,7 +106,7 @@ export const filterRaw = (
 }
 
 export const filter = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   filterAst: FilterAst,
   conditions: QueryDefFilter,
@@ -120,7 +121,7 @@ export const filter = (
 }
 
 export const filterOr = (
-  db: BasedDb,
+  db: DbClient,
   def: QueryDef,
   filterAst: FilterAst[],
   conditions: QueryDefFilter,
@@ -135,6 +136,14 @@ export const filterOr = (
   filter(db, def, filterAst, conditions.or)
   conditions.size += conditions.or.size
   return conditions.or
+}
+
+function normalizeNeedle(s: string): string {
+  return s
+    .normalize('NFKD')
+    .split('')
+    .filter((ch: string) => ch.charCodeAt(0) <= 127)
+    .join('')
 }
 
 export const convertFilter = (
@@ -163,6 +172,13 @@ export const convertFilter = (
       [field, '<', value[1]],
     ]
   } else {
+    if (operator == 'like') {
+      if (value.normalize) {
+        value = normalizeNeedle(value)
+      } else {
+        value = value.map(normalizeNeedle)
+      }
+    }
     return [[field, operator, value]]
   }
 }

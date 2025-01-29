@@ -18,7 +18,7 @@ benchmark('create 1m booleans', async (db) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   return performance.now() - start
 })

@@ -1,13 +1,12 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
 #include <stdlib.h>
-#include <punit.h>
-#include "jemalloc.h"
-#include "util/selva_lang.h"
+#include "jemalloc_selva.h"
+#include "selva/selva_lang.h"
 
 static locale_t loc;
 
@@ -51,135 +50,135 @@ static char *trans(locale_t loc, const char *s, const char *trs)
 
 PU_TEST(test_mbstrans_fi)
 {
-    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", nullptr });
     if (loc) {
         char *dst;
 
         dst = trans(loc, "ÖöHhels", "");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "ÖöHhels");
         free(dst);
 
         dst = trans(loc, "ÖöHhels", "tolower");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "ööhhels");
         free(dst);
 
         dst = trans(loc, "ÖöHhels", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "ÖÖHHELS");
         free(dst);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_mbstrans_tr)
 {
-    loc = newlocale_any((const char *[]){ "tr_TR.utf8", "tr_TR.utf-8", "tr_TR.UTF8", "tr_TR.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "tr_TR.utf8", "tr_TR.utf-8", "tr_TR.UTF8", "tr_TR.UTF-8", nullptr });
     if (loc) {
         char *dst;
 
         dst = trans(loc, "İstanbul", "");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İstanbul");
         free(dst);
 
         dst = trans(loc, "İstanbul", "tolower");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "istanbul");
         free(dst);
 
         dst = trans(loc, "İstanbul", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İSTANBUL");
         free(dst);
 
         dst = trans(loc, "İstanbul", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İSTANBUL");
         free(dst);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_mbstrans_en)
 {
-    loc = newlocale_any((const char *[]){ "en_US.utf8", "en_US.utf-8", "en_US.UTF8", "en_US.UTF-8", "en_GB.utf8", "en_GB.utf-8", "en_GB.UTF8", "en_GB.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "en_US.utf8", "en_US.utf-8", "en_US.UTF8", "en_US.UTF-8", "en_GB.utf8", "en_GB.utf-8", "en_GB.UTF8", "en_GB.UTF-8", nullptr });
     if (loc) {
         char *dst;
 
         dst = trans(loc, "İstanbul", "");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İstanbul");
         free(dst);
 
         dst = trans(loc, "İstanbul", "tolower");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "istanbul");
         free(dst);
 
         dst = trans(loc, "İstanbul", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İSTANBUL");
         free(dst);
 
         dst = trans(loc, "İstanbul", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "İSTANBUL");
         free(dst);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_mbstrans_jp)
 {
-    loc = newlocale_any((const char *[]){ "ja_JP.utf8", "ja_JP.utf-8", "ja_JP.UTF8", "ja_JP.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "ja_JP.utf8", "ja_JP.utf-8", "ja_JP.UTF8", "ja_JP.UTF-8", nullptr });
     if (loc) {
         char *dst;
 
         dst = trans(loc, "カタカナ", "");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "カタカナ");
         free(dst);
 
 #ifdef __linux__
         dst = trans(loc, "カタカナ", "tojhira");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "かたかな");
         free(dst);
 
         dst = trans(loc, "かたかな", "tojkata");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "カタカナ");
         free(dst);
 #endif
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
 PU_TEST(test_mbstrans_ar)
 {
-    loc = newlocale_any((const char *[]){ "ar_QA.utf8", "ar_QA.utf-8", "ar_QA.UTF8", "ar_QA.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "ar_QA.utf8", "ar_QA.utf-8", "ar_QA.UTF8", "ar_QA.UTF-8", nullptr });
     if (loc) {
         char *dst;
 
         dst = trans(loc, "نَرْقُص.", "");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "نَرْقُص.");
         free(dst);
 
         dst = trans(loc, "نَرْقُص.", "toupper");
-        pu_assert_not_null("", dst);
+        pu_assert_not_nullptr("", dst);
         pu_assert_str_equal("", dst, "نَرْقُص.");
         free(dst);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static int call_mbscmp(const char *s1, const char *s2, wctrans_t trans, locale_t loc)
@@ -198,7 +197,7 @@ PU_TEST(test_mbscmp)
 {
     setlocale(LC_CTYPE, "fi_FI.utf8");
     setlocale(LC_CTYPE, "fi_FI.UTF-8");
-    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", nullptr });
     if (loc) {
         wctrans_t trans = wctrans_l("tolower", loc);
         int res;
@@ -222,10 +221,10 @@ PU_TEST(test_mbscmp)
         pu_assert_equal("", res, -160); /* RFE Ideally this would be normalized and the result would be 0 */
 
         freelocale(loc);
-        loc = NULL;
+        loc = nullptr;
     }
 
-    loc = newlocale_any((const char *[]){ "de_DE.utf8", "de_DE.utf-8", "de_DE.UTF8", "de_DE.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "de_DE.utf8", "de_DE.utf-8", "de_DE.UTF8", "de_DE.UTF-8", nullptr });
     if (loc) {
         wctrans_t trans;
         int res;
@@ -260,17 +259,17 @@ PU_TEST(test_mbscmp)
 #endif
 
         freelocale(loc);
-        loc = NULL;
+        loc = nullptr;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_mbsstrstr)
 {
     setlocale(LC_CTYPE, "fi_FI.utf8");
     setlocale(LC_CTYPE, "fi_FI.UTF-8");
-    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", NULL });
+    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", nullptr });
     if (loc) {
         wctrans_t trans = wctrans_l("tolower", loc);
         int res;
@@ -294,8 +293,8 @@ PU_TEST(test_mbsstrstr)
         pu_assert_equal("", res, 5);
 
         freelocale(loc);
-        loc = NULL;
+        loc = nullptr;
     }
 
-    return NULL;
+    return nullptr;
 }

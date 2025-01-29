@@ -13,7 +13,7 @@ await test('references modify', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -32,18 +32,18 @@ await test('references modify', async (t) => {
   const bob = db.create('user', {
     name: 'bob',
   })
-  db.drain()
+  await db.drain()
 
   const marie = db.create('user', {
     name: 'marie',
   })
-  db.drain()
+  await db.drain()
 
   const john = db.create('user', {
     name: 'john',
     friends: [bob],
   })
-  db.drain()
+  await db.drain()
 
   await db.update('user', john, {
     friends: {
@@ -52,7 +52,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('user').include('*', 'friends').get()).toObject(),
@@ -70,7 +70,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     (await db.query('user').include('*', 'friends').get()).toObject(),

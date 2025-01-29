@@ -14,7 +14,7 @@ await test('multiple references', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -86,7 +86,7 @@ await test('multiple references', async (t) => {
     name: 'Mr Derp',
   })
 
-  db.drain()
+  await db.drain()
 
   await db.create('article', {
     name: 'The wonders of Strudel',
@@ -259,7 +259,7 @@ await test('single reference', async (t) => {
 
   await db.start({ clean: true })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {

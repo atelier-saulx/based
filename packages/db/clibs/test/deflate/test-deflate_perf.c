@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
- *
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -12,11 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <punit.h>
 #include "libdeflate.h"
-#include "util/ctime.h"
-#include "util/timestamp.h"
+#include "selva/ctime.h"
+#include "selva/timestamp.h"
+#if 0
 #include "zstd.h"
+#endif
 #include "util.h"
 
 static void print_ready(
@@ -266,6 +266,7 @@ static const char *do_test_libdeflate2(const uint8_t *in, size_t in_nbytes, int 
 	return NULL;
 }
 
+#if 0
 static const char *do_test_zstd(const uint8_t *in, size_t in_nbytes, int level)
 {
     ZSTD_CCtx *cctx = ZSTD_createCCtx();
@@ -335,3 +336,4 @@ PU_TEST(test_deflate_vs_zstd)
 
     return NULL;
 }
+#endif

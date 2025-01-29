@@ -13,7 +13,7 @@ await test('subscription  multiple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -25,19 +25,19 @@ await test('subscription  multiple', async (t) => {
 
   const amount = 1e6
 
-  const update = () => {
+  const update = async () => {
     const x = Date.now()
     for (let i = 1; i < amount; i++) {
       db.update('user', i, { nr: ~~(Math.random() * 9999) })
     }
     console.log('Exec 1m', Date.now() - x, 'ms')
-    db.drain()
+    await db.drain()
   }
 
   for (let i = 1; i < amount; i++) {
     db.create('user', { nr: i })
   }
-  db.drain()
+  await db.drain()
 
   const close = db
     .query('user')
@@ -47,9 +47,9 @@ await test('subscription  multiple', async (t) => {
     })
 
   await wait(100)
-  update()
+  await update()
   await wait(100)
-  update()
+  await update()
   await wait(300)
 
   close()
@@ -66,7 +66,7 @@ await test('subscription filter', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       user: {
         props: {
@@ -80,19 +80,19 @@ await test('subscription filter', async (t) => {
 
   const amount = 1e6
 
-  const update = () => {
+  const update = async () => {
     const x = Date.now()
     for (let i = 1; i < amount; i++) {
       db.update('user', i, { nr: ~~(Math.random() * 9999) })
     }
     console.log('Exec 1m', Date.now() - x, 'ms')
-    db.drain()
+    await db.drain()
   }
 
   for (let i = 1; i < amount; i++) {
     db.create('user', { nr: i, name: 'Mr ' + i, flap: 666 })
   }
-  db.drain()
+  await db.drain()
 
   const close = db
     .query('user')
@@ -110,9 +110,9 @@ await test('subscription filter', async (t) => {
     })
 
   await wait(100)
-  update()
+  await update()
   await wait(100)
-  update()
+  await update()
   await wait(300)
 
   close()

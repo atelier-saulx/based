@@ -15,7 +15,7 @@ await test('numbers', async (t) => {
 
   const animals = ['pony', 'whale', 'dolphin', 'dog']
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       example: {
         props: {
@@ -54,7 +54,7 @@ await test('numbers', async (t) => {
     animalsResult.push(animal)
   }
 
-  db.drain()
+  await db.drain()
 
   await db.update('example', 1, {
     u32: { increment: 100 },

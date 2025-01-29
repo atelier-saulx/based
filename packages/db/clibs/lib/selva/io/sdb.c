@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -8,11 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "libdeflate.h"
-#include "util/endian.h"
-#include "util/selva_string.h"
+#include "selva/endian.h"
 #include "selva/selva_hash128.h"
+#include "selva/selva_string.h"
 #include "selva_error.h"
 #include "../db_panic.h"
 #include "../io.h"

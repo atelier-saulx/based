@@ -1,7 +1,4 @@
-// --------------------------------------------
-// TODO hooks for update / create
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
-import { BasedDb } from '../../../index.js'
 import {
   Subscription,
   SubscriptionMarkerMap,
@@ -10,9 +7,10 @@ import {
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { startSubscription } from './run.js'
 import { QueryDef } from '../types.js'
+import { DbClient } from '../../index.js'
 
 export const getSubscriptionMarkers = (
-  db: BasedDb,
+  db: DbClient,
   typeId: number,
   id: number,
   isCreate: boolean,
@@ -43,7 +41,7 @@ export const getSubscriptionMarkers = (
 }
 
 export const checkSubscriptionMarkers = (
-  db: BasedDb,
+  db: DbClient,
   m: SubscriptionMarkersCheck,
   prop: PropDef | PropDefEdge, // number
 ) => {
@@ -228,7 +226,7 @@ export const addSubscriptionMarkers = (
   }
 }
 
-export const resetSubscriptionMarkers = (db: BasedDb) => {
+export const resetSubscriptionMarkers = (db: DbClient) => {
   for (const typeId in db.subscriptionMarkers) {
     const t = db.subscriptionMarkers[typeId]
 

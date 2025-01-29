@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 SAULX
+ * Copyright (c) 2022, 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -10,7 +10,6 @@
 #include <locale.h>
 #include <wchar.h>
 #include <wctype.h>
-#include "cdefs.h"
 #include "selva/_export.h"
 #include "selva_lang_code.h"
 

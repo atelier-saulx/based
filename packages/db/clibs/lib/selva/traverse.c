@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <sys/types.h>
-#include "util/svector.h"
 #include "selva/fields.h"
 #include "selva_error.h"
 #include "db.h"

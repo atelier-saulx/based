@@ -7,7 +7,6 @@
 
 #include <assert.h>
 #include <inttypes.h>
-#include <punit.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

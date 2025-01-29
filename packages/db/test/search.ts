@@ -14,7 +14,7 @@ await test('like filter', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -106,7 +106,7 @@ await test('compressed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -296,7 +296,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -352,7 +352,7 @@ await test('search ids', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  await db.putSchema({
     types: {
       article: {
         props: {
@@ -407,5 +407,58 @@ await test('search ids', async (t) => {
       .then((v) => v.length),
     1,
     'Search ids sorted combined "giraffe first"',
+  )
+})
+
+await test('like filter mbs', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          body: { type: 'string', compression: 'none' },
+          nr: { type: 'uint32' },
+        },
+      },
+    },
+  })
+
+  await db.create('article', {
+    body: 'Aleksei Mihailovitšin vanhemmat olivat Venäjän ensimmäinen Romanov-sukuinen tsaari Mikael Romanov ja hänen toinen puolisonsa Jevdokia Lukjanovna Strešnjova (1608–1645).',
+  })
+  await db.create('article', {
+    body: 'Fjodor Fjodorovitš Tšerenkov (ven. Фёдор Фёдорович Черенко́в, 3. toukokuuta 1959 Moskova, Venäjän SFNT – 4. lokakuuta 2014 Moskova, Venäjä) oli urheilu-urallaan Neuvostoliittoa edustanut jalkapalloilija ja olympiamitalisti.',
+  })
+
+  equal(
+    (
+      await db
+        .query('article')
+        .filter('body', 'like', 'mihailovitsin')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1,
+  )
+  equal(
+    (
+      await db
+        .query('article')
+        .filter('body', 'like', 'mihailovitšin')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1,
   )
 })

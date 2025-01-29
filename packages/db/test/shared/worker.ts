@@ -81,7 +81,7 @@
 // //     )
 // //   }
 
-// //   db.drain()
+// //   await db.drain()
 
 // //   console.log(
 // //     'Write',
