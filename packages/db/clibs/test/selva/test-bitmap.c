@@ -1,18 +1,12 @@
 /*
- * Copyright (c) 2022-2023 SAULX
- *
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
 #include <stdlib.h>
-#include <punit.h>
-#include "util/bitmap.h"
+#include "selva/bitmap.h"
 
 static struct bitmap *bmap;
-
-void setup(void)
-{
-}
 
 void teardown(void)
 {
@@ -36,7 +30,7 @@ PU_TEST(test_bmap_single)
     pu_assert_equal("popcount", bitmap_popcount(bmap), 1);
     pu_assert_equal("bit is set", bitmap_get(bmap, 0), 1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_bmap_clear)
@@ -58,7 +52,7 @@ PU_TEST(test_bmap_clear)
     bitmap_clear(bmap, 0);
     pu_assert_equal("popcount", bitmap_popcount(bmap), 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_bmap_erase)
@@ -81,7 +75,7 @@ PU_TEST(test_bmap_erase)
     pu_assert_equal("popcount", bitmap_popcount(bmap), 0);
     pu_assert_equal("nbits is preserved", bmap->nbits, 32);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_bmap)
@@ -135,5 +129,5 @@ PU_TEST(test_bmap)
 
     pu_assert_equal("popcount ok", bitmap_popcount(bmap), 9);
 
-    return NULL;
+    return nullptr;
 }

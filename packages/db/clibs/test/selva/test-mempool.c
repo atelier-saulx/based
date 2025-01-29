@@ -1,20 +1,11 @@
-/* Copyright (c) 2022-2023 SAULX
- *
+/*
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <stdalign.h>
 #include <stdint.h>
-#include "util/mempool.h"
-
-void setup(void)
-{
-}
-
-void teardown(void)
-{
-}
+#include "mempool.h"
 
 PU_TEST(test_simple_allocs)
 {
@@ -38,7 +29,7 @@ PU_TEST(test_simple_allocs)
     mempool_return(&pool, p2);
     mempool_destroy(&pool);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_object_reuse)
@@ -60,7 +51,7 @@ PU_TEST(test_object_reuse)
 
     mempool_destroy(&pool);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_gc)
@@ -86,7 +77,7 @@ PU_TEST(test_gc)
     mempool_destroy(&pool);
     mempool_destroy(&pool2);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_allocs)
@@ -141,5 +132,5 @@ PU_TEST(test_allocs)
 
     mempool_destroy(&pool);
 
-    return NULL;
+    return nullptr;
 }

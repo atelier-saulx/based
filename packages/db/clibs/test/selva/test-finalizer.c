@@ -1,22 +1,17 @@
-/* Copyright (c) 2022-2023 SAULX
+/* Copyright (c) 2022-2023, 2025 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <stdio.h>
 #include "queue.h"
-#include "util/finalizer.h"
+#include "finalizer.h"
 
 static int fin;
 
 void setup(void)
 {
     fin = 0;
-}
-
-void teardown(void)
-{
 }
 
 static void dispose(void *p)

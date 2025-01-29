@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "mempool.h"
 #include "svector.h"
 
@@ -368,7 +368,7 @@ ssize_t SVector_SearchIndex(const SVector * restrict vec, void *key) {
 void *SVector_Search(const SVector * restrict vec, void *key) {
     const enum SVectorMode vec_mode = vec->vec_mode;
 
-    assert(("vec_compar must be set", vec->vec_compar));
+    assert(vec->vec_compar); /* vec_compar must be set. */
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec_mode == SVECTOR_MODE_ARRAY) {
@@ -461,7 +461,7 @@ void *SVector_RemoveIndex(SVector * restrict vec, size_t index) {
 }
 
 void SVector_SetIndex(SVector * restrict vec, size_t index, void *el) {
-    assert(("vec_compar must not be set", !vec->vec_compar));
+    assert(!vec->vec_compar); /* vec_compar must not be set. */
     assert(vec->vec_mode == SVECTOR_MODE_ARRAY);
 
     SVector_ShiftReset(vec);
@@ -479,8 +479,8 @@ void SVector_SetIndex(SVector * restrict vec, size_t index, void *el) {
 }
 
 void SVector_InsertIndex(SVector * restrict vec, size_t index, void *el) {
-    assert(("vec_compar must not be set", !vec->vec_compar));
-    assert(("vec mode must be array", vec->vec_mode == SVECTOR_MODE_ARRAY));
+    assert(!vec->vec_compar); /* vec_compar must not be set. */
+    assert(vec->vec_mode == SVECTOR_MODE_ARRAY); /* vec mode must be array. */
 
     SVector_ShiftReset(vec);
     const size_t i = vec->vec_arr_shift_index + index;
@@ -502,7 +502,7 @@ void *SVector_Remove(SVector * restrict vec, void *key) {
     const enum SVectorMode vec_mode = vec->vec_mode;
 
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
-    assert(("vec_compar must be set", vec->vec_compar));
+    assert(vec->vec_compar); /* vec_compar must be set. */
 
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         /* Support lazy alloc. */

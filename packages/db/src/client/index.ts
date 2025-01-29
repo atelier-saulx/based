@@ -65,7 +65,7 @@ export class DbClient {
   subscriptionsInProgress: boolean = false
   subscriptonThrottleMs: number = 20
   subscriptions: SubscriptionsMap = new Map()
-  modifySubscriptions: SubscriptionMarkerMap = new Map()
+  subscriptionMarkers: SubscriptionMarkerMap = {}
   subscriptionsToRun: SubscriptionsToRun = []
 
   // merkle => move this to modifyctx

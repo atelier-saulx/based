@@ -374,8 +374,8 @@ await test('filter', async (t) => {
     (
       await db
         .query('article', strudelArticle)
-        .include((select) =>
-          select('contributors').include('name').filter('flap', '>', 25),
+        .include((q) =>
+          q('contributors').include('name').filter('flap', '>', 25),
         )
         .get()
     ).toObject(),
@@ -393,11 +393,11 @@ await test('filter', async (t) => {
     (
       await db
         .query('article', strudelArticle)
-        .include((select) => {
-          select('contributors').include('flap')
-          select('contributors').include('name')
-          select('contributors').filter('flap', '>', 25)
-          select('contributors').filter('flap', '<', 35)
+        .include((q) => {
+          q('contributors').include('flap')
+          q('contributors').include('name')
+          q('contributors').filter('flap', '>', 25)
+          q('contributors').filter('flap', '<', 35)
         })
         .get()
     ).toObject(),

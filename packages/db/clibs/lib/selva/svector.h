@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _UTIL_SVECTOR_H_
-#define _UTIL_SVECTOR_H_
 
-#include "cdefs.h"
 #include "mempool.h"
 #include "tree.h"
 
@@ -157,5 +154,3 @@ int SVector_Done(const struct SVectorIterator *it);
 
 #define SVECTOR_AUTOFREE(name) \
     __attribute__((cleanup(SVector_Destroy))) SVector name = { .vec_mode = SVECTOR_MODE_NONE }
-
-#endif /* _UTIL_SVECTOR_H_ */

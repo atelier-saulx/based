@@ -5,9 +5,9 @@ import {
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
 } from '../../server/schema/types.js'
-import { BasedDb, ModifyCtx } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { inspect } from 'node:util'
-import { SubscriptionMarkers } from '../query/subscription/index.js'
+import { SubscriptionMarkersCheck } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 
 export type ModifyRes = {
@@ -72,7 +72,7 @@ export class ModifyState {
     typeId: number,
     tmpId: number,
     db: DbClient,
-    subMarkers: SubscriptionMarkers,
+    subMarkers: SubscriptionMarkersCheck | false,
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
@@ -81,7 +81,7 @@ export class ModifyState {
     this.subMarkers = subMarkers
   }
 
-  subMarkers?: SubscriptionMarkers
+  subMarkers: SubscriptionMarkersCheck | false
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']

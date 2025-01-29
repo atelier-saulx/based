@@ -219,3 +219,75 @@ await test('delete a range', async (t) => {
   //db.save()
   //console.log(db.server.merkleTree.getRoot())
 })
+
+await test('reference changes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          docs: { items: { ref: 'doc', prop: 'creator' } },
+        },
+      },
+      doc: {
+        props: {
+          title: { type: 'string' },
+          creator: { ref: 'user', prop: 'docs' },
+          related: { items: { ref: 'doc', prop: 'related' } },
+        },
+      },
+    },
+  })
+
+  const users = Array.from({ length: 3 }, (_, k) =>
+    db.create('user', {
+      name: 'mr flop ' + k,
+    })
+  )
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 1, 'creating new users creates a dirty range')
+
+  db.create('doc', {
+    title: 'The Wonders of AI',
+    creator: users[0],
+  })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'creating nodes in two types makes both dirty')
+
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  const doc2 = db.create('doc', {
+    title: 'The Slops of AI',
+  })
+  const doc3 = db.create('doc', {
+    title: 'The Hype of AI',
+  })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 1, 'creating docs makes the range dirty')
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  // Link user -> doc
+  db.update('user', users[1], { docs: [doc2] })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'Linking a user to doc makes both dirty')
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+
+  // Link doc -> user
+  db.update('doc', doc3, { creator: [users[2]] })
+  await db.drain()
+  equal(db.server.dirtyRanges.size, 2, 'Linking a doc to user makes both dirty');
+  await db.save()
+  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+})

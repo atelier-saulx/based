@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -8,7 +8,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "cdefs.h"
 #include "queue.h"
 
 /**

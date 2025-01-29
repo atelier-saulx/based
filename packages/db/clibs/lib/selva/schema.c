@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "tree.h"
 #include "selva/align.h"
 #include "selva/endian.h"
@@ -206,7 +206,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         node_type_t dst_node_type;
         field_t inverse_field;
         uint32_t schema_len;
-        /* uint8_t schema[]; */
+        uint8_t schema[] __counted_by(schema_len);
     } __packed constraints;
 
     static_assert(sizeof(constraints) == 8);

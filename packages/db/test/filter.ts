@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
-import { setTimeout } from 'timers/promises'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -146,6 +145,8 @@ await test('simple', async (t) => {
     true,
     'multi ref OR filter up at 0.5 results',
   )
+
+  console.log('what??', measure, amount, measure / amount)
 
   equal(measure / amount < 10, true, 'multi ref OR filter lower then 10ms')
 

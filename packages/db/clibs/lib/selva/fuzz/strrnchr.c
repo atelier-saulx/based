@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include "../../cstrings.h"
+#include "../cstrings.h"
 
 void *selva_malloc(size_t n)
 {

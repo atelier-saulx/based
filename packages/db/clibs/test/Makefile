@@ -1,6 +1,6 @@
-# Copyright (c) 2022-2024 SAULX
+# Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
-targets := util deflate
+targets := selva deflate
 
 all: $(targets)
 

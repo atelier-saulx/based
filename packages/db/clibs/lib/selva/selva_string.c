@@ -12,10 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "libdeflate.h"
 #include "libdeflate_strings.h"
-#include "cdefs.h"
 #include "selva_error.h"
 #include "selva/crc32c.h"
 #include "selva/selva_string.h"

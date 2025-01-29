@@ -7,7 +7,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "cdefs.h"
 #include "selva/_export.h"
 
 #if __SIZEOF_INT128__ != 16

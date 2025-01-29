@@ -6,11 +6,13 @@ import { setCursor } from './setCursor.js'
 import native from '../../native.js'
 
 export function getBuffer(value): Buffer {
-  if (value instanceof Buffer) {
-    return value
-  }
-  if (value && value.buffer instanceof ArrayBuffer) {
-    return Buffer.from(value.buffer)
+  if (typeof value === 'object') {
+    if (value instanceof Buffer) {
+      return value
+    }
+    if (value.buffer instanceof ArrayBuffer) {
+      return Buffer.from(value.buffer)
+    }
   }
 }
 

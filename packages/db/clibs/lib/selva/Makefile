@@ -58,7 +58,8 @@ OBJ := \
 	string/fast_memmem.o \
 	string/mempbrk.o \
 	string/strntol.o \
-	string/strsearch.o \
+	string/strsearch_hamming.o \
+	string/strsearch_levenshtein.o \
 	svector.o \
 	time/backoff_timeout.o \
 	time/ctime.o \

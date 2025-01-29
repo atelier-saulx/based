@@ -1,7 +1,7 @@
 import { Subscription } from './types.js'
-import { BasedDb } from '../../../index.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
 import { DbClient } from '../../index.js'
+import { resetSubscriptionMarkers } from './markers.js'
 
 export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
   const aLen = a.byteLength
@@ -55,10 +55,6 @@ export const runSubscription = (subscription: Subscription) => {
   }
 }
 
-export const resetModifySubs = (db: DbClient) => {
-  db.modifySubscriptions.forEach((t) => {})
-}
-
 export const startSubscription = (db: DbClient) => {
   if (!db.subscriptionsInProgress) {
     db.subscriptionsInProgress = true
@@ -67,7 +63,7 @@ export const startSubscription = (db: DbClient) => {
         runSubscription(s)
       })
       db.subscriptionsToRun = []
-      resetModifySubs(db)
+      resetSubscriptionMarkers(db)
       db.subscriptionsInProgress = false
     }, db.subscriptonThrottleMs)
   }

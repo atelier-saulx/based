@@ -47,19 +47,22 @@ export type SubscriptionsToRun = Subscription[]
 // very simple
 // main: { start: subs }, props: { propNr: subs }, all: subs
 
-// export type Marker = Set<Subscription>
-
-export type SubMarkersSubType = {
-  main: Map<number, Set<Subscription>>
-  def: Map<number, Set<Subscription>>
+//
+export type SubscriptionMarkers = {
+  main: { [start: string]: Subscription[] }
+  props: { [prop: string]: Subscription[] }
 }
 
-export type SubscriptionMarkerMap = Map<
-  number, // typeID
-  {
-    ids: SubMarkersSubType
-    filters: SubMarkersSubType
+export type SubscriptionMarkerMap = {
+  [typeID: string]: {
+    ids: Map<number, SubscriptionMarkers>
+    collection: SubscriptionMarkers // prop want to add the filters
   }
->
+}
 
-export type SubscriptionMarkers = any
+export type SubscriptionMarkersCheck = {
+  collection: SubscriptionMarkers | false
+  ids: SubscriptionMarkers | false
+}
+
+// has sub

@@ -1,20 +1,10 @@
 /*
- * Copyright (c) 2022-2023 SAULX
- *
+ * Copyright (c) 2022-2023, 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <stdio.h>
-#include "util/eztrie.h"
-
-void setup(void)
-{
-}
-
-void teardown(void)
-{
-}
+#include "eztrie.h"
 
 static void print_eztrie(struct eztrie_iterator it)
 {
@@ -31,9 +21,9 @@ PU_TEST(test_destroy)
     struct eztrie trie;
 
     eztrie_init(&trie);
-    eztrie_destroy(&trie, NULL, NULL);
+    eztrie_destroy(&trie, nullptr, nullptr);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert)
@@ -58,9 +48,9 @@ PU_TEST(test_insert)
     pu_assert_str_equal("", res->key, "abcd");
     pu_assert_ptr_equal("", res->p, &y);
 
-    eztrie_destroy(&trie, NULL, NULL);
+    eztrie_destroy(&trie, nullptr, nullptr);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove)
@@ -83,9 +73,9 @@ PU_TEST(test_remove)
     pu_assert_str_equal("", res->key, "abcd");
     pu_assert_ptr_equal("", res->p, &y);
 
-    eztrie_destroy(&trie, NULL, NULL);
+    eztrie_destroy(&trie, nullptr, nullptr);
 
-    return NULL;
+    return nullptr;
 }
 
 static void my_cb(void *p, void *arg)
@@ -117,5 +107,5 @@ PU_TEST(test_destroy_cb)
     eztrie_destroy(&trie, my_cb, &count);
     pu_assert_equal("Called cb for every item", count, num_elem(arr));
 
-    return NULL;
+    return nullptr;
 }

@@ -1,7 +1,7 @@
 /*
  * deflate_compress.c - a compressor for DEFLATE
  *
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * Copyright 2016 Eric Biggers
  *
  * Permission is hereby granted, free of charge, to any person
@@ -26,7 +26,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "jemalloc.h"
+#include "jemalloc_selva.h"
 #include "lib_common.h"
 #include "deflate_constants.h"
 

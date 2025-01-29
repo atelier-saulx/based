@@ -1,13 +1,11 @@
 /*
  * Copyright (c) 2024 SAULX
- *
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <punit.h>
 #include "libdeflate.h"
 #include "libdeflate_strings.h"
 

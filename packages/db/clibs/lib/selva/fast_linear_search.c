@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -10,10 +10,16 @@
 #include "selva/fields.h"
 #include "selva/fast_linear_search.h"
 
+static inline size_t get_mid(size_t len)
+{
+    return len / 2 - !(len & 1);
+}
+
 #define MAKE_FUN(TYPE, NAME) \
     ssize_t NAME(const TYPE arr[], size_t len, TYPE x) \
-        { \
-        size_t mid = len / 2; \
+    { \
+        if (len == 0) return -1; \
+        size_t mid = get_mid(len); \
         for (size_t i = 0, j = len - 1, k = mid, l = mid; i <= mid; i++, j--, k--, l++) { \
             if (arr[i] == x) return i; \
             if (arr[j] == x) return j; \
@@ -25,8 +31,9 @@
 
 #define MAKE_FUN_S(TYPE, NAME, FIELD) \
     ssize_t NAME(const TYPE *arr[], size_t len, const TYPE *x) \
-        { \
-        size_t mid = len / 2; \
+    { \
+        if (len == 0) return -1; \
+        size_t mid = get_mid(len); \
         for (size_t i = 0, j = len - 1, k = mid, l = mid; i <= mid; i++, j--, k--, l++) { \
             typeof(x->FIELD) y = x->FIELD; \
             if (arr[i]->FIELD == y) return i; \
@@ -43,7 +50,9 @@ MAKE_FUN_S(struct SelvaNode, fast_linear_search_node, node_id)
 
 ssize_t fast_linear_search_references(const struct SelvaNodeReference arr[], size_t len, const struct SelvaNode *x)
 {
-    size_t mid = len / 2;
+    if (len == 0) return -1;
+
+    size_t mid = get_mid(len);
 
     for (size_t i = 0, j = len - 1, k = mid, l = mid; i <= mid; i++, j--, k--, l++) {
         if (arr[i].dst == x) return i;

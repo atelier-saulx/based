@@ -1,15 +1,13 @@
 /*
- * Copyright (c) 2024 SAULX
- *
+ * Copyright (c) 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <punit.h>
 #include "libdeflate.h"
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 static struct libdeflate_compressor *c;
 static struct libdeflate_decompressor *d;
@@ -64,6 +62,10 @@ static int full_decompress_cb(void *ctx, uint8_t *buf, size_t len, uint8_t *, si
     return 0;
 }
 
+/*
+ * FIXME The API has changed
+ */
+#if 0
 static char *full_decompress(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
 {
     const size_t kMaxDeflateBlockSize = 64 * 1024;
@@ -86,8 +88,9 @@ static char *full_decompress(struct libdeflate_decompressor *d, const char *in_b
 
     libdeflate_block_state_deinit(&state);
 
-    return NULL;
+    return nullptr;
 }
+#endif
 
 PU_TEST(test_deflate_mbscmp)
 {
@@ -105,7 +108,7 @@ PU_TEST(test_deflate_mbscmp)
 
     libdeflate_block_state_deinit(&state);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_deflate_mbscmp_fail)
@@ -125,7 +128,7 @@ PU_TEST(test_deflate_mbscmp_fail)
 
     libdeflate_block_state_deinit(&state);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_deflate_mbsstrstr)
@@ -145,7 +148,7 @@ PU_TEST(test_deflate_mbsstrstr)
 
     libdeflate_block_state_deinit(&state);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_deflate_mbsstrstr_hard)
@@ -167,5 +170,5 @@ PU_TEST(test_deflate_mbsstrstr_hard)
 
     libdeflate_block_state_deinit(&state);
 
-    return NULL;
+    return nullptr;
 }

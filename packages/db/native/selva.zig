@@ -12,17 +12,14 @@ pub usingnamespace @cImport({
 
     @cInclude("cdefs.h");
 
-    @cInclude("selva/crc32c.h");
-    @cInclude("selva/fast_memmem.h");
-
     @cInclude("selva/worker_ctx.h");
     @cInclude("selva/db.h");
-    @cInclude("selva/fast_linear_search.h");
     @cInclude("selva/fields.h");
     @cInclude("selva/node_id_set.h");
     @cInclude("selva/sort.h");
     @cInclude("selva/types.h");
     @cInclude("selva_error.h");
+    @cInclude("selva/crc32c.h");
     @cInclude("selva/selva_hash128.h");
 
     @cInclude("libdeflate.h");

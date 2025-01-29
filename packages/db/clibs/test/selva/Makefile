@@ -1,11 +1,10 @@
-# Copyright (c) 2022-2023 SAULX
-#
+# Copyright (c) 2022-2023, 2025 SAULX
 # SPDX-License-Identifier: MIT
 
 include ../../common.mk
 
 # Add here one or more include directories.
-IDIR := ../../include
+IDIR := ../../include ../../lib/selva
 
 # Set this to 1 if you will use asserts that compares floats or doubles;
 # or 0 disable
@@ -25,12 +24,12 @@ CFLAGS := $(CFLAGS) \
 		   -g3
 
 ifeq ($(uname_S),Linux)
-LDFLAGS := -Wl,-rpath,'$$ORIGIN'/../../../../build
+LDFLAGS := -Wl,-rpath,'$$ORIGIN'/../../../../dist/lib/$(PLATFORM)
 endif
 ifeq ($(uname_S),Darwin)
-LDFLAGS := -Wl,-rpath,@executable_path/../../../../build
+LDFLAGS := -Wl,-rpath,@executable_path/../../../../dist/lib/$(PLATFORM)
 endif
-LDFLAGS += -L ../../../build -ljemalloc_selva -ldeflate
+LDFLAGS += -L ../../../dist/lib/$(PLATFORM) -ljemalloc_selva -ldeflate
 
 #export LD_LIBRARY_PATH=`echo $LD_LIBRARY_PATH`:$(LIBDIR)
 

@@ -1,15 +1,14 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2023, 2025 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
-#include <punit.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "jemalloc.h"
-#include "util/svector.h"
+#include "jemalloc_selva.h"
+#include "svector.h"
 
 struct data {
     int id;
@@ -49,7 +48,7 @@ PU_TEST(test_init_works)
     pu_assert_equal("last is zeroed", vec.vec_last, 0);
     pu_assert_equal("mode is set correctly", SVector_Mode(&vec), SVECTOR_MODE_ARRAY);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_init_works_huge)
@@ -60,7 +59,7 @@ PU_TEST(test_init_works_huge)
     pu_assert_equal("last is zeroed", vec.vec_last, 0);
     pu_assert_equal("mode is set correctly", SVector_Mode(&vec), SVECTOR_MODE_RBTREE);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_init_lazy_alloc)
@@ -72,7 +71,7 @@ PU_TEST(test_init_lazy_alloc)
     pu_assert_equal("length is correct", vec.vec_arr_len, 0);
     pu_assert_equal("last is zeroed", vec.vec_last, 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_can_destroy)
@@ -83,7 +82,7 @@ PU_TEST(test_can_destroy)
     // multiple times
     SVector_Destroy(&vec);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_one)
@@ -98,7 +97,7 @@ PU_TEST(test_insert_one)
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_one_fast)
@@ -113,7 +112,7 @@ PU_TEST(test_insert_one_fast)
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_one_lazy_alloc)
@@ -126,10 +125,10 @@ PU_TEST(test_insert_one_lazy_alloc)
     SVector_Insert(&vec, &el1);
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
-    pu_assert("vec_arr is allocated", vec.vec_arr != NULL);
+    pu_assert("vec_arr is allocated", vec.vec_arr != nullptr);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_two_desc)
@@ -149,7 +148,7 @@ PU_TEST(test_insert_two_desc)
     pu_assert_ptr_equal("el1 was inserted correctly", vec.vec_arr[1], &el1);
     pu_assert_ptr_equal("el2 was inserted correctly", vec.vec_arr[0], &el2);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_many)
@@ -174,7 +173,7 @@ PU_TEST(test_insert_many)
     pu_assert_ptr_equal("el was inserted correctly", data[6]->id, 300);
     pu_assert_ptr_equal("el was inserted correctly", data[7]->id, 800);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insertFast_lazy_alloc)
@@ -187,11 +186,11 @@ PU_TEST(test_insertFast_lazy_alloc)
     SVector_Insert(&vec, &el1);
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
-    pu_assert("vec_arr is allocated", vec.vec_arr != NULL);
+    pu_assert("vec_arr is allocated", vec.vec_arr != nullptr);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
     pu_assert_equal("size is correct", SVector_Size(&vec), 1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insertFast_many)
@@ -256,14 +255,14 @@ PU_TEST(test_insertFast_many)
 
     for (size_t i = 0; i < num_elem(el); i++) {
         const void * r = SVector_Insert(&vec, &el[i]);
-        pu_assert_ptr_equal("No return value", r, NULL);
+        pu_assert_null("No return value", r);
     }
 
     pu_assert_equal("last is incremented", vec.vec_last, 333);
     pu_assert_equal("size is correct", SVector_Size(&vec), 333);
     pu_assert_equal("mode was changed", SVector_Mode(&vec), SVECTOR_MODE_RBTREE);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insertFast_dedup)
@@ -278,11 +277,11 @@ PU_TEST(test_insertFast_dedup)
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
-    pu_assert_ptr_equal("r1 = NULL", r1, NULL);
+    pu_assert_null("r1 = nullptr", r1);
     pu_assert_ptr_equal("r2 = el1", r2, &el1);
     pu_assert_equal("size is correct", SVector_Size(&vec), 1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_mixed_insertFast_and_Remove)
@@ -349,7 +348,7 @@ PU_TEST(test_mixed_insertFast_and_Remove)
         const void * r;
 
         r = SVector_Insert(&vec, &el[i]);
-        pu_assert_ptr_equal("no return value", r, NULL);
+        pu_assert_null("no return value", r);
 
         if (i > 0 &&i % 3 == 0) {
             r = SVector_Remove(&vec, &el[i - 1]);
@@ -360,14 +359,14 @@ PU_TEST(test_mixed_insertFast_and_Remove)
     pu_assert_equal("mode was changed", SVector_Mode(&vec), SVECTOR_MODE_RBTREE);
     pu_assert_equal("final size is correct", SVector_Size(&vec), 223);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_no_compar)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
-    SVector_Init(&vec, 3, NULL);
+    SVector_Init(&vec, 3, nullptr);
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
     }
@@ -377,26 +376,26 @@ PU_TEST(test_insert_no_compar)
     pu_assert_ptr_equal("el[1] was inserted correctly", vec.vec_arr[1], &el[1]);
     pu_assert_ptr_equal("el[2] was inserted correctly", vec.vec_arr[2], &el[2]);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_insert_setIndex)
 {
     struct data el[] = { { 1 } };
 
-    SVector_Init(&vec, 1, NULL);
+    SVector_Init(&vec, 1, nullptr);
     SVector_SetIndex(&vec, 4095, &el[0]);
 
     pu_assert_ptr_equal("el[0] was inserted correctly", vec.vec_arr[4095], &el[0]);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_search_index_unordered)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
-    SVector_Init(&vec, 5, NULL);
+    SVector_Init(&vec, 5, nullptr);
 
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
@@ -408,7 +407,7 @@ PU_TEST(test_search_index_unordered)
     const ssize_t i1 = SVector_SearchIndex(&vec, &(struct data){ 15 });
     pu_assert_equal("not found", i1, -1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_search_index_ordered)
@@ -430,7 +429,7 @@ PU_TEST(test_search_index_ordered)
     const ssize_t i2 = SVector_SearchIndex(&vec, &(struct data){ 16 });
     pu_assert_equal("not found", i2, -1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_search)
@@ -447,14 +446,14 @@ PU_TEST(test_search)
 
     pu_assert_ptr_equal("found the right one", res, &el[2]);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_by_index)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
-    SVector_Init(&vec, 5, NULL);
+    SVector_Init(&vec, 5, nullptr);
 
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
@@ -472,7 +471,7 @@ PU_TEST(test_remove_by_index)
     pu_assert_equal("the old element is no longer there", r2->id, 3);
     pu_assert_equal("the size was decremented", SVector_Size(&vec), num_elem(el) - 1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_one)
@@ -487,7 +486,7 @@ PU_TEST(test_remove_one)
 
     pu_assert_equal("last is zeroed", vec.vec_last, 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_one_compound_literal)
@@ -503,7 +502,7 @@ PU_TEST(test_remove_one_compound_literal)
     pu_assert_equal("last is zeroed", vec.vec_last, 0);
     pu_assert_ptr_equal("the removed item was returned", rem, &el1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_last)
@@ -523,7 +522,7 @@ PU_TEST(test_remove_last)
     pu_assert_equal("last is decremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was is still there", vec.vec_arr[0], &el1);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_first)
@@ -543,7 +542,7 @@ PU_TEST(test_remove_first)
     pu_assert_equal("last is decremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el2 was is still there", vec.vec_arr[0], &el2);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_middle)
@@ -561,7 +560,7 @@ PU_TEST(test_remove_middle)
     pu_assert_ptr_equal("el[0] was is still there", vec.vec_arr[0], &el[0]);
     pu_assert_ptr_equal("el[2] was is still there", vec.vec_arr[1], &el[2]);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_remove_all)
@@ -585,7 +584,7 @@ PU_TEST(test_remove_all)
 
     pu_assert_equal("the vector is empty", SVector_Size(&vec), 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_peek)
@@ -612,16 +611,16 @@ PU_TEST(test_peek)
 
     pu_assert_ptr_equal("Shifts el[0]", SVector_Shift(&vec), &el[2]);
     v = SVector_Peek(&vec);
-    pu_assert_ptr_equal("Nothing left", v, NULL);
+    pu_assert_null("Nothing left", v);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_pop)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
-    SVector_Init(&vec, 3, NULL);
+    SVector_Init(&vec, 3, nullptr);
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
     }
@@ -634,16 +633,16 @@ PU_TEST(test_pop)
     pu_assert_ptr_equal("Pops el[0]", SVector_Pop(&vec), &el[0]);
     pu_assert_equal("Vector size is zeroed", SVector_Size(&vec), 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_shift)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
-    SVector_Init(&vec, 3, NULL);
+    SVector_Init(&vec, 3, nullptr);
 
-    pu_assert_ptr_equal("Shift empty vector", SVector_Shift(&vec), NULL);
+    pu_assert_null("Shift empty vector", SVector_Shift(&vec));
 
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
@@ -653,16 +652,16 @@ PU_TEST(test_shift)
     pu_assert_ptr_equal("Shifts el[1]", SVector_Shift(&vec), &el[1]);
     pu_assert_ptr_equal("Shifts el[2]", SVector_Shift(&vec), &el[2]);
     pu_assert_equal("Vector size is zeroed", SVector_Size(&vec), 0);
-    pu_assert_ptr_equal("Shifts NULL", SVector_Shift(&vec), NULL);
+    pu_assert_null("Shifts nullptr", SVector_Shift(&vec));
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_shift_reset)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 }, { 4 } };
 
-    SVector_Init(&vec, num_elem(el), NULL);
+    SVector_Init(&vec, num_elem(el), nullptr);
     for (size_t i = 0; i < num_elem(el); i++) {
         SVector_Insert(&vec, &el[i]);
     }
@@ -676,7 +675,7 @@ PU_TEST(test_shift_reset)
     SVector_ShiftReset(&vec);
     pu_assert_equal("shift index is reset", vec.vec_arr_shift_index, 0);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_foreach_small)
@@ -697,7 +696,7 @@ PU_TEST(test_foreach_small)
         pu_assert_ptr_equal("el[0] is pointing to the correct item", d, &el[i++]);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_foreach_large)
@@ -720,7 +719,7 @@ PU_TEST(test_foreach_large)
     }
     pu_assert_equal("found all items", i, num_elem(el));
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_foreach_large_fast_insert)
@@ -743,7 +742,7 @@ PU_TEST(test_foreach_large_fast_insert)
     }
     pu_assert_equal("found all items", i, num_elem(el));
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_foreach_extra_large)
@@ -772,7 +771,7 @@ PU_TEST(test_foreach_extra_large)
 
     pu_assert_equal("visited every item", i, 100000);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_TEST(test_get_index)
@@ -788,7 +787,7 @@ PU_TEST(test_get_index)
     pu_assert_ptr_equal("ind 1", SVector_GetIndex(&vec, 1), &el[1]);
     pu_assert_ptr_equal("ind 2", SVector_GetIndex(&vec, 2), &el[2]);
 
-    return NULL;
+    return nullptr;
 }
 
 PU_SKIP(test_sizeof_ctrl)
@@ -797,5 +796,5 @@ PU_SKIP(test_sizeof_ctrl)
 
     pu_assert_equal("sizeof the control struct", sizeof(SVector), 48);
 
-    return NULL;
+    return nullptr;
 }
