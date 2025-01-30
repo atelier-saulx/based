@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 205 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -49,7 +49,7 @@ struct SelvaNode {
 };
 
 #if 0
-/* FIXME */
+/* TODO Expiring nodes */
 #define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.

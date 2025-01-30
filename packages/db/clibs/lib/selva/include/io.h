@@ -4,13 +4,6 @@
  */
 #pragma once
 
-#define SELVA_DB_VERSION_SIZE   40
-struct SelvaDbVersionInfo {
-    __nonstring char running[SELVA_DB_VERSION_SIZE];
-    __nonstring char created_with[SELVA_DB_VERSION_SIZE];
-    __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
-};
-
 #define SELVA_IO_HASH_SIZE 16
 
 enum selva_io_flags {

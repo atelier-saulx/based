@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stddef.h>
-#include "../cstrings.h"
+#include "cstrings.h"
 
 long int strntol(const char *s, size_t n, const char **end)
 {

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc_selva.h"
-#include "../cstrings.h"
+#include "cstrings.h"
 
 static inline uint64_t b2digits(uint64_t x)
 {

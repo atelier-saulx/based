@@ -14,8 +14,8 @@
 #include "selva/selva_hash128.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
-#include "../db_panic.h"
-#include "../io.h"
+#include "db_panic.h"
+#include "io.h"
 #include "io_struct.h"
 #include "sdb.h"
 
@@ -58,6 +58,20 @@
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
+#define SELVA_DB_VERSION_SIZE   40
+struct SelvaDbVersionInfo {
+    __nonstring char running[SELVA_DB_VERSION_SIZE];
+    __nonstring char created_with[SELVA_DB_VERSION_SIZE];
+    __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
+};
+
+/**
+ * Selva module version tracking.
+ * This is used to track the Selva module version used to create and modify the
+ * hierarchy that was serialized and later deserialized.
+ */
+static struct SelvaDbVersionInfo selva_db_version_info;
+
 /**
  * Total bytes used by the header and footer.
  */
@@ -72,7 +86,6 @@ struct selva_io_zbuf {
     char compressed_buf[] __counted_by(compressed_buf_size); /*!< Buffer for compressed block_buf. */
 };
 
-extern const char * const selva_db_version;
 static const char magic_start[] = { 'T', 'H', 'S', 'I', 'D', 'E', 'U', 'P' };
 static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
@@ -96,20 +109,6 @@ static inline void sdb_hash_finalize(struct selva_io *io)
     static_assert(sizeof(io->computed_hash) == sizeof(io->checksum_state));
     memcpy(io->computed_hash, &io->checksum_state, sizeof(io->computed_hash));
 }
-
-/**
- * Selva module version tracking.
- * This is used to track the Selva module version used to create and modify the
- * hierarchy that was serialized and later deserialized.
- */
-static struct SelvaDbVersionInfo selva_db_version_info;
-
-#if 0
-void selva_io_get_ver(struct SelvaDbVersionInfo *nfo)
-{
-    memcpy(nfo, &selva_db_version_info, sizeof(*nfo));
-}
-#endif
 
 static void file_raw_write(struct selva_io *io, const void *p, size_t size)
 {
@@ -552,11 +551,10 @@ int sdb_read_header(struct selva_io *io)
     }
 
 #if 0
-    SELVA_LOG(SELVA_LOGL_INFO,
-              "running: %.*s created_with: %.*s updated_with: %.*s",
-              SELVA_DB_VERSION_SIZE, selva_db_version_info.running,
-              SELVA_DB_VERSION_SIZE, selva_db_version_info.created_with,
-              SELVA_DB_VERSION_SIZE, selva_db_version_info.updated_with);
+    fprintf(stderr, "running: %.*s created_with: %.*s updated_with: %.*s\n",
+            SELVA_DB_VERSION_SIZE, selva_db_version_info.running,
+            SELVA_DB_VERSION_SIZE, selva_db_version_info.created_with,
+            SELVA_DB_VERSION_SIZE, selva_db_version_info.updated_with);
 #endif
 
     return 0;
@@ -595,11 +593,11 @@ int sdb_read_footer(struct selva_io *io)
     res = io->sdb_read(magic, sizeof(char), sizeof(magic), io);
     if (res != sizeof(magic) || memcmp(magic, magic_end, sizeof(magic))) {
 #if 0
-        SELVA_LOG(SELVA_LOGL_ERR, "Bad magic: %.2x %.2x %.2x %.2x %.2x %.2x %.2x %.2x",
-                  (uint8_t)magic[0], (uint8_t)magic[1],
-                  (uint8_t)magic[2], (uint8_t)magic[3],
-                  (uint8_t)magic[4], (uint8_t)magic[5],
-                  (uint8_t)magic[6], (uint8_t)magic[7]);
+        fprintf(stderr, "Bad magic: %.2x %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n",
+                (uint8_t)magic[0], (uint8_t)magic[1],
+                (uint8_t)magic[2], (uint8_t)magic[3],
+                (uint8_t)magic[4], (uint8_t)magic[5],
+                (uint8_t)magic[6], (uint8_t)magic[7]);
 #endif
         return SELVA_EINVAL;
     }
@@ -634,7 +632,6 @@ int sdb_read_hash(struct selva_io *io)
 __attribute__((constructor(101)))
 static void init(void)
 {
-    /* TODO db version info */
-    static const char selva_db_version[] = "";
-    strncpy(selva_db_version_info.running, selva_db_version, sizeof(selva_db_version_info.running));
+    extern const char * const selva_version;
+    strncpy(selva_db_version_info.running, selva_version, sizeof(selva_db_version_info.running));
 }

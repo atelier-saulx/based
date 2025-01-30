@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 CFLAGS := -std=gnu2x -g -O1 \
-		  -include ../../../include/cdefs.h -I../../../include \
+		  -I../../../include \
+		  -iquote ../include \
+		  -include ../../../include/cdefs.h \
 		  -Wno-unknown-attributes \
 		  -fsanitize=fuzzer,signed-integer-overflow,address
 

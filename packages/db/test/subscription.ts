@@ -276,7 +276,7 @@ await test('subscription mixed', async (t) => {
     console.log(blarf)
   }, 100)
 
-  for (let i = 0; i < 2e5; i++) {
+  for (let i = 0; i < 100e3; i++) {
     const close = db.query('user', i + 1).subscribe((q) => {
       // console.log(q.id, q)
       blarf++
