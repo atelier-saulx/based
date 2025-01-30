@@ -49,7 +49,7 @@ struct SelvaNode {
 };
 
 #if 0
-/* FIXME */
+/* TODO Expiring nodes */
 #define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
