@@ -727,7 +727,10 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
-        /* TODO Verify len for all types. */
+        /*
+         * Note: We don't verify len in this function. We merely expect that
+         * the caller is passing it correctly.
+         */
     case SELVA_FIELD_TYPE_TIMESTAMP:
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
@@ -749,7 +752,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return set_field_string(fields, fs, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_TEXT:
-        /* FIXME */
+        /* TODO Text field type */
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
 #if 0
