@@ -129,7 +129,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
             .len = len,
         };
 
-        /* FIXME */
+        /* FIXME string field CRC verification. */
 #if 0
         if (!selva_string_verify_crc(tl)) {
             db_panic("%p Invalid CRC: %u", tl, (unsigned)selva_string_get_crc(tl));
@@ -758,19 +758,15 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
     return 0;
 }
 
-static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_micro_buffer(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    int err;
-
-    /* FIXME A hack to create the field. */
-    err = selva_fields_set(db, node, fs, (uint8_t []){ 0 }, 1);
-    if (err) {
-        return err;
-    }
-
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaMicroBuffer *smb = selva_fields_nfo2p(fields, nfo);
+
+#if 0
+    assert(nfo->type == SELVA_FIELD_TYPE_MICRO_BUFFER);
+#endif
 
     io->sdb_read(&smb->len, sizeof(smb->len), 1, io);
     io->sdb_read(smb->data, sizeof(uint8_t), smb->len, io);
@@ -858,7 +854,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = load_field_weak_references(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            err = load_field_micro_buffer(io, db, node, fs);
+            err = load_field_micro_buffer(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
