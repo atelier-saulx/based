@@ -155,7 +155,7 @@ function updateRefs(
   setCursor(ctx, schema, def.prop, parentId, mod)
 
   const initpos = ctx.len
-  const nrOrErr = putRefs(ctx, mod, refs, op)
+  const nrOrErr = putRefs(def, ctx, mod, refs, op)
 
   if (nrOrErr) {
     if (typeof nrOrErr === 'number') {
@@ -288,6 +288,7 @@ function appendRefs(
     } else {
       return new ModifyError(def, refs)
     }
+    ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
   }
 
   let size = ctx.len - totalpos - 4
@@ -298,6 +299,7 @@ function appendRefs(
 }
 
 function putRefs(
+  def: PropDef,
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
@@ -333,6 +335,7 @@ function putRefs(
     } else {
       break
     }
+    ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], ref)
   }
 
   return refs.length - i
