@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
+SELVA_VERSION := $(shell sh -c 'git rev-parse --verify HEAD')
 CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include \
 		  -iquote ./include \
@@ -69,6 +70,7 @@ OBJ := \
 	traverse.o \
 	trx.o \
 	types.o \
+	version.o \
 	worker_ctx.o
 
 ifeq ($(uname_M),x86_64)
@@ -99,5 +101,11 @@ DEP := $(OBJ:%.o=%.d)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $^
+
+version.c: FORCE
+	@echo selva_version $(SELVA_VERSION)
+	@echo "const char * const selva_version = \"$(SELVA_VERSION)\";" > version.c
+
+FORCE:
 
 -include $(DEP)
