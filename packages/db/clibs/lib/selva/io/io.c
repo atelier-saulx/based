@@ -11,9 +11,9 @@
 #include <sys/stat.h>
 #include "selva/selva_string.h"
 #include "selva_error.h"
-#include "../db_panic.h"
+#include "db_panic.h"
 #include "sdb.h"
-#include "../io.h"
+#include "io.h"
 #include "io_struct.h"
 
 __attribute__((pure))

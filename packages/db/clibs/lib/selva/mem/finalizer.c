@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include "queue.h"
 #include "jemalloc_selva.h"
-#include "../finalizer.h"
+#include "finalizer.h"
 
 /* TODO These are never freed */
 static __thread struct finalizer_stack free_list = SLIST_HEAD_INITIALIZER(free_list);

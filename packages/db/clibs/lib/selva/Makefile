@@ -3,7 +3,9 @@
 include ../../common.mk
 
 CFLAGS += -fPIC -fvisibility=hidden \
-		  -iquote ../../include -include ../../include/cdefs.h
+		  -iquote ../../include \
+		  -iquote ./include \
+		  -include ../../include/cdefs.h
 LDFLAGS += -shared -g3 \
 		   -L$(LIB_PATH) \
 		   -ljemalloc_selva -ldeflate -lxxhash
@@ -23,7 +25,6 @@ OBJ := \
 	bitmap.o \
 	db.o \
 	db_panic.o \
-	eztrie.o \
 	fast_linear_search.o \
 	fields.o \
 	find.o \
@@ -55,6 +56,7 @@ OBJ := \
 	string/base64.o \
 	string/base64url.o \
 	string/cstrings.o \
+	string/eztrie.o \
 	string/fast_memmem.o \
 	string/mempbrk.o \
 	string/strntol.o \

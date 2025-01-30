@@ -18,10 +18,10 @@
 #include "selva/timestamp.h"
 #include "selva_error.h"
 #include "selva_lang_code.h"
-#include "../db.h"
-#include "../db_panic.h"
-#include "../io.h"
-#include "../print_ready.h"
+#include "db.h"
+#include "db_panic.h"
+#include "io.h"
+#include "print_ready.h"
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0

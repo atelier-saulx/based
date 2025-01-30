@@ -14,8 +14,8 @@
 #include "selva/selva_hash128.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
-#include "../db_panic.h"
-#include "../io.h"
+#include "db_panic.h"
+#include "io.h"
 #include "io_struct.h"
 #include "sdb.h"
 
