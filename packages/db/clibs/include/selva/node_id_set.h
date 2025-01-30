@@ -30,12 +30,14 @@ static inline bool node_id_set_has(const node_id_t *set, size_t len, node_id_t i
 
 /**
  * Sorted insert to a node_id set.
+ * @param set_p is an array allocated with jemalloc_selva.
  */
 SELVA_EXPORT
 bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id);
 
 /**
  * Remove from a node_id set.
+ * @param set_p is an array allocated with jemalloc_selva.
  */
 SELVA_EXPORT
 bool node_id_set_remove(node_id_t **set_p, size_t *len, node_id_t id);
