@@ -5,7 +5,7 @@
  */
 #include <stddef.h>
 #include <stdint.h>
-#include "../cstrings.h"
+#include "cstrings.h"
 
 char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
 {

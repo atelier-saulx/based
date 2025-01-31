@@ -1,20 +1,14 @@
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { getPropType, parse, Schema, StrictSchema } from '@based/schema'
+import { getPropType, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from './schema/types.js'
-import { genId, genRootId } from './schema/utils.js'
-import { createSchemaTypeDef, updateTypeDefs } from './schema/typeDef.js'
+import { genRootId } from './schema/utils.js'
+import { updateTypeDefs } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import {
-  CsmtNodeRange,
-  foreachDirtyBlock,
-  makeCsmtKey,
-  makeCsmtKeyFromNodeId,
-} from './tree.js'
+import { CsmtNodeRange, foreachDirtyBlock, makeCsmtKey } from './tree.js'
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
@@ -25,8 +19,6 @@ const SCHEMA_FILE = 'schema.json'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
-
-const transferList = new Array(1)
 
 export class DbWorker {
   constructor(address: BigInt, db: DbServer) {
@@ -62,12 +54,8 @@ export class DbWorker {
     return new Promise(this.callback)
   }
 
-  transferList = new Array(1)
-
-  getQueryBuf(buf): Promise<Buffer> {
-    const arrayBuffer = new Uint8Array(buf)
-    transferList[0] = arrayBuffer.buffer
-    this.channel.postMessage(buf, transferList)
+  getQueryBuf(buf: Buffer): Promise<Buffer> {
+    this.channel.postMessage(buf)
     return new Promise(this.callback)
   }
 }

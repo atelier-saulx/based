@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include "jemalloc_selva.h"
-#include "../auto_free.h"
+#include "auto_free.h"
 
 void _wrap_selva_free(void *p) {
     void **pp = (void **)p;

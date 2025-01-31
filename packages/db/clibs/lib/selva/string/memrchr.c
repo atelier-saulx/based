@@ -19,7 +19,7 @@
  */
 
 #include <string.h>
-#include "../cstrings.h"
+#include "cstrings.h"
 
 /*
  * Reverse memchr()

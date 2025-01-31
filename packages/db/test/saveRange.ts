@@ -251,17 +251,25 @@ await test('reference changes', async (t) => {
   const users = Array.from({ length: 3 }, (_, k) =>
     db.create('user', {
       name: 'mr flop ' + k,
-    })
+    }),
   )
   await db.drain()
-  equal(db.server.dirtyRanges.size, 1, 'creating new users creates a dirty range')
+  equal(
+    db.server.dirtyRanges.size,
+    1,
+    'creating new users creates a dirty range',
+  )
 
   db.create('doc', {
     title: 'The Wonders of AI',
     creator: users[0],
   })
   await db.drain()
-  equal(db.server.dirtyRanges.size, 2, 'creating nodes in two types makes both dirty')
+  equal(
+    db.server.dirtyRanges.size,
+    2,
+    'creating nodes in two types makes both dirty',
+  )
 
   await db.save()
   equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
@@ -278,16 +286,18 @@ await test('reference changes', async (t) => {
   equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
 
   // Link user -> doc
+
   db.update('user', users[1], { docs: [doc2] })
+
   await db.drain()
   equal(db.server.dirtyRanges.size, 2, 'Linking a user to doc makes both dirty')
   await db.save()
   equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
 
   // Link doc -> user
-  db.update('doc', doc3, { creator: [users[2]] })
+  db.update('doc', doc3, { creator: users[2] })
   await db.drain()
-  equal(db.server.dirtyRanges.size, 2, 'Linking a doc to user makes both dirty');
+  equal(db.server.dirtyRanges.size, 2, 'Linking a doc to user makes both dirty')
   await db.save()
   equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
 })

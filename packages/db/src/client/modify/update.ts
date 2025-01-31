@@ -1,4 +1,4 @@
-import { BasedDb, ModifyCtx } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { PropDef, SchemaTypeDef } from '../../server/schema/schema.js'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'

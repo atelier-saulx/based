@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022-2023, 2025 SAULX
- *
  * SPDX-License-Identifier: MIT
  */
 

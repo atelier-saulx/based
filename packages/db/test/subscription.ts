@@ -276,8 +276,26 @@ await test('subscription mixed', async (t) => {
     console.log(blarf)
   }, 100)
 
-  for (let i = 0; i < 40e3; i++) {
-    //   const close = db.query('user', i + 1).subscribe((q) => {
+  for (let i = 0; i < 100e3; i++) {
+    const close = db.query('user', i + 1).subscribe((q) => {
+      // console.log(q.id, q)
+      blarf++
+    })
+
+    // db.query('user')
+    //   // .range(0, 1000)
+
+    //   .range(0, 1)
+    //   .include('name', 'nr')
+    //   .filter('flap', '=', i)
+    //   // .filter('nr', '>', 9500)
+    //   .filter('name', 'has', 'Mr')
+    //   // .or((f) => {
+    //   // f.filter('nr', '=', 1e9)
+    //   // f.or('nr', '>', 2e9)
+    //   // })
+    //   .subscribe((q) => {
+    //     blarf++
     //     // console.log(q.id, q)
     //     blarf++
     //   })

@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
+SELVA_VERSION := $(shell sh -c 'git rev-parse --verify HEAD')
 CFLAGS += -fPIC -fvisibility=hidden \
-		  -iquote ../../include -include ../../include/cdefs.h
+		  -iquote ../../include \
+		  -iquote ./include \
+		  -include ../../include/cdefs.h
 LDFLAGS += -shared -g3 \
 		   -L$(LIB_PATH) \
 		   -ljemalloc_selva -ldeflate -lxxhash
@@ -23,7 +26,6 @@ OBJ := \
 	bitmap.o \
 	db.o \
 	db_panic.o \
-	eztrie.o \
 	fast_linear_search.o \
 	fields.o \
 	find.o \
@@ -55,6 +57,7 @@ OBJ := \
 	string/base64.o \
 	string/base64url.o \
 	string/cstrings.o \
+	string/eztrie.o \
 	string/fast_memmem.o \
 	string/mempbrk.o \
 	string/strntol.o \
@@ -67,6 +70,7 @@ OBJ := \
 	traverse.o \
 	trx.o \
 	types.o \
+	version.o \
 	worker_ctx.o
 
 ifeq ($(uname_M),x86_64)
@@ -97,5 +101,11 @@ DEP := $(OBJ:%.o=%.d)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $^
+
+version.c: FORCE
+	@echo selva_version $(SELVA_VERSION)
+	@echo "const char * const selva_version = \"$(SELVA_VERSION)\";" > version.c
+
+FORCE:
 
 -include $(DEP)
