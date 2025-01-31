@@ -629,4 +629,6 @@ await test('sort - from start (1M items)', async (t) => {
       },
     ],
   )
+
+  newDb.server.destroySortIndex('user', 'age')
 })

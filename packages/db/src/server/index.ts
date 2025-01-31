@@ -149,6 +149,29 @@ export class DbServer {
     return sortIndex
   }
 
+  destroySortIndex(type: string, field: string): any {
+    const t = this.schemaTypesParsed[type]
+    const prop = t.props[field]
+
+    let types = this.sortIndexes[t.id]
+    if (!type) {
+      return
+    }
+    let fields = types[prop.prop]
+    if (!fields) {
+      fields = types[prop.prop] = {}
+    }
+    let sortIndex = fields[prop.start]
+    if (sortIndex) {
+      const buf = Buffer.allocUnsafe(5)
+      buf.writeUint16LE(t.id, 0)
+      buf[2] = prop.prop
+      buf.writeUint16LE(prop.start, 3)
+      native.destroySortIndex(buf, this.dbCtxExternal)
+      delete fields[prop.start]
+    }
+  }
+
   hasSortIndex(typeId: number, field: number, start: number): boolean {
     let types = this.sortIndexes[typeId]
     if (!types) {

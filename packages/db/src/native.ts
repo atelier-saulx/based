@@ -124,4 +124,8 @@ export default {
   createSortIndex: (buf: Buffer, dbCtx: any) => {
     return db.createSortIndex(dbCtx, buf)
   },
+
+  destroySortIndex: (buf: Buffer, dbCtx: any) => {
+    return db.destroySortIndex(dbCtx, buf)
+  }
 }

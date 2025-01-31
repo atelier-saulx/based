@@ -100,6 +100,22 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     return externalNapi;
 }
 
+pub fn destroySortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return destroySortIndexNodeInternal(env, info) catch return null;
+}
+
+pub fn destroySortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    const buf = try napi.get([]u8, env, args[1]);
+    // [2 type] [1 field] [2 start]
+    const typeId = readInt(u16, buf, 0);
+    const field = buf[2];
+    const start = readInt(u16, buf, 3);
+    destroySortIndex(dbCtx, typeId, field, start);
+    return null;
+}
+
 pub fn createSortIndexMeta(
     start: u16,
     len: u16,
@@ -181,6 +197,29 @@ pub fn createSortIndex(
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
     return sortIndex;
+}
+
+pub fn destroySortIndex(
+    dbCtx: *db.DbCtx,
+    typeId: db.TypeId,
+    field: u8,
+    start: u16) void {
+    const typeIndexes = dbCtx.sortIndexes.get(typeId);
+    if (typeIndexes == null) {
+        return;
+    }
+    const sortIndex = getSortIndex(typeIndexes, field, start);
+    if (sortIndex) |index| {
+        const tI: *TypeIndex = typeIndexes.?;
+        if (field == 0) {
+            _ = tI.main.remove(start);
+        } else {
+            _ = tI.field.remove(field);
+        }
+
+        selva.selva_sort_destroy(index.index);
+        dbCtx.allocator.destroy(index);
+    }
 }
 
 pub fn getSortIndex(
