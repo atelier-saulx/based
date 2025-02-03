@@ -47,6 +47,9 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 		# TODO add -mavx512f if supported
 		CFLAGS += -fcf-protection=full
 	endif
+	ifeq ($(uname_M),aarch64)
+		CFLAGS += -march=armv8.2-a+simd+fp16
+	endif
 
 	LDFLAGS += -Wl,--no-as-needed -z noexecstack -z relro -z now
 
