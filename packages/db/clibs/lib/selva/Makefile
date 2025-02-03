@@ -70,6 +70,7 @@ OBJ := \
 	traverse.o \
 	trx.o \
 	types.o \
+	vector/vsc.o \
 	version.o \
 	worker_ctx.o
 
