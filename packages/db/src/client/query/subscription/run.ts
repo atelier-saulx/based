@@ -36,6 +36,7 @@ export const runSubscription = (subscription: Subscription) => {
           }
           subscription.res.execTime = performance.now() - d
           subscription.res.result = buf
+          subscription.res.end = buf.byteLength
         } else {
           subscription.res = new BasedQueryResponse(
             q.id,
@@ -56,9 +57,11 @@ export const runSubscription = (subscription: Subscription) => {
 }
 
 export const startSubscription = (db: DbClient) => {
+  console.log('start subscription')
   if (!db.subscriptionsInProgress) {
     db.subscriptionsInProgress = true
     setTimeout(() => {
+      console.log('run it')
       db.subscriptionsToRun.forEach((s) => {
         runSubscription(s)
       })

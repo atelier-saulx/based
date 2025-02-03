@@ -3,6 +3,23 @@ import { parse } from '@based/schema'
 
 test('basic', () => {
   parse({
+    types: {
+      person: {
+        name: 'string',
+      },
+      bence: {
+        coolGuy: 'boolean',
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friendOf',
+          },
+        },
+      },
+    },
+  })
+
+  parse({
     locales: {
       en: {},
     },

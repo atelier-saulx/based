@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 import { wait } from '@saulx/utils'
 
@@ -324,4 +325,48 @@ await test('subscription mixed', async (t) => {
   await wait(1000)
 
   clearInterval(end)
+})
+
+test('subscription listener', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  let lastRes
+  db.query('user').subscribe((res) => {
+    lastRes = res.toObject()
+  })
+
+  await wait(300)
+
+  await db.create('user', {
+    name: 'youzi',
+  })
+
+  await db.create('user', {
+    name: 'james',
+  })
+
+  await wait(300)
+
+  deepEqual(lastRes, [
+    { id: 1, name: 'youzi' },
+    { id: 2, name: 'james' },
+  ])
 })

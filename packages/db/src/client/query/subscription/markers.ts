@@ -46,7 +46,6 @@ export const checkSubscriptionMarkers = (
   prop: PropDef | PropDefEdge, // number
 ) => {
   let newSub = false
-
   if (m.ids) {
     const markers = m.ids
     if (prop.separate) {
@@ -62,12 +61,10 @@ export const checkSubscriptionMarkers = (
     } else {
       const propSubs = markers.main[prop.start]
       if (propSubs) {
-        if (propSubs) {
-          for (const s of propSubs) {
-            if (!s.inProgress) {
-              newSub = true
-              db.subscriptionsToRun.push(s)
-            }
+        for (const s of propSubs) {
+          if (!s.inProgress) {
+            newSub = true
+            db.subscriptionsToRun.push(s)
           }
         }
       }
