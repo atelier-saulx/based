@@ -9,7 +9,6 @@
 #include <arm_neon.h>
 static inline float32x2_t v2f_rsqrt(v2f val)
 {
-    /* TODO SSE: rsqrtss/rsqrtps */
     float32x2_t e = vrsqrte_f32(val);
     e = vmul_f32(vrsqrts_f32(vmul_f32(e, e), val), e);
     /* One iteration is enough. */
@@ -43,6 +42,9 @@ static inline v2f v2f_rsqrt(v2f val)
 
 float vector_sc(float *a, float *b, size_t len)
 {
+    /*
+     * This function compiles best with ARM Neon or Intel AVX2 (-mavx2).
+     */
     v8f x8, y8;
     v8f p8 = {0, 0, 0, 0, 0, 0, 0, 0};
     v8f ma8 = {0, 0, 0, 0, 0, 0, 0, 0};
