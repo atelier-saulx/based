@@ -276,11 +276,12 @@ await test('subscription mixed', async (t) => {
     console.log(blarf)
   }, 100)
 
+  let s = 0
   for (let i = 0; i < 100e3; i++) {
-    const close = db.query('user', i + 1).subscribe((q) => {
-      // console.log(q.id, q)
-      blarf++
-    })
+    // const close = db.query('user', i + 1).subscribe((q) => {
+    // console.log(q.id, q)
+    // blarf++
+    // })
 
     // db.query('user')
     //   // .range(0, 1000)
@@ -301,9 +302,7 @@ await test('subscription mixed', async (t) => {
     //   })
 
     db.query('user')
-      .range(0, 1000)
-
-      .range(0, 1)
+      .range(0, 1e3)
       .include('name', 'nr')
       .filter('flap', '=', i)
       // .filter('nr', '>', 9500)
@@ -314,14 +313,19 @@ await test('subscription mixed', async (t) => {
       // })
       .subscribe((q) => {
         blarf++
-        // console.log(q.id, q)
       })
   }
   await wait(1000)
   update()
+
   await wait(1000)
+  blarf = 0
+  s = performance.now()
   update()
   await wait(1000)
+  s = performance.now() - s - 1e3
+
+  console.log(s / blarf, 'ms per query')
 
   clearInterval(end)
 })

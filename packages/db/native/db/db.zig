@@ -13,7 +13,7 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
 const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
@@ -40,6 +40,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
+
     b.* = .{
         .id = 0,
         .arena = arena.*,
@@ -50,6 +51,12 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
+
+    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    // const allocator = fba.allocator();
+
+    // var buffer: [1000]u8 = undefined;
+    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
     try dbHashmap.put(id, b);
     return b;
 }

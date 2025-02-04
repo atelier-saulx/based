@@ -33,12 +33,12 @@ const QueryType = enum(u8) {
 };
 
 pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),

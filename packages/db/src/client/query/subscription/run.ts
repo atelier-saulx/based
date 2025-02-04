@@ -16,6 +16,8 @@ export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
   return true
 }
 
+const EMPTY = Buffer.alloc(4)
+
 export const runSubscription = (subscription: Subscription) => {
   if (!subscription.inProgress) {
     subscription.inProgress = true
@@ -29,7 +31,15 @@ export const runSubscription = (subscription: Subscription) => {
           return
         }
         subscription.inProgress = false
-        const buf = Buffer.from(res)
+        let err: Error = null
+        let buf: Buffer
+        if (res instanceof Error) {
+          err = res
+          buf = EMPTY
+        } else {
+          // @ts-ignore
+          buf = res
+        }
         if (subscription.res) {
           if (resultsAreEqual(subscription.res.result, buf)) {
             return
@@ -45,7 +55,7 @@ export const runSubscription = (subscription: Subscription) => {
           )
         }
         subscription.subs.forEach((fn) => {
-          fn(subscription.res)
+          fn(subscription.res, err)
         })
       })
       .catch((err) => {
