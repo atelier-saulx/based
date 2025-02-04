@@ -117,14 +117,14 @@ pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSc
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn setTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8, str: *u8) !void {
-    errors.selva(selva.selva_fields_set_text(ctx.selva, node, selvaFieldSchema, lang.ptr, str.ptr, str.len));
+pub fn setTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: selva.selva_lang_code, str: *u8) !void {
+    errors.selva(selva.selva_fields_set_text(ctx.selva, node, selvaFieldSchema, lang, str.ptr, str.len));
 }
 
-pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8) !?*u8 {
+pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: selva.selva_lang_code) !?*u8 {
     var len: usize = 0;
     var str: [len]u8 = undefined;
-    errors.selva(selva.selva_fields_get_text(ctx.selva, node, selvaFieldSchema, lang.ptr, &str, &len));
+    errors.selva(selva.selva_fields_get_text(ctx.selva, node, selvaFieldSchema, lang, &str, &len));
     return str;
 }
 
