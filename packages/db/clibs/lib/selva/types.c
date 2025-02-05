@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 
@@ -10,8 +10,6 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     switch (ftype) {
     case SELVA_FIELD_TYPE_NULL:
     case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
@@ -46,10 +44,6 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"null";
     case SELVA_FIELD_TYPE_TIMESTAMP:
         return (const char *)"timestamp";
-    case SELVA_FIELD_TYPE_CREATED:
-        return (const char *)"created";
-    case SELVA_FIELD_TYPE_UPDATED:
-        return (const char *)"updated";
     case SELVA_FIELD_TYPE_NUMBER:
         return (const char *)"number";
     case SELVA_FIELD_TYPE_INT8:

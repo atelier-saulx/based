@@ -51,28 +51,6 @@ static int type2fs_timestamp(struct schemabuf_parser_ctx *, struct SelvaFieldsSc
     return 1;
 }
 
-static int type2fs_timestamp_created(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    int res;
-
-    res = type2fs_timestamp(ctx, schema, field);
-
-    ctx->te->ns.created_field = field;
-
-    return res;
-}
-
-static int type2fs_timestamp_updated(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    int res;
-
-    res = type2fs_timestamp(ctx, schema, field);
-
-    ctx->te->ns.updated_field = field;
-
-    return res;
-}
-
 static int type2fs_number(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -356,14 +334,6 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
         .type2fs = type2fs_timestamp,
     },
-    [SELVA_FIELD_TYPE_CREATED] = {
-        .type = SELVA_FIELD_TYPE_CREATED,
-        .type2fs = type2fs_timestamp_created,
-    },
-    [SELVA_FIELD_TYPE_UPDATED] = {
-        .type = SELVA_FIELD_TYPE_UPDATED,
-        .type2fs = type2fs_timestamp_updated,
-    },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
@@ -571,8 +541,6 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const cha
 
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
-    ns->created_field = SELVA_FIELDS_RESERVED;
-    ns->updated_field = SELVA_FIELDS_RESERVED;
 
     return parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
 }

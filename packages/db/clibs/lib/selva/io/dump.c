@@ -215,8 +215,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         case SELVA_FIELD_TYPE_NULL:
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
-        case SELVA_FIELD_TYPE_CREATED:
-        case SELVA_FIELD_TYPE_UPDATED:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, timestamp), 1, io);
             break;
         case SELVA_FIELD_TYPE_NUMBER:
@@ -621,8 +619,6 @@ static void load_reference_meta(
             err = 0;
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
-        case SELVA_FIELD_TYPE_CREATED:
-        case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
@@ -820,8 +816,6 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = 0;
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
-        case SELVA_FIELD_TYPE_CREATED:
-        case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:

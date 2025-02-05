@@ -24,8 +24,10 @@ struct SelvaFieldsSchema;
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
     SELVA_FIELD_TYPE_TIMESTAMP = 1,
-    SELVA_FIELD_TYPE_CREATED = 2,
-    SELVA_FIELD_TYPE_UPDATED = 3,
+#if 0
+    SELVA_FIELD_TYPE_SPARE1 = 2,
+    SELVA_FIELD_TYPE_SPARE2 = 3,
+#endif
     SELVA_FIELD_TYPE_NUMBER = 4,
     SELVA_FIELD_TYPE_HLL = 5,
     SELVA_FIELD_TYPE_INT8 = 20,
@@ -88,8 +90,6 @@ struct SelvaFieldsSchema {
 };
 
 struct SelvaNodeSchema {
-    field_t created_field;
-    field_t updated_field;
     struct SelvaFieldsSchema fields_schema;
 };
 

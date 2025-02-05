@@ -8,6 +8,9 @@ import {
   REFERENCES,
   STRING,
   BINARY,
+  CREATED,
+  UPDATED,
+  TIMESTAMP,
 } from './types.js'
 
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
@@ -23,7 +26,10 @@ const propDefBuffer = (
 
   if (type === BINARY) {
     // TODO MAKE NATIVE TYPE
+    // RFE or do we? FDN-663
     type = STRING
+  } else if (type === CREATED || type === UPDATED) {
+    type = TIMESTAMP // TODO This should be defined in a map in this file?
   }
 
   if (prop.len && type === MICRO_BUFFER) {

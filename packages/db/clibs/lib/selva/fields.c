@@ -41,8 +41,6 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
 static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
-    [SELVA_FIELD_TYPE_CREATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
-    [SELVA_FIELD_TYPE_UPDATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
     [SELVA_FIELD_TYPE_HLL] = 0,
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
@@ -732,8 +730,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
          * the caller is passing it correctly.
          */
     case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
@@ -1630,8 +1626,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
             .len = 0,
         };
     case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
@@ -1720,8 +1714,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     switch (nfo->type) {
     case SELVA_FIELD_TYPE_NULL:
     case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
@@ -1997,8 +1989,6 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
             selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
-        case SELVA_FIELD_TYPE_CREATED:
-        case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
