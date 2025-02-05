@@ -254,7 +254,7 @@ await test('subscription mixed', async (t) => {
     },
   })
 
-  const amount = 1e6
+  let amount = 1e6
 
   const update = () => {
     const x = Date.now()
@@ -304,7 +304,7 @@ await test('subscription mixed', async (t) => {
     db.query('user')
       .range(0, 1e3)
       .include('name', 'nr')
-      .filter('flap', '>', i)
+      .filter('flap', '=', i)
       // .or('flap', '<', i)
       // .filter('nr', '>', 9500)
       // .filter('name', 'has', 'Mr')
@@ -321,12 +321,14 @@ await test('subscription mixed', async (t) => {
 
   await wait(1000)
   blarf = 0
+  amount = 1e5
   s = performance.now()
   update()
   await wait(1000)
   s = performance.now() - s - 1e3
 
   console.log(s / blarf, 'ms per query')
+  await wait(10000)
 
   clearInterval(end)
 })
