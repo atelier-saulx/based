@@ -1,7 +1,8 @@
+import { LangCode } from '@based/schema'
 import native from '../native.js'
 
 // type 0 = no compression; 1 = deflate
-// [type] [uncompressed size 4] [compressed string] [crc32]
+// [lang] [type] [uncompressed size 4] [compressed string] [crc32]
 
 // var cnt = 0
 // var bytesSaved = 0
@@ -13,11 +14,12 @@ export const write = (
   value: string,
   offset: number,
   noCompression: boolean,
+  lang?: LangCode,
 ): number => {
   value = value.normalize('NFKD')
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    buf[offset] = 0 // lang TODO we could actually set this
+    buf[offset] = lang || 0
     const s = Buffer.byteLength(value, 'utf8')
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))

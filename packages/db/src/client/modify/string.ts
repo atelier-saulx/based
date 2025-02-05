@@ -1,3 +1,4 @@
+import { LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import {
@@ -16,6 +17,7 @@ import { write } from '../string.js'
 // add compression handling for main buffer
 // add compression handling for edge fields
 export function writeString(
+  lang: LangCode,
   value: string | null | Buffer,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
@@ -58,7 +60,7 @@ export function writeString(
     } else {
       const isNoCompression = t.compression === 0
       // @ts-ignore stupid str
-      size = write(ctx.buf, value, ctx.len, isNoCompression)
+      size = write(ctx.buf, value, ctx.len, isNoCompression, lang)
     }
     let sizepos = ctx.len + 1 - 5
     ctx.len += size

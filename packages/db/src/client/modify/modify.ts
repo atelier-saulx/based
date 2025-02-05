@@ -58,7 +58,7 @@ function _modify(
       const type = def.typeIndex
       if (def.separate) {
         if (type === STRING) {
-          err = writeString(val, ctx, schema, def, res.tmpId, mod)
+          err = writeString(0, val, ctx, schema, def, res.tmpId, mod)
         } else if (type === TEXT) {
           err = writeText(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === REFERENCE) {
