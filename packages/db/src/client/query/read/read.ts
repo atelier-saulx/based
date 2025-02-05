@@ -307,7 +307,7 @@ export const readAllFields = (
       }
     }
   }
-  // to add defaults - may not optimal for perfromance
+  // to add defaults - may not optimal for performance
   handleUndefinedProps(id, q, item)
   return i - offset
 }
