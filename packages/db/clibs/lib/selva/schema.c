@@ -334,6 +334,14 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
         .type2fs = type2fs_timestamp,
     },
+    [2] = {
+        .type = 2,
+        .type2fs = type2fs_reserved,
+    },
+    [3] = {
+        .type = 3,
+        .type2fs = type2fs_reserved,
+    },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,

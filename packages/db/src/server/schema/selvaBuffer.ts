@@ -11,7 +11,51 @@ import {
   CREATED,
   UPDATED,
   TIMESTAMP,
+  NULL,
+  NUMBER,
+  HLL,
+  INT8,
+  UINT8,
+  INT16,
+  UINT16,
+  INT32,
+  UINT32,
+  INT64,
+  BOOLEAN,
+  ENUM,
+  TEXT,
+  WEAK_REFERENCE,
+  WEAK_REFERENCES,
+  ALIAS,
+  ALIASES,
 } from './types.js'
+
+const selvaTypeMap = []
+selvaTypeMap[NULL] = 0
+selvaTypeMap[TIMESTAMP] = 1
+selvaTypeMap[CREATED] = 1
+selvaTypeMap[UPDATED] = 1
+selvaTypeMap[NUMBER] = 4
+selvaTypeMap[HLL] = 5
+selvaTypeMap[INT8] = 20
+selvaTypeMap[UINT8] = 6
+selvaTypeMap[INT16] = 21
+selvaTypeMap[UINT16] = 22
+selvaTypeMap[INT32] = 23
+selvaTypeMap[UINT32] = 7
+selvaTypeMap[INT64] = 24
+selvaTypeMap[BOOLEAN] = 9
+selvaTypeMap[ENUM] = 10
+selvaTypeMap[STRING] = 11
+selvaTypeMap[TEXT] = 12
+selvaTypeMap[REFERENCE] = 13
+selvaTypeMap[REFERENCES] = 14
+selvaTypeMap[WEAK_REFERENCE] = 15
+selvaTypeMap[WEAK_REFERENCES] = 16
+selvaTypeMap[MICRO_BUFFER] = 17
+selvaTypeMap[ALIAS] = 18
+selvaTypeMap[ALIASES] = 19
+selvaTypeMap[BINARY] = 11
 
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
@@ -22,19 +66,12 @@ const propDefBuffer = (
   prop: PropDef,
   isEdge?: boolean,
 ): number[] => {
-  let type = prop.typeIndex
-
-  if (type === BINARY) {
-    // TODO MAKE NATIVE TYPE
-    // RFE or do we? FDN-663
-    type = STRING
-  } else if (type === CREATED || type === UPDATED) {
-    type = TIMESTAMP // TODO This should be defined in a map in this file?
-  }
+  const type = prop.typeIndex
+  const selvaType = selvaTypeMap[type]
 
   if (prop.len && type === MICRO_BUFFER) {
     const buf = Buffer.allocUnsafe(3)
-    buf[0] = type
+    buf[0] = selvaType
     buf.writeUint16LE(prop.len, 1)
     return [...buf.values()]
   } else if (type === REFERENCE || type === REFERENCES) {
@@ -43,7 +80,7 @@ const propDefBuffer = (
     let eschema = []
 
     // @ts-ignore
-    buf[0] = type + 2 * !!isEdge
+    buf[0] = selvaType + 2 * !!isEdge
     buf.writeUInt16LE(dstType.id, 1)
     buf.writeUint32LE(0, 4)
     if (!isEdge) {
@@ -62,10 +99,10 @@ const propDefBuffer = (
     }
 
     return [...buf.values(), ...eschema]
-  } else if (type === STRING) {
-    return [type, prop.len < 50 ? prop.len : 0]
+  } else if (type === STRING || type == BINARY) {
+    return [selvaType, prop.len < 50 ? prop.len : 0]
   } else {
-    return [type]
+    return [selvaType]
   }
 }
 
