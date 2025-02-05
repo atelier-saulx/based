@@ -121,7 +121,13 @@ await test('migration', async (t) => {
       .get()
   ).toObject()
 
-  console.log(allUsers[0], allUsers[1], allUsers.at(-1))
+  console.log(
+    amount,
+    allUsers.length,
+    allUsers[0],
+    allUsers[1],
+    allUsers.at(-1),
+  )
 
   if (
     allUsers.every((node) => {

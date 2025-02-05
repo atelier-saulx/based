@@ -1,4 +1,5 @@
-import { DbClient } from '../src/client/index.js'
+import { setTimeout } from 'timers/promises'
+import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { BasedDb } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual, throws } from './shared/assert.js'
@@ -19,9 +20,9 @@ await test('client server', async (t) => {
     return server.destroy()
   })
 
-  const hooks = {
-    async putSchema(schema, fromStart) {
-      return server.putSchema(schema, fromStart)
+  const hooks: DbClientHooks = {
+    async putSchema(schema, fromStart, transformFns) {
+      return server.putSchema(schema, fromStart, transformFns)
     },
     async flushModify(buf) {
       const offsets = server.modify(buf)
@@ -52,12 +53,25 @@ await test('client server', async (t) => {
     name: 'youzi',
   })
 
-  const jamez = await client2.create('user', {
+  const jamez = await client1.create('user', {
     name: 'jamez',
   })
 
-  deepEqual(await client2.query('user').get().toObject(), [
+  deepEqual(await client1.query('user').get().toObject(), [
     { id: 1, name: 'youzi' },
     { id: 2, name: 'jamez' },
+  ])
+
+  await client1.putSchema({
+    types: {
+      user: {
+        age: 'number',
+      },
+    },
+  })
+
+  deepEqual(await client1.query('user').get().toObject(), [
+    { id: 1, age: 0 },
+    { id: 2, age: 0 },
   ])
 })

@@ -8,6 +8,7 @@ import native from '../../native.js'
 import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
 import { DbServer } from '../index.js'
+import { setTimeout } from 'timers/promises'
 
 let migrationCnt = 0
 
@@ -39,7 +40,7 @@ export const migrate = async (
   fromDbServer: DbServer,
   toSchema: StrictSchema,
   transform?: TransformFns,
-) => {
+): Promise<DbServer['schema']> => {
   const migrationId = migrationCnt++
   fromDbServer.migrating = migrationId
   const abort = () => fromDbServer.migrating !== migrationId
@@ -50,7 +51,8 @@ export const migrate = async (
   await toDb.start({ clean: true })
 
   if (abort()) {
-    return toDb.destroy()
+    await toDb.destroy()
+    return fromDbServer.schema
   }
 
   toSchema = await toDb.putSchema(toSchema)
@@ -63,6 +65,8 @@ export const migrate = async (
   const fromAddress = native.intFromExternal(fromCtx)
   const toAddress = native.intFromExternal(toCtx)
   const transformFns = parseTransform(transform)
+
+  atomics[0] = 1
 
   const worker = new Worker('./dist/src/server/migrate/worker.js', {
     workerData: {
@@ -88,11 +92,12 @@ export const migrate = async (
     ranges.push(leaf.data)
   })
 
+  await Atomics.waitAsync(atomics, 0, 1).value
+
   while (i < ranges.length) {
     // block modifies
     fromDbServer.processingQueries++
     const leafData = ranges[i++]
-    // console.log('->', leafData)
     port1.postMessage(leafData)
     // wake up the worker
     atomics[0] = 1
@@ -133,4 +138,7 @@ export const migrate = async (
 
   promises.push(toDb.destroy(), worker.terminate())
   await Promise.all(promises)
+
+  fromDbServer.onSchemaChange?.(fromDbServer.schema)
+  return fromDbServer.schema
 }

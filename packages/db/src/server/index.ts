@@ -13,7 +13,7 @@ import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
-import { migrate } from './migrate/index.js'
+import { migrate, TransformFns } from './migrate/index.js'
 
 const SCHEMA_FILE = 'schema.json'
 const __filename = fileURLToPath(import.meta.url)
@@ -262,7 +262,15 @@ export class DbServer {
     })
   }
 
-  putSchema(strictSchema: StrictSchema, fromStart: boolean = false) {
+  putSchema(
+    strictSchema: StrictSchema,
+    fromStart: boolean = false,
+    transformFns?: TransformFns,
+  ) {
+    if (!fromStart && Object.keys(this.schema.types).length > 0) {
+      return this.migrateSchema(strictSchema, transformFns)
+    }
+
     const { lastId } = this.schema
 
     this.schema = {

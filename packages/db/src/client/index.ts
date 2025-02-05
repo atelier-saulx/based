@@ -16,11 +16,13 @@ import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
 import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
 import { deepEqual } from '@saulx/utils'
+import { TransformFns } from '../server/migrate/index.js'
 
-type Hooks = {
+export type DbClientHooks = {
   putSchema(
     schema: StrictSchema,
     fromStart?: boolean,
+    transformFns?: TransformFns,
   ): Promise<DbServer['schema']>
   flushModify(buf: Buffer): Promise<{
     offsets: Record<number, number>
@@ -29,7 +31,7 @@ type Hooks = {
 }
 
 type DbClientOpts = {
-  hooks: Hooks
+  hooks: DbClientHooks
   maxModifySize?: number
 }
 
@@ -40,7 +42,7 @@ export class DbClient {
     this.modifyCtx = new ModifyCtx(this)
   }
 
-  hooks: Hooks
+  hooks: DbClientHooks
 
   // schema
   schema: StrictSchema & { lastId: number } = {
@@ -68,13 +70,16 @@ export class DbClient {
   subscriptionMarkers: SubscriptionMarkerMap = {}
   subscriptionsToRun: SubscriptionsToRun = []
 
-  // merkle => move this to modifyctx
-
-  async putSchema(schema: Schema, fromStart?: boolean): Promise<StrictSchema> {
+  async putSchema(
+    schema: Schema,
+    fromStart?: boolean,
+    transformFns?: TransformFns,
+  ): Promise<StrictSchema> {
     const strictSchema = fromStart ? schema : parse(schema).schema
     const remoteSchema = await this.hooks.putSchema(
       strictSchema as StrictSchema,
       fromStart,
+      transformFns,
     )
     return this.putLocalSchema(remoteSchema)
   }
@@ -85,6 +90,7 @@ export class DbClient {
     }
     this.schema = schema
     updateTypeDefs(this)
+    // TODO should not need this, but it modifies the schema
     schemaToSelvaBuffer(this.schemaTypesParsed)
     return this.schema
   }
