@@ -4,11 +4,9 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
-
 import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
 import { DbServer } from '../index.js'
-import { setTimeout } from 'timers/promises'
 
 let migrationCnt = 0
 

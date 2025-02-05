@@ -17,6 +17,7 @@ import { DbServer } from '../server/index.js'
 import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
 import { deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
+import { hash } from '@saulx/hash'
 
 export type DbClientHooks = {
   putSchema(
@@ -69,18 +70,24 @@ export class DbClient {
   subscriptions: SubscriptionsMap = new Map()
   subscriptionMarkers: SubscriptionMarkerMap = {}
   subscriptionsToRun: SubscriptionsToRun = []
+  schemaChecksum: number
 
   async putSchema(
     schema: Schema,
     fromStart?: boolean,
     transformFns?: TransformFns,
   ): Promise<StrictSchema> {
+    const checksum = hash(schema)
+    if (checksum === this.schemaChecksum) {
+      return this.schema
+    }
     const strictSchema = fromStart ? schema : parse(schema).schema
     const remoteSchema = await this.hooks.putSchema(
       strictSchema as StrictSchema,
       fromStart,
       transformFns,
     )
+    this.schemaChecksum = checksum
     return this.putLocalSchema(remoteSchema)
   }
 
