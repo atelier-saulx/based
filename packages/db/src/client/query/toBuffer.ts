@@ -6,8 +6,6 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { ALIAS, PropDef } from '../../server/schema/types.js'
 
-import native from '../../native.js'
-import { crc32 } from '../crc32.js'
 import { DbClient } from '../index.js'
 
 const byteSize = (arr: Buffer[]) => {
