@@ -17,9 +17,9 @@ export const write = (
   lang?: LangCode,
 ): number => {
   value = value.normalize('NFKD')
+  buf[offset] = lang || 0
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    buf[offset] = lang || 0
     const s = Buffer.byteLength(value, 'utf8')
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
