@@ -19,7 +19,7 @@ struct selva_string;
  * Can be used to mark that a field doesn't exist.
  * E.g. if created and updated fields don't exist their ids can be set to this
  * value.
- * Techinally fields 251..255 are all reserved.
+ * Technically fields 251..255 are all reserved.
  */
 #define SELVA_FIELDS_RESERVED 255
 
