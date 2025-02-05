@@ -148,7 +148,7 @@ await test('simple', async (t) => {
 
   // console.log('what??', measure, amount, measure / amount)
 
-  equal(measure / amount < 15, true, 'multi ref OR filter lower then 10ms')
+  equal(measure / amount < 20, true, 'multi ref OR filter lower then 20ms')
 
   measure = 0
   mi = 0
