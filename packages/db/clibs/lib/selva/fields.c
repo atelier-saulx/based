@@ -750,7 +750,8 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         break;
     case SELVA_FIELD_TYPE_STRING:
         return set_field_string(fields, fs, nfo, value, len);
-        break;
+    case SELVA_FIELD_TYPE_TEXT:
+        return selva_fields_set_text(node, fs, value, len);
     case SELVA_FIELD_TYPE_REFERENCE:
 #if 0
         assert(db && node);
@@ -769,7 +770,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
         return set_field_smb(fields, nfo, value, len);
         break;
-    case SELVA_FIELD_TYPE_TEXT:
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
     case SELVA_FIELD_TYPE_HLL:
