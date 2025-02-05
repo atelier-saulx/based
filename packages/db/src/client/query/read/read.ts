@@ -13,6 +13,7 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
+  TEXT,
   TIMESTAMP,
   UINT16,
   UINT32,
@@ -282,6 +283,16 @@ export const readAllFields = (
         } else {
           addField(prop, read(result, i + 4, size), item)
         }
+        i += size + 4
+      } else if (prop.typeIndex == TEXT) {
+        q.include.propsRead[index] = id
+        const size = result.readUint32LE(i)
+        // TODO Read text
+        //if (size === 0) {
+        //  addField(prop, '', item)
+        //} else {
+        //  addField(prop, read(result, i + 4, size), item)
+        //}
         i += size + 4
       } else if (prop.typeIndex === ALIAS) {
         q.include.propsRead[index] = id

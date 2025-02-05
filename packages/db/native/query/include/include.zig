@@ -136,6 +136,7 @@ pub fn getFields(
             size += (valueLen + 5);
         }
 
+        // TODO if fieldType == TEXT => read each selva_string
         var result: results.Result = .{
             .id = null,
             .score = null,
