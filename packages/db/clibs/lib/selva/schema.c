@@ -161,18 +161,6 @@ static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema 
     return 1;
 }
 
-static int type2fs_hll(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_HLL,
-    };
-
-    return 1;
-}
-
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
     const char *buf = ctx->buf;
@@ -334,6 +322,14 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
         .type2fs = type2fs_timestamp,
     },
+    [2] = {
+        .type = 2,
+        .type2fs = type2fs_reserved,
+    },
+    [3] = {
+        .type = 3,
+        .type2fs = type2fs_reserved,
+    },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
@@ -366,9 +362,9 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TEXT,
         .type2fs = type2fs_text,
     },
-    [SELVA_FIELD_TYPE_HLL] = {
-        .type = SELVA_FIELD_TYPE_HLL,
-        .type2fs = type2fs_hll,
+    [5] = {
+        .type = 5,
+        .type2fs = type2fs_reserved,
     },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,

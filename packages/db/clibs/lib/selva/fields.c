@@ -42,7 +42,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
-    [SELVA_FIELD_TYPE_HLL] = 0,
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
     [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
     [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
@@ -768,7 +767,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
-    case SELVA_FIELD_TYPE_HLL:
         return SELVA_ENOTSUP;
     }
 
@@ -1672,7 +1670,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
-    case SELVA_FIELD_TYPE_HLL:
         return (struct SelvaFieldsPointer){
             .ptr = nullptr,
             .off = 0,
@@ -1750,7 +1747,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
-    case SELVA_FIELD_TYPE_HLL:
         return SELVA_ENOTSUP;
     }
 
@@ -2042,7 +2038,6 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        case SELVA_FIELD_TYPE_HLL:
             /*
              * NOP Aliases are hashed in the node hash in db.c.
              */
