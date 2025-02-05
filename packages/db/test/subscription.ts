@@ -304,7 +304,8 @@ await test('subscription mixed', async (t) => {
     db.query('user')
       .range(0, 1e3)
       .include('name', 'nr')
-      .filter('flap', '=', i)
+      .filter('flap', '>', i)
+      // .or('flap', '<', i)
       // .filter('nr', '>', 9500)
       // .filter('name', 'has', 'Mr')
       // .or((f) => {
