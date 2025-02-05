@@ -3,11 +3,12 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
 import { size, time, inspectData } from './display.js'
+import { readUint32 } from '../bitWise.js'
 
 export { time, size, inspectData }
 
 export class BasedQueryResponse {
-  result: Buffer
+  result: Uint8Array
   def: QueryDef
   execTime: number
   end: number
@@ -16,9 +17,9 @@ export class BasedQueryResponse {
   constructor(
     id: number,
     def: QueryDef,
-    result: Buffer,
+    result: Uint8Array,
     execTime: number,
-    end: number = result.byteLength,
+    end: number = result.length,
   ) {
     this.id = id
     this.def = def
@@ -28,7 +29,7 @@ export class BasedQueryResponse {
   }
 
   get size() {
-    return this.result.byteLength
+    return this.result.length
   }
 
   [inspect.custom](depth: number) {
@@ -83,7 +84,7 @@ export class BasedQueryResponse {
     let i = 5
     const result = this.result
     while (i < result.byteLength - 4) {
-      let id = result.readUInt32LE(i)
+      let id = readUint32(result, i)
       i += 4
       const item: Item = {
         id,
@@ -127,11 +128,13 @@ export class BasedQueryResponse {
   }
 
   get checksum() {
-    return this.result.readUint32LE(this.result.byteLength - 4)
+    const result = this.result
+    const offset = result.byteLength - 4
+    return readUint32(result, offset)
   }
 
   get length() {
-    return this.result.readUint32LE(0)
+    return readUint32(this.result, 0)
   }
 
   toObject(): any {

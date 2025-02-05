@@ -43,7 +43,7 @@ await test('subscription  multiple', async (t) => {
     .query('user')
     .range(0, 1e6)
     .subscribe((q) => {
-      console.log(q.id, q)
+      console.log('ID', q)
     })
 
   await wait(100)
