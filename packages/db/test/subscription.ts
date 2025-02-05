@@ -328,7 +328,7 @@ await test('subscription mixed', async (t) => {
   s = performance.now() - s - 1e3
 
   console.log(s / blarf, 'ms per query')
-  await wait(10000)
+  await wait(1000)
 
   clearInterval(end)
 })
