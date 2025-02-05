@@ -31,7 +31,6 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
         return true;
-    case SELVA_FIELD_TYPE_HLL:
     }
     return false;
 }
@@ -84,7 +83,6 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"alias";
     case SELVA_FIELD_TYPE_ALIASES:
         return (const char *)"aliases";
-    case SELVA_FIELD_TYPE_HLL:
     }
 
     return (const char *)"invalid";
