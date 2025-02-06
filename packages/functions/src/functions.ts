@@ -3,6 +3,7 @@ import { Context, HttpSession } from './context.js'
 import { BasedFunctionClient } from './client.js'
 import { BasedDataStream } from './stream.js'
 import { Authorize } from './auth.js'
+import type { BuildOptions } from 'esbuild'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,
@@ -252,6 +253,13 @@ type BasedAppFunctionConfig = {
   main: string
   path?: string
   favicon?: string
+  build?: {
+    watch?: {
+      include: string[]
+      exclude?: string[]
+    }
+    plugins?: BuildOptions['plugins']
+  }
 }
 
 type BasedJobFunctionConfig = {

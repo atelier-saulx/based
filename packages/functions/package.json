@@ -1,9 +1,12 @@
 {
   "name": "@based/functions",
-  "version": "3.0.2",
+  "version": "3.1.0-alpha",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
+  "files":[
+    "dist"
+  ],
   "scripts": {
     "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts && cp ./dist/client.d.ts ./dist/client_original.d.ts",
     "watch": "npx tsc --watch",
@@ -11,12 +14,13 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "utility-types": "^3.10.0",
-    "@saulx/utils": "^5.0.0"
+    "@saulx/utils": "^5.0.0",
+    "esbuild": "^0.24.2",
+    "utility-types": "^3.10.0"
   },
   "devDependencies": {
+    "rimraf": "^3.0.2",
     "ts-node": "10.9.1",
-    "typescript": "^4.3.5",
-    "rimraf": "^3.0.2"
+    "typescript": "^4.3.5"
   }
 }
