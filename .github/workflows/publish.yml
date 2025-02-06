@@ -1,0 +1,202 @@
+name: Publish
+run-name: based-db CI/CD Publish 🚀
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (starts with `v`)
+        required: true
+        type: string
+      notes:
+        description: Release notes
+        type: string
+jobs:
+  build-selva-linux-x64:
+    uses: './.github/workflows/build-binaries.yml'
+    with:
+      target: ubuntu-latest
+  test-selva-linux-x64:
+    uses: './.github/workflows/run-tests.yml'
+    needs: build-selva-linux-x64
+    with:
+      target: ubuntu-latest
+  binaries-to-artifacts-linux-x64:
+    uses: './.github/workflows/binaries-to-artifacts.yml'
+    needs: test-selva-linux-x64
+    with:
+      target: ubuntu-latest
+  build-selva-mac-x64:
+    uses: './.github/workflows/build-binaries.yml'
+    needs: test-selva-linux-x64
+    with:
+      target: macos-13
+  binaries-to-artifacts-mac-x64:
+    uses: './.github/workflows/binaries-to-artifacts.yml'
+    needs: build-selva-mac-x64
+    with:
+      target: macos-13
+  build-selva-mac-arm64:
+    uses: './.github/workflows/build-binaries.yml'
+    needs: test-selva-linux-x64
+    with:
+      target: macos-13-xlarge
+  binaries-to-artifacts-mac-arm64:
+    uses: './.github/workflows/binaries-to-artifacts.yml'
+    needs: build-selva-mac-arm64
+    with:
+      target: macos-13-xlarge
+
+  # publish-npm:
+  #   name: Publish ${{inputs.version}} npm packages
+  #   needs:
+  #     - binaries-to-artifacts-linux-x64
+  #     - binaries-to-artifacts-mac-x64
+  #     - binaries-to-artifacts-mac-arm64
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check version
+  #       if: ${{ !inputs.version }}
+  #       run: |
+  #         echo "No version provided on inputs"
+  #         exit 1
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18.x'
+  #         registry-url: 'https://registry.npmjs.org'
+  #     # - name: Restore selvad build cache
+  #     #   id: cache-selvad-try
+  #     #   uses: actions/cache/restore@v3
+  #     #   with:
+  #     #     path: |
+  #     #       packages/server/selvad/local
+  #     #     key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
+  #     #     fail-on-cache-miss: true
+  #     - name: Restore node_modules
+  #       id: cache-npm-try
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: '**/node_modules'
+  #         key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
+  #     - name: Install dependencies
+  #       if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+  #       run: npm ci
+  #     - name: Build based-db
+  #       run: npm run build
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         path: .
+  #     - name: Extract linux-x64 to package bin folder
+  #       run: |
+  #         mkdir -p packages/server/selvad-packages/linux-x64/bin
+  #         tar -zxf Linux-X64-selvad-binaries/linux-x64.tar.gz -C packages/server/selvad-packages/linux-x64/bin
+  #         ls -la packages/server/selvad-packages/linux-x64/bin
+  #     - name: Extract darwin-x64 to package bin folder
+  #       run: |
+  #         mkdir -p packages/server/selvad-packages/darwin-x64/bin
+  #         tar -zxf macOS-X64-selvad-binaries/darwin-x64.tar.gz -C packages/server/selvad-packages/darwin-x64/bin
+  #         ls -la packages/server/selvad-packages/darwin-x64/bin
+  #     - name: Extract darwin-arm64 to package bin folder
+  #       run: |
+  #         mkdir -p packages/server/selvad-packages/darwin-arm64/bin
+  #         tar -zxf macOS-ARM64-selvad-binaries/darwin-arm64.tar.gz -C packages/server/selvad-packages/darwin-arm64/bin
+  #         ls -la packages/server/selvad-packages/darwin-arm64/bin
+  #     - name: Update query version
+  #       run: |
+  #         cd packages/query
+  #         npm version --no-git-tag-version ${{inputs.version}}
+  #         cd ../..
+  #     - name: Publish query package
+  #       run: |
+  #         cd packages/query
+  #         npm publish --access=public
+  #         cd ../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Update client version
+  #       run: |
+  #         cd packages/client
+  #         node scripts/updateDependencies.js ${{ inputs.version }}
+  #         npm version --no-git-tag-version ${{inputs.version}}
+  #         cd ../..
+  #     - name: Publish client package
+  #       run: |
+  #         cd packages/client
+  #         npm publish --access=public
+  #         cd ../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Update server version
+  #       run: |
+  #         cd packages/server
+  #         node scripts/updateOptionalDependencies.js ${{ inputs.version }}
+  #         npm version --no-git-tag-version ${{ inputs.version }}
+  #         cd ../..
+  #     - name: Publish server package
+  #       run: |
+  #         cd packages/server
+  #         npm publish --access=public
+  #         cd ../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Update linux x64 binaries package version
+  #       run: |
+  #         cd packages/server/selvad-packages/linux-x64
+  #         npm version --no-git-tag-version ${{inputs.version}}
+  #         cd ../../../..
+  #     - name: Update darwin x64 binaries package version
+  #       run: |
+  #         cd packages/server/selvad-packages/darwin-x64
+  #         npm version --no-git-tag-version ${{inputs.version}}
+  #         cd ../../../..
+  #     - name: Update darwin arm64 binaries package version
+  #       run: |
+  #         cd packages/server/selvad-packages/darwin-arm64
+  #         npm version --no-git-tag-version ${{inputs.version}}
+  #         cd ../../../..
+  #     - name: Commit and push changes
+  #       run: |
+  #         npm ci
+  #         git status
+  #         git config --global user.name 'CI/CD'
+  #         git config --global user.email 'dev@saulx.com'
+  #         git commit -am "CI/CD update package.json files"
+  #         git push
+  #     - name: Publish linux-x64 npm package\
+  #       run: |
+  #         cd packages/server/selvad-packages/linux-x64
+  #         npm publish --access=public
+  #         cd ../../../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Publish darwin-x64 npm package
+  #       run: |
+  #         cd packages/server/selvad-packages/darwin-x64
+  #         npm publish --access=public
+  #         cd ../../../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Publish darwin-arm64 npm package
+  #       run: |
+  #         cd packages/server/selvad-packages/darwin-arm64
+  #         npm publish --access=public
+  #         cd ../../../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  # tag-version:
+  # name: Create tag for ${{inputs.version}}
+  # needs: publish-npm
+  # runs-on: ubuntu-latest
+  # steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Use Node.js
+  #     uses: actions/setup-node@v3
+  #     with:
+  #       node-version: '18.x'
+  #   - name: Create Tag
+  #     run: |
+  #       git config --global user.name 'CI/CD'
+  #       git config --global user.email 'dev@saulx.com'
+  #       git tag ${{ inputs.version }}
+  #       git push --tags

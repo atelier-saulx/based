@@ -1,0 +1,45 @@
+name: CI/CD
+run-name: based-db CI/CD 🚀
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target platform"
+        options:
+          - ubuntu-latest
+          - macos-13
+          - macos-13-xlarge
+        default: ubuntu-latest
+        type: choice
+      force-build:
+        description: "Force build"
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      target:
+        default: ubuntu-latest
+        type: string
+      force-build:
+        default: false
+        type: boolean
+  pull_request:
+    branches:
+      - main
+    types: ['opened', 'edited', 'reopened', 'synchronize', 'ready_for_review']
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
+jobs:
+  build-selva:
+    uses: './.github/workflows/build-binaries.yml'
+    with:
+      target: ${{ inputs.target }}
+  run-tests:
+    uses: './.github/workflows/run-tests.yml'
+    with:
+      target: ${{ inputs.target }}
+    needs: build-selva

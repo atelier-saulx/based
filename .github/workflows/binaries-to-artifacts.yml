@@ -1,0 +1,40 @@
+name: Binaries to Artifacts
+run-name: based-db CI/CD Binaries to Artifacts 🚀
+on:
+  workflow_call:
+    inputs:
+      target:
+        type: string
+        default: ubuntu-latest
+jobs:
+  release-binaries:
+    name: Release ${{inputs.version}} binaries
+    runs-on: ${{ inputs.target }}
+    steps:
+      - name: Check version
+        if: ${{ !inputs.version }}
+        run: |
+          echo "No version provided on inputs"
+          exit 1
+      - uses: actions/checkout@v4
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/server/selvad/local
+          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
+          fail-on-cache-miss: true
+      - name: Get archive name
+        id: archive-name
+        run: |
+          echo "filename=$(node scripts/getArch.js).tar.gz" >> $GITHUB_OUTPUT
+      - name: Compress binaries
+        run: |
+          tar -czf ${{ steps.archive-name.outputs.filename }} -C packages/server/selvad/local .
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os}}-${{ runner.arch}}-selvad-binaries
+          path: |
+            ${{ steps.archive-name.outputs.filename }}
