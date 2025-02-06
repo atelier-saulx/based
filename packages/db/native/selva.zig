@@ -21,6 +21,7 @@ pub usingnamespace @cImport({
     @cInclude("selva_error.h");
     @cInclude("selva/crc32c.h");
     @cInclude("selva/selva_hash128.h");
+    @cInclude("selva/selva_string.h");
 
     @cInclude("libdeflate.h");
 

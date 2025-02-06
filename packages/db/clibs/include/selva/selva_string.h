@@ -60,6 +60,7 @@ struct selva_string_compressed_hdr {
     uint32_t uncompressed_size;
 } __packed;
 
+#define SELVA_STRING_STRUCT_SIZE 16
 #ifndef __zig
 struct selva_string {
     struct {
@@ -72,6 +73,7 @@ struct selva_string {
         char emb[sizeof(char *)];
     };
 };
+static_assert(sizeof(struct selva_string) == SELVA_STRING_STRUCT_SIZE);
 
 #define SELVA_STRING_STATIC_BUF_SIZE(len) \
     (((len + 1) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *))

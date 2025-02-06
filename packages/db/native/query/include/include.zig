@@ -9,6 +9,7 @@ const std = @import("std");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const IncludeOp = types.IncludeOp;
+const selva = @import("../../selva.zig");
 
 pub fn getFields(
     node: db.Node,
@@ -98,16 +99,18 @@ pub fn getFields(
 
         var value: []u8 = undefined;
 
+        var fieldSchema: *const selva.SelvaFieldSchema = undefined;
         if (isEdge) {
-            const edgeFieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
-            edgeType = @enumFromInt(edgeFieldSchema.*.type);
-            value = db.getEdgeProp(edgeRef.?.reference.?, edgeFieldSchema);
+            fieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
+            edgeType = @enumFromInt(fieldSchema.*.type);
+            value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
         } else {
+            fieldSchema = try db.getFieldSchema(field, typeEntry);
             value = db.getField(
                 typeEntry,
                 id,
                 node,
-                try db.getFieldSchema(field, typeEntry),
+                fieldSchema,
             );
         }
 
@@ -136,7 +139,20 @@ pub fn getFields(
             size += (valueLen + 5);
         }
 
-        // TODO if fieldType == TEXT => read each selva_string
+        if (field != 0 and fieldSchema.*.type == selva.SELVA_FIELD_TYPE_TEXT) {
+            const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+            const text = textTmp.*[0 .. value[8]];
+            for (text) |tl| {
+                const ss: * const selva.selva_string = @ptrCast(&tl);
+                var len: usize = undefined;
+                const str: [*]const u8 = selva.selva_string_to_str(ss, &len);
+                const s = @as([*]u8, @constCast(str))[2 .. len];
+                std.log.err("tl: \"{s}\"", .{s});
+
+                // TODO
+            }
+        }
+
         var result: results.Result = .{
             .id = null,
             .score = null,
