@@ -514,15 +514,11 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const cha
         .alias_index = 0,
     };
 
-    if (len < SCHEMA_MIN_SIZE)
-    {
+    if (len < SCHEMA_MIN_SIZE) {
         return SELVA_EINVAL;
     }
 
-
-
     /* We just assume that fields_schema is allocated properly. */
-
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
 
