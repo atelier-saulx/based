@@ -1,3 +1,4 @@
+// WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
 export const TIMESTAMP = 1
 export const CREATED = 2
