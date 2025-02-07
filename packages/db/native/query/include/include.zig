@@ -146,28 +146,49 @@ pub fn getFields(
         if (field != 0 and PropType == t.Prop.TEXT) {
             const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
             const text = textTmp.*[0..value[8]];
-            // if !specific lang
+            const lang = ctx.lang;
             for (text) |tl| {
                 const ss: *const selva.selva_string = @ptrCast(&tl);
                 var len: usize = undefined;
                 const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
                 const s = @as([*]u8, @constCast(str));
-                if (isEdge) {
-                    size += (len + 6);
-                } else {
-                    size += (len + 5);
-                }
-                var result = addResult(field, s[0..len], includeMain, edgeType);
-                if (!idIsSet) {
-                    size += 5;
-                    result.id = id;
-                    idIsSet = true;
-                    if (score != null) {
-                        result.score = score;
-                        size += 1;
+
+                if (lang == t.LangCode.NONE) {
+                    if (isEdge) {
+                        size += (len + 6);
+                    } else {
+                        size += (len + 5);
                     }
+                    var result = addResult(field, s[0..len], includeMain, edgeType);
+                    if (!idIsSet) {
+                        size += 5;
+                        result.id = id;
+                        idIsSet = true;
+                        if (score != null) {
+                            result.score = score;
+                            size += 1;
+                        }
+                    }
+                    try ctx.results.append(result);
+                } else if (s[0] == @intFromEnum(lang)) {
+                    if (isEdge) {
+                        size += (len + 6);
+                    } else {
+                        size += (len + 5);
+                    }
+                    var result = addResult(field, s[0..len], includeMain, edgeType);
+                    if (!idIsSet) {
+                        size += 5;
+                        result.id = id;
+                        idIsSet = true;
+                        if (score != null) {
+                            result.score = score;
+                            size += 1;
+                        }
+                    }
+                    try ctx.results.append(result);
+                    break;
                 }
-                try ctx.results.append(result);
             }
         } else {
             if (isEdge) {

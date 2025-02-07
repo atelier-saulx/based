@@ -1,3 +1,4 @@
+import { LangCode } from '@based/schema'
 import {
   PropDef,
   PropDefEdge,
@@ -54,6 +55,7 @@ export type QueryDefSearch = {
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
 
 export type QueryDefShared = {
+  lang: LangCode
   filter: QueryDefFilter
   search: null | QueryDefSearch
   sort: null | QueryDefSort

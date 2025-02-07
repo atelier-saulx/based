@@ -35,6 +35,7 @@ import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
+import { LangCode, langCodesMap, LangName } from '@based/schema'
 
 export { QueryByAliasObj }
 
@@ -273,6 +274,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   register() {
     return registerQuery(this)
+  }
+
+  i18n(locale: LangName) {
+    this.def.lang = langCodesMap.get(locale) ?? 0
+    return this
   }
 
   subscribe(onData: OnData, onError?: OnError) {

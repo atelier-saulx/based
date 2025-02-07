@@ -40,4 +40,6 @@ await test('text', async (t) => {
   console.log(await db.query('dialog').include('id', 'fun').get())
 
   console.log(await db.query('dialog').include('id').get())
+
+  console.log(await db.query('dialog').i18n('it').include('id', 'fun').get())
 })

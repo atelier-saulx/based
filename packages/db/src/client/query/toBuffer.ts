@@ -259,5 +259,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
 
   // 8 byte crc 32
 
+  if (def.type === QueryDefType.Root) {
+    result.push(Buffer.from([def.lang]))
+  }
+
   return result
 }

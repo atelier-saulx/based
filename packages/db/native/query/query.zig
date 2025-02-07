@@ -41,6 +41,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     defer arena.deinit();
     const allocator = arena.allocator();
 
+    var q = try napi.get([]u8, env, args[1]);
+
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
         .db = dbCtx,
@@ -49,10 +51,11 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
-        .lang = types.LangCode.NONE,
+        .lang = @enumFromInt(q[q.len - 1]),
     };
 
-    const q = try napi.get([]u8, env, args[1]);
+    q = q[0 .. q.len - 1];
+
     const queryType: QueryType = @enumFromInt(q[0]);
     const typeId: db.TypeId = readInt(u16, q, 1);
 

@@ -38,6 +38,7 @@ const createRefQueryDef = (
       propDef: t,
     },
   )
+  defRef.lang = def.lang
   def.references.set(t.prop, defRef)
   return defRef
 }
