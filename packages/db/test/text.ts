@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { italy } from './shared/examples.js'
 
 await test('text', async (t) => {
   const db = new BasedDb({
@@ -31,7 +32,7 @@ await test('text', async (t) => {
   })
 
   db.create('dialog', {
-    fun: { en: '1', it: '2', fi: '3' },
+    fun: { en: '1', it: italy, fi: '3' },
   })
 
   await db.drain()

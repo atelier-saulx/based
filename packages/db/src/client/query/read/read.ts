@@ -296,7 +296,6 @@ export const readAllFields = (
           // LATER
           // addField(prop, '', item)
         } else {
-          console.log(result.subarray(i, i + 10))
           addField(prop, read(result, i + 4, size), item, false, result[i + 4])
         }
 
