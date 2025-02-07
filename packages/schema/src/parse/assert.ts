@@ -1,4 +1,6 @@
+import { isFloat32Array } from 'util/types'
 import {
+  EXPECTED_ARR,
   EXPECTED_BOOL,
   EXPECTED_FN,
   EXPECTED_NUM,
@@ -9,6 +11,12 @@ import {
 export const expectObject = (obj: any, msg?: string) => {
   if (typeof obj !== 'object' || obj === null) {
     throw Error(msg || EXPECTED_OBJ)
+  }
+}
+
+export const expectFloat32Array = (arr: any) => {
+  if (!isFloat32Array(arr)) {
+    throw Error(EXPECTED_ARR)
   }
 }
 

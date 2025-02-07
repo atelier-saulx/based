@@ -16,6 +16,7 @@ import {
   UINT16,
   UINT32,
   UINT8,
+  VECTOR,
 } from '../../../server/schema/types.js'
 import { QueryDef } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -318,6 +319,15 @@ export const readAllFields = (
           i += size
           addField(prop, string, item)
         }
+      } else if (prop.typeIndex == VECTOR) {
+        q.include.propsRead[index] = id
+        const size = result.readUint32LE(i)
+        const arr = new Float32Array(size / 4);
+        for (let j = 0; j < size; j += 4) {
+          arr[j / 4] = result.readFloatLE(i + 4 + j);
+        }
+        addField(prop, arr, item)
+        i += size + 4
       }
     }
   }

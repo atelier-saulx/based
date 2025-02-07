@@ -251,6 +251,12 @@ export type SchemaHll = Prop<{
   default?: number
 }>
 
+export type SchemaVector = Prop<{
+  type: 'vector',
+  default?: Float32Array
+  size: number
+}>
+
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
   default?: number | Date
@@ -337,6 +343,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaEnum
   | SchemaBinary
   | SchemaHll
+  | SchemaVector
   | (isStrict extends true
       ? SchemaSet<SetItems<true>>
       : SchemaPropShorthand | SchemaSet)
@@ -421,6 +428,7 @@ export type SchemaPropTypeMap = {
   set: SchemaSet
   binary: SchemaBinary
   hll: SchemaHll
+  vector: SchemaVector
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap
