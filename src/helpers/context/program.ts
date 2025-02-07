@@ -26,6 +26,8 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   basedProject = {
     ...basedFile,
     ...(cluster !== undefined && { cluster }),
+    ...(cluster === undefined &&
+      basedFile.cluster === undefined && { cluster: 'production' }),
     ...(org !== undefined && { org }),
     ...(project !== undefined && { project }),
     ...(env !== undefined && { env }),
@@ -36,11 +38,19 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   this.set('basedProject', basedProject)
 
   if (Object.keys(basedProject).length > 1) {
-    this.print
-      .info(
-        this.i18n('context.file', basedProject.file),
+    this.print.info(
+      this.i18n('context.file', basedProject.file),
+      this.state.emojis.pipe,
+    )
+
+    if (basedProject.cluster !== 'production') {
+      this.print.info(
+        this.i18n('context.cluster', basedProject.cluster),
         this.state.emojis.pipe,
       )
+    }
+
+    this.print
       .info(this.i18n('context.org', basedProject.org), this.state.emojis.pipe)
       .info(
         this.i18n('context.project', basedProject.project),

@@ -44,7 +44,6 @@ export default {
         {
           parameter: '-c, --cluster <cluster>',
           description: 'Define the cluster to use.',
-          default: 'production',
         },
         {
           parameter: '-o, --org <org>',
@@ -682,6 +681,7 @@ export default {
     configurationFileNotFound:
       'No <b>Based</b> configuration file found or it is empty. <b>Consider creating one.</b>',
     file: '<dim>Project file:</dim> <b>${file}</b>',
+    cluster: '<dim>Cluster:</dim> <b>${cluster}</b>',
     org: '<dim>Org:</dim> <b>${org}</b>',
     project: '<dim>Project:</dim> <b>${project}</b>',
     env: '<dim>Env:</dim> <b>${env}</b>',
