@@ -27,6 +27,10 @@ export const readDoubleLE = (val: Uint8Array, offset: number): number => {
   return sign * fraction * 2 ** (exponent - 1075)
 }
 
+export const readFloatLE = (val: Uint8Array, offset: number): number => {
+  return Buffer.from(val.buffer).readFloatLE(offset)
+}
+
 export const readUint32 = (val: Uint8Array, offset: number): number => {
   return (
     (val[offset] |

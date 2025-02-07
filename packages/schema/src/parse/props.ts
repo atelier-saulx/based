@@ -16,13 +16,15 @@ import {
   stringFormats,
   dateDisplays,
   numberDisplays,
+  SchemaVector,
 } from '../types.js'
 import {
   expectBoolean,
+  expectFloat32Array,
   expectFunction,
+  expectNumber,
   expectObject,
   expectString,
-  expectNumber,
 } from './assert.js'
 import {
   EXPECTED_ARR,
@@ -150,6 +152,20 @@ p.boolean = propParser<SchemaBoolean>(
     },
   },
   0,
+)
+
+p.vector = propParser<SchemaVector>(
+  {
+    size(val) {
+      expectNumber(val)
+    },
+  },
+  {
+    default(val) {
+      expectFloat32Array(val)
+    },
+  },
+  0
 )
 
 p.enum = propParser<SchemaEnum>(

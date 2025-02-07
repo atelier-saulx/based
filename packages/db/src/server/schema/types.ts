@@ -24,6 +24,7 @@ export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
 export const BINARY = 25
+export const VECTOR = 26
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -48,6 +49,7 @@ export const TYPE_INDEX_MAP = {
   id: NULL,
   binary: BINARY,
   hll: HLL,
+  vector: VECTOR,
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
@@ -61,7 +63,7 @@ export type PropDef = {
   separate: boolean
   path: string[]
   start: number
-  len: number
+  len: number // bytes
   inverseTypeName?: string
   inversePropName?: string
   // 0 == none , 1 == standard deflate
@@ -149,6 +151,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   aliases: 0,
   id: 4,
   binary: 0,
+  vector: 0, // separate
 }
 
 const reverseMap: any = {}
