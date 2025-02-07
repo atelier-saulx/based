@@ -38,7 +38,6 @@ await test('vector', async (t) => {
 
   for (const name in data) {
     db.create('data', {
-      // @ts-ignore
       a: new Float32Array(data[name]),
       name: name,
     })
