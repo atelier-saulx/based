@@ -44,7 +44,7 @@ await test('subscription  multiple', async (t) => {
     .query('user')
     .range(0, 1e6)
     .subscribe((q) => {
-      console.log(q.id, q)
+      console.log('ID', q)
     })
 
   await wait(100)
@@ -255,7 +255,7 @@ await test('subscription mixed', async (t) => {
     },
   })
 
-  const amount = 1e6
+  let amount = 1e6
 
   const update = () => {
     const x = Date.now()
@@ -277,11 +277,12 @@ await test('subscription mixed', async (t) => {
     console.log(blarf)
   }, 100)
 
+  let s = 0
   for (let i = 0; i < 100e3; i++) {
-    const close = db.query('user', i + 1).subscribe((q) => {
-      // console.log(q.id, q)
-      blarf++
-    })
+    // const close = db.query('user', i + 1).subscribe((q) => {
+    // console.log(q.id, q)
+    // blarf++
+    // })
 
     // db.query('user')
     //   // .range(0, 1000)
@@ -302,11 +303,10 @@ await test('subscription mixed', async (t) => {
     //   })
 
     db.query('user')
-      .range(0, 1000)
-
-      .range(0, 1)
+      .range(0, 1e3)
       .include('name', 'nr')
       .filter('flap', '=', i)
+      // .or('flap', '<', i)
       // .filter('nr', '>', 9500)
       // .filter('name', 'has', 'Mr')
       // .or((f) => {
@@ -315,13 +315,20 @@ await test('subscription mixed', async (t) => {
       // })
       .subscribe((q) => {
         blarf++
-        // console.log(q.id, q)
       })
   }
   await wait(1000)
   update()
+
   await wait(1000)
+  blarf = 0
+  amount = 1e5
+  s = performance.now()
   update()
+  await wait(1000)
+  s = performance.now() - s - 1e3
+
+  console.log(s / blarf, 'ms per query')
   await wait(1000)
 
   clearInterval(end)

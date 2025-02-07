@@ -38,5 +38,5 @@ await test.skip('hll', async (t) => {
 
   console.log('---------------')
 
-  // console.log((await db.query('article').get()).toObject())
+  console.log(await db.query('article').get().toObject())
 })

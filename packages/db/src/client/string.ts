@@ -1,5 +1,9 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
+import { readUint32 } from './bitWise.js'
+
+const DECODER = new TextDecoder('utf-8')
+// add encoder
 
 // type 0 = no compression; 1 = deflate
 // [lang] [type] [uncompressed size 4] [compressed string] [crc32]
@@ -65,19 +69,27 @@ export const compress = (str: string): Buffer => {
   return nBuffer
 }
 
-export const decompress = (buf: Buffer): string => {
-  return read(buf, 0, buf.byteLength)
+export const decompress = (val: Uint8Array): string => {
+  return read(val, 0, val.length)
 }
 
-export const read = (buf: Buffer, offset: number, len: number): string => {
-  const type = buf[offset + 1]
+export const read = (val: Uint8Array, offset: number, len: number): string => {
+  const type = val[offset + 1]
   if (type == 1) {
-    const origSize = buf.readUint32LE(offset + 2)
+    const origSize = readUint32(val, offset + 2)
     const newBuffer = Buffer.allocUnsafe(origSize)
-    native.decompress(buf, newBuffer, offset + 6, len - 6)
+    native.decompress(Buffer.from(val), newBuffer, offset + 6, len - 6)
     return newBuffer.toString('utf8')
   } else if (type == 0) {
-    return buf.toString('utf8', offset + 2, len + offset - 4)
+    return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
   }
   return ''
+}
+
+export const readUtf8 = (
+  val: Uint8Array,
+  offset: number,
+  len: number,
+): string => {
+  return DECODER.decode(val.subarray(offset, len + offset))
 }

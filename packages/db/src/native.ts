@@ -25,8 +25,9 @@ export default {
     db.modify(data, types, dbCtx)
   },
 
-  getQueryBuf: (q: Buffer, dbCtx: any): Buffer | null => {
-    return db.getQueryBuf(dbCtx, q)
+  getQueryBuf: (q: Buffer, dbCtx: any): ArrayBuffer | null => {
+    const x = db.getQueryBuf(dbCtx, q)
+    return x
   },
 
   start: (id: number) => {

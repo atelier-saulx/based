@@ -22,7 +22,7 @@ if (isMainThread) {
         dbCtx = native.externalFromInt(address)
         channel.postMessage(null)
       } else {
-        const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
+        const arrayBuf = native.getQueryBuf(msg, dbCtx)
         transferList[0] = arrayBuf
         channel.postMessage(arrayBuf, transferList)
       }
