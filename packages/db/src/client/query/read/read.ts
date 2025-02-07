@@ -22,6 +22,7 @@ import { QueryDef } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   readDoubleLE,
+  readFloatLE,
   readInt16,
   readInt32,
   readUint16,
@@ -321,10 +322,10 @@ export const readAllFields = (
         }
       } else if (prop.typeIndex == VECTOR) {
         q.include.propsRead[index] = id
-        const size = result.readUint32LE(i)
+        const size = readUint32(result, i)
         const arr = new Float32Array(size / 4);
         for (let j = 0; j < size; j += 4) {
-          arr[j / 4] = result.readFloatLE(i + 4 + j);
+          arr[j / 4] = readFloatLE(result, i + 4 + j);
         }
         addField(prop, arr, item)
         i += size + 4
