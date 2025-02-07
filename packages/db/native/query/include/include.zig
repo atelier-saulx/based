@@ -11,6 +11,25 @@ const t = @import("../../types.zig");
 const IncludeOp = types.IncludeOp;
 const selva = @import("../../selva.zig");
 
+inline fn addResult(
+    field: u8,
+    value: []u8,
+    main: ?[]u8,
+    edgeType: t.Prop,
+) results.Result {
+    return .{
+        .id = null,
+        .score = null,
+        .field = field,
+        .val = value,
+        .refSize = null,
+        .includeMain = main,
+        .refType = null,
+        .totalRefs = null,
+        .isEdge = edgeType,
+    };
+}
+
 pub fn getFields(
     node: db.Node,
     ctx: *QueryCtx,
@@ -100,6 +119,7 @@ pub fn getFields(
         var value: []u8 = undefined;
 
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+
         if (isEdge) {
             fieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
@@ -120,62 +140,66 @@ pub fn getFields(
             continue :includeField;
         }
 
-        if (isEdge) {
-            size += 2;
-            const propLen = t.Size(edgeType);
-            if (propLen == 0) {
-                size += (valueLen + 4);
-            } else {
-                size += propLen;
-            }
-        } else if (field == 0) {
-            main = value;
-            if (includeMain.?.len != 0) {
-                size += readInt(u16, includeMain.?, 0) + 1;
-            } else {
-                size += (valueLen + 1);
+        const PropType: t.Prop = @enumFromInt(fieldSchema.*.type);
+
+        // here we will have the lang on the CTX
+        if (field != 0 and PropType == t.Prop.TEXT) {
+            const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+            const text = textTmp.*[0..value[8]];
+            // if !specific lang
+            for (text) |tl| {
+                const ss: *const selva.selva_string = @ptrCast(&tl);
+                var len: usize = undefined;
+                const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
+                const s = @as([*]u8, @constCast(str));
+                if (isEdge) {
+                    size += (len + 6);
+                } else {
+                    size += (len + 5);
+                }
+                var result = addResult(field, s[0..len], includeMain, edgeType);
+                if (!idIsSet) {
+                    size += 5;
+                    result.id = id;
+                    idIsSet = true;
+                    if (score != null) {
+                        result.score = score;
+                        size += 1;
+                    }
+                }
+                try ctx.results.append(result);
             }
         } else {
-            size += (valueLen + 5);
-        }
-
-        if (field != 0 and fieldSchema.*.type == selva.SELVA_FIELD_TYPE_TEXT) {
-            const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
-            const text = textTmp.*[0 .. value[8]];
-            for (text) |tl| {
-                const ss: * const selva.selva_string = @ptrCast(&tl);
-                var len: usize = undefined;
-                const str: [*]const u8 = selva.selva_string_to_str(ss, &len);
-                const s = @as([*]u8, @constCast(str))[2 .. len];
-                std.log.err("tl: \"{s}\"", .{s});
-
-                // TODO
+            if (isEdge) {
+                size += 2;
+                const propLen = t.Size(edgeType);
+                if (propLen == 0) {
+                    size += (valueLen + 4);
+                } else {
+                    size += propLen;
+                }
+            } else if (field == 0) {
+                main = value;
+                if (includeMain.?.len != 0) {
+                    size += readInt(u16, includeMain.?, 0) + 1;
+                } else {
+                    size += (valueLen + 1);
+                }
+            } else {
+                size += (valueLen + 5);
             }
-        }
-
-        var result: results.Result = .{
-            .id = null,
-            .score = null,
-            .field = field,
-            .val = value,
-            .refSize = null,
-            .includeMain = includeMain,
-            .refType = null,
-            .totalRefs = null,
-            .isEdge = edgeType,
-        };
-
-        if (!idIsSet) {
-            size += 5;
-            result.id = id;
-            idIsSet = true;
-            if (score != null) {
-                result.score = score;
-                size += 1;
+            var result = addResult(field, value, includeMain, edgeType);
+            if (!idIsSet) {
+                size += 5;
+                result.id = id;
+                idIsSet = true;
+                if (score != null) {
+                    result.score = score;
+                    size += 1;
+                }
             }
+            try ctx.results.append(result);
         }
-
-        try ctx.results.append(result);
     }
 
     if (!idIsSet) {

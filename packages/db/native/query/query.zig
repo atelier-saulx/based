@@ -8,6 +8,7 @@ const results = @import("./results.zig");
 const QueryCtx = @import("./types.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
+const types = @import("../types.zig");
 
 const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
@@ -48,6 +49,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
+        .lang = types.LangCode.NONE,
     };
 
     const q = try napi.get([]u8, env, args[1]);
@@ -55,6 +57,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const typeId: db.TypeId = readInt(u16, q, 1);
 
     if (queryType == QueryType.default) {
+
+        // ADD LANG
+
         const offset = readInt(u32, q, 3);
         const limit = readInt(u32, q, 7);
         const filterSize = readInt(u16, q, 11);

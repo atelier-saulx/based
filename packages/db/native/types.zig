@@ -104,3 +104,5 @@ pub const ModOp = enum(u8) {
     DECREMENT = 13,
     _,
 };
+
+pub const LangCode = enum(u8) { NONE = 0, _ };

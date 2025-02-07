@@ -147,5 +147,9 @@ const langCodes = {
 } as const
 
 export const langCodesMap = new Map(Object.entries(langCodes))
+export const inverseLangMap = new Map()
+langCodesMap.forEach((v, k) => {
+  inverseLangMap.set(v, k)
+})
 export type LangName = keyof typeof langCodes
 export type LangCode = (typeof langCodes)[LangName]

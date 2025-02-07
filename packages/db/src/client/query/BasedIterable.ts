@@ -64,6 +64,8 @@ export class BasedQueryResponse {
   }
 
   node(index: number = 0): any {
+    // get id as well
+    // and potentialy a proxy [i] as well
     let i = 0
     if ('id' in this.def.target || 'alias' in this.def.target) {
       return this.toObject()

@@ -26,6 +26,7 @@ import {
   readUint16,
   readUint32,
 } from '../../bitWise.js'
+import { inverseLangMap } from '@based/schema'
 
 export type Item = {
   id: number
@@ -36,18 +37,23 @@ const addField = (
   value: any,
   item: Item,
   defaultOnly: boolean = false,
+  lang: number = 0,
 ) => {
   let i = p.__isEdge === true ? 1 : 0
-  const len = p.path.length
+
+  // TODO OPTMIZE
+  const path = lang ? [...p.path, inverseLangMap.get(lang)] : p.path
+  const len = path.length
+
   if (len - i === 1) {
-    const field = p.path[i]
+    const field = path[i]
     if (!defaultOnly || !(field in item)) {
       item[field] = value
     }
   } else {
     let select: any = item
     for (; i < len; i++) {
-      const field = p.path[i]
+      const field = path[i]
       if (i === len - 1) {
         if (!defaultOnly || !(field in select)) {
           select[field] = value
@@ -282,14 +288,26 @@ export const readAllFields = (
         i += size + 4
       } else if (prop.typeIndex == TEXT) {
         q.include.propsRead[index] = id
-        const size = result.readUint32LE(i)
-        // TODO Read text
-        //if (size === 0) {
-        //  addField(prop, '', item)
-        //} else {
-        //  addField(prop, read(result, i + 4, size), item)
-        //}
-        i += size + 4
+        const size = readUint32(result, i)
+
+        // if queryDef.LANG do different
+
+        if (size === 0) {
+          // LATER
+          // addField(prop, '', item)
+        } else {
+          console.log(result.subarray(i, i + 10))
+          addField(prop, read(result, i + 4, size), item, false, result[i + 4])
+        }
+
+        const lan =
+          // TODO Read text
+          //if (size === 0) {
+          //  addField(prop, '', item)
+          //} else {
+          //  addField(prop, read(result, i + 4, size), item)
+          //}
+          (i += size + 4)
       } else if (prop.typeIndex === ALIAS) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)

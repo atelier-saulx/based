@@ -8,9 +8,9 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
+  TEXT,
   TIMESTAMP,
   TypeIndex,
-  WEAK_REFERENCE,
 } from '../../server/schema/types.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 
@@ -170,6 +170,19 @@ const inspectObject = (
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
+      } else if (def.typeIndex === TEXT) {
+        if (typeof v === 'object') {
+          str += '{\n'
+          for (const lang in v) {
+            str += `${prefixBody}  ${lang}: ${prettyPrintVal(v[lang], def.typeIndex)},\n`
+          }
+          str += `${prefixBody}}`
+        } else {
+          if (v === undefined) {
+            return ''
+          }
+          str += prettyPrintVal(v, def.typeIndex)
+        }
       } else if (def.typeIndex === STRING) {
         if (v === undefined) {
           return ''

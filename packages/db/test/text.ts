@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test.skip('text', async (t) => {
+await test('text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -13,27 +13,30 @@ await test.skip('text', async (t) => {
     return db.destroy()
   })
 
-  // db.putSchema({
-  //   locales: {
-  //     en: { },
-  //     it: { fallback: ['en'] },
-  //     fi: { fallback: ['en'] },
-  //   },
-  //   types: {
-  //     dialog: {
-  //       props: {
-  //         fun: {
-  //           type: 'text',
-  //         }
-  //       },
-  //     },
-  //   },
-  // })
+  db.putSchema({
+    locales: {
+      en: {},
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
+    },
+    types: {
+      dialog: {
+        props: {
+          fun: {
+            type: 'text',
+          },
+        },
+      },
+    },
+  })
 
-  // db.create('dialog', {
-  //   fun: { en: 'haha', it: 'ahah', fi: 'hehe' },
-  // })
-  // db.drain()
+  db.create('dialog', {
+    fun: { en: '1', it: '2', fi: '3' },
+  })
 
-  // console.log((await db.query('dialog').get()).toObject())
+  await db.drain()
+
+  console.log((await db.query('dialog').include('id', 'fun').get()).debug())
+
+  console.log((await db.query('dialog').include('id').get()).debug())
 })
