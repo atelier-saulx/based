@@ -26,7 +26,7 @@ import {
   readUint16,
   readUint32,
 } from '../../bitWise.js'
-import { inverseLangMap } from '@based/schema'
+import { inverseLangMap, langCodesMap } from '@based/schema'
 
 export type Item = {
   id: number
@@ -296,7 +296,17 @@ export const readAllFields = (
           // LATER
           // addField(prop, '', item)
         } else {
-          addField(prop, read(result, i + 4, size), item, false, result[i + 4])
+          if (q.lang != langCodesMap.get('none')) {
+            addField(prop, read(result, i + 4, size), item)
+          } else {
+            addField(
+              prop,
+              read(result, i + 4, size),
+              item,
+              false,
+              result[i + 4],
+            )
+          }
         }
 
         const lan =
