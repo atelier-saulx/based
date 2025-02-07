@@ -694,21 +694,16 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
     return 0;
 }
 
-static inline void set_smb(struct SelvaMicroBuffer *buffer, const void *value, size_t len)
-{
-    typeof(buffer->len) buf_len = (typeof(buf_len))len;
-
-    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
-    memcpy(buffer->data, value, buf_len);
-}
-
-static int set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
+static void set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
 {
     struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+    typeof(buffer->len) buf_len = (typeof(buf_len))len;
 
-    set_smb(buffer, value, len);
-
-    return 0;
+    /*
+     * We assume that the caller never exceeds the maximum size.
+     */
+    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
+    memcpy(buffer->data, value, buf_len);
 }
 
 /**
@@ -763,7 +758,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        return set_field_smb(fields, nfo, value, len);
+        set_field_smb(fields, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
@@ -1641,9 +1636,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         return (struct SelvaFieldsPointer){
-#if 0
-            .type = nfo->type,
-#endif
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
             .off = (nfo->off << 3),
             .len = selva_fields_get_data_size(fs),
@@ -1661,9 +1653,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
         } while (0);
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return (struct SelvaFieldsPointer){
-#if 0
-            .type = nfo->type,
-#endif
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
             .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
             .len = selva_fields_get_data_size(fs) - offsetof(struct SelvaMicroBuffer, data),
