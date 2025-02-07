@@ -5,7 +5,7 @@ import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import { writeString } from './string.js'
 
 export function writeText(
-  value: any, // TODO YOLO
+  value: { [k: string]: Parameters<typeof writeString>[1] },
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
