@@ -37,7 +37,7 @@ await test('text', async (t) => {
 
   await db.drain()
 
-  console.log((await db.query('dialog').include('id', 'fun').get()).debug())
+  console.log(await db.query('dialog').include('id', 'fun').get())
 
-  console.log((await db.query('dialog').include('id').get()).debug())
+  console.log(await db.query('dialog').include('id').get())
 })
