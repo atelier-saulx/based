@@ -184,6 +184,7 @@ await test('has compressed', async (t) => {
   })
 
   const compressedItaly = compress(bible)
+
   for (let i = 0; i < 1; i++) {
     await db.create('italy', {
       body: compressedItaly,

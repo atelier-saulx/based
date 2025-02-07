@@ -103,13 +103,13 @@ await test('simple', async (t) => {
     machines: m,
   })
 
-  await db.drain()
+  console.log(await db.drain(), 'ms')
+  console.log('MAKE 100k', Date.now() - now)
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
+
   equal(
-    (
-      await db.query('machine').include('*').filter('lastPing', '=', x).get()
-    ).toObject().length,
+    (await db.query('machine').filter('lastPing', '=', x).get()).length,
     x.length,
     'OR number',
   )
