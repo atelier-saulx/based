@@ -1,15 +1,12 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.10",
+  "version": "8.0.0-alpha.11",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": [
-    "bin",
-    "dist"
-  ],
+  "files": ["bin", "dist"],
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
