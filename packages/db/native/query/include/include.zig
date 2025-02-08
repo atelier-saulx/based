@@ -144,22 +144,15 @@ pub fn getFields(
 
         // here we will have the lang on the CTX
         if (field != 0 and PropType == t.Prop.TEXT) {
-            const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
-            const text = textTmp.*[0..value[8]];
-            const lang = ctx.lang;
-            for (text) |tl| {
-                const ss: *const selva.selva_string = @ptrCast(&tl);
-                var len: usize = undefined;
-                const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
-                const s = @as([*]u8, @constCast(str));
-
-                if (lang == t.LangCode.NONE) {
+            var iter = db.textIterator(value);
+            if (ctx.lang == t.LangCode.NONE) {
+                while (iter.next()) |s| {
                     if (isEdge) {
-                        size += (len + 6);
+                        size += (s.len + 6);
                     } else {
-                        size += (len + 5);
+                        size += (s.len + 5);
                     }
-                    var result = addResult(field, s[0..len], includeMain, edgeType);
+                    var result = addResult(field, s, includeMain, edgeType);
                     if (!idIsSet) {
                         size += 5;
                         result.id = id;
@@ -170,13 +163,15 @@ pub fn getFields(
                         }
                     }
                     try ctx.results.append(result);
-                } else if (s[0] == @intFromEnum(lang)) {
+                }
+            } else {
+                if (iter.lang(ctx.lang)) |s| {
                     if (isEdge) {
-                        size += (len + 6);
+                        size += (s.len + 6);
                     } else {
-                        size += (len + 5);
+                        size += (s.len + 5);
                     }
-                    var result = addResult(field, s[0..len], includeMain, edgeType);
+                    var result = addResult(field, s, includeMain, edgeType);
                     if (!idIsSet) {
                         size += 5;
                         result.id = id;
@@ -187,7 +182,6 @@ pub fn getFields(
                         }
                     }
                     try ctx.results.append(result);
-                    break;
                 }
             }
         } else {

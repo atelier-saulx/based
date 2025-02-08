@@ -404,3 +404,34 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
 }
+
+pub const TextIterator = struct {
+    value: []const [16]u8,
+    index: usize = 0,
+    pub fn next(self: *TextIterator) ?[]u8 {
+        if (self.index == self.value.len) {
+            return null;
+        }
+        const tl = self.value[self.index];
+        const ss: *const selva.selva_string = @ptrCast(&tl);
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
+        const s = @as([*]u8, @constCast(str));
+        self.index += 1;
+        return s[0..len];
+    }
+    pub fn lang(self: *TextIterator, code: types.LangCode) ?[]u8 {
+        while (self.next()) |s| {
+            if (s[0] == @intFromEnum(code)) {
+                return s;
+            }
+        }
+        return null;
+    }
+};
+
+pub inline fn textIterator(value: []u8) TextIterator {
+    const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    return TextIterator{ .value = text };
+}

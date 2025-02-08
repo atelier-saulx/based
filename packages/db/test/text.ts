@@ -37,9 +37,18 @@ await test('text', async (t) => {
 
   await db.drain()
 
-  console.log(await db.query('dialog').include('id', 'fun').get())
+  await db.query('dialog').include('id', 'fun').get().inspect()
 
-  console.log(await db.query('dialog').include('id').get())
+  await db.query('dialog').include('id').get().inspect()
 
-  console.log(await db.query('dialog').i18n('it').include('id', 'fun').get())
+  await db.query('dialog').i18n('it').include('id', 'fun').get().inspect()
+
+  // // derp derp
+  // console.log('-------------------------')
+  // await db
+  //   .query('dialog')
+  //   .include('id', 'fun')
+  //   .filter('fun.it', 'hasLoose', 'fliperdieflaperdiefloep')
+  //   .get()
+  //   .inspect()
 })
