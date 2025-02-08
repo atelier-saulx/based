@@ -41,7 +41,7 @@ const idToShard = db.idToShard;
 // -------------------------------------------
 
 inline fn fail(
-    ctx: *db.DbCtx,
+    ctx: *QueryCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
@@ -68,7 +68,7 @@ inline fn fail(
 }
 
 pub fn filter(
-    ctx: *db.DbCtx,
+    ctx: *QueryCtx,
     node: db.Node,
     typeEntry: db.Type,
     conditions: []u8,
@@ -121,7 +121,7 @@ pub fn filter(
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
-            const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
+            const refTypeEntry = db.getType(ctx.db, refTypePrefix) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             if (!filter(
@@ -148,7 +148,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = @constCast(&db.getNodeIdArray(node));
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(ctx.db, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -157,7 +157,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema.?);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(ctx.db, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -165,28 +165,45 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(fieldSchema.type);
-                if (prop == Prop.REFERENCE) {
-                    // if edge different
-                    const checkRef = db.getReference(node, field);
-                    if (checkRef) |r| {
-                        value = @as([*]u8, @ptrCast(r))[0..8];
-                    } else {
+
+                if (prop == Prop.TEXT) {
+                    value = db.getField(typeEntry, 0, node, fieldSchema);
+
+                    // check if QUERY has LANG selector in there
+
+                    if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
-                } else if (prop == Prop.REFERENCES) {
-                    // if edge different
-                    const refs = db.getReferences(node, field);
-                    if (refs) |r| {
-                        const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
-                        value = arr[0 .. r.nr_refs * 4];
-                    } else {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    var iter = db.textIterator(value, ctx.lang);
+                    while (iter.next()) |s| {
+                        if (!runCondition(ctx.db, query, s)) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
                     }
                 } else {
-                    value = db.getField(typeEntry, 0, node, fieldSchema);
-                }
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    if (prop == Prop.REFERENCE) {
+                        // if edge different
+                        const checkRef = db.getReference(node, field);
+                        if (checkRef) |r| {
+                            value = @as([*]u8, @ptrCast(r))[0..8];
+                        } else {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else if (prop == Prop.REFERENCES) {
+                        // if edge different
+                        const refs = db.getReferences(node, field);
+                        if (refs) |r| {
+                            const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
+                            value = arr[0 .. r.nr_refs * 4];
+                        } else {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else {
+                        value = db.getField(typeEntry, 0, node, fieldSchema);
+                    }
+                    if (value.len == 0 or !runCondition(ctx.db, query, value)) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
                 }
             }
 

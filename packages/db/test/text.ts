@@ -43,12 +43,25 @@ await test('text', async (t) => {
 
   await db.query('dialog').i18n('it').include('id', 'fun').get().inspect()
 
-  // // derp derp
-  // console.log('-------------------------')
-  // await db
-  //   .query('dialog')
-  //   .include('id', 'fun')
-  //   .filter('fun.it', 'hasLoose', 'fliperdieflaperdiefloep')
-  //   .get()
-  //   .inspect()
+  // derp derp
+  console.log('-------------------------')
+  await db
+    .query('dialog')
+    .i18n('it')
+    .include('id', 'fun')
+    .filter('fun', 'hasLoose', 'fliperdieflaperdiefloep')
+    .get()
+    .inspect()
+
+  console.log('-------------------------')
+
+  await db
+    .query('dialog')
+    .i18n('it')
+    .include('id', 'fun')
+    .filter('fun', 'hasLoose', 'italy')
+    .get()
+    .inspect()
+
+  // TODO: if text we prob need to create a empty object in js
 })

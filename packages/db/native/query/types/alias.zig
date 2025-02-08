@@ -16,7 +16,7 @@ pub fn default(
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
     if (db.getAliasByName(typeEntry, field, value)) |node| {
-        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx, node, typeEntry, conditions, null, null, 0, false)) {
             return;
         }
         const size = try getFields(

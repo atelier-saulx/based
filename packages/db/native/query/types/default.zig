@@ -29,7 +29,7 @@ pub fn default(
         if (node == null) {
             break :checkItem;
         }
-        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {
@@ -76,7 +76,7 @@ pub fn search(
         if (node == null) {
             break :checkItem;
         }
-        s.addToScore(&searchCtxC, ctx.db, node.?, typeEntry, conditions, searchCtx);
+        s.addToScore(ctx, &searchCtxC, node.?, typeEntry, conditions, searchCtx);
     }
     try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
 }

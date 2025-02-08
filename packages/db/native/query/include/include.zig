@@ -140,49 +140,27 @@ pub fn getFields(
             continue :includeField;
         }
 
-        const PropType: t.Prop = @enumFromInt(fieldSchema.*.type);
+        const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
 
-        // here we will have the lang on the CTX
-        if (field != 0 and PropType == t.Prop.TEXT) {
-            var iter = db.textIterator(value);
-            if (ctx.lang == t.LangCode.NONE) {
-                while (iter.next()) |s| {
-                    if (isEdge) {
-                        size += (s.len + 6);
-                    } else {
-                        size += (s.len + 5);
-                    }
-                    var result = addResult(field, s, includeMain, edgeType);
-                    if (!idIsSet) {
-                        size += 5;
-                        result.id = id;
-                        idIsSet = true;
-                        if (score != null) {
-                            result.score = score;
-                            size += 1;
-                        }
-                    }
-                    try ctx.results.append(result);
+        if (prop == t.Prop.TEXT) {
+            var iter = db.textIterator(value, ctx.lang);
+            while (iter.next()) |s| {
+                if (isEdge) {
+                    size += (s.len + 6);
+                } else {
+                    size += (s.len + 5);
                 }
-            } else {
-                if (iter.lang(ctx.lang)) |s| {
-                    if (isEdge) {
-                        size += (s.len + 6);
-                    } else {
-                        size += (s.len + 5);
+                var result = addResult(field, s, includeMain, edgeType);
+                if (!idIsSet) {
+                    size += 5;
+                    result.id = id;
+                    idIsSet = true;
+                    if (score != null) {
+                        result.score = score;
+                        size += 1;
                     }
-                    var result = addResult(field, s, includeMain, edgeType);
-                    if (!idIsSet) {
-                        size += 5;
-                        result.id = id;
-                        idIsSet = true;
-                        if (score != null) {
-                            result.score = score;
-                            size += 1;
-                        }
-                    }
-                    try ctx.results.append(result);
                 }
+                try ctx.results.append(result);
             }
         } else {
             if (isEdge) {

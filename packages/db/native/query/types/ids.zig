@@ -45,7 +45,7 @@ pub fn sort(
         if (node == null) {
             continue :sortItem;
         }
-        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema);
@@ -97,7 +97,7 @@ pub fn default(
         if (node == null) {
             continue :checkItem;
         }
-        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         const size = try getFields(
@@ -134,7 +134,7 @@ pub fn search(
         if (node == null) {
             break :checkItem;
         }
-        s.addToScore(&searchCtxC, ctx.db, node.?, typeEntry, conditions, searchCtx);
+        s.addToScore(ctx, &searchCtxC, node.?, typeEntry, conditions, searchCtx);
     }
     try s.addToResults(ctx, &searchCtxC, include, @as(u32, @truncate(ids.len)) / 4, typeEntry);
 }

@@ -44,7 +44,7 @@ inline fn hasInner(
     query: []u8,
     dbCtx: *db.DbCtx,
 ) bool {
-    if (prop == Prop.STRING and mainLen == 0) {
+    if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         if (value[1] == 1) {
             if (!decompress(void, orCompare(isOr, compare).func, query, value, dbCtx, undefined)) {
                 return false;
