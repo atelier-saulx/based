@@ -34,7 +34,7 @@ pub fn addToScore(
     searchCtx: *const searchStr.SearchCtx,
 ) void {
     const dbCtx = queryCtx.db;
-    if (!filter(queryCtx, node, typeEntry, conditions, null, null, 0, false)) {
+    if (!filter(dbCtx, node, typeEntry, conditions, null, null, 0, false)) {
         return;
     }
     if (ctx.correctedForOffset != 0) {

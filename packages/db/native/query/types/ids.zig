@@ -45,7 +45,7 @@ pub fn sort(
         if (node == null) {
             continue :sortItem;
         }
-        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema);
@@ -97,7 +97,7 @@ pub fn default(
         if (node == null) {
             continue :checkItem;
         }
-        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         const size = try getFields(

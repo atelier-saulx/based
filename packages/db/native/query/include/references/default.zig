@@ -25,7 +25,7 @@ pub fn defaultReferences(
         if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
             const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(
-                ctx,
+                ctx.db,
                 refNode,
                 typeEntry,
                 filterArr,

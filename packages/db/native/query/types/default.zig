@@ -29,7 +29,7 @@ pub fn default(
         if (node == null) {
             break :checkItem;
         }
-        if (!filter(ctx, node.?, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {

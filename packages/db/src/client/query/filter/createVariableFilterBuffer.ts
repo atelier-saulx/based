@@ -1,4 +1,9 @@
-import { ALIAS, PropDef, PropDefEdge } from '../../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  PropDefEdge,
+  TEXT,
+} from '../../../server/schema/types.js'
 import { negateType, stripNegation } from './operators.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 
@@ -17,7 +22,14 @@ const parseValue = (
     !prop.separate ||
     op !== 1
   ) {
-    val = Buffer.from(val)
+    if (prop.typeIndex === TEXT) {
+      // LANGUAGE
+      console.log('Yo! TEXT')
+      val = Buffer.concat([Buffer.from(val), Buffer.from([0])])
+      // val = Buffer.from(val)
+    } else {
+      val = Buffer.from(val)
+    }
   }
   if (!(val instanceof Buffer)) {
     throw new Error('Incorrect value for filter ' + prop.path)
@@ -59,6 +71,7 @@ export const createVariableFilterBuffer = (
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
       if (op === 1 && prop.typeIndex !== ALIAS) {
+        console.log('FIXED ADD FOR TEXT ALSO')
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {
@@ -92,6 +105,9 @@ function writeVarFilter(
   buf.writeUint32LE(size, 6)
   buf[10] = stripNegation(op)
   buf[11] = prop.typeIndex
+
+  // need to pas LANG FROM QUERY
+  // need to set on 12 if TEXT
   buf.set(val, 12)
   return buf
 }

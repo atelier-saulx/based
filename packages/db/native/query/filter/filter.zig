@@ -10,6 +10,7 @@ const types = @import("../include//types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
+const LangCode = @import("../../types.zig").LangCode;
 
 const getField = db.getField;
 const idToShard = db.idToShard;
@@ -41,7 +42,7 @@ const idToShard = db.idToShard;
 // -------------------------------------------
 
 inline fn fail(
-    ctx: *QueryCtx,
+    ctx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
@@ -68,7 +69,7 @@ inline fn fail(
 }
 
 pub fn filter(
-    ctx: *QueryCtx,
+    ctx: *db.DbCtx,
     node: db.Node,
     typeEntry: db.Type,
     conditions: []u8,
@@ -121,7 +122,7 @@ pub fn filter(
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
-            const refTypeEntry = db.getType(ctx.db, refTypePrefix) catch {
+            const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             if (!filter(
@@ -148,7 +149,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = @constCast(&db.getNodeIdArray(node));
-                if (value.len == 0 or !runCondition(ctx.db, query, value)) {
+                if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -157,7 +158,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema.?);
-                if (value.len == 0 or !runCondition(ctx.db, query, value)) {
+                if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -168,17 +169,26 @@ pub fn filter(
 
                 if (prop == Prop.TEXT) {
                     value = db.getField(typeEntry, 0, node, fieldSchema);
-
                     // check if QUERY has LANG selector in there
-
+                    // need to ADD LANG CODE (0 all, specific means speific)
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
-                    var iter = db.textIterator(value, ctx.lang);
+
+                    std.debug.print("Q: {any} LANG: {d} \n", .{ query, query[query.len - 1] });
+
+                    // if  lang code === NONE
+                    // not the way
+                    var iter = db.textIterator(value, @enumFromInt(query[query.len - 1]));
+                    // or or all?
+                    var f: usize = 0;
                     while (iter.next()) |s| {
-                        if (!runCondition(ctx.db, query, s)) {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        if (!runCondition(ctx, query, s)) {
+                            f += 1;
                         }
+                    }
+                    if (f == iter.value.len) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else {
                     if (prop == Prop.REFERENCE) {
@@ -201,7 +211,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema);
                     }
-                    if (value.len == 0 or !runCondition(ctx.db, query, value)) {
+                    if (value.len == 0 or !runCondition(ctx, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }

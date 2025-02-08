@@ -51,7 +51,7 @@ pub fn default(
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
-        if (!filter(ctx, node, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {

@@ -41,7 +41,7 @@ pub fn sortedReferences(
     const refsCnt = queryTypes.getRefsCnt(isEdge, refs);
     checkItem: while (i < refsCnt) : (i += 1) {
         if (queryTypes.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
-            if (hasFilter and !filter(ctx, refNode, typeEntry, filterArr, null, null, 0, false)) {
+            if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
             }
             const fs = db.getFieldSchema(sortField, typeEntry) catch {

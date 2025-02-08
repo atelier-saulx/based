@@ -59,6 +59,7 @@ await test('text', async (t) => {
     .query('dialog')
     .i18n('it')
     .include('id', 'fun')
+    // i18n will have to be passed here better...
     .filter('fun', 'hasLoose', 'italy')
     .get()
     .inspect()

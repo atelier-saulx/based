@@ -44,15 +44,20 @@ inline fn hasInner(
     query: []u8,
     dbCtx: *db.DbCtx,
 ) bool {
+    var q = query;
     if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+        if (prop == Prop.TEXT) {
+            q = query[0 .. query.len - 1];
+        }
+
         if (value[1] == 1) {
-            if (!decompress(void, orCompare(isOr, compare).func, query, value, dbCtx, undefined)) {
+            if (!decompress(void, orCompare(isOr, compare).func, q, value, dbCtx, undefined)) {
                 return false;
             }
-        } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
+        } else if (!orCompare(isOr, compare).func(value[1..value.len], q)) {
             return false;
         }
-    } else if (!orCompare(isOr, compare).func(value, query)) {
+    } else if (!orCompare(isOr, compare).func(value, q)) {
         return false;
     }
     return true;
