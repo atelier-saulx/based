@@ -42,4 +42,12 @@ await test('text', async (t) => {
   console.log(await db.query('dialog').include('id').get())
 
   console.log(await db.query('dialog').i18n('it').include('id', 'fun').get())
+
+  await db
+    .query('dialog')
+    .i18n('it')
+    .filter('fun', 'has', 'derpol')
+    .include('id', 'fun')
+    .get()
+    .inspect()
 })
