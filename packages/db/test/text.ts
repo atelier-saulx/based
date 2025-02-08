@@ -92,5 +92,16 @@ await test('text', async (t) => {
     .get()
     .inspect()
 
+  console.log('-------------------------')
+
+  await db
+    .query('dialog')
+    .i18n('en')
+    .include('id', 'fun')
+    // i18n will have to be passed here better...
+    .filter('fun.it', 'hasLoose', 'italy')
+    .get()
+    .inspect()
+
   // TODO: if text we prob need to create a empty object in js
 })
