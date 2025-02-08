@@ -1,4 +1,4 @@
 #!/usr/bin/env node
-import { init } from '../dist/index.js'
+import { cli } from '../dist/index.js'
 
-init()
+cli()

@@ -3,7 +3,11 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "declarationMap": true,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "noEmit": false
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts", "src/**/*.json"]
 }

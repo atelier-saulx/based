@@ -1,23 +1,125 @@
-import { Command } from 'commander'
-import { join } from 'node:path'
-import { readJSON, outputJSON } from 'fs-extra/esm'
-import { input, select } from '@inquirer/prompts'
+import type { BasedClient, BasedOpts } from '@based/client'
+import { confirm } from '@clack/prompts'
+import {
+  envSelect,
+  orgSelect,
+  projectSelect,
+  userSelect,
+} from '../commands/auth/prompts.js'
+import { clusterText } from '../commands/infra/init/prompts.js'
+import {
+  authByState,
+  destroyLastSession,
+  getLastSession,
+  updateLocalUsers,
+} from '../helpers/auth/index.js'
+import { parseOrgsData } from '../helpers/infra/index.js'
+import { CONNECTION_TIMEOUT, LOCAL_AUTH_INFO } from './constants.js'
+import {
+  AppContext,
+  SharedBasedClient,
+  getFileByPath,
+  saveAsFile,
+} from './index.js'
 
-import { homedir } from 'node:os'
-import { getBasedClient } from './getBasedClient.js'
-import pc from 'picocolors'
-import { BasedClient } from '@based/client'
-import { spinner } from './spinner.js'
+// TODO
+// Move this logic to the client
+const buildClients = (
+  cluster: BasedClient,
+  env: BasedClient,
+  project: BasedClient,
+): Based.API.Client => {
+  const clients = {
+    cluster,
+    env,
+    project,
+  }
 
-const persistPath = join(homedir(), '.based/cli')
-const authPath = join(persistPath, 'auth.json')
+  const call: Based.API.Client['call'] = (gatewayFunction, payload) => {
+    if (!gatewayFunction) {
+      return
+    }
 
-export const login = async (
-  program: Command,
-  selectUser?: boolean,
-): Promise<{ client: BasedClient; admin: BasedClient; destroy(): void }> => {
-  const { cluster, org, env, project } = program.opts()
-  const admin = getBasedClient({
+    const type: Based.API.Gateway.Endpoint['type'] = gatewayFunction.type
+    const client = gatewayFunction.client
+
+    return clients[client]?.[type](
+      gatewayFunction.endpoint,
+      payload,
+    ) as undefined
+  }
+
+  const destroy: Based.API.Client['destroy'] = () => {
+    project.destroy()
+    env.destroy()
+    cluster.destroy()
+
+    process.exit(0)
+  }
+
+  const get: Based.API.Client['get'] = (client) => clients[client]
+
+  return {
+    call,
+    destroy,
+    get,
+  }
+}
+
+export const connectToHub = async (
+  context: AppContext,
+  opts: BasedOpts,
+): Promise<BasedClient> => {
+  const { file } = await context.get('basedProject')
+  const target =
+    opts.org === 'saulx' && opts.project === 'based-cloud'
+      ? context.i18n('methods.hubConnection.cluster')
+      : opts.optionalKey
+        ? context.i18n('methods.hubConnection.project')
+        : context.i18n('methods.hubConnection.environment')
+
+  const basedClient: BasedClient = SharedBasedClient.getInstance(opts)
+
+  if (!basedClient) {
+    throw new Error(context.i18n('errors.404', file))
+  }
+
+  if (basedClient.connected) {
+    return basedClient
+  }
+
+  const timeout = setTimeout(() => {
+    context.print.fail(context.i18n('errors.408'), true)
+  }, CONNECTION_TIMEOUT)
+
+  try {
+    context.spinner.start(
+      context.i18n('methods.hubConnection.connecting', target),
+    )
+
+    await basedClient.once('connect')
+  } catch (error) {
+    throw new Error(context.i18n('errors.404', file, error))
+  }
+
+  context.print.info(
+    context.i18n('methods.hubConnection.connected', target),
+    true,
+  )
+
+  clearTimeout(timeout)
+
+  return basedClient
+}
+
+export const newLogin = async (email?: string): Promise<Based.API.Client> => {
+  const context: AppContext = AppContext.getInstance()
+  const { cluster, org, env, project } = await context.getProgram()
+
+  const users: Based.Auth.AuthenticatedUser[] =
+    await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
+
+  const basedClientAdmin: BasedClient = await connectToHub(context, {
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
@@ -25,98 +127,136 @@ export const login = async (
     cluster,
   })
 
-  await admin.once('connect')
+  let lastSession = getLastSession(users)
+  let authenticatedUser: Based.Auth.AuthenticatedUser
 
-  let users: {
-    email: string
-    userId: string
-    token: string
-    ts: number
-  }[] = await readJSON(authPath).catch(() => [])
+  if (lastSession) {
+    lastSession = await authByState(context, basedClientAdmin, lastSession)
 
-  let user
-
-  if (users.length) {
-    const lastUser = users.sort((a, b) => b?.ts - a?.ts)[0]
-    await admin
-      .setAuthState({
-        ...lastUser,
-        type: 'based',
-      })
-      .then(() => {
-        user = lastUser
-      })
-      .catch(() => {
-        users = users.filter((user) => user !== lastUser)
-      })
-
-    if (selectUser && users.length) {
-      const choices = users.map((user) => ({ name: user.email, value: user }))
-      choices.push({
-        name: 'other user',
-        value: null,
-      })
-
-      user = await select({
-        message: 'select user',
-        choices,
-      })
+    if (lastSession) {
+      authenticatedUser = lastSession
     }
   }
 
-  if (!user) {
-    const email = await input({
-      message: 'enter email address',
-      validate(email) {
-        const at = email.lastIndexOf('@')
-        const dot = email.lastIndexOf('.')
-        return at > 0 && at < dot - 1 && dot < email.length - 2
-      },
+  if (!authenticatedUser) {
+    const form = await context.form.group({
+      user: userSelect(context, basedClientAdmin, users, email),
     })
 
-    const code = (~~(Math.random() * 1e6)).toString(16)
-    spinner.text = `verify ${pc.bold(email)} with code ${pc.bold(code)}`
-    spinner.start()
-
-    await admin.call('login', {
-      email,
-      skipEmailForTesting: cluster === 'local',
-      code,
-    })
-
-    spinner.succeed('verified')
-
-    user = await admin.once('authstate-change')
-    user.email = email
-
-    users = users.filter(({ email }) => email !== user.email)
-    users.push(user)
+    authenticatedUser = form.user as Based.Auth.AuthenticatedUser
   }
 
-  // update users with updated timestamp
-  user.ts = Date.now()
-  await outputJSON(authPath, users)
+  await saveAsFile(
+    updateLocalUsers(users, authenticatedUser),
+    LOCAL_AUTH_INFO,
+    'json',
+  )
 
-  const client = getBasedClient({
-    cluster,
-    org,
-    env,
-    project,
+  let parsedUserEnvs: Based.Infra.ParsedUserEnvs
+
+  if (!cluster || !org || !project || !env) {
+    const userCloudInfo: Based.Infra.UserEnvs[] = await basedClientAdmin
+      .query(context.endpoints.USER_CLOUD_INFO.endpoint, {
+        userId: basedClientAdmin.authState?.userId,
+      })
+      .get()
+
+    parsedUserEnvs = parseOrgsData(userCloudInfo)
+  }
+
+  const form = await context.form.group({
+    cluster: clusterText(context, false, cluster),
+    ...(!org && { org: orgSelect(context, Object.keys(parsedUserEnvs), org) }),
+    ...(!project && {
+      project: (results) =>
+        projectSelect(
+          context,
+          Object.keys(parsedUserEnvs[results.results.org]),
+          project,
+        )(results),
+    }),
+    ...(!env && {
+      env: (results) =>
+        envSelect(
+          context,
+          parsedUserEnvs[results.results.org][results.results.project],
+          env,
+        )(results),
+    }),
   })
 
-  await client.setAuthState({
-    ...admin.authState,
-    type: 'based',
+  const basedProject = {
+    ...form,
+    ...(cluster && { cluster }),
+    ...(org && { org }),
+    ...(project && { project }),
+    ...(env && { env }),
+  }
+
+  const basedClientEnv: BasedClient = await connectToHub(context, {
+    ...basedProject,
+    key: 'cms',
+    optionalKey: true,
   })
 
-  console.info(`🧑 ${user.email}`)
+  await basedClientEnv.setAuthState(authenticatedUser)
 
-  return {
-    client,
-    admin,
-    destroy() {
-      client.destroy()
-      admin.destroy()
-    },
+  const basedClientProject: BasedClient = await connectToHub(
+    context,
+    basedProject,
+  )
+
+  await basedClientProject.setAuthState(authenticatedUser)
+
+  const clients = buildClients(
+    basedClientAdmin,
+    basedClientEnv,
+    basedClientProject,
+  )
+
+  context.set('basedProject', basedProject)
+
+  if (lastSession) {
+    context.print
+      .pipe()
+      .success(context.i18n('commands.auth.methods.welcomeBack'), true)
+      .line()
+  }
+
+  return clients
+}
+
+export const logout = async () => {
+  const context: AppContext = AppContext.getInstance()
+  const users: Based.Auth.AuthenticatedUser[] =
+    await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
+
+  const lastSession = getLastSession(users)
+
+  if (lastSession) {
+    context.print.info(
+      `The user <b>${lastSession.email}</b> is currently connected.`,
+      true,
+    )
+
+    const logout = await confirm({
+      message: 'Do you want to disconnect the account?',
+    })
+
+    if (logout) {
+      const autenticatedUsers = destroyLastSession(users, lastSession)
+
+      await saveAsFile(autenticatedUsers, LOCAL_AUTH_INFO, 'json')
+
+      context.print.success(context.i18n('methods.logout.success'), true)
+    } else {
+      context.print.fail(context.i18n('methods.aborted'))
+    }
+  }
+
+  if (!lastSession) {
+    context.print.fail(
+      "I couldn't find any user to disconnect. Please log in first to start using <b>Based</b>.",
+    )
   }
 }

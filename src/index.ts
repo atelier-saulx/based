@@ -1,35 +1,49 @@
 import { Command } from 'commander'
-import { version } from './version.js'
-import { deploy } from './commands/deploy/index.js'
-import { globalOptions } from './globalOptions.js'
-import { login } from './commands/login/index.js'
-import pc from 'picocolors'
-import { spinner } from './shared/spinner.js'
-import { dev } from './commands/dev/index.js'
+import {
+  auth,
+  backup,
+  deploy,
+  dev,
+  disconnect,
+  infra,
+  logs,
+  projectInit,
+  test,
+  version,
+} from './commands/index.js'
+import { globalOptions } from './helpers/index.js'
+import { languages } from './i18n/index.js'
+import { AppContext } from './shared/index.js'
 
-export const init = async () => {
-  const program = new Command()
+export const cli = async () => {
+  const program: Command = new Command()
+  const context: AppContext = AppContext.getInstance(program, languages)
 
   try {
     await Promise.all([
-      globalOptions(program),
       version(program),
-      // commands
-      deploy(program),
-      login(program),
+      globalOptions(program),
+      auth(program),
+      disconnect(program),
       dev(program),
+      deploy(program),
+      backup(program),
+      logs(program),
+      test(program),
+      infra(program),
+      projectInit(program),
     ])
 
-    const opts = program.opts()
-
-    for (const arg in opts) {
-      console.info(pc.dim(arg), opts[arg])
-    }
+    const appName = context.get('appName')
+    const versionNo = context.get('appVersion')
+    context.print
+      .intro(
+        `<bgPrimary><b> ${appName} </b></bgPrimary> <dim>${versionNo}</dim>`,
+      )
+      .pipe()
 
     await program.parseAsync(process.argv)
-  } catch (e) {
-    spinner.stop()
-    console.error(pc.red(e.message))
-    process.exit(1)
+  } catch (error) {
+    context.print.fail(`<reset><red>${error.message}</red></reset>`, true)
   }
 }
