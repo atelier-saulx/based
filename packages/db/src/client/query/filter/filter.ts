@@ -5,13 +5,14 @@ import {
   SchemaPropTree,
   PropDef,
   ID_FIELD_DEF,
+  TEXT,
 } from '../../../server/schema/schema.js'
-import { BasedDb } from '../../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'
+import { inverseLangMap, langCodesMap } from '@based/schema'
 
 export { Operator, Filter }
 
@@ -44,7 +45,7 @@ const referencesFilter = (
           const edgeDef = edges[p]
           if (edgeDef) {
             conditions.edges ??= new Map()
-            size += 3 + primitiveFilter(edgeDef, filter, conditions)
+            size += 3 + primitiveFilter(edgeDef, filter, conditions, def.lang)
           }
         }
       }
@@ -95,14 +96,30 @@ export const filterRaw = (
   checkValue(value, operator) // Validates the value based on the operator
 
   let fieldDef = schema.props[field]
+
   if (!fieldDef) {
+    const s = field.split('.')
+    if (s.length > 1) {
+      const f = s.slice(0, -1).join()
+      fieldDef = schema.props[f]
+      if (fieldDef && fieldDef.typeIndex === TEXT) {
+        const code = langCodesMap.get(s[s.length - 1])
+        if (!code) {
+          throw new Error(
+            `Invalid value for filter on ${field}: expected a valid locale`,
+          )
+        }
+        return primitiveFilter(fieldDef, filter, conditions, code)
+      }
+    }
+
     if (field === 'id') {
       fieldDef = ID_FIELD_DEF
-      return primitiveFilter(fieldDef, filter, conditions)
+      return primitiveFilter(fieldDef, filter, conditions, def.lang)
     }
     return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(fieldDef, filter, conditions)
+  return primitiveFilter(fieldDef, filter, conditions, def.lang)
 }
 
 export const filter = (

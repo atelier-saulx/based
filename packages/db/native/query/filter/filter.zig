@@ -169,26 +169,34 @@ pub fn filter(
 
                 if (prop == Prop.TEXT) {
                     value = db.getField(typeEntry, 0, node, fieldSchema);
-                    // check if QUERY has LANG selector in there
-                    // need to ADD LANG CODE (0 all, specific means speific)
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
-
-                    std.debug.print("Q: {any} LANG: {d} \n", .{ query, query[query.len - 1] });
-
-                    // if  lang code === NONE
-                    // not the way
-                    var iter = db.textIterator(value, @enumFromInt(query[query.len - 1]));
-                    // or or all?
+                    const lang: LangCode = @enumFromInt(query[query.len - 1]);
+                    var iter = db.textIterator(value, lang);
                     var f: usize = 0;
-                    while (iter.next()) |s| {
-                        if (!runCondition(ctx, query, s)) {
-                            f += 1;
+                    if (lang == LangCode.NONE) {
+                        while (iter.next()) |s| {
+                            if (!runCondition(ctx, query, s)) {
+                                f += 1;
+                            } else {
+                                // 1 match is enough
+                                break;
+                            }
                         }
-                    }
-                    if (f == iter.value.len) {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        if (f == iter.value.len) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else {
+                        while (iter.next()) |s| {
+                            f += 1;
+                            if (!runCondition(ctx, query, s)) {
+                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                            }
+                        }
+                        if (f == 0) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
                     }
                 } else {
                     if (prop == Prop.REFERENCE) {

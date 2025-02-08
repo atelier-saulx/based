@@ -6,11 +6,13 @@ import {
 } from '../../../server/schema/types.js'
 import { negateType, stripNegation } from './operators.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
+import { LangCode } from '@based/schema'
 
 const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
+  lang: LangCode,
 ): Buffer => {
   let val = value
   if (op === 19 && typeof val === 'string') {
@@ -23,10 +25,8 @@ const parseValue = (
     op !== 1
   ) {
     if (prop.typeIndex === TEXT) {
-      // LANGUAGE
-      console.log('Yo! TEXT')
-      val = Buffer.concat([Buffer.from(val), Buffer.from([0])])
-      // val = Buffer.from(val)
+      // can be optmized replace when using uint8array
+      val = Buffer.concat([Buffer.from(val), Buffer.from([lang])])
     } else {
       val = Buffer.from(val)
     }
@@ -41,6 +41,7 @@ export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
+  lang: LangCode,
 ) => {
   let isOr = 4
   let val: any
@@ -50,7 +51,7 @@ export const createVariableFilterBuffer = (
       isOr = 2
       const x = []
       for (const v of value) {
-        const a = parseValue(v, prop, op)
+        const a = parseValue(v, prop, op, lang)
         const size = Buffer.allocUnsafe(2)
         size.writeUint16LE(a.byteLength)
         x.push(size, a)
@@ -59,19 +60,19 @@ export const createVariableFilterBuffer = (
     } else {
       const x = []
       for (const v of value) {
-        x.push(parseValue(v, prop, op))
+        x.push(parseValue(v, prop, op, lang))
       }
       val = x
     }
   } else {
-    val = parseValue(value, prop, op)
+    val = parseValue(value, prop, op, lang)
   }
 
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
       if (op === 1 && prop.typeIndex !== ALIAS) {
-        console.log('FIXED ADD FOR TEXT ALSO')
+        // console.log('STRICT EQUAL FOR TEXT ALSO!')
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {

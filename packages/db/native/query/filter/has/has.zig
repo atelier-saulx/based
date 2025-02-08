@@ -46,10 +46,10 @@ inline fn hasInner(
 ) bool {
     var q = query;
     if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+        // faster check
         if (prop == Prop.TEXT) {
             q = query[0 .. query.len - 1];
         }
-
         if (value[1] == 1) {
             if (!decompress(void, orCompare(isOr, compare).func, q, value, dbCtx, undefined)) {
                 return false;

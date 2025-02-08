@@ -57,10 +57,38 @@ await test('text', async (t) => {
 
   await db
     .query('dialog')
+    .include('id', 'fun')
+    // i18n will have to be passed here better...
+    .filter('fun', 'hasLoose', 'italy')
+    .get()
+    .inspect()
+
+  await db
+    .query('dialog')
     .i18n('it')
     .include('id', 'fun')
     // i18n will have to be passed here better...
     .filter('fun', 'hasLoose', 'italy')
+    .get()
+    .inspect()
+
+  console.log('-------------------------')
+
+  await db
+    .query('dialog')
+    .include('id', 'fun')
+    // i18n will have to be passed here better...
+    .filter('fun.en', 'hasLoose', 'italy')
+    .get()
+    .inspect()
+
+  console.log('-------------------------')
+
+  await db
+    .query('dialog')
+    .include('id', 'fun')
+    // i18n will have to be passed here better...
+    .filter('fun.it', 'hasLoose', 'italy')
     .get()
     .inspect()
 
