@@ -29,6 +29,7 @@ pub usingnamespace @cImport({
     @cInclude("selva/selva_lang.h");
 
     @cInclude("selva/strsearch.h");
+    @cInclude("selva/vector.h");
 });
 
 const selvaError = @cImport({
