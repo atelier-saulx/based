@@ -1,4 +1,4 @@
-const db = @import("../../db//db.zig");
+const db = @import("../../db/db.zig");
 const t = @import("./types.zig");
 const Mode = t.Mode;
 const Op = t.Operator;
