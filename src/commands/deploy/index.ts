@@ -114,53 +114,50 @@ const queuedFileUpload = queued(
   { dedup: (_client, payload) => hash(payload), concurrency: 10 },
 )
 
-const queuedFnDeploy = queued(
-  async (
-    context: AppContext,
-    client: BasedClient,
-    checksum: number,
-    config: Config,
-    js: OutputFile,
-    sourcemap: OutputFile,
-  ) => {
-    const { error, distId } = await client.stream('based:set-function', {
-      contents: js.contents,
-      payload: {
-        checksum,
-        config,
-      },
-    })
+const queuedFnDeploy = async (
+  context: AppContext,
+  client: BasedClient,
+  checksum: number,
+  config: Config,
+  js: OutputFile,
+  sourcemap: OutputFile,
+) => {
+  const { error, distId } = await client.stream('based:set-function', {
+    contents: js.contents,
+    payload: {
+      checksum,
+      config,
+    },
+  })
 
-    if (error) {
-      throw new Error(error)
-    }
+  if (error) {
+    throw new Error(error)
+  }
 
-    if (distId) {
-      await client
-        .stream('based:set-sourcemap', {
-          contents: sourcemap.contents,
-          payload: {
-            distId,
-            checksum,
-          },
-        })
-        .catch((error) => {
-          context.print.warning(
-            `<red>could not save sourcemap for: ${config.name} ${error.message}</red>`,
-            true,
-          )
-        })
-    } else {
-      context.print.warning(
-        '<red>no dist id returned from set-function</red>',
-        true,
-      )
-    }
+  if (distId) {
+    await client
+      .stream('based:set-sourcemap', {
+        contents: sourcemap.contents,
+        payload: {
+          distId,
+          checksum,
+        },
+      })
+      .catch((error) => {
+        context.print.warning(
+          `<red>Could not save sourcemap for: ${config.name} ${error.message}</red>`,
+          true,
+        )
+      })
+  } else {
+    context.print.warning(
+      '<red>No dist id returned from set-function</red>',
+      true,
+    )
+  }
 
-    return { distId }
-  },
-  { dedup: (_based, checksum) => checksum, concurrency: 10 },
-)
+  return { distId }
+}
 
 type Config = BasedFunctionConfig & {
   appParams?: {
@@ -299,7 +296,7 @@ export const parseFunctions = async (
       const existingPath = paths[config.name]
       if (existingPath) {
         context.print.warning(
-          `<red>found multiple configs for "${config.name}"</red>`,
+          `<red>Found multiple configs for "${config.name}"</red>`,
           true,
         )
 
@@ -308,7 +305,7 @@ export const parseFunctions = async (
       paths[config.name] = path
       if (!index) {
         context.print.warning(
-          `</red>could not find index.ts or index.js for "${config.name}"</red>`,
+          `</red>Could not find index.ts or index.js for "${config.name}"</red>`,
           true,
         )
 
@@ -318,7 +315,7 @@ export const parseFunctions = async (
       if (config.type === 'app') {
         if (!config.main) {
           context.print.warning(
-            `<red>no "main" field defined for "${config.name}" of type "app"</red>`,
+            `<red>No "main" field defined for "${config.name}" of type "app"</red>`,
             true,
           )
 
@@ -407,9 +404,9 @@ export const parseFunctions = async (
 
   const introAssets = async () =>
     onChange
-      ? await context.print
-          .intro('<b>Bundling your assets and dependencies...</b>')
-          .pipe()
+      ? await context.print.intro(
+          '<b>Bundling your assets and dependencies...</b>',
+        )
       : await context.print.info(
           '<b><blue>◉</blue>  Bundling your assets and dependencies...</b>',
         )
@@ -650,19 +647,28 @@ export const deploy = async (program: Command) => {
             }),
           )
 
-          context.print
-            .success(text(), true)
-            .line()
-            .intro(`Your application is now ${pc.bold('LIVE')} at these URLs:`)
-            .pipe()
+          if (logs.some(Boolean)) {
+            context.print
+              .success(text(), true)
+              .line()
+              .intro(
+                `Your application is now ${pc.bold('LIVE')} at these URLs:`,
+              )
+              .pipe()
 
-          for (const log of logs) {
-            if (log) {
-              context.print.info(log, true)
+            for (const log of logs) {
+              if (log) {
+                context.print.info(log, true)
+              }
             }
-          }
 
-          context.print.outro('<b>The deployment is complete.</b>')
+            context.print.outro('<b>The deployment is complete.</b>')
+          } else {
+            context.print
+              .line()
+              .success(text(), true)
+              .outro('<b>The deployment is complete.</b>')
+          }
         }
 
         previous = deployed

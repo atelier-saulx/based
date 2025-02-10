@@ -6,12 +6,21 @@ import { isConfigFile, isSchemaFile } from './pathAndFiles.js'
 
 export const getTargets = async () => {
   const ignorePath = await findUp('.gitignore')
-  const ignoreFile = ignorePath && (await readFile(ignorePath, 'utf8'))
-  const ignore = ignoreFile && parser.compile(ignoreFile)
+  let ignoreDirName: string = ''
+
+  let deny: (path: string, _file: string) => boolean = (
+    _path: string,
+    file: string,
+  ) => file === 'node_modules'
+
+  if (ignorePath) {
+    const ignoreFile = ignorePath && (await readFile(ignorePath, 'utf8'))
+    ignoreDirName = dirname(ignorePath)
+    const ignore = ignoreFile && parser.compile(ignoreFile)
+    deny = (path: string, _file: string) => ignore.denies(path)
+  }
+
   const targets: [dir: string, file: string][] = []
-  const deny = ignore
-    ? (path: string, _file: string) => ignore.denies(path)
-    : (_path: string, file: string) => file === 'node_modules'
   let schema: string
 
   const walk = async (dir = process.cwd()) => {
@@ -23,7 +32,7 @@ export const getTargets = async () => {
         }
         if (!file.includes('.')) {
           const path = join(dir, file)
-          if (deny(relative(dirname(ignorePath), path), file)) {
+          if (deny(relative(ignoreDirName, path), file)) {
             return null
           }
           return walk(join(dir, file))
