@@ -110,10 +110,17 @@ await test('subscription filter', async (t) => {
   }
 
   let close = sub().subscribe((q) => {
-    console.log(q.toObject(), q.checksum)
+    console.log('SUB1', q.toObject(), q.checksum)
   })
 
   await wait(100)
+  let close2 = sub().subscribe((q) => {
+    console.log('SUB2', q.toObject(), q.checksum)
+  })
+  let close3 = sub().subscribe((q) => {
+    console.log('SUB3', q.toObject(), q.checksum)
+  })
+
   await update()
   await wait(100)
   await update()
@@ -123,11 +130,13 @@ await test('subscription filter', async (t) => {
   await wait(500)
 
   close = sub().subscribe((q) => {
-    console.log('2ND', q.toObject(), q.checksum)
+    console.log('SUB4', q.toObject(), q.checksum)
   })
 
   await wait(300)
   close()
+  close2()
+  close3()
 })
 
 await test('subscription id', async (t) => {
