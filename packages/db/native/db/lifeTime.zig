@@ -7,7 +7,11 @@ const dump = @import("./dump.zig");
 const selva = @import("../selva.zig");
 
 pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return startInternal(napi_env, info) catch return null;
+    return startInternal(napi_env, info) catch |e| {
+        std.log.err("Err {any} \n", .{e});
+        _ = napi.jsThrow(napi_env, "Start failed\n");
+        return null;
+    };
 }
 
 pub fn stop(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {

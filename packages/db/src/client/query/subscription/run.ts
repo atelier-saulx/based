@@ -3,7 +3,7 @@ import { BasedQueryResponse } from '../BasedIterable.js'
 import { DbClient } from '../../index.js'
 import { resetSubscriptionMarkers } from './markers.js'
 
-export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
+export const resultsAreEqual = (a: Uint8Array, b: Uint8Array): boolean => {
   const aLen = a.byteLength
   const bLen = b.byteLength
   if (aLen != bLen) {
@@ -15,6 +15,8 @@ export const resultsAreEqual = (a: Buffer, b: Buffer): boolean => {
   if (a[aLen - 1] != b[bLen - 1]) return false
   return true
 }
+
+const EMPTY = new Uint8Array(Buffer.alloc(4))
 
 export const runSubscription = (subscription: Subscription) => {
   if (!subscription.inProgress) {
@@ -29,7 +31,14 @@ export const runSubscription = (subscription: Subscription) => {
           return
         }
         subscription.inProgress = false
-        const buf = Buffer.from(res)
+        let err: Error = null
+        let buf: Uint8Array
+        if (res instanceof Error) {
+          err = res
+          buf = EMPTY
+        } else {
+          buf = res
+        }
         if (subscription.res) {
           if (resultsAreEqual(subscription.res.result, buf)) {
             return
@@ -45,8 +54,9 @@ export const runSubscription = (subscription: Subscription) => {
             performance.now() - d,
           )
         }
+        console.log('RUN ', subscription.subs.size)
         subscription.subs.forEach((fn) => {
-          fn(subscription.res)
+          fn(subscription.res, err)
         })
       })
       .catch((err) => {

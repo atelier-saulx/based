@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { langCodesMap } from '@based/schema'
 import { DbClient } from '../index.js'
 import { MAX_RANGE_PROP_LIMIT, MAX_RANGE_REF_LIMIT } from './thresholds.js'
 import {
@@ -16,6 +16,7 @@ const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {
     filter: { conditions: new Map(), size: 0 },
     range: { offset: 0, limit: 0 },
+    lang: langCodesMap.get('none'),
     include: {
       stringFields: new Set(),
       props: new Set(),
@@ -52,7 +53,6 @@ export const createQueryDef = (
     q.props = q.schema.props
     q.type = type
     q.target = t
-
     if (type === QueryDefType.Root) {
       // IDS sort
       if (t.ids) {
@@ -63,7 +63,6 @@ export const createQueryDef = (
     } else if (type === QueryDefType.References) {
       q.range.limit = MAX_RANGE_REF_LIMIT
     }
-
     return q
   }
 }

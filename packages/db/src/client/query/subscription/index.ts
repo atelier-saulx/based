@@ -62,10 +62,12 @@ export const subscribe = (
 
   sub.subs.add(fn)
 
+  if (sub.res) {
+    onData(sub.res)
+  }
+
   if (!sub.inProgress) {
     runSubscription(sub)
-  } else if (sub.res) {
-    onData(sub.res)
   }
 
   return close

@@ -2,32 +2,33 @@ import {
   SchemaTypeDef,
   PropDef,
   PropDefEdge,
+  ALIAS,
+  ALIASES,
+  BINARY,
+  BOOLEAN,
+  CREATED,
   EMPTY_MICRO_BUFFER,
+  ENUM,
+  HLL,
+  INT16,
+  INT32,
+  INT64,
+  INT8,
   MICRO_BUFFER,
+  NULL,
+  NUMBER,
   REFERENCE,
   REFERENCES,
   STRING,
-  BINARY,
-  CREATED,
-  UPDATED,
-  TIMESTAMP,
-  NULL,
-  NUMBER,
-  HLL,
-  INT8,
-  UINT8,
-  INT16,
-  UINT16,
-  INT32,
-  UINT32,
-  INT64,
-  BOOLEAN,
-  ENUM,
   TEXT,
+  TIMESTAMP,
+  UINT16,
+  UINT32,
+  UINT8,
+  UPDATED,
+  VECTOR,
   WEAK_REFERENCE,
   WEAK_REFERENCES,
-  ALIAS,
-  ALIASES,
 } from './types.js'
 
 const selvaTypeMap = []
@@ -56,6 +57,7 @@ selvaTypeMap[MICRO_BUFFER] = 17
 selvaTypeMap[ALIAS] = 18
 selvaTypeMap[ALIASES] = 19
 selvaTypeMap[BINARY] = 11
+selvaTypeMap[VECTOR] = 17
 
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
@@ -69,7 +71,7 @@ const propDefBuffer = (
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
 
-  if (prop.len && type === MICRO_BUFFER) {
+  if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
     const buf = Buffer.allocUnsafe(3)
     buf[0] = selvaType
     buf.writeUint16LE(prop.len, 1)
@@ -120,7 +122,7 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
     let refFields = 0
     for (const f of props) {
       if (f.separate) {
-        if (f.typeIndex === 13 || f.typeIndex === 14) {
+        if (f.typeIndex === REFERENCE || f.typeIndex === REFERENCES) {
           refFields++
         }
         rest.push(f)

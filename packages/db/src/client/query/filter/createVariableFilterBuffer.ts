@@ -1,11 +1,18 @@
-import { ALIAS, PropDef, PropDefEdge } from '../../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  PropDefEdge,
+  TEXT,
+} from '../../../server/schema/types.js'
 import { negateType, stripNegation } from './operators.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
+import { LangCode } from '@based/schema'
 
 const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
+  lang: LangCode,
 ): Buffer => {
   let val = value
   if (op === 19 && typeof val === 'string') {
@@ -17,7 +24,12 @@ const parseValue = (
     !prop.separate ||
     op !== 1
   ) {
-    val = Buffer.from(val)
+    if (prop.typeIndex === TEXT) {
+      // can be optmized replace when using uint8array
+      val = Buffer.concat([Buffer.from(val), Buffer.from([lang])])
+    } else {
+      val = Buffer.from(val)
+    }
   }
   if (!(val instanceof Buffer)) {
     throw new Error('Incorrect value for filter ' + prop.path)
@@ -29,6 +41,7 @@ export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
+  lang: LangCode,
 ) => {
   let isOr = 4
   let val: any
@@ -38,7 +51,7 @@ export const createVariableFilterBuffer = (
       isOr = 2
       const x = []
       for (const v of value) {
-        const a = parseValue(v, prop, op)
+        const a = parseValue(v, prop, op, lang)
         const size = Buffer.allocUnsafe(2)
         size.writeUint16LE(a.byteLength)
         x.push(size, a)
@@ -47,18 +60,19 @@ export const createVariableFilterBuffer = (
     } else {
       const x = []
       for (const v of value) {
-        x.push(parseValue(v, prop, op))
+        x.push(parseValue(v, prop, op, lang))
       }
       val = x
     }
   } else {
-    val = parseValue(value, prop, op)
+    val = parseValue(value, prop, op, lang)
   }
 
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
       if (op === 1 && prop.typeIndex !== ALIAS) {
+        // console.log('STRICT EQUAL FOR TEXT ALSO!')
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {
@@ -92,6 +106,9 @@ function writeVarFilter(
   buf.writeUint32LE(size, 6)
   buf[10] = stripNegation(op)
   buf[11] = prop.typeIndex
+
+  // need to pas LANG FROM QUERY
+  // need to set on 12 if TEXT
   buf.set(val, 12)
   return buf
 }

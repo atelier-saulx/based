@@ -8,6 +8,7 @@ const results = @import("./results.zig");
 const QueryCtx = @import("./types.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
+const types = @import("../types.zig");
 
 const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
@@ -33,12 +34,14 @@ const QueryType = enum(u8) {
 };
 
 pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const args = try napi.getArgs(2, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const args = try napi.getArgs(2, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    var q = try napi.get([]u8, env, args[1]);
 
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
@@ -48,13 +51,18 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
+        .lang = @enumFromInt(q[q.len - 1]),
     };
 
-    const q = try napi.get([]u8, env, args[1]);
+    q = q[0 .. q.len - 1];
+
     const queryType: QueryType = @enumFromInt(q[0]);
     const typeId: db.TypeId = readInt(u16, q, 1);
 
     if (queryType == QueryType.default) {
+
+        // ADD LANG
+
         const offset = readInt(u32, q, 3);
         const limit = readInt(u32, q, 7);
         const filterSize = readInt(u16, q, 11);

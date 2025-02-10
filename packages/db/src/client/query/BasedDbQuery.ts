@@ -35,6 +35,7 @@ import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
+import { LangCode, langCodesMap, LangName } from '@based/schema'
 
 export { QueryByAliasObj }
 
@@ -190,8 +191,6 @@ export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
 const resToJSON = (res: BasedQueryResponse) => res.toJSON()
 const resToObject = (res: BasedQueryResponse) => res.toObject()
-const resInspect = (res: BasedQueryResponse) =>
-  new GetPromise((resolve) => resolve(res.inspect()))
 
 class GetPromise extends Promise<BasedQueryResponse> {
   toObject() {
@@ -200,8 +199,11 @@ class GetPromise extends Promise<BasedQueryResponse> {
   toJSON() {
     return this.then(resToJSON)
   }
-  inspect() {
-    return this.then(resInspect) as GetPromise
+  inspect(depth?: number) {
+    return this.then(
+      (res: BasedQueryResponse) =>
+        new GetPromise((resolve) => resolve(res.inspect(depth))),
+    ) as GetPromise
   }
 }
 
@@ -255,14 +257,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (res instanceof Error) {
       reject(res)
     } else {
-      const result = Buffer.from(res)
       resolve(
-        new BasedQueryResponse(
-          this.id,
-          this.def,
-          result,
-          performance.now() - d,
-        ),
+        new BasedQueryResponse(this.id, this.def, res, performance.now() - d),
       )
     }
   }
@@ -278,6 +274,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   register() {
     return registerQuery(this)
+  }
+
+  i18n(locale: LangName) {
+    this.def.lang = langCodesMap.get(locale) ?? 0
+    return this
   }
 
   subscribe(onData: OnData, onError?: OnError) {
@@ -298,11 +299,10 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const buf = registerQuery(this)
     const d = performance.now()
     const res = native.getQueryBuf(buf, dbCtxExternal)
-    const result = Buffer.from(res)
     return new BasedQueryResponse(
       this.id,
       this.def,
-      result,
+      new Uint8Array(res),
       performance.now() - d,
     )
   }

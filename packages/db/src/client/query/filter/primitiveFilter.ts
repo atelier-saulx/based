@@ -12,11 +12,13 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { checkOperator, checkValue } from '../validation.js'
+import { LangCode } from '@based/schema'
 
 export const primitiveFilter = (
   prop: PropDef | PropDefEdge,
   filter: Filter,
   conditions: QueryDefFilter,
+  lang: LangCode,
 ) => {
   let [, operator, value] = filter
 
@@ -43,7 +45,7 @@ export const primitiveFilter = (
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
-    buf = createVariableFilterBuffer(value, prop, op)
+    buf = createVariableFilterBuffer(value, prop, op, lang)
   }
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)

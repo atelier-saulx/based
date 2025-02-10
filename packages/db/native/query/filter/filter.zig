@@ -10,6 +10,7 @@ const types = @import("../include//types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
+const LangCode = @import("../../types.zig").LangCode;
 
 const getField = db.getField;
 const idToShard = db.idToShard;
@@ -165,28 +166,62 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(fieldSchema.type);
-                if (prop == Prop.REFERENCE) {
-                    // if edge different
-                    const checkRef = db.getReference(node, field);
-                    if (checkRef) |r| {
-                        value = @as([*]u8, @ptrCast(r))[0..8];
-                    } else {
+
+                if (prop == Prop.TEXT) {
+                    value = db.getField(typeEntry, 0, node, fieldSchema);
+                    if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
-                } else if (prop == Prop.REFERENCES) {
-                    // if edge different
-                    const refs = db.getReferences(node, field);
-                    if (refs) |r| {
-                        const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
-                        value = arr[0 .. r.nr_refs * 4];
+                    const lang: LangCode = @enumFromInt(query[query.len - 1]);
+                    var iter = db.textIterator(value, lang);
+                    var f: usize = 0;
+                    if (lang == LangCode.NONE) {
+                        while (iter.next()) |s| {
+                            if (!runCondition(ctx, query, s)) {
+                                f += 1;
+                            } else {
+                                // 1 match is enough
+                                break;
+                            }
+                        }
+                        if (f == iter.value.len) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
                     } else {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        while (iter.next()) |s| {
+                            f += 1;
+                            if (!runCondition(ctx, query, s)) {
+                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                            }
+                        }
+                        if (f == 0) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
                     }
                 } else {
-                    value = db.getField(typeEntry, 0, node, fieldSchema);
-                }
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    if (prop == Prop.REFERENCE) {
+                        // if edge different
+                        const checkRef = db.getReference(node, field);
+                        if (checkRef) |r| {
+                            value = @as([*]u8, @ptrCast(r))[0..8];
+                        } else {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else if (prop == Prop.REFERENCES) {
+                        // if edge different
+                        const refs = db.getReferences(node, field);
+                        if (refs) |r| {
+                            const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
+                            value = arr[0 .. r.nr_refs * 4];
+                        } else {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else {
+                        value = db.getField(typeEntry, 0, node, fieldSchema);
+                    }
+                    if (value.len == 0 or !runCondition(ctx, query, value)) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
                 }
             }
 

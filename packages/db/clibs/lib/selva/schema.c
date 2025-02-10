@@ -322,14 +322,6 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
         .type2fs = type2fs_timestamp,
     },
-    [2] = {
-        .type = 2,
-        .type2fs = type2fs_reserved,
-    },
-    [3] = {
-        .type = 3,
-        .type2fs = type2fs_reserved,
-    },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
@@ -361,10 +353,6 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_TEXT] = {
         .type = SELVA_FIELD_TYPE_TEXT,
         .type2fs = type2fs_text,
-    },
-    [5] = {
-        .type = 5,
-        .type2fs = type2fs_reserved,
     },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,
@@ -526,15 +514,11 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const cha
         .alias_index = 0,
     };
 
-    if (len < SCHEMA_MIN_SIZE)
-    {
+    if (len < SCHEMA_MIN_SIZE) {
         return SELVA_EINVAL;
     }
 
-
-
     /* We just assume that fields_schema is allocated properly. */
-
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
 
@@ -559,4 +543,16 @@ void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
         }
     }
     selva_free(schema->field_map_template.buf);
+}
+
+__constructor static void schemabuf_parsers_init(void)
+{
+    for (size_t i = 0; i<  num_elem(schemabuf_parsers); i++) {
+        if (!schemabuf_parsers[i].type2fs) {
+            schemabuf_parsers[i] = (struct schemabuf_parser){
+                .type = i,
+                .type2fs = type2fs_reserved,
+            };
+        }
+    }
 }

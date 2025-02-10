@@ -252,9 +252,8 @@ await test('update', async (t) => {
 
   const nonExistingId = snurpId + 10
 
-  console.log('-----------------')
-  await setTimeout(1e3)
-  await db.update('snurp', nonExistingId, {
+  // should throw!
+  const r = await db.update('snurp', nonExistingId, {
     a: nonExistingId,
     name: 'mr snurp ' + nonExistingId,
   })

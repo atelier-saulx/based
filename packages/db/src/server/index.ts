@@ -34,7 +34,8 @@ export class DbWorker {
     })
 
     port1.on('message', (buf) => {
-      this.resolvers.shift()(buf)
+      // TODO FIX TYPES CHECK IF THIS MAKES A COPY
+      this.resolvers.shift()(new Uint8Array(buf))
       this.db.onQueryEnd()
     })
   }
@@ -54,7 +55,7 @@ export class DbWorker {
     return new Promise(this.callback)
   }
 
-  getQueryBuf(buf: Buffer): Promise<Buffer> {
+  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
     this.channel.postMessage(buf)
     return new Promise(this.callback)
   }

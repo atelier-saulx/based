@@ -44,7 +44,7 @@ await test('subscription  multiple', async (t) => {
     .query('user')
     .range(0, 1e6)
     .subscribe((q) => {
-      console.log(q.id, q)
+      console.log('ID', q)
     })
 
   await wait(100)
@@ -95,28 +95,48 @@ await test('subscription filter', async (t) => {
   }
   await db.drain()
 
-  const close = db
-    .query('user')
-    .range(0, 1e6)
-    .include('name')
-    .filter('flap', '=', 666)
-    .filter('nr', '>', 9500)
-    .filter('name', 'has', 'Mr')
-    .or((f) => {
-      f.filter('nr', '=', 1e9)
-      f.or('nr', '>', 2e9)
-    })
-    .subscribe((q) => {
-      console.log(q.id, q)
-    })
+  const sub = () => {
+    return db
+      .query('user')
+      .range(0, 1)
+      .include('name')
+      .filter('flap', '=', 666)
+      .filter('nr', '>', 9500)
+      .filter('name', 'has', 'Mr')
+      .or((f) => {
+        f.filter('nr', '=', 1e9)
+        f.or('nr', '>', 2e9)
+      })
+  }
+
+  let close = sub().subscribe((q) => {
+    console.log('SUB1', q.toObject(), q.checksum)
+  })
 
   await wait(100)
-  await update()
-  await wait(100)
-  await update()
-  await wait(300)
+  let close2 = sub().subscribe((q) => {
+    console.log('SUB2', q.toObject(), q.checksum)
+  })
+  let close3 = sub().subscribe((q) => {
+    console.log('SUB3', q.toObject(), q.checksum)
+  })
 
+  // await update()
+  await wait(1000)
+  // await update()
+  // await wait(1000)
+
+  // close()
+  // await wait(1000)
+
+  // close = sub().subscribe((q) => {
+  //   console.log('SUB4', q.toObject(), q.checksum)
+  // })
+
+  // await wait(1000)
   close()
+  close2()
+  close3()
 })
 
 await test('subscription id', async (t) => {
@@ -255,7 +275,7 @@ await test('subscription mixed', async (t) => {
     },
   })
 
-  const amount = 1e6
+  let amount = 1e6
 
   const update = () => {
     const x = Date.now()
@@ -277,11 +297,12 @@ await test('subscription mixed', async (t) => {
     console.log(blarf)
   }, 100)
 
+  let s = 0
   for (let i = 0; i < 100e3; i++) {
-    const close = db.query('user', i + 1).subscribe((q) => {
-      // console.log(q.id, q)
-      blarf++
-    })
+    // const close = db.query('user', i + 1).subscribe((q) => {
+    // console.log(q.id, q)
+    // blarf++
+    // })
 
     // db.query('user')
     //   // .range(0, 1000)
@@ -302,11 +323,10 @@ await test('subscription mixed', async (t) => {
     //   })
 
     db.query('user')
-      .range(0, 1000)
-
-      .range(0, 1)
+      .range(0, 1e3)
       .include('name', 'nr')
       .filter('flap', '=', i)
+      // .or('flap', '<', i)
       // .filter('nr', '>', 9500)
       // .filter('name', 'has', 'Mr')
       // .or((f) => {
@@ -315,13 +335,20 @@ await test('subscription mixed', async (t) => {
       // })
       .subscribe((q) => {
         blarf++
-        // console.log(q.id, q)
       })
   }
   await wait(1000)
   update()
+
   await wait(1000)
+  blarf = 0
+  amount = 1e5
+  s = performance.now()
   update()
+  await wait(1000)
+  s = performance.now() - s - 1e3
+
+  console.log(s / blarf, 'ms per query')
   await wait(1000)
 
   clearInterval(end)

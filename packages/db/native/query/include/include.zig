@@ -9,6 +9,26 @@ const std = @import("std");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const IncludeOp = types.IncludeOp;
+const selva = @import("../../selva.zig");
+
+inline fn addResult(
+    field: u8,
+    value: []u8,
+    main: ?[]u8,
+    edgeType: t.Prop,
+) results.Result {
+    return .{
+        .id = null,
+        .score = null,
+        .field = field,
+        .val = value,
+        .refSize = null,
+        .includeMain = main,
+        .refType = null,
+        .totalRefs = null,
+        .isEdge = edgeType,
+    };
+}
 
 pub fn getFields(
     node: db.Node,
@@ -98,16 +118,19 @@ pub fn getFields(
 
         var value: []u8 = undefined;
 
+        var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+
         if (isEdge) {
-            const edgeFieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
-            edgeType = @enumFromInt(edgeFieldSchema.*.type);
-            value = db.getEdgeProp(edgeRef.?.reference.?, edgeFieldSchema);
+            fieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
+            edgeType = @enumFromInt(fieldSchema.*.type);
+            value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
         } else {
+            fieldSchema = try db.getFieldSchema(field, typeEntry);
             value = db.getField(
                 typeEntry,
                 id,
                 node,
-                try db.getFieldSchema(field, typeEntry),
+                fieldSchema,
             );
         }
 
@@ -117,49 +140,59 @@ pub fn getFields(
             continue :includeField;
         }
 
-        if (isEdge) {
-            size += 2;
-            const propLen = t.Size(edgeType);
-            if (propLen == 0) {
-                size += (valueLen + 4);
-            } else {
-                size += propLen;
-            }
-        } else if (field == 0) {
-            main = value;
-            if (includeMain.?.len != 0) {
-                size += readInt(u16, includeMain.?, 0) + 1;
-            } else {
-                size += (valueLen + 1);
+        const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
+
+        if (prop == t.Prop.TEXT) {
+            var iter = db.textIterator(value, ctx.lang);
+            while (iter.next()) |s| {
+                if (isEdge) {
+                    size += (s.len + 6);
+                } else {
+                    size += (s.len + 5);
+                }
+                var result = addResult(field, s, includeMain, edgeType);
+                if (!idIsSet) {
+                    size += 5;
+                    result.id = id;
+                    idIsSet = true;
+                    if (score != null) {
+                        result.score = score;
+                        size += 1;
+                    }
+                }
+                try ctx.results.append(result);
             }
         } else {
-            size += (valueLen + 5);
-        }
-
-        // TODO if fieldType == TEXT => read each selva_string
-        var result: results.Result = .{
-            .id = null,
-            .score = null,
-            .field = field,
-            .val = value,
-            .refSize = null,
-            .includeMain = includeMain,
-            .refType = null,
-            .totalRefs = null,
-            .isEdge = edgeType,
-        };
-
-        if (!idIsSet) {
-            size += 5;
-            result.id = id;
-            idIsSet = true;
-            if (score != null) {
-                result.score = score;
-                size += 1;
+            if (isEdge) {
+                size += 2;
+                const propLen = t.Size(edgeType);
+                if (propLen == 0) {
+                    size += (valueLen + 4);
+                } else {
+                    size += propLen;
+                }
+            } else if (field == 0) {
+                main = value;
+                if (includeMain.?.len != 0) {
+                    size += readInt(u16, includeMain.?, 0) + 1;
+                } else {
+                    size += (valueLen + 1);
+                }
+            } else {
+                size += (valueLen + 5);
             }
+            var result = addResult(field, value, includeMain, edgeType);
+            if (!idIsSet) {
+                size += 5;
+                result.id = id;
+                idIsSet = true;
+                if (score != null) {
+                    result.score = score;
+                    size += 1;
+                }
+            }
+            try ctx.results.append(result);
         }
-
-        try ctx.results.append(result);
     }
 
     if (!idIsSet) {

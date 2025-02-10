@@ -1,15 +1,2 @@
 # based-db
 
-### Release binaries and publish npm packages.
-
-Selvad binaries, db-client and db-server packages should be published though CI/CD.
-To release a version use the `Actions > Publish` script, or run the `npm run publish` command from root.
-
-Ex:
-```bash
-npm run publish -- --version v1.2.3 --notes "<optional_release_notes>"
-````
-
-This script, when triggered, sets the client and server package versions to the specified version, makes the binary npm packages, publishes the client and server and creates a new tag.  
-The workflow will take the selected branch (from the UI) or current branch (cli), build the binaries, run all tests and then publish and release. It should take around 10 minutes. It pushes to the branch so be sure to pull the changes once it is done.
-You can check the progress from the Actions UI or with `gh workflows view` command. It will send you an email if the workflow fails.

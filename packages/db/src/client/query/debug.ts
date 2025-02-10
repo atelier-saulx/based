@@ -1,6 +1,7 @@
 import picocolors from 'picocolors'
 import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../server/schema/types.js'
 import { QueryDef, QueryDefType } from './types.js'
+import { concatUint8Arr } from '../bitWise.js'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }
@@ -73,9 +74,9 @@ export const debug = (
     return
   }
 
-  if (Array.isArray(x) && x[0] instanceof Buffer) {
-    debug(Buffer.concat(x), start, end, label)
-  } else if (x instanceof Buffer) {
+  if (Array.isArray(x) && x[0] instanceof Uint8Array) {
+    debug(concatUint8Arr(x), start, end, label)
+  } else if (x instanceof Uint8Array) {
     console.log(label || '')
     if (!end) {
       end = x.byteLength

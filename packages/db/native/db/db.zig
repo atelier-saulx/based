@@ -13,7 +13,7 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
 const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
@@ -40,6 +40,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
+
     b.* = .{
         .id = 0,
         .arena = arena.*,
@@ -50,6 +51,12 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
+
+    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    // const allocator = fba.allocator();
+
+    // var buffer: [1000]u8 = undefined;
+    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
     try dbHashmap.put(id, b);
     return b;
 }
@@ -396,4 +403,44 @@ pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
 pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
+}
+
+pub const TextIterator = struct {
+    value: []const [16]u8,
+    index: usize = 0,
+    code: types.LangCode,
+    fn _next(self: *TextIterator) ?[]u8 {
+        if (self.index == self.value.len) {
+            return null;
+        }
+        const tl = self.value[self.index];
+        const ss: *const selva.selva_string = @ptrCast(&tl);
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
+        const s = @as([*]u8, @constCast(str));
+        self.index += 1;
+        return s[0..len];
+    }
+    fn _lang(self: *TextIterator) ?[]u8 {
+        while (self._next()) |s| {
+            if (s[0] == @intFromEnum(self.code)) {
+                return s;
+            }
+        }
+        return null;
+    }
+    pub fn next(self: *TextIterator) ?[]u8 {
+        // TODO fix with comptime...
+        if (self.code == types.LangCode.NONE) {
+            return self._next();
+        } else {
+            return self._lang();
+        }
+    }
+};
+
+pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
+    const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    return TextIterator{ .value = text, .code = code };
 }

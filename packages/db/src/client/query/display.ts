@@ -8,9 +8,9 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
+  TEXT,
   TIMESTAMP,
   TypeIndex,
-  WEAK_REFERENCE,
 } from '../../server/schema/types.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 
@@ -69,15 +69,15 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
     )
   }
 
-  if (type === STRING) {
-    if (v.length > 75) {
+  if (type === STRING || type === TEXT) {
+    if (v.length > 50) {
       const chars = picocolors.italic(
         picocolors.dim(
           `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
         ),
       )
       v =
-        v.slice(0, 75).replace(/\n/g, '\\n ') +
+        v.slice(0, 50).replace(/\n/g, '\\n ') +
         picocolors.dim('...') +
         '" ' +
         chars
@@ -170,6 +170,19 @@ const inspectObject = (
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
+      } else if (def.typeIndex === TEXT) {
+        if (typeof v === 'object') {
+          str += '{\n'
+          for (const lang in v) {
+            str += `${prefixBody}  ${lang}: ${prettyPrintVal(v[lang], def.typeIndex)},\n`
+          }
+          str += `${prefixBody}}`
+        } else {
+          if (v === undefined) {
+            return ''
+          }
+          str += prettyPrintVal(v, def.typeIndex)
+        }
       } else if (def.typeIndex === STRING) {
         if (v === undefined) {
           return ''

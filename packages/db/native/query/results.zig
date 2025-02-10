@@ -29,9 +29,11 @@ pub fn createResultsBuffer(
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, ctx.size + 8, &resultBuffer, &result) != c.napi_ok) {
+    if (c.napi_create_arraybuffer(env, ctx.size + 8, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
+
+    // c.napi_create_a
 
     var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 8];
     var i: usize = 4;

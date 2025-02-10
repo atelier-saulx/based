@@ -9,6 +9,7 @@ import {
   ALIAS,
   BINARY,
   HLL,
+  VECTOR,
 } from '../../server/schema/types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
@@ -27,6 +28,7 @@ import { setCursor } from './setCursor.js'
 import { appendFixedValue, writeFixedValue } from './fixed.js'
 import { writeAlias } from './alias.js'
 import { writeHll } from './hll.js'
+import { writeVector } from './vector.js'
 import { checkSubscriptionMarkers } from '../query/subscription/index.js'
 
 function _modify(
@@ -71,6 +73,8 @@ function _modify(
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === HLL) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
+        } else if (type === VECTOR) {
+          err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         }
       } else if (overwrite) {
         if (ctx.len + 15 + schema.mainLen > ctx.max) {

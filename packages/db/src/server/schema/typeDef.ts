@@ -169,9 +169,11 @@ export const createSchemaTypeDef = (
         }
       } else if (isPropType('text', schemaProp)) {
         stringFields++
+      } else if (isPropType('vector', schemaProp)) {
+          len = 4 * schemaProp.size
       }
 
-      const isseparate = len === 0
+      const isseparate = len === 0 || isPropType('vector', schemaProp)
       if (isseparate) {
         result.cnt++
       }

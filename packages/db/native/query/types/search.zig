@@ -26,13 +26,14 @@ pub fn createSearchCtx(offset: u32) QuerySearchCtx {
 }
 
 pub fn addToScore(
+    queryCtx: *QueryCtx,
     ctx: *QuerySearchCtx,
-    dbCtx: *db.DbCtx,
     node: db.Node,
     typeEntry: db.Type,
     conditions: []u8,
     searchCtx: *const searchStr.SearchCtx,
 ) void {
+    const dbCtx = queryCtx.db;
     if (!filter(dbCtx, node, typeEntry, conditions, null, null, 0, false)) {
         return;
     }

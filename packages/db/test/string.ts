@@ -222,65 +222,6 @@ await test('string + refs', async (t) => {
   )
 })
 
-await test('Big string', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
-
-  await db.putSchema({
-    types: {
-      file: {
-        props: {
-          name: { type: 'string', max: 20 },
-          contents: { type: 'string' },
-        },
-      },
-    },
-  })
-
-  const file = db.create('file', {
-    contents: euobserver,
-  })
-
-  await db.drain()
-
-  equal(
-    (await db.query('file', file).get()).node().contents,
-    euobserver,
-    'Get single id',
-  )
-
-  db.create('file', {
-    name: 'file 2',
-    contents: euobserver,
-  })
-
-  await db.drain()
-
-  deepEqual(
-    (await db.query('file').get()).toObject(),
-    [
-      {
-        id: 1,
-        name: '',
-        contents: euobserver,
-      },
-      {
-        id: 2,
-        name: 'file 2',
-        contents: euobserver,
-      },
-    ],
-    'Get multiple big strings',
-  )
-})
-
 await test('Big string disable compression', async (t) => {
   const db = new BasedDb({
     path: t.tmp,

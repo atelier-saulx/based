@@ -107,7 +107,7 @@ pub fn search(
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
-        s.addToScore(&searchCtxC, ctx.db, node, typeEntry, conditions, searchCtx);
+        s.addToScore(ctx, &searchCtxC, node, typeEntry, conditions, searchCtx);
         if ((searchCtxC.totalSearchResults >= limit)) {
             break;
         }

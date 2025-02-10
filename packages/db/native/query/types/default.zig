@@ -36,6 +36,7 @@ pub fn default(
             correctedForOffset -= 1;
             continue :checkItem;
         }
+
         const size = try getFields(
             node.?,
             ctx,
@@ -75,7 +76,7 @@ pub fn search(
         if (node == null) {
             break :checkItem;
         }
-        s.addToScore(&searchCtxC, ctx.db, node.?, typeEntry, conditions, searchCtx);
+        s.addToScore(ctx, &searchCtxC, node.?, typeEntry, conditions, searchCtx);
     }
     try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
 }
