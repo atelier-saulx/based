@@ -95,20 +95,23 @@ await test('subscription filter', async (t) => {
   }
   await db.drain()
 
-  let close = db
-    .query('user')
-    // .range(0, 1e6)
-    .include('name')
-    .filter('flap', '=', 666)
-    .filter('nr', '>', 9500)
-    .filter('name', 'has', 'Mr')
-    .or((f) => {
-      f.filter('nr', '=', 1e9)
-      f.or('nr', '>', 2e9)
-    })
-    .subscribe((q) => {
-      console.log(q.id, q)
-    })
+  const sub = () => {
+    return db
+      .query('user')
+      .range(0, 1)
+      .include('name')
+      .filter('flap', '=', 666)
+      .filter('nr', '>', 9500)
+      .filter('name', 'has', 'Mr')
+      .or((f) => {
+        f.filter('nr', '=', 1e9)
+        f.or('nr', '>', 2e9)
+      })
+  }
+
+  let close = sub().subscribe((q) => {
+    console.log(q.toObject(), q.checksum)
+  })
 
   await wait(100)
   await update()
@@ -119,22 +122,12 @@ await test('subscription filter', async (t) => {
   close()
   await wait(500)
 
-  close = db
-    .query('user')
-    // .range(0, 1e6)
-    .include('name')
-    .filter('flap', '=', 666)
-    .filter('nr', '>', 9500)
-    .filter('name', 'has', 'Mr')
-    .or((f) => {
-      f.filter('nr', '=', 1e9)
-      f.or('nr', '>', 2e9)
-    })
-    .subscribe((q) => {
-      console.log('2ND', q.id, q)
-    })
+  close = sub().subscribe((q) => {
+    console.log('2ND', q.toObject(), q.checksum)
+  })
 
   await wait(300)
+  close()
 })
 
 await test('subscription id', async (t) => {
