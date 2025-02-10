@@ -24,7 +24,8 @@ export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
 export const BINARY = 25
-export const VECTOR = 26
+export const ID = 26
+export const VECTOR = 27
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
