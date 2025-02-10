@@ -46,9 +46,9 @@ await test('vector', async (t) => {
 
   const res = (await db.query('data').get()).toObject()
   for (const r of res) {
-    const z = data[r.name]
-    for (let i = 0; i < 5; i++) {
-        deepEqual(Math.abs(r.a[i] - z[i]) < 0.1, true, `${r.a[i]} ~= ${z[i]}`)
-    }
+    const a = Buffer.from(r.a.buffer)
+    const b = Buffer.from((new Float32Array(data[r.name])).buffer)
+
+    deepEqual(Buffer.compare(a, b), 0)
   }
 })
