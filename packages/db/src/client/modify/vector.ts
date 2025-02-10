@@ -32,7 +32,7 @@ export function writeVector(
     if (!value) {
       return new ModifyError(t, value)
     }
-    size = value.byteLength + 6
+    size = value.byteLength + 4
   }
   if (size === 0) {
     if (modifyOp === UPDATE) {
