@@ -23,7 +23,9 @@
   },
   "sideEffects": false,
   "files": [
-    "dist",
+    "dist/src",
+    "dist/lib",
+    "!*.map",
     "README.md",
     "package.json"
   ],
@@ -39,8 +41,6 @@
   "devDependencies": {
     "@types/node": "^22.5.3",
     "axios": "^1.7.9",
-    "exit-hook": "^4.0.0",
-    "pkg-dir": "^8.0.0",
     "rimraf": "^3.0.2",
     "tar": "^7.4.3",
     "typescript": "^5.6.3"

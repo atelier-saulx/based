@@ -46,7 +46,9 @@ await test('save', async (t) => {
   })
 
   await db2.start()
-
-  deepEqual(await db2.query('user').get().toObject(), await db.query('user').get().toObject())
+  const a = await db.query('user').get().toObject()
+  const b = await db2.query('user').get().toObject()
+  console.log(a)
+  deepEqual(a, b)
 
 })
