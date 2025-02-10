@@ -95,9 +95,9 @@ await test('subscription filter', async (t) => {
   }
   await db.drain()
 
-  const close = db
+  let close = db
     .query('user')
-    .range(0, 1e6)
+    // .range(0, 1e6)
     .include('name')
     .filter('flap', '=', 666)
     .filter('nr', '>', 9500)
@@ -117,6 +117,24 @@ await test('subscription filter', async (t) => {
   await wait(300)
 
   close()
+  await wait(500)
+
+  close = db
+    .query('user')
+    // .range(0, 1e6)
+    .include('name')
+    .filter('flap', '=', 666)
+    .filter('nr', '>', 9500)
+    .filter('name', 'has', 'Mr')
+    .or((f) => {
+      f.filter('nr', '=', 1e9)
+      f.or('nr', '>', 2e9)
+    })
+    .subscribe((q) => {
+      console.log('2ND', q.id, q)
+    })
+
+  await wait(300)
 })
 
 await test('subscription id', async (t) => {
