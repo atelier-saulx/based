@@ -190,9 +190,12 @@ export const convertFilter = (
     ]
   } else {
     if (operator == 'like') {
-      if (value.normalize) {
+      if (value == null) {
+        throw new Error('Value is required')
+      }
+      if (value?.normalize) {
         value = normalizeNeedle(value)
-      } else {
+      } else if (Array.isArray(value) && value[0]?.normalize) {
         value = value.map(normalizeNeedle)
       }
     }
