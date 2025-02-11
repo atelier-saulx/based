@@ -48,6 +48,8 @@ inline fn hasInner(
     if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {
+            // last byte is lang
+            // [string, lang]
             q = query[0 .. query.len - 1];
         }
         if (value[1] == 1) {
