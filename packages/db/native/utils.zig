@@ -26,3 +26,5 @@ pub inline fn toSlice(comptime T: type, value: []u8) []T {
     const x: []T = @as([*]T, @alignCast(@ptrCast(value.ptr)))[0..@divFloor(value.len, div)];
     return x;
 }
+
+// to convert back use std.mem.bytesAsSlice;
