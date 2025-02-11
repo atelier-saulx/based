@@ -1,8 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const native_endian = builtin.cpu.arch.endian();
-// TODO opt for big endian
-const isLittle = true; //native_endian == .little;
+// const native_endian = builtin.cpu.arch.endian();
+// Only little endian for us
 
 pub inline fn readInt(comptime T: type, buffer: []const u8, offset: usize) T {
     if (T == f64) {
@@ -12,13 +11,13 @@ pub inline fn readInt(comptime T: type, buffer: []const u8, offset: usize) T {
         return buffer[offset];
     }
     const value: T = @bitCast(buffer[offset..][0..@divExact(@typeInfo(T).Int.bits, 8)].*);
-    return if (isLittle) value else @byteSwap(value);
+    return value;
 }
 
 pub inline fn writeInt(comptime T: type, buffer: []u8, offset: usize, value: usize) void {
     const v: T = @truncate(value);
     const target = buffer[offset..][0..@divExact(@typeInfo(T).Int.bits, 8)];
-    target.* = @bitCast(if (isLittle) v else @byteSwap(v));
+    target.* = @bitCast(v);
 }
 
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
