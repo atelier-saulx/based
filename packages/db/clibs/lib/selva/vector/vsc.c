@@ -40,7 +40,7 @@ static inline v2f v2f_rsqrt(v2f val)
 }
 #endif
 
-float vector_sc(float *a, float *b, size_t len)
+float vector_sc(const float *a, const float *b, size_t len)
 {
     /*
      * This function compiles best with ARM Neon or Intel AVX2 (-mavx2).

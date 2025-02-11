@@ -49,11 +49,9 @@ inline fn hasInner(
         q = query[0..query.len];
 
         // const y: []f32 = x;
-        const x = toSlice(f32, value);
-        std.log.err("Hello vector {any}", .{x});
+        //std.log.err("Hello vector {any}", .{x});
 
-        return false;
-        // return like.vector(@constCast(bla), @constCast(q));
+        return like.vector(toSlice(f32, value), toSlice(f32, q));
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {
