@@ -4,7 +4,7 @@ import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
-import { RANGE_ERR, UPDATE } from './types.js'
+import { ModifyOpts, RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
@@ -73,7 +73,7 @@ export const update = (
   type: string,
   id: number,
   obj: Payload,
-  overwrite?: boolean,
+  opts?: ModifyOpts,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
 
@@ -84,9 +84,10 @@ export const update = (
     id,
     db,
     getSubscriptionMarkers(db, def.id, id, false),
+    opts,
   )
 
-  const err = appendUpdate(ctx, def, obj, res, overwrite)
+  const err = appendUpdate(ctx, def, obj, res, opts?.overwrite)
 
   if (err) {
     ctx.prefix0 = -1 // force a new cursor
@@ -97,7 +98,7 @@ export const update = (
         throw new Error('out of range')
       }
       flushBuffer(db)
-      return update(db, type, id, obj, overwrite)
+      return update(db, type, id, obj, opts)
     }
 
     res.error = err

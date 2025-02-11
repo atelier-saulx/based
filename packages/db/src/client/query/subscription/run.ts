@@ -54,7 +54,6 @@ export const runSubscription = (subscription: Subscription) => {
             performance.now() - d,
           )
         }
-        console.log('RUN ', subscription.subs.size)
         subscription.subs.forEach((fn) => {
           fn(subscription.res, err)
         })

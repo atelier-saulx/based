@@ -263,7 +263,7 @@ await test('basic', async (t) => {
     {
       age: 1e6,
     },
-    true,
+    { overwrite: true },
   )
 
   await db.drain()

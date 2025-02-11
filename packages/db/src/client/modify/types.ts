@@ -1,3 +1,4 @@
+import { LangCode } from '@based/schema'
 import { ModifyError } from './ModifyRes.js'
 
 export const CREATE = 3
@@ -15,3 +16,9 @@ export const SWITCH_ID_UPDATE = 1
 
 export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 export type ModifyOp = typeof CREATE | typeof UPDATE | typeof INCREMENT
+
+export type ModifyOpts = {
+  unsafe?: boolean
+  i18n?: LangCode
+  overwrite?: boolean
+}

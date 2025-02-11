@@ -4,7 +4,7 @@ import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
-import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
+import { CREATE, ModifyErr, RANGE_ERR, ModifyOpts } from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
@@ -85,13 +85,13 @@ export function create(
   db: DbClient,
   type: string,
   obj: CreateObj,
-  unsafe?: boolean,
+  opts?: ModifyOpts,
 ): ModifyRes {
   const def = db.schemaTypesParsed[type]
 
   let id: number
   if ('id' in obj) {
-    if (unsafe) {
+    if (opts?.unsafe) {
       id = obj.id
     } else {
       throw Error('create with "id" is not allowed')
@@ -106,10 +106,11 @@ export function create(
     id,
     db,
     getSubscriptionMarkers(db, def.id, id, true),
+    opts,
   )
 
   const pos = ctx.len
-  const err = appendCreate(ctx, def, obj, res, unsafe)
+  const err = appendCreate(ctx, def, obj, res, opts?.unsafe)
 
   if (err) {
     ctx.prefix0 = -1 // force a new cursor
@@ -120,8 +121,7 @@ export function create(
         throw new Error('out of range')
       }
       flushBuffer(db)
-
-      return db.create(type, obj, unsafe)
+      return db.create(type, obj, opts)
     }
 
     res.error = err

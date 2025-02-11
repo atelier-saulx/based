@@ -66,9 +66,9 @@ if (isMainThread) {
             continue
           }
           if (Array.isArray(res)) {
-            toDb.create(res[0], res[1] || node, true)
+            toDb.create(res[0], res[1] || node, { unsafe: true })
           } else {
-            toDb.create(type, res || node, true)
+            toDb.create(type, res || node, { unsafe: true })
           }
         }
       } else if (type in toDb.client.schemaTypesParsed) {
@@ -78,7 +78,7 @@ if (isMainThread) {
           .range(leafData.start - 1, leafData.end - leafData.start + 1)
           ._getSync(fromCtx)
         for (const node of nodes) {
-          toDb.create(type, node, true)
+          toDb.create(type, node, { unsafe: true })
         }
       }
     }
