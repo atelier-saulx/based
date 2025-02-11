@@ -79,21 +79,23 @@ await test('vector set wrong size', async (t) => {
   deepEqual(rb.a.length, 5)
 })
 
-// TODO Should this work?
-await test.skip('query by vector', async (t) => {
+await test('query by vector', async (t) => {
   const db = await initDb(t)
 
-  const r1 = await db.query('data').filter('a', '=', new Float32Array(data['car'])).get()
+  const r1 = await db.query('data').filter('a', '=', new Float32Array(data['car'].slice(0, 4))).get()
   console.log(r1)
 
-  const r2 = await db.query('data').filter('a', '=', new Float32Array([...data['car'], 1])).get()
+  const r2 = await db.query('data').filter('a', '=', new Float32Array(data['car'])).get()
   console.log(r2)
+
+  const r3 = await db.query('data').filter('a', '=', new Float32Array([...data['car'], 1])).get()
+  console.log(r3)
 })
 
 await test('vector like', async (t) => {
   const db = await initDb(t)
 
   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
-  const res = await db.query('data').filter('a', 'like', fruit).get()
-  console.log(res)
+  const res = await db.query('data').include('name').filter('a', 'like', fruit).get().toObject()
+  deepEqual([{ id: 5, name: 'building' }, { id: 6, name: 'car' }], res)
 })

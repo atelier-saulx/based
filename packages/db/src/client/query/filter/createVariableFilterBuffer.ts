@@ -31,9 +31,13 @@ const parseValue = (
       val = Buffer.from(val)
     }
   }
-  if (!(val instanceof Buffer)) {
-    throw new Error('Incorrect value for filter ' + prop.path)
+  if (val?.BYTES_PER_ELEMENT > 1) {
+    val = val.buffer
   }
+  if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
+    throw new Error(`Incorrect value for filter: ${prop.path}`)
+  }
+  // @ts-ignore TODO FDN-576
   return val
 }
 
