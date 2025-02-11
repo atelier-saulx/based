@@ -183,8 +183,8 @@ export class DbClient {
     return update(this, '_root', 1, typeOrValue, idOrOverwrite as ModifyOpts)
   }
 
-  upsert(type: string, obj: Record<string, any>) {
-    return upsert(this, type, obj)
+  upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
+    return upsert(this, type, obj, opts)
   }
 
   remove(type: string, id: number | ModifyRes) {
