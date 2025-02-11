@@ -158,10 +158,12 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
       const prop = q.schema.reverseProps[k]
-      console.log('no size!', k, prop)
-
       if (prop.typeIndex === TEXT && q.lang == 0) {
-        addField(prop, {}, item)
+        const x: any = {}
+        for (const locale in q.schema.locales) {
+          x[locale] = ''
+        }
+        addField(prop, x, item)
       } else {
         addField(prop, '', item)
       }

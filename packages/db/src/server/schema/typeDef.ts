@@ -4,6 +4,7 @@ import {
   StrictSchemaType,
   getPropType,
   SchemaReference,
+  SchemaLocales,
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -88,7 +89,14 @@ export const updateTypeDefs = (db: DbClient | DbServer) => {
       if (!type.id) {
         type.id = genId(db)
       }
-      const def = createSchemaTypeDef(field, type, db.schemaTypesParsed)
+      const def = createSchemaTypeDef(
+        field,
+        type,
+        db.schemaTypesParsed,
+        db.schema.locales ?? {
+          en: {},
+        },
+      )
       def.blockCapacity =
         field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
       db.schemaTypesParsed[field] = def
@@ -101,6 +109,7 @@ export const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
   parsed: DbClient['schemaTypesParsed'],
+  locales: Partial<SchemaLocales>,
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),
@@ -128,6 +137,7 @@ export const createSchemaTypeDef = (
       throw new Error(`Invalid schema type id ${result.type}`)
     }
   }
+  result.locales = locales
 
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
@@ -145,6 +155,7 @@ export const createSchemaTypeDef = (
         typeName,
         schemaProp as SchemaObject,
         parsed,
+        locales,
         result,
         propPath,
         false,
@@ -170,7 +181,7 @@ export const createSchemaTypeDef = (
       } else if (isPropType('text', schemaProp)) {
         stringFields++
       } else if (isPropType('vector', schemaProp)) {
-          len = 4 * schemaProp.size
+        len = 4 * schemaProp.size
       }
 
       const isseparate = len === 0 || isPropType('vector', schemaProp)
