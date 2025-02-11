@@ -103,8 +103,14 @@ await test('text', async (t) => {
     .get()
     .inspect()
 
-  await db.create('dialog', {
-    fun: 'mr snurf in finland',
-  })
+  await db.create(
+    'dialog',
+    {
+      fun: 'mr snurf in finland',
+    },
+    { i18n: 'fi' },
+  )
+
+  await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
   // TODO: if text we prob need to create a empty object in js
 })

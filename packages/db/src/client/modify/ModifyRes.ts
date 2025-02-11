@@ -10,7 +10,7 @@ import { inspect } from 'node:util'
 import { SubscriptionMarkersCheck } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 import { ModifyOpts } from './types.js'
-import { LangCode } from '@based/schema'
+import { LangCode, langCodesMap } from '@based/schema'
 
 export type ModifyRes = {
   tmpId: number
@@ -84,7 +84,7 @@ export class ModifyState {
     this.subMarkers = subMarkers
     if (opts) {
       if (opts.i18n) {
-        this.i18n = opts.i18n
+        this.i18n = langCodesMap.get(opts.i18n)
       }
     }
   }

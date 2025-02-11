@@ -1,4 +1,4 @@
-import { LangCode } from '@based/schema'
+import { LangCode, LangName } from '@based/schema'
 import { ModifyError } from './ModifyRes.js'
 
 export const CREATE = 3
@@ -19,6 +19,6 @@ export type ModifyOp = typeof CREATE | typeof UPDATE | typeof INCREMENT
 
 export type ModifyOpts = {
   unsafe?: boolean
-  i18n?: LangCode
+  i18n?: LangName
   overwrite?: boolean
 }
