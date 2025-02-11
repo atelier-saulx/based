@@ -157,7 +157,14 @@ const readMain = (
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
-      addField(q.schema.reverseProps[k], '', item)
+      const prop = q.schema.reverseProps[k]
+      console.log('no size!', k, prop)
+
+      if (prop.typeIndex === TEXT && q.lang == 0) {
+        addField(prop, {}, item)
+      } else {
+        addField(prop, '', item)
+      }
     }
   }
 }
@@ -174,12 +181,15 @@ export const readAllFields = (
   while (i < end) {
     const index = result[i]
     i++
+    // index:255 id
     if (index === 255) {
       handleUndefinedProps(id, q, item)
       return i - offset
     }
+    // index:252 edge
     if (index === 252) {
       let prop = result[i]
+      // index:254 ref
       if (prop === 254) {
         i++
         const field = result[i]
@@ -203,6 +213,7 @@ export const readAllFields = (
           addField(ref.target.propDef, refItem, item)
           i += size - 5
         }
+        // index:253 refs
       } else if (prop === 253) {
         i++
         const field = result[i]
@@ -238,6 +249,7 @@ export const readAllFields = (
           i += edgeDef.len
         }
       }
+      // index:254 ref
     } else if (index === 254) {
       const field = result[i]
       i++
@@ -260,6 +272,7 @@ export const readAllFields = (
         addField(ref.target.propDef, refItem, item)
         i += size - 5
       }
+      // index:253 refs
     } else if (index === 253) {
       const field = result[i]
       i++
@@ -292,13 +305,11 @@ export const readAllFields = (
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
 
-        // if queryDef.LANG do different
-
         if (size === 0) {
           // LATER
           // addField(prop, '', item)
         } else {
-          if (q.lang != langCodesMap.get('none')) {
+          if (q.lang != 0) {
             addField(prop, read(result, i + 4, size), item)
           } else {
             addField(
@@ -310,15 +321,7 @@ export const readAllFields = (
             )
           }
         }
-
-        const lan =
-          // TODO Read text
-          //if (size === 0) {
-          //  addField(prop, '', item)
-          //} else {
-          //  addField(prop, read(result, i + 4, size), item)
-          //}
-          (i += size + 4)
+        i += size + 4
       } else if (prop.typeIndex === ALIAS) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
@@ -333,9 +336,9 @@ export const readAllFields = (
       } else if (prop.typeIndex == VECTOR) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        const arr = new Float32Array(size / 4);
+        const arr = new Float32Array(size / 4)
         for (let j = 0; j < size; j += 4) {
-          arr[j / 4] = readFloatLE(result, i + 4 + j);
+          arr[j / 4] = readFloatLE(result, i + 4 + j)
         }
         addField(prop, arr, item)
         i += size + 4

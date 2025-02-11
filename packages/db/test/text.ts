@@ -124,5 +124,13 @@ await test('text', async (t) => {
 
   await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
 
+  const derpderp = await db.create('dialog', {})
+
+  console.log(await db.query('dialog', mrSnurfInFinlind).get())
+
+  console.log('-------------------------')
+
+  console.log(await db.query('dialog', derpderp).get())
+
   // TODO: if text we prob need to create a empty object in js
 })
