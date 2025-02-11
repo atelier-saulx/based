@@ -12,7 +12,7 @@ await test('save simple range', async (t) => {
   await db.start({ clean: true })
   t.after(() => {
     // TODO No crash if stopped
-    //return db.destroy()
+    // return db.destroy()
   })
 
   await db.putSchema({
