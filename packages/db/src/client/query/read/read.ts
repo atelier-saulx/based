@@ -42,11 +42,9 @@ const addField = (
   lang: number = 0,
 ) => {
   let i = p.__isEdge === true ? 1 : 0
-
   // TODO OPTMIZE
   const path = lang ? [...p.path, inverseLangMap.get(lang)] : p.path
   const len = path.length
-
   if (len - i === 1) {
     const field = path[i]
     if (!defaultOnly || !(field in item)) {
@@ -65,6 +63,33 @@ const addField = (
       }
     }
   }
+}
+
+const getEmptyField = (p: PropDef | PropDefEdge, item: Item) => {
+  let i = p.__isEdge === true ? 1 : 0
+  const path = p.path
+  const len = path.length
+  let select: any = item
+  if (len - i === 1) {
+    const field = path[i]
+    if (!(field in item)) {
+      select = item[field] = {}
+    } else {
+      return item[field]
+    }
+  } else {
+    for (; i < len; i++) {
+      const field = path[i]
+      if (i === len - 1) {
+        if (!(field in select)) {
+          select = select[field] = {}
+        }
+      } else {
+        select = select[field] ?? (select[field] = {})
+      }
+    }
+  }
+  return select
 }
 
 const readMainValue = (
@@ -159,11 +184,12 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
     if (q.include.propsRead[k] !== id) {
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === TEXT && q.lang == 0) {
-        const x: any = {}
+        const lan = getEmptyField(prop, item)
         for (const locale in q.schema.locales) {
-          x[locale] = ''
+          if (!lan[locale]) {
+            lan[locale] = ''
+          }
         }
-        addField(prop, x, item)
       } else {
         addField(prop, '', item)
       }
@@ -304,16 +330,14 @@ export const readAllFields = (
         }
         i += size + 4
       } else if (prop.typeIndex == TEXT) {
-        q.include.propsRead[index] = id
         const size = readUint32(result, i)
-
         if (size === 0) {
-          // LATER
-          // addField(prop, '', item)
         } else {
           if (q.lang != 0) {
+            q.include.propsRead[index] = id
             addField(prop, read(result, i + 4, size), item)
           } else {
+            // q.include.propsRead[index] = id
             addField(
               prop,
               read(result, i + 4, size),
