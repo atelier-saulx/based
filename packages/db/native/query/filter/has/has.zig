@@ -10,6 +10,7 @@ const decompress = compressed.decompress;
 const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
 const std = @import("std");
+const toSlice = @import("../../../utils.zig").toSlice;
 
 inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
@@ -45,11 +46,14 @@ inline fn hasInner(
 ) bool {
     var q = query;
     if (prop == Prop.VECTOR) {
-        q = query[0 .. query.len];
-        std.log.err("Hello vector {x}", .{q});
+        q = query[0..query.len];
+
+        // const y: []f32 = x;
+        const x = toSlice(f32, value);
+        std.log.err("Hello vector {any}", .{x});
 
         return false;
-        //return like.vector(@constCast(bla), @constCast(q));
+        // return like.vector(@constCast(bla), @constCast(q));
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {
