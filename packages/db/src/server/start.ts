@@ -89,16 +89,15 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
   for (const key in db.schemaTypesParsed) {
     const def = db.schemaTypesParsed[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
-
     def.total = total
-    def.lastId = writelog?.types[def.id].lastId || lastId
+    def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
-      writelog?.types[def.id].blockCapacity || DEFAULT_BLOCK_CAPACITY
+      writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
 
     foreachBlock(db, def, (start, end, hash) => {
       const mtKey = makeCsmtKey(def.id, start)
       const file: string =
-        writelog.rangeDumps[def.id].find((v) => v.start === start)?.file || ''
+        writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file || ''
       const data: CsmtNodeRange = {
         file,
         typeId: def.id,

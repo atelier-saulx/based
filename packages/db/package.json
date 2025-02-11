@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.0.2",
+  "version": "0.0.7",
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",
@@ -27,10 +27,11 @@
     "dist/lib",
     "!*.map",
     "README.md",
-    "package.json"
+    "package.json",
+    "basedDbNative.cjs"
   ],
   "dependencies": {
-    "@based/schema": "5.0.0-alpha.0",
+    "@based/schema": "5.0.0-alpha.1",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.3.2",
     "picocolors": "^1.1.0"
