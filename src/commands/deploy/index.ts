@@ -114,50 +114,53 @@ const queuedFileUpload = queued(
   { dedup: (_client, payload) => hash(payload), concurrency: 10 },
 )
 
-const queuedFnDeploy = async (
-  context: AppContext,
-  client: BasedClient,
-  checksum: number,
-  config: Config,
-  js: OutputFile,
-  sourcemap: OutputFile,
-) => {
-  const { error, distId } = await client.stream('based:set-function', {
-    contents: js.contents,
-    payload: {
-      checksum,
-      config,
-    },
-  })
+const queuedFnDeploy = queued(
+  async (
+    context: AppContext,
+    client: BasedClient,
+    checksum: number,
+    config: Config,
+    js: OutputFile,
+    sourcemap: OutputFile,
+  ) => {
+    const { error, distId } = await client.stream('based:set-function', {
+      contents: js.contents,
+      payload: {
+        checksum,
+        config,
+      },
+    })
 
-  if (error) {
-    throw new Error(error)
-  }
+    if (error) {
+      throw new Error(error)
+    }
 
-  if (distId) {
-    await client
-      .stream('based:set-sourcemap', {
-        contents: sourcemap.contents,
-        payload: {
-          distId,
-          checksum,
-        },
-      })
-      .catch((error) => {
-        context.print.warning(
-          `<red>Could not save sourcemap for: ${config.name} ${error.message}</red>`,
-          true,
-        )
-      })
-  } else {
-    context.print.warning(
-      '<red>No dist id returned from set-function</red>',
-      true,
-    )
-  }
+    if (distId) {
+      await client
+        .stream('based:set-sourcemap', {
+          contents: sourcemap.contents,
+          payload: {
+            distId,
+            checksum,
+          },
+        })
+        .catch((error) => {
+          context.print.warning(
+            `<red>Could not save sourcemap for: ${config.name} ${error.message}</red>`,
+            true,
+          )
+        })
+    } else {
+      context.print.warning(
+        '<red>No dist id returned from set-function</red>',
+        true,
+      )
+    }
 
-  return { distId }
-}
+    return { distId }
+  },
+  { dedup: (_context, _client, checksum) => hash(checksum), concurrency: 10 },
+)
 
 type Config = BasedFunctionConfig & {
   appParams?: {
