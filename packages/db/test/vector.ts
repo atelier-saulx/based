@@ -90,12 +90,10 @@ await test.skip('query by vector', async (t) => {
   console.log(r2)
 })
 
-// TODO like or search, this needs scored sorting
-// await test('vector like', async (t) => {
-//   const db = await initDb(t)
-//
-//   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
-//   console.log(Buffer.from(fruit), Buffer.from(fruit.buffer))
-//   const res = await db.query('data').filter('a', 'like', fruit).get()
-//   console.log(res)
-// })
+await test('vector like', async (t) => {
+  const db = await initDb(t)
+
+  const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
+  const res = await db.query('data').filter('a', 'like', fruit).get()
+  console.log(res)
+})

@@ -1,7 +1,6 @@
 const default = @import("./default.zig").default;
 const loose = @import("./loose.zig").loose;
-const like = @import("./like.zig").like;
-
+const like = @import("./like.zig");
 const t = @import("../types.zig");
 const Op = t.Operator;
 const Prop = @import("../../../types.zig").Prop;
@@ -45,7 +44,13 @@ inline fn hasInner(
     dbCtx: *db.DbCtx,
 ) bool {
     var q = query;
-    if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+    if (prop == Prop.VECTOR) {
+        q = query[0 .. query.len];
+        std.log.err("Hello vector {x}", .{q});
+
+        return false;
+        //return like.vector(@constCast(bla), @constCast(q));
+    } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {
             // last byte is lang
@@ -75,7 +80,7 @@ pub inline fn has(
     dbCtx: *db.DbCtx,
 ) bool {
     if (op == Op.like) {
-        return hasInner(isOr, like, mainLen, prop, value, query, dbCtx);
+        return hasInner(isOr, like.str, mainLen, prop, value, query, dbCtx);
     } else if (op == Op.has) {
         return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
     } else {
