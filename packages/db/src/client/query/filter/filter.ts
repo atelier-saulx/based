@@ -12,7 +12,7 @@ import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'
-import { inverseLangMap, langCodesMap } from '@based/schema'
+import { langCodesMap } from '@based/schema'
 
 export { Operator, Filter }
 
