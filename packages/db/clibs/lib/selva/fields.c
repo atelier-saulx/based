@@ -1764,13 +1764,30 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct Se
 static void reference_meta_del(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReference *ref, field_t field)
 {
     struct SelvaFields *fields = ref->meta;
+    const struct SelvaFieldsSchema *schema;
     const struct SelvaFieldSchema *fs;
 
     if (!fields) {
         return;
     }
 
-    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    schema = efc->fields_schema;
+    if (!schema) {
+        /*
+         * Schema not found on this side, try the dst_type.
+         * TODO It would be nice to share the pointer.
+         */
+        struct SelvaTypeEntry *type_dst;
+        const struct SelvaFieldSchema *dst_fs;
+
+        type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+        dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
+        assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
+        schema = dst_fs->edge_constraint.fields_schema;
+        assert(schema);
+    }
+
+    fs = get_fs_by_fields_schema_field(schema, field);
     if (!fs) {
         return;
     }
