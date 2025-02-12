@@ -15,6 +15,7 @@ import {
   UINT32,
   UINT8,
 } from '../../server/schema/types.js'
+import { convertToTimestamp } from '../timestamp.js'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
@@ -87,6 +88,16 @@ map[NUMBER] = (ctx, val, def) => {
   }
   ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
 }
+map[TIMESTAMP] = (ctx, val, def) => {
+  const parsedValue = convertToTimestamp(val)
+  if (typeof parsedValue !== 'number') {
+    return new ModifyError(def, val)
+  }
+  if (ctx.len + 8 > ctx.max) {
+    return RANGE_ERR
+  }
+  ctx.len = ctx.buf.writeDoubleLE(parsedValue, ctx.len)
+}
 map[UINT32] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
@@ -119,7 +130,6 @@ map[UINT8] = (ctx, val, def) => {
   ctx.buf[ctx.len++] = val
 }
 
-map[TIMESTAMP] = map[NUMBER]
 map[INT32] = map[UINT32]
 map[INT16] = map[UINT16]
 map[INT8] = map[UINT8]

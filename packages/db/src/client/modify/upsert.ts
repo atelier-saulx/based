@@ -1,6 +1,5 @@
 import { ALIAS } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
-import { ModifyCtx } from '../operations.js'
 import { BasedDbQuery } from '../query/BasedDbQuery.js'
 import { ModifyOpts } from './types.js'
 

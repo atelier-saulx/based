@@ -3,7 +3,6 @@ const std = @import("std");
 pub const Operator = enum(u8) {
     equal = 1,
     has = 2,
-    // 3 !=
     endsWith = 4,
     startsWith = 5,
     largerThen = 6,
@@ -14,13 +13,9 @@ pub const Operator = enum(u8) {
     hasNormalize = 13,
     startsWithNormalize = 14,
     endsWithNormalize = 15,
-
     equalCrc32 = 17,
-
     like = 18,
-
     hasLoose = 19,
-
     pub fn isNumerical(self: Operator) bool {
         return switch (self) {
             Operator.smallerThen,

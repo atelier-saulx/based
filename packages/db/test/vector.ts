@@ -94,7 +94,8 @@ await test('query by vector', async (t) => {
     .toObject()
   deepEqual(r1[0].name, 'car')
 
-  const r2 = await db.query('data')
+  const r2 = await db
+    .query('data')
     .include('name')
     .filter('a', '=', new Float32Array(data['car']))
     .get()
@@ -120,10 +121,5 @@ await test('vector like', async (t) => {
     .filter('a', 'like', fruit)
     .get()
     .toObject()
-  deepEqual(
-    res,
-    [
-      { id: 6, name: 'car' },
-    ],
-  )
+  deepEqual(res, [{ id: 6, name: 'car' }])
 })

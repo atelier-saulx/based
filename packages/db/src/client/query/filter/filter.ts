@@ -155,7 +155,7 @@ export const filterOr = (
   return conditions.or
 }
 
-function normalizeNeedle(s: string): string {
+const normalizeNeedle = (s: string): string => {
   return s
     .normalize('NFKD')
     .split('')

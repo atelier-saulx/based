@@ -30,101 +30,167 @@ export type Operator =
 
 // -------------------------------------------
 // operations shared
-// 1 = equality
-// 2 = has (simd)
-// 3 = not equal
-// 4 = ends with
-// 5 = starts with
+export const EQUAL = 1
+export const HAS = 2
+export const NOT_HAS = 16
+export const NOT_EQUAL = 3
+export const ENDS_WITH = 4
+export const STARTS_WITH = 5
+export const EQUAL_CRC32 = 17
 // -------------------------------------------
 // operations numbers
-// 6 = larger then
-// 7 = smaller then
-// 8 = larger then inclusive
-// 9 = smaller then inclusive
-// 10 = range
-// 11 = exclude range
-
+export const GREATER_THAN = 6
+export const SMALLER_THAN = 7
+export const GREATER_THAN_INCLUSIVE = 8
+export const SMALLER_THAN_INCLUSIVE = 9
+export const RANGE = 10
+export const RANGE_EXCLUDE = 11
 // -------------------------------------------
 // operations strings
-// 12 = equality to lower case
-// 13 = has to lower case (simd)
-// 14 = starts with to lower case
-// 15 = ends with to lower case
-// 18 = search
+export const EQUAL_LOWER_CASE = 12
+export const HAS_NORMALIZE = 13
+export const HAS_TO_LOWER_CASE = 19
+export const STARTS_WITH_LOWER_CASE = 14
+export const ENDS_WITH_LOWER_CASE = 15
+export const LIKE = 18
 // -------------------------------------------
+export const NONE = 0
+// -------------------------------------------
+export type OPERATOR =
+  | typeof EQUAL
+  | typeof HAS
+  | typeof NOT_HAS
+  | typeof NOT_EQUAL
+  | typeof ENDS_WITH
+  | typeof STARTS_WITH
+  | typeof GREATER_THAN
+  | typeof SMALLER_THAN
+  | typeof GREATER_THAN_INCLUSIVE
+  | typeof SMALLER_THAN_INCLUSIVE
+  | typeof RANGE
+  | typeof RANGE_EXCLUDE
+  | typeof EQUAL_LOWER_CASE
+  | typeof HAS_TO_LOWER_CASE
+  | typeof HAS_NORMALIZE
+  | typeof STARTS_WITH_LOWER_CASE
+  | typeof ENDS_WITH_LOWER_CASE
+  | typeof LIKE
+  | typeof NONE
+  | typeof EQUAL_CRC32
 
-export const operationToByte = (op: Operator): number => {
+export const operationToByte = (op: Operator): OPERATOR => {
   if (op === '=') {
-    return 1
+    return EQUAL
   }
 
   if (op === 'has') {
-    return 2
+    return HAS
   }
 
   if (op === '!=') {
-    return 3
+    return NOT_EQUAL
   }
 
   if (op === '!has') {
-    return 16
+    return NOT_HAS
   }
 
   if (op === '>') {
-    return 6
+    return GREATER_THAN
   }
 
   if (op === '<') {
-    return 7
+    return SMALLER_THAN
   }
 
   if (op === '>=') {
-    return 8
+    return GREATER_THAN_INCLUSIVE
   }
 
   if (op === '<=') {
-    return 9
+    return SMALLER_THAN_INCLUSIVE
   }
 
   if (op === '..') {
-    return 10
+    return RANGE
   }
 
   if (op === '!..') {
-    return 11
+    return RANGE_EXCLUDE
   }
 
   if (op === 'like') {
-    return 18
+    return LIKE
   }
 
   if (op === 'hasLoose') {
-    return 19
+    return HAS_NORMALIZE
   }
 
-  return 0
+  return NONE
 }
 
-export const isNumerical = (op: number): boolean => {
-  if (op === 6 || op === 7 || op === 8 || op === 9 || op === 10 || op === 11) {
+export const isNumerical = (op: OPERATOR): boolean => {
+  if (
+    op === GREATER_THAN ||
+    op === SMALLER_THAN ||
+    op === SMALLER_THAN_INCLUSIVE ||
+    op === GREATER_THAN_INCLUSIVE ||
+    op === RANGE ||
+    op === RANGE_EXCLUDE
+  ) {
     return true
   }
   return false
 }
 
-export const stripNegation = (op: number): number => {
-  if (op === 16) {
-    return 2
+// -------------------------------------------
+// Types
+export const TYPE_NEGATE = 1
+export const TYPE_DEFAULT = 2
+export type FILTER_TYPE = typeof TYPE_NEGATE | typeof TYPE_DEFAULT
+// -------------------------------------------
+// Modes
+export const MODE_DEFAULT = 0
+export const MODE_OR_FIXED = 1
+export const MODE_OR_VAR = 2
+export const MODE_AND_FIXED = 3
+export const MODE_DEFAULT_VAR = 4
+export const MODE_REFERENCE = 5
+export type FILTER_MODE =
+  | typeof MODE_DEFAULT
+  | typeof MODE_OR_FIXED
+  | typeof MODE_OR_VAR
+  | typeof MODE_AND_FIXED
+  | typeof MODE_DEFAULT_VAR
+  | typeof MODE_REFERENCE
+// -------------------------------------------
+// Meta
+export const META_EDGE = 252
+export const META_OR_BRANCH = 253
+export const META_REFERENCE = 254
+export const META_ID = 255
+export type FILTER_META =
+  | typeof META_EDGE
+  | typeof META_OR_BRANCH
+  | typeof META_REFERENCE
+  | typeof META_ID
+// -------------------------------------------
+
+export const stripNegation = (op: OPERATOR): OPERATOR => {
+  if (op === NOT_HAS) {
+    return HAS
   }
-  if (op === 3) {
-    return 1
+  if (op === NOT_EQUAL) {
+    return EQUAL
   }
   return op
 }
 
-export const negateType = (op: number): number => {
-  if (op === 3) {
-    return 1
+// ----------
+export const negateType = (op: OPERATOR): FILTER_TYPE => {
+  if (op === NOT_EQUAL || op === NOT_HAS) {
+    return TYPE_NEGATE
   }
-  return 2
+  return TYPE_DEFAULT
 }
