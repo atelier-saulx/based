@@ -160,19 +160,6 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
     return nfo;
 }
 
-struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
-{
-
-    if (fs->type != SELVA_FIELD_TYPE_STRING) {
-        return nullptr;
-    }
-
-    struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
-
-    return get_mutable_string(fields, fs, nfo, initial_len);
-}
-
 /**
  * Get a mutable string in fields at fs/nfo.
  */
@@ -194,6 +181,19 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     }
 
     return s;
+}
+
+struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
+{
+
+    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+        return nullptr;
+    }
+
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
+
+    return get_mutable_string(fields, fs, nfo, initial_len);
 }
 
 static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
