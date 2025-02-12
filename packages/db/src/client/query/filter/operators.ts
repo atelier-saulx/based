@@ -10,7 +10,6 @@ export const validOperators = [
   '<=',
   '..',
   '!..',
-  'hasLoose',
 ] as const
 
 export type Operator =
@@ -26,14 +25,16 @@ export type Operator =
   | '..'
   | '!..'
   | 'like'
-  | 'hasLoose'
+
+export type FilterOpts = {
+  lowerCase?: boolean
+  normalized?: boolean
+}
 
 // -------------------------------------------
 // operations shared
 export const EQUAL = 1
 export const HAS = 2
-export const NOT_HAS = 16
-export const NOT_EQUAL = 3
 export const ENDS_WITH = 4
 export const STARTS_WITH = 5
 export const EQUAL_CRC32 = 17
@@ -54,13 +55,10 @@ export const STARTS_WITH_LOWER_CASE = 14
 export const ENDS_WITH_LOWER_CASE = 15
 export const LIKE = 18
 // -------------------------------------------
-export const NONE = 0
-// -------------------------------------------
+
 export type OPERATOR =
   | typeof EQUAL
   | typeof HAS
-  | typeof NOT_HAS
-  | typeof NOT_EQUAL
   | typeof ENDS_WITH
   | typeof STARTS_WITH
   | typeof GREATER_THAN
@@ -75,61 +73,9 @@ export type OPERATOR =
   | typeof STARTS_WITH_LOWER_CASE
   | typeof ENDS_WITH_LOWER_CASE
   | typeof LIKE
-  | typeof NONE
   | typeof EQUAL_CRC32
 
-export const operationToByte = (op: Operator): OPERATOR => {
-  if (op === '=') {
-    return EQUAL
-  }
-
-  if (op === 'has') {
-    return HAS
-  }
-
-  if (op === '!=') {
-    return NOT_EQUAL
-  }
-
-  if (op === '!has') {
-    return NOT_HAS
-  }
-
-  if (op === '>') {
-    return GREATER_THAN
-  }
-
-  if (op === '<') {
-    return SMALLER_THAN
-  }
-
-  if (op === '>=') {
-    return GREATER_THAN_INCLUSIVE
-  }
-
-  if (op === '<=') {
-    return SMALLER_THAN_INCLUSIVE
-  }
-
-  if (op === '..') {
-    return RANGE
-  }
-
-  if (op === '!..') {
-    return RANGE_EXCLUDE
-  }
-
-  if (op === 'like') {
-    return LIKE
-  }
-
-  if (op === 'hasLoose') {
-    return HAS_NORMALIZE
-  }
-
-  return NONE
-}
-
+// -------------------------------------------
 export const isNumerical = (op: OPERATOR): boolean => {
   if (
     op === GREATER_THAN ||
@@ -169,26 +115,59 @@ export type FILTER_MODE =
 export const META_EDGE = 252
 export const META_OR_BRANCH = 253
 export const META_REFERENCE = 254
+
 export type FILTER_META =
   | typeof META_EDGE
   | typeof META_OR_BRANCH
   | typeof META_REFERENCE
 // -------------------------------------------
 
-export const stripNegation = (op: OPERATOR): OPERATOR => {
-  if (op === NOT_HAS) {
-    return HAS
-  }
-  if (op === NOT_EQUAL) {
-    return EQUAL
-  }
-  return op
+export type FilterCtx = {
+  operation: OPERATOR
+  type: FILTER_TYPE
+  opts: FilterOpts
 }
 
-// ----------
-export const negateType = (op: OPERATOR): FILTER_TYPE => {
-  if (op === NOT_EQUAL || op === NOT_HAS) {
-    return TYPE_NEGATE
+export const toFilterCtx = (op: Operator, opts: FilterOpts = {}): FilterCtx => {
+  if (op === '=' || op === '!=') {
+    return {
+      operation: EQUAL,
+      type: op === '!=' ? TYPE_NEGATE : TYPE_DEFAULT,
+      opts,
+    }
   }
-  return TYPE_DEFAULT
+
+  if (op === 'has' || op === '!has') {
+    return {
+      operation: opts.lowerCase
+        ? HAS_TO_LOWER_CASE
+        : opts.normalized
+          ? HAS_NORMALIZE
+          : HAS,
+      type: op === '!has' ? TYPE_NEGATE : TYPE_DEFAULT,
+      opts,
+    }
+  }
+
+  if (op === '>') {
+    return { operation: GREATER_THAN, opts, type: TYPE_DEFAULT }
+  }
+
+  if (op === '<') {
+    return { operation: SMALLER_THAN, opts, type: TYPE_DEFAULT }
+  }
+
+  if (op === '>=') {
+    return { operation: GREATER_THAN_INCLUSIVE, opts, type: TYPE_DEFAULT }
+  }
+
+  if (op === '<=') {
+    return { operation: SMALLER_THAN_INCLUSIVE, opts, type: TYPE_DEFAULT }
+  }
+
+  if (op === 'like') {
+    return { operation: LIKE, opts, type: TYPE_DEFAULT }
+  }
+
+  throw new Error('Invalid filter')
 }

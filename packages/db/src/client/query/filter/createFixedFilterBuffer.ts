@@ -8,12 +8,10 @@ import {
 import { propIsSigned } from '../../../server/schema/utils.js'
 import {
   EQUAL,
+  FilterCtx,
   MODE_AND_FIXED,
   MODE_DEFAULT,
   MODE_OR_FIXED,
-  negateType,
-  OPERATOR,
-  stripNegation,
 } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 
@@ -75,7 +73,7 @@ export const writeFixed = (
 export const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
   size: number,
-  op: OPERATOR,
+  ctx: FilterCtx,
   value: any,
   sort: boolean,
 ) => {
@@ -86,14 +84,14 @@ export const createFixedFilterBuffer = (
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
     buf = Buffer.allocUnsafe(10 + len * size)
-    buf[0] = negateType(op)
+    buf[0] = ctx.type
     buf[1] =
-      prop.typeIndex === REFERENCES && op === EQUAL
+      prop.typeIndex === REFERENCES && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
-    buf[6] = stripNegation(op)
+    buf[6] = ctx.operation
     buf[7] = prop.typeIndex
     buf.writeUInt16LE(len, 8)
     if (sort) {
@@ -116,11 +114,11 @@ export const createFixedFilterBuffer = (
   } else {
     // [or = 0] [size 2] [start 2], [op], value[size]
     buf = Buffer.allocUnsafe(8 + size)
-    buf[0] = negateType(op)
+    buf[0] = ctx.type
     buf[1] = MODE_DEFAULT
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
-    buf[6] = stripNegation(op)
+    buf[6] = ctx.operation
     buf[7] = prop.typeIndex
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
   }
