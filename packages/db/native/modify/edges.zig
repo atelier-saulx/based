@@ -46,7 +46,7 @@ pub fn writeEdges(
         var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
 
         if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
-            const edgeFieldSchema = db.getEdgeFieldSchema(edgeConstraint, prop) catch null;
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?,edgeConstraint, prop) catch null;
             const val = db.getEdgeProp(ref, edgeFieldSchema.?);
             if (val.len > 0) {
                 _ = update.incrementBuffer(op, t, val, edgeData);
