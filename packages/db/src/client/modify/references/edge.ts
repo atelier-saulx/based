@@ -153,19 +153,22 @@ export function writeEdges(
         if (ctx.len + 2 > ctx.max) {
           return RANGE_ERR
         }
+
+        if (typeof value === 'object' && value !== null && value.increment) {
+          if (value.increment > 0) {
+            ctx.buf[ctx.len++] = 0
+            ctx.buf[ctx.len++] = INCREMENT
+            value = value.increment
+          } else if (value.increment < 0) {
+            ctx.buf[ctx.len++] = 0
+            ctx.buf[ctx.len++] = DECREMENT
+            value = -value.increment
+          }
+        }
+
         ctx.buf[ctx.len++] = edge.prop
         ctx.buf[ctx.len++] = edge.typeIndex
-        // let op = 0
-        // if (typeof value === 'object' && value !== null && value.increment) {
-        //   if (value.increment > 0) {
-        //     op = INCREMENT
-        //     value = value.increment
-        //   } else if (value.increment < 0) {
-        //     op = DECREMENT
-        //     value = -value.increment
-        //   }
-        // }
-        // ctx.buf[ctx.len++] = op
+
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err

@@ -46,7 +46,7 @@ pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c
         return null;
     }
 
-    const hash = db.getNodeRangeHash(te.?, start, end);
+    const hash = db.getNodeRangeHash(ctx.selva.?, te.?, start, end);
     @memcpy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
 
     return null;

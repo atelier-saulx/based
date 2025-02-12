@@ -1424,9 +1424,10 @@ int selva_fields_references_swap(
  * Most importantly this function makes sure that the object is shared between
  * both ends of the edge.
  */
-static void ensure_ref_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
+static void ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
-    const field_t nr_fields = efc->fields_schema ? efc->fields_schema->nr_fields : 0;
+    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
+    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields : 0;
 
     if (nr_fields > 0 && !ref->meta) {
         reference_meta_create(ref, nr_fields);
@@ -1464,23 +1465,26 @@ static void ensure_ref_meta(struct SelvaNode *node, struct SelvaNodeReference *r
 }
 
 int selva_fields_set_reference_meta(
+        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
         field_t field,
         const void *value, size_t len)
 {
+    const struct SelvaFieldsSchema *efc_fields_schema;
     const struct SelvaFieldSchema *fs;
 
     if (!ref->dst) {
         return SELVA_ENOENT;
     }
 
-    if (!efc->fields_schema) {
+    efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
+    if (!efc_fields_schema) {
         return SELVA_EINVAL;
     }
 
-    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
     if (!fs) {
         return SELVA_EINVAL;
     }
@@ -1495,11 +1499,12 @@ int selva_fields_set_reference_meta(
         return SELVA_ENOTSUP;
     }
 
-    ensure_ref_meta(node, ref, efc);
+    ensure_ref_meta(db, node, ref, efc);
     return fields_set(nullptr, nullptr, fs, ref->meta, value, len);
 }
 
 int selva_fields_get_reference_meta_mutable_string(
+        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
@@ -1507,9 +1512,10 @@ int selva_fields_get_reference_meta_mutable_string(
         size_t len,
         struct selva_string **s)
 {
+    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
     const struct SelvaFieldSchema *fs;
 
-    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
     if (!fs) {
         return SELVA_EINTYPE;
     } else if (fs->type != SELVA_FIELD_TYPE_STRING) {
@@ -1520,7 +1526,7 @@ int selva_fields_get_reference_meta_mutable_string(
         return SELVA_ENOBUFS;
     }
 
-    ensure_ref_meta(node, ref, efc);
+    ensure_ref_meta(db, node, ref, efc);
     *s = get_mutable_string(ref->meta, fs, ensure_field(nullptr, ref->meta, fs), len);
 
     return 0;
@@ -1771,22 +1777,7 @@ static void reference_meta_del(struct SelvaDb *db, const struct EdgeFieldConstra
         return;
     }
 
-    schema = efc->fields_schema;
-    if (!schema) {
-        /*
-         * Schema not found on this side, try the dst_type.
-         * TODO It would be nice to share the pointer.
-         */
-        struct SelvaTypeEntry *type_dst;
-        const struct SelvaFieldSchema *dst_fs;
-
-        type_dst = selva_get_type_by_index(db, efc->dst_node_type);
-        dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
-        assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
-        schema = dst_fs->edge_constraint.fields_schema;
-        assert(schema);
-    }
-
+    schema = selva_get_edge_field_fields_schema(db, efc);
     fs = get_fs_by_fields_schema_field(schema, field);
     if (!fs) {
         return;
@@ -1978,15 +1969,15 @@ int selva_fields_get_text_crc(const struct SelvaNode *node, const struct SelvaFi
     return selva_fields_get_text_crc2(&node->fields, fs, lang, crc);
 }
 
-static inline void hash_ref(selva_hash_state_t *hash_state, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
+static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
 {
     selva_hash_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
     if (ref->meta) {
-        selva_fields_hash_update(hash_state, efc->fields_schema, ref->meta);
+        selva_fields_hash_update(hash_state, db, selva_get_edge_field_fields_schema(db, efc), ref->meta);
     }
 }
 
-void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = schema->nr_fields;
 
@@ -2027,14 +2018,14 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
             } while (0);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            hash_ref(hash_state, selva_get_edge_field_constraint(fs), p);
+            hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), p);
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             do {
                 const struct SelvaNodeReferences *refs = p;
 
                 for (size_t i = 0; i < refs->nr_refs; i++) {
-                    hash_ref(hash_state, selva_get_edge_field_constraint(fs), &refs->refs[i]);
+                    hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), &refs->refs[i]);
                 }
             } while (0);
             break;
@@ -2062,13 +2053,13 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
     }
 }
 
-selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash128_t res;
 
     selva_hash_reset(hash_state);
-    selva_fields_hash_update(hash_state, schema, fields);
+    selva_fields_hash_update(hash_state, db, schema, fields);
     res = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
 

@@ -62,7 +62,11 @@ struct EdgeFieldConstraint {
     } __packed flags;
     field_t inverse_field;
     node_type_t dst_node_type;
-    struct SelvaFieldsSchema *fields_schema;
+    /**
+     * Don't use directly!
+     * Use: `selva_get_edge_field_fields_schema()`
+     */
+    struct SelvaFieldsSchema *_fields_schema;
 };
 
 struct SelvaFieldSchema {

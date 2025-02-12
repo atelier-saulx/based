@@ -18,42 +18,45 @@ pub fn writeEdges(
     var i: usize = 0;
 
     while (i < data.len) {
-        const prop = data[i];
+        var op: types.ModOp = @enumFromInt(0);
+        var prop = data[i];
+        if (prop == 0) {
+            op = @enumFromInt(data[i + 1]);
+            prop = data[i + 2];
+            i += 2;
+        }
         const t: p = @enumFromInt(data[i + 1]);
         var offset: u32 = 0;
         var edgeLen: u32 = undefined;
-        var op: types.ModOp = @enumFromInt(0);
         const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
 
         if (t == p.STRING or t == p.REFERENCES or t == p.ALIAS) {
             edgeLen = read(u32, data, i + 2);
             offset = 4;
-        } else {
-            op = @enumFromInt(data[i + 2]);
-            if (t == p.ENUM or t == p.BOOLEAN or t == p.INT8 or t == p.UINT8) {
-                edgeLen = 1;
-            } else if (t == p.INT16 or t == p.UINT16) {
-                edgeLen = 2;
-            } else if (t == p.INT32 or t == p.UINT32 or t == p.REFERENCE) {
-                edgeLen = 4;
-            } else if (t == p.NUMBER or t == p.TIMESTAMP) {
-                edgeLen = 8;
+        } else if (t == p.ENUM or t == p.BOOLEAN or t == p.INT8 or t == p.UINT8) {
+            edgeLen = 1;
+        } else if (t == p.INT16 or t == p.UINT16) {
+            edgeLen = 2;
+        } else if (t == p.INT32 or t == p.UINT32 or t == p.REFERENCE) {
+            edgeLen = 4;
+        } else if (t == p.NUMBER or t == p.TIMESTAMP) {
+            edgeLen = 8;
+        }
+
+        var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+
+        if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+            const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+            if (val.len > 0) {
+                _ = update.incrementBuffer(op, t, val, edgeData);
+                edgeData = val;
             }
         }
 
-        const edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
-
-        // if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
-        //     const edgeFieldSchema = db.getEdgeFieldSchema(edgeConstraint, prop) catch null;
-        //     const val = db.getEdgeProp(ref, edgeFieldSchema.?);
-        //     if (val.len > 0) {
-        //         _ = update.incrementBuffer(op, t, val, edgeData);
-        //         edgeData = val;
-        //     }
-        // }
-
         try db.writeEdgeProp(
             edgeData,
+            ctx.db.selva.?,
             ctx.node.?,
             edgeConstraint,
             ref,

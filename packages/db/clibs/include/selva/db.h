@@ -107,6 +107,9 @@ enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
 SELVA_EXPORT
 const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs) __attribute__((nonnull));
 
+SELVA_EXPORT
+const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
+
 /**
  * Delete a node.
  */
@@ -216,13 +219,13 @@ node_id_t selva_get_node_id(const struct SelvaNode *node) __attribute__((nonnull
  * @param tmp_hash_state is only used for computation and it's reset before use.
  */
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node, struct XXH3_state_s *tmp_hash_state);
+selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, struct XXH3_state_s *tmp_hash_state);
 
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node);
+selva_hash128_t selva_node_hash_update2(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end) __attribute__((nonnull));
+selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, node_id_t end) __attribute__((nonnull));
 
 /**
  * @}
