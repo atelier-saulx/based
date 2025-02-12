@@ -1,6 +1,6 @@
 const std = @import("std");
 const simd = std.simd;
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
 const types = @import("../include//types.zig");
@@ -29,8 +29,8 @@ pub const SearchCtx = struct {
 };
 
 pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
-    const sLen = readInt(u16, searchBuf, 0);
-    const words = readInt(u8, searchBuf, 2);
+    const sLen = read(u16, searchBuf, 0);
+    const words = read(u8, searchBuf, 2);
     const fields = searchBuf[2 + sLen .. searchBuf.len];
     var totalWeights: u8 = 0;
     var j: usize = 0;
@@ -73,7 +73,7 @@ fn hamming_mbs(
     query: []u8,
 ) u8 {
     const mbs = value[i + 1 .. value.len];
-    const t = query[1 .. query.len];
+    const t = query[1..query.len];
     const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
 
     return d;
@@ -94,11 +94,11 @@ fn hamming(
     var res: bool = false;
 
     while (j < l) : (j += 8) {
-        const x: u64 = readInt(u64, value, j);
+        const x: u64 = read(u64, value, j);
         res = res or (x & 0x8080808080808080) != 0;
     }
     while (j < l) : (j += 4) {
-        const x: u32 = readInt(u32, value, j);
+        const x: u32 = read(u32, value, j);
         res = res or (x & 0x80808080) != 0;
     }
     while (j < l) : (j += 1) {
@@ -239,7 +239,7 @@ pub fn search(
     var j: usize = 0;
     var bestScore: u8 = 255;
     wordLoop: while (p < ctx.allQueries.len) {
-        const qLen = readInt(u16, ctx.allQueries, p);
+        const qLen = read(u16, ctx.allQueries, p);
         const query = ctx.allQueries[p + 2 .. p + qLen + 2];
         p += qLen + 2;
         j = 0;
@@ -253,7 +253,7 @@ pub fn search(
             var score: u8 = 255;
             if (field == 0) {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
-                const start = readInt(u16, ctx.fields, j + 2);
+                const start = read(u16, ctx.fields, j + 2);
                 const len = value[start];
                 if (len < query.len) {
                     continue :fieldLoop;

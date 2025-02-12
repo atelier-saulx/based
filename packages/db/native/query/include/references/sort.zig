@@ -1,4 +1,4 @@
-const readInt = @import("../../../utils.zig").readInt;
+const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
 const dbSort = @import("../../../db/sort.zig");
 const QueryCtx = @import("../../types.zig").QueryCtx;
@@ -29,8 +29,8 @@ pub fn sortedReferences(
     const sortField: u8 = sortBuffer[1];
     const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
     if (sortBuffer.len == 7) {
-        start = readInt(u16, sortBuffer, 3);
-        len = readInt(u16, sortBuffer, 5);
+        start = read(u16, sortBuffer, 3);
+        len = read(u16, sortBuffer, 5);
     } else {
         start = 0;
         len = 0;

@@ -7,7 +7,7 @@ const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig");
 
-const readInt = utils.readInt;
+const read = utils.read;
 const writeInt = utils.writeInt;
 
 pub const Result = struct {
@@ -111,8 +111,8 @@ pub fn createResultsBuffer(
                 var mainPos: usize = 2;
                 while (mainPos < item.includeMain.?.len) {
                     const operation = item.includeMain.?[mainPos..];
-                    const start = readInt(u16, operation, 0);
-                    const len = readInt(u16, operation, 2);
+                    const start = read(u16, operation, 0);
+                    const len = read(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);
                     i += len;
                     mainPos += 4;

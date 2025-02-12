@@ -1,4 +1,4 @@
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
@@ -18,7 +18,7 @@ pub fn getSingleRefFields(
     comptime isEdge: bool,
 ) usize {
     var size: usize = 0;
-    const typeId: db.TypeId = readInt(u16, include, 0);
+    const typeId: db.TypeId = read(u16, include, 0);
     const refField = include[2];
 
     // SINGLE REF

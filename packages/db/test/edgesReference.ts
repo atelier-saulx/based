@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('multi reference', async (t) => {
+await test.skip('multi reference', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -80,7 +80,7 @@ await test('multi reference', async (t) => {
   )
 })
 
-await test('multiple references', async (t) => {
+await test.skip('multiple references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

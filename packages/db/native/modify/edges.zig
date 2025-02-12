@@ -1,5 +1,5 @@
 const db = @import("../db/db.zig");
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
@@ -23,7 +23,7 @@ pub fn writeEdges(
         var edgeLen: u32 = undefined;
         const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
         if (t == p.STRING or t == p.REFERENCES or t == p.ALIAS) {
-            edgeLen = readInt(u32, data, i + 2);
+            edgeLen = read(u32, data, i + 2);
             offset = 4;
         } else {
             // const op: types.ModOp = @enumFromInt(data[i + 2]);

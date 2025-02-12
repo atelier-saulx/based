@@ -10,7 +10,7 @@ const sort = @import("../../db/sort.zig");
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const searchStr = @import("../filter/search.zig");
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const Result = @import("../results.zig").Result;
 const s = @import("./search.zig");
 const std = @import("std");
@@ -27,7 +27,7 @@ pub fn default(
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
-    const start = readInt(u16, sortBuffer, 2);
+    const start = read(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
         std.log.err(
@@ -83,7 +83,7 @@ pub fn search(
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
-    const start = readInt(u16, sortBuffer, 2);
+    const start = read(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
         std.log.err(

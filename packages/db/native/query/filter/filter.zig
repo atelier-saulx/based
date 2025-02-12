@@ -1,7 +1,7 @@
 const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../types.zig").QueryCtx;
 const db = @import("../../db/db.zig");
@@ -52,8 +52,8 @@ inline fn fail(
     comptime isEdge: bool,
 ) bool {
     if (jump) |j| {
-        const start = readInt(u32, j, 2);
-        const size = readInt(u16, j, 0);
+        const start = read(u32, j, 2);
+        const size = read(u16, j, 0);
         return filter(
             ctx,
             node,
@@ -87,11 +87,11 @@ pub fn filter(
         const meta: Meta = @enumFromInt(conditions[i]);
         if (meta == Meta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
-            end = readInt(u32, conditions, i + 3);
+            end = read(u32, conditions, i + 3);
             i += 7;
         } else if (meta == Meta.edge) {
             if (ref != null) {
-                const size = readInt(u16, conditions, i + 1);
+                const size = read(u16, conditions, i + 1);
                 if (!filter(
                     ctx,
                     node,
@@ -110,8 +110,8 @@ pub fn filter(
             }
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[i + 1];
-            const refTypePrefix = readInt(u16, conditions, i + 2);
-            const size = readInt(u16, conditions, i + 4);
+            const refTypePrefix = read(u16, conditions, i + 2);
+            const size = read(u16, conditions, i + 4);
             const selvaRef = db.getSingleReference(node, refField);
             const refNode: ?db.Node = selvaRef.?.*.dst;
             const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
@@ -143,7 +143,7 @@ pub fn filter(
             i += size + 6;
         } else {
             const field: u8 = @intFromEnum(meta);
-            const querySize: u16 = readInt(u16, conditions, i + 1);
+            const querySize: u16 = read(u16, conditions, i + 1);
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
             if (meta == Meta.id) {

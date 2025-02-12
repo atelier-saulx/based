@@ -1,6 +1,6 @@
 const std = @import("std");
 const simd = std.simd;
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig");
 
 pub fn simdEqualsOr(
@@ -12,7 +12,7 @@ pub fn simdEqualsOr(
     const vectorLen = std.simd.suggestVectorLength(T).?;
     const bytes: u16 = @divExact(@typeInfo(T).Int.bits, 8);
     const l = values.len / bytes;
-    const valueExpanded = readInt(T, value, 0);
+    const valueExpanded = read(T, value, 0);
     const tmp: [*]T = @alignCast(@ptrCast(values.ptr));
     const ints: []T = tmp[0..l];
     if (vectorLen <= l) {

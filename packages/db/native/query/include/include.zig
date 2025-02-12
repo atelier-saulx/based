@@ -2,7 +2,7 @@ const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
@@ -52,7 +52,7 @@ pub fn getFields(
         includeIterator += 1;
         const operation = include[includeIterator..];
         if (op == IncludeOp.edge) {
-            const edgeSize = readInt(u16, operation, 0);
+            const edgeSize = read(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
             if (!idIsSet) {
                 idIsSet = true;
@@ -68,7 +68,7 @@ pub fn getFields(
         }
 
         if (op == IncludeOp.references) {
-            const refSize = readInt(u16, operation, 0);
+            const refSize = read(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
             if (!idIsSet) {
@@ -87,7 +87,7 @@ pub fn getFields(
         }
 
         if (op == IncludeOp.reference) {
-            const refSize = readInt(u16, operation, 0);
+            const refSize = read(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
             if (!idIsSet) {
@@ -109,7 +109,7 @@ pub fn getFields(
 
         // MAIN
         if (field == 0) {
-            const mainIncludeSize = readInt(u16, operation, 0);
+            const mainIncludeSize = read(u16, operation, 0);
             if (mainIncludeSize != 0) {
                 includeMain = operation[2 .. 2 + mainIncludeSize];
             }
@@ -174,7 +174,7 @@ pub fn getFields(
             } else if (field == 0) {
                 main = value;
                 if (includeMain.?.len != 0) {
-                    size += readInt(u16, includeMain.?, 0) + 1;
+                    size += read(u16, includeMain.?, 0) + 1;
                 } else {
                     size += (valueLen + 1);
                 }

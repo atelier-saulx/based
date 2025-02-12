@@ -1,6 +1,6 @@
 const std = @import("std");
 const simd = std.simd;
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
 
@@ -10,7 +10,7 @@ pub fn fillReferenceFilter(
     ctx: *db.DbCtx,
     query: []u8,
 ) bool {
-    const schemaType = readInt(u16, query, 1);
+    const schemaType = read(u16, query, 1);
     const typeEntry = db.getType(ctx, schemaType) catch {
         query[0] = 2;
         return false;
@@ -18,7 +18,7 @@ pub fn fillReferenceFilter(
     var i: usize = 3;
     var found: bool = false;
     while (i < query.len) : (i += 8) {
-        const id = readInt(u32, query, i);
+        const id = read(u32, query, i);
         const ref = db.getNode(id, typeEntry);
         if (ref) |r| {
             const arr: [*]u8 = @ptrCast(@alignCast(r));
