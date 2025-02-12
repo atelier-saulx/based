@@ -250,6 +250,27 @@ await test('multiple references', async (t) => {
       { id: 5, contributors: [] },
     ],
   )
+
+  console.log('----------------')
+  await db.update('article', lastArticle, {
+    contributors: {
+      add: [
+        {
+          id: mrYur,
+          $rating: 2,
+        },
+      ],
+    },
+  })
+
+  console.log(
+    '---------->',
+    await db
+      .query('article', lastArticle)
+      .include('contributors.$rating')
+      .get()
+      .toObject(),
+  )
 })
 
 await test('single reference', async (t) => {

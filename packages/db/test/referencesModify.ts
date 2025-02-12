@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('references modify', async (t) => {
   const db = new BasedDb({
@@ -102,4 +103,55 @@ await test('references modify', async (t) => {
     ],
     'delete',
   )
+})
+
+await test('references modify', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  await db.putSchema({
+    types: {
+      a: {
+        name: 'string',
+        bees: {
+          items: {
+            ref: 'b',
+            prop: 'as',
+            // $power: 'uint8',
+          },
+        },
+      },
+      b: {
+        name: 'string',
+        as: {
+          items: {
+            ref: 'a',
+            prop: 'bees',
+            $power: 'uint8',
+          },
+        },
+      },
+    },
+  })
+
+  const a = await db.create('a', {})
+  const b = await db.create('b', {
+    as: [
+      {
+        id: a,
+        $power: 1,
+      },
+    ],
+  })
+
+  await db.update('b', b, {
+    as: null,
+  })
 })

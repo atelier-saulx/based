@@ -1,13 +1,17 @@
 import { StrictSchema } from '@based/schema'
 import { BasedDb } from '../../index.js'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import { tmpdir } from 'os'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
 import { DbServer } from '../index.js'
+import { fileURLToPath } from 'url'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const workerPath = join(__dirname, 'worker.js')
 let migrationCnt = 0
 
 type TransformFn = (
@@ -66,7 +70,7 @@ export const migrate = async (
 
   atomics[0] = 1
 
-  const worker = new Worker('./dist/src/server/migrate/worker.js', {
+  const worker = new Worker(workerPath, {
     workerData: {
       from: fromAddress,
       to: toAddress,

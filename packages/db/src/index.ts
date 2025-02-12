@@ -36,9 +36,9 @@ export class BasedDb {
           return Promise.resolve(server.putSchema(schema, fromStart))
         },
         flushModify(buf) {
-          server.modify(buf)
+          const offsets = server.modify(buf)
           return Promise.resolve({
-            offsets: {},
+            offsets,
           })
         },
         getQueryBuf(buf) {

@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
@@ -49,8 +49,14 @@ await test('save', async (t) => {
   await db2.start()
   const a = await db.query('user').get().toObject()
   const b = await db2.query('user').get().toObject()
+
+  console.log(a, b)
   deepEqual(a, b)
 
+  const c = await db.create('user', { name: 'jerp' })
+  const d = await db2.create('user', { name: 'jerp' })
+  equal(c, 3)
+  equal(d, 3)
 })
 
 await test('save empty root', async (t) => {

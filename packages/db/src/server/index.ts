@@ -458,14 +458,20 @@ export class DbServer {
       return
     }
 
-    if (!noSave) {
-      await this.save()
-    }
+    this.stopped = true
+    try {
+      if (!noSave) {
+        await this.save()
+      }
 
-    await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
-    this.workers = []
-    native.stop(this.dbCtxExternal)
-    await setTimeout()
+      await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
+      this.workers = []
+      native.stop(this.dbCtxExternal)
+      await setTimeout()
+    } catch (e) {
+      this.stopped = false
+      throw e
+    }
   }
 
   async destroy() {
