@@ -196,8 +196,6 @@ function appendRefs(
   ctx.buf[ctx.len++] = remaining >>>= 8
   ctx.buf[ctx.len++] = remaining >>>= 8
 
-  console.log({ hasEdges })
-
   for (; i < refs.length; i++) {
     const ref = refs[i]
     let id: number

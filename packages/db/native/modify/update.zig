@@ -122,19 +122,104 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
 fn incrementBuf(
     op: types.ModOp,
     T: type,
-    aU8: []u8,
-    bU8: []u8,
+    value: []u8,
+    addition: []u8,
 ) usize {
-    const a = readInt(T, aU8, 0);
-    const b = readInt(T, bU8, 0);
+    const a = readInt(T, value, 0);
+    const b = readInt(T, addition, 0);
     const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
     if (T == f64) {
-        aU8[0..8].* = @bitCast(v);
+        value[0..8].* = @bitCast(v);
         return 8;
     } else {
         const size = @divExact(@typeInfo(T).Int.bits, 8);
-        aU8[0..size].* = @bitCast(v);
+        value[0..size].* = @bitCast(v);
         return size;
+    }
+}
+
+pub fn incrementBuffer(
+    op: types.ModOp,
+    fieldType: types.Prop,
+    value: []u8,
+    addition: []u8,
+) usize {
+    switch (fieldType) {
+        types.Prop.INT8 => {
+            return incrementBuf(
+                op,
+                i8,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT8 => {
+            return incrementBuf(
+                op,
+                u8,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT16 => {
+            return incrementBuf(
+                op,
+                i16,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT16 => {
+            return incrementBuf(
+                op,
+                u16,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT32 => {
+            return incrementBuf(
+                op,
+                i32,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT32 => {
+            return incrementBuf(
+                op,
+                u32,
+                value,
+                addition,
+            );
+        },
+        types.Prop.UINT64 => {
+            return incrementBuf(
+                op,
+                u64,
+                value,
+                addition,
+            );
+        },
+        types.Prop.INT64, types.Prop.TIMESTAMP => {
+            return incrementBuf(
+                op,
+                i64,
+                value,
+                addition,
+            );
+        },
+        types.Prop.NUMBER => {
+            return incrementBuf(
+                op,
+                f64,
+                value,
+                addition,
+            );
+        },
+        else => {
+            return 0;
+        },
     }
 }
 
@@ -144,8 +229,6 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     const start = readInt(u16, data, 1);
     const addition = data[3..];
     const value = currentData[start .. start + addition.len];
-
-    var size: usize = 0;
 
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {
@@ -158,81 +241,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         sort.remove(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
     }
 
-    switch (fieldType) {
-        types.Prop.INT8 => {
-            size = incrementBuf(
-                op,
-                i8,
-                value,
-                addition,
-            );
-        },
-        types.Prop.UINT8 => {
-            size = incrementBuf(
-                op,
-                u8,
-                value,
-                addition,
-            );
-        },
-        types.Prop.INT16 => {
-            size = incrementBuf(
-                op,
-                i16,
-                value,
-                addition,
-            );
-        },
-        types.Prop.UINT16 => {
-            size = incrementBuf(
-                op,
-                u16,
-                value,
-                addition,
-            );
-        },
-        types.Prop.INT32 => {
-            size = incrementBuf(
-                op,
-                i32,
-                value,
-                addition,
-            );
-        },
-        types.Prop.UINT32 => {
-            size = incrementBuf(
-                op,
-                u32,
-                value,
-                addition,
-            );
-        },
-        types.Prop.UINT64 => {
-            size = incrementBuf(
-                op,
-                u64,
-                value,
-                addition,
-            );
-        },
-        types.Prop.INT64, types.Prop.TIMESTAMP => {
-            size = incrementBuf(
-                op,
-                i64,
-                value,
-                addition,
-            );
-        },
-        types.Prop.NUMBER => {
-            size = incrementBuf(
-                op,
-                f64,
-                value,
-                addition,
-            );
-        },
-        else => {},
-    }
+    const size = incrementBuffer(op, fieldType, value, addition);
 
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {
