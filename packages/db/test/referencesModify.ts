@@ -22,6 +22,7 @@ await test('references modify', async (t) => {
             items: {
               ref: 'user',
               prop: 'friends',
+              $rating: 'uint8',
             },
           },
         },
@@ -101,5 +102,29 @@ await test('references modify', async (t) => {
       { id: 3, name: 'john', friends: [] },
     ],
     'delete',
+  )
+
+  await db.update('user', john, {
+    friends: [bob],
+  })
+
+  await db.update('user', john, {
+    friends: {
+      add: [
+        {
+          id: bob,
+          $rating: 1,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    await db
+      .query('user', john)
+      .include('*', 'friends.$rating')
+      .get()
+      .toObject(),
+    { id: 3, name: 'john', friends: [{ id: 1, $rating: 1 }] },
   )
 })

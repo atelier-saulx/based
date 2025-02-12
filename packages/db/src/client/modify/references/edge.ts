@@ -10,7 +10,7 @@ import {
 import { write } from '../../string.js'
 import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
-import { ModifyErr, RANGE_ERR } from '../types.js'
+import { DECREMENT, INCREMENT, ModifyErr, RANGE_ERR } from '../types.js'
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
 
@@ -155,6 +155,17 @@ export function writeEdges(
         }
         ctx.buf[ctx.len++] = edge.prop
         ctx.buf[ctx.len++] = edge.typeIndex
+        let op = 0
+        if (typeof value === 'object' && value !== null && value.increment) {
+          if (value.increment > 0) {
+            op = INCREMENT
+            value = value.increment
+          } else if (value.increment < 0) {
+            op = DECREMENT
+            value = -value.increment
+          }
+        }
+        ctx.buf[ctx.len++] = op
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err

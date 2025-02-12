@@ -20,7 +20,6 @@ export type Refs =
   | RefModify[]
   | {
       add?: RefModify[] | RefModify
-      update?: RefModify[] | RefModify
       delete?: RefModify[] | RefModify
       upsert: RefModify[] | RefModify
     }
@@ -196,6 +195,8 @@ function appendRefs(
   ctx.buf[ctx.len++] = remaining >>>= 8
   ctx.buf[ctx.len++] = remaining >>>= 8
   ctx.buf[ctx.len++] = remaining >>>= 8
+
+  console.log({ hasEdges })
 
   for (; i < refs.length; i++) {
     const ref = refs[i]

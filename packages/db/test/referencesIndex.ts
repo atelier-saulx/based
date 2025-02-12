@@ -67,6 +67,17 @@ await test('references modify', async (t) => {
     },
   })
 
+  await db.update('user', john, {
+    friends: {
+      add: [
+        {
+          id: bob,
+          $index: -1,
+        },
+      ],
+    },
+  })
+
   deepEqual(
     (await db.query('user', john).include('*', 'friends').get()).toObject(),
     {
