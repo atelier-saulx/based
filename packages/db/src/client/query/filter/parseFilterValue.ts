@@ -70,6 +70,7 @@ export const parseFilterValue = (
       if (value === 'now') {
         return Date.now()
       }
+      // MAKE THIS INTO A UTIL
       const y = value.replace(/([+-])/g, ' $1 ')
       const arr = y.split(/ +/)
       let newValue = 0
