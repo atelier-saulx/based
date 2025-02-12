@@ -1,9 +1,9 @@
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
-import { negateType, stripNegation } from './operators.js'
+import { negateType, OPERATOR, stripNegation } from './operators.js'
 
 export const createReferenceFilter = (
   prop: PropDef | PropDefEdge,
-  op: number,
+  op: OPERATOR,
   value: any,
 ) => {
   let buf: Buffer

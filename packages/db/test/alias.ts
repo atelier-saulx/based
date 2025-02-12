@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('alias', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -45,6 +45,8 @@ await test('alias', async (t) => {
     externalId: 'cool2',
     potato: '',
   })
+
+  // console.log (db.create)
 
   deepEqual(
     (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
@@ -148,28 +150,32 @@ await test('alias - references', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user').include('friends').get().toObject(), [
-    {
-      friends: [
-        {
-          email: 'jim@saulx.com',
-          id: 2,
-          name: 'jim',
-        },
-      ],
-      id: 1,
-    },
-    {
-      friends: [
-        {
-          email: 'youri@saulx.com',
-          id: 1,
-          name: 'youri',
-        },
-      ],
-      id: 2,
-    },
-  ])
+  deepEqual(
+    await db.query('user').include('friends').get().toObject(),
+    [
+      {
+        friends: [
+          {
+            email: 'jim@saulx.com',
+            id: 2,
+            name: 'jim',
+          },
+        ],
+        id: 1,
+      },
+      {
+        friends: [
+          {
+            email: 'youri@saulx.com',
+            id: 1,
+            name: 'youri',
+          },
+        ],
+        id: 2,
+      },
+    ],
+    'simple',
+  )
 
   await db.upsert('user', {
     name: 'Youri',
@@ -216,6 +222,7 @@ await test('alias - references', async (t) => {
         ],
       },
     ],
+    'update 1',
   )
 
   deepEqual(
@@ -231,6 +238,7 @@ await test('alias - references', async (t) => {
         name: 'Youri',
       },
     ],
+    'update 2',
   )
 })
 

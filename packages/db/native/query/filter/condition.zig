@@ -72,7 +72,9 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
 
     if (op == Op.equal) {
         // maybe if we get here we dont rly need a crc32
-        value = value[0 .. value.len - 4];
+        if (prop == Prop.VECTOR) {
+            value = value[0 .. value.len - 4];
+        }
         if (value.len != valueSize) {
             pass = false;
         } else {

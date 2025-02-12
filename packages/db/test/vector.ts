@@ -92,11 +92,17 @@ await test('query by vector', async (t) => {
     .get()
   console.log(r1)
 
-  // const r2 = await db.query('data').filter('a', '=', new Float32Array(data['car'])).get()
-  // console.log(r2)
+  const r2 = await db
+    .query('data')
+    .filter('a', '=', new Float32Array(data['car']))
+    .get()
+  console.log(r2)
 
-  // const r3 = await db.query('data').filter('a', '=', new Float32Array([...data['car'], 1])).get()
-  // console.log(r3)
+  const r3 = await db
+    .query('data')
+    .filter('a', '=', new Float32Array([...data['car'], 1]))
+    .get()
+  console.log(r3)
 })
 
 await test('vector like', async (t) => {

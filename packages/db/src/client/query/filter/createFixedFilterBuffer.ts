@@ -7,7 +7,7 @@ import {
   ALIAS,
 } from '../../../server/schema/types.js'
 import { propIsSigned } from '../../../server/schema/utils.js'
-import { negateType, stripNegation } from './operators.js'
+import { negateType, OPERATOR, stripNegation } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 
 // -------------------------------------------
@@ -69,7 +69,7 @@ export const writeFixed = (
 export const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
   size: number,
-  op: number,
+  op: OPERATOR,
   value: any,
   sort: boolean,
 ) => {

@@ -1,6 +1,5 @@
 import { ALIAS } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
-import { ModifyCtx } from '../operations.js'
 import { BasedDbQuery } from '../query/BasedDbQuery.js'
 import { ModifyOpts } from './types.js'
 
@@ -10,6 +9,8 @@ export async function upsert(
   obj: Record<string, any>,
   opts?: ModifyOpts,
 ) {
+  console.log(opts)
+
   const tree = db.schemaTypesParsed[type].tree
   let q: BasedDbQuery
   let id = ''
@@ -30,6 +31,7 @@ export async function upsert(
   }
 
   if (db.upserting.has(id)) {
+    console.log('DERP', db.upserting)
     const store = db.upserting.get(id)
     store.o = { ...store.o, ...obj }
     return store.p
