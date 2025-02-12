@@ -81,7 +81,7 @@ pub inline fn has(
         return hasInner(isOr, like.str, mainLen, prop, value, query, dbCtx);
     } else if (op == Op.has) {
         return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
-    } else {
+    } else if (op == Op.hasLowerCase) {
         return hasInner(isOr, loose, mainLen, prop, value, query, dbCtx);
     }
     return false;

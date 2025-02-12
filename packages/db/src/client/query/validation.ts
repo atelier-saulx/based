@@ -5,7 +5,7 @@ import {
   MAX_ID_VALUE,
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
-import { validOperators, Operator } from './filter/operators.js'
+import { validOperators, Operator } from './filter/types.js'
 import { QueryByAliasObj } from './types.js'
 
 export const isValidId = (id: number): void => {
@@ -51,6 +51,7 @@ export const checkTotalBufferSize = (bufers: Buffer[]): void => {
 }
 
 export const hasFields = (
+  // get schema see if it actualy has the value (can find it on def)
   fields: { [key: string]: PropDefEdge } | { [path: string]: PropDef },
 ): void => {
   if (Object.keys(fields).length === 0) {
@@ -59,6 +60,7 @@ export const hasFields = (
 }
 
 export const hasField = (field: string): void => {
+  // get schema see if it actualy has the value (can find it on def)
   if (!field) {
     throw new Error(`Invalid field: ${field}`)
   } else if (typeof field !== 'string' || field.trim() === '') {
@@ -66,6 +68,7 @@ export const hasField = (field: string): void => {
   }
 }
 export const checkOperator = (operator: Operator | boolean): void => {
+  // pass schema value (def) and complete for each prop + operator combination
   if (
     operator !== undefined &&
     typeof operator !== 'boolean' &&
@@ -76,6 +79,7 @@ export const checkOperator = (operator: Operator | boolean): void => {
 }
 
 export const checkValue = (value: any, operator: Operator): void => {
+  // pass schema value (def) and complete for each prop + operator combination
   if (operator === '..' || operator === '!..') {
     if (!Array.isArray(value) || value.length !== 2) {
       throw new Error(

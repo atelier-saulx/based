@@ -1,7 +1,7 @@
 import { DbClient } from '../../index.js'
 import { QueryDefFilter, QueryDef } from '../types.js'
 import { convertFilter, filter, filterOr } from './filter.js'
-import { Operator } from './operators.js'
+import { FilterOpts, Operator } from './types.js'
 import { FilterBranchFn } from './types.js'
 
 export class FilterBranch {
@@ -16,11 +16,17 @@ export class FilterBranch {
   def: QueryDef
 
   or(fn: FilterBranchFn): FilterBranch
-  or(field: string, operator?: Operator | boolean, value?: any): FilterBranch
+  or(
+    field: string,
+    operator?: Operator | boolean,
+    value?: any,
+    opts?: FilterOpts,
+  ): FilterBranch
   or(
     field: string | FilterBranchFn,
     operator?: Operator | boolean,
     value?: any,
+    opts?: FilterOpts,
   ): FilterBranch {
     if (typeof field === 'function') {
       const f = new FilterBranch(
@@ -31,7 +37,7 @@ export class FilterBranch {
       field(f)
       this.def.filter.size += f.filterBranch.size
     } else {
-      const f = convertFilter(field, operator, value)
+      const f = convertFilter(field, operator, value, opts)
       filterOr(this.db, this.def, f, this.filterBranch)
     }
     return this

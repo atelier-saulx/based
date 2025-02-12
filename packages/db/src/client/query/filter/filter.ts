@@ -8,7 +8,7 @@ import {
   TEXT,
 } from '../../../server/schema/schema.js'
 import { primitiveFilter } from './primitiveFilter.js'
-import { Operator } from './operators.js'
+import { FilterOpts, Operator, toFilterCtx } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'
@@ -23,14 +23,10 @@ const referencesFilter = (
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
-  const [fieldStr, operator, value] = filter
+  const [fieldStr, ctx, value] = filter
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
-
-  hasField(fieldStr)
-  checkOperator(operator)
-  checkValue(value, operator)
 
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
@@ -68,7 +64,7 @@ const referencesFilter = (
       // more nested
       size += filterRaw(
         db,
-        [path.slice(i + 1).join('.'), operator, value],
+        [path.slice(i + 1).join('.'), ctx, value],
         refConditions.schema,
         refConditions,
         def, // incorrect...
@@ -76,10 +72,10 @@ const referencesFilter = (
       return size
     }
   }
-  console.error(
-    `Querty: field "${fieldStr}" does not exist on type ${schema.type}`,
+
+  throw new Error(
+    `Query: field "${fieldStr}" does not exist on type ${schema.type}`,
   )
-  return size
 }
 
 export const filterRaw = (
@@ -89,11 +85,7 @@ export const filterRaw = (
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
-  const [field, operator, value] = filter
-
-  hasField(field) // Validates if the field is a non-empty string
-  checkOperator(operator) // Validates if the operator is valid
-  checkValue(value, operator) // Validates the value based on the operator
+  const field = filter[0]
 
   let fieldDef = schema.props[field]
 
@@ -167,6 +159,7 @@ export const convertFilter = (
   field: string,
   operator?: Operator | boolean,
   value?: any,
+  opts?: FilterOpts,
 ): FilterAst => {
   if (operator === undefined) {
     operator = '='
@@ -180,13 +173,13 @@ export const convertFilter = (
   checkValue(value, operator)
   if (operator === '!..') {
     return [
-      [field, '>', value[1]],
-      [field, '<', value[0]],
+      [field, toFilterCtx('>', opts), value[1]],
+      [field, toFilterCtx('<', opts), value[0]],
     ]
   } else if (operator === '..') {
     return [
-      [field, '>', value[0]],
-      [field, '<', value[1]],
+      [field, toFilterCtx('>', opts), value[0]],
+      [field, toFilterCtx('<', opts), value[1]],
     ]
   } else {
     if (operator == 'like') {
@@ -205,6 +198,6 @@ export const convertFilter = (
         value = value.buffer
       }
     }
-    return [[field, operator, value]]
+    return [[field, toFilterCtx(operator, opts), value]]
   }
 }

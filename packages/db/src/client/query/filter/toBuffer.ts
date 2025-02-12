@@ -1,10 +1,7 @@
 import { debug } from '../debug.js'
 import { QueryDefFilter } from '../types.js'
+import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './types.js'
 
-// -------------------------------------------
-// and
-// [meta = 255] [size 2]
-// -------------------------------------------
 // or
 // [meta = 253]  [size 2] [next 4]
 // -------------------------------------------
@@ -58,7 +55,7 @@ export const fillConditionsBuffer = (
   let orJumpIndex = 0
 
   if (conditions.or) {
-    result[lastWritten] = 253
+    result[lastWritten] = META_OR_BRANCH
     lastWritten++
     orJumpIndex = lastWritten
     lastWritten += 2
@@ -71,7 +68,7 @@ export const fillConditionsBuffer = (
 
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      result[lastWritten] = 254
+      result[lastWritten] = META_REFERENCE
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
@@ -87,7 +84,7 @@ export const fillConditionsBuffer = (
 
   if (conditions.edges) {
     conditions.edges.forEach((v, k) => {
-      result[lastWritten] = 252
+      result[lastWritten] = META_EDGE
       lastWritten++
       let sizeIndex = lastWritten
       lastWritten += 2

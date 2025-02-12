@@ -81,7 +81,6 @@ pub fn filter(
     var i: usize = offset;
     var orJump: ?[]u8 = jump;
     var end: usize = conditions.len;
-
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
     while (i < end) {

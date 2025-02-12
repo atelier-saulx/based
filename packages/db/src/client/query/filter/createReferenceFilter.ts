@@ -1,24 +1,19 @@
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
-import {
-  MODE_REFERENCE,
-  negateType,
-  OPERATOR,
-  stripNegation,
-} from './operators.js'
+import { FilterCtx, MODE_REFERENCE } from './types.js'
 
 export const createReferenceFilter = (
   prop: PropDef | PropDefEdge,
-  op: OPERATOR,
+  ctx: FilterCtx,
   value: any,
 ) => {
   let buf: Buffer
   const len = Array.isArray(value) ? value.length : 1
   buf = Buffer.allocUnsafe(11 + len * 8)
-  buf[0] = negateType(op)
+  buf[0] = ctx.type
   buf[1] = MODE_REFERENCE
   buf.writeUInt16LE(8, 2)
   buf.writeUInt16LE(len, 4)
-  buf[6] = stripNegation(op)
+  buf[6] = ctx.operation
   buf[7] = prop.typeIndex
   // REF TYPE (only 1 exists now...)
   buf[8] = 0

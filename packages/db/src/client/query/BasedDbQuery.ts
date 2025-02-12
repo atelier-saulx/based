@@ -35,7 +35,8 @@ import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { LangCode, langCodesMap, LangName } from '@based/schema'
+import { langCodesMap, LangName } from '@based/schema'
+import { FilterOpts } from './filter/types.js'
 
 export { QueryByAliasObj }
 
@@ -59,8 +60,13 @@ export class QueryBranch<T> {
     return this
   }
 
-  filter(field: string, operator?: Operator | boolean, value?: any): T {
-    const f = convertFilter(field, operator, value)
+  filter(
+    field: string,
+    operator?: Operator | boolean,
+    value?: any,
+    opts?: FilterOpts,
+  ): T {
+    const f = convertFilter(field, operator, value, opts)
     filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
@@ -99,11 +105,17 @@ export class QueryBranch<T> {
   }
 
   or(fn: FilterBranchFn): T
-  or(field: string, operator?: Operator | boolean, value?: any): T
+  or(
+    field: string,
+    operator?: Operator | boolean,
+    value?: any,
+    opts?: FilterOpts,
+  ): T
   or(
     field: string | FilterBranchFn,
     operator?: Operator | boolean,
     value?: any,
+    opts?: FilterOpts,
   ): T {
     if (typeof field === 'function') {
       const f = new FilterBranch(
@@ -114,7 +126,7 @@ export class QueryBranch<T> {
       field(f)
       this.def.filter.size += f.filterBranch.size
     } else {
-      const f = convertFilter(field, operator, value)
+      const f = convertFilter(field, operator, value, opts)
       filterOr(this.db, this.def, f, this.def.filter)
     }
     // @ts-ignore

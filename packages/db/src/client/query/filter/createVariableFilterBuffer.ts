@@ -10,35 +10,30 @@ import {
   EQUAL_CRC32,
   FILTER_MODE,
   HAS,
-  HAS_NORMALIZE,
   HAS_TO_LOWER_CASE,
   LIKE,
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
-  negateType,
-  NOT_EQUAL,
-  NOT_HAS,
-  OPERATOR,
-  stripNegation,
-} from './operators.js'
+  FilterCtx,
+} from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 
 const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
-  op: OPERATOR,
+  ctx: FilterCtx,
   lang: LangCode,
 ): Buffer => {
   let val = value
-  if (op === HAS_NORMALIZE && typeof val === 'string') {
+  if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
   if (
     val instanceof Uint8Array ||
     typeof value === 'string' ||
     !prop.separate ||
-    op !== 1
+    ctx.operation !== EQUAL
   ) {
     if (prop.typeIndex === TEXT) {
       // can be optmized replace when using uint8array
@@ -60,18 +55,18 @@ const parseValue = (
 export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
-  op: OPERATOR,
+  ctx: FilterCtx,
   lang: LangCode,
 ) => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
   let buf: Buffer
   if (Array.isArray(value)) {
-    if (op !== EQUAL || !prop.separate) {
+    if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
       const x = []
       for (const v of value) {
-        const a = parseValue(v, prop, op, lang)
+        const a = parseValue(v, prop, ctx, lang)
         const size = Buffer.allocUnsafe(2)
         size.writeUint16LE(a.byteLength)
         x.push(size, a)
@@ -80,39 +75,44 @@ export const createVariableFilterBuffer = (
     } else {
       const x = []
       for (const v of value) {
-        x.push(parseValue(v, prop, op, lang))
+        x.push(parseValue(v, prop, ctx, lang))
       }
       val = x
     }
   } else {
-    val = parseValue(value, prop, op, lang)
+    val = parseValue(value, prop, ctx, lang)
   }
 
   // -------------------- PUT VARIABLES HERE
   if (
-    op === EQUAL ||
-    op === HAS ||
-    op === LIKE ||
-    op === HAS_TO_LOWER_CASE ||
-    op === HAS_NORMALIZE
+    ctx.operation === EQUAL ||
+    ctx.operation === HAS ||
+    ctx.operation === LIKE ||
+    ctx.operation === HAS_TO_LOWER_CASE
   ) {
     if (prop.separate) {
       if (
-        op === EQUAL &&
+        ctx.operation === EQUAL &&
         prop.typeIndex !== ALIAS &&
         prop.typeIndex !== VECTOR
       ) {
         // console.log('STRICT EQUAL FOR TEXT ALSO!')
         // 17 crc32 check
-        buf = createFixedFilterBuffer(prop, 8, EQUAL_CRC32, val, false)
+        buf = createFixedFilterBuffer(
+          prop,
+          8,
+          { operation: EQUAL_CRC32, type: ctx.type, opts: ctx.opts },
+          val,
+          false,
+        )
       } else {
-        buf = writeVarFilter(mode, val, op, prop, 0, 0)
+        buf = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }
     } else {
-      buf = writeVarFilter(mode, val, op, prop, prop.start, prop.len)
+      buf = writeVarFilter(mode, val, ctx, prop, prop.start, prop.len)
     }
   } else {
-    console.log('OP NOT SUPPORTED YET =>', op)
+    console.log('OP NOT SUPPORTED YET =>', ctx)
   }
   return buf
 }
@@ -120,19 +120,19 @@ export const createVariableFilterBuffer = (
 function writeVarFilter(
   mode: FILTER_MODE,
   val: Buffer,
-  op: OPERATOR,
+  ctx: FilterCtx,
   prop: PropDef | PropDefEdge,
   start: number,
   len: number,
 ) {
   const size = val.byteLength
   const buf = Buffer.allocUnsafe(12 + size)
-  buf[0] = negateType(op)
+  buf[0] = ctx.type
   buf[1] = mode
   buf.writeUInt16LE(start, 2)
   buf.writeUint16LE(len, 4)
   buf.writeUint32LE(size, 6)
-  buf[10] = stripNegation(op)
+  buf[10] = ctx.operation
   buf[11] = prop.typeIndex
   // need to pas LANG FROM QUERY
   // need to set on 12 if TEXT
