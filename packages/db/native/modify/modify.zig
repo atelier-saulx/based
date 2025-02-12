@@ -53,7 +53,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         const operation: []u8 = batch[i + 1 ..];
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
-                std.debug.print("\n222put -->: ", .{});
 
                 // SWITCH FIELD
                 ctx.field = operation[0];
@@ -67,7 +66,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
                 ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
-                std.debug.print("\n2222222put -->: ", .{});
 
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;
