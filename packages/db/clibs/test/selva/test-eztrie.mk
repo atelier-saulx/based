@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 TEST_SRC += test-eztrie.c
-SRC-eztrie += ../../lib/selva/eztrie.c
+SRC-eztrie += ../../lib/selva/string/eztrie.c
