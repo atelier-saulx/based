@@ -70,6 +70,10 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         value = v;
     }
 
+    // if ((prop == Prop.STRING or prop == Prop.BINARY) and mainLen == 0) {
+    //     value = value[0 .. value.len - 4];
+    // }
+
     if (op == Op.equal) {
         if (prop == Prop.TEXT) {
             // this is here and not in fixed check because it has the lang code at then end
@@ -85,9 +89,6 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
                 }
             }
         } else {
-            if (prop == Prop.VECTOR) {
-                value = value[0 .. value.len - 4];
-            }
             if (value.len != valueSize) {
                 pass = false;
             } else {
@@ -100,7 +101,18 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
                 }
             }
         }
-    } else if (!has.has(false, op, prop, value, query, mainLen, dbCtx)) {
+    } else if (!has.has(
+        false,
+        op,
+        prop,
+        if (prop != Prop.VECTOR)
+            value[0 .. value.len - 4]
+        else
+            value,
+        query,
+        mainLen,
+        dbCtx,
+    )) {
         pass = false;
     }
     return .{ next, pass };

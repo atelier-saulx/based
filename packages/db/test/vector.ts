@@ -89,7 +89,7 @@ await test('query by vector', async (t) => {
   const r1 = await db
     .query('data')
     .include('name')
-    .filter('a', '=', new Float32Array(data['car'].slice(0, 4)))
+    .filter('a', '=', new Float32Array(data['car'].slice(0, 5)))
     .get()
     .toObject()
   deepEqual(r1[0].name, 'car')
@@ -100,15 +100,7 @@ await test('query by vector', async (t) => {
     .filter('a', '=', new Float32Array(data['car']))
     .get()
     .toObject()
-  deepEqual(r2.length, 0)
-
-  const r3 = await db
-    .query('data')
-    .include('name')
-    .filter('a', '=', new Float32Array([...data['car'], 1]))
-    .get()
-    .toObject()
-  deepEqual(r3.length, 0)
+  deepEqual(r2.length, 1)
 })
 
 await test('vector like', async (t) => {
@@ -126,4 +118,21 @@ await test('vector like', async (t) => {
     { id: 3, name: 'apple' },
     { id: 4, name: 'strawberry' },
   ])
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('data', {
+      a: new Float32Array([i / 1e6, -0.4, 7.2, 19.6, 20.2]),
+      name: 'bla ' + i,
+    })
+  }
+
+  await db.drain()
+
+  // await db
+  //   .query('data')
+  //   .include('name')
+  //   .range(0, 1e6)
+  //   .filter('name', 'has', 'x')
+  //   .get()
+  //   .inspect()
 })
