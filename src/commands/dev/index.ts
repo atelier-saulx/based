@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { buffer } from 'node:stream/consumers'
 import type { OutputFile } from '@based/bundle'
+import type { BasedServer } from '@based/server'
 import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
 import getPort from 'get-port'
@@ -93,7 +94,7 @@ export const devServer = async ({
   const basedClient = await context.getBasedClient()
   const newPort =
     port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
-  const { BasedServer } = await import('@based/server')
+
   const [devPort, filePort, _staticPort, lrPort] = await Promise.all([
     getPort({ port: newPort || 1234 }),
     getPort({ port: 2000 }),
@@ -104,16 +105,6 @@ export const devServer = async ({
   const devServerWSPath = `ws://${ip}:${devPort}`
   const publicPath = `http://${ip}:${filePort}`
   // const staticPath = `http://${ip}:${staticPort}`
-  context.print.info(
-    `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
-    '<primary>▶</primary>',
-  )
-  context.print
-    .info(
-      `<primary><b>Based Bundle Server:</b></primary> http://localhost:${filePort} | <dim>http://${ip}:${filePort}</dim>`,
-      '<primary>▶</primary>',
-    )
-    .line()
 
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
     context,
@@ -130,96 +121,33 @@ export const devServer = async ({
   const { clients } = new WebSocketServer({ port: lrPort })
   let hadError: boolean
 
-  const server = new BasedServer({
-    silent: true,
-    clients: {
-      env: client,
-    },
-    port: devPort,
-    functions: {
-      configs: {
-        db: {
-          type: 'query',
-          relay: { client: 'env' },
-        },
-        'db:schema': {
-          type: 'query',
-          relay: { client: 'env' },
-        },
-        'db:origins': {
-          type: 'query',
-          relay: { client: 'env' },
-        },
-        'db:set-schema': {
-          type: 'function',
-          relay: { client: 'env' },
-        },
-        'db:set': {
-          type: 'function',
-          relay: { client: 'env' },
-        },
-        'db:delete': {
-          type: 'function',
-          relay: { client: 'env' },
-        },
-        'db:get': {
-          type: 'function',
-          relay: { client: 'env' },
-        },
-        'db:events': {
-          type: 'channel',
-          relay: { client: 'env' },
-        },
-      },
-    },
-  })
+  const basedServer: BasedServer = await context.basedServer(
+    devPort,
+    client,
+    true,
+  )
 
+  await context.fileServer(filePort, () => browserBundles.result.outputFiles)
   update(null)
 
-  await server.start()
-  await browserBundles.ctx.serve({ port: filePort })
+  context.print.info(
+    `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
+    '<primary>▶</primary>',
+  )
+  context.print
+    .info(
+      `<primary><b>Based Bundle Server:</b></primary> http://localhost:${filePort} | <dim>http://${ip}:${filePort}</dim>`,
+      '<primary>▶</primary>',
+    )
+    .line()
 
-  // const rewrites = []
-
-  // for (const i in files) {
-  //   rewrites.push({
-  //     source: i,
-  //     destination: files[i],
-  //   })
-  // }
-
-  // http
-  //   .createServer((request, response) => {
-  //     return handler(request, response, {
-  //       rewrites,
-  //       headers: [
-  //         {
-  //           source: '*',
-
-  //           headers: [
-  //             {
-  //               key: 'Access-Control-Allow-Origin',
-  //               value: '*',
-  //             },
-  //           ],
-  //         },
-  //       ],
-  //     })
-  //   })
-  //   .listen(staticPort, () => {
-  //     console.info(
-  //       `☁️  static server: http://localhost:${staticPort} ${pc.dim(`http://${ip}:${staticPort}`)}`,
-  //     )
-  //   })
-
-  async function update(err) {
+  async function update(err: any) {
     let reloadClients = hadError
 
     if (err) {
       reloadClients = true
       hadError = true
     } else {
-      // biome-ignore lint/suspicious/noExplicitAny: impossible to type now
       let fnUpdates: any
       hadError = false
 
@@ -275,7 +203,7 @@ export const devServer = async ({
 
         if (await invalidate(context, index, config)) {
           // ts validation
-          server.functions.add({
+          basedServer.functions.add({
             [config.name]: {
               type: 'function',
               async fn() {
@@ -375,7 +303,7 @@ export const devServer = async ({
       }
 
       if (fnUpdates) {
-        server.functions.add(fnUpdates)
+        basedServer.functions.add(fnUpdates)
       }
     }
 

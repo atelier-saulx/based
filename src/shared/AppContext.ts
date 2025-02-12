@@ -2,7 +2,9 @@ import { i18n } from '@based/i18n'
 import type { Command } from 'commander'
 import {
   contextBasedClient,
+  contextBasedServer,
   contextCommandMaker,
+  contextFileServer,
   contextForm,
   contextGlobalOptions,
   contextInput,
@@ -55,6 +57,8 @@ export class AppContext {
   public spinner = contextSpinner(this)
   // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
+  public fileServer = contextFileServer
+  public basedServer = contextBasedServer
 
   private constructor(
     program?: Command,

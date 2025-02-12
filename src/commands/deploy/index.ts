@@ -12,6 +12,7 @@ import type { BasedFunctionConfig } from '@based/functions'
 import { hash, hashCompact } from '@saulx/hash'
 import { queued } from '@saulx/utils'
 import type { Command } from 'commander'
+import type { BuildFailure } from 'esbuild'
 import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
 import mimeTypes from 'mime-types'
@@ -102,7 +103,6 @@ export const invalidate = async (
 }
 
 const queuedFileUpload = queued(
-  // biome-ignore lint/suspicious/noExplicitAny: Impossible to type right now
   async (client: BasedClient, payload: any, destUrl: string) => {
     const { status } = await fetch(destUrl, { method: 'HEAD' })
     if (status === 200) {
@@ -173,7 +173,6 @@ type Config = BasedFunctionConfig & {
 }
 
 type Build = {
-  watch: BasedBundleOptions['watch']
   plugins: BasedBundleOptions['plugins']
 }
 
@@ -189,12 +188,19 @@ type ConfigStore = {
 export const parseFunctions = async (
   context: AppContext,
   functions: string[],
-  onChange,
+  onChange: (err: BuildFailure | null, res: BundleResult) => void,
   publicPath: string,
   staticPath: string,
   environment: 'development' | 'production',
   connectToCloud: boolean = false,
-) => {
+): Promise<{
+  schema: string
+  configs: ConfigStore[]
+  favicons: Set<string>
+  nodeBundles: BundleResult
+  browserBundles: BundleResult
+  files: Record<string, string>
+}> => {
   const isProduction: boolean = environment === 'production'
   let { targets, schema } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
@@ -287,9 +293,6 @@ export const parseFunctions = async (
   const paths: Record<string, string> = {}
   const nodeEntryPoints: string[] = schema ? [schema] : []
   const browserEntryPoints: string[] = []
-  let browserWatch: BasedBundleOptions['watch'] = {
-    include: [],
-  }
   const browserEsbuildPlugins: BasedBundleOptions['plugins'] = []
   const favicons = new Set<string>()
   const files: Record<string, string> = {}
@@ -331,10 +334,6 @@ export const parseFunctions = async (
 
         configStore.app = abs(config.main, dir)
         browserEntryPoints.push(configStore.app)
-
-        if (config.build?.watch) {
-          browserWatch = config.build?.watch
-        }
 
         if (config.favicon) {
           configStore.favicon = abs(config.favicon, dir)
@@ -430,7 +429,6 @@ export const parseFunctions = async (
         {
           publicPath,
           entryPoints: browserEntryPoints,
-          watch: browserWatch,
           sourcemap: true,
           platform: 'browser',
           minify: isProduction,

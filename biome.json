@@ -19,13 +19,27 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "complexity": {
+        "noForEach": "off"
+      },
       "recommended": true,
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      },
+      "performance": {
+        "noDelete": "off"
+      },
       "correctness": {
         "noUnusedVariables": "warn",
         "noUnusedFunctionParameters": "warn",
         "noUnusedImports": "warn"
       },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
+      },
       "style": {
+        "noNonNullAssertion": "off",
         "noParameterAssign": "off",
         "noInferrableTypes": "off"
       }
