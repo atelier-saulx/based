@@ -12,7 +12,7 @@ import { Operator } from './operators.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'
-import { inverseLangMap, langCodesMap } from '@based/schema'
+import { langCodesMap } from '@based/schema'
 
 export { Operator, Filter }
 
@@ -195,8 +195,14 @@ export const convertFilter = (
       }
       if (value?.normalize) {
         value = normalizeNeedle(value)
-      } else if (Array.isArray(value) && value[0]?.normalize) {
-        value = value.map(normalizeNeedle)
+      } else if (Array.isArray(value)) {
+        if (value[0]?.normalize) {
+          value = value.map(normalizeNeedle)
+        } else if (value[0]?.BYTES_PER_ELEMENT > 1) {
+          value = value.map((v) => v.buffer)
+        }
+      } else if (value?.BYTES_PER_ELEMENT > 1) {
+        value = value.buffer
       }
     }
     return [[field, operator, value]]

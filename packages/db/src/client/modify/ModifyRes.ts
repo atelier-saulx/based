@@ -9,6 +9,8 @@ import { ModifyCtx } from '../../index.js'
 import { inspect } from 'node:util'
 import { SubscriptionMarkersCheck } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
+import { ModifyOpts } from './types.js'
+import { LangCode, langCodesMap } from '@based/schema'
 
 export type ModifyRes = {
   tmpId: number
@@ -73,15 +75,22 @@ export class ModifyState {
     tmpId: number,
     db: DbClient,
     subMarkers: SubscriptionMarkersCheck | false,
+    opts?: ModifyOpts,
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
+    if (opts) {
+      if (opts.i18n) {
+        this.i18n = langCodesMap.get(opts.i18n)
+      }
+    }
   }
 
   subMarkers: SubscriptionMarkersCheck | false
+  i18n: LangCode
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
@@ -92,10 +101,12 @@ export class ModifyState {
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
+
   getId(offsets: Record<number, number>) {
     const offset = offsets[this.#typeId] || 0
     return this.tmpId + offset
   }
+
   then(resolve, reject) {
     const promise = new Promise((resolve) => {
       if (this.error) {
@@ -114,6 +125,7 @@ export class ModifyState {
       return promise.then(resolve, reject)
     }
   }
+
   catch(handler) {
     if (this.error) {
       return new Promise((resolve) => {

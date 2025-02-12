@@ -1,7 +1,6 @@
 const default = @import("./default.zig").default;
 const loose = @import("./loose.zig").loose;
-const like = @import("./like.zig").like;
-
+const like = @import("./like.zig");
 const t = @import("../types.zig");
 const Op = t.Operator;
 const Prop = @import("../../../types.zig").Prop;
@@ -11,6 +10,7 @@ const decompress = compressed.decompress;
 const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
 const std = @import("std");
+const toSlice = @import("../../../utils.zig").toSlice;
 
 inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
@@ -45,7 +45,10 @@ inline fn hasInner(
     dbCtx: *db.DbCtx,
 ) bool {
     var q = query;
-    if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+    if (prop == Prop.VECTOR) {
+        q = query[0..query.len];
+        return like.vector(toSlice(f32, value), toSlice(f32, q));
+    } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {
             // last byte is lang
@@ -75,7 +78,7 @@ pub inline fn has(
     dbCtx: *db.DbCtx,
 ) bool {
     if (op == Op.like) {
-        return hasInner(isOr, like, mainLen, prop, value, query, dbCtx);
+        return hasInner(isOr, like.str, mainLen, prop, value, query, dbCtx);
     } else if (op == Op.has) {
         return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
     } else {

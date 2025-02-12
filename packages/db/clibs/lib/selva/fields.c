@@ -1033,6 +1033,7 @@ int selva_fields_references_insert(
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
         struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
         ssize_t index_old;
+        int err;
 
         index_old = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
         if (index_old < 0) {
@@ -1041,8 +1042,17 @@ int selva_fields_references_insert(
             return 0;
         }
 
-        return selva_fields_references_move(node, fs, index_old, index);
+        err = selva_fields_references_move(node, fs, index_old, index);
+
+        *ref_out = &refs->refs[index];
+        return err;
     } else {
+        struct SelvaFields *fields = &node->fields;
+        struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+        struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
+        ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+
+        *ref_out = &refs->refs[index];
         return SELVA_EEXIST;
     }
     __builtin_unreachable();

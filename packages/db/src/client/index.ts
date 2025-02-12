@@ -18,6 +18,7 @@ import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
 import { deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
+import { ModifyOpts } from './modify/types.js'
 
 export type DbClientHooks = {
   putSchema(
@@ -102,8 +103,8 @@ export class DbClient {
     return this.schema
   }
 
-  create(type: string, obj: CreateObj, unsafe?: boolean): ModifyRes {
-    return create(this, type, obj, unsafe)
+  create(type: string, obj: CreateObj, opts?: ModifyOpts): ModifyRes {
+    return create(this, type, obj, opts)
   }
 
   query(
@@ -160,28 +161,30 @@ export class DbClient {
     type: string,
     id: number | ModifyRes,
     value: any,
-    overwrite?: boolean,
+    opts?: ModifyOpts,
   ): ModifyRes
 
-  update(value: any, overwrite?: boolean): ModifyRes
+  update(value: any, opts?: ModifyOpts): ModifyRes
 
   update(
     typeOrValue: string | any,
-    idOrOverwrite: number | ModifyRes | boolean,
+    idOrOverwrite: number | ModifyRes | boolean | ModifyOpts,
     value?: any,
-    overwrite?: boolean,
+    opts?: ModifyOpts,
   ): ModifyRes {
     if (typeof typeOrValue === 'string') {
       const id =
-        typeof idOrOverwrite === 'object' ? idOrOverwrite.tmpId : idOrOverwrite
-      return update(this, typeOrValue, id as number, value, overwrite)
+        typeof idOrOverwrite === 'object' && 'tmpId' in idOrOverwrite
+          ? idOrOverwrite.tmpId
+          : idOrOverwrite
+      return update(this, typeOrValue, id as number, value, opts)
     }
     // else it is rootProps
-    return update(this, '_root', 1, typeOrValue, idOrOverwrite as boolean)
+    return update(this, '_root', 1, typeOrValue, idOrOverwrite as ModifyOpts)
   }
 
-  upsert(type: string, obj: Record<string, any>) {
-    return upsert(this, type, obj)
+  upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
+    return upsert(this, type, obj, opts)
   }
 
   remove(type: string, id: number | ModifyRes) {

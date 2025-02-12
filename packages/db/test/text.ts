@@ -103,5 +103,34 @@ await test('text', async (t) => {
     .get()
     .inspect()
 
+  const mrSnurfInFinlind = await db.create(
+    'dialog',
+    {
+      fun: 'mr snurf in finland',
+    },
+    { i18n: 'fi' },
+  )
+
+  await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
+
+  await db.update(
+    'dialog',
+    mrSnurfInFinlind,
+    {
+      fun: 'mr snurf in finland!',
+    },
+    { i18n: 'fi' },
+  )
+
+  await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
+
+  const derpderp = await db.create('dialog', {})
+
+  console.log(await db.query('dialog', mrSnurfInFinlind).get())
+
+  console.log('-------------------------')
+
+  console.log(await db.query('dialog', derpderp).get())
+
   // TODO: if text we prob need to create a empty object in js
 })

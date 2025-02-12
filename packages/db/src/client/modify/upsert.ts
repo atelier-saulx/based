@@ -1,11 +1,14 @@
 import { ALIAS } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
+import { ModifyCtx } from '../operations.js'
 import { BasedDbQuery } from '../query/BasedDbQuery.js'
+import { ModifyOpts } from './types.js'
 
 export async function upsert(
   db: DbClient,
   type: string,
   obj: Record<string, any>,
+  opts?: ModifyOpts,
 ) {
   const tree = db.schemaTypesParsed[type].tree
   let q: BasedDbQuery
@@ -37,9 +40,9 @@ export async function upsert(
     p: q.get().then((res) => {
       db.upserting.delete(id)
       if (res.length === 0) {
-        return db.create(type, store.o)
+        return db.create(type, store.o, opts)
       } else {
-        return db.update(type, res.toObject()[0].id, store.o)
+        return db.update(type, res.toObject()[0].id, store.o, opts)
       }
     }),
   }

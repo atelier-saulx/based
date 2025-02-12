@@ -3,12 +3,12 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
 const data = {
-  'cat': [1.5, -0.4, 7.2, 19.6, 20.2],
-  'dog': [1.7, -0.3, 6.9, 19.1, 21.1],
-  'apple': [-5.2, 3.1, 0.2, 8.1, 3.5],
-  'strawberry': [-4.9, 3.6, 0.9, 7.8, 3.6],
-  'building': [60.1, -60.3, 10, -12.3, 9.2],
-  'car': [81.6, -72.1, 16, -20.2, 102],
+  cat: [1.5, -0.4, 7.2, 19.6, 20.2],
+  dog: [1.7, -0.3, 6.9, 19.1, 21.1],
+  apple: [-5.2, 3.1, 0.2, 8.1, 3.5],
+  strawberry: [-4.9, 3.6, 0.9, 7.8, 3.6],
+  building: [60.1, -60.3, 10, -12.3, 9.2],
+  car: [81.6, -72.1, 16, -20.2, 102],
 }
 
 async function initDb(t) {
@@ -44,7 +44,7 @@ async function initDb(t) {
   }
   await db.drain()
 
-  return db;
+  return db
 }
 
 await test('vector set/get', async (t) => {
@@ -53,7 +53,7 @@ await test('vector set/get', async (t) => {
   const res = (await db.query('data').get()).toObject()
   for (const r of res) {
     const a = Buffer.from(r.a.buffer)
-    const b = Buffer.from((new Float32Array(data[r.name])).buffer)
+    const b = Buffer.from(new Float32Array(data[r.name]).buffer)
 
     deepEqual(Buffer.compare(a, b), 0)
   }
@@ -72,30 +72,58 @@ await test('vector set wrong size', async (t) => {
   })
   await db.drain()
 
-  const [ra, rb] = await db.query('data').filter('id', '=', [a, b]).include('a').get()
+  const [ra, rb] = await db
+    .query('data')
+    .filter('id', '=', [a, b])
+    .include('a')
+    .get()
 
   // RFE is truncation right?
   deepEqual(ra.a.length, 5)
   deepEqual(rb.a.length, 5)
 })
 
-// TODO Should this work?
-await test.skip('query by vector', async (t) => {
+await test('query by vector', async (t) => {
   const db = await initDb(t)
 
-  const r1 = await db.query('data').filter('a', '=', new Float32Array(data['car'])).get()
-  console.log(r1)
+  const r1 = await db
+    .query('data')
+    .include('name')
+    .filter('a', '=', new Float32Array(data['car'].slice(0, 4)))
+    .get()
+    .toObject()
+  deepEqual(r1[0].name, 'car')
 
-  const r2 = await db.query('data').filter('a', '=', new Float32Array([...data['car'], 1])).get()
-  console.log(r2)
+  const r2 = await db.query('data')
+    .include('name')
+    .filter('a', '=', new Float32Array(data['car']))
+    .get()
+    .toObject()
+  deepEqual(r2.length, 0)
+
+  const r3 = await db
+    .query('data')
+    .include('name')
+    .filter('a', '=', new Float32Array([...data['car'], 1]))
+    .get()
+    .toObject()
+  deepEqual(r3.length, 0)
 })
 
-// TODO like or search, this needs scored sorting
-// await test('vector like', async (t) => {
-//   const db = await initDb(t)
-//
-//   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
-//   console.log(Buffer.from(fruit), Buffer.from(fruit.buffer))
-//   const res = await db.query('data').filter('a', 'like', fruit).get()
-//   console.log(res)
-// })
+await test('vector like', async (t) => {
+  const db = await initDb(t)
+
+  const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
+  const res = await db
+    .query('data')
+    .include('name')
+    .filter('a', 'like', fruit)
+    .get()
+    .toObject()
+  deepEqual(
+    res,
+    [
+      { id: 6, name: 'car' },
+    ],
+  )
+})

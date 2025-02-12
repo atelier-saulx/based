@@ -3,6 +3,7 @@ import {
   PropDef,
   PropDefEdge,
   TEXT,
+  VECTOR,
 } from '../../../server/schema/types.js'
 import { negateType, stripNegation } from './operators.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
@@ -31,9 +32,13 @@ const parseValue = (
       val = Buffer.from(val)
     }
   }
-  if (!(val instanceof Buffer)) {
-    throw new Error('Incorrect value for filter ' + prop.path)
+  if (val?.BYTES_PER_ELEMENT > 1) {
+    val = val.buffer
   }
+  if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
+    throw new Error(`Incorrect value for filter: ${prop.path}`)
+  }
+  // @ts-ignore TODO FDN-576
   return val
 }
 
@@ -71,16 +76,16 @@ export const createVariableFilterBuffer = (
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
-      if (op === 1 && prop.typeIndex !== ALIAS) {
+      if (op === 1 && prop.typeIndex !== ALIAS && prop.typeIndex !== VECTOR) {
         // console.log('STRICT EQUAL FOR TEXT ALSO!')
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {
-        buf = writeVarFilter(isOr, val, buf, op, prop, 0, 0)
+        buf = writeVarFilter(isOr, val, op, prop, 0, 0)
       }
     } else {
       // HANDLE EQUAL
-      buf = writeVarFilter(isOr, val, buf, op, prop, prop.start, prop.len)
+      buf = writeVarFilter(isOr, val, op, prop, prop.start, prop.len)
     }
   } else {
     console.log('OP NOT SUPPORTED YET =>', op)
@@ -91,14 +96,13 @@ export const createVariableFilterBuffer = (
 function writeVarFilter(
   isOr: number,
   val: Buffer,
-  buf: Buffer,
   op: number,
   prop: PropDef | PropDefEdge,
   start: number,
   len: number,
 ) {
   const size = val.byteLength
-  buf = Buffer.allocUnsafe(12 + size)
+  const buf = Buffer.allocUnsafe(12 + size)
   buf[0] = negateType(op)
   buf[1] = isOr
   buf.writeUInt16LE(start, 2)
@@ -109,6 +113,7 @@ function writeVarFilter(
 
   // need to pas LANG FROM QUERY
   // need to set on 12 if TEXT
-  buf.set(val, 12)
+
+  buf.set(Buffer.from(val), 12)
   return buf
 }

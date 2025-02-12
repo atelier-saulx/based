@@ -62,7 +62,7 @@ function _modify(
         if (type === STRING) {
           err = writeString(0, val, ctx, schema, def, res.tmpId, mod)
         } else if (type === TEXT) {
-          err = writeText(val, ctx, schema, def, res.tmpId, mod)
+          err = writeText(val, ctx, schema, def, res, mod)
         } else if (type === REFERENCE) {
           err = writeReference(val, ctx, schema, def, res, mod)
         } else if (type === REFERENCES) {
