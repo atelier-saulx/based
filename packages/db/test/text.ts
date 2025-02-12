@@ -244,5 +244,20 @@ await test('text', async (t) => {
     'Query empty dialog',
   )
 
-  // TODO: if text we prob need to create a empty object in js
+  result = await db
+    .query('dialog')
+    .i18n('fi')
+    .include('id', 'fun')
+    .filter('fun', '=', '3', { lowerCase: true })
+    .get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+    ],
+    'Exact match on fi',
+  )
 })

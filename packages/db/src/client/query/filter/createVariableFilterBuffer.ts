@@ -128,7 +128,6 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== ALIAS &&
         prop.typeIndex !== VECTOR
       ) {
-        // console.log('STRICT EQUAL FOR TEXT ALSO!')
         // 17 crc32 check
         buf = createFixedFilterBuffer(
           prop,
