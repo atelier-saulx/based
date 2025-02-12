@@ -13,6 +13,7 @@ struct selva_string;
 #endif
 #include "selva/types.h"
 #include "selva_lang_code.h"
+#include "selva/hll.h"
 
 /**
  * Reserved (N/A) field id.
@@ -338,3 +339,6 @@ void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *d
 
 SELVA_EXPORT
 selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+
+SELVA_EXPORT
+struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len);

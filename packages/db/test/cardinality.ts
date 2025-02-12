@@ -1,3 +1,4 @@
+import { skip } from 'node:test'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
@@ -15,7 +16,7 @@ await test.skip('hll', async (t) => {
   await db.putSchema({
     types: {
       article: {
-        myUniqueValuesCount: 'hll',
+        myUniqueValuesCount: 'cardinality',
       },
     },
   })
@@ -25,18 +26,18 @@ await test.skip('hll', async (t) => {
   console.log('------- create --------')
 
   const myArticle = await db.create('article', {
-    myUniqueValuesCount: ['myCoolValue'],
+    myUniqueValuesCount: 'myCoolValue', //['myCoolValue', 'mr snurfels'], // testar depois com valor que não é array
   })
 
-  // console.log('------- update --------')
+  console.log('------- update --------')
 
-  // // db.update('article', myArticle, {
-  // //   myUniqueValuesCount: {
-  // //     delete: ['myCoolValue'],
-  // //   },
-  // // })
+  // await db.update('article', myArticle, {
+  //   myUniqueValuesCount: {
+  //     add: ['myCoolValue'],
+  //   },
+  // })
 
   console.log('---------------')
 
-  console.log(await db.query('article').get().toObject())
+  // console.log((await db.query('article').get()).toObject())
 })

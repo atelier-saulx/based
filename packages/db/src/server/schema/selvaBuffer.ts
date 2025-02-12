@@ -9,7 +9,7 @@ import {
   CREATED,
   EMPTY_MICRO_BUFFER,
   ENUM,
-  HLL,
+  CARDINALITY,
   INT16,
   INT32,
   INT64,
@@ -37,7 +37,7 @@ selvaTypeMap[TIMESTAMP] = 1
 selvaTypeMap[CREATED] = 1
 selvaTypeMap[UPDATED] = 1
 selvaTypeMap[NUMBER] = 4
-selvaTypeMap[HLL] = 11
+selvaTypeMap[CARDINALITY] = 11
 selvaTypeMap[INT8] = 20
 selvaTypeMap[UINT8] = 6
 selvaTypeMap[INT16] = 21
