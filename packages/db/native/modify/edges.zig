@@ -20,7 +20,7 @@ pub fn writeEdges(
     while (i < data.len) {
         const prop = data[i];
         const t: p = @enumFromInt(data[i + 1]);
-        var offset: u32 = 1;
+        var offset: u32 = 0;
         var edgeLen: u32 = undefined;
         var op: types.ModOp = @enumFromInt(0);
         const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
@@ -41,16 +41,16 @@ pub fn writeEdges(
             }
         }
 
-        var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+        const edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
 
-        if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
-            const edgeFieldSchema = db.getEdgeFieldSchema(edgeConstraint, prop) catch null;
-            const val = db.getEdgeProp(ref, edgeFieldSchema.?);
-            if (val.len > 0) {
-                _ = update.incrementBuffer(op, t, val, edgeData);
-                edgeData = val;
-            }
-        }
+        // if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
+        //     const edgeFieldSchema = db.getEdgeFieldSchema(edgeConstraint, prop) catch null;
+        //     const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+        //     if (val.len > 0) {
+        //         _ = update.incrementBuffer(op, t, val, edgeData);
+        //         edgeData = val;
+        //     }
+        // }
 
         try db.writeEdgeProp(
             edgeData,
