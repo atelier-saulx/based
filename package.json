@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.15",
+  "version": "8.0.0-alpha.16",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@based/functions": "^3.0.2",
+    "@based/functions": "^3.1.2-alpha",
     "@biomejs/biome": "1.9.4",
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.3",

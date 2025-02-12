@@ -169,11 +169,6 @@ type Config = BasedFunctionConfig & {
     favicon?: string
   }
   files?: string[]
-  build?: Build
-}
-
-type Build = {
-  plugins: BasedBundleOptions['plugins']
 }
 
 type ConfigStore = {
@@ -328,8 +323,8 @@ export const parseFunctions = async (
           return true
         }
 
-        if (config.build?.plugins) {
-          browserEsbuildPlugins.push(...(config.build.plugins as Plugin[]))
+        if (config?.plugins) {
+          browserEsbuildPlugins.push(...(config.plugins as Plugin[]))
         }
 
         configStore.app = abs(config.main, dir)
