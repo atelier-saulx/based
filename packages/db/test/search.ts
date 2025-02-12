@@ -93,6 +93,19 @@ await test('like filter', async (t) => {
     0,
     'derp no results',
   )
+
+  equal(
+    (
+      await db
+        .query('article')
+        .filter('body', 'like', 'kxngdom', { score: 0 })
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
+    0,
+    'kxngdom 0 results',
+  )
 })
 
 await test('compressed', async (t) => {

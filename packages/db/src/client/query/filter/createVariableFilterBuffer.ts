@@ -2,6 +2,7 @@ import {
   ALIAS,
   PropDef,
   PropDefEdge,
+  STRING,
   TEXT,
   VECTOR,
 } from '../../../server/schema/types.js'
@@ -73,6 +74,11 @@ const parseValue = (
   }
   if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
+  }
+
+  if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
+    // @ts-ignore
+    val = Buffer.concat([val, Buffer.from([ctx.opts.score ?? 2])])
   }
   // @ts-ignore TODO FDN-576
   return val
