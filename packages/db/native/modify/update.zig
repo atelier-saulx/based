@@ -125,13 +125,8 @@ fn incrementBuf(
     value: []u8,
     addition: []u8,
 ) usize {
-<<<<<<< HEAD
-    const a = readInt(T, value, 0);
-    const b = readInt(T, addition, 0);
-=======
-    const a = read(T, aU8, 0);
-    const b = read(T, bU8, 0);
->>>>>>> 63b0089bdb5da66a2fb8978a396ddbf9d23de9e9
+    const a = read(T, value, 0);
+    const b = read(T, addition, 0);
     const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
     if (T == f64) {
         value[0..8].* = @bitCast(v);
