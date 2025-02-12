@@ -4,7 +4,6 @@ import {
   BINARY,
   STRING,
   REFERENCES,
-  ALIAS,
 } from '../../../server/schema/types.js'
 import { propIsSigned } from '../../../server/schema/utils.js'
 import { negateType, OPERATOR, stripNegation } from './operators.js'
@@ -30,7 +29,6 @@ export const writeFixed = (
   value: any,
   size: number,
   offset: number,
-  op: number, // tmp disabled...
 ) => {
   if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
     if (typeof value === 'string') {
@@ -101,7 +99,6 @@ export const createFixedFilterBuffer = (
           parseFilterValue(prop, value[i]),
           size,
           10 + i * size,
-          op,
         )
       }
     }
@@ -114,7 +111,7 @@ export const createFixedFilterBuffer = (
     buf.writeUInt16LE(start, 4)
     buf[6] = stripNegation(op)
     buf[7] = prop.typeIndex
-    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8, op)
+    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
   }
   return buf
 }

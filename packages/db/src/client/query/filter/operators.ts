@@ -124,7 +124,7 @@ export const operationToByte = (op: Operator): OPERATOR => {
   }
 
   if (op === 'hasLoose') {
-    return HAS_TO_LOWER_CASE
+    return HAS_NORMALIZE
   }
 
   return NONE
