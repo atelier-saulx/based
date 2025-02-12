@@ -10,12 +10,11 @@ pub const Operator = enum(u8) {
     largerThenInclusive = 8,
     smallerThenInclusive = 9,
     equalNormalize = 12,
-    hasNormalize = 13,
+    hasLowerCase = 13,
     startsWithNormalize = 14,
     endsWithNormalize = 15,
     equalCrc32 = 17,
     like = 18,
-    hasLowercase = 19,
     pub fn isNumerical(self: Operator) bool {
         return switch (self) {
             Operator.smallerThen,

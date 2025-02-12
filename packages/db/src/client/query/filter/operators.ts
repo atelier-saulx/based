@@ -49,8 +49,7 @@ export const RANGE_EXCLUDE = 11
 // -------------------------------------------
 // operations strings
 export const EQUAL_LOWER_CASE = 12
-export const HAS_NORMALIZE = 13
-export const HAS_TO_LOWER_CASE = 19
+export const HAS_TO_LOWER_CASE = 13
 export const STARTS_WITH_LOWER_CASE = 14
 export const ENDS_WITH_LOWER_CASE = 15
 export const LIKE = 18
@@ -69,7 +68,6 @@ export type OPERATOR =
   | typeof RANGE_EXCLUDE
   | typeof EQUAL_LOWER_CASE
   | typeof HAS_TO_LOWER_CASE
-  | typeof HAS_NORMALIZE
   | typeof STARTS_WITH_LOWER_CASE
   | typeof ENDS_WITH_LOWER_CASE
   | typeof LIKE
@@ -139,11 +137,7 @@ export const toFilterCtx = (op: Operator, opts: FilterOpts = {}): FilterCtx => {
 
   if (op === 'has' || op === '!has') {
     return {
-      operation: opts.lowerCase
-        ? HAS_TO_LOWER_CASE
-        : opts.normalized
-          ? HAS_NORMALIZE
-          : HAS,
+      operation: opts.lowerCase ? HAS_TO_LOWER_CASE : HAS,
       type: op === '!has' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
     }

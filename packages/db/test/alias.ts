@@ -228,7 +228,7 @@ await test('alias - references', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .filter('email', 'has', 'youri', { normalized: true })
+      .filter('email', 'has', 'youri', { lowerCase: true })
       .get()
       .toObject(),
     [

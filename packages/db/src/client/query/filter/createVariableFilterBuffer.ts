@@ -10,7 +10,6 @@ import {
   EQUAL_CRC32,
   FILTER_MODE,
   HAS,
-  HAS_NORMALIZE,
   HAS_TO_LOWER_CASE,
   LIKE,
   MODE_DEFAULT_VAR,
@@ -27,7 +26,7 @@ const parseValue = (
   lang: LangCode,
 ): Buffer => {
   let val = value
-  if (ctx.operation === HAS_NORMALIZE && typeof val === 'string') {
+  if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
   if (
@@ -89,8 +88,7 @@ export const createVariableFilterBuffer = (
     ctx.operation === EQUAL ||
     ctx.operation === HAS ||
     ctx.operation === LIKE ||
-    ctx.operation === HAS_TO_LOWER_CASE ||
-    ctx.operation === HAS_NORMALIZE
+    ctx.operation === HAS_TO_LOWER_CASE
   ) {
     if (prop.separate) {
       if (

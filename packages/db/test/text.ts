@@ -49,7 +49,7 @@ await test('text', async (t) => {
     .query('dialog')
     .i18n('it')
     .include('id', 'fun')
-    .filter('fun', 'has', 'fliperdieflaperdiefloep', { normalized: true })
+    .filter('fun', 'has', 'fliperdieflaperdiefloep', { lowerCase: true })
     .get()
     .inspect()
 
@@ -59,7 +59,7 @@ await test('text', async (t) => {
     .query('dialog')
     .include('id', 'fun')
     // i18n will have to be passed here better...
-    .filter('fun', 'has', 'italy', { normalized: true })
+    .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
     .inspect()
 
@@ -68,7 +68,7 @@ await test('text', async (t) => {
     .i18n('it')
     .include('id', 'fun')
     // i18n will have to be passed here better...
-    .filter('fun', 'has', 'italy', { normalized: true })
+    .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
     .inspect()
 
@@ -78,7 +78,7 @@ await test('text', async (t) => {
     .query('dialog')
     .include('id', 'fun')
     // i18n will have to be passed here better...
-    .filter('fun.en', 'has', 'italy', { normalized: true })
+    .filter('fun.en', 'has', 'italy', { lowerCase: true })
     .get()
     .inspect()
 
@@ -88,7 +88,7 @@ await test('text', async (t) => {
     .query('dialog')
     .include('id', 'fun')
     // i18n will have to be passed here better...
-    .filter('fun.it', 'has', 'italy', { normalized: true })
+    .filter('fun.it', 'has', 'italy', { lowerCase: true })
     .get()
     .inspect()
 
@@ -99,7 +99,7 @@ await test('text', async (t) => {
     .i18n('en')
     .include('id', 'fun')
     // i18n will have to be passed here better...
-    .filter('fun.it', 'has', 'italy', { normalized: true })
+    .filter('fun.it', 'has', 'italy', { lowerCase: true })
     .get()
     .inspect()
 

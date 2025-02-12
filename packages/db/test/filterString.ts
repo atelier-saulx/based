@@ -246,7 +246,7 @@ await test('has uncompressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'has', 'derp derp derp', { normalized: true })
+        .filter('body', 'has', 'derp derp derp', { lowerCase: true })
         .include('id')
         .range(0, 1e3)
         .get()
@@ -289,7 +289,7 @@ await test('has uncompressed', async (t) => {
   deepEqual(
     await db
       .query('italy')
-      .filter('headline', 'has', 'Pager', { normalized: true })
+      .filter('headline', 'has', 'Pager', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
       .get()
@@ -309,7 +309,7 @@ await test('has uncompressed', async (t) => {
   deepEqual(
     await db
       .query('italy')
-      .filter('headline', 'has', 'refugee', { normalized: true })
+      .filter('headline', 'has', 'refugee', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
       .get()
@@ -320,7 +320,7 @@ await test('has uncompressed', async (t) => {
   deepEqual(
     await db
       .query('italy')
-      .filter('headline', 'has', 'gaza', { normalized: true })
+      .filter('headline', 'has', 'gaza', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
       .get()
@@ -410,7 +410,7 @@ await test('has normalized uncompressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'has', 'aaaaaa', { normalized: true })
+        .filter('body', 'has', 'aaaaaa', { lowerCase: true })
         .include('id')
         .range(0, 1e5)
         .get()
@@ -448,7 +448,7 @@ await test('has normalized compressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'has', 'aaaaa', { normalized: true })
+        .filter('body', 'has', 'aaaaa', { lowerCase: true })
         .include('id', 'body')
         .range(0, 1e3)
         .get()
@@ -495,7 +495,7 @@ await test('has OR uncompressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'has', ['aaaaaaaaaaa', 'bbbbbb'], { normalized: true }) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .filter('body', 'has', ['aaaaaaaaaaa', 'bbbbbb'], { lowerCase: true }) //  ['aaa', 'bbb', 'ccc', 'eee']
         .include('id')
         .range(0, 1e3)
         .get()
@@ -506,7 +506,7 @@ await test('has OR uncompressed', async (t) => {
   deepEqual(
     await db
       .query('italy')
-      .filter('title', 'has', ['gaza', 'tubbies'], { normalized: true })
+      .filter('title', 'has', ['gaza', 'tubbies'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
       .get()
@@ -523,7 +523,7 @@ await test('has OR uncompressed', async (t) => {
   deepEqual(
     await db
       .query('italy')
-      .filter('title', 'has', ['crisis', 'refugee'], { normalized: true })
+      .filter('title', 'has', ['crisis', 'refugee'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
       .get()
@@ -568,7 +568,7 @@ await test('has OR compressed', async (t) => {
       await db
         .query('italy')
         .filter('body', 'has', ['aaaaaaaaaaa', 'bbbbbbbb'], {
-          normalized: true,
+          lowerCase: true,
         }) //  ['aaa', 'bbb', 'ccc', 'eee']
         .include('id')
         .range(0, 1e3)
