@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
+import { deepEqual } from './shared/assert.js'
 
 await test('text', async (t) => {
   const db = new BasedDb({
@@ -31,79 +31,141 @@ await test('text', async (t) => {
     },
   })
 
-  db.create('dialog', {
+  const dialogId = await db.create('dialog', {
     fun: { en: '1', it: italy, fi: '3' },
   })
 
   await db.drain()
 
-  await db.query('dialog').include('id', 'fun').get().inspect()
+  let result = await db.query('dialog').include('id', 'fun').get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Initial dialog with fun property',
+  )
 
-  await db.query('dialog').include('id').get().inspect()
+  result = await db.query('dialog').include('id').get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+      },
+    ],
+    'Dialog with only id included',
+  )
 
-  await db.query('dialog').i18n('it').include('id', 'fun').get().inspect()
+  result = await db.query('dialog').i18n('it').include('id', 'fun').get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: italy,
+      },
+    ],
+    'Dialog with i18n set to it',
+  )
 
-  // derp derp
-  console.log('-------------------------')
-  await db
+  result = await db
     .query('dialog')
     .i18n('it')
     .include('id', 'fun')
     .filter('fun', 'has', 'fliperdieflaperdiefloep', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(result.toObject(), [], 'Filter fun with non-existent text')
 
-  console.log('-------------------------')
-
-  await db
+  result = await db
     .query('dialog')
     .include('id', 'fun')
-    // i18n will have to be passed here better...
     .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Filter fun with text italy',
+  )
 
-  await db
+  result = await db
     .query('dialog')
     .i18n('it')
     .include('id', 'fun')
-    // i18n will have to be passed here better...
     .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: italy,
+      },
+    ],
+    'Filter fun with text italy and i18n set to it',
+  )
 
-  console.log('-------------------------')
-
-  await db
+  result = await db
     .query('dialog')
     .include('id', 'fun')
-    // i18n will have to be passed here better...
     .filter('fun.en', 'has', 'italy', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(result.toObject(), [], 'Filter fun.en with text italy')
 
-  console.log('-------------------------')
-
-  await db
+  result = await db
     .query('dialog')
     .include('id', 'fun')
-    // i18n will have to be passed here better...
     .filter('fun.it', 'has', 'italy', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: {
+          en: '1',
+          it: italy,
+          fi: '3',
+        },
+      },
+    ],
+    'Filter fun.it with text italy',
+  )
 
-  console.log('-------------------------')
-
-  await db
+  result = await db
     .query('dialog')
     .i18n('en')
     .include('id', 'fun')
-    // i18n will have to be passed here better...
     .filter('fun.it', 'has', 'italy', { lowerCase: true })
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        fun: '1',
+      },
+    ],
+    'Filter fun.it with text italy and i18n set to en',
+  )
 
-  const mrSnurfInFinlind = await db.create(
+  const mrSnurfInFinland = await db.create(
     'dialog',
     {
       fun: 'mr snurf in finland',
@@ -111,26 +173,91 @@ await test('text', async (t) => {
     { i18n: 'fi' },
   )
 
-  await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
+  result = await db.query('dialog').include('id', 'fun').i18n('fi').get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+      {
+        id: mrSnurfInFinland,
+        fun: 'mr snurf in finland',
+      },
+    ],
+    'Dialog with mr snurf in finland',
+  )
 
   await db.update(
     'dialog',
-    mrSnurfInFinlind,
+    mrSnurfInFinland,
     {
       fun: 'mr snurf in finland!',
     },
     { i18n: 'fi' },
   )
 
-  await db.query('dialog').include('id', 'fun').i18n('fi').get().inspect()
+  result = await db.query('dialog').include('id', 'fun').i18n('fi').get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+      {
+        id: mrSnurfInFinland,
+        fun: 'mr snurf in finland!',
+      },
+    ],
+    'Updated mr snurf in finland',
+  )
 
   const derpderp = await db.create('dialog', {})
 
-  console.log(await db.query('dialog', mrSnurfInFinlind).get())
+  result = await db.query('dialog', mrSnurfInFinland).get()
+  deepEqual(
+    result.toObject(),
+    {
+      id: mrSnurfInFinland,
+      fun: {
+        fi: 'mr snurf in finland!',
+        en: '',
+        it: '',
+      },
+    },
+    'Query mr snurf in finland',
+  )
 
-  console.log('-------------------------')
+  result = await db.query('dialog', derpderp).get()
+  deepEqual(
+    result.toObject(),
+    {
+      id: derpderp,
+      fun: {
+        en: '',
+        it: '',
+        fi: '',
+      },
+    },
+    'Query empty dialog',
+  )
 
-  console.log(await db.query('dialog', derpderp).get())
-
-  // TODO: if text we prob need to create a empty object in js
+  result = await db
+    .query('dialog')
+    .i18n('fi')
+    .include('id', 'fun')
+    .filter('fun', '=', '3', { lowerCase: true })
+    .get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: dialogId,
+        fun: '3',
+      },
+    ],
+    'Exact match on fi',
+  )
 })

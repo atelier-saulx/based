@@ -5,12 +5,9 @@ const vec = @import("./vector.zig").vec;
 const types = @import("../types.zig");
 const read = @import("../../../utils.zig").read;
 
-// extra value
-const dist = 2;
-// dist has to be in query....
 pub fn str(value: []const u8, query: []const u8) bool {
-    const x = strSearch(@constCast(value), @constCast(query));
-    return x <= dist;
+    const x = strSearch(@constCast(value), @constCast(query[0 .. query.len - 1]));
+    return x <= query[query.len - 1];
 }
 
 pub fn vector(value: []const f32, query: []u8) bool {
