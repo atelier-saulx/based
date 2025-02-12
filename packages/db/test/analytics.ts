@@ -14,74 +14,104 @@ await test('analytics', async (t) => {
 
   await db.putSchema({
     types: {
-      a: {
+      client: {
         name: 'string',
         bees: {
           items: {
-            ref: 'b',
-            prop: 'as',
+            ref: 'page',
+            prop: 'clients',
           },
         },
       },
-      b: {
+      page: {
         name: 'string',
-        as: {
+        clients: {
           items: {
-            ref: 'a',
+            ref: 'client',
             prop: 'bees',
-            $power: 'uint8',
+            $users: 'uint8',
           },
         },
       },
     },
   })
 
-  const a = await db.create('a', {})
-  const b = await db.create('b', {
-    as: [
+  const client = await db.create('client', {})
+  const client2 = await db.create('client', {})
+  const page = await db.create('page', {
+    clients: [
       {
-        id: a,
-        $power: 1,
+        id: client,
+        $users: { increment: 1 },
       },
     ],
   })
 
-  await db.update('b', b, {
-    as: {
+  await db.update('page', page, {
+    clients: {
       add: [
         {
-          id: a,
-          $power: 2,
+          id: client,
+          $users: { increment: 1 },
         },
       ],
     },
   })
 
-  console.log(await db.query('b', b).include('as.$power').get().toObject())
+  console.dir(
+    await db.query('page').include('clients.$users').get().toObject(),
+    { depth: null },
+  )
 
-  await db.update('b', b, {
-    as: {
+  await db.update('page', page, {
+    clients: {
       add: [
         {
-          id: a,
-          $power: { increment: 3 },
+          id: client,
+          $users: { increment: 1 },
         },
       ],
     },
   })
 
-  console.log(await db.query('b', b).include('as.$power').get().toObject())
+  console.dir(
+    await db.query('page').include('clients.$users').get().toObject(),
+    { depth: null },
+  )
 
-  await db.update('b', b, {
-    as: {
+  await db.update('page', page, {
+    clients: {
       add: [
         {
-          id: a,
-          $power: { increment: -4 },
+          id: client,
+          $users: { increment: -1 },
         },
       ],
     },
   })
 
-  console.log(await db.query('b', b).include('as.$power').get().toObject())
+  await db.update('page', page, {
+    clients: {
+      add: [
+        {
+          id: client2,
+          $users: { increment: 1 },
+        },
+      ],
+    },
+  })
+
+  console.dir(
+    await db.query('page').include('clients.$users').get().toObject(),
+    { depth: null },
+  )
+
+  db.remove('client', client2)
+
+  await db.drain()
+
+  console.dir(
+    await db.query('page').include('clients.$users').get().toObject(),
+    { depth: null },
+  )
 })

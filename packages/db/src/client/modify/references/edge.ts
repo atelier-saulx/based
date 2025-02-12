@@ -165,7 +165,7 @@ export function writeEdges(
             value = -value.increment
           }
         }
-        // ctx.buf[ctx.len++] = op
+
         ctx.buf[ctx.len++] = edge.prop
         ctx.buf[ctx.len++] = edge.typeIndex
 
