@@ -44,6 +44,13 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
+        types.Prop.CARDINALITY => {
+            // const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+
+            std.debug.print("UPDATE THE HLL {any} \n", .{data});
+            return 0;
+            // UPDATE THE HLL
+        },
         else => {
             const len = read(u32, data, 0);
             if (ctx.node == null) {

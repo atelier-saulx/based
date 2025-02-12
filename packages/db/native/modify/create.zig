@@ -35,18 +35,38 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
-        types.Prop.HLL => {
+        types.Prop.CARDINALITY => {
+            // CREATE IT!
             // TODO MARCO: make it to 8 bytes crc32 + len
+            // try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?); create something?
+            // create hll convert to buffer memcopy into a field here
+
+            // selva_fields_get_string(ctx.fieldSchema.?, "type", &type);
+            std.debug.print("\nput -->: {any}", .{data});
+
             const len = read(u32, data, 0);
             if (data[5] == 0) {
+                // RESET IF ITS UPDATE NOT IMPORANT
                 std.debug.print("\nput HLL: {any}", .{data});
             } else {
+                //
                 std.debug.print("\nadd HLL: {any}", .{data});
+
+                const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 6);
+                selva.hll_init(hll, 14, false);
+
+                std.debug.print("HLL --->: {any}", .{hll});
+
+                // selva.hll_add(hll, data[5 .. len + 5]);
+                // try db.writeField(ctx.db, hll, ctx.node.?, ctx.fieldSchema.?);
             }
             var i: usize = 1;
             while (i < len) : (i += 4) {
                 const id = read(u32, data, i + 4);
-                std.debug.print("\nitem: HLL: {any}", .{id});
+                //                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+
+                //
+                std.debug.print("\nZIG item: HLL: {any} FS: {any}\n", .{ id, ctx.fieldSchema.? });
             }
             return len;
         },
