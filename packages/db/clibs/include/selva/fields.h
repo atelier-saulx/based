@@ -204,6 +204,7 @@ int selva_fields_references_swap(
 
 SELVA_EXPORT
 int selva_fields_set_reference_meta(
+        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
@@ -212,6 +213,7 @@ int selva_fields_set_reference_meta(
 
 SELVA_EXPORT
 int selva_fields_get_reference_meta_mutable_string(
+        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
@@ -332,7 +334,7 @@ SELVA_EXPORT
 int selva_fields_get_text_crc2(const struct SelvaFields *fields, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc);
 
 SELVA_EXPORT
-void selva_fields_hash_update(struct XXH3_state_s *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
 
 SELVA_EXPORT
-selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);

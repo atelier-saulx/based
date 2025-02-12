@@ -448,7 +448,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
         do {
             selva_hash128_t node_hash;
 
-            node_hash = selva_node_hash_update(te, node, tmp_hash_state);
+            node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
             selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
@@ -530,6 +530,7 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
 }
 
 static int load_reference_meta_field_string(
+        struct SelvaDb *db,
         struct selva_io *io,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
@@ -541,7 +542,7 @@ static int load_reference_meta_field_string(
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, meta.len - sizeof(uint32_t), &s);
+    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, field, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }
@@ -574,6 +575,7 @@ static int load_field_text(struct selva_io *io, struct SelvaNode *node, const st
  */
 static void load_reference_meta(
         struct selva_io *io,
+        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
@@ -600,7 +602,7 @@ static void load_reference_meta(
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
 
-        fs = get_fs_by_fields_schema_field(efc->fields_schema, rd.field);
+        fs = get_fs_by_fields_schema_field(selva_get_edge_field_fields_schema(db, efc), rd.field);
         if (!fs) {
             db_panic("Field schema not found for the field %d", rd.field);
         }
@@ -633,10 +635,10 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             /* TODO check return value */
             io->sdb_read(value_buf, sizeof(char), value_size, io);
-            err = selva_fields_set_reference_meta(node, ref, efc, rd.field, value_buf, value_size);
+            err = selva_fields_set_reference_meta(db, node, ref, efc, rd.field, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_reference_meta_field_string(io, node, ref, efc, rd.field);
+            err = load_reference_meta_field_string(db, io, node, ref, efc, rd.field);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
@@ -691,7 +693,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         if (nfo->type == SELVA_FIELD_TYPE_NULL) {
             return SELVA_ENOENT;
         } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCE) {
-            load_reference_meta(io, node, selva_fields_nfo2p(fields, nfo), &fs->edge_constraint);
+            load_reference_meta(io, db, node, selva_fields_nfo2p(fields, nfo), &fs->edge_constraint);
         } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences *references = selva_fields_nfo2p(fields, nfo);
             const size_t len = references->nr_refs;
@@ -700,7 +702,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
             /* TODO We really need a better implementation for this! */
             for (size_t i = 0; i < len; i++) {
                 if (refs[i].dst == dst_node) {
-                    load_reference_meta(io, node, &refs[i], &fs->edge_constraint);
+                    load_reference_meta(io, db, node, &refs[i], &fs->edge_constraint);
                     break;
                 }
             }

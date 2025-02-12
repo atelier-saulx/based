@@ -272,9 +272,9 @@ pub fn getEdgeProp(
     }
 }
 
-pub fn getEdgeFieldSchema(edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-        edgeConstaint.*.fields_schema,
+        selva.selva_get_edge_field_fields_schema(db, edgeConstaint),
         field - 1,
     );
     if (edgeFieldSchema == null) {
@@ -315,12 +315,14 @@ pub fn getEdgeReference(
 
 pub fn writeEdgeProp(
     data: []u8,
+    db: *selva.SelvaDb,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
+        db,
         node,
         ref,
         efc,
@@ -386,8 +388,8 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(typeEntry: Type, start: u32, end: u32) selva.SelvaHash128 {
-    return selva.selva_node_hash_range(typeEntry, start, end);
+pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u32) selva.SelvaHash128 {
+    return selva.selva_node_hash_range(db, typeEntry, start, end);
 }
 
 pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {

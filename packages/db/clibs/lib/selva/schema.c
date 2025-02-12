@@ -483,7 +483,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
         struct SelvaFieldsSchema *schema;
 
         schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, nfo.nr_fields));
-        efc->fields_schema = schema;
+        efc->_fields_schema = schema;
 
         /*
          * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_WEAK_REFERENCES,
@@ -534,11 +534,11 @@ void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
 
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
             fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-            struct SelvaFieldsSchema *efc_schema = fs->edge_constraint.fields_schema;
+            struct SelvaFieldsSchema *efc_schema = fs->edge_constraint._fields_schema;
             if (efc_schema) {
                 schemabuf_deinit_fields_schema(efc_schema);
                 selva_free(efc_schema);
-                fs->edge_constraint.fields_schema = NULL;
+                fs->edge_constraint._fields_schema = NULL;
             }
         }
     }

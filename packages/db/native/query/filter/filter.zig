@@ -152,7 +152,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
-                const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, field) catch null;
+                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint, field) catch null;
                 if (edgeFieldSchema == null) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }

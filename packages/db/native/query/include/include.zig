@@ -121,7 +121,7 @@ pub fn getFields(
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
 
         if (isEdge) {
-            fieldSchema = try db.getEdgeFieldSchema(edgeRef.?.edgeConstaint, field);
+            fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?,edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
         } else {

@@ -368,6 +368,28 @@ const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct S
         : nullptr;
 }
 
+const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+{
+    const struct SelvaFieldsSchema *schema;
+
+    schema = efc->_fields_schema;
+    if (!schema) {
+        /*
+         * Schema not found on this side, try the dst_type.
+         * TODO It would be nice to share the pointer.
+         */
+        struct SelvaTypeEntry *type_dst;
+        const struct SelvaFieldSchema *dst_fs;
+
+        type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+        dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
+        assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
+        schema = dst_fs->edge_constraint._fields_schema;
+    }
+
+    return schema;
+}
+
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     struct SelvaTypeBlock *block = get_block(type->blocks, node->node_id);
@@ -781,30 +803,30 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
-selva_hash128_t selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
+selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
     selva_hash128_t res;
 
     selva_hash_reset(tmp_hash_state);
-    selva_fields_hash_update(tmp_hash_state, &type->ns.fields_schema, &node->fields);
+    selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, &node->fields);
     hash_aliases(tmp_hash_state, type, node->node_id);
     res = selva_hash_digest(tmp_hash_state);
 
     return res;
 }
 
-selva_hash128_t selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node)
+selva_hash128_t selva_node_hash_update2(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_hash128_t res;
 
     selva_hash_state_t *hash_state = selva_hash_create_state();
-    res = selva_node_hash_update(type, node, hash_state);
+    res = selva_node_hash_update(db, type, node, hash_state);
     selva_hash_free_state(hash_state);
 
     return res;
 }
 
-selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
+selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
 {
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
@@ -818,7 +840,7 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
     }
 
     do {
-        selva_hash128_t node_hash = selva_node_hash_update(type, node, tmp_hash_state);
+        selva_hash128_t node_hash = selva_node_hash_update(db, type, node, tmp_hash_state);
         selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
 
         node = selva_next_node(type, node);
