@@ -42,6 +42,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
+    [SELVA_FIELD_TYPE_CARDINALITY] = sizeof_field(struct SelvaFieldsAny, cardinality),
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
     [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
     [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
@@ -157,6 +158,19 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
     }
 
     return nfo;
+}
+
+struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
+{
+
+    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+        return nullptr;
+    }
+
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
+
+    return get_mutable_string(fields, fs, nfo, initial_len);
 }
 
 /**
@@ -2065,17 +2079,3 @@ selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSc
 
     return res;
 }
-
-struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
-  {
-    
-    if (fs->type != SELVA_FIELD_TYPE_STRING) {
-        fprintf(stderr, "Invalid field type %d\n", fs->type);
-        return nullptr;
-    }
-
-    struct SelvaFields *fields = &node->fields;               
-    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
-
-    return get_mutable_string(fields, fs, nfo, initial_len);                                           
-  } 

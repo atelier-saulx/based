@@ -88,6 +88,7 @@ struct SelvaFieldsAny {
         struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
         struct SelvaMicroBuffer *smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
 #endif
+        HyperLogLogPlusPlus cardinality; /*!< SELVA_FIELD_TYPE_HLL */
     };
 };
 

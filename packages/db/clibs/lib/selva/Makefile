@@ -29,6 +29,7 @@ OBJ := \
 	fast_linear_search.o \
 	fields.o \
 	find.o \
+	history.o \
 	ida.o \
 	idz.o \
 	io/dump.o \
