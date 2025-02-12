@@ -53,7 +53,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         const operation: []u8 = batch[i + 1 ..];
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0be7be9b (Remove debug log)
                 // SWITCH FIELD
                 ctx.field = operation[0];
                 i = i + 2;
