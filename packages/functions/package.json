@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "3.1.0-alpha",
+  "version": "3.1.2-alpha",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -8,7 +8,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts && cp ./dist/client.d.ts ./dist/client_original.d.ts",
+    "copy:uws": "cp src/uws.d.ts dist/uws.d.ts",
+    "copy:client": "cp ./dist/client.d.ts ./dist/client_original.d.ts",
+    "clean:ts:before": "rm -rf ./dist ./tsconfig.tsbuildinfo || true",
+    "clean:ts:after": "rm ./dist/tsconfig.tsbuildinfo || true",
+    "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client && npm run clean:ts:after",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },

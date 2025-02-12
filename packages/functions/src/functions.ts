@@ -253,13 +253,7 @@ type BasedAppFunctionConfig = {
   main: string
   path?: string
   favicon?: string
-  build?: {
-    watch?: {
-      include: string[]
-      exclude?: string[]
-    }
-    plugins?: BuildOptions['plugins']
-  }
+  plugins?: BuildOptions['plugins']
 }
 
 type BasedJobFunctionConfig = {
