@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('references modify', async (t) => {
   const db = new BasedDb({
@@ -22,7 +23,6 @@ await test('references modify', async (t) => {
             items: {
               ref: 'user',
               prop: 'friends',
-              $rating: 'uint8',
             },
           },
         },
@@ -103,28 +103,55 @@ await test('references modify', async (t) => {
     ],
     'delete',
   )
+})
 
-  await db.update('user', john, {
-    friends: [bob],
+await test('references modify', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
   })
 
-  await db.update('user', john, {
-    friends: {
-      add: [
-        {
-          id: bob,
-          $rating: 1,
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  await db.putSchema({
+    types: {
+      a: {
+        name: 'string',
+        bees: {
+          items: {
+            ref: 'b',
+            prop: 'as',
+            // $power: 'uint8',
+          },
         },
-      ],
+      },
+      b: {
+        name: 'string',
+        as: {
+          items: {
+            ref: 'a',
+            prop: 'bees',
+            $power: 'uint8',
+          },
+        },
+      },
     },
   })
 
-  deepEqual(
-    await db
-      .query('user', john)
-      .include('*', 'friends.$rating')
-      .get()
-      .toObject(),
-    { id: 3, name: 'john', friends: [{ id: 1, $rating: 1 }] },
-  )
+  const a = await db.create('a', {})
+  const b = await db.create('b', {
+    as: [
+      {
+        id: a,
+        $power: 1,
+      },
+    ],
+  })
+
+  await db.update('b', b, {
+    as: null,
+  })
 })
