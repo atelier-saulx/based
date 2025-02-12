@@ -6,7 +6,15 @@ import {
   REFERENCES,
 } from '../../../server/schema/types.js'
 import { propIsSigned } from '../../../server/schema/utils.js'
-import { negateType, OPERATOR, stripNegation } from './operators.js'
+import {
+  EQUAL,
+  MODE_AND_FIXED,
+  MODE_DEFAULT,
+  MODE_OR_FIXED,
+  negateType,
+  OPERATOR,
+  stripNegation,
+} from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 
 // -------------------------------------------
@@ -79,7 +87,10 @@ export const createFixedFilterBuffer = (
     const len = value.length
     buf = Buffer.allocUnsafe(10 + len * size)
     buf[0] = negateType(op)
-    buf[1] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
+    buf[1] =
+      prop.typeIndex === REFERENCES && op === EQUAL
+        ? MODE_AND_FIXED
+        : MODE_OR_FIXED
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
     buf[6] = stripNegation(op)
@@ -106,7 +117,7 @@ export const createFixedFilterBuffer = (
     // [or = 0] [size 2] [start 2], [op], value[size]
     buf = Buffer.allocUnsafe(8 + size)
     buf[0] = negateType(op)
-    buf[1] = 0
+    buf[1] = MODE_DEFAULT
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
     buf[6] = stripNegation(op)

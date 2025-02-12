@@ -144,30 +144,38 @@ export const isNumerical = (op: OPERATOR): boolean => {
   return false
 }
 
-// pub const Type = enum(u8) {
-//   negate = 1,
-//   default = 2,
-// };
-
-// pub const Mode = enum(u8) {
-//   default = 0,
-//   orFixed = 1,
-//   orVar = 2,
-//   andFixed = 3,
-//   defaultVar = 4,
-//   reference = 5,
-// };
-
-// pub const Meta = enum(u8) {
-//   edge = 252,
-//   orBranch = 253,
-//   reference = 254,
-//   id = 255,
-//   _,
-// };
-
+// -------------------------------------------
+// Types
 export const TYPE_NEGATE = 1
 export const TYPE_DEFAULT = 2
+export type FILTER_TYPE = typeof TYPE_NEGATE | typeof TYPE_DEFAULT
+// -------------------------------------------
+// Modes
+export const MODE_DEFAULT = 0
+export const MODE_OR_FIXED = 1
+export const MODE_OR_VAR = 2
+export const MODE_AND_FIXED = 3
+export const MODE_DEFAULT_VAR = 4
+export const MODE_REFERENCE = 5
+export type FILTER_MODE =
+  | typeof MODE_DEFAULT
+  | typeof MODE_OR_FIXED
+  | typeof MODE_OR_VAR
+  | typeof MODE_AND_FIXED
+  | typeof MODE_DEFAULT_VAR
+  | typeof MODE_REFERENCE
+// -------------------------------------------
+// Meta
+export const META_EDGE = 252
+export const META_OR_BRANCH = 253
+export const META_REFERENCE = 254
+export const META_ID = 255
+export type FILTER_META =
+  | typeof META_EDGE
+  | typeof META_OR_BRANCH
+  | typeof META_REFERENCE
+  | typeof META_ID
+// -------------------------------------------
 
 export const stripNegation = (op: OPERATOR): OPERATOR => {
   if (op === NOT_HAS) {
@@ -180,9 +188,9 @@ export const stripNegation = (op: OPERATOR): OPERATOR => {
 }
 
 // ----------
-export const negateType = (op: number): number => {
-  if (op === 3) {
-    return 1
+export const negateType = (op: OPERATOR): FILTER_TYPE => {
+  if (op === NOT_EQUAL || op === NOT_HAS) {
+    return TYPE_NEGATE
   }
-  return 2
+  return TYPE_DEFAULT
 }

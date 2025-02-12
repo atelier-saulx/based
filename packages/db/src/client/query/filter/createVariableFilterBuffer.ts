@@ -8,10 +8,13 @@ import {
 import {
   EQUAL,
   EQUAL_CRC32,
+  FILTER_MODE,
   HAS,
   HAS_NORMALIZE,
   HAS_TO_LOWER_CASE,
   LIKE,
+  MODE_DEFAULT_VAR,
+  MODE_OR_VAR,
   negateType,
   NOT_EQUAL,
   NOT_HAS,
@@ -60,12 +63,12 @@ export const createVariableFilterBuffer = (
   op: OPERATOR,
   lang: LangCode,
 ) => {
-  let isOr = 4
+  let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
   let buf: Buffer
   if (Array.isArray(value)) {
-    if (op !== 1 || !prop.separate) {
-      isOr = 2
+    if (op !== EQUAL || !prop.separate) {
+      mode = MODE_OR_VAR
       const x = []
       for (const v of value) {
         const a = parseValue(v, prop, op, lang)
@@ -103,11 +106,10 @@ export const createVariableFilterBuffer = (
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, EQUAL_CRC32, val, false)
       } else {
-        buf = writeVarFilter(isOr, val, op, prop, 0, 0)
+        buf = writeVarFilter(mode, val, op, prop, 0, 0)
       }
     } else {
-      // HANDLE EQUAL
-      buf = writeVarFilter(isOr, val, op, prop, prop.start, prop.len)
+      buf = writeVarFilter(mode, val, op, prop, prop.start, prop.len)
     }
   } else {
     console.log('OP NOT SUPPORTED YET =>', op)
@@ -116,7 +118,7 @@ export const createVariableFilterBuffer = (
 }
 
 function writeVarFilter(
-  isOr: number,
+  mode: FILTER_MODE,
   val: Buffer,
   op: OPERATOR,
   prop: PropDef | PropDefEdge,
@@ -126,7 +128,7 @@ function writeVarFilter(
   const size = val.byteLength
   const buf = Buffer.allocUnsafe(12 + size)
   buf[0] = negateType(op)
-  buf[1] = isOr
+  buf[1] = mode
   buf.writeUInt16LE(start, 2)
   buf.writeUint16LE(len, 4)
   buf.writeUint32LE(size, 6)
