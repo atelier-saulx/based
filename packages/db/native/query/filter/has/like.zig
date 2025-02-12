@@ -1,8 +1,10 @@
 const std = @import("std");
 const simd = std.simd;
-const readInt = @import("../../../utils.zig").readInt;
 const strSearch = @import("../search.zig").strSearch;
-const vec = @import("./vector.zig");
+const vec = @import("./vector.zig").vec;
+const types = @import("../types.zig");
+const toSlice = @import("../../../utils.zig").toSlice;
+const read = @import("../../../utils.zig").read;
 
 // extra value
 const dist = 2;
@@ -12,7 +14,9 @@ pub fn str(value: []const u8, query: []const u8) bool {
     return x <= dist;
 }
 
-pub fn vector(value: []const f32, query: []const f32) bool {
-    const x = vec.sc(value, query) catch return false;
-    return @abs(x) < 0.5;
+pub fn vector(value: []const f32, query: []u8) bool {
+    const qFloat = toSlice(f32, query[0 .. query.len - 5]);
+    const func: types.VectorFn = @enumFromInt(query[query.len - 5]);
+    const score = read(f32, query, query.len - 4);
+    return @abs(vec(func, qFloat, value)) < score;
 }

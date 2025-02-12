@@ -47,7 +47,7 @@ inline fn hasInner(
     var q = query;
     if (prop == Prop.VECTOR) {
         q = query[0..query.len];
-        return like.vector(toSlice(f32, value), toSlice(f32, q));
+        return like.vector(toSlice(f32, value), q);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {

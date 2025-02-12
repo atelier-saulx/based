@@ -118,8 +118,9 @@ await test('vector like', async (t) => {
   const res = await db
     .query('data')
     .include('name')
-    .filter('a', 'like', fruit)
+    .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 0.5 })
     .get()
     .toObject()
+
   deepEqual(res, [{ id: 6, name: 'car' }])
 })
