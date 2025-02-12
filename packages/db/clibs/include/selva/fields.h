@@ -13,7 +13,6 @@ struct selva_string;
 #endif
 #include "selva/types.h"
 #include "selva_lang_code.h"
-#include "selva/hll.h"
 
 /**
  * Reserved (N/A) field id.
