@@ -7,7 +7,7 @@ const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const std = @import("std");
 const searchStr = @import("../filter/search.zig");
 const s = @import("./search.zig");
@@ -30,8 +30,8 @@ pub fn sort(
     const sortField: u8 = sortBuffer[0];
     const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
     if (sortBuffer.len == 6) {
-        start = readInt(u16, sortBuffer, 2);
-        len = readInt(u16, sortBuffer, 4);
+        start = read(u16, sortBuffer, 2);
+        len = read(u16, sortBuffer, 4);
     } else {
         start = 0;
         len = 0;
@@ -40,7 +40,7 @@ pub fn sort(
     var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc);
     const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
     sortItem: while (i < ids.len) : (i += 4) {
-        const id = readInt(u32, ids, i);
+        const id = read(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             continue :sortItem;
@@ -92,7 +92,7 @@ pub fn default(
     const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
     checkItem: while (i < ids.len) : (i += 4) {
-        const id = readInt(u32, ids, i);
+        const id = read(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             continue :checkItem;
@@ -129,7 +129,7 @@ pub fn search(
     var i: u32 = 0;
     var searchCtxC = s.createSearchCtx(0);
     checkItem: while (i < ids.len) : (i += 4) {
-        const id = readInt(u32, ids, i);
+        const id = read(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             break :checkItem;

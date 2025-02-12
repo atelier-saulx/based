@@ -1,4 +1,4 @@
-const readInt = @import("../../../utils.zig").readInt;
+const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
 const selva = @import("../../../selva.zig");
 
@@ -27,15 +27,15 @@ pub inline fn getRefsFields(
     ref: ?types.RefStruct,
     comptime isEdge: bool,
 ) usize {
-    const filterSize: u16 = readInt(u16, include, 0);
-    const sortSize: u16 = readInt(u16, include, 2);
-    const offset: u32 = readInt(u32, include, 4);
-    const limit: u32 = readInt(u32, include, 8);
+    const filterSize: u16 = read(u16, include, 0);
+    const sortSize: u16 = read(u16, include, 2);
+    const offset: u32 = read(u32, include, 4);
+    const limit: u32 = read(u32, include, 8);
     const start: comptime_int = 12;
     const filterArr: ?[]u8 = if (filterSize > 0) include[start .. start + filterSize] else null;
     const hasFilter: bool = filterArr != null;
     const sortArr: ?[]u8 = if (sortSize > 0) include[start + filterSize .. start + filterSize + sortSize] else null;
-    const typeId: db.TypeId = readInt(u16, include, start + filterSize + sortSize);
+    const typeId: db.TypeId = read(u16, include, start + filterSize + sortSize);
     const refField = include[start + 2 + filterSize + sortSize];
     const typeEntry = db.getType(ctx.db, typeId) catch null;
     const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];

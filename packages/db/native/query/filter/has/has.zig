@@ -5,7 +5,7 @@ const t = @import("../types.zig");
 const Op = t.Operator;
 const Prop = @import("../../../types.zig").Prop;
 const compressed = @import("../compressed.zig");
-const readInt = @import("../../../utils.zig").readInt;
+const read = @import("../../../utils.zig").read;
 const decompress = compressed.decompress;
 const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
@@ -18,7 +18,7 @@ inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
             pub fn func(value: []u8, query: []u8) bool {
                 var j: usize = 0;
                 while (j < query.len) {
-                    const size = readInt(u16, query, j);
+                    const size = read(u16, query, j);
                     if (compare(value, query[j + 2 .. j + 2 + size])) {
                         return true;
                     }
@@ -47,7 +47,7 @@ inline fn hasInner(
     var q = query;
     if (prop == Prop.VECTOR) {
         q = query[0..query.len];
-        return like.vector(toSlice(f32, value), q);
+        return like.vector(read([]f32, value, 0), q);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         // faster check
         if (prop == Prop.TEXT) {

@@ -1,6 +1,6 @@
 const std = @import("std");
 const simd = std.simd;
-const readInt = @import("../../../utils.zig").readInt;
+const read = @import("../../../utils.zig").read;
 const selva = @import("../../../selva.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;

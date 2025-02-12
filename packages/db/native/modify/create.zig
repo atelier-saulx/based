@@ -1,5 +1,5 @@
 const db = @import("../db/db.zig");
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
@@ -26,7 +26,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     return references.putReferences(ctx, data);
                 },
                 else => {
-                    const len = readInt(u32, data, 0);
+                    const len = read(u32, data, 0);
                     // invalid command
                     return len;
                 },
@@ -37,7 +37,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.HLL => {
             // TODO MARCO: make it to 8 bytes crc32 + len
-            const len = readInt(u32, data, 0);
+            const len = read(u32, data, 0);
             if (data[5] == 0) {
                 std.debug.print("\nput HLL: {any}", .{data});
             } else {
@@ -45,13 +45,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             }
             var i: usize = 1;
             while (i < len) : (i += 4) {
-                const id = readInt(u32, data, i + 4);
+                const id = read(u32, data, i + 4);
                 std.debug.print("\nitem: HLL: {any}", .{id});
             }
             return len;
         },
         else => {
-            const len = readInt(u32, data, 0);
+            const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (ctx.typeSortIndex != null) {

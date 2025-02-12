@@ -3,7 +3,6 @@ const simd = std.simd;
 const strSearch = @import("../search.zig").strSearch;
 const vec = @import("./vector.zig").vec;
 const types = @import("../types.zig");
-const toSlice = @import("../../../utils.zig").toSlice;
 const read = @import("../../../utils.zig").read;
 
 // extra value
@@ -15,7 +14,7 @@ pub fn str(value: []const u8, query: []const u8) bool {
 }
 
 pub fn vector(value: []const f32, query: []u8) bool {
-    const qFloat = toSlice(f32, query[0 .. query.len - 5]);
+    const qFloat = read([]f32, query[0 .. query.len - 5], 0);
     const func: types.VectorFn = @enumFromInt(query[query.len - 5]);
     const score = read(f32, query, query.len - 4);
     return @abs(vec(func, qFloat, value)) < score;

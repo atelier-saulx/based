@@ -2,7 +2,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const ModifyCtx = Modify.ModifyCtx;
 // const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
@@ -36,7 +36,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     return references.putReferences(ctx, data);
                 },
                 else => {
-                    const len = readInt(u32, data, 0);
+                    const len = read(u32, data, 0);
                     return len;
                 },
             }
@@ -45,7 +45,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         else => {
-            const len = readInt(u32, data, 0);
+            const len = read(u32, data, 0);
             if (ctx.node == null) {
                 std.log.err("Field update id: {d} node does not exist \n", .{ctx.id});
                 return len;
@@ -82,7 +82,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
-    const len = readInt(u32, data, 0);
+    const len = read(u32, data, 0);
     if (ctx.node == null) {
         std.log.err("Partial update id: {d} node does not exist \n", .{ctx.id});
         return len;
@@ -93,8 +93,8 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
         var j: usize = 0;
         while (j < len) {
             const operation = slice[j..];
-            const start = readInt(u16, operation, 0);
-            const l = readInt(u16, operation, 2);
+            const start = read(u16, operation, 0);
+            const l = read(u16, operation, 2);
             if (ctx.field == 0) {
                 if (ctx.typeSortIndex != null) {
                     const sI = ctx.typeSortIndex.?.main.get(start);
@@ -125,8 +125,13 @@ fn incrementBuf(
     value: []u8,
     addition: []u8,
 ) usize {
+<<<<<<< HEAD
     const a = readInt(T, value, 0);
     const b = readInt(T, addition, 0);
+=======
+    const a = read(T, aU8, 0);
+    const b = read(T, bU8, 0);
+>>>>>>> 63b0089bdb5da66a2fb8978a396ddbf9d23de9e9
     const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
     if (T == f64) {
         value[0..8].* = @bitCast(v);
@@ -225,8 +230,8 @@ pub fn incrementBuffer(
 
 pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-    const fieldType: types.Prop = @enumFromInt(readInt(u8, data, 0));
-    const start = readInt(u16, data, 1);
+    const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
+    const start = read(u16, data, 1);
     const addition = data[3..];
     const value = currentData[start .. start + addition.len];
 

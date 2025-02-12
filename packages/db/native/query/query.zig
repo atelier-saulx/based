@@ -16,7 +16,7 @@ const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
 const QueryAlias = @import("./types/alias.zig");
 
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 
 pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -57,19 +57,19 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     q = q[0 .. q.len - 1];
 
     const queryType: QueryType = @enumFromInt(q[0]);
-    const typeId: db.TypeId = readInt(u16, q, 1);
+    const typeId: db.TypeId = read(u16, q, 1);
 
     if (queryType == QueryType.default) {
 
         // ADD LANG
 
-        const offset = readInt(u32, q, 3);
-        const limit = readInt(u32, q, 7);
-        const filterSize = readInt(u16, q, 11);
+        const offset = read(u32, q, 3);
+        const limit = read(u32, q, 7);
+        const filterSize = read(u16, q, 11);
         const filterBuf = q[13 .. 13 + filterSize];
-        const sortSize = readInt(u16, q, 13 + filterSize);
+        const sortSize = read(u16, q, 13 + filterSize);
         const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
-        const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
+        const searchSize = read(u16, q, 15 + filterSize + sortSize);
         const include = q[17 + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
             if (searchSize > 0) {
@@ -97,24 +97,24 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
             }
         }
     } else if (queryType == QueryType.id) {
-        const id = readInt(u32, q, 3);
-        const filterSize = readInt(u16, q, 7);
+        const id = read(u32, q, 3);
+        const filterSize = read(u16, q, 7);
         const filterBuf = q[9 .. 9 + filterSize];
         const include = q[9 + filterSize .. q.len];
         try QueryId.default(id, &ctx, typeId, filterBuf, include);
     } else if (queryType == QueryType.ids) {
-        const idsSize = readInt(u32, q, 3);
+        const idsSize = read(u32, q, 3);
         const ids: []u8 = q[7 .. idsSize + 7];
-        const offset = readInt(u32, q, idsSize + 7);
-        const limit = readInt(u32, q, idsSize + 11);
-        const filterSize = readInt(u16, q, idsSize + 15);
+        const offset = read(u32, q, idsSize + 7);
+        const limit = read(u32, q, idsSize + 11);
+        const filterSize = read(u16, q, idsSize + 15);
         const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
-        const sortSize = readInt(u16, q, 17 + filterSize + idsSize);
+        const sortSize = read(u16, q, 17 + filterSize + idsSize);
 
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
 
         const searchIndex = 21 + idsSize + filterSize + sortSize;
-        const searchSize = readInt(u16, q, 19 + idsSize + filterSize + sortSize);
+        const searchSize = read(u16, q, 19 + idsSize + filterSize + sortSize);
         const include = q[searchIndex + searchSize .. q.len];
         if (sortSize == 0) {
             if (searchSize > 0) {
@@ -138,9 +138,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         }
     } else if (queryType == QueryType.alias) {
         const field = q[3];
-        const valueSize = readInt(u16, q, 4);
+        const valueSize = read(u16, q, 4);
         const value = q[6 .. 6 + valueSize];
-        const filterSize = readInt(u16, q, valueSize + 6);
+        const filterSize = read(u16, q, valueSize + 6);
         const filterBuf = q[8 .. 8 + filterSize];
         const include = q[8 + filterSize + valueSize .. q.len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);

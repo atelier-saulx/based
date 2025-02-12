@@ -10,7 +10,7 @@ const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
 const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
@@ -77,28 +77,28 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.CREATE_OR_GET => {
                 // create or get
-                ctx.id = readInt(u32, operation, 0) + idOffset;
+                ctx.id = read(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
             types.ModOp.SWITCH_NODE => {
                 // SWITCH ID/NODE
-                ctx.id = readInt(u32, operation, 0);
+                ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {
                 // SWITCH TYPE
-                ctx.typeId = readInt(u16, operation, 0);
+                ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // store offset for this type
                 var j: usize = 0;
                 idOffset = 0;
                 while (j < typesInfo.len) : (j += 10) {
-                    const typeId = readInt(u16, typesInfo, j);
+                    const typeId = read(u16, typesInfo, j);
                     if (typeId == ctx.typeId) {
-                        idOffset = readInt(u32, typesInfo, j + 2);
+                        idOffset = read(u32, typesInfo, j + 2);
                         break;
                     }
                 }

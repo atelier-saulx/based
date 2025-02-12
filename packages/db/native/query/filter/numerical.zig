@@ -1,4 +1,4 @@
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const t = @import("./types.zig");
 const Op = t.Operator;
 const Mode = t.Mode;
@@ -12,8 +12,8 @@ inline fn operate(
     query: []u8,
     value: []u8,
 ) bool {
-    const q = readInt(T, query, 0);
-    const v = readInt(T, value, 0);
+    const q = read(T, query, 0);
+    const v = read(T, value, 0);
     const result = operateSwitch(T, op, q, v);
     return result;
 }
@@ -41,7 +41,7 @@ pub inline fn compare(
     const isSigned = Prop.isSigned(prop);
 
     if (prop == Prop.REFERENCES) {
-        return operateSwitch(u32, op, readInt(u32, query, 0), @truncate(v.len / 4));
+        return operateSwitch(u32, op, read(u32, query, 0), @truncate(v.len / 4));
     }
     const value = v[start .. start + size];
     if (size == 4) {

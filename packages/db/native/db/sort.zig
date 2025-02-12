@@ -4,7 +4,7 @@ const selva = @import("../selva.zig");
 const c = @import("../c.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const types = @import("../types.zig");
 const errors = @import("../errors.zig");
 
@@ -80,10 +80,10 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
     // size [2 type] [1 field] [2 start] [2 len] [1 typeIndex]
-    const typeId = readInt(u16, buf, 0);
+    const typeId = read(u16, buf, 0);
     const field = buf[2];
-    const start = readInt(u16, buf, 3);
-    const len = readInt(u16, buf, 5);
+    const start = read(u16, buf, 3);
+    const len = read(u16, buf, 5);
     const typeIndex = buf[7];
     const index = try createSortIndex(
         dbCtx,
@@ -109,9 +109,9 @@ pub fn destroySortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info)
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
     // [2 type] [1 field] [2 start]
-    const typeId = readInt(u16, buf, 0);
+    const typeId = read(u16, buf, 0);
     const field = buf[2];
-    const start = readInt(u16, buf, 3);
+    const start = read(u16, buf, 3);
     destroySortIndex(dbCtx, typeId, field, start);
     return null;
 }
@@ -199,11 +199,7 @@ pub fn createSortIndex(
     return sortIndex;
 }
 
-pub fn destroySortIndex(
-    dbCtx: *db.DbCtx,
-    typeId: db.TypeId,
-    field: u8,
-    start: u16) void {
+pub fn destroySortIndex(dbCtx: *db.DbCtx, typeId: db.TypeId, field: u8, start: u16) void {
     const typeIndexes = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
         return;
@@ -269,7 +265,7 @@ inline fn parseString(
 }
 
 inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
-    selva.selva_sort_remove_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
+    selva.selva_sort_remove_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), node);
 }
 
 pub fn remove(
@@ -298,7 +294,7 @@ pub fn remove(
             }
         },
         types.Prop.NUMBER => {
-            selva.selva_sort_remove_double(index, @floatFromInt(readInt(u64, data, start)), node);
+            selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
         },
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             removeFromIntIndex(i64, data, sortIndex, node);
@@ -313,7 +309,7 @@ pub fn remove(
 }
 
 inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
-    selva.selva_sort_insert_i64(sortIndex.index, @intCast(readInt(T, data, sortIndex.start)), node);
+    selva.selva_sort_insert_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), node);
 }
 
 pub fn insert(
@@ -343,7 +339,7 @@ pub fn insert(
             }
         },
         types.Prop.NUMBER => {
-            selva.selva_sort_insert_double(index, @floatFromInt(readInt(u64, data, start)), node);
+            selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
         },
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             insertIntIndex(i64, data, sortIndex, node);

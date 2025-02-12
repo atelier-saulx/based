@@ -3,7 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
-const readInt = @import("../utils.zig").readInt;
+const read = @import("../utils.zig").read;
 const types = @import("../types.zig");
 
 pub const TypeId = u16;

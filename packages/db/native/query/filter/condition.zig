@@ -1,5 +1,5 @@
 const std = @import("std");
-const readInt = @import("../../utils.zig").readInt;
+const read = @import("../../utils.zig").read;
 const batch = @import("./batch.zig");
 const has = @import("./has/has.zig");
 const db = @import("../../db//db.zig");
@@ -15,13 +15,13 @@ const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
 pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u32, q, i + 5);
+    const valueSize = read(u32, q, i + 5);
     const next = i + 11 + valueSize;
     const query = q[i + 11 .. next];
     const prop: Prop = @enumFromInt(q[11]);
-    const mainLen = readInt(u16, q, i + 3);
+    const mainLen = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 9]);
-    const start = readInt(u16, q, i + 1);
+    const start = read(u16, q, i + 1);
     var value: []u8 = undefined;
     if (mainLen != 0) {
         value = v[start + 1 .. v[start] + start + 1];
@@ -31,7 +31,7 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
     if (op == Op.equal) {
         var j: usize = 0;
         while (j < query.len) {
-            const size = readInt(u16, query, j);
+            const size = read(u16, query, j);
             const queryPartial = query[j + 2 .. j + 2 + size];
             if (value.len == queryPartial.len) {
                 var p: usize = 0;
@@ -55,9 +55,9 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
 }
 
 pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u32, q, i + 5);
-    const start = readInt(u16, q, i + 1);
-    const mainLen = readInt(u16, q, i + 3);
+    const valueSize = read(u32, q, i + 5);
+    const start = read(u16, q, i + 1);
+    const mainLen = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 9]);
     const next = i + 11 + valueSize;
     const prop: Prop = @enumFromInt(q[11]);
@@ -93,8 +93,8 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
 }
 
 pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
-    const repeat = readInt(u16, q, i + 3);
+    const valueSize = read(u16, q, i + 1);
+    const repeat = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
     const next = 10 + valueSize * repeat;
     if (op == Op.equal) {
@@ -124,9 +124,9 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
 }
 
 pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
+    const valueSize = read(u16, q, i + 1);
     const op: Op = @enumFromInt(q[i + 5]);
-    const repeat = readInt(u16, q, i + 7);
+    const repeat = read(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
     // Can potentialy vectorize this
@@ -149,8 +149,8 @@ pub inline fn default(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
-    const start = readInt(u16, q, i + 3);
+    const valueSize = read(u16, q, i + 1);
+    const start = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
     const prop: Prop = @enumFromInt(q[i + 6]);
     const query = q[i + 7 .. i + valueSize + 7];
@@ -168,7 +168,7 @@ pub inline fn default(
             std.log.err("Start (fixed len fields) + has not supported in filters", .{});
             return .{ next, false };
         }
-        if (!batch.simdReferencesHasSingle(readInt(u32, query, 0), v)) {
+        if (!batch.simdReferencesHasSingle(read(u32, query, 0), v)) {
             return .{ next, false };
         }
     } else if (Op.isNumerical(op)) {
@@ -186,11 +186,11 @@ pub inline fn orFixed(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
-    const start = readInt(u16, q, i + 3);
+    const valueSize = read(u16, q, i + 1);
+    const start = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
     const prop: Prop = @enumFromInt(q[i + 6]);
-    const repeat = readInt(u16, q, i + 7);
+    const repeat = read(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
     if (op == Op.equalCrc32) {
