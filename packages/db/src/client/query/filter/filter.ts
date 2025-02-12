@@ -8,7 +8,7 @@ import {
   TEXT,
 } from '../../../server/schema/schema.js'
 import { primitiveFilter } from './primitiveFilter.js'
-import { FilterOpts, Operator, toFilterCtx } from './operators.js'
+import { FilterOpts, Operator, toFilterCtx } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'

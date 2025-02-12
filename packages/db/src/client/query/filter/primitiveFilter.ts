@@ -6,7 +6,7 @@ import {
   REVERSE_SIZE_MAP,
 } from '../../../server/schema/types.js'
 import { QueryDefFilter } from '../types.js'
-import { EQUAL, isNumerical } from './operators.js'
+import { EQUAL, isNumerical } from './types.js'
 import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'

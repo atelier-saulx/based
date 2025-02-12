@@ -15,7 +15,7 @@ import {
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
   FilterCtx,
-} from './operators.js'
+} from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 

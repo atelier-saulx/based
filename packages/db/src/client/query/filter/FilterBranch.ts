@@ -1,7 +1,7 @@
 import { DbClient } from '../../index.js'
 import { QueryDefFilter, QueryDef } from '../types.js'
 import { convertFilter, filter, filterOr } from './filter.js'
-import { FilterOpts, Operator } from './operators.js'
+import { FilterOpts, Operator } from './types.js'
 import { FilterBranchFn } from './types.js'
 
 export class FilterBranch {

@@ -1,6 +1,6 @@
 import { debug } from '../debug.js'
 import { QueryDefFilter } from '../types.js'
-import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './operators.js'
+import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './types.js'
 
 // or
 // [meta = 253]  [size 2] [next 4]

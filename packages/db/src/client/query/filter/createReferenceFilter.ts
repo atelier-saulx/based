@@ -1,5 +1,5 @@
 import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
-import { FilterCtx, MODE_REFERENCE } from './operators.js'
+import { FilterCtx, MODE_REFERENCE } from './types.js'
 
 export const createReferenceFilter = (
   prop: PropDef | PropDefEdge,

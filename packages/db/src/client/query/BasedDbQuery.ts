@@ -35,8 +35,8 @@ import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { LangCode, langCodesMap, LangName } from '@based/schema'
-import { FilterOpts } from './filter/operators.js'
+import { langCodesMap, LangName } from '@based/schema'
+import { FilterOpts } from './filter/types.js'
 
 export { QueryByAliasObj }
 

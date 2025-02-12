@@ -12,7 +12,7 @@ import {
   MODE_AND_FIXED,
   MODE_DEFAULT,
   MODE_OR_FIXED,
-} from './operators.js'
+} from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
 
 // -------------------------------------------
