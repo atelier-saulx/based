@@ -37,7 +37,7 @@ selvaTypeMap[TIMESTAMP] = 1
 selvaTypeMap[CREATED] = 1
 selvaTypeMap[UPDATED] = 1
 selvaTypeMap[NUMBER] = 4
-selvaTypeMap[CARDINALITY] = 5
+selvaTypeMap[CARDINALITY] = 11
 selvaTypeMap[INT8] = 20
 selvaTypeMap[UINT8] = 6
 selvaTypeMap[INT16] = 21
@@ -101,7 +101,7 @@ const propDefBuffer = (
     }
 
     return [...buf.values(), ...eschema]
-  } else if (type === STRING || type == BINARY) {
+  } else if (type === STRING || type == BINARY || type === CARDINALITY) {
     return [selvaType, prop.len < 50 ? prop.len : 0]
   } else {
     return [selvaType]

@@ -2,7 +2,7 @@ import { skip } from 'node:test'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test.skip('hll', async (t) => {
+await test('hll', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
