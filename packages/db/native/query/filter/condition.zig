@@ -105,10 +105,7 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         false,
         op,
         prop,
-        if (prop != Prop.VECTOR)
-            value[0 .. value.len - 4]
-        else
-            value,
+        value,
         query,
         mainLen,
         dbCtx,

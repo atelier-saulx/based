@@ -48,11 +48,15 @@ inline fn hasInner(
     if (prop == Prop.VECTOR) {
         return like.vector(read([]f32, value, 0), q);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+        var v = value;
         // faster check
         if (prop == Prop.TEXT) {
             // last byte is lang
             // [string, lang]
             q = query[0 .. query.len - 1];
+            v = v[0 .. v.len - 4];
+        } else {
+            v = v[0 .. v.len - 4];
         }
         if (value[1] == 1) {
             if (!decompress(void, orCompare(isOr, compare).func, q, value, dbCtx, undefined)) {

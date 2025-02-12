@@ -453,7 +453,7 @@ await test('has normalized compressed', async (t) => {
         .range(0, 1e3)
         .get()
     ).length,
-    0,
+    1e3,
   )
 })
 
