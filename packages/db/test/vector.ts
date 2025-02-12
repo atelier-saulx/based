@@ -88,15 +88,26 @@ await test('query by vector', async (t) => {
 
   const r1 = await db
     .query('data')
+    .include('name')
     .filter('a', '=', new Float32Array(data['car'].slice(0, 4)))
     .get()
-  console.log(r1)
+    .toObject()
+  deepEqual(r1[0].name, 'car')
 
-  // const r2 = await db.query('data').filter('a', '=', new Float32Array(data['car'])).get()
-  // console.log(r2)
+  const r2 = await db.query('data')
+    .include('name')
+    .filter('a', '=', new Float32Array(data['car']))
+    .get()
+    .toObject()
+  deepEqual(r2.length, 0)
 
-  // const r3 = await db.query('data').filter('a', '=', new Float32Array([...data['car'], 1])).get()
-  // console.log(r3)
+  const r3 = await db
+    .query('data')
+    .include('name')
+    .filter('a', '=', new Float32Array([...data['car'], 1]))
+    .get()
+    .toObject()
+  deepEqual(r3.length, 0)
 })
 
 await test('vector like', async (t) => {
@@ -110,10 +121,9 @@ await test('vector like', async (t) => {
     .get()
     .toObject()
   deepEqual(
+    res,
     [
-      { id: 5, name: 'building' },
       { id: 6, name: 'car' },
     ],
-    res,
   )
 })

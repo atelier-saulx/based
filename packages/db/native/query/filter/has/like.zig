@@ -14,5 +14,5 @@ pub fn str(value: []const u8, query: []const u8) bool {
 
 pub fn vector(value: []const f32, query: []const f32) bool {
     const x = vec.sc(value, query) catch return false;
-    return x < 0.5;
+    return @abs(x) < 0.5;
 }
