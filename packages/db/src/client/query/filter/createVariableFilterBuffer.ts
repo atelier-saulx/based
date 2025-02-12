@@ -23,6 +23,8 @@ import {
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
+import { parseFilterValue } from './parseFilterValue.js'
+import { crc32 } from '../../crc32.js'
 
 const DEFAULT_SCORE = Buffer.from(new Float32Array([0.5]).buffer)
 
@@ -128,14 +130,30 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== ALIAS &&
         prop.typeIndex !== VECTOR
       ) {
-        // 17 crc32 check
-        buf = createFixedFilterBuffer(
-          prop,
-          8,
-          { operation: EQUAL_CRC32, type: ctx.type, opts: ctx.opts },
-          val,
-          false,
-        )
+        if (prop.typeIndex === TEXT) {
+          buf = writeVarFilter(
+            mode,
+            Buffer.concat([
+              Buffer.from(
+                new Uint32Array([crc32(val.slice(0, -1)), val.byteLength - 1])
+                  .buffer,
+              ),
+              Buffer.from(new Uint8Array([val[val.length - 1]]).buffer),
+            ]),
+            ctx,
+            prop,
+            0,
+            0,
+          )
+        } else {
+          buf = createFixedFilterBuffer(
+            prop,
+            8,
+            { operation: EQUAL_CRC32, type: ctx.type, opts: ctx.opts },
+            val,
+            false,
+          )
+        }
       } else {
         buf = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }

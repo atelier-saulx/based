@@ -260,4 +260,21 @@ await test('text', async (t) => {
     ],
     'Exact match on fi',
   )
+
+  result = await db
+    .query('dialog')
+    .i18n('fi')
+    .include('id', 'fun')
+    .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+    .get()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: 'mr snurf in finland!',
+      },
+    ],
+    'Exact match on fi #2',
+  )
 })
