@@ -9,8 +9,6 @@ export async function upsert(
   obj: Record<string, any>,
   opts?: ModifyOpts,
 ) {
-  console.log(opts)
-
   const tree = db.schemaTypesParsed[type].tree
   let q: BasedDbQuery
   let id = ''
@@ -31,7 +29,6 @@ export async function upsert(
   }
 
   if (db.upserting.has(id)) {
-    console.log('DERP', db.upserting)
     const store = db.upserting.get(id)
     store.o = { ...store.o, ...obj }
     return store.p
