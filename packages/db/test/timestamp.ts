@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('timestamp', async (t) => {
@@ -25,6 +26,7 @@ await test('timestamp', async (t) => {
             type: 'timestamp',
             on: 'update',
           },
+          mrDerp: 'timestamp',
         },
       },
     },
@@ -58,4 +60,32 @@ await test('timestamp', async (t) => {
   if (!(res[0].updatedAt > res[0].createdAt)) {
     throw 'updatedAt should be updated after update'
   }
+
+  const measure = async (v: number) => {
+    deepEqual(
+      Math.floor((await db.query('user', youzi).get().toObject()).mrDerp / 10),
+      Math.floor(v / 10),
+    )
+  }
+
+  await db.update('user', youzi, {
+    name: 'youzi1',
+    mrDerp: 'now + 1h',
+  })
+
+  await measure(Date.now() + 60 * 1e3 * 60)
+
+  await db.update('user', youzi, {
+    name: 'youzi1',
+    mrDerp: 'now + 1m',
+  })
+
+  await measure(Date.now() + 60 * 1e3)
+
+  await db.update('user', youzi, {
+    name: 'youzi1',
+    mrDerp: '01/02/2020',
+  })
+
+  await measure(new Date('01/02/2020').valueOf())
 })
