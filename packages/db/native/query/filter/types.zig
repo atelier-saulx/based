@@ -49,4 +49,11 @@ pub const Meta = enum(u8) {
     _,
 };
 
+pub const VectorFn = enum(u8) {
+    dotProduct = 0,
+    manhattanDistance = 1,
+    cosineSimilarity = 2,
+    euclideanDistance = 3,
+};
+
 pub const ConditionsResult = std.meta.Tuple(&.{ usize, bool });

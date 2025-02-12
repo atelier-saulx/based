@@ -15,9 +15,15 @@ import {
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
   FilterCtx,
+  VECTOR_DOT_PRODUCT,
+  VECTOR_EUCLIDEAN_DIST,
+  VECTOR_COSTINE_SIMILARITY,
+  VECTOR_MANHATTAN_DIST,
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
+
+const DEFAULT_SCORE = Buffer.from(new Float32Array([0.5]).buffer)
 
 const parseValue = (
   value: any,
@@ -29,6 +35,26 @@ const parseValue = (
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
+
+  if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
+    if (!(val instanceof ArrayBuffer)) {
+      throw new Error('Vector should be an arrayBuffer')
+    }
+    const optsFn = ctx.opts.fn
+    let fn = VECTOR_COSTINE_SIMILARITY
+    if (optsFn === 'dotProduct') {
+      fn = VECTOR_DOT_PRODUCT
+    } else if (optsFn === 'euclideanDistance') {
+      fn = VECTOR_EUCLIDEAN_DIST
+    } else if (optsFn === 'manhattanDistance') {
+      fn = VECTOR_MANHATTAN_DIST
+    }
+    const score = ctx.opts.score
+      ? Buffer.from(new Float32Array([ctx.opts.score]).buffer)
+      : DEFAULT_SCORE
+    val = Buffer.concat([Buffer.from(val), Buffer.from([fn]), score])
+  }
+
   if (
     val instanceof Uint8Array ||
     typeof value === 'string' ||

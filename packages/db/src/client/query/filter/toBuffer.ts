@@ -1,4 +1,3 @@
-import { debug } from '../debug.js'
 import { QueryDefFilter } from '../types.js'
 import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './types.js'
 
@@ -104,6 +103,7 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
+// TODO convert to UINT8ARRAY
 export const filterToBuffer = (conditions: QueryDefFilter) => {
   let result: Buffer
   if (conditions.size > 0) {
