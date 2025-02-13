@@ -1639,6 +1639,27 @@ struct SelvaNode *selva_fields_resolve_weak_reference(const struct SelvaDb *db, 
     return selva_find_node(te, weak_ref->dst_id);
 }
 
+struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    const struct SelvaFieldInfo *nfo;
+
+    if (fs->field >= fields->nr_fields) {
+        return nullptr;
+    }
+
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type != SELVA_FIELD_TYPE_STRING) {
+        return nullptr;
+    }
+
+    return nfo2p(fields, nfo);
+}
+
+struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    return selva_fields_get_selva_string2(&node->fields, fs);
+}
+
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     const struct SelvaFieldInfo *nfo;
