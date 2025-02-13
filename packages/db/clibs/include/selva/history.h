@@ -31,9 +31,17 @@ void selva_history_append(struct selva_history *hist, int64_t ts, node_id_t node
 SELVA_EXPORT
 void selva_history_fsync(struct selva_history *hist);
 
+/**
+ * Find a range.
+ * The returned buffer must be freed with selva_history_free_range().
+ */
 SELVA_EXPORT
 uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int64_t to, size_t *size_out);
 
+/**
+ * Find a range.
+ * The returned buffer must be freed with selva_history_free_range().
+ */
 SELVA_EXPORT
 uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from, int64_t to, node_id_t node_id, size_t *size_out);
 

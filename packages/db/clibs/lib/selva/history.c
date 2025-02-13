@@ -256,6 +256,7 @@ uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from
             n++;
         }
     }
+    buf = selva_realloc(buf, n * len);
 
     *size_out = n * len;
     return buf;
