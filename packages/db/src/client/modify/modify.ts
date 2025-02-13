@@ -74,7 +74,6 @@ function _modify(
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === CARDINALITY) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
-          console.log(`chamada para writeHll em modify.ts --->${err})`)
         } else if (type === VECTOR) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         }
