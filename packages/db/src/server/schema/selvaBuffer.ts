@@ -29,6 +29,7 @@ import {
   VECTOR,
   WEAK_REFERENCE,
   WEAK_REFERENCES,
+  JSON,
 } from './types.js'
 
 const selvaTypeMap = []
@@ -58,6 +59,7 @@ selvaTypeMap[ALIAS] = 18
 selvaTypeMap[ALIASES] = 19
 selvaTypeMap[BINARY] = 11
 selvaTypeMap[VECTOR] = 17
+selvaTypeMap[JSON] = 11
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
@@ -107,9 +109,15 @@ const propDefBuffer = (
     }
 
     return [...buf.values(), ...eschema]
-  } else if (type === STRING || type == BINARY || type === CARDINALITY) {
+  } else if (
+    type === STRING ||
+    type === BINARY ||
+    type === CARDINALITY ||
+    type === JSON
+  ) {
     return [selvaType, prop.len < 50 ? prop.len : 0]
-  } else {
+  }
+  {
     return [selvaType]
   }
 }

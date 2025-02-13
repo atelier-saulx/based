@@ -244,6 +244,11 @@ export type SchemaBinary = Prop<{
   format?: StringFormat
 }>
 
+export type SchemaJson = Prop<{
+  type: 'json'
+  default?: Record<string, any> | null
+}>
+
 export type SchemaBoolean = Prop<{
   type: 'boolean'
   default?: boolean
@@ -319,6 +324,7 @@ export type SchemaPropShorthand =
   | 'string'
   | 'alias'
   | 'text'
+  | 'json'
   | 'cardinality'
   | NumberType
   | EnumItem[]
@@ -347,6 +353,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaAlias
   | SchemaText
   | SchemaEnum
+  | SchemaJson
   | SchemaBinary
   | SchemaCardinality
   | SchemaVector
@@ -432,6 +439,7 @@ export type SchemaPropTypeMap = {
   alias: SchemaAlias
   enum: SchemaEnum
   text: SchemaText
+  json: SchemaJson
   set: SchemaSet
   binary: SchemaBinary
   cardinality: SchemaCardinality

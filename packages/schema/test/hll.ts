@@ -1,18 +1,18 @@
 import test from 'node:test'
 import { parse } from '@based/schema'
 
-test('hll', () => {
+test('cardinality', () => {
   parse({
     props: {
       myUniqueValuesCount: {
-        type: 'hll',
+        type: 'cardinality',
       },
     },
   })
 
   parse({
     props: {
-      myUniqueValuesCount: 'hll',
+      myUniqueValuesCount: 'cardinality',
     },
   })
 })

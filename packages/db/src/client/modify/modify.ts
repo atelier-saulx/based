@@ -11,6 +11,7 @@ import {
   CARDINALITY,
   VECTOR,
   MICRO_BUFFER,
+  JSON,
 } from '../../server/schema/types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
@@ -31,6 +32,7 @@ import { writeAlias } from './alias.js'
 import { writeHll } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { checkSubscriptionMarkers } from '../query/subscription/index.js'
+import { writeJson } from './json.js'
 
 function _modify(
   ctx: ModifyCtx,
@@ -77,6 +79,8 @@ function _modify(
           console.log(`chamada para writeHll em modify.ts --->${err})`)
         } else if (type === VECTOR) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
+        } else if (type === JSON) {
+          err = writeJson(val, ctx, schema, def, res.tmpId, mod)
         }
       } else if (overwrite) {
         if (ctx.len + 15 + schema.mainLen > ctx.max) {

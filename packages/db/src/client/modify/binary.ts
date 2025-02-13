@@ -13,6 +13,8 @@ export function getBuffer(value): Buffer {
     if (value.buffer instanceof ArrayBuffer) {
       return Buffer.from(value.buffer)
     }
+  } else if (typeof value === 'string') {
+    return Buffer.from(value)
   }
 }
 
