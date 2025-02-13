@@ -59,6 +59,7 @@ export const hasFields = (
   }
 }
 
+// also wrong
 export const hasField = (field: string): void => {
   // get schema see if it actualy has the value (can find it on def)
   if (!field) {

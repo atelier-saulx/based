@@ -185,9 +185,19 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === TEXT && q.lang == 0) {
         const lan = getEmptyField(prop, item)
-        for (const locale in q.schema.locales) {
-          if (!lan[locale]) {
-            lan[locale] = ''
+        const lang = q.include.langTextFields.get(prop.prop)
+        if (lang.has(0)) {
+          for (const locale in q.schema.locales) {
+            if (!lan[locale]) {
+              lan[locale] = ''
+            }
+          }
+        } else {
+          for (const code of lang) {
+            const locale = inverseLangMap.get(code)
+            if (!lan[locale]) {
+              lan[locale] = ''
+            }
           }
         }
       } else {

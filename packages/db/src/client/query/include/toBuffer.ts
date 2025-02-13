@@ -11,7 +11,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     !def.include.stringFields.size &&
     !def.include.props.size &&
     !def.references.size &&
-    !def.include.main.len
+    !def.include.main.len &&
+    !def.include.langTextFields.size
   ) {
     return result
   }
@@ -52,6 +53,25 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
         mainBuffer.writeUint16LE(len, i + 2)
         i += 4
         m += len
+      }
+    }
+  }
+
+  if (def.include.langTextFields.size) {
+    for (const [prop, langCode] of def.include.langTextFields.entries()) {
+      def.include.propsRead[prop] = 0
+      if (langCode.has(0)) {
+        const b = Buffer.allocUnsafe(2)
+        b[0] = prop
+        b[1] = 0
+        result.push(b)
+      } else {
+        for (const code of langCode) {
+          const b = Buffer.allocUnsafe(2)
+          b[0] = prop
+          b[1] = code
+          result.push(b)
+        }
       }
     }
   }

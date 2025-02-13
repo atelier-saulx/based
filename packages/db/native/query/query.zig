@@ -51,18 +51,12 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
-        .lang = @enumFromInt(q[q.len - 1]),
     };
-
-    q = q[0 .. q.len - 1];
 
     const queryType: QueryType = @enumFromInt(q[0]);
     const typeId: db.TypeId = read(u16, q, 1);
 
     if (queryType == QueryType.default) {
-
-        // ADD LANG
-
         const offset = read(u32, q, 3);
         const limit = read(u32, q, 7);
         const filterSize = read(u16, q, 11);
@@ -110,9 +104,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterSize = read(u16, q, idsSize + 15);
         const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
         const sortSize = read(u16, q, 17 + filterSize + idsSize);
-
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
-
         const searchIndex = 21 + idsSize + filterSize + sortSize;
         const searchSize = read(u16, q, 19 + idsSize + filterSize + sortSize);
         const include = q[searchIndex + searchSize .. q.len];
@@ -147,6 +139,5 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
-
     return results.createResultsBuffer(&ctx, env);
 }

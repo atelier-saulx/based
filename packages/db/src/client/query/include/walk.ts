@@ -5,20 +5,24 @@ import {
   REFERENCE,
   REFERENCES,
   SchemaPropTree,
+  TEXT,
 } from '../../../server/schema/types.js'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeFields, includeProp, includeAllProps } from './props.js'
 import { DbClient } from '../../index.js'
+import { langCodesMap } from '@based/schema'
 
 export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
   const path = f.split('.')
+
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
+
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(db, QueryDefType.Edge, {
@@ -50,7 +54,15 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       if (!t) {
         return
       }
-      if (
+
+      if (isPropDef(t) && t.typeIndex === TEXT) {
+        const langCode = langCodesMap.get(path[path.length - 1])
+        if (!def.include.langTextFields.has(t.prop)) {
+          def.include.langTextFields.set(t.prop, new Set())
+        }
+        def.include.langTextFields.get(t.prop).add(langCode)
+        return
+      } else if (
         isPropDef(t) &&
         (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
       ) {
@@ -73,6 +85,11 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
     const refDef = createOrGetRefQueryDef(db, def, prop)
     includeAllProps(refDef)
     return
+  } else if (prop.typeIndex === TEXT) {
+    if (!def.include.langTextFields.has(prop.prop)) {
+      def.include.langTextFields.set(prop.prop, new Set())
+    }
+    def.include.langTextFields.get(prop.prop).add(def.lang ?? 0)
   } else {
     includeProp(def, prop)
   }

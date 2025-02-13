@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('text', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -277,4 +277,27 @@ await test('text', async (t) => {
     ],
     'Exact match on fi #2',
   )
+
+  console.log('---------------------------------')
+  await db.update('dialog', mrSnurfInFinland, {
+    fun: { en: 'drink some tea!' },
+  })
+
+  result = await db
+    .query('dialog')
+    .include('fun.en')
+    .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+    .get()
+    .inspect()
+
+  // deepEqual(
+  //   result.toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       fun: { en: 'drink some tea!' },
+  //     },
+  //   ],
+  //   'Include specific language',
+  // )
 })

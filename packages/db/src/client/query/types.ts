@@ -65,6 +65,7 @@ export type QueryDefShared = {
     limit: number
   }
   include: {
+    langTextFields: Map<number, Set<LangCode>>
     stringFields: Set<string>
     props: Set<number>
     propsRead: { [propName: number]: number }
