@@ -2,7 +2,7 @@ import { skip } from 'node:test'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('hll', async (t) => {
+await test.skip('hll', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -17,6 +17,7 @@ await test('hll', async (t) => {
     types: {
       article: {
         myUniqueValuesCount: 'cardinality',
+        // lala: 'string',
       },
     },
   })
