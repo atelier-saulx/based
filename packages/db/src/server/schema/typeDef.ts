@@ -178,7 +178,11 @@ export const createSchemaTypeDef = (
         } else {
           stringFields++
         }
-      } else if (isPropType('text', schemaProp)) {
+      } else if (
+        isPropType('text', schemaProp) ||
+        isPropType('cardinality', schemaProp)
+      ) {
+        // TODO: maieutica
         stringFields++
       } else if (isPropType('vector', schemaProp)) {
         len = 4 * schemaProp.size

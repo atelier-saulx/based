@@ -42,6 +42,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
+    // [SELVA_FIELD_TYPE_CARDINALITY] = sizeof_field(struct SelvaFieldsAny, cardinality),
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
     [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
     [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
@@ -180,6 +181,19 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     }
 
     return s;
+}
+
+struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
+{
+
+    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+        return nullptr;
+    }
+
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
+
+    return get_mutable_string(fields, fs, nfo, initial_len);
 }
 
 static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
@@ -1926,47 +1940,6 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
     }
 
     destroy_fields(fields);
-}
-
-int selva_fields_get_string_crc2(const struct SelvaFields *fields, const struct SelvaFieldSchema *fs, uint32_t *crc)
-{
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-
-    if (nfo->type != SELVA_FIELD_TYPE_STRING) {
-        return SELVA_ENOENT;
-    }
-
-
-    *crc = selva_string_get_crc(nfo2p(fields, nfo));
-    return 0;
-}
-
-int selva_fields_get_string_crc(const struct SelvaNode *node, const struct SelvaFieldSchema *fs, uint32_t *crc)
-{
-    return selva_fields_get_string_crc2(&node->fields, fs, crc);
-}
-
-int selva_fields_get_text_crc2(const struct SelvaFields *fields, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc)
-{
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-    struct selva_string *s;
-
-    if (nfo->type != SELVA_FIELD_TYPE_STRING) {
-        return SELVA_ENOENT;
-    }
-
-    s = find_text_by_lang(nfo2p(fields, nfo), lang);
-    if (!s) {
-        return SELVA_ENOENT;
-    }
-
-    *crc = selva_string_get_crc(s);
-    return 0;
-}
-
-int selva_fields_get_text_crc(const struct SelvaNode *node, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc)
-{
-    return selva_fields_get_text_crc2(&node->fields, fs, lang, crc);
 }
 
 static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)

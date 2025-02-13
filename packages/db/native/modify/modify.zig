@@ -65,6 +65,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
                 ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
+
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;
                 } else {

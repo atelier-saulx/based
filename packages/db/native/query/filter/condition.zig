@@ -55,7 +55,7 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
 }
 
 pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u32, q, i + 5);
+    var valueSize = read(u32, q, i + 5);
     const start = read(u16, q, i + 1);
     const mainLen = read(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 9]);
@@ -70,23 +70,46 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         value = v;
     }
 
+    // if ((prop == Prop.STRING or prop == Prop.BINARY) and mainLen == 0) {
+    //     value = value[0 .. value.len - 4];
+    // }
+
     if (op == Op.equal) {
-        // maybe if we get here we dont rly need a crc32
-        if (prop == Prop.VECTOR) {
-            value = value[0 .. value.len - 4];
-        }
-        if (value.len != valueSize) {
-            pass = false;
-        } else {
+        if (prop == Prop.TEXT) {
+            // this is here and not in fixed check because it has the lang code at then end
+            valueSize = read(u32, query, 4);
+            if (value.len - 6 != valueSize) {
+                pass = false;
+            }
             var j: u32 = 0;
-            while (j < query.len) : (j += 1) {
-                if (value[j] != query[j]) {
+            while (j < 4) : (j += 1) {
+                if (value[value.len - 4 + j] != query[j]) {
                     pass = false;
                     break;
                 }
             }
+        } else {
+            if (value.len != valueSize) {
+                pass = false;
+            } else {
+                var j: u32 = 0;
+                while (j < query.len) : (j += 1) {
+                    if (value[j] != query[j]) {
+                        pass = false;
+                        break;
+                    }
+                }
+            }
         }
-    } else if (!has.has(false, op, prop, value, query, mainLen, dbCtx)) {
+    } else if (!has.has(
+        false,
+        op,
+        prop,
+        value,
+        query,
+        mainLen,
+        dbCtx,
+    )) {
         pass = false;
     }
     return .{ next, pass };

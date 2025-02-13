@@ -246,9 +246,12 @@ export type SchemaBoolean = Prop<{
   default?: boolean
 }>
 
-export type SchemaHll = Prop<{
-  type: 'hll'
-  default?: number
+export type SchemaCardinality = Prop<{
+  type: 'cardinality'
+  default?: string // receives a string which cardinality will be calculated
+  maxBytes?: number // should be fixed
+  mime?: Mime // TODO: check if this is correct
+  format?: NumberDisplay // when queried should return the count
 }>
 
 export type SchemaVector = Prop<{
@@ -313,7 +316,7 @@ export type SchemaPropShorthand =
   | 'string'
   | 'alias'
   | 'text'
-  | 'hll'
+  | 'cardinality'
   | NumberType
   | EnumItem[]
 
@@ -342,7 +345,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaText
   | SchemaEnum
   | SchemaBinary
-  | SchemaHll
+  | SchemaCardinality
   | SchemaVector
   | (isStrict extends true
       ? SchemaSet<SetItems<true>>
@@ -428,7 +431,7 @@ export type SchemaPropTypeMap = {
   text: SchemaText
   set: SchemaSet
   binary: SchemaBinary
-  hll: SchemaHll
+  cardinality: SchemaCardinality
   vector: SchemaVector
 } & Record<NumberType, SchemaNumber>
 

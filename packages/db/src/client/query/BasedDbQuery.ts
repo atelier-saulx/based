@@ -60,11 +60,11 @@ export class QueryBranch<T> {
     return this
   }
 
-  filter(
+  filter<O extends Operator>(
     field: string,
-    operator?: Operator | boolean,
+    operator?: O | boolean,
     value?: any,
-    opts?: FilterOpts,
+    opts?: FilterOpts<O>,
   ): T {
     const f = convertFilter(field, operator, value, opts)
     filter(this.db, this.def, f, this.def.filter)

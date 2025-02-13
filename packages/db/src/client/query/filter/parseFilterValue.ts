@@ -8,6 +8,7 @@ import {
   BOOLEAN,
   STRING,
   BINARY,
+  TEXT,
 } from '../../../server/schema/types.js'
 import { crc32 } from '../../crc32.js'
 import { convertToTimestamp } from '../../timestamp.js'
@@ -30,7 +31,11 @@ export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
 ): any => {
-  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
+  if (
+    prop.typeIndex === BINARY ||
+    prop.typeIndex === STRING ||
+    prop.typeIndex === TEXT
+  ) {
     const b = value instanceof Buffer ? value : Buffer.from(value)
     const buf = Buffer.allocUnsafe(8)
     buf.writeUint32LE(crc32(b), 0)

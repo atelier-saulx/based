@@ -8,7 +8,7 @@ import {
   TEXT,
   ALIAS,
   BINARY,
-  HLL,
+  CARDINALITY,
   VECTOR,
 } from '../../server/schema/types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
@@ -27,7 +27,7 @@ import { writeBinary } from './binary.js'
 import { setCursor } from './setCursor.js'
 import { appendFixedValue, writeFixedValue } from './fixed.js'
 import { writeAlias } from './alias.js'
-import { writeHll } from './hll.js'
+import { writeHll } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { checkSubscriptionMarkers } from '../query/subscription/index.js'
 
@@ -71,8 +71,9 @@ function _modify(
           err = writeBinary(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === ALIAS) {
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
-        } else if (type === HLL) {
+        } else if (type === CARDINALITY) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
+          console.log('chamada para writeHll em modify.ts')
         } else if (type === VECTOR) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         }

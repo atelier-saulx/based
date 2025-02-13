@@ -1,6 +1,7 @@
 import {
   SchemaAnyProp,
   SchemaBoolean,
+  SchemaCardinality,
   SchemaEnum,
   SchemaNumber,
   SchemaReferenceOneWay,
@@ -165,7 +166,7 @@ p.vector = propParser<SchemaVector>(
       expectFloat32Array(val)
     },
   },
-  0
+  0,
 )
 
 p.enum = propParser<SchemaEnum>(
@@ -504,7 +505,7 @@ p.alias = propParser<SchemaAlias>(
   0,
 )
 
-p.hll = propParser<SchemaAlias>(
+p.cardinality = propParser<SchemaAlias>(
   STUB,
   {
     default(val) {
