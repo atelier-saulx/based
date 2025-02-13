@@ -18,4 +18,10 @@ SELVA_EXPORT
 void selva_history_append(struct selva_history *hist, int64_t ts, node_id_t node_id, void *buf);
 
 SELVA_EXPORT
-void selva_history_sync(struct selva_history *hist);
+void selva_history_fsync(struct selva_history *hist);
+
+SELVA_EXPORT
+uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int64_t to, size_t *len_out);
+
+SELVA_EXPORT
+void selva_history_free_range(uint32_t *range);
