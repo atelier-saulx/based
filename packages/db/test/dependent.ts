@@ -56,20 +56,20 @@ await test('dependent', async (t) => {
     await db.query('session').include('*', 'user').get().toObject(),
   )
 
-  db.remove('user', user1)
+  // db.remove('user', user1)
 
-  // db.update('user', user1, {
-  //   session: null
-  // })
+  // // db.update('user', user1, {
+  // //   session: null
+  // // })
 
-  // db.update('user', user1, {
-  //   session: session1
-  // })
+  // // db.update('user', user1, {
+  // //   session: session1
+  // // })
 
-  await db.drain()
+  // await db.drain()
 
-  console.log(
-    '--->',
-    await db.query('session').include('*', 'user').get().toObject(),
-  )
+  // console.log(
+  //   '--->',
+  //   await db.query('session').include('*', 'user').get().toObject(),
+  // )
 })

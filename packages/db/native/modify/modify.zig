@@ -137,6 +137,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
         }
     }
+    std.debug.print("---------POWER----------\n\n", .{});
+    selva.selva_db_expire_tick(dbCtx.selva, 1);
 
     return null;
 }
