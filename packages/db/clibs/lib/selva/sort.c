@@ -26,6 +26,7 @@ struct SelvaSortItem {
     union {
         size_t data_len;
         int64_t i64;
+        float f;
         double d;
     };
     char data[];
@@ -37,6 +38,8 @@ struct SelvaSortCtx {
         RB_HEAD(SelvaSortTreeNone, SelvaSortItem) out_none;
         RB_HEAD(SelvaSortTreeAscI64, SelvaSortItem) out_ai64;
         RB_HEAD(SelvaSortTreeDescI64, SelvaSortItem) out_di64;
+        RB_HEAD(SelvaSortTreeAscFloat, SelvaSortItem) out_af;
+        RB_HEAD(SelvaSortTreeDescFloat, SelvaSortItem) out_df;
         RB_HEAD(SelvaSortTreeAscDouble, SelvaSortItem) out_ad;
         RB_HEAD(SelvaSortTreeDescDouble, SelvaSortItem) out_dd;
         RB_HEAD(SelvaSortTreeAscBuffer, SelvaSortItem) out_ab;
@@ -76,6 +79,19 @@ static int selva_sort_cmp_asc_i64(const struct SelvaSortItem * restrict a, const
 static int selva_sort_cmp_desc_i64(const struct SelvaSortItem * restrict a, const struct SelvaSortItem * restrict b)
 {
     return selva_sort_cmp_asc_i64(b, a);
+}
+
+static int selva_sort_cmp_asc_f(const struct SelvaSortItem * restrict a, const struct SelvaSortItem * restrict b)
+{
+    float x = a->d;
+    float y = b->d;
+
+    return x < y ? -1 : x > y ? 1 : selva_sort_cmp_none(a, b);
+}
+
+static int selva_sort_cmp_desc_f(const struct SelvaSortItem * restrict a, const struct SelvaSortItem * restrict b)
+{
+    return selva_sort_cmp_asc_f(b, a);
 }
 
 static int selva_sort_cmp_asc_d(const struct SelvaSortItem * restrict a, const struct SelvaSortItem * restrict b)
@@ -130,6 +146,8 @@ static int selva_sort_cmp_desc_text(const void * restrict a, const void * restri
 RB_GENERATE_STATIC(SelvaSortTreeNone, SelvaSortItem, _entry, selva_sort_cmp_none)
 RB_GENERATE_STATIC(SelvaSortTreeAscI64, SelvaSortItem, _entry, selva_sort_cmp_asc_i64)
 RB_GENERATE_STATIC(SelvaSortTreeDescI64, SelvaSortItem, _entry, selva_sort_cmp_desc_i64)
+RB_GENERATE_STATIC(SelvaSortTreeAscFloat, SelvaSortItem, _entry, selva_sort_cmp_asc_f)
+RB_GENERATE_STATIC(SelvaSortTreeDescFloat, SelvaSortItem, _entry, selva_sort_cmp_desc_f)
 RB_GENERATE_STATIC(SelvaSortTreeAscDouble, SelvaSortItem, _entry, selva_sort_cmp_asc_d)
 RB_GENERATE_STATIC(SelvaSortTreeDescDouble, SelvaSortItem, _entry, selva_sort_cmp_desc_d)
 RB_GENERATE_STATIC(SelvaSortTreeAscBuffer, SelvaSortItem, _entry, selva_sort_cmp_asc_buffer)
@@ -142,6 +160,8 @@ static bool use_mempool(enum SelvaSortOrder order)
     return (order == SELVA_SORT_ORDER_NONE ||
             order == SELVA_SORT_ORDER_I64_ASC ||
             order == SELVA_SORT_ORDER_I64_DESC ||
+            order == SELVA_SORT_ORDER_FLOAT_ASC ||
+            order == SELVA_SORT_ORDER_FLOAT_DESC ||
             order == SELVA_SORT_ORDER_DOUBLE_ASC ||
             order == SELVA_SORT_ORDER_DOUBLE_DESC);
 }
@@ -311,6 +331,22 @@ void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
     }
 }
 
+void selva_sort_insert_float(struct SelvaSortCtx *ctx, float d, const void *p)
+{
+    struct SelvaSortItem *item = create_item_d(ctx, d, p);
+
+    switch (ctx->order) {
+    case SELVA_SORT_ORDER_FLOAT_ASC:
+        (void)RB_INSERT(SelvaSortTreeAscFloat, &ctx->out_af, item);
+        break;
+    case SELVA_SORT_ORDER_FLOAT_DESC:
+        (void)RB_INSERT(SelvaSortTreeDescFloat, &ctx->out_df, item);
+        break;
+    default:
+        abort();
+    }
+}
+
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p)
 {
     struct SelvaSortItem *item = create_item_d(ctx, d, p);
@@ -383,6 +419,23 @@ static inline struct SelvaSortItem *find_i64(struct SelvaSortCtx *ctx, int64_t v
         return RB_FIND(SelvaSortTreeAscI64, &ctx->out_ai64, &find);
     case SELVA_SORT_ORDER_I64_DESC:
         return RB_FIND(SelvaSortTreeDescI64, &ctx->out_di64, &find);
+    default:
+        abort();
+    }
+}
+
+static inline struct SelvaSortItem *find_float(struct SelvaSortCtx *ctx, float f, const void *p)
+{
+    struct SelvaSortItem find = {
+        .p = p,
+        .f = f,
+    };
+
+    switch (ctx->order) {
+    case SELVA_SORT_ORDER_FLOAT_ASC:
+        return RB_FIND(SelvaSortTreeAscFloat, &ctx->out_af, &find);
+    case SELVA_SORT_ORDER_FLOAT_DESC:
+        return RB_FIND(SelvaSortTreeDescFloat, &ctx->out_df, &find);
     default:
         abort();
     }
@@ -468,6 +521,26 @@ void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
             break;
         case SELVA_SORT_ORDER_I64_DESC:
             (void)RB_REMOVE(SelvaSortTreeDescI64, &ctx->out_di64, item);
+            break;
+        default:
+            abort();
+        }
+
+        mempool_return(&ctx->mempool, item);
+    }
+}
+
+void selva_sort_remove_float(struct SelvaSortCtx *ctx, float f, const void *p)
+{
+    struct SelvaSortItem *item = find_float(ctx, f, p);
+
+    if (item) {
+        switch (ctx->order) {
+        case SELVA_SORT_ORDER_FLOAT_ASC:
+            (void)RB_REMOVE(SelvaSortTreeAscFloat, &ctx->out_af, item);
+            break;
+        case SELVA_SORT_ORDER_FLOAT_DESC:
+            (void)RB_REMOVE(SelvaSortTreeDescFloat, &ctx->out_df, item);
             break;
         default:
             abort();
@@ -651,6 +724,12 @@ static void reinsert_items(struct SelvaSortCtx *ctx)
                 case SELVA_SORT_ORDER_I64_DESC:
                     (void)RB_INSERT(SelvaSortTreeDescI64, &ctx->out_di64, item);
                     break;
+                case SELVA_SORT_ORDER_FLOAT_ASC:
+                    (void)RB_INSERT(SelvaSortTreeAscFloat, &ctx->out_af, item);
+                    break;
+                case SELVA_SORT_ORDER_FLOAT_DESC:
+                    (void)RB_INSERT(SelvaSortTreeDescFloat, &ctx->out_df, item);
+                    break;
                 case SELVA_SORT_ORDER_DOUBLE_ASC:
                     (void)RB_INSERT(SelvaSortTreeAscDouble, &ctx->out_ad, item);
                     break;
@@ -692,6 +771,16 @@ static int defrag_cmp_asc_i64(const void *a, const void *b)
 static int defrag_cmp_desc_i64(const void *a, const void *b)
 {
     return selva_sort_cmp_desc_i64(a, b);
+}
+
+static int defrag_cmp_asc_f(const void *a, const void *b)
+{
+    return selva_sort_cmp_asc_f(a, b);
+}
+
+static int defrag_cmp_desc_f(const void *a, const void *b)
+{
+    return selva_sort_cmp_desc_f(a, b);
 }
 
 static int defrag_cmp_asc_d(const void *a, const void *b)
@@ -737,6 +826,12 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
         break;
     case SELVA_SORT_ORDER_I64_DESC:
         cmp = defrag_cmp_desc_i64;
+        break;
+    case SELVA_SORT_ORDER_FLOAT_ASC:
+        cmp = defrag_cmp_asc_f;
+        break;
+    case SELVA_SORT_ORDER_FLOAT_DESC:
+        cmp = defrag_cmp_desc_f;
         break;
     case SELVA_SORT_ORDER_DOUBLE_ASC:
         cmp = defrag_cmp_asc_d;

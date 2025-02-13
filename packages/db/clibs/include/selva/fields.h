@@ -138,6 +138,17 @@ int selva_fields_get_mutable_string(
         struct selva_string **s)
     __attribute__((access(write_only, 4)));
 
+/*
+ * TODO prefix with selva_
+ * TODO Document diff to get_mutable_string
+ */
+SELVA_EXPORT
+struct selva_string *fields_ensure_string(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t initial_len);
+
 SELVA_EXPORT
 int selva_fields_reference_set(
         struct SelvaDb *db,
@@ -287,6 +298,12 @@ struct SelvaNode *selva_fields_resolve_weak_reference(
         const struct SelvaNodeWeakReference *weak_ref);
 
 SELVA_EXPORT
+struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
+
+SELVA_EXPORT
+struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+
+SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
@@ -330,6 +347,3 @@ void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *d
 
 SELVA_EXPORT
 selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
-
-SELVA_EXPORT
-struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len);

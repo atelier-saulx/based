@@ -38,7 +38,7 @@ await test('remove', async (t) => {
 
   await db.drain()
 
-  db.remove('user', simple)
+  db.delete('user', simple)
 
   await db.drain()
 
@@ -55,7 +55,7 @@ await test('remove', async (t) => {
     },
   ])
 
-  db.remove('nurp', nurp)
+  db.delete('nurp', nurp)
 
   await db.drain()
 

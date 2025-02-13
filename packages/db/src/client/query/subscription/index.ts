@@ -9,7 +9,7 @@ import {
   OnClose,
 } from './types.js'
 import { runSubscription } from './run.js'
-import { addSubscriptionMarkers, removeSubscriptionMarkers } from './markers.js'
+import { addSubscriptionMarkers, deleteSubscriptionMarkers } from './markers.js'
 
 export * from './types.js'
 export * from './markers.js'
@@ -54,7 +54,7 @@ export const subscribe = (
     sub.subs.delete(fn)
     if (sub.subs.size === 0) {
       q.db.subscriptions.delete(q.id)
-      removeSubscriptionMarkers(q)
+      deleteSubscriptionMarkers(q)
     }
     closed = true
     return q

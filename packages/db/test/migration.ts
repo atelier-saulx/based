@@ -46,7 +46,7 @@ await test('migration', async (t) => {
       age: i % 100,
     }
     if (prevId) {
-      data.friends = { add: [prevId] }
+      data.friends = { set: [prevId] }
     }
     prevId = db.create('user', data)
     if (i === amount) {

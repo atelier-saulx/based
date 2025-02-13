@@ -34,7 +34,7 @@ await test('hll', async (t) => {
 
   // await db.update('article', myArticle, {
   //   myUniqueValuesCount: {
-  //     add: ['myCoolValue'],
+  //     set: ['myCoolValue'],
   //   },
   // })
 

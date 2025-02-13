@@ -88,6 +88,12 @@ export function create(
 ): ModifyRes {
   const def = db.schemaTypesParsed[type]
 
+  if (!def) {
+    throw new Error(
+      `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.schemaTypesParsed).join(', ')}`,
+    )
+  }
+
   let id: number
   if ('id' in obj) {
     if (opts?.unsafe) {

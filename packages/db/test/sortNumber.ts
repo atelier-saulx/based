@@ -88,7 +88,7 @@ await test('numbers', async (t) => {
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
 
-  db.remove('example', 1)
+  db.delete('example', 1)
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
 
   await db

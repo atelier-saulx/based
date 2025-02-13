@@ -22,7 +22,6 @@ await test('copy', async (t) => {
         sequence: {
           ref: 'sequence',
           prop: 'pages',
-          dependent: true,
         },
       },
       sequence: {
@@ -31,7 +30,6 @@ await test('copy', async (t) => {
         edition: {
           ref: 'edition',
           prop: 'sequences',
-          dependent: true,
         },
       },
       edition: {
