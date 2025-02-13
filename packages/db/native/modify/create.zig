@@ -40,21 +40,28 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 6);
             if (data[5] == 0) {
                 // further call to hll_reset
-                selva.hll_init(hll, 14, false);
+                selva.hll_init(hll, 4, false);
             } else {
-                selva.hll_init(hll, 14, false);
+                selva.hll_init(hll, 4, false);
                 selva.hll_add(hll, data[5 .. len + 5].ptr);
             }
             var size: usize = undefined;
             const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hll, &size));
             const strU8: []u8 = bufPtr[0..size];
-            std.debug.print("{any} \n", .{strU8});
+            std.debug.print("x {any} \n", .{strU8});
             try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
+
+            // prova real
+            // const value = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+            // std.debug.print("y {any} \n", .{value});
+            // const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+
+            // const countDistinct = selva.hll_count(@ptrCast(provaReal));
+            // std.debug.print("Count Distinct = {any} \n", .{countDistinct});
 
             return len;
         },
         else => {
-            // std.debug.print("\nta entrando aqui ao invés -->: {any} {any}", .{ ctx.fieldSchema, ctx.fieldType });
             const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
