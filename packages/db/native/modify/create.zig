@@ -42,20 +42,20 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             // create hll convert to buffer memcopy into a field here
 
             // selva_fields_get_string(ctx.fieldSchema.?, "type", &type);
-            std.debug.print("\nput -->: {any}", .{data});
+            // std.debug.print("\nput -->: {any}", .{data});
 
             const len = read(u32, data, 0);
             if (data[5] == 0) {
                 // RESET IF ITS UPDATE NOT IMPORANT
-                std.debug.print("\nput HLL: {any}", .{data});
+                // std.debug.print("\nput HLL: {any}", .{data});
             } else {
                 //
-                std.debug.print("\nadd HLL: {any}", .{data});
+                // std.debug.print("\nadd HLL: {any}", .{data});
 
                 const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 6);
                 selva.hll_init(hll, 14, false);
 
-                std.debug.print("HLL --->: {any}", .{hll});
+                // std.debug.print("HLL --->: {any}", .{hll});
 
                 // selva.hll_add(hll, data[5 .. len + 5]);
                 // try db.writeField(ctx.db, hll, ctx.node.?, ctx.fieldSchema.?);

@@ -1,7 +1,39 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { setTimeout } from 'node:timers/promises'
+
+await test('update with payload.id', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      article: {
+        body: 'string',
+      },
+    },
+  })
+
+  const article1 = await db.create('article')
+  await db.update('article', {
+    id: article1,
+    body: 'xxx',
+  })
+
+  deepEqual(await db.query('article').get().toObject(), [
+    {
+      id: 1,
+      body: 'xxx',
+    },
+  ])
+})
 
 await test('update', async (t) => {
   const db = new BasedDb({

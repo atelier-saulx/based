@@ -348,7 +348,6 @@ pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
 }
 
 pub fn deleteNode(ctx: *DbCtx, typeEntry: Type, node: Node) !void {
-    std.debug.print("delete node: {any}", .{ctx});
     selva.selva_del_node(ctx.selva, typeEntry, node);
 }
 

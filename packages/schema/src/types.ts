@@ -220,6 +220,9 @@ export type SchemaNumber = Prop<{
   max?: number
   step?: number | 'any'
   display?: NumberDisplay
+  history?: {
+    interval: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
+  }
 }>
 
 export type SchemaString = Prop<{

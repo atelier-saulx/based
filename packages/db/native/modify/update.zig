@@ -47,7 +47,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.CARDINALITY => {
             // const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
 
-            std.debug.print("UPDATE THE HLL {any} \n", .{data});
+            // std.debug.print("UPDATE THE HLL {any} \n", .{data});
             return 0;
             // UPDATE THE HLL
         },

@@ -57,6 +57,15 @@ await test('dependent', async (t) => {
   )
 
   db.remove('user', user1)
+
+  // db.update('user', user1, {
+  //   session: null
+  // })
+
+  // db.update('user', user1, {
+  //   session: session1
+  // })
+
   await db.drain()
 
   console.log(
