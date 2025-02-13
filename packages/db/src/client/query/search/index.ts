@@ -23,7 +23,6 @@ const makeSize = (nr: number, u8: boolean = false) => {
 export const search = (def: QueryDef, q: string, s?: Search) => {
   let blocks = 0
   const x = q.toLowerCase().trim().split(' ')
-  console.log(x)
   const bufs = []
   for (const s of x) {
     if (s) {
