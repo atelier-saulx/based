@@ -18,6 +18,7 @@ const createEmptySharedDef = () => {
     range: { offset: 0, limit: 0 },
     lang: langCodesMap.get('none'),
     include: {
+      langTextFields: new Map(),
       stringFields: new Set(),
       props: new Set(),
       propsRead: {},

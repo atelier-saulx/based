@@ -25,7 +25,7 @@ export function writeAlias(
         if (ctx.len + 11 > ctx.max) {
           return RANGE_ERR
         }
-        setCursor(ctx, def, t.prop, parentId, modifyOp)
+        setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
         ctx.buf[ctx.len++] = DELETE
       }
     } else {
@@ -38,7 +38,7 @@ export function writeAlias(
         def.stringPropsCurrent[t.prop] = 2
         ctx.hasStringField++
       }
-      setCursor(ctx, def, t.prop, parentId, modifyOp)
+      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = modifyOp
       ctx.buf[ctx.len++] = size
       ctx.buf[ctx.len++] = size >>>= 8
@@ -51,7 +51,7 @@ export function writeAlias(
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, parentId, modifyOp)
+      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {

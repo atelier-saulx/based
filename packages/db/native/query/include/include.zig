@@ -135,15 +135,19 @@ pub fn getFields(
         }
 
         const valueLen = value.len;
+        const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
 
         if (valueLen == 0) {
+            if (prop == t.Prop.TEXT) {
+                includeIterator += 1;
+            }
             continue :includeField;
         }
 
-        const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
-
         if (prop == t.Prop.TEXT) {
-            var iter = db.textIterator(value, ctx.lang);
+            const code: t.LangCode = @enumFromInt(include[includeIterator]);
+            includeIterator += 1;
+            var iter = db.textIterator(value, code);
             while (iter.next()) |s| {
                 if (isEdge) {
                     size += (s.len + 6);

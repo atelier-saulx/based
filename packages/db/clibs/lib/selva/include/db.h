@@ -13,6 +13,7 @@
 #include "trx.h"
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
+#include "expire.h"
 #include "ref_save_map.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
@@ -47,20 +48,6 @@ struct SelvaNode {
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
-
-#if 0
-/* TODO Expiring nodes */
-#define SELVA_NODE_EXPIRE_EPOCH 1704067200000
-    /**
-     * Expiration timestamp for this node.
-     * 0 = never expires
-     * max_life = <epoch year>+(2^<bits>)/60/60/24/365
-     */
-    uint32_t expire;
-#endif
-#define SELVA_TO_EXPIRE(_ts_) ((uint32_t)((_ts_) - SELVA_HIERARCHY_EXPIRE_EPOCH))
-#define SELVA_FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
-#define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
 struct SelvaAlias {
     RB_ENTRY(SelvaAlias) _entry1;
@@ -116,6 +103,13 @@ struct SelvaTypeEntry {
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 } __attribute__((aligned(65536)));
 
+struct SelvaDbExpireToken {
+    struct SelvaExpireToken token;
+    struct SelvaDb *db;
+    node_id_t node_id;
+    node_type_t type;
+};
+
 /**
  * Database instance.
  */
@@ -134,21 +128,10 @@ struct SelvaDb {
         struct ref_save_map ref_save_map;
     } schema;
 
-#if 0
     /**
      * Expiring nodes.
      */
-    struct {
-        SVector list; /*!< List of all expiring nodes. */
-#define SELVA_NODE_EXPIRE_NEVER UINT32_MAX
-        int tim_id; /*!< 1 sec timer. */
-        /**
-         * Timestamp of the node expiring next.
-         * Set to SELVA_NODE_EXPIRE_NEVER if nothing is expiring.
-         */
-        uint32_t next;
-    } expiring;
-#endif
+    struct SelvaExpire expiring;
 };
 
 static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)

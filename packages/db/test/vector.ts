@@ -30,7 +30,8 @@ async function initDb(t) {
             type: 'vector',
             size: 5,
           },
-          name: { type: 'string' },
+          age: { type: 'uint32' },
+          name: { type: 'string', maxBytes: 10 },
         },
       },
     },
@@ -123,16 +124,18 @@ await test('vector like', async (t) => {
     db.create('data', {
       a: new Float32Array([i / 1e6, -0.4, 7.2, 19.6, 20.2]),
       name: 'bla ' + i,
+      age: i,
     })
   }
 
   await db.drain()
 
-  // await db
-  //   .query('data')
-  //   .include('name')
-  //   .range(0, 1e6)
-  //   .filter('name', 'has', 'x')
-  //   .get()
-  //   .inspect()
+  await db
+    .query('data')
+    .include('name')
+    .range(0, 1e6)
+    .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 1 })
+    // .filter('age', '>', 1e6 - 2)
+    .get()
+    .inspect()
 })

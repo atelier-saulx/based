@@ -10,5 +10,4 @@ pub const QueryCtx = struct {
     totalResults: usize,
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
-    lang: types.LangCode,
 };

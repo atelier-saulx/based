@@ -71,6 +71,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return len;
         },
         else => {
+            // std.debug.print("\nta entrando aqui ao invés -->: {any} {any}", .{ ctx.fieldSchema, ctx.fieldType });
             const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {

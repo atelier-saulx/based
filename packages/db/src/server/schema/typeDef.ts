@@ -165,7 +165,8 @@ export const createSchemaTypeDef = (
       if (
         isPropType('string', schemaProp) ||
         isPropType('alias', schemaProp) ||
-        isPropType('binary', schemaProp)
+        isPropType('binary', schemaProp) ||
+        isPropType('cardinality', schemaProp) // TODO: maieutica
       ) {
         if (typeof schemaProp === 'object') {
           if (schemaProp.maxBytes < 61) {

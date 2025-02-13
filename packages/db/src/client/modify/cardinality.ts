@@ -13,8 +13,7 @@ export function writeHll(
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  console.log(`writeHll: value = ${value}`)
-  if (typeof value !== 'string') {
+  if (!value) {
     return new ModifyError(t, value)
   }
 
@@ -64,7 +63,7 @@ function addHll(
   }
 
   console.log(`cardinality.ts value = ${value}`)
-  setCursor(ctx, def, t.prop, parentId, modifyOp)
+  setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = size
   ctx.buf[ctx.len++] = size >>>= 8

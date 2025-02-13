@@ -36,18 +36,20 @@ export function writeVector(
   }
   if (size === 0) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) { // TODO ???
+      if (ctx.len + 11 > ctx.max) {
+        // TODO ???
         return RANGE_ERR
       }
 
-      setCursor(ctx, schema, t.prop, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
-    if (ctx.len + 15 + size > ctx.max) { // TODO ???
+    if (ctx.len + 15 + size > ctx.max) {
+      // TODO ???
       return RANGE_ERR
     }
-    setCursor(ctx, schema, t.prop, parentId, modifyOp)
+    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
     ctx.buf[ctx.len++] = modifyOp
     write(value, ctx, t.len)
   }
