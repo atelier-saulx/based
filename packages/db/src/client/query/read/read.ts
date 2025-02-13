@@ -29,7 +29,7 @@ import {
   readUint16,
   readUint32,
 } from '../../bitWise.js'
-import { inverseLangMap, langCodesMap } from '@based/schema'
+import { inverseLangMap } from '@based/schema'
 
 export type Item = {
   id: number
@@ -214,7 +214,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
           }
         }
       } else {
-        addField(prop, '', item)
+        addField(prop, prop.typeIndex === JSON ? null : '', item)
       }
     }
   }
