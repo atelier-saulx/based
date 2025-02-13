@@ -52,7 +52,7 @@ await test.skip('analytics', async (t) => {
 
   await db.update('page', page, {
     clients: {
-      add: [
+      set: [
         {
           id: client,
           $viewers: { increment: 1 },
@@ -68,7 +68,7 @@ await test.skip('analytics', async (t) => {
 
   await db.update('page', page, {
     clients: {
-      add: [
+      set: [
         {
           id: client,
           $viewers: { increment: 1 },
@@ -84,7 +84,7 @@ await test.skip('analytics', async (t) => {
 
   await db.update('page', page, {
     clients: {
-      add: [
+      set: [
         {
           id: client,
           $viewers: { increment: -1 },
@@ -95,7 +95,7 @@ await test.skip('analytics', async (t) => {
 
   await db.update('page', page, {
     clients: {
-      add: [
+      set: [
         {
           id: client2,
           $viewers: { increment: 1 },

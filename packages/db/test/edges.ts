@@ -254,7 +254,7 @@ await test('multiple references', async (t) => {
   console.log('----------------')
   await db.update('article', lastArticle, {
     contributors: {
-      add: [
+      set: [
         {
           id: mrYur,
           $rating: 2,
