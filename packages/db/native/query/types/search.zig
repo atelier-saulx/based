@@ -37,7 +37,7 @@ pub fn createSearchCtx(comptime isVector: bool, offset: u32) QuerySearchCtx(isVe
     return .{
         .score = if (isVector) MaxVectorScore else MaxStringScore,
         .totalSearchResults = 0,
-        .scoreSortCtx = selva.selva_sort_init(if (isVector) selva.SELVA_SORT_ORDER_F32_ASC else selva.SELVA_SORT_ORDER_I64_ASC).?,
+        .scoreSortCtx = selva.selva_sort_init(if (isVector) selva.SELVA_SORT_ORDER_FLOAT_ASC else selva.SELVA_SORT_ORDER_I64_ASC).?,
         .i = 0,
         .correctedForOffset = offset,
     };
@@ -66,7 +66,7 @@ pub fn addToScore(
         if (ctx.score > searchCtx.score) {
             return;
         }
-        // do something
+        ctx.totalSearchResults += 1;
     } else {
         ctx.score = searchMethods.search(dbCtx, node, typeEntry, searchCtx);
         if (ctx.score > searchCtx.bad) {
@@ -78,8 +78,7 @@ pub fn addToScore(
     }
     ctx.i += 1;
     if (isVector) {
-
-        // do something...
+        selva.selva_sort_insert_float(ctx.scoreSortCtx, ctx.score, node);
     } else {
         const specialScore: i64 = (@as(i64, ctx.score) << 31) + ctx.i;
         selva.selva_sort_insert_i64(ctx.scoreSortCtx, @intCast(specialScore), node);
@@ -98,21 +97,31 @@ pub fn addToResults(
     selva.selva_sort_foreach_begin(sCtx.scoreSortCtx);
     var i: i64 = 0;
     while (!selva.selva_sort_foreach_done(sCtx.scoreSortCtx)) {
-        var sortKey: i64 = undefined;
-        const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(sCtx.scoreSortCtx, &sortKey));
+        var sortKey: if (isVector) f32 else i64 = undefined;
+        var sortedNode: db.Node = undefined;
+        if (isVector) {
+            sortedNode = @ptrCast(selva.selva_sort_foreach_float(sCtx.scoreSortCtx, &sortKey));
+        } else {
+            sortedNode = @ptrCast(selva.selva_sort_foreach_i64(sCtx.scoreSortCtx, &sortKey));
+        }
         const id = db.getNodeId(sortedNode);
         i += 1;
-        const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 31)));
-        const size = try getFields(
-            sortedNode,
-            ctx,
-            id,
-            typeEntry,
-            include,
-            null,
-            realScore,
-            false,
-        );
+        var size: usize = undefined;
+        if (isVector) {
+            std.debug.print("SNURP {any} \n", .{sortedNode});
+        } else {
+            const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 31)));
+            size = try getFields(
+                sortedNode,
+                ctx,
+                id,
+                typeEntry,
+                include,
+                null,
+                realScore,
+                false,
+            );
+        }
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
