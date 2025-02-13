@@ -238,7 +238,7 @@ export const resetSubscriptionMarkers = (db: DbClient) => {
   }
 }
 
-export const removeSubscriptionMarkers = (q: BasedDbQuery) => {
+export const deleteSubscriptionMarkers = (q: BasedDbQuery) => {
   // derp
-  console.log('remove markers!')
+  console.log('delete markers!')
 }

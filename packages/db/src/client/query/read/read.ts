@@ -120,7 +120,7 @@ const readMainValue = (
   }
   // 11: string
   else if (prop.typeIndex === STRING) {
-    // Also remove this default then (same as other string)
+    // Also delete this default then (same as other string)
     const len = result[index]
     if (len !== 0) {
       const str = readUtf8(result, index + 1, len)

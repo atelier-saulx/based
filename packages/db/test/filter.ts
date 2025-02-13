@@ -708,7 +708,7 @@ await test('or numerical', async (t) => {
 
   for (let i = 0; i < 10000; i++) {
     if (i % 2) {
-      db.remove('machine', 10000 + i)
+      db.delete('machine', 10000 + i)
     }
   }
   await db.drain()

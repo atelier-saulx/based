@@ -5,7 +5,7 @@ import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
 import { MICRO_BUFFER } from '../../server/schema/schema.js'
 
-export const remove = (db: DbClient, type: string, id: number): boolean => {
+export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
   const schema = db.schemaTypesParsed[type]
   const separate = schema.separate
@@ -14,7 +14,7 @@ export const remove = (db: DbClient, type: string, id: number): boolean => {
     const size = 12 + separate.length * 12
     if (ctx.len + size > ctx.max) {
       flushBuffer(db)
-      return remove(db, type, id)
+      return deleteFn(db, type, id)
     }
 
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
@@ -28,7 +28,7 @@ export const remove = (db: DbClient, type: string, id: number): boolean => {
   } else {
     if (ctx.len + 12 > ctx.max) {
       flushBuffer(db)
-      return remove(db, type, id)
+      return deleteFn(db, type, id)
     }
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
     ctx.buf[ctx.len++] = 4

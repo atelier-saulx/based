@@ -109,7 +109,7 @@ await test.skip('analytics', async (t) => {
     { depth: null },
   )
 
-  db.remove('_client', client2)
+  db.delete('_client', client2)
 
   await db.drain()
 

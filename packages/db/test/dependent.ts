@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
-import { italy } from './shared/examples.js'
+import { deepEqual } from './shared/assert.js'
 
 await test('dependent', async (t) => {
   const db = new BasedDb({
@@ -14,47 +13,85 @@ await test('dependent', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  const schema = {
     types: {
-      session: {
-        props: {
-          name: 'string',
-          user: {
-            ref: 'user',
-            prop: 'sessions',
-            dependent: true,
-          },
+      show: {
+        name: 'string',
+      },
+      edition: {
+        name: 'string',
+        show: {
+          ref: 'show',
+          prop: 'editions',
+          dependent: true,
         },
       },
-      user: {
-        props: {
-          name: 'string',
-          sessions: {
-            items: {
-              ref: 'session',
-              prop: 'user',
-            },
-          },
+      sequence: {
+        name: 'string',
+        edition: {
+          ref: 'edition',
+          prop: 'sequences',
+          dependent: true,
+        },
+      },
+      page: {
+        name: 'string',
+        sequence: {
+          ref: 'sequence',
+          prop: 'pages',
+          dependent: true,
+        },
+      },
+      item: {
+        name: 'string',
+        page: {
+          ref: 'page',
+          prop: 'items',
+          dependent: true,
         },
       },
     },
+  } as const
+
+  await db.putSchema(schema)
+
+  const showId = await db.create('show', {
+    editions: [
+      db.create('edition', {
+        sequences: [
+          db.create('sequence', {
+            pages: [db.create('page', { items: [db.create('item')] })],
+          }),
+        ],
+      }),
+    ],
   })
 
-  const user1 = db.create('user', {
-    name: 'youzi',
-  })
+  console.dir(
+    await db
+      .query('show')
+      .include('editions.sequences.pages.items')
+      .get()
+      .toObject(),
+    { depth: null },
+  )
 
-  db.create('session', {
-    name: 'youzi session',
-    user: user1,
-  })
+  db.delete('show', showId)
 
   await db.drain()
 
-  db.remove('user', user1)
+  console.log('-----------------------------')
 
-  await db.drain()
+  console.dir(
+    await db
+      .query('show')
+      .include('editions.sequences.pages.items')
+      .get()
+      .toObject(),
+    { depth: null },
+  )
 
-  deepEqual(await db.query('session').get().toObject(), [])
-  deepEqual(await db.query('user').get().toObject(), [])
+  for (const type in schema.types) {
+    console.log(type, await db.query(type).get().toObject())
+  }
 })

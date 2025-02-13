@@ -67,8 +67,13 @@ export class BasedDb {
     return this.client.upsert.apply(this.client, arguments)
   }
 
-  remove: DbClient['remove'] = function () {
-    return this.client.remove.apply(this.client, arguments)
+  delete: DbClient['delete'] = function () {
+    return this.client.delete.apply(this.client, arguments)
+  }
+
+  remove: DbClient['delete'] = function () {
+    console.warn('WARNING: db.remove() is deprecated. Use db.delete() instead')
+    return this.client.delete.apply(this.client, arguments)
   }
 
   query: DbClient['query'] = function () {

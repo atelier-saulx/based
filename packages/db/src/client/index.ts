@@ -11,7 +11,7 @@ import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
-import { remove } from './modify/remove.js'
+import { deleteFn } from './modify/delete.js'
 import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
 import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
@@ -265,8 +265,8 @@ export class DbClient {
     return upsert(this, type, obj, opts)
   }
 
-  remove(type: string, id: number | ModifyRes) {
-    return remove(this, type, typeof id === 'number' ? id : id.tmpId)
+  delete(type: string, id: number | ModifyRes) {
+    return deleteFn(this, type, typeof id === 'number' ? id : id.tmpId)
   }
 
   destroy() {

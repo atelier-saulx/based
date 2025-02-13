@@ -197,7 +197,7 @@ await test('delete a range', async (t) => {
   await db.drain()
   db.server.updateMerkleTree()
   const first = fun()
-  db.remove('user', 100_001)
+  db.delete('user', 100_001)
   await db.drain()
   db.server.updateMerkleTree()
   const second = fun()
