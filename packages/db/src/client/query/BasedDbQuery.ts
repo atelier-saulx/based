@@ -73,7 +73,13 @@ export class QueryBranch<T> {
     return this
   }
 
-  search(query: string, ...fields: Search[]): T {
+  search(query: string | ArrayBufferView, ...fields: Search[]): T {
+    const isVector = ArrayBuffer.isView(query)
+    if (isVector) {
+      // @ts-ignore
+      return this
+    }
+
     if (fields.length) {
       if (fields.length === 1) {
         search(this.def, query, fields[0])

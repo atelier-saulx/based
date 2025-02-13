@@ -48,6 +48,7 @@ export type QueryDefFilter = {
 export type QueryDefSearch = {
   size: number
   query: Buffer
+  isVector: boolean
   fields: { weight: number; field: number; start: number; lang: LangCode }[]
 }
 
