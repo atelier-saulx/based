@@ -66,7 +66,6 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     let prop = def.props[key]
     let lang = def.lang
     if (!prop) {
-      console.log({ prop })
       if (key.includes('.')) {
         const k = key.split('.')
         prop = def.props[k.slice(0, -1).join('.')]

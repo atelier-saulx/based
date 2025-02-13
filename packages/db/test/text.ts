@@ -343,28 +343,80 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('finland', 'fun')
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        fun: {
+          en: 'hello its the united kingdom',
+          fi: 'hello its finland',
+        },
+        $searchScore: 0,
+      },
+    ],
+    'Search for finland',
+  )
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
     .search('kingdom', 'fun')
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        fun: {
+          en: 'hello its the united kingdom',
+          fi: 'hello its finland',
+        },
+        $searchScore: 0,
+      },
+    ],
+    'Search for kingdom',
+  )
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
     .search('snurp', 'fun')
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: {
+          en: 'its mr derp!',
+          fi: 'its mr snurp!',
+        },
+        $searchScore: 0,
+      },
+    ],
+    'Search for snurp',
+  )
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: {
+          en: 'its mr derp!',
+          fi: 'its mr snurp!',
+        },
+        $searchScore: 0,
+      },
+    ],
+    'Search for derp',
+  )
 
   result = await db
     .query('dialog')
@@ -372,7 +424,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
-    .inspect()
+  deepEqual(result.toObject(), [], 'Search for derp with i18n set to fi')
 
   result = await db
     .query('dialog')
@@ -380,26 +432,35 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
-    .inspect()
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: 'its mr derp!',
+        $searchScore: 0,
+      },
+    ],
+    'Search for derp with i18n set to en',
+  )
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
     .search('derp', 'fun.en')
     .get()
-    .inspect()
-  // deepEqual(
-  //   result.toObject(),
-  //   [
-  //     {
-  //       id: dialogId,
-  //       fun: {
-  //         en: '1',
-  //         it: italy,
-  //         fi: '3',
-  //       },
-  //     },
-  //   ],
-  //   'Search',
-  // )
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: {
+          en: 'its mr derp!',
+          fi: 'its mr snurp!',
+        },
+        $searchScore: 0,
+      },
+    ],
+    'Search for derp in fun.en',
+  )
 })
