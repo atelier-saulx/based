@@ -1,4 +1,4 @@
-import { STRING } from '../../../server/schema/types.js'
+import { STRING, TEXT } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
 
 export type Search =
@@ -22,6 +22,7 @@ const makeSize = (nr: number, u8: boolean = false) => {
 export const search = (def: QueryDef, q: string, s?: Search) => {
   let blocks = 0
   const x = q.toLowerCase().trim().split(' ')
+  console.log(x)
   const bufs = []
   for (const s of x) {
     if (s) {
@@ -49,7 +50,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     for (const k in def.props) {
       const prop = def.props[k]
       // if title / name / headline add ROLE:
-      if (prop.typeIndex === STRING) {
+      if (prop.typeIndex === STRING || prop.typeIndex === TEXT) {
         s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
@@ -66,14 +67,16 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     if (!prop) {
       throw new Error('field ' + key + ' does not exist on type')
     }
-    if (prop.typeIndex !== STRING) {
-      throw new Error('Can only search trough strings')
+    if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
+      throw new Error('Can only search trough strings / text')
     }
-    def.search.size += 4
+    // add lang
+    def.search.size += 5
     def.search.fields.push({
       weight: s[key],
+      lang: def.lang,
       field: prop.prop,
-      start: prop.start ?? 0,
+      start: prop.start ?? 0, // also need lang ofc if you have start
     })
   }
 }
@@ -86,11 +89,12 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   search.fields.sort((a, b) => {
     return a.weight - b.weight
   })
-  for (let i = 0; i < search.fields.length * 4; i += 4) {
-    const f = search.fields[i / 4]
+  for (let i = 0; i < search.fields.length * 5; i += 5) {
+    const f = search.fields[i / 5]
     result[i + offset] = f.field
     result[i + 1 + offset] = f.weight
     result.writeUInt16LE(f.start, i + 2 + offset)
+    result[i + 4 + offset] = f.lang
   }
   return result
 }
