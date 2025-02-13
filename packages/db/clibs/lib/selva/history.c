@@ -110,6 +110,13 @@ int selva_history_init(const char *pathname, size_t bsize, struct selva_history 
     return 0;
 }
 
+void selva_history_destroy(struct selva_history *hist)
+{
+    selva_history_fsync(hist);
+    fclose(hist->file);
+    selva_free(hist);
+}
+
 void selva_history_append(struct selva_history *hist, int64_t ts, node_id_t node_id, void *buf)
 {
     struct selva_history_event event = {
