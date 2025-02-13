@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('json', async (t) => {
@@ -21,7 +22,8 @@ await test('json', async (t) => {
     },
   })
 
-  const jsonDerulo = await db.create('jsonDerulo', {
+  const derulo = {
+    name: 'jason',
     myJson: {
       bllz: {
         to: {
@@ -29,9 +31,14 @@ await test('json', async (t) => {
         },
       },
     },
-  })
+  }
 
-  await db.drain()
+  await db.create('jsonDerulo', derulo)
 
-  console.log(await db.query('jsonDerulo').get().toObject())
+  deepEqual(await db.query('jsonDerulo').get().toObject(), [
+    {
+      id: 1,
+      ...derulo,
+    },
+  ])
 })
