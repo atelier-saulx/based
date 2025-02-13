@@ -71,6 +71,10 @@ export class BasedDb {
     return this.client.delete.apply(this.client, arguments)
   }
 
+  expire: DbClient['expire'] = function () {
+    return this.client.expire.apply(this.client, arguments)
+  }
+
   remove: DbClient['delete'] = function () {
     console.warn('WARNING: db.remove() is deprecated. Use db.delete() instead')
     return this.client.delete.apply(this.client, arguments)

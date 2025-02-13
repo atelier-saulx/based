@@ -19,6 +19,7 @@ import { deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
+import { expire } from './modify/expire.js'
 
 export type DbClientHooks = {
   putSchema(
@@ -267,6 +268,10 @@ export class DbClient {
 
   delete(type: string, id: number | ModifyRes) {
     return deleteFn(this, type, typeof id === 'number' ? id : id.tmpId)
+  }
+
+  expire(type: string, id: number | ModifyRes, seconds: number) {
+    return expire(this, type, typeof id === 'number' ? id : id.tmpId, seconds)
   }
 
   destroy() {

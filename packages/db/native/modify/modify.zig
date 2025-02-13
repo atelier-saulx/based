@@ -131,6 +131,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
                 i += try increment(&ctx, operation, op) + 1;
             },
+            types.ModOp.EXPIRE => {
+                selva.selva_expire_node(dbCtx.selva, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+                i += 4;
+            },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });
                 break;
@@ -138,7 +142,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         }
     }
 
-    selva.selva_db_expire_tick(dbCtx.selva, 1);
+    selva.selva_db_expire_tick(dbCtx.selva, std.time.timestamp());
 
     return null;
 }

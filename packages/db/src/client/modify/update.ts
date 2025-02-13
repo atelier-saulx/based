@@ -81,6 +81,12 @@ export const update = (
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
 
+  if (!def) {
+    throw new Error(
+      `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.schemaTypesParsed).join(', ')}`,
+    )
+  }
+
   const ctx = db.modifyCtx
   const pos = ctx.len
   const res = new ModifyState(

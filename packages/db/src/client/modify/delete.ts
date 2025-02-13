@@ -1,4 +1,3 @@
-import { BasedDb } from '../../index.js'
 import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
