@@ -1,3 +1,4 @@
+import { langCodesMap } from '@based/schema'
 import { STRING, TEXT } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
 
@@ -63,18 +64,29 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   }
 
   for (const key in s) {
-    const prop = def.props[key]
+    let prop = def.props[key]
+    let lang = def.lang
     if (!prop) {
-      throw new Error('field ' + key + ' does not exist on type')
+      console.log({ prop })
+      if (key.includes('.')) {
+        const k = key.split('.')
+        prop = def.props[k.slice(0, -1).join('.')]
+        if (prop && prop.typeIndex === TEXT) {
+          lang = langCodesMap.get(k[k.length - 1])
+        } else {
+          throw new Error('field ' + key + ' does not exist on type')
+        }
+      } else {
+        throw new Error('field ' + key + ' does not exist on type')
+      }
     }
     if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
       throw new Error('Can only search trough strings / text')
     }
-    // add lang
     def.search.size += 5
     def.search.fields.push({
       weight: s[key],
-      lang: def.lang,
+      lang: lang,
       field: prop.prop,
       start: prop.start ?? 0, // also need lang ofc if you have start
     })
