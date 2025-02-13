@@ -250,6 +250,7 @@ export class DbClient {
         opts,
       )
     }
+
     // else it is rootProps
     return update(
       this,

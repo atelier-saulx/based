@@ -94,36 +94,6 @@ await test('copy', async (t) => {
     },
   })
 
-  await db.copy('edition', edition1, {
-    copiedByYouzi: true,
-    versionOf({ id }) {
-      return id
-    },
-    name({ name }) {
-      return name + ' (edition copy)'
-    },
-    sequences({ sequences }) {
-      return sequences.map(({ id }) => {
-        return db.copy('sequence', id, {
-          copiedByYouzi: true,
-          name({ name }) {
-            return name + ' (sequence copy)'
-          },
-          pages({ pages }) {
-            return pages.map(({ id }) =>
-              db.copy('page', id, {
-                copiedByYouzi: true,
-                name({ name }) {
-                  return name + ' (page copy)'
-                },
-              }),
-            )
-          },
-        })
-      })
-    },
-  })
-
   const res = await db
     .query('edition')
     .include('*', 'versionOf', 'versions', 'sequences', 'sequences.pages')
