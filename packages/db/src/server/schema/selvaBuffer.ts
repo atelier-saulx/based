@@ -66,7 +66,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(prop: PropDef): number {
-  return prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x0
+  return prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
 }
 
 const propDefBuffer = (
@@ -86,7 +86,6 @@ const propDefBuffer = (
     const buf: Buffer = Buffer.allocUnsafe(9)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
-    console.log('POWERFUL STUFF')
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags

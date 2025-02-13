@@ -44,32 +44,17 @@ await test('dependent', async (t) => {
     name: 'youzi',
   })
 
-  const session1 = db.create('session', {
+  db.create('session', {
     name: 'youzi session',
     user: user1,
   })
 
   await db.drain()
 
-  console.log(
-    '--->',
-    await db.query('session').include('*', 'user').get().toObject(),
-  )
+  db.remove('user', user1)
 
-  // db.remove('user', user1)
+  await db.drain()
 
-  // // db.update('user', user1, {
-  // //   session: null
-  // // })
-
-  // // db.update('user', user1, {
-  // //   session: session1
-  // // })
-
-  // await db.drain()
-
-  // console.log(
-  //   '--->',
-  //   await db.query('session').include('*', 'user').get().toObject(),
-  // )
+  deepEqual(await db.query('session').get().toObject(), [])
+  deepEqual(await db.query('user').get().toObject(), [])
 })
