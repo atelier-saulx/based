@@ -288,16 +288,118 @@ await test('simple', async (t) => {
     .include('fun.en')
     .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
     .get()
+
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 2,
+        fun: { en: 'drink some tea!' },
+      },
+    ],
+    'Include specific language',
+  )
+})
+
+await test('search', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    locales: {
+      en: {},
+      fi: { fallback: ['en'] },
+    },
+    types: {
+      dialog: {
+        props: {
+          fun: {
+            type: 'text',
+          },
+        },
+      },
+    },
+  })
+
+  await db.create('dialog', {
+    fun: { en: 'hello its the united kingdom', fi: 'hello its finland' },
+  })
+
+  await db.create('dialog', {
+    fun: { en: 'its mr derp!', fi: 'its mr snurp!' },
+  })
+
+  await db.drain()
+
+  let result = await db
+    .query('dialog')
+    .include('id', 'fun')
+    .search('finland', 'fun')
+    .get()
     .inspect()
 
+  result = await db
+    .query('dialog')
+    .include('id', 'fun')
+    .search('kingdom', 'fun')
+    .get()
+    .inspect()
+
+  result = await db
+    .query('dialog')
+    .include('id', 'fun')
+    .search('snurp', 'fun')
+    .get()
+    .inspect()
+
+  result = await db
+    .query('dialog')
+    .include('id', 'fun')
+    .search('derp', 'fun')
+    .get()
+    .inspect()
+
+  result = await db
+    .query('dialog')
+    .i18n('fi')
+    .include('id', 'fun')
+    .search('derp', 'fun')
+    .get()
+    .inspect()
+
+  result = await db
+    .query('dialog')
+    .i18n('en')
+    .include('id', 'fun')
+    .search('derp', 'fun')
+    .get()
+    .inspect()
+
+  result = await db
+    .query('dialog')
+    .include('id', 'fun')
+    .search('derp', 'fun.en')
+    .get()
+    .inspect()
   // deepEqual(
   //   result.toObject(),
   //   [
   //     {
-  //       id: 2,
-  //       fun: { en: 'drink some tea!' },
+  //       id: dialogId,
+  //       fun: {
+  //         en: '1',
+  //         it: italy,
+  //         fi: '3',
+  //       },
   //     },
   //   ],
-  //   'Include specific language',
+  //   'Search',
   // )
 })

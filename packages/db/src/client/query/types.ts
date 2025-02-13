@@ -48,8 +48,7 @@ export type QueryDefFilter = {
 export type QueryDefSearch = {
   size: number
   query: Buffer
-  // has to be string or text
-  fields: { weight: number; field: number; start: number }[]
+  fields: { weight: number; field: number; start: number; lang: LangCode }[]
 }
 
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }

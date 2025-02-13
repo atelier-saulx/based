@@ -3,9 +3,11 @@ const simd = std.simd;
 const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
-const types = @import("../include//types.zig");
+const types = @import("../include/types.zig");
 const compressed = @import("./compressed.zig");
 const decompress = compressed.decompress;
+const Prop = @import("../../types.zig").Prop;
+const LangCode = @import("../../types.zig").LangCode;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
@@ -227,6 +229,33 @@ pub fn strSearchCompressed(
     return false;
 }
 
+inline fn getScore(
+    dbCtx: *db.DbCtx,
+    value: []u8,
+    query: []u8,
+    score: *u8,
+    penalty: u8,
+) bool {
+    const isCompressed = value[1] == 1;
+    if (isCompressed) {
+        _ = decompress(
+            *u8,
+            strSearchCompressed,
+            query,
+            value,
+            dbCtx,
+            score,
+        );
+        score.* = score.* + penalty;
+    } else {
+        if (value.len - 6 < query.len) {
+            return true;
+        }
+        score.* = strSearch(value[2 .. value.len - 4], query) + penalty;
+    }
+    return false;
+}
+
 pub fn search(
     dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
@@ -244,7 +273,7 @@ pub fn search(
         p += qLen + 2;
         j = 0;
         bestScore = 255;
-        fieldLoop: while (j < fl) : (j += 4) {
+        fieldLoop: while (j < fl) : (j += 5) {
             const field = ctx.fields[j];
             const penalty = ctx.fields[j + 1];
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
@@ -262,29 +291,32 @@ pub fn search(
                 score = strSearch(str, query) + penalty;
             } else {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
-                const isCompressed = value[1] == 1;
-                if (isCompressed) {
-                    _ = decompress(
-                        *u8,
-                        strSearchCompressed,
-                        query,
-                        value,
-                        dbCtx,
-                        &score,
-                    );
-                    score = score + penalty;
-                } else {
-                    if (value.len - 6 < query.len) {
-                        continue :fieldLoop;
+                const prop: Prop = @enumFromInt(fieldSchema.*.type);
+                if (prop == Prop.TEXT) {
+                    const code: LangCode = @enumFromInt(ctx.fields[j + 4]);
+                    var iter = db.textIterator(value, code);
+                    while (iter.next()) |s| {
+                        score = 255;
+                        _ = getScore(dbCtx, s, query, &score, penalty);
+                        if (score < bestScore) {
+                            bestScore = score;
+                            if (score - penalty == 0) {
+                                totalScore += bestScore;
+                                continue :wordLoop;
+                            }
+                        }
                     }
-                    score = strSearch(value[2 .. value.len - 4], query) + penalty;
-                }
-            }
-            if (score < bestScore) {
-                bestScore = score;
-                if (score - penalty == 0) {
-                    totalScore += bestScore;
-                    continue :wordLoop;
+                } else {
+                    if (getScore(dbCtx, value, query, &score, penalty)) {
+                        continue :wordLoop;
+                    }
+                    if (score < bestScore) {
+                        bestScore = score;
+                        if (score - penalty == 0) {
+                            totalScore += bestScore;
+                            continue :wordLoop;
+                        }
+                    }
                 }
             }
         }
