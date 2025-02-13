@@ -81,6 +81,8 @@ void hll_add(struct selva_string *hllss, const void* element) {
         }
     }
     if (rho > hll->registers[index]) {
+        hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        printf("Updating register %llu from %d to %d\n", index, hll->registers[index], rho);
         hll->registers[index] = rho;
     }
 }

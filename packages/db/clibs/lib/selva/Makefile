@@ -32,6 +32,7 @@ OBJ := \
 	find.o \
 	history.o \
 	ida.o \
+	hll/hll.o \
 	idz.o \
 	io/dump.o \
 	io/io.o \
