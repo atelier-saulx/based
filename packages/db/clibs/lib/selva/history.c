@@ -53,13 +53,8 @@ struct selva_history_hdr {
     uint32_t bsize; /*!< Size of event data block. */
     uint32_t crc;
 } __packed;
-static_assert(sizeof(struct selva_history_hdr) == 2 * HIST_LINE_SIZE);
 
-struct selva_history_event {
-    int64_t ts;
-    node_id_t node_id;
-    uint32_t crc;
-} __packed;
+static_assert(sizeof(struct selva_history_hdr) == 2 * HIST_LINE_SIZE);
 static_assert(sizeof(struct selva_history_event) == HIST_LINE_SIZE);
 
 static const struct selva_history_hdr hdr_template = {
@@ -161,12 +156,12 @@ static bool read_event_hdr(struct selva_history_event *event, const struct selva
     return (rd != sizeof(*event));
 }
 
-static uint32_t *read_event_range(struct selva_history *hist, off_t begin_i, off_t end_i, size_t *len_out)
+static uint32_t *read_event_range(struct selva_history *hist, off_t begin_i, off_t end_i, size_t *size_out)
 {
     uint32_t *buf;
     size_t buf_size, rd;
 
-    buf_size = (end_i + 1) * get_event_bsize(hist);
+    buf_size = (end_i - begin_i + 1) * get_event_bsize(hist);
     buf = selva_malloc(buf_size);
     hist_seek(hist, begin_i);
     rd = fread(buf, sizeof(uint8_t), buf_size, hist->file);
@@ -175,7 +170,7 @@ static uint32_t *read_event_range(struct selva_history *hist, off_t begin_i, off
         return nullptr;
     }
 
-    *len_out = buf_size;
+    *size_out = buf_size;
     return buf;
 }
 
@@ -221,7 +216,7 @@ static off_t find_rightmost(struct selva_history *hist, off_t n, int64_t ts)
     return right - 1;
 }
 
-uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int64_t to, size_t *len_out)
+uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int64_t to, size_t *size_out)
 {
     off_t len = get_hist_len(hist);
     off_t begin = find_leftmost(hist, len, from);
@@ -231,7 +226,39 @@ uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int
         return nullptr;
     }
 
-    return read_event_range(hist, begin, end, len_out);
+    return read_event_range(hist, begin, end, size_out);
+}
+
+uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from, int64_t to, node_id_t node_id, size_t *size_out)
+{
+    off_t len = get_hist_len(hist);
+    off_t begin = find_leftmost(hist, len, from);
+    off_t end = find_rightmost(hist, len, to);
+    uint32_t *buf;
+    off_t n = 0;
+
+    if (begin == -1 || end == -1) {
+        return nullptr;
+    }
+
+    buf = selva_malloc(end - begin + 1);
+
+    hist_seek(hist, begin);
+    for (off_t i = begin; i <= end; i++) {
+        size_t rd;
+
+        rd = fread(buf + n, sizeof(uint8_t), len, hist->file);
+        if (rd != (size_t)len) {
+            selva_free(buf);
+            return nullptr;
+        }
+        if (((struct selva_history_event *)buf)->node_id == node_id) {
+            n++;
+        }
+    }
+
+    *size_out = n * len;
+    return buf;
 }
 
 void selva_history_free_range(uint32_t *range)
