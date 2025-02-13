@@ -289,8 +289,18 @@ pub fn search(
                 }
                 const str = value[start + 1 .. start + 1 + len];
                 score = strSearch(str, query) + penalty;
+                if (score < bestScore) {
+                    bestScore = score;
+                    if (score - penalty == 0) {
+                        totalScore += bestScore;
+                        continue :wordLoop;
+                    }
+                }
             } else {
                 const value = db.getField(typeEntry, 0, node, fieldSchema);
+                if (value.len == 0) {
+                    continue :fieldLoop;
+                }
                 const prop: Prop = @enumFromInt(fieldSchema.*.type);
                 if (prop == Prop.TEXT) {
                     const code: LangCode = @enumFromInt(ctx.fields[j + 4]);
@@ -308,7 +318,7 @@ pub fn search(
                     }
                 } else {
                     if (getScore(dbCtx, value, query, &score, penalty)) {
-                        continue :wordLoop;
+                        continue :fieldLoop;
                     }
                     if (score < bestScore) {
                         bestScore = score;
