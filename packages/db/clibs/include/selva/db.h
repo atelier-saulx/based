@@ -110,6 +110,12 @@ const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct S
 SELVA_EXPORT
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
 
+SELVA_EXPORT
+void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts);
+
+SELVA_EXPORT
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
+
 /**
  * Delete a node.
  */

@@ -388,7 +388,7 @@ static void write_ref_2way(
  * Clear single ref value.
  * @returns the original value.
  */
-static struct SelvaNode *del_single_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+static struct SelvaNode *del_single_ref(struct SelvaDb *db, struct SelvaNode *src_node, const struct EdgeFieldConstraint *efc, struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
 {
     void *vp = nfo2p(fields, nfo);
     struct SelvaNodeReference ref;
@@ -401,13 +401,17 @@ static struct SelvaNode *del_single_ref(struct SelvaDb *db, const struct EdgeFie
     assert(!ref.dst || ref.dst->type == efc->dst_node_type);
 #endif
 
+    if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) {
+        selva_expire_node(db, src_node->type, src_node->node_id, 0);
+    }
+
     return ref.dst;
 }
 
 /**
  * This is only a helper for remove_reference().
  */
-static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs, size_t i)
+static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs, size_t i)
 {
     struct SelvaNodeReference *ref;
     size_t id_set_len = refs->nr_refs;
@@ -459,6 +463,10 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
     refs->nr_refs--;
 
     assert(id_set_len == refs->nr_refs);
+
+    if  ((efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) && refs->nr_refs == 0) {
+        selva_expire_node(db, src_node->type, src_node->node_id, 0);
+    }
 }
 
 static const struct SelvaFieldSchema *get_edge_dst_fs(
@@ -496,7 +504,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
 
     if (nfo_src->type == SELVA_FIELD_TYPE_REFERENCE) {
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
-        dst = del_single_ref(db, &fs_src->edge_constraint, fields_src, nfo_src);
+        dst = del_single_ref(db, src, &fs_src->edge_constraint, fields_src, nfo_src);
     } else if (nfo_src->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences *refs = nfo2p(fields_src, nfo_src);
 
@@ -504,7 +512,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
         if (idx >= 0) {
             assert(idx < refs->nr_refs);
             dst = refs->refs[idx].dst;
-            del_multi_ref(db, &fs_src->edge_constraint, refs, idx);
+            del_multi_ref(db, src, &fs_src->edge_constraint, refs, idx);
         } else {
             struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
             assert(dst_type);
@@ -514,7 +522,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, orig_dst_node);
             if (i >= 0) {
                 dst = refs->refs[i].dst;
-                del_multi_ref(db, &fs_src->edge_constraint, refs, i);
+                del_multi_ref(db, src, &fs_src->edge_constraint, refs, i);
             }
         }
     }
@@ -552,7 +560,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
             assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
-            removed = del_single_ref(db, &fs_dst->edge_constraint, fields_dst, nfo_dst);
+            removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst);
             assert(removed == src);
         } else if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
@@ -567,7 +575,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
 
             ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, src);
             if (i >= 0) {
-                del_multi_ref(db, &fs_dst->edge_constraint, refs, i);
+                del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i);
             }
         }
     }

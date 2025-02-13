@@ -67,24 +67,6 @@ int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
     return node_id_cmp(a->dest, b->dest);
 }
 
-#if 0
-static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const void ** restrict b_raw)
-{
-    const struct SelvaNode *a = *(const struct SelvaNode **)a_raw;
-    const struct SelvaNode *b = *(const struct SelvaNode **)b_raw;
-    int diff;
-
-    assert(a && b);
-
-    diff = a->expire - b->expire;
-    if (diff) {
-        return diff;
-    }
-
-    return node_id_cmp(a->node_id, b->node_id);
-}
-#endif
-
 static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
 {
     uint16_t a_type = 0xFFFF & (uintptr_t)(*a_raw);
@@ -123,18 +105,47 @@ RB_GENERATE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id
 RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
 RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 
+void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts)
+{
+    struct SelvaDbExpireToken *token = selva_calloc(1, sizeof(*token));
+
+    token->token.expire = ts;
+    token->db = db;
+    token->type = type;
+    token->node_id = node_id;
+
+    selva_expire_insert(&db->expiring, &token->token);
+}
+
+static void expire_cb(struct SelvaExpireToken *tok)
+{
+    struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = selva_get_type_by_index(token->db, token->type);
+    assert(te);
+    node = selva_find_node(te, token->node_id);
+    if (node) {
+        selva_del_node(token->db, te, node);
+    }
+
+    selva_free(token);
+}
+
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
+{
+    selva_expire_tick(&db->expiring, now);
+}
+
 struct SelvaDb *selva_db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
     ref_save_map_init(&db->schema.ref_save_map);
-#if 0
-    db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
-    SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
-    /* TODO Expiring nodes timer */
-    db->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
-#endif
+    db->expiring.expire_cb = expire_cb;
+    selva_expire_init(&db->expiring);
 
     return db;
 }
@@ -196,6 +207,7 @@ void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
     ref_save_map_destroy(&db->schema.ref_save_map);
+    selva_expire_deinit(&db->expiring);
     memset(db, 0, sizeof(*db));
     selva_free(db);
 }
@@ -402,12 +414,6 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
         type->max_node = selva_max_node(type);
     }
 
-#if 0
-    if (node->expire) {
-        /* TODO clear expire */
-    }
-#endif
-
     selva_fields_destroy(db, node);
 #if 0
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.nr_fields));
@@ -466,9 +472,6 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     }
 
     memset(&node->trx_label, 0, sizeof(node->trx_label));
-#if 0
-    node->expire = 0;
-#endif
     selva_fields_init(&type->ns.fields_schema, &node->fields);
 
     type->nr_nodes++;

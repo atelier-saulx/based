@@ -26,6 +26,7 @@ OBJ := \
 	bitmap.o \
 	db.o \
 	db_panic.o \
+	expire.o \
 	fast_linear_search.o \
 	fields.o \
 	find.o \
