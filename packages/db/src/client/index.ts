@@ -11,7 +11,7 @@ import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
-import { remove } from './modify/remove.js'
+import { deleteFn } from './modify/delete.js'
 import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
 import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
@@ -19,6 +19,7 @@ import { deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
+import { expire } from './modify/expire.js'
 
 export type DbClientHooks = {
   putSchema(
@@ -265,8 +266,12 @@ export class DbClient {
     return upsert(this, type, obj, opts)
   }
 
-  remove(type: string, id: number | ModifyRes) {
-    return remove(this, type, typeof id === 'number' ? id : id.tmpId)
+  delete(type: string, id: number | ModifyRes) {
+    return deleteFn(this, type, typeof id === 'number' ? id : id.tmpId)
+  }
+
+  expire(type: string, id: number | ModifyRes, seconds: number) {
+    return expire(this, type, typeof id === 'number' ? id : id.tmpId, seconds)
   }
 
   destroy() {

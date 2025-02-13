@@ -30,6 +30,8 @@ enum SelvaSortOrder {
     SELVA_SORT_ORDER_NONE = 0,
     SELVA_SORT_ORDER_I64_ASC,
     SELVA_SORT_ORDER_I64_DESC,
+    SELVA_SORT_ORDER_FLOAT_ASC,
+    SELVA_SORT_ORDER_FLOAT_DESC,
     SELVA_SORT_ORDER_DOUBLE_ASC,
     SELVA_SORT_ORDER_DOUBLE_DESC,
     SELVA_SORT_ORDER_BUFFER_ASC,
@@ -59,6 +61,9 @@ SELVA_EXPORT
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
 
 SELVA_EXPORT
+void selva_sort_insert_float(struct SelvaSortCtx *ctx, float d, const void *p);
+
+SELVA_EXPORT
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p);
 
 SELVA_EXPORT
@@ -72,6 +77,9 @@ void selva_sort_remove(struct SelvaSortCtx *ctx, const void *p);
 
 SELVA_EXPORT
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
+
+SELVA_EXPORT
+void selva_sort_remove_float(struct SelvaSortCtx *ctx, float f, const void *p);
 
 SELVA_EXPORT
 void selva_sort_remove_double(struct SelvaSortCtx *ctx, double d, const void *p);

@@ -18,6 +18,7 @@ import {
   dateDisplays,
   numberDisplays,
   SchemaVector,
+  SchemaJson,
 } from '../types.js'
 import {
   expectBoolean,
@@ -505,11 +506,21 @@ p.alias = propParser<SchemaAlias>(
   0,
 )
 
-p.cardinality = propParser<SchemaAlias>(
+p.cardinality = propParser<SchemaCardinality>(
   STUB,
   {
     default(val) {
       expectNumber(val)
+    },
+  },
+  0,
+)
+
+p.json = propParser<SchemaJson>(
+  STUB,
+  {
+    default(val) {
+      expectObject(val)
     },
   },
   0,

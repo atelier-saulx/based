@@ -81,8 +81,14 @@ void hll_add(struct selva_string *hllss, const void* element) {
         }
     }
     if (rho > hll->registers[index]) {
+        hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
         hll->registers[index] = rho;
     }
+    // printf("HLL in binary format: ");
+    // for (size_t i = 6*8; i < (6*8 + 16); i++) {
+    //     printf("%02x", ((unsigned char *)hll)[i]);
+    // }
+    // printf("\n");
 }
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {

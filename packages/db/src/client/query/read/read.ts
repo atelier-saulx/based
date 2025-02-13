@@ -17,6 +17,7 @@ import {
   UINT32,
   UINT8,
   VECTOR,
+  JSON,
 } from '../../../server/schema/types.js'
 import { QueryDef } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -28,7 +29,7 @@ import {
   readUint16,
   readUint32,
 } from '../../bitWise.js'
-import { inverseLangMap, langCodesMap } from '@based/schema'
+import { inverseLangMap } from '@based/schema'
 
 export type Item = {
   id: number
@@ -120,7 +121,7 @@ const readMainValue = (
   }
   // 11: string
   else if (prop.typeIndex === STRING) {
-    // Also remove this default then (same as other string)
+    // Also delete this default then (same as other string)
     const len = result[index]
     if (len !== 0) {
       const str = readUtf8(result, index + 1, len)
@@ -128,6 +129,18 @@ const readMainValue = (
     } else {
       addField(prop, '', item)
     }
+  }
+  // ?: json
+  else if (prop.typeIndex === JSON) {
+    addField(
+      prop,
+      global.JSON.parse(
+        Buffer.from(
+          result.subarray(index + 1, index + 1 + result[index]),
+        ).toString(),
+      ),
+      item,
+    )
   }
   // 25: binary
   else if (prop.typeIndex === BINARY) {
@@ -201,7 +214,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
           }
         }
       } else {
-        addField(prop, '', item)
+        addField(prop, prop.typeIndex === JSON ? null : '', item)
       }
     }
   }
@@ -267,7 +280,18 @@ export const readAllFields = (
       } else {
         const edgeDef = q.edges.reverseProps[prop]
         const t = edgeDef.typeIndex
-        if (t === BINARY) {
+        if (t === JSON) {
+          i++
+          const size = readUint32(result, i)
+          addField(
+            edgeDef,
+            global.JSON.parse(
+              Buffer.from(result.subarray(i + 6, size + i)).toString(),
+            ),
+            item,
+          )
+          i += size + 4
+        } else if (t === BINARY) {
           i++
           const size = readUint32(result, i)
           addField(edgeDef, result.subarray(i + 6, size + i), item)
@@ -325,7 +349,18 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      if (prop.typeIndex === BINARY) {
+      if (prop.typeIndex === JSON) {
+        q.include.propsRead[index] = id
+        const size = readUint32(result, i)
+        addField(
+          prop,
+          global.JSON.parse(
+            Buffer.from(result.subarray(i + 6, i + size)).toString(),
+          ),
+          item,
+        )
+        i += size + 4
+      } else if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
         addField(prop, result.subarray(i + 6, i + size), item)

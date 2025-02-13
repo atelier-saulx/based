@@ -405,7 +405,7 @@ await test('basic', async (t) => {
     ],
   )
 
-  db.remove('user', mrX)
+  db.delete('user', mrX)
 
   await db.drain()
 
@@ -472,7 +472,7 @@ await test('basic', async (t) => {
     'Check name index len after removal',
   )
 
-  db.remove('user', mrBlurp)
+  db.delete('user', mrBlurp)
 
   await db.drain()
 
@@ -506,7 +506,7 @@ await test('basic', async (t) => {
     'Check email index len after removal (2)',
   )
 
-  db.remove('user', mrZ)
+  db.delete('user', mrZ)
 
   await db.drain()
 

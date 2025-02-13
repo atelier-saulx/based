@@ -40,8 +40,6 @@ export function writeHll(
     //   }
     // }
   } else {
-    // hllAdd
-    console.log('modify/cardinality.ts init + add')
     return addHll(value, ctx, def, t, parentId, modifyOp, 0)
   }
 }
@@ -62,7 +60,6 @@ function addHll(
     return RANGE_ERR
   }
 
-  console.log(`cardinality.ts value = ${value}`)
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = size
@@ -76,8 +73,6 @@ function addHll(
     }
     // CALL XX
     let hash = crc32(Buffer.from(str))
-    console.log(`cardinality.ts str = ${str}`)
-    console.log(`hash = ${hash}`)
     ctx.buf[ctx.len++] = hash
     ctx.buf[ctx.len++] = hash >>>= 8
     ctx.buf[ctx.len++] = hash >>>= 8

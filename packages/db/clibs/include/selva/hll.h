@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "_export.h"
+#include "selva/_export.h"
 #include "selva_string.h"
 #include <stdbool.h>
 #include "cdefs.h"

@@ -1,4 +1,5 @@
 const c = @import("../c.zig");
+const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -56,6 +57,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
 
     const queryType: QueryType = @enumFromInt(q[0]);
     const typeId: db.TypeId = read(u16, q, 1);
+
+    // expire things before query
+    selva.selva_db_expire_tick(dbCtx.selva, std.time.timestamp());
 
     if (queryType == QueryType.default) {
         const offset = read(u32, q, 3);

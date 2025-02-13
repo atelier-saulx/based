@@ -23,7 +23,7 @@ export type SubscriptionsMap = Map<number, Subscription>
 export type SubscriptionsToRun = Subscription[]
 
 // for fields its very different
-// if shceduled need to remove from every field (-1 on each other field)
+// if shceduled need to delete from every field (-1 on each other field)
 
 // later replace this with native + buffer / externalID
 
