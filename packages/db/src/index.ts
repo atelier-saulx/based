@@ -55,6 +55,10 @@ export class BasedDb {
     return this.client.create.apply(this.client, arguments)
   }
 
+  copy: DbClient['copy'] = function () {
+    return this.client.copy.apply(this.client, arguments)
+  }
+
   update: DbClient['update'] = function () {
     return this.client.update.apply(this.client, arguments)
   }

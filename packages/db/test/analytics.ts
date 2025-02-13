@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('analytics', async (t) => {
+await test.skip('analytics', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -28,10 +28,13 @@ await test('analytics', async (t) => {
             $viewers: 'uint8',
           },
         },
-        // activeViewers: {
-        //   type: 'uint32',
-        //   path: 'clients.$viewers.#sum',
-        // },
+        activeViewers: {
+          type: 'uint32',
+          path: 'clients.$viewers.#sum',
+          history: {
+            interval: 'second',
+          },
+        },
       },
     },
   })

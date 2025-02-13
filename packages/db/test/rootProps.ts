@@ -40,16 +40,18 @@ await test('rootProps', async (t) => {
     myBoolean: true,
   }
 
+  const article = db.create('article', {
+    name: 'best article',
+    body: 'success',
+  })
+
   await db.update(rootData)
 
   let rootRes = (await db.query().get()).toObject()
 
   deepEqual(rootRes, { id: 1, ...rootData })
 
-  const article = await db.create('article', {
-    name: 'best article',
-    body: 'success',
-  })
+  console.log({ article })
 
   await db.update({
     bestArticles: [article],

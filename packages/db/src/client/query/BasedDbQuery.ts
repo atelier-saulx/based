@@ -14,6 +14,7 @@ import {
   convertFilter,
   QueryByAliasObj,
   isAlias,
+  includeField,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -143,12 +144,7 @@ export class QueryBranch<T> {
   include(...fields: (string | BranchInclude | string[])[]): T {
     for (const f of fields) {
       if (typeof f === 'string') {
-        if (f === '*') {
-          hasFields(this.def.props)
-          includeFields(this.def, getAll(this.def.props))
-        } else {
-          this.def.include.stringFields.add(f)
-        }
+        includeField(this.def, f)
       } else if (typeof f === 'function') {
         f((field: string) => {
           if (field[0] == '$') {
@@ -185,8 +181,8 @@ export class QueryBranch<T> {
       } else if (Array.isArray(f)) {
         for (const field of f) {
           hasField(field)
+          includeField(this.def, field)
         }
-        includeFields(this.def, f)
       } else if (f !== undefined) {
         throw new Error(
           'Invalid include statement: expected props, refs and edges (string or array) or function',

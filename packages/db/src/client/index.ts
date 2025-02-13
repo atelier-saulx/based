@@ -103,8 +103,51 @@ export class DbClient {
     return this.schema
   }
 
-  create(type: string, obj: CreateObj, opts?: ModifyOpts): ModifyRes {
+  create(type: string, obj: CreateObj = {}, opts?: ModifyOpts): ModifyRes {
     return create(this, type, obj, opts)
+  }
+
+  async copy(
+    type: string,
+    target: number | ModifyRes,
+    objOrTransformFn?:
+      | Record<string, any>
+      | ((item: Record<string, any>) => Promise<any>),
+  ): Promise<ModifyRes> {
+    const item = await this.query(type, target)
+      .include('*', '**.id')
+      .get()
+      .toObject()
+
+    if (typeof objOrTransformFn === 'function') {
+      const { id, ...props } = await objOrTransformFn(item)
+      return this.create(type, props)
+    }
+
+    if (typeof objOrTransformFn === 'object' && objOrTransformFn !== null) {
+      const { id, ...props } = item
+      await Promise.all(
+        Object.keys(objOrTransformFn).map(async (key) => {
+          const val = objOrTransformFn[key]
+          if (val === null) {
+            delete props[key]
+          } else if (typeof val === 'function') {
+            const res = await val(item)
+            if (Array.isArray(res)) {
+              props[key] = await Promise.all(res)
+            } else {
+              props[key] = res
+            }
+          } else {
+            props[key] = val
+          }
+        }),
+      )
+      return this.create(type, props)
+    }
+
+    const { id, ...props } = item
+    return this.create(type, props)
   }
 
   query(
@@ -164,23 +207,58 @@ export class DbClient {
     opts?: ModifyOpts,
   ): ModifyRes
 
+  update(
+    type: string,
+    value: Record<string, any> & { id: number | ModifyRes },
+    opts?: ModifyOpts,
+  ): ModifyRes
+
   update(value: any, opts?: ModifyOpts): ModifyRes
 
   update(
     typeOrValue: string | any,
-    idOrOverwrite: number | ModifyRes | boolean | ModifyOpts,
+    idOverwriteOrValue:
+      | number
+      | ModifyRes
+      | boolean
+      | ModifyOpts
+      | (Record<string, any> & { id: number | ModifyRes }),
     value?: any,
     opts?: ModifyOpts,
   ): ModifyRes {
     if (typeof typeOrValue === 'string') {
-      const id =
-        typeof idOrOverwrite === 'object' && 'tmpId' in idOrOverwrite
-          ? idOrOverwrite.tmpId
-          : idOrOverwrite
-      return update(this, typeOrValue, id as number, value, opts)
+      if (typeof idOverwriteOrValue === 'object') {
+        if (idOverwriteOrValue instanceof ModifyState) {
+          return update(
+            this,
+            typeOrValue,
+            idOverwriteOrValue.tmpId,
+            value,
+            opts,
+          )
+        }
+        if ('id' in idOverwriteOrValue) {
+          const { id, ...props } = idOverwriteOrValue
+          return this.update(typeOrValue, id, props, opts)
+        }
+      }
+      return update(
+        this,
+        typeOrValue,
+        idOverwriteOrValue as number,
+        value,
+        opts,
+      )
     }
+
     // else it is rootProps
-    return update(this, '_root', 1, typeOrValue, idOrOverwrite as ModifyOpts)
+    return update(
+      this,
+      '_root',
+      1,
+      typeOrValue,
+      idOverwriteOrValue as ModifyOpts,
+    )
   }
 
   upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
