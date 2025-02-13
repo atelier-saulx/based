@@ -65,7 +65,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 
 function makeEdgeConstraintFlags(prop: PropDef): number {
     const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
-    return prop.dependent ? 0x0 : EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT
+    return prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
 }
 
 const propDefBuffer = (
@@ -88,7 +88,7 @@ const propDefBuffer = (
 
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
-    buf[1] = isEdge ? makeEdgeConstraintFlags(prop) : 0 // flags
+    buf[1] = makeEdgeConstraintFlags(prop) // flags
     buf.writeUInt16LE(dstType.id, 2) // dst_node_type
     buf.writeUint32LE(0, 5) // schema_len
     if (!isEdge) {
