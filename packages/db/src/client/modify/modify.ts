@@ -10,6 +10,7 @@ import {
   BINARY,
   CARDINALITY,
   VECTOR,
+  MICRO_BUFFER,
 } from '../../server/schema/types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
@@ -73,7 +74,7 @@ function _modify(
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === CARDINALITY) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
-          console.log('chamada para writeHll em modify.ts')
+          console.log(`chamada para writeHll em modify.ts --->${err})`)
         } else if (type === VECTOR) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         }
@@ -81,10 +82,10 @@ function _modify(
         if (ctx.len + 15 + schema.mainLen > ctx.max) {
           return RANGE_ERR
         }
-        setCursor(ctx, schema, def.prop, res.tmpId, mod, true)
+        setCursor(ctx, schema, def.prop, MICRO_BUFFER, res.tmpId, mod, true)
         if (ctx.lastMain === -1) {
           let mainLenU32 = schema.mainLen
-          setCursor(ctx, schema, def.prop, res.tmpId, mod)
+          setCursor(ctx, schema, def.prop, MICRO_BUFFER, res.tmpId, mod)
           ctx.buf[ctx.len++] = mod
           ctx.buf[ctx.len++] = mainLenU32
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8
@@ -112,7 +113,7 @@ function _modify(
           if (ctx.len + 10 > ctx.max) {
             return RANGE_ERR
           }
-          setCursor(ctx, schema, def.prop, res.tmpId, mod)
+          setCursor(ctx, schema, def.prop, MICRO_BUFFER, res.tmpId, mod)
           let start = def.start
           if (increment < 0) {
             ctx.buf[ctx.len++] = DECREMENT

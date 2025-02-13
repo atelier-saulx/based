@@ -56,7 +56,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
                 // SWITCH FIELD
                 ctx.field = operation[0];
-                i = i + 2;
+                i = i + 3;
 
                 if (ctx.field != 0) {
                     ctx.currentSortIndex = dbSort.getSortIndex(ctx.typeSortIndex, ctx.field, 0);
@@ -65,7 +65,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
 
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
-                ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
+                // add prop
+                ctx.fieldType = @enumFromInt(operation[1]); //@enumFromInt(ctx.fieldSchema.?.*.type);
 
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;

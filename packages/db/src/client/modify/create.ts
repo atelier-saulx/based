@@ -1,5 +1,5 @@
 import { BasedDb, ModifyCtx } from '../../index.js'
-import { SchemaTypeDef } from '../../server/schema/schema.js'
+import { MICRO_BUFFER, SchemaTypeDef } from '../../server/schema/schema.js'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -20,7 +20,6 @@ const appendCreate = (
 ): ModifyErr => {
   const len = ctx.len
   let err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
-
   if (err) {
     return err
   }
@@ -29,7 +28,7 @@ const appendCreate = (
     if (ctx.len + 10 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, res.tmpId, CREATE)
+    setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, CREATE)
   }
 
   if (def.createTs) {
@@ -37,7 +36,7 @@ const appendCreate = (
     for (const prop of def.createTs) {
       if (ctx.lastMain === -1) {
         let mainLenU32 = def.mainLen
-        setCursor(ctx, def, prop.prop, res.tmpId, CREATE)
+        setCursor(ctx, def, prop.prop, MICRO_BUFFER, res.tmpId, CREATE)
         ctx.buf[ctx.len++] = CREATE
         ctx.buf[ctx.len++] = mainLenU32
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
