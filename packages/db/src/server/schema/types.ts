@@ -6,7 +6,7 @@ export const TIMESTAMP = 1
 export const CREATED = 2
 export const UPDATED = 3
 export const NUMBER = 4
-export const CARDINALITY = 5
+export const CARDINALITY = 5 //se colocar 11 ele faz o console de Ao menos entra aqui?
 export const INT8 = 20
 export const UINT8 = 6
 export const INT16 = 21
@@ -83,6 +83,7 @@ export type PropDef = {
     [prop: string]: PropDefEdge
   }
   __isEdge?: boolean
+  dependent?: boolean
 }
 
 export type PropDefEdge = Partial<PropDef> & {

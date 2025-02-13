@@ -3,6 +3,7 @@ import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
+import { MICRO_BUFFER } from '../../server/schema/schema.js'
 
 export const remove = (db: DbClient, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
@@ -16,11 +17,11 @@ export const remove = (db: DbClient, type: string, id: number): boolean => {
       return remove(db, type, id)
     }
 
-    setCursor(ctx, schema, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
     ctx.buf[ctx.len++] = 4
 
     for (const s of separate) {
-      setCursor(ctx, schema, s.prop, id, UPDATE)
+      setCursor(ctx, schema, s.prop, s.typeIndex, id, UPDATE)
       ctx.buf[ctx.len++] = 4
     }
     ctx.buf[ctx.len++] = 10
@@ -29,7 +30,7 @@ export const remove = (db: DbClient, type: string, id: number): boolean => {
       flushBuffer(db)
       return remove(db, type, id)
     }
-    setCursor(ctx, schema, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
     ctx.buf[ctx.len++] = 4
     ctx.buf[ctx.len++] = 10
   }

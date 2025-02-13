@@ -8,6 +8,7 @@ import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
 import { writeEdges } from './edge.js'
+import { MICRO_BUFFER } from '../../../server/schema/schema.js'
 
 export type RefModifyOpts = {
   id?: number | ModifyState
@@ -40,7 +41,7 @@ export function writeReferences(
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, res.tmpId, mod)
+    setCursor(ctx, schema, def.prop, def.typeIndex, res.tmpId, mod)
     ctx.buf[ctx.len++] = DELETE
     return
   }
@@ -109,7 +110,7 @@ function deleteRefs(
   if (ctx.len + 10 + size > ctx.max) {
     return RANGE_ERR
   }
-  setCursor(ctx, schema, def.prop, parentId, modifyOp)
+  setCursor(ctx, schema, def.prop, def.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = size
   ctx.buf[ctx.len++] = size >>>= 8
@@ -151,7 +152,7 @@ function updateRefs(
     return RANGE_ERR
   }
 
-  setCursor(ctx, schema, def.prop, parentId, mod)
+  setCursor(ctx, schema, def.prop, def.typeIndex, parentId, mod)
 
   const initpos = ctx.len
   const nrOrErr = putRefs(def, ctx, mod, refs, op)

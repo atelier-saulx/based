@@ -58,14 +58,14 @@ export function writeBinary(
         return RANGE_ERR
       }
 
-      setCursor(ctx, schema, t.prop, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
     if (ctx.len + 15 + size > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, t.prop, parentId, modifyOp)
+    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
     ctx.buf[ctx.len++] = modifyOp
     writeBinaryRaw(value, ctx)
   }

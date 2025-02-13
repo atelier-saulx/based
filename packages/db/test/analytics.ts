@@ -14,35 +14,35 @@ await test('analytics', async (t) => {
 
   await db.putSchema({
     types: {
-      client: {
-        name: 'string',
-        bees: {
-          items: {
-            ref: 'page',
-            prop: 'clients',
-          },
+      _client: {
+        props: {
+          name: 'string',
         },
       },
       page: {
         name: 'string',
         clients: {
           items: {
-            ref: 'client',
-            prop: 'bees',
-            $users: 'uint8',
+            ref: '_client',
+            prop: 'pages',
+            $viewers: 'uint8',
           },
         },
+        // activeViewers: {
+        //   type: 'uint32',
+        //   path: 'clients.$viewers.#sum',
+        // },
       },
     },
   })
 
-  const client = await db.create('client', {})
-  const client2 = await db.create('client', {})
+  const client = await db.create('_client', {})
+  const client2 = await db.create('_client', {})
   const page = await db.create('page', {
     clients: [
       {
         id: client,
-        $users: { increment: 1 },
+        $viewers: { increment: 1 },
       },
     ],
   })
@@ -52,14 +52,14 @@ await test('analytics', async (t) => {
       add: [
         {
           id: client,
-          $users: { increment: 1 },
+          $viewers: { increment: 1 },
         },
       ],
     },
   })
 
   console.dir(
-    await db.query('page').include('clients.$users').get().toObject(),
+    await db.query('page').include('clients.$viewers').get().toObject(),
     { depth: null },
   )
 
@@ -68,14 +68,14 @@ await test('analytics', async (t) => {
       add: [
         {
           id: client,
-          $users: { increment: 1 },
+          $viewers: { increment: 1 },
         },
       ],
     },
   })
 
   console.dir(
-    await db.query('page').include('clients.$users').get().toObject(),
+    await db.query('page').include('clients.$viewers').get().toObject(),
     { depth: null },
   )
 
@@ -84,7 +84,7 @@ await test('analytics', async (t) => {
       add: [
         {
           id: client,
-          $users: { increment: -1 },
+          $viewers: { increment: -1 },
         },
       ],
     },
@@ -95,23 +95,23 @@ await test('analytics', async (t) => {
       add: [
         {
           id: client2,
-          $users: { increment: 1 },
+          $viewers: { increment: 1 },
         },
       ],
     },
   })
 
   console.dir(
-    await db.query('page').include('clients.$users').get().toObject(),
+    await db.query('page').include('clients.$viewers').get().toObject(),
     { depth: null },
   )
 
-  db.remove('client', client2)
+  db.remove('_client', client2)
 
   await db.drain()
 
   console.dir(
-    await db.query('page').include('clients.$users').get().toObject(),
+    await db.query('page').include('clients.$viewers.#sum').get().toObject(),
     { depth: null },
   )
 })

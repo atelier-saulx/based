@@ -17,6 +17,7 @@ await test.skip('hll', async (t) => {
     types: {
       article: {
         myUniqueValuesCount: 'cardinality',
+        // lala: 'string',
       },
     },
   })

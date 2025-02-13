@@ -5,6 +5,7 @@ import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
+import { MICRO_BUFFER } from '../../../server/schema/schema.js'
 
 function writeRef(
   id: number,
@@ -19,7 +20,7 @@ function writeRef(
     return RANGE_ERR
   }
   ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
-  setCursor(ctx, schema, def.prop, parentId, modifyOp)
+  setCursor(ctx, schema, def.prop, def.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = hasEdges ? 1 : 0
   ctx.buf[ctx.len++] = id
@@ -94,7 +95,7 @@ export function writeReference(
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
+    setCursor(ctx, schema, def.prop, def.typeIndex, res.tmpId, modifyOp)
     ctx.buf[ctx.len++] = DELETE
   } else if (typeof value === 'number') {
     return writeRef(value, ctx, schema, def, res.tmpId, modifyOp, false)

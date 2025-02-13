@@ -13,7 +13,6 @@ struct selva_string;
 #endif
 #include "selva/types.h"
 #include "selva_lang_code.h"
-#include "selva/hll.h"
 
 /**
  * Reserved (N/A) field id.
@@ -88,7 +87,7 @@ struct SelvaFieldsAny {
         struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
         struct SelvaMicroBuffer *smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
 #endif
-        HyperLogLogPlusPlus cardinality; /*!< SELVA_FIELD_TYPE_HLL */
+        // HyperLogLogPlusPlus cardinality; /*!< SELVA_FIELD_TYPE_HLL */
     };
 };
 
@@ -324,16 +323,7 @@ SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
 
 SELVA_EXPORT
-int selva_fields_get_string_crc(const struct SelvaNode *node, const struct SelvaFieldSchema *fs, uint32_t *crc);
-
-SELVA_EXPORT
-int selva_fields_get_string_crc2(const struct SelvaFields *fields, const struct SelvaFieldSchema *fs, uint32_t *crc);
-
-SELVA_EXPORT
 int selva_fields_get_text_crc(const struct SelvaNode *node, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc);
-
-SELVA_EXPORT
-int selva_fields_get_text_crc2(const struct SelvaFields *fields, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc);
 
 SELVA_EXPORT
 void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);

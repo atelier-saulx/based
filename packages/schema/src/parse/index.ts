@@ -25,7 +25,7 @@ export class SchemaParser {
     expectObject(types)
     for (const type in types) {
       this.lvl++
-      if (type[0] === '_') {
+      if (type === '_root') {
         throw new Error(INVALID_KEY)
       }
       this.path[this.lvl] = type

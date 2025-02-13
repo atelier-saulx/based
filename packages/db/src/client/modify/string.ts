@@ -35,7 +35,7 @@ export function writeString(
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, parentId, modifyOp)
+      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
@@ -50,7 +50,7 @@ export function writeString(
       def.stringPropsCurrent[t.prop] = 2
       ctx.hasStringField++
     }
-    setCursor(ctx, def, t.prop, parentId, modifyOp)
+    setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
     // TODO if buffer check if second byte is zero or one
     // modOp | size u32 | stringprotocol | string
     ctx.buf[ctx.len] = modifyOp

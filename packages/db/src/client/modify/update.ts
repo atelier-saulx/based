@@ -1,5 +1,9 @@
 import { ModifyCtx } from '../../index.js'
-import { PropDef, SchemaTypeDef } from '../../server/schema/schema.js'
+import {
+  MICRO_BUFFER,
+  PropDef,
+  SchemaTypeDef,
+} from '../../server/schema/schema.js'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -45,7 +49,7 @@ const appendUpdate = (
       return RANGE_ERR
     }
 
-    setCursor(ctx, def, 0, res.tmpId, UPDATE)
+    setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, UPDATE)
     ctx.buf[ctx.len++] = 5
     ctx.buf[ctx.len++] = mergeMainSize
     ctx.buf[ctx.len++] = mergeMainSize >>>= 8
