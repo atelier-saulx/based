@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-//#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "selva/crc32c.h"
@@ -140,14 +139,6 @@ static off_t get_hist_len(struct selva_history *hist)
     fseeko(hist->file, 0L, SEEK_END);
     return (ftello(hist->file) - sizeof(struct selva_history_hdr)) / get_event_bsize(hist);
 }
-
-#if 0
-static off_t calc_mid(off_t left, off_t right)
-{
-    div_t d = lldiv(left + right, 2);
-    return result = d.quot + !!d.rem;
-}
-#endif
 
 static void hist_seek(const struct selva_history *hist, off_t index)
 {
