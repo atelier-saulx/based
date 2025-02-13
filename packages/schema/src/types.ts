@@ -252,7 +252,7 @@ export type SchemaHll = Prop<{
 }>
 
 export type SchemaVector = Prop<{
-  type: 'vector',
+  type: 'vector'
   default?: Float32Array
   size: number
 }>
@@ -388,11 +388,12 @@ export type SchemaType<isStrict = false> = isStrict extends true
       | GenericSchemaType<false>
       | (SchemaProps & { props?: never })
 
-export type SchemaTypeName = AllowedKey
+export type SchemaTypeName = Exclude<string, '_root'>
 export type SchemaTypes<isStrict = false> = Record<
   SchemaTypeName,
   SchemaType<isStrict>
->
+> & { _root?: never }
+
 export type SchemaPropsOneWay<isStrict = false> = Record<
   AllowedKey,
   SchemaPropOneWay<isStrict>

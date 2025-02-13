@@ -95,7 +95,7 @@ const propDefBuffer = (
         eschema = props
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
-        eschema.unshift(...[0, 0, 0, 0], sepPropCount(props), 0)
+        eschema.unshift(0, 0, 0, 0, sepPropCount(props), 0)
         buf.writeUint32LE(eschema.length, 4)
       }
     }

@@ -309,6 +309,7 @@ export class DbServer {
           refProp.prop = inverseKey
         }
       }
+
       // @ts-ignore This creates an internal type to use for root props
       this.schema.types._root = {
         id: genRootId(),

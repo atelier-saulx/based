@@ -83,6 +83,7 @@ export type PropDef = {
     [prop: string]: PropDefEdge
   }
   __isEdge?: boolean
+  dependent?: boolean
 }
 
 export type PropDefEdge = Partial<PropDef> & {
