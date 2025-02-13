@@ -31,6 +31,9 @@ struct schemabuf_parser_ctx {
     size_t alias_index;
 };
 
+/**
+ * Parse field schema to efc.
+ */
 static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const char *buf, size_t len);
 
 static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *, field_t)
@@ -180,14 +183,15 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
-        field_t field;
+        enum SelvaFieldType type;
+        enum EdgeFieldConstraintFlag flags;
         node_type_t dst_node_type;
         field_t inverse_field;
         uint32_t schema_len;
         uint8_t schema[] __counted_by(schema_len);
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 8);
+    static_assert(sizeof(constraints) == 9);
 
     if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -205,7 +209,8 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         .field = field,
         .type = type,
         .edge_constraint = {
-            .flags = ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP,
+            .flags = (constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) |
+                     (ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP),
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
         },
@@ -241,17 +246,19 @@ static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaField
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
+        enum SelvaFieldType type;
+        uint8_t spare;
         node_type_t dst_node_type;
         uint8_t pad[5]; /* Reserved for future use. */
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 7);
+    static_assert(sizeof(constraints) == 9);
 
-    if (ctx->len < 1 + sizeof(constraints)) {
+    if (ctx->len < sizeof(constraints)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&constraints, ctx->buf + 1, sizeof(constraints));
+    memcpy(&constraints, ctx->buf, sizeof(constraints));
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
@@ -261,7 +268,7 @@ static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaField
         },
     };
 
-    return 1 + sizeof(constraints);
+    return sizeof(constraints);
 }
 
 static int type2fs_weak_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -505,6 +512,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
          * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_WEAK_REFERENCES,
          * SELVA_FIELD_TYPE_ALIAS, and SELVA_FIELD_TYPE_ALIASES are not
          * supported here.
+         * len < SCHEMA_MIN_SIZE was already checked inschemabuf_get_info().
          * TODO Should we fail on unsupported types?
          */
 

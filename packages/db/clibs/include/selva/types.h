@@ -55,10 +55,11 @@ enum SelvaFieldType {
 
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
+        EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
         /**
          * Skip saving this field while dumping.
          */
-        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
+        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
     field_t inverse_field;
     node_type_t dst_node_type;

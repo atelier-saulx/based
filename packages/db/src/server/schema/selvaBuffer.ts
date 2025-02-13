@@ -63,6 +63,11 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
 }
 
+function makeEdgeConstraintFlags(prop: PropDef): number {
+    const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
+    return prop.dependent ? 0x0 : EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT
+}
+
 const propDefBuffer = (
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
@@ -77,26 +82,27 @@ const propDefBuffer = (
     buf.writeUint16LE(prop.len, 1)
     return [...buf.values()]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf: Buffer = Buffer.allocUnsafe(8)
+    const buf: Buffer = Buffer.allocUnsafe(9)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
 
     // @ts-ignore
-    buf[0] = selvaType + 2 * !!isEdge
-    buf.writeUInt16LE(dstType.id, 1)
-    buf.writeUint32LE(0, 4)
+    buf[0] = selvaType + 2 * !!isEdge // field type
+    buf[1] = isEdge ? makeEdgeConstraintFlags(prop) : 0 // flags
+    buf.writeUInt16LE(dstType.id, 2) // dst_node_type
+    buf.writeUint32LE(0, 5) // schema_len
     if (!isEdge) {
       prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
-      buf[3] = prop.inversePropNumber
+      buf[4] = prop.inversePropNumber
 
       if (prop.edges) {
         const props = Object.values(prop.edges)
         eschema = props
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
-        eschema.unshift(...[0, 0, 0, 0], sepPropCount(props), 0)
-        buf.writeUint32LE(eschema.length, 4)
+        eschema.unshift(0, 0, 0, 0, sepPropCount(props), 0)
+        buf.writeUint32LE(eschema.length, 5)
       }
     }
 

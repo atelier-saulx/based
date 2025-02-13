@@ -211,10 +211,12 @@ export const createSchemaTypeDef = (
       } else if (isPropType('references', schemaProp)) {
         prop.inversePropName = schemaProp.items.prop
         prop.inverseTypeName = schemaProp.items.ref
+        prop.dependent = schemaProp.items.dependent
         addEdges(prop, schemaProp.items)
       } else if (isPropType('reference', schemaProp)) {
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
+        prop.dependent = schemaProp.dependent
         addEdges(prop, schemaProp)
       } else if (typeof schemaProp === 'object') {
         if (

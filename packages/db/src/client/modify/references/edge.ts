@@ -79,7 +79,7 @@ export function writeEdges(
           } else {
             const buf = getBuffer(value)
             if (!buf) {
-              return new ModifyError(t, ref)
+              return new ModifyError(edge, value)
             }
             size = buf.byteLength
           }
@@ -101,7 +101,7 @@ export function writeEdges(
           }
         } else if (edge.typeIndex === STRING) {
           if (typeof value !== 'string') {
-            return new ModifyError(t, ref)
+            return new ModifyError(edge, value)
           }
           if (ctx.len + 6 + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
@@ -120,7 +120,7 @@ export function writeEdges(
             if (value instanceof ModifyState) {
               value = value.tmpId
             } else {
-              return new ModifyError(t, ref)
+              return new ModifyError(edge, value)
             }
           }
           if (value > 0) {
@@ -131,11 +131,11 @@ export function writeEdges(
             ctx.buf[ctx.len++] = value >>>= 8
             ctx.buf[ctx.len++] = value >>>= 8
           } else {
-            return new ModifyError(t, ref)
+            return new ModifyError(edge, value)
           }
         } else if (edge.typeIndex === REFERENCES) {
           if (!Array.isArray(value)) {
-            return new ModifyError(t, ref)
+            return new ModifyError(edge, value)
           }
           let size = value.length * 4
           if (ctx.len + 6 + size > ctx.max) {
@@ -154,7 +154,7 @@ export function writeEdges(
           return RANGE_ERR
         }
 
-        if (typeof value === 'object' && value !== null && value.increment) {
+        if (typeof value === 'object' && value !== null) {
           if (value.increment > 0) {
             ctx.buf[ctx.len++] = 0
             ctx.buf[ctx.len++] = INCREMENT
@@ -163,6 +163,8 @@ export function writeEdges(
             ctx.buf[ctx.len++] = 0
             ctx.buf[ctx.len++] = DECREMENT
             value = -value.increment
+          } else {
+            return new ModifyError(edge, value)
           }
         }
 
