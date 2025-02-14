@@ -46,11 +46,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.CARDINALITY => {
             // const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-            const currentData = = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-            
-            const hash: u64 = read(u64, data, 0);
+            // const currentData = = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
-            std.debug.print("zig hash: {d}\n", .{hash});
+            // const hash: u64 = read(u64, data, 0);
+
+            // std.debug.print("zig hash: {d}\n", .{hash});
             // std.debug.print("UPDATE THE HLL {any} \n", .{data});
             return 0;
             // UPDATE THE HLL
