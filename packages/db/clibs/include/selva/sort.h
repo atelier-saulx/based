@@ -61,7 +61,7 @@ SELVA_EXPORT
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
 
 SELVA_EXPORT
-void selva_sort_insert_float(struct SelvaSortCtx *ctx, float d, const void *p);
+void selva_sort_insert_float(struct SelvaSortCtx *ctx, float f, const void *p);
 
 SELVA_EXPORT
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p);
