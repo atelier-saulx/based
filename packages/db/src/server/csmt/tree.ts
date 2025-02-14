@@ -4,6 +4,7 @@ import membershipProof, { Proof } from './memebership-proof.js'
 
 export function createTree(createHash: () => any): Csmt {
   let root: TreeNode | null = null
+  const emptyHash = genHash(Buffer.from(''))
 
   function genHash(s: Buffer) {
     return createHash().update(s).digest()
@@ -17,7 +18,7 @@ export function createTree(createHash: () => any): Csmt {
     const hash =
       left && right
         ? genNodeHash(left.hash, right.hash)
-        : genHash(Buffer.from(''))
+        : emptyHash
 
     return {
       hash,
