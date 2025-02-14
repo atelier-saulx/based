@@ -27,7 +27,6 @@ const referencesFilter = (
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
-
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]

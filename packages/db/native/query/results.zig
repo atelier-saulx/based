@@ -19,7 +19,7 @@ pub const Result = struct {
     includeMain: ?[]u8, // make this optional
     totalRefs: ?usize,
     isEdge: t.Prop,
-    score: ?u8,
+    score: ?[4]u8,
 };
 
 pub fn createResultsBuffer(
@@ -76,8 +76,9 @@ pub fn createResultsBuffer(
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
                 if (item.score != null) {
-                    data[i] = item.score.?;
-                    i += 1;
+                    @memcpy(data[i .. i + 4], &item.score.?);
+                    // data[i] = item.score.?;
+                    i += 4;
                 }
             }
         }

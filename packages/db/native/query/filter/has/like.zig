@@ -14,5 +14,5 @@ pub fn vector(value: []const f32, query: []u8) bool {
     const qFloat = read([]f32, query[0 .. query.len - 5], 0);
     const func: types.VectorFn = @enumFromInt(query[query.len - 5]);
     const score = read(f32, query, query.len - 4);
-    return @abs(vec(func, value, qFloat)) < score;
+    return vec(func, value, qFloat) < score;
 }

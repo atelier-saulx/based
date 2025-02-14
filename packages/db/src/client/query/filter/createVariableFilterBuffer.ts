@@ -20,6 +20,7 @@ import {
   VECTOR_EUCLIDEAN_DIST,
   VECTOR_COSTINE_SIMILARITY,
   VECTOR_MANHATTAN_DIST,
+  getVectorFn,
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
@@ -43,15 +44,7 @@ const parseValue = (
     if (!(val instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
     }
-    const optsFn = ctx.opts.fn
-    let fn = VECTOR_COSTINE_SIMILARITY
-    if (optsFn === 'dotProduct') {
-      fn = VECTOR_DOT_PRODUCT
-    } else if (optsFn === 'euclideanDistance') {
-      fn = VECTOR_EUCLIDEAN_DIST
-    } else if (optsFn === 'manhattanDistance') {
-      fn = VECTOR_MANHATTAN_DIST
-    }
+    let fn = getVectorFn(ctx.opts.fn)
     const score = ctx.opts.score
       ? Buffer.from(new Float32Array([ctx.opts.score]).buffer)
       : DEFAULT_SCORE

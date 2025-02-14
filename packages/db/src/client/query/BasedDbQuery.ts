@@ -9,7 +9,6 @@ import {
   Operator,
   sort,
   defToBuffer,
-  getAll,
   filterOr,
   convertFilter,
   QueryByAliasObj,
@@ -21,15 +20,13 @@ import {
   createOrGetEdgeRefQueryDef,
   createOrGetRefQueryDef,
 } from './include/utils.js'
-import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
-import { search, Search } from './search/index.js'
+import { search, Search, vectorSearch } from './search/index.js'
 import {
   isValidId,
   checkMaxIdsPerQuery,
   checkTotalBufferSize,
   hasField,
-  hasFields,
 } from './validation.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
@@ -37,7 +34,7 @@ import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
-import { FilterOpts } from './filter/types.js'
+import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 
 export { QueryByAliasObj }
 
@@ -73,7 +70,47 @@ export class QueryBranch<T> {
     return this
   }
 
-  search(query: string, ...fields: Search[]): T {
+  search(query: string, ...fields: Search[]): T
+
+  search(
+    query: ArrayBufferView,
+    field: string,
+    opts?: Omit<FilterOpts, 'lowerCase'>,
+  ): T
+
+  search(
+    query: string | ArrayBufferView,
+    field?: Search | string,
+    opts?: Omit<FilterOpts, 'lowerCase'> | Search,
+    ...fields: Search[]
+  ): T {
+    if (ArrayBuffer.isView(query)) {
+      // @ts-ignore
+      vectorSearch(this.def, query, field, opts ?? {})
+      // @ts-ignore
+      return this
+    }
+
+    if (field) {
+      if (!fields) {
+        // @ts-ignore
+        fields = [field]
+      } else {
+        // @ts-ignore
+        fields.unshift(field)
+      }
+    }
+
+    if (opts) {
+      if (!fields) {
+        // @ts-ignore
+        fields = [opts]
+      } else {
+        // @ts-ignore
+        fields.unshift(opts)
+      }
+    }
+
     if (fields.length) {
       if (fields.length === 1) {
         search(this.def, query, fields[0])

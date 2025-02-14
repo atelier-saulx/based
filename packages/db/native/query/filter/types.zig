@@ -56,4 +56,8 @@ pub const VectorFn = enum(u8) {
     euclideanDistance = 3,
 };
 
+pub const MaxVectorScore: f32 = 9999999;
+
+pub const MaxStringScore: u8 = 255;
+
 pub const ConditionsResult = std.meta.Tuple(&.{ usize, bool });

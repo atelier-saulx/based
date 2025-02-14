@@ -118,23 +118,39 @@ pub fn default(
 }
 
 pub fn search(
+    comptime isVector: bool,
     ids: []u8,
     ctx: *QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    searchCtx: *const searchStr.SearchCtx,
+    searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
-    var searchCtxC = s.createSearchCtx(0);
+    var searchCtxC = s.createSearchCtx(isVector, 0);
     checkItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             break :checkItem;
         }
-        s.addToScore(ctx, &searchCtxC, node.?, typeEntry, conditions, searchCtx);
+        s.addToScore(
+            isVector,
+            ctx,
+            &searchCtxC,
+            node.?,
+            typeEntry,
+            conditions,
+            searchCtx,
+        );
     }
-    try s.addToResults(ctx, &searchCtxC, include, @as(u32, @truncate(ids.len)) / 4, typeEntry);
+    try s.addToResults(
+        isVector,
+        ctx,
+        &searchCtxC,
+        include,
+        @as(u32, @truncate(ids.len)) / 4,
+        typeEntry,
+    );
 }
