@@ -27,6 +27,7 @@ import {
   checkMaxIdsPerQuery,
   checkTotalBufferSize,
   hasField,
+  isValidAlias,
 } from './validation.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
@@ -289,6 +290,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
 
     const def = createQueryDef(db, QueryDefType.Root, target)
+
+    if (isAlias(id)) {
+      isValidAlias(def, id)
+    }
+
     super(db, def)
   }
 

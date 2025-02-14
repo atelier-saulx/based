@@ -145,13 +145,13 @@ await test('search', async (t) => {
 
   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
 
-  // for (let i = 0; i < 2; i++) {
-  //   db.create('data', {
-  //     a: new Float32Array([i / 1e5, -0.4, 7.2, 19.6, 20.2]),
-  //     name: 'bla ' + i,
-  //     age: i,
-  //   })
-  // }
+  for (let i = 0; i < 1e6; i++) {
+    db.create('data', {
+      a: new Float32Array([i / 1e5, -0.4, 7.2, 19.6, 20.2]),
+      name: 'bla ' + i,
+      age: i,
+    })
+  }
 
   await db.drain()
   await db
@@ -160,5 +160,5 @@ await test('search', async (t) => {
     .range(0, 100)
     .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
     .get()
-    .inspect()
+    .inspect(10)
 })
