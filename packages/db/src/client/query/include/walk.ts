@@ -10,9 +10,15 @@ import {
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
-import { includeFields, includeProp, includeAllProps } from './props.js'
+import {
+  includeFields,
+  includeProp,
+  includeAllProps,
+  includeField,
+} from './props.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
+// import { includeDoesNotExist } from '../validation.js'
 
 export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
@@ -22,7 +28,6 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
-
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(db, QueryDefType.Edge, {
@@ -41,7 +46,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           } else {
             const f = path.slice(i + 1).join('.')
             if (!includeProp(refDef, refDef.props[f])) {
-              includeFields(refDef, [f])
+              includeField(refDef, f)
             }
             return
           }
@@ -51,7 +56,9 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         return
       }
       t = t[p]
+
       if (!t) {
+        // includeDoesNotExist(def, f)
         return
       }
 
@@ -69,7 +76,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
         if (!includeProp(refDef, refDef.props[f])) {
-          includeFields(refDef, [f])
+          includeField(refDef, f)
         }
         return
       }
@@ -80,6 +87,8 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       for (const field of endFields) {
         walkDefs(db, def, field)
       }
+    } else {
+      // includeDoesNotExist(def, f)
     }
   } else if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     const refDef = createOrGetRefQueryDef(db, def, prop)

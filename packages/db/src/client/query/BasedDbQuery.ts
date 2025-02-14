@@ -4,7 +4,6 @@ import {
   createQueryDef,
   QueryDefType,
   QueryTarget,
-  includeFields,
   filter,
   Operator,
   sort,
@@ -14,6 +13,7 @@ import {
   QueryByAliasObj,
   isAlias,
   includeField,
+  includeFields,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -22,13 +22,6 @@ import {
 } from './include/utils.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
-import {
-  isValidId,
-  checkMaxIdsPerQuery,
-  checkTotalBufferSize,
-  hasField,
-  isValidAlias,
-} from './validation.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '../../server/schema/types.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
@@ -39,7 +32,6 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 
 export { QueryByAliasObj }
 
-// fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
 
 export type BranchInclude = (select: SelectFn) => any
@@ -217,17 +209,13 @@ export class QueryBranch<T> {
           }
         })
       } else if (Array.isArray(f)) {
-        for (const field of f) {
-          hasField(field)
-          includeField(this.def, field)
-        }
+        includeFields(this.def, f)
       } else if (f !== undefined) {
         throw new Error(
           'Invalid include statement: expected props, refs and edges (string or array) or function',
         )
       }
     }
-
     // @ts-ignore
     return this
   }
@@ -268,22 +256,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         target.alias = id
       } else {
         if (Array.isArray(id)) {
-          checkMaxIdsPerQuery(id)
-          // const ids = id.filter((id) => typeof id === 'number')
-          // if (ids.length < id.length) {
-          //   throw new Error(
-          //     'Seems that aliases are part of ids in qeury not supported yet...',
-          //   )
-          // }
           // TODO ADD MULTI ALIAS
           // @ts-ignore
           target.ids = new Uint32Array(id)
-          for (const id of target.ids) {
-            isValidId(id)
-          }
           target.ids.sort()
         } else {
-          isValidId(id)
           target.id = id
         }
       }
@@ -291,18 +268,20 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     const def = createQueryDef(db, QueryDefType.Root, target)
 
-    if (isAlias(id)) {
-      isValidAlias(def, id)
-    }
-
     super(db, def)
   }
 
   #getInternal = async (resolve, reject) => {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeFields(this.def, ['*'])
+      includeField(this.def, '*')
     }
-    const buf = registerQuery(this)
+    let buf: Buffer
+    try {
+      buf = registerQuery(this)
+    } catch (err) {
+      reject(err)
+      return
+    }
     const d = performance.now()
     const res = await this.db.hooks.getQueryBuf(buf)
     if (res instanceof Error) {
@@ -324,7 +303,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   buffer: Buffer
 
   register() {
-    return registerQuery(this)
+    registerQuery(this)
   }
 
   i18n(locale: LangName) {
@@ -345,7 +324,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   _getSync(dbCtxExternal: any) {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeFields(this.def, ['*'])
+      includeField(this.def, '*')
     }
     const buf = registerQuery(this)
     const d = performance.now()
@@ -360,10 +339,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   toBuffer() {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeFields(this.def, ['*'])
+      includeField(this.def, '*')
     }
     const b = defToBuffer(this.db, this.def)
-    checkTotalBufferSize(b)
     return Buffer.concat(b)
   }
 }

@@ -10,7 +10,6 @@ import {
 import { primitiveFilter } from './primitiveFilter.js'
 import { FilterOpts, Operator, toFilterCtx } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
-import { hasField, checkOperator, checkValue } from '../validation.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
 
@@ -167,9 +166,6 @@ export const convertFilter = (
     value = operator
     operator = '='
   }
-  hasField(field)
-  checkOperator(operator)
-  checkValue(value, operator)
   if (operator === '!..') {
     return [
       [field, toFilterCtx('>', opts), value[1]],

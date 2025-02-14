@@ -62,15 +62,13 @@ export const throws = async (
   logErr?: boolean,
   label?: string,
 ) => {
+  var didThrow = false
   try {
     await fn()
-    const e = new Error('')
-    e.stack =
-      '\n' +
-      (label ?? fn.toString().replace('() =>', '') + '\n\n should throw \n') +
-      e.stack.split('\n').slice(-1).join('')
-    throw e
   } catch (err) {
+    didThrow = true
+    const e = new Error('')
+    e.stack.split('\n').slice(-1).join('')
     if (logErr) {
       console.log('')
       if (label) {
@@ -80,5 +78,8 @@ export const throws = async (
       }
       console.log('')
     }
+  }
+  if (didThrow === false) {
+    throw new Error(`"${label ?? 'Function '}" should throw`)
   }
 }

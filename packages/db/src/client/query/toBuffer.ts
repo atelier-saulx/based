@@ -5,6 +5,7 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { ALIAS, PropDef } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
+import { error } from 'console'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -35,11 +36,18 @@ const getAliasPropdef = (
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
+  // if (def.errors.length) {
+  //   return []
+  // }
+
   const result: Buffer[] = []
   const include = includeToBuffer(db, def)
 
   def.references.forEach((ref) => {
     include.push(...defToBuffer(db, ref))
+    if (ref.errors) {
+      def.errors.push(...ref.errors)
+    }
   })
 
   let edges: Buffer[]
@@ -49,6 +57,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     edges = includeToBuffer(db, def.edges)
     def.edges.references.forEach((ref) => {
       edges.push(...defToBuffer(db, ref))
+      if (ref.errors) {
+        def.errors.push(...ref.errors)
+      }
     })
     edgesSize = byteSize(edges)
   }

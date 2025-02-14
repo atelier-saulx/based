@@ -146,13 +146,15 @@ await test('query', async (t) => {
   await throws(
     () => db.query('user').include('derp').get(),
     true,
-    'none existing field in include',
+    'non existing field in include',
   )
+
+  await db.query('user').filter('derp', '=', true).get()
 
   await throws(
     () => db.query('user').filter('derp', '=', true).get(),
     true,
-    'none existing field in filter',
+    'non existing field in filter',
   )
 
   await throws(

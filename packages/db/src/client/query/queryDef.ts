@@ -11,9 +11,11 @@ import {
   QueryTarget,
   Target,
 } from './types.js'
+import { incorrectType } from './errors.js'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {
+    errors: [],
     filter: { conditions: new Map(), size: 0 },
     range: { offset: 0, limit: 0 },
     lang: langCodesMap.get('none'),
@@ -50,14 +52,15 @@ export const createQueryDef = (
   } else {
     const t = target as Target
     const q = queryDef as QueryDefRest
-    q.schema = db.schemaTypesParsed[t.type]
+    // VALIDATE TYPE
+    q.schema = db.schemaTypesParsed[t.type] ?? incorrectType(q, t.type)
     q.props = q.schema.props
     q.type = type
     q.target = t
     if (type === QueryDefType.Root) {
-      // IDS sort
       if (t.ids) {
-        q.range.limit = t.ids.length // 1k?
+        // VALIDATE IDS
+        q.range.limit = t.ids.length
       } else {
         q.range.limit = MAX_RANGE_PROP_LIMIT
       }

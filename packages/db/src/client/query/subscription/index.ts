@@ -1,5 +1,5 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { includeFields } from '../query.js'
+import { includeField, includeFields } from '../query.js'
 import { registerQuery } from '../registerQuery.js'
 import {
   Subscription,
@@ -22,10 +22,15 @@ export const subscribe = (
   let closed = false
 
   if (!q.def.include.stringFields.size && !q.def.references.size) {
-    includeFields(q.def, ['*'])
+    includeField(q.def, '*')
   }
 
-  registerQuery(q)
+  try {
+    registerQuery(q)
+  } catch (err) {
+    onError(err)
+    return () => q
+  }
 
   if (!q.db.subscriptions.has(q.id)) {
     const subscription: Subscription = {

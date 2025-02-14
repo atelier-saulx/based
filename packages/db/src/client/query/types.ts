@@ -5,6 +5,7 @@ import {
   SchemaTypeDef,
 } from '../../server/schema/schema.js'
 import { FilterOpts } from './filter/types.js'
+import { QueryError } from './errors.js'
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 
@@ -64,6 +65,7 @@ export type QueryDefSearch =
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
 
 export type QueryDefShared = {
+  errors: QueryError[]
   lang: LangCode
   filter: QueryDefFilter
   search: null | QueryDefSearch
