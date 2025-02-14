@@ -60,7 +60,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             // casting out nines, to strip it later
             const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             const countDistinct = selva.hll_count(@ptrCast(provaReal));
-            std.debug.print("Count Distinct = {any} \n", .{@round(countDistinct)});
+            std.debug.print("Count Distinct = {d} \n", .{@round(countDistinct)});
 
             return 8;
         },

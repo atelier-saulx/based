@@ -36,6 +36,16 @@ await test('hll', async (t) => {
       'mr snurfels',
       'lala',
       'lala',
+      'myCoolValue',
+      'myCoolValue',
+      'mr snurfels',
+      'mr snurfels',
+      'lala',
+      'lala',
+      'lele',
+      'lili',
+      'lolo',
+      'lulu',
     ],
   })
 
