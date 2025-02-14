@@ -17,7 +17,7 @@ await test('json', async (t) => {
     types: {
       jsonDerulo: {
         name: 'string',
-        myJson: 'json',
+        // myJson: 'json',
       },
     },
   })

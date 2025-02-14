@@ -128,5 +128,9 @@ export default {
 
   destroySortIndex: (buf: Buffer, dbCtx: any) => {
     return db.destroySortIndex(dbCtx, buf)
-  }
+  },
+
+  xxHash64: (buf: Buffer) => {
+    return db.xxHash64(buf)
+  },
 }
