@@ -669,6 +669,8 @@ void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx)
 
 SELVA_SORT_FOREACH(i64, RB_NEXT, i64)
 SELVA_SORT_FOREACH(i64_reverse, RB_PREV, i64)
+SELVA_SORT_FOREACH(float, RB_NEXT, f)
+SELVA_SORT_FOREACH(float_reverse, RB_PREV, f)
 SELVA_SORT_FOREACH(double, RB_NEXT, d)
 SELVA_SORT_FOREACH(double_reverse, RB_PREV, d)
 
