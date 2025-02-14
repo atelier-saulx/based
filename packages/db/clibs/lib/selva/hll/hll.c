@@ -90,7 +90,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
     
     if (hll->num_registers > len) {
-        printf("Dense mode failure: There is no allocated space on selva string for the required registers: (%d > %d)\n", len, hll->num_registers);
+        printf("Dense mode failure: There is no allocated space on selva string for the required registers: (%zu > %d)\n", len, hll->num_registers);
         exit(EXIT_FAILURE); 
     }
 
@@ -109,7 +109,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
 
-    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL);
+    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL); //&?
 
     uint8_t precision = first_hll->precision;
     uint32_t num_registers = first_hll->num_registers;
@@ -201,46 +201,59 @@ double hll_count(struct selva_string *hllss) {
 }
 
 int main(void) {
+
+    /* -------------------------------------------
+    ** Single value test 
+    ** -----------------------------------------*/
+
     // size_t precision = 14;
 
-    const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
+    // const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
 
-    size_t precision = 4;
+    // int initial_capacity = sizeof(bool) \
+    //                         + sizeof(precision) \
+    //                         + sizeof(uint32_t);
+
+    // struct selva_string hll;
+
+    // selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    // hll_init(&hll, precision, SPARSE);
+    // hll_add(&hll, hash);
+    // double estimated_cardinality = hll_count(&hll);
+    // printf("Estimated cardinality: %f\n", estimated_cardinality);
+
+    /* -------------------------------------------
+    ** Array union test 
+    ** -----------------------------------------*/
+
+    size_t precision = 14;
     int initial_capacity = sizeof(bool) \
                             + sizeof(precision) \
                             + sizeof(uint32_t);
-
     struct selva_string hll;
-    // selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
-
-    // hll_init(&hll, precision, SPARSE);
-
-    // int num_elements = 1e6;
-    // char (*elements)[50] = malloc(num_elements * sizeof(*elements));
-    // if (elements == NULL) {
-    //     perror("Failed to allocate memory");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // for (int i = 0; i < num_elements; i++) {
-    //     snprintf(elements[i], 50, "hll1_%d", i);
-    //     hll_add(&hll, elements[i]);
-    // }
-    // double estimated_cardinality = hll_count(&hll);
-
-    // printf("Estimated cardinality: %f\n", estimated_cardinality);
-    // float expected_cardinality = num_elements;
-    // float error = fabs(expected_cardinality - estimated_cardinality);
-    // printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
-
-    // free(elements);
-
-    printf("init: %d\n", initial_capacity);
     selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+
     hll_init(&hll, precision, SPARSE);
-    hll_add(&hll, hash);
+
+    int num_elements = 1e6;
+    char (*elements)[50] = malloc(num_elements * sizeof(*elements));
+    if (elements == NULL) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < num_elements; i++) {
+        snprintf(elements[i], 50, "hll1_%d", i);
+        hll_add(&hll, xxHash64(elements[i], strlen(elements[i])));
+    }
     double estimated_cardinality = hll_count(&hll);
+
     printf("Estimated cardinality: %f\n", estimated_cardinality);
+    float expected_cardinality = num_elements;
+    float error = fabs(expected_cardinality - estimated_cardinality);
+    printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
+
+    free(elements);
 
     return 0;
 }
