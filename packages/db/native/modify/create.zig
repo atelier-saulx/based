@@ -38,15 +38,16 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.CARDINALITY => {
             const len = read(u16, data, 0);
 
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.SELVA_STRING_STRUCT_SIZE);
-            selva.hll_init(hll, 8, true);
+            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 80);
+
+            selva.hll_init(hll, 14, true);
 
             var i: usize = 2;
             while (i < len * 8) {
                 const hllu = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
                 const hash = read(u64, data, i);
-                // std.debug.print("h: {any} \n", .{hash});
+                std.debug.print("h: {any} \n", .{hash});
 
                 selva.hll_add(hllu, hash);
 

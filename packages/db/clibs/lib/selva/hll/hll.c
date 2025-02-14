@@ -15,9 +15,11 @@
 #define DENSE false
 
 typedef struct {
-    bool is_sparse;
-    uint8_t precision;
-    uint32_t num_registers;
+    struct {
+        uint8_t is_sparse : 1;
+        uint8_t precision : 7;
+    };
+    uint16_t num_registers;
     uint32_t registers[];
 } HyperLogLogPlusPlus;
 
@@ -29,20 +31,25 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     }
     size_t len;
 
+    {
+        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        printf("len ===> %zu %zu\n", len, sizeof(HyperLogLogPlusPlus));
+    }
+
     if (is_sparse){
 
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
-
 
         hll->is_sparse = true;
         hll->precision = precision;
         hll->num_registers = 0;
     }
     else {
+        
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, NULL, num_registers);
+        (void)selva_string_append(hllss, NULL, num_registers * sizeof(uint32_t));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
