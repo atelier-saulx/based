@@ -31,8 +31,10 @@ await test('hll', async (t) => {
   const myArticle = await db.create('article', {
     myUniqueValuesCountFromArray: [
       'myCoolValue',
+      'myCoolValue',
       'mr snurfels',
       'mr snurfels',
+      'lala',
       'lala',
     ],
   })
