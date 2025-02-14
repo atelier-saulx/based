@@ -246,7 +246,7 @@ static struct SelvaSortItem *create_item_f(struct SelvaSortCtx *ctx, float f, co
 {
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
-    item->d = f;
+    item->f = f;
     item->p = p;
 
     return item;

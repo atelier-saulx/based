@@ -4,6 +4,7 @@ import membershipProof, { Proof } from './memebership-proof.js'
 
 export function createTree(createHash: () => any): Csmt {
   let root: TreeNode | null = null
+  const emptyHash = genHash(Buffer.from(''))
 
   function genHash(s: Buffer) {
     return createHash().update(s).digest()
@@ -17,7 +18,7 @@ export function createTree(createHash: () => any): Csmt {
     const hash =
       left && right
         ? genNodeHash(left.hash, right.hash)
-        : genHash(Buffer.from(''))
+        : emptyHash
 
     return {
       hash,
@@ -87,12 +88,20 @@ export function createTree(createHash: () => any): Csmt {
     return !node.left && !node.right && node.key === k
   }
 
-  function deleteNode(node: TreeNode, k: TreeKey): TreeNode {
+  function deleteNode(node: TreeNode, k: TreeKey): TreeNode | null {
     const left = node.left
     const right = node.right
 
     if (!left || !right) {
-      throw new Error('The tree is broken')
+      if (node.data) {
+        if (node.key === k) {
+          return null
+        }
+
+        throw new Error(`k=${k} does not exist`)
+      } else {
+        throw new Error('The tree is broken')
+      }
     }
 
     if (checkForLeaf(left, k) || checkForLeaf(right, k)) {

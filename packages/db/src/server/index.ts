@@ -20,6 +20,16 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
+class SortIndex {
+  constructor(buf: Buffer, dbCtxExternal: any) {
+    this.buf = buf
+    this.idx = native.createSortIndex(buf, dbCtxExternal)
+  }
+  buf: Buffer
+  idx: any
+  cnt = 0
+}
+
 export class DbWorker {
   constructor(address: BigInt, db: DbServer) {
     const { port1, port2 } = new MessageChannel()
@@ -117,12 +127,42 @@ export class DbServer {
   sortIndexes: {
     [type: number]: {
       [field: number]: {
-        [start: number]: any
+        [start: number]: SortIndex
       }
     }
   }
 
-  createSortIndex(type: string, field: string): any {
+  cleanupTimer: NodeJS.Timeout
+
+  cleanup() {
+    if (!this.cleanupTimer) {
+      // amount accessed
+      // current mem available
+      this.cleanupTimer = global.setTimeout(() => {
+        this.cleanupTimer = null
+        let remaining: boolean
+        for (const type in this.sortIndexes) {
+          for (const field in this.sortIndexes[type]) {
+            for (const start in this.sortIndexes[type][field]) {
+              const sortIndex = this.sortIndexes[type][field][start]
+              sortIndex.cnt /= 2
+              if (sortIndex.cnt < 1) {
+                native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
+                delete this.sortIndexes[type][field][start]
+              } else {
+                remaining = true
+              }
+            }
+          }
+        }
+        if (remaining) {
+          this.cleanup()
+        }
+      }, 60e3)
+    }
+  }
+
+  createSortIndex(type: string, field: string): SortIndex {
     const t = this.schemaTypesParsed[type]
     const prop = t.props[field]
 
@@ -145,7 +185,7 @@ export class DbServer {
     buf.writeUint16LE(prop.start, 3)
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
-    sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    sortIndex = new SortIndex(buf, this.dbCtxExternal)
     fields[prop.start] = sortIndex
     return sortIndex
   }
@@ -173,7 +213,7 @@ export class DbServer {
     }
   }
 
-  hasSortIndex(typeId: number, field: number, start: number): boolean {
+  getSortIndex(typeId: number, field: number, start: number): SortIndex {
     let types = this.sortIndexes[typeId]
     if (!types) {
       types = this.sortIndexes[typeId] = {}
@@ -182,11 +222,7 @@ export class DbServer {
     if (!fields) {
       fields = types[field] = {}
     }
-    let sortIndex = fields[start]
-    if (sortIndex) {
-      return true
-    }
-    return false
+    return fields[start]
   }
 
   migrateSchema(
@@ -201,7 +237,11 @@ export class DbServer {
     return migrate(this, schema, transform)
   }
 
-  createSortIndexBuffer(typeId: number, field: number, start: number): any {
+  createSortIndexBuffer(
+    typeId: number,
+    field: number,
+    start: number,
+  ): SortIndex {
     const buf = Buffer.allocUnsafe(8)
     buf.writeUint16LE(typeId, 0)
     buf[2] = field
@@ -230,7 +270,7 @@ export class DbServer {
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
     // put in modify stuff
-    const sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    const sortIndex = new SortIndex(buf, this.dbCtxExternal)
     const types = this.sortIndexes[typeId]
     const fields = types[field]
     fields[start] = sortIndex
@@ -417,14 +457,18 @@ export class DbServer {
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]
           const start = sort.readUint16LE(2 + 1)
-          if (!this.hasSortIndex(typeId, field, start)) {
+          let sortIndex = this.getSortIndex(typeId, field, start)
+          if (!sortIndex) {
             if (this.processingQueries) {
               return new Promise((resolve) => {
                 this.queryQueue.set(resolve, buf)
               })
             }
-            this.createSortIndexBuffer(typeId, field, start)
+            sortIndex = this.createSortIndexBuffer(typeId, field, start)
           }
+          // increment
+          sortIndex.cnt++
+          this.cleanup()
         }
       } else if (queryType == 1) {
         // This will be more advanced - sometimes has indexes / sometimes not
@@ -460,6 +504,7 @@ export class DbServer {
     }
 
     this.stopped = true
+    clearTimeout(this.cleanupTimer)
     try {
       if (!noSave) {
         await this.save()
