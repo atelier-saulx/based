@@ -36,24 +36,31 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.CARDINALITY => {
-            const hash: u64 = read(u64, data, 0);
-            // std.debug.print("zig hash: {d}\n", .{hash});
+            const len = read(u16, data, 0);
+
             const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.SELVA_STRING_STRUCT_SIZE);
+            selva.hll_init(hll, 4, false);
 
-            selva.hll_init(hll, 14, true);
-            selva.hll_add(hll, hash);
+            var i: usize = 2;
+            while (i < len * 8) {
+                const hash = read(u64, data, i);
+                std.debug.print("h: {any} \n", .{hash});
 
-            var size: usize = undefined;
-            const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hll, &size));
-            const strU8: []u8 = bufPtr[0..size];
-            try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
+                selva.hll_add(hll, hash);
+
+                var size: usize = undefined;
+                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hll, &size));
+                const strU8: []u8 = bufPtr[0..size];
+                try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
+                i += 8;
+            }
 
             // casting out nines, to strip it later
             const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             const countDistinct = selva.hll_count(@ptrCast(provaReal));
-            std.debug.print("Count Distinct = {any} \n", .{@round(countDistinct)});
+            std.debug.print("Count Distinct = {any} \n", .{countDistinct});
 
-            return 8;
+            return i;
         },
         else => {
             const len = read(u32, data, 0);
