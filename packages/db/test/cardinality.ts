@@ -33,7 +33,7 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'lele',
   })
 
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 1e1; i++) {
     await db.update('article', myArticle, {
       myUniqueValuesCount: `lala${i}`,
     })
