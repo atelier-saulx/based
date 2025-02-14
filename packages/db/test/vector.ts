@@ -156,9 +156,9 @@ await test('search', async (t) => {
   await db.drain()
   await db
     .query('data')
-    .include('id')
+    .include('id', 'name')
     .range(0, 100)
-    .search(fruit, 'a')
+    .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
     .get()
     .inspect()
 })

@@ -63,6 +63,7 @@ pub fn addToScore(
     }
     if (isVector) {
         ctx.score = searchMethods.searchVector(node, typeEntry, searchCtx);
+        // std.debug.print("ABS {any} \n", .{ctx.score});
         if (ctx.score > searchCtx.score) {
             return;
         }
@@ -78,6 +79,7 @@ pub fn addToScore(
     }
     ctx.i += 1;
     if (isVector) {
+        // BUG SCORE GETS READ INCORRECTLY
         selva.selva_sort_insert_float(ctx.scoreSortCtx, ctx.score, node);
     } else {
         const specialScore: i64 = (@as(i64, ctx.score) << 31) + ctx.i;
