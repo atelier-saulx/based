@@ -5,7 +5,6 @@
 #include "cdefs.h"
 #include "selva/selva_string.h"
 #include "selva/hll.h"
-// #include "xxhash.h"
 #include "selva/xxhash64.h"
 
 #define HLL_MIN_PRECISION 4
@@ -74,8 +73,6 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     bool is_sparse = hll->is_sparse;
     uint32_t precision = hll->precision;
 
-    // uint64_t hash = XXH64(element, strlen(element), 0);
-
     uint64_t index = hash >> (HASH_SIZE - precision);
     uint64_t w = (hash << precision) | (1ULL << (precision - 1));
     uint32_t rho = count_leading_zeros(w) + 1;
@@ -89,13 +86,14 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
             hll->num_registers = (index + 1);
         }
     }
-    /*
-     * TODO or maybe here?
-     *
-    if (len < wgfe)
-        selva_String_append()
-        */
+
     hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+    
+    if (hll->num_registers > len) {
+        printf("Dense mode failure: There is no allocated space on selva string for the required registers: (%d > %d)\n", len, hll->num_registers);
+        exit(EXIT_FAILURE); 
+    }
+
     if (rho > hll->registers[index]) {
         hll->registers[index] = rho;
     }
@@ -239,7 +237,7 @@ int main(void) {
 
     printf("init: %d\n", initial_capacity);
     selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
-    hll_init(&hll, precision, DENSE);
+    hll_init(&hll, precision, SPARSE);
     hll_add(&hll, hash);
     double estimated_cardinality = hll_count(&hll);
     printf("Estimated cardinality: %f\n", estimated_cardinality);

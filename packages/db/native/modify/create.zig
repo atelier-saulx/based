@@ -37,13 +37,10 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.CARDINALITY => {
             const hash: u64 = read(u64, data, 0);
-
             std.debug.print("zig hash: {d}\n", .{hash});
+            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.SELVA_STRING_STRUCT_SIZE);
 
-            // need to check i the hash cames empty?
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 80);
-
-            selva.hll_init(hll, 4, false);
+            selva.hll_init(hll, 4, true);
             selva.hll_add(hll, hash);
 
             var size: usize = undefined;
@@ -52,9 +49,9 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
 
             // casting out nines, to strip it later
-            // const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-            // const countDistinct = selva.hll_count(@ptrCast(provaReal));
-            // std.debug.print("Count Distinct = {any} \n", .{@round(countDistinct)});
+            const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+            const countDistinct = selva.hll_count(@ptrCast(provaReal));
+            std.debug.print("Count Distinct = {any} \n", .{@round(countDistinct)});
 
             return 8;
         },
