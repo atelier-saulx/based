@@ -309,7 +309,7 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 
 static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
 {
-    const sdb_nr_aliases_t nr_aliases = te->nr_aliases;
+    const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
 
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
