@@ -83,8 +83,8 @@ static int selva_sort_cmp_desc_i64(const struct SelvaSortItem * restrict a, cons
 
 static int selva_sort_cmp_asc_f(const struct SelvaSortItem * restrict a, const struct SelvaSortItem * restrict b)
 {
-    float x = a->d;
-    float y = b->d;
+    float x = a->f;
+    float y = b->f;
 
     return x < y ? -1 : x > y ? 1 : selva_sort_cmp_none(a, b);
 }
@@ -242,6 +242,16 @@ static struct SelvaSortItem *create_item_i64(struct SelvaSortCtx *ctx, int64_t v
     return item;
 }
 
+static struct SelvaSortItem *create_item_f(struct SelvaSortCtx *ctx, float f, const void *p)
+{
+    struct SelvaSortItem *item = mempool_get(&ctx->mempool);
+
+    item->d = f;
+    item->p = p;
+
+    return item;
+}
+
 static struct SelvaSortItem *create_item_d(struct SelvaSortCtx *ctx, double d, const void *p)
 {
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
@@ -331,9 +341,9 @@ void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
     }
 }
 
-void selva_sort_insert_float(struct SelvaSortCtx *ctx, float d, const void *p)
+void selva_sort_insert_float(struct SelvaSortCtx *ctx, float f, const void *p)
 {
-    struct SelvaSortItem *item = create_item_d(ctx, d, p);
+    struct SelvaSortItem *item = create_item_f(ctx, f, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_FLOAT_ASC:
