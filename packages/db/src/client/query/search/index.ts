@@ -1,6 +1,7 @@
 import { langCodesMap } from '@based/schema'
 import { STRING, TEXT, VECTOR } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
+import { FilterOpts } from '../filter/types.js'
 
 export type Search =
   | string[]
@@ -21,7 +22,12 @@ const makeSize = (nr: number, u8: boolean = false) => {
 }
 
 // vector
-export const vectorSearch = (def: QueryDef, q: ArrayBufferView, opts: {}) => {
+export const vectorSearch = (
+  def: QueryDef,
+  q: ArrayBufferView,
+  opts: Omit<FilterOpts, 'lowerCase'>,
+) => {
+  // [isVec] [q len] [q len] [fn] [score] [score] [score] [score] [q..]
   // else {
   //   const b = Buffer.from(q.buffer)
   //   bufs.push(makeSize(1, true), makeSize(b.byteLength), b)

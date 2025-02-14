@@ -9,14 +9,13 @@ const decompress = compressed.decompress;
 const Prop = @import("../../types.zig").Prop;
 const LangCode = @import("../../types.zig").LangCode;
 const VectorFn = @import("./types.zig").VectorFn;
+
 const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
-
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
-
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
 
@@ -28,7 +27,7 @@ pub fn SearchCtx(comptime isVector: bool) type {
     if (isVector) {
         return struct {
             field: u8,
-            query: []f32, // support more types later..
+            query: []f32, // support more types later
             func: VectorFn,
             score: f32,
         };
