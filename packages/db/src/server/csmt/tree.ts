@@ -87,12 +87,21 @@ export function createTree(createHash: () => any): Csmt {
     return !node.left && !node.right && node.key === k
   }
 
-  function deleteNode(node: TreeNode, k: TreeKey): TreeNode {
+  function deleteNode(node: TreeNode, k: TreeKey): TreeNode | null {
     const left = node.left
     const right = node.right
 
     if (!left || !right) {
-      throw new Error('The tree is broken')
+      console.log(node, k)
+      if (node.data) {
+        if (node.key === k) {
+          return null
+        }
+
+        throw new Error(`k=${k} does not exist`)
+      } else {
+        throw new Error('The tree is broken')
+      }
     }
 
     if (checkForLeaf(left, k) || checkForLeaf(right, k)) {
