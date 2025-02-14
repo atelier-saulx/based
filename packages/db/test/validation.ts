@@ -112,3 +112,53 @@ await test('update', async (t) => {
     ],
   )
 })
+
+await test('query', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          rating: 'uint32',
+          name: 'string',
+          friend: { ref: 'user', prop: 'friend' },
+          countryCode: { type: 'string', maxBytes: 2 },
+          connections: {
+            items: {
+              ref: 'user',
+              prop: 'connections',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  await throws(() => db.query('derp').get(), true, 'non existing type')
+
+  await throws(
+    () => db.query('user').include('derp').get(),
+    true,
+    'none existing field in include',
+  )
+
+  await throws(
+    () => db.query('user').filter('derp', '=', true).get(),
+    true,
+    'none existing field in filter',
+  )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user', { $id: 1 }).get(),
+    true,
+    'incorrect alias',
+  )
+})

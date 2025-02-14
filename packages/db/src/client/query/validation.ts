@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '../../server/schema/types.js'
+import { ALIAS, PropDef, PropDefEdge } from '../../server/schema/types.js'
 import {
   MAX_IDS_PER_QUERY,
   MIN_ID_VALUE,
@@ -6,7 +6,7 @@ import {
   MAX_BUFFER_SIZE,
 } from './thresholds.js'
 import { validOperators, Operator } from './filter/types.js'
-import { QueryByAliasObj } from './types.js'
+import { QueryByAliasObj, QueryDef } from './types.js'
 
 export const isValidId = (id: number): void => {
   if (typeof id != 'number') {
@@ -56,6 +56,15 @@ export const hasFields = (
 ): void => {
   if (Object.keys(fields).length === 0) {
     throw new Error('No fields available to include')
+  }
+}
+
+export const isValidAlias = (def: QueryDef, id: QueryByAliasObj) => {
+  for (const key in id) {
+    const prop = def.schema.props[key]
+    if (!prop || prop.typeIndex !== ALIAS) {
+      throw new Error(`Incorrect alias provided for query ${key}`)
+    }
   }
 }
 
