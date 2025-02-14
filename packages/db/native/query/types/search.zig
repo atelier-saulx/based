@@ -79,7 +79,6 @@ pub fn addToScore(
     }
     ctx.i += 1;
     if (isVector) {
-        // BUG SCORE GETS READ INCORRECTLY
         selva.selva_sort_insert_float(ctx.scoreSortCtx, ctx.score, node);
     } else {
         const specialScore: i64 = (@as(i64, ctx.score) << 31) + ctx.i;
