@@ -760,7 +760,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
         return selva_fields_reference_set(db, node, fs, (struct SelvaNode *)value, nullptr);
     case SELVA_FIELD_TYPE_REFERENCES:
-        return SELVA_ENOTSUP;
+        return selva_fields_references_insert(db, node, fs, -1, false, selva_get_type_by_node(db, (struct SelvaNode *)value), (struct SelvaNode *)value, NULL);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
