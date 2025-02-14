@@ -15,6 +15,13 @@
 #define SPARSE true
 #define DENSE false
 
+typedef struct {
+    bool is_sparse;
+    uint8_t precision;
+    uint32_t num_registers;
+    uint32_t registers[];
+} HyperLogLogPlusPlus;
+
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
@@ -36,8 +43,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
-        /* TODO append here to allocate space for the registers. */
-        (void)selva_string_append(hllss, NULL, 16);
+        (void)selva_string_append(hllss, NULL, num_registers);
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
