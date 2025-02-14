@@ -11,7 +11,7 @@ import {
   QueryTarget,
   Target,
 } from './types.js'
-import { validateId, validateIds, validateType } from './errors.js'
+import { validateId, validateIds, validateType } from './validation.js'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {

@@ -5,7 +5,7 @@ import {
   SchemaTypeDef,
 } from '../../server/schema/schema.js'
 import { FilterOpts } from './filter/types.js'
-import { QueryError } from './errors.js'
+import { QueryError } from './validation.js'
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 

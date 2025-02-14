@@ -1,7 +1,7 @@
 import native from '../../native.js'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toBuffer.js'
-import { handleErrors } from './errors.js'
+import { handleErrors } from './validation.js'
 
 export const registerQuery = (q: BasedDbQuery): Buffer => {
   if (!q.id) {
