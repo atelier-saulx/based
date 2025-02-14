@@ -57,6 +57,7 @@ function addHll(
   for (let val of value) {
     let b: Buffer
     if (typeof val === 'string') {
+      console.log(`values = \'${val}\'`)
       b = Buffer.from(val)
     } else if (!(val instanceof Buffer)) {
       b = val

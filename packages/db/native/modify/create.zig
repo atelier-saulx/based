@@ -46,7 +46,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 const hllu = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
                 const hash = read(u64, data, i);
-                std.debug.print("h: {any} \n", .{hash});
+                // std.debug.print("h: {any} \n", .{hash});
 
                 selva.hll_add(hllu, hash);
 

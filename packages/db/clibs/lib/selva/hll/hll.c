@@ -100,10 +100,10 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
     // printf("is Sparse: %d\n", hll->is_sparse);
     // printf("Precision: %d\n", hll->precision);
-    printf("Num registers: %d\n", hll->num_registers);
-    for (int i = 0; i < hll->num_registers; i++) {
-        printf("M[%d] = %u\n", i, hll->registers[i]);
-    }
+    // printf("Num registers: %d\n", hll->num_registers);
+    // for (int i = 0; i < hll->num_registers; i++) {
+    //     printf("M[%d] = %u\n", i, hll->registers[i]);
+    // }
 
 }
 

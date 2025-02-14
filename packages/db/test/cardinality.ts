@@ -24,12 +24,35 @@ await test('hll', async (t) => {
 
   console.log('------- create --------')
 
+  const myArticle = await db.create('article', {
+    myUniqueValuesCount: 'myCoolValue',
+  })
+
   // const myArticle = await db.create('article', {
-  //   myUniqueValuesCount: 'myCoolValue',
+  //   myUniqueValuesCountFromArray: [
+  //     'myCoolValue',
+  //     'myCoolValue',
+  //     'mr snurfels',
+  //     'mr snurfels',
+  //     'lala',
+  //     'lala',
+  //     'myCoolValue',
+  //     'myCoolValue',
+  //     'mr snurfels',
+  //     'mr snurfels',
+  //     'lala',
+  //     'lala',
+  //     'lele',
+  //     'lili',
+  //     'lolo',
+  //     'lulu',
+  //   ],
   // })
 
-  const myArticle = await db.create('article', {
-    myUniqueValuesCountFromArray: [
+  console.log('------- update --------')
+
+  await db.update('article', myArticle, {
+    myUniqueValuesCount: [
       'myCoolValue',
       'myCoolValue',
       'mr snurfels',
@@ -48,12 +71,6 @@ await test('hll', async (t) => {
       'lulu',
     ],
   })
-
-  console.log('------- update --------')
-
-  // await db.update('article', myArticle, {
-  //   myUniqueValuesCount: 'lele',
-  // })
 
   // for (let i = 0; i < 1e1; i++) {
   //   await db.update('article', myArticle, {
