@@ -5,7 +5,8 @@
 #include "cdefs.h"
 #include "selva/selva_string.h"
 #include "selva/hll.h"
-#include "xxhash.h"
+// #include "xxhash.h"
+#include "selva/xxhash64.h"
 
 #define HLL_MIN_PRECISION 4
 #define HLL_MAX_PRECISION 16
@@ -37,7 +38,6 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
 
         int initial_capacity = sizeof(precision) + sizeof(num_registers) + (num_registers * sizeof(uint32_t));
 
-        fprintf(stderr, "%p %x\n", hllss, !hllss ?: hllss->flags);
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);  
 
         hll->is_sparse = false;
@@ -50,8 +50,11 @@ int count_leading_zeros(uint64_t x) {
     return (x == 0 ? 0 : __builtin_clzll(x));
 }
 
-void hll_add(struct selva_string *hllss, const void* element) {
-    if (!hllss || !element) {
+void hll_add(struct selva_string *hllss, const uint64_t hash) {
+    printf("c hash: %llu\n", hash);
+    printf("c hash: %x\n", hash);
+
+    if (!hllss || !hash) {
         return;
     }
 
@@ -65,7 +68,7 @@ void hll_add(struct selva_string *hllss, const void* element) {
     bool is_sparse = hll->is_sparse;
     uint32_t precision = hll->precision;
     
-    uint64_t hash = XXH64(element, strlen(element), 0);
+    // uint64_t hash = XXH64(element, strlen(element), 0);
 
     uint64_t index = hash >> (HASH_SIZE - precision);
     uint64_t w = (hash << precision) | (1ULL << (precision - 1));
@@ -84,11 +87,14 @@ void hll_add(struct selva_string *hllss, const void* element) {
         hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
         hll->registers[index] = rho;
     }
-    // printf("HLL in binary format: ");
-    // for (size_t i = 6*8; i < (6*8 + 16); i++) {
-    //     printf("%02x", ((unsigned char *)hll)[i]);
-    // }
-    // printf("\n");
+    
+    printf("is Sparse: %d\n", hll->is_sparse);
+    printf("Precision: %d\n", hll->precision);
+    printf("Num registers: %d\n", hll->num_registers);
+    for (int i = 0; i < hll->num_registers; i++) {
+        printf("M[%d] = %u\n", i, hll->registers[i]);
+    }
+
 }
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
@@ -155,11 +161,16 @@ double hll_count(struct selva_string *hllss) {
     uint32_t num_registers = hll->num_registers;
     uint32_t *registers = hll->registers;
 
+    printf("is Sparse: %d\n", hll->is_sparse);
+    printf("Precision: %d\n", hll->precision);
+    printf("Num registers: %d\n", hll->num_registers);
+
     double raw_estimate = 0.0;
     double zero_count = 0.0;
     
 
     for (size_t i = 0; i < num_registers; i++) {
+        printf("M[%zu] = %u\n", i, registers[i]);  
         if (registers[i] == 0) {
             zero_count++;
         }
@@ -180,35 +191,45 @@ double hll_count(struct selva_string *hllss) {
 }
 
 int main(void) {
-    size_t precision = 14;
+    // size_t precision = 14;
+
+    const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
+
+    size_t precision = 4;
     int initial_capacity = sizeof(bool) \
                             + sizeof(precision) \
                             + sizeof(uint32_t);
     
     struct selva_string hll;
+    // selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+
+    // hll_init(&hll, precision, SPARSE);
+
+    // int num_elements = 1e6;
+    // char (*elements)[50] = malloc(num_elements * sizeof(*elements));
+    // if (elements == NULL) {
+    //     perror("Failed to allocate memory");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // for (int i = 0; i < num_elements; i++) {
+    //     snprintf(elements[i], 50, "hll1_%d", i);
+    //     hll_add(&hll, elements[i]);
+    // }
+    // double estimated_cardinality = hll_count(&hll);
+
+    // printf("Estimated cardinality: %f\n", estimated_cardinality);
+    // float expected_cardinality = num_elements;
+    // float error = fabs(expected_cardinality - estimated_cardinality);
+    // printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
+
+    // free(elements);
+
     selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
-
-    hll_init(&hll, precision, SPARSE);
-
-    int num_elements = 1e6;
-    char (*elements)[50] = malloc(num_elements * sizeof(*elements));
-    if (elements == NULL) {
-        perror("Failed to allocate memory");
-        exit(EXIT_FAILURE);
-    }
-
-    for (int i = 0; i < num_elements; i++) {
-        snprintf(elements[i], 50, "hll1_%d", i);
-        hll_add(&hll, elements[i]);
-    }
+    hll_init(&hll, precision, DENSE);
+    hll_add(&hll, hash);
     double estimated_cardinality = hll_count(&hll);
-
     printf("Estimated cardinality: %f\n", estimated_cardinality);
-    float expected_cardinality = num_elements;
-    float error = fabs(expected_cardinality - estimated_cardinality);
-    printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
-
-    free(elements);
 
     return 0;
 }

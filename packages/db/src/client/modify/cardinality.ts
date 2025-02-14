@@ -3,7 +3,7 @@ import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import { ModifyOp, ModifyErr, UPDATE, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { crc32 } from '../crc32.js'
+import { xxHash64 } from '../xxHash64.js'
 
 export function writeHll(
   value: string | null | Buffer,
@@ -40,7 +40,7 @@ export function writeHll(
     //   }
     // }
   } else {
-    return addHll(value, ctx, def, t, parentId, modifyOp, 0)
+    return addHll(value, ctx, def, t, parentId, modifyOp)
   }
 }
 
@@ -51,31 +51,20 @@ function addHll(
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
-  addOrPut: 0 | 1,
 ): ModifyErr {
-  console.log(`addHll: value = ${value}`)
-  let size = value.length * 4 + 1
+  let size = 8
 
   if (ctx.len + size + 11 > ctx.max) {
     return RANGE_ERR
   }
 
+  console.log(`test JS original value = ${value}`)
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
-  ctx.buf[ctx.len++] = size
-  ctx.buf[ctx.len++] = size >>>= 8
-  ctx.buf[ctx.len++] = size >>>= 8
-  ctx.buf[ctx.len++] = size >>>= 8
-  ctx.buf[ctx.len++] = addOrPut
-  for (const str of value) {
-    if (typeof str !== 'string') {
-      return new ModifyError(t, value)
-    }
-    // CALL XX
-    let hash = crc32(Buffer.from(str))
-    ctx.buf[ctx.len++] = hash
-    ctx.buf[ctx.len++] = hash >>>= 8
-    ctx.buf[ctx.len++] = hash >>>= 8
-    ctx.buf[ctx.len++] = hash >>>= 8
-  }
+
+  let hash: bigint = xxHash64(Buffer.from(value)) //1ec6c662633f0026 or 2217677992400715814
+
+  ctx.buf.writeBigUInt64LE(hash, ctx.len)
+  console.log('js hash:', hash)
+  ctx.len += 8
 }
