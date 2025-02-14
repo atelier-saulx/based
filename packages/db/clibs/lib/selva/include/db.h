@@ -81,8 +81,7 @@ struct SelvaTypeEntry {
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
         size_t nr_aliases; /*!< Number of aliases by name. */
-    } *aliases __pcounted_by(nr_aliases);
-    size_t nr_aliases; /*!< Number of alias fields in this type. */
+    } *aliases __pcounted_by(ns.nr_aliases);
     size_t nr_nodes; /*!< Number of nodes of this type. */
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
     /**
