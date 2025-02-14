@@ -63,7 +63,7 @@ export const isValidAlias = (def: QueryDef, id: QueryByAliasObj) => {
   for (const key in id) {
     const prop = def.schema.props[key]
     if (!prop || prop.typeIndex !== ALIAS) {
-      throw new Error(`Incorrect alias provided for query ${key}`)
+      throw new Error(`Incorrect alias provided for query "${key}"`)
     }
   }
 }
