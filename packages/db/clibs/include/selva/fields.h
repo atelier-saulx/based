@@ -119,17 +119,6 @@ int selva_fields_set(
         const struct SelvaFieldSchema *fs,
         const void *value, size_t len);
 
-/**
- * Set field value with CRC.
- */
-SELVA_EXPORT
-int selva_fields_set_wcrc(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        const struct SelvaFieldSchema *fs,
-        const void *value, size_t len,
-        uint32_t crc);
-
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
         struct SelvaNode *node,
@@ -243,7 +232,12 @@ int selva_fields_get_reference_meta_mutable_string(
  * +------+------+--------+-----+
  */
 SELVA_EXPORT
-int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len);
+int selva_fields_set_string(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaFieldInfo *nfo,
+        const char *str,
+        size_t len);
 
 /**
  * Set text field translation.
@@ -326,7 +320,7 @@ SELVA_EXPORT
 void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /**
- * Init fields of a node.
+ * Init the fields struct of a node or edge.
  */
 SELVA_EXPORT
 void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
