@@ -55,18 +55,19 @@ pub fn default(
 }
 
 pub fn search(
+    comptime isVector: bool,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    searchCtx: *const searchStr.SearchCtx,
+    searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
-    var searchCtxC = s.createSearchCtx(offset);
+    var searchCtxC = s.createSearchCtx(isVector, offset);
     checkItem: while (searchCtxC.totalSearchResults < limit) {
         if (first) {
             first = false;
@@ -76,7 +77,15 @@ pub fn search(
         if (node == null) {
             break :checkItem;
         }
-        s.addToScore(ctx, &searchCtxC, node.?, typeEntry, conditions, searchCtx);
+        s.addToScore(
+            isVector,
+            ctx,
+            &searchCtxC,
+            node.?,
+            typeEntry,
+            conditions,
+            searchCtx,
+        );
     }
-    try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
+    try s.addToResults(isVector, ctx, &searchCtxC, include, limit, typeEntry);
 }

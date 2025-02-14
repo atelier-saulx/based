@@ -97,7 +97,9 @@ struct SelvaFieldsSchema {
 };
 
 struct SelvaNodeSchema {
+    size_t nr_aliases; /*!< Number of alias fields in this type. */
     struct SelvaFieldsSchema fields_schema;
+    /* Nothing must be put after this line. */
 };
 
 struct SelvaAlias;

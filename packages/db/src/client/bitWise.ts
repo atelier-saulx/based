@@ -28,7 +28,25 @@ export const readDoubleLE = (val: Uint8Array, offset: number): number => {
 }
 
 export const readFloatLE = (val: Uint8Array, offset: number): number => {
-  return Buffer.from(val.buffer).readFloatLE(offset)
+  const bits =
+    val[offset] |
+    (val[offset + 1] << 8) |
+    (val[offset + 2] << 16) |
+    (val[offset + 3] << 24)
+  const sign = bits >>> 31 ? -1 : 1
+  let exponent = (bits >>> 23) & 0xff
+  let fraction = bits & 0x7fffff
+  if (exponent === 0xff) {
+    if (fraction === 0) return sign * Infinity
+    return NaN
+  }
+  if (exponent === 0) {
+    if (fraction === 0) return sign * 0
+    exponent = 1
+  } else {
+    fraction |= 0x800000
+  }
+  return sign * fraction * 2 ** (exponent - 150)
 }
 
 export const readUint32 = (val: Uint8Array, offset: number): number => {

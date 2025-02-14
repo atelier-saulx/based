@@ -788,7 +788,7 @@ node_id_t selva_get_node_id(const struct SelvaNode *node)
  */
 static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
 {
-    for (size_t i = 0; i < type->nr_aliases; i++) {
+    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
         struct SelvaAliases *aliases = &type->aliases[i];
         const struct SelvaAlias *alias;
         struct SelvaAlias find = {

@@ -151,6 +151,19 @@ export const VECTOR_MANHATTAN_DIST = 1
 export const VECTOR_COSTINE_SIMILARITY = 2
 export const VECTOR_EUCLIDEAN_DIST = 3
 
+export const getVectorFn = (optsFn?: FilterOpts['fn']) => {
+  if (!optsFn) {
+    return VECTOR_COSTINE_SIMILARITY
+  }
+  if (optsFn === 'dotProduct') {
+    return VECTOR_DOT_PRODUCT
+  } else if (optsFn === 'euclideanDistance') {
+    return VECTOR_EUCLIDEAN_DIST
+  } else if (optsFn === 'manhattanDistance') {
+    return VECTOR_MANHATTAN_DIST
+  }
+}
+
 export const toFilterCtx = (op: Operator, opts: FilterOpts = {}): FilterCtx => {
   if (op === '=' || op === '!=') {
     return {

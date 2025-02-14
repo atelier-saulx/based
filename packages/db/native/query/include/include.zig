@@ -37,7 +37,7 @@ pub fn getFields(
     typeEntry: db.Type,
     include: []u8,
     edgeRef: ?types.RefStruct,
-    score: ?u8,
+    score: ?[4]u8,
     comptime isEdge: bool,
 ) !usize {
     var includeMain: ?[]u8 = null;
@@ -56,7 +56,7 @@ pub fn getFields(
             const edges = operation[2 .. 2 + edgeSize];
             if (!idIsSet) {
                 idIsSet = true;
-                size += try addIdOnly(ctx, id);
+                size += try addIdOnly(ctx, id, score);
             }
             size += try getFields(node, ctx, id, typeEntry, edges, .{
                 .reference = edgeRef.?.reference,
@@ -73,7 +73,7 @@ pub fn getFields(
             includeIterator += refSize + 2;
             if (!idIsSet) {
                 idIsSet = true;
-                size += try addIdOnly(ctx, id);
+                size += try addIdOnly(ctx, id, score);
             }
             size += getRefsFields(
                 ctx,
@@ -92,7 +92,7 @@ pub fn getFields(
             includeIterator += refSize + 2;
             if (!idIsSet) {
                 idIsSet = true;
-                size += try addIdOnly(ctx, id);
+                size += try addIdOnly(ctx, id, score);
             }
             size += getSingleRefFields(
                 ctx,
@@ -161,7 +161,7 @@ pub fn getFields(
                     idIsSet = true;
                     if (score != null) {
                         result.score = score;
-                        size += 1;
+                        size += 4;
                     }
                 }
                 try ctx.results.append(result);
@@ -192,7 +192,7 @@ pub fn getFields(
                 idIsSet = true;
                 if (score != null) {
                     result.score = score;
-                    size += 1;
+                    size += 4;
                 }
             }
             try ctx.results.append(result);
@@ -201,7 +201,7 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        size += try addIdOnly(ctx, id);
+        size += try addIdOnly(ctx, id, score);
     }
 
     return size;

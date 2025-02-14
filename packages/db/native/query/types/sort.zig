@@ -71,6 +71,7 @@ pub fn default(
 }
 
 pub fn search(
+    comptime isVector: bool,
     comptime desc: bool,
     ctx: *QueryCtx,
     offset: u32,
@@ -79,7 +80,7 @@ pub fn search(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
-    searchCtx: *const searchStr.SearchCtx,
+    searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
@@ -99,7 +100,7 @@ pub fn search(
     } else {
         selva.selva_sort_foreach_begin(sI.index);
     }
-    var searchCtxC = s.createSearchCtx(offset);
+    var searchCtxC = s.createSearchCtx(isVector, offset);
     while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
         if (desc) {
@@ -107,10 +108,25 @@ pub fn search(
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index));
         }
-        s.addToScore(ctx, &searchCtxC, node, typeEntry, conditions, searchCtx);
+        s.addToScore(
+            isVector,
+            ctx,
+            &searchCtxC,
+            node,
+            typeEntry,
+            conditions,
+            searchCtx,
+        );
         if ((searchCtxC.totalSearchResults >= limit)) {
             break;
         }
     }
-    try s.addToResults(ctx, &searchCtxC, include, limit, typeEntry);
+    try s.addToResults(
+        isVector,
+        ctx,
+        &searchCtxC,
+        include,
+        limit,
+        typeEntry,
+    );
 }

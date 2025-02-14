@@ -8,12 +8,14 @@ const compressed = @import("./compressed.zig");
 const decompress = compressed.decompress;
 const Prop = @import("../../types.zig").Prop;
 const LangCode = @import("../../types.zig").LangCode;
+const VectorFn = @import("./types.zig").VectorFn;
 
+const MaxVectorScore = @import("./types.zig").MaxVectorScore;
+const vectorScore = @import("./has/vector.zig").vec;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
-
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
 
@@ -21,36 +23,59 @@ inline fn isSeparator(ch: u8) bool {
     return simd.countElementsWithValue(seperatorChars, ch) > 0;
 }
 
-pub const SearchCtx = struct {
-    fields: []u8,
-    len: u16,
-    allQueries: []u8,
-    words: u16,
-    meh: u8,
-    bad: u8,
-};
-
-pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
-    const sLen = read(u16, searchBuf, 0);
-    const words = read(u8, searchBuf, 2);
-    const fields = searchBuf[2 + sLen .. searchBuf.len];
-    var totalWeights: u8 = 0;
-    var j: usize = 0;
-    var totalfields: u8 = 0;
-    while (j < fields.len) {
-        const weight = fields[j + 1];
-        totalWeights += weight;
-        j += 2;
-        totalfields += 1;
+pub fn SearchCtx(comptime isVector: bool) type {
+    if (isVector) {
+        return struct {
+            field: u8,
+            query: []f32, // support more types later
+            func: VectorFn,
+            score: f32,
+        };
     }
-    return .{
-        .len = sLen,
-        .allQueries = searchBuf[3..sLen],
-        .fields = fields,
-        .words = words,
-        .meh = words * 1,
-        .bad = 2 + (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
+    return struct {
+        fields: []u8,
+        len: u16,
+        allQueries: []u8,
+        words: u16,
+        meh: u8,
+        bad: u8,
+        score: u8,
     };
+}
+
+pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVector) {
+    if (!isVector) {
+        const sLen = read(u16, searchBuf, 1);
+        const words = read(u8, searchBuf, 3);
+        const fields = searchBuf[3 + sLen .. searchBuf.len];
+        var j: usize = 0;
+        var totalfields: u8 = 0;
+        var totalWeights: u8 = 0;
+        while (j < fields.len) {
+            const weight = fields[j + 1];
+            totalWeights += weight;
+            j += 2;
+            totalfields += 1;
+        }
+        return .{
+            .len = sLen,
+            .allQueries = searchBuf[4..sLen],
+            .fields = fields,
+            .words = words,
+            .meh = words * 1,
+            .bad = 2 + (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
+            .score = 0,
+        };
+    } else {
+        const sLen = read(u16, searchBuf, 1);
+        // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
+        return .{
+            .field = searchBuf[3],
+            .func = @enumFromInt(searchBuf[4]),
+            .score = read(f32, searchBuf, 5),
+            .query = read([]f32, searchBuf[9 .. 9 + sLen], 0),
+        };
+    }
 }
 
 fn hamming_ascii(
@@ -260,7 +285,7 @@ pub fn search(
     dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
-    ctx: *const SearchCtx,
+    ctx: *const SearchCtx(false),
 ) u8 {
     const fl = ctx.fields.len;
     var p: usize = 0;
@@ -336,4 +361,24 @@ pub fn search(
         }
     }
     return totalScore;
+}
+
+pub fn searchVector(
+    node: *selva.SelvaNode,
+    typeEntry: *selva.SelvaTypeEntry,
+    ctx: *const SearchCtx(true),
+) f32 {
+    // add FS on ctx
+    const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
+        return MaxVectorScore;
+    };
+    const value = db.getField(typeEntry, ctx.field, node, fieldSchema);
+    if (value.len == 0) {
+        return MaxVectorScore;
+    }
+    return vectorScore(ctx.func, read([]f32, value, 0), ctx.query);
+}
+
+pub inline fn isVectorSearch(src: []u8) bool {
+    return src[0] == 1;
 }

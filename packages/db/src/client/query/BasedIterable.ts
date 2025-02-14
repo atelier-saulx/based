@@ -3,7 +3,7 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
 import { size, time, inspectData } from './display.js'
-import { readUint32 } from '../bitWise.js'
+import { readFloatLE, readUint32 } from '../bitWise.js'
 
 export { time, size, inspectData }
 
@@ -92,8 +92,8 @@ export class BasedQueryResponse {
         id,
       }
       if (this.def.search) {
-        item.$searchScore = result[i]
-        i += 1
+        item.$searchScore = readFloatLE(result, i)
+        i += 4
       }
       const l = readAllFields(
         this.def,

@@ -19,6 +19,7 @@ const QueryAlias = @import("./types/alias.zig");
 
 const read = @import("../utils.zig").read;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
+const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
@@ -72,8 +73,29 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         if (sortSize == 0) {
             if (searchSize > 0) {
                 const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                const searchCtx = &createSearchCtx(search);
-                try QueryDefault.search(&ctx, offset, limit, typeId, filterBuf, include, searchCtx);
+                if (isVectorSearch(search)) {
+                    try QueryDefault.search(
+                        true,
+                        &ctx,
+                        offset,
+                        limit,
+                        typeId,
+                        filterBuf,
+                        include,
+                        &createSearchCtx(true, search),
+                    );
+                } else {
+                    try QueryDefault.search(
+                        false,
+                        &ctx,
+                        offset,
+                        limit,
+                        typeId,
+                        filterBuf,
+                        include,
+                        &createSearchCtx(false, search),
+                    );
+                }
             } else {
                 try QueryDefault.default(&ctx, offset, limit, typeId, filterBuf, include);
             }
@@ -82,11 +104,20 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
             const isAsc = sortBuf[0] == 0;
             if (searchSize > 0) {
                 const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                const searchCtx = &createSearchCtx(search);
-                if (isAsc) {
-                    try QuerySort.search(false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                if (isVectorSearch(search)) {
+                    const searchCtx = &createSearchCtx(true, search);
+                    if (isAsc) {
+                        try QuerySort.search(true, false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    } else {
+                        try QuerySort.search(true, true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    }
                 } else {
-                    try QuerySort.search(true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    const searchCtx = &createSearchCtx(false, search);
+                    if (isAsc) {
+                        try QuerySort.search(false, false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    } else {
+                        try QuerySort.search(false, true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+                    }
                 }
             } else if (isAsc) {
                 try QuerySort.default(false, &ctx, offset, limit, typeId, filterBuf, include, s);
@@ -114,15 +145,27 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const include = q[searchIndex + searchSize .. q.len];
         if (sortSize == 0) {
             if (searchSize > 0) {
-                const searchCtx = &createSearchCtx(q[searchIndex .. searchIndex + searchSize]);
-                try QueryIds.search(ids, &ctx, typeId, filterBuf, include, searchCtx);
+                const search = q[searchIndex .. searchIndex + searchSize];
+                if (isVectorSearch(search)) {
+                    const searchCtx = &createSearchCtx(true, search);
+                    try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
+                } else {
+                    const searchCtx = &createSearchCtx(false, search);
+                    try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
+                }
             } else {
                 try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
             }
         } else {
             if (searchSize > 0) {
-                const searchCtx = &createSearchCtx(q[searchIndex .. searchIndex + searchSize]);
-                try QueryIds.search(ids, &ctx, typeId, filterBuf, include, searchCtx);
+                const search = q[searchIndex .. searchIndex + searchSize];
+                if (isVectorSearch(search)) {
+                    const searchCtx = &createSearchCtx(true, search);
+                    try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
+                } else {
+                    const searchCtx = &createSearchCtx(false, search);
+                    try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
+                }
             } else {
                 const isAsc = sortBuf[0] == 0;
                 if (isAsc) {

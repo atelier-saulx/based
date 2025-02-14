@@ -546,7 +546,10 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const cha
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
 
-    return parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
+    int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
+    ns->nr_aliases = ctx.alias_index;
+
+    return err;
 }
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)

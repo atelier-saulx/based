@@ -5,7 +5,7 @@
 #include "cdefs.h"
 #include "selva/selva_string.h"
 #include "selva/hll.h"
-#include "xxhash.h"
+#include "selva/xxhash64.h"
 
 #define HLL_MIN_PRECISION 4
 #define HLL_MAX_PRECISION 16
@@ -14,8 +14,15 @@
 #define SPARSE true
 #define DENSE false
 
+typedef struct {
+    bool is_sparse;
+    uint8_t precision;
+    uint32_t num_registers;
+    uint32_t registers[];
+} HyperLogLogPlusPlus;
+
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
-    if (precision < HLL_MIN_PRECISION || 
+    if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
         printf("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION );
         exit(EXIT_FAILURE);
@@ -24,7 +31,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
 
     if (is_sparse){
 
-        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);  
+        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
 
         hll->is_sparse = true;
@@ -35,10 +42,8 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
-        int initial_capacity = sizeof(precision) + sizeof(num_registers) + (num_registers * sizeof(uint32_t));
-
-        fprintf(stderr, "%p %x\n", hllss, !hllss ?: hllss->flags);
-        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);  
+        (void)selva_string_append(hllss, NULL, num_registers);
+        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
         hll->precision = precision;
@@ -50,8 +55,11 @@ int count_leading_zeros(uint64_t x) {
     return (x == 0 ? 0 : __builtin_clzll(x));
 }
 
-void hll_add(struct selva_string *hllss, const void* element) {
-    if (!hllss || !element) {
+void hll_add(struct selva_string *hllss, const uint64_t hash) {
+    // printf("c hash: %llu\n", hash);
+    // printf("c hash: %x\n", hash);
+
+    if (!hllss || !hash) {
         return;
     }
 
@@ -64,8 +72,6 @@ void hll_add(struct selva_string *hllss, const void* element) {
 
     bool is_sparse = hll->is_sparse;
     uint32_t precision = hll->precision;
-    
-    uint64_t hash = XXH64(element, strlen(element), 0);
 
     uint64_t index = hash >> (HASH_SIZE - precision);
     uint64_t w = (hash << precision) | (1ULL << (precision - 1));
@@ -80,20 +86,30 @@ void hll_add(struct selva_string *hllss, const void* element) {
             hll->num_registers = (index + 1);
         }
     }
+
+    hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+    
+    if (hll->num_registers > len) {
+        printf("Dense mode failure: There is no allocated space on selva string for the required registers: (%zu > %d)\n", len, hll->num_registers);
+        exit(EXIT_FAILURE); 
+    }
+
     if (rho > hll->registers[index]) {
-        hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
         hll->registers[index] = rho;
     }
-    // printf("HLL in binary format: ");
-    // for (size_t i = 6*8; i < (6*8 + 16); i++) {
-    //     printf("%02x", ((unsigned char *)hll)[i]);
+
+    // printf("is Sparse: %d\n", hll->is_sparse);
+    // printf("Precision: %d\n", hll->precision);
+    // printf("Num registers: %d\n", hll->num_registers);
+    // for (int i = 0; i < hll->num_registers; i++) {
+    //     printf("M[%d] = %u\n", i, hll->registers[i]);
     // }
-    // printf("\n");
+
 }
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
 
-    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL);
+    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL); //&?
 
     uint8_t precision = first_hll->precision;
     uint32_t num_registers = first_hll->num_registers;
@@ -119,7 +135,7 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
 
     return result;
 }
-    
+
 const double bias_correction_table[][2] = {
     {4.0, 0.673},
     {5.0, 0.697},
@@ -140,7 +156,7 @@ double compute_alpha_m(size_t m) {
         case 16: return 0.673; break;
         case 32: return 0.697; break;
         case 64: return 0.709; break;
-        default: 
+        default:
             return 0.7213 / (1.0 + 1.079 / m); break;
     }
 }
@@ -149,42 +165,71 @@ double hll_count(struct selva_string *hllss) {
     if (!hllss) return 0.0;
 
     size_t len;
-    HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);  
+    HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
     uint32_t precision = hll->precision;
     uint32_t num_registers = hll->num_registers;
     uint32_t *registers = hll->registers;
 
+    // printf("is Sparse: %d\n", hll->is_sparse);
+    // printf("Precision: %d\n", hll->precision);
+    // printf("Num registers: %d\n", hll->num_registers);
+
     double raw_estimate = 0.0;
     double zero_count = 0.0;
-    
+
 
     for (size_t i = 0; i < num_registers; i++) {
+        // printf("M[%zu] = %u\n", i, registers[i]);
         if (registers[i] == 0) {
             zero_count++;
         }
         raw_estimate += pow(2.0, -((double)registers[i]));
     }
-    
+
     double m = (double)num_registers;
-    double alpha_m = compute_alpha_m(num_registers);    
+    double alpha_m = compute_alpha_m(num_registers);
     double estimate = alpha_m * m * m / raw_estimate;
 
     if (estimate <= (5.0 / 2.0) * m) {
         estimate = m * log(m / zero_count);
     }
-    
+
     estimate = apply_bias_correction(estimate, precision);
 
     return estimate;
 }
 
 int main(void) {
+
+    /* -------------------------------------------
+    ** Single value test 
+    ** -----------------------------------------*/
+
+    // size_t precision = 14;
+
+    // const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
+
+    // int initial_capacity = sizeof(bool) \
+    //                         + sizeof(precision) \
+    //                         + sizeof(uint32_t);
+
+    // struct selva_string hll;
+
+    // selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    // hll_init(&hll, precision, SPARSE);
+    // hll_add(&hll, hash);
+    // double estimated_cardinality = hll_count(&hll);
+    // printf("Estimated cardinality: %f\n", estimated_cardinality);
+
+    /* -------------------------------------------
+    ** Array union test 
+    ** -----------------------------------------*/
+
     size_t precision = 14;
     int initial_capacity = sizeof(bool) \
                             + sizeof(precision) \
                             + sizeof(uint32_t);
-    
     struct selva_string hll;
     selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
 
@@ -199,7 +244,7 @@ int main(void) {
 
     for (int i = 0; i < num_elements; i++) {
         snprintf(elements[i], 50, "hll1_%d", i);
-        hll_add(&hll, elements[i]);
+        hll_add(&hll, xxHash64(elements[i], strlen(elements[i])));
     }
     double estimated_cardinality = hll_count(&hll);
 
