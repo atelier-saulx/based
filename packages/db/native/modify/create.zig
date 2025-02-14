@@ -41,7 +41,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             std.debug.print("zig hash: {d}\n", .{hash});
 
             // need to check i the hash cames empty?
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 6);
+            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 80);
             selva.hll_init(hll, 4, false);
 
             selva.hll_add(hll, hash);
