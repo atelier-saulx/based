@@ -44,25 +44,16 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
 
             var i: usize = 2;
             while (i < len * 8) {
-                const hllu = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-
                 const hash = read(u64, data, i);
-                std.debug.print("h: {any} \n", .{hash});
-
-                selva.hll_add(hllu, hash);
+                selva.hll_add(hll, hash);
 
                 var size: usize = undefined;
-                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hllu, &size));
+                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hll, &size));
                 const strU8: []u8 = bufPtr[0..size];
                 try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
+
                 i += 8;
             }
-
-            // casting out nines, to strip it later
-            const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-            const countDistinct = selva.hll_count(@ptrCast(provaReal));
-            std.debug.print("Count Distinct = {d} \n", .{@round(countDistinct)});
-
             return i;
         },
         else => {

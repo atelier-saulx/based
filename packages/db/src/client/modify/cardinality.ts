@@ -18,14 +18,7 @@ export function writeHll(
   }
 
   if (value === null) {
-    // console.log('modify/cardinality.ts trying to reset?')
-    // if (modifyOp === UPDATE) {
-    //   if (ctx.len + 11 > ctx.max) {
-    //     return RANGE_ERR
-    //   }
-    //   setCursor(ctx, def, t.prop, parentId, modifyOp)
-    //   ctx.buf[ctx.len++] = DELETE
-    // }
+    // Future hll_reset frunction
     return
   } else if (!Array.isArray(value)) {
     value = [value]
@@ -57,11 +50,10 @@ function addHll(
   for (let val of value) {
     let b: Buffer
     if (typeof val === 'string') {
-      console.log(`values = \'${val}\'`)
       b = Buffer.from(val)
     } else if (!(val instanceof Buffer)) {
       b = val
-      // WRONG!! STORE ERR SOMEHWERE SEE REST
+      return new ModifyError(t, val)
     }
     const hash: bigint = xxHash64(b)
     ctx.buf.writeBigUInt64LE(hash, ctx.len)

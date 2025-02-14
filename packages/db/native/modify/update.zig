@@ -53,7 +53,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 const currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
                 const hash: u64 = read(u64, data, i);
-                // std.debug.print("h: {any} \n", .{hash});
                 selva.hll_add(currentData, hash);
 
                 var size: usize = undefined;
@@ -63,12 +62,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
                 i += 8;
             }
-
-            // casting out nines, to strip it later
-            const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-            const countDistinct = selva.hll_count(@ptrCast(provaReal));
-            std.debug.print("Count Distinct = {d} \n", .{@round(countDistinct)});
-
             return i;
         },
         else => {
