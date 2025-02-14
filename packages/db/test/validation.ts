@@ -143,6 +143,25 @@ await test('query', async (t) => {
 
   await throws(() => db.query('derp').get(), true, 'non existing type')
 
+  // @ts-ignore
+  await throws(() => db.query('user', 'derp derp').get(), true, 'incorrect id')
+
+  await throws(
+    () => db.query('user', [1, 1221.11, 0]).get(),
+    true,
+    'incorrect ids',
+  )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user', [1, 'X', {}]).get(),
+    true,
+    'incorrect ids 2',
+  )
+
+  const x = new Uint32Array(new Array(2e6).map((v) => 1))
+  await throws(() => db.query('user', x).get(), true, 'incorrect ids 2')
+
   await throws(
     () => db.query('user').include('derp').get(),
     true,

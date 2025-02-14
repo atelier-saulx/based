@@ -1,6 +1,6 @@
 import { langCodesMap } from '@based/schema'
 import { DbClient } from '../index.js'
-import { MAX_RANGE_PROP_LIMIT, MAX_RANGE_REF_LIMIT } from './thresholds.js'
+import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
   EdgeTarget,
   QueryDef,
@@ -11,7 +11,7 @@ import {
   QueryTarget,
   Target,
 } from './types.js'
-import { incorrectType } from './errors.js'
+import { validateId, validateIds, validateType } from './errors.js'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {
@@ -52,20 +52,21 @@ export const createQueryDef = (
   } else {
     const t = target as Target
     const q = queryDef as QueryDefRest
-    // VALIDATE TYPE
-    q.schema = db.schemaTypesParsed[t.type] ?? incorrectType(q, t.type)
+    q.schema = validateType(db, q, t.type)
     q.props = q.schema.props
     q.type = type
     q.target = t
     if (type === QueryDefType.Root) {
-      if (t.ids) {
-        // VALIDATE IDS
+      if (t.id) {
+        t.id = validateId(q, t.id)
+      } else if (t.ids) {
+        t.ids = validateIds(q, t.ids)
         q.range.limit = t.ids.length
       } else {
-        q.range.limit = MAX_RANGE_PROP_LIMIT
+        q.range.limit = DEF_RANGE_PROP_LIMIT
       }
     } else if (type === QueryDefType.References) {
-      q.range.limit = MAX_RANGE_REF_LIMIT
+      q.range.limit = DEF_RANGE_REF_LIMIT
     }
     return q
   }

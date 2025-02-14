@@ -245,7 +245,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(
     db: DbClient,
     type: string,
-    id?: QueryByAliasObj | number | (QueryByAliasObj | number)[],
+    id?: QueryByAliasObj | number | Uint32Array | (QueryByAliasObj | number)[],
   ) {
     const target: QueryTarget = {
       type,
@@ -255,11 +255,12 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       if (isAlias(id)) {
         target.alias = id
       } else {
-        if (Array.isArray(id)) {
+        if (Array.isArray(id) || id instanceof Uint32Array) {
           // TODO ADD MULTI ALIAS
           // @ts-ignore
-          target.ids = new Uint32Array(id)
-          target.ids.sort()
+          target.ids = id
+          // target.ids = new Uint32Array(id)
+          // target.ids.sort()
         } else {
           target.id = id
         }

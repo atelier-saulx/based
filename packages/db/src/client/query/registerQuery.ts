@@ -1,6 +1,7 @@
 import native from '../../native.js'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toBuffer.js'
+import { handleErrors } from './errors.js'
 
 export const registerQuery = (q: BasedDbQuery): Buffer => {
   if (!q.id) {
@@ -9,11 +10,8 @@ export const registerQuery = (q: BasedDbQuery): Buffer => {
     let id = native.crc32(buf)
     q.id = id
     q.buffer = buf
-    if (q.def.errors) {
-      console.log('ERRORS', q.def.errors)
-    }
+    handleErrors(q.def)
     return buf
   }
-
   return q.buffer
 }

@@ -1,4 +1,6 @@
 import { SchemaTypeDef } from '../../server/schema/types.js'
+import { DbClient } from '../index.js'
+import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryDef } from './types.js'
 
 export type QueryError = {
@@ -9,13 +11,98 @@ export type QueryError = {
 export const ERR_TARGET_INVAL_TYPE = 1
 export const ERR_TARGET_INVAL_ALIAS = 2
 export const ERR_TARGET_EXCEED_MAX_IDS = 3
+export const ERR_TARGET_INVAL_IDS = 4
+export const ERR_TARGET_INVAL_ID = 5
 
-export const incorrectType = (def: QueryDef, type: string) => {
-  def.errors.push({
-    code: ERR_TARGET_INVAL_TYPE,
-    payload: type,
-  })
-  return EMPTY_SCHEMA_DEF
+const messages = {
+  [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
+  [ERR_TARGET_INVAL_ALIAS]: (p) => `Invalid alias "${p}"`,
+  [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
+    `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
+  [ERR_TARGET_INVAL_IDS]: (p) =>
+    `Ids should be of type array or Uint32Array with valid ids`,
+  [ERR_TARGET_INVAL_ID]: (p) =>
+    `Invalid id should be a number larger then 0 "${p}"`,
+}
+
+export type ErrorCode = keyof typeof messages
+
+export const validateType = (db: DbClient, def: QueryDef, type: string) => {
+  const r = db.schemaTypesParsed[type]
+  if (!r) {
+    def.errors.push({
+      code: ERR_TARGET_INVAL_TYPE,
+      payload: type,
+    })
+    EMPTY_SCHEMA_DEF.locales = db.schema.locales
+    return EMPTY_SCHEMA_DEF
+  }
+  return r
+}
+
+export const validateId = (def: QueryDef, id: any): number => {
+  if (typeof id != 'number' || id == 0 || id > MAX_ID) {
+    def.errors.push({
+      code: ERR_TARGET_INVAL_ID,
+      payload: id,
+    })
+    return 1
+  }
+  return id
+}
+
+export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
+  if (!Array.isArray(ids) && !(ids instanceof Uint32Array)) {
+    def.errors.push({
+      code: ERR_TARGET_INVAL_IDS,
+      payload: ids,
+    })
+    return new Uint32Array([])
+  }
+
+  if (ids.length > MAX_IDS_PER_QUERY) {
+    def.errors.push({
+      code: ERR_TARGET_EXCEED_MAX_IDS,
+      payload: ids,
+    })
+    return new Uint32Array([])
+  }
+
+  if (Array.isArray(ids)) {
+    try {
+      ids = new Uint32Array(ids)
+      ids.sort()
+    } catch (err) {
+      def.errors.push({
+        code: ERR_TARGET_INVAL_IDS,
+        payload: ids,
+      })
+      return new Uint32Array([])
+    }
+  }
+  // pretty heavy if it are a lot...
+  for (const id of ids) {
+    if (typeof id != 'number' || id == 0 || id > MAX_ID) {
+      def.errors.push({
+        code: ERR_TARGET_INVAL_IDS,
+        payload: ids,
+      })
+      return new Uint32Array([])
+    }
+  }
+  return ids
+}
+
+export const handleErrors = (def: QueryDef) => {
+  if (def.errors.length) {
+    let name = `Query\n`
+    for (const err of def.errors) {
+      name += `  ${messages[err.code](err.payload)}\n`
+    }
+    const err = new Error(name)
+    err.stack = ''
+    throw err
+  }
 }
 
 export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {

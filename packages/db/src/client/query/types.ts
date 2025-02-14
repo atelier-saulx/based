@@ -115,7 +115,10 @@ export type QueryByAliasObj = {
 }
 
 export const isAlias = (
-  id: QueryByAliasObj | number | (QueryByAliasObj | number)[],
+  id: QueryByAliasObj | number | Uint32Array | (QueryByAliasObj | number)[],
 ): id is QueryByAliasObj => {
+  if (id instanceof Uint32Array) {
+    return false
+  }
   return typeof id === 'object' && id !== null && !Array.isArray(id)
 }

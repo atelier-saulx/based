@@ -158,7 +158,8 @@ export class DbClient {
       | ModifyRes
       | (number | ModifyRes)[]
       | QueryByAliasObj
-      | QueryByAliasObj[],
+      | QueryByAliasObj[]
+      | Uint32Array,
   ): BasedDbQuery
 
   query(): BasedDbQuery
@@ -171,6 +172,7 @@ export class DbClient {
       | (number | ModifyRes)[]
       | QueryByAliasObj
       | QueryByAliasObj[]
+      | Uint32Array
       | { [alias: string]: string }, // alias
   ): BasedDbQuery {
     if (type === undefined) {
@@ -190,6 +192,8 @@ export class DbClient {
           }
         }
       }
+    } else if (id instanceof Uint32Array) {
+      // all good
     } else if (typeof id === 'object') {
       if (id instanceof ModifyState) {
         id = id.tmpId
@@ -198,7 +202,7 @@ export class DbClient {
       }
     }
 
-    return new BasedDbQuery(this, type, id as number | number[])
+    return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
   update(
