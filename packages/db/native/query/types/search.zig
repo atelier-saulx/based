@@ -108,7 +108,16 @@ pub fn addToResults(
         i += 1;
         var size: usize = undefined;
         if (isVector) {
-            std.debug.print("SNURP {any} \n", .{sortedNode});
+            size = try getFields(
+                sortedNode,
+                ctx,
+                id,
+                typeEntry,
+                include,
+                null,
+                @bitCast(sortKey),
+                false,
+            );
         } else {
             const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 31)));
             size = try getFields(
@@ -118,7 +127,7 @@ pub fn addToResults(
                 typeEntry,
                 include,
                 null,
-                realScore,
+                .{ realScore, 0, 0, 0 },
                 false,
             );
         }

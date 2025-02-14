@@ -68,12 +68,12 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         };
     } else {
         const sLen = read(u16, searchBuf, 1);
-        // [isVec] [q len] [q len] [fn] [score] [score] [score] [score] [q..]
+        // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
         return .{
             .field = searchBuf[3],
             .func = @enumFromInt(searchBuf[4]),
             .score = read(f32, searchBuf, 5),
-            .query = read([]f32, searchBuf[4..sLen], 0),
+            .query = read([]f32, searchBuf[9 .. 9 + sLen], 0),
         };
     }
 }
@@ -368,8 +368,15 @@ pub fn searchVector(
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(true),
 ) f32 {
-    std.debug.print("flap {any} {any} {any} \n", .{ node, typeEntry, ctx });
-    return 0;
+    // add FS on ctx
+    const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
+        return MaxVectorScore;
+    };
+    const value = db.getField(typeEntry, ctx.field, node, fieldSchema);
+    if (value.len == 0) {
+        return MaxVectorScore;
+    }
+    return vectorScore(ctx.func, read([]f32, value, 0), ctx.query);
 }
 
 pub inline fn isVectorSearch(src: []u8) bool {

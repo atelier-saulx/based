@@ -428,23 +428,27 @@ export const resultToObject = (
   offset: number = 0,
 ) => {
   const len = readUint32(result, offset)
+
   if (len === 0) {
     return []
   }
   let items = []
   let i = 5 + offset
+
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
     const item: Item = {
       id,
     }
+
     if (q.search) {
-      item.$searchScore = result[i]
-      i += 1
+      item.$searchScore = readFloatLE(result, i)
+      i += 4
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
+
     items.push(item)
   }
   if ('id' in q.target || 'alias' in q.target) {

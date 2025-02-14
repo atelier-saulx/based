@@ -4,6 +4,7 @@ import {
   PropDefEdge,
   SchemaTypeDef,
 } from '../../server/schema/schema.js'
+import { FilterOpts } from './filter/types.js'
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 
@@ -45,12 +46,20 @@ export type QueryDefFilter = {
   and?: QueryDefFilter
 }
 
-export type QueryDefSearch = {
-  size: number
-  query: Buffer
-  isVector: boolean
-  fields: { weight: number; field: number; start: number; lang: LangCode }[]
-}
+export type QueryDefSearch =
+  | {
+      size: number
+      query: Buffer
+      isVector: false
+      fields: { weight: number; field: number; start: number; lang: LangCode }[]
+    }
+  | {
+      size: number
+      query: Buffer
+      prop: number
+      isVector: true
+      opts: FilterOpts
+    }
 
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
 

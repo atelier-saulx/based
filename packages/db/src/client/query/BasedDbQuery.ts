@@ -86,9 +86,29 @@ export class QueryBranch<T> {
   ): T {
     if (ArrayBuffer.isView(query)) {
       // @ts-ignore
-      vectorSearch(this.def, query, opts ?? {})
+      vectorSearch(this.def, query, field, opts ?? {})
       // @ts-ignore
       return this
+    }
+
+    if (field) {
+      if (!fields) {
+        // @ts-ignore
+        fields = [field]
+      } else {
+        // @ts-ignore
+        fields.unshift(field)
+      }
+    }
+
+    if (opts) {
+      if (!fields) {
+        // @ts-ignore
+        fields = [opts]
+      } else {
+        // @ts-ignore
+        fields.unshift(opts)
+      }
     }
 
     if (fields.length) {

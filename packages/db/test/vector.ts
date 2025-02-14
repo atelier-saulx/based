@@ -154,10 +154,9 @@ await test('search', async (t) => {
   // }
 
   await db.drain()
-
   await db
     .query('data')
-    .include('name')
+    .include('id')
     .range(0, 100)
     .search(fruit, 'a')
     .get()

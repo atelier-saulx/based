@@ -1,7 +1,7 @@
 import { langCodesMap } from '@based/schema'
 import { STRING, TEXT, VECTOR } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
-import { FilterOpts } from '../filter/types.js'
+import { FilterOpts, getVectorFn } from '../filter/types.js'
 
 export type Search =
   | string[]
@@ -25,28 +25,29 @@ const makeSize = (nr: number, u8: boolean = false) => {
 export const vectorSearch = (
   def: QueryDef,
   q: ArrayBufferView,
+  field: string,
   opts: Omit<FilterOpts, 'lowerCase'>,
 ) => {
-  // [isVec] [q len] [q len] [fn] [score] [score] [score] [score] [q..]
-  // else {
-  //   const b = Buffer.from(q.buffer)
-  //   bufs.push(makeSize(1, true), makeSize(b.byteLength), b)
-  // }
-  // if (isVector) {
-  //   for (const k in def.props) {
-  //     if (def.props[k].typeIndex === VECTOR) {
-  //       s[k] = 0.5
-  //     }
-  //   }
-  // } else {
-  //       x[f] = isVector ? 0.5 : 0
-  // if (
-  //   (isVector && prop.typeIndex !== VECTOR) ||
-  //   (!isVector && prop.typeIndex !== STRING && prop.typeIndex !== TEXT)
-  // ) {
-  //   throw new Error('Can only search trough strings / text')
-  // }
-  // return bufs
+  const prop = def.props[field]
+
+  if (!prop) {
+    throw new Error(`Cannot find prop ${field}`)
+  }
+  if (prop.typeIndex !== VECTOR) {
+    throw new Error('Can only search trough strings / text')
+  }
+  // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
+  let size = 9
+  const vec = Buffer.from(q.buffer)
+  size += vec.byteLength
+
+  def.search = {
+    size: size,
+    prop: prop.prop,
+    query: vec,
+    isVector: true,
+    opts,
+  }
 }
 
 export const search = (def: QueryDef, q: string, s?: Search) => {
@@ -120,42 +121,39 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   }
 }
 
-/*
+export const searchToBuffer = (search: QueryDefSearch) => {
   if (search.isVector) {
-    // is vector
+    // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
+    const result = Buffer.allocUnsafe(search.size)
+    result[0] = 1 // search.isVector 1
+    result.writeUint16LE(search.query.byteLength, 1)
+    result[3] = search.prop
+    result[4] = getVectorFn(search.opts.fn)
+    result.set(
+      Buffer.from(new Float32Array([search.opts.score ?? 0.5]).buffer),
+      5,
+    )
+    result.set(search.query, 9)
+    return result
+  } else {
+    const result = Buffer.allocUnsafe(search.size)
+    result[0] = 0 // search.isVector 0
+    result.writeUint16LE(search.query.byteLength, 1)
+    result.set(search.query, 3)
+    const offset = search.query.byteLength + 3
+    // @ts-ignore
     search.fields.sort((a, b) => {
       return a.weight - b.weight
     })
-    // is vector...
-    for (let i = 0; i < search.fields.length * 8; i += 8) {
-      const f = search.fields[i / 8]
+    // @ts-ignore
+    for (let i = 0; i < search.fields.length * 5; i += 5) {
+      // @ts-ignore
+      const f = search.fields[i / 5]
       result[i + offset] = f.field
-      // longer for float
-      result.set(
-        Buffer.from(new Float32Array([f.weight]).buffer),
-        i + 1 + offset,
-      )
-      result.writeUInt16LE(f.start, i + 5 + offset)
-      result[i + 7 + offset] = f.lang
+      result[i + 1 + offset] = f.weight
+      result.writeUInt16LE(f.start, i + 2 + offset)
+      result[i + 4 + offset] = f.lang
     }
-  } else {
-*/
-
-export const searchToBuffer = (search: QueryDefSearch) => {
-  const result = Buffer.allocUnsafe(search.size)
-  result[0] = 0 // search.isVector ? 1 :
-  result.writeUint16LE(search.query.byteLength, 1)
-  result.set(search.query, 3)
-  const offset = search.query.byteLength + 3
-  search.fields.sort((a, b) => {
-    return a.weight - b.weight
-  })
-  for (let i = 0; i < search.fields.length * 5; i += 5) {
-    const f = search.fields[i / 5]
-    result[i + offset] = f.field
-    result[i + 1 + offset] = f.weight
-    result.writeUInt16LE(f.start, i + 2 + offset)
-    result[i + 4 + offset] = f.lang
+    return result
   }
-  return result
 }
