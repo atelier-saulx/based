@@ -58,13 +58,13 @@ function addHll(
     return RANGE_ERR
   }
 
-  console.log(`test JS original value = ${value}`)
+  // console.log(`test JS original value = ${value}`)
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
 
   let hash: bigint = xxHash64(Buffer.from(value)) //1ec6c662633f0026 or 2217677992400715814
 
   ctx.buf.writeBigUInt64LE(hash, ctx.len)
-  console.log('js hash:', hash)
+  // console.log('js hash:', hash)
   ctx.len += 8
 }

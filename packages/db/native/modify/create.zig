@@ -37,10 +37,10 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.CARDINALITY => {
             const hash: u64 = read(u64, data, 0);
-            std.debug.print("zig hash: {d}\n", .{hash});
+            // std.debug.print("zig hash: {d}\n", .{hash});
             const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.SELVA_STRING_STRUCT_SIZE);
 
-            selva.hll_init(hll, 4, true);
+            selva.hll_init(hll, 14, true);
             selva.hll_add(hll, hash);
 
             var size: usize = undefined;

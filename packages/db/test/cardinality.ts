@@ -17,12 +17,9 @@ await test('hll', async (t) => {
     types: {
       article: {
         myUniqueValuesCount: 'cardinality',
-        // lala: 'string',
       },
     },
   })
-
-  // await setTimeout(100)
 
   console.log('------- create --------')
 
@@ -32,11 +29,16 @@ await test('hll', async (t) => {
 
   console.log('------- update --------')
 
-  // await db.update('article', myArticle, {
-  //   myUniqueValuesCount: {
-  //     set: ['myCoolValue'],
-  //   },
-  // })
+  await db.update('article', myArticle, {
+    myUniqueValuesCount: 'lele',
+  })
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.update('article', myArticle, {
+      myUniqueValuesCount: `lala${i}`,
+    })
+  }
+  await db.drain()
 
   console.log('---------------')
 

@@ -1,6 +1,7 @@
 const std = @import("std");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
+const selva = @import("../selva.zig");
 const Modify = @import("./ctx.zig");
 const read = @import("../utils.zig").read;
 const ModifyCtx = Modify.ModifyCtx;
@@ -45,15 +46,23 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.CARDINALITY => {
-            // const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-            // const currentData = = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+            const currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
-            // const hash: u64 = read(u64, data, 0);
-
+            const hash: u64 = read(u64, data, 0);
             // std.debug.print("zig hash: {d}\n", .{hash});
-            // std.debug.print("UPDATE THE HLL {any} \n", .{data});
-            return 0;
-            // UPDATE THE HLL
+            selva.hll_add(currentData, hash);
+
+            var size: usize = undefined;
+            const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(currentData, &size));
+            const strU8: []u8 = bufPtr[0..size];
+            try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
+
+            // casting out nines, to strip it later
+            const provaReal = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+            const countDistinct = selva.hll_count(@ptrCast(provaReal));
+            std.debug.print("Count Distinct = {any} \n", .{@round(countDistinct)});
+
+            return 8;
         },
         else => {
             const len = read(u32, data, 0);

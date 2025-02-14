@@ -56,8 +56,8 @@ int count_leading_zeros(uint64_t x) {
 }
 
 void hll_add(struct selva_string *hllss, const uint64_t hash) {
-    printf("c hash: %llu\n", hash);
-    printf("c hash: %x\n", hash);
+    // printf("c hash: %llu\n", hash);
+    // printf("c hash: %x\n", hash);
 
     if (!hllss || !hash) {
         return;
@@ -98,12 +98,12 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
         hll->registers[index] = rho;
     }
 
-    printf("is Sparse: %d\n", hll->is_sparse);
-    printf("Precision: %d\n", hll->precision);
-    printf("Num registers: %d\n", hll->num_registers);
-    for (int i = 0; i < hll->num_registers; i++) {
-        printf("M[%d] = %u\n", i, hll->registers[i]);
-    }
+    // printf("is Sparse: %d\n", hll->is_sparse);
+    // printf("Precision: %d\n", hll->precision);
+    // printf("Num registers: %d\n", hll->num_registers);
+    // for (int i = 0; i < hll->num_registers; i++) {
+    //     printf("M[%d] = %u\n", i, hll->registers[i]);
+    // }
 
 }
 
@@ -171,16 +171,16 @@ double hll_count(struct selva_string *hllss) {
     uint32_t num_registers = hll->num_registers;
     uint32_t *registers = hll->registers;
 
-    printf("is Sparse: %d\n", hll->is_sparse);
-    printf("Precision: %d\n", hll->precision);
-    printf("Num registers: %d\n", hll->num_registers);
+    // printf("is Sparse: %d\n", hll->is_sparse);
+    // printf("Precision: %d\n", hll->precision);
+    // printf("Num registers: %d\n", hll->num_registers);
 
     double raw_estimate = 0.0;
     double zero_count = 0.0;
 
 
     for (size_t i = 0; i < num_registers; i++) {
-        printf("M[%zu] = %u\n", i, registers[i]);
+        // printf("M[%zu] = %u\n", i, registers[i]);
         if (registers[i] == 0) {
             zero_count++;
         }
