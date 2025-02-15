@@ -6,6 +6,7 @@
 #include "selva/selva_string.h"
 #include "selva/hll.h"
 #include "selva/xxhash64.h"
+#include "db_panic.h"
 
 #define HLL_MIN_PRECISION 4
 #define HLL_MAX_PRECISION 16
@@ -17,11 +18,15 @@
 typedef struct {
     struct {
         uint8_t is_sparse : 1;
-        uint8_t precision : 7;
+        uint8_t dirty : 1;
+        uint8_t precision : 6;
     };
     uint16_t num_registers;
+    uint32_t count;
     uint32_t registers[];
 } HyperLogLogPlusPlus;
+
+static_assert(HLL_INIT_SIZE == sizeof(HyperLogLogPlusPlus));
 
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     if (precision < HLL_MIN_PRECISION ||
@@ -53,23 +58,22 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     }
 }
 
-int count_leading_zeros(uint64_t x) {
+static int count_leading_zeros(uint64_t x) {
     return (x == 0 ? 0 : __builtin_clzll(x));
 }
 
 void hll_add(struct selva_string *hllss, const uint64_t hash) {
     if (!hllss || !hash) {
-        return;
+        db_panic("Error: Unable to read stored value.");
     }
 
     size_t len;
     HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
     if (!hll) {
-        printf("Failed to convert selva_string to HyperLogLogPlusPlus\n");
-        return;
+        db_panic("Failed to convert selva_string to HyperLogLogPlusPlus");
     }
+    hll->dirty = true;
 
-    bool is_sparse = hll->is_sparse;
     uint32_t precision = hll->precision;
 
     uint64_t index = hash >> (HASH_SIZE - precision);
@@ -89,8 +93,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
     
     if (hll->num_registers > len) {
-        printf("Dense mode failure: There is no allocated space on selva string for the required registers: (%zu > %d)\n", len, hll->num_registers);
-        exit(EXIT_FAILURE); 
+        db_panic("Dense mode failure: There is no allocated space on selva string for the required registers: (%zu > %d)\n", len, hll->num_registers);
     }
 
     if (rho > hll->registers[index]) {
@@ -114,8 +117,7 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
     for (size_t j = 1; j < count; j++) {
         HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], NULL);
         if (current_hll->precision != precision) {
-            printf("Precision mismatch is unsupported (for now just returning NULL)\n");
-            exit(EXIT_FAILURE);
+            db_panic("Precision mismatch is unsupported.");
         }
         for (size_t i = 0; i < num_registers; i++) {
             if (current_hll->registers[i] > result_hll->registers[i]) {
@@ -133,7 +135,7 @@ const double bias_correction_table[][2] = {
     {6.0, 0.709},
 };
 
-double apply_bias_correction(double alpha_m, uint8_t precision) {
+static double apply_bias_correction(double alpha_m, uint8_t precision) {
     for (size_t i = 0; i < sizeof(bias_correction_table) / sizeof(bias_correction_table[0]); i++) {
         if (bias_correction_table[i][0] == (double)precision) {
             return alpha_m * bias_correction_table[i][1];
@@ -142,7 +144,7 @@ double apply_bias_correction(double alpha_m, uint8_t precision) {
     return alpha_m;
 }
 
-double compute_alpha_m(size_t m) {
+static double compute_alpha_m(size_t m) {
     switch(m) {
         case 16: return 0.673; break;
         case 32: return 0.697; break;
@@ -152,11 +154,13 @@ double compute_alpha_m(size_t m) {
     }
 }
 
-double hll_count(struct selva_string *hllss) {
-    if (!hllss) return 0.0;
+uint32_t *hll_count(struct selva_string *hllss) {
+    if (!hllss) return 0;
 
     size_t len;
     HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+
+    if (!hll->dirty) return &hll->count;
 
     uint32_t precision = hll->precision;
     uint32_t num_registers = hll->num_registers;
@@ -183,7 +187,9 @@ double hll_count(struct selva_string *hllss) {
 
     estimate = apply_bias_correction(estimate, precision);
 
-    return estimate;
+    hll->count = (uint32_t)estimate;
+    hll->dirty = false;
+    return &hll->count;
 }
 
 int main(void) {
@@ -232,9 +238,9 @@ int main(void) {
         snprintf(elements[i], 50, "hll1_%d", i);
         hll_add(&hll, xxHash64(elements[i], strlen(elements[i])));
     }
-    double estimated_cardinality = hll_count(&hll);
+    uint32_t estimated_cardinality = *hll_count(&hll);
 
-    printf("Estimated cardinality: %f\n", estimated_cardinality);
+    printf("Estimated cardinality: %u\n", estimated_cardinality);
     float expected_cardinality = num_elements;
     float error = fabs(expected_cardinality - estimated_cardinality);
     printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
