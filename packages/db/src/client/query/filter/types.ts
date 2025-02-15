@@ -1,3 +1,5 @@
+import { QueryDef } from '../types.js'
+import { filterOperatorDoesNotExist } from '../validation.js'
 import { FilterBranch } from './FilterBranch.js'
 
 export type Filter = [fieldStr: string, ctx: FilterCtx, value: any]
@@ -164,7 +166,11 @@ export const getVectorFn = (optsFn?: FilterOpts['fn']) => {
   }
 }
 
-export const toFilterCtx = (op: Operator, opts: FilterOpts = {}): FilterCtx => {
+export const toFilterCtx = (
+  def: QueryDef,
+  op: Operator,
+  opts: FilterOpts = {},
+): FilterCtx => {
   if (op === '=' || op === '!=') {
     return {
       operation: EQUAL,
@@ -201,5 +207,5 @@ export const toFilterCtx = (op: Operator, opts: FilterOpts = {}): FilterCtx => {
     return { operation: LIKE, opts, type: TYPE_DEFAULT }
   }
 
-  throw new Error('Invalid filter operator')
+  filterOperatorDoesNotExist(def, op)
 }

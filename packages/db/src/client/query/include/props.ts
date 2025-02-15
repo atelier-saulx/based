@@ -60,7 +60,7 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
     return false
   }
   if (prop.separate) {
-    def.include.props.add(prop.prop)
+    def.include.props.set(prop.prop, prop)
   } else {
     def.include.main.len += prop.len
     def.include.main.include[prop.start] = [0, prop as PropDef]

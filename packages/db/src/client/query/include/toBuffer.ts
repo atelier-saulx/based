@@ -58,18 +58,23 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
   }
 
   if (def.include.langTextFields.size) {
-    for (const [prop, langCode] of def.include.langTextFields.entries()) {
+    for (const [
+      prop,
+      { codes, def: propDef },
+    ] of def.include.langTextFields.entries()) {
       def.include.propsRead[prop] = 0
-      if (langCode.has(0)) {
-        const b = Buffer.allocUnsafe(2)
+      if (codes.has(0)) {
+        const b = Buffer.allocUnsafe(3)
         b[0] = prop
-        b[1] = 0
+        b[1] = propDef.typeIndex
+        b[2] = 0
         result.push(b)
       } else {
-        for (const code of langCode) {
-          const b = Buffer.allocUnsafe(2)
+        for (const code of codes) {
+          const b = Buffer.allocUnsafe(3)
           b[0] = prop
-          b[1] = code
+          b[1] = propDef.typeIndex
+          b[2] = code
           result.push(b)
         }
       }
@@ -79,7 +84,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
   const propSize = def.include.props.size ?? 0
 
   if (mainBuffer) {
-    len = mainBuffer.byteLength + 3 + propSize
+    len = mainBuffer.byteLength + 3 + propSize * 2
     includeBuffer = Buffer.allocUnsafe(len)
     includeBuffer[0] = 0
     includeBuffer.writeInt16LE(mainBuffer.byteLength, 1)
@@ -87,24 +92,26 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     mainBuffer.copy(includeBuffer, 3)
     if (propSize) {
       let i = 0
-      for (const prop of def.include.props) {
+      for (const [prop, propDef] of def.include.props.entries()) {
         includeBuffer[i + offset] = prop
-        i++
+        includeBuffer[i + offset + 1] = propDef.typeIndex
+        i += 2
       }
     }
   } else if (propSize) {
-    const buf = Buffer.allocUnsafe(propSize)
+    const buf = Buffer.allocUnsafe(propSize * 2)
     let i = 0
-    for (const prop of def.include.props) {
+    for (const [prop, propDef] of def.include.props.entries()) {
       buf[i] = prop
-      i++
+      buf[i + 1] = propDef.typeIndex
+      i += 2
     }
     includeBuffer = buf
   }
 
   if (includeBuffer) {
-    def.include.props.forEach((v) => {
-      def.include.propsRead[v] = 0
+    def.include.props.forEach((v, k) => {
+      def.include.propsRead[k] = 0
     })
     result.push(includeBuffer)
   }

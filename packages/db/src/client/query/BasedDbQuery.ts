@@ -57,7 +57,7 @@ export class QueryBranch<T> {
     value?: any,
     opts?: FilterOpts<O>,
   ): T {
-    const f = convertFilter(field, operator, value, opts)
+    const f = convertFilter(this.def, field, operator, value, opts)
     filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
@@ -157,7 +157,7 @@ export class QueryBranch<T> {
       field(f)
       this.def.filter.size += f.filterBranch.size
     } else {
-      const f = convertFilter(field, operator, value, opts)
+      const f = convertFilter(this.def, field, operator, value, opts)
       filterOr(this.db, this.def, f, this.def.filter)
     }
     // @ts-ignore

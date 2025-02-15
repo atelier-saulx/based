@@ -49,7 +49,27 @@ await test('hll', async (t) => {
   //   ],
   // })
 
-  console.log('------- update --------')
+  // const felling = ['folish', 'superficial', 'deep', 'moving', 'fake']
+
+  // let lastId = 0
+  // const f: number[] = []
+  // for (let i = 0; i < 1e2; i++) {
+  //   lastId = db.create('article', {
+  //     myUniqueValuesCount:
+  //       felling[Math.floor(Math.random() * (felling.length - 1))],
+  //   }).tmpId
+  //   if (i % 2) {
+  //     f.push(lastId)
+  //   }
+  // }
+
+  // db.update('article', myArticle, {
+  //   myUniqueValuesCount: f,
+  // })
+
+  // console.log(await db.drain(), 'ms')
+
+  // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [

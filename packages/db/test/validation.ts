@@ -123,12 +123,26 @@ await test('query', async (t) => {
   t.after(() => db.destroy())
 
   await db.putSchema({
+    locales: {
+      en: {},
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
+    },
     types: {
+      todo: {
+        done: 'boolean',
+        age: 'uint16',
+        unique: 'cardinality',
+        status: ['a', 'b', 'c'],
+        title: 'string',
+        body: 'text',
+      },
       user: {
         props: {
           rating: 'uint32',
           name: 'string',
           friend: { ref: 'user', prop: 'friend' },
+          description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
           connections: {
             items: {
@@ -168,7 +182,12 @@ await test('query', async (t) => {
     'non existing field in include',
   )
 
-  await db.query('user').filter('derp', '=', true).get()
+  await throws(
+    // @ts-ignore
+    () => db.query('user', { $id: 1 }).get(),
+    true,
+    'incorrect alias',
+  )
 
   await throws(
     () => db.query('user').filter('derp', '=', true).get(),
@@ -176,10 +195,48 @@ await test('query', async (t) => {
     'non existing field in filter',
   )
 
+  await db
+    .query('user')
+    .filter('friend.description.en', '=', 'nice')
+    .get()
+    .catch((err) => {
+      console.error(err)
+    })
+
+  await throws(
+    () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
+    true,
+    'non existing lang in filter',
+  )
+
+  await throws(
+    () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
+    true,
+    'non existing lang in filter',
+  )
+
+  await throws(
+    () => db.query('user').filter('friend.description.fr', '=', 'nice').get(),
+    true,
+    'non existing lang in filter',
+  )
+
+  await throws(
+    () => db.query('user').include('friend.description.flap').get(),
+    true,
+    'non existing lang in include #1',
+  )
+
+  await throws(
+    () => db.query('user').include('friend.description.fr').get(),
+    true,
+    'non existing lang in include #2',
+  )
+
   await throws(
     // @ts-ignore
-    () => db.query('user', { $id: 1 }).get(),
+    () => db.query('user').filter('friend.description.fr', 'derp', 1).get(),
     true,
-    'incorrect alias',
+    'Filter non existing operator',
   )
 })

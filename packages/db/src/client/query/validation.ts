@@ -1,7 +1,7 @@
-import { SchemaTypeDef } from '../../server/schema/types.js'
+import { ALIAS, PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
-import { QueryDef } from './types.js'
+import { QueryByAliasObj, QueryDef } from './types.js'
 
 export type QueryError = {
   code: number
@@ -14,17 +14,38 @@ export const ERR_TARGET_EXCEED_MAX_IDS = 3
 export const ERR_TARGET_INVAL_IDS = 4
 export const ERR_TARGET_INVAL_ID = 5
 export const ERR_INCLUDE_ENOENT = 6
+export const ERR_FILTER_ENOENT = 7
+export const ERR_FILTER_OP_FIELD = 8
+export const ERR_FILTER_OP_ENOENT = 9
+export const ERR_FILTER_INVALID_VAL = 10
+export const ERR_FILTER_INVALID_OPTS = 11
+export const ERR_FILTER_INVALID_LANG = 12
+export const ERR_INCLUDE_INVALID_LANG = 13
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
-  [ERR_TARGET_INVAL_ALIAS]: (p) => `Invalid alias "${p}"`,
+  [ERR_TARGET_INVAL_ALIAS]: (p) => {
+    var v: string
+    try {
+      v = JSON.stringify(p).replace(/"/g, '')
+    } catch (err) {
+      v = ''
+    }
+    return `Invalid alias prodived to query "${v}"`
+  },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
     `Ids should be of type array or Uint32Array with valid ids`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
-  [ERR_INCLUDE_ENOENT]: (p) => `Included field does not exist "${p}"`,
+  [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
+  [ERR_INCLUDE_INVALID_LANG]: (p) => `Include: invalid lang "${p}"`,
+
+  [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
+  [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
+
+  [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -42,11 +63,66 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
   return r
 }
 
+export const filterOperatorDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_FILTER_OP_ENOENT,
+    payload: field,
+  })
+}
+
+export const filterInvalidLang = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_FILTER_INVALID_LANG,
+    payload: field,
+  })
+}
+
+export const filterFieldDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_FILTER_ENOENT,
+    payload: field,
+  })
+}
+
 export const includeDoesNotExist = (def: QueryDef, field: string) => {
   def.errors.push({
     code: ERR_INCLUDE_ENOENT,
     payload: field,
   })
+}
+
+export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_INCLUDE_INVALID_LANG,
+    payload: field,
+  })
+}
+
+export const validateAlias = (
+  alias: QueryByAliasObj,
+  path: string[],
+  def: QueryDef,
+): { def: PropDef; value: string } => {
+  const schema = def.schema
+  for (const k in alias) {
+    if (typeof alias[k] === 'string') {
+      const p = path.join('.') + k
+      const prop = schema.props[p]
+      if (prop.typeIndex === ALIAS) {
+        return { def: prop, value: alias[k] }
+      }
+    } else if (typeof alias[k] === 'object') {
+      const propDef = validateAlias(alias[k], [...path, k], def)
+      if (propDef) {
+        return propDef
+      }
+    }
+  }
+  def.errors.push({
+    code: ERR_TARGET_INVAL_ALIAS,
+    payload: alias,
+  })
+  return { value: '', def: EMPTY_ALIAS_PROP_DEF }
 }
 
 export const validateId = (def: QueryDef, id: any): number => {
@@ -112,6 +188,16 @@ export const handleErrors = (def: QueryDef) => {
     err.stack = ''
     throw err
   }
+}
+
+export const EMPTY_ALIAS_PROP_DEF: PropDef = {
+  prop: 1,
+  typeIndex: ALIAS,
+  __isPropDef: true,
+  separate: true,
+  len: 0,
+  start: 0,
+  path: ['ERROR_ALIAS'],
 }
 
 export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {

@@ -11,7 +11,12 @@ import {
   QueryTarget,
   Target,
 } from './types.js'
-import { validateId, validateIds, validateType } from './validation.js'
+import {
+  validateAlias,
+  validateId,
+  validateIds,
+  validateType,
+} from './validation.js'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {
@@ -22,7 +27,7 @@ const createEmptySharedDef = () => {
     include: {
       langTextFields: new Map(),
       stringFields: new Set(),
-      props: new Set(),
+      props: new Map(),
       propsRead: {},
       main: {
         len: 0,
@@ -62,6 +67,8 @@ export const createQueryDef = (
       } else if (t.ids) {
         t.ids = validateIds(q, t.ids)
         q.range.limit = t.ids.length
+      } else if (t.alias) {
+        t.resolvedAlias = validateAlias(t.alias, [], q)
       } else {
         q.range.limit = DEF_RANGE_PROP_LIMIT
       }

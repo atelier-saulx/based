@@ -13,7 +13,7 @@ import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
-import { includeDoesNotExist } from '../validation.js'
+import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
 
 export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
@@ -46,7 +46,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
             return
           }
         } else {
-          def.edges.include.props.add(edgeProp.prop)
+          def.edges.include.props.set(edgeProp.prop, edgeProp)
         }
         return
       }
@@ -60,11 +60,16 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       }
 
       if (isPropDef(t) && t.typeIndex === TEXT) {
-        const langCode = langCodesMap.get(path[path.length - 1])
-        if (!def.include.langTextFields.has(t.prop)) {
-          def.include.langTextFields.set(t.prop, new Set())
+        const lang = path[path.length - 1]
+        const langCode = langCodesMap.get(lang)
+        if (!langCode || !db.schema.locales[lang]) {
+          includeLangDoesNotExist(def, f)
+          return
         }
-        def.include.langTextFields.get(t.prop).add(langCode)
+        if (!def.include.langTextFields.has(t.prop)) {
+          def.include.langTextFields.set(t.prop, { def: t, codes: new Set() })
+        }
+        def.include.langTextFields.get(t.prop).codes.add(langCode)
         return
       } else if (
         isPropDef(t) &&
@@ -92,9 +97,9 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
     return
   } else if (prop.typeIndex === TEXT) {
     if (!def.include.langTextFields.has(prop.prop)) {
-      def.include.langTextFields.set(prop.prop, new Set())
+      def.include.langTextFields.set(prop.prop, { def: prop, codes: new Set() })
     }
-    def.include.langTextFields.get(prop.prop).add(def.lang ?? 0)
+    def.include.langTextFields.get(prop.prop).codes.add(def.lang ?? 0)
   } else {
     includeProp(def, prop)
   }

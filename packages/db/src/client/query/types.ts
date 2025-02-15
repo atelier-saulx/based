@@ -28,6 +28,7 @@ export type Target = {
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
   alias?: QueryByAliasObj
+  resolvedAlias?: { def: PropDef; value: string }
 }
 
 export const isRefDef = (def: QueryDef): def is QueryDefRest => {
@@ -76,9 +77,12 @@ export type QueryDefShared = {
     limit: number
   }
   include: {
-    langTextFields: Map<number, Set<LangCode>>
+    langTextFields: Map<
+      number,
+      { def: PropDef | PropDefEdge; codes: Set<LangCode> }
+    >
     stringFields: Set<string>
-    props: Set<number>
+    props: Map<number, PropDef | PropDefEdge>
     propsRead: { [propName: number]: number }
     main: {
       include: MainIncludes
@@ -120,5 +124,10 @@ export const isAlias = (
   if (id instanceof Uint32Array) {
     return false
   }
-  return typeof id === 'object' && id !== null && !Array.isArray(id)
+  return (
+    typeof id === 'object' &&
+    id !== null &&
+    !Array.isArray(id) &&
+    !ArrayBuffer.isView(id)
+  )
 }

@@ -107,13 +107,19 @@ pub fn getFields(
 
         const field: u8 = @intFromEnum(op);
 
+        var prop: t.Prop = undefined;
+
         // MAIN
         if (field == 0) {
+            prop = t.Prop.MICRO_BUFFER;
             const mainIncludeSize = read(u16, operation, 0);
             if (mainIncludeSize != 0) {
                 includeMain = operation[2 .. 2 + mainIncludeSize];
             }
             includeIterator += 2 + mainIncludeSize;
+        } else {
+            prop = @enumFromInt(operation[0]);
+            includeIterator += 1;
         }
 
         var value: []u8 = undefined;
@@ -135,8 +141,6 @@ pub fn getFields(
         }
 
         const valueLen = value.len;
-        // pass typeIndex
-        const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
 
         if (valueLen == 0) {
             if (prop == t.Prop.TEXT) {
@@ -144,6 +148,9 @@ pub fn getFields(
             }
             continue :includeField;
         }
+
+        // if prop == t.Prop.CARDINALITY
+        // count as slice [0..4]
 
         if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);

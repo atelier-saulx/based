@@ -49,6 +49,124 @@ await test('simple', async (t) => {
 
   await db.drain()
 
+  deepEqual(
+    (await db.query('user').include('name', 'snurp').get()).toObject(),
+    [
+      {
+        id: 1,
+        snurp: 'derp derp',
+        name: '',
+      },
+    ],
+  )
+
+  deepEqual(
+    (await db.query('user').include('name', 'snurp', 'age').get()).toObject(),
+    [
+      {
+        id: 1,
+        age: 99,
+        snurp: 'derp derp',
+        name: '',
+      },
+    ],
+  )
+
+  deepEqual(
+    (
+      await db
+        .query('user')
+        .include(
+          'name',
+          'snurp',
+          'age',
+          'email',
+          'flap',
+          'burp',
+          'location.x',
+          'location.y',
+        )
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        flap: 0,
+        email: 'merp_merp@once.net',
+        age: 99,
+        burp: 66,
+        location: { x: 0, y: 0 },
+        snurp: 'derp derp',
+        name: '',
+      },
+    ],
+  )
+
+  deepEqual(
+    (await db.query('user').include('location.label').get()).toObject(),
+    [
+      {
+        id: 1,
+        location: {
+          label: 'BLA BLA',
+        },
+      },
+    ],
+  )
+
+  deepEqual((await db.query('user').include('location').get()).toObject(), [
+    {
+      id: 1,
+      location: {
+        x: 0,
+        y: 0,
+        label: 'BLA BLA',
+      },
+    },
+  ])
+
+  deepEqual(
+    (await db.query('user').include('location', 'burp').get()).toObject(),
+    [
+      {
+        id: 1,
+        burp: 66,
+        location: {
+          x: 0,
+          y: 0,
+          label: 'BLA BLA',
+        },
+      },
+    ],
+  )
+
+  deepEqual(
+    (
+      await db
+        .query('user')
+        .include(
+          'age',
+          'email',
+          'flap',
+          'burp',
+          'location.x',
+          'location.y',
+          'location.label',
+        )
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        flap: 0,
+        email: 'merp_merp@once.net',
+        age: 99,
+        burp: 66,
+        location: { x: 0, y: 0, label: 'BLA BLA' },
+      },
+    ],
+  )
+
   deepEqual((await db.query('user').get()).toObject(), [
     {
       id: 1,
