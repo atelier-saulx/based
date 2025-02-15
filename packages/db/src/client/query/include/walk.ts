@@ -13,7 +13,7 @@ import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
-import { includeDoesNotExist } from '../validation.js'
+import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
 
 export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
@@ -60,7 +60,12 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       }
 
       if (isPropDef(t) && t.typeIndex === TEXT) {
-        const langCode = langCodesMap.get(path[path.length - 1])
+        const lang = path[path.length - 1]
+        const langCode = langCodesMap.get(lang)
+        if (!langCode || !db.schema.locales[lang]) {
+          includeLangDoesNotExist(def, f)
+          return
+        }
         if (!def.include.langTextFields.has(t.prop)) {
           def.include.langTextFields.set(t.prop, { def: t, codes: new Set() })
         }

@@ -20,6 +20,7 @@ export const ERR_FILTER_OP_ENOENT = 9
 export const ERR_FILTER_INVALID_VAL = 10
 export const ERR_FILTER_INVALID_OPTS = 11
 export const ERR_FILTER_INVALID_LANG = 12
+export const ERR_INCLUDE_INVALID_LANG = 13
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -41,6 +42,7 @@ const messages = {
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
   [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
   [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
+  [ERR_INCLUDE_INVALID_LANG]: (p) => `Include: invalid lang "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -75,6 +77,13 @@ export const filterFieldDoesNotExist = (def: QueryDef, field: string) => {
 export const includeDoesNotExist = (def: QueryDef, field: string) => {
   def.errors.push({
     code: ERR_INCLUDE_ENOENT,
+    payload: field,
+  })
+}
+
+export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_INCLUDE_INVALID_LANG,
     payload: field,
   })
 }

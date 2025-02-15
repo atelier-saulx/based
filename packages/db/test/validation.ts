@@ -220,4 +220,16 @@ await test('query', async (t) => {
     true,
     'non existing lang in filter',
   )
+
+  await throws(
+    () => db.query('user').include('friend.description.flap').get(),
+    true,
+    'non existing lang in include #1',
+  )
+
+  await throws(
+    () => db.query('user').include('friend.description.fr').get(),
+    true,
+    'non existing lang in include #2',
+  )
 })
