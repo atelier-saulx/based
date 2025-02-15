@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { ModifyRes } from '../src/client/modify/ModifyRes.js'
 import { setTimeout } from 'timers/promises'
+import { wait } from '@saulx/utils'
 
 await test('single special cases', async (t) => {
   const db = new BasedDb({
@@ -710,4 +711,49 @@ await test('single reference multi refs strings', async (t) => {
       lilBlup: null,
     },
   ])
+})
+
+await test('update same value', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  t.after(() => {
+    return db.destroy()
+  })
+  await db.start({ clean: true })
+  await db.putSchema({
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+    },
+    types: {
+      country: {
+        name: 'string',
+      },
+      contestant: {
+        name: 'string',
+        country: { ref: 'country', prop: 'contestants' },
+      },
+    },
+  })
+
+  const id = await db.create('contestant', {
+    name: 'Mr flap',
+  })
+
+  const countryId = await db.create('country', {
+    name: 'Country X',
+  })
+
+  await db.update('contestant', {
+    id,
+    country: countryId,
+  })
+
+  await db.update('contestant', {
+    id,
+    country: countryId,
+  })
+
+  await wait(1e3)
 })

@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { CsmtNodeRange, destructureCsmtKey, foreachDirtyBlock } from './tree.js'
 import { DbServer } from './index.js'
+import { writeFileSync } from 'node:fs'
 
 const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
@@ -26,7 +27,11 @@ type Writelog = {
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-export async function save(db: DbServer) {
+export function save(db: DbServer, sync = false) {
+  if (!db.dirtyRanges.size) {
+    return
+  }
+
   let err: number
   const ts = Date.now()
 
@@ -91,5 +96,7 @@ export async function save(db: DbServer) {
   if (mtRoot) {
     data.hash = mtRoot.hash.toString('hex')
   }
-  await writeFile(join(db.fileSystemPath, WRITELOG_FILE), JSON.stringify(data))
+  const filePath = join(db.fileSystemPath, WRITELOG_FILE)
+  const content = JSON.stringify(data)
+  return sync ? writeFileSync(filePath, content) : writeFile(filePath, content)
 }

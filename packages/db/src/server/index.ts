@@ -14,7 +14,7 @@ import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
-
+import exitHook from 'exit-hook'
 const SCHEMA_FILE = 'schema.json'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -95,7 +95,7 @@ export class DbServer {
   queryQueue: Map<Function, Buffer> = new Map()
   stopped: boolean
   onSchemaChange: OnSchemaChange
-
+  unlistenExit: ReturnType<typeof exitHook>
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -114,6 +114,7 @@ export class DbServer {
   start(opts?: { clean?: boolean }) {
     return start(this, opts)
   }
+
   save() {
     return save(this)
   }
@@ -505,6 +506,8 @@ export class DbServer {
 
     this.stopped = true
     clearTimeout(this.cleanupTimer)
+    this.unlistenExit()
+
     try {
       if (!noSave) {
         await this.save()
@@ -523,7 +526,11 @@ export class DbServer {
   async destroy() {
     await this.stop(true)
     await rm(this.fileSystemPath, { recursive: true }).catch((err) =>
-      console.warn('Error removing dump folder', err.message),
+      console.warn(
+        'Error removing dump folder',
+        this.fileSystemPath,
+        err.message,
+      ),
     )
   }
 }

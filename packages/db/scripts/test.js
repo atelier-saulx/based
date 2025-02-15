@@ -65,7 +65,9 @@ console.log('')
 for (const test of testsToRun) {
   const fullPath = test[0]
   const relPath = relative(p, fullPath)
-  console.log(picocolors.bgBlue(` ${relPath} `))
+  console.log(
+    picocolors.bgBlue(` ${picocolors.bold(picocolors.black(relPath))} `),
+  )
 
   if (test[1]) {
     process.env.TEST_TO_RUN = test[1]

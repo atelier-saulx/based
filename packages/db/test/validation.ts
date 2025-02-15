@@ -239,4 +239,11 @@ await test('query', async (t) => {
     true,
     'Filter non existing operator',
   )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('friend.description.en', '>', 1).get(),
+    true,
+    'Filter incorrect operator on text',
+  )
 })

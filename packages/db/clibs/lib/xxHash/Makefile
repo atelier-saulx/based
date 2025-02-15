@@ -15,10 +15,10 @@ ERR = $(error Unsupported platform!)
 err: ; $(ERR)
 
 linux: build
-	cp -P $(XXHASH_SRC_PATH)/libxxhash.so* $(LIB_PATH)
+	cp $(XXHASH_SRC_PATH)/libxxhash.so* $(LIB_PATH)
 
 darwin: build
-	cp -P $(XXHASH_SRC_PATH)/libxxhash*.dylib $(LIB_PATH)
+	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib $(LIB_PATH)
 	install_name_tool -id @rpath/libxxhash.dylib $(LIB_PATH)/libxxhash.dylib
 
 build:

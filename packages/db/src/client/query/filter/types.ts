@@ -15,20 +15,6 @@ export const IsFilter = (f: FilterAst): f is Filter => {
   return false
 }
 
-export const validOperators = [
-  '=',
-  'has',
-  '!has',
-  '<',
-  '>',
-  '!=',
-  'like',
-  '>=',
-  '<=',
-  '..',
-  '!..',
-] as const
-
 export type Operator =
   | '='
   | 'has'
@@ -208,4 +194,23 @@ export const toFilterCtx = (
   }
 
   filterOperatorDoesNotExist(def, op)
+}
+
+export const operatorReverseMap: Record<OPERATOR, string> = {
+  [EQUAL]: '=',
+  [HAS]: 'has',
+  [ENDS_WITH]: 'endsWith',
+  [STARTS_WITH]: 'startsWith',
+  [GREATER_THAN]: '>',
+  [SMALLER_THAN]: '<',
+  [GREATER_THAN_INCLUSIVE]: '>=',
+  [SMALLER_THAN_INCLUSIVE]: '<=',
+  [RANGE]: '..',
+  [RANGE_EXCLUDE]: '!..',
+  [EQUAL_LOWER_CASE]: '= (lowerCase)',
+  [HAS_TO_LOWER_CASE]: 'has (lowerCase)',
+  [STARTS_WITH_LOWER_CASE]: 'startsWith (lowerCase)',
+  [ENDS_WITH_LOWER_CASE]: 'endsWith (lowerCase)',
+  [LIKE]: 'like',
+  [EQUAL_CRC32]: '= (crc32)',
 }

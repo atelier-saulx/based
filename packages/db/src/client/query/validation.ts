@@ -1,5 +1,14 @@
-import { ALIAS, PropDef, SchemaTypeDef } from '../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  PropDefEdge,
+  SchemaTypeDef,
+  STRING,
+  TEXT,
+} from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
+import { isNumerical } from './filter/types.js'
+import { Filter } from './query.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 
@@ -41,14 +50,31 @@ const messages = {
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
   [ERR_INCLUDE_INVALID_LANG]: (p) => `Include: invalid lang "${p}"`,
-
   [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
   [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
-
   [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
+
+export const validateFilter = (
+  def: QueryDef,
+  prop: PropDef | PropDefEdge,
+  filter: Filter,
+) => {
+  if (prop.typeIndex === TEXT || prop.typeIndex === STRING) {
+    const op = filter[1].operation
+    if (isNumerical(op)) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: filter,
+      })
+      return true
+    }
+  }
+
+  return false
+}
 
 export const validateType = (db: DbClient, def: QueryDef, type: string) => {
   const r = db.schemaTypesParsed[type]
