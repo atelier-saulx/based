@@ -6,13 +6,14 @@ import {
   PropDef,
   ID_FIELD_DEF,
   TEXT,
+  REFERENCE,
 } from '../../../server/schema/schema.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { FilterOpts, Operator, toFilterCtx } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
-import { filterFieldDoesNotExist } from '../validation.js'
+import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
 
 export { Operator, Filter }
 
@@ -43,10 +44,13 @@ const referencesFilter = (
             size += 3 + primitiveFilter(edgeDef, filter, conditions, def.lang)
           }
         }
+      } else {
+        filterFieldDoesNotExist(def, fieldStr)
+        return 0
       }
       return size
     }
-    if (isPropDef(t) && t.typeIndex === 13) {
+    if (isPropDef(t) && t.typeIndex === REFERENCE) {
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
@@ -72,9 +76,10 @@ const referencesFilter = (
     }
   }
 
-  throw new Error(
-    `Query: field "${fieldStr}" does not exist on type ${schema.type}`,
-  )
+  if (!def) {
+    filterFieldDoesNotExist(def, fieldStr)
+    return 0
+  }
 }
 
 export const filterRaw = (
@@ -85,35 +90,26 @@ export const filterRaw = (
   def: QueryDef,
 ): number => {
   const field = filter[0]
-
   let fieldDef = schema.props[field]
-
   if (!fieldDef) {
     const s = field.split('.')
     if (s.length > 1) {
       const f = s.slice(0, -1).join()
       fieldDef = schema.props[f]
       if (fieldDef && fieldDef.typeIndex === TEXT) {
-        const code = langCodesMap.get(s[s.length - 1])
-        if (!code) {
-          throw new Error(
-            `Invalid value for filter on ${field}: expected a valid locale`,
-          )
+        const lang = s[s.length - 1]
+        const code = langCodesMap.get(lang)
+        if (!code || !schema.locales[lang]) {
+          filterInvalidLang(def, field)
+          return 0
         }
         return primitiveFilter(fieldDef, filter, conditions, code)
       }
     }
-
     if (field === 'id') {
       fieldDef = ID_FIELD_DEF
       return primitiveFilter(fieldDef, filter, conditions, def.lang)
     }
-
-    if (!fieldDef) {
-      filterFieldDoesNotExist(def, field)
-      return 0
-    }
-
     return referencesFilter(db, filter, schema, conditions, def)
   }
   return primitiveFilter(fieldDef, filter, conditions, def.lang)
