@@ -164,12 +164,12 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
     for (size_t i = 0; i < refs->nr_refs; i++) {
         struct SelvaNodeReference *ref = &refs->refs[i];
 
-        if (ref && ref->dst) {
-            save_ref(io, ref);
-        } else {
-            /* TODO Handle NULL */
+        if (!ref->dst) {
+            /* TODO Handle NULL? */
             db_panic("ref in refs shouldn't be NULL");
         }
+
+        save_ref(io, ref);
     }
 }
 
@@ -725,13 +725,14 @@ static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct 
 static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, field_t field)
 {
     sdb_arr_len_t nr_refs;
+    int err = 0;
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
-    for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
-        load_ref(io, db, node, fs, field);
+    for (sdb_arr_len_t i = 0; i < nr_refs && !err; i++) {
+        err = load_ref(io, db, node, fs, field);
     }
 
-    return 0;
+    return err;
 }
 
 static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)

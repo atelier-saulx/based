@@ -149,6 +149,7 @@ int selva_fields_reference_set(
 
 /**
  * @param index 0 = first; -1 = last.
+ * @param reorder move the existing ref to `index` instead of returning EEXIST.
  */
 SELVA_EXPORT
 int selva_fields_references_insert(

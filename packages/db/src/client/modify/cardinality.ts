@@ -6,7 +6,7 @@ import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'
 
 export function writeHll(
-  value: string | null | Buffer,
+  value: string | null | Buffer | Array<string | Buffer>,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -18,53 +18,45 @@ export function writeHll(
   }
 
   if (value === null) {
-    // console.log('modify/cardinality.ts trying to reset?')
-    // if (modifyOp === UPDATE) {
-    //   if (ctx.len + 11 > ctx.max) {
-    //     return RANGE_ERR
-    //   }
-    //   setCursor(ctx, def, t.prop, parentId, modifyOp)
-    //   ctx.buf[ctx.len++] = DELETE
-    // }
-  } else if (Array.isArray(value)) {
-    // console.log('modify/cardinality.ts Array.isArray(value)')
-    // for (const key in value) {
-    //   if (key === 'add') {
-    //     // @ts-ignore
-    //     const err = addHll(value[key], ctx, def, t, parentId, modifyOp, 1)
-    //     if (err) {
-    //       return err
-    //     }
-    //   } else {
-    //     return new ModifyError(t, value)
-    //   }
-    // }
-  } else {
-    return addHll(value, ctx, def, t, parentId, modifyOp)
+    // Future hll_reset frunction
+    return
+  } else if (!Array.isArray(value)) {
+    value = [value]
   }
+
+  const err = addHll(value, ctx, def, t, parentId, modifyOp)
 }
 
 function addHll(
-  value: string | null | Buffer,
+  value: (string | Buffer)[],
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  let size = 8
+  const len = value.length
+  let size = 2 + len * 8
 
   if (ctx.len + size + 11 > ctx.max) {
     return RANGE_ERR
   }
 
-  // console.log(`test JS original value = ${value}`)
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
+  ctx.buf.writeUint16LE(len, ctx.len)
+  ctx.len += 2
 
-  let hash: bigint = xxHash64(Buffer.from(value)) //1ec6c662633f0026 or 2217677992400715814
-
-  ctx.buf.writeBigUInt64LE(hash, ctx.len)
-  // console.log('js hash:', hash)
-  ctx.len += 8
+  for (let val of value) {
+    let b: Buffer
+    if (typeof val === 'string') {
+      b = Buffer.from(val)
+    } else if (!(val instanceof Buffer)) {
+      b = val
+      return new ModifyError(t, val)
+    }
+    const hash: bigint = xxHash64(b)
+    ctx.buf.writeBigUInt64LE(hash, ctx.len)
+    ctx.len += 8
+  }
 }

@@ -90,3 +90,78 @@ await test('save empty root', async (t) => {
   await setTimeout(1e3)
 
 })
+
+await test('save refs', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      group: {
+        props: {
+          name: { type: 'string' },
+          users: {
+            items: {
+              ref: 'user',
+              prop: 'group',
+            },
+          },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          email: { type: 'string' },
+          group: {
+            ref: 'group',
+            prop: 'users'
+          },
+        },
+      },
+    },
+  })
+
+  const grp = db.create('group', {
+    name: 'best',
+  })
+  db.create('user', {
+    name: 'youzi',
+    email: 'youzi@yazi.yo',
+    group: grp,
+  })
+
+  db.create('user', {
+    name: 'youri',
+    email: 'youri@yari.yo',
+    group: grp,
+  })
+
+  await db.drain()
+  //await db.save()
+  await db.stop()
+  const db2 = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db2.destroy()
+  })
+
+  await db2.start()
+  const a = await db.query('user').get().toObject()
+  const b = await db2.query('user').get().toObject()
+
+  console.log(a, b)
+  deepEqual(a, b)
+
+  const c = await db.create('user', { name: 'jerp' })
+  const d = await db2.create('user', { name: 'jerp' })
+  equal(c, 3)
+  equal(d, 3)
+})

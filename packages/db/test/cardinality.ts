@@ -17,6 +17,7 @@ await test('hll', async (t) => {
     types: {
       article: {
         myUniqueValuesCount: 'cardinality',
+        myUniqueValuesCountFromArray: 'cardinality',
       },
     },
   })
@@ -24,21 +25,59 @@ await test('hll', async (t) => {
   console.log('------- create --------')
 
   const myArticle = await db.create('article', {
-    myUniqueValuesCount: 'myCoolValue', //['myCoolValue', 'mr snurfels'], // testar depois com valor que não é array
+    myUniqueValuesCount: 'myCoolValue',
   })
+
+  // const myArticle = await db.create('article', {
+  //   myUniqueValuesCountFromArray: [
+  //     'myCoolValue',
+  //     'myCoolValue',
+  //     'mr snurfels',
+  //     'mr snurfels',
+  //     'lala',
+  //     'lala',
+  //     'myCoolValue',
+  //     'myCoolValue',
+  //     'mr snurfels',
+  //     'mr snurfels',
+  //     'lala',
+  //     'lala',
+  //     'lele',
+  //     'lili',
+  //     'lolo',
+  //     'lulu',
+  //   ],
+  // })
 
   console.log('------- update --------')
 
   await db.update('article', myArticle, {
-    myUniqueValuesCount: 'lele',
+    myUniqueValuesCount: [
+      'myCoolValue',
+      'myCoolValue',
+      'mr snurfels',
+      'mr snurfels',
+      'lala',
+      'lala',
+      'myCoolValue',
+      'myCoolValue',
+      'mr snurfels',
+      'mr snurfels',
+      'lala',
+      'lala',
+      'lele',
+      'lili',
+      'lolo',
+      'lulu',
+    ],
   })
 
-  for (let i = 0; i < 1e1; i++) {
-    await db.update('article', myArticle, {
-      myUniqueValuesCount: `lala${i}`,
-    })
-  }
-  await db.drain()
+  // for (let i = 0; i < 1e1; i++) {
+  //   await db.update('article', myArticle, {
+  //     myUniqueValuesCount: `lala${i}`,
+  //   })
+  // }
+  // await db.drain()
 
   console.log('---------------')
 

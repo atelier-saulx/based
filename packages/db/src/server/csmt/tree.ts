@@ -93,7 +93,6 @@ export function createTree(createHash: () => any): Csmt {
     const right = node.right
 
     if (!left || !right) {
-      console.log(node, k)
       if (node.data) {
         if (node.key === k) {
           return null
