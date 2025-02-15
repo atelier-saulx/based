@@ -28,12 +28,12 @@ await test('save', async (t) => {
 
   db.create('user', {
     name: 'youzi',
-    email: 'youzi@yazi.yo'
+    email: 'youzi@yazi.yo',
   })
 
   db.create('user', {
     name: 'youri',
-    email: 'youri@yari.yo'
+    email: 'youri@yari.yo',
   })
 
   await db.drain()
@@ -72,7 +72,7 @@ await test('save empty root', async (t) => {
 
   await db.putSchema({
     props: {
-      rando: { type: 'string'}
+      rando: { type: 'string' },
     },
     types: {
       user: {
@@ -88,7 +88,6 @@ await test('save empty root', async (t) => {
 
   await db.save()
   await setTimeout(1e3)
-
 })
 
 await test('save refs', async (t) => {
@@ -120,7 +119,7 @@ await test('save refs', async (t) => {
           email: { type: 'string' },
           group: {
             ref: 'group',
-            prop: 'users'
+            prop: 'users',
           },
         },
       },
@@ -143,8 +142,8 @@ await test('save refs', async (t) => {
   })
 
   await db.drain()
-  //await db.save()
-  await db.stop()
+  await db.save()
+  // await db.stop()
   const db2 = new BasedDb({
     path: t.tmp,
   })
