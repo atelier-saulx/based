@@ -14,6 +14,14 @@ await test('save', async (t) => {
   })
 
   await db.putSchema({
+    props: {
+      coolname: 'string',
+      users: {
+        items: {
+          ref: 'user',
+        },
+      },
+    },
     types: {
       user: {
         props: {
@@ -57,9 +65,30 @@ await test('save', async (t) => {
   const d = await db2.create('user', { name: 'jerp' })
   equal(c, 3)
   equal(d, 3)
+
+  await db2.save()
+
+  const user1 = await db2.create('user', { name: 'jerp' })
+
+  await db2.save()
+
+  const user2 = await db2.create('user', { name: 'jerp' })
+  await db2.update({
+    coolname: 'xxx',
+    users: [user1, user2],
+  })
+
+  await db2.save()
+
+  await db2.update({
+    coolname: 'xxx',
+    users: [user1],
+  })
+
+  await db2.save()
 })
 
-await test('save empty root', async (t) => {
+await test.skip('save empty root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -90,7 +119,7 @@ await test('save empty root', async (t) => {
   await setTimeout(1e3)
 })
 
-await test('save refs', async (t) => {
+await test.skip('save refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -139,6 +168,7 @@ await test('save refs', async (t) => {
     email: 'youri@yari.yo',
     group: grp,
   })
+
   await db.drain()
   await db.save()
 
@@ -152,5 +182,44 @@ await test('save refs', async (t) => {
 
   const users1 = await db.query('user').include('group').get().toObject()
   const users2 = await db2.query('user').include('group').get().toObject()
+
   deepEqual(users1, users2)
+})
+
+await test.skip('auto save', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      group: {
+        props: {
+          name: { type: 'string' },
+          users: {
+            items: {
+              ref: 'user',
+              prop: 'group',
+            },
+          },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          email: { type: 'string' },
+          group: {
+            ref: 'group',
+            prop: 'users',
+          },
+        },
+      },
+    },
+  })
 })

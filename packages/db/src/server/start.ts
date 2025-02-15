@@ -6,7 +6,9 @@ import { join } from 'node:path'
 import { createTree } from './csmt/index.js'
 import { foreachBlock } from './tree.js'
 import { availableParallelism } from 'node:os'
+import exitHook from 'exit-hook'
 import './worker.js'
+import { save } from './save.js'
 
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
@@ -127,4 +129,10 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
   while (i--) {
     db.workers[i] = new DbWorker(address, db)
   }
+
+  db.unlistenExit = exitHook((signal) => {
+    console.log(`Exiting with signal: ${signal}`)
+    save(db, true)
+    console.log('Successfully saved.')
+  })
 }
