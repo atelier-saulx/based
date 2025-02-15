@@ -412,6 +412,7 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
     ref = &refs->refs[i];
     reference_meta_destroy(db, efc, ref);
 
+    assert(refs->index);
     if (!node_id_set_remove(&refs->index, &id_set_len, ref->dst->node_id)) {
         db_panic("node_id not found in refs: %u:%u\n", ref->dst->type, ref->dst->node_id);
     }
@@ -967,6 +968,9 @@ int selva_fields_get_text(
     return SELVA_ENOENT;
 }
 
+/**
+ * @returns false if NOK
+ */
 static bool add_to_refs_index_(
         struct SelvaNode *node,
         const struct SelvaFieldSchema * restrict fs,
@@ -996,12 +1000,8 @@ static bool add_to_refs_index(
         const struct SelvaFieldSchema * restrict fs_src,
         const struct SelvaFieldSchema * restrict fs_dst)
 {
-    bool res = false;
-
-    res |= add_to_refs_index_(src, fs_src, dst->node_id);
-    res |= add_to_refs_index_(dst, fs_dst, src->node_id);
-
-    return res;
+    return add_to_refs_index_(src, fs_src, dst->node_id) &&
+           add_to_refs_index_(dst, fs_dst, src->node_id);
 }
 
 int selva_fields_references_insert(
