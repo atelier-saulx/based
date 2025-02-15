@@ -154,13 +154,19 @@ static double compute_alpha_m(size_t m) {
     }
 }
 
-uint32_t *hll_count(struct selva_string *hllss) {
-    if (!hllss) return 0;
+uint8_t *hll_count(struct selva_string *hllss) {
+    if (!hllss) {
+        // PANIC  ASSERTION
+        return 0;   
+    }
 
     size_t len;
     HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
-    if (!hll->dirty) return &hll->count;
+    if (!hll->dirty) {
+
+        return &hll->count;
+    }
 
     uint32_t precision = hll->precision;
     uint32_t num_registers = hll->num_registers;
@@ -189,7 +195,7 @@ uint32_t *hll_count(struct selva_string *hllss) {
 
     hll->count = (uint32_t)estimate;
     hll->dirty = false;
-    return &hll->count;
+    return (uint8_t *)(&hll->count);
 }
 
 int main(void) {

@@ -101,5 +101,8 @@ await test('hll', async (t) => {
 
   console.log('---------------')
 
-  // console.log((await db.query('article').get()).toObject())
+  await db.query('article').get().inspect()
+
+  // .inspect()
+  // .then((v) => v.debug())
 })
