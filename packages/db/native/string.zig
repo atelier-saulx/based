@@ -2,6 +2,7 @@ const c = @import("./c.zig");
 const napi = @import("./napi.zig");
 const std = @import("std");
 const selva = @import("./selva.zig");
+const writeInt = @import("./utils.zig").writeInt;
 
 pub fn napi_finalize_hash(_: c.napi_env, finalize_data: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
     _ = selva.selva_hash_free_state(@ptrCast(finalize_data));
@@ -142,19 +143,11 @@ pub fn decompress(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
 }
 
 pub fn xxHash64(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    const args = napi.getArgs(1, env, info) catch return null;
+    const args = napi.getArgs(3, env, info) catch return null;
     const buf = napi.get([]u8, env, args[0]) catch return null;
+    const target = napi.get([]u8, env, args[1]) catch return null;
+    const offset = napi.get(u32, env, args[2]) catch return null;
     const hash = selva.xxHash64(buf.ptr, buf.len);
-    var h: c.napi_value = undefined;
-    _ = c.napi_create_bigint_uint64(env, hash, &h);
-    return h;
+    writeInt(usize, target, offset, hash);
+    return null;
 }
-
-// pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-//     const args = napi.getArgs(1, env, info) catch return null;
-//     const buf = napi.get([]u8, env, args[0]) catch return null;
-//     const value: u32 = selva.crc32c(0, buf.ptr, buf.len);
-//     var v: c.napi_value = undefined;
-//     _ = c.napi_create_uint32(env, value, &v);
-//     return v;
-// }

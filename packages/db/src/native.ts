@@ -130,7 +130,7 @@ export default {
     return db.destroySortIndex(dbCtx, buf)
   },
 
-  xxHash64: (buf: Buffer) => {
-    return db.xxHash64(buf)
+  xxHash64: (buf: Buffer, target: Buffer, index: number) => {
+    return db.xxHash64(buf, target, index)
   },
 }

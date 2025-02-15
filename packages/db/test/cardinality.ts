@@ -1,6 +1,6 @@
-import { skip } from 'node:test'
-import { BasedDb } from '../src/index.js'
+import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
+import { deepEqual } from 'node:assert'
 
 await test('hll', async (t) => {
   const db = new BasedDb({
@@ -16,6 +16,7 @@ await test('hll', async (t) => {
   await db.putSchema({
     types: {
       article: {
+        derp: 'number',
         myUniqueValuesCount: 'cardinality',
         myUniqueValuesCountFromArray: 'cardinality',
       },
@@ -24,52 +25,61 @@ await test('hll', async (t) => {
 
   console.log('------- create --------')
 
-  const myArticle = await db.create('article', {
+  let myArticle = await db.create('article', {
     myUniqueValuesCount: 'myCoolValue',
   })
 
-  // const myArticle = await db.create('article', {
-  //   myUniqueValuesCountFromArray: [
-  //     'myCoolValue',
-  //     'myCoolValue',
-  //     'mr snurfels',
-  //     'mr snurfels',
-  //     'lala',
-  //     'lala',
-  //     'myCoolValue',
-  //     'myCoolValue',
-  //     'mr snurfels',
-  //     'mr snurfels',
-  //     'lala',
-  //     'lala',
-  //     'lele',
-  //     'lili',
-  //     'lolo',
-  //     'lulu',
-  //   ],
-  // })
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        myUniqueValuesCount: 1,
+        myUniqueValuesCountFromArray: 0,
+      },
+    ],
+  )
 
-  // const felling = ['folish', 'superficial', 'deep', 'moving', 'fake']
+  await db.create('article', {
+    myUniqueValuesCountFromArray: [
+      'myCoolValue',
+      'myCoolValue',
+      'mr snurfels',
+      'mr snurfels',
+      'lala',
+      'lala',
+      'myCoolValue',
+      'myCoolValue',
+      'mr snurfels',
+      'mr snurfels',
+      'lala',
+      'lala',
+      'lele',
+      'lili',
+      'lolo',
+      'lulu',
+    ],
+  })
 
-  // let lastId = 0
-  // const f: number[] = []
-  // for (let i = 0; i < 1e2; i++) {
-  //   lastId = db.create('article', {
-  //     myUniqueValuesCount:
-  //       felling[Math.floor(Math.random() * (felling.length - 1))],
-  //   }).tmpId
-  //   if (i % 2) {
-  //     f.push(lastId)
-  //   }
-  // }
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+        .get()
+    ).toObject(),
+    [
+      { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
+      { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
+    ],
+  )
 
-  // db.update('article', myArticle, {
-  //   myUniqueValuesCount: f,
-  // })
-
-  // console.log(await db.drain(), 'ms')
-
-  // console.log('------- update --------')
+  console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -92,17 +102,52 @@ await test('hll', async (t) => {
     ],
   })
 
-  // for (let i = 0; i < 1e1; i++) {
-  //   await db.update('article', myArticle, {
-  //     myUniqueValuesCount: `lala${i}`,
-  //   })
-  // }
-  // await db.drain()
+  console.log(await db.drain(), 'ms')
 
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
+        .get()
+    ).toObject(),
+    [
+      { id: 1, myUniqueValuesCount: 7, myUniqueValuesCountFromArray: 0 },
+      { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
+    ],
+  )
+
+  const feeling = ['folish', 'superficial', 'deep', 'moving', 'fake']
+
+  let feelings = []
+  for (let i = 0; i < 1e6; i++) {
+    feelings.push(
+      xxHash64(
+        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+      ),
+    )
+  }
+
+  console.log('---->', feelings.length)
+
+  await db.update('article', myArticle, {
+    myUniqueValuesCount: feelings,
+  })
+
+  console.log(await db.drain(), 'ms')
+
+  console.log(await db.query('article').get().toObject())
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('article', {
+      // derp: i,
+      myUniqueValuesCount: feelings,
+    })
+  }
+
+  console.log(await db.drain(), 'ms')
   console.log('---------------')
 
-  await db.query('article').get().inspect()
-
-  // .inspect()
-  // .then((v) => v.debug())
+  await db.query('article').range(0, 1e6).get().inspect(10)
+  await db.query('article').range(0, 1e6).get().inspect(10)
 })
