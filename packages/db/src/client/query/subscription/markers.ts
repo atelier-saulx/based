@@ -163,7 +163,7 @@ export const addSubscriptionMarkers = (
     const marker = markerType.ids.get(id)
     const props = q.def.include.props
     const main = q.def.include.main
-    for (const p of props) {
+    for (const [p] of props.entries()) {
       if (!(p in marker.props)) {
         marker.props[p] = []
       }
@@ -183,7 +183,7 @@ export const addSubscriptionMarkers = (
     const props = q.def.include.props
     const main = q.def.include.main
     const marker = markerType.collection
-    for (const p of props) {
+    for (const [p] of props.entries()) {
       if (!(p in marker.props)) {
         marker.props[p] = []
       }

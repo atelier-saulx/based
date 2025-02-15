@@ -22,7 +22,7 @@ const createEmptySharedDef = () => {
     include: {
       langTextFields: new Map(),
       stringFields: new Set(),
-      props: new Set(),
+      props: new Map(),
       propsRead: {},
       main: {
         len: 0,
