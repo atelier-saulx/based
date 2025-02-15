@@ -157,6 +157,7 @@ const normalizeNeedle = (s: string): string => {
 }
 
 export const convertFilter = (
+  def: QueryDef,
   field: string,
   operator?: Operator | boolean,
   value?: any,
@@ -171,13 +172,13 @@ export const convertFilter = (
   }
   if (operator === '!..') {
     return [
-      [field, toFilterCtx('>', opts), value[1]],
-      [field, toFilterCtx('<', opts), value[0]],
+      [field, toFilterCtx(def, '>', opts), value[1]],
+      [field, toFilterCtx(def, '<', opts), value[0]],
     ]
   } else if (operator === '..') {
     return [
-      [field, toFilterCtx('>', opts), value[0]],
-      [field, toFilterCtx('<', opts), value[1]],
+      [field, toFilterCtx(def, '>', opts), value[0]],
+      [field, toFilterCtx(def, '<', opts), value[1]],
     ]
   } else {
     if (operator == 'like') {
@@ -196,6 +197,6 @@ export const convertFilter = (
         value = value.buffer
       }
     }
-    return [[field, toFilterCtx(operator, opts), value]]
+    return [[field, toFilterCtx(def, operator, opts), value]]
   }
 }

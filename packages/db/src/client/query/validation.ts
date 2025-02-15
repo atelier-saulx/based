@@ -40,9 +40,12 @@ const messages = {
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
+  [ERR_INCLUDE_INVALID_LANG]: (p) => `Include: invalid lang "${p}"`,
+
   [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
   [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
-  [ERR_INCLUDE_INVALID_LANG]: (p) => `Include: invalid lang "${p}"`,
+
+  [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -58,6 +61,13 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
     return EMPTY_SCHEMA_DEF
   }
   return r
+}
+
+export const filterOperatorDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_FILTER_OP_ENOENT,
+    payload: field,
+  })
 }
 
 export const filterInvalidLang = (def: QueryDef, field: string) => {

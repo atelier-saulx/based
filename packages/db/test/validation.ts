@@ -232,4 +232,11 @@ await test('query', async (t) => {
     true,
     'non existing lang in include #2',
   )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('friend.description.fr', 'derp', 1).get(),
+    true,
+    'Filter non existing operator',
+  )
 })
