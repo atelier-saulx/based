@@ -1,7 +1,12 @@
-import { SchemaTypeDef } from '../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  SchemaTypeDef,
+  STRING,
+} from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
-import { QueryDef } from './types.js'
+import { QueryByAliasObj, QueryDef } from './types.js'
 
 export type QueryError = {
   code: number
@@ -17,7 +22,15 @@ export const ERR_INCLUDE_ENOENT = 6
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
-  [ERR_TARGET_INVAL_ALIAS]: (p) => `Invalid alias "${p}"`,
+  [ERR_TARGET_INVAL_ALIAS]: (p) => {
+    var v: string
+    try {
+      v = JSON.stringify(p).replace(/"/g, '')
+    } catch (err) {
+      v = ''
+    }
+    return `Invalid alias prodived to query "${v}"`
+  },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
@@ -40,6 +53,33 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
     return EMPTY_SCHEMA_DEF
   }
   return r
+}
+
+export const validateAlias = (
+  alias: QueryByAliasObj,
+  path: string[],
+  def: QueryDef,
+): { def: PropDef; value: string } => {
+  const schema = def.schema
+  for (const k in alias) {
+    if (typeof alias[k] === 'string') {
+      const p = path.join('.') + k
+      const prop = schema.props[p]
+      if (prop.typeIndex === ALIAS) {
+        return { def: prop, value: alias[k] }
+      }
+    } else if (typeof alias[k] === 'object') {
+      const propDef = validateAlias(alias[k], [...path, k], def)
+      if (propDef) {
+        return propDef
+      }
+    }
+  }
+  def.errors.push({
+    code: ERR_TARGET_INVAL_ALIAS,
+    payload: alias,
+  })
+  return { value: '', def: EMPTY_ALIAS_PROP_DEF }
 }
 
 export const includeDoesNotExist = (def: QueryDef, field: string) => {
@@ -112,6 +152,16 @@ export const handleErrors = (def: QueryDef) => {
     err.stack = ''
     throw err
   }
+}
+
+export const EMPTY_ALIAS_PROP_DEF: PropDef = {
+  prop: 1,
+  typeIndex: ALIAS,
+  __isPropDef: true,
+  separate: true,
+  len: 0,
+  start: 0,
+  path: ['ERROR_ALIAS'],
 }
 
 export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {

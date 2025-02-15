@@ -5,34 +5,11 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { ALIAS, PropDef } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
-import { error } from 'console'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
   }, 0)
-}
-
-const getAliasPropdef = (
-  alias: QueryByAliasObj,
-  path: string[],
-  def: QueryDef,
-): { def: PropDef; value: string } | void => {
-  const schema = def.schema
-  for (const k in alias) {
-    if (typeof alias[k] === 'string') {
-      const p = path.join('.') + k
-      const prop = schema.props[p]
-      if (prop.typeIndex === ALIAS) {
-        return { def: prop, value: alias[k] }
-      }
-    } else if (typeof alias[k] === 'object') {
-      const propDef = getAliasPropdef(alias[k], [...path, k], def)
-      if (propDef) {
-        return propDef
-      }
-    }
-  }
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
@@ -84,36 +61,23 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     }
     // [type,type]
     // [q type] 0 == id, 1 === ids, 2 === type only
-    if (def.target.alias) {
+    if (def.target.resolvedAlias) {
       // put this somehwere else at some point
-      try {
-        const alias = getAliasPropdef(def.target.alias, [], def)
-        if (!alias) {
-          throw new Error(
-            `Cannot find valid alias type in "${JSON.stringify(def.target.alias)}"`,
-          )
-        } else {
-          const s = Buffer.byteLength(alias.value)
-
-          // filter is nice for things like access
-          const buf = Buffer.allocUnsafe(8 + filterSize + s)
-          buf[0] = 3
-          buf[1] = def.schema.idUint8[0]
-          buf[2] = def.schema.idUint8[1]
-          buf[3] = alias.def.prop
-          buf.writeUint16LE(s, 4)
-          buf.write(alias.value, 6)
-          buf.writeUint16LE(filterSize, s + 6)
-          if (filterSize) {
-            buf.set(filter, 8 + s)
-          }
-          result.push(buf)
-        }
-      } catch (err) {
-        throw new Error(
-          `Cannot parse alias object query for type ${def.schema.type}`,
-        )
+      const alias = def.target.resolvedAlias
+      const s = Buffer.byteLength(alias.value)
+      // filter is nice for things like access
+      const buf = Buffer.allocUnsafe(8 + filterSize + s)
+      buf[0] = 3
+      buf[1] = def.schema.idUint8[0]
+      buf[2] = def.schema.idUint8[1]
+      buf[3] = alias.def.prop
+      buf.writeUint16LE(s, 4)
+      buf.write(alias.value, 6)
+      buf.writeUint16LE(filterSize, s + 6)
+      if (filterSize) {
+        buf.set(filter, 8 + s)
       }
+      result.push(buf)
     } else if (def.target.id) {
       // type 0
       // 0: 4 [id]

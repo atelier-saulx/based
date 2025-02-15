@@ -168,18 +168,16 @@ await test('query', async (t) => {
     'non existing field in include',
   )
 
-  await db.query('user').filter('derp', '=', true).get()
-
-  await throws(
-    () => db.query('user').filter('derp', '=', true).get(),
-    true,
-    'non existing field in filter',
-  )
-
   await throws(
     // @ts-ignore
     () => db.query('user', { $id: 1 }).get(),
     true,
     'incorrect alias',
+  )
+
+  await throws(
+    () => db.query('user').filter('derp', '=', true).get(),
+    true,
+    'non existing field in filter',
   )
 })

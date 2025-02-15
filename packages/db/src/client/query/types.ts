@@ -28,6 +28,7 @@ export type Target = {
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
   alias?: QueryByAliasObj
+  resolvedAlias?: { def: PropDef; value: string }
 }
 
 export const isRefDef = (def: QueryDef): def is QueryDefRest => {
@@ -123,5 +124,10 @@ export const isAlias = (
   if (id instanceof Uint32Array) {
     return false
   }
-  return typeof id === 'object' && id !== null && !Array.isArray(id)
+  return (
+    typeof id === 'object' &&
+    id !== null &&
+    !Array.isArray(id) &&
+    !ArrayBuffer.isView(id)
+  )
 }
