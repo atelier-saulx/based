@@ -1,13 +1,19 @@
 import {
   ALIAS,
+  BOOLEAN,
+  NUMBER,
   PropDef,
   PropDefEdge,
   SchemaTypeDef,
   STRING,
   TEXT,
+  TIMESTAMP,
+  UINT16,
+  UINT32,
 } from '../../server/schema/types.js'
+import { propIsNumerical } from '../../server/schema/utils.js'
 import { DbClient } from '../index.js'
-import { isNumerical } from './filter/types.js'
+import { EQUAL, isNumerical, operatorReverseMap } from './filter/types.js'
 import { Filter } from './query.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
@@ -53,6 +59,8 @@ const messages = {
   [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
   [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
   [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
+  [ERR_FILTER_OP_FIELD]: (p: Filter) =>
+    `Cannot use operator "${operatorReverseMap[p[1].operation]}" on field "${p[0]}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -60,19 +68,30 @@ export type ErrorCode = keyof typeof messages
 export const validateFilter = (
   def: QueryDef,
   prop: PropDef | PropDefEdge,
-  filter: Filter,
+  f: Filter,
 ) => {
-  if (prop.typeIndex === TEXT || prop.typeIndex === STRING) {
-    const op = filter[1].operation
+  const t = prop.typeIndex
+  const op = f[1].operation
+  if (t === TEXT || t === STRING) {
     if (isNumerical(op)) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
-        payload: filter,
+        payload: f,
       })
       return true
     }
+  } else if (propIsNumerical(prop) && op !== EQUAL && !isNumerical(op)) {
+    def.errors.push({
+      code: ERR_FILTER_OP_FIELD,
+      payload: f,
+    })
+    return true
+  } else if (t === BOOLEAN && op !== EQUAL) {
+    def.errors.push({
+      code: ERR_FILTER_OP_FIELD,
+      payload: f,
+    })
   }
-
   return false
 }
 

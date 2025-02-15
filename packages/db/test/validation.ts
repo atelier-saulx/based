@@ -141,6 +141,7 @@ await test('query', async (t) => {
         props: {
           rating: 'uint32',
           name: 'string',
+          isOn: 'boolean',
           friend: { ref: 'user', prop: 'friend' },
           description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
@@ -246,4 +247,22 @@ await test('query', async (t) => {
     true,
     'Filter incorrect operator on text',
   )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('rating', 'has', 1).get(),
+    true,
+    'Filter incorrect operator on uint32',
+  )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('isOn', 'has', 1).get(),
+    true,
+    'Filter incorrect operator on bool',
+  )
+
+  await db.query('user').filter('isOn', true).get()
+  await db.query('user').filter('isOn').get()
+  await db.query('user').filter('isOn', false).get()
 })
