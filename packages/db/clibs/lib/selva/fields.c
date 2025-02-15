@@ -973,13 +973,11 @@ int selva_fields_get_text(
  */
 static bool add_to_refs_index_(
         struct SelvaNode *node,
-        const struct SelvaFieldSchema * restrict fs,
+        struct SelvaFieldInfo *nfo,
         node_id_t dst)
 {
-    struct SelvaFieldInfo *nfo;
     bool res = true;
 
-    nfo = ensure_field(node, &node->fields, fs);
     if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences *refs = nfo2p(&node->fields, nfo);
         size_t nr_refs;
@@ -1000,8 +998,12 @@ static bool add_to_refs_index(
         const struct SelvaFieldSchema * restrict fs_src,
         const struct SelvaFieldSchema * restrict fs_dst)
 {
-    return add_to_refs_index_(src, fs_src, dst->node_id) &&
-           add_to_refs_index_(dst, fs_dst, src->node_id);
+    struct SelvaFieldInfo *nfo_src = ensure_field(src, &src->fields, fs_src);
+    struct SelvaFieldInfo *nfo_dst = ensure_field(dst, &dst->fields, fs_dst);
+    const bool added_src = add_to_refs_index_(src, nfo_src, dst->node_id);
+    const bool added_dst = add_to_refs_index_(dst, nfo_dst, src->node_id);
+
+    return added_src && added_dst;
 }
 
 int selva_fields_references_insert(
