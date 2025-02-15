@@ -149,6 +149,9 @@ pub fn getFields(
             continue :includeField;
         }
 
+        // if prop == t.Prop.CARDINALITY
+        // count as slice [0..4]
+
         if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);
             includeIterator += 1;
