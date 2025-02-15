@@ -119,7 +119,7 @@ await test.skip('save empty root', async (t) => {
   await setTimeout(1e3)
 })
 
-await test.skip('save refs', async (t) => {
+await test('save refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

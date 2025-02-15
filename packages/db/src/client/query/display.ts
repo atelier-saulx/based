@@ -2,6 +2,7 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import {
   BINARY,
+  CARDINALITY,
   NUMBER,
   PropDef,
   PropDefEdge,
@@ -85,6 +86,10 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
     } else {
       return `"${v}"`
     }
+  }
+
+  if (type === CARDINALITY) {
+    return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('(unique)'))}`
   }
 
   if (type === TIMESTAMP) {
@@ -187,6 +192,8 @@ const inspectObject = (
         if (v === undefined) {
           return ''
         }
+        str += prettyPrintVal(v, def.typeIndex)
+      } else if (def.typeIndex === CARDINALITY) {
         str += prettyPrintVal(v, def.typeIndex)
       } else if (def.typeIndex === TIMESTAMP) {
         str += prettyPrintVal(v, def.typeIndex)

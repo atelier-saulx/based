@@ -126,7 +126,19 @@ pub fn getFields(
 
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
 
-        if (isEdge) {
+        if (prop == t.Prop.CARDINALITY) {
+            if (isEdge) {
+                // do this later!
+            } else {
+                fieldSchema = try db.getFieldSchema(field, typeEntry);
+                const stored = selva.selva_fields_get_selva_string(node, fieldSchema);
+                if (stored == null) {
+                    continue :includeField;
+                }
+                const countDistinct = selva.hll_count(@ptrCast(stored));
+                value = countDistinct[0..4];
+            }
+        } else if (isEdge) {
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
@@ -148,9 +160,6 @@ pub fn getFields(
             }
             continue :includeField;
         }
-
-        // if prop == t.Prop.CARDINALITY
-        // count as slice [0..4]
 
         if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);

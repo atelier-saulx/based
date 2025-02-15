@@ -46,9 +46,9 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.CARDINALITY => {
-            const len = read(u16, data, 0);
+            const len = read(u32, data, 0);
 
-            var i: usize = 2;
+            var i: usize = 4;
             while (i < len * 8) {
                 const currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
 
@@ -62,7 +62,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
                 i += 8;
             }
-            return i;
+            return len * 8;
         },
         else => {
             const len = read(u32, data, 0);

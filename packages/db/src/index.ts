@@ -9,6 +9,7 @@ export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
 export { DbClient, DbServer }
+export { xxHash64 } from './client/xxHash64.js'
 
 export class BasedDb {
   client: DbClient

@@ -46,7 +46,7 @@ clean:
 
 # New target for hll executable
 hll: lib/selva
-	$(CC) -g -o lib/selva/hll/hll lib/selva/hll/hll.c -Iinclude -Ilib/xxHash -L"$(subst ../../,,$(LIB_PATH))/" -lm -lselva -lxxhash -Wno-unknown-attributes -Wl,-rpath,"$(subst ../../,,$(LIB_PATH))/"
+	$(CC) -g -std=gnu2x -o lib/selva/hll/hll lib/selva/hll/hll.c lib/selva/db_panic.c -Ilib/selva/include -Iinclude -Ilib/xxHash -L"$(subst ../../,,$(LIB_PATH))/" -lm -lselva -lxxhash -Wno-unknown-attributes -Wl,-rpath,"$(subst ../../,,$(LIB_PATH))/"
 
 .PHONY: all prapare clean lib $(LIBS) test platform
 .NOTPARALLEL:

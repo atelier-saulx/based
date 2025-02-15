@@ -36,13 +36,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return reference.updateReference(ctx, data);
         },
         types.Prop.CARDINALITY => {
-            const len = read(u16, data, 0);
+            const len = read(u32, data, 0);
 
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, 80);
+            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
 
             selva.hll_init(hll, 14, true);
 
-            var i: usize = 2;
+            var i: usize = 4;
             while (i < len * 8) {
                 const hash = read(u64, data, i);
                 selva.hll_add(hll, hash);
@@ -54,7 +54,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
 
                 i += 8;
             }
-            return i;
+            return len * 8;
         },
         else => {
             const len = read(u32, data, 0);

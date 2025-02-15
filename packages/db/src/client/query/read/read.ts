@@ -18,6 +18,7 @@ import {
   UINT8,
   VECTOR,
   JSON,
+  CARDINALITY,
 } from '../../../server/schema/types.js'
 import { QueryDef } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -196,7 +197,9 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
       const prop = q.schema.reverseProps[k]
-      if (prop.typeIndex === TEXT && q.lang == 0) {
+      if (prop.typeIndex === CARDINALITY) {
+        addField(prop, 0, item)
+      } else if (prop.typeIndex === TEXT && q.lang == 0) {
         const lan = getEmptyField(prop, item)
         const lang = q.include.langTextFields.get(prop.prop).codes
         if (lang.has(0)) {
@@ -349,7 +352,12 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      if (prop.typeIndex === JSON) {
+      if (prop.typeIndex === CARDINALITY) {
+        q.include.propsRead[index] = id
+        const size = readUint32(result, i)
+        addField(prop, readUint32(result, i + 4), item)
+        i += size + 4
+      } else if (prop.typeIndex === JSON) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
         addField(

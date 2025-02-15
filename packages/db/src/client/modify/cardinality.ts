@@ -36,27 +36,22 @@ function addHll(
   modifyOp: ModifyOp,
 ): ModifyErr {
   const len = value.length
-  let size = 2 + len * 8
-
+  let size = 4 + len * 8
   if (ctx.len + size + 11 > ctx.max) {
     return RANGE_ERR
   }
-
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
-  ctx.buf.writeUint16LE(len, ctx.len)
-  ctx.len += 2
-
+  ctx.buf.writeUint32LE(len, ctx.len)
+  ctx.len += 4
   for (let val of value) {
-    let b: Buffer
     if (typeof val === 'string') {
-      b = Buffer.from(val)
-    } else if (!(val instanceof Buffer)) {
-      b = val
+      xxHash64(Buffer.from(val), ctx.buf, ctx.len)
+    } else if (val instanceof Buffer && val.byteLength === 8) {
+      ctx.buf.set(val, ctx.len)
+    } else {
       return new ModifyError(t, val)
     }
-    const hash: bigint = xxHash64(b)
-    ctx.buf.writeBigUInt64LE(hash, ctx.len)
     ctx.len += 8
   }
 }
