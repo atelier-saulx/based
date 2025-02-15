@@ -10,15 +10,10 @@ import {
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
-import {
-  includeFields,
-  includeProp,
-  includeAllProps,
-  includeField,
-} from './props.js'
+import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
-// import { includeDoesNotExist } from '../validation.js'
+import { includeDoesNotExist } from '../validation.js'
 
 export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   const prop = def.props[f]
@@ -58,7 +53,9 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       t = t[p]
 
       if (!t) {
-        // includeDoesNotExist(def, f)
+        if (f != 'id') {
+          includeDoesNotExist(def, f)
+        }
         return
       }
 
@@ -81,14 +78,13 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         return
       }
     }
+
     const tree = def.schema.tree[path[0]]
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
         walkDefs(db, def, field)
       }
-    } else {
-      // includeDoesNotExist(def, f)
     }
   } else if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     const refDef = createOrGetRefQueryDef(db, def, prop)

@@ -164,6 +164,7 @@ pub fn filter(
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
+                // add in the filter buffer
                 const prop: Prop = @enumFromInt(fieldSchema.type);
 
                 if (prop == Prop.TEXT) {

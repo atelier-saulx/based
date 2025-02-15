@@ -13,6 +13,7 @@ export const ERR_TARGET_INVAL_ALIAS = 2
 export const ERR_TARGET_EXCEED_MAX_IDS = 3
 export const ERR_TARGET_INVAL_IDS = 4
 export const ERR_TARGET_INVAL_ID = 5
+export const ERR_INCLUDE_ENOENT = 6
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -23,6 +24,7 @@ const messages = {
     `Ids should be of type array or Uint32Array with valid ids`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
+  [ERR_INCLUDE_ENOENT]: (p) => `Included field does not exist "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -38,6 +40,13 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
     return EMPTY_SCHEMA_DEF
   }
   return r
+}
+
+export const includeDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_INCLUDE_ENOENT,
+    payload: field,
+  })
 }
 
 export const validateId = (def: QueryDef, id: any): number => {

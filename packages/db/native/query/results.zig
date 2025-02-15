@@ -7,6 +7,17 @@ const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig");
 
+const builtin = @import("builtin");
+extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
+
+pub inline fn copy(dest: []u8, source: []const u8) void {
+    if (builtin.link_libc) {
+        _ = memcpy(dest.ptr, source.ptr, source.len);
+    } else {
+        @memcpy(dest[0..source.len], source);
+    }
+}
+
 const read = utils.read;
 const writeInt = utils.writeInt;
 
@@ -76,8 +87,7 @@ pub fn createResultsBuffer(
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
                 if (item.score != null) {
-                    @memcpy(data[i .. i + 4], &item.score.?);
-                    // data[i] = item.score.?;
+                    copy(data[i .. i + 4], &item.score.?);
                     i += 4;
                 }
             }
@@ -105,7 +115,7 @@ pub fn createResultsBuffer(
         if (item.isEdge != t.Prop.NULL and t.Size(item.isEdge) != 0) {
             const propLen = t.Size(item.isEdge);
             // if 1 len can optmize
-            @memcpy(data[i .. i + propLen], val);
+            copy(data[i .. i + propLen], val);
             i += propLen;
         } else if (item.field == 0) {
             if (item.includeMain != null and item.includeMain.?.len != 0) {
@@ -114,18 +124,18 @@ pub fn createResultsBuffer(
                     const operation = item.includeMain.?[mainPos..];
                     const start = read(u16, operation, 0);
                     const len = read(u16, operation, 2);
-                    @memcpy(data[i .. i + len], val[start .. start + len]);
+                    copy(data[i .. i + len], val[start .. start + len]);
                     i += len;
                     mainPos += 4;
                 }
             } else {
-                @memcpy(data[i .. i + val.len], val);
+                copy(data[i .. i + val.len], val);
                 i += val.len;
             }
         } else {
             writeInt(u32, data, i, val.len);
             i += 4;
-            @memcpy(data[i .. i + val.len], val);
+            copy(data[i .. i + val.len], val);
             i += val.len;
         }
     }

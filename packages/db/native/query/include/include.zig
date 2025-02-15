@@ -135,6 +135,7 @@ pub fn getFields(
         }
 
         const valueLen = value.len;
+        // pass typeIndex
         const prop: t.Prop = @enumFromInt(fieldSchema.*.type);
 
         if (valueLen == 0) {
