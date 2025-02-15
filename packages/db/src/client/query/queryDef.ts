@@ -3,8 +3,6 @@ import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
   EdgeTarget,
-  isAlias,
-  QueryByAliasObj,
   QueryDef,
   QueryDefEdges,
   QueryDefRest,
@@ -19,7 +17,6 @@ import {
   validateIds,
   validateType,
 } from './validation.js'
-import { ALIAS, PropDef } from '../../server/schema/types.js'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {

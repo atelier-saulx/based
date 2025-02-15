@@ -12,6 +12,7 @@ import { FilterOpts, Operator, toFilterCtx } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
+import { filterFieldDoesNotExist } from '../validation.js'
 
 export { Operator, Filter }
 
@@ -107,6 +108,12 @@ export const filterRaw = (
       fieldDef = ID_FIELD_DEF
       return primitiveFilter(fieldDef, filter, conditions, def.lang)
     }
+
+    if (!fieldDef) {
+      filterFieldDoesNotExist(def, field)
+      return 0
+    }
+
     return referencesFilter(db, filter, schema, conditions, def)
   }
   return primitiveFilter(fieldDef, filter, conditions, def.lang)

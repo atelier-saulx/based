@@ -1,9 +1,4 @@
-import {
-  ALIAS,
-  PropDef,
-  SchemaTypeDef,
-  STRING,
-} from '../../server/schema/types.js'
+import { ALIAS, PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
@@ -19,6 +14,11 @@ export const ERR_TARGET_EXCEED_MAX_IDS = 3
 export const ERR_TARGET_INVAL_IDS = 4
 export const ERR_TARGET_INVAL_ID = 5
 export const ERR_INCLUDE_ENOENT = 6
+export const ERR_FILTER_ENOENT = 7
+export const ERR_FILTER_OP_FIELD = 8
+export const ERR_FILTER_OP_ENOENT = 9
+export const ERR_FILTER_INVALID_VAL = 10
+export const ERR_FILTER_INVALID_OPTS = 11
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -37,7 +37,8 @@ const messages = {
     `Ids should be of type array or Uint32Array with valid ids`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
-  [ERR_INCLUDE_ENOENT]: (p) => `Included field does not exist "${p}"`,
+  [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
+  [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -53,6 +54,20 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
     return EMPTY_SCHEMA_DEF
   }
   return r
+}
+
+export const filterFieldDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_FILTER_ENOENT,
+    payload: field,
+  })
+}
+
+export const includeDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_INCLUDE_ENOENT,
+    payload: field,
+  })
 }
 
 export const validateAlias = (
@@ -80,13 +95,6 @@ export const validateAlias = (
     payload: alias,
   })
   return { value: '', def: EMPTY_ALIAS_PROP_DEF }
-}
-
-export const includeDoesNotExist = (def: QueryDef, field: string) => {
-  def.errors.push({
-    code: ERR_INCLUDE_ENOENT,
-    payload: field,
-  })
 }
 
 export const validateId = (def: QueryDef, id: any): number => {
