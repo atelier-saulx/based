@@ -16,13 +16,14 @@ export class BasedDb {
   server: DbServer
   fileSystemPath: string
   maxModifySize: number
-  constructor({
-    path,
-    maxModifySize,
-  }: {
-    path: string
-    maxModifySize?: number
-  }) {
+
+  constructor(opt: { path: string; maxModifySize?: number }) {
+    this.#init(opt)
+  }
+
+  #init({ path, maxModifySize }: { path: string; maxModifySize?: number }) {
+    this.fileSystemPath = path
+    this.maxModifySize = maxModifySize
     const server = new DbServer({
       path,
       maxModifySize,
@@ -115,5 +116,15 @@ export class BasedDb {
   destroy() {
     this.client.destroy()
     return this.server.destroy()
+  }
+
+  async wipe() {
+    const opts = {
+      maxModifySize: this.maxModifySize,
+      path: this.fileSystemPath,
+    }
+    await this.destroy()
+    this.#init(opts)
+    await this.start({ clean: true })
   }
 }

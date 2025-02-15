@@ -89,7 +89,7 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
   }
 
   if (type === CARDINALITY) {
-    return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('(unique)'))}`
+    return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('unique'))}`
   }
 
   if (type === TIMESTAMP) {
@@ -141,8 +141,10 @@ const inspectObject = (
     if (isEdge) {
       // skip
     } else if (key === 'id') {
-      // @ts-ignore
-      str += v + picocolors.italic(picocolors.dim(` ${q.target.type}`))
+      str +=
+        picocolors.blue(v) +
+        // @ts-ignore
+        picocolors.italic(picocolors.dim(` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''

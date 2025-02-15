@@ -1,8 +1,6 @@
-import { setTimeout } from 'timers/promises'
 import { DbClient, DbClientHooks } from '../src/client/index.js'
-import { BasedDb } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
-import { deepEqual, throws } from './shared/assert.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('client server', async (t) => {
@@ -74,6 +72,4 @@ await test('client server', async (t) => {
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
-
-  
 })

@@ -1,0 +1,90 @@
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { throws, deepEqual } from './shared/assert.js'
+
+await test('wipe', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      data: {
+        props: {
+          a: {
+            type: 'vector',
+            size: 5,
+          },
+          age: { type: 'uint32' },
+          name: { type: 'string', maxBytes: 10 },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('data', {
+      age: i,
+    })
+  }
+
+  console.log('set 1m', await db.drain())
+  deepEqual(await db.query('data').range(0, 10).get().toObject(), [
+    { id: 1, age: 0, name: '', a: '' },
+    { id: 2, age: 1, name: '', a: '' },
+    { id: 3, age: 2, name: '', a: '' },
+    { id: 4, age: 3, name: '', a: '' },
+    { id: 5, age: 4, name: '', a: '' },
+    { id: 6, age: 5, name: '', a: '' },
+    { id: 7, age: 6, name: '', a: '' },
+    { id: 8, age: 7, name: '', a: '' },
+    { id: 9, age: 8, name: '', a: '' },
+    { id: 10, age: 9, name: '', a: '' },
+  ])
+
+  await db.save()
+
+  await db.wipe()
+
+  await db.putSchema({
+    types: {
+      x: {
+        props: {
+          a: {
+            type: 'vector',
+            size: 5,
+          },
+          age: { type: 'uint32' },
+          name: { type: 'string', maxBytes: 10 },
+        },
+      },
+    },
+  })
+
+  await throws(() => db.query('data').get(), true)
+  for (let i = 0; i < 1e6; i++) {
+    db.create('x', {
+      age: i,
+    })
+  }
+  console.log('set 1m after wipe', await db.drain())
+
+  deepEqual(await db.query('x').range(0, 10).get().toObject(), [
+    { id: 1, age: 0, name: '', a: '' },
+    { id: 2, age: 1, name: '', a: '' },
+    { id: 3, age: 2, name: '', a: '' },
+    { id: 4, age: 3, name: '', a: '' },
+    { id: 5, age: 4, name: '', a: '' },
+    { id: 6, age: 5, name: '', a: '' },
+    { id: 7, age: 6, name: '', a: '' },
+    { id: 8, age: 7, name: '', a: '' },
+    { id: 9, age: 8, name: '', a: '' },
+    { id: 10, age: 9, name: '', a: '' },
+  ])
+})
