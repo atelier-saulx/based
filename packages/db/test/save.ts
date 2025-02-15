@@ -50,7 +50,7 @@ await test('save', async (t) => {
   const a = await db.query('user').get().toObject()
   const b = await db2.query('user').get().toObject()
 
-  console.log(a, b)
+  //console.log(a, b)
   deepEqual(a, b)
 
   const c = await db.create('user', { name: 'jerp' })
@@ -94,7 +94,6 @@ await test('save refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
   t.after(() => {
     return db.destroy()
@@ -140,27 +139,18 @@ await test('save refs', async (t) => {
     email: 'youri@yari.yo',
     group: grp,
   })
-
   await db.drain()
   await db.save()
-  // await db.stop()
+
   const db2 = new BasedDb({
     path: t.tmp,
   })
-
   t.after(() => {
     return db2.destroy()
   })
-
   await db2.start()
-  const a = await db.query('user').get().toObject()
-  const b = await db2.query('user').get().toObject()
 
-  console.log(a, b)
-  deepEqual(a, b)
-
-  const c = await db.create('user', { name: 'jerp' })
-  const d = await db2.create('user', { name: 'jerp' })
-  equal(c, 3)
-  equal(d, 3)
+  const users1 = await db.query('user').include('group').get().toObject()
+  const users2 = await db2.query('user').include('group').get().toObject()
+  deepEqual(users1, users2)
 })
