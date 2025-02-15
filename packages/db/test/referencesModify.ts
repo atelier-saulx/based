@@ -155,3 +155,63 @@ await test('references modify', async (t) => {
     as: null,
   })
 })
+
+await test('reference move', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  await db.putSchema({
+    types: {
+      a: {
+        name: 'string',
+        bees: {
+          items: {
+            ref: 'b',
+            prop: 'as',
+          },
+        },
+      },
+      b: {
+        name: 'string',
+        as: {
+          items: {
+            ref: 'a',
+            prop: 'bees',
+          },
+        },
+      },
+    },
+  })
+
+  const a = await db.create('a', {})
+  const b1 = await db.create('b', {
+    as: [
+      {
+        id: a,
+      },
+    ],
+  })
+  const b2 = await db.create('b', {
+    as: [
+      {
+        id: a,
+      },
+    ],
+  })
+
+  await db.update('a', a, {
+    bees: [b1],
+  })
+  await db.update('a', a, {
+    bees: [b2],
+  })
+
+  deepEqual((await db.query('a').include('bees').get()).toObject()[0].bees[0].id, 2)
+})
