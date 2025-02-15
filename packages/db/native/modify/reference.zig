@@ -15,7 +15,16 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const node = try db.upsertNode(id, refTypeEntry);
-    const ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+
+    // TODO nice to handle
+    const ref = db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?) catch |err| {
+        if (err == errors.SelvaError.SELVA_EEXIST) {
+            // TODO handle edges here
+            return 5;
+        } else {
+            return err;
+        }
+    };
     if (hasEdges) {
         const totalEdgesLen = read(u32, data, 5);
         const len = 5 + totalEdgesLen;
