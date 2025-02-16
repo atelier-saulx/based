@@ -464,3 +464,68 @@ await test('search', async (t) => {
     'Search for derp in fun.en',
   )
 })
+
+await test('reference text', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+    },
+    types: {
+      country: {
+        name: 'string',
+        votingLegal: 'text',
+      },
+      contestant: {
+        name: 'string',
+        country: { ref: 'country', prop: 'contestants' },
+      },
+    },
+  })
+
+  const country1 = await db.create('country')
+
+  await db.create('contestant', {
+    name: 'New contestant',
+    country: country1,
+  })
+
+  deepEqual(await db.query('country').include('*').get().toObject(), [
+    {
+      id: 1,
+      name: '',
+      votingLegal: {
+        en: '',
+        fr: '',
+      },
+    },
+  ])
+
+  deepEqual(
+    await db.query('contestant').include('*', 'country').get().toObject(),
+    [
+      {
+        id: 1,
+        name: 'New contestant',
+        country: {
+          id: 1,
+          name: '',
+          votingLegal: {
+            en: '',
+            fr: '',
+          },
+        },
+      },
+    ],
+  )
+})

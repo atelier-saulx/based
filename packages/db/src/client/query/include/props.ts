@@ -3,6 +3,7 @@ import {
   PropDefEdge,
   REFERENCE,
   REFERENCES,
+  TEXT,
 } from '../../../server/schema/types.js'
 import { QueryDef } from '../types.js'
 
@@ -59,12 +60,19 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
   if (!prop || prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     return false
   }
-  if (prop.separate) {
-    def.include.props.set(prop.prop, prop)
+  if (prop.typeIndex === TEXT) {
+    if (!def.include.langTextFields.has(prop.prop)) {
+      def.include.langTextFields.set(prop.prop, { def: prop, codes: new Set() })
+    }
+    def.include.langTextFields.get(prop.prop).codes.add(def.lang ?? 0)
   } else {
-    def.include.main.len += prop.len
-    def.include.main.include[prop.start] = [0, prop as PropDef]
-    return true
+    if (prop.separate) {
+      def.include.props.set(prop.prop, prop)
+    } else {
+      def.include.main.len += prop.len
+      def.include.main.include[prop.start] = [0, prop as PropDef]
+      return true
+    }
   }
   return false
 }

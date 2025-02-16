@@ -18,8 +18,21 @@ export class BasedDb {
   fileSystemPath: string
   maxModifySize: number
 
-  constructor(opt: { path: string; maxModifySize?: number }) {
-    this.#init(opt)
+  constructor(opts: { path: string; maxModifySize?: number; debug?: boolean }) {
+    this.#init(opts)
+
+    if (opts.debug) {
+      for (const key in this) {
+        const fn = this[key]
+        if (typeof fn === 'function') {
+          // @ts-ignore
+          this[key] = function () {
+            console.info(`[${key}]`, arguments)
+            return fn.apply(this, arguments)
+          }
+        }
+      }
+    }
   }
 
   #init({ path, maxModifySize }: { path: string; maxModifySize?: number }) {

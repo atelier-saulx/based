@@ -57,11 +57,15 @@ struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
         /**
+         * _fields_schema is referenced from the opposite efc and shouldn't be freed.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF = 0x40,
+        /**
          * Skip saving this field while dumping.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
-    field_t inverse_field;
+    field_t inverse_field; // [len] [1] [2] [3] [4]
     node_type_t dst_node_type;
     /**
      * Don't use directly!
