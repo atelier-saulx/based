@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { crc32c } from '@based/crc32'
+import { crc32c } from '@based/crc32c'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 
@@ -25,7 +25,7 @@ await test('simple', async (t) => {
   })
 
   const transaction = await db.create('transaction', {
-    myHash: crc32(Buffer.from('oid123')),
+    myHash: crc32c(Buffer.from('oid123')),
   })
 
   equal(
@@ -42,7 +42,7 @@ await test('simple', async (t) => {
   const m: number[] = []
   for (let i = 0; i < 1e7; i++) {
     lastId = db.create('transaction', {
-      myHash: crc32(Buffer.from(`oid${i}`)),
+      myHash: crc32c(Buffer.from(`oid${i}`)),
     }).tmpId
     if (i % 2) {
       m.push(lastId)
