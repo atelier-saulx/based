@@ -21,6 +21,7 @@ function writeRef(
   }
   ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
   setCursor(ctx, schema, def.prop, def.typeIndex, parentId, modifyOp)
+
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = hasEdges ? 1 : 0
   ctx.buf[ctx.len++] = id

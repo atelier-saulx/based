@@ -431,3 +431,45 @@ await test('filter', async (t) => {
     'Filter references and sort',
   )
 })
+
+test('cross reference', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+    },
+    types: {
+      country: {
+        name: 'string',
+        votingLegal: 'text',
+      },
+      contestant: {
+        name: 'string',
+        country: { ref: 'country', prop: 'contestants' },
+      },
+    },
+  })
+
+  const contestant1 = await db.create('contestant')
+  const country1 = await db.create('country')
+  await db.update('contestant', contestant1, {
+    name: 'New contestant',
+    country: country1,
+  })
+  // console.dir(
+  //   await db.query('contestant').include('*', 'country').get().toObject(),
+  //   {
+  //     depth: null,
+  //   },
+  // )
+})
