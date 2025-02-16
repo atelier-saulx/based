@@ -1,36 +1,24 @@
 import { crc32c_table } from './crc32c_table'
 
-export function crc32c(buf: Uint8Array): number {
+export function crc32c(buf: Buffer): number {
   let crc = 0
   let offset = 0
   let len = buf.length
 
-  // When the underlying buffer isn’t known to be aligned to 8 bytes,
-  // we simulate the C code’s “while (len && ((uintptr_t)data & 7) != 0)”
-  // by considering the byteOffset of the Uint8Array.
-  const base = buf.byteOffset
-  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
+  if (len == 0) {
+    return crc
+  }
 
-  // Process unaligned bytes until (base + offset) is a multiple of 8.
-  while (len > 0 && (base + offset) % 8 !== 0) {
+  while (len > 0 && offset % 8 !== 0) {
     crc = ((crc >>> 8) ^ crc32c_table[0][(crc ^ buf[offset]) & 0xff]) >>> 0
     offset++
     len--
   }
 
-  // Process 8 bytes at a time.
   const n = Math.floor(len / 8)
   for (let i = 0; i < n; i++) {
-    // Read an 8-byte (64-bit) little-endian word.
-    // We use two 32-bit reads and combine them into a BigInt.
-    const low = BigInt(dv.getUint32(offset, true))
-    const high = BigInt(dv.getUint32(offset + 4, true))
-    let word = (high << 32n) | low
+    const word = BigInt(crc) ^ buf.readBigUInt64LE(offset)
 
-    // XOR the lower 32 bits with the current crc.
-    word = BigInt(crc) ^ word
-
-    // Extract each byte from the 64-bit word.
     const b0 = Number(word & 0xffn)
     const b1 = Number((word >> 8n) & 0xffn)
     const b2 = Number((word >> 16n) & 0xffn)
@@ -56,7 +44,6 @@ export function crc32c(buf: Uint8Array): number {
 
   len = len % 8
 
-  // Process any len bytes one at a time.
   while (len > 0) {
     crc = ((crc >>> 8) ^ crc32c_table[0][(crc ^ buf[offset]) & 0xff]) >>> 0
     offset++
