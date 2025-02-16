@@ -103,7 +103,7 @@ export const validateFilter = (
   const t = prop.typeIndex
   const op = f[1].operation
   const value = f[2]
-  if (t === REFERENCES) {
+  if (t === REFERENCES || t === REFERENCE) {
     if (op == LIKE) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
@@ -111,8 +111,7 @@ export const validateFilter = (
       })
       return true
     }
-  } else if (t === REFERENCE) {
-    if (op != EQUAL) {
+    if (t === REFERENCE && op != EQUAL) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
         payload: f,
@@ -157,6 +156,13 @@ export const validateFilter = (
         return true
       }
     }
+    if (!(value instanceof Float32Array)) {
+      def.errors.push({
+        code: ERR_FILTER_INVALID_VAL,
+        payload: f,
+      })
+      return true
+    }
   } else if (t === TEXT || t === STRING) {
     if (isNumerical(op)) {
       def.errors.push({
@@ -178,11 +184,28 @@ export const validateFilter = (
         return true
       }
     }
-  } else if (propIsNumerical(prop) && op !== EQUAL && !isNumerical(op)) {
-    def.errors.push({
-      code: ERR_FILTER_OP_FIELD,
-      payload: f,
-    })
+    // tod convert to Uint8Array
+    if (typeof value !== 'string' || !((value as any) instanceof Buffer)) {
+      def.errors.push({
+        code: ERR_FILTER_INVALID_VAL,
+        payload: f,
+      })
+      return true
+    }
+  } else if (propIsNumerical(prop)) {
+    if (op !== EQUAL && !isNumerical(op)) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+    }
+    if (typeof value !== 'number') {
+      def.errors.push({
+        code: ERR_FILTER_INVALID_VAL,
+        payload: f,
+      })
+      return true
+    }
     return true
   } else if (t === BOOLEAN && op !== EQUAL) {
     def.errors.push({

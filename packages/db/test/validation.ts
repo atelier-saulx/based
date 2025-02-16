@@ -296,6 +296,7 @@ await test('query', async (t) => {
         id: 1,
       },
     ],
+    'skip empty string',
   )
 
   deepEqual(
@@ -312,5 +313,13 @@ await test('query', async (t) => {
         id: 1,
       },
     ],
+    'skip undefined',
+  )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('friend.description', 'like', 999).get(),
+    true,
+    'Filter incorrect value on text',
   )
 })
