@@ -174,7 +174,6 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
         addField(prop, 0, item)
       } else if (prop.typeIndex === TEXT && q.lang == 0) {
         const lan = getEmptyField(prop, item)
-        console.log(q.include.langTextFields, '??', prop.prop)
         const lang = q.include.langTextFields.get(prop.prop).codes
         if (lang.has(0)) {
           for (const locale in q.schema.locales) {

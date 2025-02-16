@@ -447,29 +447,100 @@ test('cross reference', async (t) => {
     locales: {
       en: { required: true },
       fr: { required: true },
+      nl: { required: true },
+      el: { required: true },
+      he: { required: true },
+      it: { required: true },
+      lv: { required: true },
+      lb: { required: true },
+      ro: { required: true },
+      sl: { required: true },
+      es: { required: true },
+      de: { required: true },
+      cs: { required: true },
+      et: { required: true },
+    },
+    props: {
+      // info: 'text',
+      // legal: 'text',
+      // terms: 'text',
+      // privacy: 'text',
+      excludedCountries: { items: { ref: 'country' } },
+      activeSequence: { ref: 'sequence' },
+      coreDataLock: 'boolean',
     },
     types: {
       country: {
         name: 'string',
-        votingLegal: 'text',
+        currency: [
+          'all',
+          'amd',
+          'aud',
+          'azn',
+          'chf',
+          'czk',
+          'dkk',
+          'eur',
+          'gbp',
+          'gel',
+          'ils',
+          'isk',
+          'mdl',
+          'nok',
+          'pln',
+          'rsd',
+          'sek',
+          'uah',
+        ],
+        voteType: ['sms_text', 'sms_suffix', 'online', 'call_suffix'],
+        maxVotes: { type: 'uint8' },
+        price: 'uint16',
+        destination: 'string',
+        // votingText: 'text',
+        // votingLegal: 'text',
+      },
+      sequence: {
+        name: { type: 'string', readOnly: true },
+        // recapTitle: 'text',
+        // title: 'text',
+        // description: 'text',
+        countdown: 'timestamp',
+        winner: 'string',
+        // row: {
+        // props: { title: 'text', description: 'text', countdown: 'timestamp' },
+        // },
+      },
+      round: {
+        name: 'string',
+        contestants: { items: { ref: 'contestant', prop: 'rounds' } },
+        createdBy: { ref: 'user', prop: 'createdRounds' },
       },
       contestant: {
         name: 'string',
+        song: 'string',
+        lyrics: 'string',
         country: { ref: 'country', prop: 'contestants' },
+      },
+      user: {
+        name: 'string',
+        email: { type: 'alias', format: 'email' },
+        currentToken: 'alias',
       },
     },
   })
 
   const contestant1 = await db.create('contestant')
+  const contestant2 = await db.create('contestant')
   const country1 = await db.create('country')
   await db.update('contestant', contestant1, {
     name: 'New contestant',
     country: country1,
   })
-  // console.dir(
-  //   await db.query('contestant').include('*', 'country').get().toObject(),
-  //   {
-  //     depth: null,
-  //   },
-  // )
+  console.log('--------')
+  console.dir(
+    await db.query('contestant').include('*', 'country').get().toObject(),
+    {
+      depth: null,
+    },
+  )
 })
