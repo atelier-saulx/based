@@ -80,7 +80,7 @@ const messages = {
     return `Filter: Invalid opts "${safeStringify(p)}"`
   },
   [ERR_FILTER_INVALID_VAL]: (p) => {
-    return `Filter: Invalid value "${safeStringify(p)}"`
+    return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
   },
 }
 
@@ -119,13 +119,13 @@ export const validateFilter = (
       })
       return true
     }
-    if (!isValidId(value)) {
-      def.errors.push({
-        code: ERR_FILTER_INVALID_VAL,
-        payload: f,
-      })
-      return true
-    }
+    // if (!isValidId(value)) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_INVALID_VAL,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
   } else if (t === VECTOR) {
     if (isNumerical(op) || op === HAS) {
       def.errors.push({
@@ -319,8 +319,8 @@ export const handleErrors = (def: QueryDef) => {
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }
-    const err = new Error(name)
-    err.stack = ''
+    const err = new Error(`Query\n`)
+    err.stack = name
     throw err
   }
 }
