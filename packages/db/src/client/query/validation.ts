@@ -112,13 +112,13 @@ export const validateFilter = (
       })
       return true
     }
-    // if (t === REFERENCE && op != EQUAL) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_OP_FIELD,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
+    if (t === REFERENCE && op != EQUAL) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
     // if (Array.isArray(value)) {
     //   for (const v of value) {
     //     if (!isValidId(v)) {
@@ -195,12 +195,13 @@ export const validateFilter = (
     //   return true
     // }
   } else if (propIsNumerical(prop)) {
-    // if (op !== EQUAL && !isNumerical(op)) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_OP_FIELD,
-    //     payload: f,
-    //   })
-    // }
+    if (op !== EQUAL && !isNumerical(op)) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
     // if (Array.isArray()) {
     // } else if (t !== TIMESTAMP && typeof value !== 'number') {
     //   def.errors.push({
