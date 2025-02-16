@@ -113,7 +113,7 @@ export const validateFilterCtx = (
       const opts = f[1].opts
       if (
         (opts.fn && !VECTOR_FNS.includes(opts.fn)) ||
-        (opts.score != undefined && typeof opts.fn !== 'number')
+        (opts.score != undefined && typeof opts.score !== 'number')
       ) {
         def.errors.push({
           code: ERR_FILTER_INVALID_OPTS,
@@ -132,7 +132,10 @@ export const validateFilterCtx = (
     }
     if (op === LIKE) {
       const opts = f[1].opts
-      if (typeof opts.fn !== 'number') {
+      if (
+        opts.score &&
+        (typeof opts.score !== 'number' || opts.score < 0 || opts.score > 255)
+      ) {
         def.errors.push({
           code: ERR_FILTER_INVALID_OPTS,
           payload: f,
