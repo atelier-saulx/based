@@ -72,9 +72,9 @@ export const throws = async (
     if (logErr) {
       console.log('')
       if (label) {
-        console.log(color.gray(`${label} "${err.message}"`))
+        console.log(color.gray(`${label} "${err.stack}"`))
       } else {
-        console.log(color.gray(err.message))
+        console.log(color.gray(err.stack))
       }
       console.log('')
     }

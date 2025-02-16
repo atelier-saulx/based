@@ -119,6 +119,7 @@ export const validateFilter = (
       })
       return true
     }
+
     // if (!isValidId(value)) {
     //   def.errors.push({
     //     code: ERR_FILTER_INVALID_VAL,
