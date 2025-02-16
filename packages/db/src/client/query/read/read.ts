@@ -31,6 +31,7 @@ import {
   readUint32,
 } from '../../bitWise.js'
 import { inverseLangMap } from '@based/schema'
+import { READ_EDGE, READ_ID, READ_REFERENCE, READ_REFERENCES } from './types.js'
 
 export type Item = {
   id: number
@@ -100,29 +101,19 @@ const readMainValue = (
   index: number,
   item: Item,
 ) => {
-  // 1: timestamp, 4: number
   if (prop.typeIndex === TIMESTAMP || prop.typeIndex === NUMBER) {
     addField(prop, readDoubleLE(result, index), item)
-  }
-  // 5: uint32
-  else if (prop.typeIndex === UINT32) {
+  } else if (prop.typeIndex === UINT32) {
     addField(prop, readUint32(result, index), item)
-  }
-  // 9: boolean
-  else if (prop.typeIndex === BOOLEAN) {
+  } else if (prop.typeIndex === BOOLEAN) {
     addField(prop, Boolean(result[index]), item)
-  }
-  // 10: Enum
-  else if (prop.typeIndex === ENUM) {
+  } else if (prop.typeIndex === ENUM) {
     if (result[index] === 0) {
       addField(prop, undefined, item)
     } else {
       addField(prop, prop.enum[result[index] - 1], item)
     }
-  }
-  // 11: string
-  else if (prop.typeIndex === STRING) {
-    // Also delete this default then (same as other string)
+  } else if (prop.typeIndex === STRING) {
     const len = result[index]
     if (len !== 0) {
       const str = readUtf8(result, index + 1, len)
@@ -130,42 +121,24 @@ const readMainValue = (
     } else {
       addField(prop, '', item)
     }
-  }
-  // ?: json
-  else if (prop.typeIndex === JSON) {
+  } else if (prop.typeIndex === JSON) {
     addField(
       prop,
-      global.JSON.parse(
-        Buffer.from(
-          result.subarray(index + 1, index + 1 + result[index]),
-        ).toString(),
-      ),
+      global.JSON.parse(readUtf8(result, index + 1, index + 1 + result[index])),
       item,
     )
-  }
-  // 25: binary
-  else if (prop.typeIndex === BINARY) {
+  } else if (prop.typeIndex === BINARY) {
     addField(prop, result.subarray(index + 1, index + 1 + result[index]), item)
-  }
-  // 18: int8
-  else if (prop.typeIndex === INT8) {
+  } else if (prop.typeIndex === INT8) {
     const signedVal = (result[index] << 24) >> 24
     addField(prop, signedVal, item)
-  }
-  // 19: uint8
-  else if (prop.typeIndex === UINT8) {
+  } else if (prop.typeIndex === UINT8) {
     addField(prop, result[index], item)
-  }
-  // 20: int16
-  else if (prop.typeIndex === INT16) {
+  } else if (prop.typeIndex === INT16) {
     addField(prop, readInt16(result, index), item)
-  }
-  // 21: uint16
-  else if (prop.typeIndex === UINT16) {
+  } else if (prop.typeIndex === UINT16) {
     addField(prop, readUint16(result, index), item)
-  }
-  // 22: int32
-  else if (prop.typeIndex === INT32) {
+  } else if (prop.typeIndex === INT32) {
     addField(prop, readInt32(result, index), item)
   }
 }
@@ -235,16 +208,13 @@ export const readAllFields = (
   while (i < end) {
     const index = result[i]
     i++
-    // index:255 id
-    if (index === 255) {
+    if (index === READ_ID) {
       handleUndefinedProps(id, q, item)
       return i - offset
     }
-    // index:252 edge
-    if (index === 252) {
+    if (index === READ_EDGE) {
       let prop = result[i]
-      // index:254 ref
-      if (prop === 254) {
+      if (prop === READ_REFERENCE) {
         i++
         const field = result[i]
         i++
@@ -267,8 +237,7 @@ export const readAllFields = (
           addField(ref.target.propDef, refItem, item)
           i += size - 5
         }
-        // index:253 refs
-      } else if (prop === 253) {
+      } else if (prop === READ_REFERENCES) {
         i++
         const field = result[i]
         i++
@@ -288,9 +257,7 @@ export const readAllFields = (
           const size = readUint32(result, i)
           addField(
             edgeDef,
-            global.JSON.parse(
-              Buffer.from(result.subarray(i + 6, size + i)).toString(),
-            ),
+            global.JSON.parse(readUtf8(result, i + 6, size + i)),
             item,
           )
           i += size + 4
@@ -314,8 +281,7 @@ export const readAllFields = (
           i += edgeDef.len
         }
       }
-      // index:254 ref
-    } else if (index === 254) {
+    } else if (index === READ_REFERENCE) {
       const field = result[i]
       i++
       const size = readUint32(result, i)
@@ -337,8 +303,7 @@ export const readAllFields = (
         addField(ref.target.propDef, refItem, item)
         i += size - 5
       }
-      // index:253 refs
-    } else if (index === 253) {
+    } else if (index === READ_REFERENCES) {
       const field = result[i]
       i++
       const ref = q.references.get(field)
@@ -390,7 +355,6 @@ export const readAllFields = (
             q.include.propsRead[index] = id
             addField(prop, read(result, i + 4, size), item)
           } else {
-            // q.include.propsRead[index] = id
             addField(
               prop,
               read(result, i + 4, size),
@@ -424,7 +388,6 @@ export const readAllFields = (
       }
     }
   }
-  // to add defaults - may not optimal for performance
   handleUndefinedProps(id, q, item)
   return i - offset
 }
@@ -462,5 +425,6 @@ export const resultToObject = (
   if ('id' in q.target || 'alias' in q.target) {
     return items[0]
   }
+
   return items
 }

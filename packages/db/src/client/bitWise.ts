@@ -89,3 +89,5 @@ export const concatUint8Arr = (arrs: Uint8Array[]): Uint8Array => {
   })
   return result
 }
+
+const textDecoder = new TextDecoder('utf-8')
