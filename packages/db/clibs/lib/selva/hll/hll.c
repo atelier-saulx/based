@@ -165,7 +165,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
 
     if (!hll->dirty) {
 
-        return &hll->count;
+        return (uint8_t *)&hll->count;
     }
 
     uint32_t precision = hll->precision;
