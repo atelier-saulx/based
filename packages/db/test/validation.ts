@@ -156,6 +156,8 @@ await test('query', async (t) => {
     },
   })
 
+  await db.create('user', { name: 'power user' })
+
   await throws(() => db.query('derp').get(), true, 'non existing type')
 
   // @ts-ignore
@@ -278,5 +280,21 @@ await test('query', async (t) => {
     () => db.query('user').filter('connections', 'like', 1).get(),
     true,
     'Filter incorrect operator on references',
+  )
+
+  deepEqual(
+    await db
+      .query('user')
+      .filter('name', 'has', '')
+      .include('name')
+      .get()
+      .inspect()
+      .toObject(),
+    [
+      {
+        name: 'power user',
+        id: 1,
+      },
+    ],
   )
 })

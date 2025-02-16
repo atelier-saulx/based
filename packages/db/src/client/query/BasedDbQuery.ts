@@ -1,4 +1,3 @@
-import { BasedDb } from '../../index.js'
 import {
   QueryDef,
   createQueryDef,
@@ -9,7 +8,6 @@ import {
   sort,
   defToBuffer,
   filterOr,
-  convertFilter,
   QueryByAliasObj,
   isAlias,
   includeField,
@@ -29,6 +27,7 @@ import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
+import { convertFilter } from './filter/convertFilter.js'
 
 export { QueryByAliasObj }
 
@@ -58,6 +57,16 @@ export class QueryBranch<T> {
     opts?: FilterOpts<O>,
   ): T {
     const f = convertFilter(this.def, field, operator, value, opts)
+    if (!f) {
+      // @ts-ignore
+      return this
+    }
+    filter(this.db, this.def, f, this.def.filter)
+    // @ts-ignore
+    return this
+  }
+
+  filterBatch(f: FilterAst) {
     filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
@@ -129,12 +138,6 @@ export class QueryBranch<T> {
     return this
   }
 
-  filterBatch(f: FilterAst) {
-    filter(this.db, this.def, f, this.def.filter)
-    // @ts-ignore
-    return this
-  }
-
   or(fn: FilterBranchFn): T
   or(
     field: string,
@@ -158,7 +161,9 @@ export class QueryBranch<T> {
       this.def.filter.size += f.filterBranch.size
     } else {
       const f = convertFilter(this.def, field, operator, value, opts)
-      filterOr(this.db, this.def, f, this.def.filter)
+      if (f) {
+        filterOr(this.db, this.def, f, this.def.filter)
+      }
     }
     // @ts-ignore
     return this

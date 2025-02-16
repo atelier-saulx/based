@@ -1,6 +1,7 @@
 import { DbClient } from '../../index.js'
 import { QueryDefFilter, QueryDef } from '../types.js'
-import { convertFilter, filter, filterOr } from './filter.js'
+import { filter, filterOr } from './filter.js'
+import { convertFilter } from './convertFilter.js'
 import { FilterOpts, Operator } from './types.js'
 import { FilterBranchFn } from './types.js'
 
@@ -38,14 +39,18 @@ export class FilterBranch {
       this.def.filter.size += f.filterBranch.size
     } else {
       const f = convertFilter(this.def, field, operator, value, opts)
-      filterOr(this.db, this.def, f, this.filterBranch)
+      if (f) {
+        filterOr(this.db, this.def, f, this.filterBranch)
+      }
     }
     return this
   }
 
   filter(field: string, operator?: Operator | boolean, value?: any) {
     const f = convertFilter(this.def, field, operator, value)
-    filter(this.db, this.def, f, this.filterBranch)
+    if (f) {
+      filter(this.db, this.def, f, this.filterBranch)
+    }
     return this
   }
 }
