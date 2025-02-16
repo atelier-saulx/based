@@ -465,7 +465,7 @@ await test('search', async (t) => {
   )
 })
 
-test('reference text', async (t) => {
+await test('reference text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -495,7 +495,6 @@ test('reference text', async (t) => {
 
   const country1 = await db.create('country', {
     name: 'xxx',
-    votingLegal: { en: 'smurko' },
   })
 
   await db.create('contestant', {

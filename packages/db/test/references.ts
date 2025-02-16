@@ -432,7 +432,7 @@ await test('filter', async (t) => {
   )
 })
 
-test('cross reference', async (t) => {
+await test('cross reference', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -472,30 +472,30 @@ test('cross reference', async (t) => {
     types: {
       country: {
         name: 'string',
-        // currency: [
-        //   'all',
-        //   'amd',
-        //   'aud',
-        //   'azn',
-        //   'chf',
-        //   'czk',
-        //   'dkk',
-        //   'eur',
-        //   'gbp',
-        //   'gel',
-        //   'ils',
-        //   'isk',
-        //   'mdl',
-        //   'nok',
-        //   'pln',
-        //   'rsd',
-        //   'sek',
-        //   'uah',
-        // ],
-        // voteType: ['sms_text', 'sms_suffix', 'online', 'call_suffix'],
-        // maxVotes: { type: 'uint8' },
+        currency: [
+          'all',
+          'amd',
+          'aud',
+          'azn',
+          'chf',
+          'czk',
+          'dkk',
+          'eur',
+          'gbp',
+          'gel',
+          'ils',
+          'isk',
+          'mdl',
+          'nok',
+          'pln',
+          'rsd',
+          'sek',
+          'uah',
+        ],
+        voteType: ['sms_text', 'sms_suffix', 'online', 'call_suffix'],
+        maxVotes: { type: 'uint8' },
         price: 'uint16',
-        // destination: 'string',
+        destination: 'string',
         votingText: 'text',
         votingLegal: 'text',
       },
