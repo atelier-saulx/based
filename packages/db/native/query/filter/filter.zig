@@ -165,6 +165,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 // add in the filter buffer
+                // it is in there just need to get it
                 const prop: Prop = @enumFromInt(fieldSchema.type);
 
                 if (prop == Prop.TEXT) {

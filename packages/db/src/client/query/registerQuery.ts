@@ -1,5 +1,6 @@
 import native from '../../native.js'
 import { BasedDbQuery } from './BasedDbQuery.js'
+import { debug } from './debug.js'
 import { defToBuffer } from './toBuffer.js'
 import { handleErrors } from './validation.js'
 
@@ -13,5 +14,7 @@ export const registerQuery = (q: BasedDbQuery): Buffer => {
     handleErrors(q.def)
     return buf
   }
+
+  handleErrors(q.def)
   return q.buffer
 }

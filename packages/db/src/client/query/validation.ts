@@ -1,3 +1,4 @@
+import picocolors from 'picocolors'
 import {
   ALIAS,
   BINARY,
@@ -50,10 +51,33 @@ export const ERR_FILTER_INVALID_OPTS = 11
 export const ERR_FILTER_INVALID_LANG = 12
 export const ERR_INCLUDE_INVALID_LANG = 13
 
-const safeStringify = (p: any) => {
+const parseUint8Array = (p: any) => {
+  if (ArrayBuffer.isView(p)) {
+    const x = []
+    // @ts-ignore
+    for (let i = 0; i < p.length; i++) {
+      x[i] = p[i]
+    }
+    p = x
+    return p
+  }
+  return p
+}
+
+const safeStringify = (p: any, nr = 30) => {
   var v: string
+
   try {
-    v = JSON.stringify(p).replace(/"/g, '')
+    p = parseUint8Array(p)
+    if (typeof p === 'object') {
+      for (const key in p) {
+        p[key] = parseUint8Array(p[key])
+      }
+    }
+    v = JSON.stringify(p).replace(/"/g, '').slice(0, nr)
+    if (v.length === nr) {
+      v += '...'
+    }
   } catch (err) {
     v = ''
   }
@@ -63,12 +87,12 @@ const safeStringify = (p: any) => {
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    return `Invalid alias prodived to query "${safeStringify(p)}"`
+    return `Invalid alias prodived to query\n  ${picocolors.italic(safeStringify(p, 100))}`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
-    `Ids should be of type array or Uint32Array with valid ids`,
+    `Ids should be of type array or Uint32Array with valid ids received \n  ${picocolors.italic(safeStringify(p, 100))}`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
@@ -319,10 +343,12 @@ export const validateId = (def: QueryDef, id: any): number => {
 }
 
 export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
+  const origIds = ids
+
   if (!Array.isArray(ids) && !(ids instanceof Uint32Array)) {
     def.errors.push({
       code: ERR_TARGET_INVAL_IDS,
-      payload: ids,
+      payload: origIds,
     })
     return new Uint32Array([])
   }
@@ -330,7 +356,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
   if (ids.length > MAX_IDS_PER_QUERY) {
     def.errors.push({
       code: ERR_TARGET_EXCEED_MAX_IDS,
-      payload: ids,
+      payload: origIds,
     })
     return new Uint32Array([])
   }
@@ -342,17 +368,18 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
     } catch (err) {
       def.errors.push({
         code: ERR_TARGET_INVAL_IDS,
-        payload: ids,
+        payload: origIds,
       })
       return new Uint32Array([])
     }
   }
   // pretty heavy if it are a lot...
-  for (const id of ids) {
-    if (typeof id != 'number' || id == 0 || id > MAX_ID) {
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    if (typeof id !== 'number' || id == 0 || id > MAX_ID) {
       def.errors.push({
         code: ERR_TARGET_INVAL_IDS,
-        payload: ids,
+        payload: origIds,
       })
       return new Uint32Array([])
     }
@@ -362,7 +389,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = `Query\n`
+    let name = `${picocolors.red('QueryError')} [${safeStringify(def.target)}]\n`
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }

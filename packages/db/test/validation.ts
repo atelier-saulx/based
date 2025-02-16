@@ -322,4 +322,15 @@ await test('query', async (t) => {
     true,
     'Filter incorrect value on text',
   )
+
+  await throws(
+    // @ts-ignore
+    () =>
+      db
+        // @ts-ignore
+        .query({ id: 1, rating: 'derp' })
+        .get(),
+    true,
+    'Icorrect payload',
+  )
 })
