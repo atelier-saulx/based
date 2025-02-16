@@ -21,7 +21,12 @@ import {
   VECTOR_FNS,
 } from './filter/types.js'
 import { Filter } from './query.js'
-import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
+import {
+  MAX_ID,
+  MAX_ID_VALUE,
+  MAX_IDS_PER_QUERY,
+  MIN_ID_VALUE,
+} from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 
 export type QueryError = {
@@ -72,19 +77,32 @@ const messages = {
   [ERR_FILTER_OP_FIELD]: (p: Filter) =>
     `Cannot use operator "${operatorReverseMap[p[1].operation]}" on field "${p[0]}"`,
   [ERR_FILTER_INVALID_OPTS]: (p) => {
-    return `Filter: Invalid opts prodived "${safeStringify(p)}"`
+    return `Filter: Invalid opts "${safeStringify(p)}"`
+  },
+  [ERR_FILTER_INVALID_VAL]: (p) => {
+    return `Filter: Invalid value "${safeStringify(p)}"`
   },
 }
 
 export type ErrorCode = keyof typeof messages
 
-export const validateFilterCtx = (
+export const isValidId = (id: number): boolean => {
+  if (typeof id != 'number') {
+    return false
+  } else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
+    return false
+  }
+  return true
+}
+
+export const validateFilter = (
   def: QueryDef,
   prop: PropDef | PropDefEdge,
   f: Filter,
 ) => {
   const t = prop.typeIndex
   const op = f[1].operation
+  const value = f[2]
   if (t === REFERENCES) {
     if (op == LIKE) {
       def.errors.push({
@@ -97,6 +115,13 @@ export const validateFilterCtx = (
     if (op != EQUAL) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
+    if (!isValidId(value)) {
+      def.errors.push({
+        code: ERR_FILTER_INVALID_VAL,
         payload: f,
       })
       return true
@@ -334,44 +359,6 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   stringProps: Buffer.from([]),
   stringPropsLoop: [],
 }
-
-// import { ALIAS, PropDef, PropDefEdge } from '../../server/schema/types.js'
-// import {
-//   MAX_IDS_PER_QUERY,
-//   MIN_ID_VALUE,
-//   MAX_ID_VALUE,
-//   MAX_BUFFER_SIZE,
-// } from './thresholds.js'
-// import { QueryByAliasObj, QueryDef } from './types.js'
-// import { DbClient } from '../index.js'
-
-// export const isValidId = (id: number): void => {
-//   if (typeof id != 'number') {
-//     throw new Error('Id has to be a number')
-//   } else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
-//     throw new Error(
-//       `Invalid Id: The Id should range between ${MIN_ID_VALUE} and ${MAX_ID_VALUE}.)`,
-//     )
-//   }
-// }
-
-// export const isValidType = (
-//   type: string,
-//   schema: DbClient['schemaTypesParsed'],
-// ): void => {
-//   if (!schema[type]) {
-//     throw new Error(`Incorrect type provided to query "${type}"`)
-//   }
-// }
-
-// export const isValidAlias = (def: QueryDef, id: QueryByAliasObj) => {
-//   for (const key in id) {
-//     const prop = def.schema.props[key]
-//     if (!prop || prop.typeIndex !== ALIAS) {
-//       throw new Error(`Incorrect alias provided to query "${key}"`)
-//     }
-//   }
-// }
 
 // export const checkMaxIdsPerQuery = (
 //   ids: (number | QueryByAliasObj)[],

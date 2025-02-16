@@ -12,7 +12,7 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { LangCode } from '@based/schema'
-import { validateFilterCtx } from '../validation.js'
+import { validateFilter } from '../validation.js'
 
 export const primitiveFilter = (
   def: QueryDef,
@@ -21,7 +21,7 @@ export const primitiveFilter = (
   conditions: QueryDefFilter,
   lang: LangCode,
 ) => {
-  if (validateFilterCtx(def, prop, filter)) {
+  if (validateFilter(def, prop, filter)) {
     return
   }
   let [, ctx, value] = filter
