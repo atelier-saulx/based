@@ -2,7 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
-import { size, time, inspectData } from './display.js'
+import { size, time, inspectData, displayTarget, defHasId } from './display.js'
 import { readFloatLE, readUint32 } from '../bitWise.js'
 
 export { time, size, inspectData }
@@ -33,15 +33,8 @@ export class BasedQueryResponse {
   }
 
   [inspect.custom](depth: number) {
-    const hasId = 'id' in this.def.target || 'alias' in this.def.target
-    const target = hasId
-      ? this.def.schema.type +
-        ':' +
-        ('alias' in this.def.target
-          ? inspect(this.def.target.alias)
-          : // @ts-ignore
-            this.def.target.id)
-      : this.def.schema.type
+    const hasId = defHasId(this.def)
+    const target = displayTarget(this.def)
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)

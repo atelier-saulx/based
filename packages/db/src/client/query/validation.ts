@@ -31,7 +31,7 @@ import {
   MIN_ID_VALUE,
 } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
-import { safeStringify } from './display.js'
+import { defHasId, displayTarget, safeStringify } from './display.js'
 
 export type QueryError = {
   code: number
@@ -54,6 +54,7 @@ export const ERR_INCLUDE_INVALID_LANG = 13
 export const ERR_SORT_ENOENT = 14
 export const ERR_SORT_TYPE = 15
 export const ERR_SORT_ORDER = 16
+export const ERR_SORT_WRONG_TARGET = 17
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -79,7 +80,12 @@ const messages = {
   [ERR_FILTER_INVALID_VAL]: (p) => {
     return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
   },
+  [ERR_SORT_TYPE]: (p) => `Sort: field type does not support sort "${p}"`,
   [ERR_SORT_ENOENT]: (p) => `Sort: field does not exist "${p}"`,
+  [ERR_SORT_WRONG_TARGET]: (p) =>
+    `Sort: incorrect qeury target "${displayTarget(p)}"`,
+  [ERR_SORT_ORDER]: (p) =>
+    `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -282,8 +288,13 @@ export const validateSort = (
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   const propDef = def.props[field]
+  if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
+    def.errors.push({
+      code: ERR_SORT_ORDER,
+      payload: { order: orderInput, field },
+    })
+  }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
-
   if (!propDef) {
     def.errors.push({
       code: ERR_SORT_ENOENT,
@@ -293,6 +304,23 @@ export const validateSort = (
       prop: EMPTY_ALIAS_PROP_DEF,
       order,
     }
+  }
+  const type = propDef.typeIndex
+
+  // check if references works
+  // single ref does not work
+  if (type === REFERENCE || type === REFERENCES || type === TEXT) {
+    def.errors.push({
+      code: ERR_SORT_TYPE,
+      payload: field,
+    })
+  }
+
+  if (defHasId(def)) {
+    def.errors.push({
+      code: ERR_SORT_WRONG_TARGET,
+      payload: def,
+    })
   }
 
   return {
@@ -386,7 +414,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = `${picocolors.red('QueryError')} [${safeStringify(def.target)}]\n`
+    let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }

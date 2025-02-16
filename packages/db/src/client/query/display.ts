@@ -14,6 +14,7 @@ import {
   TypeIndex,
 } from '../../server/schema/types.js'
 import { BasedQueryResponse } from './BasedIterable.js'
+import { inspect } from 'node:util'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -353,4 +354,22 @@ export const inspectData = (
     str += ']'
   }
   return str
+}
+
+export const defHasId = (def: QueryDef) => {
+  return 'id' in def.target || 'alias' in def.target
+}
+
+export const displayTarget = (def: QueryDef) => {
+  // ids
+  const hasId = defHasId(def)
+  const target = hasId
+    ? def.schema.type +
+      ':' +
+      ('alias' in def.target
+        ? inspect(def.target.alias)
+        : // @ts-ignore
+          def.target.id)
+    : def.schema.type
+  return target
 }
