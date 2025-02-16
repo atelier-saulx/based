@@ -493,7 +493,6 @@ await test('reference text', async (t) => {
     },
   })
 
-  // const country1 = await db.create('country', { name: 'x' })
   const country1 = await db.create('country')
 
   await db.create('contestant', {
