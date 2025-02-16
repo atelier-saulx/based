@@ -17,15 +17,15 @@ export const convertFilter = (
   value?: any,
   opts?: FilterOpts | undefined,
 ): FilterAst => {
-  if (value === '' || value === undefined) {
-    return
-  }
   if (operator === undefined) {
     operator = '='
     value = true
   } else if (typeof operator === 'boolean') {
     value = operator
     operator = '='
+  }
+  if (value === '' || value === undefined) {
+    return
   }
   if (operator === '!..') {
     return [
