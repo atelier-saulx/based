@@ -1,4 +1,5 @@
-import { BasedDb, crc32 } from '../src/index.js'
+import { BasedDb } from '../src/index.js'
+import { crc32c } from '@based/crc32'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 

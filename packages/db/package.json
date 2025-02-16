@@ -35,7 +35,8 @@
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.3.2",
     "exit-hook": "^4.0.0",
-    "picocolors": "^1.1.0"
+    "picocolors": "^1.1.0",
+    "@based/crc32c": "ˆ1.0.0"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
