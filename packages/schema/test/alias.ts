@@ -1,7 +1,7 @@
 import test from 'node:test'
 import { parse } from '@based/schema'
 
-test('alias', () => {
+await test('alias', () => {
   parse({
     types: {
       article: {

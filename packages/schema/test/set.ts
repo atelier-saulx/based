@@ -2,7 +2,7 @@ import test from 'node:test'
 import { throws } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('set', () => {
+await test('set', () => {
   parse({
     props: {
       myStrings: {

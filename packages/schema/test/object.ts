@@ -1,7 +1,7 @@
 import test from 'node:test'
 import { parse } from '@based/schema'
 
-test('object', () => {
+await test('object', () => {
   parse({
     props: {
       myObject: {
