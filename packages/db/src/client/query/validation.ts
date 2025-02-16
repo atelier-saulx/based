@@ -1,5 +1,6 @@
 import {
   ALIAS,
+  BINARY,
   BOOLEAN,
   PropDef,
   PropDefEdge,
@@ -87,13 +88,47 @@ const messages = {
 
 export type ErrorCode = keyof typeof messages
 
-export const isValidId = (id: number): boolean => {
+export const isValidId = (id: number) => {
   if (typeof id != 'number') {
     return false
   } else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
     return false
   }
   return true
+}
+
+export const isValidString = (v: any) => {
+  const isVal =
+    typeof v === 'string' ||
+    (v as any) instanceof Buffer ||
+    ArrayBuffer.isView(v)
+  return isVal
+}
+
+export const validateVal = (
+  def: QueryDef,
+  f: Filter,
+  validate: (v: any) => boolean,
+): boolean => {
+  const value = f[2]
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      if (!validate(v)) {
+        def.errors.push({
+          code: ERR_FILTER_INVALID_VAL,
+          payload: f,
+        })
+        return true
+      }
+    }
+  } else if (!validate(value)) {
+    def.errors.push({
+      code: ERR_FILTER_INVALID_VAL,
+      payload: f,
+    })
+    return true
+  }
+  return false
 }
 
 export const validateFilter = (
@@ -103,7 +138,6 @@ export const validateFilter = (
 ) => {
   const t = prop.typeIndex
   const op = f[1].operation
-  const value = f[2]
   if (t === REFERENCES || t === REFERENCE) {
     if (op == LIKE) {
       def.errors.push({
@@ -119,23 +153,9 @@ export const validateFilter = (
       })
       return true
     }
-    // if (Array.isArray(value)) {
-    //   for (const v of value) {
-    //     if (!isValidId(v)) {
-    //       def.errors.push({
-    //         code: ERR_FILTER_INVALID_VAL,
-    //         payload: f,
-    //       })
-    //       return true
-    //     }
-    //   }
-    // } else if (!isValidId(value)) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_INVALID_VAL,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
+    if (validateVal(def, f, isValidId)) {
+      return true
+    }
   } else if (t === VECTOR) {
     if (isNumerical(op) || op === HAS) {
       def.errors.push({
@@ -157,15 +177,16 @@ export const validateFilter = (
         return true
       }
     }
-    // OR
-    // if (!(value instanceof Float32Array)) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_INVALID_VAL,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
-  } else if (t === TEXT || t === STRING) {
+    if (
+      validateVal(
+        def,
+        f,
+        (v) => ArrayBuffer.isView(v) || v instanceof ArrayBuffer,
+      )
+    ) {
+      return true
+    }
+  } else if (t === TEXT || t === STRING || t === BINARY) {
     if (isNumerical(op)) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
@@ -186,14 +207,9 @@ export const validateFilter = (
         return true
       }
     }
-    // tod convert to Uint8Array
-    // if (typeof value !== 'string' && !((value as any) instanceof Buffer)) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_INVALID_VAL,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
+    if (validateVal(def, f, isValidString)) {
+      return true
+    }
   } else if (propIsNumerical(prop)) {
     if (op !== EQUAL && !isNumerical(op)) {
       def.errors.push({
@@ -202,15 +218,9 @@ export const validateFilter = (
       })
       return true
     }
-    // if (Array.isArray()) {
-    // } else if (t !== TIMESTAMP && typeof value !== 'number') {
-    //   def.errors.push({
-    //     code: ERR_FILTER_INVALID_VAL,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
-    // return true
+    if (validateVal(def, f, (v) => t == TIMESTAMP || typeof v === 'number')) {
+      return true
+    }
   } else if (t === BOOLEAN && op !== EQUAL) {
     def.errors.push({
       code: ERR_FILTER_OP_FIELD,
@@ -298,7 +308,7 @@ export const validateAlias = (
 }
 
 export const validateId = (def: QueryDef, id: any): number => {
-  if (typeof id != 'number' || id == 0 || id > MAX_ID) {
+  if (!isValidId(id)) {
     def.errors.push({
       code: ERR_TARGET_INVAL_ID,
       payload: id,
