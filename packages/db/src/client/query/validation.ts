@@ -119,14 +119,23 @@ export const validateFilter = (
       })
       return true
     }
-
-    // if (!isValidId(value)) {
-    //   def.errors.push({
-    //     code: ERR_FILTER_INVALID_VAL,
-    //     payload: f,
-    //   })
-    //   return true
-    // }
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        if (!isValidId(v)) {
+          def.errors.push({
+            code: ERR_FILTER_INVALID_VAL,
+            payload: f,
+          })
+          return true
+        }
+      }
+    } else if (!isValidId(value)) {
+      def.errors.push({
+        code: ERR_FILTER_INVALID_VAL,
+        payload: f,
+      })
+      return true
+    }
   } else if (t === VECTOR) {
     if (isNumerical(op) || op === HAS) {
       def.errors.push({
