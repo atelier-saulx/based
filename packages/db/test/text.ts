@@ -503,7 +503,32 @@ test('reference text', async (t) => {
     country: country1,
   })
 
-  await db.query('country').include('*').get().inspect()
+  deepEqual(await db.query('country').include('*').get().toObject(), [
+    {
+      id: 1,
+      name: '',
+      votingLegal: {
+        en: '',
+        fr: '',
+      },
+    },
+  ])
 
-  await db.query('contestant').include('*', 'country').get().inspect()
+  deepEqual(
+    await db.query('contestant').include('*', 'country').get().toObject(),
+    [
+      {
+        id: 1,
+        name: 'New contestant',
+        country: {
+          id: 1,
+          name: '',
+          votingLegal: {
+            en: '',
+            fr: '',
+          },
+        },
+      },
+    ],
+  )
 })
