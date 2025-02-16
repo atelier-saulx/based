@@ -5,6 +5,7 @@ import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
 import { setTimeout as setTimeoutAsync } from 'timers/promises'
 
+// TODO test should be the same number as the native build in one
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
