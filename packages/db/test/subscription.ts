@@ -354,7 +354,7 @@ await test('subscription mixed', async (t) => {
   clearInterval(end)
 })
 
-test('subscription listener', async (t) => {
+await test('subscription listener', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

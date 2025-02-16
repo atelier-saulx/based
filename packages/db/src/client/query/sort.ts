@@ -1,4 +1,5 @@
 import { QueryDef, QueryDefSort } from './types.js'
+import { validateSort } from './validation.js'
 
 export const createSortBuffer = (sort: QueryDefSort) => {
   const buf = Buffer.allocUnsafe(7)
@@ -13,8 +14,5 @@ export const createSortBuffer = (sort: QueryDefSort) => {
 
 // NO REF / REFERENCES SUPPORT
 export const sort = (def: QueryDef, field: string, order?: 'asc' | 'desc') => {
-  def.sort = {
-    prop: def.props[field],
-    order: order === 'asc' || order === undefined ? 0 : 1,
-  }
+  def.sort = validateSort(def, field, order)
 }

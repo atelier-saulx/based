@@ -13,5 +13,7 @@ export const registerQuery = (q: BasedDbQuery): Buffer => {
     handleErrors(q.def)
     return buf
   }
+
+  handleErrors(q.def)
   return q.buffer
 }

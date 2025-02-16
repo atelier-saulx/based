@@ -2,7 +2,7 @@ import test from 'node:test'
 import { deepEqual } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('shorthands', () => {
+await test('shorthands', () => {
   deepEqual(
     parse({
       types: {

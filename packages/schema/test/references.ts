@@ -2,7 +2,7 @@ import test from 'node:test'
 import { deepEqual, throws } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('references', (t) => {
+await test('references', (t) => {
   parse({
     types: {
       article: {
@@ -220,7 +220,7 @@ test('references', (t) => {
   }, 'Disallow incorrect location of required prop')
 })
 
-test('edges', () => {
+await test('edges', () => {
   parse({
     types: {
       event: {

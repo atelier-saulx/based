@@ -28,7 +28,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     // TODO if !edges use batch operation
     // set this whole thing
-
     // check if ref b has ref a
     // optional faster check of the id
     // BST

@@ -1,3 +1,4 @@
+import picocolors from 'picocolors'
 import {
   ALIAS,
   BINARY,
@@ -30,6 +31,7 @@ import {
   MIN_ID_VALUE,
 } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
+import { safeStringify } from './display.js'
 
 export type QueryError = {
   code: number
@@ -49,26 +51,19 @@ export const ERR_FILTER_INVALID_VAL = 10
 export const ERR_FILTER_INVALID_OPTS = 11
 export const ERR_FILTER_INVALID_LANG = 12
 export const ERR_INCLUDE_INVALID_LANG = 13
-
-const safeStringify = (p: any) => {
-  var v: string
-  try {
-    v = JSON.stringify(p).replace(/"/g, '')
-  } catch (err) {
-    v = ''
-  }
-  return v
-}
+export const ERR_SORT_ENOENT = 14
+export const ERR_SORT_TYPE = 15
+export const ERR_SORT_ORDER = 16
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    return `Invalid alias prodived to query "${safeStringify(p)}"`
+    return `Invalid alias prodived to query\n  ${picocolors.italic(safeStringify(p, 100))}`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
-    `Ids should be of type array or Uint32Array with valid ids`,
+    `Ids should be of type array or Uint32Array with valid ids \n  ${picocolors.italic(safeStringify(p, 100))}`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
@@ -84,6 +79,7 @@ const messages = {
   [ERR_FILTER_INVALID_VAL]: (p) => {
     return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
   },
+  [ERR_SORT_ENOENT]: (p) => `Sort: field does not exist "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -280,6 +276,31 @@ export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
   })
 }
 
+export const validateSort = (
+  def: QueryDef,
+  field: string,
+  orderInput?: 'asc' | 'desc',
+): QueryDef['sort'] => {
+  const propDef = def.props[field]
+  const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
+
+  if (!propDef) {
+    def.errors.push({
+      code: ERR_SORT_ENOENT,
+      payload: field,
+    })
+    return {
+      prop: EMPTY_ALIAS_PROP_DEF,
+      order,
+    }
+  }
+
+  return {
+    prop: def.props[field],
+    order,
+  }
+}
+
 export const validateAlias = (
   alias: QueryByAliasObj,
   path: string[],
@@ -319,10 +340,12 @@ export const validateId = (def: QueryDef, id: any): number => {
 }
 
 export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
+  const origIds = ids
+
   if (!Array.isArray(ids) && !(ids instanceof Uint32Array)) {
     def.errors.push({
       code: ERR_TARGET_INVAL_IDS,
-      payload: ids,
+      payload: origIds,
     })
     return new Uint32Array([])
   }
@@ -330,7 +353,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
   if (ids.length > MAX_IDS_PER_QUERY) {
     def.errors.push({
       code: ERR_TARGET_EXCEED_MAX_IDS,
-      payload: ids,
+      payload: origIds,
     })
     return new Uint32Array([])
   }
@@ -342,17 +365,18 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
     } catch (err) {
       def.errors.push({
         code: ERR_TARGET_INVAL_IDS,
-        payload: ids,
+        payload: origIds,
       })
       return new Uint32Array([])
     }
   }
   // pretty heavy if it are a lot...
-  for (const id of ids) {
-    if (typeof id != 'number' || id == 0 || id > MAX_ID) {
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    if (typeof id !== 'number' || id == 0 || id > MAX_ID) {
       def.errors.push({
         code: ERR_TARGET_INVAL_IDS,
-        payload: ids,
+        payload: origIds,
       })
       return new Uint32Array([])
     }
@@ -362,7 +386,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = `Query\n`
+    let name = `${picocolors.red('QueryError')} [${safeStringify(def.target)}]\n`
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }
