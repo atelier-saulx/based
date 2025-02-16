@@ -1,8 +1,9 @@
 import { BasedDb } from '../src/index.js'
 import { crc32c } from '@based/crc32c'
 import test from './shared/test.js'
-import { equal, deepEqual } from './shared/assert.js'
+import { equal } from './shared/assert.js'
 
+// TODO test should be the same number as the native build in one
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
