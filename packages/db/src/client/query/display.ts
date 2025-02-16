@@ -363,13 +363,18 @@ export const defHasId = (def: QueryDef) => {
 export const displayTarget = (def: QueryDef) => {
   // ids
   const hasId = defHasId(def)
-  const target = hasId
-    ? def.schema.type +
-      ':' +
-      ('alias' in def.target
-        ? inspect(def.target.alias)
-        : // @ts-ignore
-          def.target.id)
-    : def.schema.type
+  const hasIds = 'ids' in def.target
+
+  const target =
+    hasId || hasIds
+      ? def.schema.type +
+        ':' +
+        (hasIds
+          ? 'ids'
+          : 'alias' in def.target
+            ? safeStringify(def.target.alias, 30)
+            : // @ts-ignore
+              def.target.id)
+      : def.schema.type
   return target
 }
