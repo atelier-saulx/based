@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { wait } from '@saulx/utils'
 
 await test('references', async (t) => {
   const db = new BasedDb({
@@ -431,12 +430,4 @@ await test('filter', async (t) => {
     },
     'Filter references and sort',
   )
-
-  // deepEqual(
-  //   (
-  //     await db.query('article').include('name', 'contributors[0].name').get()
-  //   ).toObject(),
-  //   [{ id: 1, name: 'The wonders of Strudel' }],
-  //   'Access rederences by using an array index',
-  // )
 })

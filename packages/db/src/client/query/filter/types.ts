@@ -29,6 +29,13 @@ export type Operator =
   | '!..'
   | 'like'
 
+export const VECTOR_FNS = [
+  'dotProduct',
+  'manhattanDistance',
+  'cosineSimilarity',
+  'euclideanDistance',
+]
+
 export type FilterOpts<O = Operator> = {
   lowerCase?: boolean
   fn?:

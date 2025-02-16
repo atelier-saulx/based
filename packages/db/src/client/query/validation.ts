@@ -1,19 +1,25 @@
 import {
   ALIAS,
   BOOLEAN,
-  NUMBER,
   PropDef,
   PropDefEdge,
+  REFERENCE,
+  REFERENCES,
   SchemaTypeDef,
   STRING,
   TEXT,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
+  VECTOR,
 } from '../../server/schema/types.js'
 import { propIsNumerical } from '../../server/schema/utils.js'
 import { DbClient } from '../index.js'
-import { EQUAL, isNumerical, operatorReverseMap } from './filter/types.js'
+import {
+  EQUAL,
+  HAS,
+  isNumerical,
+  LIKE,
+  operatorReverseMap,
+  VECTOR_FNS,
+} from './filter/types.js'
 import { Filter } from './query.js'
 import { MAX_ID, MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
@@ -37,16 +43,20 @@ export const ERR_FILTER_INVALID_OPTS = 11
 export const ERR_FILTER_INVALID_LANG = 12
 export const ERR_INCLUDE_INVALID_LANG = 13
 
+const safeStringify = (p: any) => {
+  var v: string
+  try {
+    v = JSON.stringify(p).replace(/"/g, '')
+  } catch (err) {
+    v = ''
+  }
+  return v
+}
+
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    var v: string
-    try {
-      v = JSON.stringify(p).replace(/"/g, '')
-    } catch (err) {
-      v = ''
-    }
-    return `Invalid alias prodived to query "${v}"`
+    return `Invalid alias prodived to query "${safeStringify(p)}"`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
@@ -61,24 +71,74 @@ const messages = {
   [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
   [ERR_FILTER_OP_FIELD]: (p: Filter) =>
     `Cannot use operator "${operatorReverseMap[p[1].operation]}" on field "${p[0]}"`,
+  [ERR_FILTER_INVALID_OPTS]: (p) => {
+    return `Filter: Invalid opts prodived "${safeStringify(p)}"`
+  },
 }
 
 export type ErrorCode = keyof typeof messages
 
-export const validateFilter = (
+export const validateFilterCtx = (
   def: QueryDef,
   prop: PropDef | PropDefEdge,
   f: Filter,
 ) => {
   const t = prop.typeIndex
   const op = f[1].operation
-  if (t === TEXT || t === STRING) {
+  if (t === REFERENCES) {
+    if (op == LIKE) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
+  } else if (t === REFERENCE) {
+    if (op != EQUAL) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
+  } else if (t === VECTOR) {
+    if (isNumerical(op) || op === HAS) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
+    if (op === LIKE) {
+      const opts = f[1].opts
+      if (
+        (opts.fn && !VECTOR_FNS.includes(opts.fn)) ||
+        (opts.score != undefined && typeof opts.fn !== 'number')
+      ) {
+        def.errors.push({
+          code: ERR_FILTER_INVALID_OPTS,
+          payload: f,
+        })
+        return true
+      }
+    }
+  } else if (t === TEXT || t === STRING) {
     if (isNumerical(op)) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
         payload: f,
       })
       return true
+    }
+    if (op === LIKE) {
+      const opts = f[1].opts
+      if (typeof opts.fn !== 'number') {
+        def.errors.push({
+          code: ERR_FILTER_INVALID_OPTS,
+          payload: f,
+        })
+        return true
+      }
     }
   } else if (propIsNumerical(prop) && op !== EQUAL && !isNumerical(op)) {
     def.errors.push({
@@ -91,7 +151,9 @@ export const validateFilter = (
       code: ERR_FILTER_OP_FIELD,
       payload: f,
     })
+    return true
   }
+
   return false
 }
 

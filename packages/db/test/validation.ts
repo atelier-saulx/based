@@ -265,4 +265,18 @@ await test('query', async (t) => {
   await db.query('user').filter('isOn', true).get()
   await db.query('user').filter('isOn').get()
   await db.query('user').filter('isOn', false).get()
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('friend', 'has', 1).get(),
+    true,
+    'Filter incorrect operator on reference',
+  )
+
+  await throws(
+    // @ts-ignore
+    () => db.query('user').filter('connections', 'like', 1).get(),
+    true,
+    'Filter incorrect operator on references',
+  )
 })
