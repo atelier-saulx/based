@@ -493,7 +493,10 @@ test('reference text', async (t) => {
     },
   })
 
-  const country1 = await db.create('country')
+  const country1 = await db.create('country', {
+    name: 'xxx',
+    votingLegal: { en: 'smurko' },
+  })
 
   await db.create('contestant', {
     name: 'New contestant',
