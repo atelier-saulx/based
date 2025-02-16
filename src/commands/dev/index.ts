@@ -85,7 +85,11 @@ export const devServer = async ({
   functions,
   port,
   cloud,
-}: { functions?: string[]; port?: string; cloud?: boolean }) => {
+}: {
+  functions?: string[]
+  port?: string
+  cloud?: boolean
+}) => {
   process.on('SIGINT', () => {
     context.print.pipe().fail(context.i18n('methods.aborted'), true)
   })
