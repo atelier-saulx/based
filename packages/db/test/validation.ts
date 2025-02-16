@@ -297,4 +297,20 @@ await test('query', async (t) => {
       },
     ],
   )
+
+  deepEqual(
+    await db
+      .query('user')
+      .filter('friend.description.en', '=', undefined)
+      .include('name')
+      .get()
+      .inspect()
+      .toObject(),
+    [
+      {
+        name: 'power user',
+        id: 1,
+      },
+    ],
+  )
 })

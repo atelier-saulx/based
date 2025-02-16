@@ -17,7 +17,7 @@ export const convertFilter = (
   value?: any,
   opts?: FilterOpts | undefined,
 ): FilterAst => {
-  if (value === '') {
+  if (value === '' || value === undefined) {
     return
   }
   if (operator === undefined) {
