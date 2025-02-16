@@ -500,8 +500,6 @@ test('reference text', async (t) => {
     country: country1,
   })
 
-  await db.query('country').include('*').get().inspect()
-
   deepEqual(await db.query('country').include('*').get().toObject(), [
     {
       id: 1,
