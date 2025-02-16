@@ -397,6 +397,17 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
         dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
         assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
         schema = dst_fs->edge_constraint._fields_schema;
+
+        /**
+         * Cache the result.
+         * RFE This is not very optimal and nice way to do this but currently
+         * it's not very easy to prepare these links in schemabuf_parse_ns()
+         * because the type lookup svector is not built there and it's
+         * likely incomplete until all types have been created.
+         */
+        struct EdgeFieldConstraint *efcm = (struct EdgeFieldConstraint *)efc;
+        efcm->_fields_schema = schema;
+        efcm->flags |= EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF;
     }
 
     return schema;

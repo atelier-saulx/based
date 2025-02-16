@@ -57,6 +57,10 @@ struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
         /**
+         * _fields_schema is referenced from the opposite efc and shouldn't be freed.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF = 0x40,
+        /**
          * Skip saving this field while dumping.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
