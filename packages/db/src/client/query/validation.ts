@@ -92,7 +92,7 @@ const messages = {
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
-    `Ids should be of type array or Uint32Array with valid ids received \n  ${picocolors.italic(safeStringify(p, 100))}`,
+    `Ids should be of type array or Uint32Array with valid ids \n  ${picocolors.italic(safeStringify(p, 100))}`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,

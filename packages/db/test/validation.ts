@@ -333,4 +333,15 @@ await test('query', async (t) => {
     true,
     'Icorrect payload',
   )
+
+  const q = db.query('flap')
+  for (let i = 0; i < 2; i++) {
+    await throws(
+      async () => {
+        await q.get()
+      },
+      false,
+      `Throw when using cached error #${i + 1}`,
+    )
+  }
 })
