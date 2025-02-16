@@ -503,5 +503,7 @@ test('reference text', async (t) => {
     country: country1,
   })
 
-  await db.query('contestant').include('*', 'country').get().toObject()
+  await db.query('country').include('*').get().inspect()
+
+  await db.query('contestant').include('*', 'country').get().inspect()
 })
