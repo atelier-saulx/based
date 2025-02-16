@@ -8,6 +8,7 @@ import {
   SchemaTypeDef,
   STRING,
   TEXT,
+  TIMESTAMP,
   VECTOR,
 } from '../../server/schema/types.js'
 import { propIsNumerical } from '../../server/schema/utils.js'
@@ -111,30 +112,30 @@ export const validateFilter = (
       })
       return true
     }
-    if (t === REFERENCE && op != EQUAL) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
-      return true
-    }
-    if (Array.isArray(value)) {
-      for (const v of value) {
-        if (!isValidId(v)) {
-          def.errors.push({
-            code: ERR_FILTER_INVALID_VAL,
-            payload: f,
-          })
-          return true
-        }
-      }
-    } else if (!isValidId(value)) {
-      def.errors.push({
-        code: ERR_FILTER_INVALID_VAL,
-        payload: f,
-      })
-      return true
-    }
+    // if (t === REFERENCE && op != EQUAL) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_OP_FIELD,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
+    // if (Array.isArray(value)) {
+    //   for (const v of value) {
+    //     if (!isValidId(v)) {
+    //       def.errors.push({
+    //         code: ERR_FILTER_INVALID_VAL,
+    //         payload: f,
+    //       })
+    //       return true
+    //     }
+    //   }
+    // } else if (!isValidId(value)) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_INVALID_VAL,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
   } else if (t === VECTOR) {
     if (isNumerical(op) || op === HAS) {
       def.errors.push({
@@ -156,13 +157,14 @@ export const validateFilter = (
         return true
       }
     }
-    if (!(value instanceof Float32Array)) {
-      def.errors.push({
-        code: ERR_FILTER_INVALID_VAL,
-        payload: f,
-      })
-      return true
-    }
+    // OR
+    // if (!(value instanceof Float32Array)) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_INVALID_VAL,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
   } else if (t === TEXT || t === STRING) {
     if (isNumerical(op)) {
       def.errors.push({
@@ -185,28 +187,29 @@ export const validateFilter = (
       }
     }
     // tod convert to Uint8Array
-    if (typeof value !== 'string' || !((value as any) instanceof Buffer)) {
-      def.errors.push({
-        code: ERR_FILTER_INVALID_VAL,
-        payload: f,
-      })
-      return true
-    }
+    // if (typeof value !== 'string' && !((value as any) instanceof Buffer)) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_INVALID_VAL,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
   } else if (propIsNumerical(prop)) {
-    if (op !== EQUAL && !isNumerical(op)) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
-    }
-    if (typeof value !== 'number') {
-      def.errors.push({
-        code: ERR_FILTER_INVALID_VAL,
-        payload: f,
-      })
-      return true
-    }
-    return true
+    // if (op !== EQUAL && !isNumerical(op)) {
+    //   def.errors.push({
+    //     code: ERR_FILTER_OP_FIELD,
+    //     payload: f,
+    //   })
+    // }
+    // if (Array.isArray()) {
+    // } else if (t !== TIMESTAMP && typeof value !== 'number') {
+    //   def.errors.push({
+    //     code: ERR_FILTER_INVALID_VAL,
+    //     payload: f,
+    //   })
+    //   return true
+    // }
+    // return true
   } else if (t === BOOLEAN && op !== EQUAL) {
     def.errors.push({
       code: ERR_FILTER_OP_FIELD,
