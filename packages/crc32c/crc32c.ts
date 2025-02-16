@@ -1,6 +1,13 @@
-import { crc32c_table } from './crc32c_table'
+import { crc32c_table } from './crc32c_table.js'
 
-export function crc32c(buf: Buffer): number {
+export function crc32c(val: string | Uint8Array): number {
+  let buf: Buffer
+  if (typeof val === 'string') {
+    buf = Buffer.allocUnsafe(Buffer.byteLength(val))
+    buf.write(val)
+  } else {
+    buf = Buffer.from(val)
+  }
   let crc = 0
   let offset = 0
   let len = buf.length
@@ -17,16 +24,22 @@ export function crc32c(buf: Buffer): number {
 
   const n = Math.floor(len / 8)
   for (let i = 0; i < n; i++) {
-    const word = BigInt(crc) ^ buf.readBigUInt64LE(offset)
+    // original c source uses uint64_t word
+    // const word = BigInt(crc) ^ buf.readBigUInt64LE(offset)
+    // split in tow to avoid bigint
+    const wordLow = buf.readUInt32LE(offset)
+    const wordHigh = buf.readUInt32LE(offset + 4)
+    const newWordLow = crc ^ wordLow
+    const newWordHigh = wordHigh
 
-    const b0 = Number(word & 0xffn)
-    const b1 = Number((word >> 8n) & 0xffn)
-    const b2 = Number((word >> 16n) & 0xffn)
-    const b3 = Number((word >> 24n) & 0xffn)
-    const b4 = Number((word >> 32n) & 0xffn)
-    const b5 = Number((word >> 40n) & 0xffn)
-    const b6 = Number((word >> 48n) & 0xffn)
-    const b7 = Number((word >> 56n) & 0xffn)
+    const b0 = newWordLow & 0xff
+    const b1 = (newWordLow >>> 8) & 0xff
+    const b2 = (newWordLow >>> 16) & 0xff
+    const b3 = (newWordLow >>> 24) & 0xff
+    const b4 = newWordHigh & 0xff
+    const b5 = (newWordHigh >>> 8) & 0xff
+    const b6 = (newWordHigh >>> 16) & 0xff
+    const b7 = (newWordHigh >>> 24) & 0xff
 
     crc =
       (crc32c_table[7][b0] ^
