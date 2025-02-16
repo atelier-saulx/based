@@ -10,7 +10,7 @@ export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
-// export { crc32 } from '../client/crc32.js'
+export { crc32 } from './client/crc32.js'
 
 export class BasedDb {
   client: DbClient
