@@ -52,7 +52,7 @@ export const time = (time: number) => {
   }
 }
 
-const prettyPrintVal = (v: any, type: TypeIndex): string => {
+export const prettyPrintVal = (v: any, type: TypeIndex): string => {
   if (type === BINARY) {
     const nr = 12
     const isLarger = v.length > nr
@@ -100,6 +100,38 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
     }
   }
 
+  return v
+}
+
+export const parseUint8Array = (p: any) => {
+  if (ArrayBuffer.isView(p)) {
+    const x = []
+    // @ts-ignore
+    for (let i = 0; i < p.length; i++) {
+      x[i] = p[i]
+    }
+    p = x
+    return p
+  }
+  return p
+}
+
+export const safeStringify = (p: any, nr = 30) => {
+  var v: string
+  try {
+    p = parseUint8Array(p)
+    if (typeof p === 'object') {
+      for (const key in p) {
+        p[key] = parseUint8Array(p[key])
+      }
+    }
+    v = JSON.stringify(p).replace(/"/g, '').slice(0, nr)
+    if (v.length === nr) {
+      v += '...'
+    }
+  } catch (err) {
+    v = ''
+  }
   return v
 }
 

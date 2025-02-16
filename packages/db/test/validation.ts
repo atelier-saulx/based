@@ -122,6 +122,8 @@ await test('query', async (t) => {
 
   t.after(() => db.destroy())
 
+  const drip = ['dope', 'cringe', 'meh']
+
   await db.putSchema({
     locales: {
       en: {},
@@ -142,6 +144,7 @@ await test('query', async (t) => {
           rating: 'uint32',
           name: 'string',
           isOn: 'boolean',
+          drip,
           friend: { ref: 'user', prop: 'friend' },
           description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
@@ -156,7 +159,15 @@ await test('query', async (t) => {
     },
   })
 
-  await db.create('user', { name: 'power user' })
+  for (let i = 0; i < 5; i++) {
+    await db.create('user', {
+      name: 'power user ' + i,
+      rating: i,
+      isOn: i % 2 ? true : false,
+      drip: drip[~~(Math.random() * drip.length)],
+    })
+    await db.create('user')
+  }
 
   await throws(() => db.query('derp').get(), true, 'non existing type')
 
@@ -282,6 +293,19 @@ await test('query', async (t) => {
     'Filter incorrect operator on references',
   )
 
+  const allData = [
+    { id: 1, name: 'power user 0' },
+    { id: 2, name: '' },
+    { id: 3, name: 'power user 1' },
+    { id: 4, name: '' },
+    { id: 5, name: 'power user 2' },
+    { id: 6, name: '' },
+    { id: 7, name: 'power user 3' },
+    { id: 8, name: '' },
+    { id: 9, name: 'power user 4' },
+    { id: 10, name: '' },
+  ]
+
   deepEqual(
     await db
       .query('user')
@@ -290,13 +314,20 @@ await test('query', async (t) => {
       .get()
       .inspect()
       .toObject(),
-    [
-      {
-        name: 'power user',
-        id: 1,
-      },
-    ],
+    allData,
     'skip empty string',
+  )
+
+  deepEqual(
+    await db
+      .query('user', [])
+      .filter('name', 'has', '')
+      .include('name')
+      .get()
+      .inspect()
+      .toObject(),
+    [],
+    'ignore empty ids',
   )
 
   deepEqual(
@@ -307,12 +338,7 @@ await test('query', async (t) => {
       .get()
       .inspect()
       .toObject(),
-    [
-      {
-        name: 'power user',
-        id: 1,
-      },
-    ],
+    allData,
     'skip undefined',
   )
 
@@ -331,7 +357,7 @@ await test('query', async (t) => {
         .query({ id: 1, rating: 'derp' })
         .get(),
     true,
-    'Icorrect payload',
+    'Incorrect payload',
   )
 
   const q = db.query('flap')
@@ -344,4 +370,22 @@ await test('query', async (t) => {
       `Throw when using cached error #${i + 1}`,
     )
   }
+
+  await throws(
+    // @ts-ignore
+    () =>
+      db
+        // @ts-ignore
+        .query({ id: 1, rating: 'derp' })
+        .get(),
+    true,
+    'Incorrect payload',
+  )
+
+  await db.query('user').sort('drip', 'desc').get().inspect()
+
+  await db.query('user').sort('flurp').get().inspect()
+
+  // @ts-ignore
+  await db.query('user').sort('drip', 'gurk').get().inspect()
 })
