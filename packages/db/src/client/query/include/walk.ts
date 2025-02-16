@@ -95,11 +95,6 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
     const refDef = createOrGetRefQueryDef(db, def, prop)
     includeAllProps(refDef)
     return
-  } else if (prop.typeIndex === TEXT) {
-    if (!def.include.langTextFields.has(prop.prop)) {
-      def.include.langTextFields.set(prop.prop, { def: prop, codes: new Set() })
-    }
-    def.include.langTextFields.get(prop.prop).codes.add(def.lang ?? 0)
   } else {
     includeProp(def, prop)
   }
