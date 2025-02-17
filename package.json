@@ -24,7 +24,7 @@
   "prettier": "@saulx/prettier-config",
   "scripts": {
     "watch": "(cd packages/schema && npm run watch) & (cd packages/db && npm run watch)",
-    "build": "(cd packages/schema && npm run build) && (cd packages/db && npm run build) && (cd packages/crc32c && npm run build)",
+    "build": "(cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build)",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
     "build-release": "npm run build-podman && npm run build-locale && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release)",
