@@ -41,7 +41,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
 
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
+            const hll = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
 
             selva.hll_init(hll, 14, true);
 
