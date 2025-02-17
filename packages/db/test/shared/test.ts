@@ -10,8 +10,12 @@ export const counts = {
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
+const errors = new Set<string>()
 
-const test = async (name: string, fn: (t?: any) => Promise<void>) => {
+const test = async (
+  name: string,
+  fn: (t?: any) => Promise<void>,
+): Promise<any> => {
   if (
     process.env.TEST_TO_RUN &&
     !name.toLowerCase().includes(process.env.TEST_TO_RUN.toLowerCase())
@@ -50,6 +54,7 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
     console.log(picocolors.red(msg))
+    errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
   }
 
   await Promise.all(afters.map((f) => f()))
@@ -107,7 +112,7 @@ export const printSummary = () => {
 `
       : ''
 
-  const msg =
+  let msg =
     // nuno +
     `
 Test result:
@@ -117,6 +122,7 @@ Good: ${counts.success}
 `
 
   if (counts.errors > 0) {
+    msg += `\nFailed tests: \n${Array.from(errors).join('\n\n')}`
     console.log(picocolors.red(msg))
   } else if (counts.success) {
     console.log(picocolors.green(msg))

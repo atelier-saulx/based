@@ -17,7 +17,6 @@
   },
   "prettier": "@saulx/prettier-config",
   "sideEffects": false,
-  "type": "module",
   "devDependencies": {
     "@saulx/prettier-config": "2.0.0",
     "@saulx/tsconfig": "^1.1.0",

@@ -2,6 +2,7 @@ import { compress, decompress } from './client/string.js'
 import { ModifyCtx } from './client/operations.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
+import picocolors from 'picocolors'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -27,7 +28,8 @@ export class BasedDb {
         if (typeof fn === 'function') {
           // @ts-ignore
           this[key] = function () {
-            console.info(`[${key}]`, arguments)
+            const str = [`[${key}]`, ...arguments].join(' ')
+            console.info(picocolors.dim(str))
             return fn.apply(this, arguments)
           }
         }
