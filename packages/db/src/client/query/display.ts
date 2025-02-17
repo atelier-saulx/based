@@ -14,7 +14,6 @@ import {
   TypeIndex,
 } from '../../server/schema/types.js'
 import { BasedQueryResponse } from './BasedIterable.js'
-import { inspect } from 'node:util'
 
 const decimals = (v) => ~~(v * 100) / 100
 

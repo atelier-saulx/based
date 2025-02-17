@@ -2,7 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
-import { size, time, inspectData, displayTarget, defHasId } from './display.js'
+import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '../bitWise.js'
 
 export { time, size, inspectData }

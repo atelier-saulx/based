@@ -2,6 +2,7 @@
   "name": "@based/crc32c",
   "version": "1.0.0",
   "license": "UNLICENSED",
+  "type": "module",
   "main": "dist/crc32c.js",
   "types": "dist/crc32c.d.ts",
   "files": [
@@ -16,7 +17,6 @@
   },
   "prettier": "@saulx/prettier-config",
   "sideEffects": false,
-  "type": "module",
   "devDependencies": {
     "@saulx/prettier-config": "2.0.0",
     "@saulx/tsconfig": "^1.1.0",

@@ -2,6 +2,7 @@ import { compress, decompress } from './client/string.js'
 import { ModifyCtx } from './client/operations.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
+import picocolors from 'picocolors'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -10,7 +11,7 @@ export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
-// export { crc32 } from '../client/crc32.js'
+export { crc32 } from './client/crc32.js'
 
 export class BasedDb {
   client: DbClient
@@ -27,7 +28,8 @@ export class BasedDb {
         if (typeof fn === 'function') {
           // @ts-ignore
           this[key] = function () {
-            console.info(`[${key}]`, arguments)
+            const str = [`[${key}]`, ...arguments].join(' ')
+            console.info(picocolors.dim(str))
             return fn.apply(this, arguments)
           }
         }

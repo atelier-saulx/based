@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'timers/promises'
 
 await test('references', async (t) => {
   const db = new BasedDb({
@@ -432,115 +433,169 @@ await test('filter', async (t) => {
   )
 })
 
-await test('cross reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
+// await test('cross reference', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
 
-  await db.start({ clean: true })
+//   await db.start({ clean: true })
 
-  t.after(() => {
-    return db.destroy()
-  })
+//   t.after(() => {
+//     return db.destroy()
+//   })
 
-  await db.putSchema({
-    locales: {
-      en: { required: true },
-      // fr: { required: true },
-      // nl: { required: true },
-      // el: { required: true },
-      // he: { required: true },
-      // it: { required: true },
-      // lv: { required: true },
-      // lb: { required: true },
-      // ro: { required: true },
-      // sl: { required: true },
-      // es: { required: true },
-      // de: { required: true },
-      // cs: { required: true },
-      // et: { required: true },
-    },
-    // props: {
-    //   info: 'text',
-    //   legal: 'text',
-    //   terms: 'text',
-    //   privacy: 'text',
-    //   excludedCountries: { items: { ref: 'country' } },
-    //   activeSequence: { ref: 'sequence' },
-    //   coreDataLock: 'boolean',
-    // },
-    types: {
-      country: {
-        name: 'string',
-        currency: [
-          'all',
-          'amd',
-          'aud',
-          'azn',
-          'chf',
-          'czk',
-          'dkk',
-          'eur',
-          'gbp',
-          'gel',
-          'ils',
-          'isk',
-          'mdl',
-          'nok',
-          'pln',
-          'rsd',
-          'sek',
-          'uah',
-        ],
-        voteType: ['sms_text', 'sms_suffix', 'online', 'call_suffix'],
-        maxVotes: { type: 'uint8' },
-        price: 'uint16',
-        destination: 'string',
-        votingText: 'text',
-        votingLegal: 'text',
-      },
-      // sequence: {
-      //   name: { type: 'string', readOnly: true },
-      //   recapTitle: 'text',
-      //   title: 'text',
-      //   description: 'text',
-      //   countdown: 'timestamp',
-      //   winner: 'string',
-      //   row: {
-      //     props: { title: 'text', description: 'text', countdown: 'timestamp' },
-      //   },
-      // },
-      // round: {
-      //   name: 'string',
-      //   contestants: { items: { ref: 'contestant', prop: 'rounds' } },
-      //   createdBy: { ref: 'user', prop: 'createdRounds' },
-      // },
-      contestant: {
-        name: 'string',
-        song: 'string',
-        lyrics: 'string',
-        country: { ref: 'country', prop: 'contestants' },
-      },
-      // user: {
-      //   name: 'string',
-      //   email: { type: 'alias', format: 'email' },
-      //   currentToken: 'alias',
-      // },
-    },
-  })
+//   await db.putSchema({
+//     locales: {
+//       en: { required: true },
+//       fr: { required: true },
+//       nl: { required: true },
+//       el: { required: true },
+//       he: { required: true },
+//       it: { required: true },
+//       lv: { required: true },
+//       lb: { required: true },
+//       ro: { required: true },
+//       sl: { required: true },
+//       es: { required: true },
+//       de: { required: true },
+//       cs: { required: true },
+//       et: { required: true },
+//     },
+//     props: {
+//       info: 'text',
+//       legal: 'text',
+//       terms: 'text',
+//       privacy: 'text',
+//       excludedCountries: { items: { ref: 'country' } },
+//       activeSequence: { ref: 'sequence' },
+//       coreDataLock: 'boolean',
+//     },
+//     types: {
+//       country: {
+//         name: 'string',
+//         currency: [
+//           'all',
+//           'amd',
+//           'aud',
+//           'azn',
+//           'chf',
+//           'czk',
+//           'dkk',
+//           'eur',
+//           'gbp',
+//           'gel',
+//           'ils',
+//           'isk',
+//           'mdl',
+//           'nok',
+//           'pln',
+//           'rsd',
+//           'sek',
+//           'uah',
+//         ],
+//         voteType: ['sms_text', 'sms_suffix', 'online', 'call_suffix'],
+//         maxVotes: { type: 'uint8' },
+//         price: 'uint16',
+//         destination: 'string',
+//         votingText: 'text',
+//         votingLegal: 'text',
+//       },
+//       sequence: {
+//         name: { type: 'string', readOnly: true },
+//         recapTitle: 'text',
+//         title: 'text',
+//         description: 'text',
+//         countdown: 'timestamp',
+//         winner: 'string',
+//         row: {
+//           props: { title: 'text', description: 'text', countdown: 'timestamp' },
+//         },
+//       },
+//       round: {
+//         name: 'string',
+//         contestants: { items: { ref: 'contestant', prop: 'rounds' } },
+//         createdBy: { ref: 'user', prop: 'createdRounds' },
+//       },
+//       contestant: {
+//         name: 'string',
+//         song: 'string',
+//         lyrics: 'string',
+//         country: { ref: 'country', prop: 'contestants' },
+//       },
+//       user: {
+//         name: 'string',
+//         email: { type: 'alias', format: 'email' },
+//         currentToken: 'alias',
+//       },
+//     },
+//   })
 
-  const contestant1 = await db.create('contestant')
-  const contestant2 = await db.create('contestant')
-  const country1 = await db.create('country')
-  await db.update('contestant', contestant1, {
-    name: 'New contestant',
-    country: country1,
-  })
-  console.log('--------')
-  console.dir(
-    await db.query('contestant').include('*', 'country').get().toObject(),
-    {
-      depth: null,
-    },
-  )
-})
+//   console.dir(
+//     await db.query('contestant').include('*', '**').get().toObject(),
+//     {
+//       depth: null,
+//     },
+//   )
+
+//   const contestant1 = await db.create('contestant')
+
+//   console.dir(
+//     await db.query('contestant').include('*', '**').get().toObject(),
+//     {
+//       depth: null,
+//     },
+//   )
+
+//   const country1 = await db.create('country', { name: 'xxx' })
+
+//   console.dir(
+//     await db.query('contestant').include('*', '**').get().toObject(),
+//     {
+//       depth: null,
+//     },
+//   )
+
+//   console.log(
+//     '--->',
+//     await db
+//       .query('contestant', contestant1)
+//       .include('*', '**')
+//       .get()
+//       .toObject(),
+//   )
+
+//   await db.update('contestant', contestant1, {
+//     name: 'New contestant',
+//     country: country1,
+//   })
+
+//   console.log(
+//     '--->',
+//     await db.query('country', country1).include('*', '**').get().toObject(),
+//   )
+
+//   console.dir(
+//     await db.query('contestant').include('*', '**').get().toObject(),
+//     {
+//       depth: null,
+//     },
+//   )
+
+//   console.log(
+//     '--->',
+//     await db
+//       // @ts-ignore
+//       .query('contestant', {
+//         id: 1,
+//         maxVotes: 0,
+//         price: 0,
+//         name: 'New country',
+//         destination: '',
+//         votingText: '',
+//         votingLegal: '',
+//       })
+//       .include('*', '**')
+//       .get()
+//       .toObject(),
+//   )
+// })

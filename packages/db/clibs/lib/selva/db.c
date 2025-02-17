@@ -382,10 +382,10 @@ const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct S
 
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
 {
-    const struct SelvaFieldsSchema *schema;
+    struct SelvaFieldsSchema *schema;
 
     schema = efc->_fields_schema;
-    if (!schema) {
+    if (!schema && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
         /*
          * Schema not found on this side, try the dst_type.
          * TODO It would be nice to share the pointer.
@@ -404,10 +404,12 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
          * it's not very easy to prepare these links in schemabuf_parse_ns()
          * because the type lookup svector is not built there and it's
          * likely incomplete until all types have been created.
+         * The flag can be safely set here even if `schema` is nullptr to
+         * speed up future lookups.
          */
         struct EdgeFieldConstraint *efcm = (struct EdgeFieldConstraint *)efc;
         efcm->_fields_schema = schema;
-        efcm->flags |= EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF;
+        efcm->flags |= EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED;
     }
 
     return schema;

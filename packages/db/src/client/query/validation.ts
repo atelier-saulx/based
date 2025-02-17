@@ -7,6 +7,7 @@ import {
   PropDefEdge,
   REFERENCE,
   REFERENCES,
+  REVERSE_TYPE_INDEX_MAP,
   SchemaTypeDef,
   STRING,
   TEXT,
@@ -31,7 +32,7 @@ import {
   MIN_ID_VALUE,
 } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
-import { defHasId, displayTarget, safeStringify } from './display.js'
+import { displayTarget, safeStringify } from './display.js'
 
 export type QueryError = {
   code: number
@@ -82,12 +83,13 @@ const messages = {
   [ERR_FILTER_INVALID_VAL]: (p) => {
     return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
   },
-  [ERR_SORT_TYPE]: (p) => `Sort: field type does not support sort "${p}"`,
   [ERR_SORT_ENOENT]: (p) => `Sort: field does not exist "${p}"`,
   [ERR_SORT_WRONG_TARGET]: (p) =>
     `Sort: incorrect qeury target "${displayTarget(p)}"`,
   [ERR_SORT_ORDER]: (p) =>
     `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
+  [ERR_SORT_TYPE]: (p) =>
+    `Sort: cannot sort on type "${REVERSE_TYPE_INDEX_MAP[p.typeIndex]}" on field "${p.path.join('.')}"`,
   [ERR_RANGE_INVALID_OFFSET]: (p) =>
     `Range: incorrect offset "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
@@ -338,21 +340,13 @@ export const validateSort = (
       order,
     }
   }
+
   const type = propDef.typeIndex
 
-  // check if references works
-  // single ref does not work
-  if (type === REFERENCE || type === REFERENCES || type === TEXT) {
+  if (type === TEXT || type === REFERENCES || type === REFERENCE) {
     def.errors.push({
       code: ERR_SORT_TYPE,
-      payload: field,
-    })
-  }
-
-  if (defHasId(def)) {
-    def.errors.push({
-      code: ERR_SORT_WRONG_TARGET,
-      payload: def,
+      payload: propDef,
     })
   }
 
@@ -454,7 +448,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+    let name = `${picocolors.red('QueryError')} [${safeStringify(def.target)}]\n`
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }

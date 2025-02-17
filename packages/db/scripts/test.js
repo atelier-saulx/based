@@ -75,6 +75,9 @@ for (const test of testsToRun) {
     process.env.TEST_TO_RUN = ''
   }
 
+  global._currentTestPath = fullPath
+    .replace('/dist/', '/')
+    .replace('.js', '.ts')
   await import(fullPath)
     .catch((err) => {
       console.log('')

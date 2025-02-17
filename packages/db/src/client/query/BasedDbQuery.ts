@@ -28,7 +28,6 @@ import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
-import { off } from 'process'
 import { validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 
@@ -276,8 +275,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
           // TODO ADD MULTI ALIAS
           // @ts-ignore
           target.ids = id
-          // target.ids = new Uint32Array(id)
-          // target.ids.sort()
         } else {
           target.id = id
         }
