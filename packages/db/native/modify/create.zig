@@ -1,5 +1,5 @@
 const db = @import("../db/db.zig");
-const read = @import("../utils.zig").read;
+const util = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
@@ -8,6 +8,9 @@ const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 const std = @import("std");
+const lib = @import("../lib.zig");
+
+const read = util.read;
 
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
@@ -38,7 +41,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
 
-            const hll = selva.fields_ensure_string(ctx.db.selva, ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
+            const hll = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
 
             selva.hll_init(hll, 14, true);
 

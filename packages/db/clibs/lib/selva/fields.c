@@ -805,9 +805,8 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
     return 0;
 }
 
-struct selva_string *fields_ensure_string(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
+struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
 {
-
     if (fs->type != SELVA_FIELD_TYPE_STRING) {
         return nullptr;
     }

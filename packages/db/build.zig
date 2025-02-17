@@ -12,6 +12,13 @@ pub fn build(b: *std.Build) void {
     });
     lib.linker_allow_shlib_undefined = true;
 
+    const enable_debug = b.option(bool, "enable_debug", "Enable debugging prints") orelse false;
+
+    const options = b.addOptions();
+    options.addOption(bool, "enable_debug", enable_debug);
+
+    lib.root_module.addOptions("config", options);
+
     const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node/include/node/";
     lib.addIncludePath(b.path(node_hpath));
 

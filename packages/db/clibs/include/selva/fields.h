@@ -132,8 +132,7 @@ int selva_fields_get_mutable_string(
  * TODO Document diff to get_mutable_string
  */
 SELVA_EXPORT
-struct selva_string *fields_ensure_string(
-        struct SelvaDb *db,
+struct selva_string *selva_fields_ensure_string(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);

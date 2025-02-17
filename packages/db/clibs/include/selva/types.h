@@ -65,7 +65,7 @@ struct EdgeFieldConstraint {
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
-    field_t inverse_field; // [len] [1] [2] [3] [4]
+    field_t inverse_field;
     node_type_t dst_node_type;
     /**
      * Don't use directly!
