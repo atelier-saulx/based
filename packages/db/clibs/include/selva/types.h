@@ -59,7 +59,7 @@ struct EdgeFieldConstraint {
         /**
          * _fields_schema is referenced from the opposite efc and shouldn't be freed.
          */
-        EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF = 0x40,
+        EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED = 0x40,
         /**
          * Skip saving this field while dumping.
          */
