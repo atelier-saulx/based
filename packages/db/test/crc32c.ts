@@ -64,16 +64,11 @@ await test('simple', async (t) => {
     ],
   )
 
-  let timer = setTimeout(() => {
-    timer = null
-  }, 5e3)
-
   console.time('1E7 CRC32c TS')
 
   let lastId = 0
   let m: number[] = []
 
-  // while (timer) {
   for (let i = 0; i < 1e7; i++) {
     lastId = db.create('transaction', {
       myHash: crc32c(Buffer.from(`oid${i}`)),
@@ -82,7 +77,6 @@ await test('simple', async (t) => {
       m.push(lastId)
     }
   }
-  // }
 
   db.update('transaction', transaction, {
     myHash: m,
@@ -90,13 +84,10 @@ await test('simple', async (t) => {
 
   await db.drain()
 
-  clearTimeout(timer)
-
-  console.timeEnd('End CRC32c TS')
+  console.timeEnd('1E7 CRC32c TS')
 
   console.time('1E7 CRC32c Native')
 
-  // while (timer) {
   lastId = 0
   m = []
   for (let i = 0; i < 1e7; i++) {
@@ -107,13 +98,14 @@ await test('simple', async (t) => {
       m.push(lastId)
     }
   }
-  // }
 
   db.update('transactionN', transactionN, {
     myNativeMadeHash: m,
   })
 
   await db.drain()
+
+  console.timeEnd('1E7 CRC32c Native')
 
   equal(
     await db
@@ -152,7 +144,4 @@ await test('simple', async (t) => {
       },
     ],
   )
-  clearTimeout(timer)
-
-  console.timeEnd('End CRC32c Native')
 })
