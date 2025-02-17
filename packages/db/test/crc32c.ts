@@ -282,7 +282,31 @@ function crc32py(buf: Buffer, initial: number): number {
   return (crc ^ -1) >>> 0
 }
 
-// TODO test should be the same number as the native build in one
+// ------------------------------------
+console.log(
+  'Comparing just the hash generation, without writing in the database',
+)
+
+console.time('1E7 CRC32c TS')
+for (let i = 0; i < 1e7; i++) {
+  crc32c(`oid${i}`)
+}
+console.timeEnd('1E7 CRC32c TS')
+
+console.time('1E7 CRC32c Py')
+for (let i = 0; i < 1e7; i++) {
+  crc32py(Buffer.from(`oid${i}`), 0)
+}
+console.timeEnd('1E7 CRC32c Py')
+
+console.time('1E7 CRC32c Native')
+for (let i = 0; i < 1e7; i++) {
+  nativeCrc32(Buffer.from(`oid${i}`))
+}
+console.timeEnd('1E7 CRC32c Native')
+
+// ------------------------------------
+
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
