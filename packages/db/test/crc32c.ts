@@ -268,7 +268,7 @@ const kCRCTable = Int32Array.of(
   0xbe2da0a5,
   0x4c4623a6,
   0x5f16d052,
-  0xad7d5351
+  0xad7d5351,
 )
 
 function crc32py(buf: Buffer, initial: number): number {
@@ -315,7 +315,7 @@ await test('simple', async (t) => {
   })
 
   const transaction = await db.create('transaction', {
-    myHash: crc32c(Buffer.from('oid123')),
+    myHash: crc32c('oid123'),
   })
   const transactionPy = await db.create('transactionPy', {
     pyHash: crc32py(Buffer.from('oid123'), 0),
@@ -356,7 +356,7 @@ await test('simple', async (t) => {
 
   for (let i = 0; i < 1e7; i++) {
     lastId = db.create('transaction', {
-      myHash: crc32c(Buffer.from(`oid${i}`)),
+      myHash: crc32c(`oid${i}`),
     }).tmpId
     if (i % 2) {
       m.push(lastId)
@@ -370,8 +370,6 @@ await test('simple', async (t) => {
   await db.drain()
 
   console.timeEnd('1E7 CRC32c TS')
-
-
 
   console.time('1E7 CRC32c TSpy')
   lastId = 0
@@ -392,8 +390,6 @@ await test('simple', async (t) => {
   await db.drain()
 
   console.timeEnd('1E7 CRC32c TSpy')
-
-
 
   console.time('1E7 CRC32c Native')
 
