@@ -75,23 +75,23 @@ export class ModifyState {
     tmpId: number,
     db: DbClient,
     subMarkers: SubscriptionMarkersCheck | false,
-    opts?: ModifyOpts,
+    opts: ModifyOpts,
+    update = false,
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
-    if (opts) {
-      if (opts.i18n) {
-        this.i18n = langCodesMap.get(opts.i18n)
-      }
+    this.update = update
+    if (opts?.i18n) {
+      this.i18n = langCodesMap.get(opts.i18n)
     }
   }
 
   subMarkers: SubscriptionMarkersCheck | false
   i18n: LangCode
-
+  update: boolean
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
   #typeId: number
@@ -103,6 +103,9 @@ export class ModifyState {
   }
 
   getId(offsets: Record<number, number>) {
+    if (this.update) {
+      return this.tmpId
+    }
     const offset = offsets[this.#typeId] || 0
     return this.tmpId + offset
   }

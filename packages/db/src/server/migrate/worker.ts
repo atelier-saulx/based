@@ -84,7 +84,7 @@ if (isMainThread) {
     }
 
     await toDb.drain()
-    // await setTimeout()
+    channel.postMessage([toDb.server.schema, toDb.server.schemaTypesParsed])
     // put it to sleep
     atomics[0] = 0
     Atomics.notify(atomics, 0)

@@ -415,7 +415,6 @@ export class DbServer {
       i += 4
       const lastId = buf.readUint32LE(i)
       i += 4
-
       def.lastId = lastId + offset
       offsets[typeId] = offset
     }

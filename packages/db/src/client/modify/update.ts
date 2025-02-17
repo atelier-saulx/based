@@ -95,6 +95,7 @@ export const update = (
     db,
     getSubscriptionMarkers(db, def.id, id, false),
     opts,
+    true,
   )
 
   const err = appendUpdate(ctx, def, obj, res, opts?.overwrite)
