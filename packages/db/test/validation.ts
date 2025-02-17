@@ -384,8 +384,45 @@ await test('query', async (t) => {
 
   await db.query('user').sort('drip', 'desc').get().inspect()
 
-  await db.query('user').sort('flurp').get().inspect()
+  await throws(
+    async () => {
+      await db.query('user').sort('flurp').get()
+    },
+    true,
+    'Non existing field on sort',
+  )
 
-  // @ts-ignore
-  await db.query('user').sort('drip', 'gurk').get().inspect()
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').sort('drip', 'gurk').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').sort('connections').get().inspect()
+  }, true)
+
+  // await throws(async () => {
+  //   await db.query('user').sort('friend').get().inspect()
+  // }, true)
+
+  // await throws(async () => {
+  //   await db.query('user').sort('description').get().inspect()
+  // }, true)
+
+  // await throws(async () => {
+  //   await db.query('user', 1).sort('drip').get().inspect()
+  // }, true)
+
+  // await db.query('user', []).sort('drip').get().inspect()
+
+  // await db.query('user', [1, 2, 3]).sort('drip').get().inspect()
+
+  // await throws(async () => {
+  //   await db.query('user').sort('drip').range(0, -10).get().inspect()
+  // }, true)
+
+  // await throws(async () => {
+  //   // @ts-ignore
+  //   await db.query('user').sort('drip').range('derp', -100).get().inspect()
+  // }, true)
 })

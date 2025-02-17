@@ -354,3 +354,27 @@ export const inspectData = (
   }
   return str
 }
+
+export const defHasId = (def: QueryDef) => {
+  return 'id' in def.target || 'alias' in def.target
+}
+
+export const displayTarget = (def: QueryDef) => {
+  // ids
+  const hasId = defHasId(def)
+  const hasIds = 'ids' in def.target
+
+  const target =
+    hasId || hasIds
+      ? def.schema.type +
+        ':' +
+        (hasIds
+          ? // @ts-ignore
+            `ids(${def.target?.ids?.length ?? 0})`
+          : 'alias' in def.target
+            ? safeStringify(def.target.alias, 30)
+            : // @ts-ignore
+              def.target.id)
+      : def.schema.type
+  return target
+}

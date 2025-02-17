@@ -28,6 +28,8 @@ import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
+import { validateRange } from './validation.js'
+import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 
 export { QueryByAliasObj }
 
@@ -169,7 +171,13 @@ export class QueryBranch<T> {
     return this
   }
 
-  range(offset: number, limit: number): T {
+  range(offset: number, limit: number = DEF_RANGE_PROP_LIMIT): T {
+    if (validateRange(this.def, offset, limit)) {
+      this.def.range.offset = 0
+      this.def.range.limit = DEF_RANGE_PROP_LIMIT
+      // @ts-ignore
+      return this
+    }
     this.def.range.offset = offset
     this.def.range.limit = limit
     // @ts-ignore
@@ -247,10 +255,13 @@ class GetPromise extends Promise<BasedQueryResponse> {
 }
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
+  skipValidation = false
+
   constructor(
     db: DbClient,
     type: string,
     id?: QueryByAliasObj | number | Uint32Array | (QueryByAliasObj | number)[],
+    skipValidation?: boolean, // for internal use
   ) {
     const target: QueryTarget = {
       type,
@@ -264,15 +275,13 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
           // TODO ADD MULTI ALIAS
           // @ts-ignore
           target.ids = id
-          // target.ids = new Uint32Array(id)
-          // target.ids.sort()
         } else {
           target.id = id
         }
       }
     }
 
-    const def = createQueryDef(db, QueryDefType.Root, target)
+    const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
 
     super(db, def)
   }

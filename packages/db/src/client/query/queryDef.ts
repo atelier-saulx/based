@@ -18,9 +18,10 @@ import {
   validateType,
 } from './validation.js'
 
-const createEmptySharedDef = () => {
+const createEmptySharedDef = (skipValidation: boolean) => {
   const q: Partial<QueryDefShared> = {
     errors: [],
+    skipValidation,
     filter: { conditions: new Map(), size: 0 },
     range: { offset: 0, limit: 0 },
     lang: langCodesMap.get('none'),
@@ -44,8 +45,9 @@ export const createQueryDef = (
   db: DbClient,
   type: QueryDefType,
   target: QueryTarget,
+  skipValidation: boolean,
 ): QueryDef => {
-  const queryDef = createEmptySharedDef()
+  const queryDef = createEmptySharedDef(skipValidation)
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges

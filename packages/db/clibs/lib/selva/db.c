@@ -117,6 +117,20 @@ void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, 
     selva_expire_insert(&db->expiring, &token->token);
 }
 
+static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t arg)
+{
+    struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+    node_type_t type = (node_type_t)(arg.v >> 32);
+    node_id_t node_id = (uint32_t)(arg.v & 0xFFFFFFFF);
+
+    return type == token->type && node_id == token->node_id;
+}
+
+void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id)
+{
+    selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
+}
+
 static void expire_cb(struct SelvaExpireToken *tok)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
@@ -133,6 +147,13 @@ static void expire_cb(struct SelvaExpireToken *tok)
     selva_free(token);
 }
 
+static void cancel_cb(struct SelvaExpireToken *tok)
+{
+    struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+
+    selva_free(token);
+}
+
 void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
 {
     selva_expire_tick(&db->expiring, now);
@@ -145,6 +166,7 @@ struct SelvaDb *selva_db_create(void)
     SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
     ref_save_map_init(&db->schema.ref_save_map);
     db->expiring.expire_cb = expire_cb;
+    db->expiring.cancel_cb = cancel_cb;
     selva_expire_init(&db->expiring);
 
     return db;
