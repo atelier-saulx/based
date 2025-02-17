@@ -55,6 +55,8 @@ export const ERR_SORT_ENOENT = 14
 export const ERR_SORT_TYPE = 15
 export const ERR_SORT_ORDER = 16
 export const ERR_SORT_WRONG_TARGET = 17
+export const ERR_RANGE_INVALID_OFFSET = 18
+export const ERR_RANGE_INVALID_LIMIT = 19
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -86,9 +88,32 @@ const messages = {
     `Sort: incorrect qeury target "${displayTarget(p)}"`,
   [ERR_SORT_ORDER]: (p) =>
     `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
+  [ERR_RANGE_INVALID_OFFSET]: (p) =>
+    `Range: incorrect offset "${safeStringify(p)}"`,
+  [ERR_RANGE_INVALID_LIMIT]: (p) =>
+    `Range: incorrect limit "${safeStringify(p)}"`,
 }
 
 export type ErrorCode = keyof typeof messages
+
+export const validateRange = (def: QueryDef, offset: number, limit: number) => {
+  var r = false
+  if (typeof offset !== 'number' || offset > MAX_ID || offset < 0) {
+    def.errors.push({
+      code: ERR_RANGE_INVALID_OFFSET,
+      payload: offset,
+    })
+    r = true
+  }
+  if (typeof limit !== 'number' || limit > MAX_ID || limit < 1) {
+    def.errors.push({
+      code: ERR_RANGE_INVALID_LIMIT,
+      payload: limit,
+    })
+    r = true
+  }
+  return r
+}
 
 export const isValidId = (id: number) => {
   if (typeof id != 'number') {
@@ -112,6 +137,9 @@ export const validateVal = (
   f: Filter,
   validate: (v: any) => boolean,
 ): boolean => {
+  if (def.skipValidation) {
+    return false
+  }
   const value = f[2]
   if (Array.isArray(value)) {
     for (const v of value) {
@@ -138,6 +166,9 @@ export const validateFilter = (
   prop: PropDef | PropDefEdge,
   f: Filter,
 ) => {
+  if (def.skipValidation) {
+    return false
+  }
   const t = prop.typeIndex
   const op = f[1].operation
   if (t === REFERENCES || t === REFERENCE) {
@@ -288,6 +319,7 @@ export const validateSort = (
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   const propDef = def.props[field]
+
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -295,6 +327,7 @@ export const validateSort = (
     })
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
+
   if (!propDef) {
     def.errors.push({
       code: ERR_SORT_ENOENT,
@@ -357,6 +390,9 @@ export const validateAlias = (
 }
 
 export const validateId = (def: QueryDef, id: any): number => {
+  if (def.skipValidation) {
+    return id
+  }
   if (!isValidId(id)) {
     def.errors.push({
       code: ERR_TARGET_INVAL_ID,
@@ -398,7 +434,11 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
       return new Uint32Array([])
     }
   }
-  // pretty heavy if it are a lot...
+
+  if (def.skipValidation) {
+    return ids
+  }
+
   for (let i = 0; i < ids.length; i++) {
     const id = ids[i]
     if (typeof id !== 'number' || id == 0 || id > MAX_ID) {
@@ -458,39 +498,3 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   stringProps: Buffer.from([]),
   stringPropsLoop: [],
 }
-
-// export const checkMaxIdsPerQuery = (
-//   ids: (number | QueryByAliasObj)[],
-// ): void => {
-//   if (ids.length > MAX_IDS_PER_QUERY) {
-//     throw new Error(`The number of IDs cannot exceed ${MAX_IDS_PER_QUERY}.`)
-//   }
-// }
-
-// export const checkMaxBufferSize = (buf: Buffer): void => {
-//   if (buf.byteLength > MAX_BUFFER_SIZE) {
-//     throw new Error(
-//       `The buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
-//         `Crrent size is ${buf.byteLength} bytes.`,
-//     )
-//   }
-// }
-
-// export const checkTotalBufferSize = (bufers: Buffer[]): void => {
-//   let totalSize = 0
-//   for (const buffer of bufers) {
-//     totalSize += buffer.byteLength
-//     if (totalSize > MAX_BUFFER_SIZE) {
-//       throw new Error(
-//         `The total buffer size exceeds the maximum threshold of ${MAX_BUFFER_SIZE} bytes.` +
-//           `Crrent size is ${totalSize} bytes.`,
-//       )
-//     }
-//   }
-// }
-
-// // ------------------------------
-
-// export const includeDoesNotExist = (def: QueryDef, field: string) => {
-//   throw new Error(`Incorrect include field provided to query "${field}")`)
-// }

@@ -25,9 +25,14 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       const p = path[i]
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
-          def.edges = createQueryDef(db, QueryDefType.Edge, {
-            ref: def.target.propDef,
-          })
+          def.edges = createQueryDef(
+            db,
+            QueryDefType.Edge,
+            {
+              ref: def.target.propDef,
+            },
+            def.skipValidation,
+          )
           def.edges.lang = def.lang
         }
         const edgeProp = def.edges.props[p]

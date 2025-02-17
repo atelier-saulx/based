@@ -408,4 +408,17 @@ await test('query', async (t) => {
   await throws(async () => {
     await db.query('user', 1).sort('drip').get().inspect()
   }, true)
+
+  await db.query('user', []).sort('drip').get().inspect()
+
+  await db.query('user', [1, 2, 3]).sort('drip').get().inspect()
+
+  await throws(async () => {
+    await db.query('user').sort('drip').range(0, -10).get().inspect()
+  }, true)
+
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').sort('drip').range('derp', -100).get().inspect()
+  }, true)
 })

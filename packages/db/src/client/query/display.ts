@@ -370,7 +370,8 @@ export const displayTarget = (def: QueryDef) => {
       ? def.schema.type +
         ':' +
         (hasIds
-          ? 'ids'
+          ? // @ts-ignore
+            `ids(${def.target?.ids?.length ?? 0})`
           : 'alias' in def.target
             ? safeStringify(def.target.alias, 30)
             : // @ts-ignore

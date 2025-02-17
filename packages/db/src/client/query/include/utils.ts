@@ -37,6 +37,7 @@ const createRefQueryDef = (
       type: t.inverseTypeName,
       propDef: t,
     },
+    def.skipValidation,
   )
   defRef.lang = def.lang
   def.references.set(t.prop, defRef)
@@ -59,9 +60,14 @@ export const createOrGetEdgeRefQueryDef = (
   def: QueryDef,
   t: PropDefEdge,
 ) => {
-  def.edges ??= createQueryDef(db, QueryDefType.Edge, {
-    ref: t,
-  })
+  def.edges ??= createQueryDef(
+    db,
+    QueryDefType.Edge,
+    {
+      ref: t,
+    },
+    def.skipValidation,
+  )
   def.edges.props ??= {}
   def.edges.props[t.name] = t
   const refDef = createOrGetRefQueryDef(db, def.edges, t)

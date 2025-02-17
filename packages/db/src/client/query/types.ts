@@ -72,6 +72,7 @@ export type QueryDefShared = {
   search: null | QueryDefSearch
   sort: null | QueryDefSort
   reverseProps: any
+  skipValidation: boolean
   range: {
     offset: number
     limit: number
