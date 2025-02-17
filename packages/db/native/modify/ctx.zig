@@ -3,6 +3,8 @@ const c = @import("../c.zig");
 const selva = @import("../selva.zig");
 const types = @import("../types.zig");
 const sort = @import("../db/sort.zig");
+const std = @import("std");
+const read = @import("../utils.zig").read;
 
 pub const ModifyCtx = struct {
     field: u8,
@@ -15,4 +17,16 @@ pub const ModifyCtx = struct {
     node: ?db.Node,
     fieldType: types.Prop,
     db: *db.DbCtx,
+    typeInfo: []u8,
 };
+
+pub fn getIdOffset(ctx: ModifyCtx, typeId: u16) u32 {
+    var j: usize = 0;
+    while (j < ctx.typeInfo.len) : (j += 10) {
+        const tId = read(u16, ctx.typeInfo, j);
+        if (tId == typeId) {
+            return read(u32, ctx.typeInfo, j + 2);
+        }
+    }
+    return 0;
+}

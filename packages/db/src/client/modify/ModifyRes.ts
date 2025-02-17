@@ -97,12 +97,14 @@ export class ModifyState {
   #typeId: number
   tmpId: number
   error?: ModifyError
-  promises?: Promise<any>[];
+  promises?: Promise<any>[]
+  resolved?: boolean;
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
 
   getId(offsets: Record<number, number>) {
+    this.resolved = true
     if (this.update) {
       return this.tmpId
     }

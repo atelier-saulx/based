@@ -85,27 +85,39 @@ await test('client server', async (t) => {
             prop: 'others',
           },
         },
+        favoriteUser: {
+          ref: 'user',
+          prop: 'favoriteUser',
+        },
       },
     },
   })
 
-  const fred = await client1.create('user', {
+  const fred = client1.create('user', {
     name: 'fred',
   })
 
-  const marie = await client1.create('user', {
+  const marie = client1.create('user', {
     name: 'marie',
   })
 
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],
+    favoriteUser: marie,
   })
 
-  console.log(
-    '-------',
-    res,
-    { fred, marie },
+  deepEqual(
     await client1.query('user', res).include('*', '**').get().toObject(),
+    {
+      id: 1,
+      age: 0,
+      name: 'youzi',
+      others: [
+        { id: 3, age: 0, name: 'fred' },
+        { id: 4, age: 0, name: 'marie' },
+      ],
+      favoriteUser: { id: 4, age: 0, name: 'marie' },
+    },
   )
 })
