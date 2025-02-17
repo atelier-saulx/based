@@ -1,5 +1,5 @@
 const db = @import("../db/db.zig");
-const read = @import("../utils.zig").read;
+const util = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
@@ -8,6 +8,9 @@ const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 const std = @import("std");
+const lib = @import("../lib.zig");
+
+const read = util.read;
 
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
