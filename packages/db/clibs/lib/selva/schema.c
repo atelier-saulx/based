@@ -562,7 +562,7 @@ void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
             fs->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaFieldsSchema *efc_schema = fs->edge_constraint._fields_schema;
-            if (efc_schema && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF)) {
+            if (efc_schema && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
                 schemabuf_deinit_fields_schema(efc_schema);
                 selva_free(efc_schema);
             }
