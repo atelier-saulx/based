@@ -448,7 +448,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = `${picocolors.red('QueryError')} [${safeStringify(def.target)}]\n`
+    let name = `${picocolors.red('QueryError')} [${displayTarget(def)}]\n`
     for (const err of def.errors) {
       name += `  ${messages[err.code](err.payload)}\n`
     }
