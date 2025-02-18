@@ -15,13 +15,14 @@ const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
 pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u32, q, i + 5);
+    const prop: Prop = @enumFromInt(q[2]);
+    const valueSize = read(u32, q, i + 6);
     const next = i + 11 + valueSize;
     const query = q[i + 11 .. next];
-    const prop: Prop = @enumFromInt(q[11]);
-    const mainLen = read(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 9]);
-    const start = read(u16, q, i + 1);
+    const mainLen = read(u16, q, i + 4);
+    const op: Op = @enumFromInt(q[i + 10]);
+    const start = read(u16, q, i + 2);
+
     var value: []u8 = undefined;
     if (mainLen != 0) {
         value = v[start + 1 .. v[start] + start + 1];
@@ -55,12 +56,12 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
 }
 
 pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    var valueSize = read(u32, q, i + 5);
-    const start = read(u16, q, i + 1);
-    const mainLen = read(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 9]);
+    const prop: Prop = @enumFromInt(q[2]);
+    const start = read(u16, q, i + 2);
+    const mainLen = read(u16, q, i + 4);
+    var valueSize = read(u32, q, i + 6);
+    const op: Op = @enumFromInt(q[i + 10]);
     const next = i + 11 + valueSize;
-    const prop: Prop = @enumFromInt(q[11]);
     const query = q[i + 11 .. next];
     var value: []u8 = undefined;
     var pass = true;
@@ -70,9 +71,7 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         value = v;
     }
 
-    // if ((prop == Prop.STRING or prop == Prop.BINARY) and mainLen == 0) {
-    //     value = value[0 .. value.len - 4];
-    // }
+    // std.debug.print("DERP {any}\n", .{q});
 
     if (op == Op.equal) {
         if (prop == Prop.TEXT) {
@@ -116,9 +115,10 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
 }
 
 pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u16, q, i + 1);
-    const repeat = read(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 5]);
+    // PROP
+    const valueSize = read(u16, q, i + 2);
+    const repeat = read(u16, q, i + 4);
+    const op: Op = @enumFromInt(q[i + 6]);
     const next = 10 + valueSize * repeat;
     if (op == Op.equal) {
         const refType = q[i + 7];
@@ -147,8 +147,8 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
 }
 
 pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u16, q, i + 1);
-    const op: Op = @enumFromInt(q[i + 5]);
+    const valueSize = read(u16, q, i + 2);
+    const op: Op = @enumFromInt(q[i + 6]);
     const repeat = read(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
@@ -172,10 +172,12 @@ pub inline fn default(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const valueSize = read(u16, q, i + 1);
-    const start = read(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 5]);
-    const prop: Prop = @enumFromInt(q[i + 6]);
+    const prop: Prop = @enumFromInt(q[i + 1]);
+    // std.debug.print("DEF {any}\n", .{prop});
+
+    const valueSize = read(u16, q, i + 2);
+    const start = read(u16, q, i + 4);
+    const op: Op = @enumFromInt(q[i + 6]);
     const query = q[i + 7 .. i + valueSize + 7];
     const next = 7 + valueSize;
     if (op == Op.equal) {
@@ -209,10 +211,10 @@ pub inline fn orFixed(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const valueSize = read(u16, q, i + 1);
-    const start = read(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 5]);
-    const prop: Prop = @enumFromInt(q[i + 6]);
+    const prop: Prop = @enumFromInt(q[i + 1]);
+    const valueSize = read(u16, q, i + 2);
+    const start = read(u16, q, i + 4);
+    const op: Op = @enumFromInt(q[i + 6]);
     const repeat = read(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;

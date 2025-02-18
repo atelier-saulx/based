@@ -2,6 +2,115 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 
+await test('single', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+  const status = ['error', 'danger', 'ok', '🦄']
+
+  await db.putSchema({
+    types: {
+      org: {
+        props: {
+          status,
+          name: 'string',
+          x: 'number',
+          orgs: {
+            items: {
+              ref: 'org',
+              prop: '_o',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const org = await db.create('org', {
+    status: 'ok',
+    name: 'hello',
+    x: 10,
+  })
+
+  const org2 = await db.create('org', {
+    status: 'ok',
+    name: 'x',
+  })
+
+  await db.create('org', {
+    name: 'hello ???????',
+    orgs: [org, org2],
+  })
+
+  const x = [10, 20]
+
+  deepEqual((await db.query('org').filter('x', '=', x).get()).toObject(), [
+    {
+      id: 1,
+      status: 'ok',
+      x: 10,
+      name: 'hello',
+    },
+  ])
+  deepEqual(
+    (await db.query('org').filter('orgs', '=', [org, org2]).get()).toObject(),
+    [
+      {
+        id: 3,
+        status: undefined,
+        x: 0,
+        name: 'hello ???????',
+      },
+    ],
+  )
+  deepEqual(
+    (await db.query('org').filter('status', '=', 'error').get()).toObject(),
+    [],
+  )
+  deepEqual(
+    (await db.query('org').filter('status', '=', 'ok').get()).toObject(),
+    [
+      {
+        id: 1,
+        status: 'ok',
+        x: 10,
+        name: 'hello',
+      },
+      {
+        id: 2,
+        status: 'ok',
+        x: 0,
+        name: 'x',
+      },
+    ],
+  )
+  deepEqual(
+    (await db.query('org').filter('name', 'has', '0').get()).toObject(),
+    [],
+  )
+  deepEqual(
+    (await db.query('org').filter('name', 'has', 'hello').get()).toObject(),
+    [
+      {
+        id: 1,
+        status: 'ok',
+        x: 10,
+        name: 'hello',
+      },
+      {
+        id: 3,
+        status: undefined,
+        x: 0,
+        name: 'hello ???????',
+      },
+    ],
+  )
+})
+
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,

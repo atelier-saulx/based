@@ -89,10 +89,12 @@ export const createFixedFilterBuffer = (
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
-    buf.writeUInt16LE(size, 2)
-    buf.writeUInt16LE(start, 4)
-    buf[6] = ctx.operation
-    buf[7] = prop.typeIndex
+
+    buf[2] = prop.typeIndex
+    buf.writeUInt16LE(size, 3)
+    buf.writeUInt16LE(start, 5)
+    buf[7] = ctx.operation
+    // buf[7] = prop.typeIndex
     buf.writeUInt16LE(len, 8)
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
@@ -116,10 +118,10 @@ export const createFixedFilterBuffer = (
     buf = Buffer.allocUnsafe(8 + size)
     buf[0] = ctx.type
     buf[1] = MODE_DEFAULT
-    buf.writeUInt16LE(size, 2)
-    buf.writeUInt16LE(start, 4)
-    buf[6] = ctx.operation
-    buf[7] = prop.typeIndex
+    buf[2] = prop.typeIndex
+    buf.writeUInt16LE(size, 3)
+    buf.writeUInt16LE(start, 5)
+    buf[7] = ctx.operation
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
   }
   return buf
