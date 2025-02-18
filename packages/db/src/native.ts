@@ -5,6 +5,16 @@ var compressor: any = null
 var decompressor: any = null
 
 export default {
+  historyCreate(pathname: string, entryByteSize: number) {
+    // entryByteSize u16
+    // const len = 2 + Buffer.byteLength(pathname)
+    // const buf = Buffer.allocUnsafe(len)
+    // buf[0] = entryByteSize
+    // buf[1] = entryByteSize >>> 8
+    // buf.write(pathname, 2)
+    return db.historyCreate(pathname, entryByteSize)
+  },
+
   workerCtxInit: (): void => {
     return db.workerCtxInit()
   },

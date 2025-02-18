@@ -122,7 +122,9 @@ Good: ${counts.success}
 `
 
   if (counts.errors > 0) {
-    msg += `\nFailed tests: \n${Array.from(errors).join('\n\n')}`
+    if (!process.env.TEST_TO_RUN) {
+      msg = `Failed tests: \n${Array.from(errors).join('\n\n')}\n${msg}`
+    }
     console.log(picocolors.red(msg))
   } else if (counts.success) {
     console.log(picocolors.green(msg))
