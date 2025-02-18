@@ -425,4 +425,8 @@ await test('query', async (t) => {
     // @ts-ignore
     await db.query('user').sort('drip').range('derp', -100).get().inspect()
   }, true)
+
+  await throws(async () => {
+    await db.query('user').locale('az').get().inspect()
+  }, true)
 })

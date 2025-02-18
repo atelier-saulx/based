@@ -58,6 +58,7 @@ export const ERR_SORT_ORDER = 16
 export const ERR_SORT_WRONG_TARGET = 17
 export const ERR_RANGE_INVALID_OFFSET = 18
 export const ERR_RANGE_INVALID_LIMIT = 19
+export const ERR_INVALID_LANG = 20
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -94,6 +95,7 @@ const messages = {
     `Range: incorrect offset "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
     `Range: incorrect limit "${safeStringify(p)}"`,
+  [ERR_INVALID_LANG]: (p) => `Invalid locale "${p}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -315,13 +317,22 @@ export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
   })
 }
 
+export const validateLocale = (def: QueryDef, lang: string) => {
+  const schema = def.schema
+  if (!(lang in schema.locales)) {
+    def.errors.push({
+      code: ERR_INVALID_LANG,
+      payload: lang,
+    })
+  }
+}
+
 export const validateSort = (
   def: QueryDef,
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   const propDef = def.props[field]
-
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -329,7 +340,6 @@ export const validateSort = (
     })
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
-
   if (!propDef) {
     def.errors.push({
       code: ERR_SORT_ENOENT,
@@ -340,23 +350,19 @@ export const validateSort = (
       order,
     }
   }
-
   const type = propDef.typeIndex
-
   if (type === TEXT || type === REFERENCES || type === REFERENCE) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
   }
-
   if ('id' in def.target || 'alias' in def.target) {
     def.errors.push({
       code: ERR_SORT_WRONG_TARGET,
       payload: def,
     })
   }
-
   return {
     prop: def.props[field],
     order,
