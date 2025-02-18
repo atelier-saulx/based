@@ -44,6 +44,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
         types.Prop.UINT64,
         types.Prop.BOOLEAN,
         types.Prop.ENUM,
+        types.Prop.CARDINALITY,
         => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
@@ -181,6 +182,7 @@ pub fn createSortIndex(
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
     var node = db.getFirstNode(typeEntry);
     var first = true;
+    var data: []u8 = undefined;
     while (node != null) {
         if (first) {
             first = false;
@@ -190,7 +192,11 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
+        if (prop == types.Prop.CARDINALITY) {
+            data = db.getCardinalityField(node.?, fieldSchema);
+        } else {
+            data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
+        }
         insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {
@@ -299,6 +305,7 @@ pub fn remove(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             removeFromIntIndex(i64, data, sortIndex, node);
         },
+        types.Prop.CARDINALITY => removeFromIntIndex(u32, data, sortIndex, node),
         types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => removeFromIntIndex(u64, data, sortIndex, node),
@@ -344,6 +351,7 @@ pub fn insert(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             insertIntIndex(i64, data, sortIndex, node);
         },
+        types.Prop.CARDINALITY => insertIntIndex(u32, data, sortIndex, node),
         types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),

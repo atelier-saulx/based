@@ -3,8 +3,10 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const types = @import("../types.zig");
+
+const read = utils.read;
 
 pub const TypeId = u16;
 pub const Node = *selva.SelvaNode;
@@ -104,6 +106,17 @@ pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
         return errors.SelvaError.SELVA_EINVAL;
     }
     return s.?;
+}
+
+pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
+    utils.debugPrint("getCardinalityField\n", .{});
+
+    const stored = selva.selva_fields_get_selva_string(node, selvaFieldSchema);
+    if (stored == null) {
+        return @as([*]u8, undefined)[0..0];
+    }
+    const countDistinct = selva.hll_count(@ptrCast(stored));
+    return countDistinct[0..4];
 }
 
 pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
