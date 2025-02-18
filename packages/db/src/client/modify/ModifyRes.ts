@@ -83,6 +83,7 @@ export class ModifyState {
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
+    this.update = update
     if (opts?.locale) {
       this.locale = langCodesMap.get(opts.locale)
     }
