@@ -29,7 +29,6 @@ export function writeText(
       const langCode: LangCode =
         langCodesMap.get(lang) || langCodesMap.get('en') // TODO use proper fallback
       const s = value[lang]
-
       const err = writeString(langCode, s, ctx, def, t, res.tmpId, modifyOp)
       if (err) {
         return err

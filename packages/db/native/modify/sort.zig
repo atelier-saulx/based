@@ -5,6 +5,7 @@ const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
+const types = @import("../types.zig");
 
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u16, data, 0);
@@ -14,7 +15,15 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     }
     while (i < len) : (i += 1) {
         const field = data[i + 2];
-        const sI = sort.getSortIndex(ctx.typeSortIndex, field, 0);
+
+        // HANDLE UNDEFINED FOR TEXT! INCLUDE IN BUF
+        // ALSO INCLUDE HLL / TEXT TYPEINDEX
+        const sI = sort.getSortIndex(
+            ctx.typeSortIndex,
+            field,
+            0,
+            types.LangCode.NONE,
+        );
         if (sI != null) {
             sort.insert(ctx.db, sI.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
         }

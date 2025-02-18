@@ -559,17 +559,54 @@ await test('sort', async (t) => {
   })
 
   const id1 = await db.create('dialog', {
-    fun: { en: '3', fi: '1' },
+    fun: { en: '3 en', fi: '1' },
   })
   const id2 = await db.create('dialog', {
-    fun: { en: '2', fi: '2' },
+    fun: { en: '2 en', fi: '2' },
   })
   const id3 = await db.create('dialog', {
-    fun: { en: '1', fi: '3' },
+    fun: { en: '1 en', fi: '3' },
   })
+  const id4 = await db.create('dialog', {})
 
-  // pass option to sort locale
-  await db.query('dialog').locale('fi').sort('fun').get().inspect()
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
+    ],
+  )
+
+  deepEqual(await db.query('dialog').sort('fun.fi', 'desc').get().toObject(), [
+    { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
+    { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
+    { id: 1, fun: { en: '3 en', fi: '1', it: '' } },
+    { id: 4, fun: { en: '', it: '', fi: '' } },
+  ])
+
+  deepEqual(
+    await db.query('dialog').locale('en').sort('fun', 'desc').get().toObject(),
+    [
+      { id: 1, fun: '3 en' },
+      { id: 2, fun: '2 en' },
+      { id: 3, fun: '1 en' },
+      { id: 4, fun: '' },
+    ],
+  )
 
   await db.drain()
 })

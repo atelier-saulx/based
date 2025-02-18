@@ -139,7 +139,9 @@ export class DbServer {
   sortIndexes: {
     [type: number]: {
       [field: number]: {
-        [start: number]: SortIndex
+        [start: number]: {
+          [lang: number]: SortIndex
+        }
       }
     }
   }
@@ -156,13 +158,15 @@ export class DbServer {
         for (const type in this.sortIndexes) {
           for (const field in this.sortIndexes[type]) {
             for (const start in this.sortIndexes[type][field]) {
-              const sortIndex = this.sortIndexes[type][field][start]
-              sortIndex.cnt /= 2
-              if (sortIndex.cnt < 1) {
-                native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
-                delete this.sortIndexes[type][field][start]
-              } else {
-                remaining = true
+              for (const lang in this.sortIndexes[type][field][start]) {
+                const sortIndex = this.sortIndexes[type][field][start][lang]
+                sortIndex.cnt /= 2
+                if (sortIndex.cnt < 1) {
+                  native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
+                  delete this.sortIndexes[type][field][start][lang]
+                } else {
+                  remaining = true
+                }
               }
             }
           }
@@ -174,19 +178,30 @@ export class DbServer {
     }
   }
 
-  createSortIndex(type: string, field: string, lang?: LangName): SortIndex {
+  createSortIndex(
+    type: string,
+    field: string,
+    lang: LangName = 'none',
+  ): SortIndex {
     const t = this.schemaTypesParsed[type]
     const prop = t.props[field]
+    const langCode =
+      langCodesMap.get(lang ?? Object.keys(this.schema?.locales ?? 'en')[0]) ??
+      0
 
     let types = this.sortIndexes[t.id]
     if (!types) {
       types = this.sortIndexes[t.id] = {}
     }
-    let fields = types[prop.prop]
-    if (!fields) {
-      fields = types[prop.prop] = {}
+    let f = types[prop.prop]
+    if (!f) {
+      f = types[prop.prop] = {}
     }
-    let sortIndex = fields[prop.start]
+    let fields = f[prop.start]
+    if (!fields) {
+      fields = f[prop.start] = {}
+    }
+    let sortIndex = fields[langCode]
     if (sortIndex) {
       return sortIndex
     }
@@ -198,15 +213,13 @@ export class DbServer {
     buf.writeUint16LE(prop.start, 3)
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
-    buf[8] = langCodesMap.get(
-      lang ?? Object.keys(this.schema?.locales ?? 'en')[0] ?? 'en',
-    )
+    buf[8] = langCode
     sortIndex = new SortIndex(buf, this.dbCtxExternal)
-    fields[prop.start] = sortIndex
+    fields[langCode] = sortIndex
     return sortIndex
   }
 
-  destroySortIndex(type: string, field: string): any {
+  destroySortIndex(type: string, field: string, lang: LangName = 'none'): any {
     const t = this.schemaTypesParsed[type]
     const prop = t.props[field]
 
@@ -220,25 +233,40 @@ export class DbServer {
     }
     let sortIndex = fields[prop.start]
     if (sortIndex) {
-      const buf = Buffer.allocUnsafe(5)
+      // [2 type] [1 field] [2 start] [1 lang]
+
+      const buf = Buffer.allocUnsafe(6)
       buf.writeUint16LE(t.id, 0)
       buf[2] = prop.prop
       buf.writeUint16LE(prop.start, 3)
+      buf[5] =
+        langCodesMap.get(
+          lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
+        ) ?? 0
       native.destroySortIndex(buf, this.dbCtxExternal)
       delete fields[prop.start]
     }
   }
 
-  getSortIndex(typeId: number, field: number, start: number): SortIndex {
+  getSortIndex(
+    typeId: number,
+    field: number,
+    start: number,
+    lang: number,
+  ): SortIndex {
     let types = this.sortIndexes[typeId]
     if (!types) {
       types = this.sortIndexes[typeId] = {}
     }
-    let fields = types[field]
-    if (!fields) {
-      fields = types[field] = {}
+    let f = types[field]
+    if (!f) {
+      f = types[field] = {}
     }
-    return fields[start]
+    let fields = f[start]
+    if (!fields) {
+      fields = f[start] = {}
+    }
+    return fields[lang]
   }
 
   migrateSchema(
@@ -288,10 +316,12 @@ export class DbServer {
     buf[7] = prop.typeIndex
     buf[8] = lang
     // put in modify stuff
-    const sortIndex = new SortIndex(buf, this.dbCtxExternal)
+    const sortIndex =
+      this.getSortIndex(typeId, prop.prop, prop.start, lang) ??
+      new SortIndex(buf, this.dbCtxExternal)
     const types = this.sortIndexes[typeId]
     const fields = types[field]
-    fields[start] = sortIndex
+    fields[start][lang] = sortIndex
     return sortIndex
   }
 
@@ -490,7 +520,7 @@ export class DbServer {
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]
           const start = sort.readUint16LE(2 + 1)
-          let sortIndex = this.getSortIndex(typeId, field, start)
+          let sortIndex = this.getSortIndex(typeId, field, start, 0)
           if (!sortIndex) {
             if (this.processingQueries) {
               return new Promise((resolve) => {

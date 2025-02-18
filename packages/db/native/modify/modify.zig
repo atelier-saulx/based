@@ -59,20 +59,25 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.field = operation[0];
                 i = i + 3;
 
-                if (ctx.field != 0) {
-                    ctx.currentSortIndex = dbSort.getSortIndex(ctx.typeSortIndex, ctx.field, 0);
-                } else {
-                    ctx.currentSortIndex = null;
-                }
-
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
                 // add prop
-                ctx.fieldType = @enumFromInt(operation[1]); //@enumFromInt(ctx.fieldSchema.?.*.type);
 
+                ctx.fieldType = @enumFromInt(operation[1]);
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;
                 } else {
                     offset = 5;
+                }
+
+                if (ctx.field != 0) {
+                    ctx.currentSortIndex = dbSort.getSortIndex(
+                        ctx.typeSortIndex,
+                        ctx.field,
+                        0,
+                        types.LangCode.NONE,
+                    );
+                } else {
+                    ctx.currentSortIndex = null;
                 }
             },
             types.ModOp.DELETE_NODE => {

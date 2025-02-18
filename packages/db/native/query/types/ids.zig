@@ -29,7 +29,7 @@ pub fn sort(
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
     const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
-    const lang: types.LangCode = @enumFromInt(sortBuffer[7]);
+    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
     start = read(u16, sortBuffer, 2);
     len = read(u16, sortBuffer, 4);
     // --------------------------------

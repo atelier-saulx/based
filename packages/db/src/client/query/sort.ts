@@ -10,7 +10,7 @@ export const createSortBuffer = (sort: QueryDefSort) => {
   buf.writeUint16LE(sort.prop.start, 3)
   buf.writeUint16LE(sort.prop.len, 5)
   buf[7] = sort.lang
-
+  // console.info({ sort, buf: new Uint8Array(buf) })
   //[LANG]
   return buf
 }

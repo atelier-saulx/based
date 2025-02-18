@@ -40,11 +40,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
-
             const hll = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
-
             selva.hll_init(hll, 14, true);
-
             var i: usize = 4;
             while (i < len * 8) {
                 const hash = read(u64, data, i);
@@ -72,6 +69,17 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 }
             } else if (ctx.currentSortIndex != null) {
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
+            } else if (ctx.fieldType == types.Prop.TEXT) {
+                // --- find
+                const sIndex = sort.getSortIndex(
+                    ctx.db.sortIndexes.get(ctx.typeId),
+                    ctx.field,
+                    0,
+                    @enumFromInt(slice[0]),
+                );
+                if (sIndex) |s| {
+                    sort.insert(ctx.db, s, slice, ctx.node.?);
+                }
             }
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);

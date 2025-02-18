@@ -23,14 +23,23 @@ pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..SIZE];
 
 // key of main sort indexes is START, key of buffSort is field
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
+pub const TextSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
 pub const FieldSortIndexes = std.AutoHashMap(u8, *SortIndexMeta);
 
 pub const TypeIndex = struct {
+    text: TextSortIndexes,
     field: FieldSortIndexes,
     main: MainSortIndexes,
 };
 
 pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
+
+inline fn getTextKey(
+    field: u8,
+    lang: types.LangCode,
+) u16 {
+    return @as(u16, @bitCast([_]u8{ field, @intFromEnum(lang) }));
+}
 
 fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
@@ -111,11 +120,12 @@ pub fn destroySortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info)
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
-    // [2 type] [1 field] [2 start]
+    // [2 type] [1 field] [2 start] [1 lang]
     const typeId = read(u16, buf, 0);
     const field = buf[2];
     const start = read(u16, buf, 3);
-    destroySortIndex(dbCtx, typeId, field, start);
+    const lang = read(u8, buf, 5);
+    destroySortIndex(dbCtx, typeId, field, start, @enumFromInt(lang));
     return null;
 }
 
@@ -155,16 +165,19 @@ fn getOrCreateFromCtx(
         typeIndexes.?.* = .{
             .field = FieldSortIndexes.init(dbCtx.allocator),
             .main = MainSortIndexes.init(dbCtx.allocator),
+            .text = TextSortIndexes.init(dbCtx.allocator),
         };
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
     const tI: *TypeIndex = typeIndexes.?;
-    sortIndex = getSortIndex(typeIndexes, field, start);
+    sortIndex = getSortIndex(typeIndexes, field, start, lang);
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
         sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang);
         if (field == 0) {
             try tI.main.put(start, sortIndex.?);
+        } else if (prop == types.Prop.TEXT) {
+            try tI.text.put(getTextKey(field, lang), sortIndex.?);
         } else {
             try tI.field.put(field, sortIndex.?);
         }
@@ -219,12 +232,18 @@ pub fn createSortIndex(
     return sortIndex;
 }
 
-pub fn destroySortIndex(dbCtx: *db.DbCtx, typeId: db.TypeId, field: u8, start: u16) void {
+pub fn destroySortIndex(
+    dbCtx: *db.DbCtx,
+    typeId: db.TypeId,
+    field: u8,
+    start: u16,
+    lang: types.LangCode,
+) void {
     const typeIndexes = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
         return;
     }
-    const sortIndex = getSortIndex(typeIndexes, field, start);
+    const sortIndex = getSortIndex(typeIndexes, field, start, lang);
     if (sortIndex) |index| {
         const tI: *TypeIndex = typeIndexes.?;
         if (field == 0) {
@@ -232,7 +251,6 @@ pub fn destroySortIndex(dbCtx: *db.DbCtx, typeId: db.TypeId, field: u8, start: u
         } else {
             _ = tI.field.remove(field);
         }
-
         selva.selva_sort_destroy(index.index);
         dbCtx.allocator.destroy(index);
     }
@@ -242,12 +260,15 @@ pub fn getSortIndex(
     typeSortIndexes: ?*TypeIndex,
     field: u8,
     start: u16,
+    lang: types.LangCode,
 ) ?*SortIndexMeta {
     if (typeSortIndexes == null) {
         return null;
     }
     const tI = typeSortIndexes.?;
-    if (field == 0) {
+    if (lang != types.LangCode.NONE) {
+        return tI.text.get(getTextKey(field, lang));
+    } else if (field == 0) {
         return tI.main.get(start);
     } else {
         return tI.field.get(field);
@@ -344,6 +365,16 @@ pub fn insert(
     return switch (prop) {
         types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
             selva.selva_sort_insert_i64(index, data[start], node);
+        },
+        types.Prop.TEXT => {
+            if (data.len > 0) {
+                var iter = db.textIterator(data, sortIndex.langCode);
+                while (iter.next()) |s| {
+                    selva.selva_sort_insert_buf(index, parseString(dbCtx, s), SIZE, node);
+                }
+            } else {
+                selva.selva_sort_insert_buf(index, parseString(dbCtx, data), SIZE, node);
+            }
         },
         types.Prop.STRING => {
             const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
