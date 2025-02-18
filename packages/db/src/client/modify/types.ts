@@ -24,6 +24,6 @@ export type ModifyOp =
 
 export type ModifyOpts = {
   unsafe?: boolean
-  i18n?: LangName
+  locale?: LangName
   overwrite?: boolean
 }

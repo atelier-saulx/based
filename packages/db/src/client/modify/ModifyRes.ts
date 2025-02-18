@@ -83,14 +83,14 @@ export class ModifyState {
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
     if (opts) {
-      if (opts.i18n) {
-        this.i18n = langCodesMap.get(opts.i18n)
+      if (opts.locale) {
+        this.locale = langCodesMap.get(opts.locale)
       }
     }
   }
 
   subMarkers: SubscriptionMarkersCheck | false
-  i18n: LangCode
+  locale: LangCode
 
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']

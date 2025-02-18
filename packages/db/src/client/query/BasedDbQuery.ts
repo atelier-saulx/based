@@ -321,7 +321,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  i18n(locale: LangName) {
+  locale(locale: LangName) {
     this.def.lang = langCodesMap.get(locale) ?? 0
     return this
   }
