@@ -350,6 +350,13 @@ export const validateSort = (
     })
   }
 
+  if ('id' in def.target || 'alias' in def.target) {
+    def.errors.push({
+      code: ERR_SORT_WRONG_TARGET,
+      payload: def,
+    })
+  }
+
   return {
     prop: def.props[field],
     order,
