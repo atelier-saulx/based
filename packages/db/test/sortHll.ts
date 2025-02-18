@@ -1,6 +1,6 @@
 import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from 'node:assert'
+import { deepEqual, notStrictEqual } from 'node:assert'
 import { setTimeout as setTimeoutAsync } from 'timers/promises'
 
 await test('sortCardinality', async (t) => {
@@ -53,14 +53,39 @@ await test('sortCardinality', async (t) => {
     brazilians: 'marco', // add logic to deal with update without create
   })
 
-  await db
-    .query('article')
-    .sort('count', 'desc')
-    .include('count')
-    .get()
-    .inspect()
+  deepEqual(
+    (
+      await db.query('article').sort('count', 'desc').include('count').get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        count: 7,
+      },
+      {
+        id: 2,
+        count: 1,
+      },
+    ],
+    'create, with standalone values and array, include sort asc',
+  )
 
-  await db.query('article').sort('count', 'asc').include('derp').get().inspect()
+  deepEqual(
+    (
+      await db.query('article').sort('count', 'asc').include('derp').get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        derp: 100,
+      },
+      {
+        id: 1,
+        derp: 1,
+      },
+    ],
+    'sort a not included cardinality field',
+  )
 
   await db.update('article', myArticle, {
     count: 'lala',
@@ -68,12 +93,28 @@ await test('sortCardinality', async (t) => {
 
   await db.drain()
 
-  await db
-    .query('article')
-    .sort('count', 'asc')
-    .include('count', 'brazilians')
-    .get()
-    .inspect()
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .sort('count', 'asc')
+        .include('count', 'brazilians')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        count: 2,
+        brazilians: 1,
+      },
+      {
+        id: 1,
+        count: 7,
+        brazilians: 1,
+      },
+    ],
+    'update, standalone, include, sort asc',
+  )
 
   const names = [
     'João',
@@ -101,27 +142,51 @@ await test('sortCardinality', async (t) => {
 
   await db.drain()
 
-  await db
-    .query('article')
-    .sort('brazilians', 'desc')
-    .include('count', 'brazilians')
-    .get()
-    .inspect()
+  notStrictEqual(
+    (
+      await db
+        .query('article')
+        .sort('brazilians', 'desc')
+        .include('count', 'brazilians')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        count: 2,
+        brazilians: 992078,
+      },
+      {
+        id: 1,
+        count: 7,
+        brazilians: 1,
+      },
+    ],
+    'update 1M distinct values, include, sort desc',
+  )
 
   db.delete('article', test)
 
-  await db
-    .query('article')
-    .sort('brazilians', 'desc')
-    .include('count', 'brazilians')
-    .get()
-    .inspect()
-
-  //   deepEqual((await db.query('article').include('count').get()).toObject(), [
-  //     {
-  //       id: 1,
-  //       myUniqueValuesCount: 1,
-  //       myUniqueValuesCountFromArray: 0,
-  //     },
-  //   ])
+  notStrictEqual(
+    (
+      await db
+        .query('article')
+        .sort('brazilians', 'desc')
+        .include('count', 'brazilians')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        count: 2,
+        brazilians: 998760,
+      },
+      {
+        id: 1,
+        count: 7,
+        brazilians: 1,
+      },
+    ],
+    'delete a register',
+  )
 })
