@@ -32,8 +32,6 @@ pub fn default(
     const start = read(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start, lang);
 
-    std.debug.print("derp {any} \n ", .{sortBuffer});
-
     if (sIndex == null) {
         std.log.err(
             "Err exec query (zig) no sort index available for query type: {any} field: {any} start: {any} lang: {any}  \n",
