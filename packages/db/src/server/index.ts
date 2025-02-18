@@ -1,7 +1,13 @@
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { getPropType, StrictSchema } from '@based/schema'
+import {
+  getPropType,
+  LangCode,
+  langCodesMap,
+  LangName,
+  StrictSchema,
+} from '@based/schema'
 import { PropDef, SchemaTypeDef } from './schema/types.js'
 import { genRootId } from './schema/utils.js'
 import { updateTypeDefs } from './schema/typeDef.js'
@@ -168,7 +174,7 @@ export class DbServer {
     }
   }
 
-  createSortIndex(type: string, field: string): SortIndex {
+  createSortIndex(type: string, field: string, lang?: LangName): SortIndex {
     const t = this.schemaTypesParsed[type]
     const prop = t.props[field]
 
@@ -185,12 +191,16 @@ export class DbServer {
       return sortIndex
     }
     const buf = Buffer.allocUnsafe(8)
-    // size [2 type] [1 field] [2 start] [2 len]
+    // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
+    // call createSortBuf here
     buf.writeUint16LE(t.id, 0)
     buf[2] = prop.prop
     buf.writeUint16LE(prop.start, 3)
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
+    buf[8] = langCodesMap.get(
+      lang ?? Object.keys(this.schema?.locales ?? 'en')[0] ?? 'en',
+    )
     sortIndex = new SortIndex(buf, this.dbCtxExternal)
     fields[prop.start] = sortIndex
     return sortIndex
@@ -247,8 +257,9 @@ export class DbServer {
     typeId: number,
     field: number,
     start: number,
+    lang: number,
   ): SortIndex {
-    const buf = Buffer.allocUnsafe(8)
+    const buf = Buffer.allocUnsafe(9)
     buf.writeUint16LE(typeId, 0)
     buf[2] = field
     buf.writeUint16LE(start, 3)
@@ -275,6 +286,7 @@ export class DbServer {
     }
     buf.writeUint16LE(prop.len, 5)
     buf[7] = prop.typeIndex
+    buf[8] = lang
     // put in modify stuff
     const sortIndex = new SortIndex(buf, this.dbCtxExternal)
     const types = this.sortIndexes[typeId]
@@ -485,7 +497,12 @@ export class DbServer {
                 this.queryQueue.set(resolve, buf)
               })
             }
-            sortIndex = this.createSortIndexBuffer(typeId, field, start)
+            sortIndex = this.createSortIndexBuffer(
+              typeId,
+              field,
+              start,
+              sort[sort.byteLength - 1],
+            )
           }
           // increment
           sortIndex.cnt++

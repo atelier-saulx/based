@@ -170,8 +170,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
           buf.set(search, 17 + filterSize + sortSize)
         }
 
-        console.log('flap {any} \n', { searchSize })
-
         result.push(buf)
       }
     }

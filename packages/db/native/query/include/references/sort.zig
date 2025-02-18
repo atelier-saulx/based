@@ -30,8 +30,15 @@ pub fn sortedReferences(
     const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
     start = read(u16, sortBuffer, 3);
     len = read(u16, sortBuffer, 5);
+    const langCode: types.LangCode = @enumFromInt(sortBuffer[7]);
 
-    var metaSortIndex = dbSort.createSortIndexMeta(start, len, sortProp, sortBuffer[0] == 1) catch {
+    var metaSortIndex = dbSort.createSortIndexMeta(
+        start,
+        len,
+        sortProp,
+        sortBuffer[0] == 1,
+        langCode,
+    ) catch {
         return result;
     };
     const refsCnt = queryTypes.getRefsCnt(isEdge, refs);

@@ -337,6 +337,9 @@ export const validateSort = (
     })
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
+
+  // IF ! FIX
+
   if (!propDef) {
     def.errors.push({
       code: ERR_SORT_ENOENT,
@@ -345,15 +348,18 @@ export const validateSort = (
     return {
       prop: EMPTY_ALIAS_PROP_DEF,
       order,
+      lang: def.lang,
     }
   }
   const type = propDef.typeIndex
-  if (type === TEXT || type === REFERENCES || type === REFERENCE) {
+  if (type === REFERENCES || type === REFERENCE) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
   }
+
+  // add propDef LANG
   if ('id' in def.target || 'alias' in def.target) {
     def.errors.push({
       code: ERR_SORT_WRONG_TARGET,
@@ -363,6 +369,7 @@ export const validateSort = (
   return {
     prop: def.props[field],
     order,
+    lang: def.lang,
   }
 }
 

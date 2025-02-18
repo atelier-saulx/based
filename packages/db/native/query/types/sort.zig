@@ -27,8 +27,11 @@ pub fn default(
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
+    // const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
+
     const start = read(u16, sortBuffer, 2);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
+
     if (sIndex == null) {
         std.log.err(
             "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",
@@ -36,6 +39,7 @@ pub fn default(
         );
         return;
     }
+
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     if (desc) {

@@ -13,6 +13,7 @@ pub const SortIndexMeta = struct {
     start: u16,
     len: u16, // len can be added somewhere else
     index: *selva.SelvaSortCtx,
+    langCode: types.LangCode,
 };
 
 const SIZE = 16;
@@ -58,7 +59,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
-        types.Prop.STRING => {
+        types.Prop.STRING, types.Prop.TEXT => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {
@@ -85,6 +86,7 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     const start = read(u16, buf, 3);
     const len = read(u16, buf, 5);
     const typeIndex = buf[7];
+    const lang = buf[8];
     const index = try createSortIndex(
         dbCtx,
         typeId,
@@ -92,6 +94,7 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
         start,
         len,
         @enumFromInt(typeIndex),
+        @enumFromInt(lang),
         true,
         false,
     );
@@ -121,6 +124,7 @@ pub fn createSortIndexMeta(
     len: u16,
     prop: types.Prop,
     desc: bool,
+    lang: types.LangCode,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(prop, desc);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
@@ -129,6 +133,7 @@ pub fn createSortIndexMeta(
         .start = start,
         .index = sortCtx,
         .prop = prop,
+        .langCode = lang,
     };
     return s;
 }
@@ -140,6 +145,7 @@ fn getOrCreateFromCtx(
     start: u16,
     len: u16,
     prop: types.Prop,
+    lang: types.LangCode,
     comptime desc: bool,
 ) !*SortIndexMeta {
     var sortIndex: ?*SortIndexMeta = undefined;
@@ -156,7 +162,7 @@ fn getOrCreateFromCtx(
     sortIndex = getSortIndex(typeIndexes, field, start);
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc);
+        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang);
         if (field == 0) {
             try tI.main.put(start, sortIndex.?);
         } else {
@@ -173,14 +179,27 @@ pub fn createSortIndex(
     start: u16,
     len: u16,
     prop: types.Prop,
+    lang: types.LangCode,
     comptime defrag: bool,
     comptime desc: bool,
 ) !*SortIndexMeta {
-    const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, field, start, len, prop, desc);
+    const sortIndex = try getOrCreateFromCtx(
+        dbCtx,
+        typeId,
+        field,
+        start,
+        len,
+        prop,
+        lang,
+        desc,
+    );
+
     const typeEntry = try db.getType(dbCtx, typeId);
+
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
     var node = db.getFirstNode(typeEntry);
     var first = true;
+
     while (node != null) {
         if (first) {
             first = false;
@@ -196,6 +215,7 @@ pub fn createSortIndex(
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
+
     return sortIndex;
 }
 
