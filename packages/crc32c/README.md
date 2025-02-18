@@ -47,7 +47,7 @@ npm run build
 
 ## API
 
-`crc32c(value: string | UInt16Array): number`
+`crc32c(value: string | UInt16Array | Buffer): number`
 
 Computes the CRC32C checksum for the given buffer.
 
