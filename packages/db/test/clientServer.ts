@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
@@ -72,4 +73,51 @@ await test('client server', async (t) => {
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
+
+  await client1.putSchema({
+    types: {
+      user: {
+        name: 'string',
+        age: 'number',
+        others: {
+          items: {
+            ref: 'user',
+            prop: 'others',
+          },
+        },
+        favoriteUser: {
+          ref: 'user',
+          prop: 'favoriteUser',
+        },
+      },
+    },
+  })
+
+  const fred = client1.create('user', {
+    name: 'fred',
+  })
+
+  const marie = client1.create('user', {
+    name: 'marie',
+  })
+
+  const res = await client1.update('user', youzi, {
+    name: 'youzi',
+    others: [fred, marie],
+    favoriteUser: marie,
+  })
+
+  deepEqual(
+    await client1.query('user', res).include('*', '**').get().toObject(),
+    {
+      id: 1,
+      age: 0,
+      name: 'youzi',
+      others: [
+        { id: 3, age: 0, name: 'fred' },
+        { id: 4, age: 0, name: 'marie' },
+      ],
+      favoriteUser: { id: 4, age: 0, name: 'marie' },
+    },
+  )
 })

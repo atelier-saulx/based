@@ -57,7 +57,7 @@ export class ModifyCtx {
       this.dirtyTypes.size * 10 -
       this.dirtyRanges.size * 8
   }
-  getData() {
+  getData(lastIds: Record<number, number>) {
     const rangesSize = this.dirtyRanges.size
     const typesSize = this.dirtyTypes.size
     const data = this.buf.subarray(
@@ -69,6 +69,7 @@ export class ModifyCtx {
     i += 2
     for (const [id, startId] of this.dirtyTypes) {
       const lastId = this.db.schemaTypesParsedById[id].lastId
+      lastIds[id] = lastId
       data.writeUint16LE(id, i)
       i += 2
       data.writeUint32LE(startId, i)
@@ -91,12 +92,28 @@ export const flushBuffer = (db: DbClient) => {
 
   if (ctx.len) {
     const d = Date.now()
-    const data = ctx.getData()
+    const lastIds = {}
+    const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
     const queue = ctx.queue
 
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
       resCtx.offsets = offsets
+
+      for (const typeId in lastIds) {
+        if (typeId in offsets) {
+          const lastId = lastIds[typeId] + offsets[typeId]
+          const def = db.schemaTypesParsedById[typeId]
+          const delta = lastId - def.lastId
+          if (delta > 0) {
+            def.lastId += delta
+            def.total += delta
+          }
+        } else {
+          console.warn('no offset returned, very wrong')
+        }
+      }
+
       db.writeTime += Date.now() - d
       if (queue.size) {
         flushPromise.then(() => {

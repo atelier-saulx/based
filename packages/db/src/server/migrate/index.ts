@@ -2,7 +2,11 @@ import { StrictSchema } from '@based/schema'
 import { BasedDb } from '../../index.js'
 import { dirname, join } from 'path'
 import { tmpdir } from 'os'
-import { Worker, MessageChannel } from 'node:worker_threads'
+import {
+  Worker,
+  MessageChannel,
+  receiveMessageOnPort,
+} from 'node:worker_threads'
 import native from '../../native.js'
 import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
@@ -129,7 +133,14 @@ export const migrate = async (
   }
 
   if (!abort()) {
-    fromDbServer.putSchema(toSchema, true)
+    let msg: any
+    let schema: any
+    let schemaTypesParsed: any
+    while ((msg = receiveMessageOnPort(port1))) {
+      ;[schema, schemaTypesParsed] = msg.message
+    }
+    fromDbServer.schema = schema
+    fromDbServer.schemaTypesParsed = schemaTypesParsed
     fromDbServer.dbCtxExternal = toCtx
     toDb.server.dbCtxExternal = fromCtx
   }
@@ -142,5 +153,6 @@ export const migrate = async (
   await Promise.all(promises)
 
   fromDbServer.onSchemaChange?.(fromDbServer.schema)
+
   return fromDbServer.schema
 }

@@ -21,6 +21,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
+    const idOffset = Modify.getIdOffset(ctx.*, refTypeId);
     var i: usize = 9;
 
     _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
@@ -37,9 +38,25 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     // 4 bytes buffer
     while (i < len) : (i += 5) {
         const op = data[i];
-        const hasEdgeData = op == 1 or op == 2;
-        const hasIndex = op == 2 or op == 3;
-        const id = read(u32, data, i + 1);
+        // 0 no edge, no index, real id
+        // 1 edge, no index, real id
+        // 2 edge, index, real id
+        // 3 no edge, index, real id
+
+        // 4 no edge, no index, tmp id
+        // 5 edge, no index, tmp id
+        // 6 edge, index, tmp id
+        // 7 no edge, index, tmp id
+
+        const hasEdgeData = op == 1 or op == 2 or op == 5 or op == 6;
+        const hasIndex = op == 2 or op == 3 or op == 6 or op == 7;
+        const isTmpId: bool = op == 4 or op == 5 or op == 6 or op == 7;
+        var id = read(u32, data, i + 1);
+
+        if (isTmpId) {
+            id = id + idOffset;
+        }
+
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
         const node = try db.upsertNode(id, refTypeEntry);
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
