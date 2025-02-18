@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const config = @import("config");
 // const native_endian = builtin.cpu.arch.endian();
 // Only little endian for us
 
@@ -37,4 +38,10 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
     const size = if (T == f32 or T == u32 or T == i32) 4 else if (T == f64 or T == u64 or T == i64) 8 else if (T == u16 or T == i16) 2 else if (T == u8 or T == i8) 1;
     const value: T = @bitCast(buffer[offset..][0..size].*);
     return value;
+}
+
+pub fn debugPrint(comptime format: []const u8, args: anytype) void {
+    if (config.enable_debug) {
+        std.debug.print(format, args);
+    }
 }

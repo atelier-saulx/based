@@ -10,6 +10,12 @@ import os, { platform } from 'os'
 
 const args = process.argv.slice(2)
 const isRelease = args.includes('release')
+const isDebugging = args.includes('debug')
+
+let debugOption = ''
+if (isDebugging) {
+  debugOption = '-Denable_debug=true'
+}
 
 type Platform = { os: string; arch: string }
 
@@ -76,7 +82,7 @@ function buildWithZig(
 ) {
   console.log(`Building for target ${target}...`)
   execSync(
-    `zig build -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
+    `zig build ${debugOption} -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
     {
       stdio: 'inherit',
     },
