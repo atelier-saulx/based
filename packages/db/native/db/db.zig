@@ -109,8 +109,6 @@ pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
 }
 
 pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
-    utils.debugPrint("getCardinalityField\n", .{});
-
     const stored = selva.selva_fields_get_selva_string(node, selvaFieldSchema);
     if (stored == null) {
         return @as([*]u8, undefined)[0..0];
