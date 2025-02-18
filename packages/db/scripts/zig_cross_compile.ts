@@ -12,8 +12,6 @@ const args = process.argv.slice(2)
 const isRelease = args.includes('release')
 const isDebugging = args.includes('debug')
 
-console.log('-----------------------', args)
-
 let debugOption = ''
 if (isDebugging) {
   debugOption = '-Denable_debug=true'
