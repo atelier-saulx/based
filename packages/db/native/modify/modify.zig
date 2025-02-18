@@ -10,13 +10,15 @@ const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
 const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
-const read = @import("../utils.zig").read;
 const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const dbSort = @import("../db//sort.zig");
 const increment = Update.increment;
+const utils = @import("../utils.zig");
+
+const read = utils.read;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {

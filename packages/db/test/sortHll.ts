@@ -1,8 +1,9 @@
 import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
+import { setTimeout as setTimeoutAsync } from 'timers/promises'
 
-await test('hll', async (t) => {
+await test('sortCardinality', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -18,11 +19,12 @@ await test('hll', async (t) => {
       article: {
         derp: 'number',
         count: 'cardinality',
+        brazilians: 'cardinality',
       },
     },
   })
 
-  await db.create('article', {
+  let test = await db.create('article', {
     count: [
       'myCoolValue',
       'myCoolValue',
@@ -42,11 +44,13 @@ await test('hll', async (t) => {
       'lulu',
     ],
     derp: 1,
+    brazilians: 'marco',
   })
 
   let myArticle = await db.create('article', {
     count: 'myCoolValue',
     derp: 100,
+    brazilians: 'marco', // add logic to deal with update without create
   })
 
   await db
@@ -56,19 +60,60 @@ await test('hll', async (t) => {
     .get()
     .inspect()
 
-  // funciona mesmo se eu não incluir count
   await db.query('article').sort('count', 'asc').include('derp').get().inspect()
 
   await db.update('article', myArticle, {
     count: 'lala',
   })
 
-  console.log(await db.drain(), 'ms')
+  await db.drain()
 
   await db
     .query('article')
     .sort('count', 'asc')
-    .include('count')
+    .include('count', 'brazilians')
+    .get()
+    .inspect()
+
+  const names = [
+    'João',
+    'Maria',
+    'José',
+    'Ana',
+    'Paulo',
+    'Carlos',
+    'Lucas',
+    'Mariana',
+    'Fernanda',
+    'Gabriel',
+  ]
+
+  let brazos = []
+  for (let i = 0; i < 1e6; i++) {
+    brazos.push(names[Math.floor(Math.random() * names.length)] + i)
+  }
+
+  console.time('1M Distinct Brazos update')
+  await db.update('article', myArticle, {
+    brazilians: brazos,
+  })
+  console.timeEnd('1M Distinct Brazos update')
+
+  await db.drain()
+
+  await db
+    .query('article')
+    .sort('brazilians', 'desc')
+    .include('count', 'brazilians')
+    .get()
+    .inspect()
+
+  db.delete('article', test)
+
+  await db
+    .query('article')
+    .sort('brazilians', 'desc')
+    .include('count', 'brazilians')
     .get()
     .inspect()
 

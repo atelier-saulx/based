@@ -121,11 +121,7 @@ await test('hll', async (t) => {
 
   let feelings = []
   for (let i = 0; i < 1e6; i++) {
-    feelings.push(
-      xxHash64(
-        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
-      ),
-    )
+    feelings.push(feeling[Math.floor(Math.random() * (feeling.length - 1))])
   }
 
   console.log('---->', feelings.length)
