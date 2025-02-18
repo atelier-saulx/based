@@ -58,7 +58,7 @@ SELVA_EXPORT
 uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from, int64_t to, node_id_t node_id, size_t *size_out);
 
 /**
- * Free a range returned by selva_history_find_range_node().
+ * Free a range returned by selva_history_find_range() or selva_history_find_range_node().
  */
 SELVA_EXPORT
 void selva_history_free_range(uint32_t *range);
