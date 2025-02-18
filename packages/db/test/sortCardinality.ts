@@ -59,6 +59,19 @@ await test('hll', async (t) => {
   // funciona mesmo se eu não incluir count
   await db.query('article').sort('count', 'asc').include('derp').get().inspect()
 
+  await db.update('article', myArticle, {
+    count: 'lala',
+  })
+
+  console.log(await db.drain(), 'ms')
+
+  await db
+    .query('article')
+    .sort('count', 'asc')
+    .include('count')
+    .get()
+    .inspect()
+
   //   deepEqual((await db.query('article').include('count').get()).toObject(), [
   //     {
   //       id: 1,
