@@ -1,9 +1,8 @@
 import { createSortBuffer } from './sort.js'
-import { QueryByAliasObj, QueryDef, QueryDefType } from './types.js'
+import { QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
-import { ALIAS, PropDef } from '../../server/schema/types.js'
 import { DbClient } from '../index.js'
 
 const byteSize = (arr: Buffer[]) => {
@@ -13,10 +12,6 @@ const byteSize = (arr: Buffer[]) => {
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
-  // if (def.errors.length) {
-  //   return []
-  // }
-
   const result: Buffer[] = []
   const include = includeToBuffer(db, def)
 
@@ -174,6 +169,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         if (searchSize) {
           buf.set(search, 17 + filterSize + sortSize)
         }
+
+        console.log('flap {any} \n', { searchSize })
 
         result.push(buf)
       }

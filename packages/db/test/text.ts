@@ -529,3 +529,47 @@ await test('reference text', async (t) => {
     ],
   )
 })
+
+await test('sort', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    locales: {
+      en: {},
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
+    },
+    types: {
+      dialog: {
+        props: {
+          fun: {
+            type: 'text',
+          },
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('dialog', {
+    fun: { en: '3', fi: '1' },
+  })
+  const id2 = await db.create('dialog', {
+    fun: { en: '2', fi: '2' },
+  })
+  const id3 = await db.create('dialog', {
+    fun: { en: '1', fi: '3' },
+  })
+
+  // pass option to sort locale
+  await db.query('dialog').locale('fi').sort('fun').get().inspect()
+
+  await db.drain()
+})
