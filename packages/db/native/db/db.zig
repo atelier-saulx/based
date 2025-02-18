@@ -106,8 +106,13 @@ pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
     return s.?;
 }
 
-pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
-    const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
+pub fn getField(
+    typeEntry: ?Type,
+    id: u32,
+    node: Node,
+    selvaFieldSchema: FieldSchema,
+    fieldType: types.Prop,
+) []u8 {
     if (fieldType == types.Prop.ALIAS) {
         const target = if (id == 0) getNodeId(node) else id;
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
@@ -115,7 +120,6 @@ pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSc
         if (alias == null) {
             return @as([*]u8, undefined)[0..0];
         }
-        // const alias = selva.selva_get_next_alias(aliasIterator);
         var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];

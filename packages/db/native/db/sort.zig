@@ -190,7 +190,7 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
+        const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema, prop);
         insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {

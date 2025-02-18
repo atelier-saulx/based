@@ -12,9 +12,6 @@ const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
 const Mode = @import("./types.zig").Mode;
 const LangCode = @import("../../types.zig").LangCode;
-
-const getField = db.getField;
-const idToShard = db.idToShard;
 // -------------------------------------------
 // or
 // [meta = 253]  [size 2] [next 4]
@@ -167,10 +164,8 @@ pub fn filter(
                 };
                 const prop: Prop = @enumFromInt(conditions[i + 5]);
 
-                // std.debug.print("F {any}\n", .{prop});
-
                 if (prop == Prop.TEXT) {
-                    value = db.getField(typeEntry, 0, node, fieldSchema);
+                    value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -219,7 +214,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        value = db.getField(typeEntry, 0, node, fieldSchema);
+                        value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
                     if (value.len == 0 or !runCondition(ctx, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
