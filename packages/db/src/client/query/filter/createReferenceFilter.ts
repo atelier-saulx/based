@@ -11,10 +11,11 @@ export const createReferenceFilter = (
   buf = Buffer.allocUnsafe(11 + len * 8)
   buf[0] = ctx.type
   buf[1] = MODE_REFERENCE
-  buf.writeUInt16LE(8, 2)
-  buf.writeUInt16LE(len, 4)
-  buf[6] = ctx.operation
-  buf[7] = prop.typeIndex
+  buf[2] = prop.typeIndex
+  buf.writeUInt16LE(8, 3)
+  buf.writeUInt16LE(len, 5)
+  buf[7] = ctx.operation
+  // buf[7] = prop.typeIndex
   // REF TYPE (only 1 exists now...)
   buf[8] = 0
   buf.writeUInt16LE(prop.inverseTypeId, 9)

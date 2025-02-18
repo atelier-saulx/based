@@ -6,6 +6,7 @@ const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
+const history = @import("./db/history.zig");
 const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
 const sort = @import("./db/sort.zig");
@@ -81,6 +82,7 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
+    registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
     registerFunction(env, exports, "workerCtxInit", workerCtxInit) catch return null;
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;

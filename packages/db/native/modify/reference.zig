@@ -10,10 +10,17 @@ const ModifyCtx = Modify.ModifyCtx;
 const edge = @import("./edges.zig");
 
 pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
-    const hasEdges = data[0] == 1;
-    const id = read(u32, data, 1);
+    const op = data[0];
+    const hasEdges = op == 1 or op == 2;
+    const isTmpId = op == 0 or op == 3;
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
+    var id = read(u32, data, 1);
+
+    if (isTmpId) {
+        id = id + Modify.getIdOffset(ctx.*, refTypeId);
+    }
+
     const node = try db.upsertNode(id, refTypeEntry);
 
     // TODO nice to handle

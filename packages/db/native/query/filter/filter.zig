@@ -10,10 +10,8 @@ const types = @import("../include//types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
+const Mode = @import("./types.zig").Mode;
 const LangCode = @import("../../types.zig").LangCode;
-
-const getField = db.getField;
-const idToShard = db.idToShard;
 // -------------------------------------------
 // or
 // [meta = 253]  [size 2] [next 4]
@@ -164,12 +162,10 @@ pub fn filter(
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
-                // add in the filter buffer
-                // it is in there just need to get it
-                const prop: Prop = @enumFromInt(fieldSchema.type);
+                const prop: Prop = @enumFromInt(conditions[i + 5]);
 
                 if (prop == Prop.TEXT) {
-                    value = db.getField(typeEntry, 0, node, fieldSchema);
+                    value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -218,7 +214,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        value = db.getField(typeEntry, 0, node, fieldSchema);
+                        value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
                     if (value.len == 0 or !runCondition(ctx, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

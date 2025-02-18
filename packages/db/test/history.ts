@@ -1,8 +1,11 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import native from '../src/native.js'
 
-await test.skip('history', async (t) => {
+await test('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
 
   t.after(() => {
@@ -23,15 +26,25 @@ await test.skip('history', async (t) => {
             type: 'uint32',
           },
         },
-        // history: {
-        //   props: ['views', 'active'],
-        //   interval: 'second',
-        // },d
       },
     },
   })
 
-  // db.
+  const pathname = join(t.tmp, 'history')
+  const entry = Buffer.from([1, 2, 3])
+  writeFileSync(pathname, '')
+
+  native.historyCreate(pathname, entry.byteLength)
+
+  /*
+    int selva_history_init(const char *pathname, size_t bsize, struct selva_history **hist_out);
+    void selva_history_append(struct selva_history *hist, int64_t ts, node_id_t node_id, void *buf);
+    void selva_history_fsync(struct selva_history *hist);
+    uint32_t *selva_history_find_range(struct selva_history *hist, int64_t from, int64_t to, size_t *len_out);
+    void selva_history_free_range(uint32_t *range);
+    void selva_history_destroy(struct selva_history *hist);
+    uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from, int64_t to, node_id_t node_id, size_t *size_out);
+  */
 
   // await db.putSchema({
   //   types: {
@@ -55,14 +68,16 @@ await test.skip('history', async (t) => {
   //   },
   // })
 
-  const page = await db.create('page')
-  let i = 5
-  let views = 0
-  while (i--) {
-    views++
-    await db.update('page', page, { views })
-    await setTimeout(1e3)
-  }
+  // const page = await db.create('page')
+  // let i = 5
+  // let views = 0
+  // while (i--) {
+  //   views++
+  //   await db.update('page', page, { views })
+  //   await setTimeout(1e3)
+  // }
+
+  // throw new Error('ballz')
 
   // await db.query('page', page).include('views.history')
 

@@ -8,7 +8,12 @@ import { updateTypeDefs } from './schema/typeDef.js'
 import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import { CsmtNodeRange, foreachDirtyBlock, makeCsmtKey } from './tree.js'
+import {
+  CsmtNodeRange,
+  foreachDirtyBlock,
+  makeCsmtKey,
+  makeCsmtKeyFromNodeId,
+} from './tree.js'
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
@@ -405,41 +410,56 @@ export class DbServer {
     const dataLen = buf.readUint32LE(buf.length - 4)
     let typesSize = buf.readUint16LE(dataLen)
     let i = dataLen + 2
+
     while (typesSize--) {
       const typeId = buf.readUint16LE(i)
       i += 2
       const startId = buf.readUint32LE(i)
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
+
       buf.writeUint32LE(offset, i)
+
       i += 4
       const lastId = buf.readUint32LE(i)
       i += 4
-
       def.lastId = lastId + offset
       offsets[typeId] = offset
     }
+
     if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
       this.#modify(buf)
     }
+
     return offsets
   }
 
   #modify(buf: Buffer) {
     const end = buf.length - 4
     const dataLen = buf.readUint32LE(end)
-    const typesSize = buf.readUint16LE(dataLen)
+    let typesSize = buf.readUint16LE(dataLen)
     const typesLen = typesSize * 10
     const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
     const data = buf.subarray(0, dataLen)
-    let i = dataLen + 2 + typesLen
+
+    let i = dataLen + 2
+
+    while (typesSize--) {
+      const typeId = buf.readUint16LE(i)
+      const def = this.schemaTypesParsedById[typeId]
+      const key = makeCsmtKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
+      this.dirtyRanges.add(key)
+      i += 10
+    }
+
     while (i < end) {
       const key = buf.readDoubleLE(i)
       this.dirtyRanges.add(key)
       i += 8
     }
+
     native.modify(data, types, this.dbCtxExternal)
   }
 

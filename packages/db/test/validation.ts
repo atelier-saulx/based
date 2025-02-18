@@ -148,6 +148,7 @@ await test('query', async (t) => {
           friend: { ref: 'user', prop: 'friend' },
           description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
+          blap: { type: 'vector', size: 5 },
           connections: {
             items: {
               ref: 'user',
@@ -428,5 +429,22 @@ await test('query', async (t) => {
 
   await throws(async () => {
     await db.query('user').locale('az').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'blap').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').search([1, 2, 3, 4], 'blap').get().inspect()
   }, true)
 })

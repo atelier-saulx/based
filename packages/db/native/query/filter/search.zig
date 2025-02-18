@@ -304,9 +304,11 @@ pub fn search(
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
+            // Prop has to be passed....
+            const prop: Prop = @enumFromInt(fieldSchema.*.type);
             var score: u8 = 255;
             if (field == 0) {
-                const value = db.getField(typeEntry, 0, node, fieldSchema);
+                const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                 const start = read(u16, ctx.fields, j + 2);
                 const len = value[start];
                 if (len < query.len) {
@@ -322,11 +324,10 @@ pub fn search(
                     }
                 }
             } else {
-                const value = db.getField(typeEntry, 0, node, fieldSchema);
+                const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
-                const prop: Prop = @enumFromInt(fieldSchema.*.type);
                 if (prop == Prop.TEXT) {
                     const code: LangCode = @enumFromInt(ctx.fields[j + 4]);
                     var iter = db.textIterator(value, code);
@@ -372,7 +373,7 @@ pub fn searchVector(
     const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
         return MaxVectorScore;
     };
-    const value = db.getField(typeEntry, ctx.field, node, fieldSchema);
+    const value = db.getField(typeEntry, ctx.field, node, fieldSchema, Prop.VECTOR);
     if (value.len == 0) {
         return MaxVectorScore;
     }

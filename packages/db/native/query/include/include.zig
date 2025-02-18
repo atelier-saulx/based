@@ -144,12 +144,7 @@ pub fn getFields(
             value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
         } else {
             fieldSchema = try db.getFieldSchema(field, typeEntry);
-            value = db.getField(
-                typeEntry,
-                id,
-                node,
-                fieldSchema,
-            );
+            value = db.getField(typeEntry, id, node, fieldSchema, prop);
         }
 
         const valueLen = value.len;

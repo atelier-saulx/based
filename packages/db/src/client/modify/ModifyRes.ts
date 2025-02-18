@@ -75,21 +75,22 @@ export class ModifyState {
     tmpId: number,
     db: DbClient,
     subMarkers: SubscriptionMarkersCheck | false,
-    opts?: ModifyOpts,
+    opts: ModifyOpts,
+    update = false,
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
-    if (opts) {
-      if (opts.locale) {
-        this.locale = langCodesMap.get(opts.locale)
-      }
+    this.update = update
+    if (opts?.locale) {
+      this.locale = langCodesMap.get(opts.locale)
     }
   }
 
   subMarkers: SubscriptionMarkersCheck | false
+  update: boolean
   locale: LangCode
 
   #buf: ModifyCtx
@@ -97,12 +98,17 @@ export class ModifyState {
   #typeId: number
   tmpId: number
   error?: ModifyError
-  promises?: Promise<any>[];
+  promises?: Promise<any>[]
+  resolved?: boolean;
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
 
   getId(offsets: Record<number, number>) {
+    this.resolved = true
+    if (this.update) {
+      return this.tmpId
+    }
     const offset = offsets[this.#typeId] || 0
     return this.tmpId + offset
   }

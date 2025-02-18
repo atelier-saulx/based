@@ -201,19 +201,21 @@ function appendRefs(
     const ref = refs[i]
     let id: number
     let index: number
-
+    let isTmpId: boolean
     if (typeof ref === 'object') {
       if (ref instanceof ModifyState) {
         if (ref.error) {
           return ref.error
         }
         id = ref.tmpId
+        isTmpId = !ref.resolved
       } else if (ref.id instanceof ModifyState) {
         if (ref.id.error) {
           return ref.id.error
         }
         id = ref.id.tmpId
         index = ref.$index
+        isTmpId = !ref.id.resolved
       } else if (ref.id > 0) {
         id = ref.id
         index = ref.$index
@@ -231,7 +233,7 @@ function appendRefs(
         if (ctx.len + 9 > ctx.max) {
           return RANGE_ERR
         }
-        ctx.buf[ctx.len++] = 1
+        ctx.buf[ctx.len++] = isTmpId ? 5 : 1
         ctx.buf[ctx.len++] = id
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
@@ -240,7 +242,7 @@ function appendRefs(
         if (ctx.len + 13 > ctx.max) {
           return RANGE_ERR
         }
-        ctx.buf[ctx.len++] = 2
+        ctx.buf[ctx.len++] = isTmpId ? 6 : 2
         ctx.buf[ctx.len++] = id
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
@@ -267,7 +269,7 @@ function appendRefs(
       if (ctx.len + 5 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = 0
+      ctx.buf[ctx.len++] = isTmpId ? 4 : 0
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
@@ -276,7 +278,7 @@ function appendRefs(
       if (ctx.len + 9 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = 3
+      ctx.buf[ctx.len++] = isTmpId ? 7 : 3
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
@@ -326,6 +328,9 @@ function putRefs(
     } else if (ref instanceof ModifyState) {
       if (ref.error) {
         return ref.error
+      }
+      if (!ref.resolved) {
+        break
       }
       ref = ref.tmpId
       ctx.buf[ctx.len++] = ref
