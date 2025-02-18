@@ -10,6 +10,7 @@ const types = @import("../include//types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
+const Mode = @import("./types.zig").Mode;
 const LangCode = @import("../../types.zig").LangCode;
 
 const getField = db.getField;
@@ -164,9 +165,9 @@ pub fn filter(
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
-                // add in the filter buffer
-                // it is in there just need to get it
-                const prop: Prop = @enumFromInt(fieldSchema.type);
+                const prop: Prop = @enumFromInt(conditions[i + 5]);
+
+                // std.debug.print("F {any}\n", .{prop});
 
                 if (prop == Prop.TEXT) {
                     value = db.getField(typeEntry, 0, node, fieldSchema);

@@ -11,16 +11,10 @@ import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './types.js'
 // [meta = 254] [field] [typeId 2] [size 2]
 // -------------------------------------------
 // conditions normal
-// field, [size 2]
-// [or = 0] [size 2] [start 2], [op] [typeIndex], value[size]
 // -------------------------------------------
 // conditions or fixed
-// field, [size 2]
-// [or = 1] [size 2] [start 2] [op] [typeIndex], [repeat 2], value[size] value[size] value[size]
 // -------------------------------------------
 // conditions or variable
-// field, [size 2]
-// [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
 const writeConditions = (
@@ -31,6 +25,7 @@ const writeConditions = (
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
+  // result[lasWritten + 1] = typeIndex
   lastWritten++
   const sizeIndex = lastWritten
   lastWritten += 2

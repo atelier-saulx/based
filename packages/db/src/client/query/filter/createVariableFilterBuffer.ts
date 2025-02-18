@@ -2,7 +2,6 @@ import {
   ALIAS,
   PropDef,
   PropDefEdge,
-  STRING,
   TEXT,
   VECTOR,
 } from '../../../server/schema/types.js'
@@ -16,15 +15,10 @@ import {
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
   FilterCtx,
-  VECTOR_DOT_PRODUCT,
-  VECTOR_EUCLIDEAN_DIST,
-  VECTOR_COSTINE_SIMILARITY,
-  VECTOR_MANHATTAN_DIST,
   getVectorFn,
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
-import { parseFilterValue } from './parseFilterValue.js'
 import { crc32 } from '../../crc32.js'
 
 const DEFAULT_SCORE = Buffer.from(new Float32Array([0.5]).buffer)
@@ -39,7 +33,6 @@ const parseValue = (
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
-
   if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
     if (!(val instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
@@ -50,7 +43,6 @@ const parseValue = (
       : DEFAULT_SCORE
     val = Buffer.concat([Buffer.from(val), Buffer.from([fn]), score])
   }
-
   if (
     val instanceof Uint8Array ||
     typeof value === 'string' ||
@@ -70,12 +62,11 @@ const parseValue = (
   if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
-
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
     // @ts-ignore
     val = Buffer.concat([val, Buffer.from([ctx.opts.score ?? 2])])
   }
-  // @ts-ignore TODO FDN-576
+  // @ts-ignore
   return val
 }
 
@@ -110,7 +101,6 @@ export const createVariableFilterBuffer = (
     val = parseValue(value, prop, ctx, lang)
   }
 
-  // -------------------- PUT VARIABLES HERE
   if (
     ctx.operation === EQUAL ||
     ctx.operation === HAS ||
@@ -153,8 +143,6 @@ export const createVariableFilterBuffer = (
     } else {
       buf = writeVarFilter(mode, val, ctx, prop, prop.start, prop.len)
     }
-  } else {
-    console.log('OP NOT SUPPORTED YET =>', ctx)
   }
   return buf
 }
@@ -171,13 +159,14 @@ function writeVarFilter(
   const buf = Buffer.allocUnsafe(12 + size)
   buf[0] = ctx.type
   buf[1] = mode
-  buf.writeUInt16LE(start, 2)
-  buf.writeUint16LE(len, 4)
-  buf.writeUint32LE(size, 6)
-  buf[10] = ctx.operation
-  buf[11] = prop.typeIndex
+  buf[2] = prop.typeIndex
+  buf.writeUInt16LE(start, 3)
+  buf.writeUint16LE(len, 5)
+  buf.writeUint32LE(size, 7)
+  buf[11] = ctx.operation
   // need to pas LANG FROM QUERY
   // need to set on 12 if TEXT
   buf.set(Buffer.from(val), 12)
+
   return buf
 }
