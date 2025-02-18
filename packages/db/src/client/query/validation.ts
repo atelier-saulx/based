@@ -58,6 +58,10 @@ export const ERR_SORT_ORDER = 16
 export const ERR_SORT_WRONG_TARGET = 17
 export const ERR_RANGE_INVALID_OFFSET = 18
 export const ERR_RANGE_INVALID_LIMIT = 19
+export const ERR_INVALID_LANG = 20
+export const ERR_SEARCH_ENOENT = 21
+export const ERR_SEARCH_TYPE = 22
+export const ERR_SEARCH_INCORRECT_VALUE = 23
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -94,33 +98,53 @@ const messages = {
     `Range: incorrect offset "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
     `Range: incorrect limit "${safeStringify(p)}"`,
+  [ERR_INVALID_LANG]: (p) => `Invalid locale "${p}"`,
+  [ERR_SEARCH_ENOENT]: (p) => `Search: field does not exist "${p}"`,
+  [ERR_SEARCH_TYPE]: (p) => `Search: incorrect type "${p.path.join('.')}"`,
+  [ERR_SEARCH_INCORRECT_VALUE]: (p) =>
+    `Search: incorrect query on field "${safeStringify(p)}"`,
 }
 
 export type ErrorCode = keyof typeof messages
 
+export const searchIncorrecQueryValue = (def: QueryDef, payload: any) => {
+  def.errors.push({ code: ERR_SEARCH_INCORRECT_VALUE, payload })
+}
+
+export const searchIncorrectType = (
+  def: QueryDef,
+  payload: PropDef | PropDefEdge,
+) => {
+  def.errors.push({ code: ERR_SEARCH_TYPE, payload })
+}
+
+export const searchDoesNotExist = (
+  def: QueryDef,
+  field: string,
+  isVector: boolean,
+) => {
+  def.errors.push({ code: ERR_SEARCH_ENOENT, payload: field })
+  if (isVector) {
+    return ERROR_VECTOR
+  }
+  return ERROR_STRING
+}
+
 export const validateRange = (def: QueryDef, offset: number, limit: number) => {
   var r = false
   if (typeof offset !== 'number' || offset > MAX_ID || offset < 0) {
-    def.errors.push({
-      code: ERR_RANGE_INVALID_OFFSET,
-      payload: offset,
-    })
+    def.errors.push({ code: ERR_RANGE_INVALID_OFFSET, payload: offset })
     r = true
   }
   if (typeof limit !== 'number' || limit > MAX_ID || limit < 1) {
-    def.errors.push({
-      code: ERR_RANGE_INVALID_LIMIT,
-      payload: limit,
-    })
+    def.errors.push({ code: ERR_RANGE_INVALID_LIMIT, payload: limit })
     r = true
   }
   return r
 }
 
 export const isValidId = (id: number) => {
-  if (typeof id != 'number') {
-    return false
-  } else if (id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
+  if (typeof id != 'number' || id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
     return false
   }
   return true
@@ -146,10 +170,7 @@ export const validateVal = (
   if (Array.isArray(value)) {
     for (const v of value) {
       if (!validate(v)) {
-        def.errors.push({
-          code: ERR_FILTER_INVALID_VAL,
-          payload: f,
-        })
+        def.errors.push({ code: ERR_FILTER_INVALID_VAL, payload: f })
         return true
       }
     }
@@ -175,10 +196,7 @@ export const validateFilter = (
   const op = f[1].operation
   if (t === REFERENCES || t === REFERENCE) {
     if (op == LIKE) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
+      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
     if (t === REFERENCE && op != EQUAL) {
@@ -193,10 +211,7 @@ export const validateFilter = (
     }
   } else if (t === VECTOR) {
     if (isNumerical(op) || op === HAS) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
+      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
     if (op === LIKE) {
@@ -205,10 +220,7 @@ export const validateFilter = (
         (opts.fn && !VECTOR_FNS.includes(opts.fn)) ||
         (opts.score != undefined && typeof opts.score !== 'number')
       ) {
-        def.errors.push({
-          code: ERR_FILTER_INVALID_OPTS,
-          payload: f,
-        })
+        def.errors.push({ code: ERR_FILTER_INVALID_OPTS, payload: f })
         return true
       }
     }
@@ -223,10 +235,7 @@ export const validateFilter = (
     }
   } else if (t === TEXT || t === STRING || t === BINARY) {
     if (isNumerical(op)) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
+      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
     if (op === LIKE) {
@@ -235,10 +244,7 @@ export const validateFilter = (
         opts.score &&
         (typeof opts.score !== 'number' || opts.score < 0 || opts.score > 255)
       ) {
-        def.errors.push({
-          code: ERR_FILTER_INVALID_OPTS,
-          payload: f,
-        })
+        def.errors.push({ code: ERR_FILTER_INVALID_OPTS, payload: f })
         return true
       }
     }
@@ -247,23 +253,16 @@ export const validateFilter = (
     }
   } else if (propIsNumerical(prop)) {
     if (op !== EQUAL && !isNumerical(op)) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
+      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
     if (validateVal(def, f, (v) => t == TIMESTAMP || typeof v === 'number')) {
       return true
     }
   } else if (t === BOOLEAN && op !== EQUAL) {
-    def.errors.push({
-      code: ERR_FILTER_OP_FIELD,
-      payload: f,
-    })
+    def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
     return true
   }
-
   return false
 }
 
@@ -315,13 +314,22 @@ export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
   })
 }
 
+export const validateLocale = (def: QueryDef, lang: string) => {
+  const schema = def.schema
+  if (!(lang in schema.locales)) {
+    def.errors.push({
+      code: ERR_INVALID_LANG,
+      payload: lang,
+    })
+  }
+}
+
 export const validateSort = (
   def: QueryDef,
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   const propDef = def.props[field]
-
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -329,7 +337,6 @@ export const validateSort = (
     })
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
-
   if (!propDef) {
     def.errors.push({
       code: ERR_SORT_ENOENT,
@@ -340,16 +347,19 @@ export const validateSort = (
       order,
     }
   }
-
   const type = propDef.typeIndex
-
   if (type === TEXT || type === REFERENCES || type === REFERENCE) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
   }
-
+  if ('id' in def.target || 'alias' in def.target) {
+    def.errors.push({
+      code: ERR_SORT_WRONG_TARGET,
+      payload: def,
+    })
+  }
   return {
     prop: def.props[field],
     order,
@@ -448,9 +458,13 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = `${picocolors.red('QueryError')} [${displayTarget(def)}]\n`
+    let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
     for (const err of def.errors) {
-      name += `  ${messages[err.code](err.payload)}\n`
+      try {
+        name += `  ${messages[err.code](err.payload)}\n`
+      } catch (e) {
+        name += `  Cannot parse error:${err.code}\n`
+      }
     }
     const err = new Error(`Query\n`)
     err.stack = name
@@ -466,6 +480,26 @@ export const EMPTY_ALIAS_PROP_DEF: PropDef = {
   len: 0,
   start: 0,
   path: ['ERROR_ALIAS'],
+}
+
+export const ERROR_STRING: PropDef = {
+  prop: 1,
+  typeIndex: STRING,
+  __isPropDef: true,
+  separate: true,
+  len: 0,
+  start: 0,
+  path: ['ERROR_STRING'],
+}
+
+export const ERROR_VECTOR: PropDef = {
+  prop: 1,
+  typeIndex: VECTOR,
+  __isPropDef: true,
+  separate: true,
+  len: 0,
+  start: 0,
+  path: ['ERROR_VECTOR'],
 }
 
 export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {

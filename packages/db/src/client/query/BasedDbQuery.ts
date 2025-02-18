@@ -28,7 +28,7 @@ import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
-import { validateRange } from './validation.js'
+import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 
 export { QueryByAliasObj }
@@ -321,7 +321,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  i18n(locale: LangName) {
+  locale(locale: LangName) {
+    validateLocale(this.def, locale)
     this.def.lang = langCodesMap.get(locale) ?? 0
     return this
   }

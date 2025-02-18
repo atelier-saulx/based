@@ -2,6 +2,11 @@ import { langCodesMap } from '@based/schema'
 import { STRING, TEXT, VECTOR } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
+import {
+  searchDoesNotExist,
+  searchIncorrecQueryValue,
+  searchIncorrectType,
+} from '../validation.js'
 
 export type Search =
   | string[]
@@ -28,13 +33,12 @@ export const vectorSearch = (
   field: string,
   opts: Omit<FilterOpts, 'lowerCase'>,
 ) => {
-  const prop = def.props[field]
-
+  let prop = def.props[field]
   if (!prop) {
-    throw new Error(`Cannot find prop ${field}`)
+    prop = searchDoesNotExist(def, field, true)
   }
   if (prop.typeIndex !== VECTOR) {
-    throw new Error('Can only search trough strings / text')
+    searchIncorrectType(def, prop)
   }
   // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
   let size = 9
@@ -53,6 +57,11 @@ export const vectorSearch = (
 export const search = (def: QueryDef, q: string, s?: Search) => {
   const bufs = []
   let blocks = 0
+
+  if (typeof q !== 'string') {
+    searchIncorrecQueryValue(def, q)
+    q = ''
+  }
   const x = q.toLowerCase().trim().split(' ')
   for (const s of x) {
     if (s) {
@@ -62,20 +71,16 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     }
   }
   bufs.unshift(makeSize(blocks, true))
-
   const query = Buffer.concat(bufs)
-
   def.search = {
     size: query.byteLength + 3,
     query,
     fields: [],
     isVector: false,
   }
-
   if (typeof s === 'string') {
     s = [s]
   }
-
   if (!s) {
     s = {}
     for (const k in def.props) {
@@ -101,15 +106,16 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
         prop = def.props[k.slice(0, -1).join('.')]
         if (prop && prop.typeIndex === TEXT) {
           lang = langCodesMap.get(k[k.length - 1])
+          // incorrect LANG
         } else {
-          throw new Error('field ' + key + ' does not exist on type')
+          prop = searchDoesNotExist(def, key, false)
         }
       } else {
-        throw new Error('field ' + key + ' does not exist on type')
+        prop = searchDoesNotExist(def, key, false)
       }
     }
     if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
-      throw new Error('Can only search trough strings / text')
+      searchIncorrectType(def, prop)
     }
     def.search.size += 5
     def.search.fields.push({

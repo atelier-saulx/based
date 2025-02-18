@@ -64,7 +64,7 @@ await test('simple', async (t) => {
     'Dialog with only id included',
   )
 
-  result = await db.query('dialog').i18n('it').include('id', 'fun').get()
+  result = await db.query('dialog').locale('it').include('id', 'fun').get()
   deepEqual(
     result.toObject(),
     [
@@ -73,12 +73,12 @@ await test('simple', async (t) => {
         fun: italy,
       },
     ],
-    'Dialog with i18n set to it',
+    'Dialog with locale set to it',
   )
 
   result = await db
     .query('dialog')
-    .i18n('it')
+    .locale('it')
     .include('id', 'fun')
     .filter('fun', 'has', 'fliperdieflaperdiefloep', { lowerCase: true })
     .get()
@@ -106,7 +106,7 @@ await test('simple', async (t) => {
 
   result = await db
     .query('dialog')
-    .i18n('it')
+    .locale('it')
     .include('id', 'fun')
     .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
@@ -118,7 +118,7 @@ await test('simple', async (t) => {
         fun: italy,
       },
     ],
-    'Filter fun with text italy and i18n set to it',
+    'Filter fun with text italy and locale set to it',
   )
 
   result = await db
@@ -150,7 +150,7 @@ await test('simple', async (t) => {
 
   result = await db
     .query('dialog')
-    .i18n('en')
+    .locale('en')
     .include('id', 'fun')
     .filter('fun.it', 'has', 'italy', { lowerCase: true })
     .get()
@@ -162,7 +162,7 @@ await test('simple', async (t) => {
         fun: '1',
       },
     ],
-    'Filter fun.it with text italy and i18n set to en',
+    'Filter fun.it with text italy and locale set to en',
   )
 
   const mrSnurfInFinland = await db.create(
@@ -170,10 +170,10 @@ await test('simple', async (t) => {
     {
       fun: 'mr snurf in finland',
     },
-    { i18n: 'fi' },
+    { locale: 'fi' },
   )
 
-  result = await db.query('dialog').include('id', 'fun').i18n('fi').get()
+  result = await db.query('dialog').include('id', 'fun').locale('fi').get()
   deepEqual(
     result.toObject(),
     [
@@ -195,10 +195,10 @@ await test('simple', async (t) => {
     {
       fun: 'mr snurf in finland!',
     },
-    { i18n: 'fi' },
+    { locale: 'fi' },
   )
 
-  result = await db.query('dialog').include('id', 'fun').i18n('fi').get()
+  result = await db.query('dialog').include('id', 'fun').locale('fi').get()
   deepEqual(
     result.toObject(),
     [
@@ -246,7 +246,7 @@ await test('simple', async (t) => {
 
   result = await db
     .query('dialog')
-    .i18n('fi')
+    .locale('fi')
     .include('id', 'fun')
     .filter('fun', '=', '3', { lowerCase: true })
     .get()
@@ -263,7 +263,7 @@ await test('simple', async (t) => {
 
   result = await db
     .query('dialog')
-    .i18n('fi')
+    .locale('fi')
     .include('id', 'fun')
     .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
     .get()
@@ -420,15 +420,15 @@ await test('search', async (t) => {
 
   result = await db
     .query('dialog')
-    .i18n('fi')
+    .locale('fi')
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
-  deepEqual(result.toObject(), [], 'Search for derp with i18n set to fi')
+  deepEqual(result.toObject(), [], 'Search for derp with locale set to fi')
 
   result = await db
     .query('dialog')
-    .i18n('en')
+    .locale('en')
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
@@ -441,7 +441,7 @@ await test('search', async (t) => {
         $searchScore: 0,
       },
     ],
-    'Search for derp with i18n set to en',
+    'Search for derp with locale set to en',
   )
 
   result = await db

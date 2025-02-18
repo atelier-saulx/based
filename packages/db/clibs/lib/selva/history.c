@@ -62,7 +62,7 @@ static const struct selva_history_hdr hdr_template = {
     .ver = HIST_VER,
 };
 
-int selva_history_init(const char *pathname, size_t bsize, struct selva_history **hist_out)
+int selva_history_create(const char *pathname, size_t bsize, struct selva_history **hist_out)
 {
     struct selva_history *hist = selva_malloc(sizeof(*hist));
 

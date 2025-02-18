@@ -1,7 +1,7 @@
 {
   "name": "@based/crc32c",
   "version": "1.0.0",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "dist/crc32c.js",
   "types": "dist/crc32c.d.ts",

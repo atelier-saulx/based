@@ -148,6 +148,7 @@ await test('query', async (t) => {
           friend: { ref: 'user', prop: 'friend' },
           description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
+          blap: { type: 'vector', size: 5 },
           connections: {
             items: {
               ref: 'user',
@@ -401,28 +402,49 @@ await test('query', async (t) => {
     await db.query('user').sort('connections').get().inspect()
   }, true)
 
-  // await throws(async () => {
-  //   await db.query('user').sort('friend').get().inspect()
-  // }, true)
+  await throws(async () => {
+    await db.query('user').sort('friend').get().inspect()
+  }, true)
 
-  // await throws(async () => {
-  //   await db.query('user').sort('description').get().inspect()
-  // }, true)
+  await throws(async () => {
+    await db.query('user').sort('description').get().inspect()
+  }, true)
 
-  // await throws(async () => {
-  //   await db.query('user', 1).sort('drip').get().inspect()
-  // }, true)
+  await throws(async () => {
+    await db.query('user', 1).sort('drip').get().inspect()
+  }, true)
 
-  // await db.query('user', []).sort('drip').get().inspect()
+  await db.query('user', []).sort('drip').get().inspect()
 
-  // await db.query('user', [1, 2, 3]).sort('drip').get().inspect()
+  await db.query('user', [1, 2, 3]).sort('drip').get().inspect()
 
-  // await throws(async () => {
-  //   await db.query('user').sort('drip').range(0, -10).get().inspect()
-  // }, true)
+  await throws(async () => {
+    await db.query('user').sort('drip').range(0, -10).get().inspect()
+  }, true)
 
-  // await throws(async () => {
-  //   // @ts-ignore
-  //   await db.query('user').sort('drip').range('derp', -100).get().inspect()
-  // }, true)
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').sort('drip').range('derp', -100).get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').locale('az').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'blap').get().inspect()
+  }, true)
+
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').search([1, 2, 3, 4], 'blap').get().inspect()
+  }, true)
 })

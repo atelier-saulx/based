@@ -16,7 +16,7 @@ export function writeText(
   // todo proper fallback as well
   if (value && typeof value !== 'object') {
     const err = writeString(
-      res.i18n ?? langCodesMap.get('en'),
+      res.locale ?? langCodesMap.get('en'),
       value,
       ctx,
       def,

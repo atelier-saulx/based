@@ -83,15 +83,15 @@ export class ModifyState {
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
-    this.update = update
-    if (opts?.i18n) {
-      this.i18n = langCodesMap.get(opts.i18n)
+    if (opts?.locale) {
+      this.locale = langCodesMap.get(opts.locale)
     }
   }
 
   subMarkers: SubscriptionMarkersCheck | false
-  i18n: LangCode
   update: boolean
+  locale: LangCode
+
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
   #typeId: number
