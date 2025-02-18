@@ -4,9 +4,11 @@ const selva = @import("../selva.zig");
 const c = @import("../c.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const errors = @import("../errors.zig");
+
+const read = utils.read;
 
 pub const SortIndexMeta = struct {
     prop: types.Prop,
@@ -182,7 +184,6 @@ pub fn createSortIndex(
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
     var node = db.getFirstNode(typeEntry);
     var first = true;
-    var data: []u8 = undefined;
     while (node != null) {
         if (first) {
             first = false;
@@ -193,6 +194,7 @@ pub fn createSortIndex(
             break;
         }
         const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema, prop);
+        utils.debugPrint("data: {any}\n", .{data});
         insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {

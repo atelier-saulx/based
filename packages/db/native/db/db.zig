@@ -134,6 +134,8 @@ pub fn getField(
         var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
+    } else if (fieldType == types.Prop.CARDINALITY) {
+        return getCardinalityField(node, selvaFieldSchema);
     }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
