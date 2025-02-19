@@ -63,7 +63,11 @@ export type QueryDefSearch =
       opts: FilterOpts
     }
 
-export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
+export type QueryDefSort = {
+  prop: PropDefEdge | PropDef
+  order: 0 | 1
+  lang: LangCode
+}
 
 export type QueryDefShared = {
   errors: QueryError[]

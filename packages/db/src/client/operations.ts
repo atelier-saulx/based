@@ -13,7 +13,7 @@ export class ModifyCtx {
   len: number = 0
   id = -1
   lastMain = -1
-  hasStringField = -1
+  hasSortField = -1
   queue = new Map<(payload: any) => void, ModifyState>()
   ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 

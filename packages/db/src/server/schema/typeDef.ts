@@ -14,6 +14,10 @@ import {
   SIZE_MAP,
   TYPE_INDEX_MAP,
   PropDefEdge,
+  STRING,
+  ALIAS,
+  CARDINALITY,
+  BINARY,
 } from './types.js'
 import { DbClient } from '../../client/index.js'
 import { DbServer } from '../index.js'
@@ -123,9 +127,21 @@ export const createSchemaTypeDef = (
     tree: {},
     total: 0,
     lastId: 0,
-    stringPropsSize: 0,
-    stringPropsLoop: [],
     main: {},
+    hasSeperateSort: false,
+    seperateSort: {
+      size: 0,
+      props: [],
+      buffer: Buffer.allocUnsafe(0),
+      bufferTmp: Buffer.allocUnsafe(0),
+    },
+    hasSeperateTextSort: false,
+    seperateTextSort: {
+      size: 0,
+      props: [],
+      buffer: Buffer.allocUnsafe(0),
+      bufferTmp: Buffer.allocUnsafe(0),
+    },
   },
   path: string[] = [],
   top: boolean = true,
@@ -138,13 +154,13 @@ export const createSchemaTypeDef = (
     }
   }
   result.locales = locales
-
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
 
   const encoder = new TextEncoder()
   const target = type.props
-  let stringFields: number = 0
+  let separateSortProps: number = 0
+  let separateSortText: number = 0
 
   for (const key in target) {
     const schemaProp = target[key]
@@ -165,8 +181,7 @@ export const createSchemaTypeDef = (
       if (
         isPropType('string', schemaProp) ||
         isPropType('alias', schemaProp) ||
-        isPropType('binary', schemaProp) ||
-        isPropType('cardinality', schemaProp) // TODO: maieutica
+        isPropType('cardinality', schemaProp)
       ) {
         if (typeof schemaProp === 'object') {
           if (schemaProp.maxBytes < 61) {
@@ -174,17 +189,11 @@ export const createSchemaTypeDef = (
           } else if ('max' in schemaProp && schemaProp.max < 31) {
             len = schemaProp.max * 2 + 1
           } else {
-            stringFields++
+            separateSortProps++
           }
         } else {
-          stringFields++
+          separateSortProps++
         }
-      } else if (
-        isPropType('text', schemaProp) ||
-        isPropType('cardinality', schemaProp)
-      ) {
-        // TODO: maieutica
-        stringFields++
       } else if (isPropType('vector', schemaProp)) {
         len = 4 * schemaProp.size
       }
@@ -336,28 +345,36 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    // result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
-
-    if (stringFields > 0) {
-      result.hasStringProp = true
+    if (separateSortProps > 0) {
+      result.hasSeperateSort = true
       let max = 0
       for (const f of result.separate) {
-        if (f.typeIndex === 11) {
+        // Does not only need to be on string can also be HLL
+        if (
+          f.typeIndex === STRING ||
+          f.typeIndex === ALIAS ||
+          f.typeIndex === CARDINALITY
+        ) {
           if (f.prop > max) {
             max = f.prop
           }
         }
       }
-      result.stringProps = Buffer.allocUnsafe(max + 1)
+
+      result.seperateSort.buffer = Buffer.allocUnsafe(max + 1)
       for (const f of result.separate) {
-        if (f.typeIndex === 11) {
-          result.stringProps[f.prop] = 1
-          result.stringPropsLoop.push(f)
-          result.stringPropsSize++
+        if (
+          f.typeIndex === STRING ||
+          f.typeIndex === ALIAS ||
+          f.typeIndex === CARDINALITY
+        ) {
+          result.seperateSort.buffer[f.prop] = 1
+          result.seperateSort.props.push(f)
+          result.seperateSort.size++
         }
       }
-      result.stringPropsCurrent = Buffer.allocUnsafe(max + 1)
-      result.stringProps.copy(result.stringPropsCurrent)
+      result.seperateSort.bufferTmp = Buffer.allocUnsafe(max + 1)
+      result.seperateSort.buffer.copy(result.seperateSort.bufferTmp)
     }
 
     for (const p in result.props) {

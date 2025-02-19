@@ -25,17 +25,21 @@ pub fn default(
     include: []u8,
     sortBuffer: []u8,
 ) !void {
-    // [order] [prop] [propType] [start] [start] [len] [len]
+    // [order] [prop] [propType] [start] [start] [len] [len] [lan]
     const field = sortBuffer[0];
+    // const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
+    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
     const start = read(u16, sortBuffer, 2);
-    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
+    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start, lang);
+
     if (sIndex == null) {
         std.log.err(
-            "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",
-            .{ typeId, field, start },
+            "Err exec query (zig) no sort index available for query type: {any} field: {any} start: {any} lang: {any}  \n",
+            .{ typeId, field, start, lang },
         );
         return;
     }
+
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     if (desc) {
@@ -85,7 +89,9 @@ pub fn search(
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
     const start = read(u16, sortBuffer, 2);
-    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
+    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
+
+    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start, lang);
     if (sIndex == null) {
         std.log.err(
             "Err exec query (zig) no sort index aviable for query type: {any} field: {any} start: {any}  \n",

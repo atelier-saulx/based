@@ -96,6 +96,7 @@ export class ModifyState {
   #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
   #typeId: number
+
   tmpId: number
   error?: ModifyError
   promises?: Promise<any>[]

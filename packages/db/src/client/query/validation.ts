@@ -33,6 +33,7 @@ import {
 } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
+import { LangCode, langCodesMap } from '@based/schema'
 
 export type QueryError = {
   code: number
@@ -56,12 +57,14 @@ export const ERR_SORT_ENOENT = 14
 export const ERR_SORT_TYPE = 15
 export const ERR_SORT_ORDER = 16
 export const ERR_SORT_WRONG_TARGET = 17
+
 export const ERR_RANGE_INVALID_OFFSET = 18
 export const ERR_RANGE_INVALID_LIMIT = 19
 export const ERR_INVALID_LANG = 20
 export const ERR_SEARCH_ENOENT = 21
 export const ERR_SEARCH_TYPE = 22
 export const ERR_SEARCH_INCORRECT_VALUE = 23
+export const ERR_SORT_LANG = 24
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -103,6 +106,7 @@ const messages = {
   [ERR_SEARCH_TYPE]: (p) => `Search: incorrect type "${p.path.join('.')}"`,
   [ERR_SEARCH_INCORRECT_VALUE]: (p) =>
     `Search: incorrect query on field "${safeStringify(p)}"`,
+  [ERR_SORT_LANG]: (p) => `Sort: invalid lang`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -329,7 +333,7 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  const propDef = def.props[field]
+  let propDef = def.props[field]
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -337,32 +341,65 @@ export const validateSort = (
     })
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
+
+  // IF ! FIX
+
+  let lang: LangCode = 0
+
   if (!propDef) {
-    def.errors.push({
-      code: ERR_SORT_ENOENT,
-      payload: field,
-    })
-    return {
-      prop: EMPTY_ALIAS_PROP_DEF,
-      order,
+    let isText = false
+    if (field.includes('.')) {
+      const path = field.split('.')
+      const x = path.slice(0, -1).join('.')
+      propDef = def.props[x]
+      if (propDef && propDef.typeIndex === TEXT) {
+        const k = path[path.length - 1]
+        lang = langCodesMap.get(k)
+        isText = true
+      }
+    }
+    if (!isText) {
+      def.errors.push({
+        code: ERR_SORT_ENOENT,
+        payload: field,
+      })
+      return {
+        prop: EMPTY_ALIAS_PROP_DEF,
+        order,
+        lang: def.lang,
+      }
     }
   }
   const type = propDef.typeIndex
-  if (type === TEXT || type === REFERENCES || type === REFERENCE) {
+  if (type === REFERENCES || type === REFERENCE) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
+  } else if (type === TEXT) {
+    if (lang === 0) {
+      lang = def.lang ?? 0
+      if (lang === 0) {
+        def.errors.push({
+          code: ERR_SORT_LANG,
+          payload: propDef,
+        })
+      }
+    }
   }
+
+  // add propDef LANG
   if ('id' in def.target || 'alias' in def.target) {
     def.errors.push({
       code: ERR_SORT_WRONG_TARGET,
       payload: def,
     })
   }
+
   return {
-    prop: def.props[field],
+    prop: propDef,
     order,
+    lang,
   }
 }
 
@@ -520,9 +557,18 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   main: {},
   separate: [],
   tree: {},
-  hasStringProp: false,
-  stringPropsSize: 0,
-  stringPropsCurrent: Buffer.from([]),
-  stringProps: Buffer.from([]),
-  stringPropsLoop: [],
+  hasSeperateSort: false,
+  seperateSort: {
+    size: 0,
+    buffer: Buffer.from([]),
+    bufferTmp: Buffer.from([]),
+    props: [],
+  },
+  hasSeperateTextSort: false,
+  seperateTextSort: {
+    size: 0,
+    buffer: Buffer.from([]),
+    bufferTmp: Buffer.from([]),
+    props: [],
+  },
 }

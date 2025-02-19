@@ -36,7 +36,6 @@ pub fn default(
             correctedForOffset -= 1;
             continue :checkItem;
         }
-
         const size = try getFields(
             node.?,
             ctx,

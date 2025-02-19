@@ -59,7 +59,6 @@ export function writeBinary(
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-
       setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }

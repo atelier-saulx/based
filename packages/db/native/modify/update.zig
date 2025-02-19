@@ -47,19 +47,15 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         },
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
-
             var i: usize = 4;
             while (i < len * 8) {
                 const currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-
                 const hash: u64 = read(u64, data, i);
                 selva.hll_add(currentData, hash);
-
                 var size: usize = undefined;
                 const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(currentData, &size));
                 const strU8: []u8 = bufPtr[0..size];
                 try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
-
                 i += 8;
             }
             return len * 8;
@@ -70,7 +66,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 std.log.err("Field update id: {d} node does not exist \n", .{ctx.id});
                 return len;
             }
-
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (ctx.typeSortIndex != null) {
@@ -78,7 +73,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
                         if (currentData == null) {
-                            currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                            currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                         }
                         const sI = entry.value_ptr.*;
                         sort.remove(ctx.db, sI, currentData.?, ctx.node.?);
@@ -86,7 +81,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
@@ -108,7 +103,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
     const slice = data[4 .. len + 4];
-    var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
         var j: usize = 0;
         while (j < len) {
@@ -244,7 +239,7 @@ pub fn incrementBuffer(
 }
 
 pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
-    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
     const start = read(u16, data, 1);
     const addition = data[3..];
@@ -260,9 +255,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     } else if (ctx.currentSortIndex != null) {
         sort.remove(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
     }
-
     const size = incrementBuffer(op, fieldType, value, addition);
-
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);

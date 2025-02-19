@@ -51,7 +51,7 @@ struct selva_history_hdr {
     uint32_t ver;
     uint32_t spare;
     uint32_t bsize; /*!< Size of event data block. */
-    uint32_t crc;
+    uint32_t crc; /*!< CRC of the header, initial CRC for the first entry. */
 } __packed;
 
 static_assert(sizeof(struct selva_history_hdr) == 2 * HIST_LINE_SIZE);
@@ -233,31 +233,34 @@ uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from
     off_t len = get_hist_len(hist);
     off_t begin = find_leftmost(hist, len, from);
     off_t end = find_rightmost(hist, len, to);
+    size_t entry_len = get_event_bsize(hist);
     uint32_t *buf;
-    off_t n = 0;
+    size_t n = 0;
 
     if (begin == -1 || end == -1) {
         return nullptr;
     }
 
-    buf = selva_malloc(end - begin + 1);
+    buf = selva_malloc((end - begin + 1) * entry_len);
 
     hist_seek(hist, begin);
     for (off_t i = begin; i <= end; i++) {
+        uint8_t *cur = (uint8_t *)buf + n * entry_len;
         size_t rd;
 
-        rd = fread(buf + n, sizeof(uint8_t), len, hist->file);
-        if (rd != (size_t)len) {
+        rd = fread(cur, sizeof(uint8_t), entry_len, hist->file);
+        if (rd != (size_t)entry_len) {
             selva_free(buf);
             return nullptr;
         }
-        if (((struct selva_history_event *)buf)->node_id == node_id) {
+        if (((struct selva_history_event *)cur)->node_id == node_id) {
             n++;
         }
     }
-    buf = selva_realloc(buf, n * len);
 
-    *size_out = n * len;
+    selva_xallocx(buf, n * entry_len, 0, 0);
+    *size_out = n * entry_len;
+
     return buf;
 }
 

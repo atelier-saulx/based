@@ -28,14 +28,17 @@ pub fn sortedReferences(
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[1];
     const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
-    if (sortBuffer.len == 7) {
-        start = read(u16, sortBuffer, 3);
-        len = read(u16, sortBuffer, 5);
-    } else {
-        start = 0;
-        len = 0;
-    }
-    var metaSortIndex = dbSort.createSortIndexMeta(start, len, sortProp, sortBuffer[0] == 1) catch {
+    start = read(u16, sortBuffer, 3);
+    len = read(u16, sortBuffer, 5);
+    const langCode: types.LangCode = @enumFromInt(sortBuffer[7]);
+
+    var metaSortIndex = dbSort.createSortIndexMeta(
+        start,
+        len,
+        sortProp,
+        sortBuffer[0] == 1,
+        langCode,
+    ) catch {
         return result;
     };
     const refsCnt = queryTypes.getRefsCnt(isEdge, refs);
@@ -47,7 +50,7 @@ pub fn sortedReferences(
             const fs = db.getFieldSchema(sortField, typeEntry) catch {
                 return result;
             };
-            const value = db.getField(typeEntry, 0, refNode, fs);
+            const value = db.getField(typeEntry, 0, refNode, fs, sortProp);
             dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
         }
     }
