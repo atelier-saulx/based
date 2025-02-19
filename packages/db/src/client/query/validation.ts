@@ -557,9 +557,18 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   main: {},
   separate: [],
   tree: {},
-  hasStringProp: false,
-  stringPropsSize: 0,
-  stringPropsCurrent: Buffer.from([]),
-  stringProps: Buffer.from([]),
-  stringPropsLoop: [],
+  hasSeperateSort: false,
+  seperateSort: {
+    size: 0,
+    buffer: Buffer.from([]),
+    bufferTmp: Buffer.from([]),
+    props: [],
+  },
+  hasSeperateTextSort: false,
+  seperateTextSort: {
+    size: 0,
+    buffer: Buffer.from([]),
+    bufferTmp: Buffer.from([]),
+    props: [],
+  },
 }

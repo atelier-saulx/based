@@ -35,7 +35,7 @@ export function writeAlias(
         return RANGE_ERR
       }
       if (modifyOp === CREATE) {
-        def.stringPropsCurrent[t.prop] = 2
+        def.seperateSort.bufferTmp[t.prop] = 2
         ctx.hasStringField++
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
