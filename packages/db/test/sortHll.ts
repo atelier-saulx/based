@@ -50,7 +50,7 @@ await test('sortCardinality', async (t) => {
   let myArticle = await db.create('article', {
     count: 'myCoolValue',
     derp: 100,
-    brazilians: 'marco', // add logic to deal with update without create
+    // Cardinality is being updated without being set/create
   })
 
   deepEqual(
@@ -167,24 +167,20 @@ await test('sortCardinality', async (t) => {
 
   db.delete('article', test)
 
-  notStrictEqual(
+  await db.drain()
+
+  deepEqual(
     (
       await db
         .query('article')
         .sort('brazilians', 'desc')
-        .include('count', 'brazilians')
+        .include('count')
         .get()
     ).toObject(),
     [
       {
         id: 2,
         count: 2,
-        brazilians: 998760,
-      },
-      {
-        id: 1,
-        count: 7,
-        brazilians: 1,
       },
     ],
     'delete a register',
