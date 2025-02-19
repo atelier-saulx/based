@@ -10,6 +10,7 @@ const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
 const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
+const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const read = @import("../utils.zig").read;
 const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
@@ -55,13 +56,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
-                // SWITCH FIELD
                 ctx.field = operation[0];
                 i = i + 3;
-
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
-                // add prop
-
                 ctx.fieldType = @enumFromInt(operation[1]);
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;
@@ -85,19 +82,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {
-                // create or get
                 ctx.id = read(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
             types.ModOp.SWITCH_NODE => {
-                // SWITCH ID/NODE
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {
-                // SWITCH TYPE
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
@@ -107,6 +101,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.ADD_EMPTY_SORT => {
                 i += try addEmptyToSortIndex(&ctx, operation) + 1;
+            },
+            types.ModOp.ADD_EMPTY_SORT_TEXT => {
+                i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
             types.ModOp.DELETE_PROP_ONLY => {
                 i += try deleteFieldOnly(&ctx) + 1;

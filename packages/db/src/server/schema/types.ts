@@ -100,6 +100,13 @@ export type PropDefEdge = Partial<PropDef> & {
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
 
+export type SchemaSortUndefinedHandler = {
+  size: number // number of text fields
+  buffer: Buffer
+  bufferTmp: Buffer // Gets reused in modify to avoid extra Alloc
+  props: PropDef[]
+}
+
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
@@ -123,12 +130,12 @@ export type SchemaTypeDef = {
     [start: string]: PropDef
   }
   tree: SchemaPropTree
-  // responseCtx: BasedNode
-  hasStringProp: boolean
-  stringPropsSize: number
-  stringProps: Buffer // size will be max field
-  stringPropsCurrent: Buffer // size will be max field
-  stringPropsLoop: PropDef[]
+
+  hasSeperateSort: boolean
+  seperateSort: SchemaSortUndefinedHandler
+  hasSeperateTextSort: boolean
+  seperateTextSort: SchemaSortUndefinedHandler
+
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>

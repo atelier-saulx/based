@@ -4,7 +4,13 @@ import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
-import { CREATE, ModifyErr, RANGE_ERR, ModifyOpts } from './types.js'
+import {
+  CREATE,
+  ModifyErr,
+  RANGE_ERR,
+  ModifyOpts,
+  ADD_EMPTY_SORT,
+} from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
@@ -52,17 +58,16 @@ const appendCreate = (
     }
   }
 
-  // if touched lets see perf impact here
-  if (def.hasStringProp) {
-    if (ctx.hasStringField !== def.stringPropsSize - 1) {
+  if (def.hasSeperateSort) {
+    if (ctx.hasStringField !== def.seperateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = 7
+      ctx.buf[ctx.len++] = ADD_EMPTY_SORT
       let sizepos = ctx.len
       ctx.len += 2
-      for (const { prop } of def.stringPropsLoop) {
-        if (def.stringPropsCurrent[prop] === 1) {
+      for (const { prop } of def.seperateSort.props) {
+        if (def.seperateSort.bufferTmp[prop] === 1) {
           if (ctx.len + 1 > ctx.max) {
             return RANGE_ERR
           }
@@ -73,9 +78,8 @@ const appendCreate = (
       ctx.buf[sizepos++] = size
       ctx.buf[sizepos] = size >>>= 8
     }
-
     if (ctx.hasStringField !== -1) {
-      def.stringProps.copy(def.stringPropsCurrent)
+      def.seperateSort.buffer.copy(def.seperateSort.bufferTmp)
     }
   }
 }

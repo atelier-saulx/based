@@ -69,8 +69,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 }
             } else if (ctx.currentSortIndex != null) {
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
-            } else if (ctx.fieldType == types.Prop.TEXT) {
-                // --- find
+            } else if (ctx.typeSortIndex != null and ctx.fieldType == types.Prop.TEXT) {
                 const sIndex = sort.getSortIndex(
                     ctx.db.sortIndexes.get(ctx.typeId),
                     ctx.field,
@@ -81,11 +80,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     sort.insert(ctx.db, s, slice, ctx.node.?);
                 }
             }
+
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             }
+
             return len;
         },
     }

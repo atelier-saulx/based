@@ -104,6 +104,7 @@ pub const ModOp = enum(u8) {
     INCREMENT = 12,
     DECREMENT = 13,
     EXPIRE = 14,
+    ADD_EMPTY_SORT_TEXT = 15,
     _,
 };
 
