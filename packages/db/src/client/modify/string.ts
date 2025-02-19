@@ -48,7 +48,7 @@ export function writeString(
     }
     if (modifyOp === CREATE) {
       def.seperateSort.bufferTmp[t.prop] = 2
-      ctx.hasStringField++
+      ctx.hasSortField++
     }
     setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
     // TODO if buffer check if second byte is zero or one
