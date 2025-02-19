@@ -36,7 +36,7 @@ export function writeAlias(
       }
       if (modifyOp === CREATE) {
         def.seperateSort.bufferTmp[t.prop] = 2
-        ctx.hasStringField++
+        ctx.hasSortField++
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = modifyOp

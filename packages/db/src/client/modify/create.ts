@@ -59,7 +59,7 @@ const appendCreate = (
   }
 
   if (def.hasSeperateSort) {
-    if (ctx.hasStringField !== def.seperateSort.size - 1) {
+    if (ctx.hasSortField !== def.seperateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
@@ -78,7 +78,7 @@ const appendCreate = (
       ctx.buf[sizepos++] = size
       ctx.buf[sizepos] = size >>>= 8
     }
-    if (ctx.hasStringField !== -1) {
+    if (ctx.hasSortField !== -1) {
       def.seperateSort.buffer.copy(def.seperateSort.bufferTmp)
     }
   }
