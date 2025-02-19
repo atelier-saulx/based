@@ -181,7 +181,6 @@ export const createSchemaTypeDef = (
       if (
         isPropType('string', schemaProp) ||
         isPropType('alias', schemaProp) ||
-        isPropType('binary', schemaProp) ||
         isPropType('cardinality', schemaProp)
       ) {
         if (typeof schemaProp === 'object') {
@@ -354,8 +353,7 @@ export const createSchemaTypeDef = (
         if (
           f.typeIndex === STRING ||
           f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY ||
-          f.typeIndex === BINARY
+          f.typeIndex === CARDINALITY
         ) {
           if (f.prop > max) {
             max = f.prop
@@ -368,8 +366,7 @@ export const createSchemaTypeDef = (
         if (
           f.typeIndex === STRING ||
           f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY ||
-          f.typeIndex === BINARY
+          f.typeIndex === CARDINALITY
         ) {
           result.seperateSort.buffer[f.prop] = 1
           result.seperateSort.props.push(f)
