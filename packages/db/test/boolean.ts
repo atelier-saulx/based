@@ -23,7 +23,7 @@ await test('boolean', async (t) => {
     },
   })
 
-  db.create('user', {})
+  const user1 = await db.create('user', {})
   db.create('user', {
     isNice: true,
   })
@@ -53,4 +53,16 @@ await test('boolean', async (t) => {
     { id: 1, isNice: false },
     { id: 3, isNice: false },
   ])
+
+  await db.update('user', user1, {
+    isNice: true,
+  })
+
+  // console.log(await db.query('user', user1).get().toObject())
+
+  // await db.update('user', user1, {
+  //   isNice: false,
+  // })
+
+  // console.log(await db.query('user', user1).get().toObject())
 })

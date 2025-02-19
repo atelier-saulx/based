@@ -46,7 +46,7 @@ export function writeAlias(
       ctx.buf[ctx.len++] = size >>>= 8
       ctx.len += ctx.buf.write(value, ctx.len, 'utf8')
     }
-  } else if (typeof value === null) {
+  } else if (value === null) {
     if (modifyOp === UPDATE) {
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
