@@ -3,12 +3,14 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const Modify = @import("./ctx.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const ModifyCtx = Modify.ModifyCtx;
 // const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
+
+const read = utils.read;
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     switch (ctx.fieldType) {
@@ -49,7 +51,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             var i: usize = 4;
             while (i < len * 8) {
-                const currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+                var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+                if (currentData == null) {
+                    currentData = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
+                    selva.hll_init(currentData, 14, true);
+                }
                 const hash: u64 = read(u64, data, i);
                 selva.hll_add(currentData, hash);
                 var size: usize = undefined;

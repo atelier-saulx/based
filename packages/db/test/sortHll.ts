@@ -55,16 +55,22 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     (
-      await db.query('article').sort('count', 'desc').include('count').get()
+      await db
+        .query('article')
+        .sort('count', 'desc')
+        .include('count', 'brazilians')
+        .get()
     ).toObject(),
     [
       {
         id: 1,
         count: 7,
+        brazilians: 1,
       },
       {
         id: 2,
         count: 1,
+        brazilians: 0,
       },
     ],
     'create, with standalone values and array, include sort asc',
@@ -93,6 +99,12 @@ await test('sortCardinality', async (t) => {
 
   await db.drain()
 
+  await db
+    .query('article')
+    .sort('count', 'asc')
+    .include('count', 'brazilians')
+    .get()
+
   deepEqual(
     (
       await db
@@ -105,7 +117,7 @@ await test('sortCardinality', async (t) => {
       {
         id: 2,
         count: 2,
-        brazilians: 1,
+        brazilians: 0,
       },
       {
         id: 1,
