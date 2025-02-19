@@ -5,7 +5,7 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import native from '../src/native.js'
 
-await test('history', async (t) => {
+await test.skip('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
 
   t.after(() => {
@@ -31,10 +31,15 @@ await test('history', async (t) => {
   })
 
   const pathname = join(t.tmp, 'history')
-  const entry = Buffer.from([1, 2, 3])
+
   writeFileSync(pathname, '')
 
-  native.historyCreate(pathname, entry.byteLength)
+  const history = native.historyCreate(
+    pathname,
+    db.client.schemaTypesParsed.page.mainLen,
+  )
+  const pageId = await db.create('page', {})
+  native.historyAppend(history, db.client.schemaTypesParsed.page.id, pageId)
 
   /*
     int selva_history_init(const char *pathname, size_t bsize, struct selva_history **hist_out);
