@@ -3,8 +3,10 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const types = @import("../types.zig");
+
+const read = utils.read;
 
 pub const TypeId = u16;
 pub const Node = *selva.SelvaNode;
@@ -106,6 +108,15 @@ pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
     return s.?;
 }
 
+pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
+    const stored = selva.selva_fields_get_selva_string(node, selvaFieldSchema);
+    if (stored == null) {
+        return @as([*]u8, undefined)[0..0];
+    }
+    const countDistinct = selva.hll_count(@ptrCast(stored));
+    return countDistinct[0..4];
+}
+
 pub fn getField(
     typeEntry: ?Type,
     id: u32,
@@ -123,6 +134,8 @@ pub fn getField(
         var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
+    } else if (fieldType == types.Prop.CARDINALITY) {
+        return getCardinalityField(node, selvaFieldSchema);
     }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];

@@ -18,6 +18,9 @@ const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const dbSort = @import("../db//sort.zig");
 const increment = Update.increment;
+const utils = @import("../utils.zig");
+
+const read = utils.read;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {

@@ -4,9 +4,11 @@ const selva = @import("../selva.zig");
 const c = @import("../c.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const errors = @import("../errors.zig");
+
+const read = utils.read;
 
 pub const SortIndexMeta = struct {
     prop: types.Prop,
@@ -54,6 +56,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
         types.Prop.UINT64,
         types.Prop.BOOLEAN,
         types.Prop.ENUM,
+        types.Prop.CARDINALITY,
         => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
@@ -340,6 +343,7 @@ pub fn remove(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             removeFromIntIndex(i64, data, sortIndex, node);
         },
+        types.Prop.CARDINALITY => removeFromIntIndex(u32, data, sortIndex, node),
         types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => removeFromIntIndex(u64, data, sortIndex, node),
@@ -395,6 +399,7 @@ pub fn insert(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             insertIntIndex(i64, data, sortIndex, node);
         },
+        types.Prop.CARDINALITY => insertIntIndex(u32, data, sortIndex, node),
         types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),
