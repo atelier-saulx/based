@@ -1,6 +1,5 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { setTimeout } from 'node:timers/promises'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import native from '../src/native.js'

@@ -1,7 +1,7 @@
 const selva = @import("../selva.zig");
 const napi = @import("../napi.zig");
 const c = @import("../c.zig");
-const db = @import("../db.zig");
+const db = @import("./db.zig");
 const std = @import("std");
 const errors = @import("../errors.zig");
 
@@ -31,11 +31,33 @@ fn _historyAppend(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const nodeId: u32 = try napi.get(u32, env, args[2]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[3]);
     const ts = std.time.timestamp();
-    const typeEntry = try db.getType(dbCtx, typeId);
-    const node = db.getNode(nodeId, typeEntry.?);
-    const fieldSchema = try db.getFieldSchema(0, typeEntry.?);
-    const data = db.getField(typeEntry.?, nodeId, node.?, fieldSchema.?);
-    try errors.selva(selva.selva_history_append(history, ts, nodeId, data));
+    const typeEntry = db.getType(
+        dbCtx,
+        typeId,
+    ) catch {
+        return null;
+    };
+    const node = db.getNode(
+        nodeId,
+        typeEntry,
+    );
+    const fieldSchema = try db.getFieldSchema(
+        0,
+        typeEntry,
+    );
+    const data = db.getField(
+        typeEntry,
+        nodeId,
+        node.?,
+        fieldSchema,
+        @enumFromInt(0),
+    );
+    selva.selva_history_append(
+        history,
+        ts,
+        nodeId,
+        data.ptr,
+    );
     return null;
 }
 

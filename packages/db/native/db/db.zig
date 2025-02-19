@@ -72,11 +72,11 @@ pub fn getQueryId() u32 {
     return lastQueryId;
 }
 
-pub fn getType(ctx: *DbCtx, typePrefix: TypeId) !Type {
+pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
-        typePrefix,
+        typeId,
     );
 
     if (selvaTypeEntry == null) {
