@@ -15,6 +15,7 @@ import { fnIsTimedOut, updateTimeoutCounter } from './timeout.js'
 import { destroyObs, start } from '../query/index.js'
 import { destroyChannel, startChannel } from '../channel/index.js'
 import { genVersion } from './genVersion.js'
+import { pathMatcher } from '../incoming/http/pathMatcher.js'
 
 export * from './types.js'
 
@@ -85,17 +86,22 @@ export class BasedFunctions {
         channel: 60e3, // 3 1 Min
       }
     }
+    
 
     if (this.config.route === undefined) {
       this.config.route = ({ name, path }) => {
+        // console.log({name, path})
         if (path) {
-          const fromPath = this.getNameFromPath(path)
+          const fromPath = this.getNameFromPath(path)          
           const r = (fromPath && this.routes[fromPath]) || this.routes[name]
+          
           if (r) {
             return r
           }
-          const rootPath = this.paths['/']
-          if (rootPath) {
+          // if nothing start matching glob 
+          const rootPath = this.paths['/']          
+          
+          if (rootPath) {            
             return this.routes[rootPath] || null
           }
           return null
@@ -116,7 +122,7 @@ export class BasedFunctions {
       }
     }
 
-    if (routes) {
+    if (routes) {      
       this.addRoutes(routes)
     }
 
@@ -131,9 +137,13 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(name?: string, path?: string): BasedRouteComplete | null {
+  route(name?: string, path?: string): BasedRouteComplete | null {    
     return this.config.route({ server: this.server, name, path })
   }
+
+  // route(name?: string, path?: string): BasedRouteComplete | null {    
+  //   return this.config.route({ server: this.server, name, path })
+  // }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
     let spec = this.getFromStore(name)
@@ -208,6 +218,7 @@ export class BasedFunctions {
     if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
     }
+    
     return nRoute
   }
 
@@ -232,12 +243,15 @@ export class BasedFunctions {
         rateLimitTokens: number
       }) {
     const realRoute = this.completeRoute(route, name)
+    
     if (realRoute === null) {
       return null
     }
+
     if (realRoute.path) {
       this.paths[realRoute.path] = realRoute.name
     }
+
     this.routes[route.name] = realRoute
     return realRoute
   }
@@ -394,6 +408,39 @@ export class BasedFunctions {
   }
 
   getNameFromPath(path: string): string {
+    // get path matcher here as well!
+    // console.log({paths:this.paths, path, match: this.paths[path]});
+    // const matches = Object.keys(this.paths).map(pattern => {
+    //   return {
+    //     pattern,
+    //     path,
+    //     match: pathMatcher(pattern, path)
+    //   }
+    // })
+    // console.log({matches});
+  
+    
+    // pathMatcherMillion(Buffer.from('/o/:orderId'), Buffer.from('/o/123'))
+    // console.log('true1', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/123')))
+    // console.log('false2', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/')))
+    // console.log('false3', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/abc/abc')))
+    // console.log('false4', pathMatcher(Buffer.from('/o/:orderId(\\d+)'), Buffer.from('/o/123')))
+    // console.log('true5', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/123')))
+    // console.log('true6', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc')))
+    // console.log('true7', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc/')))
+    // console.log('false8', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc/abc')))
+    // console.log('true9', pathMatcher(Buffer.from('/path/:chapters+'), Buffer.from('/path/one/two/three')))
+    // console.log('false10', pathMatcher(Buffer.from('/path/:chapters+'), Buffer.from('/path/')))
+    // console.log('true11', pathMatcher(Buffer.from('/path/:chapters*'), Buffer.from('/path/one/two/three')))
+    // console.log('true12', pathMatcher(Buffer.from('/path/:chapters*'), Buffer.from('/path/')))
+    // console.log('true13', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/123')))
+    // console.log('true14', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users')))
+    // console.log('false15', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/abc/abc')))
+    // console.log('true16', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/abc')))
+    // console.log('true17', pathMatcher(Buffer.from('/users'), Buffer.from('/users/')))
+    // console.log('false18', pathMatcher(Buffer.from('/users'), Buffer.from('/users/abc')))
+    console.log('------------------------------------------------------');
+    
     return this.paths[path]
   }
 
