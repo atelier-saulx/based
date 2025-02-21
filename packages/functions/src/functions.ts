@@ -246,7 +246,7 @@ type FunctionConfigSharedComplete = Required<
   FunctionConfigShared,
   'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
 > & {
-  tokens: PathToken[]
+  tokens?: PathToken[]
 }
 
 export type BasedFunctionTypes =
@@ -408,7 +408,7 @@ export type BasedRouteComplete<
   Partial<BasedFunctionConfig<T>>,
   'type' | 'name' | 'maxPayloadSize' | 'rateLimitTokens'
 > & {
-  tokens: PathToken[]
+  tokens?: PathToken[]
 }
 
 export function isBasedRoute<T extends BasedFunctionTypes>(

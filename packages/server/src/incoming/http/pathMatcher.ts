@@ -251,7 +251,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
  * @param pattern - The pattern ("/users/:userId?")
  * @param path - The path to test ("/users/123")
  */
-export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[]> {
+export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[] | boolean> {
   if (!tokens.length || path.byteLength === 0 || path[0] !== SLASH) {
     return {}
   }
@@ -261,7 +261,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
   const len = path.byteLength
   let token = tokens[i - 1]
   let tokenValue = token.value.toString()
-  const extractions: Record<string, string | string[]> = {}
+  const extractions: Record<string, string | string[] | boolean> = {}
   let collected: string = ''
   let isToCollect: boolean = false
   let query: boolean = false
@@ -271,6 +271,12 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     collected += String.fromCharCode(path[i]) || ''    
 
     if (query) {
+      if (i === len - 1 && collected && !queryValue) {
+        extractions[collected] = true
+        
+        collected = ''
+      }
+
       if (path[i] === QUESTION_MARK) {
         collected = ''      
       }
@@ -283,7 +289,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
         collected = ''
       }
       
-      if (path[i + 1] === AMPERSAND || i === len - 1) {
+      if (path[i + 1] === AMPERSAND || i === len - 1 && collected) {
         i++
         extractions[queryValue] = collected
         collected = ''

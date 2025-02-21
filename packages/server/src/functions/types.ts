@@ -23,8 +23,6 @@ export type FunctionConfig = {
     channel: number
   }
   route?: (opts: {
-    server: BasedServer
-    name?: string
     path?: string
   }) => null | BasedRouteComplete
   install?: (opts: {

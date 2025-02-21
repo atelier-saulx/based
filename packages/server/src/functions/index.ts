@@ -42,8 +42,6 @@ export class BasedFunctions {
     channel: 500,
   }
 
-  routesArr: BasedRouteComplete[] = []
-
   paths: {
     [path: string]: string
   } = {}
@@ -91,12 +89,14 @@ export class BasedFunctions {
 
 
     if (this.config.route === undefined) {
-      this.config.route = ({ path }) => {        
+      this.config.route = ({ path }) => {  
+        let route: BasedRouteComplete        
+        
         if (path) {
-          return this.getRoute(path)
+          route = this.getRoute(path)
         }
 
-        return null
+        return route || this.routes[path] || this.routes['/'] || null
       }
     }
 
@@ -127,8 +127,8 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(path?: string): BasedRouteComplete | null {    
-    return this.config.route({ server: this.server, path })
+  route(path?: string): BasedRouteComplete | null {
+    return this.config.route({ path })
   }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
@@ -204,9 +204,15 @@ export class BasedFunctions {
     if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
     }
-    if (!nRoute.tokens && nRoute.path) {
-      const clearPath = nRoute.path.replace(`/${nRoute.name}`, '')      
-      nRoute.tokens = tokenizePattern(Buffer.from(`/${nRoute.name}${clearPath}`))
+    if (!nRoute.tokens) {
+      let finalPath: string = `/${nRoute.name}`
+      
+      if (nRoute.path) {
+        const clearPath = nRoute.path.replace(`/${nRoute.name}`, '')
+        finalPath += clearPath
+      }
+      
+      nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
     }
     
     return nRoute
@@ -242,7 +248,6 @@ export class BasedFunctions {
       this.paths[realRoute.path] = realRoute.name
     }
 
-    this.routesArr.push(realRoute)
     this.routes[route.name] = realRoute
     return realRoute
   }
@@ -403,26 +408,27 @@ export class BasedFunctions {
     let removeNameFromTokens: boolean = false
     let tokens = []
     const bufferPath = Buffer.from(path)
-    
-    while (i < this.routesArr.length) {
-      tokens = this.routesArr[i].tokens
+    const routesKeys = Object.keys(this.routes)
+        
+    while (i < routesKeys.length) {
+      tokens = this.routes[routesKeys[i]].tokens
 
       if (removeNameFromTokens && tokens) {
         tokens.shift()        
       }
 
       if (pathMatcher(tokens, bufferPath)) {
-        return this.routesArr[i]
+        return this.routes[routesKeys[i]]
       }
 
       i++
 
-      if (i === this.routesArr.length && !removeNameFromTokens) {
+      if (i === routesKeys.length && !removeNameFromTokens) {
         removeNameFromTokens = true
         i = 0        
       }
 
-      if (i === this.routesArr.length && removeNameFromTokens) {
+      if (i === routesKeys.length && removeNameFromTokens) {
         return null
       }
     }
