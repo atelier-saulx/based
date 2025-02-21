@@ -203,11 +203,11 @@ test('http.open', async (t: T) => {
   await server.start()
 
   const res = await fetch(`${t.context.http}/hello`)
-  const text = await res.text()
+  const text = await res.text()  
+
+  await server.destroy()
 
   t.is(text, 'hello!')
   t.is(openCnt, 1)
   t.is(closeCnt, 1)
-
-  await server.destroy()
 })
