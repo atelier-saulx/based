@@ -181,6 +181,11 @@ type FunctionConfigShared = {
    * **Query String Parameters**
    * 
    * Dont need to be included in the path, they will be merged and included in the payload automatically.
+   * ----
+   * **Reserved words**
+   * 
+   * `token`
+   * - If you define an parameter named 'token' or use 'token' as query string, the value will not be included in the payload, instead it will be user internally to keep your AuthState updated.
    */
   path?: string
   /** In bytes. `-1` indicates no size limit */
@@ -231,10 +236,18 @@ type FunctionConfigShared = {
   timeoutCounter?: number
 }
 
+export type PathToken = {
+  type: 0 | 1 | 2 // 'invalid' | 'static' | 'param'
+  value?: Buffer
+  modifier?: 0 | 63 | 43 | 42
+}
+
 type FunctionConfigSharedComplete = Required<
   FunctionConfigShared,
   'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
->
+> & {
+  tokens: PathToken[]
+}
 
 export type BasedFunctionTypes =
   | 'channel'
@@ -394,7 +407,9 @@ export type BasedRouteComplete<
 > = Required<
   Partial<BasedFunctionConfig<T>>,
   'type' | 'name' | 'maxPayloadSize' | 'rateLimitTokens'
->
+> & {
+  tokens: PathToken[]
+}
 
 export function isBasedRoute<T extends BasedFunctionTypes>(
   type: T,

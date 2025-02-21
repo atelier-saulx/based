@@ -15,7 +15,7 @@ import { fnIsTimedOut, updateTimeoutCounter } from './timeout.js'
 import { destroyObs, start } from '../query/index.js'
 import { destroyChannel, startChannel } from '../channel/index.js'
 import { genVersion } from './genVersion.js'
-import { pathMatcher } from '../incoming/http/pathMatcher.js'
+import { pathMatcher, tokenizePattern } from '../incoming/http/pathMatcher.js'
 
 export * from './types.js'
 
@@ -41,6 +41,8 @@ export class BasedFunctions {
     function: 20e3,
     channel: 500,
   }
+
+  routesArr: BasedRouteComplete[] = []
 
   paths: {
     [path: string]: string
@@ -86,27 +88,15 @@ export class BasedFunctions {
         channel: 60e3, // 3 1 Min
       }
     }
-    
+
 
     if (this.config.route === undefined) {
-      this.config.route = ({ name, path }) => {
-        // console.log({name, path})
+      this.config.route = ({ path }) => {        
         if (path) {
-          const fromPath = this.getNameFromPath(path)          
-          const r = (fromPath && this.routes[fromPath]) || this.routes[name]
-          
-          if (r) {
-            return r
-          }
-          // if nothing start matching glob 
-          const rootPath = this.paths['/']          
-          
-          if (rootPath) {            
-            return this.routes[rootPath] || null
-          }
-          return null
+          return this.getRoute(path)
         }
-        return this.routes[name] || null
+
+        return null
       }
     }
 
@@ -137,13 +127,9 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(name?: string, path?: string): BasedRouteComplete | null {    
-    return this.config.route({ server: this.server, name, path })
+  route(path?: string): BasedRouteComplete | null {    
+    return this.config.route({ server: this.server, path })
   }
-
-  // route(name?: string, path?: string): BasedRouteComplete | null {    
-  //   return this.config.route({ server: this.server, name, path })
-  // }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
     let spec = this.getFromStore(name)
@@ -218,6 +204,10 @@ export class BasedFunctions {
     if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
     }
+    if (!nRoute.tokens && nRoute.path) {
+      const clearPath = nRoute.path.replace(`/${nRoute.name}`, '')      
+      nRoute.tokens = tokenizePattern(Buffer.from(`/${nRoute.name}${clearPath}`))
+    }
     
     return nRoute
   }
@@ -252,6 +242,7 @@ export class BasedFunctions {
       this.paths[realRoute.path] = realRoute.name
     }
 
+    this.routesArr.push(realRoute)
     this.routes[route.name] = realRoute
     return realRoute
   }
@@ -407,41 +398,34 @@ export class BasedFunctions {
     return s
   }
 
-  getNameFromPath(path: string): string {
-    // get path matcher here as well!
-    // console.log({paths:this.paths, path, match: this.paths[path]});
-    // const matches = Object.keys(this.paths).map(pattern => {
-    //   return {
-    //     pattern,
-    //     path,
-    //     match: pathMatcher(pattern, path)
-    //   }
-    // })
-    // console.log({matches});
-  
+  getRoute(path: string): BasedRouteComplete | null {    
+    let i: number = 0
+    let removeNameFromTokens: boolean = false
+    let tokens = []
+    const bufferPath = Buffer.from(path)
     
-    // pathMatcherMillion(Buffer.from('/o/:orderId'), Buffer.from('/o/123'))
-    // console.log('true1', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/123')))
-    // console.log('false2', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/')))
-    // console.log('false3', pathMatcher(Buffer.from('/o/:orderId'), Buffer.from('/o/abc/abc')))
-    // console.log('false4', pathMatcher(Buffer.from('/o/:orderId(\\d+)'), Buffer.from('/o/123')))
-    // console.log('true5', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/123')))
-    // console.log('true6', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc')))
-    // console.log('true7', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc/')))
-    // console.log('false8', pathMatcher(Buffer.from('/:orderId'), Buffer.from('/abc/abc')))
-    // console.log('true9', pathMatcher(Buffer.from('/path/:chapters+'), Buffer.from('/path/one/two/three')))
-    // console.log('false10', pathMatcher(Buffer.from('/path/:chapters+'), Buffer.from('/path/')))
-    // console.log('true11', pathMatcher(Buffer.from('/path/:chapters*'), Buffer.from('/path/one/two/three')))
-    // console.log('true12', pathMatcher(Buffer.from('/path/:chapters*'), Buffer.from('/path/')))
-    // console.log('true13', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/123')))
-    // console.log('true14', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users')))
-    // console.log('false15', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/abc/abc')))
-    // console.log('true16', pathMatcher(Buffer.from('/users/:userId?'), Buffer.from('/users/abc')))
-    // console.log('true17', pathMatcher(Buffer.from('/users'), Buffer.from('/users/')))
-    // console.log('false18', pathMatcher(Buffer.from('/users'), Buffer.from('/users/abc')))
-    console.log('------------------------------------------------------');
-    
-    return this.paths[path]
+    while (i < this.routesArr.length) {
+      tokens = this.routesArr[i].tokens
+
+      if (removeNameFromTokens && tokens) {
+        tokens.shift()        
+      }
+
+      if (pathMatcher(tokens, bufferPath)) {
+        return this.routesArr[i]
+      }
+
+      i++
+
+      if (i === this.routesArr.length && !removeNameFromTokens) {
+        removeNameFromTokens = true
+        i = 0        
+      }
+
+      if (i === this.routesArr.length && removeNameFromTokens) {
+        return null
+      }
+    }
   }
 
   getFromStore(name: string): BasedFunctionConfigComplete | null {

@@ -72,11 +72,11 @@ test('http path match', async (t: T) => {
       configs: {
         bla: {
           type: 'query',
-          path: '/static/:parameter',
+          path: '/static/:parameter?',
           closeAfterIdleTime: 3e3,
           uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
-            update(0)
+            update(true)
             return () => {}
           },
         },
@@ -88,33 +88,24 @@ test('http path match', async (t: T) => {
   })
   await server.start()
 
-  const r1 = await (await fetch(t.context.http + '/static/test')).json()
+  const r1 = await (await fetch(t.context.http + '/static/fafa')).json()
 
   await server.destroy()
 
-  t.true(true)
+  t.true(r1)
 })
 
 
-
-
-// const tokens = tokenizePattern(Buffer.from('/static/:file'))
-//   const path = Buffer.from('/static/asdads')
+// test("sandbox", (t: T) => {
+//   const tokens = tokenizePattern(Buffer.from('/static/:orderId*'))
+//   const path = Buffer.from('/static/value/value')
 //   let result = false
-  
 //   let d = performance.now()
-//   const obj = pathExtractor(tokens, path)
+  
 //   for (let i = 0; i < 10e6; i++) {
 //     result = pathMatcher(tokens, path)
 //   }
 //   console.log(performance.now() - d, 'ms')
 
-// test("sandbox", (t: T) => {
-//   const tokens = tokenizePattern(Buffer.from('/static/:orderId*'))
-//   const path = Buffer.from('/static/123')
-  
-
-//   pathMatcher(tokens, path)
-
-//   t.true(true)
+//   t.true(result)
 // })

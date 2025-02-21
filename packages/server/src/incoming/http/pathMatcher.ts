@@ -1,3 +1,4 @@
+import { PathToken } from "@based/functions"
 import {
   NUMBER_ZERO,
   NUMBER_NINE,
@@ -20,12 +21,6 @@ import {
   EQUALS_SIGN,
   AMPERSAND
 } from "./types.js"
-
-type Token = {
-  type: 0 | 1 | 2 // 'invalid' | 'static' | 'param'
-  value?: Buffer
-  modifier?: 0 | 63 | 43 | 42
-}
 
 /**
  * Checks if the byte represents a character for a parameter name.
@@ -93,8 +88,8 @@ function splitBuffer(buffer: Buffer, delimiter: number): Buffer[] {
  *
  * @param segment - The pattern segment as a Buffer.
  */
-function parseToken(segment: Buffer): Token {
-  let modifier: Token['modifier'] = REQUIRED_MODIFIER
+function parseToken(segment: Buffer): PathToken {
+  let modifier: PathToken['modifier'] = REQUIRED_MODIFIER
   let value: Buffer = Buffer.allocUnsafe(segment.length)
   let type: number = STATIC
 
@@ -117,7 +112,7 @@ function parseToken(segment: Buffer): Token {
     if (isValidParamChar(segment[i])) {
       value[j++] = segment[i]
     } else if (isValidParamModifier(segment[i]) && type === PARAM && i === len - 1) {
-      modifier = segment[i] as Token['modifier']
+      modifier = segment[i] as PathToken['modifier']
     } else {
       type = INVALID
 
@@ -129,7 +124,7 @@ function parseToken(segment: Buffer): Token {
 
   value = value.slice(0, j)
 
-  return { type, value, modifier } as Token
+  return { type, value, modifier } as PathToken
 }
 
 /**
@@ -138,9 +133,9 @@ function parseToken(segment: Buffer): Token {
  * @param pattern - The pattern as a Buffer.
  * @returns An array of tokens.
  */
-export function tokenizePattern(pattern: Buffer): Token[] {
+export function tokenizePattern(pattern: Buffer): PathToken[] {
   const parts = splitBuffer(pattern, SLASH)
-  const tokens: Token[] = []
+  const tokens: PathToken[] = []
 
   for (const part of parts) {    
     tokens.push(parseToken(part))
@@ -155,8 +150,8 @@ export function tokenizePattern(pattern: Buffer): Token[] {
  * @param pattern - The pattern ("/users/:userId?")
  * @param path - The path to test ("/users/123")
  */
-export function pathMatcher(tokens: Token[], path: Buffer): boolean {
-  if (!tokens.length || path.byteLength === 0 || path[0] !== SLASH) {
+export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
+  if (!tokens?.length || path.byteLength === 0 || path[0] !== SLASH) {
     return false
   }
 
@@ -164,18 +159,29 @@ export function pathMatcher(tokens: Token[], path: Buffer): boolean {
   let i = 1
   const len = path.byteLength
   let token = tokens[i - 1]
-  let lastTokenIndex = 1
-
-  while (i < len) {    
-    if (tokens.length === 1 && token.value[SLASH]) {
+  let lastIndex = 1  
+  let tokenSize = token.value.length
+  let tokenValueIndex = 0
+  
+  while (i < len) {
+    if (tokens.length === 1 && token.value[SLASH]) {      
       return true
     }
 
     if (path[i] === SLASH) {
       tokenIndex++
       i++
-      lastTokenIndex = i
+      lastIndex = i
       token = tokens[tokenIndex]
+      
+      if (token?.type === STATIC) {
+        if (tokenSize) {
+          return false
+        }
+
+        tokenSize = token.value.length
+        tokenValueIndex = 0
+      }
 
       if (i === len && !token) {
         return true
@@ -184,9 +190,9 @@ export function pathMatcher(tokens: Token[], path: Buffer): boolean {
       if (!token) {
         const previousModifier = tokens[tokenIndex - 1].modifier
         if (previousModifier === QUESTION_MARK ||
-            previousModifier === ASTERISK ||
-            previousModifier === PLUS
-          ) {          
+          previousModifier === ASTERISK ||
+          previousModifier === PLUS
+        ) {          
           return true
         }
 
@@ -200,9 +206,18 @@ export function pathMatcher(tokens: Token[], path: Buffer): boolean {
 
     if (token.type === INVALID) { 
       return false
-    } else if (token.type === STATIC && path[i] !== token.value[i - lastTokenIndex]) {   
-      return false
-    } else if (i === len && token.type === PARAM) {
+    } else if (token.type === STATIC) { 
+      if (path[i] !== token.value[i - lastIndex]) {
+        return false  
+      } else if (path[i] === token.value[tokenValueIndex] && tokenSize) {        
+        tokenSize--
+        tokenValueIndex++
+        // i++
+        // continue
+      } else {
+        return false
+      }
+    } else if (i === len && token.type === PARAM) {    
       if (token.modifier === QUESTION_MARK || token.modifier === ASTERISK)  {
         return true 
       } else if (token.modifier === PLUS) {
@@ -222,6 +237,10 @@ export function pathMatcher(tokens: Token[], path: Buffer): boolean {
       }
     }
   }
+
+  if (tokenSize) {
+    return false
+  }
   
   return true
 }
@@ -232,7 +251,7 @@ export function pathMatcher(tokens: Token[], path: Buffer): boolean {
  * @param pattern - The pattern ("/users/:userId?")
  * @param path - The path to test ("/users/123")
  */
-export function pathExtractor(tokens: Token[], path: Buffer): Record<string, string | string[]> {
+export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[]> {
   if (!tokens.length || path.byteLength === 0 || path[0] !== SLASH) {
     return {}
   }
