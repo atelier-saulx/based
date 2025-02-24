@@ -23,7 +23,7 @@ await test('hll', async (t) => {
     },
   })
 
-  console.log('------- create --------')
+  // console.log('------- create --------')
 
   let myArticle = await db.create('article', {
     myUniqueValuesCount: 'myCoolValue',
@@ -122,7 +122,7 @@ await test('hll', async (t) => {
     [],
   )
 
-  console.log('------- update --------')
+  // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -163,11 +163,13 @@ await test('hll', async (t) => {
   const feeling = ['folish', 'superficial', 'deep', 'moving', 'fake']
 
   let feelings = []
-  for (let i = 0; i < 1e2; i++) {
-    feelings.push(feeling[Math.floor(Math.random() * (feeling.length - 1))])
+  for (let i = 0; i < 1e3; i++) {
+    feelings.push(
+      xxHash64(
+        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+      ),
+    )
   }
-
-  console.log('---->', feelings.length)
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: feelings,
@@ -175,9 +177,7 @@ await test('hll', async (t) => {
 
   console.log(await db.drain(), 'ms')
 
-  // console.log(await db.query('article').get().toObject())
-
-  for (let i = 0; i < 1e1; i++) {
+  for (let i = 0; i < 1e2; i++) {
     db.create('article', {
       derp: i,
       myUniqueValuesCount: feelings,
