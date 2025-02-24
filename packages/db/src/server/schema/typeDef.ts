@@ -17,7 +17,9 @@ import {
   STRING,
   ALIAS,
   CARDINALITY,
-  BINARY,
+  REFERENCES,
+  REFERENCE,
+  TEXT,
 } from './types.js'
 import { DbClient } from '../../client/index.js'
 import { DbServer } from '../index.js'
@@ -137,7 +139,7 @@ export const createSchemaTypeDef = (
     },
     hasSeperateTextSort: false,
     seperateTextSort: {
-      size: 0,
+      size: 0, // prop len
       props: [],
       buffer: Buffer.allocUnsafe(0),
       bufferTmp: Buffer.allocUnsafe(0),
@@ -154,6 +156,7 @@ export const createSchemaTypeDef = (
     }
   }
   result.locales = locales
+  result.localeSize = Object.keys(locales).length
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
 
@@ -196,6 +199,8 @@ export const createSchemaTypeDef = (
         }
       } else if (isPropType('vector', schemaProp)) {
         len = 4 * schemaProp.size
+      } else if (isPropType('text', schemaProp)) {
+        separateSortText++
       }
 
       const isseparate = len === 0 || isPropType('vector', schemaProp)
@@ -259,7 +264,10 @@ export const createSchemaTypeDef = (
     const vals = Object.values(result.props)
 
     vals.sort((a, b) => {
-      if (b.separate && (a.typeIndex === 14 || a.typeIndex === 13)) {
+      if (
+        b.separate &&
+        (a.typeIndex === REFERENCES || a.typeIndex === REFERENCE)
+      ) {
         return -1
       }
       return a.prop - b.prop
@@ -345,11 +353,36 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
+    if (separateSortText > 0) {
+      result.hasSeperateTextSort = true
+      let max = 0
+      for (const f of result.separate) {
+        if (f.typeIndex === TEXT) {
+          if (f.prop > max) {
+            max = f.prop
+          }
+        }
+      }
+      result.seperateTextSort.buffer = Buffer.allocUnsafe(
+        max * result.localeSize + 1,
+      )
+      for (const f of result.separate) {
+        if (f.typeIndex === TEXT) {
+          result.seperateTextSort.buffer[f.prop] = 1
+          result.seperateTextSort.props.push(f)
+          result.seperateTextSort.size += result.localeSize
+        }
+      }
+      result.seperateTextSort.bufferTmp = Buffer.allocUnsafe(
+        max * result.localeSize + 1,
+      )
+      result.seperateTextSort.buffer.copy(result.seperateTextSort.bufferTmp)
+    }
+
     if (separateSortProps > 0) {
       result.hasSeperateSort = true
       let max = 0
       for (const f of result.separate) {
-        // Does not only need to be on string can also be HLL
         if (
           f.typeIndex === STRING ||
           f.typeIndex === ALIAS ||
@@ -360,7 +393,6 @@ export const createSchemaTypeDef = (
           }
         }
       }
-
       result.seperateSort.buffer = Buffer.allocUnsafe(max + 1)
       for (const f of result.separate) {
         if (

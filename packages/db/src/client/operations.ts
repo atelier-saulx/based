@@ -14,6 +14,7 @@ export class ModifyCtx {
   id = -1
   lastMain = -1
   hasSortField = -1
+  hasSortText = -1
   queue = new Map<(payload: any) => void, ModifyState>()
   ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 

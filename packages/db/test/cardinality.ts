@@ -121,10 +121,12 @@ await test('hll', async (t) => {
 
   let feelings = []
   for (let i = 0; i < 1e6; i++) {
-    feelings.push(feeling[Math.floor(Math.random() * (feeling.length - 1))])
+    feelings.push(
+      xxHash64(
+        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+      ),
+    )
   }
-
-  console.log('---->', feelings.length)
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: feelings,
@@ -134,9 +136,11 @@ await test('hll', async (t) => {
 
   console.log(await db.query('article').get().toObject())
 
-  for (let i = 0; i < 1e6; i++) {
+  // 120Mb / s
+  console.log('START')
+
+  for (let i = 0; i < 10; i++) {
     db.create('article', {
-      // derp: i,
       myUniqueValuesCount: feelings,
     })
   }
@@ -144,6 +148,6 @@ await test('hll', async (t) => {
   console.log(await db.drain(), 'ms')
   console.log('---------------')
 
-  await db.query('article').range(0, 1e6).get().inspect(10)
-  await db.query('article').range(0, 1e6).get().inspect(10)
+  // await db.query('article').range(0, 1e6).get().inspect(10)
+  // await db.query('article').range(0, 1e6).get().inspect(10)
 })

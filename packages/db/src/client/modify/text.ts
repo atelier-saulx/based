@@ -1,6 +1,6 @@
 import { langCodesMap, LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
-import { ModifyOp, ModifyErr } from './types.js'
+import { ModifyOp, ModifyErr, CREATE } from './types.js'
 import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import { writeString } from './string.js'
 import { ModifyState } from './ModifyRes.js'
@@ -24,6 +24,11 @@ export function writeText(
       res.tmpId,
       modifyOp,
     )
+    if (modifyOp === CREATE) {
+      def.seperateTextSort.bufferTmp[t.prop * def.localeSize] = 2
+      ctx.hasSortText++
+    }
+    return err
   } else {
     for (const lang in value) {
       const langCode: LangCode =

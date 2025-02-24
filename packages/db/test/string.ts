@@ -395,6 +395,39 @@ await test('Big string disable compression', async (t) => {
     ],
     'Get multiple big strings (uncompressed)',
   )
+
+  const xuz = []
+  for (let i = 0; i < 10; i++) {
+    xuz.push(Buffer.from(euobserver))
+  }
+  const x = Buffer.concat(xuz)
+  for (let i = 0; i < 10; i++) {
+    db.create('file', {
+      contents: x,
+    })
+  }
+  console.log('--', await db.drain(), 'ms')
+  let xx = Date.now()
+  var mb = 0
+  let p: any = []
+  for (let i = 0; i < 9; i++) {
+    p.push(db.query('file').get())
+    mb += 74
+  }
+  await Promise.all(p)
+  console.log(Date.now() - xx, 'ms', mb)
+
+  for (let i = 0; i < 9; i++) {
+    xx = Date.now()
+    mb = 0
+    p = []
+    for (let i = 0; i < 9; i++) {
+      p.push(db.query('file').get())
+      mb += 74
+    }
+    await Promise.all(p)
+    console.log(Date.now() - xx, 'ms', mb)
+  }
 })
 
 await test('Big string', async (t) => {

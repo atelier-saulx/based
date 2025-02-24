@@ -571,4 +571,5 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
     bufferTmp: Buffer.from([]),
     props: [],
   },
+  localeSize: 0,
 }

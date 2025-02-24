@@ -139,6 +139,7 @@ export type SchemaTypeDef = {
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>
+  localeSize: number
 }
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
