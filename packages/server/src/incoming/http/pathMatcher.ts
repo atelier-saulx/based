@@ -164,10 +164,6 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
   let tokenValueIndex = 0
   
   while (i < len) {
-    if (tokens.length === 1 && token.value[SLASH]) {      
-      return true
-    }
-
     if (path[i] === SLASH) {
       tokenIndex++
       i++
@@ -189,8 +185,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
 
       if (!token) {
         const previousModifier = tokens[tokenIndex - 1].modifier
-        if (previousModifier === QUESTION_MARK ||
-          previousModifier === ASTERISK ||
+        if (previousModifier === ASTERISK ||
           previousModifier === PLUS
         ) {          
           return true
@@ -212,12 +207,10 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
       } else if (path[i] === token.value[tokenValueIndex] && tokenSize) {        
         tokenSize--
         tokenValueIndex++
-        // i++
-        // continue
       } else {
         return false
       }
-    } else if (i === len && token.type === PARAM) {    
+    } else if (i === len && token.type === PARAM) {          
       if (token.modifier === QUESTION_MARK || token.modifier === ASTERISK)  {
         return true 
       } else if (token.modifier === PLUS) {
@@ -238,10 +231,10 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
     }
   }
 
-  if (tokenSize) {
+  if (tokenSize && token.type === STATIC) {
     return false
   }
-  
+
   return true
 }
 
@@ -252,7 +245,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
  * @param path - The path to test ("/users/123")
  */
 export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[] | boolean> {
-  if (!tokens.length || path.byteLength === 0 || path[0] !== SLASH) {
+  if (!tokens.length || path.byteLength === 0 || path[0] !== SLASH) {    
     return {}
   }
 
@@ -267,8 +260,18 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
   let query: boolean = false
   let queryValue: string = ''
 
-  while (i < len) {         
-    collected += String.fromCharCode(path[i]) || ''    
+  if (i === len) {
+    extractions[tokenValue] = ''
+
+    return extractions
+  }
+
+  while (i < len) { 
+    if (i === 1 && path[i] === QUESTION_MARK) {
+      extractions[tokenValue] = ''
+    }
+
+    collected += String.fromCharCode(path[i]) || ''  
 
     if (query) {
       if (i === len - 1 && collected && !queryValue) {
@@ -307,7 +310,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     }
 
     i++
-
+    
     if (path[i] === SLASH) {
       isToCollect = true
       i++
@@ -318,7 +321,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     }
 
     if (isToCollect) {      
-      isToCollect = false   
+      isToCollect = false
    
       if (token.type === PARAM) {
         if (token.modifier === PLUS || token.modifier === ASTERISK) {
@@ -327,7 +330,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
           extractions[tokenValue] = collected
         }  
       }
-      
+
       collected = ''
     }    
 

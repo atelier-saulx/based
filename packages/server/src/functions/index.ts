@@ -90,7 +90,7 @@ export class BasedFunctions {
 
     if (this.config.route === undefined) {
       this.config.route = ({ path }) => {  
-        let route: BasedRouteComplete        
+        let route: BasedRouteComplete
         
         if (path) {
           route = this.getRoute(path)
@@ -411,14 +411,21 @@ export class BasedFunctions {
     const routesKeys = Object.keys(this.routes)
         
     while (i < routesKeys.length) {
-      tokens = [...this.routes[routesKeys[i]].tokens]
+      tokens = [...this.routes[routesKeys[i]].tokens]      
 
       if (removeNameFromTokens && tokens) {
         tokens.shift()        
       }
 
       if (pathMatcher(tokens, bufferPath)) {
-        return this.routes[routesKeys[i]]
+        if (tokens.length === this.routes[routesKeys[i]].tokens.length) {
+          return this.routes[routesKeys[i]]
+        }
+
+        return {
+          ...this.routes[routesKeys[i]],
+          tokens
+        }
       }
 
       i++

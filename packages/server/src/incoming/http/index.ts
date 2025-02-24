@@ -270,7 +270,7 @@ export const httpHandler = (
     const checksumRaw = req.getHeader('if-none-match')
     const checksumNum = Number(checksumRaw)
     const checksum = !isNaN(checksumNum) ? checksumNum : 0
-    
+
     handleRequest(server, method, ctx, route, (payload) => {
       httpGet(route, payload, ctx, server, checksum)
     })
