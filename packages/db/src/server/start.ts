@@ -14,8 +14,6 @@ import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
 
-// TODO FROM the schema
-
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 
