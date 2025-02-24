@@ -15,8 +15,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "tsc && tsc test/*.ts --noEmit && tsx --test test/*.ts",
-    "test1": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
+    "test": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
   },
   "prettier": "@saulx/prettier-config",
   "sideEffects": false,
