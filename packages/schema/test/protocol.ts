@@ -5,6 +5,8 @@ import {
   SchemaTypesParsedById,
   SchemaTypesParsed,
 } from '../src/def/index.js'
+import { readFromPacked } from '../dist/def/readFromPacked.js'
+import { deepEqual } from 'node:assert'
 
 // schema byte format
 
@@ -37,61 +39,12 @@ await test('protocol', (t) => {
 
   updateTypeDefs(schema, parsed, parsedIDs)
 
-  console.log(parsed.thing.buf, parsed.thing.propNames)
+  console.log(parsed.thing.props)
+
+  console.log('--------------------------------------')
+  console.dir(readFromPacked(parsed.thing.packed).props, { depth: 10 })
+
+  deepEqual(parsed.thing.props, readFromPacked(parsed.thing.packed).props)
 
   // read types back from buf
-
-  const props: any = []
-  const b = parsed.thing.buf
-  let collectMain = false
-
-  const mainProps = []
-
-  const typeId = b.subarray(0, 2)
-
-  for (let i = 2; i < b.length; i++) {
-    const prop = b[i]
-    if (collectMain) {
-      if (prop === 0) {
-        collectMain = false
-      } else {
-        mainProps.push({
-          prop: i - 3,
-          typeIndex: b[i],
-        })
-      }
-    } else {
-      if (prop == 0) {
-        collectMain = true
-      } else {
-        props.push({ prop, typeIndex: b[i + 1] })
-        i++
-      }
-    }
-  }
-
-  const decoder = new TextDecoder()
-  const fields: any = []
-  const f = parsed.thing.propNames
-  for (let i = 0; i < f.length; i++) {
-    const size = f[i]
-    fields.push(decoder.decode(f.subarray(i + 1, i + 1 + size)))
-    i += size
-  }
-
-  for (let i = 0; i < mainProps.length; i++) {
-    mainProps[i].path = fields[i + 1]
-  }
-
-  for (let i = 0; i < props.length; i++) {
-    props[i].path = fields[i + 1 + mainProps.length]
-  }
-
-  console.log({
-    type: fields[0],
-    fields,
-    typeId,
-    props,
-    mainProps,
-  })
 })
