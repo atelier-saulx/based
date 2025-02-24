@@ -12,6 +12,7 @@
 #include "selva/selva_lang.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
+#include "bits.h"
 #include "db.h"
 #include "db_panic.h"
 #include "idz.h"
@@ -90,18 +91,19 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     const size_t field_data_size = selva_fields_get_data_size(fs);
     const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
-    if (new_size > 0xFFFFFF) {
+    if (new_size > (1 << bitsizeof(struct SelvaFields, data_len)) - 1) {
         db_panic("new_size too large: %zu", new_size);
     }
+    if (off > (size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << 3) | 0x7)) {
+        db_panic("fields->data too full");
+    }
+    assert((off & 0x7) == 0);
 
     if (!data || selva_sallocx(data, 0) < new_size) {
         data = selva_realloc(data, new_size);
         fields->data = PTAG(data, PTAG_GETTAG(fields->data));
     }
     fields->data_len = new_size;
-
-    assert((off & 0x7) == 0);
-
     memset(data + off, 0, field_data_size);
 
     return (struct SelvaFieldInfo){
