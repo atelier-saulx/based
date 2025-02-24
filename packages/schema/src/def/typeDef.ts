@@ -140,15 +140,15 @@ export const createSchemaTypeDef = (
     seperateSort: {
       size: 0,
       props: [],
-      buffer: Buffer.allocUnsafe(0),
-      bufferTmp: Buffer.allocUnsafe(0),
+      buffer: new Uint8Array([]),
+      bufferTmp: new Uint8Array([]),
     },
     hasSeperateTextSort: false,
     seperateTextSort: {
       size: 0, // prop len
       props: [],
-      buffer: Buffer.allocUnsafe(0),
-      bufferTmp: Buffer.allocUnsafe(0),
+      buffer: new Uint8Array([]),
+      bufferTmp: new Uint8Array([]),
     },
   },
   path: string[] = [],
@@ -314,7 +314,7 @@ export const createSchemaTypeDef = (
       }
     }
 
-    result.buf = Buffer.allocUnsafe(len)
+    result.buf = new Uint8Array(len)
     result.buf[0] = result.idUint8[0]
     result.buf[1] = result.idUint8[1]
 
@@ -351,7 +351,7 @@ export const createSchemaTypeDef = (
       }
     }
 
-    result.propNames = Buffer.allocUnsafe(fieldNameLen)
+    result.propNames = new Uint8Array(fieldNameLen)
     let lastWritten = 0
     for (const f of fieldNames) {
       result.propNames[lastWritten] = f.byteLength
@@ -369,7 +369,7 @@ export const createSchemaTypeDef = (
           }
         }
       }
-      result.seperateTextSort.buffer = Buffer.allocUnsafe(
+      result.seperateTextSort.buffer = new Uint8Array(
         max * result.localeSize + 1,
       )
       for (const f of result.separate) {
@@ -379,12 +379,10 @@ export const createSchemaTypeDef = (
           result.seperateTextSort.size += result.localeSize
         }
       }
-      result.seperateTextSort.bufferTmp = Buffer.allocUnsafe(
+      result.seperateTextSort.bufferTmp = new Uint8Array(
         max * result.localeSize + 1,
       )
-
-      // @ts-ignore
-      result.seperateTextSort.buffer.copy(result.seperateTextSort.bufferTmp)
+      result.seperateTextSort.buffer.set(result.seperateTextSort.bufferTmp)
     }
 
     if (separateSortProps > 0) {
@@ -401,7 +399,7 @@ export const createSchemaTypeDef = (
           }
         }
       }
-      result.seperateSort.buffer = Buffer.allocUnsafe(max + 1)
+      result.seperateSort.buffer = new Uint8Array(max + 1)
       for (const f of result.separate) {
         if (
           f.typeIndex === STRING ||
@@ -413,10 +411,8 @@ export const createSchemaTypeDef = (
           result.seperateSort.size++
         }
       }
-      result.seperateSort.bufferTmp = Buffer.allocUnsafe(max + 1)
-
-      // @ts-ignore
-      result.seperateSort.buffer.copy(result.seperateSort.bufferTmp)
+      result.seperateSort.bufferTmp = new Uint8Array(max + 1)
+      result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
     }
 
     for (const p in result.props) {

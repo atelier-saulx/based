@@ -8,7 +8,7 @@ import {
 
 // schema byte format
 
-await test('protocol', () => {
+await test('protocol', (t) => {
   const schema: StrictSchema = {
     types: {
       thing: {
@@ -34,5 +34,7 @@ await test('protocol', () => {
 
   updateTypeDefs(schema, parsed, parsedIDs)
 
-  console.log(parsed, parsedIDs)
+  // use path
+
+  console.log(JSON.stringify(parsed))
 })

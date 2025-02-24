@@ -79,7 +79,7 @@ const appendCreate = (
       ctx.buf[sizepos] = size >>>= 8
     }
     if (ctx.hasSortField !== -1) {
-      def.seperateSort.buffer.copy(def.seperateSort.bufferTmp)
+      def.seperateSort.buffer.set(def.seperateSort.bufferTmp)
     }
   }
 }

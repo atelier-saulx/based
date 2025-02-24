@@ -130,6 +130,11 @@ function makeBlockCapacityBuffer(blockCapacity: number): Buffer {
 
 // todo rewrite
 export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
+  if (typeof Buffer === 'undefined') {
+    // TMP
+    return []
+  }
+
   return Object.values(schema).map((t, i) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []

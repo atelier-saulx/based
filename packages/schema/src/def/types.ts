@@ -102,8 +102,8 @@ export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
 
 export type SchemaSortUndefinedHandler = {
   size: number // number of text fields
-  buffer: Buffer
-  bufferTmp: Buffer // Gets reused in modify to avoid extra Alloc
+  buffer: Uint8Array
+  bufferTmp: Uint8Array // Gets reused in modify to avoid extra Alloc
   props: PropDef[]
 }
 
@@ -115,8 +115,8 @@ export type SchemaTypeDef = {
   lastId: number
   blockCapacity: number
   mainLen: number
-  buf: Buffer
-  propNames: Buffer
+  buf: Uint8Array
+  propNames: Uint8Array
   props: {
     [path: string]: PropDef
   }
