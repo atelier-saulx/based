@@ -5,7 +5,7 @@ import {
   REFERENCE,
   REFERENCES,
   REVERSE_SIZE_MAP,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { QueryDef, QueryDefFilter } from '../types.js'
 import { EQUAL, isNumerical } from './types.js'
 import { Filter } from './types.js'

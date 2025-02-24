@@ -1,9 +1,5 @@
 import { LangCode } from '@based/schema'
-import {
-  PropDef,
-  PropDefEdge,
-  SchemaTypeDef,
-} from '../../server/schema/schema.js'
+import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 

@@ -1,6 +1,10 @@
 import { parse, Schema, StrictSchema } from '@based/schema'
 import { create, CreateObj } from './modify/create.js'
-import { SchemaTypeDef } from '../server/schema/types.js'
+import {
+  SchemaTypeDef,
+  updateTypeDefs,
+  schemaToSelvaBuffer,
+} from '@based/schema/def'
 import { flushBuffer, ModifyCtx } from './operations.js'
 import {
   SubscriptionMarkerMap,
@@ -12,9 +16,7 @@ import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
-import { updateTypeDefs } from '../server/schema/typeDef.js'
 import { DbServer } from '../server/index.js'
-import { schemaToSelvaBuffer } from '../server/schema/selvaBuffer.js'
 import { deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
@@ -98,7 +100,17 @@ export class DbClient {
       return this.schema
     }
     this.schema = schema
-    updateTypeDefs(this)
+    for (const field in this.schema.types) {
+      if (!('id' in this.schema.types[field])) {
+        this.schema.lastId++
+        this.schema.types[field].id = this.schema.lastId
+      }
+    }
+    updateTypeDefs(
+      this.schema,
+      this.schemaTypesParsed,
+      this.schemaTypesParsedById,
+    )
     // TODO should not need this, but it modifies the schema
     schemaToSelvaBuffer(this.schemaTypesParsed)
     return this.schema

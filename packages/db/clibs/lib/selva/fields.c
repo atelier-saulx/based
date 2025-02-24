@@ -42,7 +42,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
-    // [SELVA_FIELD_TYPE_CARDINALITY] = sizeof_field(struct SelvaFieldsAny, cardinality),
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
     [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
     [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
@@ -904,7 +903,7 @@ int selva_fields_set_text(
     if (!tf.text) {
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
-        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
+        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)",
                  node->type, node->node_id, fs->field,
                  selva_str_field_type(nfo->type), nfo->type,
                  selva_str_field_type(fs->type), fs->type);
@@ -915,7 +914,6 @@ int selva_fields_set_text(
         tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
         err = selva_string_init(tf.tl, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
         if (err) {
-            /* TODO Error handling? */
             db_panic("Failed to init a text field");
         }
     }

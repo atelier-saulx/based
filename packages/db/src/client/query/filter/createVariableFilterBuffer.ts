@@ -1,10 +1,4 @@
-import {
-  ALIAS,
-  PropDef,
-  PropDefEdge,
-  TEXT,
-  VECTOR,
-} from '../../../server/schema/types.js'
+import { ALIAS, PropDef, PropDefEdge, TEXT, VECTOR } from '@based/schema/def'
 import {
   EQUAL,
   EQUAL_CRC32,

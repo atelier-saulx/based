@@ -1,4 +1,4 @@
-import { ALIAS } from '../../server/schema/types.js'
+import { ALIAS } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import { BasedDbQuery } from '../query/BasedDbQuery.js'
 import { ModifyOpts } from './types.js'

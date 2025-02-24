@@ -1,13 +1,6 @@
 import { ModifyCtx } from '../../index.js'
-import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
-import {
-  ModifyOp,
-  ModifyErr,
-  UPDATE,
-  RANGE_ERR,
-  DELETE,
-  CREATE,
-} from './types.js'
+import { SchemaTypeDef, PropDef } from '@based/schema/def'
+import { ModifyOp, ModifyErr, RANGE_ERR, CREATE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'

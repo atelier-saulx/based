@@ -44,7 +44,6 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 
 	ifeq ($(uname_M),x86_64)
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
-		# TODO add -mavx512f if supported
 		CFLAGS += -fcf-protection=full
 	endif
 	ifeq ($(uname_M),aarch64)
@@ -54,7 +53,6 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	LDFLAGS += -Wl,--no-as-needed -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so
-	MOD_SUFFIX := .so
 endif
 ifeq ($(uname_S),Darwin) # Assume macOS
 	ROSETTA2 := $(shell sh -c 'sysctl -n sysctl.proc_translated 2>/dev/null || echo 0')
@@ -62,11 +60,7 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 	CFLAGS += -g -Wno-c11-extensions -Wno-unknown-attributes
 
 	ifeq ($(uname_M),x86_64)
-		CFLAGS += -march=x86-64
-		ifeq ($(ROSETTA2),0)
-			CFLAGS += -mtune=core-avx2 -mfpmath=sse -mavx -mavx2
-			CFLAGS += -fcf-protection=full
-		endif
+		$(error Unsupported platform darwin_x86_64)
 	endif
 	ifeq ($(uname_M),aarch64)
 		CFLAGS += -mcpu=apple-m1
@@ -74,7 +68,6 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 	endif
 
 	LIB_SUFFIX := .dylib
-	MOD_SUFFIX := .so
 endif
 
 ifndef LIB_SUFFIX

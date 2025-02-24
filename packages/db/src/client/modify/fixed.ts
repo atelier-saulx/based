@@ -14,7 +14,7 @@ import {
   UINT16,
   UINT32,
   UINT8,
-} from '../../server/schema/types.js'
+} from '@based/schema/def'
 import { convertToTimestamp } from '../timestamp.js'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'

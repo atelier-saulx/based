@@ -1,6 +1,6 @@
 import native from '../native.js'
 import { DbServer } from './index.js'
-import { SchemaTypeDef } from './schema/types.js'
+import { SchemaTypeDef } from '@based/schema/def'
 
 export type CsmtNodeRange = {
   file: string

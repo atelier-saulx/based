@@ -2,7 +2,7 @@ import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
-import { MICRO_BUFFER } from '../../server/schema/schema.js'
+import { MICRO_BUFFER } from '@based/schema/def'
 
 export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
   const ctx = db.modifyCtx

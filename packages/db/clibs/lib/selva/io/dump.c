@@ -291,7 +291,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        // case SELVA_FIELD_TYPE_CARDINALITY:
             /* NOP */
             break;
         }
@@ -654,7 +653,6 @@ static void load_reference_meta(
             db_panic("Muffer not supported in edge meta");
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        // case SELVA_FIELD_TYPE_CARDINALITY:
             /* NOP */
             break;
         }
@@ -855,7 +853,6 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-        // case SELVA_FIELD_TYPE_CARDINALITY:
             /* NOP */
             break;
         }
