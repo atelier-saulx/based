@@ -127,8 +127,8 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(path?: string): BasedRouteComplete | null {
-    return this.config.route({ path })
+  route(externalName?: string, externalPath?: string): BasedRouteComplete | null {
+    return this.config.route({ path: externalPath || externalName })
   }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
@@ -411,7 +411,7 @@ export class BasedFunctions {
     const routesKeys = Object.keys(this.routes)
         
     while (i < routesKeys.length) {
-      tokens = this.routes[routesKeys[i]].tokens
+      tokens = [...this.routes[routesKeys[i]].tokens]
 
       if (removeNameFromTokens && tokens) {
         tokens.shift()        

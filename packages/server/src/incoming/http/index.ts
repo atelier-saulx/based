@@ -103,7 +103,7 @@ export const httpHandler = (
     return
   }
 
-  const route = server.functions.route(url)  
+  const route = server.functions.route(path[1], url)
 
   if (route === null || route.internalOnly === true) {
     sendError(
