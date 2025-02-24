@@ -1,4 +1,5 @@
 import {
+  CARDINALITY,
   PropDef,
   PropDefEdge,
   REFERENCE,
@@ -47,6 +48,8 @@ export const primitiveFilter = (
       value,
       !isNumerical(ctx.operation),
     )
+  } else if (prop.typeIndex === CARDINALITY) {
+    buf = createFixedFilterBuffer(prop, 2, ctx, value, false)
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, ctx, value, false)
   } else {
