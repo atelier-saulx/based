@@ -1,7 +1,7 @@
 import { langCodesMap, LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
 import { ModifyOp, ModifyErr, CREATE } from './types.js'
-import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
+import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import { writeString } from './string.js'
 import { ModifyState } from './ModifyRes.js'
 

@@ -1,4 +1,4 @@
-import { SchemaLocales } from '@based/schema'
+import type { SchemaLocales } from '../index.js'
 
 // WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
@@ -130,12 +130,10 @@ export type SchemaTypeDef = {
     [start: string]: PropDef
   }
   tree: SchemaPropTree
-
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler
   hasSeperateTextSort: boolean
   seperateTextSort: SchemaSortUndefinedHandler
-
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>
@@ -216,3 +214,6 @@ export const isPropDef = (prop: any): prop is PropDef => {
   }
   return false
 }
+
+export type SchemaTypesParsed = { [key: string]: SchemaTypeDef }
+export type SchemaTypesParsedById = Record<number, SchemaTypeDef>

@@ -1,14 +1,9 @@
 import { ModifyCtx } from '../../../index.js'
-import {
-  PropDef,
-  REFERENCES,
-  SchemaTypeDef,
-} from '../../../server/schema/types.js'
+import { PropDef, REFERENCES, SchemaTypeDef } from '@based/schema/def'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
 import { writeEdges } from './edge.js'
-import { MICRO_BUFFER } from '../../../server/schema/schema.js'
 
 export type RefModifyOpts = {
   id?: number | ModifyState

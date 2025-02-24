@@ -1,5 +1,3 @@
-import { DbClient } from '../../client/index.js'
-import { DbServer } from '../index.js'
 import {
   INT16,
   INT32,
@@ -38,17 +36,4 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
     return true
   }
   return false
-}
-
-const genIdFromInt = (n: number): number => {
-  return n
-}
-
-export const genRootId = () => {
-  return genIdFromInt(1)
-}
-
-export const genId = (db: DbServer | DbClient): number => {
-  db.schema.lastId++
-  return genIdFromInt(db.schema.lastId)
 }

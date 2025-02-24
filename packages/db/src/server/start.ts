@@ -12,6 +12,8 @@ import { save } from './save.js'
 
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
+
+// TODO FROM the schema
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
 const makeCsmtKey = (typeId: number, start: number) =>

@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '../../../server/schema/types.js'
+import { PropDef, PropDefEdge } from '@based/schema/def'
 import {
   Subscription,
   SubscriptionMarkerMap,

@@ -1,5 +1,5 @@
 import picocolors from 'picocolors'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../server/schema/types.js'
+import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 import { QueryDef, QueryDefType } from './types.js'
 import { concatUint8Arr } from '../bitWise.js'
 

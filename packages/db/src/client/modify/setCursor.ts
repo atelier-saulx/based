@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import { MICRO_BUFFER, SchemaTypeDef } from '../../server/schema/types.js'
+import { MICRO_BUFFER, SchemaTypeDef } from '@based/schema/def'
 import {
   CREATE,
   ModifyOp,

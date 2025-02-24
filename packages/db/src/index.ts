@@ -3,8 +3,6 @@ import { ModifyCtx } from './client/operations.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import picocolors from 'picocolors'
-
-export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
 
 export { compress, decompress }

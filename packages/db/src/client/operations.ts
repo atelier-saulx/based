@@ -1,4 +1,4 @@
-import { PropDef, SchemaTypeDef } from '../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { DbClient } from './index.js'
 import { ModifyState } from './modify/ModifyRes.js'
 import { makeCsmtKeyFromNodeId } from './tree.js'

@@ -1,9 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import {
-  MICRO_BUFFER,
-  PropDef,
-  SchemaTypeDef,
-} from '../../server/schema/schema.js'
+import { MICRO_BUFFER, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'

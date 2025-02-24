@@ -19,7 +19,7 @@ import {
   VECTOR,
   JSON,
   CARDINALITY,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { QueryDef } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {

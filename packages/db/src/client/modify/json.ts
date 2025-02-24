@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import { PropDef, SchemaTypeDef } from '../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { ModifyOp, ModifyErr } from './types.js'
 import { writeBinary } from './binary.js'
 

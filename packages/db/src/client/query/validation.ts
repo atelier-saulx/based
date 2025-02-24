@@ -13,8 +13,8 @@ import {
   TEXT,
   TIMESTAMP,
   VECTOR,
-} from '../../server/schema/types.js'
-import { propIsNumerical } from '../../server/schema/utils.js'
+  propIsNumerical,
+} from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
   EQUAL,

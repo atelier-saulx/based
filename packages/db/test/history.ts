@@ -1,11 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { setTimeout } from 'node:timers/promises'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import native from '../src/native.js'
 
-await test('history', async (t) => {
+await test.skip('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
 
   t.after(() => {

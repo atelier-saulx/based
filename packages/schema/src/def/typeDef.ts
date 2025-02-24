@@ -5,7 +5,7 @@ import {
   getPropType,
   SchemaReference,
   SchemaLocales,
-} from '@based/schema'
+} from '../index.js'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import {
@@ -20,11 +20,13 @@ import {
   REFERENCES,
   REFERENCE,
   TEXT,
+  SchemaTypesParsedById,
+  SchemaTypesParsed,
 } from './types.js'
-import { DbClient } from '../../client/index.js'
-import { DbServer } from '../index.js'
-import { genId } from './utils.js'
-import { DEFAULT_BLOCK_CAPACITY } from '../start.js'
+import { StrictSchema } from '../types.js'
+
+// TMP
+export const DEFAULT_BLOCK_CAPACITY = 100_000
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0
@@ -75,38 +77,42 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   }
 }
 
-export const updateTypeDefs = (db: DbClient | DbServer) => {
-  for (const field in db.schemaTypesParsed) {
-    if (field in db.schema.types) {
+export const updateTypeDefs = (
+  schema: StrictSchema,
+  schemaTypesParsed: SchemaTypesParsed,
+  schemaTypesParsedById: SchemaTypesParsedById,
+) => {
+  for (const field in schemaTypesParsed) {
+    if (field in schema.types) {
       continue
     }
-    const id = db.schemaTypesParsed[field].id
-    delete db.schemaTypesParsed[field]
-    delete db.schemaTypesParsedById[id]
+    const id = schemaTypesParsed[field].id
+    delete schemaTypesParsed[field]
+    delete schemaTypesParsedById[id]
   }
-  for (const field in db.schema.types) {
-    const type = db.schema.types[field]
+  for (const field in schema.types) {
+    const type = schema.types[field]
     if (
-      db.schemaTypesParsed[field] &&
-      db.schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
+      schemaTypesParsed[field] &&
+      schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
     ) {
       continue
     } else {
       if (!type.id) {
-        type.id = genId(db)
+        throw new Error('NEED ID ON TYPE')
       }
       const def = createSchemaTypeDef(
         field,
         type,
-        db.schemaTypesParsed,
-        db.schema.locales ?? {
+        schemaTypesParsed,
+        schema.locales ?? {
           en: {},
         },
       )
       def.blockCapacity =
         field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
-      db.schemaTypesParsed[field] = def
-      db.schemaTypesParsedById[type.id] = def
+      schemaTypesParsed[field] = def
+      schemaTypesParsedById[type.id] = def
     }
   }
 }
@@ -114,7 +120,7 @@ export const updateTypeDefs = (db: DbClient | DbServer) => {
 export const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
-  parsed: DbClient['schemaTypesParsed'],
+  parsed: SchemaTypesParsed,
   locales: Partial<SchemaLocales>,
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
@@ -376,6 +382,8 @@ export const createSchemaTypeDef = (
       result.seperateTextSort.bufferTmp = Buffer.allocUnsafe(
         max * result.localeSize + 1,
       )
+
+      // @ts-ignore
       result.seperateTextSort.buffer.copy(result.seperateTextSort.bufferTmp)
     }
 
@@ -406,6 +414,8 @@ export const createSchemaTypeDef = (
         }
       }
       result.seperateSort.bufferTmp = Buffer.allocUnsafe(max + 1)
+
+      // @ts-ignore
       result.seperateSort.buffer.copy(result.seperateSort.bufferTmp)
     }
 

@@ -1,4 +1,3 @@
-import { BasedDb } from '../../../index.js'
 import {
   isPropDef,
   PropDef,
@@ -6,7 +5,7 @@ import {
   REFERENCES,
   SchemaPropTree,
   TEXT,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
