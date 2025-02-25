@@ -296,7 +296,6 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-
     handleRequest(server, method, ctx, route, (payload) => {      
       authorize(route, server, ctx, payload, httpFunction)
     })
