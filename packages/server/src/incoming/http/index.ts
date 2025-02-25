@@ -53,33 +53,24 @@ export const httpHandler = (
       res.writeHeader('Access-Control-Allow-Origin', '*')
       res.end(server.restFallbackPath)
     })
-    
     return
   }
 
   if (server.restFallbackPath && path[1] === server.restFallbackPath) {
     if (method !== 'post') {
       res.end()
-    
       return
     }
-    
     let authorization: string = path[2]
-    
     if (!authorization || authorization.length > 5e3) {
       res.end()
-    
       return
     }
-    
     const authState = parseAuthState(authorization)
-    
     if (authState.error === 'Invalid token') {
       res.end()
-    
       return
     }
-    
     ctx = {
       session: {
         url,
@@ -99,7 +90,6 @@ export const httpHandler = (
       },
     }
     handleFakeWs(server, ctx)
-    
     return
   }
 
@@ -127,7 +117,6 @@ export const httpHandler = (
         ? { route: { name: path[1], type: 'function' } }
         : { route: { name: '', path: url, type: 'function' } },
     )
-    
     return
   }
 
@@ -135,7 +124,6 @@ export const httpHandler = (
 
   if (route.public !== true) {
     let authorization: string = req.getHeader('authorization')
-    
     if (authorization) {
       if (authorization.length > 5e3) {
         sendError(
@@ -157,15 +145,12 @@ export const httpHandler = (
           BasedErrorCode.PayloadTooLarge,
           { route: { name: 'authorize', type: 'function' } },
         )
-        
         return
       }
-      
       authState = parseAuthState(authorization)
     } else {
       // TODO: remove this when c++ client can encode
       const authorization: string = req.getHeader('json-authorization')
-      
       if (authorization) {
         authState = parseJSONAuthState(authorization)
       }
@@ -196,7 +181,6 @@ export const httpHandler = (
       for (const header of route.headers) {
         ctx.session.headers[header] = req.getHeader(header)
       }
-     
       ctx.session.res.cork(() => {
         ctx.session.res.writeHeader(
           'Access-Control-Allow-Headers',
@@ -222,19 +206,16 @@ export const httpHandler = (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.http)
   ) {
     endRateLimitHttp(res)
-    
     return
   }
 
   const query = req.getQuery()
-
   if (query) {
     ctx.session.query = query
   }
 
   const len = req.getHeader('content-length')
   const lenConverted = len ? Number(len) : undefined
-  
   if (lenConverted !== undefined && !isNaN(lenConverted)) {
     ctx.session.headers['content-length'] = lenConverted
   }
@@ -245,14 +226,12 @@ export const httpHandler = (
   ) {
     // Zero allowed, but not for streams
     sendError(server, ctx, BasedErrorCode.LengthRequired, route)
-    
     return
   }
 
   if (route.headers) {
     for (const header of route.headers) {
       const v = req.getHeader(header)
-      
       if (v) {
         ctx.session.headers[header] = v
       }
@@ -263,53 +242,40 @@ export const httpHandler = (
     // Handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      
       return
     }
-
     const checksumRaw = req.getHeader('if-none-match')
     const checksumNum = Number(checksumRaw)
     const checksum = !isNaN(checksumNum) ? checksumNum : 0
-
     handleRequest(server, method, ctx, route, (payload) => {
       httpGet(route, payload, ctx, server, checksum)
     })
-
     return
   }
 
   if (isBasedRoute('stream', route)) {
     if (method === 'options') {
       end(ctx)
-      
       return
     }
-    
     if (method !== 'post') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      
       return
     }
-
     if (ctx.session.headers['content-length'] === 0) {
       // Zero is also not allowed for streams
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
-      
       return
     }
-
     httpStreamFunction(server, ctx, route)
-    
     return
   }
 
   if (isBasedRoute('channel', route)) {
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      
       return
     }
-
     handleRequest(server, method, ctx, route, (payload) => {
       authorize(
         route,
@@ -322,7 +288,6 @@ export const httpHandler = (
         route.publicPublisher || route.public,
       )
     })
-
     return
   }
 
