@@ -37,6 +37,23 @@ const makeFunction = (path: string, returnValue: any) => {
   } as BasedFunctionConfigs
 }
 
+// FOR FUTURE: now the result is 400ms avg.
+// test('path matcher 10 million matches', async (t: T) => {
+//   const finalPath = '/static/:parameter?'
+//   const tokens = tokenizePattern(Buffer.from(finalPath))
+//   const bufferedUrl = Buffer.from('/static/yahoo')
+//   let match: boolean = false
+//   let i = 0
+//   const startTime = performance.now()
+//   while (i < 10e6) {
+//     match = pathMatcher(tokens, bufferedUrl)    
+//     i++
+//   }  
+//   console.log(`${((performance.now() - startTime))}ms`)
+  
+//   t.true(match)
+// })
+
 test('[query] path matcher with static value and optional parameter', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
