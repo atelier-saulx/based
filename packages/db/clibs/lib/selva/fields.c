@@ -94,10 +94,9 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     if (new_size > (1 << bitsizeof(struct SelvaFields, data_len)) - 1) {
         db_panic("new_size too large: %zu", new_size);
     }
-    if (off > (size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF) | 0x7)) {
-        db_panic("fields->data too full");
+    if ((off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {
+        db_panic("fields->data too full or invalid offset: %zu", off);
     }
-    assert((off & 0x7) == 0);
 
     if (!data || selva_sallocx(data, 0) < new_size) {
         data = selva_realloc(data, new_size);
