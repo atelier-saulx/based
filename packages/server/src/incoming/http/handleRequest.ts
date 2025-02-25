@@ -14,8 +14,6 @@ export const handleRequest = (
   if (method === 'post') {
     readBody(server, ctx, ready, route)
   } else {
-    const payload = payloadParser(ctx, route)
-    
-    ready(payload)
+    ready(payloadParser(ctx, route))
   }
 }
