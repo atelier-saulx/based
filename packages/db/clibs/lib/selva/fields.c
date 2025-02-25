@@ -94,7 +94,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     if (new_size > (1 << bitsizeof(struct SelvaFields, data_len)) - 1) {
         db_panic("new_size too large: %zu", new_size);
     }
-    if (off > (size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << 3) | 0x7)) {
+    if (off > (size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF) | 0x7)) {
         db_panic("fields->data too full");
     }
     assert((off & 0x7) == 0);
@@ -108,7 +108,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
 
     return (struct SelvaFieldInfo){
         .type = fs->type,
-        .off = off >> 3,
+        .off = off >> SELVA_FIELDS_OFF,
     };
 }
 
@@ -116,7 +116,7 @@ static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFi
 {
     char *data = (char *)PTAG_GETP(fields->data);
 
-    void *p = data + (nfo->off << 3);
+    void *p = data + (nfo->off << SELVA_FIELDS_OFF);
 
     if (unlikely((char *)p > data + fields->data_len)) {
         db_panic("Invalid field data access");
@@ -1675,7 +1675,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_NULL:
         return (struct SelvaFieldsPointer){
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << 3),
+            .off = (nfo->off << SELVA_FIELDS_OFF),
             .len = 0,
         };
     case SELVA_FIELD_TYPE_TIMESTAMP:
@@ -1714,7 +1714,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return (struct SelvaFieldsPointer){
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
+            .off = (nfo->off << SELVA_FIELDS_OFF) + offsetof(struct SelvaMicroBuffer, data),
             .len = selva_fields_get_data_size(fs) - offsetof(struct SelvaMicroBuffer, data),
         };
     case SELVA_FIELD_TYPE_ALIAS:
