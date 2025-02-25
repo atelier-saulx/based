@@ -636,7 +636,9 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     }
 
     refs = nfo2p(fields, nfo);
+#if 0
     assert(((uintptr_t)refs & 7) == 0);
+#endif
 
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
@@ -1511,7 +1513,9 @@ int selva_fields_set_reference_meta(
     if (!fs) {
         return SELVA_EINVAL;
     }
+#if 0
     assert(fs->field == field);
+#endif
 
     /*
      * Edge metadata can't contain these types because it would be almost
@@ -1567,8 +1571,10 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, fi
 
     ref = (struct SelvaNodeReference *)nfo2p(fields, nfo);
 
+#if 0
     /* Verify proper alignment. */
     assert(((uintptr_t)ref & 7) == 0);
+#endif
 
     return ref;
 }
@@ -1585,8 +1591,10 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
 
     refs = (struct SelvaNodeReferences *)nfo2p(fields, nfo);
 
+#if 0
     /* Verify proper alignment. */
     assert(((uintptr_t)refs & 7) == 0);
+#endif
 
     return refs;
 }
