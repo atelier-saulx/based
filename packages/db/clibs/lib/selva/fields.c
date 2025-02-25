@@ -169,8 +169,7 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     struct selva_string *s = nfo2p(fields, nfo);
 
     assert(nfo->type == SELVA_FIELD_TYPE_STRING);
-    assert(((uintptr_t)s & 7) == 0);
-    assert(s);
+    assert(s && ((uintptr_t)s & 7) == 0);
 
     if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
         if (fs->string.fixed_len == 0) {
