@@ -87,7 +87,6 @@ export class BasedFunctions {
       }
     }
 
-
     if (this.config.route === undefined) {
       this.config.route = ({ path }) => {  
         let route: BasedRouteComplete
@@ -112,7 +111,7 @@ export class BasedFunctions {
       }
     }
 
-    if (routes) {      
+    if (routes) {
       this.addRoutes(routes)
     }
 
@@ -239,15 +238,12 @@ export class BasedFunctions {
         rateLimitTokens: number
       }) {
     const realRoute = this.completeRoute(route, name)
-    
     if (realRoute === null) {
       return null
     }
-
     if (realRoute.path) {
       this.paths[realRoute.path] = realRoute.name
     }
-
     this.routes[route.name] = realRoute
     return realRoute
   }
