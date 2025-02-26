@@ -52,13 +52,27 @@ export const dev = async (program: Command) => {
 }
 
 class AppFile {
-  constructor(outputFile: OutputFile, filePort: number) {
+  constructor({
+    outputFile,
+    ip,
+    port,
+    folder = 'static',
+  }: {
+    outputFile: OutputFile
+    ip: string
+    port: number
+    folder?: string
+  }) {
     this.#outputFile = outputFile
-    this.#filePort = filePort
+    this.#folder = folder
+    this.#ip = ip
+    this.#port = port
   }
 
   #outputFile: OutputFile
-  #filePort: number
+  #folder: string
+  #ip: string
+  #port: number
 
   get text() {
     return this.#outputFile?.text || ''
@@ -68,7 +82,7 @@ class AppFile {
     return (
       this.#outputFile?.path.replace(
         process.cwd(),
-        `http://localhost:${this.#filePort}`,
+        `http://${this.#ip}:${this.#port}/${this.#folder}`,
       ) || ''
     )
   }
@@ -99,16 +113,13 @@ export const devServer = async ({
   const newPort =
     port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
 
-  const [devPort, filePort, _staticPort, lrPort] = await Promise.all([
+  const [devPort, lrPort] = await Promise.all([
     getPort({ port: newPort || 1234 }),
-    getPort({ port: 2000 }),
-    getPort({ port: 3000 }),
     getPort({ port: 4000 }),
   ])
   const ip = getOwnIp()
   const devServerWSPath = `ws://${ip}:${devPort}`
-  const publicPath = `http://${ip}:${filePort}`
-  // const staticPath = `http://${ip}:${staticPort}`
+  const publicPath = `http://${ip}:${devPort}/static/`
 
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
     context,
@@ -128,22 +139,16 @@ export const devServer = async ({
   const basedServer: BasedServer = await context.basedServer(
     devPort,
     client,
+    () => browserBundles.result.outputFiles,
     true,
   )
 
-  await context.fileServer(filePort, () => browserBundles.result.outputFiles)
   update(null)
 
   context.print.info(
     `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
     '<primary>▶</primary>',
   )
-  context.print
-    .info(
-      `<primary><b>Based Bundle Server:</b></primary> http://localhost:${filePort} | <dim>http://${ip}:${filePort}</dim>`,
-      '<primary>▶</primary>',
-    )
-    .line()
 
   async function update(err: any) {
     let reloadClients = hadError
@@ -163,6 +168,7 @@ export const devServer = async ({
         let appJs: OutputFile
         let appCss: OutputFile
         let appFavicon: OutputFile
+
         if (app) {
           const faviconPath =
             favicon &&
@@ -170,6 +176,7 @@ export const devServer = async ({
               ?.imports[0]?.path
           const faviconPathAbsolute =
             faviconPath && join(process.cwd(), faviconPath)
+
           if (app.endsWith('.html')) {
             appHtml = browserBundles.html(app)
           } else {
@@ -225,11 +232,12 @@ export const devServer = async ({
 
         if (app) {
           const params = {
-            html: new AppFile(appHtml, filePort),
-            js: new AppFile(appJs, filePort),
-            css: new AppFile(appCss, filePort),
-            favicon: new AppFile(appFavicon, filePort),
+            html: new AppFile({ outputFile: appHtml, ip, port: devPort }),
+            js: new AppFile({ outputFile: appJs, ip, port: devPort }),
+            css: new AppFile({ outputFile: appCss, ip, port: devPort }),
+            favicon: new AppFile({ outputFile: appFavicon, ip, port: devPort }),
           }
+
           reloadClients = true
           fnUpdates[config.name] = {
             ...config,

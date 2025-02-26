@@ -1,10 +1,14 @@
+import { basename, extname } from 'node:path'
+import { join } from 'node:path'
+import type { OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
 import type { BasedServer } from '@based/server'
-import { join } from 'node:path'
+import { getContentType } from '../../shared/index.js'
 
 export const contextBasedServer = async (
   port: number,
   client: BasedClient,
+  files: () => OutputFile[],
   silent: boolean,
 ): Promise<BasedServer> => {
   const { BasedServer } = await import('@based/server')
@@ -16,16 +20,55 @@ export const contextBasedServer = async (
     port,
     functions: {
       configs: {
-        files: {
-          path: '/static/',
-          type: 'function',
-          // allow just http, without function
-          fn: async () => {
-            return
-          },
-          httpResponse: async (_based, _payload, responseData, send, ctx) => {
-            console.log({ ctx })
-            send(responseData, { contentType: 'flapdrol' })
+        static: {
+          type: 'http',
+          path: '/static/:file?',
+          fn: async (_based, payload, send, _ctx) => {
+            const getFileContent = (requestedFileName: string) =>
+              files().find((file) => basename(file.path) === requestedFileName)
+
+            const file = payload.file
+            const urlPath = file ? file : '/'
+            const requestedFileName = urlPath === '/' ? 'index.html' : urlPath
+            const fileContent = getFileContent(requestedFileName)
+
+            if (!fileContent) {
+              send(
+                'File Not Allowed or Not Found',
+                { 'Content-Type': 'text/plain' },
+                404,
+              )
+              return
+            }
+
+            try {
+              const dataBuffer = Buffer.from(fileContent.contents)
+              const ext = extname(fileContent.path).toLowerCase()
+              const contentType = getContentType(ext)
+              let contentData: string | Buffer<ArrayBuffer> = dataBuffer
+
+              if (
+                contentType.includes('text') ||
+                contentType.includes('javascript')
+              ) {
+                contentData = dataBuffer.toString('utf8')
+              }
+
+              send(
+                contentData,
+                {
+                  'Content-Type': contentType,
+                  'Access-Control-Allow-Origin': '*',
+                },
+                200,
+              )
+            } catch {
+              send(
+                'Internal Server Error',
+                { 'Content-Type': 'text/plain' },
+                500,
+              )
+            }
           },
         },
         db: {

@@ -127,3 +127,40 @@ export const saveAsFile = async (
     throw new Error(`Failed to save file: ${error}`)
   }
 }
+
+export const getContentType = (extension: string) => {
+  switch (extension) {
+    case '.html': {
+      return 'text/html'
+    }
+
+    case '.js': {
+      return 'application/javascript'
+    }
+
+    case '.css': {
+      return 'text/css'
+    }
+
+    case '.json': {
+      return 'application/json'
+    }
+
+    case '.png': {
+      return 'image/png'
+    }
+
+    case '.jpg':
+    case '.jpeg': {
+      return 'image/jpeg'
+    }
+
+    case '.gif': {
+      return 'image/gif'
+    }
+
+    default: {
+      return 'application/octet-stream'
+    }
+  }
+}
