@@ -90,12 +90,16 @@ export class BasedFunctions {
     if (this.config.route === undefined) {
       this.config.route = ({ path }) => {  
         let route: BasedRouteComplete
+
+        if (path === '/') {
+          return this.routes[this.paths['/']]
+        }
         
         if (path) {
           route = this.getRoute(path)
         }
 
-        return route || this.routes[path] || this.routes['/'] || null
+        return route || this.routes[path] || this.routes[this.paths['/']] || null
       }
     }
 

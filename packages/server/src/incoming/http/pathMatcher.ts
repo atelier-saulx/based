@@ -109,12 +109,18 @@ function parseToken(segment: Buffer): PathToken {
   }
 
   while (i < len) {    
-    if (isValidParamChar(segment[i])) {
+    if (isValidParamChar(segment[i]) ||
+      (
+        segment[i] === COLON &&
+        value[0] === 0x64 &&
+        value[1] === 0x62
+      )) {
       value[j++] = segment[i]
     } else if (isValidParamModifier(segment[i]) && type === PARAM && i === len - 1) {
       modifier = segment[i] as PathToken['modifier']
     } else {
       type = INVALID
+      value.fill(0)
 
       break
     }
