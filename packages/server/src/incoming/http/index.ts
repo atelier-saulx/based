@@ -1,7 +1,7 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server.js'
 import { HttpSession, Context, AuthState, isBasedRoute } from '@based/functions'
-import { httpFunction } from './function.js'
+import { basicFunction } from './basicFunction.js'
 import { httpStreamFunction } from './streamFunction/index.js'
 import { httpGet } from './query.js'
 import { BasedErrorCode } from '@based/errors'
@@ -17,6 +17,7 @@ import { end } from '../../sendHttpResponse.js'
 import { httpPublish } from './publish.js'
 import { handleRequest } from './handleRequest.js'
 import { handleFakeWs } from './fakeWs/index.js'
+import { httpFunction } from './httpFunction.js'
 
 let clientId = 0
 const defHeaders = 'Authorization,Content-Type'
@@ -291,7 +292,17 @@ export const httpHandler = (
     return
   }
 
-  if (isBasedRoute('function', route) || isBasedRoute('http', route)) {
+  if (isBasedRoute('function', route)) {
+    if (method !== 'post' && method !== 'get') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
+    }
+    handleRequest(server, method, ctx, route, (payload) => {      
+      authorize(route, server, ctx, payload, basicFunction)
+    })
+  }
+
+  if (isBasedRoute('http', route)) {
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return

@@ -10,12 +10,28 @@ import { sendError } from '../../sendError.js'
 import { IsAuthorizedHandler } from '../../authorize.js'
 
 export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
-  route: BasedRoute<'function'>,
-  spec: BasedFunctionConfig<'function'>,
+  route: BasedRoute<'http'>,
+  spec: BasedFunctionConfig<'http'>,
   server,
   ctx,
   payload
 ) => {
+  const send: SendHttpResponse = (responseData, headers, status) => {
+    if (!ctx.session) {
+      return
+    }
+    if (!status) {
+      sendHttpResponse(ctx, responseData, headers)
+    } else {
+      sendHttpResponse(
+        ctx,
+        responseData,
+        headers,
+        typeof status === 'string' ? status : String(status)
+      )
+    }
+  }
+
   if (spec.relay) {
     const client = server.clients[spec.relay.client]
 
@@ -33,23 +49,8 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
         if (!ctx.session) {
           return
         }
-        if (spec.httpResponse) {
-          const send: SendHttpResponse = (responseData, headers, status) => {
-            if (!ctx.session) {
-              return
-            }
-            if (!status) {
-              sendHttpResponse(ctx, responseData, headers)
-            } else {
-              sendHttpResponse(
-                ctx,
-                responseData,
-                headers,
-                typeof status === 'string' ? status : String(status)
-              )
-            }
-          }
-          await spec.httpResponse(server.client, payload, result, send, ctx)
+        if (spec.fn) {
+          await spec.fn(server.client, payload, send, ctx)
           return
         }
 
@@ -66,28 +67,13 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
   }
 
   spec
-    .fn(server.client, payload, ctx)
+    .fn(server.client, payload, send, ctx)
     .then(async (result) => {
       if (!ctx.session) {
         return
       }
-      if (spec.httpResponse) {
-        const send: SendHttpResponse = (responseData, headers, status) => {
-          if (!ctx.session) {
-            return
-          }
-          if (!status) {
-            sendHttpResponse(ctx, responseData, headers)
-          } else {
-            sendHttpResponse(
-              ctx,
-              responseData,
-              headers,
-              typeof status === 'string' ? status : String(status)
-            )
-          }
-        }
-        await spec.httpResponse(server.client, payload, result, send, ctx)
+      if (spec.fn) {
+        await spec.fn(server.client, payload, send, ctx)
         return
       }
 
