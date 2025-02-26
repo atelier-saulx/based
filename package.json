@@ -6,7 +6,10 @@
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": ["bin", "dist"],
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
@@ -38,6 +41,7 @@
   "dependencies": {
     "@based/bundle": "^0.4.7",
     "@based/client": "^6.11.1",
+    "@based/db": "^0.0.16",
     "@based/i18n": "^0.2.0",
     "@based/server": "^9.1.2",
     "@clack/prompts": "^0.7.0",

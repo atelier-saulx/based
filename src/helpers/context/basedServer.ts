@@ -1,12 +1,13 @@
 import type { BasedClient } from '@based/client'
-import { BasedServer } from '@based/server'
-import { contentType } from 'mime-types'
+import type { BasedServer } from '@based/server'
+import { join } from 'node:path'
 
 export const contextBasedServer = async (
   port: number,
   client: BasedClient,
   silent: boolean,
 ): Promise<BasedServer> => {
+  const { BasedServer } = await import('@based/server')
   const server = new BasedServer({
     silent,
     clients: {
@@ -63,6 +64,15 @@ export const contextBasedServer = async (
     },
   })
 
+  const { BasedDb } = await import('@based/db')
+  const basedDb = new BasedDb({
+    path: join(process.cwd(), 'tmp'),
+  })
+
+  await basedDb.start()
+  server.client.db ??= {}
+  server.client.db.v2 = basedDb
+  server.on('error', console.error)
   await server.start()
 
   return server
