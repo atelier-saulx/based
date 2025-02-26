@@ -96,7 +96,7 @@ export const httpHandler = (
 
   const route = server.functions.route(path[1], url)
 
-  if (route === null || route.internalOnly === true) {
+  if (route === null || route?.internalOnly === true) {
     sendError(
       server,
       {
@@ -123,7 +123,7 @@ export const httpHandler = (
 
   let authState: AuthState = {}
 
-  if (route.public !== true) {
+  if (route?.public !== true) {
     let authorization: string = req.getHeader('authorization')
     if (authorization) {
       if (authorization.length > 5e3) {
@@ -197,14 +197,14 @@ export const httpHandler = (
         ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
       })
     }
-  } else if (route.headers) {
+  } else if (route?.headers) {
     for (const header of route.headers) {
       ctx.session.headers[header] = req.getHeader(header)
     }
   }
 
   if (
-    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.http)
+    rateLimitRequest(server, ctx, route?.rateLimitTokens, server.rateLimit.http)
   ) {
     endRateLimitHttp(res)
     return
@@ -230,7 +230,7 @@ export const httpHandler = (
     return
   }
 
-  if (route.headers) {
+  if (route?.headers) {
     for (const header of route.headers) {
       const v = req.getHeader(header)
       if (v) {

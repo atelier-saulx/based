@@ -91,7 +91,7 @@ export class BasedFunctions {
       this.config.route = ({ path }) => {  
         let route: BasedRouteComplete
 
-        if (path === '/') {
+        if (path === '/' && this.routes[this.paths['/']]) {
           return this.routes[this.paths['/']]
         }
         
