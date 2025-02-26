@@ -240,6 +240,8 @@ export class BasedServer {
 
   public workerRequest: (type: string, payload?: any) => void | Promise<any>;
 
+  private http: ServerOptions['http'] = {};
+
   [util.inspect.custom]() {
     return `BasedServer [${this.port}]`
   }
@@ -293,6 +295,14 @@ export class BasedServer {
 
     if (opts.getIp) {
       this.getIp = opts.getIp
+    }
+
+    if (opts.http?.open) {
+      this.http.open = opts.http.open
+    }
+    
+    if (opts.http?.close) {
+      this.http.close = opts.http.close
     }
 
     initNetwork(this, opts)
@@ -359,12 +369,18 @@ export class BasedServer {
           if (!this.silent)
             console.info('    Based-server listening on port:', this.port)
           this.listenSocket = listenSocket
+          if (this.http?.open) {
+            this.http.open({})
+          }
           resolve(this)
         } else {
           console.info(
             picocolors.red('🤮  Based-server error on port:'),
             this.port,
           )
+          if (this.http?.close) {
+            this.http.close({})
+          }
           reject(new Error('Cannot start based-server on port: ' + this.port))
         }
       })
@@ -381,5 +397,9 @@ export class BasedServer {
     }
     this.listenSocket = null
     this.uwsApp = null
+
+    if (this.http?.close) {
+      this.http.close({})
+    }
   }
 }

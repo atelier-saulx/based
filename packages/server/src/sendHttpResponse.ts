@@ -54,7 +54,7 @@ export const sendHttpResponse = (
 
   let cType: string
 
-  let parsed: string
+  let parsed: string | Buffer 
 
   if (result === undefined) {
     ctx.session.res.cork(() => {
@@ -66,7 +66,7 @@ export const sendHttpResponse = (
       ctx.session.res.end()
     })
     return
-  } else if (typeof result === 'string') {
+  } else if (typeof result === 'string' || (result instanceof Buffer)) {
     cType = 'text/plain'
     parsed = result
     // TODO: more check here

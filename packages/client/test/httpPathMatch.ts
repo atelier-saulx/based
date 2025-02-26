@@ -1,0 +1,544 @@
+import test, { ExecutionContext } from 'ava'
+import { BasedServer } from '@based/server'
+import fetch from 'cross-fetch'
+import getPort from 'get-port'
+import { BasedFunctionConfigs } from '@based/functions'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const makeQuery = (path: string, returnValue: any) => {
+  return {
+    bla: {
+      type: 'query',
+      path,
+      closeAfterIdleTime: 3e3,
+      uninstallAfterIdleTime: 1e3,
+      fn: (_, __, update) => {
+        update(returnValue)
+        return () => {}
+      },
+    },
+  } as BasedFunctionConfigs
+}
+
+const makeFunction = (path: string, returnValue: any) => {
+  return {
+    bla: {
+      type: 'function',
+      path,
+      fn: async () => returnValue,
+    },
+  } as BasedFunctionConfigs
+}
+
+// FOR FUTURE: now the result is 400ms avg.
+// test('path matcher 10 million matches', async (t: T) => {
+//   const finalPath = '/static/:parameter?'
+//   const tokens = tokenizePattern(Buffer.from(finalPath))
+//   const bufferedUrl = Buffer.from('/static/yahoo')
+//   let match: boolean = false
+//   let i = 0
+//   const startTime = performance.now()
+//   while (i < 10e6) {
+//     match = pathMatcher(tokens, bufferedUrl)    
+//     i++
+//   }  
+//   console.log(`${((performance.now() - startTime))}ms`)
+  
+//   t.true(match)
+// })
+
+test('[query] path matcher with static value and optional parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeQuery('/static/:parameter?', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static?token=123')).json()
+  const r3 = await (await fetch(t.context.http + '/static/')).json()
+  const r4 = await (await fetch(t.context.http + '/static/?token=123')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/123')).json()
+  const r8 = await (await fetch(t.context.http + '/static/123/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
+  
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+})
+
+
+test('[query] path matcher with static value and required parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeQuery('/static/:parameter', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r8 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/123')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/123/')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/123/?token=123')).json()
+
+  await server.destroy()
+
+  t.is(JSON.stringify(r1), `{"error":"[static] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r2), `{"error":"[static] Function not found.","code":40401}`)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.is(JSON.stringify(r7), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r8), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+})
+
+
+test('[query] path matcher with static value and multiple required parameters (1 or more)', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeQuery('/static/:parameter+', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r8 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/fafa/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/fafa/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r17 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/?token=123')).json()
+
+  await server.destroy()
+
+  t.is(JSON.stringify(r1), `{"error":"[static] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r2), `{"error":"[static] Function not found.","code":40401}`)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.is(JSON.stringify(r9), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r10), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.true(r15)
+  t.true(r16)
+  t.true(r17)
+})
+
+test('[query] path matcher with static value and multiple optional parameters (0 or more)', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeQuery('/static/:parameter*', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r8 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/fafa/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/fafa/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r17 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/?token=123')).json()
+
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.true(r15)
+  t.true(r16)
+  t.true(r17)
+})
+
+test('[query] path matcher with no static value and a optional parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeQuery('/:parameter?', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/')).json()
+  const r2 = await (await fetch(t.context.http + '//')).json()
+  const r3 = await (await fetch(t.context.http + '/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/123')).json()
+  const r6 = await (await fetch(t.context.http + '/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/fafa/fefe')).json()
+  const r8 = await (await fetch(t.context.http + '/fafa/fefe/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/fafa/fefe')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/fafa/fefe/')).json()
+  const r17 = await (await fetch(t.context.http + '/?token=123')).json()
+
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r5)
+  t.true(r6)
+  t.is(JSON.stringify(r7), `{"error":"[fafa] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r8), `{"error":"[fafa] Function not found.","code":40401}`)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.is(JSON.stringify(r15), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r16), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r17)
+})
+
+test('[function] path matcher with static value and optional parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeFunction('/static/:parameter?', true)
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static?token=123')).json()
+  const r3 = await (await fetch(t.context.http + '/static/')).json()
+  const r4 = await (await fetch(t.context.http + '/static/?token=123')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/123')).json()
+  const r8 = await (await fetch(t.context.http + '/static/123/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/static/123/')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/static/123/?token=123')).json()
+
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.true(r15)
+  t.true(r16)
+})
+
+
+test('[function] path matcher with static value and required parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeFunction('/static/:parameter', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r8 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/123')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/123/')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/123/?token=123')).json()
+
+  await server.destroy()
+
+  t.is(JSON.stringify(r1), `{"error":"[static] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r2), `{"error":"[static] Function not found.","code":40401}`)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.is(JSON.stringify(r7), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r8), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+})
+
+
+test('[function] path matcher with static value and multiple required parameters (1 or more)', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeFunction('/static/:parameter+', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r8 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/fafa/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/fafa/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r17 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/?token=123')).json()
+
+  await server.destroy()
+
+  t.is(JSON.stringify(r1), `{"error":"[static] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r2), `{"error":"[static] Function not found.","code":40401}`)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.is(JSON.stringify(r9), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r10), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.true(r15)
+  t.true(r16)
+  t.true(r17)
+})
+
+test('[function] path matcher with static value and multiple optional parameters (0 or more)', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeFunction('/static/:parameter*', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/static')).json()
+  const r2 = await (await fetch(t.context.http + '/static/')).json()
+  const r3 = await (await fetch(t.context.http + '/static/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/static/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/static/fafa/123')).json()
+  const r6 = await (await fetch(t.context.http + '/static/fafa/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r8 = await (await fetch(t.context.http + '/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla/static')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/static/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/static/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/static/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/fafa/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/fafa/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/')).json()
+  const r17 = await (await fetch(t.context.http + '/bla/static/fafa/fefe/fifi/fofo/fufu/fafa/fefe/fifi/fofo/fufu/?token=123')).json()
+
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r4)
+  t.true(r5)
+  t.true(r6)
+  t.true(r7)
+  t.true(r8)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.true(r15)
+  t.true(r16)
+  t.true(r17)
+})
+
+test('[function] path matcher with no static value and a optional parameter', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: makeFunction('/:parameter?', true)
+    },
+    auth: {
+      authorize: async () => true,
+    },
+  })
+  await server.start()
+
+  const r1 = await (await fetch(t.context.http + '/')).json()
+  const r2 = await (await fetch(t.context.http + '//')).json()
+  const r3 = await (await fetch(t.context.http + '/fafa')).json()
+  const r4 = await (await fetch(t.context.http + '/fafa/')).json()
+  const r5 = await (await fetch(t.context.http + '/123')).json()
+  const r6 = await (await fetch(t.context.http + '/123/')).json()
+  const r7 = await (await fetch(t.context.http + '/fafa/fefe')).json()
+  const r8 = await (await fetch(t.context.http + '/fafa/fefe/')).json()
+  const r9 = await (await fetch(t.context.http + '/bla')).json()
+  const r10 = await (await fetch(t.context.http + '/bla/')).json()
+  const r11 = await (await fetch(t.context.http + '/bla/fafa')).json()
+  const r12 = await (await fetch(t.context.http + '/bla/fafa/')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/123')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/123/')).json()
+  const r15 = await (await fetch(t.context.http + '/bla/fafa/fefe')).json()
+  const r16 = await (await fetch(t.context.http + '/bla/fafa/fefe/')).json()
+  const r17 = await (await fetch(t.context.http + '/?token=123')).json()
+
+  await server.destroy()
+
+  t.true(r1)
+  t.true(r2)
+  t.true(r3)
+  t.true(r5)
+  t.true(r6)
+  t.is(JSON.stringify(r7), `{"error":"[fafa] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r8), `{"error":"[fafa] Function not found.","code":40401}`)
+  t.true(r9)
+  t.true(r10)
+  t.true(r11)
+  t.true(r12)
+  t.true(r13)
+  t.true(r14)
+  t.is(JSON.stringify(r15), `{"error":"[bla] Function not found.","code":40401}`)
+  t.is(JSON.stringify(r16), `{"error":"[bla] Function not found.","code":40401}`)
+  t.true(r17)
+})

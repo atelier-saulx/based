@@ -15,6 +15,7 @@ import { fnIsTimedOut, updateTimeoutCounter } from './timeout.js'
 import { destroyObs, start } from '../query/index.js'
 import { destroyChannel, startChannel } from '../channel/index.js'
 import { genVersion } from './genVersion.js'
+import { pathMatcher, tokenizePattern } from '../incoming/http/pathMatcher.js'
 
 export * from './types.js'
 
@@ -87,20 +88,18 @@ export class BasedFunctions {
     }
 
     if (this.config.route === undefined) {
-      this.config.route = ({ name, path }) => {
-        if (path) {
-          const fromPath = this.getNameFromPath(path)
-          const r = (fromPath && this.routes[fromPath]) || this.routes[name]
-          if (r) {
-            return r
-          }
-          const rootPath = this.paths['/']
-          if (rootPath) {
-            return this.routes[rootPath] || null
-          }
-          return null
+      this.config.route = ({ path }) => {  
+        let route: BasedRouteComplete
+
+        if (path === '/') {
+          return this.routes[this.paths['/']]
         }
-        return this.routes[name] || null
+        
+        if (path) {
+          route = this.getRoute(path)
+        }
+
+        return route || this.routes[path] || this.routes[this.paths['/']] || null
       }
     }
 
@@ -131,8 +130,8 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(name?: string, path?: string): BasedRouteComplete | null {
-    return this.config.route({ server: this.server, name, path })
+  route(externalName?: string, externalPath?: string): BasedRouteComplete | null {
+    return this.config.route({ path: externalPath || externalName })
   }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
@@ -208,6 +207,17 @@ export class BasedFunctions {
     if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
     }
+    if (!nRoute.tokens) {
+      let finalPath: string = `/${nRoute.name}`
+      
+      if (nRoute.path) {
+        const clearPath = nRoute.path.replace(`/${nRoute.name}`, '')
+        finalPath += clearPath
+      }
+      
+      nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
+    }
+    
     return nRoute
   }
 
@@ -393,8 +403,42 @@ export class BasedFunctions {
     return s
   }
 
-  getNameFromPath(path: string): string {
-    return this.paths[path]
+  getRoute(path: string): BasedRouteComplete | null {    
+    let i: number = 0
+    let removeNameFromTokens: boolean = false
+    let tokens = []
+    const bufferPath = Buffer.from(path)
+    const routesKeys = Object.keys(this.routes)
+        
+    while (i < routesKeys.length) {
+      tokens = [...this.routes[routesKeys[i]].tokens]      
+
+      if (removeNameFromTokens && tokens) {
+        tokens.shift()        
+      }
+
+      if (pathMatcher(tokens, bufferPath)) {
+        if (tokens.length === this.routes[routesKeys[i]].tokens.length) {
+          return this.routes[routesKeys[i]]
+        }
+
+        return {
+          ...this.routes[routesKeys[i]],
+          tokens
+        }
+      }
+
+      i++
+
+      if (i === routesKeys.length && !removeNameFromTokens) {
+        removeNameFromTokens = true
+        i = 0        
+      }
+
+      if (i === routesKeys.length && removeNameFromTokens) {
+        return null
+      }
+    }
   }
 
   getFromStore(name: string): BasedFunctionConfigComplete | null {
