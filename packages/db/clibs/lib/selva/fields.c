@@ -705,17 +705,6 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
     return 0;
 }
 
-static void set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
-{
-    void *buffer = nfo2p(fields, nfo);
-
-    /*
-     * We assume that the caller never exceeds the maximum size.
-     */
-    memcpy(buffer, value, len);
-    /* TODO memset excess */
-}
-
 /**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
@@ -768,7 +757,9 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        set_field_smb(fields, nfo, value, len);
+        assert(len <= fs->smb.len);
+        memcpy(nfo2p(fields, nfo), value, len);
+        memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
