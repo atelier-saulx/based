@@ -376,16 +376,42 @@ export const parseFunctions = async (
     throw context.print.fail(context.i18n('methods.aborted'), true)
   }
 
-  const replaceBasedConfigPlugin = ({ cloud, url }) => ({
+  const replaceBasedConfigPlugin = ({ cloud, url }): Plugin => ({
     name: 'replace-based-config',
     setup(build) {
-      build.onLoad({ filter: /based\.(js|ts|json)$/ }, async () => {
+      build.onResolve({ filter: /[\\\/]based\.(js|ts|json)$/ }, (args) => {
+        return { path: args.path, namespace: 'replace-based' }
+      })
+
+      build.onLoad({ filter: /.*/, namespace: 'replace-based' }, async () => {
         if (cloud || !url) {
-          return null
+          await context.print
+            .pipe()
+            .info(
+              '<b><blue>◉</blue>  Connecting your project to your cloud functions instead of the your local Based Dev Server.</b>',
+            )
+            .pipe()
+
+          const { cluster, org, env, project } = await context.getProgram()
+          const contents = `export default ${JSON.stringify({ cluster, org, env, project })};`
+
+          return {
+            contents,
+            loader: 'js',
+          }
         }
 
+        const contents = `export default ${JSON.stringify({ url })};`
+
+        await context.print
+          .pipe()
+          .info(
+            '<b><blue>◉</blue>  Connecting your project to your local functions instead of the cloud.</b>',
+          )
+          .pipe()
+
         return {
-          contents: `export default ${JSON.stringify({ url })};`,
+          contents,
           loader: 'js',
         }
       })
