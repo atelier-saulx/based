@@ -58,11 +58,6 @@ struct SelvaNodeWeakReferences {
     struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
-struct SelvaMicroBuffer {
-    uint16_t len;
-    uint8_t data[] __counted_by(len);
-} __packed;
-
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
     union {
@@ -85,9 +80,7 @@ struct SelvaFieldsAny {
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
         struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
         struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
-        struct SelvaMicroBuffer *smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
 #endif
-        // HyperLogLogPlusPlus cardinality; /*!< SELVA_FIELD_TYPE_HLL */
     };
 };
 

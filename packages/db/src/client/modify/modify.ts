@@ -12,7 +12,7 @@ import {
   VECTOR,
   MICRO_BUFFER,
   JSON,
-} from '../../server/schema/types.js'
+} from '@based/schema/def'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'

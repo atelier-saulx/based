@@ -4,7 +4,7 @@ import {
   PropDefEdge,
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
-} from '../../server/schema/types.js'
+} from '@based/schema/def'
 import { ModifyCtx } from '../../index.js'
 import { inspect } from 'node:util'
 import { SubscriptionMarkersCheck } from '../query/subscription/index.js'

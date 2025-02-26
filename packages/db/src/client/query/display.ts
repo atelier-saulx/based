@@ -12,7 +12,7 @@ import {
   TEXT,
   TIMESTAMP,
   TypeIndex,
-} from '../../server/schema/types.js'
+} from '@based/schema/def'
 import { BasedQueryResponse } from './BasedIterable.js'
 
 const decimals = (v) => ~~(v * 100) / 100

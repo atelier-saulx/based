@@ -1,5 +1,5 @@
 import { langCodesMap } from '@based/schema'
-import { STRING, TEXT, VECTOR } from '../../../server/schema/types.js'
+import { STRING, TEXT, VECTOR } from '@based/schema/def'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
 import {

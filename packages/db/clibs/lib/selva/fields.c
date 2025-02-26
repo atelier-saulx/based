@@ -12,6 +12,7 @@
 #include "selva/selva_lang.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
+#include "bits.h"
 #include "db.h"
 #include "db_panic.h"
 #include "idz.h"
@@ -42,7 +43,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
-    // [SELVA_FIELD_TYPE_CARDINALITY] = sizeof_field(struct SelvaFieldsAny, cardinality),
     [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
     [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
     [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
@@ -59,7 +59,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
-    [SELVA_FIELD_TYPE_MICRO_BUFFER] = sizeof(struct SelvaMicroBuffer),
+    [SELVA_FIELD_TYPE_MICRO_BUFFER] = 0, /* check fs. */
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
@@ -78,7 +78,7 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
             return sizeof(struct selva_string);
         }
     } else if (type == SELVA_FIELD_TYPE_MICRO_BUFFER) {
-        return sizeof(struct SelvaMicroBuffer) + fs->smb.len;
+        return fs->smb.len;
     } else {
         return selva_field_data_size[type];
     }
@@ -91,8 +91,11 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     const size_t field_data_size = selva_fields_get_data_size(fs);
     const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
-    if (new_size > 0xFFFFFF) {
+    if (new_size > (1 << bitsizeof(struct SelvaFields, data_len)) - 1) {
         db_panic("new_size too large: %zu", new_size);
+    }
+    if ((off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {
+        db_panic("fields->data too full or invalid offset: %zu", off);
     }
 
     if (!data || selva_sallocx(data, 0) < new_size) {
@@ -100,14 +103,11 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
         fields->data = PTAG(data, PTAG_GETTAG(fields->data));
     }
     fields->data_len = new_size;
-
-    assert((off & 0x7) == 0);
-
     memset(data + off, 0, field_data_size);
 
     return (struct SelvaFieldInfo){
         .type = fs->type,
-        .off = off >> 3,
+        .off = off >> SELVA_FIELDS_OFF,
     };
 }
 
@@ -115,7 +115,7 @@ static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFi
 {
     char *data = (char *)PTAG_GETP(fields->data);
 
-    void *p = data + (nfo->off << 3);
+    void *p = data + (nfo->off << SELVA_FIELDS_OFF);
 
     if (unlikely((char *)p > data + fields->data_len)) {
         db_panic("Invalid field data access");
@@ -168,8 +168,7 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     struct selva_string *s = nfo2p(fields, nfo);
 
     assert(nfo->type == SELVA_FIELD_TYPE_STRING);
-    assert(((uintptr_t)s & 7) == 0);
-    assert(s);
+    assert(s && ((uintptr_t)s & 7) == 0);
 
     if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
         if (fs->string.fixed_len == 0) {
@@ -635,7 +634,9 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     }
 
     refs = nfo2p(fields, nfo);
+#if 0
     assert(((uintptr_t)refs & 7) == 0);
+#endif
 
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
@@ -706,14 +707,13 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
 
 static void set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
 {
-    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
-    typeof(buffer->len) buf_len = (typeof(buf_len))len;
+    void *buffer = nfo2p(fields, nfo);
 
     /*
      * We assume that the caller never exceeds the maximum size.
      */
-    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
-    memcpy(buffer->data, value, buf_len);
+    memcpy(buffer, value, len);
+    /* TODO memset excess */
 }
 
 /**
@@ -904,7 +904,7 @@ int selva_fields_set_text(
     if (!tf.text) {
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
-        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
+        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)",
                  node->type, node->node_id, fs->field,
                  selva_str_field_type(nfo->type), nfo->type,
                  selva_str_field_type(fs->type), fs->type);
@@ -915,7 +915,6 @@ int selva_fields_set_text(
         tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
         err = selva_string_init(tf.tl, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
         if (err) {
-            /* TODO Error handling? */
             db_panic("Failed to init a text field");
         }
     }
@@ -1511,7 +1510,9 @@ int selva_fields_set_reference_meta(
     if (!fs) {
         return SELVA_EINVAL;
     }
+#if 0
     assert(fs->field == field);
+#endif
 
     /*
      * Edge metadata can't contain these types because it would be almost
@@ -1567,8 +1568,10 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, fi
 
     ref = (struct SelvaNodeReference *)nfo2p(fields, nfo);
 
+#if 0
     /* Verify proper alignment. */
     assert(((uintptr_t)ref & 7) == 0);
+#endif
 
     return ref;
 }
@@ -1585,8 +1588,10 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
 
     refs = (struct SelvaNodeReferences *)nfo2p(fields, nfo);
 
+#if 0
     /* Verify proper alignment. */
     assert(((uintptr_t)refs & 7) == 0);
+#endif
 
     return refs;
 }
@@ -1675,7 +1680,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_NULL:
         return (struct SelvaFieldsPointer){
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << 3),
+            .off = (nfo->off << SELVA_FIELDS_OFF),
             .len = 0,
         };
     case SELVA_FIELD_TYPE_TIMESTAMP:
@@ -1714,8 +1719,8 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return (struct SelvaFieldsPointer){
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
-            .len = selva_fields_get_data_size(fs) - offsetof(struct SelvaMicroBuffer, data),
+            .off = (nfo->off << SELVA_FIELDS_OFF),
+            .len = selva_fields_get_data_size(fs),
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:

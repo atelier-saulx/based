@@ -1,4 +1,4 @@
-import { PropDef, SchemaTypeDef } from '../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { DbClient } from './index.js'
 import { ModifyState } from './modify/ModifyRes.js'
 import { makeCsmtKeyFromNodeId } from './tree.js'
@@ -14,6 +14,7 @@ export class ModifyCtx {
   id = -1
   lastMain = -1
   hasSortField = -1
+  hasSortText = -1
   queue = new Map<(payload: any) => void, ModifyState>()
   ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 

@@ -5,7 +5,7 @@ import {
   getPropType,
   SchemaReference,
   SchemaLocales,
-} from '@based/schema'
+} from '../index.js'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import {
@@ -17,12 +17,16 @@ import {
   STRING,
   ALIAS,
   CARDINALITY,
-  BINARY,
+  REFERENCES,
+  REFERENCE,
+  TEXT,
+  SchemaTypesParsedById,
+  SchemaTypesParsed,
 } from './types.js'
-import { DbClient } from '../../client/index.js'
-import { DbServer } from '../index.js'
-import { genId } from './utils.js'
-import { DEFAULT_BLOCK_CAPACITY } from '../start.js'
+import { StrictSchema } from '../types.js'
+
+// TMP
+export const DEFAULT_BLOCK_CAPACITY = 100_000
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0
@@ -73,38 +77,42 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   }
 }
 
-export const updateTypeDefs = (db: DbClient | DbServer) => {
-  for (const field in db.schemaTypesParsed) {
-    if (field in db.schema.types) {
+export const updateTypeDefs = (
+  schema: StrictSchema,
+  schemaTypesParsed: SchemaTypesParsed,
+  schemaTypesParsedById: SchemaTypesParsedById,
+) => {
+  for (const field in schemaTypesParsed) {
+    if (field in schema.types) {
       continue
     }
-    const id = db.schemaTypesParsed[field].id
-    delete db.schemaTypesParsed[field]
-    delete db.schemaTypesParsedById[id]
+    const id = schemaTypesParsed[field].id
+    delete schemaTypesParsed[field]
+    delete schemaTypesParsedById[id]
   }
-  for (const field in db.schema.types) {
-    const type = db.schema.types[field]
+  for (const field in schema.types) {
+    const type = schema.types[field]
     if (
-      db.schemaTypesParsed[field] &&
-      db.schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
+      schemaTypesParsed[field] &&
+      schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
     ) {
       continue
     } else {
       if (!type.id) {
-        type.id = genId(db)
+        throw new Error('NEED ID ON TYPE')
       }
       const def = createSchemaTypeDef(
         field,
         type,
-        db.schemaTypesParsed,
-        db.schema.locales ?? {
+        schemaTypesParsed,
+        schema.locales ?? {
           en: {},
         },
       )
       def.blockCapacity =
         field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
-      db.schemaTypesParsed[field] = def
-      db.schemaTypesParsedById[type.id] = def
+      schemaTypesParsed[field] = def
+      schemaTypesParsedById[type.id] = def
     }
   }
 }
@@ -112,7 +120,7 @@ export const updateTypeDefs = (db: DbClient | DbServer) => {
 export const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
-  parsed: DbClient['schemaTypesParsed'],
+  parsed: SchemaTypesParsed,
   locales: Partial<SchemaLocales>,
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
@@ -132,15 +140,15 @@ export const createSchemaTypeDef = (
     seperateSort: {
       size: 0,
       props: [],
-      buffer: Buffer.allocUnsafe(0),
-      bufferTmp: Buffer.allocUnsafe(0),
+      buffer: new Uint8Array([]),
+      bufferTmp: new Uint8Array([]),
     },
     hasSeperateTextSort: false,
     seperateTextSort: {
-      size: 0,
+      size: 0, // prop len
       props: [],
-      buffer: Buffer.allocUnsafe(0),
-      bufferTmp: Buffer.allocUnsafe(0),
+      buffer: new Uint8Array([]),
+      bufferTmp: new Uint8Array([]),
     },
   },
   path: string[] = [],
@@ -154,6 +162,7 @@ export const createSchemaTypeDef = (
     }
   }
   result.locales = locales
+  result.localeSize = Object.keys(locales).length
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
 
@@ -196,6 +205,8 @@ export const createSchemaTypeDef = (
         }
       } else if (isPropType('vector', schemaProp)) {
         len = 4 * schemaProp.size
+      } else if (isPropType('text', schemaProp)) {
+        separateSortText++
       }
 
       const isseparate = len === 0 || isPropType('vector', schemaProp)
@@ -259,7 +270,10 @@ export const createSchemaTypeDef = (
     const vals = Object.values(result.props)
 
     vals.sort((a, b) => {
-      if (b.separate && (a.typeIndex === 14 || a.typeIndex === 13)) {
+      if (
+        b.separate &&
+        (a.typeIndex === REFERENCES || a.typeIndex === REFERENCE)
+      ) {
         return -1
       }
       return a.prop - b.prop
@@ -300,14 +314,13 @@ export const createSchemaTypeDef = (
       }
     }
 
-    result.buf = Buffer.allocUnsafe(len)
+    // make packed version
+    result.buf = new Uint8Array(len)
     result.buf[0] = result.idUint8[0]
     result.buf[1] = result.idUint8[1]
-
     const fieldNames = []
     const tNameBuf = encoder.encode(typeName)
     fieldNames.push(tNameBuf)
-
     let fieldNameLen = tNameBuf.byteLength + 1
     let i = 2
     if (result.mainLen) {
@@ -324,7 +337,6 @@ export const createSchemaTypeDef = (
       i++
       result.buf[i] = 0
     }
-
     for (const f of vals) {
       if (f.separate) {
         i++
@@ -336,8 +348,7 @@ export const createSchemaTypeDef = (
         fieldNameLen += name.byteLength + 1
       }
     }
-
-    result.propNames = Buffer.allocUnsafe(fieldNameLen)
+    result.propNames = new Uint8Array(fieldNameLen)
     let lastWritten = 0
     for (const f of fieldNames) {
       result.propNames[lastWritten] = f.byteLength
@@ -345,11 +356,45 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
+    let bufLen = result.buf.length
+    result.packed = new Uint8Array(2 + bufLen + result.propNames.length)
+    result.packed[0] = bufLen
+    result.packed[1] = bufLen >>>= 8
+    result.packed.set(result.buf, 2)
+    result.packed.set(result.propNames, result.buf.length + 2)
+
+    // done making packed bversion
+
+    if (separateSortText > 0) {
+      result.hasSeperateTextSort = true
+      let max = 0
+      for (const f of result.separate) {
+        if (f.typeIndex === TEXT) {
+          if (f.prop > max) {
+            max = f.prop
+          }
+        }
+      }
+      result.seperateTextSort.buffer = new Uint8Array(
+        max * result.localeSize + 1,
+      )
+      for (const f of result.separate) {
+        if (f.typeIndex === TEXT) {
+          result.seperateTextSort.buffer[f.prop] = 1
+          result.seperateTextSort.props.push(f)
+          result.seperateTextSort.size += result.localeSize
+        }
+      }
+      result.seperateTextSort.bufferTmp = new Uint8Array(
+        max * result.localeSize + 1,
+      )
+      result.seperateTextSort.buffer.set(result.seperateTextSort.bufferTmp)
+    }
+
     if (separateSortProps > 0) {
       result.hasSeperateSort = true
       let max = 0
       for (const f of result.separate) {
-        // Does not only need to be on string can also be HLL
         if (
           f.typeIndex === STRING ||
           f.typeIndex === ALIAS ||
@@ -360,8 +405,7 @@ export const createSchemaTypeDef = (
           }
         }
       }
-
-      result.seperateSort.buffer = Buffer.allocUnsafe(max + 1)
+      result.seperateSort.buffer = new Uint8Array(max + 1)
       for (const f of result.separate) {
         if (
           f.typeIndex === STRING ||
@@ -373,8 +417,8 @@ export const createSchemaTypeDef = (
           result.seperateSort.size++
         }
       }
-      result.seperateSort.bufferTmp = Buffer.allocUnsafe(max + 1)
-      result.seperateSort.buffer.copy(result.seperateSort.bufferTmp)
+      result.seperateSort.bufferTmp = new Uint8Array(max + 1)
+      result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
     }
 
     for (const p in result.props) {

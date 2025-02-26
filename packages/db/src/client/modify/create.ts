@@ -1,5 +1,5 @@
 import { BasedDb, ModifyCtx } from '../../index.js'
-import { MICRO_BUFFER, SchemaTypeDef } from '../../server/schema/schema.js'
+import { MICRO_BUFFER, SchemaTypeDef } from '@based/schema/def'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -79,7 +79,7 @@ const appendCreate = (
       ctx.buf[sizepos] = size >>>= 8
     }
     if (ctx.hasSortField !== -1) {
-      def.seperateSort.buffer.copy(def.seperateSort.bufferTmp)
+      def.seperateSort.buffer.set(def.seperateSort.bufferTmp)
     }
   }
 }

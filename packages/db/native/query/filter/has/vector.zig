@@ -8,9 +8,9 @@ pub fn vec(func: Fn, value: []const f32, query: []const f32) f32 {
         return MaxVectorScore;
     }
     if (func == Fn.cosineSimilarity) {
-        return @abs(selva.vector_sc(value.ptr, query.ptr, query.len));
+        return @abs(1 - selva.vector_sc(value.ptr, query.ptr, query.len));
     } else if (func == Fn.dotProduct) {
-        return @abs(selva.vector_dot(value.ptr, query.ptr, query.len));
+        return @abs(1 - selva.vector_dot(value.ptr, query.ptr, query.len));
     } else if (func == Fn.manhattanDistance) {
         return @abs(selva.vector_l1(value.ptr, query.ptr, query.len));
     } else if (func == Fn.euclideanDistance) {

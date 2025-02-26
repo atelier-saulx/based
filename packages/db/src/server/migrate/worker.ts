@@ -6,8 +6,7 @@ import {
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
-import { REFERENCE, REFERENCES } from '../schema/types.js'
-import { setTimeout } from 'node:timers/promises'
+import { REFERENCE, REFERENCES } from '@based/schema/def'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')

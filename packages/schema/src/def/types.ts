@@ -1,4 +1,4 @@
-import { SchemaLocales } from '@based/schema'
+import type { SchemaLocales } from '../index.js'
 
 // WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
@@ -102,8 +102,8 @@ export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
 
 export type SchemaSortUndefinedHandler = {
   size: number // number of text fields
-  buffer: Buffer
-  bufferTmp: Buffer // Gets reused in modify to avoid extra Alloc
+  buffer: Uint8Array
+  bufferTmp: Uint8Array // Gets reused in modify to avoid extra Alloc
   props: PropDef[]
 }
 
@@ -115,8 +115,9 @@ export type SchemaTypeDef = {
   lastId: number
   blockCapacity: number
   mainLen: number
-  buf: Buffer
-  propNames: Buffer
+  buf: Uint8Array
+  propNames: Uint8Array
+  packed: Uint8Array
   props: {
     [path: string]: PropDef
   }
@@ -130,15 +131,14 @@ export type SchemaTypeDef = {
     [start: string]: PropDef
   }
   tree: SchemaPropTree
-
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler
   hasSeperateTextSort: boolean
   seperateTextSort: SchemaSortUndefinedHandler
-
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>
+  localeSize: number
 }
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
@@ -215,3 +215,6 @@ export const isPropDef = (prop: any): prop is PropDef => {
   }
   return false
 }
+
+export type SchemaTypesParsed = { [key: string]: SchemaTypeDef }
+export type SchemaTypesParsedById = Record<number, SchemaTypeDef>

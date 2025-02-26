@@ -3,15 +3,22 @@ import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
   getPropType,
-  LangCode,
   langCodesMap,
   LangName,
   StrictSchema,
 } from '@based/schema'
-import { PropDef, SchemaTypeDef } from './schema/types.js'
-import { genRootId } from './schema/utils.js'
-import { updateTypeDefs } from './schema/typeDef.js'
-import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
+import {
+  PropDef,
+  SchemaTypeDef,
+  // genRootId,
+  updateTypeDefs,
+  schemaToSelvaBuffer,
+  SchemaTypesParsed,
+  SchemaTypesParsedById,
+} from '@based/schema/def'
+// import { genRootId } from './schema/utils.js'
+// import { updateTypeDefs } from './schema/typeDef.js'
+// import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
 import {
@@ -92,8 +99,8 @@ export class DbServer {
     types: {},
   }
   migrating: number = null
-  schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
-  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
+  schemaTypesParsed: SchemaTypesParsed = {}
+  schemaTypesParsedById: SchemaTypesParsedById = {}
   fileSystemPath: string
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
@@ -402,13 +409,24 @@ export class DbServer {
 
       // @ts-ignore This creates an internal type to use for root props
       this.schema.types._root = {
-        id: genRootId(),
+        id: 1,
         props,
       }
       delete this.schema.props
     }
 
-    updateTypeDefs(this)
+    for (const field in this.schema.types) {
+      if (!('id' in this.schema.types[field])) {
+        this.schema.lastId++
+        this.schema.types[field].id = this.schema.lastId
+      }
+    }
+
+    updateTypeDefs(
+      this.schema,
+      this.schemaTypesParsed,
+      this.schemaTypesParsedById,
+    )
 
     if (!fromStart) {
       writeFile(

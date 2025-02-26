@@ -1,4 +1,4 @@
-import { MICRO_BUFFER } from '../../server/schema/schema.js'
+import { MICRO_BUFFER } from '@based/schema/def'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { EXPIRE } from './types.js'

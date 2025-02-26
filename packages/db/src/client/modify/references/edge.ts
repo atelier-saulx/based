@@ -6,7 +6,7 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { write } from '../../string.js'
 import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'

@@ -4,8 +4,8 @@ import {
   BINARY,
   STRING,
   REFERENCES,
-} from '../../../server/schema/types.js'
-import { propIsSigned } from '../../../server/schema/utils.js'
+  propIsSigned,
+} from '@based/schema/def'
 import {
   EQUAL,
   FilterCtx,

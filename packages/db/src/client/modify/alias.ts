@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
+import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import {
   CREATE,
   UPDATE,

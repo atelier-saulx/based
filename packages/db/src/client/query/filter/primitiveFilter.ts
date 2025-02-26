@@ -1,10 +1,11 @@
 import {
+  CARDINALITY,
   PropDef,
   PropDefEdge,
   REFERENCE,
   REFERENCES,
   REVERSE_SIZE_MAP,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { QueryDef, QueryDefFilter } from '../types.js'
 import { EQUAL, isNumerical } from './types.js'
 import { Filter } from './types.js'
@@ -47,6 +48,8 @@ export const primitiveFilter = (
       value,
       !isNumerical(ctx.operation),
     )
+  } else if (prop.typeIndex === CARDINALITY) {
+    buf = createFixedFilterBuffer(prop, 2, ctx, value, false)
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, ctx, value, false)
   } else {

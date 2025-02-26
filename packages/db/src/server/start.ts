@@ -9,10 +9,10 @@ import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import './worker.js'
 import { save } from './save.js'
+import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
 
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
-export const DEFAULT_BLOCK_CAPACITY = 100_000
 
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start

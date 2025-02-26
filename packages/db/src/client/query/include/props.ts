@@ -4,7 +4,7 @@ import {
   REFERENCE,
   REFERENCES,
   TEXT,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { QueryDef } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {

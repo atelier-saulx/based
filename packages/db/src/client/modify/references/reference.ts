@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../../index.js'
-import { PropDef, SchemaTypeDef } from '../../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'

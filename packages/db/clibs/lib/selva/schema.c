@@ -14,8 +14,10 @@
 #include "selva/endian.h"
 #include "selva_error.h"
 #include "selva/fields.h"
-#include "ref_save_map.h"
+#include "bits.h"
+#include "db_panic.h"
 #include "db.h"
+#include "ref_save_map.h"
 #include "schema.h"
 
 #define SCHEMA_MIN_SIZE             6
@@ -163,18 +165,6 @@ static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema 
 
     return 1;
 }
-
-// static int type2fs_cardinality(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
-// {
-//     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-//     *fs = (struct SelvaFieldSchema){
-//         .field = field,
-//         .type = SELVA_FIELD_TYPE_CARDINALITY,
-//     };
-
-//     return 1;
-// }
 
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
@@ -373,10 +363,6 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_TEXT,
         .type2fs = type2fs_text,
     },
-    // [SELVA_FIELD_TYPE_CARDINALITY] = {
-    //     .type = SELVA_FIELD_TYPE_CARDINALITY,
-    //     .type2fs = type2fs_cardinality,
-    // },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,
         .type2fs = type2fs_reference,
@@ -443,9 +429,13 @@ static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
 
             assert(fs);
 
+            if ((fixed_field_off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {
+                db_panic("Invalid fixed field offset: %zu", fixed_field_off);
+            }
+
             nfo[i] = (struct SelvaFieldInfo){
                 .type = fs->type,
-                .off = fixed_field_off >> 3,
+                .off = fixed_field_off >> SELVA_FIELDS_OFF,
             };
             fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
         } else {

@@ -3,7 +3,7 @@ import {
   PropDefEdge,
   REFERENCE,
   SchemaPropTree,
-} from '../../../server/schema/types.js'
+} from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
 import { QueryDef, QueryDefType } from '../types.js'

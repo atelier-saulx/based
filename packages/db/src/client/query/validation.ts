@@ -13,8 +13,8 @@ import {
   TEXT,
   TIMESTAMP,
   VECTOR,
-} from '../../server/schema/types.js'
-import { propIsNumerical } from '../../server/schema/utils.js'
+  propIsNumerical,
+} from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
   EQUAL,
@@ -547,8 +547,9 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   lastId: 0,
   blockCapacity: 0,
   mainLen: 0,
-  buf: Buffer.from([]),
-  propNames: Buffer.from([]),
+  buf: new Uint8Array([]),
+  propNames: new Uint8Array([]),
+  packed: new Uint8Array([]),
   props: {},
   locales: {},
   reverseProps: {},
@@ -560,15 +561,16 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   hasSeperateSort: false,
   seperateSort: {
     size: 0,
-    buffer: Buffer.from([]),
-    bufferTmp: Buffer.from([]),
+    buffer: new Uint8Array([]),
+    bufferTmp: new Uint8Array([]),
     props: [],
   },
   hasSeperateTextSort: false,
   seperateTextSort: {
     size: 0,
-    buffer: Buffer.from([]),
-    bufferTmp: Buffer.from([]),
+    buffer: new Uint8Array([]),
+    bufferTmp: new Uint8Array([]),
     props: [],
   },
+  localeSize: 0,
 }

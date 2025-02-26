@@ -54,15 +54,22 @@ await test('boolean', async (t) => {
     { id: 3, isNice: false },
   ])
 
-  await db.update('user', user1, {
-    isNice: true,
-  })
+  // // @ts-ignore
+  // Map.prototype.toJSON = function () {
+  //   return [...this]
+  // }
+  // // or, if you really want to use objects:
+  // // @ts-ignore
+  // Map.prototype.toJSON = function () {
+  //   var obj = {}
+  //   for (let [key, value] of this) obj[key] = value
+  //   return obj
+  // }
+  // // and for Sets:
+  // // @ts-ignore
+  // Set.prototype.toJSON = function () {
+  //   return [...this]
+  // }
 
-  // console.log(await db.query('user', user1).get().toObject())
-
-  // await db.update('user', user1, {
-  //   isNice: false,
-  // })
-
-  // console.log(await db.query('user', user1).get().toObject())
+  // console.log(JSON.stringify(db.query('user').filter('isNice', false).def))
 })
