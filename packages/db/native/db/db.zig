@@ -152,21 +152,21 @@ pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
     return str;
 }
 
-pub fn getReference(node: Node, field: u8) ?Node {
-    const result = selva.selva_fields_get_reference(node, field);
+pub fn getReference(ctx: *DbCtx, node: Node, field: u8) ?Node {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
     if (result == null) {
         return null;
     }
     return result.?.*.dst;
 }
 
-pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
-    const result = selva.selva_fields_get_reference(node, field);
+pub fn getSingleReference(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReference {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
     return result;
 }
 
-pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
-    const result = selva.selva_fields_get_references(node, field);
+pub fn getReferences(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReferences {
+    const result = selva.selva_fields_get_references(ctx.selva, node, field);
     return result;
 }
 
@@ -204,7 +204,7 @@ pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: Field
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const field = fieldSchema.field;
-            const result = selva.selva_fields_get_reference(target, field);
+            const result = selva.selva_fields_get_reference(ctx.selva, target, field);
             if (result == null) {
                 return err;
             }
@@ -311,11 +311,13 @@ pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFi
 }
 
 pub fn getEdgeReferences(
+    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReferences {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_references(
+            ctx.selva,
             ref.meta,
             field - 1,
         );
@@ -328,11 +330,13 @@ pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.S
 }
 
 pub fn getEdgeReference(
+    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
+            ctx.selva,
             ref.meta,
             field - 1,
         );
@@ -341,15 +345,15 @@ pub fn getEdgeReference(
 }
 
 pub fn writeEdgeProp(
+    ctx: *DbCtx,
     data: []u8,
-    db: *selva.SelvaDb,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
-        db,
+        ctx.selva,
         node,
         ref,
         efc,

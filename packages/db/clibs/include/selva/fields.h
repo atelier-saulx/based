@@ -267,16 +267,16 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
 struct SelvaNode *selva_fields_resolve_weak_reference(

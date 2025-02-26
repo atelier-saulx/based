@@ -434,13 +434,13 @@ static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
             }
 
             nfo[i] = (struct SelvaFieldInfo){
-                .type = fs->type,
+                .in_use = true,
                 .off = fixed_field_off >> SELVA_FIELDS_OFF,
             };
             fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
         } else {
             nfo[i] = (struct SelvaFieldInfo){
-                .type = 0,
+                .in_use = false,
                 .off = 0,
             };
         }

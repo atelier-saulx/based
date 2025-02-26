@@ -24,14 +24,13 @@ await test('big nodes', async (t) => {
     types: {
       mega: {
         props: {
-          // 4093 + one ref field is currently the max
-          ...makeALot(4093),
+          ...makeALot(4096),
           ref: { type: 'reference', ref: 'giga', prop: 'ref' },
         },
       },
       giga: {
         props: {
-          ...makeALot(600),
+          ...makeALot(16383),
           ref: { type: 'reference', ref: 'mega', prop: 'ref' },
         }
       },

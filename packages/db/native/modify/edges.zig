@@ -55,8 +55,8 @@ pub fn writeEdges(
         }
 
         try db.writeEdgeProp(
+            ctx.db,
             edgeData,
-            ctx.db.selva.?,
             ctx.node.?,
             edgeConstraint,
             ref,

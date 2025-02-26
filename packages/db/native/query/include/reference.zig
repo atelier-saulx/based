@@ -49,7 +49,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
+        var selvaRef = db.getEdgeReference(ctx.db, ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -66,7 +66,7 @@ pub fn getSingleRefFields(
             return 6 + size;
         }
     } else {
-        const selvaRef = db.getSingleReference(originalNode, refField);
+        const selvaRef = db.getSingleReference(ctx.db, originalNode, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
