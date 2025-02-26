@@ -54,11 +54,11 @@ the information passed as a parameter will take precedence over the file.
 
 ### Global Options
 
-The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(json|ts|js)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.
+The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(ts|js|json)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.
 
 | Option | Description |
 |--------|-------------|
-| `--display <level>` | Sets the logging level for the CLI output (available levels: verbose | info | success | warning | error | silent). |
+| `--display <level>` | Sets the logging level for the CLI output (available levels: verbose / info / success / warning / error / silent). |
 | `-y, --yes` | You can use this to skip all the prompts and use a predefined preset in some commands. |
 | `-c, --cluster <cluster>` | Define the cluster to use. |
 | `-o, --org <org>` | Specify the organization. |
@@ -163,7 +163,7 @@ List and filter your logs.
 | `--collapsed` | To display the content of the logs collapsed. |
 | `--app` | To display the content only about your app and your functions. |
 | `--infra` | To display the content only about the infrastructure of your environment. |
-| `--level <level>` | Filter by level (available levels: all | info | error). |
+| `--level <level>` | Filter by level (available levels: all / info / error). |
 | `-l, --limit <limit>` | Limit the number of displayed logs (all: 0, max: 1000)(Limit has no effect when logs are being displayed as a live stream in real-time). |
 | `-s, --sort <sort>` | Sort the order of the logs asc/desc (Sorting has no effect when logs are being displayed as a live stream in real-time). |
 | `-sD, --start-date <dd/mm/yyyy-hh:mm:ss>` | The start date and time for filtering logs. |
