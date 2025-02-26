@@ -59,7 +59,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
-    [SELVA_FIELD_TYPE_MICRO_BUFFER] = sizeof(struct SelvaMicroBuffer),
+    [SELVA_FIELD_TYPE_MICRO_BUFFER] = 0, /* check fs. */
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
@@ -78,7 +78,7 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
             return sizeof(struct selva_string);
         }
     } else if (type == SELVA_FIELD_TYPE_MICRO_BUFFER) {
-        return sizeof(struct SelvaMicroBuffer) + fs->smb.len;
+        return fs->smb.len;
     } else {
         return selva_field_data_size[type];
     }
@@ -707,14 +707,13 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
 
 static void set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
 {
-    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
-    typeof(buffer->len) buf_len = (typeof(buf_len))len;
+    void *buffer = nfo2p(fields, nfo);
 
     /*
      * We assume that the caller never exceeds the maximum size.
      */
-    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
-    memcpy(buffer->data, value, buf_len);
+    memcpy(buffer, value, len);
+    /* TODO memset excess */
 }
 
 /**
@@ -1720,8 +1719,8 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return (struct SelvaFieldsPointer){
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << SELVA_FIELDS_OFF) + offsetof(struct SelvaMicroBuffer, data),
-            .len = selva_fields_get_data_size(fs) - offsetof(struct SelvaMicroBuffer, data),
+            .off = (nfo->off << SELVA_FIELDS_OFF),
+            .len = selva_fields_get_data_size(fs),
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
