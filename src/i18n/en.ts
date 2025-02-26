@@ -27,13 +27,13 @@ export default {
   commands: {
     globalOptions: {
       longDescription:
-        "The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(json|ts|js)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.",
+        "The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(ts|js|json)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.",
       options: [
         {
           parameter: '--display <level>',
           description:
-            'Sets the logging level for the CLI output (available levels: verbose | info | success | warning | error | silent).',
-          default: 'verbose',
+            'Sets the logging level for the CLI output (available levels: verbose / info / success / warning / error / silent).',
+          default: 'info',
         },
         {
           parameter: '-y, --yes',
@@ -381,7 +381,7 @@ export default {
             {
               parameter: '--level <level>',
               description:
-                'Filter by level (available levels: all | info | error).',
+                'Filter by level (available levels: all / info / error).',
               default: 'all',
             },
             {

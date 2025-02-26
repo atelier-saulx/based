@@ -32,7 +32,7 @@ export class AppContext {
     'silent',
   ]
   public state: Based.Context.State = {
-    display: 'verbose',
+    display: 'info',
     emojis: {
       info: '<primary>●</primary>',
       success: '<green>♥</green>',
@@ -56,7 +56,7 @@ export class AppContext {
   public spinner = contextSpinner(this)
   // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
-  public basedServer = contextBasedServer
+  public basedServer = contextBasedServer(this)
 
   private constructor(
     program?: Command,

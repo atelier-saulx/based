@@ -199,6 +199,7 @@ export const parseFunctions = async (
   const isProduction: boolean = environment === 'production'
   let { targets, schema } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
+  const { display } = context.getGlobalOptions()
 
   if (!functions) {
     schema = null
@@ -206,9 +207,21 @@ export const parseFunctions = async (
 
   context.print.intro('<b>Preparing your functions...</b>').pipe()
 
+  let debug: boolean = false
+
+  switch (display) {
+    case 'silent':
+    case 'info':
+      debug = false
+      break
+    default:
+      debug = true
+  }
+
   // bundle the configs and schema (if necessary)
   const configBundles = await bundle({
     entryPoints: schema ? [schema, ...configPaths] : configPaths,
+    debug,
   })
 
   // read configs
@@ -306,7 +319,7 @@ export const parseFunctions = async (
       paths[config.name] = path
       if (!index) {
         context.print.warning(
-          `</red>Could not find index.ts or index.js for "${config.name}"</red>`,
+          `<red>Could not find index.ts or index.js for "${config.name}"</red>`,
           true,
         )
 
@@ -420,18 +433,18 @@ export const parseFunctions = async (
 
   const introFunctions = async () =>
     onChange
-      ? await context.print.intro('<b>Bundling your functions...</b>').pipe()
-      : await context.print.info(
-          '<b><blue>◉</blue>  Bundling your functions...</b>',
+      ? context.print.intro('<dim>Bundling your functions...</dim>').pipe()
+      : context.print.info(
+          '<dim><blue>◉</blue>  Bundling your functions...</dim>',
         )
 
   const introAssets = async () =>
     onChange
-      ? await context.print.intro(
-          '<b>Bundling your assets and dependencies...</b>',
+      ? context.print.intro(
+          '<dim>Bundling your assets and dependencies...</dim>',
         )
-      : await context.print.info(
-          '<b><blue>◉</blue>  Bundling your assets and dependencies...</b>',
+      : context.print.info(
+          '<dim><blue>◉</blue>  Bundling your assets and dependencies...</dim>',
         )
 
   // build the functions
@@ -442,12 +455,14 @@ export const parseFunctions = async (
         {
           entryPoints: nodeEntryPoints,
           sourcemap: 'external',
+          debug,
         },
         onChange,
       ),
       await introAssets(),
       await bundle(
         {
+          debug,
           publicPath,
           entryPoints: browserEntryPoints,
           sourcemap: true,

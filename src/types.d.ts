@@ -127,7 +127,7 @@ declare global {
         fail: (
           message: string,
           icon?: boolean | string,
-          killCode?: number,
+          killCode?: number | false,
         ) => void
         line: () => this
         pipe: (message?: string) => this
