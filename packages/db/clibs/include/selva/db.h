@@ -105,6 +105,20 @@ inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
+inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct SelvaTypeEntry *te, field_t field)
+#if !__zig
+{
+    return get_fs_by_fields_schema_field(&te->ns.fields_schema, field);
+}
+#else
+;
+#endif
+
+/**
+ * Get the field schema for field.
+ */
+SELVA_EXPORT
+__attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
 #if !__zig
 {
