@@ -121,7 +121,6 @@ int selva_fields_get_mutable_string(
     __attribute__((access(write_only, 4)));
 
 /*
- * TODO prefix with selva_
  * TODO Document diff to get_mutable_string
  */
 SELVA_EXPORT
