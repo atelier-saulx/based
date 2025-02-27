@@ -75,16 +75,44 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
  * Get the node schema for type.
  */
 SELVA_EXPORT
-const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te) __attribute__((nonnull, pure));
+__attribute__((nonnull, pure))
+inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
+#if !__zig
+{
+    return &te->ns;
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
-const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field) __attribute__((nonnull, pure));
+__attribute__((nonnull, pure))
+inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
+#if !__zig
+{
+    if (field >= fields_schema->nr_fields) {
+        return nullptr;
+    }
+
+    return &fields_schema->field_schemas[field];
+}
+#else
+;
+#endif
 
 /**
  * Get the field schema for field.
  */
 SELVA_EXPORT
-const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field) __attribute__((nonnull, pure));
+__attribute__((nonnull, pure))
+inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
+#if !__zig
+{
+    return get_fs_by_fields_schema_field(&ns->fields_schema, field);
+}
+#else
+;
+#endif
 
 /**
  * Get the field schema for field.
@@ -96,7 +124,14 @@ SELVA_EXPORT
 #if __has_c_attribute(reproducible)
 [[reproducible]]
 #endif
-enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
+inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
+#if !__zig
+{
+    return fs->type;
+}
+#else
+;
+#endif
 
 /**
  * Get the EdgeFieldConstraint from a ref field schema.

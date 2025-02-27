@@ -359,24 +359,11 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
     return te;
 }
 
-const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
-{
-    return &te->ns;
-}
+extern inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 
-const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
-{
-    if (field >= fields_schema->nr_fields) {
-        return nullptr;
-    }
+extern inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field);
 
-    return &fields_schema->field_schemas[field];
-}
-
-const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
-{
-    return get_fs_by_fields_schema_field(&ns->fields_schema, field);
-}
+extern inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field);
 
 const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
@@ -390,10 +377,7 @@ const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct S
     return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
-enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
-{
-    return fs->type;
-}
+extern inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
 
 const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
 {
