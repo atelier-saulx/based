@@ -87,8 +87,8 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
 }
 
 pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(typeEntry.?),
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+        typeEntry.?,
         @bitCast(field),
     );
     if (s == null) {
@@ -98,8 +98,8 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 }
 
 pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(typeEntry.?),
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+        typeEntry.?,
         @bitCast(field),
     );
     if (s == null) {
