@@ -58,30 +58,24 @@ struct SelvaNodeWeakReferences {
     struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
-struct SelvaFieldsAny {
-    enum SelvaFieldType type; /*!< Type of the value. */
-    union {
-        bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
-        double number; /*!< SELVA_FIELD_TYPE_NUMBER */
-        int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
-        struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
-        int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
-        uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
-        int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
-        uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
-        int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
-        uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
-        int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
-        uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
-        uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
-#if 0
-        struct SelvaTextField *text; /*!< SELVA_FIELD_TYPE_TEXT */
-        struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
-        struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
-        struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
-        struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
-#endif
-    };
+/**
+ * Type helper to determine the size of statically (constant/fixed) sized fields.
+ */
+union SelvaStaticFields {
+    bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
+    double number; /*!< SELVA_FIELD_TYPE_NUMBER */
+    int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
+    struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
+    int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
+    uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
+    int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
+    uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
+    int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
+    uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
+    int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
+    uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
+    uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
+    struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
 };
 
 struct SelvaFieldsPointer {
