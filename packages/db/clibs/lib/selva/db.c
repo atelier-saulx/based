@@ -365,26 +365,11 @@ extern inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const
 
 extern inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field);
 
-const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
-{
-    struct SelvaTypeEntry *type;
-
-    type = selva_get_type_by_node(db, node);
-    if (!type) {
-        return nullptr;
-    }
-
-    return selva_get_fs_by_ns_field(&type->ns, field);
-}
+extern inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 extern inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
 
-const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
-{
-    return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
-        ? &fs->edge_constraint
-        : nullptr;
-}
+extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
 
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
 {

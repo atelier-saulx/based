@@ -118,7 +118,22 @@ inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct Selv
  * Get the field schema for field.
  */
 SELVA_EXPORT
-const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field) __attribute__((nonnull, pure));
+__attribute__((nonnull, pure))
+inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+#if !__zig
+{
+    struct SelvaTypeEntry *type;
+
+    type = selva_get_type_by_node(db, node);
+    if (!type) {
+        return nullptr;
+    }
+
+    return selva_get_fs_by_ns_field(&type->ns, field);
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
 #if __has_c_attribute(reproducible)
@@ -140,7 +155,17 @@ inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
  * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
  */
 SELVA_EXPORT
-const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs) __attribute__((nonnull));
+__attribute__((nonnull))
+inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
+#if !__zig
+{
+    return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
+        ? &fs->edge_constraint
+        : nullptr;
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
