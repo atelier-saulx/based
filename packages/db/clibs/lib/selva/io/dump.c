@@ -208,9 +208,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         switch (type) {
         case SELVA_FIELD_TYPE_NULL:
             break;
-        case SELVA_FIELD_TYPE_TIMESTAMP:
-            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(union SelvaStaticFields, timestamp), 1, io);
-            break;
         case SELVA_FIELD_TYPE_NUMBER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(union SelvaStaticFields, number), 1, io);
             break;
@@ -225,10 +222,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(union SelvaStaticFields, uint32), 1, io);
-            break;
-        case SELVA_FIELD_TYPE_INT64:
-        case SELVA_FIELD_TYPE_UINT64:
-            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(union SelvaStaticFields, uint64), 1, io);
             break;
         case SELVA_FIELD_TYPE_BOOLEAN:
             io->sdb_write(&(uint8_t){ *(uint8_t *)selva_fields_nfo2p(fields, nfo) }, sizeof(uint8_t), 1, io);
@@ -617,7 +610,6 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_NULL:
             err = 0;
             break;
-        case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
@@ -625,8 +617,6 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_UINT16:
         case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
-        case SELVA_FIELD_TYPE_INT64:
-        case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
@@ -811,7 +801,6 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_NULL:
             err = 0;
             break;
-        case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
@@ -819,8 +808,6 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_UINT16:
         case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
-        case SELVA_FIELD_TYPE_INT64:
-        case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:

@@ -43,19 +43,6 @@ static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSch
     return SELVA_EINTYPE;
 }
 
-static int type2fs_timestamp(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_TIMESTAMP,
-    };
-    static_assert(sizeof(time_t) == sizeof(int64_t));
-
-    return 1;
-}
-
 static int type2fs_number(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -87,18 +74,6 @@ static int type2fs_uint32(struct schemabuf_parser_ctx *, struct SelvaFieldsSchem
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_UINT32,
-    };
-
-    return 1;
-}
-
-static int type2fs_uint64(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_UINT64,
     };
 
     return 1;
@@ -327,10 +302,6 @@ static struct schemabuf_parser {
         .type = 0,
         .type2fs = type2fs_reserved,
     },
-    [SELVA_FIELD_TYPE_TIMESTAMP] = {
-        .type = SELVA_FIELD_TYPE_TIMESTAMP,
-        .type2fs = type2fs_timestamp,
-    },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
@@ -342,10 +313,6 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_UINT32] = {
         .type = SELVA_FIELD_TYPE_UINT32,
         .type2fs = type2fs_uint32,
-    },
-    [SELVA_FIELD_TYPE_UINT64] = {
-        .type = SELVA_FIELD_TYPE_UINT64,
-        .type2fs = type2fs_uint64,
     },
     [SELVA_FIELD_TYPE_BOOLEAN] = {
         .type = SELVA_FIELD_TYPE_BOOLEAN,

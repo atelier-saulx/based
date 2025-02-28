@@ -64,7 +64,6 @@ struct SelvaNodeWeakReferences {
 union SelvaStaticFields {
     bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
     double number; /*!< SELVA_FIELD_TYPE_NUMBER */
-    int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
     struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
     int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
     uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
@@ -72,8 +71,6 @@ union SelvaStaticFields {
     uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
     int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
     uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
-    int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
-    uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
     uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
     struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
 };

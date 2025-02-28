@@ -12,7 +12,6 @@ import {
   CARDINALITY,
   INT16,
   INT32,
-  INT64,
   INT8,
   MICRO_BUFFER,
   NULL,
@@ -34,7 +33,7 @@ import {
 
 const selvaTypeMap = []
 selvaTypeMap[NULL] = 0
-selvaTypeMap[TIMESTAMP] = 1
+selvaTypeMap[TIMESTAMP] = 4
 selvaTypeMap[CREATED] = 1
 selvaTypeMap[UPDATED] = 1
 selvaTypeMap[NUMBER] = 4
@@ -45,7 +44,6 @@ selvaTypeMap[INT16] = 21
 selvaTypeMap[UINT16] = 22
 selvaTypeMap[INT32] = 23
 selvaTypeMap[UINT32] = 7
-selvaTypeMap[INT64] = 24
 selvaTypeMap[BOOLEAN] = 9
 selvaTypeMap[ENUM] = 10
 selvaTypeMap[STRING] = 11
