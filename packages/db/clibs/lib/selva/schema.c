@@ -55,6 +55,18 @@ static int type2fs_number(struct schemabuf_parser_ctx *, struct SelvaFieldsSchem
     return 1;
 }
 
+static int type2fs_int8(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_INT8,
+    };
+
+    return 1;
+}
+
 static int type2fs_uint8(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -62,6 +74,42 @@ static int type2fs_uint8(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_UINT8,
+    };
+
+    return 1;
+}
+
+static int type2fs_int16(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_INT16,
+    };
+
+    return 1;
+}
+
+static int type2fs_uint16(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_UINT16,
+    };
+
+    return 1;
+}
+
+static int type2fs_int32(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_INT32,
     };
 
     return 1;
@@ -306,9 +354,25 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
     },
+    [SELVA_FIELD_TYPE_INT8] = {
+        .type = SELVA_FIELD_TYPE_INT8,
+        .type2fs = type2fs_int8,
+    },
     [SELVA_FIELD_TYPE_UINT8] = {
         .type = SELVA_FIELD_TYPE_UINT8,
         .type2fs = type2fs_uint8,
+    },
+    [SELVA_FIELD_TYPE_INT16] = {
+        .type = SELVA_FIELD_TYPE_INT16,
+        .type2fs = type2fs_int16,
+    },
+    [SELVA_FIELD_TYPE_UINT16] = {
+        .type = SELVA_FIELD_TYPE_UINT16,
+        .type2fs = type2fs_uint16,
+    },
+    [SELVA_FIELD_TYPE_INT32] = {
+        .type = SELVA_FIELD_TYPE_INT32,
+        .type2fs = type2fs_int32,
     },
     [SELVA_FIELD_TYPE_UINT32] = {
         .type = SELVA_FIELD_TYPE_UINT32,
