@@ -58,10 +58,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 }
                 const hash: u64 = read(u64, data, i);
                 selva.hll_add(currentData, hash);
-                var size: usize = undefined;
-                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(currentData, &size));
-                const strU8: []u8 = bufPtr[0..size];
-                try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
                 i += 8;
             }
             return len * 8;

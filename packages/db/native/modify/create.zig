@@ -1,5 +1,5 @@
 const db = @import("../db/db.zig");
-const util = @import("../utils.zig");
+const utils = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
@@ -10,7 +10,7 @@ const types = @import("../types.zig");
 const std = @import("std");
 const lib = @import("../lib.zig");
 
-const read = util.read;
+const read = utils.read;
 
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
@@ -46,12 +46,6 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             while (i < len * 8) {
                 const hash = read(u64, data, i);
                 selva.hll_add(hll, hash);
-
-                var size: usize = undefined;
-                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(hll, &size));
-                const strU8: []u8 = bufPtr[0..size];
-                try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
-
                 i += 8;
             }
             return len * 8;

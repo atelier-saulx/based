@@ -19,6 +19,24 @@ await test('hll', async (t) => {
         derp: 'number',
         myUniqueValuesCount: 'cardinality',
         myUniqueValuesCountFromArray: 'cardinality',
+        contributors: {
+          items: {
+            ref: 'user',
+            prop: 'articles',
+            $tokens: 'cardinality',
+          },
+        },
+      },
+      user: {
+        props: {
+          name: 'number',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
       },
     },
   })
@@ -122,7 +140,7 @@ await test('hll', async (t) => {
     [],
   )
 
-  // console.log('------- update --------')
+  // // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -163,7 +181,7 @@ await test('hll', async (t) => {
   const feeling = ['folish', 'superficial', 'deep', 'moving', 'fake']
 
   let feelings = []
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     feelings.push(
       xxHash64(
         Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
@@ -171,21 +189,13 @@ await test('hll', async (t) => {
     )
   }
 
+  console.time('1M values with 5 distinct feelings update')
   await db.update('article', myArticle, {
     myUniqueValuesCount: feelings,
   })
+  console.timeEnd('1M values with 5 distinct feelings update')
 
   console.log(await db.drain(), 'ms')
-
-  for (let i = 0; i < 1e2; i++) {
-    db.create('article', {
-      derp: i,
-      myUniqueValuesCount: feelings,
-    })
-  }
-
-  console.log(await db.drain(), 'ms')
-  console.log('---------------')
 
   // await db.query('article').range(0, 1e6).get().inspect(10)
   // await db.query('article').range(0, 1e6).get().inspect(10)
@@ -213,4 +223,23 @@ await test('hll', async (t) => {
       },
     ],
   )
+
+  // // -------- edges
+
+  // const mrSnurp = db.create('user', {
+  //   name: 900,
+  // })
+
+  // await db.create('article', {
+  //   // derp: 813,
+  //   myUniqueValuesCount: '123',
+  //   contributors: [{ id: mrSnurp }],
+  // })
+
+  // await db
+  //   .query('article')
+  //   // .sort('derp', 'desc')
+  //   // .include('contributors.$tokens')
+  //   .get()
+  //   .inspect()
 })
