@@ -22,6 +22,7 @@ import {
   TEXT,
   SchemaTypesParsedById,
   SchemaTypesParsed,
+  ENUM,
 } from './types.js'
 import { StrictSchema } from '../types.js'
 
@@ -57,7 +58,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesTotalLen += 1 + 2 + edge.len // field len
       }
 
-      if (edge.typeIndex === 10) {
+      if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
           : refProp[key].enum
@@ -65,9 +66,9 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         for (let i = 0; i < edge.enum.length; i++) {
           edge.reverseEnum[edge.enum[i]] = i
         }
-      } else if (edge.typeIndex === 14) {
+      } else if (edge.typeIndex === REFERENCES) {
         edge.inverseTypeName = refProp[key].items.ref
-      } else if (edge.typeIndex === 13) {
+      } else if (edge.typeIndex === REFERENCE) {
         edge.inverseTypeName = refProp[key].ref
       }
 
