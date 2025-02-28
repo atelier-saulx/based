@@ -24,10 +24,37 @@ import {
   SchemaTypesParsed,
   ENUM,
 } from './types.js'
-import { StrictSchema } from '../types.js'
+import { SchemaProp, StrictSchema } from '../types.js'
 
 // TMP
 export const DEFAULT_BLOCK_CAPACITY = 100_000
+
+function getPropLen(schemaProp: SchemaProp)
+{
+  let len = SIZE_MAP[getPropType(schemaProp)]
+  if (
+    isPropType('string', schemaProp) ||
+    isPropType('alias', schemaProp) ||
+    isPropType('cardinality', schemaProp)
+  ) {
+    if (typeof schemaProp === 'object') {
+      if (schemaProp.maxBytes < 61) {
+        len = schemaProp.maxBytes + 1
+      } else if ('max' in schemaProp && schemaProp.max < 31) {
+        len = schemaProp.max * 2 + 1
+      }
+    }
+  } else if (isPropType('vector', schemaProp)) {
+    len = 4 * schemaProp.size
+  }
+
+  return len
+}
+
+function isSeparate(schemaProp: SchemaProp, len: number)
+{
+  return len === 0 || isPropType('vector', schemaProp)
+}
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0
@@ -187,30 +214,24 @@ export const createSchemaTypeDef = (
         false,
       )
     } else {
-      let len = SIZE_MAP[propType]
+      const len = getPropLen(schemaProp)
       if (
         isPropType('string', schemaProp) ||
         isPropType('alias', schemaProp) ||
         isPropType('cardinality', schemaProp)
       ) {
         if (typeof schemaProp === 'object') {
-          if (schemaProp.maxBytes < 61) {
-            len = schemaProp.maxBytes + 1
-          } else if ('max' in schemaProp && schemaProp.max < 31) {
-            len = schemaProp.max * 2 + 1
-          } else {
+          if (!(schemaProp.maxBytes < 61) || !('max' in schemaProp && schemaProp.max < 31)) {
             separateSortProps++
           }
         } else {
           separateSortProps++
         }
-      } else if (isPropType('vector', schemaProp)) {
-        len = 4 * schemaProp.size
       } else if (isPropType('text', schemaProp)) {
         separateSortText++
       }
 
-      const isseparate = len === 0 || isPropType('vector', schemaProp)
+      const isseparate = isSeparate(schemaProp, len)
       if (isseparate) {
         result.cnt++
       }
