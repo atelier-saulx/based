@@ -810,6 +810,20 @@ struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const st
     return get_mutable_string(fields, fs, nfo, initial_len);
 }
 
+struct selva_string *selva_fields_ensure_string2(
+        struct SelvaFields *fields,
+        const struct SelvaFieldSchema *fs,
+        size_t initial_len)
+{
+    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+        return nullptr;
+    }
+
+    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
+
+    return get_mutable_string(fields, fs, nfo, initial_len);
+}
+
 static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
 {
     const size_t len = text->len;

@@ -124,6 +124,12 @@ struct selva_string *selva_fields_ensure_string(
         size_t initial_len);
 
 SELVA_EXPORT
+struct selva_string *selva_fields_ensure_string2(
+        struct SelvaFields *fields,
+        const struct SelvaFieldSchema *fs,
+        size_t initial_len);
+
+SELVA_EXPORT
 int selva_fields_reference_set(
         struct SelvaDb *db,
         struct SelvaNode * restrict src,
