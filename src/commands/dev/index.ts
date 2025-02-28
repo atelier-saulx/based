@@ -141,6 +141,7 @@ export const devServer = async ({
     client,
     () => browserBundles.result.outputFiles,
     true,
+    cloud,
   )
 
   update(null)

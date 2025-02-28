@@ -12,6 +12,7 @@ export const contextBasedServer =
     client: BasedClient,
     files: () => OutputFile[],
     silent: boolean,
+    cloud: boolean,
   ): Promise<BasedServer> => {
     const { BasedServer } = await import('@based/server')
     const server = new BasedServer({
@@ -111,14 +112,17 @@ export const contextBasedServer =
       },
     })
 
-    const { BasedDb } = await import('@based/db')
-    const basedDb = new BasedDb({
-      path: join(process.cwd(), 'tmp'),
-    })
+    if (!cloud) {
+      const { BasedDb } = await import('@based/db')
+      const basedDb = new BasedDb({
+        path: join(process.cwd(), 'tmp'),
+      })
 
-    await basedDb.start()
-    server.client.db ??= {}
-    server.client.db.v2 = basedDb
+      await basedDb.start()
+      server.client.db ??= {}
+      server.client.db.v2 = basedDb
+    }
+
     server.on('error', (_message, data, _error) => {
       context.print
         .line()

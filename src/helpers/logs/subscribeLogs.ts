@@ -1,5 +1,18 @@
-import diff from 'arr-diff'
 import type { AppContext } from '../../shared/index.js'
+
+const combineData = (a, b) => {
+  const x = [...a, ...b].sort((a, b) =>
+    a.ts > b.ts ? 1 : a.ts === b.ts ? 0 : -1,
+  )
+
+  // console.log({
+  //   x: x.slice(-2).map((x) => {
+  //     x.DATE = new Date(x.ts)
+  //     return x
+  //   }),
+  // })
+  return x
+}
 
 export const subscribeLogs = async (
   context: AppContext,
@@ -8,8 +21,6 @@ export const subscribeLogs = async (
 ) => {
   const basedClient = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
-  let adminLogsPrevious: Based.Logs.AdminLogsData[] = []
-  let envLogsPrevious: Based.Logs.EnvLogsData[] = []
   let finalAdminData = []
   let finalEnvData = []
   const isOnlyApp: boolean = args.app && !args.infra
@@ -29,12 +40,9 @@ export const subscribeLogs = async (
         if (!Array.isArray(data)) {
           throw new Error('Fatal error reading your logs. Try again.')
         }
-
-        const finalData = diff(adminLogsPrevious, data)
-
-        finalAdminData.push(finalData)
-
-        adminLogsPrevious = data
+        finalAdminData = data
+        // combineData(finalEnvData, finalAdminData)
+        renderData(combineData(finalEnvData, finalAdminData))
       })
   }
 
@@ -45,19 +53,9 @@ export const subscribeLogs = async (
         if (!Array.isArray(data)) {
           throw new Error('Fatal error reading your logs. Try again.')
         }
-
-        const finalData = diff(envLogsPrevious, data)
-
-        finalEnvData.push(finalData)
-
-        envLogsPrevious = data
+        finalEnvData = data
+        // combineData(finalEnvData, finalAdminData)
+        renderData(combineData(finalEnvData, finalAdminData))
       })
   }
-
-  setInterval(() => {
-    renderData([...finalAdminData, ...finalEnvData].flat())
-
-    finalAdminData = []
-    finalEnvData = []
-  }, 1e3)
 }
