@@ -35,6 +35,7 @@
 static void destroy_fields(struct SelvaFields *fields);
 static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fields);
 static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReference *ref);
+static void ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc);
 
 /**
  * Size of each type in fields.data.
@@ -811,17 +812,23 @@ struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const st
 }
 
 struct selva_string *selva_fields_ensure_string2(
-        struct SelvaFields *fields,
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        struct EdgeFieldConstraint *efc,
+        struct SelvaNodeReference *ref,
         const struct SelvaFieldSchema *fs,
         size_t initial_len)
 {
+    struct SelvaFieldInfo *nfo;
+
     if (fs->type != SELVA_FIELD_TYPE_STRING) {
         return nullptr;
     }
 
-    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
+    ensure_ref_meta(db, node, ref, efc);
+    nfo = ensure_field(ref->meta, fs);
 
-    return get_mutable_string(fields, fs, nfo, initial_len);
+    return get_mutable_string(ref->meta, fs, nfo, initial_len);
 }
 
 static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)

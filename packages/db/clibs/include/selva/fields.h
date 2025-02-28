@@ -125,7 +125,10 @@ struct selva_string *selva_fields_ensure_string(
 
 SELVA_EXPORT
 struct selva_string *selva_fields_ensure_string2(
-        struct SelvaFields *fields,
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        struct EdgeFieldConstraint *efc,
+        struct SelvaNodeReference *ref,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
 
