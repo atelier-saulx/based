@@ -1,7 +1,6 @@
 import {
   INT16,
   INT32,
-  INT64,
   INT8,
   UINT16,
   UINT32,
@@ -14,7 +13,7 @@ import {
 
 export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
   const t = prop.typeIndex
-  if (t === INT16 || t === INT32 || t === INT64 || t === INT8) {
+  if (t === INT16 || t === INT32 || t === INT8) {
     return true
   }
   return false
@@ -25,7 +24,6 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
   if (
     t === INT16 ||
     t === INT32 ||
-    t === INT64 ||
     t === INT8 ||
     t === UINT8 ||
     t === UINT16 ||
