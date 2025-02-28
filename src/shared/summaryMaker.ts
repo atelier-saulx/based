@@ -1,5 +1,6 @@
 import { intro } from '@clack/prompts'
-import { type AppContext, colorize } from './index.js'
+import type { AppContext } from '../context/index.js'
+import { colorize } from './index.js'
 
 export const summaryMaker = async (context: AppContext, summary: string[]) => {
   const { skip } = context.getGlobalOptions()

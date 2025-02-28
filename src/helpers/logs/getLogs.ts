@@ -1,4 +1,4 @@
-import type { AppContext } from '../../shared/index.js'
+import type { AppContext } from '../../context/index.js'
 
 export const getLogs = async (
   context: AppContext,

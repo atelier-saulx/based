@@ -5,7 +5,7 @@ export * from './make/index.js'
 export * from './restore/index.js'
 
 import type { Command } from 'commander'
-import { AppContext } from '../../shared/index.js'
+import { AppContext } from '../../context/index.js'
 import { download } from './download/index.js'
 import { flush } from './flush/index.js'
 import { list } from './list/index.js'

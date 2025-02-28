@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import type { OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
 import type { BasedServer } from '@based/server'
-import { type AppContext, getContentType } from '../../shared/index.js'
+import type { AppContext } from '../context/index.js'
+import { getContentType } from '../shared/index.js'
 
 export const contextBasedServer =
   (context: AppContext) =>

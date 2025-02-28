@@ -1,12 +1,9 @@
 import { resolve } from 'node:path'
 import type { Command } from 'commander'
 import { pathExists } from 'fs-extra'
+import { AppContext } from '../../../context/index.js'
 import { backupsSelection, mountDBName } from '../../../helpers/index.js'
-import {
-  AppContext,
-  isFileFromCloud,
-  replaceTilde,
-} from '../../../shared/index.js'
+import { isFileFromCloud, replaceTilde } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
 export const restore =

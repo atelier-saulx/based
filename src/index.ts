@@ -11,9 +11,9 @@ import {
   test,
   version,
 } from './commands/index.js'
+import { AppContext } from './context/index.js'
 import { globalOptions } from './helpers/index.js'
 import { languages } from './i18n/index.js'
-import { AppContext } from './shared/index.js'
 
 export const cli = async () => {
   const program: Command = new Command()

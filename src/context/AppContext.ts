@@ -1,5 +1,6 @@
 import { i18n } from '@based/i18n'
 import type { Command } from 'commander'
+import type { languages } from '../i18n/index.js'
 import {
   contextBasedClient,
   contextBasedServer,
@@ -14,8 +15,7 @@ import {
   contextSpinner,
   contextTerminalKit,
   endpoints,
-} from '../helpers/index.js'
-import type { languages } from '../i18n/index.js'
+} from './index.js'
 // TODO
 // We need an eventEmitter?
 // import EventEmitter from 'events'

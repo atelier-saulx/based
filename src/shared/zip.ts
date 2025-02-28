@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import path, { join, relative } from 'node:path'
 import AdmZip from 'adm-zip'
-import type { AppContext } from './AppContext.js'
+import type { AppContext } from '../context/AppContext.js'
 
 export const extractZipEntry = async (
   context: AppContext,

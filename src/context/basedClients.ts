@@ -1,4 +1,4 @@
-import { newLogin } from '../../shared/index.js'
+import { newLogin } from '../shared/index.js'
 
 export async function contextBasedClient(): Promise<Based.API.Client> {
   let basedClient: Based.API.Client = this.get('basedClient')

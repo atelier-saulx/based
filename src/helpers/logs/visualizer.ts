@@ -1,4 +1,5 @@
-import { type AppContext, colorize } from '../../shared/index.js'
+import type { AppContext } from '../../context/index.js'
+import { colorize } from '../../shared/index.js'
 import { filterLogs, formatLogs, getLogs, subscribeLogs } from './index.js'
 
 export const visualizer = async (

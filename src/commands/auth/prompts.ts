@@ -1,6 +1,7 @@
 import type { BasedClient } from '@based/client'
+import type { AppContext } from '../../context/index.js'
 import { authByEmail, authByState } from '../../helpers/auth/index.js'
-import { type AppContext, getBranch } from '../../shared/index.js'
+import { getBranch } from '../../shared/index.js'
 import { isEmailValid, isValueInOptions } from '../../shared/validations.js'
 
 export const newUserText =

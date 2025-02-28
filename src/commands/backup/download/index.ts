@@ -1,9 +1,9 @@
 import { writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { Command } from 'commander'
+import { AppContext } from '../../../context/index.js'
 import { backupsSelection } from '../../../helpers/index.js'
 import {
-  AppContext,
   isValidPath,
   replaceTilde,
   sanitizeFileName,

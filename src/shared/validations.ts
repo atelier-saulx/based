@@ -1,4 +1,4 @@
-import type { AppContext } from './AppContext.js'
+import type { AppContext } from '../context/AppContext.js'
 
 export const isNotEmpty = (value: string): boolean =>
   value !== '' && value !== undefined

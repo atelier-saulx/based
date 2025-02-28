@@ -18,7 +18,8 @@ import { readJSON } from 'fs-extra/esm'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
 import ts from 'typescript'
-import { AppContext, getTargets, isIndexFile } from '../../shared/index.js'
+import { AppContext } from '../../context/index.js'
+import { getTargets, isIndexFile } from '../../shared/index.js'
 
 const { glob } = fg
 const cwd = process.cwd()

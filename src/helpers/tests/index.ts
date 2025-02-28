@@ -2,7 +2,8 @@ import { exec } from 'node:child_process'
 import { resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { readJSON } from 'fs-extra/esm'
-import { type AppContext, replaceTilde } from '../../shared/index.js'
+import type { AppContext } from '../../context/index.js'
+import { replaceTilde } from '../../shared/index.js'
 
 const execAsync = promisify(exec)
 

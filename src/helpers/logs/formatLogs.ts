@@ -26,10 +26,8 @@ const templateMessage = (
     return ''
   }
 
-  // format(timestamp, logViewerDateAndTime)
-
   return colorize(
-    `<reset><gray>${new Date(timestamp)}</gray> ${labels.join(' ')}\n${message.trim()}\n</reset>`,
+    `<reset><gray>[${format(timestamp, logViewerDateAndTime)}]</gray> ${labels.join(' ')}\n${message.trim()}\n</reset>`,
   )
 }
 

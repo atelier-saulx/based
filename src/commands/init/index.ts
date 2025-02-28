@@ -2,8 +2,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { confirm } from '@clack/prompts'
 import type { Command } from 'commander'
+import { AppContext } from '../../context/index.js'
 import {
-  AppContext,
   BASED_FILE,
   BASED_FILE_BOILERPLATE,
   BASED_FILE_BOILERPLATE_ZIPENTRY,

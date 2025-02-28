@@ -8,7 +8,7 @@ import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
 import getPort from 'get-port'
 import { WebSocket, WebSocketServer } from 'ws'
-import { AppContext } from '../../shared/index.js'
+import { AppContext } from '../../context/index.js'
 import { invalidate, parseFunctions } from '../deploy/index.js'
 
 const getOwnIp = () => {

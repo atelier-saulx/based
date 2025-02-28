@@ -1,5 +1,5 @@
 import { format, parse } from 'date-fns'
-import { dateOnly } from '../../shared/index.js'
+import { dateOnly } from '../shared/index.js'
 
 export const contextParse: Based.Context.Parse = {
   date: (

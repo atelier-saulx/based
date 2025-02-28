@@ -1,7 +1,35 @@
 import { intro, outro } from '@clack/prompts'
-import type { AppContext } from '../../shared/AppContext.js'
-import { colorize } from '../../shared/colorize.js'
-import { LINE_NEW, LINE_START, LINE_UP } from '../../shared/constants.js'
+import { colorize } from '../shared/colorize.js'
+import { LINE_NEW, LINE_START, LINE_UP } from '../shared/constants.js'
+import type { AppContext } from './AppContext.js'
+
+// const originalStdoutWrite = process.stdout.write.bind(process.stdout)
+// const originalStderrWrite = process.stderr.write.bind(process.stderr)
+
+// function formatMessage(message: string): string {
+//   const cleanMessage = message.replaceAll(/\r/g, '')
+//   return `${cleanMessage}`
+// }
+
+// process.stdout.write = ((
+//   chunk: any,
+//   encoding?: BufferEncoding,
+//   callback?: (error?: Error | null) => void,
+// ): boolean => {
+//   const str: string = typeof chunk === 'string' ? chunk : chunk.toString()
+//   const formatted = formatMessage(str)
+//   return originalStdoutWrite(formatted, encoding, callback)
+// }) as typeof process.stdout.write
+
+// process.stderr.write = ((
+//   chunk: any,
+//   encoding?: BufferEncoding,
+//   callback?: (error?: Error | null) => void,
+// ): boolean => {
+//   const str: string = typeof chunk === 'string' ? chunk : chunk.toString()
+//   const formatted = formatMessage(str)
+//   return originalStderrWrite(formatted, encoding, callback)
+// }) as typeof process.stderr.write
 
 const logBase =
   (level: keyof Based.Context.State['emojis'], context: AppContext) =>
@@ -19,12 +47,12 @@ const logBase =
         icon = `${icon}  `
       }
 
-      message = `${LINE_START}${colorize(`${icon}${message}`)}`
+      message = `${colorize(`${icon}${message}`)}`
 
       if (context.spinner.isActive) {
-        context.spinner.stop(`${LINE_UP}${LINE_START}${message}`)
+        context.spinner.stop(`${message}`)
       } else {
-        console.info(message)
+        console.log(message)
       }
     }
 
@@ -77,14 +105,12 @@ export const contextPrint = (context: AppContext): Based.Context.Print => ({
     }
 
     if (context.spinner.isActive) {
-      context.spinner.stop(
-        `${LINE_START}${LINE_UP}${context.state.emojis.pipe}`,
-      )
+      context.spinner.stop(`${context.state.emojis.pipe}`)
 
       return contextPrint(context)
     }
 
-    console.info(`${LINE_START}${LINE_UP}${LINE_NEW} `)
+    console.info(`${LINE_NEW} `)
 
     return contextPrint(context)
   },

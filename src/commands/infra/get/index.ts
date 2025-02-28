@@ -1,8 +1,8 @@
 import { join, resolve } from 'node:path'
 import type { Command } from 'commander'
+import { AppContext } from '../../../context/index.js'
 import { getMachines } from '../../../helpers/index.js'
 import {
-  AppContext,
   isFormatValid,
   isValidPath,
   saveAsFile,

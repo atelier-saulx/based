@@ -1,12 +1,8 @@
 import { confirm } from '@clack/prompts'
 import { Separator, checkbox, input, select } from '@inquirer/prompts'
 import { isValid, parse } from 'date-fns'
-import {
-  type AppContext,
-  colorize,
-  dateAndTime,
-  dateOnly,
-} from '../../shared/index.js'
+import type { AppContext } from '../context/index.js'
+import { colorize, dateAndTime, dateOnly } from '../shared/index.js'
 import { contextParse } from './parse.js'
 
 export function contextInput(context: AppContext): Based.Context.InputHandler {

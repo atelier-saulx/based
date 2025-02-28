@@ -1,6 +1,6 @@
 import type { Command } from 'commander'
+import { AppContext } from '../../../context/index.js'
 import { backupsSorting, backupsSummary } from '../../../helpers/index.js'
-import { AppContext } from '../../../shared/index.js'
 import { getDownload } from '../download/index.js'
 import { setFlush } from '../flush/index.js'
 import { setRestore } from '../restore/index.js'

@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
-import { AppContext, colorize } from '../../../shared/index.js'
+import { AppContext } from '../../../context/index.js'
+import { colorize } from '../../../shared/index.js'
 
 export const overview =
   (program: Command) => async (args: Based.Infra.Overview.Command) => {

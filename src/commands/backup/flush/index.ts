@@ -1,6 +1,6 @@
 import type { Command } from 'commander'
+import { AppContext } from '../../../context/index.js'
 import { backupsSelection, mountDBName } from '../../../helpers/index.js'
-import { AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
 export const flush =

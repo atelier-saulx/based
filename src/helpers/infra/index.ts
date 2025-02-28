@@ -1,4 +1,4 @@
-import { AppContext } from '../../shared/AppContext.js'
+import { AppContext } from '../../context/AppContext.js'
 
 export const exportInfraTemplate = ({
   name,

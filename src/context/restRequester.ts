@@ -1,6 +1,6 @@
 import { createWriteStream, unlink } from 'node:fs'
 import https from 'node:https'
-import type { AppContext } from '../../shared/index.js'
+import type { AppContext } from '../context/index.js'
 
 export function contextRestRequester(context: AppContext) {
   return {

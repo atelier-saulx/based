@@ -1,6 +1,6 @@
 import type { BasedClient } from '@based/client'
+import type { AppContext } from '../../context/index.js'
 import { LINE_UP } from '../../shared/constants.js'
-import type { AppContext } from '../../shared/index.js'
 
 export const authByState = async (
   context: AppContext,

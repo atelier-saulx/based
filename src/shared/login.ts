@@ -7,6 +7,7 @@ import {
   userSelect,
 } from '../commands/auth/prompts.js'
 import { clusterText } from '../commands/infra/init/prompts.js'
+import { AppContext } from '../context/index.js'
 import {
   authByState,
   destroyLastSession,
@@ -15,12 +16,7 @@ import {
 } from '../helpers/auth/index.js'
 import { parseOrgsData } from '../helpers/infra/index.js'
 import { CONNECTION_TIMEOUT, LOCAL_AUTH_INFO } from './constants.js'
-import {
-  AppContext,
-  SharedBasedClient,
-  getFileByPath,
-  saveAsFile,
-} from './index.js'
+import { SharedBasedClient, getFileByPath, saveAsFile } from './index.js'
 
 // TODO
 // Move this logic to the client

@@ -1,5 +1,5 @@
 import type { Command } from 'commander'
-import { AppContext } from '../../../shared/index.js'
+import { AppContext } from '../../../context/index.js'
 
 export const clear = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)

@@ -1,7 +1,7 @@
 import { clearTimeout } from 'node:timers'
 import { type AuthState, BasedClient, type BasedOpts } from '@based/client'
 import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
-import { AppContext } from './AppContext.js'
+import { AppContext } from '../context/AppContext.js'
 
 export class SharedBasedClient extends BasedClient {
   private static instance: Record<

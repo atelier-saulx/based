@@ -9,8 +9,9 @@ import {
   select,
   text,
 } from '@clack/prompts'
-import { LINE_START } from '../../shared/constants.js'
-import { type AppContext, colorize } from '../../shared/index.js'
+import type { AppContext } from '../context/index.js'
+import { LINE_START } from '../shared/constants.js'
+import { colorize } from '../shared/index.js'
 
 type Validate = (value: string | string[]) => string | undefined
 
@@ -127,7 +128,7 @@ const collider: Collider = (validation, output) => (value) => {
 }
 
 const errorMessage = (content: string) => {
-  cancel(`${LINE_START}●  ${content}`)
+  cancel(`●  ${content}`)
 
   process.exit(0)
 }

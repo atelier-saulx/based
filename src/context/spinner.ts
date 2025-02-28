@@ -1,6 +1,7 @@
 import { spinner as clack } from '@clack/prompts'
-import { LINE_NEW, LINE_START, LINE_UP } from '../../shared/constants.js'
-import { type AppContext, colorize } from '../../shared/index.js'
+import type { AppContext } from '../context/index.js'
+import { LINE_NEW, LINE_START, LINE_UP } from '../shared/constants.js'
+import { colorize } from '../shared/index.js'
 
 const spinner = clack()
 
@@ -36,7 +37,7 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
 
       message = message || '<dim>│</dim>'
 
-      spinner.stop(`${LINE_START}${colorize(message)}`)
+      spinner.stop(`${colorize(message)}`)
       context.spinner.isActive = false
 
       return contextSpinner(context)

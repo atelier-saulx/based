@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { type BundleResult, bundle } from '@based/bundle'
 import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
+import type { AppContext } from '../context/index.js'
 import {
-  type AppContext,
   abs,
   buildFunctions,
   getTargets,

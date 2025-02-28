@@ -1,4 +1,4 @@
-import { getFile } from '../../shared/getFile.js'
+import { getFile } from '../shared/getFile.js'
 
 export async function contextProgram(): Promise<Based.Context.Project> {
   let basedProject: Based.Context.Project = this.get('basedProject')

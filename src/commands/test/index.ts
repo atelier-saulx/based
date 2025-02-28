@@ -1,6 +1,6 @@
 import type { Command } from 'commander'
 import { checkScript, runTests } from '../../helpers/index.js'
-import { AppContext } from '../../shared/index.js'
+import { AppContext } from '../../context/index.js'
 import { getList, setMake, setRestore } from '../backup/index.js'
 
 export const test = async (program: Command): Promise<void> => {
