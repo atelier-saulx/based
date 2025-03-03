@@ -436,17 +436,6 @@ export const createSchemaTypeDef = (
       }
     }
 
-    const mainFields: PropDef[] = []
-    const restFields: PropDef[] = []
-
-    for (const f of vals) {
-      if (f.separate) {
-        restFields.push(f)
-      } else {
-        mainFields.push(f)
-      }
-    }
-
     makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)
