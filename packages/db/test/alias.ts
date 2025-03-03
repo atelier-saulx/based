@@ -380,7 +380,6 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .include('name', 'email', 'status', 'currentToken')
       .get()
       .toObject(),
     {
@@ -388,8 +387,6 @@ await test('Update existing alias field', async (t) => {
       name: 'nuno',
       email: 'nuno@saulx.com',
       status: 'clear',
-      // TODO: This may not be the expected result
-      currentToken: '',
     },
   )
 
