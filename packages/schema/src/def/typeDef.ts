@@ -105,9 +105,10 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   }
 }
 
-function makePacked(result: Partial<SchemaTypeDef>, typeName: string, vals: PropDef[], len: number)
+function makePacked(result: Partial<SchemaTypeDef>, typeName: string, len: number)
 {
   const encoder = new TextEncoder()
+  const vals = Object.values(result.props)
 
   result.buf = new Uint8Array(len)
   result.buf[0] = result.idUint8[0]
@@ -432,7 +433,7 @@ export const createSchemaTypeDef = (
       }
     }
 
-    makePacked(result, typeName, vals, len)
+    makePacked(result, typeName, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)
     }
