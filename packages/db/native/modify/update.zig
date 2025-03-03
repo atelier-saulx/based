@@ -87,8 +87,15 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
+
             if (ctx.fieldType == types.Prop.ALIAS) {
-                try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
+                if (slice.len > 0) {
+                    try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                } {
+                    db.delAliasByName(ctx.typeEntry.?, ctx.field, slice) catch |e| {
+                        if (e != error.SELVA_ENOENT) return e;
+                    };
+                }
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             }
