@@ -284,3 +284,62 @@ await test('Get single node by alias', async (t) => {
     },
   )
 })
+
+await test('Update existing alias field', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          email: 'alias',
+          status: ['login', 'clear'],
+          currentToken: 'alias',
+        },
+      },
+    },
+  })
+
+  const email = 'nuno@saulx.com'
+  await db.upsert('user', {
+    name: 'nuno',
+    email,
+    currentToken:
+      // INFO: Works if this field is undefined or an empty string
+      'aff1ffc48253ffe063005ecce308996da1ab01c864276faaa88bd94fab4a092d604bbd916470ff1def223bc9e8b662b7',
+  })
+
+  const existingUser = await db.query('user', { email }).get().toObject()
+
+  const newToken =
+    'e2d88cf5d303972f2eb0c381e093afb8728eaebc8114a322418403eeaf30eb767d3d7dfaef784e9c2059d6cfa78cea87'
+  await db.update('user', existingUser.id, {
+    currentToken: newToken,
+    status: 'login',
+  })
+
+  deepEqual(
+    await db
+      .query('user', {
+        email,
+      })
+      .get()
+      .toObject(),
+    {
+      id: 1,
+      name: 'nuno',
+      email: 'nuno@saulx.com',
+      status: 'login',
+      currentToken: newToken,
+    },
+  )
+})
