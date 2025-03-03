@@ -61,6 +61,12 @@ selvaTypeMap[JSON] = 11
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
+function blockCapacity(blockCapacity: number): Buffer {
+  const buf = Buffer.allocUnsafe(4)
+  buf.writeInt32LE(blockCapacity)
+  return buf
+}
+
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
 }
@@ -120,12 +126,6 @@ const propDefBuffer = (
   }
 }
 
-function makeBlockCapacityBuffer(blockCapacity: number): Buffer {
-  const buf = Buffer.allocUnsafe(4)
-  buf.writeInt32LE(blockCapacity)
-  return buf
-}
-
 // todo rewrite
 export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
   if (typeof Buffer === 'undefined') {
@@ -147,7 +147,7 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
     }
     rest.sort((a, b) => a.prop - b.prop)
     return Buffer.from([
-      ...makeBlockCapacityBuffer(t.blockCapacity).values(),
+      ...blockCapacity(t.blockCapacity).values(),
       1 + sepPropCount(props),
       1 + refFields,
       ...propDefBuffer(schema, {
