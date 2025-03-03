@@ -158,6 +158,65 @@ function makePacked(result: Partial<SchemaTypeDef>, typeName: string, vals: Prop
   result.packed.set(result.propNames, result.buf.length + 2)
 }
 
+function makeSeparateTextSort(result: Partial<SchemaTypeDef>)
+{
+   result.hasSeperateTextSort = true
+
+   let max = 0
+   for (const f of result.separate) {
+     if (f.typeIndex === TEXT) {
+       if (f.prop > max) {
+         max = f.prop
+       }
+     }
+   }
+   result.seperateTextSort.buffer = new Uint8Array(
+     max * result.localeSize + 1,
+   )
+   for (const f of result.separate) {
+     if (f.typeIndex === TEXT) {
+       result.seperateTextSort.buffer[f.prop] = 1
+       result.seperateTextSort.props.push(f)
+       result.seperateTextSort.size += result.localeSize
+     }
+   }
+   result.seperateTextSort.bufferTmp = new Uint8Array(
+     max * result.localeSize + 1,
+   )
+   result.seperateTextSort.buffer.set(result.seperateTextSort.bufferTmp)
+}
+
+function makeSeparateSort(result: Partial<SchemaTypeDef>)
+{
+  result.hasSeperateSort = true
+  let max = 0
+  for (const f of result.separate) {
+    if (
+      f.typeIndex === STRING ||
+      f.typeIndex === ALIAS ||
+      f.typeIndex === CARDINALITY
+    ) {
+      if (f.prop > max) {
+        max = f.prop
+      }
+    }
+  }
+  result.seperateSort.buffer = new Uint8Array(max + 1)
+  for (const f of result.separate) {
+    if (
+      f.typeIndex === STRING ||
+      f.typeIndex === ALIAS ||
+      f.typeIndex === CARDINALITY
+    ) {
+      result.seperateSort.buffer[f.prop] = 1
+      result.seperateSort.props.push(f)
+      result.seperateSort.size++
+    }
+  }
+  result.seperateSort.bufferTmp = new Uint8Array(max + 1)
+  result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
+}
+
 export const updateTypeDefs = (
   schema: StrictSchema,
   schemaTypesParsed: SchemaTypesParsed,
@@ -389,61 +448,11 @@ export const createSchemaTypeDef = (
     }
 
     makePacked(result, typeName, vals, len)
-
     if (separateSortText > 0) {
-      result.hasSeperateTextSort = true
-      let max = 0
-      for (const f of result.separate) {
-        if (f.typeIndex === TEXT) {
-          if (f.prop > max) {
-            max = f.prop
-          }
-        }
-      }
-      result.seperateTextSort.buffer = new Uint8Array(
-        max * result.localeSize + 1,
-      )
-      for (const f of result.separate) {
-        if (f.typeIndex === TEXT) {
-          result.seperateTextSort.buffer[f.prop] = 1
-          result.seperateTextSort.props.push(f)
-          result.seperateTextSort.size += result.localeSize
-        }
-      }
-      result.seperateTextSort.bufferTmp = new Uint8Array(
-        max * result.localeSize + 1,
-      )
-      result.seperateTextSort.buffer.set(result.seperateTextSort.bufferTmp)
+      makeSeparateTextSort(result)
     }
-
     if (separateSortProps > 0) {
-      result.hasSeperateSort = true
-      let max = 0
-      for (const f of result.separate) {
-        if (
-          f.typeIndex === STRING ||
-          f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY
-        ) {
-          if (f.prop > max) {
-            max = f.prop
-          }
-        }
-      }
-      result.seperateSort.buffer = new Uint8Array(max + 1)
-      for (const f of result.separate) {
-        if (
-          f.typeIndex === STRING ||
-          f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY
-        ) {
-          result.seperateSort.buffer[f.prop] = 1
-          result.seperateSort.props.push(f)
-          result.seperateSort.size++
-        }
-      }
-      result.seperateSort.bufferTmp = new Uint8Array(max + 1)
-      result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
+      makeSeparateSort(result)
     }
 
     for (const p in result.props) {
