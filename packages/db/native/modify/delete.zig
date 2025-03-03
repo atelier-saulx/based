@@ -2,6 +2,7 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const std = @import("std");
+const types = @import("../types.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
@@ -40,6 +41,12 @@ pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     }
-    try db.deleteField(ctx.db, ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    if (ctx.fieldType == types.Prop.ALIAS) {
+        db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
+            if (e != error.SELVA_ENOENT) return e;
+        };
+    } else {
+        try db.deleteField(ctx.db, ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    }
     return 0;
 }
