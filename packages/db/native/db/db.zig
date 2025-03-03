@@ -423,7 +423,7 @@ pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u3
     return selva.selva_node_hash_range(db, typeEntry, start, end);
 }
 
-pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
+pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !void {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
