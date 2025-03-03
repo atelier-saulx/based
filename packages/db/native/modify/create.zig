@@ -78,10 +78,6 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
-                } else {
-                    db.delAliasByName(ctx.typeEntry.?, ctx.field, slice) catch |e| {
-                        if (e != error.SELVA_ENOENT) return e;
-                    };
                 }
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);

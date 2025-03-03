@@ -433,6 +433,13 @@ pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
     try errors.selva(selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len));
 }
 
+pub fn delAlias(typeEntry: Type, node_id: selva.node_id_t, field: u8) !void {
+    const aliases = selva.selva_get_aliases(typeEntry, field);
+    if (aliases != null) {
+        selva.selva_del_alias_by_dest(aliases, node_id);
+    }
+}
+
 pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
