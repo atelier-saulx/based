@@ -343,9 +343,6 @@ export const createSchemaTypeDef = (
       }
 
       const isseparate = isSeparate(schemaProp, len)
-      if (isseparate) {
-        result.cnt++
-      }
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
         __isPropDef: true,
@@ -353,7 +350,7 @@ export const createSchemaTypeDef = (
         path: propPath,
         start: 0,
         len,
-        prop: isseparate ? result.cnt : 0,
+        prop: isseparate ? ++result.cnt : 0,
       }
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
@@ -415,8 +412,7 @@ export const createSchemaTypeDef = (
     let lastProp = 0
     for (const p of vals) {
       if (p.separate) {
-        lastProp++
-        p.prop = lastProp
+        p.prop = ++lastProp
       }
     }
 
