@@ -42,7 +42,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
-
     b.* = .{
         .id = 0,
         .arena = arena.*,
@@ -53,12 +52,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
-
-    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    // const allocator = fba.allocator();
-
-    // var buffer: [1000]u8 = undefined;
-    // var fba = std.heap.FixedBufferAllocator.init(&buffer);
     try dbHashmap.put(id, b);
     return b;
 }
@@ -66,7 +59,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
 var lastQueryId: u32 = 0;
 pub fn getQueryId() u32 {
     lastQueryId += 1;
-    if (lastQueryId > 4_000_000_000_000) {
+    if (lastQueryId > 4_000_000_000) {
         lastQueryId = 0;
     }
     return lastQueryId;

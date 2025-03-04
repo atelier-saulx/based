@@ -6,23 +6,37 @@ const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
 
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
-    if (ctx.field == 0) {
-        if (ctx.typeSortIndex != null) {
-            var currentData: ?[]u8 = null;
-            var it = ctx.typeSortIndex.?.main.iterator();
-            while (it.next()) |entry| {
-                if (currentData == null) {
-                    currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-                }
-                sort.remove(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
-            }
-        }
+    if (ctx.typeSortIndex == null) {
         return 0;
     }
-    if (ctx.currentSortIndex != null) {
+
+    if (ctx.field == 0) {
+        var currentData: ?[]u8 = null;
+        var it = ctx.typeSortIndex.?.main.iterator();
+        while (it.next()) |entry| {
+            if (currentData == null) {
+                currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+            }
+            sort.remove(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
+        }
+    } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+    } else if (ctx.fieldType == types.Prop.TEXT) {
+        var it = ctx.typeSortIndex.?.text.iterator();
+        while (it.next()) |entry| {
+            const t = db.getText(
+                ctx.typeEntry,
+                ctx.id,
+                ctx.node.?,
+                ctx.fieldSchema.?,
+                ctx.fieldType,
+                entry.value_ptr.*.langCode,
+            );
+            sort.remove(ctx.db, entry.value_ptr.*, t, ctx.node.?);
+        }
     }
+
     return 0;
 }
 
