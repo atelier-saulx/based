@@ -10,15 +10,11 @@ import {
 import {
   PropDef,
   SchemaTypeDef,
-  // genRootId,
   updateTypeDefs,
   schemaToSelvaBuffer,
   SchemaTypesParsed,
   SchemaTypesParsedById,
 } from '@based/schema/def'
-// import { genRootId } from './schema/utils.js'
-// import { updateTypeDefs } from './schema/typeDef.js'
-// import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
 import {

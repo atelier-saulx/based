@@ -1,4 +1,4 @@
-import { REVERSE_SIZE_MAP, SchemaTypeDef } from './types.js'
+import { PropDef, REVERSE_SIZE_MAP, SchemaTypeDef } from './types.js'
 
 export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   const size = (packed[0] | (packed[1] << 8)) >>> 0
@@ -104,7 +104,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   let s = 0
   for (const p of mainProps) {
     const len = REVERSE_SIZE_MAP[p.typeIndex]
-    result.props[p.path] = {
+    const prop: PropDef = {
       prop: p.prop,
       separate: false,
       __isPropDef: true,
@@ -113,11 +113,13 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       path: p.path.split('.'),
       len,
     }
+    result.props[p.path] = prop
+    result.main[prop.start] = prop
     s += len
   }
 
   for (const p of props) {
-    result.props[p.path] = {
+    const prop: PropDef = {
       prop: p.prop,
       separate: true,
       __isPropDef: true,
@@ -127,6 +129,8 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       len: 0,
       compression: 1,
     }
+    result.props[p.path] = prop
+    result.reverseProps[prop.prop] = prop
   }
 
   // make this into a typeDef

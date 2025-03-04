@@ -383,6 +383,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('snurp', 'fun')
     .get()
+
   deepEqual(
     result.toObject(),
     [
@@ -403,6 +404,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
+
   deepEqual(
     result.toObject(),
     [
@@ -424,6 +426,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
+
   deepEqual(result.toObject(), [], 'Search for derp with locale set to fi')
 
   result = await db
@@ -432,6 +435,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun')
     .get()
+
   deepEqual(
     result.toObject(),
     [
@@ -449,6 +453,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('derp', 'fun.en')
     .get()
+
   deepEqual(
     result.toObject(),
     [
@@ -558,16 +563,28 @@ await test('sort', async (t) => {
     },
   })
 
+  await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject()
+
+  // not great....
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
   })
+
   const id2 = await db.create('dialog', {
     fun: { en: '2 en', fi: '2' },
   })
+
   const id3 = await db.create('dialog', {
     fun: { en: '1 en', fi: '3' },
   })
+
   const id4 = await db.create('dialog', {})
+
+  const id5 = await db.create('dialog', {
+    fun: { it: 'derp' },
+  })
+
+  await db.query('dialog').locale('fi').get().inspect(20)
 
   deepEqual(
     await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
@@ -588,6 +605,10 @@ await test('sort', async (t) => {
         id: 4,
         fun: '',
       },
+      {
+        id: 5,
+        fun: '',
+      },
     ],
   )
 
@@ -596,6 +617,7 @@ await test('sort', async (t) => {
     { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
     { id: 1, fun: { en: '3 en', fi: '1', it: '' } },
     { id: 4, fun: { en: '', it: '', fi: '' } },
+    { id: 5, fun: { en: '', it: 'derp', fi: '' } },
   ])
 
   deepEqual(
@@ -605,6 +627,7 @@ await test('sort', async (t) => {
       { id: 2, fun: '2 en' },
       { id: 3, fun: '1 en' },
       { id: 4, fun: '' },
+      { id: 5, fun: '' },
     ],
   )
 

@@ -5,6 +5,8 @@ import {
   getPropType,
   SchemaReference,
   SchemaLocales,
+  LangName,
+  langCodesMap,
 } from '../index.js'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -148,7 +150,12 @@ export const createSchemaTypeDef = (
       size: 0, // prop len
       props: [],
       buffer: new Uint8Array([]),
+      noUndefined: new Uint8Array(
+        new Array(Object.keys(locales).length).fill(0),
+      ),
       bufferTmp: new Uint8Array([]),
+      localeStringToIndex: new Map(),
+      localeToIndex: new Map(),
     },
   },
   path: string[] = [],
@@ -362,8 +369,7 @@ export const createSchemaTypeDef = (
     result.packed[1] = bufLen >>>= 8
     result.packed.set(result.buf, 2)
     result.packed.set(result.propNames, result.buf.length + 2)
-
-    // done making packed bversion
+    // packed has to be cleaned up
 
     if (separateSortText > 0) {
       result.hasSeperateTextSort = true
@@ -375,20 +381,34 @@ export const createSchemaTypeDef = (
           }
         }
       }
-      result.seperateTextSort.buffer = new Uint8Array(
-        max * result.localeSize + 1,
-      )
+      const bufLen = (max + 1) * (result.localeSize + 1)
+      result.seperateTextSort.buffer = new Uint8Array(bufLen)
+      let index = 0
+      for (const code in result.locales) {
+        const codeLang = langCodesMap.get(code)
+        result.seperateTextSort.localeStringToIndex.set(
+          code,
+          new Uint8Array([index + 1, codeLang]),
+        )
+        result.seperateTextSort.localeToIndex.set(codeLang, index + 1)
+        index++
+      }
       for (const f of result.separate) {
         if (f.typeIndex === TEXT) {
-          result.seperateTextSort.buffer[f.prop] = 1
+          const index = f.prop * (result.localeSize + 1)
+          result.seperateTextSort.buffer[index] = result.localeSize
+          for (const [, locales] of result.seperateTextSort
+            .localeStringToIndex) {
+            result.seperateTextSort.buffer[locales[0] + index] = locales[1]
+          }
           result.seperateTextSort.props.push(f)
           result.seperateTextSort.size += result.localeSize
         }
       }
-      result.seperateTextSort.bufferTmp = new Uint8Array(
-        max * result.localeSize + 1,
-      )
-      result.seperateTextSort.buffer.set(result.seperateTextSort.bufferTmp)
+      result.seperateTextSort.props.sort((a, b) => (a.prop > b.prop ? 1 : -1))
+      result.seperateTextSort.bufferTmp = new Uint8Array(bufLen)
+      result.seperateTextSort.bufferTmp.fill(0)
+      result.seperateTextSort.bufferTmp.set(result.seperateTextSort.buffer)
     }
 
     if (separateSortProps > 0) {
@@ -412,12 +432,12 @@ export const createSchemaTypeDef = (
           f.typeIndex === ALIAS ||
           f.typeIndex === CARDINALITY
         ) {
-          result.seperateSort.buffer[f.prop] = 1
           result.seperateSort.props.push(f)
           result.seperateSort.size++
         }
       }
       result.seperateSort.bufferTmp = new Uint8Array(max + 1)
+      result.seperateSort.bufferTmp.fill(0)
       result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
     }
 

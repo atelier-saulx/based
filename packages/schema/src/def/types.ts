@@ -1,4 +1,4 @@
-import type { SchemaLocales } from '../index.js'
+import type { LangCode, LangName, SchemaLocales } from '../index.js'
 
 // WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
@@ -134,7 +134,11 @@ export type SchemaTypeDef = {
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler
   hasSeperateTextSort: boolean
-  seperateTextSort: SchemaSortUndefinedHandler
+  seperateTextSort: SchemaSortUndefinedHandler & {
+    noUndefined: Uint8Array
+    localeStringToIndex: Map<string, Uint8Array> // [langCode][index]
+    localeToIndex: Map<LangCode, number>
+  }
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>

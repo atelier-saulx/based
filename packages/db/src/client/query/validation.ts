@@ -567,9 +567,13 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   },
   hasSeperateTextSort: false,
   seperateTextSort: {
+    localeToIndex: new Map(),
+    localeStringToIndex: new Map(),
+    noUndefined: new Uint8Array([]),
     size: 0,
     buffer: new Uint8Array([]),
     bufferTmp: new Uint8Array([]),
+
     props: [],
   },
   localeSize: 0,

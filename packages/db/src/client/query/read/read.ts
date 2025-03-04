@@ -327,9 +327,7 @@ export const readAllFields = (
         const size = readUint32(result, i)
         addField(
           prop,
-          global.JSON.parse(
-            Buffer.from(result.subarray(i + 6, i + size)).toString(),
-          ),
+          global.JSON.parse(readUtf8(result, i + 6, size - 6)),
           item,
         )
         i += size + 4
@@ -412,16 +410,15 @@ export const resultToObject = (
     const item: Item = {
       id,
     }
-
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
-
     items.push(item)
   }
+
   if ('id' in q.target || 'alias' in q.target) {
     return items[0]
   }

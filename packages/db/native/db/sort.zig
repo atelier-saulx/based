@@ -226,7 +226,23 @@ pub fn createSortIndex(
             break;
         }
         const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema, prop);
-        insert(dbCtx, sortIndex, data, node.?);
+        if (prop == types.Prop.TEXT) {
+            if (data.len == 0) {
+                insert(dbCtx, sortIndex, EMPTY_CHAR_SLICE, node.?);
+            } else {
+                var iter = db.textIterator(data, lang);
+                var found = false;
+                while (iter.next()) |s| {
+                    found = true;
+                    insert(dbCtx, sortIndex, s, node.?);
+                }
+                if (!found) {
+                    insert(dbCtx, sortIndex, EMPTY_CHAR_SLICE, node.?);
+                }
+            }
+        } else {
+            insert(dbCtx, sortIndex, data, node.?);
+        }
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -370,17 +386,7 @@ pub fn insert(
         types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
             selva.selva_sort_insert_i64(index, data[start], node);
         },
-        types.Prop.TEXT => {
-            if (data.len > 0) {
-                var iter = db.textIterator(data, sortIndex.langCode);
-                while (iter.next()) |s| {
-                    selva.selva_sort_insert_buf(index, parseString(dbCtx, s), SIZE, node);
-                }
-            } else {
-                selva.selva_sort_insert_buf(index, parseString(dbCtx, data), SIZE, node);
-            }
-        },
-        types.Prop.STRING => {
+        types.Prop.STRING, types.Prop.TEXT => {
             const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(

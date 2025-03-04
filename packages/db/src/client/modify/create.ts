@@ -10,6 +10,7 @@ import {
   RANGE_ERR,
   ModifyOpts,
   ADD_EMPTY_SORT,
+  ADD_EMPTY_SORT_TEXT,
 } from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
@@ -79,8 +80,46 @@ const appendCreate = (
       ctx.buf[sizepos] = size >>>= 8
     }
     if (ctx.hasSortField !== -1) {
-      def.seperateSort.buffer.set(def.seperateSort.bufferTmp)
+      def.seperateSort.buffer.set(def.seperateSort.bufferTmp, 0)
     }
+    // add test for this
+    ctx.hasSortField = -1
+  }
+
+  if (def.hasSeperateTextSort) {
+    const buf = def.seperateTextSort.bufferTmp
+    if (ctx.hasSortText !== def.seperateTextSort.size - 1) {
+      if (ctx.len + 3 > ctx.max) {
+        return RANGE_ERR
+      }
+      ctx.buf[ctx.len++] = ADD_EMPTY_SORT_TEXT
+      let sizepos = ctx.len
+      ctx.len += 2
+      const amount = def.localeSize + 1
+      const len = amount * def.seperateTextSort.props.length
+      for (const { prop } of def.seperateTextSort.props) {
+        const index = prop * amount
+        if (buf[index] !== 0) {
+          ctx.buf[ctx.len++] = prop
+          ctx.buf[ctx.len++] = buf[index]
+          for (let i = index + 1; i < len + index; i++) {
+            const lang = buf[i]
+            if (lang !== 0) {
+              ctx.buf[ctx.len++] = lang
+            }
+          }
+        }
+      }
+      let size = ctx.len - sizepos - 2
+      ctx.buf[sizepos++] = size
+      ctx.buf[sizepos] = size >>>= 8
+      // [size][size] [prop][len][lang][lang]
+    }
+
+    if (ctx.hasSortText !== -1) {
+      buf.set(def.seperateTextSort.buffer, 0)
+    }
+    ctx.hasSortText = -1
   }
 }
 
@@ -127,7 +166,7 @@ export function create(
 
     if (err === RANGE_ERR) {
       if (pos === 0) {
-        throw new Error('out of range')
+        throw new Error('!No range available')
       }
       flushBuffer(db)
       return db.create(type, obj, opts)

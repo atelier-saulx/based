@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import { MICRO_BUFFER, SchemaTypeDef } from '@based/schema/def'
+import { SchemaTypeDef } from '@based/schema/def'
 import {
   CREATE,
   ModifyOp,
@@ -39,8 +39,6 @@ export const setCursor = (
     ctx.buf[ctx.len++] = SWITCH_FIELD // switch field
     ctx.buf[ctx.len++] = field // actual field
     ctx.buf[ctx.len++] = typeIndex
-    // field === 0 ? MICRO_BUFFER : schema.reverseProps[field].typeIndex
-    // add start and len if its main
     ctx.field = field
   }
 

@@ -78,6 +78,7 @@ export const read = (val: Uint8Array, offset: number, len: number): string => {
   if (type == 1) {
     const origSize = readUint32(val, offset + 2)
     const newBuffer = Buffer.allocUnsafe(origSize)
+    // deflate in browser for this...
     native.decompress(Buffer.from(val), newBuffer, offset + 6, len - 6)
     return newBuffer.toString('utf8')
   } else if (type == 0) {
