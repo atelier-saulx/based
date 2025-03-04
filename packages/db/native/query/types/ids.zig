@@ -33,7 +33,7 @@ pub fn sort(
     start = read(u16, sortBuffer, 2);
     len = read(u16, sortBuffer, 4);
     // --------------------------------
-    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc, lang);
+    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc, lang, sortField);
     const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);

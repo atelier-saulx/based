@@ -16,6 +16,7 @@ pub const SortIndexMeta = struct {
     len: u16, // len can be added somewhere else
     index: *selva.SelvaSortCtx,
     langCode: types.LangCode,
+    field: u8,
 };
 
 const SIZE = 16;
@@ -138,6 +139,7 @@ pub fn createSortIndexMeta(
     prop: types.Prop,
     desc: bool,
     lang: types.LangCode,
+    field: u8,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(prop, desc);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
@@ -147,6 +149,7 @@ pub fn createSortIndexMeta(
         .index = sortCtx,
         .prop = prop,
         .langCode = lang,
+        .field = field,
     };
     return s;
 }
@@ -176,7 +179,7 @@ fn getOrCreateFromCtx(
     sortIndex = getSortIndex(typeIndexes, field, start, lang);
     if (sortIndex == null) {
         sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang);
+        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang, field);
         if (field == 0) {
             try tI.main.put(start, sortIndex.?);
         } else if (prop == types.Prop.TEXT) {

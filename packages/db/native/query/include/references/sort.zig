@@ -38,6 +38,7 @@ pub fn sortedReferences(
         sortProp,
         sortBuffer[0] == 1,
         langCode,
+        sortField,
     ) catch {
         return result;
     };

@@ -24,7 +24,7 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
-            if (entry.value_ptr.*.prop == ctx.field) {
+            if (entry.value_ptr.*.field == ctx.field) {
                 const t = db.getText(
                     ctx.typeEntry,
                     ctx.id,
