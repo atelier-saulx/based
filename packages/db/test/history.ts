@@ -4,6 +4,10 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import native from '../src/native.js'
 
+/*
+1. Store history 
+*/
+
 await test.skip('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
 
@@ -20,25 +24,31 @@ await test.skip('history', async (t) => {
           name: 'string',
           views: {
             type: 'uint32',
+            history: {
+              interval: 'second',
+            },
           },
           active: {
             type: 'uint32',
+            history: {
+              interval: 'second',
+            },
           },
         },
       },
     },
   })
 
-  const pathname = join(t.tmp, 'history')
+  // const pathname = join(t.tmp, 'history')
 
-  writeFileSync(pathname, '')
+  // writeFileSync(pathname, '')
 
-  const history = native.historyCreate(
-    pathname,
-    db.client.schemaTypesParsed.page.mainLen,
-  )
-  const pageId = await db.create('page', {})
-  native.historyAppend(history, db.client.schemaTypesParsed.page.id, pageId)
+  // const history = native.historyCreate(
+  //   pathname,
+  //   db.client.schemaTypesParsed.page.mainLen,
+  // )
+  // const pageId = await db.create('page', {})
+  // native.historyAppend(history, db.client.schemaTypesParsed.page.id, pageId)
 
   /*
     int selva_history_init(const char *pathname, size_t bsize, struct selva_history **hist_out);
