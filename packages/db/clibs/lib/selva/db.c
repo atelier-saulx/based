@@ -277,6 +277,13 @@ static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_
     return &blocks->blocks[block_i];
 }
 
+static void clone_schema_buf(struct SelvaTypeEntry *te, const char *schema_buf, size_t schema_len)
+{
+    te->schema_buf = selva_malloc(schema_len);
+    memcpy(te->schema_buf, schema_buf, schema_len);
+    te->schema_len = schema_len;
+}
+
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_info nfo;
@@ -305,8 +312,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
     te->type = type;
-    te->schema_buf = schema_buf;
-    te->schema_len = schema_len;
+    clone_schema_buf(te, schema_buf, schema_len);
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
