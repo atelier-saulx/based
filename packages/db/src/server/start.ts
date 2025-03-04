@@ -88,8 +88,19 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
     db.merkleTree = createTree(db.createCsmtHashFun)
   }
 
-  for (const key in db.schemaTypesParsed) {
-    const def = db.schemaTypesParsed[key]
+
+  // FDN-791 CSMT is unstable (not history independent)
+  // For now we just sort the types to ensure that we always
+  // load in the same order.
+  const types = Object.keys(db.schemaTypesParsed).sort((a, b) => db.schemaTypesParsed[a].id - db.schemaTypesParsed[b].id).reduce((obj, key) => {
+      obj[key] = db.schemaTypesParsed[key];
+      return obj;
+    },
+    {}
+  )
+
+  for (const key in types) {
+    const def = types[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.total = total
     def.lastId = writelog?.types[def.id]?.lastId || lastId
