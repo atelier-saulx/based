@@ -129,7 +129,7 @@ await test('simple', async (t) => {
   await db2.save()
 })
 
-await test('save empty root', async (t) => {
+await test('empty root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -160,7 +160,7 @@ await test('save empty root', async (t) => {
   await setTimeout(1e3)
 })
 
-await test('save refs', async (t) => {
+await test('refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -265,7 +265,7 @@ await test('auto save', async (t) => {
   })
 })
 
-await test('save text', async (t) => {
+await test('text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
