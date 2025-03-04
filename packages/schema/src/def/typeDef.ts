@@ -188,7 +188,6 @@ export const createSchemaTypeDef = (
       }
       return a.prop - b.prop
     })
-
     let lastProp = 0
     for (const p of vals) {
       if (p.separate) {
