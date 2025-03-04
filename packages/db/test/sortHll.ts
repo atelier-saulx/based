@@ -226,30 +226,12 @@ await test('sortCardinality', async (t) => {
       .get()
       .toObject(),
     [
-      {
-        id: 2,
-        count: 2,
-      },
-      {
-        id: 3,
-        count: 1,
-      },
-      {
-        id: 4,
-        count: 1,
-      },
-      {
-        id: 5,
-        count: 1,
-      },
-      {
-        id: 6,
-        count: 0,
-      },
-      {
-        id: 7,
-        count: 0,
-      },
+      { id: 2, count: 2 },
+      { id: 3, count: 1 },
+      { id: 4, count: 1 },
+      { id: 5, count: 1 },
+      { id: 6, count: 0 },
+      { id: 7, count: 0 },
     ],
     'test from undefined / non undefined',
   )
