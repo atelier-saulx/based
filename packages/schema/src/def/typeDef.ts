@@ -6,7 +6,6 @@ import {
   SchemaLocales,
 } from '../index.js'
 import { setByPath } from '@saulx/utils'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import {
   PropDef,
   SchemaTypeDef,
@@ -23,6 +22,8 @@ import { makeSeparateSort } from './makeSeparateSort.js'
 import { getPropLen } from './getPropLen.js'
 import { isSeparate } from './utils.js'
 import { addEdges } from './addEdges.js'
+import { createEmptyDef } from './createEmptyDef.js'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
@@ -71,40 +72,7 @@ export const createSchemaTypeDef = (
   type: StrictSchemaType | SchemaObject,
   parsed: SchemaTypesParsed,
   locales: Partial<SchemaLocales>,
-  result: Partial<SchemaTypeDef> = {
-    cnt: 0,
-    checksum: hashObjectIgnoreKeyOrder(type),
-    type: typeName,
-    props: {},
-    reverseProps: {},
-    idUint8: new Uint8Array([0, 0]),
-    id: 0,
-    mainLen: 0,
-    separate: [],
-    tree: {},
-    total: 0,
-    lastId: 0,
-    main: {},
-    hasSeperateSort: false,
-    seperateSort: {
-      size: 0,
-      props: [],
-      buffer: new Uint8Array([]),
-      bufferTmp: new Uint8Array([]),
-    },
-    hasSeperateTextSort: false,
-    seperateTextSort: {
-      size: 0, // prop len
-      props: [],
-      buffer: new Uint8Array([]),
-      noUndefined: new Uint8Array(
-        new Array(Object.keys(locales).length).fill(0),
-      ),
-      bufferTmp: new Uint8Array([]),
-      localeStringToIndex: new Map(),
-      localeToIndex: new Map(),
-    },
-  },
+  result: Partial<SchemaTypeDef> = createEmptyDef(typeName, type, locales),
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {

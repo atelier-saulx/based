@@ -14,6 +14,7 @@ import {
   TIMESTAMP,
   VECTOR,
   propIsNumerical,
+  createEmptyDef,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -540,40 +541,9 @@ export const ERROR_VECTOR: PropDef = {
 }
 
 export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
-  type: '_error',
-  cnt: 0,
-  checksum: 0,
-  total: 0,
-  lastId: 0,
-  blockCapacity: 0,
-  mainLen: 0,
+  ...createEmptyDef('_error', { props: {} }, {}),
   buf: new Uint8Array([]),
   propNames: new Uint8Array([]),
   packed: new Uint8Array([]),
-  props: {},
-  locales: {},
-  reverseProps: {},
-  id: 0,
   idUint8: new Uint8Array([0, 0]),
-  main: {},
-  separate: [],
-  tree: {},
-  hasSeperateSort: false,
-  seperateSort: {
-    size: 0,
-    buffer: new Uint8Array([]),
-    bufferTmp: new Uint8Array([]),
-    props: [],
-  },
-  hasSeperateTextSort: false,
-  seperateTextSort: {
-    localeToIndex: new Map(),
-    localeStringToIndex: new Map(),
-    noUndefined: new Uint8Array([]),
-    size: 0,
-    buffer: new Uint8Array([]),
-    bufferTmp: new Uint8Array([]),
-    props: [],
-  },
-  localeSize: 0,
 }
