@@ -9,7 +9,6 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     if (ctx.typeSortIndex == null) {
         return 0;
     }
-
     if (ctx.field == 0) {
         var currentData: ?[]u8 = null;
         var it = ctx.typeSortIndex.?.main.iterator();
@@ -25,18 +24,19 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
-            const t = db.getText(
-                ctx.typeEntry,
-                ctx.id,
-                ctx.node.?,
-                ctx.fieldSchema.?,
-                ctx.fieldType,
-                entry.value_ptr.*.langCode,
-            );
-            sort.remove(ctx.db, entry.value_ptr.*, t, ctx.node.?);
+            if (entry.value_ptr.*.prop == ctx.field) {
+                const t = db.getText(
+                    ctx.typeEntry,
+                    ctx.id,
+                    ctx.node.?,
+                    ctx.fieldSchema.?,
+                    ctx.fieldType,
+                    entry.value_ptr.*.langCode,
+                );
+                sort.remove(ctx.db, entry.value_ptr.*, t, ctx.node.?);
+            }
         }
     }
-
     return 0;
 }
 
