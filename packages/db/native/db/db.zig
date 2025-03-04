@@ -363,14 +363,8 @@ pub fn writeEdgeProp(
     ));
 }
 
-pub fn deleteField(ctx: *DbCtx, typeEntry: Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) !void {
-    const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
-    if (fieldType == types.Prop.ALIAS) {
-        const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
-        selva.selva_del_alias_by_dest(typeAliases, if (id == 0) getNodeId(node) else id);
-    } else {
-        try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
-    }
+pub fn deleteField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {

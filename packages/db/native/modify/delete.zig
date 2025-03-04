@@ -36,7 +36,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
-        try db.deleteField(ctx.db, ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+        try db.deleteField(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;
 }

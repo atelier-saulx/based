@@ -387,6 +387,7 @@ await test('Update existing alias field', async (t) => {
       name: 'nuno',
       email: 'nuno@saulx.com',
       status: 'clear',
+      currentToken: '',
     },
   )
 

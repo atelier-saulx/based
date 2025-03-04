@@ -106,11 +106,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.ADD_EMPTY_SORT_TEXT => {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
-            types.ModOp.DELETE => { // 11
+            types.ModOp.DELETE => {
                 i += try deleteField(&ctx) + 1;
             },
-            types.ModOp.DELETE_SORT_INDEX => { // 4
-                // special case
+            types.ModOp.DELETE_SORT_INDEX => {
                 i += try deleteFieldSortIndex(&ctx) + 1;
             },
             types.ModOp.CREATE_PROP => {
