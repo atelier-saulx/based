@@ -5,6 +5,7 @@ const std = @import("std");
 const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
 
+// TODO: can optmize this greatly
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     if (ctx.typeSortIndex == null) {
         return 0;
@@ -24,7 +25,9 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
+            // pretty slow...
             if (entry.value_ptr.*.field == ctx.field) {
+                // Extra slow...
                 const t = db.getText(
                     ctx.typeEntry,
                     ctx.id,
