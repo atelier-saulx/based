@@ -19,6 +19,7 @@ await test('sortCardinality', async (t) => {
       article: {
         derp: 'number',
         count: 'cardinality',
+        lala: 'cardinality',
         brazilians: 'cardinality',
       },
     },
@@ -198,5 +199,58 @@ await test('sortCardinality', async (t) => {
     'delete a register',
   )
 
-  // test from undefined / non undefined etc
+  const c1 = await db.create('article', {
+    count: 'name1',
+  })
+  const c2 = await db.create('article', {
+    count: 'name2',
+  })
+  const c3 = await db.create('article', {
+    count: 'name3',
+  })
+  const c4 = await db.create('article', {})
+  const c5 = await db.create('article', {})
+
+  // await db
+  //   .query('article')
+  //   // .sort('count', 'desc')
+  //   .include('count')
+  //   .get()
+  //   .inspect(100)
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('count')
+      .sort('count', 'desc')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 2,
+        count: 2,
+      },
+      {
+        id: 3,
+        count: 1,
+      },
+      {
+        id: 4,
+        count: 1,
+      },
+      {
+        id: 5,
+        count: 1,
+      },
+      {
+        id: 6,
+        count: 0,
+      },
+      {
+        id: 7,
+        count: 0,
+      },
+    ],
+    'test from undefined / non undefined',
+  )
 })
