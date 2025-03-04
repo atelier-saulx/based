@@ -565,7 +565,6 @@ await test('sort', async (t) => {
 
   await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject()
 
-  // not great....
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
   })
@@ -628,6 +627,36 @@ await test('sort', async (t) => {
       { id: 3, fun: '1 en' },
       { id: 4, fun: '' },
       { id: 5, fun: '' },
+    ],
+  )
+
+  await db.update('dialog', id5, {
+    fun: { fi: '0' },
+  })
+
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 5,
+        fun: '0',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
     ],
   )
 

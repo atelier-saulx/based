@@ -225,24 +225,21 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema, prop);
-        if (prop == types.Prop.TEXT) {
-            if (data.len == 0) {
-                insert(dbCtx, sortIndex, EMPTY_CHAR_SLICE, node.?);
-            } else {
-                var iter = db.textIterator(data, lang);
-                var found = false;
-                while (iter.next()) |s| {
-                    found = true;
-                    insert(dbCtx, sortIndex, s, node.?);
-                }
-                if (!found) {
-                    insert(dbCtx, sortIndex, EMPTY_CHAR_SLICE, node.?);
-                }
-            }
-        } else {
-            insert(dbCtx, sortIndex, data, node.?);
-        }
+        const data = if (prop == types.Prop.TEXT) db.getText(
+            typeEntry,
+            db.getNodeId(node.?),
+            node.?,
+            fieldSchema,
+            prop,
+            lang,
+        ) else db.getField(
+            typeEntry,
+            db.getNodeId(node.?),
+            node.?,
+            fieldSchema,
+            prop,
+        );
+        insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -341,7 +338,7 @@ pub fn remove(
         types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        types.Prop.STRING => {
+        types.Prop.STRING, types.Prop.TEXT => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_remove_buf(
                     index,

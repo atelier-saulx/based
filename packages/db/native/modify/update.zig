@@ -88,7 +88,18 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
-            if (ctx.fieldType == types.Prop.ALIAS) {
+            if (ctx.fieldType == types.Prop.TEXT) {
+                if (ctx.typeSortIndex != null and ctx.fieldType == types.Prop.TEXT) {
+                    const lang: types.LangCode = @enumFromInt(slice[0]);
+                    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
+                    if (sIndex) |sortIndex| {
+                        const currentData: []u8 = db.getText(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
+                        sort.remove(ctx.db, sortIndex, currentData, ctx.node.?);
+                        sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
+                    }
+                }
+                try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+            } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                 } else {

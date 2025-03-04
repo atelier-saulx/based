@@ -473,8 +473,31 @@ pub const TextIterator = struct {
     }
 };
 
+const emptyArray: []const [16]u8 = &.{};
+
 pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
+    if (value.len == 0) {
+        return TextIterator{ .value = emptyArray, .code = code };
+    }
     const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
     const text = textTmp.*[0..value[8]];
     return TextIterator{ .value = text, .code = code };
+}
+
+pub inline fn getText(
+    typeEntry: ?Type,
+    id: u32,
+    node: Node,
+    selvaFieldSchema: FieldSchema,
+    fieldType: types.Prop,
+    langCode: types.LangCode,
+) []u8 {
+    const data = getField(typeEntry, id, node, selvaFieldSchema, fieldType);
+    var iter = textIterator(data, langCode);
+    var found = false;
+    while (iter.next()) |s| {
+        found = true;
+        return s;
+    }
+    return @as([*]u8, undefined)[0..0];
 }
