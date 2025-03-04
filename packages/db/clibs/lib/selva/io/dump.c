@@ -18,6 +18,7 @@
 #include "selva/timestamp.h"
 #include "selva_error.h"
 #include "selva_lang_code.h"
+#include "auto_free.h"
 #include "db.h"
 #include "db_panic.h"
 #include "io.h"
@@ -381,8 +382,8 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
      * Save all the common data here that can't be split up.
      */
     save_schema(&io, db);
-
     selva_io_end(&io, nullptr);
+
     return 0;
 }
 
@@ -478,7 +479,7 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
 
     for (size_t i = 0; i < nr_types; i++) {
         node_type_t type;
-        char *schema_buf;
+        __selva_autofree char *schema_buf;
         sdb_arr_len_t schema_len;
         int err;
 
@@ -491,7 +492,6 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
         if (err) {
             db_panic("Failed to create a node type entry: %s", selva_strerror(err));
         }
-        selva_free(schema_buf);
     }
 }
 
@@ -549,13 +549,12 @@ static int load_field_text(struct selva_io *io, struct SelvaNode *node, const st
 
     for (uint8_t i = 0; i < len; i++) {
         struct sdb_text_meta meta;
-        char *str;
+        __selva_autofree char *str;
 
         io->sdb_read(&meta, sizeof(meta), 1, io);
         str = selva_malloc(meta.len); /* TODO Optimize */
         io->sdb_read(str, sizeof(char), meta.len, io);
         selva_fields_set_text(node, fs, str, meta.len);
-        selva_free(str);
     }
 
     return 0;
