@@ -9,7 +9,15 @@ import {
   TIMESTAMP,
   PropDef,
   PropDefEdge,
+  SIZE_MAP,
 } from './types.js'
+
+import { SchemaProp, isPropType } from '../types.js'
+import { getPropType } from '../parse/utils.js'
+
+export function isSeparate(schemaProp: SchemaProp, len: number) {
+  return len === 0 || isPropType('vector', schemaProp)
+}
 
 export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
   const t = prop.typeIndex
@@ -34,4 +42,25 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
     return true
   }
   return false
+}
+
+export function getPropLen(schemaProp: SchemaProp) {
+  let len = SIZE_MAP[getPropType(schemaProp)]
+  if (
+    isPropType('string', schemaProp) ||
+    isPropType('alias', schemaProp) ||
+    isPropType('cardinality', schemaProp)
+  ) {
+    if (typeof schemaProp === 'object') {
+      if (schemaProp.maxBytes < 61) {
+        len = schemaProp.maxBytes + 1
+      } else if ('max' in schemaProp && schemaProp.max < 31) {
+        len = schemaProp.max * 2 + 1
+      }
+    }
+  } else if (isPropType('vector', schemaProp)) {
+    len = 4 * schemaProp.size
+  }
+
+  return len
 }

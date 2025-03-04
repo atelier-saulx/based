@@ -5,7 +5,6 @@ import {
   getPropType,
   SchemaReference,
   SchemaLocales,
-  LangName,
 } from '../index.js'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -21,38 +20,14 @@ import {
   SchemaTypesParsed,
   ENUM,
 } from './types.js'
-import { SchemaProp, StrictSchema } from '../types.js'
+import { StrictSchema } from '../types.js'
 import { makePacked } from './makePacked.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
+import { getPropLen } from './getPropLen.js'
+import { isSeparate } from './utils.js'
 
-// TMP
 export const DEFAULT_BLOCK_CAPACITY = 100_000
-
-function getPropLen(schemaProp: SchemaProp) {
-  let len = SIZE_MAP[getPropType(schemaProp)]
-  if (
-    isPropType('string', schemaProp) ||
-    isPropType('alias', schemaProp) ||
-    isPropType('cardinality', schemaProp)
-  ) {
-    if (typeof schemaProp === 'object') {
-      if (schemaProp.maxBytes < 61) {
-        len = schemaProp.maxBytes + 1
-      } else if ('max' in schemaProp && schemaProp.max < 31) {
-        len = schemaProp.max * 2 + 1
-      }
-    }
-  } else if (isPropType('vector', schemaProp)) {
-    len = 4 * schemaProp.size
-  }
-
-  return len
-}
-
-function isSeparate(schemaProp: SchemaProp, len: number) {
-  return len === 0 || isPropType('vector', schemaProp)
-}
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0

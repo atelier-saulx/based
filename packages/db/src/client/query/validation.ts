@@ -573,7 +573,6 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
     size: 0,
     buffer: new Uint8Array([]),
     bufferTmp: new Uint8Array([]),
-
     props: [],
   },
   localeSize: 0,
