@@ -6,7 +6,6 @@ import {
   SchemaReference,
   SchemaLocales,
   LangName,
-  langCodesMap,
 } from '../index.js'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -16,19 +15,44 @@ import {
   SIZE_MAP,
   TYPE_INDEX_MAP,
   PropDefEdge,
-  STRING,
-  ALIAS,
-  CARDINALITY,
   REFERENCES,
   REFERENCE,
-  TEXT,
   SchemaTypesParsedById,
   SchemaTypesParsed,
+  ENUM,
 } from './types.js'
-import { StrictSchema } from '../types.js'
+import { SchemaProp, StrictSchema } from '../types.js'
+import { makePacked } from './makePacked.js'
+import { makeSeparateTextSort } from './makeSeparateTextSort.js'
+import { makeSeparateSort } from './makeSeparateSort.js'
 
 // TMP
 export const DEFAULT_BLOCK_CAPACITY = 100_000
+
+function getPropLen(schemaProp: SchemaProp) {
+  let len = SIZE_MAP[getPropType(schemaProp)]
+  if (
+    isPropType('string', schemaProp) ||
+    isPropType('alias', schemaProp) ||
+    isPropType('cardinality', schemaProp)
+  ) {
+    if (typeof schemaProp === 'object') {
+      if (schemaProp.maxBytes < 61) {
+        len = schemaProp.maxBytes + 1
+      } else if ('max' in schemaProp && schemaProp.max < 31) {
+        len = schemaProp.max * 2 + 1
+      }
+    }
+  } else if (isPropType('vector', schemaProp)) {
+    len = 4 * schemaProp.size
+  }
+
+  return len
+}
+
+function isSeparate(schemaProp: SchemaProp, len: number) {
+  return len === 0 || isPropType('vector', schemaProp)
+}
 
 const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   let edgesCnt = 0
@@ -59,7 +83,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesTotalLen += 1 + 2 + edge.len // field len
       }
 
-      if (edge.typeIndex === 10) {
+      if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
           : refProp[key].enum
@@ -67,9 +91,9 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         for (let i = 0; i < edge.enum.length; i++) {
           edge.reverseEnum[edge.enum[i]] = i
         }
-      } else if (edge.typeIndex === 14) {
+      } else if (edge.typeIndex === REFERENCES) {
         edge.inverseTypeName = refProp[key].items.ref
-      } else if (edge.typeIndex === 13) {
+      } else if (edge.typeIndex === REFERENCE) {
         edge.inverseTypeName = refProp[key].ref
       }
 
@@ -173,7 +197,6 @@ export const createSchemaTypeDef = (
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
 
-  const encoder = new TextEncoder()
   const target = type.props
   let separateSortProps: number = 0
   let separateSortText: number = 0
@@ -193,33 +216,27 @@ export const createSchemaTypeDef = (
         false,
       )
     } else {
-      let len = SIZE_MAP[propType]
+      const len = getPropLen(schemaProp)
       if (
         isPropType('string', schemaProp) ||
         isPropType('alias', schemaProp) ||
         isPropType('cardinality', schemaProp)
       ) {
         if (typeof schemaProp === 'object') {
-          if (schemaProp.maxBytes < 61) {
-            len = schemaProp.maxBytes + 1
-          } else if ('max' in schemaProp && schemaProp.max < 31) {
-            len = schemaProp.max * 2 + 1
-          } else {
+          if (
+            !(schemaProp.maxBytes < 61) ||
+            !('max' in schemaProp && schemaProp.max < 31)
+          ) {
             separateSortProps++
           }
         } else {
           separateSortProps++
         }
-      } else if (isPropType('vector', schemaProp)) {
-        len = 4 * schemaProp.size
       } else if (isPropType('text', schemaProp)) {
         separateSortText++
       }
 
-      const isseparate = len === 0 || isPropType('vector', schemaProp)
-      if (isseparate) {
-        result.cnt++
-      }
+      const isseparate = isSeparate(schemaProp, len)
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
         __isPropDef: true,
@@ -227,7 +244,7 @@ export const createSchemaTypeDef = (
         path: propPath,
         start: 0,
         len,
-        prop: isseparate ? result.cnt : 0,
+        prop: isseparate ? ++result.cnt : 0,
       }
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
@@ -289,8 +306,7 @@ export const createSchemaTypeDef = (
     let lastProp = 0
     for (const p of vals) {
       if (p.separate) {
-        lastProp++
-        p.prop = lastProp
+        p.prop = ++lastProp
       }
     }
 
@@ -310,135 +326,12 @@ export const createSchemaTypeDef = (
       }
     }
 
-    const mainFields: PropDef[] = []
-    const restFields: PropDef[] = []
-
-    for (const f of vals) {
-      if (f.separate) {
-        restFields.push(f)
-      } else {
-        mainFields.push(f)
-      }
-    }
-
-    // make packed version
-    result.buf = new Uint8Array(len)
-    result.buf[0] = result.idUint8[0]
-    result.buf[1] = result.idUint8[1]
-    const fieldNames = []
-    const tNameBuf = encoder.encode(typeName)
-    fieldNames.push(tNameBuf)
-    let fieldNameLen = tNameBuf.byteLength + 1
-    let i = 2
-    if (result.mainLen) {
-      result.buf[i] = 0
-      for (const f of vals) {
-        if (!f.separate) {
-          i++
-          result.buf[i] = f.typeIndex
-          const name = encoder.encode(f.path.join('.'))
-          fieldNames.push(name)
-          fieldNameLen += name.byteLength + 1
-        }
-      }
-      i++
-      result.buf[i] = 0
-    }
-    for (const f of vals) {
-      if (f.separate) {
-        i++
-        result.buf[i] = f.prop
-        i++
-        result.buf[i] = f.typeIndex
-        const name = encoder.encode(f.path.join('.'))
-        fieldNames.push(name)
-        fieldNameLen += name.byteLength + 1
-      }
-    }
-    result.propNames = new Uint8Array(fieldNameLen)
-    let lastWritten = 0
-    for (const f of fieldNames) {
-      result.propNames[lastWritten] = f.byteLength
-      result.propNames.set(f, lastWritten + 1)
-      lastWritten += f.byteLength + 1
-    }
-
-    let bufLen = result.buf.length
-    result.packed = new Uint8Array(2 + bufLen + result.propNames.length)
-    result.packed[0] = bufLen
-    result.packed[1] = bufLen >>>= 8
-    result.packed.set(result.buf, 2)
-    result.packed.set(result.propNames, result.buf.length + 2)
-    // packed has to be cleaned up
-
+    makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
-      result.hasSeperateTextSort = true
-      let max = 0
-      for (const f of result.separate) {
-        if (f.typeIndex === TEXT) {
-          if (f.prop > max) {
-            max = f.prop
-          }
-        }
-      }
-      const bufLen = (max + 1) * (result.localeSize + 1)
-      result.seperateTextSort.buffer = new Uint8Array(bufLen)
-      let index = 0
-      for (const code in result.locales) {
-        const codeLang = langCodesMap.get(code)
-        result.seperateTextSort.localeStringToIndex.set(
-          code,
-          new Uint8Array([index + 1, codeLang]),
-        )
-        result.seperateTextSort.localeToIndex.set(codeLang, index + 1)
-        index++
-      }
-      for (const f of result.separate) {
-        if (f.typeIndex === TEXT) {
-          const index = f.prop * (result.localeSize + 1)
-          result.seperateTextSort.buffer[index] = result.localeSize
-          for (const [, locales] of result.seperateTextSort
-            .localeStringToIndex) {
-            result.seperateTextSort.buffer[locales[0] + index] = locales[1]
-          }
-          result.seperateTextSort.props.push(f)
-          result.seperateTextSort.size += result.localeSize
-        }
-      }
-      result.seperateTextSort.props.sort((a, b) => (a.prop > b.prop ? 1 : -1))
-      result.seperateTextSort.bufferTmp = new Uint8Array(bufLen)
-      result.seperateTextSort.bufferTmp.fill(0)
-      result.seperateTextSort.bufferTmp.set(result.seperateTextSort.buffer)
+      makeSeparateTextSort(result)
     }
-
     if (separateSortProps > 0) {
-      result.hasSeperateSort = true
-      let max = 0
-      for (const f of result.separate) {
-        if (
-          f.typeIndex === STRING ||
-          f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY
-        ) {
-          if (f.prop > max) {
-            max = f.prop
-          }
-        }
-      }
-      result.seperateSort.buffer = new Uint8Array(max + 1)
-      for (const f of result.separate) {
-        if (
-          f.typeIndex === STRING ||
-          f.typeIndex === ALIAS ||
-          f.typeIndex === CARDINALITY
-        ) {
-          result.seperateSort.props.push(f)
-          result.seperateSort.size++
-        }
-      }
-      result.seperateSort.bufferTmp = new Uint8Array(max + 1)
-      result.seperateSort.bufferTmp.fill(0)
-      result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
+      makeSeparateSort(result)
     }
 
     for (const p in result.props) {

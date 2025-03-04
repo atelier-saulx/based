@@ -1,7 +1,7 @@
 import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
-import { UPDATE } from './types.js'
+import { UPDATE, DELETE_SORT_INDEX, DELETE_NODE } from './types.js'
 import { MICRO_BUFFER } from '@based/schema/def'
 
 export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
@@ -17,21 +17,22 @@ export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
     }
 
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
-    ctx.buf[ctx.len++] = 4
+    ctx.buf[ctx.len++] = DELETE_SORT_INDEX
 
     for (const s of separate) {
       setCursor(ctx, schema, s.prop, s.typeIndex, id, UPDATE)
-      ctx.buf[ctx.len++] = 4
+      ctx.buf[ctx.len++] = DELETE_SORT_INDEX
     }
-    ctx.buf[ctx.len++] = 10
+
+    ctx.buf[ctx.len++] = DELETE_NODE
   } else {
     if (ctx.len + 12 > ctx.max) {
       flushBuffer(db)
       return deleteFn(db, type, id)
     }
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
-    ctx.buf[ctx.len++] = 4
-    ctx.buf[ctx.len++] = 10
+    ctx.buf[ctx.len++] = DELETE_SORT_INDEX
+    ctx.buf[ctx.len++] = DELETE_NODE
   }
 
   if (!db.isDraining) {

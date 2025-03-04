@@ -5,14 +5,14 @@ var compressor: any = null
 var decompressor: any = null
 
 export default {
-  historyCreate(pathname: string, entryByteSize: number) {
-    // entryByteSize u16
-    // const len = 2 + Buffer.byteLength(pathname)
-    // const buf = Buffer.allocUnsafe(len)
-    // buf[0] = entryByteSize
-    // buf[1] = entryByteSize >>> 8
-    // buf.write(pathname, 2)
-    return db.historyCreate(pathname, entryByteSize)
+  historyAppend(history: any, typeId: number, nodeId: number) {
+    return db.historyCreate(history, typeId, nodeId)
+  },
+  historyCreate(pathname: string, mainLen: number): any {
+    return db.historyCreate(
+      Buffer.from(pathname),
+      mainLen + 16 - (mainLen % 16),
+    )
   },
 
   workerCtxInit: (): void => {

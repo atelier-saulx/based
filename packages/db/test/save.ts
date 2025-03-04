@@ -3,7 +3,7 @@ import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
-await test('save', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -14,6 +14,22 @@ await test('save', async (t) => {
   })
 
   await db.putSchema({
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+      nl: { required: true },
+      el: { required: true },
+      he: { required: true },
+      it: { required: true },
+      lv: { required: true },
+      lb: { required: true },
+      ro: { required: true },
+      sl: { required: true },
+      es: { required: true },
+      de: { required: true },
+      cs: { required: true },
+      et: { required: true },
+    },
     props: {
       coolname: 'string',
       users: {
@@ -29,7 +45,32 @@ await test('save', async (t) => {
           email: { type: 'string' },
           age: { type: 'uint32' },
           story: { type: 'string' },
+          test: { ref: 'typeTest', prop: 'q' },
         },
+      },
+      typeTest: {
+        props: {
+          a: { type: 'string' },
+          b: { type: 'number' },
+          c: { type: 'boolean' },
+          //d: { type: 'object' },
+          e: { type: 'timestamp' },
+          f: { type: 'binary' },
+          g: { type: 'alias' },
+          h: { type: 'text' },
+          i: { type: 'json' },
+          j: { type: 'cardinality' },
+          k: { type: 'int8' },
+          l: { type: 'int16' },
+          m: { type: 'uint16' },
+          n: { type: 'int32' },
+          o: { type: 'uint32' },
+          //p: { type: 'references', ref: 'typeTest', prop: 'reference' },
+          q: { type: 'reference', ref: 'user', prop: 'test' },
+          r: { type: 'enum', enum: ['a', 'b', 'c'] },
+          s: { type: 'vector', size: 1 },
+          //t: { type: 'set' },
+        }
       },
     },
   })
@@ -38,11 +79,11 @@ await test('save', async (t) => {
     name: 'youzi',
     email: 'youzi@yazi.yo',
   })
-
   db.create('user', {
     name: 'youri',
     email: 'youri@yari.yo',
   })
+  db.create('typeTest', {})
 
   await db.drain()
   await db.save()
@@ -88,7 +129,7 @@ await test('save', async (t) => {
   await db2.save()
 })
 
-await test.skip('save empty root', async (t) => {
+await test('empty root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -119,7 +160,7 @@ await test.skip('save empty root', async (t) => {
   await setTimeout(1e3)
 })
 
-await test('save refs', async (t) => {
+await test('refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -186,7 +227,7 @@ await test('save refs', async (t) => {
   deepEqual(users1, users2)
 })
 
-await test.skip('auto save', async (t) => {
+await test('auto save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -224,7 +265,7 @@ await test.skip('auto save', async (t) => {
   })
 })
 
-await test('save text', async (t) => {
+await test('text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -255,7 +296,7 @@ await test('save text', async (t) => {
       fi: 'Galileo Galilei',
     },
     body: {
-        en: 'Galileo di Vincenzo Bonaiuti de\' Galilei (15 February 1564 – 8 January 1642), commonly referred to as Galileo Galilei (/ˌɡælɪˈleɪoʊ ˌɡælɪˈleɪ/, US also /ˌɡælɪˈliːoʊ -/; Italian: [ɡaliˈlɛːo ɡaliˈlɛːi]) or mononymously as Galileo, was an Italian astronomer, physicist and engineer, sometimes described as a polymath. He was born in the city of Pisa, then part of the Duchy of Florence. Galileo has been called the father of observational astronomy, modern-era classical physics, the scientific method, and modern science.',
+      en: "Galileo di Vincenzo Bonaiuti de' Galilei (15 February 1564 – 8 January 1642), commonly referred to as Galileo Galilei (/ˌɡælɪˈleɪoʊ ˌɡælɪˈleɪ/, US also /ˌɡælɪˈliːoʊ -/; Italian: [ɡaliˈlɛːo ɡaliˈlɛːi]) or mononymously as Galileo, was an Italian astronomer, physicist and engineer, sometimes described as a polymath. He was born in the city of Pisa, then part of the Duchy of Florence. Galileo has been called the father of observational astronomy, modern-era classical physics, the scientific method, and modern science.",
       fi: 'Galileo Galilei (15. helmikuuta 1564 Pisa, Firenzen herttuakunta – 8. tammikuuta 1642 Arcetri, Toscanan suurherttuakunta) oli italialainen tähtitieteilijä, filosofi ja fyysikko. Hänen merkittävimmät saavutuksensa liittyvät tieteellisen menetelmän kehitykseen aristoteelisesta nykyiseen muotoonsa. Häntä on kutsuttu tieteen, klassisen fysiikan ja tähtitieteen isäksi.',
     },
   })
@@ -265,7 +306,7 @@ await test('save text', async (t) => {
       fi: 'Urbanus VIII',
     },
     body: {
-        en: 'Pope Urban VIII (Latin: Urbanus VIII; Italian: Urbano VIII; baptised 5 April 1568 – 29 July 1644), born Maffeo Vincenzo Barberini, was head of the Catholic Church and ruler of the Papal States from 6 August 1623 to his death, in July 1644.\nHe was also an opponent of Copernicanism and was involved in the Galileo affair, which saw the astronomer tried for heresy.',
+      en: 'Pope Urban VIII (Latin: Urbanus VIII; Italian: Urbano VIII; baptised 5 April 1568 – 29 July 1644), born Maffeo Vincenzo Barberini, was head of the Catholic Church and ruler of the Papal States from 6 August 1623 to his death, in July 1644.\nHe was also an opponent of Copernicanism and was involved in the Galileo affair, which saw the astronomer tried for heresy.',
       fi: 'Paavi Urbanus VIII, syntymänimeltään Maffeo Barberini, (huhtikuu 1568 – 29. heinäkuuta 1644) oli paavina 6. elokuuta 1623 – 29. heinäkuuta 1644.\nUrbanus VIII:n paaviuden aikana Galileo Galilei kutsuttiin vuonna 1633 Roomaan vastamaan syytöksiin harhaoppisuudesta',
     },
   })

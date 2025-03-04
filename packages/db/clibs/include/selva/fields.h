@@ -58,37 +58,21 @@ struct SelvaNodeWeakReferences {
     struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
-struct SelvaMicroBuffer {
-    uint16_t len;
-    uint8_t data[] __counted_by(len);
-} __packed;
-
-struct SelvaFieldsAny {
-    enum SelvaFieldType type; /*!< Type of the value. */
-    union {
-        bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
-        double number; /*!< SELVA_FIELD_TYPE_NUMBER */
-        int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
-        struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
-        int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
-        uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
-        int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
-        uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
-        int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
-        uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
-        int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
-        uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
-        uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
-#if 0
-        struct SelvaTextField *text; /*!< SELVA_FIELD_TYPE_TEXT */
-        struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
-        struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
-        struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
-        struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
-        struct SelvaMicroBuffer *smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
-#endif
-        // HyperLogLogPlusPlus cardinality; /*!< SELVA_FIELD_TYPE_HLL */
-    };
+/**
+ * Type helper to determine the size of statically (constant/fixed) sized fields.
+ */
+union SelvaStaticFields {
+    bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
+    double number; /*!< SELVA_FIELD_TYPE_NUMBER */
+    struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
+    int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
+    uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
+    int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
+    uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
+    int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
+    uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
+    uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
+    struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
 };
 
 struct SelvaFieldsPointer {
@@ -128,12 +112,20 @@ int selva_fields_get_mutable_string(
     __attribute__((access(write_only, 4)));
 
 /*
- * TODO prefix with selva_
  * TODO Document diff to get_mutable_string
  */
 SELVA_EXPORT
 struct selva_string *selva_fields_ensure_string(
         struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t initial_len);
+
+SELVA_EXPORT
+struct selva_string *selva_fields_ensure_string2(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct EdgeFieldConstraint *efc,
+        struct SelvaNodeReference *ref,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
 
@@ -274,16 +266,16 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
 struct SelvaNode *selva_fields_resolve_weak_reference(
@@ -332,9 +324,6 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
  */
 SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
-
-SELVA_EXPORT
-int selva_fields_get_text_crc(const struct SelvaNode *node, const struct SelvaFieldSchema *fs, enum selva_lang_code lang, uint32_t *crc);
 
 SELVA_EXPORT
 void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);

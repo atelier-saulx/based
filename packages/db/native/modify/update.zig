@@ -58,10 +58,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 }
                 const hash: u64 = read(u64, data, i);
                 selva.hll_add(currentData, hash);
-                var size: usize = undefined;
-                const bufPtr: [*]u8 = @constCast(selva.selva_string_to_buf(currentData, &size));
-                const strU8: []u8 = bufPtr[0..size];
-                try db.writeField(ctx.db, strU8, ctx.node.?, ctx.fieldSchema.?);
                 i += 8;
             }
             return len * 8;
@@ -91,8 +87,15 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
+
             if (ctx.fieldType == types.Prop.ALIAS) {
-                try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
+                if (slice.len > 0) {
+                    try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                } else {
+                    db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
+                        if (e != error.SELVA_ENOENT) return e;
+                    };
+                }
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             }

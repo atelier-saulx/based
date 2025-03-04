@@ -34,6 +34,11 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         printf("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION );
         exit(EXIT_FAILURE);
     }
+    if (hllss == nullptr){
+        printf("Error: Getting NULL selva string during HLL initialization.\n");
+        exit(EXIT_FAILURE);
+    }
+
     size_t len;
 
     if (is_sparse){

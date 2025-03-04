@@ -12,7 +12,6 @@ import {
   CARDINALITY,
   INT16,
   INT32,
-  INT64,
   INT8,
   MICRO_BUFFER,
   NULL,
@@ -34,7 +33,7 @@ import {
 
 const selvaTypeMap = []
 selvaTypeMap[NULL] = 0
-selvaTypeMap[TIMESTAMP] = 1
+selvaTypeMap[TIMESTAMP] = 4
 selvaTypeMap[CREATED] = 1
 selvaTypeMap[UPDATED] = 1
 selvaTypeMap[NUMBER] = 4
@@ -45,7 +44,6 @@ selvaTypeMap[INT16] = 21
 selvaTypeMap[UINT16] = 22
 selvaTypeMap[INT32] = 23
 selvaTypeMap[UINT32] = 7
-selvaTypeMap[INT64] = 24
 selvaTypeMap[BOOLEAN] = 9
 selvaTypeMap[ENUM] = 10
 selvaTypeMap[STRING] = 11
@@ -62,6 +60,12 @@ selvaTypeMap[VECTOR] = 17
 selvaTypeMap[JSON] = 11
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
+
+function blockCapacity(blockCapacity: number): Buffer {
+  const buf = Buffer.allocUnsafe(4)
+  buf.writeInt32LE(blockCapacity)
+  return buf
+}
 
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
@@ -122,12 +126,6 @@ const propDefBuffer = (
   }
 }
 
-function makeBlockCapacityBuffer(blockCapacity: number): Buffer {
-  const buf = Buffer.allocUnsafe(4)
-  buf.writeInt32LE(blockCapacity)
-  return buf
-}
-
 // todo rewrite
 export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
   if (typeof Buffer === 'undefined') {
@@ -149,7 +147,7 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
     }
     rest.sort((a, b) => a.prop - b.prop)
     return Buffer.from([
-      ...makeBlockCapacityBuffer(t.blockCapacity).values(),
+      ...blockCapacity(t.blockCapacity).values(),
       1 + sepPropCount(props),
       1 + refFields,
       ...propDefBuffer(schema, {

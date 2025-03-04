@@ -6,9 +6,8 @@ const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
+const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
-const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
-const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
@@ -107,15 +106,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.ADD_EMPTY_SORT_TEXT => {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
-            types.ModOp.DELETE_PROP_ONLY => {
-                i += try deleteFieldOnly(&ctx) + 1;
-            },
-            types.ModOp.DELETE_PROP_ONLY_REAL => {
-                i += try deleteFieldOnlyReal(&ctx) + 1;
-            },
-            types.ModOp.DELETE_PROP => {
-                // special case
+            types.ModOp.DELETE => {
                 i += try deleteField(&ctx) + 1;
+            },
+            types.ModOp.DELETE_SORT_INDEX => {
+                i += try deleteFieldSortIndex(&ctx) + 1;
             },
             types.ModOp.CREATE_PROP => {
                 i += try createField(&ctx, operation) + offset;

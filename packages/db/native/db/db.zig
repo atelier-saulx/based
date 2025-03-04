@@ -72,11 +72,11 @@ pub fn getQueryId() u32 {
     return lastQueryId;
 }
 
-pub fn getType(ctx: *DbCtx, typePrefix: TypeId) !Type {
+pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
-        typePrefix,
+        typeId,
     );
 
     if (selvaTypeEntry == null) {
@@ -87,8 +87,8 @@ pub fn getType(ctx: *DbCtx, typePrefix: TypeId) !Type {
 }
 
 pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(typeEntry.?),
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+        typeEntry.?,
         @bitCast(field),
     );
     if (s == null) {
@@ -98,8 +98,8 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 }
 
 pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(typeEntry.?),
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+        typeEntry.?,
         @bitCast(field),
     );
     if (s == null) {
@@ -152,21 +152,21 @@ pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
     return str;
 }
 
-pub fn getReference(node: Node, field: u8) ?Node {
-    const result = selva.selva_fields_get_reference(node, field);
+pub fn getReference(ctx: *DbCtx, node: Node, field: u8) ?Node {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
     if (result == null) {
         return null;
     }
     return result.?.*.dst;
 }
 
-pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
-    const result = selva.selva_fields_get_reference(node, field);
+pub fn getSingleReference(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReference {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
     return result;
 }
 
-pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
-    const result = selva.selva_fields_get_references(node, field);
+pub fn getReferences(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReferences {
+    const result = selva.selva_fields_get_references(ctx.selva, node, field);
     return result;
 }
 
@@ -204,7 +204,7 @@ pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: Field
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const field = fieldSchema.field;
-            const result = selva.selva_fields_get_reference(target, field);
+            const result = selva.selva_fields_get_reference(ctx.selva, target, field);
             if (result == null) {
                 return err;
             }
@@ -311,11 +311,13 @@ pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFi
 }
 
 pub fn getEdgeReferences(
+    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReferences {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_references(
+            ctx.selva,
             ref.meta,
             field - 1,
         );
@@ -328,11 +330,13 @@ pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.S
 }
 
 pub fn getEdgeReference(
+    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
+            ctx.selva,
             ref.meta,
             field - 1,
         );
@@ -341,15 +345,15 @@ pub fn getEdgeReference(
 }
 
 pub fn writeEdgeProp(
+    ctx: *DbCtx,
     data: []u8,
-    db: *selva.SelvaDb,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
-        db,
+        ctx.selva,
         node,
         ref,
         efc,
@@ -359,14 +363,8 @@ pub fn writeEdgeProp(
     ));
 }
 
-pub fn deleteField(ctx: *DbCtx, typeEntry: Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) !void {
-    const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
-    if (fieldType == types.Prop.ALIAS) {
-        const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
-        selva.selva_del_alias_by_dest(typeAliases, if (id == 0) getNodeId(node) else id);
-    } else {
-        try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
-    }
+pub fn deleteField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
@@ -419,7 +417,7 @@ pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u3
     return selva.selva_node_hash_range(db, typeEntry, start, end);
 }
 
-pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
+pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !void {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
@@ -427,6 +425,13 @@ pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
 pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
     try errors.selva(selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len));
+}
+
+pub fn delAlias(typeEntry: Type, node_id: selva.node_id_t, field: u8) !void {
+    const aliases = selva.selva_get_aliases(typeEntry, field);
+    if (aliases != null) {
+        selva.selva_del_alias_by_dest(aliases, node_id);
+    }
 }
 
 pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {

@@ -136,7 +136,7 @@ int selva_traverse_field_bfs(
             if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
                 struct SelvaNodeReference *reference;
 
-                reference = selva_fields_get_reference(node, field);
+                reference = selva_fields_get_reference(db, node, field);
                 if (!reference) {
                     continue;
                 }
@@ -150,7 +150,7 @@ int selva_traverse_field_bfs(
             } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
                 struct SelvaNodeReferences *references;
 
-                references = selva_fields_get_references(node, field);
+                references = selva_fields_get_references(db, node, field);
                 if (references && references->refs) {
                     const size_t nr_refs = references->nr_refs;
 
@@ -167,7 +167,7 @@ int selva_traverse_field_bfs(
             } else if (fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
                 struct SelvaNodeWeakReference weak_reference;
 
-                weak_reference = selva_fields_get_weak_reference(&node->fields, field);
+                weak_reference = selva_fields_get_weak_reference(db, &node->fields, field);
 
                 struct SelvaNode *dst_node = weak_ref2node(db, node, field, &weak_reference);
                 if (dst_node) {
@@ -179,7 +179,7 @@ int selva_traverse_field_bfs(
             } else if (fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
                 struct SelvaNodeWeakReferences weak_references;
 
-                weak_references = selva_fields_get_weak_references(&node->fields, field);
+                weak_references = selva_fields_get_weak_references(db, &node->fields, field);
                 const size_t nr_refs = weak_references.nr_refs;
 
                 for (size_t i = 0; i < nr_refs; i++) {

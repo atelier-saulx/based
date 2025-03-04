@@ -110,7 +110,7 @@ pub fn filter(
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
-            const selvaRef = db.getSingleReference(node, refField);
+            const selvaRef = db.getSingleReference(ctx, node, refField);
             const refNode: ?db.Node = selvaRef.?.*.dst;
             const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -198,7 +198,7 @@ pub fn filter(
                 } else {
                     if (prop == Prop.REFERENCE) {
                         // if edge different
-                        const checkRef = db.getReference(node, field);
+                        const checkRef = db.getReference(ctx,node, field);
                         if (checkRef) |r| {
                             value = @as([*]u8, @ptrCast(r))[0..8];
                         } else {
@@ -206,7 +206,7 @@ pub fn filter(
                         }
                     } else if (prop == Prop.REFERENCES) {
                         // if edge different
-                        const refs = db.getReferences(node, field);
+                        const refs = db.getReferences(ctx,node, field);
                         if (refs) |r| {
                             const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
                             value = arr[0 .. r.nr_refs * 4];

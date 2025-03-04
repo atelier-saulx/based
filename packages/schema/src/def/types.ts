@@ -13,7 +13,6 @@ export const INT16 = 21
 export const UINT16 = 22
 export const INT32 = 23
 export const UINT32 = 7
-export const INT64 = 24
 export const BOOLEAN = 9
 export const ENUM = 10
 export const STRING = 11

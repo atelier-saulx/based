@@ -4,7 +4,8 @@ import { ModifyError } from './ModifyRes.js'
 export const CREATE = 3
 export const UPDATE = 6
 export const DELETE = 11
-export const MERGE_MAIN = 4
+export const DELETE_SORT_INDEX = 4
+export const DELETE_NODE = 10
 export const RANGE_ERR = 1
 export const INCREMENT = 12
 export const DECREMENT = 13

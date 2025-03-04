@@ -158,6 +158,7 @@ export class DbServer {
       this.cleanupTimer = global.setTimeout(() => {
         this.cleanupTimer = null
         let remaining: boolean
+
         for (const type in this.sortIndexes) {
           for (const field in this.sortIndexes[type]) {
             for (const start in this.sortIndexes[type][field]) {
@@ -174,6 +175,7 @@ export class DbServer {
             }
           }
         }
+
         if (remaining) {
           this.cleanup()
         }

@@ -58,7 +58,7 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ref.?.reference.?, refField)) |r| {
+        if (db.getEdgeReferences(ctx.db,ref.?.reference.?, refField)) |r| {
             const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint, refField) catch {
                 return 0;
             };
@@ -69,7 +69,7 @@ pub inline fn getRefsFields(
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
-        refs = db.getReferences(node, refField);
+        refs = db.getReferences(ctx.db, node, refField);
         if (refs == null) {
             return 0;
         }

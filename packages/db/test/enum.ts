@@ -23,7 +23,7 @@ await test('enum', async (t) => {
     },
   })
 
-  db.create('user', {
+  const user1 = await db.create('user', {
     fancyness: 'mid',
   })
 
@@ -56,4 +56,19 @@ await test('enum', async (t) => {
     ).toObject(),
     [{ id: 2, fancyness: 'fire' }],
   )
+
+  db.update('user', user1, {
+    fancyness: 'beta',
+  })
+
+  await db.drain()
+
+  console.log('-------------------------')
+  console.log(await db.query('user', user1).get().toObject())
+  // deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
+  //   { id: 1, fancyness: 'beta' },
+  //   { id: 2, fancyness: 'fire' },
+  //   { id: 3, fancyness: 'beta' },
+  //   { id: 4, fancyness: undefined },
+  // ])
 })

@@ -19,11 +19,29 @@ await test('hll', async (t) => {
         derp: 'number',
         myUniqueValuesCount: 'cardinality',
         myUniqueValuesCountFromArray: 'cardinality',
+        contributors: {
+          items: {
+            ref: 'user',
+            prop: 'articles',
+            $tokens: 'cardinality',
+          },
+        },
+      },
+      user: {
+        props: {
+          name: 'number',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
       },
     },
   })
 
-  console.log('------- create --------')
+  // console.log('------- create --------')
 
   let myArticle = await db.create('article', {
     myUniqueValuesCount: 'myCoolValue',
@@ -41,6 +59,22 @@ await test('hll', async (t) => {
         id: 1,
         myUniqueValuesCount: 1,
         myUniqueValuesCountFromArray: 0,
+      },
+    ],
+  )
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCount')
+        .filter('myUniqueValuesCount', '!=', 0)
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        myUniqueValuesCount: 1,
       },
     ],
   )
@@ -79,7 +113,34 @@ await test('hll', async (t) => {
     ],
   )
 
-  console.log('------- update --------')
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCountFromArray')
+        .filter('myUniqueValuesCountFromArray', '=', 7)
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        myUniqueValuesCountFromArray: 7,
+      },
+    ],
+  )
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('myUniqueValuesCount')
+        .filter('myUniqueValuesCount', '>', 1)
+        .get()
+    ).toObject(),
+    [],
+  )
+
+  // // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -128,26 +189,57 @@ await test('hll', async (t) => {
     )
   }
 
+  console.time('1M values with 5 distinct feelings update')
   await db.update('article', myArticle, {
     myUniqueValuesCount: feelings,
   })
+  console.timeEnd('1M values with 5 distinct feelings update')
 
   console.log(await db.drain(), 'ms')
 
-  console.log(await db.query('article').get().toObject())
-
-  // 120Mb / s
-  console.log('START')
-
-  for (let i = 0; i < 10; i++) {
-    db.create('article', {
-      myUniqueValuesCount: feelings,
-    })
-  }
-
-  console.log(await db.drain(), 'ms')
-  console.log('---------------')
-
   // await db.query('article').range(0, 1e6).get().inspect(10)
   // await db.query('article').range(0, 1e6).get().inspect(10)
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .filter('myUniqueValuesCount', '=', 11)
+        .or('myUniqueValuesCountFromArray', '>', 6)
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        derp: 0,
+        myUniqueValuesCount: 11,
+        myUniqueValuesCountFromArray: 0,
+      },
+      {
+        id: 2,
+        derp: 0,
+        myUniqueValuesCountFromArray: 7,
+        myUniqueValuesCount: 0,
+      },
+    ],
+  )
+
+  // // -------- edges
+
+  // const mrSnurp = db.create('user', {
+  //   name: 900,
+  // })
+
+  // await db.create('article', {
+  //   // derp: 813,
+  //   myUniqueValuesCount: '123',
+  //   contributors: [{ id: mrSnurp }],
+  // })
+
+  // await db
+  //   .query('article')
+  //   // .sort('derp', 'desc')
+  //   // .include('contributors.$tokens')
+  //   .get()
+  //   .inspect()
 })

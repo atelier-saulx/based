@@ -117,18 +117,14 @@ retry:
 
     struct SelvaAlias *prev_by_dest = RB_INSERT(SelvaAliasesByDest, &aliases->alias_by_dest, new_alias);
     if (prev_by_dest) {
+        new_alias->prev = prev_by_dest;
+        new_alias->next = prev_by_dest->next;
+        prev_by_dest->next = new_alias;
         if (aliases->single) {
             /*
              * Restrict this field to a single alias, i.e. this is SELVA_FIELD_TYPE_ALIAS.
              */
             (void)del_alias(aliases, prev_by_dest);
-        } else {
-            /*
-             * SELVA_FIELD_TYPE_ALIASES
-             */
-            new_alias->prev = prev_by_dest;
-            new_alias->next = prev_by_dest->next;
-            prev_by_dest->next = new_alias;
         }
     }
 }

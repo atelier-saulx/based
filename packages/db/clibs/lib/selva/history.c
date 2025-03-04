@@ -96,7 +96,6 @@ int selva_history_create(const char *pathname, size_t bsize, struct selva_histor
             hdr.bsize != bsize) {
             return SELVA_EINVAL;
         }
-
     }
 
     hist->crc = hdr.crc;

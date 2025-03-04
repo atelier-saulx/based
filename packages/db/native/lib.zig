@@ -83,6 +83,7 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
+    registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
     registerFunction(env, exports, "workerCtxInit", workerCtxInit) catch return null;
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;

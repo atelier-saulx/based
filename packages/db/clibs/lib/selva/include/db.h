@@ -32,6 +32,7 @@ struct SelvaNode {
     RB_ENTRY(SelvaNode) _index_entry;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
+#define SELVA_FIELDS_OFF 3
         /**
          * Field data.
          * This pointer is tagged with PTAG.
@@ -43,8 +44,8 @@ struct SelvaNode {
             field_t nr_fields: 8;
         };
         alignas(uint16_t) struct SelvaFieldInfo {
-            enum SelvaFieldType type: 5;
-            uint16_t off: 11; /*!< Offset in data in 8-byte blocks. */
+            uint16_t in_use: 1;
+            uint16_t off: 15; /*!< Offset in data in 8-byte blocks. (shift by SELVA_FIELDS_OFF) */
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
