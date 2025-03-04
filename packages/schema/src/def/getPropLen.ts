@@ -19,6 +19,5 @@ export function getPropLen(schemaProp: SchemaProp) {
   } else if (isPropType('vector', schemaProp)) {
     len = 4 * schemaProp.size
   }
-
   return len
 }

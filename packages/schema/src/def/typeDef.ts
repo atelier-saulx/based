@@ -50,14 +50,12 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         separate: true,
         path: [...prop.path, key],
       }
-
       if (edge.len == 0) {
         prop.edgesTotalLen = 0
       } else {
         // [field] [size] [data]
         prop.edgesTotalLen += 1 + 2 + edge.len // field len
       }
-
       if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
@@ -71,7 +69,6 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       } else if (edge.typeIndex === REFERENCE) {
         edge.inverseTypeName = refProp[key].ref
       }
-
       prop.edges[key] = edge
       prop.reverseEdges[edge.prop] = edge
     }
@@ -210,7 +207,6 @@ export const createSchemaTypeDef = (
       } else if (isPropType('text', schemaProp)) {
         separateSortText++
       }
-
       const isseparate = isSeparate(schemaProp, len)
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
@@ -267,7 +263,6 @@ export const createSchemaTypeDef = (
 
   if (top) {
     const vals = Object.values(result.props)
-
     vals.sort((a, b) => {
       if (
         b.separate &&
@@ -284,7 +279,6 @@ export const createSchemaTypeDef = (
         p.prop = ++lastProp
       }
     }
-
     let len = 2
     for (const f of vals) {
       if (f.separate) {
@@ -300,7 +294,6 @@ export const createSchemaTypeDef = (
         setByPath(result.tree, f.path, f)
       }
     }
-
     makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)
@@ -308,7 +301,6 @@ export const createSchemaTypeDef = (
     if (separateSortProps > 0) {
       makeSeparateSort(result)
     }
-
     for (const p in result.props) {
       const x = result.props[p]
       if (!x.separate) {
@@ -318,6 +310,5 @@ export const createSchemaTypeDef = (
       }
     }
   }
-
   return result as SchemaTypeDef
 }
