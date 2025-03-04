@@ -3,7 +3,6 @@ import {
   SchemaObject,
   StrictSchemaType,
   getPropType,
-  SchemaReference,
   SchemaLocales,
 } from '../index.js'
 import { setByPath } from '@saulx/utils'
@@ -11,14 +10,11 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import {
   PropDef,
   SchemaTypeDef,
-  SIZE_MAP,
   TYPE_INDEX_MAP,
-  PropDefEdge,
   REFERENCES,
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
-  ENUM,
 } from './types.js'
 import { StrictSchema } from '../types.js'
 import { makePacked } from './makePacked.js'
@@ -26,54 +22,9 @@ import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
 import { getPropLen } from './getPropLen.js'
 import { isSeparate } from './utils.js'
+import { addEdges } from './addEdges.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
-
-const addEdges = (prop: PropDef, refProp: SchemaReference) => {
-  let edgesCnt = 0
-  for (const key in refProp) {
-    if (key[0] === '$') {
-      if (!prop.edges) {
-        prop.edges = {}
-        prop.reverseEdges = {}
-        prop.edgesTotalLen = 0
-      }
-      edgesCnt++
-      const edgeType = getPropType(refProp[key])
-      const edge: PropDefEdge = {
-        __isPropDef: true,
-        __isEdge: true,
-        prop: edgesCnt,
-        name: key,
-        typeIndex: TYPE_INDEX_MAP[edgeType],
-        len: SIZE_MAP[edgeType],
-        separate: true,
-        path: [...prop.path, key],
-      }
-      if (edge.len == 0) {
-        prop.edgesTotalLen = 0
-      } else {
-        // [field] [size] [data]
-        prop.edgesTotalLen += 1 + 2 + edge.len // field len
-      }
-      if (edge.typeIndex === ENUM) {
-        edge.enum = Array.isArray(refProp[key])
-          ? refProp[key]
-          : refProp[key].enum
-        edge.reverseEnum = {}
-        for (let i = 0; i < edge.enum.length; i++) {
-          edge.reverseEnum[edge.enum[i]] = i
-        }
-      } else if (edge.typeIndex === REFERENCES) {
-        edge.inverseTypeName = refProp[key].items.ref
-      } else if (edge.typeIndex === REFERENCE) {
-        edge.inverseTypeName = refProp[key].ref
-      }
-      prop.edges[key] = edge
-      prop.reverseEdges[edge.prop] = edge
-    }
-  }
-}
 
 export const updateTypeDefs = (
   schema: StrictSchema,
@@ -168,11 +119,9 @@ export const createSchemaTypeDef = (
   result.localeSize = Object.keys(locales).length
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
-
   const target = type.props
   let separateSortProps: number = 0
   let separateSortText: number = 0
-
   for (const key in target) {
     const schemaProp = target[key]
     const propPath = [...path, key]
@@ -260,7 +209,6 @@ export const createSchemaTypeDef = (
       }
     }
   }
-
   if (top) {
     const vals = Object.values(result.props)
     vals.sort((a, b) => {
