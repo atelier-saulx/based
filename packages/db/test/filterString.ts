@@ -210,10 +210,13 @@ await test('has uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
   await db.start({ clean: true })
+
   t.after(() => {
     return db.destroy()
   })
+
   await db.putSchema({
     types: {
       italy: {
@@ -225,6 +228,7 @@ await test('has uncompressed', async (t) => {
       },
     },
   })
+
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
