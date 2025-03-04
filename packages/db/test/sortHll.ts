@@ -197,4 +197,6 @@ await test('sortCardinality', async (t) => {
     ],
     'delete a register',
   )
+
+  // test from undefined / non undefined etc
 })

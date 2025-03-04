@@ -10,9 +10,11 @@ const types = @import("../types.zig");
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u16, data, 0);
     var i: usize = 0;
+
     if (ctx.typeSortIndex == null) {
         return len + 2;
     }
+
     while (i < len) : (i += 1) {
         const field = data[i + 2];
         const sI = sort.getSortIndex(

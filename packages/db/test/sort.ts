@@ -632,3 +632,129 @@ await test('sort - from start (1M items)', async (t) => {
 
   newDb.server.destroySortIndex('user', 'age')
 })
+
+await test('unset value on create', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      dialog: {
+        props: {
+          fun: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  })
+
+  await db.query('dialog').sort('fun', 'desc').get().toObject()
+
+  const id1 = await db.create('dialog', {
+    fun: '1',
+  })
+
+  const id2 = await db.create('dialog', {
+    fun: '2',
+  })
+
+  const id3 = await db.create('dialog', {
+    fun: '3',
+  })
+
+  const id4 = await db.create('dialog', {})
+
+  const id5 = await db.create('dialog', {})
+
+  deepEqual(
+    await db.query('dialog').sort('fun', 'desc').get().toObject(),
+    [
+      {
+        id: 3,
+        fun: '3',
+      },
+      {
+        id: 2,
+        fun: '2',
+      },
+      {
+        id: 1,
+        fun: '1',
+      },
+      {
+        id: 4,
+        fun: '',
+      },
+      {
+        id: 5,
+        fun: '',
+      },
+    ],
+    'first',
+  )
+
+  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+    { id: 3, fun: '3' },
+    { id: 2, fun: '2' },
+    { id: 1, fun: '1' },
+    { id: 4, fun: '' },
+    { id: 5, fun: '' },
+  ])
+
+  await db.update('dialog', id5, {
+    fun: '0',
+  })
+
+  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+    {
+      id: 3,
+      fun: '3',
+    },
+    {
+      id: 2,
+      fun: '2',
+    },
+    {
+      id: 1,
+      fun: '1',
+    },
+    {
+      id: 5,
+      fun: '0',
+    },
+    {
+      id: 4,
+      fun: '',
+    },
+  ])
+
+  db.delete('dialog', id5)
+  await db.drain()
+
+  deepEqual(await db.query('dialog').sort('fun', 'desc').get().toObject(), [
+    {
+      id: 3,
+      fun: '3',
+    },
+    {
+      id: 2,
+      fun: '2',
+    },
+    {
+      id: 1,
+      fun: '1',
+    },
+    {
+      id: 4,
+      fun: '',
+    },
+  ])
+})

@@ -68,7 +68,7 @@ const appendCreate = (
       let sizepos = ctx.len
       ctx.len += 2
       for (const { prop } of def.seperateSort.props) {
-        if (def.seperateSort.bufferTmp[prop] === 1) {
+        if (def.seperateSort.bufferTmp[prop] === 0) {
           if (ctx.len + 1 > ctx.max) {
             return RANGE_ERR
           }
@@ -79,8 +79,9 @@ const appendCreate = (
       ctx.buf[sizepos++] = size
       ctx.buf[sizepos] = size >>>= 8
     }
+
     if (ctx.hasSortField !== -1) {
-      def.seperateSort.buffer.set(def.seperateSort.bufferTmp, 0)
+      def.seperateSort.bufferTmp.set(def.seperateSort.buffer, 0)
     }
     // add test for this
     ctx.hasSortField = -1
