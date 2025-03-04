@@ -3,7 +3,7 @@ import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
-await test('save', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -14,6 +14,22 @@ await test('save', async (t) => {
   })
 
   await db.putSchema({
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+      nl: { required: true },
+      el: { required: true },
+      he: { required: true },
+      it: { required: true },
+      lv: { required: true },
+      lb: { required: true },
+      ro: { required: true },
+      sl: { required: true },
+      es: { required: true },
+      de: { required: true },
+      cs: { required: true },
+      et: { required: true },
+    },
     props: {
       coolname: 'string',
       users: {
@@ -29,7 +45,32 @@ await test('save', async (t) => {
           email: { type: 'string' },
           age: { type: 'uint32' },
           story: { type: 'string' },
+          test: { ref: 'typeTest', prop: 'q' },
         },
+      },
+      typeTest: {
+        props: {
+          a: { type: 'string' },
+          b: { type: 'number' },
+          c: { type: 'boolean' },
+          //d: { type: 'object' },
+          e: { type: 'timestamp' },
+          f: { type: 'binary' },
+          g: { type: 'alias' },
+          h: { type: 'text' },
+          i: { type: 'json' },
+          j: { type: 'cardinality' },
+          k: { type: 'int8' },
+          l: { type: 'int16' },
+          m: { type: 'uint16' },
+          n: { type: 'int32' },
+          o: { type: 'uint32' },
+          //p: { type: 'references', ref: 'typeTest', prop: 'reference' },
+          q: { type: 'reference', ref: 'user', prop: 'test' },
+          r: { type: 'enum', enum: ['a', 'b', 'c'] },
+          s: { type: 'vector', size: 1 },
+          //t: { type: 'set' },
+        }
       },
     },
   })
@@ -38,11 +79,11 @@ await test('save', async (t) => {
     name: 'youzi',
     email: 'youzi@yazi.yo',
   })
-
   db.create('user', {
     name: 'youri',
     email: 'youri@yari.yo',
   })
+  db.create('typeTest', {})
 
   await db.drain()
   await db.save()
