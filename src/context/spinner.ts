@@ -1,4 +1,3 @@
-import readline from 'node:readline'
 import type { AppContext } from '../context/index.js'
 import {
   CONNECTION_TIMEOUT,
