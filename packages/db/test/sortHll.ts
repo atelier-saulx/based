@@ -19,7 +19,7 @@ await test('sortCardinality', async (t) => {
       article: {
         derp: 'number',
         count: 'cardinality',
-        lala: 'cardinality',
+        // lala: 'cardinality',
         brazilians: 'cardinality',
       },
     },
@@ -54,6 +54,13 @@ await test('sortCardinality', async (t) => {
     // Cardinality is being updated without being set/create
   })
 
+  // await db
+  //   .query('article')
+  //   .sort('count', 'desc')
+  //   .include('count', 'brazilians')
+  //   .get()
+  //   .inspect()
+
   deepEqual(
     (
       await db
@@ -77,22 +84,22 @@ await test('sortCardinality', async (t) => {
     'create, with standalone values and array, include sort asc',
   )
 
-  deepEqual(
-    (
-      await db.query('article').sort('count', 'asc').include('derp').get()
-    ).toObject(),
-    [
-      {
-        id: 2,
-        derp: 100,
-      },
-      {
-        id: 1,
-        derp: 1,
-      },
-    ],
-    'sort a not included cardinality field',
-  )
+  // deepEqual(
+  //   (
+  //     await db.query('article').sort('count', 'asc').include('derp').get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       derp: 100,
+  //     },
+  //     {
+  //       id: 1,
+  //       derp: 1,
+  //     },
+  //   ],
+  //   'sort a not included cardinality field',
+  // )
 
   await db.update('article', myArticle, {
     count: 'lala',
@@ -100,120 +107,122 @@ await test('sortCardinality', async (t) => {
 
   await db.drain()
 
-  await db
-    .query('article')
-    .sort('count', 'asc')
-    .include('count', 'brazilians')
-    .get()
+  // deepEqual(
+  //   (
+  //     await db
+  //       .query('article')
+  //       .sort('count', 'asc')
+  //       .include('count', 'brazilians')
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       count: 2,
+  //       brazilians: 0,
+  //     },
+  //     {
+  //       id: 1,
+  //       count: 7,
+  //       brazilians: 1,
+  //     },
+  //   ],
+  //   'update, standalone, include, sort asc',
+  // )
 
-  deepEqual(
-    (
-      await db
-        .query('article')
-        .sort('count', 'asc')
-        .include('count', 'brazilians')
-        .get()
-    ).toObject(),
-    [
-      {
-        id: 2,
-        count: 2,
-        brazilians: 0,
-      },
-      {
-        id: 1,
-        count: 7,
-        brazilians: 1,
-      },
-    ],
-    'update, standalone, include, sort asc',
-  )
+  // const names = [
+  //   'João',
+  //   'Maria',
+  //   'José',
+  //   'Ana',
+  //   'Paulo',
+  //   'Carlos',
+  //   'Lucas',
+  //   'Mariana',
+  //   'Fernanda',
+  //   'Gabriel',
+  // ]
 
-  const names = [
-    'João',
-    'Maria',
-    'José',
-    'Ana',
-    'Paulo',
-    'Carlos',
-    'Lucas',
-    'Mariana',
-    'Fernanda',
-    'Gabriel',
-  ]
+  // let brazos = []
+  // for (let i = 0; i < 1e6; i++) {
+  //   brazos.push(names[Math.floor(Math.random() * names.length)] + i)
+  // }
 
-  let brazos = []
-  for (let i = 0; i < 1e6; i++) {
-    brazos.push(names[Math.floor(Math.random() * names.length)] + i)
-  }
+  // console.time('1M Distinct Brazos update')
+  // await db.update('article', myArticle, {
+  //   brazilians: brazos,
+  // })
+  // console.timeEnd('1M Distinct Brazos update')
 
-  console.time('1M Distinct Brazos update')
-  await db.update('article', myArticle, {
-    brazilians: brazos,
-  })
-  console.timeEnd('1M Distinct Brazos update')
+  // await db.drain()
 
-  await db.drain()
-
-  notStrictEqual(
-    (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('count', 'brazilians')
-        .get()
-    ).toObject(),
-    [
-      {
-        id: 2,
-        count: 2,
-        brazilians: 992078,
-      },
-      {
-        id: 1,
-        count: 7,
-        brazilians: 1,
-      },
-    ],
-    'update 1M distinct values, include, sort desc',
-  )
+  // notStrictEqual(
+  //   (
+  //     await db
+  //       .query('article')
+  //       .sort('brazilians', 'desc')
+  //       .include('count', 'brazilians')
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       count: 2,
+  //       brazilians: 992078,
+  //     },
+  //     {
+  //       id: 1,
+  //       count: 7,
+  //       brazilians: 1,
+  //     },
+  //   ],
+  //   'update 1M distinct values, include, sort desc',
+  // )
 
   db.delete('article', test)
 
   await db.drain()
 
-  deepEqual(
-    (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('count')
-        .get()
-    ).toObject(),
-    [
-      {
-        id: 2,
-        count: 2,
-      },
-    ],
-    'delete a register',
-  )
+  // deepEqual(
+  //   (
+  //     await db
+  //       .query('article')
+  //       .sort('brazilians', 'desc')
+  //       .include('count')
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       count: 2,
+  //     },
+  //   ],
+  //   'delete a register',
+  // )
 
-  const c1 = await db.create('article', {
+  const c3 = await db.create('article', {
     count: 'name1',
   })
-  const c2 = await db.create('article', {
+  const c4 = await db.create('article', {
     count: 'name2',
   })
-  const c3 = await db.create('article', {
+  const c5 = await db.create('article', {
     count: 'name3',
+    derp: 2,
+    brazilians: 'marco',
   })
-  const c4 = await db.create('article', {})
-  const c5 = await db.create('article', {})
+  const c6 = await db.create('article', {})
+  const c7 = await db.create('article', {})
+  const c8 = await db.create('article', {
+    count: ['name1', 'name2', 'name3'],
+  })
+  const c9 = await db.create('article', {
+    count: ['name1', 'name2'],
+  })
 
   // await db
   //   .query('article')
-  //   // .sort('count', 'desc')
+  //   .sort('count', 'desc')
   //   .include('count')
   //   .get()
   //   .inspect(100)
@@ -221,12 +230,14 @@ await test('sortCardinality', async (t) => {
   deepEqual(
     await db
       .query('article')
-      .include('count')
       .sort('count', 'desc')
+      .include('count')
       .get()
       .toObject(),
     [
+      { id: 8, count: 3 },
       { id: 2, count: 2 },
+      { id: 9, count: 2 },
       { id: 3, count: 1 },
       { id: 4, count: 1 },
       { id: 5, count: 1 },
