@@ -316,35 +316,18 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schem
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
     te->type = type;
-    clone_schema_buf(te, schema_buf, schema_len);
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
-        selva_free(te->schema_buf);
         selva_free(te);
         return err;
     }
 
+    clone_schema_buf(te, schema_buf, schema_len);
     te->blocks = alloc_blocks(nfo.block_capacity);
     selva_init_aliases(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
-
-#if 0
-    struct mempool_slab_info slab_info = mempool_slab_info(&te->nodepool);
-
-           "node_size: %zu\n"
-           "slab_size: %zu\n"
-           "chunk_size: %zu\n"
-           "obj_size: %zu\n"
-           "nr_objects: %zu\n",
-           type,
-           node_size,
-           slab_info.slab_size,
-           slab_info.chunk_size,
-           slab_info.obj_size,
-           slab_info.nr_objects);
-#endif
 
     void *prev = SVector_Insert(&db->type_list, SelvaTypeEntry2vecptr(te));
     if (prev) {
