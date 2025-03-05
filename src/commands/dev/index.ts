@@ -39,14 +39,8 @@ const getOwnIp = () => {
 }
 
 export const dev = async (program: Command) => {
-  const cmd = program
-    .command('dev')
-    .option(
-      '-f, --functions <functions...>',
-      'The function names to be served (variadic).',
-    )
-    .option('--port <port>', 'To set manually the Based Dev Server port.')
-    .option('--cloud', 'To connect to Based Cloud instead.')
+  const context: AppContext = AppContext.getInstance(program)
+  const cmd: Command = context.commandMaker('dev')
 
   cmd.action(devServer)
 }
@@ -104,9 +98,6 @@ export const devServer = async ({
   port?: string
   cloud?: boolean
 }) => {
-  // process.on('SIGINT', () => {
-  //   context.print.pipe().error(context.i18n('methods.aborted'))
-  // })
   const context: AppContext = AppContext.getInstance()
   await context.getProgram()
   const basedClient = await context.getBasedClient()
@@ -157,169 +148,176 @@ export const devServer = async ({
   async function update(err: any) {
     let reloadClients = hadError
 
-    if (err) {
+    if (
+      err ||
+      nodeBundles.error ||
+      nodeBundles.result.errors ||
+      browserBundles.error ||
+      browserBundles.result.errors
+    ) {
       reloadClients = true
       hadError = true
-    } else {
-      let fnUpdates: any
-      hadError = false
+      return
+    }
 
-      for (const { index, config, app, favicon } of configs) {
-        const js = nodeBundles.js(index)
+    let fnUpdates: any
+    hadError = false
 
-        let checksum: number
-        let appHtml: OutputFile
-        let appJs: OutputFile
-        let appCss: OutputFile
-        let appFavicon: OutputFile
+    for (const { index, config, app, favicon } of configs) {
+      const js = nodeBundles.js(index)
 
-        if (app) {
-          const faviconPath =
-            favicon &&
-            browserBundles.result.metafile.outputs[browserBundles.find(favicon)]
-              ?.imports[0]?.path
-          const faviconPathAbsolute =
-            faviconPath && join(process.cwd(), faviconPath)
+      let checksum: number
+      let appHtml: OutputFile
+      let appJs: OutputFile
+      let appCss: OutputFile
+      let appFavicon: OutputFile
 
-          if (app.endsWith('.html')) {
-            appHtml = browserBundles.html(app)
-          } else {
-            appJs = browserBundles.js(app)
-            appCss = browserBundles.css(app)
-            appFavicon =
-              faviconPath &&
-              browserBundles.result.outputFiles.find(
-                ({ path }) => path === faviconPathAbsolute,
-              )
-          }
+      if (app) {
+        const faviconPath =
+          favicon &&
+          browserBundles.result.metafile.outputs[browserBundles.find(favicon)]
+            ?.imports[0]?.path
+        const faviconPathAbsolute =
+          faviconPath && join(process.cwd(), faviconPath)
 
-          checksum = hash(
-            [
-              appHtml?.hash,
-              appHtml?.path,
-              appJs?.hash,
-              appJs?.path,
-              appCss?.hash,
-              appCss?.path,
-              appFavicon?.path,
-              js.hash,
-              config,
-            ].filter(Boolean),
-          )
+        if (app.endsWith('.html')) {
+          appHtml = browserBundles.html(app)
         } else {
-          checksum = hash([js.hash, config])
+          appJs = browserBundles.js(app)
+          appCss = browserBundles.css(app)
+          appFavicon =
+            faviconPath &&
+            browserBundles.result.outputFiles.find(
+              ({ path }) => path === faviconPathAbsolute,
+            )
         }
 
-        if (checksums[config.name] === checksum) {
-          continue
-        }
+        checksum = hash(
+          [
+            appHtml?.hash,
+            appHtml?.path,
+            appJs?.hash,
+            appJs?.path,
+            appCss?.hash,
+            appCss?.path,
+            appFavicon?.path,
+            js.hash,
+            config,
+          ].filter(Boolean),
+        )
+      } else {
+        checksum = hash([js.hash, config])
+      }
 
-        checksums[config.name] = checksum
+      if (checksums[config.name] === checksum) {
+        continue
+      }
 
-        if (await invalidate(context, index, config)) {
-          // ts validation
-          basedServer.functions.add({
-            [config.name]: {
-              type: 'function',
-              async fn() {
-                return 'error (should log the ts error)'
-              },
-            },
-          })
-          continue
-        }
+      checksums[config.name] = checksum
 
-        // const sourcemap = nodeBundles.map(index)
-        const fn = nodeBundles.require(index)
-        const defaultFn = fn.default || fn
-        fnUpdates ??= {}
-
-        if (app) {
-          const params = {
-            html: new AppFile({ outputFile: appHtml, ip, port: devPort }),
-            js: new AppFile({ outputFile: appJs, ip, port: devPort }),
-            css: new AppFile({ outputFile: appCss, ip, port: devPort }),
-            favicon: new AppFile({ outputFile: appFavicon, ip, port: devPort }),
-          }
-
-          reloadClients = true
-          fnUpdates[config.name] = {
-            ...config,
+      if (await invalidate(context, index, config)) {
+        // ts validation
+        basedServer.functions.add({
+          [config.name]: {
             type: 'function',
-            async fn(based, _payload, ctx) {
-              const errorTarget =
-                (browserBundles.error && browserBundles) ||
-                (nodeBundles.error && nodeBundles)
+            async fn() {
+              return 'error (should log the ts error)'
+            },
+          },
+        })
+        continue
+      }
 
-              if (errorTarget) {
-                const vsCodeLink = (str) =>
-                  `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
-                let str = `${liveReloadScript(lrPort)}<pre>`
-                for (const { location, text } of errorTarget.error.errors) {
-                  if (location) {
-                    const { file, column, line } = location
-                    str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`
-                  }
+      // const sourcemap = nodeBundles.map(index)
+      const fn = nodeBundles.require(index)
+      const defaultFn = fn.default || fn
+      fnUpdates ??= {}
+
+      if (app) {
+        const params = {
+          html: new AppFile({ outputFile: appHtml, ip, port: devPort }),
+          js: new AppFile({ outputFile: appJs, ip, port: devPort }),
+          css: new AppFile({ outputFile: appCss, ip, port: devPort }),
+          favicon: new AppFile({ outputFile: appFavicon, ip, port: devPort }),
+        }
+
+        reloadClients = true
+        fnUpdates[config.name] = {
+          ...config,
+          type: 'function',
+          async fn(based, _payload, ctx) {
+            const errorTarget =
+              (browserBundles.error && browserBundles) ||
+              (nodeBundles.error && nodeBundles)
+
+            if (errorTarget) {
+              const vsCodeLink = (str) =>
+                `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
+              let str = `${liveReloadScript(lrPort)}<pre>`
+              for (const { location, text } of errorTarget.error.errors) {
+                if (location) {
+                  const { file, column, line } = location
+                  str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`
                 }
-
-                if (errorTarget.updates.length) {
-                  str += '\n'
-                  for (const [type, path] of errorTarget.updates) {
-                    str += `\n${type}: ${vsCodeLink(path)}`
-                  }
-                }
-
-                str += '</pre>'
-                return str
               }
 
-              let html = await defaultFn(based, params, ctx)
-              let i = -1
-
-              if (html instanceof Readable) {
-                html = (await buffer(html)).toString()
+              if (errorTarget.updates.length) {
+                str += '\n'
+                for (const [type, path] of errorTarget.updates) {
+                  str += `\n${type}: ${vsCodeLink(path)}`
+                }
               }
 
-              if (typeof html === 'string') {
-                i = html.indexOf('</head>')
+              str += '</pre>'
+              return str
+            }
 
-                if (i === -1) {
-                  i = html.indexOf('</body>')
-                }
+            let html = await defaultFn(based, params, ctx)
+            let i = -1
 
-                if (i === -1) {
-                  i = html.indexOf('</html>')
-                }
+            if (html instanceof Readable) {
+              html = (await buffer(html)).toString()
+            }
+
+            if (typeof html === 'string') {
+              i = html.indexOf('</head>')
+
+              if (i === -1) {
+                i = html.indexOf('</body>')
               }
 
               if (i === -1) {
-                context.print.warning(
-                  '<yellow>invalid html, skip livereload tag and based opts tag</yellow>',
-                )
-                return html
+                i = html.indexOf('</html>')
               }
-              return `${html.substring(0, i)}${liveReloadScript(
-                lrPort,
-              )}${basedOptsScript(client.opts)}${html.substring(i)}`
-            },
-          }
-        } else {
-          fnUpdates[config.name] = {
-            ...config,
-            fn(...args) {
-              return defaultFn(...args)
-            },
-          }
-        }
+            }
 
-        if (fn.httpResponse) {
-          fnUpdates[config.name].httpResponse = fn.httpResponse
+            if (i === -1) {
+              context.print.warning(
+                '<yellow>invalid html, skip livereload tag and based opts tag</yellow>',
+              )
+              return html
+            }
+            return `${html.substring(0, i)}${liveReloadScript(
+              lrPort,
+            )}${basedOptsScript(client.opts)}${html.substring(i)}`
+          },
+        }
+      } else {
+        fnUpdates[config.name] = {
+          ...config,
+          fn(...args) {
+            return defaultFn(...args)
+          },
         }
       }
 
-      if (fnUpdates) {
-        basedServer.functions.add(fnUpdates)
+      if (fn.httpResponse) {
+        fnUpdates[config.name].httpResponse = fn.httpResponse
       }
+    }
+
+    if (fnUpdates) {
+      basedServer.functions.add(fnUpdates)
     }
 
     if (reloadClients) {

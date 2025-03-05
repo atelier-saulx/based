@@ -20,6 +20,7 @@ import pc from 'picocolors'
 import ts from 'typescript'
 import { AppContext } from '../../context/index.js'
 import { getTargets, isIndexFile } from '../../shared/index.js'
+import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
 
 const { glob } = fg
 const cwd = process.cwd()
@@ -201,7 +202,7 @@ export const parseFunctions = async (
     schema = null
   }
 
-  context.print.intro('<b>Preparing your functions...</b>').pipe()
+  context.print.intro('Preparing your functions').pipe()
 
   let debug: boolean = false
 
@@ -241,7 +242,7 @@ export const parseFunctions = async (
 
   if (!configs.length) {
     const err = `No ${functions ? 'matching ' : ''}function configs found`
-    context.print.warning(`<yellow>${err}</yellow>`)
+    context.print.warning(err)
     throw new Error(err)
   }
 
@@ -267,7 +268,7 @@ export const parseFunctions = async (
   await Promise.all(
     configs.map(async (item) => {
       const { config, path } = item
-      const access = config.public
+      const accessLabel = config.public
         ? `<secondary>${'public'.padEnd(7)}</secondary>`
         : `<secondary>${'private'.padEnd(7)}</secondary>`
       const type = config.type || 'function'
@@ -276,8 +277,12 @@ export const parseFunctions = async (
           ? 'authorize'
           : config.name
       const file = rel(path)
+      const functionLabel = `<b>${name.padEnd(functionsNameWidth)}</b>`
+      const typeLabel = `<dim><secondary>${type.padEnd(9)}</secondary></dim>`
+      const pipe = '<dim>|</dim>'
+      const fileLabel = `<dim>${file}</dim>`
       context.print.log(
-        `<secondary>${type.padEnd(9)}</secondary> <dim>|</dim> <b>${name.padEnd(functionsNameWidth)}</b> <dim>|</dim> ${access} <dim>${file}</dim>`,
+        `${functionLabel} ${pipe} ${accessLabel} ${pipe} ${typeLabel} ${pipe} ${fileLabel}`,
         '<secondary>◆</secondary>',
       )
 
@@ -291,7 +296,7 @@ export const parseFunctions = async (
     }),
   )
 
-  context.print.outro('<b>Functions ready!</b>')
+  context.print.pipe().outro('Functions ready').line()
 
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
@@ -380,63 +385,21 @@ export const parseFunctions = async (
     throw context.print.error(context.i18n('methods.aborted'))
   }
 
-  const replaceBasedConfigPlugin = ({ cloud, url }): Plugin => ({
-    name: 'replace-based-config',
-    setup(build) {
-      build.onResolve({ filter: /[\\\/]based\.(js|ts|json)$/ }, (args) => {
-        return { path: args.path, namespace: 'replace-based' }
-      })
-
-      build.onLoad({ filter: /.*/, namespace: 'replace-based' }, async () => {
-        if (cloud || !url) {
-          context.print
-            .pipe()
-            .log(
-              '<b><blue>◉</blue>  Connecting your project to your cloud functions instead of the your local Based Dev Server.</b>',
-            )
-            .pipe()
-
-          const { cluster, org, env, project } = await context.getProgram()
-          const contents = `export default ${JSON.stringify({ cluster, org, env, project })};`
-
-          return {
-            contents,
-            loader: 'js',
-          }
-        }
-
-        const contents = `export default ${JSON.stringify({ url })};`
-
-        context.print
-          .pipe()
-          .log(
-            '<b><blue>◉</blue>  Connecting your project to your local functions instead of the cloud.</b>',
-          )
-          .pipe()
-
-        return {
-          contents,
-          loader: 'js',
-        }
-      })
-    },
-  })
+  context.print.intro('Bundling').pipe()
 
   const introFunctions = async () =>
-    onChange
-      ? context.print.intro('<dim>Bundling your functions...</dim>').pipe()
-      : context.print.log(
-          '<dim><blue>◉</blue>  Bundling your functions...</dim>',
-        )
+    context.print.log(
+      context.i18n('methods.bundling.functionsLabel', nodeEntryPoints.length),
+      '<secondary>◆</secondary>',
+    )
 
   const introAssets = async () =>
-    onChange
-      ? context.print.intro(
-          '<dim>Bundling your assets and dependencies...</dim>',
-        )
-      : context.print.log(
-          '<dim><blue>◉</blue>  Bundling your assets and dependencies...</dim>',
-        )
+    context.print.log(
+      context.i18n('methods.bundling.assetsLabel', browserEntryPoints.length),
+      '<secondary>◆</secondary>',
+    )
+
+  const basedFilePlugin = replaceBasedConfigPlugin(context)
 
   // build the functions
   const [_logFunctions, nodeBundles, _logAssets, browserBundles] =
@@ -462,7 +425,7 @@ export const parseFunctions = async (
           bundle: true,
           plugins: [
             ...browserEsbuildPlugins,
-            replaceBasedConfigPlugin({
+            basedFilePlugin({
               cloud: connectToCloud,
               url: staticPath,
             }),
@@ -480,19 +443,11 @@ export const parseFunctions = async (
 }
 
 export const deploy = async (program: Command) => {
-  const cmd = program
-    .command('deploy')
-    .option('-w, --watch', 'watch mode')
-    .option(
-      '-f, --functions <functions...>',
-      'function names to deploy (variadic)',
-    )
+  const context: AppContext = AppContext.getInstance(program)
+  const cmd: Command = context.commandMaker('deploy')
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      // process.on('SIGINT', () => {
-      //   context.print.pipe().error(context.i18n('methods.aborted'))
-      // })
       const context: AppContext = AppContext.getInstance(program)
       await context.getProgram()
       const basedClient = await context.getBasedClient()
@@ -519,7 +474,7 @@ export const deploy = async (program: Command) => {
 
       async function update(err) {
         if (err) {
-          context.print.warning(`<red>${err}</red>`)
+          context.print.warning(err)
           return
         }
 
@@ -701,7 +656,10 @@ export const deploy = async (program: Command) => {
 
         previous = deployed
       }
-      process.exit(0)
+
+      if (!watch) {
+        process.exit(0)
+      }
     },
   )
 }

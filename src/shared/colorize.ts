@@ -1,8 +1,82 @@
 import pc from 'picocolors'
 
+const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
+
+export function colorizerLength(text: string): number {
+  return text.replace(tagRegex, (_, __, content) => {
+    return content
+  }).length
+}
+
+export function colorize(content: string): string
+export function colorize(content: string[]): string[]
+export function colorize(content: string | string[]): string | string[] {
+  if (!content) return ''
+
+  if (Array.isArray(content)) {
+    return content.map(processText)
+  }
+
+  return processText(content)
+}
+
+function processText(text: string): string {
+  const result: string[] = []
+  const stack: { tag: string; start: number; acc: string[] }[] = []
+  let i = 0
+  let acc: string[] = []
+
+  while (i < text.length) {
+    if (text[i] === '<') {
+      const closeBracket = text.indexOf('>', i)
+
+      if (closeBracket === -1) {
+        acc.push(text.substring(i))
+        break
+      }
+
+      acc.push(text.substring(i, i))
+      const tagContent = text.substring(i + 1, closeBracket)
+
+      if (tagContent[0] === '/') {
+        const tagName = tagContent.slice(1)
+        const last = stack.pop()
+
+        if (last && last.tag === tagName) {
+          const innerText = last.acc.join('') + acc.join('')
+          acc = []
+          const transformed = transformTag(tagName, innerText)
+
+          if (stack.length > 0) {
+            stack[stack.length - 1].acc.push(transformed)
+          } else {
+            result.push(transformed)
+          }
+
+          i = closeBracket + 1
+        }
+      } else {
+        stack.push({ tag: tagContent, start: i, acc: acc.slice() })
+
+        acc = []
+        i = closeBracket + 1
+      }
+    } else {
+      acc.push(text[i])
+      i++
+    }
+  }
+
+  result.push(acc.join(''))
+
+  return result.join('')
+}
+
+const { isColorSupported, createColors, ...pico } = pc
+
 const formatter =
-  (open, close, replace = open) =>
-  (input) => {
+  (open: string, close: string, replace: string = open) =>
+  (input: string) => {
     const string = `${input}`
     const index = string.indexOf(close, open.length)
     return ~index
@@ -10,28 +84,25 @@ const formatter =
       : open + string + close
   }
 
-const replaceClose = (string, close, replace, index) => {
+const replaceClose = (
+  string: string,
+  close: string,
+  replace: string,
+  index: number,
+) => {
   let result = ''
   let cursor = 0
+
   do {
     result += string.substring(cursor, index) + replace
     cursor = index + close.length
     index = string.indexOf(close, cursor)
   } while (~index)
+
   return result + string.substring(cursor)
 }
 
-const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
-
-export function colorize(content: string): string
-export function colorize(content: string[]): string[]
-export function colorize(content: string | string[]): string | string[] {
-  if (!content) {
-    return ''
-  }
-
-  const { isColorSupported, createColors, ...pico } = pc
-
+function transformTag(tagName: string, content: string): string {
   const tagFunctions: { [key: string]: (text: string) => string } = {
     ...pico,
     b: pc.bold,
@@ -44,27 +115,5 @@ export function colorize(content: string | string[]): string | string[] {
     reset: (text: string) => `\u001b[0m${text}`,
   }
 
-  const processTags = (text: string): string => {
-    return text.replace(tagRegex, (_, tagName, content) => {
-      const transform = tagFunctions[tagName]
-
-      if (transform) {
-        return transform(processTags(content))
-      }
-
-      return content
-    })
-  }
-
-  if (Array.isArray(content)) {
-    return content.map(processTags) as string[]
-  }
-
-  return processTags(content) as string
-}
-
-export function colorizerLength(text: string): number {
-  return text.replace(tagRegex, (_, __, content) => {
-    return content
-  }).length
+  return tagFunctions[tagName] ? tagFunctions[tagName](content) : content
 }

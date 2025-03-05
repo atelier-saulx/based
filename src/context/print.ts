@@ -46,32 +46,40 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
       ...stdlog(chunk, encoding, callback),
     )) as typeof process.stderr.write
 
-  function logger(...args: any[]): string {
-    let log: string = args
-      .map((arg) => {
-        if (typeof arg !== 'string') {
-          return JSON.stringify(arg, null, 2)
-        }
+  const logger =
+    (icon: string) =>
+    (...args: any[]): string => {
+      let log: string = args
+        .map((arg) => {
+          if (typeof arg !== 'string') {
+            return JSON.stringify(arg, null, 2)
+          }
 
-        return arg
-      })
-      .join('')
+          return arg
+        })
+        .join('')
 
-    if (!log.length) {
-      return ''
+      if (!log.length) {
+        return ''
+      }
+
+      if (isValidChar(log.charCodeAt(0))) {
+        log = `${icon || context.state.emojis.log}  ${log}`
+      }
+
+      return LINE_CLEAR + log.trimStart().trim()
     }
 
-    if (isValidChar(log.charCodeAt(0))) {
-      log = `${context.state.emojis.log}  ${log}`
-    }
-
-    return LINE_CLEAR + log.trimStart().trim()
-  }
-
-  console.log = (...args: any[]): void => originalConsoleLog(logger(...args))
-  console.warn = (...args: any[]): void => originalConsoleWarn(logger(...args))
+  console.log = (...args: any[]): void =>
+    originalConsoleLog(logger(context.state.emojis.log)(...args))
+  console.warn = (...args: any[]): void =>
+    originalConsoleWarn(
+      `<yellow>${logger(context.state.emojis.warning)(...args)}</yellow>`,
+    )
   console.error = (...args: any[]): void =>
-    originalConsoleError(logger(...args))
+    originalConsoleError(
+      `<red>${logger(context.state.emojis.error)(...args)}</red>`,
+    )
 
   return {
     intro: (message) => {
@@ -133,11 +141,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     error: (message) => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.error(
-          context.state.emojis.error,
-          SPACER,
-          `<red>${message}</red>`,
-        )
+        console.error(context.state.emojis.error, SPACER, message)
       }
       return contextPrint(context)
     },

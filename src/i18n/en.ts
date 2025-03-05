@@ -738,6 +738,16 @@ export default {
       email: 'Enter your email address:',
       success: 'User: <b>${email}</b> logged in successfully!',
     },
+    bundling: {
+      functionsLabel_one: '${number} function',
+      functionsLabel_many: '${number} functions',
+      assetsLabel_one: '${number} asset',
+      assetsLabel_many: '${number} assets',
+    },
+    plugins: {
+      cloudFunctions: 'Connecting to your cloud functions.',
+      localFunctions: 'Connecting to your local functions.',
+    },
     hubConnection: {
       cluster: 'Based Cluster',
       environment: 'the Environment',

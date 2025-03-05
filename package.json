@@ -39,7 +39,7 @@
     "@based/bundle": "^0.4.9",
     "@based/client": "^6.11.1",
     "@based/db": "^0.0.19",
-    "@based/i18n": "^0.2.0",
+    "@based/i18n": "^0.3.0",
     "@based/server": "^9.2.0",
     "@clack/prompts": "^0.7.0",
     "@inquirer/prompts": "^6.0.1",
