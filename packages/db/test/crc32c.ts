@@ -3,7 +3,6 @@ import { crc32c } from '@based/crc32c'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
-import { setTimeout as setTimeoutAsync } from 'timers/promises'
 
 console.log(
   'Comparing just the hash generation, without writing in the database',
