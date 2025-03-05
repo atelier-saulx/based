@@ -742,7 +742,7 @@ export default {
       cluster: 'Based Cluster',
       environment: 'the Environment',
       project: 'the Project',
-      connecting: 'ConnectSSSSSSSSSSSSSSSSSSSSSing to ${target}...',
+      connecting: 'Connecting to ${target}...',
       connected: 'Connected to ${target}.',
     },
   },
