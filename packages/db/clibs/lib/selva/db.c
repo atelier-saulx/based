@@ -315,6 +315,14 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schem
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
+#if 0
+    fprintf(stderr, "schema_buf: [ ");
+    for (size_t i = 0; i < schema_len; i++) {
+        fprintf(stderr, "%x, ", schema_buf[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
+
     te->type = type;
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
