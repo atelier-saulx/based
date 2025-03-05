@@ -488,7 +488,7 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
         schema_buf = selva_malloc(schema_len);
         io->sdb_read(schema_buf, sizeof(char), schema_len, io);
 
-        err = selva_db_schema_create(db, type, schema_buf, schema_len);
+        err = selva_db_create_type(db, type, schema_buf, schema_len);
         if (err) {
             db_panic("Failed to create a node type entry: %s", selva_strerror(err));
         }

@@ -686,4 +686,34 @@ await test('sort', async (t) => {
       },
     ],
   )
+
+  db.update('dialog', id1, {
+    fun: null,
+  })
+
+  await db.drain()
+
+  await db.query('dialog').locale('fi').get().inspect()
+
+  // deepEqual(
+  //   await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+  //   [
+  //     {
+  //       id: 3,
+  //       fun: '3',
+  //     },
+  //     {
+  //       id: 2,
+  //       fun: '2',
+  //     },
+  //     {
+  //       id: 1,
+  //       fun: '',
+  //     },
+  //     {
+  //       id: 4,
+  //       fun: '',
+  //     },
+  //   ],
+  // )
 })

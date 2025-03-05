@@ -175,9 +175,9 @@ struct SelvaDb *selva_db_create(void)
 /**
  * Delete all nodes under this type.
  */
-static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
+static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaTypeBlocks *blocks = te->blocks;
     block_id_t blocks_len = blocks->len;
 
     for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
@@ -186,30 +186,34 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
         struct SelvaNode *tmp;
 
         RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
-            selva_del_node(db, type, node);
+            selva_del_node(db, te, node);
         }
     }
 }
 
-static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
+static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    selva_destroy_all_cursors(type);
-    del_all_nodes(db, type);
+    selva_destroy_all_cursors(te);
+    del_all_nodes(db, te);
     /*
      * We assume that as the nodes are deleted the aliases are also freed.
-     * The following function will just free type->aliases.
+     * The following function will just free te->aliases.
      */
-    selva_destroy_aliases(type);
+    selva_destroy_aliases(te);
 
-    (void)SVector_Remove(&db->type_list, SelvaTypeEntry2vecptr(type));
+    /*
+     * Remove this type from the type list.
+     */
+    (void)SVector_Remove(&db->type_list, SelvaTypeEntry2vecptr(te));
 
-    mempool_destroy(&type->nodepool);
-    selva_free(type->blocks);
-    schemabuf_deinit_fields_schema(&type->ns.fields_schema);
+    mempool_destroy(&te->nodepool);
+    selva_free(te->blocks);
+    schemabuf_deinit_fields_schema(&te->ns.fields_schema);
 #if 0
-    memset(type, 0, sizeof(*type));
+    memset(te, 0, sizeof(*te));
 #endif
-    selva_free(type);
+    selva_free(te->schema_buf);
+    selva_free(te);
 }
 
 static void del_all_types(struct SelvaDb *db)
@@ -221,7 +225,7 @@ static void del_all_types(struct SelvaDb *db)
     SVector_Clone(&types_copy, &db->type_list, nullptr);
     SVector_ForeachBegin(&it, &types_copy);
     while ((type = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-        del_type(db, type);
+        destroy_type(db, type);
     }
 }
 
@@ -284,7 +288,7 @@ static void clone_schema_buf(struct SelvaTypeEntry *te, const char *schema_buf, 
     te->schema_len = schema_len;
 }
 
-int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_info nfo;
     const size_t te_ns_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
@@ -311,35 +315,27 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
     memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
+#if 0
+    fprintf(stderr, "schema_buf: [ ");
+    for (size_t i = 0; i < schema_len; i++) {
+        fprintf(stderr, "%x, ", schema_buf[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
+
     te->type = type;
-    clone_schema_buf(te, schema_buf, schema_len);
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
     }
 
+    clone_schema_buf(te, schema_buf, schema_len);
     te->blocks = alloc_blocks(nfo.block_capacity);
     selva_init_aliases(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
-
-#if 0
-    struct mempool_slab_info slab_info = mempool_slab_info(&te->nodepool);
-
-           "node_size: %zu\n"
-           "slab_size: %zu\n"
-           "chunk_size: %zu\n"
-           "obj_size: %zu\n"
-           "nr_objects: %zu\n",
-           type,
-           node_size,
-           slab_info.slab_size,
-           slab_info.chunk_size,
-           slab_info.obj_size,
-           slab_info.nr_objects);
-#endif
 
     void *prev = SVector_Insert(&db->type_list, SelvaTypeEntry2vecptr(te));
     if (prev) {
