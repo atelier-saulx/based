@@ -38,30 +38,20 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   this.set('basedProject', basedProject)
 
   if (Object.keys(basedProject).length > 1) {
-    this.print.info(
-      this.i18n('context.file', basedProject.file),
-      this.state.emojis.pipe,
-    )
+    this.print.pipe(this.i18n('context.file', basedProject.file))
 
     if (basedProject.cluster !== 'production') {
-      this.print.info(
-        this.i18n('context.cluster', basedProject.cluster),
-        this.state.emojis.pipe,
-      )
+      this.print.pipe(this.i18n('context.cluster', basedProject.cluster))
     }
 
     this.print
-      .info(this.i18n('context.org', basedProject.org), this.state.emojis.pipe)
-      .info(
-        this.i18n('context.project', basedProject.project),
-        this.state.emojis.pipe,
-      )
-      .info(this.i18n('context.env', basedProject.env), this.state.emojis.pipe)
+      .pipe(this.i18n('context.org', basedProject.org))
+      .pipe(this.i18n('context.project', basedProject.project))
+      .pipe(this.i18n('context.env', basedProject.env))
 
     if (basedProject.apiKey) {
-      this.print.info(
+      this.print.pipe(
         this.i18n('context.apiKey', `${basedProject.apiKey.slice(0, 7)}...`),
-        this.state.emojis.pipe,
       )
     }
 

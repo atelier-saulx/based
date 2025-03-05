@@ -16,32 +16,28 @@ import {
   contextTerminalKit,
   endpoints,
 } from './index.js'
-// TODO
-// We need an eventEmitter?
-// import EventEmitter from 'events'
-// import '../helpers/context/eventEmitter.js'
-
 export class AppContext {
+  public program: Command
   private static instance: AppContext
-  private logLevels: string[] = [
-    'verbose',
-    'info',
-    'success',
-    'warning',
-    'error',
-    'silent',
-  ]
   public state: Based.Context.State = {
-    display: 'info',
     emojis: {
-      info: '<primary>●</primary>',
-      success: '<green>♥</green>',
-      warning: '<yellow>▲</yellow>',
-      error: '<red>■</red>',
+      intro: '<gray>┌</gray>',
+      outro: '<gray>└</gray>',
+      step: '<primary>●</primary>',
+      line: '<gray>──</gray>',
       pipe: '<gray>│</gray>',
+      log: '<white>◇</white>',
+      success: '<green>●</green>',
+      error: '<red>■</red>',
+      warning: '<yellow>▲</yellow>',
+      spinner: [
+        '<primary>◐</primary>',
+        '<primary>◓</primary>',
+        '<primary>◑</primary>',
+        '<primary>◒</primary>',
+      ],
     },
   }
-  public program: Command
   public i18n: ReturnType<typeof i18n<typeof languages>>
   public commandMaker = contextCommandMaker
   public getGlobalOptions = contextGlobalOptions
@@ -54,7 +50,6 @@ export class AppContext {
   public form = contextForm(this)
   public print = contextPrint(this)
   public spinner = contextSpinner(this)
-  // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
   public basedServer = contextBasedServer(this)
 

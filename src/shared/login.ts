@@ -85,7 +85,8 @@ export const connectToHub = async (
   }
 
   const timeout = setTimeout(() => {
-    context.print.fail(context.i18n('errors.408'), true)
+    context.print.error(context.i18n('errors.408'))
+    context.spinner.stop()
   }, CONNECTION_TIMEOUT)
 
   try {
@@ -98,10 +99,7 @@ export const connectToHub = async (
     throw new Error(context.i18n('errors.404', file, error))
   }
 
-  context.print.info(
-    context.i18n('methods.hubConnection.connected', target),
-    true,
-  )
+  context.print.step(context.i18n('methods.hubConnection.connected', target))
 
   clearTimeout(timeout)
 
@@ -215,7 +213,12 @@ export const newLogin = async (email?: string): Promise<Based.API.Client> => {
   if (lastSession) {
     context.print
       .pipe()
-      .success(context.i18n('commands.auth.methods.welcomeBack'), true)
+      .success(
+        context.i18n(
+          'commands.auth.methods.welcomeBack',
+          authenticatedUser.email,
+        ),
+      )
       .line()
   }
 
@@ -230,7 +233,7 @@ export const logout = async () => {
   const lastSession = getLastSession(users)
 
   if (lastSession) {
-    context.print.info(
+    context.print.log(
       `The user <b>${lastSession.email}</b> is currently connected.`,
       true,
     )
@@ -244,14 +247,14 @@ export const logout = async () => {
 
       await saveAsFile(autenticatedUsers, LOCAL_AUTH_INFO, 'json')
 
-      context.print.success(context.i18n('methods.logout.success'), true)
+      context.print.success(context.i18n('methods.logout.success'))
     } else {
-      context.print.fail(context.i18n('methods.aborted'))
+      context.print.error(context.i18n('methods.aborted'))
     }
   }
 
   if (!lastSession) {
-    context.print.fail(
+    context.print.error(
       "I couldn't find any user to disconnect. Please log in first to start using <b>Based</b>.",
     )
   }

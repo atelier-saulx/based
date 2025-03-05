@@ -1,5 +1,4 @@
 import type { AppContext } from '../../context/index.js'
-import { colorize } from '../../shared/index.js'
 import { filterLogs, formatLogs, getLogs, subscribeLogs } from './index.js'
 
 export const visualizer = async (
@@ -81,11 +80,11 @@ export const visualizer = async (
 
     const { kill, addRow } = context.terminalKit({
       title: appName,
-      header: colorize([
+      header: [
         `<bgPrimary><b> ${appName} </b></bgPrimary> <dim>${versionNo}</dim>`,
         `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${args.stream ? '<b><red>LIVE</red></b>' : ''}`,
         `Active Filters: [${filterLabels.join(' | ')}]`,
-      ]),
+      ],
       rows: {
         sort: args.sort,
       },
@@ -113,7 +112,7 @@ export const visualizer = async (
       }
 
       if (!args.stream) {
-        context.print.info(
+        context.print.log(
           `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
         )
       }

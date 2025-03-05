@@ -1,46 +1,67 @@
-import { spinner as clack } from '@clack/prompts'
 import type { AppContext } from '../context/index.js'
-import { LINE_NEW, LINE_START, LINE_UP } from '../shared/constants.js'
-import { colorize } from '../shared/index.js'
-
-const spinner = clack()
+import {
+  CONNECTION_TIMEOUT,
+  LINE_CLEAR,
+  LINE_NEW,
+  LINE_START,
+  LINE_UP,
+  SPACER,
+} from '../shared/constants.js'
 
 export function contextSpinner(context: AppContext): Based.Context.Spinner {
   return {
     isActive: false,
-    text: (message = ''): Based.Context.Spinner => {
-      if (!context.spinner.isActive) {
-        spinner.start()
-        context.spinner.isActive = true
-      }
-
-      spinner.message(colorize(message))
-      context.spinner.isActive = true
-
-      return contextSpinner(context)
-    },
-    start: (message = ''): Based.Context.Spinner => {
+    timeoutID: null,
+    intervalID: null,
+    message: '',
+    start: (message, timeout = CONNECTION_TIMEOUT) => {
       if (context.spinner.isActive) {
-        spinner.stop()
         context.spinner.isActive = false
+        clearInterval(context.spinner.intervalID)
+        clearTimeout(context.spinner.timeoutID)
       }
 
-      spinner.start(colorize(message))
+      context.print.pipe()
       context.spinner.isActive = true
+      context.spinner.message = ''
+      context.spinner.message = message || context.i18n('context.loading')
 
-      return contextSpinner(context)
+      let spinnerIndex: number = 0
+      context.spinner.intervalID = setInterval(() => {
+        console.log(
+          LINE_UP,
+          LINE_START,
+          LINE_CLEAR,
+          context.state.emojis.spinner[spinnerIndex],
+          SPACER,
+          context.spinner.message,
+        )
+
+        spinnerIndex = (spinnerIndex + 1) % context.state.emojis.spinner.length
+      }, 1e3 / 4)
+
+      context.spinner.timeoutID = setTimeout(() => {
+        context.spinner.isActive = false
+        return clearInterval(context.spinner.intervalID)
+      }, timeout)
     },
-    stop: (message = ''): Based.Context.Spinner => {
+    stop: (message = '') => {
       if (!context.spinner.isActive) {
-        return contextSpinner(context)
+        return
       }
 
-      message = message || '<dim>│</dim>'
+      clearInterval(context.spinner.intervalID)
+      clearTimeout(context.spinner.timeoutID)
 
-      spinner.stop(`${colorize(message)}`)
       context.spinner.isActive = false
-
-      return contextSpinner(context)
+      context.spinner.message = message
+      console.log(
+        LINE_UP,
+        LINE_CLEAR,
+        LINE_UP,
+        context.spinner.message,
+        LINE_NEW,
+      )
     },
   }
 }

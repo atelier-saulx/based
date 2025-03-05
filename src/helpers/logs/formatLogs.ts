@@ -1,5 +1,5 @@
 import { format, isAfter, isBefore, isWithinInterval, toDate } from 'date-fns'
-import { colorize, logViewerDateAndTime } from '../../shared/index.js'
+import { logViewerDateAndTime } from '../../shared/index.js'
 
 const thresholdMessageLength: number = 4
 
@@ -26,9 +26,7 @@ const templateMessage = (
     return ''
   }
 
-  return colorize(
-    `<reset><gray>[${format(timestamp, logViewerDateAndTime)}]</gray> ${labels.join(' ')}\n${message.trim()}\n</reset>`,
-  )
+  return `<reset><gray>[${format(timestamp, logViewerDateAndTime)}]</gray> ${labels.join(' ')}\n${message.trim()}\n</reset>`
 }
 
 const isToBeFiltered = (

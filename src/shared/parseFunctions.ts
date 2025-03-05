@@ -71,7 +71,7 @@ export const parseFunctions = async (
   // handle schema
   if (schema) {
     const schemaPayload = parseSchema(configBundles, schema)
-    context.print.info(
+    context.print.log(
       `<blue>schema</blue> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
     )
   }
@@ -86,7 +86,7 @@ export const parseFunctions = async (
       const type = config.type || 'function'
       const name = config.name || ''
       const file = rel(path)
-      context.print.info(
+      context.print.log(
         `⚒️ <magenta>${type}</magenta> ${name} <i>${access}</i> <dim>${file}</dim>`,
       )
 

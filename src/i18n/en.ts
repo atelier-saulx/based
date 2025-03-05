@@ -32,8 +32,8 @@ export default {
         {
           parameter: '--display <level>',
           description:
-            'Sets the logging level for the CLI output (available levels: verbose / info / success / warning / error / silent).',
-          default: 'info',
+            'Sets the logging level for the CLI output (available levels: log / verbose / debug / silent).',
+          default: 'log',
         },
         {
           parameter: '-y, --yes',
@@ -94,8 +94,8 @@ export default {
         authByEmail:
           'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>...',
         authByState: 'Authorizing your email <b>${email}</b>...',
-        success: "<b>Email verified. Welcome, let's rock!</b> 🔥",
-        welcomeBack: "<b>Welcome back! Let's rock!</b> 🔥",
+        success: "Email verified. Welcome, <b>${user}</b>. Let's rock!",
+        welcomeBack: "Welcome back, <b>${user}</b>! Let's rock!",
         error: 'Was not possible to autenticate your user. ${error}',
       },
     },
@@ -686,6 +686,7 @@ export default {
     project: '<dim>Project:</dim> <b>${project}</b>',
     env: '<dim>Env:</dim> <b>${env}</b>',
     apiKey: '<dim>API Key:</dim> <b>${apiKey}</b>',
+    loading: 'Loading...',
     input: {
       enterToSkip: '<dim>(ENTER to skip)</dim>',
       skip: '<dim>(S to skip)</dim>',
@@ -737,11 +738,6 @@ export default {
       project: 'the Project',
       connecting: 'Connecting to ${target}...',
       connected: 'Connected to ${target}.',
-    },
-    authenticateUser: {
-      loading:
-        'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>.',
-      success: "<b>Email verified. Welcome, let's rock!</b> 🔥",
     },
   },
 } as const

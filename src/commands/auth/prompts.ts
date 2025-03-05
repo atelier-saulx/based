@@ -139,8 +139,8 @@ export const projectSelect =
     if (options.length === 1) {
       context.print
         .pipe()
-        .info(`You only have one project for the org <b>${org}</b>.`, true)
-        .info(`Project selected: <b>${input}</b>.`, true)
+        .log(`You only have one project for the org <b>${org}</b>.`)
+        .log(`Project selected: <b>${input}</b>.`)
         .pipe()
     }
 
@@ -194,11 +194,11 @@ export const envSelect =
     if (options.length === 1) {
       context.print
         .pipe()
-        .info(
+        .log(
           `You only have one env for project <b>${project}</b>, and it has the same name as your branch <b>${branch}</b>.`,
           true,
         )
-        .info(`Deploying by #branch: <b>${branch}</b>.`, true)
+        .log(`Deploying by #branch: <b>${branch}</b>.`, true)
         .pipe()
     }
 

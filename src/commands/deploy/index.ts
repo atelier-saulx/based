@@ -91,14 +91,13 @@ export const invalidate = async (
   } else if (!warned.has(fileName)) {
     context.print.warning(
       `<red>missing type "${typeName}" in function "${config.name}" of type "${config.type}"</red> <dim>${rel(fileName)}</dim>`,
-      true,
     )
 
     warned.add(fileName)
   }
 
   if (!hasExport) {
-    context.print.warning(`<red>nothing exported in: ${fileName}</red>`, true)
+    context.print.warning(`<red>nothing exported in: ${fileName}</red>`)
     return true
   }
 }
@@ -148,14 +147,10 @@ const queuedFnDeploy = queued(
         .catch((error) => {
           context.print.warning(
             `<red>Could not save sourcemap for: ${config.name} ${error.message}</red>`,
-            true,
           )
         })
     } else {
-      context.print.warning(
-        '<red>No dist id returned from set-function</red>',
-        true,
-      )
+      context.print.warning('<red>No dist id returned from set-function</red>')
     }
 
     return { distId }
@@ -212,7 +207,7 @@ export const parseFunctions = async (
 
   switch (display) {
     case 'silent':
-    case 'info':
+    case 'log':
       debug = false
       break
     default:
@@ -246,14 +241,14 @@ export const parseFunctions = async (
 
   if (!configs.length) {
     const err = `No ${functions ? 'matching ' : ''}function configs found`
-    context.print.warning(`<yellow>${err}</yellow>`, true)
+    context.print.warning(`<yellow>${err}</yellow>`)
     throw new Error(err)
   }
 
   // handle schema
   if (schema) {
     const schemaPayload = parseSchema(configBundles, schema)
-    context.print.info(
+    context.print.log(
       `<blueBright><b>[schema]</b></blueBright> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
       '<blueBright>◆</blueBright>',
     )
@@ -281,7 +276,7 @@ export const parseFunctions = async (
           ? 'authorize'
           : config.name
       const file = rel(path)
-      context.print.info(
+      context.print.log(
         `<secondary>${type.padEnd(9)}</secondary> <dim>|</dim> <b>${name.padEnd(functionsNameWidth)}</b> <dim>|</dim> ${access} <dim>${file}</dim>`,
         '<secondary>◆</secondary>',
       )
@@ -312,7 +307,6 @@ export const parseFunctions = async (
       if (existingPath) {
         context.print.warning(
           `<red>Found multiple configs for "${config.name}"</red>`,
-          true,
         )
 
         return true
@@ -321,7 +315,6 @@ export const parseFunctions = async (
       if (!index) {
         context.print.warning(
           `<red>Could not find index.ts or index.js for "${config.name}"</red>`,
-          true,
         )
 
         return true
@@ -331,7 +324,6 @@ export const parseFunctions = async (
         if (!config.main) {
           context.print.warning(
             `<red>No "main" field defined for "${config.name}" of type "app"</red>`,
-            true,
           )
 
           return true
@@ -358,16 +350,14 @@ export const parseFunctions = async (
         if (outsideRootFile) {
           context.print.warning(
             `<red>invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}</red>`,
-            true,
           )
 
           return true
         }
 
         if (!matched.length) {
-          context.print.info(
+          context.print.log(
             `<red>invalid "fields" defined for "${config.name}" - no files matched</red>`,
-            true,
           )
 
           return true
@@ -387,7 +377,7 @@ export const parseFunctions = async (
   const cancelled = invalids.find(Boolean)
 
   if (cancelled) {
-    throw context.print.fail(context.i18n('methods.aborted'), true)
+    throw context.print.error(context.i18n('methods.aborted'))
   }
 
   const replaceBasedConfigPlugin = ({ cloud, url }): Plugin => ({
@@ -399,9 +389,9 @@ export const parseFunctions = async (
 
       build.onLoad({ filter: /.*/, namespace: 'replace-based' }, async () => {
         if (cloud || !url) {
-          await context.print
+          context.print
             .pipe()
-            .info(
+            .log(
               '<b><blue>◉</blue>  Connecting your project to your cloud functions instead of the your local Based Dev Server.</b>',
             )
             .pipe()
@@ -417,9 +407,9 @@ export const parseFunctions = async (
 
         const contents = `export default ${JSON.stringify({ url })};`
 
-        await context.print
+        context.print
           .pipe()
-          .info(
+          .log(
             '<b><blue>◉</blue>  Connecting your project to your local functions instead of the cloud.</b>',
           )
           .pipe()
@@ -435,7 +425,7 @@ export const parseFunctions = async (
   const introFunctions = async () =>
     onChange
       ? context.print.intro('<dim>Bundling your functions...</dim>').pipe()
-      : context.print.info(
+      : context.print.log(
           '<dim><blue>◉</blue>  Bundling your functions...</dim>',
         )
 
@@ -444,7 +434,7 @@ export const parseFunctions = async (
       ? context.print.intro(
           '<dim>Bundling your assets and dependencies...</dim>',
         )
-      : context.print.info(
+      : context.print.log(
           '<dim><blue>◉</blue>  Bundling your assets and dependencies...</dim>',
         )
 
@@ -500,9 +490,9 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      process.on('SIGINT', () => {
-        context.print.pipe().fail(context.i18n('methods.aborted'))
-      })
+      // process.on('SIGINT', () => {
+      //   context.print.pipe().error(context.i18n('methods.aborted'))
+      // })
       const context: AppContext = AppContext.getInstance(program)
       await context.getProgram()
       const basedClient = await context.getBasedClient()
@@ -529,7 +519,7 @@ export const deploy = async (program: Command) => {
 
       async function update(err) {
         if (err) {
-          context.print.warning(`<red>${err}</red>`, true)
+          context.print.warning(`<red>${err}</red>`)
           return
         }
 
@@ -551,7 +541,7 @@ export const deploy = async (program: Command) => {
               .get('project')
               .call('db:set-schema', schemaPayload)
 
-            context.print.success(text(), true)
+            context.print.success(text())
           }
         }
 
@@ -606,14 +596,14 @@ export const deploy = async (program: Command) => {
                 destUrl,
               )
 
-              context.spinner.text(text(++uploading))
+              context.spinner.message = text(++uploading)
 
               assetsMap[path] = destUrl
               assetsMap[fileName] = destUrl
             }),
           )
 
-          context.print.success(text(), true)
+          context.print.success(text())
         }
 
         // deploys
@@ -675,7 +665,7 @@ export const deploy = async (program: Command) => {
                 sourcemap,
               )
 
-              context.spinner.text(text(++deploying))
+              context.spinner.message = text(++deploying)
 
               const { path = `/${config.name}`, public: isPublic } = config
 
@@ -687,7 +677,7 @@ export const deploy = async (program: Command) => {
 
           if (logs.some(Boolean)) {
             context.print
-              .success(text(), true)
+              .success(text())
               .line()
               .intro(
                 `Your application is now ${pc.bold('LIVE')} at these URLs:`,
@@ -696,7 +686,7 @@ export const deploy = async (program: Command) => {
 
             for (const log of logs) {
               if (log) {
-                context.print.info(log, true)
+                context.print.log(log, true)
               }
             }
 
@@ -704,7 +694,7 @@ export const deploy = async (program: Command) => {
           } else {
             context.print
               .line()
-              .success(text(), true)
+              .success(text())
               .outro('<b>The deployment is complete.</b>')
           }
         }

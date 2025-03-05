@@ -54,6 +54,5 @@ export const setMake = async (context: AppContext) => {
 
   context.print.success(
     context.i18n('commands.backups.subCommands.make.methods.success'),
-    true,
   )
 }

@@ -11,7 +11,7 @@ export const extractZipEntry = async (
 ): Promise<boolean> => {
   try {
     if (!existsSync(sourcePath)) {
-      context.print.fail(context.i18n('errors.915'))
+      context.print.error(context.i18n('errors.915'))
       return false
     }
 
@@ -23,7 +23,7 @@ export const extractZipEntry = async (
     )
 
     if (!filteredEntries.length) {
-      context.print.fail(context.i18n('errors.916'))
+      context.print.error(context.i18n('errors.916'))
       return false
     }
 
@@ -41,7 +41,7 @@ export const extractZipEntry = async (
 
     return true
   } catch (error) {
-    context.print.fail(context.i18n('errors.902', error))
+    context.print.error(context.i18n('errors.902', error))
 
     return false
   }

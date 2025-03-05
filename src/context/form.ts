@@ -10,8 +10,6 @@ import {
   text,
 } from '@clack/prompts'
 import type { AppContext } from '../context/index.js'
-import { LINE_START } from '../shared/constants.js'
-import { colorize } from '../shared/index.js'
 
 type Validate = (value: string | string[]) => string | undefined
 
@@ -140,7 +138,7 @@ export function contextForm(context: AppContext): FormMaker {
       const { header, footer, cancelMessage, ...rest } = fields
 
       if (header) {
-        context.print.info(`●  ${colorize(header)}`)
+        context.print.log(`●  ${header}`)
       }
 
       const result = await group(rest as PromptGroup<unknown>, {
@@ -149,7 +147,7 @@ export function contextForm(context: AppContext): FormMaker {
       })
 
       if (footer) {
-        outro(colorize(footer))
+        outro(footer)
       }
 
       return result as Promise<Record<string, object>>
@@ -172,7 +170,7 @@ export function contextForm(context: AppContext): FormMaker {
         }
 
         if (!isValid && required) {
-          log.error(colorize(validationResult))
+          log.error(validationResult)
         }
       }
 
@@ -185,10 +183,10 @@ export function contextForm(context: AppContext): FormMaker {
       }
 
       const result = (await text({
-        message: colorize(message),
+        message,
         placeholder,
         initialValue: input,
-        validate: (input) => colorize(validator(input, validation, skip)),
+        validate: (input) => validator(input, validation, skip),
       })) as string
 
       if (isCancel(result)) {
@@ -234,7 +232,7 @@ export function contextForm(context: AppContext): FormMaker {
         }
 
         if (typeof validationResult === 'string') {
-          log.error(colorize(validationResult))
+          log.error(validationResult)
         }
       }
 
@@ -243,7 +241,7 @@ export function contextForm(context: AppContext): FormMaker {
       }
 
       const result = (await select({
-        message: colorize(message),
+        message,
         options,
       })) as string
 
@@ -270,7 +268,7 @@ export function contextForm(context: AppContext): FormMaker {
         }
 
         if (typeof validationResult === 'string') {
-          log.error(colorize(validationResult))
+          log.error(validationResult)
         }
       }
 
@@ -283,7 +281,7 @@ export function contextForm(context: AppContext): FormMaker {
       }
 
       const result = (await multiselect({
-        message: colorize(message),
+        message,
         options,
         initialValues: input,
         required: !skip,

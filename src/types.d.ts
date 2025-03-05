@@ -86,13 +86,18 @@ declare global {
           }
 
       type State = {
-        display: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'
+        display?: 'log' | 'verbose' | 'debug' | 'silent'
         emojis: {
-          warning: string
+          intro: string
+          outro: string
+          step: string
+          line: string
+          pipe: string
+          log: string
           success: string
           error: string
-          info: string
-          pipe: string
+          warning: string
+          spinner: string[]
         }
       }
 
@@ -108,29 +113,25 @@ declare global {
         }
       }
 
-      interface Spinner {
-        start: (message?: string, timeout?: number) => this
-        stop: (message?: string) => this
-        text: (message?: string) => this
+      type Spinner = {
+        start: (message?: string, timeout?: number) => void
+        stop: (message?: string) => void
+        message: string
         isActive: boolean
+        timeoutID: NodeJS.Timeout
+        intervalID: NodeJS.Timeout
       }
-
-      type PrintMethodBase = (message: string, icon?: boolean | string) => this
 
       interface Print {
         intro: (message: string) => this
         outro: (message: string) => this
-        step: PrintMethodBase
-        info: PrintMethodBase
-        success: PrintMethodBase
-        warning: PrintMethodBase
-        fail: (
-          message: string,
-          icon?: boolean | string,
-          killCode?: number | false,
-        ) => void
-        line: () => this
+        step: (message: string) => this
         pipe: (message?: string) => this
+        log: (message: string, icon?: boolean | string) => this
+        success: (message: string) => this
+        error: (message: string) => this
+        warning: (message: string) => this
+        line: () => this
         separator: (width?: number) => this
       }
 

@@ -1,128 +1,141 @@
-import { intro, outro } from '@clack/prompts'
 import { colorize } from '../shared/colorize.js'
-import { LINE_NEW, LINE_START, LINE_UP } from '../shared/constants.js'
+import { LINE_NEW, SPACER, isValidChar } from '../shared/constants.js'
 import type { AppContext } from './AppContext.js'
 
-// const originalStdoutWrite = process.stdout.write.bind(process.stdout)
-// const originalStderrWrite = process.stderr.write.bind(process.stderr)
+export const contextPrint = (context: AppContext): Based.Context.Print => {
+  const originalStdoutWrite = process.stdout.write.bind(process.stdout)
+  const originalStderrWrite = process.stderr.write.bind(process.stderr)
+  const originalConsoleLog = console.log
+  const global = context.get('globalOptions')
+  const isBasicLog = global?.display !== 'silent' || global?.display !== 'debug'
 
-// function formatMessage(message: string): string {
-//   const cleanMessage = message.replaceAll(/\r/g, '')
-//   return `${cleanMessage}`
-// }
-
-// process.stdout.write = ((
-//   chunk: any,
-//   encoding?: BufferEncoding,
-//   callback?: (error?: Error | null) => void,
-// ): boolean => {
-//   const str: string = typeof chunk === 'string' ? chunk : chunk.toString()
-//   const formatted = formatMessage(str)
-//   return originalStdoutWrite(formatted, encoding, callback)
-// }) as typeof process.stdout.write
-
-// process.stderr.write = ((
-//   chunk: any,
-//   encoding?: BufferEncoding,
-//   callback?: (error?: Error | null) => void,
-// ): boolean => {
-//   const str: string = typeof chunk === 'string' ? chunk : chunk.toString()
-//   const formatted = formatMessage(str)
-//   return originalStderrWrite(formatted, encoding, callback)
-// }) as typeof process.stderr.write
-
-const logBase =
-  (level: keyof Based.Context.State['emojis'], context: AppContext) =>
-  (message: string, icon: boolean | string = false) => {
-    const { display } = context.getGlobalOptions()
-
-    if (display === 'verbose' || display === level) {
-      if (icon === true) {
-        icon = context.state.emojis[level]
-      } else if (icon === false) {
-        icon = ''
-      }
-
-      if (icon !== '') {
-        icon = `${icon}  `
-      }
-
-      message = `${colorize(`${icon}${message}`)}`
-
-      if (context.spinner.isActive) {
-        context.spinner.stop(`${message}`)
-      } else {
-        console.log(message)
-      }
-    }
-
-    return contextPrint(context)
+  function stdlog(
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): any[] {
+    const str: string =
+      typeof chunk === 'string' ? chunk : JSON.stringify(chunk, null, 2)
+    const formatted = colorize(str)
+    return [formatted, encoding, callback]
   }
 
-export const contextPrint = (context: AppContext): Based.Context.Print => ({
-  intro: (message: string): Based.Context.Print => {
-    if (!message) {
+  process.stdout.write = ((
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): boolean =>
+    originalStdoutWrite(
+      ...stdlog(chunk, encoding, callback),
+    )) as typeof process.stdout.write
+
+  process.stderr.write = ((
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): boolean =>
+    originalStderrWrite(
+      ...stdlog(chunk, encoding, callback),
+    )) as typeof process.stderr.write
+
+  console.log = (...args: any[]): void => {
+    let log: string = args
+      .map((arg) => {
+        if (typeof arg !== 'string') {
+          return JSON.stringify(arg, null, 2)
+        }
+
+        return arg
+      })
+      .join('')
+
+    if (!log.length) {
+      return
+    }
+
+    if (isValidChar(log.charCodeAt(0))) {
+      log = `${context.state.emojis.log}  ${log}`
+    }
+
+    originalConsoleLog(log.trimStart().trim())
+  }
+
+  return {
+    intro: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(context.state.emojis.intro, '<gray>──</gray>', message)
+      }
       return contextPrint(context)
-    }
-
-    intro(colorize(message))
-
-    return contextPrint(context)
-  },
-  outro: (message: string): Based.Context.Print => {
-    if (!message) {
+    },
+    outro: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(context.state.emojis.outro, '<gray>──</gray>', message)
+      }
       return contextPrint(context)
-    }
-
-    outro(colorize(message))
-
-    return contextPrint(context)
-  },
-  step: logBase('info', context),
-  pipe: (message?: string): Based.Context.Print =>
-    logBase('info', context)(message ?? '', context.state.emojis.pipe),
-  info: logBase('info', context),
-  success: logBase('info', context),
-  warning: logBase('info', context),
-  fail: (
-    message: string,
-    icon: boolean | string = false,
-    killCode: number | false = 1,
-  ): void => {
-    if (message) {
-      logBase('info', context)(message, icon)
-    }
-
-    if (typeof killCode === 'number') {
-      process.exit(killCode ?? 0)
-    }
-  },
-  line: (): Based.Context.Print => {
-    const { display } = context.getGlobalOptions()
-
-    if (display === 'silent') {
+    },
+    step: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(context.state.emojis.step, SPACER, message)
+      }
       return contextPrint(context)
-    }
-
-    if (context.spinner.isActive) {
-      context.spinner.stop(`${context.state.emojis.pipe}`)
-
+    },
+    pipe: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(context.state.emojis.pipe, SPACER, message)
+      }
       return contextPrint(context)
-    }
-
-    console.info(`${LINE_NEW} `)
-
-    return contextPrint(context)
-  },
-  separator: (width: number = process.stdout.columns): Based.Context.Print => {
-    const { display } = context.getGlobalOptions()
-
-    if (display === 'silent') {
+    },
+    log: (message, icon) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        if (icon === false) {
+          console.log(context.state.emojis.pipe, SPACER, message)
+        } else if (icon && typeof icon === 'string') {
+          console.log(icon, SPACER, message)
+        } else {
+          console.log(context.state.emojis.log, SPACER, message)
+        }
+      }
       return contextPrint(context)
-    }
-
-    console.info(colorize(`<gray>${'-'.repeat(width)}</gray>`))
-
-    return contextPrint(context)
-  },
-})
+    },
+    success: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(context.state.emojis.success, SPACER, message)
+      }
+      return contextPrint(context)
+    },
+    error: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.error(context.state.emojis.error, SPACER, message)
+      }
+      return contextPrint(context)
+    },
+    warning: (message) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.warn(context.state.emojis.error, SPACER, message)
+      }
+      return contextPrint(context)
+    },
+    line: () => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(LINE_NEW)
+      }
+      return contextPrint(context)
+    },
+    separator: (width = process.stdout.columns) => {
+      context.spinner.stop()
+      if (isBasicLog) {
+        console.log(`<gray>${'─'.repeat(width)}</gray>`)
+      }
+      return contextPrint(context)
+    },
+  }
+}

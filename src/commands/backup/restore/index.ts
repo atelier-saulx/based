@@ -67,7 +67,7 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
     }
 
     if (verbose) {
-      context.print.info(`<b>Selected file:</b> <cyan>${selectedFile}</cyan>`)
+      context.print.log(`<b>Selected file:</b> <cyan>${selectedFile}</cyan>`)
     }
   }
 

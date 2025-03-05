@@ -127,10 +127,8 @@ export const contextBasedServer =
     server.on('error', (_message, data, _error) => {
       context.print
         .line()
-        .fail(
+        .error(
           `<dim><b>Based Dev Server</b> error:</dim>\n${JSON.stringify(data, null, 2)}`,
-          context.state.emojis.error,
-          false,
         )
     })
     await server.start()

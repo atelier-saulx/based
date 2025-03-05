@@ -45,20 +45,18 @@ export const backupsSummary = (
 
   if (verbose) {
     context.print
-      .info(
+      .log(
         `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases.`,
       )
-      .info(
+      .log(
         `Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
       )
 
     for (const database in values.sorted) {
-      context.print
-        .separator()
-        .info(`Database: <b><cyan>${database}</cyan></b>`)
+      context.print.separator().log(`Database: <b><cyan>${database}</cyan></b>`)
 
       for (let i = 0; i < values.sorted[database].length; i++) {
-        context.print.info(`File: <dim>${values.sorted[database][i].key}</dim>`)
+        context.print.log(`File: <dim>${values.sorted[database][i].key}</dim>`)
       }
     }
   }
@@ -80,7 +78,7 @@ const dbSelection = async ({
     db = await context.input.select('Choose database:', choices)
   } else {
     if (verbose) {
-      context.print.info(`<b>Selected database:</b> <cyan>${db}</cyan>`)
+      context.print.log(`<b>Selected database:</b> <cyan>${db}</cyan>`)
     }
   }
 
@@ -139,7 +137,7 @@ const fileSelection = async ({
   if (file) {
     if (isBackupExists(sortedBackups, file)) {
       if (verbose) {
-        context.print.info(
+        context.print.log(
           `<b>Selected file:</b> <reset><cyan>${file}</cyan></reset>`,
         )
       }
@@ -174,7 +172,7 @@ const fileSelection = async ({
     file = findLatestBackup(removeTheCurrent(sortedBackups), date)
 
     if (verbose) {
-      context.print.info(
+      context.print.log(
         `<b>Selected file:</b> <reset><cyan>${file}</cyan></reset>`,
       )
     }

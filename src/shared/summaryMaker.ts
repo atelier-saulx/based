@@ -1,6 +1,4 @@
-import { intro } from '@clack/prompts'
 import type { AppContext } from '../context/index.js'
-import { colorize } from './index.js'
 
 export const summaryMaker = async (context: AppContext, summary: string[]) => {
   const { skip } = context.getGlobalOptions()
@@ -10,12 +8,11 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
 
   for (const [index, element] of summary.entries()) {
     if (!index) {
-      intro(colorize(element))
-      context.print.pipe()
+      context.print.intro(element).pipe()
 
       continue
     }
-    context.print.info(element, true)
+    context.print.log(element, true)
   }
 
   if (!skip) {

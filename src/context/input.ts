@@ -2,7 +2,7 @@ import { confirm } from '@clack/prompts'
 import { Separator, checkbox, input, select } from '@inquirer/prompts'
 import { isValid, parse } from 'date-fns'
 import type { AppContext } from '../context/index.js'
-import { colorize, dateAndTime, dateOnly } from '../shared/index.js'
+import { dateAndTime, dateOnly } from '../shared/index.js'
 import { contextParse } from './parse.js'
 
 export function contextInput(context: AppContext): Based.Context.InputHandler {
@@ -23,7 +23,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const value: string = await input({
-        message: colorize(message),
+        message,
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
           (today && value.toLowerCase() === 't') ||
@@ -57,7 +57,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const value = await input({
-        message: colorize(message),
+        message,
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
           (now && value.toLowerCase() === 'n') ||
@@ -85,7 +85,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const prompt = input({
-        message: colorize(message),
+        message,
         required: true,
         validate: (value) =>
           (skip && value === 's') || !Number.isNaN(Number(value)),
@@ -100,7 +100,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
 
     email: async (message: string) =>
       input({
-        message: colorize(message),
+        message,
         required: true,
         validate: (email) => {
           const at: number = email.lastIndexOf('@')
@@ -117,7 +117,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       initialValue = true,
     ) => {
       const result = await confirm({
-        message: colorize(`\r<yellow>⬢</yellow>  ${message}`),
+        message: `\r<yellow>⬢</yellow>  ${message}`,
         active: positive,
         inactive: negative,
         initialValue,
@@ -143,7 +143,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       return input({
-        message: colorize(message),
+        message,
         required: true,
         default: defaultValue,
         validate: (value) => {
@@ -180,22 +180,22 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         }
 
         return {
-          name: colorize(choice.name),
-          description: colorize(choice.description),
+          name: choice.name,
+          description: choice.description,
           value: choice.value,
         }
       })
 
       if (multiSelection) {
         return checkbox({
-          message: `${colorize(message)}:`,
+          message: `${message}:`,
           choices,
           required: true,
         })
       }
 
       return select({
-        message: `${colorize(message)}:`,
+        message: `${message}:`,
         choices,
       })
     },

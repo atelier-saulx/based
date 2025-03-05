@@ -44,6 +44,6 @@ export const cli = async () => {
 
     await program.parseAsync(process.argv)
   } catch (error) {
-    context.print.fail(`<reset><red>${error}</red></reset>`, true)
+    context.print.error(`<reset><red>${error}</red></reset>`)
   }
 }

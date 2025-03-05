@@ -53,7 +53,7 @@ export const getDownload = async (
   })
 
   if (isExternalPath) {
-    context.print.info(context.i18n('alias.isExternalPath', path))
+    context.print.log(context.i18n('alias.isExternalPath', path))
   }
 
   const getPath = async () =>
@@ -77,7 +77,7 @@ export const getDownload = async (
         throw new Error(context.i18n('errors.904'))
       }
 
-      context.print.info(context.i18n('errors.904'), true)
+      context.print.log(context.i18n('errors.904'), true)
       path = ''
     }
   } while (!isValid && retry > 0)

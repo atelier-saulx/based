@@ -5,7 +5,7 @@ export const clear = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
   const basedClient = await context.getBasedClient()
 
-  context.print.info(context.i18n('methods.warning'))
+  context.print.log(context.i18n('methods.warning'))
 
   const doIt: boolean = await context.input.confirm()
 
@@ -25,7 +25,7 @@ export const clear = (program: Command) => async () => {
 
     basedClient.destroy()
     return
-  } catch (error) {
+  } catch {
     throw new Error(context.i18n('errors.910'))
   }
 }

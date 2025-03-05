@@ -104,9 +104,9 @@ export const devServer = async ({
   port?: string
   cloud?: boolean
 }) => {
-  process.on('SIGINT', () => {
-    context.print.pipe().fail(context.i18n('methods.aborted'), true)
-  })
+  // process.on('SIGINT', () => {
+  //   context.print.pipe().error(context.i18n('methods.aborted'))
+  // })
   const context: AppContext = AppContext.getInstance()
   await context.getProgram()
   const basedClient = await context.getBasedClient()
@@ -146,7 +146,7 @@ export const devServer = async ({
 
   update(null)
 
-  context.print.info(
+  context.print.log(
     `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
     '<primary>▶</primary>',
   )
@@ -292,7 +292,6 @@ export const devServer = async ({
               if (i === -1) {
                 context.print.warning(
                   '<yellow>invalid html, skip livereload tag and based opts tag</yellow>',
-                  true,
                 )
                 return html
               }

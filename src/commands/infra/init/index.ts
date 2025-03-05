@@ -72,7 +72,6 @@ export const infraInit =
 
     context.print.warning(
       context.i18n('commands.infra.subCommands.init.methods.warning'),
-      true,
     )
 
     if (!skip) {

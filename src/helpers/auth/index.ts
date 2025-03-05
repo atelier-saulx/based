@@ -1,6 +1,5 @@
 import type { BasedClient } from '@based/client'
 import type { AppContext } from '../../context/index.js'
-import { LINE_UP } from '../../shared/constants.js'
 
 export const authByState = async (
   context: AppContext,
@@ -9,10 +8,8 @@ export const authByState = async (
 ): Promise<Based.Auth.AuthenticatedUser | false> => {
   try {
     await basedClient.setAuthState(state)
-
-    context.spinner.stop(LINE_UP)
   } catch ({ error }) {
-    context.print.line().info(`<red>${error}</red>`, context.state.emojis.error)
+    context.print.line().log(`<red>${error}</red>`, context.state.emojis.error)
 
     return false
   }
@@ -47,11 +44,11 @@ export const authByEmail = async (
 
     context.print
       .line()
-      .success(context.i18n('commands.auth.methods.success'), true)
+      .success(context.i18n('commands.auth.methods.success', email))
   } catch (error) {
     context.print
       .line()
-      .info(
+      .log(
         `<red>${context.i18n('errors.401', error.message.split(']').pop().trim())}</red>`,
         context.state.emojis.error,
       )
