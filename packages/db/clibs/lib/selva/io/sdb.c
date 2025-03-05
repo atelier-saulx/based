@@ -55,6 +55,7 @@
 
 #define SDB_VERSION 1
 #define SDB_COMPRESSION_LEVEL 1
+#define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
@@ -550,7 +551,7 @@ int sdb_read_header(struct selva_io *io)
         io->flags |= _SELVA_IO_FLAGS_EN_COMPRESS;
     }
 
-#if 0
+#if SDB_LOG_VERSIONS
     fprintf(stderr, "running: %.*s created_with: %.*s updated_with: %.*s\n",
             SELVA_DB_VERSION_SIZE, selva_db_version_info.running,
             SELVA_DB_VERSION_SIZE, selva_db_version_info.created_with,
