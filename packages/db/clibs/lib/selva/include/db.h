@@ -98,8 +98,14 @@ struct SelvaTypeEntry {
         struct SelvaTypeCursorsByNodeId by_node_id; /*!< Lists of cursors indexed by node_id. i.e. find all cursors pointing to a certain node. */
         size_t nr_cursors; /*!< Total count of active cursors allocated. */
     } cursors;
-    const char *schema_buf;
+
+    /**
+     * Copy of the original selvaBuffer tha was used to initialize this type.
+     * Alloc & free with selva_jemalloc.
+     */
+    char *schema_buf __pcounted_by(schema_len);
     size_t schema_len;
+
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 } __attribute__((aligned(65536)));
 
