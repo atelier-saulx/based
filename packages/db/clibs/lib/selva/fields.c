@@ -1683,9 +1683,9 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     const struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
-    if (unlikely(fs->field >= fields->nr_fields)) {
-        return (struct SelvaFieldsPointer){};
-    }
+#if 0
+    assert(fs->field < fields->nr_fields);
+#endif
 
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
