@@ -51,6 +51,12 @@
  *    | XX XX XX XX XX XX XX XX | over uncompressed data.
  *    | XX XX XX XX XX XX XX XX | binary
  * ```
+ *
+ * Reading the created and updated version with hexdump:
+ * ```
+ * hexdump -s 8 -n 40 -e '40/1 "%c"' common.sdb
+ * hexdump -s 48 -n 40 -e '40/1 "%c"' common.sdb
+ * ```
  */
 
 #define SDB_VERSION 1
