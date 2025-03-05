@@ -8,11 +8,11 @@ JEMALLOC_CONFIG := --with-version=VERSION \
 				   --disable-cxx \
 				   --enable-xmalloc \
 				   --disable-initial-exec-tls \
-				   --enable-prof \
 				   --with-jemalloc-prefix=selva_ \
 				   --with-private-namespace=selva_ \
 				   --with-install-suffix=_selva \
 				   --with-malloc-conf=xmalloc:true
+				   #--enable-prof
 JEMALLOC_CFLAGS := -std=gnu99 -fPIC -Wall -Wno-missing-braces -pipe -g3 -O3 -funroll-loops
 JEMALLOC_LDFLAGS := $(LDFLAGS)
 
