@@ -24,7 +24,7 @@ fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
         return errors.SelvaError.DB_NOT_CREATED;
     }
 
-    try errors.selva(selva.selva_db_schema_create(ctx.selva, typeId, schema.ptr, schema.len));
+    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
 
     return null;
 }
