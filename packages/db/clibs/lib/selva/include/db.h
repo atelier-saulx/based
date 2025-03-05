@@ -68,6 +68,7 @@ struct SelvaTypeBlock {
  */
 struct SelvaTypeEntry {
     node_type_t type;
+
     /**
      * Node blocks in this type.
      */
@@ -85,6 +86,7 @@ struct SelvaTypeEntry {
     } *aliases __pcounted_by(ns.nr_aliases);
     size_t nr_nodes; /*!< Number of nodes of this type. */
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
+
     /**
      * Max node inserted so far.
      * Initially NULL but also NULLed if the node is deleted.
@@ -92,6 +94,7 @@ struct SelvaTypeEntry {
      * RB_INSERT_NEXT() almost always as node_id normally grows monotonically.
      */
     struct SelvaNode *max_node;
+
     struct {
         struct ida *ida; /*! Id allocator for cursors. */
         struct SelvaTypeCursorById by_cursor_id; /*!< Cursors indexed by cursor_id. */
