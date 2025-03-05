@@ -202,7 +202,7 @@ export const parseFunctions = async (
     schema = null
   }
 
-  context.print.intro('Preparing your functions').pipe()
+  context.print.intro('Loading your functions').pipe()
 
   let debug: boolean = false
 
@@ -296,7 +296,7 @@ export const parseFunctions = async (
     }),
   )
 
-  context.print.pipe().outro('Functions ready').line()
+  context.print.pipe().outro('Functions loaded').line()
 
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
@@ -385,7 +385,7 @@ export const parseFunctions = async (
     throw context.print.error(context.i18n('methods.aborted'))
   }
 
-  context.print.intro('Bundling').pipe()
+  context.print.intro('Bundling your project').pipe()
 
   const introFunctions = async () =>
     context.print.log(
@@ -398,8 +398,6 @@ export const parseFunctions = async (
       context.i18n('methods.bundling.assetsLabel', browserEntryPoints.length),
       '<secondary>◆</secondary>',
     )
-
-  const basedFilePlugin = replaceBasedConfigPlugin(context)
 
   // build the functions
   const [_logFunctions, nodeBundles, _logAssets, browserBundles] =
@@ -424,11 +422,11 @@ export const parseFunctions = async (
           minify: isProduction,
           bundle: true,
           plugins: [
-            ...browserEsbuildPlugins,
-            basedFilePlugin({
+            replaceBasedConfigPlugin(context)({
               cloud: connectToCloud,
               url: staticPath,
             }),
+            ...browserEsbuildPlugins,
           ],
           define: {
             global: 'window',

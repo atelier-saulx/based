@@ -3,9 +3,7 @@ import pc from 'picocolors'
 const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
 
 export function colorizerLength(text: string): number {
-  return text.replace(tagRegex, (_, __, content) => {
-    return content
-  }).length
+  return text.replace(tagRegex, (_, __, content) => content).length
 }
 
 export function colorize(content: string): string
@@ -22,7 +20,7 @@ export function colorize(content: string | string[]): string | string[] {
 
 function processText(text: string): string {
   const result: string[] = []
-  const stack: { tag: string; start: number; acc: string[] }[] = []
+  const stack: { tag: string; acc: string[] }[] = []
   let i = 0
   let acc: string[] = []
 
@@ -35,7 +33,6 @@ function processText(text: string): string {
         break
       }
 
-      acc.push(text.substring(i, i))
       const tagContent = text.substring(i + 1, closeBracket)
 
       if (tagContent[0] === '/') {
@@ -43,28 +40,31 @@ function processText(text: string): string {
         const last = stack.pop()
 
         if (last && last.tag === tagName) {
-          const innerText = last.acc.join('') + acc.join('')
-          acc = []
+          const innerText = acc.join('')
           const transformed = transformTag(tagName, innerText)
 
-          if (stack.length > 0) {
-            stack[stack.length - 1].acc.push(transformed)
-          } else {
-            result.push(transformed)
-          }
+          acc = last.acc
+          acc.push(transformed)
 
           i = closeBracket + 1
-        }
-      } else {
-        stack.push({ tag: tagContent, start: i, acc: acc.slice() })
 
-        acc = []
+          continue
+        }
+
         i = closeBracket + 1
+
+        continue
       }
-    } else {
-      acc.push(text[i])
-      i++
+
+      stack.push({ tag: tagContent, acc: acc })
+      acc = []
+      i = closeBracket + 1
+
+      continue
     }
+
+    acc.push(text[i])
+    i++
   }
 
   result.push(acc.join(''))
@@ -79,6 +79,7 @@ const formatter =
   (input: string) => {
     const string = `${input}`
     const index = string.indexOf(close, open.length)
+
     return ~index
       ? open + replaceClose(string, close, replace, index) + close
       : open + string + close

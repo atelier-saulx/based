@@ -739,10 +739,10 @@ export default {
       success: 'User: <b>${email}</b> logged in successfully!',
     },
     bundling: {
-      functionsLabel_one: '${number} function',
-      functionsLabel_many: '${number} functions',
-      assetsLabel_one: '${number} asset',
-      assetsLabel_many: '${number} assets',
+      functionsLabel_one: 'Function: ${number}',
+      functionsLabel_many: 'Functions: ${number}',
+      assetsLabel_one: 'Asset: ${number}',
+      assetsLabel_many: 'Assets: ${number}',
     },
     plugins: {
       cloudFunctions: 'Connecting to your cloud functions.',

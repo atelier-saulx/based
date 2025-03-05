@@ -6,20 +6,24 @@ export const replaceBasedConfigPlugin =
   ({ cloud, url }): Plugin => ({
     name: 'replace-based-config',
     setup(build) {
+      if (cloud || !url) {
+        context.print.log(
+          context.i18n('methods.plugins.cloudFunctions'),
+          '<secondary>◆</secondary>',
+        )
+      } else {
+        context.print.log(
+          context.i18n('methods.plugins.localFunctions'),
+          '<secondary>◆</secondary>',
+        )
+      }
+
       build.onResolve({ filter: /[\\\/]based\.(js|ts|json)$/ }, (args) => {
         return { path: args.path, namespace: 'replace-based' }
       })
 
       build.onLoad({ filter: /.*/, namespace: 'replace-based' }, async () => {
         if (cloud || !url) {
-          context.print
-            .pipe()
-            .log(
-              context.i18n('methods.plugins.cloudFunctions'),
-              '<secondary>◆</secondary>',
-            )
-            .pipe()
-
           const { cluster, org, env, project } = await context.getProgram()
           const contents = `export default ${JSON.stringify({ cluster, org, env, project })};`
 
@@ -30,14 +34,6 @@ export const replaceBasedConfigPlugin =
         }
 
         const contents = `export default ${JSON.stringify({ url })};`
-
-        context.print
-          .pipe()
-          .log(
-            context.i18n('methods.plugins.localFunctions'),
-            '<secondary>◆</secondary>',
-          )
-          .pipe()
 
         return {
           contents,
