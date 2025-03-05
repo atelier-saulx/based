@@ -1,11 +1,18 @@
 import { colorize } from '../shared/colorize.js'
-import { LINE_NEW, SPACER, isValidChar } from '../shared/constants.js'
+import {
+  LINE_CLEAR,
+  LINE_NEW,
+  SPACER,
+  isValidChar,
+} from '../shared/constants.js'
 import type { AppContext } from './AppContext.js'
 
 export const contextPrint = (context: AppContext): Based.Context.Print => {
   const originalStdoutWrite = process.stdout.write.bind(process.stdout)
   const originalStderrWrite = process.stderr.write.bind(process.stderr)
   const originalConsoleLog = console.log
+  const originalConsoleWarn = console.warn
+  const originalConsoleError = console.error
   const global = context.get('globalOptions')
   const isBasicLog = global?.display !== 'silent' || global?.display !== 'debug'
 
@@ -17,6 +24,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     const str: string =
       typeof chunk === 'string' ? chunk : JSON.stringify(chunk, null, 2)
     const formatted = colorize(str)
+
     return [formatted, encoding, callback]
   }
 
@@ -38,7 +46,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
       ...stdlog(chunk, encoding, callback),
     )) as typeof process.stderr.write
 
-  console.log = (...args: any[]): void => {
+  function logger(...args: any[]): string {
     let log: string = args
       .map((arg) => {
         if (typeof arg !== 'string') {
@@ -50,28 +58,41 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
       .join('')
 
     if (!log.length) {
-      return
+      return ''
     }
 
     if (isValidChar(log.charCodeAt(0))) {
       log = `${context.state.emojis.log}  ${log}`
     }
 
-    originalConsoleLog(log.trimStart().trim())
+    return LINE_CLEAR + log.trimStart().trim()
   }
+
+  console.log = (...args: any[]): void => originalConsoleLog(logger(...args))
+  console.warn = (...args: any[]): void => originalConsoleWarn(logger(...args))
+  console.error = (...args: any[]): void =>
+    originalConsoleError(logger(...args))
 
   return {
     intro: (message) => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.log(context.state.emojis.intro, '<gray>──</gray>', message)
+        console.log(
+          context.state.emojis.intro,
+          context.state.emojis.line,
+          message,
+        )
       }
       return contextPrint(context)
     },
     outro: (message) => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.log(context.state.emojis.outro, '<gray>──</gray>', message)
+        console.log(
+          context.state.emojis.outro,
+          context.state.emojis.line,
+          message,
+        )
       }
       return contextPrint(context)
     },
@@ -112,7 +133,11 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     error: (message) => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.error(context.state.emojis.error, SPACER, message)
+        console.error(
+          context.state.emojis.error,
+          SPACER,
+          `<red>${message}</red>`,
+        )
       }
       return contextPrint(context)
     },

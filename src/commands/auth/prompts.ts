@@ -35,9 +35,11 @@ export const userSelect =
     basedClient: BasedClient,
     users: Based.Auth.AuthenticatedUser[],
     input: string,
+    lastUser?: string,
   ) =>
   async () => {
     if (users?.length) {
+      const { cluster } = await context.getProgram()
       const itsNotMe = context.i18n('commands.auth.methods.newUser')
 
       const usersOptions = [
@@ -62,7 +64,24 @@ export const userSelect =
         return newUserText(context, basedClient)()
       }
 
-      const authorized = (await authByState(
+      let authorized: false | Based.Auth.AuthenticatedUser
+
+      if (result.email === lastUser) {
+        authorized = await authByEmail(
+          context,
+          basedClient,
+          cluster,
+          result.email,
+        )
+
+        if (!authorized) {
+          return newUserText(context, basedClient)()
+        }
+
+        return authorized
+      }
+
+      authorized = (await authByState(
         context,
         basedClient,
         result,

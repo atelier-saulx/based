@@ -73,6 +73,15 @@ export default {
       description: 'Disconnect your user locally.',
       example: 'npx @based/cli disconnect',
       options: [],
+      methods: {
+        connectedUser: 'The user <b>${email}</b> is currently connected.',
+        success: 'You are now disconnected. See you soon!',
+        error:
+          "I couldn't find any user to disconnect. Please log in first to start using <b>Based</b>.",
+      },
+      prompts: {
+        confirmation: 'Do you want to disconnect the account?',
+      },
     },
     auth: {
       description: 'Authorize your user in the Based Cloud.',
@@ -729,14 +738,11 @@ export default {
       email: 'Enter your email address:',
       success: 'User: <b>${email}</b> logged in successfully!',
     },
-    logout: {
-      success: 'You are now disconnected. See you soon!',
-    },
     hubConnection: {
       cluster: 'Based Cluster',
       environment: 'the Environment',
       project: 'the Project',
-      connecting: 'Connecting to ${target}...',
+      connecting: 'ConnectSSSSSSSSSSSSSSSSSSSSSing to ${target}...',
       connected: 'Connected to ${target}.',
     },
   },

@@ -121,6 +121,9 @@ export const devServer = async ({
   const devServerWSPath = `ws://${ip}:${devPort}`
   const publicPath = `http://${ip}:${devPort}/static/`
 
+  process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
+  process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
+
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
     context,
     functions,

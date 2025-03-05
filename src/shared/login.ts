@@ -106,7 +106,7 @@ export const connectToHub = async (
   return basedClient
 }
 
-export const newLogin = async (email?: string): Promise<Based.API.Client> => {
+export const login = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
 
@@ -123,8 +123,10 @@ export const newLogin = async (email?: string): Promise<Based.API.Client> => {
 
   let lastSession = getLastSession(users)
   let authenticatedUser: Based.Auth.AuthenticatedUser
+  let lastEmail: string = ''
 
   if (lastSession) {
+    lastEmail = lastSession.email
     lastSession = await authByState(context, basedClientAdmin, lastSession)
 
     if (lastSession) {
@@ -134,7 +136,7 @@ export const newLogin = async (email?: string): Promise<Based.API.Client> => {
 
   if (!authenticatedUser) {
     const form = await context.form.group({
-      user: userSelect(context, basedClientAdmin, users, email),
+      user: userSelect(context, basedClientAdmin, users, email, lastEmail),
     })
 
     authenticatedUser = form.user as Based.Auth.AuthenticatedUser
@@ -234,12 +236,14 @@ export const logout = async () => {
 
   if (lastSession) {
     context.print.log(
-      `The user <b>${lastSession.email}</b> is currently connected.`,
-      true,
+      context.i18n(
+        'commands.disconnect.methods.connectedUser',
+        lastSession.email,
+      ),
     )
 
     const logout = await confirm({
-      message: 'Do you want to disconnect the account?',
+      message: context.i18n('commands.disconnect.prompts.confirmation'),
     })
 
     if (logout) {
@@ -247,15 +251,13 @@ export const logout = async () => {
 
       await saveAsFile(autenticatedUsers, LOCAL_AUTH_INFO, 'json')
 
-      context.print.success(context.i18n('methods.logout.success'))
+      context.print.success(context.i18n('commands.disconnect.methods.success'))
     } else {
       context.print.error(context.i18n('methods.aborted'))
     }
   }
 
   if (!lastSession) {
-    context.print.error(
-      "I couldn't find any user to disconnect. Please log in first to start using <b>Based</b>.",
-    )
+    context.print.error(context.i18n('commands.disconnect.methods.error'))
   }
 }

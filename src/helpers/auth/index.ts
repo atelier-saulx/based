@@ -8,8 +8,12 @@ export const authByState = async (
 ): Promise<Based.Auth.AuthenticatedUser | false> => {
   try {
     await basedClient.setAuthState(state)
-  } catch ({ error }) {
-    context.print.line().log(`<red>${error}</red>`, context.state.emojis.error)
+  } catch (error) {
+    if (!error.token) {
+      context.print.line().error(context.i18n('errors.402'))
+    } else {
+      context.print.line().error(error)
+    }
 
     return false
   }
@@ -31,6 +35,7 @@ export const authByEmail = async (
 ): Promise<Based.Auth.AuthenticatedUser | false> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
 
+  context.print.pipe()
   context.spinner.start(
     context.i18n('commands.auth.methods.authByEmail', email, code),
   )
@@ -43,15 +48,12 @@ export const authByEmail = async (
     })
 
     context.print
-      .line()
       .success(context.i18n('commands.auth.methods.success', email))
-  } catch (error) {
-    context.print
       .line()
-      .log(
-        `<red>${context.i18n('errors.401', error.message.split(']').pop().trim())}</red>`,
-        context.state.emojis.error,
-      )
+  } catch (error) {
+    context.print.error(
+      `<red>${context.i18n('errors.401', error.message.split(']').pop().trim())}</red>`,
+    )
 
     return false
   }

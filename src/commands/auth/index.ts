@@ -1,6 +1,6 @@
 import type { Command } from 'commander'
 import { AppContext } from '../../context/index.js'
-import { newLogin } from '../../shared/index.js'
+import { login } from '../../shared/index.js'
 
 export const auth = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
@@ -10,7 +10,7 @@ export const auth = async (program: Command): Promise<void> => {
     const { email } = args
 
     try {
-      const { destroy } = await newLogin(email)
+      const { destroy } = await login(email)
 
       destroy()
     } catch (error) {

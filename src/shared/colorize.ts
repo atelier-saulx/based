@@ -21,6 +21,8 @@ const replaceClose = (string, close, replace, index) => {
   return result + string.substring(cursor)
 }
 
+const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
+
 export function colorize(content: string): string
 export function colorize(content: string[]): string[]
 export function colorize(content: string | string[]): string | string[] {
@@ -42,8 +44,6 @@ export function colorize(content: string | string[]): string | string[] {
     reset: (text: string) => `\u001b[0m${text}`,
   }
 
-  const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
-
   const processTags = (text: string): string => {
     return text.replace(tagRegex, (_, tagName, content) => {
       const transform = tagFunctions[tagName]
@@ -61,4 +61,10 @@ export function colorize(content: string | string[]): string | string[] {
   }
 
   return processTags(content) as string
+}
+
+export function colorizerLength(text: string): number {
+  return text.replace(tagRegex, (_, __, content) => {
+    return content
+  }).length
 }

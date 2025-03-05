@@ -1,12 +1,13 @@
+import readline from 'node:readline'
 import type { AppContext } from '../context/index.js'
 import {
   CONNECTION_TIMEOUT,
   LINE_CLEAR,
-  LINE_NEW,
   LINE_START,
   LINE_UP,
   SPACER,
 } from '../shared/constants.js'
+import { colorizerLength } from '../shared/index.js'
 
 export function contextSpinner(context: AppContext): Based.Context.Spinner {
   return {
@@ -28,21 +29,24 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
 
       let spinnerIndex: number = 0
       context.spinner.intervalID = setInterval(() => {
-        console.log(
-          LINE_UP,
-          LINE_START,
-          LINE_CLEAR,
-          context.state.emojis.spinner[spinnerIndex],
-          SPACER,
-          context.spinner.message,
-        )
+        const message =
+          context.state.emojis.spinner[spinnerIndex] +
+          SPACER +
+          context.spinner.message
+        const messageLength = colorizerLength(message)
+        const terminalLength = process.stdout.columns
+        const LINES_UP: string[] = new Array(
+          Math.ceil(messageLength / terminalLength),
+        ).fill(LINE_UP)
+
+        console.log(...LINES_UP, LINE_CLEAR, message)
 
         spinnerIndex = (spinnerIndex + 1) % context.state.emojis.spinner.length
       }, 1e3 / 4)
 
       context.spinner.timeoutID = setTimeout(() => {
-        context.spinner.isActive = false
-        return clearInterval(context.spinner.intervalID)
+        context.print.error(context.i18n('errors.408'))
+        process.exit(408)
       }, timeout)
     },
     stop: (message = '') => {
@@ -55,13 +59,13 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
 
       context.spinner.isActive = false
       context.spinner.message = message
-      console.log(
-        LINE_UP,
-        LINE_CLEAR,
-        LINE_UP,
-        context.spinner.message,
-        LINE_NEW,
-      )
+      const messageLength = colorizerLength(context.spinner.message)
+      const terminalLength = process.stdout.columns
+      const LINES_UP: string[] = new Array(
+        Math.ceil(messageLength || (terminalLength + 1) / terminalLength),
+      ).fill(LINE_UP)
+
+      console.log(...LINES_UP, LINE_START, context.spinner.message)
     },
   }
 }
