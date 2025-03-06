@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { buffer } from 'node:stream/consumers'
 import type { BuildFailure, BundleResult, OutputFile } from '@based/bundle'
+import type { BasedAuthorizeFunctionConfig } from '@based/functions'
 import type { BasedServer } from '@based/server'
 import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
@@ -363,6 +364,16 @@ export const devServer = async ({
             return `${html.substring(0, i)}${liveReloadScript(
               lrPort,
             )}${basedOptsScript(client.opts)}${html.substring(i)}`
+          },
+        }
+      } else if (
+        (config.type as BasedAuthorizeFunctionConfig['type']) === 'authorize'
+      ) {
+        fnUpdates[config.name || 'authorize'] = {
+          ...config,
+          name: config.name || 'authorize',
+          fn(...args) {
+            return defaultFn(...args)
           },
         }
       } else {

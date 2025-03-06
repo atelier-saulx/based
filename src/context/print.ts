@@ -52,15 +52,17 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     (...args: any[]): string => {
       let log: string = args
         .map((arg) => {
-          if (
-            typeof arg !== 'string' &&
-            typeof arg !== 'number' &&
-            arg !== undefined
-          ) {
-            return JSON.stringify(arg, null, 2)
-              .split(LINE_NEW)
-              .map((line) => context.state.emojis.pipe + SPACER + line)
-              .join(LINE_NEW)
+          if (typeof arg !== 'string' && typeof arg !== 'number' && arg) {
+            const log = JSON.stringify(arg, null, 2)
+
+            if (log) {
+              return log
+                .split(LINE_NEW)
+                .map((line) => context.state.emojis.pipe + SPACER + line)
+                .join(LINE_NEW)
+            }
+
+            return log
           }
 
           return arg
@@ -71,7 +73,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
         return ''
       }
 
-      if (isValidChar(log.charCodeAt(0))) {
+      if (isValidChar(log.charCodeAt(0)) || log[0] === '[') {
         log = `${icon || context.state.emojis.log}  ${log}`
       }
 
