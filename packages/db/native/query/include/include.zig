@@ -126,19 +126,7 @@ pub fn getFields(
 
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
 
-        if (prop == t.Prop.CARDINALITY) {
-            if (isEdge) {
-                // do this later!
-            } else {
-                fieldSchema = try db.getFieldSchema(field, typeEntry);
-                const stored = selva.selva_fields_get_selva_string(node, fieldSchema);
-                if (stored == null) {
-                    continue :includeField;
-                }
-                const countDistinct = selva.hll_count(@ptrCast(stored));
-                value = countDistinct[0..4];
-            }
-        } else if (isEdge) {
+        if (isEdge) {
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
