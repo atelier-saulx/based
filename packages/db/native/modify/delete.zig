@@ -7,10 +7,9 @@ const ModifyCtx = Modify.ModifyCtx;
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
-    if (ctx.db.initialized == false) {
+    if (ctx.typeSortIndex == null) {
         return 0;
     }
-
     if (ctx.field == 0) {
         var currentData: ?[]u8 = null;
         var it = ctx.typeSortIndex.?.main.iterator();
