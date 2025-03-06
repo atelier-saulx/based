@@ -67,7 +67,8 @@
     (void *)((uintptr_t)(ptag) & ~PTAG_MASK)
 #else
 #define PTAG_GETP(ptag) \
-    (void *)(((intptr_t)(ptag) << 16) >> 16)
+    (void *)(int *)(((uintptr_t)(ptag) & ((1ull << 48) - 1)) | \
+                ~(((uintptr_t)(ptag) & (1ull << 47)) - 1));
 #endif
 
 #endif
