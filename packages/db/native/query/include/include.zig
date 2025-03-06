@@ -122,9 +122,8 @@ pub fn getFields(
             includeIterator += 1;
         }
 
-        var value: []u8 = undefined;
-
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+        var value: []u8 = undefined;
 
         if (prop == t.Prop.CARDINALITY) {
             if (isEdge) {
