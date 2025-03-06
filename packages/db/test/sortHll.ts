@@ -25,7 +25,7 @@ await test('sortCardinality', async (t) => {
     },
   })
 
-  let test = await db.create('article', {
+  let c1 = await db.create('article', {
     count: [
       'myCoolValue',
       'myCoolValue',
@@ -48,7 +48,7 @@ await test('sortCardinality', async (t) => {
     brazilians: 'marco',
   })
 
-  let myArticle = await db.create('article', {
+  let c2 = await db.create('article', {
     count: 'myCoolValue',
     derp: 100,
     // Cardinality is being updated without being set/create
@@ -94,7 +94,7 @@ await test('sortCardinality', async (t) => {
     'sort a not included cardinality field',
   )
 
-  await db.update('article', myArticle, {
+  await db.update('article', c2, {
     count: 'lala',
   })
 
@@ -142,7 +142,7 @@ await test('sortCardinality', async (t) => {
   }
 
   console.time('1M Distinct Brazos update')
-  await db.update('article', myArticle, {
+  await db.update('article', c2, {
     brazilians: brazos,
   })
   console.timeEnd('1M Distinct Brazos update')
@@ -182,7 +182,7 @@ await test('sortCardinality', async (t) => {
     'update 1M distinct values, exclude, sort desc',
   )
 
-  db.delete('article', test)
+  db.delete('article', c1)
 
   await db.drain()
 
@@ -199,10 +199,6 @@ await test('sortCardinality', async (t) => {
         id: 2,
         derp: 100,
         count: 2,
-      },
-      {
-        id: 1,
-        count: 0,
       },
     ],
     'delete a register',
