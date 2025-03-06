@@ -1,6 +1,5 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 
 await test('dependent', async (t) => {
   const db = new BasedDb({
