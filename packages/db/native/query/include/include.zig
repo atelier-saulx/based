@@ -106,8 +106,9 @@ pub fn getFields(
         }
 
         const field: u8 = @intFromEnum(op);
-
         var prop: t.Prop = undefined;
+        var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+        var value: []u8 = undefined;
 
         // MAIN
         if (field == 0) {
@@ -121,10 +122,6 @@ pub fn getFields(
             prop = @enumFromInt(operation[0]);
             includeIterator += 1;
         }
-
-        var value: []u8 = undefined;
-
-        var fieldSchema: *const selva.SelvaFieldSchema = undefined;
 
         if (prop == t.Prop.CARDINALITY) {
             if (isEdge) {
