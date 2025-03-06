@@ -14,7 +14,9 @@ import { ModifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 export function writeText(
-  value: { [k: string]: Parameters<typeof writeString>[1] },
+  value:
+    | { [k: string]: Parameters<typeof writeString>[1] }
+    | Parameters<typeof writeString>[1],
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -35,21 +37,26 @@ export function writeText(
   }
 
   // const len = value?.length
-  if (value === null) {
+  // think about this
+  if (value === null && !res.locale) {
     if (modifyOp === UPDATE) {
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
-    } else {
-      return
     }
+    return
   }
 
   // todo proper fallback as well
-  if (value && typeof value !== 'object') {
+  if ((value && typeof value !== 'object') || value === null) {
     const locale = res.locale ?? langCodesMap.get('en') // TODO: Add def lang option...
+    if (value == null) {
+      // @ts-ignore
+      value = ''
+    }
+    // @ts-ignore
     const err = writeString(res.locale, value, ctx, def, t, res.tmpId, modifyOp)
     if (modifyOp === CREATE) {
       const index = t.prop * (def.localeSize + 1)
@@ -60,13 +67,18 @@ export function writeText(
     }
     return err
   } else {
+    // @ts-ignore
     for (const lang in value) {
       const langC: Uint8Array =
         def.seperateTextSort.localeStringToIndex.get(lang)
       if (!langC) {
         return new ModifyError(t, lang, 'Invalid locale')
       }
-      const s = value[lang]
+      let s = value[lang]
+      if (s == null) {
+        // @ts-ignore
+        s = ''
+      }
       const err = writeString(
         langC[1] as LangCode,
         s,
