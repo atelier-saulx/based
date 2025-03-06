@@ -8,7 +8,7 @@ export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
   const schema = db.schemaTypesParsed[type]
   const separate = schema.separate
-  // pretty slow actually
+  // TODO: pretty slow actually
   if (separate) {
     const size = 12 + separate.length * 12
     if (ctx.len + size > ctx.max) {

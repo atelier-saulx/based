@@ -38,6 +38,7 @@ map[BINARY] = (ctx, val, def) => {
   ctx.buf.set(buf, ctx.len)
   ctx.len += buf.byteLength
 }
+
 map[STRING] = (ctx, val, def) => {
   if (typeof val !== 'string') {
     if (val !== null) {
@@ -55,6 +56,7 @@ map[STRING] = (ctx, val, def) => {
   ctx.buf[ctx.len++] = size
   ctx.len += ctx.buf.write(val, ctx.len, 'utf8')
 }
+
 map[BOOLEAN] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
@@ -67,6 +69,7 @@ map[BOOLEAN] = (ctx, val, def) => {
     return new ModifyError(def, val)
   }
 }
+
 map[ENUM] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
@@ -79,6 +82,7 @@ map[ENUM] = (ctx, val, def) => {
     return new ModifyError(def, val)
   }
 }
+
 map[NUMBER] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
@@ -88,6 +92,7 @@ map[NUMBER] = (ctx, val, def) => {
   }
   ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
 }
+
 map[TIMESTAMP] = (ctx, val, def) => {
   const parsedValue = convertToTimestamp(val)
   if (typeof parsedValue !== 'number') {
@@ -98,6 +103,7 @@ map[TIMESTAMP] = (ctx, val, def) => {
   }
   ctx.len = ctx.buf.writeDoubleLE(parsedValue, ctx.len)
 }
+
 map[UINT32] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
@@ -110,6 +116,7 @@ map[UINT32] = (ctx, val, def) => {
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
 }
+
 map[UINT16] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
@@ -120,6 +127,7 @@ map[UINT16] = (ctx, val, def) => {
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
+
 map[UINT8] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
@@ -131,7 +139,9 @@ map[UINT8] = (ctx, val, def) => {
 }
 
 map[INT32] = map[UINT32]
+
 map[INT16] = map[UINT16]
+
 map[INT8] = map[UINT8]
 
 export const writeFixedValue = (

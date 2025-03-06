@@ -48,6 +48,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
     }
     if (ctx.fieldType == types.Prop.ALIAS) {
         db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {

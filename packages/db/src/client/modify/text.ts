@@ -1,9 +1,17 @@
 import { langCodesMap, LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
-import { ModifyOp, ModifyErr, CREATE } from './types.js'
+import {
+  ModifyOp,
+  ModifyErr,
+  CREATE,
+  UPDATE,
+  RANGE_ERR,
+  DELETE,
+} from './types.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import { writeString } from './string.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
+import { setCursor } from './setCursor.js'
 
 export function writeText(
   value: { [k: string]: Parameters<typeof writeString>[1] },
@@ -11,8 +19,34 @@ export function writeText(
   def: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
+  const isBuffer = value instanceof Buffer
+
+  if (
+    typeof value !== 'string' &&
+    value !== null &&
+    !isBuffer &&
+    value &&
+    typeof value !== 'object'
+  ) {
+    return new ModifyError(t, value)
+  }
+
+  // const len = value?.length
+  if (value === null) {
+    if (modifyOp === UPDATE) {
+      if (ctx.len + 11 > ctx.max) {
+        return RANGE_ERR
+      }
+      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+      ctx.buf[ctx.len++] = DELETE
+    } else {
+      return
+    }
+  }
+
   // todo proper fallback as well
   if (value && typeof value !== 'object') {
     const locale = res.locale ?? langCodesMap.get('en') // TODO: Add def lang option...

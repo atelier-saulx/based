@@ -554,10 +554,9 @@ await test('sort', async (t) => {
     },
     types: {
       dialog: {
-        props: {
-          fun: {
-            type: 'text',
-          },
+        snurf: 'string',
+        fun: {
+          type: 'text',
         },
       },
     },
@@ -567,26 +566,34 @@ await test('sort', async (t) => {
 
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
+    snurf: '1',
   })
 
   const id2 = await db.create('dialog', {
     fun: { en: '2 en', fi: '2' },
+    snurf: '2',
   })
 
   const id3 = await db.create('dialog', {
     fun: { en: '1 en', fi: '3' },
+    snurf: '3',
   })
 
   const id4 = await db.create('dialog', {})
 
   const id5 = await db.create('dialog', {
     fun: { it: 'derp' },
+    snurf: '4',
   })
 
-  await db.query('dialog').locale('fi').get().inspect(20)
-
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+    await db
+      .query('dialog')
+      .include('fun')
+      .locale('fi')
+      .sort('fun', 'desc')
+      .get()
+      .toObject(),
     [
       {
         id: 3,
@@ -611,16 +618,30 @@ await test('sort', async (t) => {
     ],
   )
 
-  deepEqual(await db.query('dialog').sort('fun.fi', 'desc').get().toObject(), [
-    { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
-    { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
-    { id: 1, fun: { en: '3 en', fi: '1', it: '' } },
-    { id: 4, fun: { en: '', it: '', fi: '' } },
-    { id: 5, fun: { en: '', it: 'derp', fi: '' } },
-  ])
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('fun')
+      .sort('fun.fi', 'desc')
+      .get()
+      .toObject(),
+    [
+      { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
+      { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
+      { id: 1, fun: { en: '3 en', fi: '1', it: '' } },
+      { id: 4, fun: { en: '', it: '', fi: '' } },
+      { id: 5, fun: { en: '', it: 'derp', fi: '' } },
+    ],
+  )
 
   deepEqual(
-    await db.query('dialog').locale('en').sort('fun', 'desc').get().toObject(),
+    await db
+      .query('dialog')
+      .locale('en')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get()
+      .toObject(),
     [
       { id: 1, fun: '3 en' },
       { id: 2, fun: '2 en' },
@@ -635,7 +656,13 @@ await test('sort', async (t) => {
   })
 
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get()
+      .toObject(),
     [
       {
         id: 3,
@@ -663,10 +690,14 @@ await test('sort', async (t) => {
   db.delete('dialog', id5)
   await db.drain()
 
-  await db.query('dialog').locale('fi').get().inspect(20)
-
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('fun')
+      .sort('fun', 'desc')
+      .get()
+      .toObject(),
     [
       {
         id: 3,
@@ -687,13 +718,49 @@ await test('sort', async (t) => {
     ],
   )
 
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .sort('snurf', 'desc')
+      .get()
+      .toObject(),
+    [
+      { id: 3, fun: '3', snurf: '3' },
+      { id: 2, fun: '2', snurf: '2' },
+      { id: 1, fun: '1', snurf: '1' },
+      { id: 4, snurf: '', fun: '' },
+    ],
+  )
+
   db.update('dialog', id1, {
     fun: null,
   })
 
   await db.drain()
 
-  await db.query('dialog').locale('fi').get().inspect()
+  db.update('dialog', id1, {
+    snurf: null,
+  })
+
+  await db.drain()
+
+  // await db.query('dialog').locale('fi').get().inspect(10)
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .sort('snurf', 'desc')
+      .get()
+      .toObject(),
+    [
+      { id: 3, fun: '3', snurf: '3' },
+      { id: 2, fun: '2', snurf: '2' },
+      { id: 1, fun: '', snurf: '' },
+      { id: 4, snurf: '', fun: '' },
+    ],
+  )
 
   // deepEqual(
   //   await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject(),
