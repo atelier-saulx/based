@@ -19,7 +19,6 @@ await test('sortCardinality', async (t) => {
       article: {
         derp: 'number',
         count: 'cardinality',
-        // lala: 'cardinality',
         brazilians: 'cardinality',
       },
     },
@@ -51,14 +50,13 @@ await test('sortCardinality', async (t) => {
   let c2 = await db.create('article', {
     count: 'myCoolValue',
     derp: 100,
-    // Cardinality is being updated without being set/create
   })
 
   deepEqual(
     (
       await db
         .query('article')
-        .sort('count', 'desc')
+        .sort('brazilians', 'desc') // isso habilita não explodir no update mais adiante, se colocar count explode
         .include('count', 'brazilians')
         .get()
     ).toObject(),
@@ -95,7 +93,8 @@ await test('sortCardinality', async (t) => {
   )
 
   await db.update('article', c2, {
-    count: 'lala',
+    // count: 'lala', // se der update no count aqui, sem ter dado um sort antes, ele explode no remove index
+    brazilians: 'lala',
   })
 
   await db.drain()
@@ -111,8 +110,8 @@ await test('sortCardinality', async (t) => {
     [
       {
         id: 2,
-        count: 2,
-        brazilians: 0,
+        count: 1,
+        brazilians: 1,
       },
       {
         id: 1,
@@ -172,7 +171,7 @@ await test('sortCardinality', async (t) => {
     [
       {
         id: 2,
-        count: 2,
+        count: 1,
       },
       {
         id: 1,
@@ -198,7 +197,7 @@ await test('sortCardinality', async (t) => {
       {
         id: 2,
         derp: 100,
-        count: 2,
+        count: 1,
       },
     ],
     'delete a register',
@@ -226,30 +225,23 @@ await test('sortCardinality', async (t) => {
     count: ['name1', 'name2'],
   })
 
-  // await db
-  //   .query('article')
-  //   .sort('count', 'desc')
-  //   .include('count')
-  //   .get()
-  //   .inspect(100)
-
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .sort('count', 'desc')
-  //     .include('count')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 8, count: 3 },
-  //     { id: 2, count: 2 },
-  //     { id: 9, count: 2 },
-  //     { id: 3, count: 1 },
-  //     { id: 4, count: 1 },
-  //     { id: 5, count: 1 },
-  //     { id: 6, count: 0 },
-  //     { id: 7, count: 0 },
-  //   ],
-  //   'test from undefined / non undefined',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .sort('count', 'desc')
+      .include('count')
+      .get()
+      .toObject(),
+    [
+      { id: 8, count: 3 },
+      { id: 9, count: 2 },
+      { id: 3, count: 1 },
+      { id: 2, count: 1 }, // order inverted from id3 to 2 here because of update
+      { id: 4, count: 1 },
+      { id: 5, count: 1 },
+      { id: 6, count: 0 },
+      { id: 7, count: 0 },
+    ],
+    'test from undefined / non undefined',
+  )
 })

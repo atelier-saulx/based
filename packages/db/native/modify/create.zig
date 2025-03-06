@@ -48,8 +48,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 selva.hll_add(hll, hash);
                 i += 8;
             }
-            const slice = @as([*]u8, undefined)[0..0];
-            addSortIndexOnCreation(ctx, slice) catch null;
+            const newCount = selva.hll_count(hll);
+            addSortIndexOnCreation(ctx, newCount[0..4]) catch null;
             return len * 8;
         },
         else => {
