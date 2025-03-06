@@ -56,7 +56,7 @@ await test('sortCardinality', async (t) => {
     (
       await db
         .query('article')
-        .sort('brazilians', 'desc') // isso habilita não explodir no update mais adiante, se colocar count explode
+        .sort('brazilians', 'desc')
         .include('count', 'brazilians')
         .get()
     ).toObject(),
@@ -93,8 +93,7 @@ await test('sortCardinality', async (t) => {
   )
 
   await db.update('article', c2, {
-    // count: 'lala', // se der update no count aqui, sem ter dado um sort antes, ele explode no remove index
-    brazilians: 'lala',
+    count: 'lala',
   })
 
   await db.drain()
@@ -110,8 +109,8 @@ await test('sortCardinality', async (t) => {
     [
       {
         id: 2,
-        count: 1,
-        brazilians: 1,
+        count: 2,
+        brazilians: 0,
       },
       {
         id: 1,
@@ -171,7 +170,7 @@ await test('sortCardinality', async (t) => {
     [
       {
         id: 2,
-        count: 1,
+        count: 2,
       },
       {
         id: 1,
@@ -197,7 +196,7 @@ await test('sortCardinality', async (t) => {
       {
         id: 2,
         derp: 100,
-        count: 1,
+        count: 2,
       },
     ],
     'delete a register',
@@ -234,9 +233,9 @@ await test('sortCardinality', async (t) => {
       .toObject(),
     [
       { id: 8, count: 3 },
+      { id: 2, count: 2 },
       { id: 9, count: 2 },
       { id: 3, count: 1 },
-      { id: 2, count: 1 }, // order inverted from id3 to 2 here because of update
       { id: 4, count: 1 },
       { id: 5, count: 1 },
       { id: 6, count: 0 },
