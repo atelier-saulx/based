@@ -113,23 +113,43 @@ export const contextBasedServer =
       },
     })
 
-    if (!cloud) {
-      const { BasedDb } = await import('@based/db')
-      const basedDb = new BasedDb({
-        path: join(process.cwd(), 'tmp'),
-      })
+    context.print.line().intro(context.i18n('methods.database.name')).pipe()
 
-      await basedDb.start()
-      server.client.db ??= {}
-      server.client.db.v2 = basedDb
+    if (!cloud) {
+      try {
+        const { BasedDb } = await import('@based/db')
+        const basedDb = new BasedDb({
+          path: join(process.cwd(), 'tmp'),
+        })
+
+        await basedDb.start()
+
+        server.client.db ??= {}
+        server.client.db.v2 = basedDb
+
+        context.print.step(
+          context.i18n(
+            'methods.database.instance',
+            context.i18n('methods.database.running'),
+          ),
+        )
+      } catch (error) {
+        context.print.error(context.i18n('methods.database.instance', error))
+      }
+    } else {
+      context.print.step(
+        context.i18n(
+          'methods.database.instance',
+          context.i18n('methods.database.notRunning'),
+        ),
+      )
     }
 
     server.on('error', (_message, data, _error) => {
       context.print
         .line()
-        .error(
-          `<dim><b>Based Dev Server</b> error:</dim>\n${JSON.stringify(data, null, 2)}`,
-        )
+        .error(context.i18n('methods.server.name'))
+        .log(data, ' ')
     })
     await server.start()
 

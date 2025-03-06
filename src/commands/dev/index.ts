@@ -2,7 +2,7 @@ import { networkInterfaces } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { buffer } from 'node:stream/consumers'
-import type { OutputFile } from '@based/bundle'
+import type { BuildFailure, BundleResult, OutputFile } from '@based/bundle'
 import type { BasedServer } from '@based/server'
 import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
@@ -140,23 +140,71 @@ export const devServer = async ({
 
   update(null)
 
-  context.print.log(
-    `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
-    '<primary>▶</primary>',
-  )
+  const watching = update ? 'Waiting for changes...' : 'Not watching files'
 
-  async function update(err: any) {
+  context.print
+    .line()
+    .intro('<primary><b>Based Dev Server</b></primary>')
+    .pipe()
+    .step(`<dim><b>Local</b>: http://localhost:${devPort}</dim>`)
+    .step(`<dim><b>Public</b>: http://${ip}:${devPort}</dim>`)
+    .pipe()
+    .step(`<dim>${watching}</dim>`)
+
+  async function update(err: BuildFailure | null, result?: BundleResult) {
     let reloadClients = hadError
 
     if (
       err ||
-      nodeBundles.error ||
-      nodeBundles.result.errors ||
-      browserBundles.error ||
-      browserBundles.result.errors
+      browserBundles?.error?.errors.length ||
+      result?.error?.errors.length
     ) {
+      const errors = result?.error?.errors || browserBundles?.error?.errors
+
+      if (errors.length) {
+        context.print
+          .line()
+          .intro(`<red>${context.i18n('methods.bundling.errorDetected')}</red>`)
+
+        for (const error of errors) {
+          if (error.location) {
+            context.print
+              .pipe()
+              .log(`<b>${error.text}</b>`, context.state.emojis.error)
+
+            if (error.location.lineText) {
+              context.print.pipe().pipe(`"${error.location.lineText}"`).pipe()
+            }
+
+            context.print.log(
+              context.i18n('methods.bundling.error.file', error.location.file),
+              context.state.emojis.error,
+            )
+
+            if (error.location.line && error.location.column) {
+              context.print.log(
+                context.i18n(
+                  'methods.bundling.error.location',
+                  error.location.line,
+                  error.location.column,
+                ),
+                context.state.emojis.error,
+              )
+            }
+
+            if (error.pluginName) {
+              context.print.log(
+                context.i18n('methods.bundling.error.plugin', error.pluginName),
+                context.state.emojis.error,
+              )
+            }
+          }
+        }
+      }
+
       reloadClients = true
       hadError = true
+
       return
     }
 
@@ -207,6 +255,21 @@ export const devServer = async ({
         )
       } else {
         checksum = hash([js.hash, config])
+      }
+
+      if (result?.updates.length) {
+        context.print
+          .line()
+          .intro(context.i18n('methods.bundling.changeDetected'))
+
+        for (const [type, file] of result.updates) {
+          context.print
+            .pipe()
+            .log(
+              context.i18n(`methods.bundling.types.${type}`, file),
+              '<secondary>◆</secondary>',
+            )
+        }
       }
 
       if (checksums[config.name] === checksum) {

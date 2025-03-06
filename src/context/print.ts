@@ -2,6 +2,7 @@ import { colorize } from '../shared/colorize.js'
 import {
   LINE_CLEAR,
   LINE_NEW,
+  LINE_START,
   SPACER,
   isValidChar,
 } from '../shared/constants.js'
@@ -13,8 +14,9 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
   const originalConsoleLog = console.log
   const originalConsoleWarn = console.warn
   const originalConsoleError = console.error
-  const global = context.get('globalOptions')
+  const global = context.program?.opts()
   const isBasicLog = global?.display !== 'silent' || global?.display !== 'debug'
+  const isDebug = global?.display === 'debug'
 
   function stdlog(
     chunk: any,
@@ -23,9 +25,8 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
   ): any[] {
     const str: string =
       typeof chunk === 'string' ? chunk : JSON.stringify(chunk, null, 2)
-    const formatted = colorize(str)
 
-    return [formatted, encoding, callback]
+    return [colorize(str), encoding, callback]
   }
 
   process.stdout.write = ((
@@ -51,8 +52,15 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     (...args: any[]): string => {
       let log: string = args
         .map((arg) => {
-          if (typeof arg !== 'string') {
+          if (
+            typeof arg !== 'string' &&
+            typeof arg !== 'number' &&
+            arg !== undefined
+          ) {
             return JSON.stringify(arg, null, 2)
+              .split(LINE_NEW)
+              .map((line) => context.state.emojis.pipe + SPACER + line)
+              .join(LINE_NEW)
           }
 
           return arg
@@ -67,7 +75,14 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
         log = `${icon || context.state.emojis.log}  ${log}`
       }
 
-      return LINE_CLEAR + log.trimStart().trim()
+      let message: string = log.trimStart().trim()
+
+      if (isDebug) {
+        const debug = isDebug ? `${LINE_CLEAR}${LINE_START}[debug] ` : ''
+        message = debug + message
+      }
+
+      return LINE_CLEAR + LINE_START + message
     }
 
   console.log = (...args: any[]): void =>

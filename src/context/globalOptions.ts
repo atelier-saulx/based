@@ -25,6 +25,8 @@ export function contextGlobalOptions(): Based.Context.GlobalOptions<'skip'> {
     ...(file !== undefined && { file }),
   }
 
+  process.env.BASED_CLI_LOG_LEVEL = display
+
   this.set('globalOptions', globalOptions)
 
   return globalOptions

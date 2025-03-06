@@ -1,12 +1,12 @@
 # @based/cli
 
 Streamline your app development with our cli.
-**Based** offers a real-time database and makes deploying to the cloud fast and easy,
+**Based.io** offers a real-time database and makes deploying to the cloud fast and easy,
 letting you focus on building your app without the hassle.
 
 ## Simple usage
 
-_Example:_ `npx @based/cli [commands][sub-commands][options]`
+_Example:_ `npx @based/cli@alpha [commands][sub-commands][options]`
 
 When you created your account on Based.io, you also needed to create a cluster or an organization,
 name your project, and choose an environment to start developing your app.
@@ -26,7 +26,7 @@ at the root of your project, which should look something like this:
 export default {
   org: 'my-org',
   project: 'my-project',
-  env: 'production', // or any other name you have chosen
+  env: '#branch', // or any other name you have chosen
 }
 ```
 
@@ -49,6 +49,7 @@ there is no need to pass any of the authentication parameters when executing CLI
 they are all optional.
 However, if you provide any of the authentication parameters in a project that has the `based.json` file,
 the information passed as a parameter will take precedence over the file.
+
 
 ## Commands
 

@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative } from 'node:path'
 import {
   type BasedBundleOptions,
+  type BuildFailure,
   type BundleResult,
   type OutputFile,
   type Plugin,
@@ -12,7 +13,6 @@ import type { BasedFunctionConfig } from '@based/functions'
 import { hash, hashCompact } from '@saulx/hash'
 import { queued } from '@saulx/utils'
 import type { Command } from 'commander'
-import type { BuildFailure } from 'esbuild'
 import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
 import mimeTypes from 'mime-types'
@@ -296,8 +296,6 @@ export const parseFunctions = async (
     }),
   )
 
-  context.print.pipe().outro('Functions loaded').line()
-
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
   const nodeEntryPoints: string[] = schema ? [schema] : []
@@ -385,7 +383,7 @@ export const parseFunctions = async (
     throw context.print.error(context.i18n('methods.aborted'))
   }
 
-  context.print.intro('Bundling your project').pipe()
+  context.print.line().intro(context.i18n('methods.bundling.project')).pipe()
 
   const introFunctions = async () =>
     context.print.log(
@@ -394,10 +392,18 @@ export const parseFunctions = async (
     )
 
   const introAssets = async () =>
-    context.print.log(
-      context.i18n('methods.bundling.assetsLabel', browserEntryPoints.length),
-      '<secondary>◆</secondary>',
-    )
+    context.print
+      .log(
+        context.i18n('methods.bundling.assetsLabel', browserEntryPoints.length),
+        '<secondary>◆</secondary>',
+      )
+      .log(
+        context.i18n(
+          'methods.bundling.pluginLabel',
+          browserEsbuildPlugins.length,
+        ),
+        '<secondary>◆</secondary>',
+      )
 
   // build the functions
   const [_logFunctions, nodeBundles, _logAssets, browserBundles] =

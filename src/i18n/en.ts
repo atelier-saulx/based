@@ -739,14 +739,37 @@ export default {
       success: 'User: <b>${email}</b> logged in successfully!',
     },
     bundling: {
-      functionsLabel_one: 'Function: ${number}',
-      functionsLabel_many: 'Functions: ${number}',
-      assetsLabel_one: 'Asset: ${number}',
-      assetsLabel_many: 'Assets: ${number}',
+      project: 'Bundling your project',
+      functionsLabel_one: '<b>Function</b>: ${number}',
+      functionsLabel_many: '<b>Functions</b>: ${number}',
+      assetsLabel_one: '<b>Asset</b>: ${number}',
+      assetsLabel_many: '<b>Assets</b>: ${number}',
+      pluginLabel: '<b>Plugins</b>: ${number}',
+      changeDetected: 'Detected changes, rebundling files',
+      errorDetected: 'Error detected while bundling',
+      error: {
+        file: '<b>File</b>: ${file}',
+        location: '<b>Location</b>: Ln ${line}, Col ${column}',
+        plugin: '<b>Plugin</b>: ${name}',
+      },
+      types: {
+        update: '<b>Updated</b>: ${file}',
+        delete: '<b>Deleted</b>: ${file}',
+        create: '<b>Created</b>: ${file}',
+      },
+    },
+    server: {
+      name: '<dim><b>Based Dev Server</b> error:</dim>',
+    },
+    database: {
+      name: '<primary><b>Based DB</b></primary>',
+      instance: '<dim><b>Local instance</b>: ${status}</dim>',
+      running: 'Running',
+      notRunning: 'Not running',
     },
     plugins: {
-      cloudFunctions: 'Connecting to your cloud functions.',
-      localFunctions: 'Connecting to your local functions.',
+      cloudFunctions: 'Connecting your app to your cloud functions...',
+      localFunctions: 'Connecting your app to your local functions...',
     },
     hubConnection: {
       cluster: 'Based Cluster',
