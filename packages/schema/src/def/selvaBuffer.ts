@@ -61,9 +61,10 @@ selvaTypeMap[JSON] = 11
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
-function blockCapacity(blockCapacity: number): Buffer {
-  const buf = Buffer.allocUnsafe(4)
-  buf.writeInt32LE(blockCapacity)
+function blockCapacity(blockCapacity: number): Uint8Array {
+  const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
+  const view = new DataView(buf.buffer)
+  view.setUint32(0, blockCapacity, true)
   return buf
 }
 
@@ -84,19 +85,23 @@ const propDefBuffer = (
   const selvaType = selvaTypeMap[type]
 
   if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
-    const buf = Buffer.allocUnsafe(3)
+    const buf = new Uint8Array(3)
+    const view = new DataView(buf.buffer)
+
     buf[0] = selvaType
-    buf.writeUint16LE(prop.len, 1)
+    view.setUint16(1, prop.len, true)
     return [...buf.values()]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf: Buffer = Buffer.allocUnsafe(9)
+    const buf = new Uint8Array(9)
+    const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
+
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
-    buf.writeUInt16LE(dstType.id, 2) // dst_node_type
-    buf.writeUint32LE(0, 5) // schema_len
+    view.setUint16(2, dstType.id, true) // dst_node_type
+    view.setUint32(5, 0, true) // schema_len
     if (!isEdge) {
       prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
@@ -108,11 +113,11 @@ const propDefBuffer = (
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
         eschema.unshift(0, 0, 0, 0, sepPropCount(props), 0)
-        buf.writeUint32LE(eschema.length, 5)
+        view.setUint32(5, eschema.length, true)
       }
     }
 
-    return [...buf.values(), ...eschema]
+    return [...buf, ...eschema]
   } else if (
     type === STRING ||
     type === BINARY ||
@@ -127,12 +132,7 @@ const propDefBuffer = (
 }
 
 // todo rewrite
-export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
-  if (typeof Buffer === 'undefined') {
-    // TMP
-    return []
-  }
-
+export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }): ArrayBuffer[] {
   return Object.values(schema).map((t, i) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []
@@ -146,8 +146,8 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
     rest.sort((a, b) => a.prop - b.prop)
-    return Buffer.from([
-      ...blockCapacity(t.blockCapacity).values(),
+    return Uint8Array.from([
+      ...blockCapacity(t.blockCapacity),
       1 + sepPropCount(props),
       1 + refFields,
       ...propDefBuffer(schema, {
@@ -155,6 +155,6 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
         len: t.mainLen === 0 ? 1 : t.mainLen,
       }),
       ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
-    ])
+    ]).buffer
   })
 }
