@@ -49,5 +49,19 @@ await test('exists', async (t) => {
     },
   ])
 
+  deepEqual(
+    await db.query('user').filter('friend', '!exists').get().toObject(),
+    [
+      {
+        id: 1,
+        name: 'mr derp',
+      },
+      {
+        id: 2,
+        name: '',
+      },
+    ],
+  )
+
   // exists
 })

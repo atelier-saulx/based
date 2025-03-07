@@ -149,7 +149,12 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
-            if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+            if (prop == Prop.REFERENCE) {
+                const nr = read(u64, value, 0);
+                if ((negate == Type.default and nr == 0) or (negate == Type.negate and nr != 0)) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                }
+            } else if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += 4;
