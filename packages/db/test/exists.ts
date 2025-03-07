@@ -22,6 +22,12 @@ await test('exists', async (t) => {
             ref: 'user',
             prop: 'friend',
           },
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
         },
       },
     },
@@ -63,5 +69,33 @@ await test('exists', async (t) => {
     ],
   )
 
-  // exists
+  deepEqual(
+    await db.query('user').filter('friends', '!exists').get().toObject(),
+    [
+      {
+        id: 1,
+        name: 'mr derp',
+      },
+      {
+        id: 2,
+        name: '',
+      },
+    ],
+  )
+
+  await db.update('user', id1, { friends: [id2] })
+
+  deepEqual(
+    await db.query('user').filter('friends', 'exists').get().toObject(),
+    [
+      {
+        id: 1,
+        name: 'mr derp',
+      },
+      {
+        id: 2,
+        name: '',
+      },
+    ],
+  )
 })

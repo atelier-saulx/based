@@ -149,7 +149,11 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
-            if (prop == Prop.REFERENCE) {
+            if (prop == Prop.REFERENCES) {
+                if ((negate == Type.default and value[0] == 0) or (negate == Type.negate and value[0] != 0)) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                }
+            } else if (prop == Prop.REFERENCE) {
                 const nr = read(u64, value, 0);
                 if ((negate == Type.default and nr == 0) or (negate == Type.negate and nr != 0)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
