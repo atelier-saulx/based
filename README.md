@@ -59,7 +59,7 @@ The CLI has some global options that can be used from any command. These options
 
 | Option | Description |
 |--------|-------------|
-| `--display <level>` | Sets the logging level for the CLI output (available levels: verbose / info / success / warning / error / silent). |
+| `--display <level>` | Sets the logging level for the CLI output (available levels: log / verbose / debug / silent). |
 | `-y, --yes` | You can use this to skip all the prompts and use a predefined preset in some commands. |
 | `-c, --cluster <cluster>` | Define the cluster to use. |
 | `-o, --org <org>` | Specify the organization. |
