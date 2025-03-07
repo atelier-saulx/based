@@ -145,21 +145,27 @@ pub fn filter(
             const field: u8 = conditions[i + 1];
             const negate: Type = @enumFromInt(conditions[i + 2]);
             const prop: Prop = @enumFromInt(conditions[i + 3]);
-            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            };
-            const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+
+            // if IS EDGE
+
             if (prop == Prop.REFERENCES) {
-                if ((negate == Type.default and value[0] == 0) or (negate == Type.negate and value[0] != 0)) {
+                const refs = db.getReferences(ctx, node, field);
+                if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (prop == Prop.REFERENCE) {
-                const nr = read(u64, value, 0);
-                if ((negate == Type.default and nr == 0) or (negate == Type.negate and nr != 0)) {
+                const checkRef = db.getReference(ctx, node, field);
+                if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
-            } else if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
-                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            } else {
+                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                };
+                const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                }
             }
             i += 4;
         } else {
@@ -186,7 +192,6 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(conditions[i + 5]);
-
                 if (prop == Prop.TEXT) {
                     value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     if (value.len == 0) {
