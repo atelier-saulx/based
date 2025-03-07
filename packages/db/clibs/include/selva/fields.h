@@ -284,6 +284,9 @@ struct SelvaNode *selva_fields_resolve_weak_reference(
         const struct SelvaNodeWeakReference *weak_ref);
 
 SELVA_EXPORT
+struct selva_string *selva_fields_get_selva_string3(struct SelvaNodeReference *ref, const struct SelvaFieldSchema *fs);
+
+SELVA_EXPORT
 struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT

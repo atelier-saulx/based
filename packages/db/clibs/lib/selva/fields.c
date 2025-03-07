@@ -1678,6 +1678,18 @@ struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const
     return selva_fields_get_selva_string2(&node->fields, fs);
 }
 
+struct selva_string *selva_fields_get_selva_string3(
+    struct SelvaNodeReference *ref,
+    const struct SelvaFieldSchema *fs)
+{
+
+    if (!ref->meta){
+        return nullptr;
+    }
+
+    return selva_fields_get_selva_string2(ref->meta, fs);
+}
+
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     const struct SelvaFieldInfo *nfo;
