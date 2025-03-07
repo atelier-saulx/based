@@ -27,6 +27,7 @@ export const contextBasedServer =
           static: {
             type: 'http',
             path: '/static/:file?',
+            public: true,
             fn: async (_based, payload, send, _ctx) => {
               const getFileContent = (requestedFileName: string) =>
                 files().find(
