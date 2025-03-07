@@ -27,6 +27,7 @@ export const isValidChar = (char: number) => {
   )
 }
 export const FUNCTION_TYPES = {
+  authorize: 'Authorize',
   query: 'BasedQueryFunction',
   function: 'BasedFunction',
   app: 'BasedAppFunction',

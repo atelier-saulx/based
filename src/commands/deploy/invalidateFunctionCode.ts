@@ -50,7 +50,7 @@ export const invalidateFunctionCode = async (
       .warning(
         context.i18n(
           'methods.bundling.wrongType',
-          functionConfig.name,
+          functionConfig.name || functionConfig.type,
           Object.keys(FUNCTION_TYPES)
             .map((type) => `'<b>${type}</b>'`)
             .join(','),
@@ -66,7 +66,7 @@ export const invalidateFunctionCode = async (
       .warning(
         context.i18n(
           'methods.bundling.methodNotExported',
-          functionConfig.name,
+          functionConfig.name || functionConfig.type,
           functionConfig.type,
         ),
       )

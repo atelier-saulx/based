@@ -15,7 +15,6 @@ import type { Command } from 'commander'
 import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
 import mimeTypes from 'mime-types'
-import pc from 'picocolors'
 import { AppContext } from '../../context/index.js'
 import { getTargets, isIndexFile } from '../../shared/index.js'
 import { invalidateFunctionCode } from './invalidateFunctionCode.js'
@@ -27,22 +26,6 @@ const cwd = process.cwd()
 const rel = (str: string) => relative(cwd, str)
 const abs = (str: string, dir: string) =>
   isAbsolute(str) ? str : join(dir, str)
-
-// const findType = (node: ts.Node, typeName: string) => {
-//   // @ts-ignore
-//   if (node.type?.typeName?.escapedText === typeName) {
-//     return true
-//   }
-
-//   let found
-//   ts.forEachChild(node, (node) => {
-//     if (!found) {
-//       found = findType(node, typeName)
-//     }
-//   })
-
-//   return found
-// }
 
 const queuedFileUpload = queued(
   async (client: BasedClient, payload: any, destUrl: string) => {
@@ -87,12 +70,12 @@ const queuedFnDeploy = queued(
           },
         })
         .catch((error) => {
-          context.print.warning(
-            `<red>Could not save sourcemap for: ${config.name} ${error.message}</red>`,
+          context.print.error(
+            `Could not save sourcemap for: ${config.name} ${error.message}`,
           )
         })
     } else {
-      context.print.warning('<red>No dist id returned from set-function</red>')
+      context.print.error('No dist id returned from set-function')
     }
 
     return { distId }
@@ -582,9 +565,7 @@ export const deploy = async (program: Command) => {
             context.print
               .success(text())
               .line()
-              .intro(
-                `Your application is now ${pc.bold('LIVE')} at these URLs:`,
-              )
+              .intro(`Your application is now '<b>LIVE<b>' at these URLs:`)
               .pipe()
 
             for (const log of logs) {
@@ -593,7 +574,7 @@ export const deploy = async (program: Command) => {
               }
             }
 
-            context.print.outro('<b>The deployment is complete.</b>')
+            context.print.pipe().outro('<b>The deployment is complete.</b>')
           } else {
             context.print
               .line()
@@ -614,9 +595,7 @@ export const deploy = async (program: Command) => {
 
 function textFactory(prefix: string, suffix: string, total: number) {
   return (amount?: number) => {
-    return pc.bold(
-      `${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}.`,
-    )
+    return `<b>${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}.</b>`
   }
 }
 
