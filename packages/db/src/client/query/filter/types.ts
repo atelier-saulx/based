@@ -18,7 +18,7 @@ export const IsFilter = (f: FilterAst): f is Filter => {
 export type Operator =
   | '='
   | 'has'
-  | '!has'
+  | '!has' // includes ?
   | '<'
   | '>'
   | '!='
@@ -28,6 +28,8 @@ export type Operator =
   | '..'
   | '!..'
   | 'like'
+  | 'exists'
+  | '!exists'
 
 export const VECTOR_FNS = [
   'dotProduct',
@@ -69,6 +71,8 @@ export const STARTS_WITH_LOWER_CASE = 14
 export const ENDS_WITH_LOWER_CASE = 15
 export const LIKE = 18
 // -------------------------------------------
+// only valid for seperate fields
+export const EXISTS = 19
 
 export type OPERATOR =
   | typeof EQUAL
@@ -87,6 +91,7 @@ export type OPERATOR =
   | typeof ENDS_WITH_LOWER_CASE
   | typeof LIKE
   | typeof EQUAL_CRC32
+  | typeof EXISTS
 
 // -------------------------------------------
 export const isNumerical = (op: OPERATOR): boolean => {
@@ -125,6 +130,7 @@ export type FILTER_MODE =
   | typeof MODE_REFERENCE
 // -------------------------------------------
 // Meta
+export const META_EXISTS = 251
 export const META_EDGE = 252
 export const META_OR_BRANCH = 253
 export const META_REFERENCE = 254
@@ -133,6 +139,7 @@ export type FILTER_META =
   | typeof META_EDGE
   | typeof META_OR_BRANCH
   | typeof META_REFERENCE
+  | typeof META_EXISTS
 // -------------------------------------------
 
 export type FilterCtx = {
@@ -168,6 +175,14 @@ export const toFilterCtx = (
     return {
       operation: EQUAL,
       type: op === '!=' ? TYPE_NEGATE : TYPE_DEFAULT,
+      opts,
+    }
+  }
+
+  if (op === 'exists' || op === '!exists') {
+    return {
+      operation: EXISTS,
+      type: op === '!exists' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
     }
   }
@@ -220,4 +235,5 @@ export const operatorReverseMap: Record<OPERATOR, string> = {
   [ENDS_WITH_LOWER_CASE]: 'endsWith (lowerCase)',
   [LIKE]: 'like',
   [EQUAL_CRC32]: '= (crc32)',
+  [EXISTS]: 'exists',
 }

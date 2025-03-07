@@ -24,7 +24,11 @@ export const convertFilter = (
     value = operator
     operator = '='
   }
-  if (value === '' || value === undefined) {
+  if (
+    !(operator === 'exists' || operator === '!exists') &&
+    (value === '' || value === undefined)
+  ) {
+    // not great...
     return
   }
   if (operator === '!..') {

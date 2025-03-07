@@ -19,6 +19,7 @@ import {
 import { DbClient } from '../index.js'
 import {
   EQUAL,
+  EXISTS,
   HAS,
   isNumerical,
   LIKE,
@@ -199,7 +200,17 @@ export const validateFilter = (
   }
   const t = prop.typeIndex
   const op = f[1].operation
-  if (t === REFERENCES || t === REFERENCE) {
+
+  if (op == EXISTS) {
+    // fields...
+    if (f[2] !== undefined) {
+      def.errors.push({
+        code: ERR_FILTER_OP_FIELD,
+        payload: f,
+      })
+      return true
+    }
+  } else if (t === REFERENCES || t === REFERENCE) {
     if (op == LIKE) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true

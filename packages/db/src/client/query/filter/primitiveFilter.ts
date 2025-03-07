@@ -7,7 +7,7 @@ import {
   REVERSE_SIZE_MAP,
 } from '@based/schema/def'
 import { QueryDef, QueryDefFilter } from '../types.js'
-import { EQUAL, isNumerical } from './types.js'
+import { EQUAL, EXISTS, isNumerical, TYPE_NEGATE } from './types.js'
 import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
@@ -26,10 +26,22 @@ export const primitiveFilter = (
     return
   }
   let [, ctx, value] = filter
-  const fieldIndexChar = prop.prop
   let buf: Buffer
-  let size = 0
+  const fieldIndexChar = prop.prop
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
+
+  if (ctx.operation === EXISTS) {
+    if (!conditions.exists) {
+      conditions.exists = []
+    }
+    conditions.exists.push({
+      prop: prop,
+      negate: filter[1].type === TYPE_NEGATE,
+    })
+    return 4
+  }
+
+  let size = 0
   const isArray = Array.isArray(value)
   if (isArray && value.length === 1) {
     value = value[0]

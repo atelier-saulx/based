@@ -1,5 +1,12 @@
 import { QueryDefFilter } from '../types.js'
-import { META_EDGE, META_OR_BRANCH, META_REFERENCE } from './types.js'
+import {
+  META_EDGE,
+  META_EXISTS,
+  META_OR_BRANCH,
+  META_REFERENCE,
+  TYPE_DEFAULT,
+  TYPE_NEGATE,
+} from './types.js'
 
 // or
 // [meta = 253]  [size 2] [next 4]
@@ -25,7 +32,6 @@ const writeConditions = (
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
-  // result[lasWritten + 1] = typeIndex
   lastWritten++
   const sizeIndex = lastWritten
   lastWritten += 2
@@ -35,7 +41,6 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
-  // make this u32
   result.writeUint16LE(conditionSize, sizeIndex)
   return lastWritten - offset
 }
@@ -93,6 +98,19 @@ export const fillConditionsBuffer = (
     result.writeUint16LE(size, orJumpIndex)
     result.writeUint32LE(lastWritten, orJumpIndex + 2)
     lastWritten += size
+  }
+
+  if (conditions.exists) {
+    for (const exists of conditions.exists) {
+      result[lastWritten] = META_EXISTS
+      lastWritten++
+      result[lastWritten] = exists.prop.prop
+      lastWritten++
+      result[lastWritten] = exists.negate ? TYPE_NEGATE : TYPE_DEFAULT
+      lastWritten++
+      result[lastWritten] = exists.prop.typeIndex
+      lastWritten++
+    }
   }
 
   return lastWritten - offset

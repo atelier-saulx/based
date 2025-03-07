@@ -71,8 +71,6 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         value = v;
     }
 
-    // std.debug.print("DERP {any}\n", .{q});
-
     if (op == Op.equal) {
         if (prop == Prop.TEXT) {
             // this is here and not in fixed check because it has the lang code at then end

@@ -10,6 +10,7 @@ const types = @import("../include//types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
+const Type = @import("./types.zig").Type;
 const Mode = @import("./types.zig").Mode;
 const LangCode = @import("../../types.zig").LangCode;
 // -------------------------------------------
@@ -79,6 +80,7 @@ pub fn filter(
     var i: usize = offset;
     var orJump: ?[]u8 = jump;
     var end: usize = conditions.len;
+
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
     while (i < end) {
@@ -139,8 +141,21 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += size + 6;
+        } else if (meta == Meta.exists) {
+            const field: u8 = conditions[i + 1];
+            const negate: Type = @enumFromInt(conditions[i + 2]);
+            const prop: Prop = @enumFromInt(conditions[i + 3]);
+            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            };
+            const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+            if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            }
+            i += 4;
         } else {
             const field: u8 = @intFromEnum(meta);
+
             const querySize: u16 = read(u16, conditions, i + 1);
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
@@ -198,7 +213,7 @@ pub fn filter(
                 } else {
                     if (prop == Prop.REFERENCE) {
                         // if edge different
-                        const checkRef = db.getReference(ctx,node, field);
+                        const checkRef = db.getReference(ctx, node, field);
                         if (checkRef) |r| {
                             value = @as([*]u8, @ptrCast(r))[0..8];
                         } else {
@@ -206,7 +221,7 @@ pub fn filter(
                         }
                     } else if (prop == Prop.REFERENCES) {
                         // if edge different
-                        const refs = db.getReferences(ctx,node, field);
+                        const refs = db.getReferences(ctx, node, field);
                         if (refs) |r| {
                             const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
                             value = arr[0 .. r.nr_refs * 4];
