@@ -377,9 +377,8 @@ extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(
 
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
 {
-    struct SelvaFieldsSchema *schema;
+    struct SelvaFieldsSchema *schema = efc->_fields_schema;
 
-    schema = efc->_fields_schema;
     if (!schema && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
         /*
          * Schema not found on this side, try the dst_type.
