@@ -98,4 +98,11 @@ await test('exists', async (t) => {
       },
     ],
   )
+
+  await db.update('user', id1, { friends: null })
+
+  deepEqual(
+    await db.query('user').filter('friends', 'exists').get().toObject(),
+    [],
+  )
 })

@@ -164,7 +164,6 @@ pub fn filter(
             i += 4;
         } else {
             const field: u8 = @intFromEnum(meta);
-
             const querySize: u16 = read(u16, conditions, i + 1);
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
