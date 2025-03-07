@@ -35,6 +35,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     const ctx = try db.createDbCtx(id);
     ctx.selva = selva.selva_db_create();
     var externalNapi: c.napi_value = undefined;
+    ctx.initialized = true;
     _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
     return externalNapi;
 }
@@ -42,6 +43,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
+    ctx.initialized = false;
 
     if (ctx.selva != null) {
         selva.selva_db_destroy(ctx.selva);
