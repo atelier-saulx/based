@@ -357,7 +357,7 @@ export const devServer = async ({
 
             if (i === -1) {
               context.print.warning(
-                '<yellow>invalid html, skip livereload tag and based opts tag</yellow>',
+                'Invalid html, skip livereload tag and based opts tag',
               )
               return html
             }
@@ -376,6 +376,10 @@ export const devServer = async ({
             return defaultFn(...args)
           },
         }
+
+        basedServer.auth.updateConfig({
+          authorize: fnUpdates[config.name || 'authorize'].fn,
+        })
       } else {
         fnUpdates[config.name] = {
           ...config,

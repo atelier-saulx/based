@@ -111,6 +111,15 @@ export const contextBasedServer =
           },
         },
       },
+      auth: {
+        verifyAuthState: async (_, ctx, authState) => {
+          if (authState.token !== ctx.session?.authState.token) {
+            return { ...authState }
+          }
+
+          return true
+        },
+      },
     })
 
     context.print.line().intro(context.i18n('methods.database.name')).pipe()
