@@ -90,7 +90,7 @@ const propDefBuffer = (
 
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
-    return [...buf.values()]
+    return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
     const buf = new Uint8Array(9)
     const view = new DataView(buf.buffer)
