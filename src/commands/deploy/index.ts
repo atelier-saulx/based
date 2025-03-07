@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative } from 'node:path'
 import {
   type BasedBundleOptions,
@@ -9,7 +9,6 @@ import {
   bundle,
 } from '@based/bundle'
 import type { BasedClient } from '@based/client'
-import type { BasedFunctionConfig } from '@based/functions'
 import { hash, hashCompact } from '@saulx/hash'
 import { queued } from '@saulx/utils'
 import type { Command } from 'commander'
@@ -17,10 +16,11 @@ import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
-import ts from 'typescript'
 import { AppContext } from '../../context/index.js'
 import { getTargets, isIndexFile } from '../../shared/index.js'
+import { invalidateFunctionCode } from './invalidateFunctionCode.js'
 import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
+export * from './invalidateFunctionCode.js'
 
 const { glob } = fg
 const cwd = process.cwd()
@@ -44,65 +44,6 @@ const abs = (str: string, dir: string) =>
 //   return found
 // }
 
-const types = {
-  query: 'BasedQueryFunction',
-  function: 'BasedFunction',
-  app: 'BasedAppFunction',
-}
-
-const warned = new Set()
-export const invalidate = async (
-  context: AppContext,
-  fileName: string,
-  config: Config,
-): Promise<boolean> => {
-  const source = (await readFile(fileName)).toString()
-  const target = ts.ScriptTarget.ESNext
-  const sourceFile = ts.createSourceFile(
-    fileName,
-    source,
-    target,
-    false,
-    ts.ScriptKind.TSX,
-  )
-  const typeName = types[config.type]
-  let hasExport: boolean
-  let hasType = !typeName
-
-  ts.forEachChild(sourceFile, function walk(node) {
-    if (
-      node.kind === ts.SyntaxKind.ExportAssignment ||
-      node.kind === ts.SyntaxKind.ExportKeyword
-    ) {
-      hasExport = true
-    }
-
-    // @ts-ignore
-    if (node.type?.typeName?.escapedText === typeName) {
-      hasType = true
-    }
-
-    if (!hasType || !hasExport) {
-      ts.forEachChild(node, walk)
-    }
-  })
-
-  if (hasType) {
-    warned.delete(fileName)
-  } else if (!warned.has(fileName)) {
-    context.print.warning(
-      `<red>missing type "${typeName}" in function "${config.name}" of type "${config.type}"</red> <dim>${rel(fileName)}</dim>`,
-    )
-
-    warned.add(fileName)
-  }
-
-  if (!hasExport) {
-    context.print.warning(`<red>nothing exported in: ${fileName}</red>`)
-    return true
-  }
-}
-
 const queuedFileUpload = queued(
   async (client: BasedClient, payload: any, destUrl: string) => {
     const { status } = await fetch(destUrl, { method: 'HEAD' })
@@ -120,7 +61,7 @@ const queuedFnDeploy = queued(
     context: AppContext,
     client: BasedClient,
     checksum: number,
-    config: Config,
+    config: Based.Deploy.Function,
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {
@@ -159,24 +100,6 @@ const queuedFnDeploy = queued(
   { dedup: (_context, _client, checksum) => hash(checksum), concurrency: 10 },
 )
 
-type Config = BasedFunctionConfig & {
-  appParams?: {
-    js?: string
-    css?: string
-    favicon?: string
-  }
-  files?: string[]
-}
-
-type ConfigStore = {
-  config: Config
-  path: string
-  dir: string
-  index?: string
-  app?: string
-  favicon?: string
-}
-
 export const parseFunctions = async (
   context: AppContext,
   functions: string[],
@@ -187,7 +110,7 @@ export const parseFunctions = async (
   connectToCloud: boolean = false,
 ): Promise<{
   schema: string
-  configs: ConfigStore[]
+  configs: Based.Deploy.Functions[]
   favicons: Set<string>
   nodeBundles: BundleResult
   browserBundles: BundleResult
@@ -222,12 +145,14 @@ export const parseFunctions = async (
   })
 
   // read configs
-  let configs: ConfigStore[] = await Promise.all(
+  let configs: Based.Deploy.Functions[] = await Promise.all(
     configPaths.map(async (path, index) => {
       const dir = targets[index][0]
+
       if (path.endsWith('.json')) {
         return { dir, path, config: await readJSON(path) }
       }
+
       const compiled = configBundles.require(path)
 
       return { dir, path, config: compiled.default || compiled }
@@ -257,7 +182,7 @@ export const parseFunctions = async (
 
   const functionsNameWidth = configs.reduce((acc, item) => {
     const name: string =
-      item.config.type === ('authorize' as Config['type'])
+      item.config.type === ('authorize' as Based.Deploy.Function['type'])
         ? 'authorize'
         : item.config.name
 
@@ -268,19 +193,18 @@ export const parseFunctions = async (
   await Promise.all(
     configs.map(async (item) => {
       const { config, path } = item
-      const accessLabel = config.public
+      const accessLabel: string = config.public
         ? `<secondary>${'public'.padEnd(7)}</secondary>`
         : `<secondary>${'private'.padEnd(7)}</secondary>`
-      const type = config.type || 'function'
-      const name =
-        config.type === ('authorize' as Config['type'])
-          ? 'authorize'
-          : config.name
-      const file = rel(path)
-      const functionLabel = `<b>${name.padEnd(functionsNameWidth)}</b>`
-      const typeLabel = `<dim><secondary>${type.padEnd(9)}</secondary></dim>`
-      const pipe = '<dim>|</dim>'
-      const fileLabel = `<dim>${file}</dim>`
+      const type: string = config.type || 'function'
+      const name: string =
+        config.type === 'authorize' ? 'authorize' : config.name
+      const file: string = rel(path)
+      const functionLabel: string = `<b>${name.padEnd(functionsNameWidth)}</b>`
+      const typeLabel: string = `<dim><secondary>${type.padEnd(9)}</secondary></dim>`
+      const pipe: string = '<dim>|</dim>'
+      const fileLabel: string = `<dim>${file}</dim>`
+
       context.print.log(
         `${functionLabel} ${pipe} ${accessLabel} ${pipe} ${typeLabel} ${pipe} ${fileLabel}`,
         '<secondary>◆</secondary>',
@@ -299,6 +223,7 @@ export const parseFunctions = async (
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
   const nodeEntryPoints: string[] = schema ? [schema] : []
+  const functionsEntryPoints: string[] = []
   const browserEntryPoints: string[] = []
   const browserEsbuildPlugins: BasedBundleOptions['plugins'] = []
   const favicons = new Set<string>()
@@ -306,6 +231,7 @@ export const parseFunctions = async (
   const invalids = await Promise.all(
     configs.map(async (configStore) => {
       const { config, path, index, dir } = configStore
+
       const existingPath = paths[config.name]
       if (existingPath) {
         context.print.warning(
@@ -314,7 +240,9 @@ export const parseFunctions = async (
 
         return true
       }
+
       paths[config.name] = path
+
       if (!index) {
         context.print.warning(
           `<red>Could not find index.ts or index.js for "${config.name}"</red>`,
@@ -371,9 +299,10 @@ export const parseFunctions = async (
         }
       }
 
+      functionsEntryPoints.push(path)
       nodeEntryPoints.push(index)
 
-      return invalidate(context, index, config)
+      return invalidateFunctionCode(context, index, config, path)
     }),
   )
 
@@ -406,42 +335,57 @@ export const parseFunctions = async (
       )
 
   // build the functions
-  const [_logFunctions, nodeBundles, _logAssets, browserBundles] =
-    await Promise.all([
-      await introFunctions(),
-      await bundle(
-        {
-          entryPoints: nodeEntryPoints,
-          sourcemap: 'external',
-          debug,
+  const [
+    _logFunctions,
+    _functionsWatcher,
+    nodeBundles,
+    _logAssets,
+    browserBundles,
+  ] = await Promise.all([
+    await introFunctions(),
+    await bundle(
+      {
+        entryPoints: functionsEntryPoints,
+        sourcemap: false,
+        bundle: true,
+        minify: false,
+        debug: false,
+      },
+      onChange,
+    ),
+    await bundle(
+      {
+        entryPoints: nodeEntryPoints,
+        sourcemap: 'external',
+        debug,
+      },
+      onChange,
+    ),
+    await introAssets(),
+    await bundle(
+      {
+        debug,
+        publicPath,
+        entryPoints: browserEntryPoints,
+        sourcemap: true,
+        platform: 'browser',
+        minify: isProduction,
+        bundle: true,
+        plugins: [
+          replaceBasedConfigPlugin(context)({
+            cloud: connectToCloud,
+            url: staticPath,
+          }),
+          ...browserEsbuildPlugins,
+        ],
+        define: {
+          global: 'window',
+          'process.env.NODE_ENV': `"${environment}"`,
         },
-        onChange,
-      ),
-      await introAssets(),
-      await bundle(
-        {
-          debug,
-          publicPath,
-          entryPoints: browserEntryPoints,
-          sourcemap: true,
-          platform: 'browser',
-          minify: isProduction,
-          bundle: true,
-          plugins: [
-            replaceBasedConfigPlugin(context)({
-              cloud: connectToCloud,
-              url: staticPath,
-            }),
-            ...browserEsbuildPlugins,
-          ],
-          define: {
-            global: 'window',
-            'process.env.NODE_ENV': `"${environment}"`,
-          },
-        },
-        onChange,
-      ),
-    ])
+      },
+      onChange,
+    ),
+  ])
 
   return { schema, configs, favicons, nodeBundles, browserBundles, files }
 }

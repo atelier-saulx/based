@@ -26,3 +26,8 @@ export const isValidChar = (char: number) => {
     (char >= LETTER_LOWER_A && char <= LETTER_LOWER_Z)
   )
 }
+export const FUNCTION_TYPES = {
+  query: 'BasedQueryFunction',
+  function: 'BasedFunction',
+  app: 'BasedAppFunction',
+}

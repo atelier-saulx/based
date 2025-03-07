@@ -165,7 +165,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     warning: (message) => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.warn(context.state.emojis.error, SPACER, message)
+        console.warn(context.state.emojis.warning, SPACER, message)
       }
       return contextPrint(context)
     },

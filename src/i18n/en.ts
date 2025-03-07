@@ -747,6 +747,10 @@ export default {
       pluginLabel: '<b>Plugins</b>: ${number}',
       changeDetected: 'Detected changes, rebundling files',
       errorDetected: 'Error detected while bundling',
+      wrongType:
+        "The type key of the function '<b>${name}</b>' is missing or invalid. The only valid values are: ${types}",
+      methodNotExported:
+        "No <b>default</b> export pointing to a method related to the function '<b>${name}</b>' of type '<b>${type}</b>' was found",
       error: {
         file: '<b>File</b>: ${file}',
         location: '<b>Location</b>: Ln ${line}, Col ${column}',

@@ -10,7 +10,8 @@ import type { Command } from 'commander'
 import getPort from 'get-port'
 import { WebSocket, WebSocketServer } from 'ws'
 import { AppContext } from '../../context/index.js'
-import { invalidate, parseFunctions } from '../deploy/index.js'
+import { invalidateFunctionCode, parseFunctions } from '../deploy/index.js'
+import { FunctionFile } from './FunctionFile.js'
 
 const getOwnIp = () => {
   const nets = networkInterfaces()
@@ -44,43 +45,6 @@ export const dev = async (program: Command) => {
   const cmd: Command = context.commandMaker('dev')
 
   cmd.action(devServer)
-}
-
-class AppFile {
-  constructor({
-    outputFile,
-    ip,
-    port,
-    folder = 'static',
-  }: {
-    outputFile: OutputFile
-    ip: string
-    port: number
-    folder?: string
-  }) {
-    this.#outputFile = outputFile
-    this.#folder = folder
-    this.#ip = ip
-    this.#port = port
-  }
-
-  #outputFile: OutputFile
-  #folder: string
-  #ip: string
-  #port: number
-
-  get text() {
-    return this.#outputFile?.text || ''
-  }
-
-  get url() {
-    return (
-      this.#outputFile?.path.replace(
-        process.cwd(),
-        `http://${this.#ip}:${this.#port}/${this.#folder}`,
-      ) || ''
-    )
-  }
 }
 
 const liveReloadScript = (port: number): string =>
@@ -129,7 +93,7 @@ export const devServer = async ({
   const client = basedClient.get('project')
   const checksums: Record<string, number> = {}
   const { clients } = new WebSocketServer({ port: lrPort })
-  let hadError: boolean
+  let hadError: boolean = true
 
   const basedServer: BasedServer = await context.basedServer(
     devPort,
@@ -154,6 +118,20 @@ export const devServer = async ({
 
   async function update(err: BuildFailure | null, result?: BundleResult) {
     let reloadClients = hadError
+
+    if (result?.updates.length) {
+      context.print
+        .line()
+        .intro(context.i18n('methods.bundling.changeDetected'))
+        .pipe()
+
+      for (const [type, file] of result.updates) {
+        context.print.log(
+          context.i18n(`methods.bundling.types.${type}`, file),
+          '<secondary>◆</secondary>',
+        )
+      }
+    }
 
     if (
       err ||
@@ -212,7 +190,7 @@ export const devServer = async ({
     let fnUpdates: any
     hadError = false
 
-    for (const { index, config, app, favicon } of configs) {
+    for (const { index, config, app, favicon, path } of configs) {
       const js = nodeBundles.js(index)
 
       let checksum: number
@@ -258,28 +236,13 @@ export const devServer = async ({
         checksum = hash([js.hash, config])
       }
 
-      if (result?.updates.length) {
-        context.print
-          .line()
-          .intro(context.i18n('methods.bundling.changeDetected'))
-
-        for (const [type, file] of result.updates) {
-          context.print
-            .pipe()
-            .log(
-              context.i18n(`methods.bundling.types.${type}`, file),
-              '<secondary>◆</secondary>',
-            )
-        }
-      }
-
       if (checksums[config.name] === checksum) {
         continue
       }
 
       checksums[config.name] = checksum
 
-      if (await invalidate(context, index, config)) {
+      if (await invalidateFunctionCode(context, index, config, path)) {
         // ts validation
         basedServer.functions.add({
           [config.name]: {
@@ -299,10 +262,14 @@ export const devServer = async ({
 
       if (app) {
         const params = {
-          html: new AppFile({ outputFile: appHtml, ip, port: devPort }),
-          js: new AppFile({ outputFile: appJs, ip, port: devPort }),
-          css: new AppFile({ outputFile: appCss, ip, port: devPort }),
-          favicon: new AppFile({ outputFile: appFavicon, ip, port: devPort }),
+          html: new FunctionFile({ outputFile: appHtml, ip, port: devPort }),
+          js: new FunctionFile({ outputFile: appJs, ip, port: devPort }),
+          css: new FunctionFile({ outputFile: appCss, ip, port: devPort }),
+          favicon: new FunctionFile({
+            outputFile: appFavicon,
+            ip,
+            port: devPort,
+          }),
         }
 
         reloadClients = true

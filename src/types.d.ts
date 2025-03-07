@@ -503,24 +503,27 @@ declare global {
       }
     }
 
-    type ConfigBase = BasedFunctionConfig & {
-      type: 'authorize' & BasedFunctionConfig['type']
-      main: string
-      appParams?: {
-        js?: string
-        css?: string
+    namespace Deploy {
+      type Function = BasedFunctionConfig &
+        BasedAppFunctionConfig & {
+          type: 'authorize' & BasedFunctionConfig['type']
+          main: string
+          appParams?: {
+            js?: string
+            css?: string
+            favicon?: string
+          }
+          files?: string[]
+        }
+
+      type Functions = {
+        config: Function
+        path: string
+        dir: string
+        index?: string
+        app?: string
         favicon?: string
       }
-      files?: string[]
-    }
-
-    type ConfigStore = {
-      config: ConfigBase
-      path: string
-      dir: string
-      index?: string
-      app?: string
-      favicon?: string
     }
   }
 }
