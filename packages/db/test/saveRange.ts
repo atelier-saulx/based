@@ -79,7 +79,7 @@ await test('save simple range', async (t) => {
   const secondHash = db.server.merkleTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
-  equal(firstHash.equals(secondHash), false)
+  equal(Buffer.from(firstHash).equals(Buffer.from(secondHash)), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 3)
@@ -107,8 +107,8 @@ await test('save simple range', async (t) => {
   const thirdHash = db.server.merkleTree.getRoot().hash
 
   //console.log([firstHash, secondHash, thirdHash])
-  equal(firstHash.equals(secondHash), false)
-  equal(secondHash.equals(thirdHash), true)
+  equal(Buffer.from(firstHash).equals(Buffer.from(secondHash)), false)
+  equal(Buffer.from(secondHash).equals(Buffer.from(thirdHash)), true)
 
   deepEqual(
     (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
@@ -202,18 +202,18 @@ await test('delete a range', async (t) => {
   db.server.updateMerkleTree()
   const second = fun()
 
-  equal(first.hash.equals(second.hash), false, 'delete changes the root hash')
+  equal(Buffer.from(first.hash).equals(Buffer.from(second.hash)), false, 'delete changes the root hash')
   equal(
-    first.left.hash.equals(second.left.hash),
+    Buffer.from(first.left.hash).equals(Buffer.from(second.left.hash)),
     true,
     "the first block hash wasn't change",
   )
   equal(
-    first.right.hash.equals(second.right.hash),
+    Buffer.from(first.right.hash).equals(Buffer.from(second.right.hash)),
     false,
     'the second block hash a new hash of the deletion',
   )
-  equal(second.right.hash.equals(Buffer.alloc(16)), true)
+  equal(Buffer.from(second.right.hash).equals(Buffer.alloc(16)), true)
 
   // TODO In the future the merkleTree should remain the same but the right block doesn't need an sdb
   //db.save()

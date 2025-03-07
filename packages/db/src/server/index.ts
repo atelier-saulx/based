@@ -15,7 +15,7 @@ import {
   SchemaTypesParsed,
   SchemaTypesParsedById,
 } from '@based/schema/def'
-import { createTree } from './csmt/index.js'
+import { createTree, hashEq } from './csmt/index.js'
 import { start } from './start.js'
 import {
   CsmtNodeRange,
@@ -338,7 +338,7 @@ export class DbServer {
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
       if (oldLeaf) {
-        if (oldLeaf.hash.equals(hash)) {
+        if (hashEq(oldLeaf.hash, hash)) {
           return
         }
         try {
