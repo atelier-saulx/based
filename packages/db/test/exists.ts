@@ -120,5 +120,5 @@ await test('exists', async (t) => {
     [{ id: 2, name: '' }],
   )
 
-  await db.query('user').filter('friends', '!exists').get().inspect(10)
+  await db.query('user').filter('friends', '!exists').get().inspect()
 })

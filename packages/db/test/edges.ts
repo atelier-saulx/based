@@ -60,7 +60,7 @@ await test('multiple references', async (t) => {
               $file: 'binary',
               $lang: 'string',
               $bigString: 'string',
-              $role: { enum: ['writer', 'editor'] },
+              $role: ['writer', 'editor'],
               $rating: 'uint32',
               $on: 'boolean',
             },
