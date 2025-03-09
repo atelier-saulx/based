@@ -153,12 +153,13 @@ await test('search', async (t) => {
     })
   }
 
-  await db.drain()
+  console.log('maak 5 M', await db.drain(), 'ms')
+
   await db
     .query('data')
     .include('id', 'name')
     .range(0, 1e6)
     .search(fruit, 'a', { fn: 'euclideanDistance', score: 10000 })
     .get()
-    .inspect(10)
+    .inspect(3)
 })

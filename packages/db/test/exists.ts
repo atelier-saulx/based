@@ -119,4 +119,6 @@ await test('exists', async (t) => {
     await db.query('user').filter('friends', '!exists').get().toObject(),
     [{ id: 2, name: '' }],
   )
+
+  await db.query('user').filter('friends', '!exists').get().inspect()
 })
