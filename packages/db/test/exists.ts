@@ -107,7 +107,7 @@ await test('exists', async (t) => {
   )
 
   const ids = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 10e6; i++) {
     const id = db.create('user', {})
     ids.push(id.tmpId)
   }
@@ -119,4 +119,6 @@ await test('exists', async (t) => {
     await db.query('user').filter('friends', '!exists').get().toObject(),
     [{ id: 2, name: '' }],
   )
+
+  await db.query('user').filter('friends', '!exists').get().inspect(10)
 })

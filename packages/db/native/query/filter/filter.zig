@@ -145,9 +145,7 @@ pub fn filter(
             const field: u8 = conditions[i + 1];
             const negate: Type = @enumFromInt(conditions[i + 2]);
             const prop: Prop = @enumFromInt(conditions[i + 3]);
-
             // if IS EDGE
-
             if (prop == Prop.REFERENCES) {
                 const refs = db.getReferences(ctx, node, field);
                 if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
