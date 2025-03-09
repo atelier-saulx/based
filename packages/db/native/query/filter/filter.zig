@@ -40,8 +40,6 @@ const LangCode = @import("../../types.zig").LangCode;
 // [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
-const ZEROES: @Vector(8, u8) = @splat(0);
-
 inline fn fail(
     ctx: *db.DbCtx,
     node: *selva.SelvaNode,
@@ -147,32 +145,49 @@ pub fn filter(
             const field: u8 = conditions[i + 1];
             const negate: Type = @enumFromInt(conditions[i + 2]);
             const prop: Prop = @enumFromInt(conditions[i + 3]);
-            var value: []u8 = undefined;
             if (isEdge) {
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint, field) catch {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                };
-                value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
-            } else {
-                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                };
-                value = db.getField(typeEntry, 0, node, fieldSchema, prop);
-            }
-            // this is a bit dangerous (checking first byte - very fast though
-            if (prop == Prop.REFERENCES) {
-                if ((negate == Type.default and value[0] == 0) or (negate == Type.negate and value[0] != 0)) {
+                if (ref) |r| {
+                    if (prop == Prop.REFERENCES) {
+                        const refs = db.getEdgeReferences(ctx, r.reference.?, field);
+                        if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else if (prop == Prop.REFERENCE) {
+                        const checkRef = db.getEdgeReference(ctx, r.reference.?, field);
+                        if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    } else {
+                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, r.edgeConstaint, field) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
+                        const value = db.getEdgeProp(r.reference.?, edgeFieldSchema);
+                        if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
+                    }
+                } else if (negate == Type.default) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
-            } else if (prop == Prop.REFERENCE) {
-                const h: @Vector(8, u8) = value[0..8].*;
-                const isZero = @reduce(.And, h == ZEROES);
-                if ((negate == Type.default and isZero) or (negate == Type.negate and !isZero)) {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                }
             } else {
-                if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                if (prop == Prop.REFERENCES) {
+                    const refs = db.getReferences(ctx, node, field);
+                    if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+                } else if (prop == Prop.REFERENCE) {
+                    const checkRef = db.getReference(ctx, node, field);
+                    if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+                } else {
+                    const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                    if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
                 }
             }
             i += 4;
