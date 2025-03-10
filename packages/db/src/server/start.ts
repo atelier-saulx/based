@@ -40,7 +40,7 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(db: DbServer, opts: { clean?: boolean }) {
+export async function start(db: DbServer, opts: { clean?: boolean, managed?: boolean }) {
   const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
@@ -141,9 +141,21 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
     db.workers[i] = new DbWorker(address, db)
   }
 
-  db.unlistenExit = exitHook((signal) => {
-    console.log(`Exiting with signal: ${signal}`)
-    save(db, true)
-    console.log('Successfully saved.')
-  })
+  if (!opts.managed) {
+    db.unlistenExit = exitHook(async (signal) => {
+      const blockSig = () => {}
+      const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
+      // A really dumb way to block signals temporarily while saving.
+      // This is needed because there is no way to set the process signal mask
+      // in Node.js.
+      signals.forEach((sig) => process.on(sig, blockSig))
+
+      console.log(`Exiting with signal: ${signal}`)
+      save(db, true)
+      console.log('Successfully saved.')
+
+      signals.forEach((sig) => process.off(sig, blockSig))
+    })
+  }
 }

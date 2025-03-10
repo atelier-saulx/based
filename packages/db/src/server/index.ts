@@ -125,7 +125,7 @@ export class DbServer {
     this.onSchemaChange = onSchemaChange
   }
 
-  start(opts?: { clean?: boolean }) {
+  start(opts?: { clean?: boolean, managed?: boolean }) {
     return start(this, opts)
   }
 
@@ -589,7 +589,7 @@ export class DbServer {
 
     this.stopped = true
     clearTimeout(this.cleanupTimer)
-    this.unlistenExit()
+    this?.unlistenExit()
 
     try {
       if (!noSave) {

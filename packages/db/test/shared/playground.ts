@@ -170,7 +170,7 @@ const runSimple = async (path: string) => {
   const db = new BasedDb({
     path,
   })
-  await db.start({ clean: true })
+  await db.start({ clean: true, managed: true })
 
   const profession = ['developer', 'baker', '???']
 
