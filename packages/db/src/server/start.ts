@@ -40,7 +40,7 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(db: DbServer, opts: { clean?: boolean, managed?: boolean }) {
+export async function start(db: DbServer, opts: { clean?: boolean, hosted?: boolean }) {
   const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
@@ -141,7 +141,7 @@ export async function start(db: DbServer, opts: { clean?: boolean, managed?: boo
     db.workers[i] = new DbWorker(address, db)
   }
 
-  if (!opts.managed) {
+  if (!opts.hosted) {
     db.unlistenExit = exitHook(async (signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];

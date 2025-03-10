@@ -125,7 +125,7 @@ export class DbServer {
     this.onSchemaChange = onSchemaChange
   }
 
-  start(opts?: { clean?: boolean, managed?: boolean }) {
+  start(opts?: { clean?: boolean, hosted?: boolean }) {
     return start(this, opts)
   }
 
