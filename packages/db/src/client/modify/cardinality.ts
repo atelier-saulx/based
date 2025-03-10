@@ -49,6 +49,15 @@ function addHll(
   }
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
+  writeHllBuf(value, ctx, t, len)
+}
+
+function writeHllBuf(
+  value: (string | Buffer)[],
+  ctx: ModifyCtx,
+  t: PropDef,
+  len: number,
+) {
   ctx.buf.writeUint32LE(len, ctx.len)
   ctx.len += 4
   for (let val of value) {
