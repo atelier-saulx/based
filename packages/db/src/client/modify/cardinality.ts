@@ -52,7 +52,7 @@ function addHll(
   writeHllBuf(value, ctx, t, len)
 }
 
-function writeHllBuf(
+export function writeHllBuf(
   value: (string | Buffer)[],
   ctx: ModifyCtx,
   t: PropDef,
