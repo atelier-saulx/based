@@ -1,7 +1,7 @@
 import { Csmt, TreeNode } from './index.js'
 
 function makeLabel(node: TreeNode) {
-  return `${node.key}\n${node.hash.toString('base64').substring(0, 5)}`
+  return `${node.key}\n${Buffer.from(node.hash).toString('base64').substring(0, 5)}`
 }
 
 export default function draw(csmt: Csmt) {

@@ -1,16 +1,20 @@
-import { Csmt, TreeKey, TreeKeyNil, TreeNode, TreeDiff } from './types.js'
+import { Hash, Csmt, TreeKey, TreeKeyNil, TreeNode, TreeDiff } from './types.js'
 import { distance, min, max } from './tree-utils.js'
 import membershipProof, { Proof } from './memebership-proof.js'
 
+export function hashEq(a: Hash, b: Hash) {
+    let isEqual = true;
+    for(let i = 0; i < a.length && isEqual; i++) {
+           isEqual = a[i] === b[i];
+    }
+    return isEqual
+}
+
 export function createTree(createHash: () => any): Csmt {
   let root: TreeNode | null = null
-  const emptyHash = genHash(Buffer.from(''))
+  const emptyHash = createHash().digest()
 
-  function genHash(s: Buffer) {
-    return createHash().update(s).digest()
-  }
-
-  function genNodeHash(lHash: Buffer, rHash: Buffer) {
+  function genNodeHash(lHash: Hash, rHash: Hash) {
     return createHash().update(lHash).update(rHash).digest()
   }
 
@@ -28,7 +32,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function createLeaf(k: TreeKey, h: Buffer, data: any): TreeNode {
+  function createLeaf(k: TreeKey, h: Hash, data: any): TreeNode {
     return {
       hash: h,
       key: k,
@@ -133,8 +137,8 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   function diffAB(
-    diffA: Map<TreeKey, Buffer>,
-    diffB: Map<TreeKey, Buffer>,
+    diffA: Map<TreeKey, Hash>,
+    diffB: Map<TreeKey, Hash>,
     nodeA: TreeNode | null,
     nodeB: TreeNode | null,
   ) {
@@ -142,7 +146,7 @@ export function createTree(createHash: () => any): Csmt {
       nodeA &&
       nodeB &&
       nodeA.key === nodeB.key &&
-      nodeA.hash.compare(nodeB.hash) === 0
+      hashEq(nodeA.hash, nodeB.hash)
     ) {
       return
     }
@@ -157,7 +161,7 @@ export function createTree(createHash: () => any): Csmt {
     if (nodeA && !leftA && !rightA) {
       const bHash = diffB.get(nodeA.key)
 
-      if (bHash && bHash.compare(nodeA.hash) === 0) {
+      if (bHash && hashEq(bHash, nodeA.hash)) {
         // The same leaf appears to exist in both trees
         diffB.delete(nodeA.key)
       } else {
@@ -170,7 +174,7 @@ export function createTree(createHash: () => any): Csmt {
     if (nodeB && !leftB && !rightB) {
       const aHash = diffA.get(nodeB.key)
 
-      if (aHash && aHash.compare(nodeB.hash) === 0) {
+      if (aHash && hashEq(aHash, nodeB.hash)) {
         diffA.delete(nodeB.key)
       } else {
         diffB.set(nodeB.key, nodeB.hash)
@@ -188,8 +192,8 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   function diff(tree: Csmt): TreeDiff {
-    const leftMap = new Map<TreeKey, Buffer>()
-    const rightMap = new Map<TreeKey, Buffer>()
+    const leftMap = new Map<TreeKey, Hash>()
+    const rightMap = new Map<TreeKey, Hash>()
     const nodeA = root
     const nodeB = tree.getRoot()
 
@@ -220,9 +224,9 @@ export function createTree(createHash: () => any): Csmt {
 
   return {
     getRoot: () => root,
-    insert: (k: TreeKey, h: Buffer, data: any = null) => {
-      if (!(h instanceof Buffer)) {
-        throw new TypeError('`h` must be a Buffer')
+    insert: (k: TreeKey, h: Hash, data: any = null) => {
+      if (!(h instanceof Uint8Array)) { // TODO can we extract the name somehow from Hash?
+        throw new TypeError('`h` must be a Uint8Array') // TODO can we extract the name somehow from Hash?
       }
 
       const newLeaf = createLeaf(k, h, data)

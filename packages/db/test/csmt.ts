@@ -4,7 +4,7 @@ import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { Csmt, createTree } from '../src/server/csmt/index.js'
 
-const shortHash = (buf: Buffer) => buf.toString('base64').substring(0, 5)
+const shortHash = (buf: Buffer | Uint8Array) => Buffer.from(buf).toString('base64').substring(0, 5)
 function genNodeHash(lHash: Buffer, rHash: Buffer) {
   return createHash('sha256').update(lHash).update(rHash).digest()
 }

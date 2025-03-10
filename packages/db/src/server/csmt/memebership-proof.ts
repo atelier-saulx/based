@@ -9,7 +9,7 @@ export enum Direction {
 
 export type Proof =
   | [TreeKey | null, TreeKey | null]
-  | [TreeKey | Buffer, TreeKey | Direction][]
+  | [TreeKey | Uint8Array, TreeKey | Direction][]
 
 function reverse(direction: Direction): Direction {
   switch (direction) {
