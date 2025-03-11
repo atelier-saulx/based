@@ -346,14 +346,16 @@ pub fn writeEdgeProp(
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
-    field: u8,
+    prop: u8,
 ) !void {
+    std.debug.print("flap {any} \n", .{efc});
+
     try errors.selva(selva.selva_fields_set_reference_meta(
         ctx.selva,
         node,
         ref,
         efc,
-        field - 1,
+        prop,
         data.ptr,
         data.len,
     ));

@@ -75,16 +75,22 @@ export type PropDef = {
   inverseTypeId?: number
   inversePropNumber?: number
   enum?: any[]
+  dependent?: boolean
+
+  // edge stuff
+  edgeMainLen?: 0
   reverseEnum?: { [key: string]: number }
-  edgesTotalLen?: number
+  edgesSeperateCnt?: number
   edges?: {
     [key: string]: PropDefEdge
   }
-  reverseEdges?: {
+  reverseSeperateEdges?: {
     [prop: string]: PropDefEdge
   }
+  reverseMainEdges?: {
+    [start: string]: PropDefEdge
+  }
   __isEdge?: boolean
-  dependent?: boolean
 }
 
 export type PropDefEdge = Partial<PropDef> & {

@@ -14,7 +14,6 @@ const d = promisify(deflate)
 const inf = promisify(inflate)
 
 // schema byte format
-
 await test('protocol', async (t) => {
   const schema: StrictSchema = {
     types: {

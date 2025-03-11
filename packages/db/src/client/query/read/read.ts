@@ -169,6 +169,7 @@ const readMain = (
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
+      // Only relvant for seperate props
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
         addField(prop, 0, item)
@@ -250,7 +251,12 @@ export const readAllFields = (
         i += size + 4
         // ----------------
       } else {
-        const edgeDef = q.edges.reverseProps[prop]
+        // if prop === 0 use main reverseIndex
+        // TODO: reversePropsEdgesMain [START]
+        // TODO: reversePropsEdges [PROP]
+
+        // @ts-ignore
+        const edgeDef: PropDefEdge = q.edges.target.ref.reverseProps[prop]
         const t = edgeDef.typeIndex
         if (t === JSON) {
           i++

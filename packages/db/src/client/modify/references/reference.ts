@@ -56,29 +56,30 @@ function singleReferenceEdges(
     }
   }
 
+  // need youri's help here...
   if (id > 0) {
-    const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
-    if (edgesLen === 0) {
-      return writeRef(id, ctx, schema, def, parentId, modifyOp, false, isTmpId)
-    }
-    let err = writeRef(id, ctx, schema, def, parentId, modifyOp, true, isTmpId)
-    if (err) {
-      return err
-    }
-    if (ctx.len + 4 + edgesLen > ctx.max) {
-      return RANGE_ERR
-    }
-    let sizepos = ctx.len
-    ctx.len += 4
-    err = writeEdges(def, ref, ctx)
-    if (err) {
-      return err
-    }
-    let size = ctx.len - sizepos
-    ctx.buf[sizepos++] = size
-    ctx.buf[sizepos++] = size >>>= 8
-    ctx.buf[sizepos++] = size >>>= 8
-    ctx.buf[sizepos] = size >>>= 8
+    // const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
+    // if (edgesLen === 0) {
+    return writeRef(id, ctx, schema, def, parentId, modifyOp, false, isTmpId)
+    // }
+    // let err = writeRef(id, ctx, schema, def, parentId, modifyOp, true, isTmpId)
+    // if (err) {
+    //   return err
+    // }
+    // if (ctx.len + 4 + edgesLen > ctx.max) {
+    //   return RANGE_ERR
+    // }
+    // let sizepos = ctx.len
+    // ctx.len += 4
+    // err = writeEdges(def, ref, ctx)
+    // if (err) {
+    //   return err
+    // }
+    // let size = ctx.len - sizepos
+    // ctx.buf[sizepos++] = size
+    // ctx.buf[sizepos++] = size >>>= 8
+    // ctx.buf[sizepos++] = size >>>= 8
+    // ctx.buf[sizepos] = size >>>= 8
   } else {
     return new ModifyError(def, ref)
   }

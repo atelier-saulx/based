@@ -83,11 +83,9 @@ const propDefBuffer = (
 ): number[] => {
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
-
   if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
     const buf = new Uint8Array(3)
     const view = new DataView(buf.buffer)
-
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
     return [...buf]
@@ -96,7 +94,6 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
-
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
@@ -106,17 +103,17 @@ const propDefBuffer = (
       prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
       buf[4] = prop.inversePropNumber
-
       if (prop.edges) {
         const props = Object.values(prop.edges)
-        eschema = props
+        const main = { ...EMPTY_MICRO_BUFFER, len: prop.edgeMainLen }
+        eschema = [...props, main]
+          .filter((v) => v.separate === true)
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
         eschema.unshift(0, 0, 0, 0, sepPropCount(props), 0)
         view.setUint32(5, eschema.length, true)
       }
     }
-
     return [...buf, ...eschema]
   } else if (
     type === STRING ||
@@ -126,13 +123,11 @@ const propDefBuffer = (
   ) {
     return [selvaType, prop.len < 50 ? prop.len : 0]
   }
-  {
-    return [selvaType]
-  }
 }
 
-// todo rewrite
-export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }): ArrayBuffer[] {
+export function schemaToSelvaBuffer(schema: {
+  [key: string]: SchemaTypeDef
+}): ArrayBuffer[] {
   return Object.values(schema).map((t, i) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []

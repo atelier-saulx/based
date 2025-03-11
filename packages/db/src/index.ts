@@ -11,6 +11,7 @@ export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'
 export * from './client/query/serialize.js'
+export * from './client/query/BasedDbQuery.js'
 
 export class BasedDb {
   client: DbClient

@@ -66,6 +66,8 @@ export function writeEdges(
   ref: RefModifyOpts,
   ctx: ModifyCtx,
 ): ModifyErr {
+  // console.log('YO EDGE', t)
+
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
@@ -170,6 +172,15 @@ export function writeEdges(
 
         ctx.buf[ctx.len++] = edge.prop
         ctx.buf[ctx.len++] = edge.typeIndex
+        let start = edge.start
+        ctx.buf[ctx.len++] = start
+        ctx.buf[ctx.len++] = start >>>= 8
+
+        let len = edge.len
+        ctx.buf[ctx.len++] = len
+        ctx.buf[ctx.len++] = len >>>= 8
+
+        console.log({ edge })
 
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
