@@ -93,6 +93,7 @@ export const parseFunctions = async (
   connectToCloud: boolean = false,
 ): Promise<{
   schema: string
+  schemaPayload: any //TODO
   configs: Based.Deploy.Functions[]
   favicons: Set<string>
   nodeBundles: BundleResult
@@ -104,7 +105,7 @@ export const parseFunctions = async (
   const configPaths = targets.map(([dir, file]) => join(dir, file))
   const { display } = context.getGlobalOptions()
 
-  if (!functions) {
+  if (functions) {
     schema = null
   }
 
@@ -155,8 +156,9 @@ export const parseFunctions = async (
   }
 
   // handle schema
+  let schemaPayload: any
   if (schema) {
-    const schemaPayload = parseSchema(configBundles, schema)
+    schemaPayload = parseSchema(configBundles, schema)
     context.print.log(
       `<blueBright><b>[schema]</b></blueBright> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
       '<blueBright>◆</blueBright>',
@@ -370,7 +372,15 @@ export const parseFunctions = async (
     ),
   ])
 
-  return { schema, configs, favicons, nodeBundles, browserBundles, files }
+  return {
+    schema,
+    schemaPayload,
+    configs,
+    favicons,
+    nodeBundles,
+    browserBundles,
+    files,
+  }
 }
 
 export const deploy = async (program: Command) => {
@@ -398,11 +408,6 @@ export const deploy = async (program: Command) => {
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
 
-      await update(null)
-      if (!watch) {
-        await basedClient.get('project').destroy()
-      }
-
       async function update(err) {
         if (err) {
           context.print.warning(err)
@@ -419,16 +424,29 @@ export const deploy = async (program: Command) => {
           deployed.add(hashed)
 
           if (!previous.has(hashed)) {
-            const text = textFactory('deployed', 'schema', schemaPayload.length)
+            // const text = textFactory('deployed', 'schema', schemaPayload.length)
 
-            context.spinner.start(text(0))
+            // context.spinner.start(text(0))
 
-            await basedClient
-              .get('project')
-              .call('db:set-schema', schemaPayload)
+            // TODO: once based-cloud updates db:set-schema to the new db
+            // or makes a new endpoint
+            context.print
+              .intro('<yellow>set-schema unavailable</yellow>')
+              .warning(
+                'db:set-schema is not currently available online. Please set schema manually',
+              )
 
-            context.print.success(text())
+            // await basedClient
+            //   .get('project')
+            //   .call('db:set-schema', schemaPayload)
+
+            // context.print.success(text())
           }
+        }
+
+        await update(null)
+        if (!watch) {
+          await basedClient.get('project').destroy()
         }
 
         // upload assets

@@ -6,7 +6,10 @@
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": ["bin", "dist"],
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",

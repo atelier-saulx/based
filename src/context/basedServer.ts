@@ -5,6 +5,61 @@ import type { BasedClient } from '@based/client'
 import type { BasedServer } from '@based/server'
 import type { AppContext } from '../context/index.js'
 import { getContentType } from '../shared/index.js'
+import type { BasedFunctionConfigs } from '@based/functions'
+import type { BasedDb } from '@based/db'
+
+const remoteServerConfig: BasedFunctionConfigs = {
+  db: {
+    type: 'query',
+    relay: { client: 'env' },
+  },
+  'db:schema': {
+    type: 'query',
+    relay: { client: 'env' },
+  },
+  'db:origins': {
+    type: 'query',
+    relay: { client: 'env' },
+  },
+  'db:set-schema': {
+    type: 'function',
+    relay: { client: 'env' },
+  },
+  'db:set': {
+    type: 'function',
+    relay: { client: 'env' },
+  },
+  'db:delete': {
+    type: 'function',
+    relay: { client: 'env' },
+  },
+  'db:get': {
+    type: 'function',
+    relay: { client: 'env' },
+  },
+  'db:events': {
+    type: 'channel',
+    relay: { client: 'env' },
+  },
+}
+
+const localServerConfig: BasedFunctionConfigs = {
+  'db:set-schema': {
+    type: 'function',
+    fn: async (based, schema) => {
+      const db = based.db.v2 as BasedDb
+
+      try {
+        console.info('Setting schema...')
+        await db.putSchema(JSON.parse(JSON.stringify(schema)))
+        console.info('Done')
+      } catch (error) {
+        console.error('Error setting schema:')
+        console.error(error)
+      }
+    },
+  },
+}
 
 export const contextBasedServer =
   (context: AppContext) =>
@@ -78,38 +133,7 @@ export const contextBasedServer =
               }
             },
           },
-          db: {
-            type: 'query',
-            relay: { client: 'env' },
-          },
-          'db:schema': {
-            type: 'query',
-            relay: { client: 'env' },
-          },
-          'db:origins': {
-            type: 'query',
-            relay: { client: 'env' },
-          },
-          'db:set-schema': {
-            type: 'function',
-            relay: { client: 'env' },
-          },
-          'db:set': {
-            type: 'function',
-            relay: { client: 'env' },
-          },
-          'db:delete': {
-            type: 'function',
-            relay: { client: 'env' },
-          },
-          'db:get': {
-            type: 'function',
-            relay: { client: 'env' },
-          },
-          'db:events': {
-            type: 'channel',
-            relay: { client: 'env' },
-          },
+          ...(cloud ? remoteServerConfig : localServerConfig),
         },
       },
       auth: {
@@ -132,7 +156,7 @@ export const contextBasedServer =
           path: join(process.cwd(), 'tmp'),
         })
 
-        await basedDb.start()
+        await basedDb.start({})
 
         server.client.db ??= {}
         server.client.db.v2 = basedDb

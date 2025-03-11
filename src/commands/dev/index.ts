@@ -80,15 +80,16 @@ export const devServer = async ({
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
 
-  const { nodeBundles, browserBundles, configs } = await parseFunctions(
-    context,
-    functions,
-    update,
-    publicPath,
-    devServerWSPath,
-    'development',
-    cloud,
-  )
+  const { nodeBundles, browserBundles, configs, schemaPayload } =
+    await parseFunctions(
+      context,
+      functions,
+      update,
+      publicPath,
+      devServerWSPath,
+      'development',
+      cloud,
+    )
 
   const client = basedClient.get('project')
   const checksums: Record<string, number> = {}
@@ -359,6 +360,15 @@ export const devServer = async ({
       if (fn.httpResponse) {
         fnUpdates[config.name].httpResponse = fn.httpResponse
       }
+    }
+
+    if (schemaPayload) {
+      context.spinner.start('Deploying schema')
+
+      // TODO: once designed, we need to support multiple dbs and multiple schemas
+      await basedServer.client.call('db:set-schema', schemaPayload[0].schema)
+
+      context.print.success('Schema deployed')
     }
 
     if (fnUpdates) {
