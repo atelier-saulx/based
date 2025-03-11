@@ -4,20 +4,23 @@ import {
   type BasedBundleOptions,
   type BuildFailure,
   type BundleResult,
-  type OutputFile,
   type Plugin,
   bundle,
 } from '@based/bundle'
-import type { BasedClient } from '@based/client'
-import { hash, hashCompact } from '@saulx/hash'
-import { queued } from '@saulx/utils'
+import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
 import fg from 'fast-glob'
 import { readJSON } from 'fs-extra/esm'
-import mimeTypes from 'mime-types'
 import { AppContext } from '../../context/index.js'
 import { getTargets, isIndexFile } from '../../shared/index.js'
+import {
+  bundlingErrorHandling,
+  bundlingUpdateHandling,
+} from '../dev/handlers.js'
 import { invalidateFunctionCode } from './invalidateFunctionCode.js'
+import { prepareFilesToUpload, uploadFiles } from './peprareUpload.js'
+import { prepareFilesToDeploy } from './prepareDeploy.js'
+import { queuedFnDeploy } from './queues.js'
 import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
 export * from './invalidateFunctionCode.js'
 
@@ -27,62 +30,6 @@ const rel = (str: string) => relative(cwd, str)
 const abs = (str: string, dir: string) =>
   isAbsolute(str) ? str : join(dir, str)
 
-const queuedFileUpload = queued(
-  async (client: BasedClient, payload: any, destUrl: string) => {
-    const { status } = await fetch(destUrl, { method: 'HEAD' })
-    if (status === 200) {
-      return { src: destUrl }
-    }
-
-    return client.stream('db:file-upload', payload)
-  },
-  { dedup: (_client, payload) => hash(payload), concurrency: 10 },
-)
-
-const queuedFnDeploy = queued(
-  async (
-    context: AppContext,
-    client: BasedClient,
-    checksum: number,
-    config: Based.Deploy.Function,
-    js: OutputFile,
-    sourcemap: OutputFile,
-  ) => {
-    const { error, distId } = await client.stream('based:set-function', {
-      contents: js.contents,
-      payload: {
-        checksum,
-        config,
-      },
-    })
-
-    if (error) {
-      throw new Error(error)
-    }
-
-    if (distId) {
-      await client
-        .stream('based:set-sourcemap', {
-          contents: sourcemap.contents,
-          payload: {
-            distId,
-            checksum,
-          },
-        })
-        .catch((error) => {
-          context.print.error(
-            `Could not save sourcemap for: ${config.name} ${error.message}`,
-          )
-        })
-    } else {
-      context.print.error('No dist id returned from set-function')
-    }
-
-    return { distId }
-  },
-  { dedup: (_context, _client, checksum) => hash(checksum), concurrency: 10 },
-)
-
 export const parseFunctions = async (
   context: AppContext,
   functions: string[],
@@ -91,22 +38,14 @@ export const parseFunctions = async (
   staticPath: string,
   environment: 'development' | 'production',
   connectToCloud: boolean = false,
-): Promise<{
-  schema: string
-  schemaPayload: any //TODO
-  configs: Based.Deploy.Functions[]
-  favicons: Set<string>
-  nodeBundles: BundleResult
-  browserBundles: BundleResult
-  files: Record<string, string>
-}> => {
+): Promise<Based.Deploy.ParsedFunction> => {
   const isProduction: boolean = environment === 'production'
-  let { targets, schema } = await getTargets()
+  let { targets, schema: schemaPath } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
   const { display } = context.getGlobalOptions()
 
   if (functions) {
-    schema = null
+    schemaPath = null
   }
 
   context.print.intro('Loading your functions').pipe()
@@ -124,7 +63,7 @@ export const parseFunctions = async (
 
   // bundle the configs and schema (if necessary)
   const configBundles = await bundle({
-    entryPoints: schema ? [schema, ...configPaths] : configPaths,
+    entryPoints: schemaPath ? [schemaPath, ...configPaths] : configPaths,
     debug,
   })
 
@@ -156,11 +95,11 @@ export const parseFunctions = async (
   }
 
   // handle schema
-  let schemaPayload: any
-  if (schema) {
-    schemaPayload = parseSchema(configBundles, schema)
+  let schemaParsed: any
+  if (schemaPath) {
+    schemaParsed = parseSchema(configBundles, schemaPath)
     context.print.log(
-      `<blueBright><b>[schema]</b></blueBright> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
+      `<blueBright><b>[schema]</b></blueBright> ${schemaParsed.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schemaPath)}</dim>`,
       '<blueBright>◆</blueBright>',
     )
   }
@@ -207,7 +146,7 @@ export const parseFunctions = async (
 
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
-  const nodeEntryPoints: string[] = schema ? [schema] : []
+  const nodeEntryPoints: string[] = schemaPath ? [schemaPath] : []
   const functionsEntryPoints: string[] = []
   const browserEntryPoints: string[] = []
   const browserEsbuildPlugins: BasedBundleOptions['plugins'] = []
@@ -373,8 +312,8 @@ export const parseFunctions = async (
   ])
 
   return {
-    schema,
-    schemaPayload,
+    schemaPath,
+    schemaParsed,
     configs,
     favicons,
     nodeBundles,
@@ -388,14 +327,14 @@ export const deploy = async (program: Command) => {
   const cmd: Command = context.commandMaker('deploy')
 
   cmd.action(
-    async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
+    async ({ functions, watch, forceReload }: Based.Deploy.Command) => {
       const context: AppContext = AppContext.getInstance(program)
       await context.getProgram()
       const basedClient = await context.getBasedClient()
       const { publicPath } = await basedClient
         .get('project')
         .call('based:env-info')
-      const { nodeBundles, browserBundles, schema, favicons, configs } =
+      const { nodeBundles, browserBundles, schemaPath, favicons, configs } =
         await parseFunctions(
           context,
           functions,
@@ -406,42 +345,46 @@ export const deploy = async (program: Command) => {
         )
 
       const assetsMap: Record<string, string> = {}
+      const functionsMap: Record<string, number> = {}
       let previous = new Set<string | number>()
+      let greetings: boolean = false
 
-      async function update(err) {
-        if (err) {
-          context.print.warning(err)
-          return
+      await update(null)
+
+      if (!watch) {
+        await basedClient.get('project').destroy()
+      }
+
+      async function update(err: BuildFailure | null, result?: BundleResult) {
+        if (result?.updates.length) {
+          const updates = result?.updates
+
+          bundlingUpdateHandling(context)(updates)
         }
+
+        if (
+          err ||
+          browserBundles?.error?.errors.length ||
+          result?.error?.errors.length
+        ) {
+          const errors = result?.error?.errors || browserBundles?.error?.errors
+
+          if (bundlingErrorHandling(context)(errors)) {
+            return
+          }
+        }
+
+        context.print.line()
 
         const deployed: typeof previous = new Set()
 
         // update schema
-        if (schema) {
-          const schemaPayload = parseSchema(nodeBundles, schema)
-          const hashed = hash(schemaPayload)
-
-          deployed.add(hashed)
-
-          if (!previous.has(hashed)) {
-            // const text = textFactory('deployed', 'schema', schemaPayload.length)
-
-            // context.spinner.start(text(0))
-
-            // TODO: once based-cloud updates db:set-schema to the new db
-            // or makes a new endpoint
-            context.print
-              .intro('<yellow>set-schema unavailable</yellow>')
-              .warning(
-                'db:set-schema is not currently available online. Please set schema manually',
-              )
-
-            // await basedClient
-            //   .get('project')
-            //   .call('db:set-schema', schemaPayload)
-
-            // context.print.success(text())
-          }
+        if (schemaPath) {
+          context.print
+            .intro('<yellow>set-schema unavailable</yellow>')
+            .warning(
+              'db:set-schema is not currently available online. Please set schema manually',
+            )
         }
 
         await update(null)
@@ -452,67 +395,38 @@ export const deploy = async (program: Command) => {
         // upload assets
         const assets = browserBundles.result.outputFiles
         const { outputs } = browserBundles.result.metafile
-        const uploads = assets
-          .map(({ path, contents }) => {
-            const fileName = path.substring(path.lastIndexOf('/') + 1)
-            const ext = fileName.substring(fileName.lastIndexOf('.'))
-            return { path, contents, fileName, ext }
-          })
-          .filter(({ ext, path, fileName }) => {
-            if (path in assetsMap) {
-              return
-            }
 
-            if (ext === '.js') {
-              if (favicons.has(outputs[fileName].entryPoint)) {
-                // esbuild generates an stub js for the favicon, we don't need that
-                return
-              }
-            } else if (ext === '.map') {
-              if (favicons.has(outputs[fileName.slice(0, -4)].entryPoint)) {
-                // esbuild generates an stub js.map for the favicon, we don't need that
-                return
-              }
-            }
-
-            return true
-          })
+        const uploads = prepareFilesToUpload(
+          assets,
+          favicons,
+          outputs,
+          assetsMap,
+        )
 
         if (uploads.length) {
-          const text = textFactory('Uploaded', 'asset', uploads.length)
-          let uploading = 0
-
-          context.spinner.start(text(0))
-          context.print.line()
-
-          await Promise.all(
-            uploads.map(async ({ path, contents, ext, fileName }) => {
-              const id = `fi${hashCompact(fileName, 8)}`
-              const destUrl = `${publicPath}/${fileName}`
-              await queuedFileUpload(
-                basedClient.get('project'),
-                {
-                  contents,
-                  fileName,
-                  mimeType: mimeTypes.lookup(ext),
-                  payload: { id, $$fileKey: fileName },
-                },
-                destUrl,
-              )
-
-              context.spinner.message = text(++uploading)
-
-              assetsMap[path] = destUrl
-              assetsMap[fileName] = destUrl
-            }),
-          )
-
-          context.print.success(text())
+          await uploadFiles(context)(uploads, publicPath, assetsMap)
         }
+
+        // const functions = nodeBundles.result.outputFiles
+        const deploysNew = prepareFilesToDeploy(
+          configs,
+          nodeBundles,
+          browserBundles,
+          outputs,
+          forceReload,
+          assetsMap,
+          functionsMap,
+        )
+
+        console.dir({ deploysNew }, { depth: null })
 
         // deploys
         const deploys = configs
-          .map(({ index, app, favicon, config }) => {
+          .map(({ index, app, favicon, config, path }) => {
+            // console.log({ updates: result?.updates, path, dir, index })
+
+            // path.relative(basePath, path.resolve(basePath, filePath))
+
             const js = nodeBundles.js(index)
             const sourcemap = nodeBundles.map(index)
             const appJs = app && browserBundles.js(app)
@@ -522,32 +436,40 @@ export const deploy = async (program: Command) => {
               const appCss = browserBundles.css(app)
               const appFavicon =
                 favicon && outputs[browserBundles.find(favicon)]?.imports[0]
+
               config.appParams = {
                 js: assetsMap[appJs?.path],
                 css: assetsMap[appCss?.path],
                 favicon: assetsMap[appFavicon?.path],
               }
 
-              checksum = hash([
+              const checksumSeed = [
                 appJs?.hash,
                 appCss?.hash,
                 appFavicon?.path,
                 js.hash,
                 config,
-              ])
+              ]
+
+              if (forceReload) {
+                const num = Number(forceReload)
+                const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
+
+                config.appParams.forceReload = Date.now() + seconds
+
+                checksumSeed.push(Date.now())
+              }
+
+              checksum = hash(checksumSeed)
             } else {
               checksum = hash([js.hash, config])
             }
 
-            deployed.add(checksum)
-
-            return { checksum, config, js, sourcemap }
+            return { checksum, config, js, sourcemap, path }
           })
           .filter(({ checksum }) => !previous.has(checksum))
 
         if (deploys.length) {
-          const text = textFactory('Deployed', 'function', deploys.length)
-          // deploy functions
           let deploying = 0
           let url = basedClient
             .get('project')
@@ -556,10 +478,16 @@ export const deploy = async (program: Command) => {
 
           url = url.substring(0, url.lastIndexOf('/'))
 
-          context.spinner.start(text(0))
+          context.spinner.start(
+            context.i18n(
+              'commands.deploy.methods.deployed',
+              deploying,
+              deploys.length,
+            ),
+          )
 
           const logs = await Promise.all(
-            deploys.map(async ({ checksum, config, js, sourcemap }) => {
+            deploys.map(async ({ checksum, config, js, sourcemap, path }) => {
               await queuedFnDeploy(
                 context,
                 basedClient.get('project'),
@@ -569,35 +497,57 @@ export const deploy = async (program: Command) => {
                 sourcemap,
               )
 
-              context.spinner.message = text(++deploying)
+              functionsMap[path] = checksum
 
-              const { path = `/${config.name}`, public: isPublic } = config
+              context.spinner.message = context.i18n(
+                'commands.deploy.methods.deployed',
+                ++deploying,
+                deploys.length,
+              )
+
+              const { finalPath = `/${config.name}`, public: isPublic } = config
 
               if (isPublic) {
-                return `<dim>${url}</dim>${path}`
+                return `<dim>${url}</dim>${finalPath}`
               }
             }),
           )
 
-          if (logs.some(Boolean)) {
+          if (logs.some(Boolean) && !greetings) {
+            greetings = true
+
             context.print
-              .success(text())
+              .success(
+                context.i18n(
+                  'commands.deploy.methods.deployed',
+                  deploying,
+                  deploys.length,
+                ),
+              )
               .line()
-              .intro(`Your application is now '<b>LIVE<b>' at these URLs:`)
+              .intro(context.i18n('commands.deploy.methods.deployLive'))
               .pipe()
 
             for (const log of logs) {
               if (log) {
-                context.print.log(log, true)
+                context.print.step(log)
               }
             }
 
-            context.print.pipe().outro('<b>The deployment is complete.</b>')
+            context.print
+              .pipe()
+              .outro(context.i18n('commands.deploy.methods.deployComplete'))
           } else {
             context.print
-              .line()
-              .success(text())
-              .outro('<b>The deployment is complete.</b>')
+              .success(
+                context.i18n(
+                  'commands.deploy.methods.deployed',
+                  deploying,
+                  deploys.length,
+                ),
+              )
+              .pipe()
+              .outro(context.i18n('commands.deploy.methods.deployComplete'))
           }
         }
 
@@ -609,12 +559,6 @@ export const deploy = async (program: Command) => {
       }
     },
   )
-}
-
-function textFactory(prefix: string, suffix: string, total: number) {
-  return (amount?: number) => {
-    return `<b>${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}.</b>`
-  }
 }
 
 function parseSchema(bundleResult: BundleResult, schema: string) {

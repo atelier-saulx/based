@@ -1,3 +1,4 @@
+import type { BundleResult, OutputFile } from '@based/bundle'
 import type { AuthState, BasedClient } from '@based/client'
 import type { BasedFunctionConfig } from '@based/functions'
 import type { BasedQuery } from '@based/functions'
@@ -504,6 +505,36 @@ declare global {
     }
 
     namespace Deploy {
+      type Command = {
+        functions: string[]
+        watch: boolean
+        forceReload: boolean | number
+      }
+
+      type ParsedFunction = {
+        schemaPath: string
+        schemaParsed: any
+        configs: Based.Deploy.Functions[]
+        favicons: Set<string>
+        nodeBundles: BundleResult
+        browserBundles: BundleResult
+        files: Record<string, string>
+      }
+
+      type FilesToUpload = {
+        path: string
+        contents: Uint8Array
+        fileName: string
+        ext: string
+      }
+
+      type FunctionsToDeploy = {
+        checksum: number
+        config: any
+        js: OutputFile
+        sourcemap: OutputFile
+      }
+
       type Function = BasedFunctionConfig &
         BasedAppFunctionConfig & {
           type: 'authorize' & BasedFunctionConfig['type']

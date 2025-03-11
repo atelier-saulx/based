@@ -1,10 +1,10 @@
 import { colorize } from '../shared/colorize.js'
 import {
+  IS_VALID_CHAR,
   LINE_CLEAR,
   LINE_NEW,
   LINE_START,
   SPACER,
-  isValidChar,
 } from '../shared/constants.js'
 import type { AppContext } from './AppContext.js'
 
@@ -73,7 +73,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
         return ''
       }
 
-      if (isValidChar(log.charCodeAt(0)) || log[0] === '[') {
+      if (IS_VALID_CHAR(log.charCodeAt(0)) || log[0] === '[') {
         log = `${icon || context.state.emojis.log}  ${log}`
       }
 

@@ -10,8 +10,13 @@ import type { Command } from 'commander'
 import getPort from 'get-port'
 import { WebSocket, WebSocketServer } from 'ws'
 import { AppContext } from '../../context/index.js'
+import {
+  BASED_OPTS_SCRIPT,
+  LIVE_RELOAD_SCRIPT,
+} from '../../shared/constants.js'
 import { invalidateFunctionCode, parseFunctions } from '../deploy/index.js'
 import { FunctionFile } from './FunctionFile.js'
+import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
 
 const getOwnIp = () => {
   const nets = networkInterfaces()
@@ -45,13 +50,6 @@ export const dev = async (program: Command) => {
   const cmd: Command = context.commandMaker('dev')
 
   cmd.action(devServer)
-}
-
-const liveReloadScript = (port: number): string =>
-  `<script>!function e(o){var n=window.location.hostname;o||(o=0),setTimeout((function(){var t=new WebSocket("ws://"+n+":${port}");t.addEventListener("message",(function(){location.reload()})),t.addEventListener("open",(function(){o>0&&location.reload(),console.log("%cBased live reload server connected","color: #bbb")})),t.addEventListener("close",(function(){console.log("%cBased live reload server reconnecting...","color: #bbb"),e(Math.min(o+1e3))}))}),o)}();</script>`
-
-const basedOptsScript = (opts) => {
-  return `<script>window.BASED=window.BASED||{};window.BASED.opts={${JSON.stringify(opts).replace(/":/g, ':').replace(/,"/g, ',').slice(2, -1)}}</script>`
 }
 
 export const devServer = async ({
@@ -121,17 +119,9 @@ export const devServer = async ({
     let reloadClients = hadError
 
     if (result?.updates.length) {
-      context.print
-        .line()
-        .intro(context.i18n('methods.bundling.changeDetected'))
-        .pipe()
+      const updates = result?.updates
 
-      for (const [type, file] of result.updates) {
-        context.print.log(
-          context.i18n(`methods.bundling.types.${type}`, file),
-          '<secondary>◆</secondary>',
-        )
-      }
+      bundlingUpdateHandling(context)(updates)
     }
 
     if (
@@ -141,51 +131,12 @@ export const devServer = async ({
     ) {
       const errors = result?.error?.errors || browserBundles?.error?.errors
 
-      if (errors.length) {
-        context.print
-          .line()
-          .intro(`<red>${context.i18n('methods.bundling.errorDetected')}</red>`)
+      if (bundlingErrorHandling(context)(errors)) {
+        reloadClients = true
+        hadError = true
 
-        for (const error of errors) {
-          if (error.location) {
-            context.print
-              .pipe()
-              .log(`<b>${error.text}</b>`, context.state.emojis.error)
-
-            if (error.location.lineText) {
-              context.print.pipe().pipe(`"${error.location.lineText}"`).pipe()
-            }
-
-            context.print.log(
-              context.i18n('methods.bundling.error.file', error.location.file),
-              context.state.emojis.error,
-            )
-
-            if (error.location.line && error.location.column) {
-              context.print.log(
-                context.i18n(
-                  'methods.bundling.error.location',
-                  error.location.line,
-                  error.location.column,
-                ),
-                context.state.emojis.error,
-              )
-            }
-
-            if (error.pluginName) {
-              context.print.log(
-                context.i18n('methods.bundling.error.plugin', error.pluginName),
-                context.state.emojis.error,
-              )
-            }
-          }
-        }
+        return
       }
-
-      reloadClients = true
-      hadError = true
-
-      return
     }
 
     let fnUpdates: any
@@ -285,7 +236,7 @@ export const devServer = async ({
             if (errorTarget) {
               const vsCodeLink = (str) =>
                 `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
-              let str = `${liveReloadScript(lrPort)}<pre>`
+              let str = `${LIVE_RELOAD_SCRIPT(lrPort)}<pre>`
               for (const { location, text } of errorTarget.error.errors) {
                 if (location) {
                   const { file, column, line } = location
@@ -329,9 +280,9 @@ export const devServer = async ({
               )
               return html
             }
-            return `${html.substring(0, i)}${liveReloadScript(
+            return `${html.substring(0, i)}${LIVE_RELOAD_SCRIPT(
               lrPort,
-            )}${basedOptsScript(client.opts)}${html.substring(i)}`
+            )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`
           },
         }
       } else if (

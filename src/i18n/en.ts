@@ -634,10 +634,26 @@ export default {
           description: 'To deploy in watch mode.',
         },
         {
+          parameter: '-fr, --force-reload',
+          description:
+            'Enable or disable this function in the cloud, or set the update time window (in seconds) to ensure users stay in sync with your cache.',
+          default: 10,
+        },
+        {
           parameter: '-f, --functions <functions...>',
           description: 'The function names to be served (variadic).',
         },
       ],
+      methods: {
+        uploaded_one: '<b>Uploaded</b>: ${item}/${max} asset',
+        uploaded_many: '<b>Uploaded</b>: ${item}/${max} assets',
+        deployed_one: '<b>Deployed</b>: ${item}/${max} function',
+        deployed_many: '<b>Deployed</b>: ${item}/${max} functions',
+        schema_one: '<b>Deployed</b>: ${item}/${max} schema',
+        schema_many: '<b>Deployed</b>: ${item}/${max} schemas',
+        deployComplete: 'Deployment completed successfully',
+        deployLive: 'Your application is now <b>LIVE</b> at:',
+      },
     },
     dev: {
       description: 'Develop your app running the Based Cloud locally.',
