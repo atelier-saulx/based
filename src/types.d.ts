@@ -533,6 +533,7 @@ declare global {
         config: any
         js: OutputFile
         sourcemap: OutputFile
+        path: string
       }
 
       type Function = BasedFunctionConfig &

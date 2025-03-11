@@ -41,6 +41,7 @@ export const prepareFilesToDeploy = (
         const num = Number(forceReload)
         const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
         config.appParams.forceReload = Date.now() + seconds
+
         checksumSeed.push(Date.now())
       }
 
@@ -50,7 +51,7 @@ export const prepareFilesToDeploy = (
     }
 
     if (functionsMap[path] !== checksum) {
-      result.push({ checksum, config, js, sourcemap })
+      result.push({ checksum, config, js, sourcemap, path })
     }
   }
 

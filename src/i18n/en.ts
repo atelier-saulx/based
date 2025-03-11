@@ -634,7 +634,7 @@ export default {
           description: 'To deploy in watch mode.',
         },
         {
-          parameter: '-fr, --force-reload',
+          parameter: '-fr, --force-reload <boolean|seconds>',
           description:
             'Enable or disable this function in the cloud, or set the update time window (in seconds) to ensure users stay in sync with your cache.',
           default: 10,

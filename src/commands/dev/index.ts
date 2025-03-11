@@ -14,7 +14,8 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
-import { invalidateFunctionCode, parseFunctions } from '../deploy/index.js'
+import { invalidateFunctionCode } from '../deploy/index.js'
+import { parseFunctions } from '../deploy/parseFunctions.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
 
@@ -78,7 +79,7 @@ export const devServer = async ({
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
 
-  const { nodeBundles, browserBundles, configs, schemaPayload } =
+  const { nodeBundles, browserBundles, configs, schemaParsed } =
     await parseFunctions(
       context,
       functions,
@@ -313,11 +314,11 @@ export const devServer = async ({
       }
     }
 
-    if (schemaPayload) {
+    if (schemaParsed) {
       context.spinner.start('Deploying schema')
 
       // TODO: once designed, we need to support multiple dbs and multiple schemas
-      await basedServer.client.call('db:set-schema', schemaPayload[0].schema)
+      await basedServer.client.call('db:set-schema', schemaParsed[0].schema)
 
       context.print.success('Schema deployed')
     }

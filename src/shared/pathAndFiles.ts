@@ -164,3 +164,22 @@ export const getContentType = (extension: string) => {
     }
   }
 }
+
+export const parseNumberAndBoolean = (
+  value: string | number | boolean,
+): number | boolean => {
+  const trimmed = String(value).trim()
+
+  if (trimmed === 'true') return true
+  if (trimmed === 'false') return false
+
+  const num = Number(trimmed)
+
+  if (!Number.isNaN(num)) return num
+}
+
+export const stringMaxLength = (strings: string[]) =>
+  strings.reduce(
+    (acc, string) => (string.length > acc ? string.length : acc),
+    0,
+  )
