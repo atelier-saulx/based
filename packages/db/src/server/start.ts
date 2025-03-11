@@ -141,7 +141,7 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
     db.workers[i] = new DbWorker(address, db)
   }
 
-  if (!opts.hosted) {
+  if (!opts?.hosted) {
     db.unlistenExit = exitHook(async (signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
