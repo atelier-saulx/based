@@ -43,26 +43,18 @@ pub fn writeEdges(
         } else if (t == p.NUMBER or t == p.TIMESTAMP) {
             edgeLen = 8;
         } else if (t == p.CARDINALITY) {
-            // const len = read(u32, data, i + 2);
-            // const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
-            // const hll = selva.selva_fields_ensure_string(ctx.node.?, edgeFieldSchema, selva.HLL_INIT_SIZE);
-            // selva.hll_init(hll, 14, true);
-
-            const hash = read(u64, data, 6);
-            utils.debugPrint("data: {any}\nhash: {any}\n", .{ data, hash });
-            // var it: usize = 6;
-            // while (it < len * 8 + 6) {
-            //     const hash = read(u64, data, it);
-            //     utils.debugPrint("hash: {any}\n", .{hash});
-            //     selva.hll_add(hll, hash);
-            //     it += 8;
-            // }
-            // edgeLen = len;
-            // offset = 4;
-            // const countDistinct = selva.hll_count(@ptrCast(hll));
-            // const value = countDistinct[0..4];
-            // utils.debugPrint("include.zig / len hll stored: {any}\n", .{selva.selva_string_get_len(hll)});
-            // utils.debugPrint("include.zig / countDistinct: {}\n", .{std.mem.bytesToValue(u32, value)});
+            const len = read(u32, data, i + 2);
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+            const hll = selva.selva_fields_ensure_string2(ctx.db.selva.?, ctx.node.?, edgeConstraint, ref, edgeFieldSchema, selva.HLL_INIT_SIZE);
+            selva.hll_init(hll, 14, true);
+            var it: usize = 6;
+            while (it < len + 6) {
+                const hash = read(u64, data, it);
+                selva.hll_add(hll, hash);
+                it += 8;
+            }
+            edgeLen = len;
+            offset = 4;
         }
         if (t != p.CARDINALITY) {
             var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
