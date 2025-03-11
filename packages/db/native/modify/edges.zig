@@ -1,14 +1,14 @@
 const db = @import("../db/db.zig");
 const utils = @import("../utils.zig");
-const read = utils.read;
 const Modify = @import("./ctx.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const types = @import("../types.zig");
 const update = @import("./update.zig");
 const std = @import("std");
-const ModifyCtx = Modify.ModifyCtx;
+const read = utils.read;
 
+const ModifyCtx = Modify.ModifyCtx;
 const p = types.Prop;
 
 pub fn writeEdges(
@@ -47,8 +47,8 @@ pub fn writeEdges(
             const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
             const hll = selva.selva_fields_ensure_string2(ctx.db.selva.?, ctx.node.?, edgeConstraint, ref, edgeFieldSchema, selva.HLL_INIT_SIZE);
             selva.hll_init(hll, 14, true);
-            var it: usize = 6;
-            while (it < len + 6) {
+            var it: usize = 4;
+            while (it < len) {
                 const hash = read(u64, data, it);
                 selva.hll_add(hll, hash);
                 it += 8;

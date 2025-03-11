@@ -276,6 +276,7 @@ export const readAllFields = (
           }
           i += size + 4
         } else if (t === CARDINALITY) {
+          i++
           const size = readUint32(result, i)
           addField(edgeDef, readUint32(result, i + 4), item)
           i += size + 4
