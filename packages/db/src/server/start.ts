@@ -62,16 +62,22 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
     )
 
     // Load the common dump
-    native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+    try {
+      native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+    } catch (e) {
+      console.log(e.message)
+      throw e
+    }
 
     // Load all range dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       for (const dump of dumps) {
         const fname = dump.file
-        const err = native.loadRange(join(path, fname), db.dbCtxExternal)
-        if (err) {
-          console.log(`Failed to load a range. file: "${fname}": ${err}`)
+        try {
+          native.loadRange(join(path, fname), db.dbCtxExternal)
+        } catch (e) {
+          console.log(e.message)
         }
       }
     }
@@ -81,7 +87,9 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
       // Prop need to not call setting in selva
       db.putSchema(JSON.parse(schema.toString()), true)
     }
-  } catch (err) {}
+  } catch (err) {
+    // TODO In some cases we really should give up!
+  }
 
   // The merkle tree should be empty at start.
   if (!db.merkleTree || db.merkleTree.getRoot()) {

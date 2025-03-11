@@ -1,8 +1,16 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
 
+const selvaIoErrlog = Buffer.alloc(256)
 var compressor: any = null
 var decompressor: any = null
+
+function SelvaIoErrlogToString(buf: Buffer) {
+    let i: number;
+    let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
+
+    return selvaIoErrlog.slice(0, len).toString();
+}
 
 export default {
   historyAppend(history: any, typeId: number, nodeId: number) {
@@ -65,14 +73,20 @@ export default {
     return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)
   },
 
-  loadCommon: (path: string, dbCtx: any): number => {
+  loadCommon: (path: string, dbCtx: any): void => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.loadCommon(buf, dbCtx)
+    const err: number = db.loadCommon(buf, dbCtx, selvaIoErrlog)
+    if (err) {
+      throw new Error(`Failed to load common. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`)
+    }
   },
 
-  loadRange: (path: string, dbCtx: any): number => {
+  loadRange: (path: string, dbCtx: any): void => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.loadRange(buf, dbCtx)
+    const err: number = db.loadRange(buf, dbCtx, selvaIoErrlog)
+    if (err) {
+      throw new Error(`Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`)
+    }
   },
 
   updateSchemaType: (prefix: number, buf: Buffer, dbCtx: any) => {

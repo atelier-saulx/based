@@ -54,10 +54,10 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
  *  ```
  */
 SELVA_EXPORT
-int selva_dump_load_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_range(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+int selva_dump_load_range(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 /**
  * Find a type by type id.
