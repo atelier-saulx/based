@@ -102,10 +102,6 @@ pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) ?[]u8 {
         return countDistinct[0..4];
     } else {
         return null;
-        // const newCardinality = selva.selva_fields_ensure_string(node, selvaFieldSchema, selva.HLL_INIT_SIZE);
-        // selva.hll_init(newCardinality, 14, true);
-        // const countDistinct = selva.hll_count(@ptrCast(newCardinality));
-        // return countDistinct[0..4];
     }
 }
 
