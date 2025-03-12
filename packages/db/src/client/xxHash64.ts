@@ -1,8 +1,8 @@
 import native from '../native.js'
 
-export const xxHash64 = (buf: Buffer, target?: Buffer, index?: number) => {
+export const xxHash64 = (buf: Buffer | Uint8Array, target?: Uint8Array | Buffer, index?: number) => {
   if (!target) {
-    target = Buffer.allocUnsafe(8)
+    target = new Uint8Array(8)
     index = 0
   }
   native.xxHash64(buf, target, index)

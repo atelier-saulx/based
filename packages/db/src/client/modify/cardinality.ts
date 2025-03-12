@@ -6,7 +6,7 @@ import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'
 
 export function writeHll(
-  value: string | null | Buffer | Array<string | Buffer>,
+  value: string | null | Buffer | Uint8Array | Array<string | Buffer | Uint8Array>,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -18,7 +18,7 @@ export function writeHll(
   }
 
   if (value === null) {
-    // Future hll_reset frunction
+    // Future hll_reset function
     return
   } else if (!Array.isArray(value)) {
     value = [value]
@@ -35,7 +35,7 @@ export function writeHll(
 }
 
 function addHll(
-  value: (string | Buffer)[],
+  value: (string | Buffer | Uint8Array)[],
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -53,7 +53,7 @@ function addHll(
 }
 
 export function writeHllBuf(
-  value: (string | Buffer)[],
+  value: (string | Buffer | Uint8Array)[],
   ctx: ModifyCtx,
   t: PropDef,
   len: number,
@@ -62,8 +62,8 @@ export function writeHllBuf(
   ctx.len += 4
   for (let val of value) {
     if (typeof val === 'string') {
-      xxHash64(Buffer.from(val), ctx.buf, ctx.len)
-    } else if (val instanceof Buffer && val.byteLength === 8) {
+      xxHash64(new TextEncoder().encode(val), ctx.buf, ctx.len)
+    } else if ((val instanceof Buffer || val instanceof Uint8Array) && val.byteLength === 8) {
       ctx.buf.set(val, ctx.len)
     } else {
       return new ModifyError(t, val)
