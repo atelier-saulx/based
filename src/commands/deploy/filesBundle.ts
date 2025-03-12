@@ -7,7 +7,7 @@ import {
 import type { AppContext } from '../../context/index.js'
 import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
 
-export const bundleProject = async (
+export const filesBundle = async (
   context: AppContext,
   nodeEntryPoints: string[],
   browserEntryPoints: string[],

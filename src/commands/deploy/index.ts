@@ -6,11 +6,12 @@ import {
   bundlingErrorHandling,
   bundlingUpdateHandling,
 } from '../dev/handlers.js'
-import { bundleProject } from './bundleFiles.js'
 import { configsDeploy } from './configsDeploy.js'
-import { parseConfigs } from './configsParse.js'
+import { configsParse } from './configsParse.js'
+import { filesBundle } from './filesBundle.js'
 import { prepareFilesToUpload, uploadFiles } from './peprareUpload.js'
-import { queuedFnDeploy } from './queues.js'
+import { schemaDeploy } from './schemaDeploy.js'
+import { schemaParse } from './schemaParse.js'
 export * from './configsInvalidateCode.js'
 
 export const deploy = async (program: Command) => {
@@ -32,9 +33,9 @@ export const deploy = async (program: Command) => {
         nodeEntryPoints,
         browserEntryPoints,
         browserEsbuildPlugins,
-      } = await parseConfigs(context, functions)
+      } = await configsParse(context, functions)
 
-      const { nodeBundles, browserBundles } = await bundleProject(
+      const { nodeBundles, browserBundles } = await filesBundle(
         context,
         nodeEntryPoints,
         browserEntryPoints,
@@ -46,19 +47,20 @@ export const deploy = async (program: Command) => {
         true,
       )
 
+      const schema = await schemaParse(context, configs, nodeBundles)
+
       const assetsMap: Record<string, string> = {}
-      const functionsMap: Record<string, number> = {}
-      let previous = new Set<string | number>()
+      const configsMap: Record<string, number> = {}
       let greetings: boolean = false
       forceReload = parseNumberAndBoolean(forceReload)
 
-      // if (schemaPath) {
-      //   context.print
-      //     .line()
-      //     .intro(context.i18n('methods.schema.unavailable'))
-      //     .pipe()
-      //     .warning(context.i18n('methods.schema.setSchema'))
-      // }
+      if (schema) {
+        context.print
+          .line()
+          .intro(context.i18n('methods.schema.unavailable'))
+          .pipe()
+          .warning(context.i18n('methods.schema.setSchema'))
+      }
 
       await onChange(null)
 
@@ -87,8 +89,6 @@ export const deploy = async (program: Command) => {
 
         context.print.line()
 
-        const deployed: typeof previous = new Set()
-
         const assets = browserBundles.result.outputFiles
         const { outputs } = browserBundles.result.metafile
 
@@ -103,75 +103,24 @@ export const deploy = async (program: Command) => {
           await uploadFiles(context)(uploads, publicPath, assetsMap)
         }
 
-        const deploys = configsDeploy(
+        const { deploys, logs } = await configsDeploy(
+          context,
           configs,
           nodeBundles,
           browserBundles,
           outputs,
           forceReload,
           assetsMap,
-          functionsMap,
+          configsMap,
         )
 
+        // await schemaDeploy(context, schema, configsMap)
+
         if (deploys.length) {
-          let deploying = 0
-          let url = basedClient
-            .get('project')
-            .connection?.ws.url.replace('ws://', 'http://')
-            .replace('wss://', 'https://')
-
-          url = url.substring(0, url.lastIndexOf('/'))
-
-          context.spinner.start(
-            context.i18n('commands.deploy.methods.deploying') +
-              context.i18n(
-                'commands.deploy.methods.function',
-                deploying,
-                deploys.length,
-              ),
-          )
-
-          const logs = await Promise.all(
-            deploys.map(async ({ checksum, config, js, sourcemap, path }) => {
-              await queuedFnDeploy(
-                context,
-                basedClient.get('project'),
-                checksum,
-                config,
-                js,
-                sourcemap,
-              )
-
-              functionsMap[path] = checksum
-
-              context.spinner.message =
-                context.i18n('commands.deploy.methods.deploying') +
-                context.i18n(
-                  'commands.deploy.methods.function',
-                  ++deploying,
-                  deploys.length,
-                )
-
-              const { finalPath = `/${config.name}`, public: isPublic } = config
-
-              if (isPublic) {
-                return `<dim>${url}</dim>${finalPath}`
-              }
-            }),
-          )
-
           if (logs.some(Boolean) && !greetings) {
             greetings = true
 
             context.print
-              .success(
-                context.i18n('commands.deploy.methods.deployed') +
-                  context.i18n(
-                    'commands.deploy.methods.function',
-                    deploying,
-                    deploys.length,
-                  ),
-              )
               .line()
               .intro(context.i18n('commands.deploy.methods.deployLive'))
               .pipe()
@@ -187,20 +136,10 @@ export const deploy = async (program: Command) => {
               .outro(context.i18n('commands.deploy.methods.deployComplete'))
           } else {
             context.print
-              .success(
-                context.i18n('commands.deploy.methods.deployed') +
-                  context.i18n(
-                    'commands.deploy.methods.function',
-                    deploying,
-                    deploys.length,
-                  ),
-              )
               .pipe()
               .outro(context.i18n('commands.deploy.methods.deployComplete'))
           }
         }
-
-        previous = deployed
       }
 
       if (!watch) {

@@ -14,8 +14,8 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
-import { bundleProject } from '../deploy/bundleFiles.js'
-import { parseConfigs } from '../deploy/configsParse.js'
+import { configsParse } from '../deploy/configsParse.js'
+import { filesBundle } from '../deploy/filesBundle.js'
 import { configsInvalidateCode } from '../deploy/index.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
@@ -85,9 +85,9 @@ export const devServer = async ({
     nodeEntryPoints,
     browserEntryPoints,
     browserEsbuildPlugins,
-  } = await parseConfigs(context, functions)
+  } = await configsParse(context, functions)
 
-  const { nodeBundles, browserBundles } = await bundleProject(
+  const { nodeBundles, browserBundles } = await filesBundle(
     context,
     nodeEntryPoints,
     browserEntryPoints,

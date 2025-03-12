@@ -766,6 +766,8 @@ export default {
       noMainTypeApp:
         "No <b>'main'</b> field defined for <b>'${function}'<b> of type 'app', this is a required field",
       loadingFunctions: 'Loading your functions',
+      loadingSchema: 'Loading your schema',
+      noSchema: 'invalid or not found',
       noFunctions:
         'No matching function configurations found. Check your Based Functions files and try again.',
       project: 'Bundling your project',
@@ -797,7 +799,7 @@ export default {
       remove: 'Remove the files and try again.',
       loading: 'Loading your schema',
       unavailable: '<yellow>Schema unavailable</yellow>',
-      setSchema: `Your schema was successfully found, but the 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
+      setSchema: `Your schema was successfully found and parsed, but the 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
     },
     server: {
       name: '<dim><b>Based Dev Server</b> error:</dim>',

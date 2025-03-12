@@ -3,12 +3,7 @@ import { join } from 'node:path'
 import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import type { AppContext } from '../../context/index.js'
-import {
-  isIndexFile,
-  isSchemaFile,
-  rel,
-  stringMaxLength,
-} from '../../shared/index.js'
+import { isConfigFile, isIndexFile } from '../../shared/index.js'
 import { configsInvalidateCode } from './configsInvalidateCode.js'
 
 export const configsBundle = async (
@@ -70,7 +65,7 @@ export const configsBundle = async (
           }
         }
 
-        if (!isSchemaFile(path)) {
+        if (isConfigFile(path)) {
           if (!index) {
             context.print.warning(
               context.i18n('methods.bundling.noIndex', config.name),
@@ -122,40 +117,6 @@ export const configsBundle = async (
       })
       .filter(Boolean),
   )) as Based.Deploy.Functions[]
-
-  if (!configsResolved.length) {
-    context.print.error(context.i18n('methods.bundling.noFunctions'))
-
-    throw new Error(context.i18n('methods.aborted'))
-  }
-
-  const functionsNames: string[] = configsResolved
-    .map(({ config }) => config.name)
-    .filter(Boolean)
-
-  await Promise.all(
-    configsResolved.map(async ({ config, path }) => {
-      if (isSchemaFile(path)) {
-        return
-      }
-
-      const accessLabel: string = config.public
-        ? `<secondary>${'public'.padEnd(7)}</secondary>`
-        : `<secondary>${'private'.padEnd(7)}</secondary>`
-      const type: string = config.type || 'function'
-      const name: string = config.name
-      const file: string = rel(path)
-      const functionLabel: string = `<b>${name.padEnd(stringMaxLength(functionsNames))}</b>`
-      const typeLabel: string = `<dim><secondary>${type.padEnd(9)}</secondary></dim>`
-      const pipe: string = '<dim>|</dim>'
-      const fileLabel: string = `<dim>${file}</dim>`
-
-      context.print.log(
-        `${functionLabel} ${pipe} ${accessLabel} ${pipe} ${typeLabel} ${pipe} ${fileLabel}`,
-        '<secondary>◆</secondary>',
-      )
-    }),
-  )
 
   return configsResolved
 }

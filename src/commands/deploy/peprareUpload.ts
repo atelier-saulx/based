@@ -56,7 +56,7 @@ export const uploadFiles =
         context.i18n('commands.deploy.methods.uploading') +
           context.i18n(
             'commands.deploy.methods.asset',
-            uploading,
+            uploading.toString(),
             uploads.length,
           ),
       )
