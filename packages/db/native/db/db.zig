@@ -96,15 +96,16 @@ pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
     return s.?;
 }
 
-pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
+pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) ?[]u8 {
     if (selva.selva_fields_get_selva_string(node, selvaFieldSchema)) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
     } else {
-        const newCardinality = selva.selva_fields_ensure_string(node, selvaFieldSchema, selva.HLL_INIT_SIZE);
-        selva.hll_init(newCardinality, 14, true);
-        const countDistinct = selva.hll_count(@ptrCast(newCardinality));
-        return countDistinct[0..4];
+        return null;
+        // const newCardinality = selva.selva_fields_ensure_string(node, selvaFieldSchema, selva.HLL_INIT_SIZE);
+        // selva.hll_init(newCardinality, 14, true);
+        // const countDistinct = selva.hll_count(@ptrCast(newCardinality));
+        // return countDistinct[0..4];
     }
 }
 
@@ -147,7 +148,7 @@ pub fn getField(
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == types.Prop.CARDINALITY) {
-        return getCardinalityField(node, selvaFieldSchema);
+        return getCardinalityField(node, selvaFieldSchema) orelse undefined;
     }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];

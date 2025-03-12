@@ -161,7 +161,7 @@ static double compute_alpha_m(size_t m) {
 
 uint8_t *hll_count(struct selva_string *hllss) {
     if (!hllss) {
-        return null;
+        return nullptr;
     }
 
     size_t len;
