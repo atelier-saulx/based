@@ -134,7 +134,7 @@ export default {
     return db.compress(compressor, buf, offset, stringSize)
   },
 
-  decompress: (input: Buffer | Uint8Array, output: Buffer, offset: number, len: number) => {
+  decompress: (input: Buffer | Uint8Array, output: Buffer | Uint8Array, offset: number, len: number) => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
