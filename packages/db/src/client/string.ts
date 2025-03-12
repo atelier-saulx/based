@@ -1,9 +1,12 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32 } from './bitWise.js'
+import makeTmpBuffer from './tmpBuffer.js'
 
 const DECODER = new TextDecoder('utf-8')
 // add encoder
+
+const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
 // type 0 = no compression; 1 = deflate
 // [lang] [type] [uncompressed size 4] [compressed string] [crc32]
@@ -74,20 +77,11 @@ export const decompress = (val: Uint8Array): string => {
   return read(val, 0, val.length)
 }
 
-let readTmpBuf: ArrayBuffer;
-
 export const read = (val: Uint8Array, offset: number, len: number): string => {
   const type = val[offset + 1]
   if (type == 1) {
     const origSize = readUint32(val, offset + 2)
-    // @ts-ignore
-    if (!readTmpBuf || readTmpBuf.maxByteLength < origSize) {
-        // @ts-ignore
-        readTmpBuf = new ArrayBuffer(origSize, { maxByteLength: 2 * origSize });
-    }
-    // @ts-ignore
-    readTmpBuf.resize(origSize)
-    const newBuffer = new Uint8Array(readTmpBuf)
+    const newBuffer = getTmpBuffer(origSize)
     // deflate in browser for this...
     native.decompress(val, newBuffer, offset + 6, len - 6)
     return new TextDecoder('utf-8').decode(newBuffer)
