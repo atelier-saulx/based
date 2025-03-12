@@ -3,7 +3,7 @@ import { DbServer, DbWorker } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { createTree } from './csmt/index.js'
+import { createTree, hashEq } from './csmt/index.js'
 import { foreachBlock } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
@@ -130,9 +130,11 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
   }
 
   if (writelog?.hash) {
-    const oldHash = Buffer.from(writelog.hash, 'hex')
+    // Uint8Array.fromHex() Iint8Array.toHex() are not available in V8
+    // https://issues.chromium.org/issues/42204568
+    const oldHash = Uint8Array.from(Buffer.from(writelog.hash, 'hex'))
     const newHash = db.merkleTree.getRoot()?.hash
-    if (!oldHash.equals(newHash)) {
+    if (!hashEq(oldHash, newHash)) {
       console.error(
         `WARN: CSMT hash mismatch: ${writelog.hash} != ${Buffer.from(newHash).toString('hex')}`,
       )
