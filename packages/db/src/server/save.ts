@@ -46,7 +46,7 @@ export function save(db: DbServer, sync = false) {
   foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
     const file = block_sdb_file(typeId, start, end)
     const path = join(db.fileSystemPath, file)
-    const hash = Buffer.allocUnsafe(16)
+    const hash = new Uint8Array(16)
     err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hash)
     if (err) {
       console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)

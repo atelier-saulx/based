@@ -65,7 +65,7 @@ export default {
     start: number,
     end: number,
     dbCtx: any,
-    hashOut: Buffer,
+    hashOut: Uint8Array,
   ): number => {
     const pathBuf = textEncoder.encode(path + '\0')
     return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
