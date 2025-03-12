@@ -128,9 +128,7 @@ pub fn getFields(
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             if (prop == t.Prop.CARDINALITY) {
-                // TODO: This can be much better if no selva_string is created in include when edge is undefined
-                // returnig zero count from hll_count might be an option in this case, but the undefined logic must be handled somewhere else.
-                value = db.getCardinalityReferenceOrCreate(ctx.db.selva.?, node, edgeRef.?.edgeConstaint, edgeRef.?.reference.?, fieldSchema);
+                value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema) orelse undefined;
             } else {
                 value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
             }

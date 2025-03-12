@@ -141,7 +141,7 @@ await test('hll', async (t) => {
     [],
   )
 
-  // // console.log('------- update --------')
+  // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -318,7 +318,6 @@ await test('hll', async (t) => {
         contributors: [
           {
             id: 1,
-            $undeftokens: 0,
           },
         ],
       },

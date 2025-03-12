@@ -161,7 +161,7 @@ static double compute_alpha_m(size_t m) {
 
 uint8_t *hll_count(struct selva_string *hllss) {
     if (!hllss) {
-        db_panic("Error: HLL selva string is NULL.");
+        return null;
     }
 
     size_t len;

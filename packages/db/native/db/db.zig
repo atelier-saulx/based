@@ -100,8 +100,7 @@ pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     if (selva.selva_fields_get_selva_string(node, selvaFieldSchema)) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
-    } 
-    else {
+    } else {
         const newCardinality = selva.selva_fields_ensure_string(node, selvaFieldSchema, selva.HLL_INIT_SIZE);
         selva.hll_init(newCardinality, 14, true);
         const countDistinct = selva.hll_count(@ptrCast(newCardinality));
@@ -109,10 +108,13 @@ pub fn getCardinalityField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     }
 }
 
-pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) []u8 {
-    const stored = selva.selva_fields_get_selva_string3(ref, selvaFieldSchema) orelse null;
-    const countDistinct = selva.hll_count(@ptrCast(stored));
-    return countDistinct[0..4];
+pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
+    if (selva.selva_fields_get_selva_string3(ref, selvaFieldSchema) orelse null) |stored| {
+        const countDistinct = selva.hll_count(@ptrCast(stored));
+        return countDistinct[0..4];
+    } else {
+        return null;
+    }
 }
 
 pub fn getCardinalityReferenceOrCreate(db: *selva.SelvaDb, node: Node, edgeConstraint: EdgeFieldConstraint, ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) []u8 {
