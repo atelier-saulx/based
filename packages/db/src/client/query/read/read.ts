@@ -20,7 +20,7 @@ import {
   JSON,
   CARDINALITY,
 } from '@based/schema/def'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefEdges } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   readDoubleLE,
@@ -251,40 +251,42 @@ export const readAllFields = (
         i += size + 4
         // ----------------
       } else {
-        // if prop === 0 use main reverseIndex
-        // TODO: reversePropsEdgesMain [START]
-        // TODO: reversePropsEdges [PROP]
-
-        // @ts-ignore
-        const edgeDef: PropDefEdge = q.edges.target.ref.reverseProps[prop]
-        const t = edgeDef.typeIndex
-        if (t === JSON) {
-          i++
-          const size = readUint32(result, i)
-          addField(
-            edgeDef,
-            global.JSON.parse(readUtf8(result, i + 6, size + i)),
-            item,
-          )
-          i += size + 4
-        } else if (t === BINARY) {
-          i++
-          const size = readUint32(result, i)
-          addField(edgeDef, result.subarray(i + 6, size + i), item)
-          i += size + 4
-        } else if (t === STRING || t === ALIAS || t === ALIASES) {
-          i++
-          const size = readUint32(result, i)
-          if (size === 0) {
-            addField(edgeDef, '', item)
-          } else {
-            addField(edgeDef, read(result, i + 4, size), item)
-          }
-          i += size + 4
+        if (prop === 0) {
+          console.log('GOT MAIN VALUE DO STUFF WITH START')
+          //  const edgeDef: PropDefEdge = q.edges.target.ref.reverseProps[prop]
+          // change this
+          // i++
+          // readMainValue(edgeDef, result, i, item)
+          // i += edgeDef.len
         } else {
-          i++
-          readMainValue(edgeDef, result, i, item)
-          i += edgeDef.len
+          const target = 'ref' in q.edges.target && q.edges.target.ref
+          const edgeDef: PropDefEdge = target.reverseSeperateEdges[prop]
+          const t = edgeDef.typeIndex
+
+          if (t === JSON) {
+            i++
+            const size = readUint32(result, i)
+            addField(
+              edgeDef,
+              global.JSON.parse(readUtf8(result, i + 6, size + i)),
+              item,
+            )
+            i += size + 4
+          } else if (t === BINARY) {
+            i++
+            const size = readUint32(result, i)
+            addField(edgeDef, result.subarray(i + 6, size + i), item)
+            i += size + 4
+          } else if (t === STRING || t === ALIAS || t === ALIASES) {
+            i++
+            const size = readUint32(result, i)
+            if (size === 0) {
+              addField(edgeDef, '', item)
+            } else {
+              addField(edgeDef, read(result, i + 4, size), item)
+            }
+            i += size + 4
+          }
         }
       }
     } else if (index === READ_REFERENCE) {

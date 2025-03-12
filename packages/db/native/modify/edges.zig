@@ -20,6 +20,9 @@ pub fn writeEdges(
     while (i < data.len) {
         const op: types.ModOp = @enumFromInt(0);
 
+        // MOD OP
+        // handle create / update / partial
+
         const prop = data[i];
 
         const t: p = @enumFromInt(data[i + 1]);
@@ -31,11 +34,15 @@ pub fn writeEdges(
         var start: u16 = 0;
 
         if (prop == 0) {
+            // IF CREATE OR FULL UPDATE OF MAIN
+            // IF UPDATE SINGLE VALUE
+            std.debug.print("GOT MAIN \n", .{});
             start = read(u16, data, i + 2);
             edgeLen = @as(u32, read(u16, data, i + 4));
             // prop = data[i + 2];
-            i += 4;
-        } else if (t == p.STRING or t == p.REFERENCES or t == p.ALIAS) {
+            offset = 4;
+        } else {
+            // if TEXT
             edgeLen = read(u32, data, i + 2);
             offset = 4;
         }
@@ -43,10 +50,11 @@ pub fn writeEdges(
         var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
 
         std.debug.print(
-            "FLAP {any} len: {d} i: {d} d: {any} start: {any} edgeData: {any} \n",
-            .{ prop, edgeLen, i, data, start, edgeData },
+            "FLAP {any} len: {d} i: {d} d: {any} start: {any} edgeData: {any} type: {any} \n",
+            .{ prop, edgeLen, i, data, start, edgeData, t },
         );
 
+        // ---> MAIN
         // TMP
         if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
             const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;

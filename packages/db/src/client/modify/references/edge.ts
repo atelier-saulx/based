@@ -49,7 +49,6 @@ function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
         return new ModifyError(t, value)
       }
     }
-
     if (id > 0) {
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
@@ -66,9 +65,8 @@ export function writeEdges(
   ref: RefModifyOpts,
   ctx: ModifyCtx,
 ): ModifyErr {
-  // console.log('YO EDGE', t)
-
   for (const key in t.edges) {
+    // handle if main better
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
@@ -180,7 +178,17 @@ export function writeEdges(
         ctx.buf[ctx.len++] = len
         ctx.buf[ctx.len++] = len >>>= 8
 
-        console.log({ edge })
+        // Add CTX mainEdgeBuffer
+        // All get added after each other
+        //
+
+        // allways add them in the same area
+        console.log('write main edge', { edge })
+
+        // ADD EXTRA CODE WHOLE MAIN
+        // START + LEN
+        // IF CREATE MAKE A WHOLE
+        // HANDLE WHOLE BY STORING ON CTX (like the main)
 
         const err = appendFixedValue(ctx, value, edge)
         if (err) {

@@ -105,12 +105,21 @@ const propDefBuffer = (
       buf[4] = prop.inversePropNumber
       if (prop.edges) {
         const props = Object.values(prop.edges)
-        const main = { ...EMPTY_MICRO_BUFFER, len: prop.edgeMainLen }
-        eschema = [...props, main]
           .filter((v) => v.separate === true)
+          .sort((a, b) => (a.prop > b.prop ? 1 : -1))
+        const p = [
+          {
+            ...EMPTY_MICRO_BUFFER,
+            len: prop.edgeMainLen || 1, // allow zero here... else useless padding
+            __isEdgeDef: true,
+          },
+          // or handle this here...
+          ...props,
+        ]
+        eschema = p
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
-        eschema.unshift(0, 0, 0, 0, sepPropCount(props), 0)
+        eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0)
         view.setUint32(5, eschema.length, true)
       }
     }

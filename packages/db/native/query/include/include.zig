@@ -124,6 +124,7 @@ pub fn getFields(
         }
 
         if (isEdge) {
+            std.debug.print("include isEdge {any} \n", .{isEdge});
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);

@@ -298,7 +298,7 @@ pub fn getEdgeProp(
 pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
         selva.selva_get_edge_field_fields_schema(db, edgeConstaint),
-        field - 1,
+        field,
     );
     if (edgeFieldSchema == null) {
         return errors.SelvaError.SELVA_NO_EDGE_FIELDSCHEMA;
@@ -348,8 +348,6 @@ pub fn writeEdgeProp(
     ref: *selva.SelvaNodeReference,
     prop: u8,
 ) !void {
-    std.debug.print("flap {any} \n", .{efc});
-
     try errors.selva(selva.selva_fields_set_reference_meta(
         ctx.selva,
         node,
