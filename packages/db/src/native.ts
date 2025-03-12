@@ -3,8 +3,8 @@ import db from '../../basedDbNative.cjs'
 
 const selvaIoErrlog = new Uint8Array(256)
 const textEncoder = new TextEncoder()
-var compressor: any = null
-var decompressor: any = null
+var compressor = db.createCompressor()
+var decompressor = db.createDecompressor()
 
 function SelvaIoErrlogToString(buf: Uint8Array) {
     let i: number;
@@ -108,14 +108,19 @@ export default {
   createHash: () => {
     const state = db.hashCreate()
     const hash = {
-      update: (buf: Buffer) => {
+      update: (buf: Buffer | Uint8Array) => {
         db.hashUpdate(state, buf)
         return hash
       },
-      digest: (encoding?: BufferEncoding): Buffer | string => {
-        const buf = Buffer.allocUnsafe(16)
+      digest: (encoding?: 'hex'): Uint8Array | string => {
+        const buf = new Uint8Array(16)
         db.hashDigest(state, buf)
-        return encoding ? buf.toString(encoding) : buf
+        if (encoding === 'hex') {
+          // TODO Remove Buffer
+          return Buffer.from(buf).toString('hex')
+        } else {
+          return buf;
+        }
       },
       reset: () => {
         db.hashReset(state)
@@ -125,22 +130,15 @@ export default {
     return hash
   },
 
-  // needs to pass dbCtx: any
-  compress: (buf: Buffer, offset: number, stringSize: number) => {
-    if (compressor === null) {
-      compressor = db.createCompressor()
-    }
+  compress: (buf: Buffer | Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },
 
-  decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
-    if (decompressor === null) {
-      decompressor = db.createDecompressor()
-    }
+  decompress: (input: Buffer | Uint8Array, output: Buffer, offset: number, len: number) => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
-  crc32: (buf: Buffer) => {
+  crc32: (buf: Buffer | Uint8Array) => {
     return db.crc32(buf)
   },
 
@@ -152,7 +150,7 @@ export default {
     return db.destroySortIndex(dbCtx, buf)
   },
 
-  xxHash64: (buf: Buffer, target: Buffer, index: number) => {
+  xxHash64: (buf: Buffer | Uint8Array, target: Buffer | Uint8Array, index: number) => {
     return db.xxHash64(buf, target, index)
   },
 }
