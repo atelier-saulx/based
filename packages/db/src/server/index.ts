@@ -436,7 +436,7 @@ export class DbServer {
         const type = this.schemaTypesParsed[types[i]]
         // TODO should not crash!
         try {
-          native.updateSchemaType(type.id, Buffer.from(s[i]), this.dbCtxExternal)
+          native.updateSchemaType(type.id, new Uint8Array(s[i]), this.dbCtxExternal)
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }

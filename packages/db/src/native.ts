@@ -89,7 +89,7 @@ export default {
     }
   },
 
-  updateSchemaType: (prefix: number, buf: Buffer, dbCtx: any) => {
+  updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
     return db.updateSchema(prefix, buf, dbCtx)
   },
 
