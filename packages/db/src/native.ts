@@ -29,10 +29,6 @@ export default {
     return db.workerCtxInit()
   },
 
-  markMerkleBlock: (buf: Buffer): any => {
-    // pstart,
-  },
-
   externalFromInt(address: BigInt): any {
     return db.externalFromInt(address)
   },
