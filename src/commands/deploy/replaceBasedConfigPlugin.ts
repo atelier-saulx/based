@@ -7,19 +7,15 @@ export const replaceBasedConfigPlugin =
     name: 'replace-based-config',
     setup(build) {
       if (cloud || !url) {
-        context.print
-          .pipe()
-          .log(
-            context.i18n('methods.plugins.cloudFunctions'),
-            '<secondary>◆</secondary>',
-          )
+        context.print.log(
+          context.i18n('methods.plugins.cloudFunctions'),
+          '<secondary>◆</secondary>',
+        )
       } else {
-        context.print
-          .pipe()
-          .log(
-            context.i18n('methods.plugins.localFunctions'),
-            '<secondary>◆</secondary>',
-          )
+        context.print.log(
+          context.i18n('methods.plugins.localFunctions'),
+          '<secondary>◆</secondary>',
+        )
       }
 
       build.onResolve({ filter: /[\\\/]based\.(js|ts|json)$/ }, (args) => {

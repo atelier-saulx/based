@@ -22,7 +22,7 @@ export const queuedFnDeploy = queued(
     context: AppContext,
     client: BasedClient,
     checksum: number,
-    config: Based.Deploy.Function,
+    config: Based.Deploy.FunctionBase,
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {

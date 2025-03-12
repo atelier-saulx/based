@@ -77,14 +77,12 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
         log = `${icon || context.state.emojis.log}  ${log}`
       }
 
-      let message: string = log.trimStart().trim()
-
       if (isDebug) {
         const debug = isDebug ? `${LINE_CLEAR}${LINE_START}[debug] ` : ''
-        message = debug + message
+        log = debug + log
       }
 
-      return LINE_CLEAR + LINE_START + message
+      return LINE_CLEAR + LINE_START + log
     }
 
   console.log = (...args: any[]): void =>
@@ -172,7 +170,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     line: () => {
       context.spinner.stop()
       if (isBasicLog) {
-        console.log(LINE_NEW)
+        console.log('')
       }
       return contextPrint(context)
     },

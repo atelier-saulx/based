@@ -21,7 +21,7 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
         clearTimeout(context.spinner.timeoutID)
       }
 
-      context.print.pipe()
+      console.log('')
       context.spinner.isActive = true
       context.spinner.message = ''
       context.spinner.message = message || context.i18n('context.loading')

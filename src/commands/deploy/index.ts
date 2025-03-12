@@ -6,11 +6,12 @@ import {
   bundlingErrorHandling,
   bundlingUpdateHandling,
 } from '../dev/handlers.js'
-import { parseFunctions } from './parseFunctions.js'
+import { bundleProject } from './bundleFiles.js'
+import { configsDeploy } from './configsDeploy.js'
+import { parseConfigs } from './configsParse.js'
 import { prepareFilesToUpload, uploadFiles } from './peprareUpload.js'
-import { prepareFilesToDeploy } from './prepareDeploy.js'
 import { queuedFnDeploy } from './queues.js'
-export * from './invalidateFunctionCode.js'
+export * from './configsInvalidateCode.js'
 
 export const deploy = async (program: Command) => {
   const context: AppContext = AppContext.getInstance(program)
@@ -24,15 +25,26 @@ export const deploy = async (program: Command) => {
       const { publicPath } = await basedClient
         .get('project')
         .call('based:env-info')
-      const { nodeBundles, browserBundles, schemaPath, favicons, configs } =
-        await parseFunctions(
-          context,
-          functions,
-          watch && update,
-          publicPath,
-          '',
-          'production',
-        )
+
+      const {
+        configs,
+        favicons,
+        nodeEntryPoints,
+        browserEntryPoints,
+        browserEsbuildPlugins,
+      } = await parseConfigs(context, functions)
+
+      const { nodeBundles, browserBundles } = await bundleProject(
+        context,
+        nodeEntryPoints,
+        browserEntryPoints,
+        browserEsbuildPlugins,
+        watch && onChange,
+        'production',
+        publicPath,
+        '',
+        true,
+      )
 
       const assetsMap: Record<string, string> = {}
       const functionsMap: Record<string, number> = {}
@@ -40,23 +52,21 @@ export const deploy = async (program: Command) => {
       let greetings: boolean = false
       forceReload = parseNumberAndBoolean(forceReload)
 
-      if (schemaPath) {
-        context.print
-          .line()
-          .intro('<yellow>Schema unavailable</yellow>')
-          .pipe()
-          .warning(
-            `The 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
-          )
-      }
+      // if (schemaPath) {
+      //   context.print
+      //     .line()
+      //     .intro(context.i18n('methods.schema.unavailable'))
+      //     .pipe()
+      //     .warning(context.i18n('methods.schema.setSchema'))
+      // }
 
-      await update(null)
+      await onChange(null)
 
       if (!watch) {
         await basedClient.get('project').destroy()
       }
 
-      async function update(err: BuildFailure | null, result?: BundleResult) {
+      async function onChange(err: BuildFailure | null, result?: BundleResult) {
         if (result?.updates.length) {
           const updates = result?.updates
 
@@ -93,7 +103,7 @@ export const deploy = async (program: Command) => {
           await uploadFiles(context)(uploads, publicPath, assetsMap)
         }
 
-        const deploys = prepareFilesToDeploy(
+        const deploys = configsDeploy(
           configs,
           nodeBundles,
           browserBundles,
@@ -113,11 +123,12 @@ export const deploy = async (program: Command) => {
           url = url.substring(0, url.lastIndexOf('/'))
 
           context.spinner.start(
-            context.i18n(
-              'commands.deploy.methods.deployed',
-              deploying,
-              deploys.length,
-            ),
+            context.i18n('commands.deploy.methods.deploying') +
+              context.i18n(
+                'commands.deploy.methods.function',
+                deploying,
+                deploys.length,
+              ),
           )
 
           const logs = await Promise.all(
@@ -133,11 +144,13 @@ export const deploy = async (program: Command) => {
 
               functionsMap[path] = checksum
 
-              context.spinner.message = context.i18n(
-                'commands.deploy.methods.deployed',
-                ++deploying,
-                deploys.length,
-              )
+              context.spinner.message =
+                context.i18n('commands.deploy.methods.deploying') +
+                context.i18n(
+                  'commands.deploy.methods.function',
+                  ++deploying,
+                  deploys.length,
+                )
 
               const { finalPath = `/${config.name}`, public: isPublic } = config
 
@@ -152,11 +165,12 @@ export const deploy = async (program: Command) => {
 
             context.print
               .success(
-                context.i18n(
-                  'commands.deploy.methods.deployed',
-                  deploying,
-                  deploys.length,
-                ),
+                context.i18n('commands.deploy.methods.deployed') +
+                  context.i18n(
+                    'commands.deploy.methods.function',
+                    deploying,
+                    deploys.length,
+                  ),
               )
               .line()
               .intro(context.i18n('commands.deploy.methods.deployLive'))
@@ -174,11 +188,12 @@ export const deploy = async (program: Command) => {
           } else {
             context.print
               .success(
-                context.i18n(
-                  'commands.deploy.methods.deployed',
-                  deploying,
-                  deploys.length,
-                ),
+                context.i18n('commands.deploy.methods.deployed') +
+                  context.i18n(
+                    'commands.deploy.methods.function',
+                    deploying,
+                    deploys.length,
+                  ),
               )
               .pipe()
               .outro(context.i18n('commands.deploy.methods.deployComplete'))

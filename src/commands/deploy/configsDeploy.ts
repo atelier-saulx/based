@@ -1,7 +1,8 @@
 import type { BundleResult } from '@based/bundle'
 import { hash } from '@saulx/hash'
+import { isConfigFile } from '../../shared/pathAndFiles.js'
 
-export const prepareFilesToDeploy = (
+export const configsDeploy = (
   functions: Based.Deploy.Functions[],
   nodeBundles: BundleResult,
   browserBundles: BundleResult,
@@ -13,6 +14,10 @@ export const prepareFilesToDeploy = (
   const result: Based.Deploy.FunctionsToDeploy[] = []
 
   for (const { index, config, app, favicon, path } of functions) {
+    if (!isConfigFile(path)) {
+      continue
+    }
+
     const js = nodeBundles.js(index)
     const sourcemap = nodeBundles.map(index)
     const appJs = app && browserBundles.js(app)

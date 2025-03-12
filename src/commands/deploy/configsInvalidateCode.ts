@@ -3,10 +3,10 @@ import ts from 'typescript'
 import type { AppContext } from '../../context/index.js'
 import { FUNCTION_TYPES } from '../../shared/constants.js'
 
-export const invalidateFunctionCode = async (
+export const configsInvalidateCode = async (
   context: AppContext,
   functionFile: string,
-  functionConfig: Based.Deploy.Function,
+  functionConfig: Based.Deploy.FunctionBase,
   functionPath: string,
 ): Promise<boolean> => {
   const source = (await readFile(functionFile)).toString()
@@ -57,7 +57,8 @@ export const invalidateFunctionCode = async (
         ),
       )
       .pipe(`<dim>${functionPath}</dim>`)
-    return true
+
+    return false
   }
 
   if (!hasExport) {
@@ -71,6 +72,7 @@ export const invalidateFunctionCode = async (
         ),
       )
       .pipe(`<dim>${functionFile}</dim>`)
-    return true
+
+    return false
   }
 }

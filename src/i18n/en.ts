@@ -645,12 +645,16 @@ export default {
         },
       ],
       methods: {
-        uploaded_one: '<b>Uploaded</b>: ${item}/${max} asset',
-        uploaded_many: '<b>Uploaded</b>: ${item}/${max} assets',
-        deployed_one: '<b>Deployed</b>: ${item}/${max} function',
-        deployed_many: '<b>Deployed</b>: ${item}/${max} functions',
-        schema_one: '<b>Deployed</b>: ${item}/${max} schema',
-        schema_many: '<b>Deployed</b>: ${item}/${max} schemas',
+        uploaded: '<b>Uploaded</b>: ',
+        uploading: '<b>Uploading</b>: ',
+        deployed: '<b>Deployed</b>: ',
+        deploying: '<b>Deploying</b>: ',
+        asset_one: '${item}/${max} asset',
+        asset_many: '${item}/${max} assets',
+        function_one: '${item}/${max} function',
+        function_many: '${item}/${max} functions',
+        schema_one: '${item}/${max} schema',
+        schema_many: '${item}/${max} schemas',
         deployComplete: 'Deployment completed successfully',
         deployLive: 'Your application is now <b>LIVE</b> at:',
       },
@@ -755,6 +759,15 @@ export default {
       success: 'User: <b>${email}</b> logged in successfully!',
     },
     bundling: {
+      noIndex:
+        "Could not find <b>'index.ts'</b> or <b>'index.js'</b> for <b>'${function}'</b>",
+      multipleConfig:
+        "Found <b>multiple configs</b> for the function <b>'${function}'</b>",
+      noMainTypeApp:
+        "No <b>'main'</b> field defined for <b>'${function}'<b> of type 'app', this is a required field",
+      loadingFunctions: 'Loading your functions',
+      noFunctions:
+        'No matching function configurations found. Check your Based Functions files and try again.',
       project: 'Bundling your project',
       functionsLabel_one: '<b>Function</b>: ${number}',
       functionsLabel_many: '<b>Functions</b>: ${number}',
@@ -778,6 +791,14 @@ export default {
         create: '<b>Created</b>: ${file}',
       },
     },
+    schema: {
+      multiple: 'Multiple schemas found',
+      multipleDesc: 'You should have only one schema in your project.',
+      remove: 'Remove the files and try again.',
+      loading: 'Loading your schema',
+      unavailable: '<yellow>Schema unavailable</yellow>',
+      setSchema: `Your schema was successfully found, but the 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
+    },
     server: {
       name: '<dim><b>Based Dev Server</b> error:</dim>',
     },
@@ -788,8 +809,8 @@ export default {
       notRunning: 'Not running',
     },
     plugins: {
-      cloudFunctions: 'Connecting your app to your cloud functions...',
-      localFunctions: 'Connecting your app to your local functions...',
+      cloudFunctions: 'Connecting your app to your cloud functions',
+      localFunctions: 'Connecting your app to your local functions',
     },
     hubConnection: {
       cluster: 'Based Cluster',

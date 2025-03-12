@@ -1,7 +1,6 @@
 export * from './SharedBasedClient.js'
 export * from './login.js'
 export * from './getMyIp.js'
-export * from './getTargets.js'
 export * from './getBranch.js'
 export * from './pathAndFiles.js'
 export * from './dateAndTimeFormats.js'

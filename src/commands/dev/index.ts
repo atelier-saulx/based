@@ -14,8 +14,9 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
-import { invalidateFunctionCode } from '../deploy/index.js'
-import { parseFunctions } from '../deploy/parseFunctions.js'
+import { bundleProject } from '../deploy/bundleFiles.js'
+import { parseConfigs } from '../deploy/configsParse.js'
+import { configsInvalidateCode } from '../deploy/index.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
 
@@ -79,16 +80,24 @@ export const devServer = async ({
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
 
-  const { nodeBundles, browserBundles, configs, schemaParsed } =
-    await parseFunctions(
-      context,
-      functions,
-      update,
-      publicPath,
-      devServerWSPath,
-      'development',
-      cloud,
-    )
+  const {
+    configs,
+    nodeEntryPoints,
+    browserEntryPoints,
+    browserEsbuildPlugins,
+  } = await parseConfigs(context, functions)
+
+  const { nodeBundles, browserBundles } = await bundleProject(
+    context,
+    nodeEntryPoints,
+    browserEntryPoints,
+    browserEsbuildPlugins,
+    onChange,
+    'development',
+    publicPath,
+    devServerWSPath,
+    cloud,
+  )
 
   const client = basedClient.get('project')
   const checksums: Record<string, number> = {}
@@ -103,9 +112,9 @@ export const devServer = async ({
     cloud,
   )
 
-  update(null)
+  onChange(null)
 
-  const watching = update ? 'Waiting for changes...' : 'Not watching files'
+  const watching = onChange ? 'Waiting for changes...' : 'Not watching files'
 
   context.print
     .line()
@@ -116,7 +125,7 @@ export const devServer = async ({
     .pipe()
     .step(`<dim>${watching}</dim>`)
 
-  async function update(err: BuildFailure | null, result?: BundleResult) {
+  async function onChange(err: BuildFailure | null, result?: BundleResult) {
     let reloadClients = hadError
 
     if (result?.updates.length) {
@@ -195,7 +204,7 @@ export const devServer = async ({
 
       checksums[config.name] = checksum
 
-      if (await invalidateFunctionCode(context, index, config, path)) {
+      if (await configsInvalidateCode(context, index, config, path)) {
         // ts validation
         basedServer.functions.add({
           [config.name]: {
@@ -314,14 +323,14 @@ export const devServer = async ({
       }
     }
 
-    if (schemaParsed) {
-      context.spinner.start('Deploying schema')
+    // if (schemaParsed) {
+    //   context.spinner.start('Deploying schema')
 
-      // TODO: once designed, we need to support multiple dbs and multiple schemas
-      await basedServer.client.call('db:set-schema', schemaParsed[0].schema)
+    //   // TODO: once designed, we need to support multiple dbs and multiple schemas
+    //   await basedServer.client.call('db:set-schema', schemaParsed[0].schema)
 
-      context.print.success('Schema deployed')
-    }
+    //   context.print.success('Schema deployed')
+    // }
 
     if (fnUpdates) {
       basedServer.functions.add(fnUpdates)

@@ -2,11 +2,11 @@ import { basename, extname } from 'node:path'
 import { join } from 'node:path'
 import type { OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
+import type { BasedDb } from '@based/db'
+import type { BasedFunctionConfigs } from '@based/functions'
 import type { BasedServer } from '@based/server'
 import type { AppContext } from '../context/index.js'
 import { getContentType } from '../shared/index.js'
-import type { BasedFunctionConfigs } from '@based/functions'
-import type { BasedDb } from '@based/db'
 
 const remoteServerConfig: BasedFunctionConfigs = {
   db: {
@@ -50,11 +50,8 @@ const localServerConfig: BasedFunctionConfigs = {
       const db = based.db.v2 as BasedDb
 
       try {
-        console.info('Setting schema...')
         await db.putSchema(JSON.parse(JSON.stringify(schema)))
-        console.info('Done')
       } catch (error) {
-        console.error('Error setting schema:')
         console.error(error)
       }
     },

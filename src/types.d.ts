@@ -1,4 +1,4 @@
-import type { BundleResult, OutputFile } from '@based/bundle'
+import type { BasedBundleOptions, OutputFile } from '@based/bundle'
 import type { AuthState, BasedClient } from '@based/client'
 import type { BasedFunctionConfig } from '@based/functions'
 import type { BasedQuery } from '@based/functions'
@@ -512,13 +512,11 @@ declare global {
       }
 
       type ParsedFunction = {
-        schemaPath: string
-        schemaParsed: any
         configs: Based.Deploy.Functions[]
         favicons: Set<string>
-        nodeBundles: BundleResult
-        browserBundles: BundleResult
-        files: Record<string, string>
+        nodeEntryPoints: string[]
+        browserEntryPoints: string[]
+        browserEsbuildPlugins: BasedBundleOptions['plugins']
       }
 
       type FilesToUpload = {
@@ -536,7 +534,9 @@ declare global {
         path: string
       }
 
-      type Function = BasedFunctionConfig &
+      type FunctionsFiles = [dir: string, file: string, path: string]
+
+      type FunctionBase = BasedFunctionConfig &
         BasedAppFunctionConfig & {
           type: 'authorize' & BasedFunctionConfig['type']
           main: string
@@ -549,7 +549,7 @@ declare global {
         }
 
       type Functions = {
-        config: Function
+        config: FunctionBase
         path: string
         dir: string
         index?: string
