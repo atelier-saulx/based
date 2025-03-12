@@ -84,7 +84,7 @@ export const read = (val: Uint8Array, offset: number, len: number): string => {
     const newBuffer = getTmpBuffer(origSize)
     // deflate in browser for this...
     native.decompress(val, newBuffer, offset + 6, len - 6)
-    return new TextDecoder('utf-8').decode(newBuffer)
+    return DECODER.decode(newBuffer)
   } else if (type == 0) {
     return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
   }
