@@ -10,6 +10,34 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
     }
 }
 
+fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize {
+    var size: usize = arrayLen;
+    // TODO zig can't properly parse the enum c.napi_typedarray_type
+    switch (arrayType) {
+        //c.napi_typedarray_type.napi_int8_array, c.napi_typedarray_type.napi_uint8_array, c.napi_typedarray_type.napi_uint8_clamped_array => {
+        0, 1, 2 => {
+            // NOP
+        },
+        //c.napi_typedarray_type.napi_int16_array, c.napi_typedarray_type.napi_uint16_array => {
+        3, 4 => {
+            size *= 2;
+        },
+        //c.napi_typedarray_type.napi_int32_array, c.napi_typedarray_type.napi_uint32_array, c.napi_typedarray_type.napi_float32_array => {
+        5, 6, 7 => {
+            size *= 4;
+        },
+        //c.napi_typedarray_type.napi_float64_array, c.napi_typedarray_type.napi_bigint64_array, c.napi_typedarray_type.napi_biguint64_array => {
+        8, 9, 10 => {
+            size *= 8;
+        },
+        else => {
+            // never
+        }
+    }
+
+    return size;
+}
+
 pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     var res: T = undefined;
 
@@ -80,19 +108,33 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == []u8) {
         var buffer: [*]u8 = undefined;
-        var size: usize = undefined;
-        if (c.napi_get_buffer_info(env, value, @ptrCast(&buffer), @ptrCast(&size)) != c.napi_ok) {
+        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayLen: usize = undefined;
+        if (c.napi_get_typedarray_info(env, value,
+            &arrayType,
+            &arrayLen,
+            @ptrCast(&buffer),
+            null,
+            null) != c.napi_ok) {
             return errors.Napi.CannotGetBuffer;
         }
+        const size: usize = calcTypedArraySize(arrayType, arrayLen);
         return buffer[0..size];
     }
 
     if (T == []u32) {
         var buffer: [*]u32 = undefined;
-        var size: usize = undefined;
-        if (c.napi_get_buffer_info(env, value, @ptrCast(&buffer), @ptrCast(&size)) != c.napi_ok) {
+        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayLen: usize = undefined;
+        if (c.napi_get_typedarray_info(env, value,
+            &arrayType,
+            &arrayLen,
+            @ptrCast(&buffer),
+            null,
+            null) != c.napi_ok) {
             return errors.Napi.CannotGetBuffer;
         }
+        const size: usize = calcTypedArraySize(arrayType, arrayLen);
         return buffer[0 .. size / 4];
     }
 
