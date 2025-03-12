@@ -1,15 +1,16 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
 
-const selvaIoErrlog = Buffer.alloc(256)
+const selvaIoErrlog = new Uint8Array(256)
+const textEncoder = new TextEncoder()
 var compressor: any = null
 var decompressor: any = null
 
-function SelvaIoErrlogToString(buf: Buffer) {
+function SelvaIoErrlogToString(buf: Uint8Array) {
     let i: number;
     let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
 
-    return selvaIoErrlog.slice(0, len).toString();
+    return new TextDecoder().decode(selvaIoErrlog.slice(0, len));
 }
 
 export default {
@@ -57,8 +58,8 @@ export default {
   },
 
   saveCommon: (path: string, dbCtx: any): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveCommon(buf, dbCtx)
+    const pathBuf = textEncoder.encode(path + '\0')
+    return db.saveCommon(pathBuf, dbCtx)
   },
 
   saveRange: (
@@ -69,21 +70,21 @@ export default {
     dbCtx: any,
     hashOut: Buffer,
   ): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)
+    const pathBuf = textEncoder.encode(path + '\0')
+    return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
   },
 
   loadCommon: (path: string, dbCtx: any): void => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const err: number = db.loadCommon(buf, dbCtx, selvaIoErrlog)
+    const pathBuf = textEncoder.encode(path + '\0')
+    const err: number = db.loadCommon(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(`Failed to load common. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`)
     }
   },
 
   loadRange: (path: string, dbCtx: any): void => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const err: number = db.loadRange(buf, dbCtx, selvaIoErrlog)
+    const pathBuf = textEncoder.encode(path + '\0')
+    const err: number = db.loadRange(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(`Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`)
     }
