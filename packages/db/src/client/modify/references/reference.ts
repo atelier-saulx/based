@@ -21,15 +21,12 @@ function writeRef(
   }
   ctx.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
   setCursor(ctx, schema, def.prop, def.typeIndex, parentId, modifyOp)
-
   ctx.buf[ctx.len++] = modifyOp
-
   if (isTmpId) {
     ctx.buf[ctx.len++] = hasEdges ? 2 : 3
   } else {
     ctx.buf[ctx.len++] = hasEdges ? 1 : 0
   }
-
   ctx.buf[ctx.len++] = id
   ctx.buf[ctx.len++] = id >>>= 8
   ctx.buf[ctx.len++] = id >>>= 8
@@ -56,7 +53,7 @@ function singleReferenceEdges(
     }
   }
 
-  // need youri's help here...
+  // TODO SINGLE REF
   if (id > 0) {
     // const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
     // if (edgesLen === 0) {

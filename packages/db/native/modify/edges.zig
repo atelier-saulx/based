@@ -18,52 +18,51 @@ pub fn writeEdges(
     var i: usize = 0;
 
     while (i < data.len) {
-        const op: types.ModOp = @enumFromInt(0);
+        // const op: types.ModOp = @enumFromInt(0);
 
         // MOD OP
         // handle create / update / partial
 
         const prop = data[i];
+        // std.debug.print("GOT derp {any} \n", .{op});
 
         const t: p = @enumFromInt(data[i + 1]);
 
         var offset: u32 = 0;
-        var edgeLen: u32 = undefined;
         const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
 
-        var start: u16 = 0;
+        // var start: u16 = 0;
 
-        if (prop == 0) {
-            // IF CREATE OR FULL UPDATE OF MAIN
-            // IF UPDATE SINGLE VALUE
-            std.debug.print("GOT MAIN \n", .{});
-            start = read(u16, data, i + 2);
-            edgeLen = @as(u32, read(u16, data, i + 4));
-            // prop = data[i + 2];
-            offset = 4;
-        } else {
-            // if TEXT
-            edgeLen = read(u32, data, i + 2);
-            offset = 4;
-        }
+        // if (prop == 0) {
+        //     // IF CREATE OR FULL UPDATE OF MAIN
+        //     // IF UPDATE SINGLE VALUE
+        //     start = read(u16, data, i + 2);
+        //     edgeLen = @as(u32, read(u16, data, i + 4));
+        //     // prop = data[i + 2];
+        //     offset = 4;
+        // } else {
+        // if TEXT
+        const edgeLen = read(u32, data, i + 2);
+        offset = 4;
+        // }
 
-        var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+        const edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
 
         std.debug.print(
-            "FLAP {any} len: {d} i: {d} d: {any} start: {any} edgeData: {any} type: {any} \n",
-            .{ prop, edgeLen, i, data, start, edgeData, t },
+            "FLAP {any} len: {d} t:{any} edgeData: {any}  \n",
+            .{ prop, edgeLen, t, edgeData },
         );
 
         // ---> MAIN
         // TMP
-        if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
-            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
-            const val = db.getEdgeProp(ref, edgeFieldSchema.?);
-            if (val.len > 0) {
-                _ = update.incrementBuffer(op, t, val, edgeData);
-                edgeData = val;
-            }
-        }
+        // if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
+        //     const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+        //     const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+        //     if (val.len > 0) {
+        //         _ = update.incrementBuffer(op, t, val, edgeData);
+        //         edgeData = val;
+        //     }
+        // }
 
         // difference in update and set
         // if create it has the full main buffer much easier

@@ -34,9 +34,9 @@ await test('multiple', async (t) => {
             items: {
               ref: 'user',
               prop: 'articles',
-              // $rating: 'uint32',
-              $derp: 'string',
-              // $rdy: 'boolean',
+              $rating: 'uint32',
+              // $derp: 'string',
+              $rdy: 'boolean',
             },
           },
         },
@@ -51,17 +51,20 @@ await test('multiple', async (t) => {
     contributors: [
       {
         id: mrDerp,
-        // $rating: 1,
-        $derp: 'a',
+        $rdy: true,
+        $rating: 1,
+        // $derp: 'a',
       },
     ],
   })
 
   await db
     .query('article')
-    .include('contributors.$derp')
+    .include('contributors.$rating')
+
+    // .include('contributors.$derp')
     // .include('*', 'contributors.$rating', 'contributors.*')
     .get()
-    .inspect()
+    // .inspect()
     .then((v) => v.debug())
 })

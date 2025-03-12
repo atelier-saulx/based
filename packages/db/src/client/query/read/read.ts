@@ -251,15 +251,20 @@ export const readAllFields = (
         i += size + 4
         // ----------------
       } else {
+        const target = 'ref' in q.edges.target && q.edges.target.ref
+        if (!target) {
+          console.warn('big problem with target')
+        }
         if (prop === 0) {
+          // 2 options pass total
           console.log('GOT MAIN VALUE DO STUFF WITH START')
-          //  const edgeDef: PropDefEdge = q.edges.target.ref.reverseProps[prop]
+          // const start =
+          // const edgeDef: PropDefEdge = target.reverseMainEdges[prop]
           // change this
-          // i++
+          i++
           // readMainValue(edgeDef, result, i, item)
           // i += edgeDef.len
         } else {
-          const target = 'ref' in q.edges.target && q.edges.target.ref
           const edgeDef: PropDefEdge = target.reverseSeperateEdges[prop]
           const t = edgeDef.typeIndex
 

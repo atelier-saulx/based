@@ -1,6 +1,7 @@
 import { BasedDb, ModifyCtx } from '../../../index.js'
 import {
   BINARY,
+  MICRO_BUFFER,
   PropDef,
   PropDefEdge,
   REFERENCE,
@@ -10,7 +11,14 @@ import {
 import { write } from '../../string.js'
 import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
-import { DECREMENT, INCREMENT, ModifyErr, RANGE_ERR } from '../types.js'
+import {
+  DECREMENT,
+  INCREMENT,
+  ModifyErr,
+  RANGE_ERR,
+  UPDATE,
+  UPDATE_PARTIAL,
+} from '../types.js'
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
 
@@ -65,6 +73,12 @@ export function writeEdges(
   ref: RefModifyOpts,
   ctx: ModifyCtx,
 ): ModifyErr {
+  // mergeEdgeMain: (PropDef | any)[] | null
+
+  let mainFields: (PropDefEdge | any)[]
+  let mainSize = 0
+  let hasIncr = false
+
   for (const key in t.edges) {
     // handle if main better
     if (key in ref) {
@@ -150,47 +164,67 @@ export function writeEdges(
           appendRefs(edge, ctx, value)
         }
       } else {
-        if (ctx.len + 2 > ctx.max) {
-          return RANGE_ERR
-        }
+        // if incr / decr
+        // do stuff
 
-        if (typeof value === 'object' && value !== null) {
-          if (value.increment > 0) {
-            ctx.buf[ctx.len++] = 0
-            ctx.buf[ctx.len++] = INCREMENT
-            value = value.increment
-          } else if (value.increment < 0) {
-            ctx.buf[ctx.len++] = 0
-            ctx.buf[ctx.len++] = DECREMENT
-            value = -value.increment
+        // INCREMENT / DECREMENT
+        // if (typeof value === 'object' && value !== null) {
+        // }
+        // hasIncr
+        // if total len === 1
+
+        if (t.edgeMainLen == edge.len) {
+          if (ctx.len + 4 > ctx.max) {
+            return RANGE_ERR
+          }
+          ctx.buf[ctx.len++] = 0
+          ctx.buf[ctx.len++] = MICRO_BUFFER
+          const size = edge.len
+          let sizeU32 = size
+          ctx.buf[ctx.len++] = sizeU32
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
+          const err = appendFixedValue(ctx, value, edge)
+          if (err) {
+            return err
+          }
+        } else {
+          mainSize += edge.len
+          if (!mainFields) {
+            mainFields = [edge, value]
           } else {
-            return new ModifyError(edge, value)
+            const len = mainFields.length
+            for (let i = 0; i < len; i += 2) {
+              if (edge.start < mainFields[i].start) {
+                mainFields.splice(i, 0, edge, value)
+                break
+              } else if (mainFields[len - i - 2].start < edge.start) {
+                mainFields.splice(len - i, 0, edge, value)
+                break
+              }
+            }
           }
         }
+      }
+    }
+  }
 
-        ctx.buf[ctx.len++] = edge.prop
-        ctx.buf[ctx.len++] = edge.typeIndex
-        let start = edge.start
-        ctx.buf[ctx.len++] = start
-        ctx.buf[ctx.len++] = start >>>= 8
+  if (mainFields) {
+    if (mainSize === t.edgeMainLen) {
+      ctx.buf[ctx.len++] = 0
+      ctx.buf[ctx.len++] = MICRO_BUFFER
+      let sizeU32 = mainSize
+      ctx.buf[ctx.len++] = sizeU32
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
 
-        let len = edge.len
-        ctx.buf[ctx.len++] = len
-        ctx.buf[ctx.len++] = len >>>= 8
+      console.log('yo yo yo', mainFields)
 
-        // Add CTX mainEdgeBuffer
-        // All get added after each other
-        //
-
-        // allways add them in the same area
-        console.log('write main edge', { edge })
-
-        // ADD EXTRA CODE WHOLE MAIN
-        // START + LEN
-        // IF CREATE MAKE A WHOLE
-        // HANDLE WHOLE BY STORING ON CTX (like the main)
-
-        const err = appendFixedValue(ctx, value, edge)
+      for (let i = 0; i < mainFields.length; i += 2) {
+        const edge: PropDefEdge = mainFields[i]
+        const err = appendFixedValue(ctx, mainFields[i + 1], edge)
         if (err) {
           return err
         }
