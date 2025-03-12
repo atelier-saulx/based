@@ -50,7 +50,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         hll->num_registers = 0;
     }
     else {
-        
+
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
@@ -96,7 +96,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     }
 
     hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
-    
+
     if (hll->num_registers > len) {
         db_panic("Dense mode failure: There is no allocated space on selva string for the required registers: (%zu > %d)\n", len, hll->num_registers);
     }
@@ -204,7 +204,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
 int main(void) {
 
     /* -------------------------------------------
-    ** Single value test 
+    ** Single value test
     ** -----------------------------------------*/
 
     // size_t precision = 14;
@@ -224,7 +224,7 @@ int main(void) {
     // printf("Estimated cardinality: %f\n", estimated_cardinality);
 
     /* -------------------------------------------
-    ** Array union test 
+    ** Array union test
     ** -----------------------------------------*/
 
     size_t precision = 14;

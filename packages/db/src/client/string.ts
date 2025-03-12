@@ -1,9 +1,12 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32 } from './bitWise.js'
+import makeTmpBuffer from './tmpBuffer.js'
 
 const DECODER = new TextDecoder('utf-8')
-// add encoder
+const ENCODER = new TextEncoder();
+
+const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
 // type 0 = no compression; 1 = deflate
 // [lang] [type] [uncompressed size 4] [compressed string] [crc32]
@@ -14,31 +17,40 @@ const DECODER = new TextDecoder('utf-8')
 // make this into a package
 // write the type Byte
 export const write = (
-  buf: Buffer,
+  buf: Buffer | Uint8Array,
   value: string,
   offset: number,
   noCompression: boolean,
   lang?: LangCode,
 ): number => {
   value = value.normalize('NFKD')
+
   buf[offset] = lang || 0
+  const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
+  let crc = native.crc32(buf.subarray(offset + 2, offset + 2 + l))
+
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    const s = new TextEncoder().encode(value).byteLength
-    buf.write(value, offset + 6 + s, 'utf8')
-    let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
-    const size = native.compress(buf, offset + 6, s)
+    buf.copyWithin(offset + 6 + l, offset + 2, offset + 2 + l)
+    const size = native.compress(buf, offset + 6, l)
     if (size === 0) {
       buf[offset + 1] = 0 // not compressed
-      const len = buf.write(value, offset + 2, 'utf8')
-      buf[offset + len + 2] = crc
-      buf[offset + len + 3] = crc >>>= 8
-      buf[offset + len + 4] = crc >>>= 8
-      buf[offset + len + 5] = crc >>>= 8
-      return len + 6
+      ENCODER.encodeInto(value, buf.subarray(offset + 2))
+      buf[offset + l + 2] = crc
+      buf[offset + l + 3] = crc >>>= 8
+      buf[offset + l + 4] = crc >>>= 8
+      buf[offset + l + 5] = crc >>>= 8
+      return l + 6
     } else {
+      let len = l
+
       buf[offset + 1] = 1 // compressed
-      buf.writeUInt32LE(s, offset + 2)
+
+      buf[offset + 2] = len
+      buf[offset + 3] = len >>>= 8
+      buf[offset + 4] = len >>>= 8
+      buf[offset + 5] = len >>>= 8
+
       buf[offset + size + 6] = crc
       buf[offset + size + 7] = crc >>>= 8
       buf[offset + size + 8] = crc >>>= 8
@@ -47,13 +59,11 @@ export const write = (
     }
   } else {
     buf[offset + 1] = 0 // not compressed
-    const len = buf.write(value, offset + 2, 'utf8')
-    let crc = native.crc32(buf.subarray(offset + 2, offset + len + 2))
-    buf[offset + len + 2] = crc
-    buf[offset + len + 3] = crc >>>= 8
-    buf[offset + len + 4] = crc >>>= 8
-    buf[offset + len + 5] = crc >>>= 8
-    return len + 6
+    buf[offset + l + 2] = crc
+    buf[offset + l + 3] = crc >>>= 8
+    buf[offset + l + 4] = crc >>>= 8
+    buf[offset + l + 5] = crc >>>= 8
+    return l + 6
   }
 }
 
@@ -64,9 +74,9 @@ export const compress = (str: string): Buffer => {
   if (!tmpCompressBlock || tmpCompressBlock.byteLength < len * 3) {
     tmpCompressBlock = Buffer.allocUnsafe(len * 3)
   }
-  const s = write(tmpCompressBlock, str, 0, false)
-  const nBuffer = Buffer.allocUnsafe(s)
-  tmpCompressBlock.copy(nBuffer, 0, 0, s)
+  const l = write(tmpCompressBlock, str, 0, false)
+  const nBuffer = Buffer.allocUnsafe(l)
+  tmpCompressBlock.copy(nBuffer, 0, 0, l)
   return nBuffer
 }
 
@@ -74,23 +84,14 @@ export const decompress = (val: Uint8Array): string => {
   return read(val, 0, val.length)
 }
 
-let readTmpBuf: ArrayBuffer;
-
 export const read = (val: Uint8Array, offset: number, len: number): string => {
   const type = val[offset + 1]
   if (type == 1) {
     const origSize = readUint32(val, offset + 2)
-    // @ts-ignore
-    if (!readTmpBuf || readTmpBuf.maxByteLength < origSize) {
-        // @ts-ignore
-        readTmpBuf = new ArrayBuffer(origSize, { maxByteLength: 2 * origSize });
-    }
-    // @ts-ignore
-    readTmpBuf.resize(origSize)
-    const newBuffer = new Uint8Array(readTmpBuf)
+    const newBuffer = getTmpBuffer(origSize)
     // deflate in browser for this...
     native.decompress(val, newBuffer, offset + 6, len - 6)
-    return new TextDecoder('utf-8').decode(newBuffer)
+    return DECODER.decode(newBuffer)
   } else if (type == 0) {
     return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
   }
