@@ -24,7 +24,7 @@ export const write = (
   buf[offset] = lang || 0
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    const s = Buffer.byteLength(value, 'utf8')
+    const s = new TextEncoder().encode(value).byteLength
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
     const size = native.compress(buf, offset + 6, s)
@@ -60,8 +60,9 @@ export const write = (
 let tmpCompressBlock: Buffer
 
 export const compress = (str: string): Buffer => {
-  if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 3) {
-    tmpCompressBlock = Buffer.allocUnsafe(str.length * 3)
+  const len = new TextEncoder().encode(str).byteLength
+  if (!tmpCompressBlock || tmpCompressBlock.byteLength < len * 3) {
+    tmpCompressBlock = Buffer.allocUnsafe(len * 3)
   }
   const s = write(tmpCompressBlock, str, 0, false)
   const nBuffer = Buffer.allocUnsafe(s)
@@ -73,14 +74,23 @@ export const decompress = (val: Uint8Array): string => {
   return read(val, 0, val.length)
 }
 
+let readTmpBuf: ArrayBuffer;
+
 export const read = (val: Uint8Array, offset: number, len: number): string => {
   const type = val[offset + 1]
   if (type == 1) {
     const origSize = readUint32(val, offset + 2)
-    const newBuffer = Buffer.allocUnsafe(origSize)
+    // @ts-ignore
+    if (!readTmpBuf || readTmpBuf.maxByteLength < origSize) {
+        // @ts-ignore
+        readTmpBuf = new ArrayBuffer(origSize, { maxByteLength: 2 * origSize });
+    }
+    // @ts-ignore
+    readTmpBuf.resize(origSize)
+    const newBuffer = new Uint8Array(readTmpBuf)
     // deflate in browser for this...
-    native.decompress(Buffer.from(val), newBuffer, offset + 6, len - 6)
-    return newBuffer.toString('utf8')
+    native.decompress(val, newBuffer, offset + 6, len - 6)
+    return new TextDecoder('utf-8').decode(newBuffer)
   } else if (type == 0) {
     return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
   }
