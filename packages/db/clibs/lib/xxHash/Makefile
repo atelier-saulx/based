@@ -16,7 +16,7 @@ err: ; $(ERR)
 
 linux: build
 	cp $(XXHASH_SRC_PATH)/libxxhash.so.0 $(LIB_PATH)
-	-cd $(LIB_PATH); ln -s libxxhash.so.0 libxxhash.so
+	cd $(LIB_PATH); ln -sf libxxhash.so.0 libxxhash.so
 
 darwin: build
 	cp $(XXHASH_SRC_PATH)/libxxhash.dylib $(LIB_PATH)
