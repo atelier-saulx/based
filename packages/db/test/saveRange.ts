@@ -3,6 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual, equal } from './shared/assert.js'
+import { hashEq } from '../src/server/csmt/tree.js'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -79,7 +80,7 @@ await test('save simple range', async (t) => {
   const secondHash = db.server.merkleTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
-  equal(Buffer.from(firstHash).equals(Buffer.from(secondHash)), false)
+  equal(hashEq(firstHash, secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 3)
@@ -107,8 +108,8 @@ await test('save simple range', async (t) => {
   const thirdHash = db.server.merkleTree.getRoot().hash
 
   //console.log([firstHash, secondHash, thirdHash])
-  equal(Buffer.from(firstHash).equals(Buffer.from(secondHash)), false)
-  equal(Buffer.from(secondHash).equals(Buffer.from(thirdHash)), true)
+  equal(hashEq(firstHash, secondHash), false)
+  equal(hashEq(secondHash, thirdHash), true)
 
   deepEqual(
     (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
@@ -202,18 +203,18 @@ await test('delete a range', async (t) => {
   db.server.updateMerkleTree()
   const second = fun()
 
-  equal(Buffer.from(first.hash).equals(Buffer.from(second.hash)), false, 'delete changes the root hash')
+  equal(hashEq(first.hash, second.hash), false, 'delete changes the root hash')
   equal(
-    Buffer.from(first.left.hash).equals(Buffer.from(second.left.hash)),
+    hashEq(first.left.hash, second.left.hash),
     true,
     "the first block hash wasn't change",
   )
   equal(
-    Buffer.from(first.right.hash).equals(Buffer.from(second.right.hash)),
+    hashEq(first.right.hash, second.right.hash),
     false,
     'the second block hash a new hash of the deletion',
   )
-  equal(Buffer.from(second.right.hash).equals(Buffer.alloc(16)), true)
+  equal(hashEq(second.right.hash, new Uint8Array(16)), true)
 
   // TODO In the future the merkleTree should remain the same but the right block doesn't need an sdb
   //db.save()
