@@ -7,6 +7,7 @@ import {
   UPDATE,
   RANGE_ERR,
   DELETE,
+  SIZE,
 } from './types.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import { writeString } from './string.js'
@@ -40,7 +41,7 @@ export function writeText(
   // think about this
   if (value === null && !res.locale) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)

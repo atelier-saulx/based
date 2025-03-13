@@ -18,6 +18,10 @@ export const SWITCH_FIELD = 0
 export const SWITCH_ID_CREATE = 9
 export const SWITCH_ID_UPDATE = 1
 
+export const enum SIZE {
+  DEFAULT_CURSOR = 11,
+}
+
 export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 export type ModifyOp =
   | typeof CREATE
@@ -30,5 +34,3 @@ export type ModifyOpts = {
   locale?: LangName
   overwrite?: boolean
 }
-
-// export const MAX_CURSOR_LEN = 11

@@ -8,6 +8,7 @@ import {
   ModifyErr,
   RANGE_ERR,
   DELETE,
+  SIZE,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -32,7 +33,7 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
@@ -42,7 +43,9 @@ export function writeString(
     let size = isBuffer
       ? value.byteLength
       : Buffer.byteLength(value, 'utf8') + 6
-    if (ctx.len + 20 + size > ctx.max) {
+    if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
+      // +10 OR +11, teh original check was +20 but
+      // there are 10 addtional bytes in this scope
       // 5 compression size
       return RANGE_ERR
     }

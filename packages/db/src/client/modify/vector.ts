@@ -1,6 +1,13 @@
 import { ModifyCtx } from '../../index.js'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
-import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
+import {
+  UPDATE,
+  ModifyOp,
+  ModifyErr,
+  RANGE_ERR,
+  DELETE,
+  SIZE,
+} from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
@@ -36,7 +43,7 @@ export function writeVector(
   }
   if (size === 0) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         // TODO ???
         return RANGE_ERR
       }
@@ -45,7 +52,7 @@ export function writeVector(
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
-    if (ctx.len + 15 + size > ctx.max) {
+    if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
       // TODO ???
       return RANGE_ERR
     }

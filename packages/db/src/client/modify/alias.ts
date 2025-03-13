@@ -7,6 +7,7 @@ import {
   ModifyErr,
   RANGE_ERR,
   DELETE,
+  SIZE,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -22,7 +23,7 @@ export function writeAlias(
   if (typeof value === 'string') {
     if (value.length === 0) {
       if (modifyOp === UPDATE) {
-        if (ctx.len + 11 > ctx.max) {
+        if (ctx.len + SIZE.DEFAULT_CURSOR > ctx.max) {
           return RANGE_ERR
         }
         setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
@@ -30,7 +31,7 @@ export function writeAlias(
       }
     } else {
       let size = Buffer.byteLength(value, 'utf8')
-      if (ctx.len + 15 + size > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
         // 5 compression size
         return RANGE_ERR
       }
@@ -48,7 +49,7 @@ export function writeAlias(
     }
   } else if (value === null) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
