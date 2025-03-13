@@ -54,7 +54,7 @@ export type QueryDefSearch =
     }
   | {
       size: number
-      query: Buffer
+      query: Uint8Array
       prop: number
       isVector: true
       opts: FilterOpts

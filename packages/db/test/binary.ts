@@ -3,6 +3,8 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 
+const ENCODER = new TextEncoder()
+
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -46,7 +48,7 @@ await test('simple', async (t) => {
     file: new Uint8Array([1, 2, 3, 4]),
   })
 
-  const italyBytes = Buffer.from(italy, 'utf-8')
+  const italyBytes = ENCODER.encode(italy)
   const id2 = await db.create('user', {
     file: italyBytes,
   })

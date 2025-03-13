@@ -1,7 +1,8 @@
 import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from 'node:assert'
-import { setTimeout as setTimeoutAsync } from 'timers/promises'
+
+const ENCODER = new TextEncoder()
 
 await test('sortCardinality', async (t) => {
   const db = new BasedDb({
@@ -203,7 +204,7 @@ await test('sortCardinality', async (t) => {
   )
 
   const c3 = await db.create('article', {
-    count: xxHash64(Buffer.from('name1')),
+    count: xxHash64(ENCODER.encode('name1')),
   })
 
   const c4 = await db.create('article', {

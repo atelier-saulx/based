@@ -24,7 +24,7 @@ export function writeText(
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  const isBuffer = value instanceof Buffer
+  const isBuffer = value instanceof Uint8Array
 
   if (
     typeof value !== 'string' &&

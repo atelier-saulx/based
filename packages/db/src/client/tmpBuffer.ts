@@ -1,5 +1,6 @@
 export default function makeTmpBuffer(initialSize: number) {
-  let tmpBuffer = new ArrayBuffer(initialSize)
+  // @ts-ignore
+  let tmpBuffer = new ArrayBuffer(initialSize, { maxByteLength: initialSize })
 
   return {
     getUint8Array: (size: number): Uint8Array => {
