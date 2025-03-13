@@ -1,58 +1,45 @@
 import type { BundleResult } from '@based/bundle'
 import type { AppContext } from '../../context/index.js'
 import { isSchemaFile, rel, stringMaxLength } from '../../shared/index.js'
+import { schemaPrepare } from './schemaPrepare.js'
 
 export const schemaParse = async (
   context: AppContext,
   configs: Based.Deploy.Functions[],
   nodeBundles: BundleResult,
-): Promise<Based.Deploy.Functions> => {
+): Promise<Based.Deploy.SchemaBase> => {
   context.print
     .line()
     .intro(context.i18n('methods.bundling.loadingSchema'))
     .pipe()
   const pipe: string = '<dim>|</dim>'
 
-  const schema = await Promise.all(
+  const schema = (await Promise.all(
     configs
       .map(async ({ path }) => {
         if (!isSchemaFile(path)) {
           return false
         }
 
-        const bundled = nodeBundles.require(path)
+        const schema = schemaPrepare(path, nodeBundles)
 
-        if (bundled) {
-          let bundledSchema = bundled.default || bundled
+        if (schema) {
+          const schemaLabel: string = '<b>schema</b>'
+          const dbName: string = `<blueBright>${(schema.db || 'default').padEnd(stringMaxLength([schema.db || 'default']))}</blueBright>`
+          const fileLabel: string = `<dim>${rel(path)}</dim>`
 
-          if (!Array.isArray(bundledSchema)) {
-            if (!bundledSchema.schema) {
-              bundledSchema = { schema: bundledSchema }
-            }
+          context.print.log(
+            `${schemaLabel} ${pipe} ${dbName} ${pipe} ${fileLabel}`,
+            '<blueBright>◆</blueBright>',
+          )
 
-            bundledSchema = [bundledSchema]
-          }
-
-          const dbNames = bundledSchema.map(({ db = 'default' }) => db)
-
-          for (const { schema } of bundledSchema) {
-            const schemaLabel: string = '<b>schema</b>'
-            const dbName: string = `<blueBright>${(schema.db || 'default').padEnd(stringMaxLength(dbNames))}</blueBright>`
-            const fileLabel: string = `<dim>${rel(path)}</dim>`
-
-            context.print.log(
-              `${schemaLabel} ${pipe} ${dbName} ${pipe} ${fileLabel}`,
-              '<blueBright>◆</blueBright>',
-            )
-          }
-
-          return bundledSchema
+          return { schema, path }
         }
 
         return false
       })
       .filter(Boolean),
-  )
+  )) as Based.Deploy.SchemaBase[]
 
   if (schema.length) {
     return schema[0]

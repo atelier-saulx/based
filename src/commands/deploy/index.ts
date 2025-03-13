@@ -10,7 +10,6 @@ import { configsDeploy } from './configsDeploy.js'
 import { configsParse } from './configsParse.js'
 import { filesBundle } from './filesBundle.js'
 import { prepareFilesToUpload, uploadFiles } from './peprareUpload.js'
-import { schemaDeploy } from './schemaDeploy.js'
 import { schemaParse } from './schemaParse.js'
 export * from './configsInvalidateCode.js'
 

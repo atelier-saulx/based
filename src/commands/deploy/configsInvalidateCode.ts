@@ -9,6 +9,10 @@ export const configsInvalidateCode = async (
   functionConfig: Based.Deploy.FunctionBase,
   functionPath: string,
 ): Promise<boolean> => {
+  if (!functionFile) {
+    return
+  }
+
   const source = (await readFile(functionFile)).toString()
   const sourceFile = ts.createSourceFile(
     functionFile,

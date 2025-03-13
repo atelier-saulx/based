@@ -534,6 +534,8 @@ declare global {
         path: string
       }
 
+      type SchemaBase = { schema: any; path: string }
+
       type FunctionsFiles = [dir: string, file: string, path: string]
 
       type FunctionBase = BasedFunctionConfig &

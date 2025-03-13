@@ -50,8 +50,9 @@ const localServerConfig: BasedFunctionConfigs = {
       const db = based.db.v2 as BasedDb
 
       try {
-        await db.putSchema(JSON.parse(JSON.stringify(schema)))
+        await db.putSchema(schema)
       } catch (error) {
+        console.error('db:set-schema')
         console.error(error)
       }
     },

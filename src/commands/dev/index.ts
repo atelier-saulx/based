@@ -14,9 +14,12 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
+import { isSchemaFile } from '../../shared/pathAndFiles.js'
 import { configsParse } from '../deploy/configsParse.js'
 import { filesBundle } from '../deploy/filesBundle.js'
 import { configsInvalidateCode } from '../deploy/index.js'
+import { schemaParse } from '../deploy/schemaParse.js'
+import { schemaPrepare } from '../deploy/schemaPrepare.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
 
@@ -99,6 +102,8 @@ export const devServer = async ({
     cloud,
   )
 
+  await schemaParse(context, configs, nodeBundles)
+
   const client = basedClient.get('project')
   const checksums: Record<string, number> = {}
   const { clients } = new WebSocketServer({ port: lrPort })
@@ -131,6 +136,8 @@ export const devServer = async ({
     if (result?.updates.length) {
       const updates = result?.updates
 
+      console.log({ updates })
+
       bundlingUpdateHandling(context)(updates)
     }
 
@@ -153,8 +160,20 @@ export const devServer = async ({
     hadError = false
 
     for (const { index, config, app, favicon, path } of configs) {
-      const js = nodeBundles.js(index)
+      if (isSchemaFile(path)) {
+        const schema = schemaPrepare(path, nodeBundles)
+        const checksum: number = hash([schema])
 
+        if (checksums[path] !== checksum) {
+          checksums[path] = checksum
+
+          await basedServer.client.call('db:set-schema', schema)
+        }
+
+        continue
+      }
+
+      const js = nodeBundles.js(index)
       let checksum: number
       let appHtml: OutputFile
       let appJs: OutputFile
@@ -322,15 +341,6 @@ export const devServer = async ({
         fnUpdates[config.name].httpResponse = fn.httpResponse
       }
     }
-
-    // if (schemaParsed) {
-    //   context.spinner.start('Deploying schema')
-
-    //   // TODO: once designed, we need to support multiple dbs and multiple schemas
-    //   await basedServer.client.call('db:set-schema', schemaParsed[0].schema)
-
-    //   context.print.success('Schema deployed')
-    // }
 
     if (fnUpdates) {
       basedServer.functions.add(fnUpdates)
