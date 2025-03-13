@@ -186,5 +186,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
+
+    // result for js
     return results.createResultsBuffer(&ctx, env);
 }

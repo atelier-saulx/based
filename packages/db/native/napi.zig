@@ -10,7 +10,7 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
     }
 }
 
-fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize {
+inline fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize {
     var size: usize = arrayLen;
     // TODO zig can't properly parse the enum c.napi_typedarray_type
     switch (arrayType) {
@@ -32,13 +32,12 @@ fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize 
         },
         else => {
             // never
-        }
+        },
     }
-
     return size;
 }
 
-pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
+pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     var res: T = undefined;
 
     if (T == u8) {
@@ -110,12 +109,7 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
         var buffer: [*]u8 = undefined;
         var arrayType: c.napi_typedarray_type = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value,
-            &arrayType,
-            &arrayLen,
-            @ptrCast(&buffer),
-            null,
-            null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);
@@ -126,12 +120,7 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
         var buffer: [*]u32 = undefined;
         var arrayType: c.napi_typedarray_type = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value,
-            &arrayType,
-            &arrayLen,
-            @ptrCast(&buffer),
-            null,
-            null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);

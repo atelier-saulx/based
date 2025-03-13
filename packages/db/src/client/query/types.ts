@@ -66,6 +66,8 @@ export type QueryDefSort = {
   lang: LangCode
 }
 
+// ADD AGGREGATES
+//   similair to filter
 export type QueryDefShared = {
   errors: QueryError[]
   lang: LangCode

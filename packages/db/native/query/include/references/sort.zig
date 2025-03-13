@@ -80,5 +80,7 @@ pub fn sortedReferences(
         i += 1;
     }
     selva.selva_sort_destroy(metaSortIndex.index);
+
+    // AGG
     return result;
 }

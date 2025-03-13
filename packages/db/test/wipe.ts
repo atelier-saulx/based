@@ -1,6 +1,7 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, equals } from '../src/index.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
+import native from '../src/native.js'
 
 await test('wipe', async (t) => {
   const db = new BasedDb({
@@ -87,4 +88,58 @@ await test('wipe', async (t) => {
     { id: 9, age: 8, name: '', a: '' },
     { id: 10, age: 9, name: '', a: '' },
   ])
+
+  const arr = new Array(2e6).fill(0)
+  const arr2 = new Array(2e6).fill(0)
+
+  const buf1 = Buffer.from(arr)
+  const buf2 = Buffer.from(arr2)
+  const amount = 1e5
+  let d = performance.now()
+  let cnt = 0
+  for (let i = 0; i < amount; i++) {
+    if (buf1.equals(buf2)) {
+      cnt++
+    }
+  }
+
+  console.log(performance.now() - d, 'ms', cnt)
+
+  const a = new Uint8Array(arr)
+  const b = new Uint8Array(arr2)
+
+  // const a = new BigUint64Array(a1.buffer)
+  // const b = new BigUint64Array(b1.buffer)
+
+  // const eq = (a, b) => {
+  //   // const a = new BigUint64Array(a1.buffer)
+  //   // const b = new BigUint64Array(b1.buffer)
+  //   const len = a.length
+  //   if (len != b.length) {
+  //     return false
+  //   }
+  //   let i = 0
+  //   while (i < len) {
+  //     if (a[i] != b[i]) {
+  //       return false
+  //     }
+  //     i++
+  //   }
+  //   return true
+  // }
+
+  d = performance.now()
+  cnt = 0
+
+  // global.gc()
+
+  for (let i = 0; i < amount; i++) {
+    if (equals(a, b)) {
+      cnt++
+    }
+  }
+
+  console.log(equals(a, b))
+
+  console.log(performance.now() - d, 'ms', cnt)
 })
