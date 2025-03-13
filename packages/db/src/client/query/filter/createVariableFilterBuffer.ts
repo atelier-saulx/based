@@ -15,7 +15,7 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 
-const DEFAULT_SCORE = Buffer.from(new Float32Array([0.5]).buffer)
+const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
 const parseValue = (
   value: any,
@@ -31,11 +31,17 @@ const parseValue = (
     if (!(val instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
     }
-    let fn = getVectorFn(ctx.opts.fn)
-    const score = ctx.opts.score
-      ? Buffer.from(new Float32Array([ctx.opts.score]).buffer)
+    const vector = new Uint8Array(val)
+    let fn = new Uint8Array([getVectorFn(ctx.opts.fn)])
+    const score: Uint8Array = ctx.opts.score
+      ? new Uint8Array(new Float32Array([ctx.opts.score]).buffer)
       : DEFAULT_SCORE
-    val = Buffer.concat([Buffer.from(val), Buffer.from([fn]), score])
+    const buf = new Uint8Array(vector.byteLength + fn.byteLength + score.byteLength)
+    let off = 0
+    off +=(buf.set(new Uint8Array(vector), off), vector.byteLength)
+    off += (buf.set(fn, off), fn.byteLength)
+    buf.set(score, off)
+    val = buf
   }
   if (
     val instanceof Uint8Array ||
