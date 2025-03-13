@@ -67,16 +67,12 @@ export const write = (
   }
 }
 
-let tmpCompressBlock: Buffer
-
-export const compress = (str: string): Buffer => {
-  const len = new TextEncoder().encode(str).byteLength
-  if (!tmpCompressBlock || tmpCompressBlock.byteLength < len * 3) {
-    tmpCompressBlock = Buffer.allocUnsafe(len * 3)
-  }
+export const compress = (str: string): Uint8Array => {
+  const len = ENCODER.encode(str).byteLength
+  const tmpCompressBlock = getTmpBuffer(len * 3)
   const l = write(tmpCompressBlock, str, 0, false)
-  const nBuffer = Buffer.allocUnsafe(l)
-  tmpCompressBlock.copy(nBuffer, 0, 0, l)
+  const nBuffer = new Uint8Array(l)
+  nBuffer.set(tmpCompressBlock.subarray(0, l))
   return nBuffer
 }
 
