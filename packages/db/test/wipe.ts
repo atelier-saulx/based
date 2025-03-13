@@ -91,6 +91,9 @@ await test('wipe', async (t) => {
 
   const arr = new Array(1000).fill(0)
   const arr2 = new Array(1000).fill(0)
+    // Test these \/
+    //arr2[500] = 1
+    //arr2[arr2.length - 2] = 1
 
   const buf1 = Buffer.from(arr)
   const buf2 = Buffer.from(arr2)
