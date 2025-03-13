@@ -202,4 +202,3 @@ pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     r[0] = if (c.memcmp(a.ptr, b.ptr, a.len) == 0) 1 else 0;
     return null;
 }
-

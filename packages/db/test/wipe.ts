@@ -89,12 +89,12 @@ await test('wipe', async (t) => {
     { id: 10, age: 9, name: '', a: '' },
   ])
 
-  const arr = new Array(2e6).fill(0)
-  const arr2 = new Array(2e6).fill(0)
+  const arr = new Array(1000).fill(0)
+  const arr2 = new Array(1000).fill(0)
 
   const buf1 = Buffer.from(arr)
   const buf2 = Buffer.from(arr2)
-  const amount = 1e5
+  const amount = 1e6
   let d = performance.now()
   let cnt = 0
   for (let i = 0; i < amount; i++) {
