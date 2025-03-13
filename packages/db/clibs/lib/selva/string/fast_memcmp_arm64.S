@@ -1,5 +1,3 @@
-/*	.section	__TEXT,__text,regular,pure_instructions
-*/
 	.globl	_fast_memcmp
 	.p2align	2
 _fast_memcmp:
