@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence, bible } from './shared/examples.js'
 
+const ENCODER = new TextEncoder()
 const capitals =
   'AAAAAAAAAA AAAAAAAAAAA AAAAAAAAAAAAAAAAAAAA AAA A AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 
@@ -49,7 +50,7 @@ await test('variable size (string/binary)', async (t) => {
       code: str,
       name: 'Gossip #' + i,
       body: compressedItaly,
-      stuff: Buffer.from('#' + i),
+      stuff: ENCODER.encode('#' + i),
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
@@ -60,7 +61,7 @@ await test('variable size (string/binary)', async (t) => {
     (
       await db
         .query('article')
-        .filter('stuff', '=', Buffer.from('#' + 2))
+        .filter('stuff', '=', ENCODER.encode('#' + 2))
         .include('name', 'stuff', 'derp', 'type')
         .range(0, 10)
         .get()
@@ -87,7 +88,7 @@ await test('variable size (string/binary)', async (t) => {
 
   equal(len, 20, 'has binary (single')
 
-  const largeDerp = Buffer.from(italy)
+  const largeDerp = ENCODER.encode(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
     smurpArticle = db.create('article', {
@@ -111,7 +112,7 @@ await test('variable size (string/binary)', async (t) => {
     (
       await db
         .query('article')
-        .filter('derp', 'has', Buffer.from('vitorio'))
+        .filter('derp', 'has', ENCODER.encode('vitorio'))
         .include('id')
         .get()
     ).length,
@@ -123,7 +124,7 @@ await test('variable size (string/binary)', async (t) => {
     (
       await db
         .query('article')
-        .filter('derp', 'has', Buffer.from('xx'))
+        .filter('derp', 'has', ENCODER.encode('xx'))
         .include('id')
         .get()
     ).length,
