@@ -60,7 +60,7 @@ export const dev = async (program: Command) => {
 export const devServer = async ({
   functions,
   port,
-  cloud,
+  cloud = false,
 }: {
   functions?: string[]
   port?: string
