@@ -165,8 +165,7 @@ export default {
   },
 
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
-    db.equals(a, b, tmp)
-    return tmp[0] == 1
+    return !!db.equals(a, b)
   },
 }
 

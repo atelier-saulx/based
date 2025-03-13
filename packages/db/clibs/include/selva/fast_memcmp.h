@@ -5,8 +5,7 @@
 #pragma once
 
 #include <stddef.h>
-#include <stdint.h>
 #include "selva/_export.h"
 
 SELVA_EXPORT
-uint8_t fast_memcmp(void *restrict a, void *restrict b, size_t len);
+bool fast_memcmp(const void *restrict a, const void *restrict b, size_t len);

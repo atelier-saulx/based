@@ -6,7 +6,7 @@
 #include <string.h>
 #include "selva/fast_memcmp.h"
 
-uint8_t fast_memcmp(void *restrict a, void *restrict b, size_t len)
+bool fast_memcmp(const void *restrict a, const void *restrict b, size_t len)
 {
     return !memcmp(a, b, len);
 }

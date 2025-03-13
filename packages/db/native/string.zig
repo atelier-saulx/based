@@ -198,7 +198,9 @@ pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     const args = napi.getArgs(3, env, info) catch return null;
     const a = napi.get([]u8, env, args[0]) catch return null;
     const b = napi.get([]u8, env, args[1]) catch return null;
-    const r = napi.get([]u8, env, args[2]) catch return null;
-    r[0] = selva.fast_memcmp(a.ptr, b.ptr, a.len);
-    return null;
+    if (selva.fast_memcmp(a.ptr, b.ptr, a.len) == true) {
+        return args[1];
+    } else {
+        return null;
+    }
 }
