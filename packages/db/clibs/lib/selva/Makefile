@@ -61,7 +61,6 @@ OBJ := \
 	string/base64url.o \
 	string/cstrings.o \
 	string/eztrie.o \
-	string/fast_memcmp.o \
 	string/fast_memmem.o \
 	string/mempbrk.o \
 	string/strntol.o \
@@ -84,13 +83,16 @@ OBJ := \
 
 ifeq ($(uname_M),x86_64)
 OBJ += \
-	crc32c/crc32c_x64.o
+	crc32c/crc32c_x64.o \
+	string/fast_memcmp.o
 else ifeq ($(uname_M),aarch64)
 OBJ += \
-	crc32c/crc32c_arm64.o
+	crc32c/crc32c_arm64.o \
+	string/fast_memcmp_arm64.o
 else
 OBJ += \
-	crc32c/crc32c.o
+	crc32c/crc32c.o \
+	string/fast_memcmp.o
 endif
 
 ifeq ($(uname_S),Darwin)
