@@ -2,6 +2,8 @@ import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
+const ENCODER = new TextEncoder()
+
 await test('hll', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -185,7 +187,7 @@ await test('hll', async (t) => {
   for (let i = 0; i < 1e6; i++) {
     feelings.push(
       xxHash64(
-        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+        ENCODER.encode(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
       ),
     )
   }
@@ -329,7 +331,7 @@ await test('hll', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        $undeftokens: xxHash64(Buffer.from('lala')),
+        $undeftokens: xxHash64(ENCODER.encode('lala')),
       },
     ],
   })
