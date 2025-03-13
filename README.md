@@ -242,6 +242,7 @@ _Example:_ `npx @based/cli deploy [options]`
 | Option | Description |
 |--------|-------------|
 | `-w, --watch` | To deploy in watch mode. |
+| `-fr, --force-reload <boolean|seconds>` | Enable or disable this function in the cloud, or set the update time window (in seconds) to ensure users stay in sync with your cache. |
 | `-f, --functions <functions...>` | The function names to be served (variadic). |
 
 ### Dev
