@@ -13,7 +13,7 @@ function write(value: Float32Array, ctx: ModifyCtx, fieldSize: number) {
   ctx.buf[ctx.len++] = tmp >>>= 8
   ctx.buf[ctx.len++] = tmp >>>= 8
   ctx.buf[ctx.len++] = tmp >>>= 8
-  Buffer.from(value.buffer).copy(ctx.buf, ctx.len, 0, size)
+  ctx.buf.set(new Uint8Array(value.buffer).subarray(0, size), ctx.len)
   ctx.len += size
 }
 
