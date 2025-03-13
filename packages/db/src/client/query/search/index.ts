@@ -62,7 +62,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
-  const x = q.toLowerCase().trim().split(' ')
+  const x = q.toLowerCase().normalize('NFKD').trim().split(' ')
   for (const s of x) {
     if (s) {
       const b = Buffer.from(s)
