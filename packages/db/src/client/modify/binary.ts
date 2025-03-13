@@ -13,7 +13,7 @@ export function getBuffer(value: any): Uint8Array | undefined {
       return value
     }
     if (value.buffer instanceof ArrayBuffer) {
-      return new Uint8Array(value.buffer)
+      return new Uint8Array(value.buffer, 0, value.byteLength)
     }
   } else if (typeof value === 'string') {
     return ENCODER.encode(value)

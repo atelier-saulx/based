@@ -42,7 +42,7 @@ export const vectorSearch = (
   }
   // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
   let size = 9
-  const vec = new Uint8Array(q.buffer)
+  const vec = new Uint8Array(q.buffer, 0, q.byteLength)
   size += vec.byteLength
 
   def.search = {
