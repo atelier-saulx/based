@@ -35,7 +35,7 @@ await test('multiple', async (t) => {
               ref: 'user',
               prop: 'articles',
               $rating: 'uint32',
-              // $derp: 'string',
+              $derp: 'string',
               $rdy: 'boolean',
             },
           },
@@ -53,7 +53,7 @@ await test('multiple', async (t) => {
         id: mrDerp,
         $rdy: true,
         $rating: 1,
-        // $derp: 'a',
+        $derp: 'a',
       },
     ],
   })
@@ -61,10 +61,29 @@ await test('multiple', async (t) => {
   await db
     .query('article')
     .include('contributors.$rating')
-
     // .include('contributors.$derp')
     // .include('*', 'contributors.$rating', 'contributors.*')
     .get()
-    // .inspect()
+    .inspect()
     .then((v) => v.debug())
+
+  // const typicalThursday = await db.create('article', {
+  //   name: 'Typical Thursday',
+  //   contributors: [
+  //     {
+  //       id: mrDerp,
+  //       $rating: 1,
+  //     },
+  //   ],
+  // })
+
+  // await db.update('article', fantasticalFriday, {
+  //   name: 'Fantastical Friday',
+  //   contributors: [
+  //     {
+  //       id: mrDerp,
+  //       $rating: 2,
+  //     },
+  //   ],
+  // })
 })

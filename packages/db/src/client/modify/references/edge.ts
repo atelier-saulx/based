@@ -97,14 +97,12 @@ export function writeEdges(
             }
             size = buf.byteLength
           }
-
-          if (ctx.len + 6 + size > ctx.max) {
+          if (ctx.len + 7 + size > ctx.max) {
             return RANGE_ERR
           }
-
+          ctx.buf[ctx.len++] = UPDATE
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
-
           if (size) {
             writeBinaryRaw(value, ctx)
           } else {
@@ -117,9 +115,10 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(edge, value)
           }
-          if (ctx.len + 6 + Buffer.byteLength(value) > ctx.max) {
+          if (ctx.len + 7 + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
           }
+          ctx.buf[ctx.len++] = UPDATE
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
           let size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
@@ -138,6 +137,7 @@ export function writeEdges(
             }
           }
           if (value > 0) {
+            ctx.buf[ctx.len++] = UPDATE
             ctx.buf[ctx.len++] = edge.prop
             ctx.buf[ctx.len++] = REFERENCE
             ctx.buf[ctx.len++] = value
@@ -152,9 +152,10 @@ export function writeEdges(
             return new ModifyError(edge, value)
           }
           let size = value.length * 4
-          if (ctx.len + 6 + size > ctx.max) {
+          if (ctx.len + 7 + size > ctx.max) {
             return RANGE_ERR
           }
+          ctx.buf[ctx.len++] = UPDATE
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = REFERENCES
           ctx.buf[ctx.len++] = size
@@ -174,9 +175,10 @@ export function writeEdges(
         // if total len === 1
 
         if (t.edgeMainLen == edge.len) {
-          if (ctx.len + 4 > ctx.max) {
+          if (ctx.len + 7 + edge.len > ctx.max) {
             return RANGE_ERR
           }
+          ctx.buf[ctx.len++] = UPDATE
           ctx.buf[ctx.len++] = 0
           ctx.buf[ctx.len++] = MICRO_BUFFER
           const size = edge.len
@@ -212,6 +214,10 @@ export function writeEdges(
 
   if (mainFields) {
     if (mainSize === t.edgeMainLen) {
+      if (ctx.len + 7 + mainSize > ctx.max) {
+        return RANGE_ERR
+      }
+      ctx.buf[ctx.len++] = UPDATE
       ctx.buf[ctx.len++] = 0
       ctx.buf[ctx.len++] = MICRO_BUFFER
       let sizeU32 = mainSize
@@ -219,9 +225,6 @@ export function writeEdges(
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
-
-      console.log('yo yo yo', mainFields)
-
       for (let i = 0; i < mainFields.length; i += 2) {
         const edge: PropDefEdge = mainFields[i]
         const err = appendFixedValue(ctx, mainFields[i + 1], edge)
@@ -229,6 +232,8 @@ export function writeEdges(
           return err
         }
       }
+    } else {
+      // add each
     }
   }
 }
