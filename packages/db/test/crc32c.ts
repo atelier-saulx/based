@@ -4,23 +4,21 @@ import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
 
-console.log(
-  'Comparing just the hash generation, without writing in the database',
-)
+const ENCODER = new TextEncoder()
 
-console.time('1E7 CRC32c TS')
-for (let i = 0; i < 1e7; i++) {
-  crc32c(Buffer.from(`oid${i}`))
-}
-console.timeEnd('1E7 CRC32c TS')
+await test('Comparing just the hash generation, without writing in the database', async (t) => {
+  console.time('1E7 CRC32c TS')
+  for (let i = 0; i < 1e7; i++) {
+    crc32c(ENCODER.encode(`oid${i}`))
+  }
+  console.timeEnd('1E7 CRC32c TS')
 
-console.time('1E7 CRC32c Native')
-for (let i = 0; i < 1e7; i++) {
-  nativeCrc32(Buffer.from(`oid${i}`))
-}
-console.timeEnd('1E7 CRC32c Native')
-
-// ------------------------------------
+  console.time('1E7 CRC32c Native')
+  for (let i = 0; i < 1e7; i++) {
+    nativeCrc32(ENCODER.encode(`oid${i}`))
+  }
+  console.timeEnd('1E7 CRC32c Native')
+})
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -49,11 +47,11 @@ await test('simple', async (t) => {
   })
 
   const transaction = await db.create('transaction', {
-    myHash: crc32c(Buffer.from('oid123')),
+    myHash: crc32c(ENCODER.encode('oid123')),
   })
 
   const transactionN = await db.create('transactionN', {
-    myNativeMadeHash: nativeCrc32(Buffer.from('oid123')),
+    myNativeMadeHash: nativeCrc32(ENCODER.encode('oid123')),
   })
 
   equal(
@@ -87,7 +85,7 @@ await test('simple', async (t) => {
 
   for (let i = 0; i < 1e7; i++) {
     lastId = db.create('transaction', {
-      myHash: crc32c(Buffer.from(`oid${i}`)),
+      myHash: crc32c(ENCODER.encode(`oid${i}`)),
     }).tmpId
     if (i % 2) {
       m.push(lastId)
@@ -108,7 +106,7 @@ await test('simple', async (t) => {
   m = []
   for (let i = 0; i < 1e7; i++) {
     lastId = db.create('transactionN', {
-      myNativeMadeHash: nativeCrc32(Buffer.from(`oid${i}`)),
+      myNativeMadeHash: nativeCrc32(ENCODER.encode(`oid${i}`)),
     }).tmpId
     if (i % 2) {
       m.push(lastId)
