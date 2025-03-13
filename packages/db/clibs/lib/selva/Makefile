@@ -61,6 +61,7 @@ OBJ := \
 	string/base64url.o \
 	string/cstrings.o \
 	string/eztrie.o \
+	string/fast_memcmp.o \
 	string/fast_memmem.o \
 	string/mempbrk.o \
 	string/strntol.o \
