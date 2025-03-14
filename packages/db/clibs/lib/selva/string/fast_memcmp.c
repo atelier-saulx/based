@@ -20,6 +20,10 @@ bool fast_memcmp(const void *restrict a, const void *restrict b, size_t len)
     const char *y = (const char *)b;
     bool res = false;
 
+    if (x[0] != y[0]) {
+        return false;
+    }
+
     for (size_t i = 0; i < len; i++) {
         res |= x[i] != y[i];
     }
