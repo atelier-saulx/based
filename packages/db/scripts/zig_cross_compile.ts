@@ -26,7 +26,19 @@ const AVAILABLE_PLATFORMS = [
   //   { os: 'macos', arch: 'x86_64' },
 ]
 
-const AVAILABLE_NODE_VERSIONS = ['v20.11.1', 'v20.18.1', 'v22.13.0']
+async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
+  //Promise<string[]> {
+  const { data } = await axios.get('https://nodejs.org/dist/index.json')
+  const versions = new Map()
+  for (const release of data) {
+    const [_, major, minor, patch] =
+      release.version.match(/^v(\d+)\.(\d+)\.(\d+)/) || []
+    if (major && !versions.has(major) && major >= 20) {
+      versions.set(major, `v${major}.${minor}.${patch}`)
+    }
+  }
+  return versions //Array.from(versions.values())
+}
 
 const PLATFORMS = isRelease
   ? AVAILABLE_PLATFORMS
@@ -41,8 +53,6 @@ const PLATFORMS = isRelease
         }[os.arch() as 'arm64' | 'aarch64' | 'x64' | 'x86_64'],
       },
     ]
-
-const NODE_VERSIONS = isRelease ? AVAILABLE_NODE_VERSIONS : [process.version]
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.join(dirname(__filename), '..')
@@ -91,11 +101,11 @@ function buildWithZig(
 
 function moveLibraryToPlatformDir(
   destinationLibPath: string,
-  version: string,
+  major: string,
   platform: Platform,
 ): void {
   const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
-  const newPath = path.join(destinationLibPath, `libnode-${version}.node`)
+  const newPath = path.join(destinationLibPath, `libnode-${major}.node`)
 
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
@@ -103,7 +113,7 @@ function moveLibraryToPlatformDir(
 
     if (isRelease && platform.os === 'linux') {
       execSync(
-        `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${version}"`,
+        `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`,
         {
           stdio: 'inherit',
         },
@@ -126,23 +136,28 @@ function getDestinationLibraryPath(platform: Platform): string {
 }
 
 async function main() {
+  const AVAILABLE_NODE_VERSIONS = await fetchAvailableNodeVersions()
+  const NODE_VERSIONS = isRelease
+    ? Array.from(AVAILABLE_NODE_VERSIONS.entries())
+    : [[process.version.match(/^v(\d+)\./)?.[1] ?? '20', process.version]]
+
   for (const platform of PLATFORMS) {
     const target = `${platform.arch}-${platform.os}${platform.os === 'linux' ? '-gnu' : ''}`
     const rpath = platform.os == 'macos' ? '@loader_path' : '$ORIGIN'
 
-    for (const version of NODE_VERSIONS) {
+    for (const [major, version] of NODE_VERSIONS) {
       try {
         const nodeHeadersPath = await downloadAndExtractNodeHeaders(version)
         const destinationLibPath = getDestinationLibraryPath(platform)
 
         buildWithZig(target, nodeHeadersPath, rpath, destinationLibPath)
-        moveLibraryToPlatformDir(destinationLibPath, version, platform)
+        moveLibraryToPlatformDir(destinationLibPath, 'v' + major, platform)
 
         console.log('Cleaning up zig-out directory...')
         rimraf.sync(path.join(__dirname, 'zig-out'))
       } catch (error) {
         console.error(
-          `Error processing version ${version} for platform ${target}:`,
+          `Error processing version v${major} for platform ${target}:`,
           error,
         )
         throw error

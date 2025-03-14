@@ -4,7 +4,7 @@ const process = require('process')
 
 const platform = os.platform()
 const arch = os.arch()
-const nodeVersion = process.version
+const nodeMajorVersion = parseInt(process.version.match(/^v?(\d+)/)[1], 10)
 
 const baseDir = path.join(__dirname, 'dist/lib')
 let platformDir
@@ -20,7 +20,11 @@ switch (platform) {
     throw new Error(`Unsupported platform: ${platform}`)
 }
 
-const libPath = path.join(baseDir, platformDir, `libnode-${nodeVersion}.node`)
+const libPath = path.join(
+  baseDir,
+  platformDir,
+  `libnode-v${nodeMajorVersion}.node`,
+)
 const addon = require(libPath)
 
 module.exports = addon
