@@ -7,8 +7,7 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   }
   let i = 0
   if (len < 40) {
-    let max = len < 40 ? len : 4
-    while (i < max) {
+    while (i < len) {
       if (aB[i] != bB[i]) {
         return false
       }
