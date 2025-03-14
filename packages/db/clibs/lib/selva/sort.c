@@ -886,31 +886,7 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
 #include <unistd.h>
 #include "selva/ctime.h"
 #include "selva/timestamp.h"
-
-static void print_time(char *msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
-{
-    struct timespec ts_diff;
-    double t;
-    const char *t_unit;
-
-    timespec_sub(&ts_diff, ts_end, ts_start);
-    t = timespec2ms(&ts_diff);
-
-    if (t < 1e3) {
-        t_unit = "ms";
-    } else if (t < 60e3) {
-        t /= 1e3;
-        t_unit = "s";
-    } else if (t < 3.6e6) {
-        t /= 60e3;
-        t_unit = "min";
-    } else {
-        t /= 3.6e6;
-        t_unit = "h";
-    }
-
-    fprintf(stderr, "%s: %.2f %s\n", msg, t, t_unit);
-}
+#include "print_ready.h"
 #endif
 
 #ifdef SORT_TEST_I64
@@ -929,7 +905,7 @@ static void test_i64(void)
         selva_sort_insert_i64(sort, (uint64_t)x << 31, (void *)i);
     }
     ts_monotime(&ts_end);
-    print_time("inserts", &ts_start, &ts_end);
+    print_ready("inserts", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
@@ -944,12 +920,12 @@ static void test_i64(void)
 #endif
     }
     ts_monotime(&ts_end);
-    print_time("foreach", &ts_start, &ts_end);
+    print_ready("foreach", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_defrag(sort);
     ts_monotime(&ts_end);
-    print_time("defrag", &ts_start, &ts_end);
+    print_ready("defrag", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
@@ -964,7 +940,7 @@ static void test_i64(void)
 #endif
     }
     ts_monotime(&ts_end);
-    print_time("foreach2", &ts_start, &ts_end);
+    print_ready("foreach2", &ts_start, &ts_end, "");
 
     selva_sort_destroy(sort);
 }
@@ -992,7 +968,7 @@ static void test_buf(void)
         selva_sort_insert_buf(sort, buf, sizeof(buf), (void *)i);
     }
     ts_monotime(&ts_end);
-    print_time("inserts", &ts_start, &ts_end);
+    print_ready("inserts", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
@@ -1008,7 +984,7 @@ static void test_buf(void)
 #endif
     }
     ts_monotime(&ts_end);
-    print_time("foreach", &ts_start, &ts_end);
+    print_ready("foreach", &ts_start, &ts_end, "");
 
     selva_sort_destroy(sort);
 }
@@ -1036,7 +1012,7 @@ static void test_fixed_buf(void)
         selva_sort_insert_buf(sort, buf, sizeof(buf), (void *)i);
     }
     ts_monotime(&ts_end);
-    print_time("inserts", &ts_start, &ts_end);
+    print_ready("inserts", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
@@ -1046,12 +1022,12 @@ static void test_fixed_buf(void)
         __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
     }
     ts_monotime(&ts_end);
-    print_time("foreach", &ts_start, &ts_end);
+    print_ready("foreach", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_defrag(sort);
     ts_monotime(&ts_end);
-    print_time("defrag", &ts_start, &ts_end);
+    print_ready("defrag", &ts_start, &ts_end, "");
 
     ts_monotime(&ts_start);
     selva_sort_foreach_begin(sort);
@@ -1061,7 +1037,7 @@ static void test_fixed_buf(void)
         __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
     }
     ts_monotime(&ts_end);
-    print_time("foreach2", &ts_start, &ts_end);
+    print_ready("foreach2", &ts_start, &ts_end, "");
 
     selva_sort_destroy(sort);
 }
