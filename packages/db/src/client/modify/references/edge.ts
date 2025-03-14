@@ -252,7 +252,7 @@ export function writeEdges(
       // thats the actual thing
       // [size][size][size][size][len][len][start-1][start-1][start-2][start-2][MAIN..len]
       // size - len
-      const mainFieldsStartSize = mainFields.length
+      const mainFieldsStartSize = mainFields.length * 2
       if (ctx.len + 7 + mainSize + mainFieldsStartSize > ctx.max) {
         return RANGE_ERR
       }
@@ -286,6 +286,10 @@ export function writeEdges(
         let start = edge.start
         ctx.buf[sIndexI] = start
         ctx.buf[sIndexI + 1] = start >>>= 8
+        let len = edge.len
+        ctx.buf[sIndexI + 2] = len
+        ctx.buf[sIndexI + 3] = len >>>= 8
+
         ctx.len += edge.start
         writtenFields += edge.start + edge.len
         const err = appendFixedValue(ctx, value, edge)

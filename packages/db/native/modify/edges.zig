@@ -30,18 +30,7 @@ pub fn writeEdges(
         var len: u32 = undefined;
         var offset: u32 = 0;
 
-        // var start: u16 = 0;
-
-        // if (prop == 0) {
-        //     // IF CREATE OR FULL UPDATE OF MAIN
-        //     // IF UPDATE SINGLE VALUE
-        //     start = read(u16, data, i + 2);
-        //     edgeLen = @as(u32, read(u16, data, i + 4));
-        //     // prop = data[i + 2];
-        //     offset = 4;
-        // } else {
         // if TEXT
-
         // ---> MAIN
         // TMP
         // if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
@@ -54,39 +43,25 @@ pub fn writeEdges(
         // else just set it
         // }
 
-        // difference in update and set
-        // if create it has the full main buffer much easier
-
         if (op == types.ModOp.UPDATE_PARTIAL) {
-            // IF CREATE OR FULL UPDATE OF MAIN
-            // IF UPDATE SINGLE VALUE
-            // const size = read(u16, data, i + 3);
             len = read(u32, data, i);
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
-            std.debug.print("222 MAIN {any} prop: {any} \n", .{ offset, prop });
+            const mainBufferOffset = len - totalMainBufferLen;
 
             const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
             const val = db.getEdgeProp(ref, edgeFieldSchema.?);
 
             if (val.len > 0) {
-                // -----------
-            } else {
-                // add main len as well
-                // std.debug.print("Yo! {any} - {any} \n", .{ data[i + 3 + offset .. i + 3 + len + offset], totalMainBufferLen });
-                // ----
-                // const newField =
-                const mainBufferOffset = len - totalMainBufferLen;
-
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-
-                std.debug.print(
-                    "MAIN {any} prop: {any} [{any},{any}] {any} \n",
-                    .{ mainBufferOffset, prop, i + offset + mainBufferOffset, i + len + offset, edgeData },
-                );
-
-                // std.debug.print("MAIN {any} prop: {any} \n", .{ edgeData, prop });
-
+                var j: usize = offset + i;
+                while (j < mainBufferOffset + offset + i) : (j += 4) {
+                    const start = read(u16, data, j);
+                    const l = read(u16, data, j + 2);
+                    @memcpy(val[start .. start + l], edgeData[start .. start + l]);
+                }
+            } else {
+                const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 try db.writeEdgeProp(
                     ctx.db,
                     edgeData,
@@ -95,18 +70,23 @@ pub fn writeEdges(
                     ref,
                     prop,
                 );
-
-                std.debug.print("flap \n", .{});
             }
-
-            // const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
         } else {
             len = read(u32, data, i);
             offset = 4;
 
-            const edgeData = data[i + offset .. i + offset + len];
-            // std.debug.print("222 MAIN {any} prop: {any} \n", .{ edgeData, prop });
+            //  if (t != p.CARDINALITY) {
+            //     var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+            //     if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
+            //         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+            //         const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+            //         if (val.len > 0) {
+            //             _ = update.incrementBuffer(op, t, val, edgeData);
+            //             edgeData = val;
+            //         }
+            //     }
 
+            const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
                 ctx.db,
                 edgeData,
@@ -116,18 +96,6 @@ pub fn writeEdges(
                 prop,
             );
         }
-
-        //  if (t != p.CARDINALITY) {
-        //     var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
-
-        //     if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
-        //         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
-        //         const val = db.getEdgeProp(ref, edgeFieldSchema.?);
-        //         if (val.len > 0) {
-        //             _ = update.incrementBuffer(op, t, val, edgeData);
-        //             edgeData = val;
-        //         }
-        //     }
 
         i += offset + len;
     }
