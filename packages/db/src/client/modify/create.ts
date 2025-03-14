@@ -11,6 +11,7 @@ import {
   ModifyOpts,
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
+  SIZE,
 } from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
@@ -32,7 +33,7 @@ const appendCreate = (
   }
 
   if (ctx.len === len || def.mainLen === 0) {
-    if (ctx.len + 10 > ctx.max) {
+    if (ctx.len + SIZE.DEFAULT_CURSOR > ctx.max) {
       return RANGE_ERR
     }
     setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, CREATE)

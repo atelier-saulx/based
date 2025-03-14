@@ -24,6 +24,7 @@ import {
   ModifyErr,
   ModifyOp,
   RANGE_ERR,
+  SIZE,
 } from './types.js'
 import { writeBinary } from './binary.js'
 import { setCursor } from './setCursor.js'
@@ -82,7 +83,7 @@ function _modify(
           err = writeJson(val, ctx, schema, def, res.tmpId, mod)
         }
       } else if (overwrite) {
-        if (ctx.len + 15 + schema.mainLen > ctx.max) {
+        if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + schema.mainLen > ctx.max) {
           return RANGE_ERR
         }
         setCursor(ctx, schema, def.prop, MICRO_BUFFER, res.tmpId, mod, true)
@@ -113,7 +114,7 @@ function _modify(
           if (increment === 0) {
             continue
           }
-          if (ctx.len + 10 > ctx.max) {
+          if (ctx.len + SIZE.DEFAULT_CURSOR > ctx.max) {
             return RANGE_ERR
           }
           setCursor(ctx, schema, def.prop, MICRO_BUFFER, res.tmpId, mod)

@@ -1,7 +1,7 @@
 import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
-import { UPDATE, DELETE_SORT_INDEX, DELETE_NODE } from './types.js'
+import { UPDATE, DELETE_SORT_INDEX, DELETE_NODE, SIZE } from './types.js'
 import { MICRO_BUFFER } from '@based/schema/def'
 
 export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
@@ -10,7 +10,7 @@ export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
   const separate = schema.separate
   // TODO: pretty slow actually
   if (separate) {
-    const size = 12 + separate.length * 12
+    const size = SIZE.DEFAULT_CURSOR + 2 + separate.length * 12
     if (ctx.len + size > ctx.max) {
       flushBuffer(db)
       return deleteFn(db, type, id)
@@ -23,7 +23,7 @@ export const deleteFn = (db: DbClient, type: string, id: number): boolean => {
     }
     ctx.buf[ctx.len++] = DELETE_NODE
   } else {
-    if (ctx.len + 12 > ctx.max) {
+    if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
       flushBuffer(db)
       return deleteFn(db, type, id)
     }

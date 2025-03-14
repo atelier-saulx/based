@@ -1,7 +1,7 @@
 import { MICRO_BUFFER } from '@based/schema/def'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
-import { EXPIRE } from './types.js'
+import { EXPIRE, SIZE } from './types.js'
 import { DbClient } from '../index.js'
 
 export type CreateObj = Record<string, any>
@@ -21,7 +21,7 @@ export function expire(
   }
 
   const ctx = db.modifyCtx
-  if (ctx.len + 8 + 1 + 4 > ctx.max) {
+  if (ctx.len + SIZE.DEFAULT_CURSOR + 5 > ctx.max) {
     flushBuffer(db)
     return expire(db, type, id, seconds)
   }

@@ -1,12 +1,17 @@
 import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
-import { ModifyOp, ModifyErr, RANGE_ERR, CREATE } from './types.js'
+import { ModifyOp, ModifyErr, RANGE_ERR, CREATE, SIZE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'
 
 export function writeHll(
-  value: string | null | Buffer | Uint8Array | Array<string | Buffer | Uint8Array>,
+  value:
+    | string
+    | null
+    | Buffer
+    | Uint8Array
+    | Array<string | Buffer | Uint8Array>,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -44,7 +49,7 @@ function addHll(
 ): ModifyErr {
   const len = value.length
   let size = 4 + len * 8
-  if (ctx.len + size + 11 > ctx.max) {
+  if (ctx.len + size + SIZE.DEFAULT_CURSOR > ctx.max) {
     return RANGE_ERR
   }
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
@@ -63,7 +68,10 @@ export function writeHllBuf(
   for (let val of value) {
     if (typeof val === 'string') {
       xxHash64(new TextEncoder().encode(val), ctx.buf, ctx.len)
-    } else if ((val instanceof Buffer || val instanceof Uint8Array) && val.byteLength === 8) {
+    } else if (
+      (val instanceof Buffer || val instanceof Uint8Array) &&
+      val.byteLength === 8
+    ) {
       ctx.buf.set(val, ctx.len)
     } else {
       return new ModifyError(t, val)
