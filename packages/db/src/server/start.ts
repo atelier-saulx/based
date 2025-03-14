@@ -10,6 +10,7 @@ import exitHook from 'exit-hook'
 import './worker.js'
 import { save } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
+import { bufToHex } from '../utils.js'
 
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
@@ -136,7 +137,7 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
     const newHash = db.merkleTree.getRoot()?.hash
     if (!hashEq(oldHash, newHash)) {
       console.error(
-        `WARN: CSMT hash mismatch: ${writelog.hash} != ${Buffer.from(newHash).toString('hex')}`,
+        `WARN: CSMT hash mismatch: ${writelog.hash} != ${bufToHex(newHash)}`,
       )
     }
   }

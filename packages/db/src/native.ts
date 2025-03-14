@@ -1,5 +1,6 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
+import { bufToHex } from './utils.js'
 
 const selvaIoErrlog = new Uint8Array(256)
 const textEncoder = new TextEncoder()
@@ -117,8 +118,7 @@ export default {
         const buf = new Uint8Array(16)
         db.hashDigest(state, buf)
         if (encoding === 'hex') {
-          // TODO Remove Buffer
-          return Buffer.from(buf).toString('hex')
+          return bufToHex(buf)
         } else {
           return buf
         }
