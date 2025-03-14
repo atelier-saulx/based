@@ -258,25 +258,15 @@ export const readAllFields = (
         i += size + 4
         // ----------------
       } else {
+        i++
         const target = 'ref' in q.edges.target && q.edges.target.ref
-        if (!target) {
-          console.warn('big problem with target')
-        }
         if (prop === 0) {
-          // 2 options pass total
-          console.log('GOT MAIN VALUE DO STUFF WITH START')
-          // const start =
-          // change this
-          i++
           i += readMain(q.edges, result, i, item)
-          console.log(q)
           // i += edgeDef.len
         } else {
           const edgeDef: PropDefEdge = target.reverseSeperateEdges[prop]
           const t = edgeDef.typeIndex
-
           if (t === JSON) {
-            i++
             const size = readUint32(result, i)
             addField(
               edgeDef,
@@ -285,12 +275,10 @@ export const readAllFields = (
             )
             i += size + 4
           } else if (t === BINARY) {
-            i++
             const size = readUint32(result, i)
             addField(edgeDef, result.subarray(i + 6, size + i), item)
             i += size + 4
           } else if (t === STRING || t === ALIAS || t === ALIASES) {
-            i++
             const size = readUint32(result, i)
             if (size === 0) {
               addField(edgeDef, '', item)
@@ -299,7 +287,6 @@ export const readAllFields = (
             }
             i += size + 4
           } else if (t === CARDINALITY) {
-            i++
             const size = readUint32(result, i)
             addField(edgeDef, readUint32(result, i + 4), item)
             i += size + 4

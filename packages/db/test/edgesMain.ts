@@ -45,6 +45,7 @@ await test('multiple', async (t) => {
   })
 
   const mrDerp = await db.create('user', { name: 'mr Derp' })
+  const mrFrap = await db.create('user', { name: 'mr Frap' })
 
   const fantasticalFriday = await db.create('article', {
     name: 'Fantastical Friday',
@@ -54,6 +55,12 @@ await test('multiple', async (t) => {
         $rdy: true,
         $rating: 66,
         $derp: 'a',
+      },
+      {
+        id: mrFrap,
+        $rdy: false,
+        $rating: 99,
+        $derp: 'b',
       },
     ],
   })
