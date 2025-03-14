@@ -31,6 +31,10 @@ export const FUNCTION_TYPES = {
   query: 'BasedQueryFunction',
   function: 'BasedFunction',
   app: 'BasedAppFunction',
+  stream: 'BasedStreamFunction',
+  channel: 'BasedChannelFunction',
+  job: 'BasedFunction',
+  http: 'BasedHttpFunction',
 }
 export const LIVE_RELOAD_SCRIPT = (port: number): string =>
   `<script>!function e(o){var n=window.location.hostname;o||(o=0),setTimeout((function(){var t=new WebSocket("ws://"+n+":${port}");t.addEventListener("message",(function(){location.reload()})),t.addEventListener("open",(function(){o>0&&location.reload(),console.log("%cBased live reload server connected","color: #bbb")})),t.addEventListener("close",(function(){console.log("%cBased live reload server reconnecting...","color: #bbb"),e(Math.min(o+1e3))}))}),o)}();</script>`
