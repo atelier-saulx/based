@@ -1,6 +1,7 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, equals } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { equal } from 'node:assert'
 
 const data = {
   cat: [1.5, -0.4, 7.2, 19.6, 20.2],
@@ -53,10 +54,10 @@ await test('vector set/get', async (t) => {
 
   const res = (await db.query('data').get()).toObject()
   for (const r of res) {
-    const a = Buffer.from(r.a.buffer)
-    const b = Buffer.from(new Float32Array(data[r.name]).buffer)
+    const a = new Uint8Array(r.a.buffer, 0, r.a.byteLength)
+    const b = new Uint8Array(new Float32Array(data[r.name]).buffer)
 
-    deepEqual(Buffer.compare(a, b), 0)
+    equal(equals(a, b), true)
   }
 })
 

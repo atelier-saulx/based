@@ -15,16 +15,7 @@ export type Search =
     }
   | string
 
-const makeSize = (nr: number, u8: boolean = false) => {
-  if (u8) {
-    const size = Buffer.allocUnsafe(1)
-    size[0] = nr
-    return size
-  }
-  const size = Buffer.allocUnsafe(2)
-  size.writeUint16LE(nr)
-  return size
-}
+const ENCODER = new TextEncoder()
 
 // vector
 export const vectorSearch = (
@@ -54,24 +45,44 @@ export const vectorSearch = (
   }
 }
 
+function concatBufs(bufs: Uint8Array[], totalByteLength: number): Uint8Array {
+  const res = new Uint8Array(totalByteLength)
+  let off = 0
+
+  for (let i = 0; i < bufs.length; i++) {
+    const buf = bufs[i]
+
+    res.set(buf, off)
+    off += buf.byteLength
+  }
+
+  return res
+}
+
 export const search = (def: QueryDef, q: string, s?: Search) => {
-  const bufs = []
-  let blocks = 0
+  const bufs: Uint8Array[] = []
+  let nrBlocks = 0
+  let totalByteLength = 1
 
   if (typeof q !== 'string') {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
-  const x = q.toLowerCase().normalize('NFKD').trim().split(' ')
+  const x = q.toLowerCase().normalize('NFKD').trim().split(' ').map((s) => `  ${s}`)
   for (const s of x) {
     if (s) {
-      const b = Buffer.from(s)
-      bufs.push(makeSize(b.byteLength), b)
-      blocks++
+      const buf = ENCODER.encode(s)
+      let len = buf.byteLength - 2
+      buf[0] = len
+      buf[1] = len >>> 8
+      bufs.push(buf)
+      nrBlocks++
+      totalByteLength += len + 2
     }
   }
-  bufs.unshift(makeSize(blocks, true))
-  const query = Buffer.concat(bufs)
+  bufs.unshift(Uint8Array.from([nrBlocks]))
+
+  const query = concatBufs(bufs, totalByteLength)
   def.search = {
     size: query.byteLength + 3,
     query,

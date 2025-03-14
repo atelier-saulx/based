@@ -48,7 +48,7 @@ export type QueryDefFilter = {
 export type QueryDefSearch =
   | {
       size: number
-      query: Buffer
+      query: Uint8Array
       isVector: false
       fields: { weight: number; field: number; start: number; lang: LangCode }[]
     }
