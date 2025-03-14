@@ -28,6 +28,8 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
 const charMap = new TextEncoder().encode("0123456789abcdef");
 const DECODER = new TextDecoder()
 
+// Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
+// https://issues.chromium.org/issues/42204568
 export const bufToHex = (a: Uint8Array): string => {
   const tmp = new Uint8Array(2 * a.byteLength)
   const n = charMap.length
@@ -60,6 +62,8 @@ const intMap = {
   'f': 0xf,
 }
 
+// Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
+// https://issues.chromium.org/issues/42204568
 export const hexToBuf = (s: string): Uint8Array => {
   const len = (s.length >>> 1) << 1
   const buf = new Uint8Array(len / 2)
