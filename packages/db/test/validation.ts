@@ -82,6 +82,7 @@ await test('update', async (t) => {
         countryCode: 'nope',
       }),
     true,
+    'Test OK: Correctly throws!',
   )
 
   await db.drain()
