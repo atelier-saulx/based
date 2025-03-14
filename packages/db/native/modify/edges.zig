@@ -47,7 +47,8 @@ pub fn writeEdges(
         //     if (val.len > 0) {
         //         _ = update.incrementBuffer(op, t, val, edgeData);
         //         edgeData = val;
-        //     }
+        //     } else set
+        // else just set it
         // }
 
         // difference in update and set
@@ -56,10 +57,21 @@ pub fn writeEdges(
         if (op == types.ModOp.UPDATE_PARTIAL) {
             // IF CREATE OR FULL UPDATE OF MAIN
             // IF UPDATE SINGLE VALUE
-            const start = read(u16, data, i + 3);
-            len = @as(u32, read(u16, data, i + 5));
-            std.debug.print("Yo! {any} \n", .{start});
-            offset = 4;
+            // const size = read(u16, data, i + 3);
+            len = @as(u32, read(u32, data, i + 3));
+            const totalMainBufferLen = read(u16, data, i + 7);
+            offset = 6;
+
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+            const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+            if (val.len > 0) {} else {
+                // add main len as well
+                std.debug.print("Yo! {any} - {any} \n", .{ data[i + 3 + offset .. i + 3 + len + offset], totalMainBufferLen });
+                // ----
+                // const newField =
+
+            }
+
             // const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
         } else {
             len = read(u32, data, i + 3);

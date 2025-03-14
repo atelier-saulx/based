@@ -247,7 +247,47 @@ export function writeEdges(
         }
       }
     } else {
-      // add each
+      if (ctx.len + 7 + mainSize > ctx.max) {
+        return RANGE_ERR
+      }
+      ctx.buf[ctx.len++] = UPDATE_PARTIAL
+      ctx.buf[ctx.len++] = 0
+      ctx.buf[ctx.len++] = MICRO_BUFFER
+      let sizeU32 = 0
+      const index = ctx.len
+      ctx.len += 4
+      let mainTotal = t.edgeMainLen
+
+      ctx.buf[ctx.len++] = mainTotal
+      ctx.buf[ctx.len++] = mainTotal >>>= 8
+
+      // START // START // START // START
+      // size = sizeu32 = mainTotal
+      // thats the actual thing
+
+      // [size][size][size][size][len][len][start-1][start-1][start-2][start-2][MAIN..len]
+      // size - len
+
+      // ctx.buf[]
+
+      for (let i = 0; i < mainFields.length; i += 2) {
+        const edge: PropDefEdge = mainFields[i]
+        let start = edge.start
+        let len = edge.len
+        sizeU32 += 4 + len
+        ctx.buf[ctx.len++] = start
+        ctx.buf[ctx.len++] = start >>>= 8
+        ctx.buf[ctx.len++] = len >>>= 8
+        ctx.buf[ctx.len++] = len >>>= 8
+        const err = appendFixedValue(ctx, mainFields[i + 1], edge)
+        if (err) {
+          return err
+        }
+      }
+      ctx.buf[index] = sizeU32
+      ctx.buf[index + 1] = sizeU32 >>>= 8
+      ctx.buf[index + 2] = sizeU32 >>>= 8
+      ctx.buf[index + 3] = sizeU32 >>>= 8
     }
   }
 }

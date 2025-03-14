@@ -58,24 +58,42 @@ await test('multiple', async (t) => {
       },
       {
         id: mrFrap,
-        $rdy: false,
+        // $rdy: false,
         $rating: 99,
         $derp: 'b',
       },
     ],
   })
 
-  console.log('derp')
+  // await db
+  //   .query('article')
+  //   .include('contributors.$rdy')
+  //   .include('contributors.$rating')
+  //   .include('contributors.$derp')
+  //   .get()
+  //   .inspect()
+  //   .then((v) => v.debug())
 
-  await db
-    .query('article')
-    .include('contributors.$rdy')
-    .include('contributors.$rating')
-    .include('contributors.$derp')
-    // .include('*', 'contributors.$rating', 'contributors.*')
-    .get()
-    .inspect()
-    .then((v) => v.debug())
+  // await db.update('article', fantasticalFriday, {
+  //   contributors: {
+  //     set: [
+  //       {
+  //         id: mrDerp,
+  //         $rating: 22,
+  //         // $rdy: true,
+  //       },
+  //     ],
+  //   },
+  // })
+
+  // await db
+  //   .query('article')
+  //   .include('contributors.$rdy')
+  //   .include('contributors.$rating')
+  //   .include('contributors.$derp')
+  //   .get()
+  //   .inspect()
+  //   .then((v) => v.debug())
 
   // const typicalThursday = await db.create('article', {
   //   name: 'Typical Thursday',
