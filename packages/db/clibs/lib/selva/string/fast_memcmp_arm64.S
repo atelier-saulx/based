@@ -33,7 +33,7 @@ LBB0_8:
 	and	x8, x2, #0xffffffffffffffc0
 	add	x9, x0, #32
 	add	x10, x1, #32
-	movi.2d	v0, #0000000000000000
+	movi	v0.2d, #0000000000000000
 	mov	x11, x8
 	movi	v1.2d, #0000000000000000
 	movi	v2.2d, #0000000000000000
@@ -69,7 +69,7 @@ LBB0_12:
 	mov	x11, x8
 	and	x8, x2, #0xfffffffffffffff8
 	movi	v0.2d, #0000000000000000
-	mov.b	v0[0], w9
+	mov	v0.b[0], w9
 	add	x9, x0, x11
 	add	x10, x1, x11
 	sub	x11, x11, x8
