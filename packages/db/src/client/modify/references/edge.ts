@@ -247,10 +247,7 @@ export function writeEdges(
         }
       }
     } else {
-      // START // START // START // START
-      // size = sizeu32 = mainTotal
-      // thats the actual thing
-      // [size][size][size][size][len][len][start-1][start-1][start-2][start-2][MAIN..len]
+      // [size][size][size][size][len][len][start-1][start-1][len-1][len-1][start-2][start-2][len-2][len-2][MAIN..len]
       // size - len
       const mainFieldsStartSize = mainFields.length * 2
       if (ctx.len + 7 + mainSize + mainFieldsStartSize > ctx.max) {
