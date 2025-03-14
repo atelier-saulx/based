@@ -40,3 +40,36 @@ export const bufToHex = (a: Uint8Array): string => {
 
   return DECODER.decode(tmp)
 }
+
+const intMap = {
+  '0': 0,
+  '1': 0x1,
+  '2': 0x2,
+  '3': 0x3,
+  '4': 0x4,
+  '5': 0x5,
+  '6': 0x6,
+  '7': 0x7,
+  '8': 0x8,
+  '9': 0x9,
+  'a': 0xa,
+  'b': 0xb,
+  'c': 0xc,
+  'd': 0xd,
+  'e': 0xe,
+  'f': 0xf,
+}
+
+export const hexToBuf = (s: string): Uint8Array => {
+  const len = (s.length >>> 1) << 1
+  const buf = new Uint8Array(len / 2)
+
+  for (let i = 0; i < buf.byteLength; i++) {
+    const x = s.charAt(2 * i)
+    const y = s.charAt(2 * i + 1)
+
+    buf[i] = (intMap[x] << 4) + intMap[y]
+  }
+
+  return buf;
+}
