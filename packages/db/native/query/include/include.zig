@@ -125,14 +125,17 @@ pub fn getFields(
         }
 
         if (isEdge) {
-            std.debug.print("include isEdge {any} \n", .{isEdge});
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
+
             if (prop == t.Prop.CARDINALITY) {
                 value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema) orelse undefined;
             } else {
                 value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
             }
+
+            // check if this is ok?
+
         } else {
             fieldSchema = try db.getFieldSchema(field, typeEntry);
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
@@ -172,13 +175,9 @@ pub fn getFields(
         } else {
             if (isEdge) {
                 size += 2;
-                const propLen = t.Size(edgeType);
-                if (propLen == 0) {
-                    size += (valueLen + 4);
-                } else {
-                    size += propLen;
-                }
-            } else if (field == 0) {
+            }
+
+            if (field == 0) {
                 main = value;
                 if (includeMain.?.len != 0) {
                     size += read(u16, includeMain.?, 0) + 1;

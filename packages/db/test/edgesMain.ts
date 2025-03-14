@@ -52,16 +52,19 @@ await test('multiple', async (t) => {
       {
         id: mrDerp,
         $rdy: true,
-        $rating: 1,
+        $rating: 66,
         $derp: 'a',
       },
     ],
   })
 
+  console.log('derp')
+
   await db
     .query('article')
+    .include('contributors.$rdy')
     .include('contributors.$rating')
-    // .include('contributors.$derp')
+    .include('contributors.$derp')
     // .include('*', 'contributors.$rating', 'contributors.*')
     .get()
     .inspect()

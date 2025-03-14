@@ -20,7 +20,7 @@ import {
   JSON,
   CARDINALITY,
 } from '@based/schema/def'
-import { QueryDef, QueryDefEdges } from '../types.js'
+import { QueryDef, QueryDefEdges, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   readDoubleLE,
@@ -151,11 +151,18 @@ const readMain = (
 ) => {
   const mainInclude = q.include.main
   let i = offset
-  if (mainInclude.len === q.schema.mainLen) {
-    for (const start in q.schema.main) {
-      readMainValue(q.schema.main[start], result, Number(start) + i, item)
+
+  const isEdge = q.type === QueryDefType.Edge
+
+  const main = isEdge ? q.target.ref.reverseMainEdges : q.schema.main
+
+  const len = isEdge ? q.target.ref.edgeMainLen : q.schema.mainLen
+
+  if (mainInclude.len === len) {
+    for (const start in main) {
+      readMainValue(main[start], result, Number(start) + i, item)
     }
-    i += q.schema.mainLen
+    i += len
   } else {
     for (const k in mainInclude.include) {
       const [index, prop] = mainInclude.include[k]
@@ -259,10 +266,10 @@ export const readAllFields = (
           // 2 options pass total
           console.log('GOT MAIN VALUE DO STUFF WITH START')
           // const start =
-          // const edgeDef: PropDefEdge = target.reverseMainEdges[prop]
           // change this
           i++
-          // readMainValue(edgeDef, result, i, item)
+          i += readMain(q.edges, result, i, item)
+          console.log(q)
           // i += edgeDef.len
         } else {
           const edgeDef: PropDefEdge = target.reverseSeperateEdges[prop]
