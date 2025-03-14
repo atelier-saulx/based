@@ -136,8 +136,6 @@ export const devServer = async ({
     if (result?.updates.length) {
       const updates = result?.updates
 
-      console.log({ updates })
-
       bundlingUpdateHandling(context)(updates)
     }
 
