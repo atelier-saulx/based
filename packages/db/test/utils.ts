@@ -3,8 +3,8 @@ import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
 
 await test('equals', async (t) => {
-  const arr = new Array(39).fill(0)
-  const arr2 = new Array(39).fill(0)
+  const arr = new Array(1000).fill(0)
+  const arr2 = new Array(1000).fill(0)
   // arr2[500] = 1
   // arr2[arr2.length - 2] = 1
 
