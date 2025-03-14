@@ -134,14 +134,10 @@ const propDefBuffer = (
   }
 }
 
-<<<<<<< HEAD
+// TODO rewrite
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {
-=======
-// TODO rewrite
-export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }): ArrayBuffer[] {
->>>>>>> secret-mega-project
   return Object.values(schema).map((t, i) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []

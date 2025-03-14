@@ -19,15 +19,18 @@ pub fn writeEdges(
     var i: usize = 0;
     const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
 
+    std.debug.print("flap {any} \n", .{data});
+
     while (i < data.len) {
         const op: types.ModOp = @enumFromInt(data[i]);
         const prop = data[i + 1];
-        const t: p = @enumFromInt(data[i + 2]);
+        // const t: p = @enumFromInt(data[i + 2]);
+        i += 3;
+
         var len: u32 = undefined;
         var offset: u32 = 0;
 
         // var start: u16 = 0;
-        std.debug.print("GOT derp i {d} {any} {any} {any} d: {any} \n", .{ i, op, t, prop, data });
 
         // if (prop == 0) {
         //     // IF CREATE OR FULL UPDATE OF MAIN
@@ -58,25 +61,52 @@ pub fn writeEdges(
             // IF CREATE OR FULL UPDATE OF MAIN
             // IF UPDATE SINGLE VALUE
             // const size = read(u16, data, i + 3);
-            len = @as(u32, read(u32, data, i + 3));
-            const totalMainBufferLen = read(u16, data, i + 7);
+            len = read(u32, data, i);
+            const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
+            std.debug.print("222 MAIN {any} prop: {any} \n", .{ offset, prop });
 
             const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
             const val = db.getEdgeProp(ref, edgeFieldSchema.?);
-            if (val.len > 0) {} else {
+
+            if (val.len > 0) {
+                // -----------
+            } else {
                 // add main len as well
-                std.debug.print("Yo! {any} - {any} \n", .{ data[i + 3 + offset .. i + 3 + len + offset], totalMainBufferLen });
+                // std.debug.print("Yo! {any} - {any} \n", .{ data[i + 3 + offset .. i + 3 + len + offset], totalMainBufferLen });
                 // ----
                 // const newField =
+                const mainBufferOffset = len - totalMainBufferLen;
 
+                const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
+
+                std.debug.print(
+                    "MAIN {any} prop: {any} [{any},{any}] {any} \n",
+                    .{ mainBufferOffset, prop, i + offset + mainBufferOffset, i + len + offset, edgeData },
+                );
+
+                // std.debug.print("MAIN {any} prop: {any} \n", .{ edgeData, prop });
+
+                try db.writeEdgeProp(
+                    ctx.db,
+                    edgeData,
+                    ctx.node.?,
+                    edgeConstraint,
+                    ref,
+                    prop,
+                );
+
+                std.debug.print("flap \n", .{});
             }
 
             // const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
         } else {
-            len = read(u32, data, i + 3);
+            len = read(u32, data, i);
             offset = 4;
-            const edgeData = data[i + 3 + offset .. i + 3 + offset + len];
+
+            const edgeData = data[i + offset .. i + offset + len];
+            // std.debug.print("222 MAIN {any} prop: {any} \n", .{ edgeData, prop });
+
             try db.writeEdgeProp(
                 ctx.db,
                 edgeData,
@@ -99,6 +129,6 @@ pub fn writeEdges(
         //         }
         //     }
 
-        i += 3 + offset + len;
+        i += offset + len;
     }
 }

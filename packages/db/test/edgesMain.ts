@@ -58,21 +58,22 @@ await test('multiple', async (t) => {
       },
       {
         id: mrFrap,
-        // $rdy: false,
-        $rating: 99,
+        $rdy: true,
+
+        // $rating: 99,
         $derp: 'b',
       },
     ],
   })
 
-  // await db
-  //   .query('article')
-  //   .include('contributors.$rdy')
-  //   .include('contributors.$rating')
-  //   .include('contributors.$derp')
-  //   .get()
-  //   .inspect()
-  //   .then((v) => v.debug())
+  await db
+    .query('article')
+    .include('contributors.$rdy')
+    .include('contributors.$rating')
+    .include('contributors.$derp')
+    .get()
+    .inspect()
+    .then((v) => v.debug())
 
   // await db.update('article', fantasticalFriday, {
   //   contributors: {

@@ -247,47 +247,54 @@ export function writeEdges(
         }
       }
     } else {
-      if (ctx.len + 7 + mainSize > ctx.max) {
-        return RANGE_ERR
-      }
-      ctx.buf[ctx.len++] = UPDATE_PARTIAL
-      ctx.buf[ctx.len++] = 0
-      ctx.buf[ctx.len++] = MICRO_BUFFER
-      let sizeU32 = 0
-      const index = ctx.len
-      ctx.len += 4
-      let mainTotal = t.edgeMainLen
-
-      ctx.buf[ctx.len++] = mainTotal
-      ctx.buf[ctx.len++] = mainTotal >>>= 8
-
       // START // START // START // START
       // size = sizeu32 = mainTotal
       // thats the actual thing
-
       // [size][size][size][size][len][len][start-1][start-1][start-2][start-2][MAIN..len]
       // size - len
+      const mainFieldsStartSize = mainFields.length
+      if (ctx.len + 7 + mainSize + mainFieldsStartSize > ctx.max) {
+        return RANGE_ERR
+      }
+      ctx.buf[ctx.len++] = UPDATE_PARTIAL
+      // Main buffer is always 0
+      ctx.buf[ctx.len++] = 0
+      ctx.buf[ctx.len++] = MICRO_BUFFER
 
-      // ctx.buf[]
+      let sizeU32 = mainFieldsStartSize + t.edgeMainLen
+      ctx.buf[ctx.len++] = sizeU32
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      ctx.buf[ctx.len++] = sizeU32 >>>= 8
 
+      let mainTotal = t.edgeMainLen
+      ctx.buf[ctx.len++] = mainTotal
+      ctx.buf[ctx.len++] = mainTotal >>>= 8
+
+      // index of start of fields
+      const sIndex = ctx.len
+      ctx.len += mainFieldsStartSize
+
+      // Add zeroes
+      ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
+      // Keep track of written bytes from append fixed
+      let writtenFields = 0
       for (let i = 0; i < mainFields.length; i += 2) {
         const edge: PropDefEdge = mainFields[i]
+        const value = mainFields[i + 1]
+        const sIndexI = i + sIndex
         let start = edge.start
-        let len = edge.len
-        sizeU32 += 4 + len
-        ctx.buf[ctx.len++] = start
-        ctx.buf[ctx.len++] = start >>>= 8
-        ctx.buf[ctx.len++] = len >>>= 8
-        ctx.buf[ctx.len++] = len >>>= 8
-        const err = appendFixedValue(ctx, mainFields[i + 1], edge)
+        ctx.buf[sIndexI] = start
+        ctx.buf[sIndexI + 1] = start >>>= 8
+        ctx.len += edge.start
+        writtenFields += edge.start + edge.len
+        const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err
         }
       }
-      ctx.buf[index] = sizeU32
-      ctx.buf[index + 1] = sizeU32 >>>= 8
-      ctx.buf[index + 2] = sizeU32 >>>= 8
-      ctx.buf[index + 3] = sizeU32 >>>= 8
+      // Correction to reuse append fixed value
+      ctx.len += t.edgeMainLen - writtenFields
     }
   }
 }
