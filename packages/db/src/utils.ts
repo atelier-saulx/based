@@ -77,3 +77,22 @@ export const hexToBuf = (s: string): Uint8Array => {
 
   return buf;
 }
+
+function base64OutLen(n: number, lineMax: number): number
+{
+  let olen: number;
+
+  /* This version would be with padding but we don't pad */
+  //olen = n * 4 / 3 + 4; /* 3-byte blocks to 4-byte */
+  olen = ((4 * n / 3) + 3) & ~3;
+  olen += lineMax > 0 ? olen / lineMax : 0; // line feeds
+
+  return olen;
+}
+
+export const base64encode = (a: Uint8Array, lineMax: number = 72): string => {
+  // TODO Could fallback to @saulx/utils if native is not available
+  const tmp = new Uint8Array(base64OutLen(a.byteLength, lineMax))
+
+  return DECODER.decode(native.base64encode(tmp, a, lineMax))
+}

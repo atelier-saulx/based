@@ -195,7 +195,7 @@ inline fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize)
 // }
 
 pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    const args = napi.getArgs(3, env, info) catch return null;
+    const args = napi.getArgs(2, env, info) catch return null;
     const a = napi.get([]u8, env, args[0]) catch return null;
     const b = napi.get([]u8, env, args[1]) catch return null;
     if (selva.fast_memcmp(a.ptr, b.ptr, a.len) == true) {
@@ -203,4 +203,14 @@ pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     } else {
         return null;
     }
+}
+
+pub fn base64encode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    const args = napi.getArgs(3, env, info) catch return null;
+    const dst = napi.get([]u8, env, args[0]) catch return null;
+    const src = napi.get([]u8, env, args[1]) catch return null;
+    const lineMax = napi.get(u32, env, args[2]) catch return null;
+
+    _ = selva.base64_encode_s(dst.ptr, src.ptr, src.len, lineMax);
+    return args[0];
 }
