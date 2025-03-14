@@ -15,7 +15,7 @@ import {
   SchemaTypesParsed,
   SchemaTypesParsedById,
 } from '@based/schema/def'
-import { createTree } from './csmt/index.js'
+import { createTree, hashEq } from './csmt/index.js'
 import { start } from './start.js'
 import {
   CsmtNodeRange,
@@ -125,7 +125,7 @@ export class DbServer {
     this.onSchemaChange = onSchemaChange
   }
 
-  start(opts?: { clean?: boolean }) {
+  start(opts?: { clean?: boolean, hosted?: boolean }) {
     return start(this, opts)
   }
 
@@ -338,7 +338,7 @@ export class DbServer {
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
       if (oldLeaf) {
-        if (oldLeaf.hash.equals(hash)) {
+        if (hashEq(oldLeaf.hash, hash)) {
           return
         }
         try {
@@ -436,7 +436,7 @@ export class DbServer {
         const type = this.schemaTypesParsed[types[i]]
         // TODO should not crash!
         try {
-          native.updateSchemaType(type.id, Buffer.from(s[i]), this.dbCtxExternal)
+          native.updateSchemaType(type.id, new Uint8Array(s[i]), this.dbCtxExternal)
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
@@ -589,7 +589,7 @@ export class DbServer {
 
     this.stopped = true
     clearTimeout(this.cleanupTimer)
-    this.unlistenExit()
+    this?.unlistenExit()
 
     try {
       if (!noSave) {

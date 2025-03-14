@@ -11,17 +11,14 @@ pub fn napi_finalize_hash(_: c.napi_env, finalize_data: ?*anyopaque, _: ?*anyopa
 pub fn hashCreate(env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     const state = selva.selva_hash_create_state();
     var externalNapi: c.napi_value = undefined;
-
     _ = selva.selva_hash_reset(state);
     _ = c.napi_create_external(env, state, napi_finalize_hash, null, &externalNapi);
-
     return externalNapi;
 }
 
 pub fn hashReset(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
-
     _ = selva.selva_hash_reset(state);
     return null;
 }
@@ -30,7 +27,6 @@ pub fn hashUpdate(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     const args = napi.getArgs(2, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
-
     _ = selva.selva_hash_update(state, buf.ptr, buf.len);
     return null;
 }
@@ -39,7 +35,6 @@ pub fn hashDigest(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     const args = napi.getArgs(2, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
-
     const hash = selva.selva_hash_digest(state);
     @memcpy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
     return null;
@@ -55,7 +50,6 @@ pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
 }
 
 // return queryId
-
 pub fn createCompressor(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     const compressor: *selva.libdeflate_compressor = selva.libdeflate_alloc_compressor(3).?;
     var externalNapi: c.napi_value = undefined;
@@ -149,5 +143,62 @@ pub fn xxHash64(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi
     const offset = napi.get(u32, env, args[2]) catch return null;
     const hash = selva.xxHash64(buf.ptr, buf.len);
     writeInt(usize, target, offset, hash);
+    return null;
+}
+
+inline fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize {
+    var size: usize = arrayLen;
+    // TODO zig can't properly parse the enum c.napi_typedarray_type
+    switch (arrayType) {
+        //c.napi_typedarray_type.napi_int8_array, c.napi_typedarray_type.napi_uint8_array, c.napi_typedarray_type.napi_uint8_clamped_array => {
+        0, 1, 2 => {
+            // NOP
+        },
+        //c.napi_typedarray_type.napi_int16_array, c.napi_typedarray_type.napi_uint16_array => {
+        3, 4 => {
+            size *= 2;
+        },
+        //c.napi_typedarray_type.napi_int32_array, c.napi_typedarray_type.napi_uint32_array, c.napi_typedarray_type.napi_float32_array => {
+        5, 6, 7 => {
+            size *= 4;
+        },
+        //c.napi_typedarray_type.napi_float64_array, c.napi_typedarray_type.napi_bigint64_array, c.napi_typedarray_type.napi_biguint64_array => {
+        8, 9, 10 => {
+            size *= 8;
+        },
+        else => {
+            // never
+        },
+    }
+
+    return size;
+}
+
+// const vectorLen = std.simd.suggestVectorLength(u8).?;
+// pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+//     const args = napi.getArgs(3, env, info) catch return null;
+//     const a = napi.get([]u8, env, args[0]) catch return null;
+//     const b = napi.get([]u8, env, args[1]) catch return null;
+//     const r = napi.get([]u8, env, args[2]) catch return null;
+//     r[0] = 1;
+//     const l = a.len;
+//     var i: usize = 0;
+//     while (i <= (l - vectorLen)) : (i += vectorLen) {
+//         const a1: @Vector(vectorLen, u8) = a[i..][0..vectorLen].*;
+//         const b1: @Vector(vectorLen, u8) = b[i..][0..vectorLen].*;
+//         if (@reduce(.And, a1 == b1) == false) {
+//             r[0] = 0;
+//             break;
+//         }
+//     }
+//     return null;
+// }
+
+pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    const args = napi.getArgs(3, env, info) catch return null;
+    const a = napi.get([]u8, env, args[0]) catch return null;
+    const b = napi.get([]u8, env, args[1]) catch return null;
+    const r = napi.get([]u8, env, args[2]) catch return null;
+    r[0] = if (c.memcmp(a.ptr, b.ptr, a.len) == 0) 1 else 0;
     return null;
 }

@@ -166,7 +166,7 @@ static void save_field_references(struct selva_io *io, const struct SelvaFieldsS
         struct SelvaNodeReference *ref = &refs->refs[i];
 
         if (!ref->dst) {
-            /* TODO Handle NULL? */
+            /* TODO Handle NULL? Also handle it in read. */
             db_panic("ref in refs shouldn't be NULL");
         }
 
@@ -355,18 +355,6 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-__used static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
-{
-    static const char map[] = "0123456789abcdef";
-    char *p = s;
-
-    for (size_t i = 0; i < SELVA_IO_HASH_SIZE; i++) {
-        *p++ = map[(hash[i] >> 4) % sizeof(map)];
-        *p++ = map[(hash[i] & 0x0f) % sizeof(map)];
-    }
-
-    return s;
-}
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
 {
@@ -377,6 +365,12 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
     if (err) {
         return err;
     }
+
+    /*
+     * Just in case.
+     */
+    io.errlog_buf = nullptr;
+    io.errlog_left = 0;
 
     /*
      * Save all the common data here that can't be split up.
@@ -425,6 +419,12 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
         return err;
     }
 
+    /*
+     * Just in case.
+     */
+    io.errlog_buf = nullptr;
+    io.errlog_left = 0;
+
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
@@ -458,23 +458,26 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_end);
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
-            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
-            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
+            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
+            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
 #endif
 
     return 0;
 }
 
-static void load_schema(struct selva_io *io, struct SelvaDb *db)
+__attribute__((warn_unused_result))
+static int load_schema(struct selva_io *io, struct SelvaDb *db)
 {
     sdb_nr_types_t nr_types;
 
     if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
-        db_panic("Invalid schema magic");
+        selva_io_errlog(io, "Invalid schema magic");
+        return SELVA_EINVAL;
     }
 
     if (io->sdb_read(&nr_types, sizeof(nr_types), 1, io) != 1) {
-        db_panic("nr_types schema");
+        selva_io_errlog(io, "nr_types schema");
+        return SELVA_EINVAL;
     }
 
     for (size_t i = 0; i < nr_types; i++) {
@@ -490,11 +493,15 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
 
         err = selva_db_create_type(db, type, schema_buf, schema_len);
         if (err) {
-            db_panic("Failed to create a node type entry: %s", selva_strerror(err));
+            selva_io_errlog(io, "Failed to create a node type entry: %s", selva_strerror(err));
+            return SELVA_EINVAL;
         }
     }
+
+    return 0;
 }
 
+__attribute__((warn_unused_result))
 static int load_string(struct selva_io *io, struct selva_string *s, const struct sdb_string_meta *meta)
 {
     if (io->sdb_read(selva_string_to_mstr(s, nullptr), sizeof(char), meta->len, io) != meta->len * sizeof(char)) {
@@ -505,6 +512,7 @@ static int load_string(struct selva_io *io, struct selva_string *s, const struct
     return 0;
 }
 
+__attribute__((warn_unused_result))
 static int load_field_string(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct sdb_string_meta meta;
@@ -520,6 +528,7 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
     return load_string(io, s, &meta);
 }
 
+__attribute__((warn_unused_result))
 static int load_reference_meta_field_string(
         struct SelvaDb *db,
         struct selva_io *io,
@@ -541,6 +550,7 @@ static int load_reference_meta_field_string(
     return load_string(io, s, &meta);
 }
 
+__attribute__((warn_unused_result))
 static int load_field_text(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     uint8_t len;
@@ -563,14 +573,18 @@ static int load_field_text(struct selva_io *io, struct SelvaNode *node, const st
 /**
  * Load meta fields of an edge in an edge field of node.
  */
-static void load_reference_meta(
+__attribute__((warn_unused_result))
+static int load_reference_meta(
         struct selva_io *io,
         struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
+    int err = 0;
+
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
-        db_panic("Load ref meta fields of %d:%d: Invalid magic", node->type, node->node_id);
+        selva_io_errlog(io, "Load ref meta fields of %d:%d: Invalid magic", node->type, node->node_id);
+        return SELVA_EINVAL;
     }
 
     sdb_nr_fields_t nr_fields;
@@ -585,8 +599,9 @@ static void load_reference_meta(
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
         if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
-            db_panic("Invalid field begin magic for %d:%d",
-                     node->type, node->node_id);
+            selva_io_errlog(io, "Invalid field begin magic for %d:%d",
+                            node->type, node->node_id);
+            return SELVA_EINVAL;
         }
 #endif
 
@@ -594,16 +609,19 @@ static void load_reference_meta(
 
         fs = get_fs_by_fields_schema_field(selva_get_edge_field_fields_schema(db, efc), rd.field);
         if (!fs) {
-            db_panic("Field schema not found for the field %d", rd.field);
+            selva_io_errlog(io, "Field schema not found for the field %d", rd.field);
+            return SELVA_EINVAL;
         }
         if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
-            db_panic("Invalid field type found %d != %d",
-                     rd.type, fs->type);
+            selva_io_errlog(io, "Invalid field type found %d != %d",
+                            rd.type, fs->type);
+            return SELVA_EINVAL;
         }
 
         const size_t value_size = selva_fields_get_data_size(fs);
         char value_buf[value_size];
-        int err = SELVA_EINVAL;
+
+        err = SELVA_EINVAL;
 
         switch (fs->type) {
         case SELVA_FIELD_TYPE_NULL:
@@ -635,27 +653,33 @@ static void load_reference_meta(
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_REFERENCES:
-            db_panic("References not supported in edge meta");
+            selva_io_errlog(io, "References not supported in edge meta");
+            err = SELVA_ENOTSUP;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            db_panic("Muffer not supported in edge meta");
+            selva_io_errlog(io, "Muffer not supported in edge meta");
+            err = SELVA_ENOTSUP;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
             break;
         }
         if (err) {
-            db_panic("Failed to set field (%d:%d:%d): %s",
-                     node->type, node->node_id, rd.field,
-                     selva_strerror(err));
+            selva_io_errlog(io, "Failed to set field (%d:%d:%d): %s",
+                            node->type, node->node_id, rd.field,
+                            selva_strerror(err));
         }
 
-        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
-            db_panic("Invalid field end magic for %d:%d.%d",
-                     node->type, node->node_id, rd.field);
+        if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+            selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
+                            node->type, node->node_id, rd.field);
+            err = SELVA_EINVAL;
         }
     }
+
+    return err;
 }
 
+__attribute__((warn_unused_result))
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     node_id_t dst_id;
@@ -682,7 +706,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         }
 
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-            load_reference_meta(io, db, node, selva_fields_nfo2p(fields, nfo), &fs->edge_constraint);
+            err = load_reference_meta(io, db, node, selva_fields_nfo2p(fields, nfo), &fs->edge_constraint);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences *references = selva_fields_nfo2p(fields, nfo);
             const size_t len = references->nr_refs;
@@ -691,16 +715,17 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
             /* TODO We really need a better implementation for this! */
             for (size_t i = 0; i < len; i++) {
                 if (refs[i].dst == dst_node) {
-                    load_reference_meta(io, db, node, &refs[i], &fs->edge_constraint);
+                    err = load_reference_meta(io, db, node, &refs[i], &fs->edge_constraint);
                     break;
                 }
             }
         }
     }
 
-    return 0;
+    return err;
 }
 
+__attribute__((warn_unused_result))
 static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t nr_refs;
@@ -709,6 +734,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct 
     return (nr_refs) ? load_ref(io, db, node, fs) : 0;
 }
 
+__attribute__((warn_unused_result))
 static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t nr_refs;
@@ -722,6 +748,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     return err;
 }
 
+__attribute__((warn_unused_result))
 static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t nr_refs;
@@ -744,6 +771,7 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
     return 0;
 }
 
+__attribute__((warn_unused_result))
 static int load_field_micro_buffer(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
@@ -755,13 +783,17 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaNode *node, 
     return 0;
 }
 
-static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
+__attribute__((warn_unused_result))
+static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     struct SelvaNodeSchema *ns = &te->ns;
     sdb_nr_fields_t nr_fields;
+    int err = 0;
 
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
-        db_panic("Invalid magic for node fields load fields of %d:%d", node->type, node->node_id);
+        selva_io_errlog(io, "Invalid magic for node fields load fields of %d:%d",
+                        node->type, node->node_id);
+        return SELVA_EINVAL;
     }
 
     io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
@@ -774,27 +806,30 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
         if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
-            db_panic("Invalid field begin magic for %d:%d",
-                     node->type, node->node_id);
+            selva_io_errlog(io, "Invalid field begin magic for %d:%d",
+                            node->type, node->node_id);
+            return SELVA_EINVAL;
         }
 #endif
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
-
         fs = selva_get_fs_by_ns_field(ns, rd.field);
         if (!fs) {
-            db_panic("Field Schema not found for %d:%d.%d",
-                      node->type, node->node_id, rd.field);
+            selva_io_errlog(io, "Field Schema not found for %d:%d.%d",
+                            node->type, node->node_id, rd.field);
+            return SELVA_EINVAL;
         }
         if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
-            db_panic("Invalid field type found for %d:%d.%d: %d != %d\n",
-                     node->type, node->node_id, fs->field,
-                     rd.type, fs->type);
+            selva_io_errlog(io, "Invalid field type found for %d:%d.%d: %d != %d\n",
+                            node->type, node->node_id, fs->field,
+                            rd.type, fs->type);
+            return SELVA_EINVAL;
         }
 
         const size_t value_size = selva_fields_get_data_size(fs);
         char value_buf[value_size];
-        int err = SELVA_EINVAL;
+
+        err = SELVA_EINVAL;
 
         switch (rd.type) {
         case SELVA_FIELD_TYPE_NULL:
@@ -838,22 +873,27 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             break;
         }
         if (err) {
-            db_panic("Failed to set field (%d:%d:%d): %s",
-                     node->type, node->node_id, rd.field,
-                     selva_strerror(err));
+            selva_io_errlog(io, "Failed to set field (%d:%d:%d): %s",
+                            node->type, node->node_id, rd.field,
+                            selva_strerror(err));
         }
-
-        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
-            db_panic("Invalid field end magic for %d:%d.%d",
-                     node->type, node->node_id, rd.field);
+        if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+            selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
+                            node->type, node->node_id, rd.field);
         }
     }
+
+    return err;
 }
 
+__attribute__((warn_unused_result))
 static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
+    int err;
+
     if (!read_dump_magic(io, DUMP_MAGIC_NODE)) {
-        db_panic("Invalid node magic for type %d", te->type);
+        selva_io_errlog(io, "Invalid node magic for type %d", te->type);
+        return 0;
     }
 
     node_id_t node_id;
@@ -861,17 +901,22 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
 
     struct SelvaNode *node = selva_upsert_node(te, node_id);
     assert(node->type == te->type);
-    load_node_fields(io, db, te, node);
+    err = load_node_fields(io, db, te, node);
+    if (err) {
+        return 0;
+    }
 
     return node_id;
 }
 
-static void load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
+__attribute__((warn_unused_result))
+static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
 {
     sdb_nr_aliases_t nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
-        db_panic("Invalid aliases magic for type %d", te->type);
+        selva_io_errlog(io, "Invalid aliases magic for type %d", te->type);
+        return SELVA_EINVAL;
     }
 
     io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
@@ -892,25 +937,40 @@ static void load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
             selva_set_alias_p(&te->aliases[i], alias);
         }
     }
+
+    return 0;
 }
 
-static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
+__attribute__((warn_unused_result))
+static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
+    int err;
     sdb_nr_nodes_t nr_nodes;
-    io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
 
+    io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
     for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
         node_id_t node_id;
 
         node_id = load_node(io, db, te);
-        load_aliases_node(io, te, node_id);
+        if (unlikely(node_id == 0)) {
+            return SELVA_EINVAL;
+        }
+
+        err = load_aliases_node(io, te, node_id);
+        if (err) {
+            return err;
+        }
     }
+
+    return 0;
 }
 
-static void load_types(struct selva_io *io, struct SelvaDb *db)
+__attribute__((warn_unused_result))
+static int load_types(struct selva_io *io, struct SelvaDb *db)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
-        db_panic("Ivalid types magic");
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
     }
 
     node_type_t type;
@@ -919,14 +979,15 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     struct SelvaTypeEntry *te;
     te = selva_get_type_by_index(db, type);
     if (!te) {
-        db_panic("Type not found: %d", type);
+        selva_io_errlog(io, "Type not found: %d", type);
+        return SELVA_EINVAL;
     }
 
-    load_nodes(io, db, te);
+    return load_nodes(io, db, te);
 }
 
 
-int selva_dump_load_common(struct SelvaDb *db, const char *filename)
+int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io;
     int err;
@@ -936,13 +997,16 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename)
         return err;
     }
 
-    load_schema(&io, db);
+    io.errlog_buf = errlog_buf;
+    io.errlog_left = errlog_size;
+
+    err = load_schema(&io, db);
     selva_io_end(&io, nullptr);
 
-    return 0;
+    return err;
 }
 
-int selva_dump_load_range(struct SelvaDb *db, const char *filename)
+int selva_dump_load_range(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io;
     int err;
@@ -952,8 +1016,11 @@ int selva_dump_load_range(struct SelvaDb *db, const char *filename)
         return err;
     }
 
-    load_types(&io, db);
+    io.errlog_buf = errlog_buf;
+    io.errlog_left = errlog_size;
+
+    err = load_types(&io, db);
     selva_io_end(&io, nullptr);
 
-    return 0;
+    return err;
 }

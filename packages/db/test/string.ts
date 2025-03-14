@@ -3,6 +3,8 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
 
+const ENCODER = new TextEncoder()
+
 await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -398,7 +400,7 @@ await test('Big string disable compression', async (t) => {
 
   const xuz = []
   for (let i = 0; i < 10; i++) {
-    xuz.push(Buffer.from(euobserver))
+    xuz.push(ENCODER.encode(euobserver))
   }
   const x = Buffer.concat(xuz)
   for (let i = 0; i < 10; i++) {

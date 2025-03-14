@@ -18,14 +18,14 @@ import { write } from '../string.js'
 // add compression handling for edge fields
 export function writeString(
   lang: LangCode,
-  value: string | null | Buffer,
+  value: string | null | Uint8Array,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  const isBuffer = value instanceof Buffer
+  const isBuffer = value instanceof Uint8Array
   if (typeof value !== 'string' && value !== null && !isBuffer) {
     return new ModifyError(t, value)
   }

@@ -5,16 +5,18 @@ import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import native from '../../native.js'
 
-export function getBuffer(value): Buffer {
+const ENCODER = new TextEncoder()
+
+export function getBuffer(value: any): Uint8Array | undefined {
   if (typeof value === 'object') {
-    if (value instanceof Buffer) {
+    if (value instanceof Uint8Array) {
       return value
     }
     if (value.buffer instanceof ArrayBuffer) {
-      return Buffer.from(value.buffer)
+      return new Uint8Array(value.buffer, 0, value.byteLength)
     }
   } else if (typeof value === 'string') {
-    return Buffer.from(value)
+    return ENCODER.encode(value)
   }
 }
 

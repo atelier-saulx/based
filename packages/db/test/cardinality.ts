@@ -2,6 +2,8 @@ import { BasedDb, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
+const ENCODER = new TextEncoder()
+
 await test('hll', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -24,6 +26,7 @@ await test('hll', async (t) => {
             ref: 'user',
             prop: 'articles',
             $tokens: 'cardinality',
+            $undeftokens: 'cardinality',
           },
         },
       },
@@ -140,7 +143,7 @@ await test('hll', async (t) => {
     [],
   )
 
-  // // console.log('------- update --------')
+  // console.log('------- update --------')
 
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
@@ -184,7 +187,7 @@ await test('hll', async (t) => {
   for (let i = 0; i < 1e6; i++) {
     feelings.push(
       xxHash64(
-        Buffer.from(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+        ENCODER.encode(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
       ),
     )
   }
@@ -226,20 +229,130 @@ await test('hll', async (t) => {
 
   // // -------- edges
 
-  // const mrSnurp = db.create('user', {
-  //   name: 900,
-  // })
+  const mrSnurp = db.create('user', {
+    name: 900,
+  })
 
-  // await db.create('article', {
-  //   // derp: 813,
-  //   myUniqueValuesCount: '123',
-  //   contributors: [{ id: mrSnurp }],
-  // })
+  const edge = await db.create('article', {
+    derp: 813,
+    contributors: [{ id: mrSnurp, $tokens: ['lala', 'lele', 'lili'] }],
+  })
 
-  // await db
-  //   .query('article')
-  //   // .sort('derp', 'desc')
-  //   // .include('contributors.$tokens')
-  //   .get()
-  //   .inspect()
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .filter('id', '>=', 3)
+        .include('contributors.$tokens')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 3,
+        contributors: [
+          {
+            id: 1,
+            $tokens: 3,
+          },
+        ],
+      },
+    ],
+  )
+
+  await db.update('article', edge, {
+    contributors: [
+      {
+        id: mrSnurp,
+        $tokens: [
+          'myCoolValue',
+          'myCoolValue',
+          'mr snurfels',
+          'mr snurfels',
+          'lala',
+          'lala',
+          'myCoolValue',
+          'myCoolValue',
+          'mr snurfels',
+          'mr snurfels',
+          'lala',
+          'lala',
+          'lele',
+          'lili',
+          'lolo',
+          'lulu',
+        ],
+      },
+    ],
+  })
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .filter('id', '>=', 3)
+        .include('contributors.$tokens')
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 3,
+        contributors: [
+          {
+            id: 1,
+            $tokens: 7,
+          },
+        ],
+      },
+    ],
+  )
+
+  // handle undefined case
+  deepEqual(
+    await db
+      .query('article')
+      .filter('id', '>=', 3)
+      .include('contributors.$undeftokens')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        contributors: [
+          {
+            id: 1,
+          },
+        ],
+      },
+    ],
+  )
+
+  // update without creation
+  await db.update('article', edge, {
+    contributors: [
+      {
+        id: mrSnurp,
+        $undeftokens: xxHash64(ENCODER.encode('lala')),
+      },
+    ],
+  })
+
+  deepEqual(
+    await db
+      .query('article')
+      .filter('id', '>=', 3)
+      .include('contributors.$undeftokens')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        contributors: [
+          {
+            id: 1,
+            $undeftokens: 1,
+          },
+        ],
+      },
+    ],
+  )
 })

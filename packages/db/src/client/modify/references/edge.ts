@@ -2,6 +2,7 @@ import { BasedDb, ModifyCtx } from '../../../index.js'
 import {
   BINARY,
   MICRO_BUFFER,
+  CARDINALITY,
   PropDef,
   PropDefEdge,
   REFERENCE,
@@ -9,6 +10,7 @@ import {
   STRING,
 } from '@based/schema/def'
 import { write } from '../../string.js'
+import { writeHllBuf } from '../cardinality.js'
 import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import {
@@ -163,6 +165,18 @@ export function writeEdges(
           ctx.buf[ctx.len++] = size >>>= 8
           ctx.buf[ctx.len++] = size >>>= 8
           appendRefs(edge, ctx, value)
+        } else if (edge.typeIndex === CARDINALITY) {
+          if (!Array.isArray(value)) {
+            value = [value]
+          }
+          const len = value.length
+          let size = 4 + len * 8
+          if (ctx.len + size + 11 > ctx.max) {
+            return RANGE_ERR
+          }
+          ctx.buf[ctx.len++] = edge.prop
+          ctx.buf[ctx.len++] = CARDINALITY
+          writeHllBuf(value, ctx, t, size)
         }
       } else {
         // if incr / decr

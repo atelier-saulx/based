@@ -42,7 +42,7 @@ export const vectorSearch = (
   }
   // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
   let size = 9
-  const vec = Buffer.from(q.buffer)
+  const vec = new Uint8Array(q.buffer, 0, q.byteLength)
   size += vec.byteLength
 
   def.search = {
@@ -62,7 +62,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
-  const x = q.toLowerCase().trim().split(' ')
+  const x = q.toLowerCase().normalize('NFKD').trim().split(' ')
   for (const s of x) {
     if (s) {
       const b = Buffer.from(s)
@@ -136,7 +136,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     result[3] = search.prop
     result[4] = getVectorFn(search.opts.fn)
     result.set(
-      Buffer.from(new Float32Array([search.opts.score ?? 0.5]).buffer),
+      new Uint8Array(new Float32Array([search.opts.score ?? 0.5]).buffer),
       5,
     )
     result.set(search.query, 9)

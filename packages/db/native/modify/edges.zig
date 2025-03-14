@@ -1,13 +1,14 @@
 const db = @import("../db/db.zig");
-const read = @import("../utils.zig").read;
+const utils = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const types = @import("../types.zig");
 const update = @import("./update.zig");
 const std = @import("std");
-const ModifyCtx = Modify.ModifyCtx;
+const read = utils.read;
 
+const ModifyCtx = Modify.ModifyCtx;
 const p = types.Prop;
 
 pub fn writeEdges(
@@ -73,6 +74,18 @@ pub fn writeEdges(
                 prop,
             );
         }
+
+        //  if (t != p.CARDINALITY) {
+        //     var edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+
+        //     if (op == types.ModOp.INCREMENT or op == types.ModOp.DECREMENT) {
+        //         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+        //         const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+        //         if (val.len > 0) {
+        //             _ = update.incrementBuffer(op, t, val, edgeData);
+        //             edgeData = val;
+        //         }
+        //     }
 
         i += 3 + offset + len;
     }

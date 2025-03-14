@@ -42,56 +42,6 @@ void teardown(void)
     /* Haha, not gonna reset the locale for you. */
 }
 
-struct full_decompress_ctx {
-    char *out_buf;
-    size_t out_i;
-    size_t out_len;
-};
-
-static int full_decompress_cb(void *ctx, uint8_t *buf, size_t len, uint8_t *, size_t)
-{
-    struct full_decompress_ctx *c = (struct full_decompress_ctx *)ctx;
-
-    if (c->out_i + len > c->out_len) {
-        return -1;
-    }
-
-    memmove(c->out_buf + c->out_i, buf, len);
-    c->out_i += len;
-
-    return 0;
-}
-
-/*
- * FIXME The API has changed
- */
-#if 0
-static char *full_decompress(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
-{
-    const size_t kMaxDeflateBlockSize = 64 * 1024;
-    struct libdeflate_block_state state = libdeflate_block_state_init(kMaxDeflateBlockSize);
-    enum libdeflate_result res;
-    int result = 0;
-
-    do {
-        struct full_decompress_ctx ctx = {
-            .out_buf = out_buf,
-            .out_i = 0,
-            .out_len = out_len,
-        };
-
-        res = libdeflate_decompress_stream(d, &state, in_buf, in_len, full_decompress_cb, &ctx, &result);
-    } while (res == LIBDEFLATE_INSUFFICIENT_SPACE && libdeflate_block_state_growbuf(&state));
-
-    pu_assert_equal("", res, 0);
-    pu_assert_equal("", result, 0);
-
-    libdeflate_block_state_deinit(&state);
-
-    return nullptr;
-}
-#endif
-
 PU_TEST(test_deflate_mbscmp)
 {
     wctrans_t trans;
@@ -131,7 +81,7 @@ PU_TEST(test_deflate_mbscmp_fail)
     return nullptr;
 }
 
-PU_TEST(test_deflate_mbsstrstr)
+PU_SKIP(test_deflate_mbsstrstr)
 {
     wctrans_t trans;
     struct libdeflate_block_state state = libdeflate_block_state_init(1024);

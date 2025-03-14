@@ -13,12 +13,13 @@ const { createHash } = require('crypto');
 const { createTree } = require('./lib/index');
 
 const tree = createTree(() => createHash('sha256'));
+const ENCODER = new TextEncoder();
 
-tree.insert(1n, Buffer.from('a'));
-tree.insert(2n, Buffer.from('a'));
-tree.insert(3n, Buffer.from('a'));
-tree.insert(4n, Buffer.from('b'));
-tree.insert(5n, Buffer.from('b'));
+tree.insert(1n, ENCODER.encode('a'));
+tree.insert(2n, ENCODER.encode('a'));
+tree.insert(3n, ENCODER.encode('a'));
+tree.insert(4n, ENCODER.encode('b'));
+tree.insert(5n, ENCODER.encode('b'));
 ```
 
 Results a tree like this:

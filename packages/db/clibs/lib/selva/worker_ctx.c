@@ -2,7 +2,6 @@
  * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <stdio.h>
 #include <pthread.h>
 #include "selva/selva_string.h"
 #include "selva/worker_ctx.h"

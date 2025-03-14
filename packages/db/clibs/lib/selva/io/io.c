@@ -5,6 +5,7 @@
 #define SELVA_IO_TYPE
 #include <ctype.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +23,19 @@ static int valid_flags(enum selva_io_flags flags)
     return (!(flags & SELVA_IO_FLAGS_READ) ^ !(flags & SELVA_IO_FLAGS_WRITE)) ||
            (!(flags & SELVA_IO_FLAGS_FILE_IO) ^ !(flags & SELVA_IO_FLAGS_STRING_IO)) ||
            !(flags & _SELVA_IO_FLAGS_EN_COMPRESS);
+}
+
+char *selva_io_hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
+{
+    static const char map[] = "0123456789abcdef";
+    char *p = s;
+
+    for (size_t i = 0; i < SELVA_IO_HASH_SIZE; i++) {
+        *p++ = map[(hash[i] >> 4) % sizeof(map)];
+        *p++ = map[(hash[i] & 0x0f) % sizeof(map)];
+    }
+
+    return s;
 }
 
 /**
@@ -139,32 +153,26 @@ static void selva_io_close(struct selva_io *io)
     }
 }
 
-void selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
+int selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
 {
+    int err = 0;
+
     if (io->flags & SELVA_IO_FLAGS_WRITE) {
         sdb_write_footer(io);
         io->sdb_flush(io);
     } else { /* SELVA_IO_FLAGS_READ */
-        int err;
-
         err = sdb_read_footer(io);
         if (!err && memcmp(io->computed_hash, io->stored_hash, SELVA_IO_HASH_SIZE)) {
-#if 0
             char act[64];
             char expected[64];
 
-            SELVA_LOG(SELVA_LOGL_ERR, "Hash mismatch. act: %.*s. expected: %.*s",
-                      64, sha3_to_hex(act, io->computed_hash),
-                      64, sha3_to_hex(expected, io->stored_hash));
-#endif
+            selva_io_errlog(io, "Hash mismatch. act: %.*s. expected: %.*s",
+                            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex(act, io->computed_hash),
+                            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex(expected, io->stored_hash));
             err = SELVA_EINVAL;
         }
         if (err) {
-            /*
-             * TODO It wouldn't be necessary to crash here as hierarchy loading is
-             * sort of safe to fail.
-             */
-            db_panic("SDB deserialization failed: %s", selva_strerror(err));
+            selva_io_errlog(io, "SDB deserialization failed: %s", selva_strerror(err));
         }
 
     }
@@ -176,6 +184,8 @@ void selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_S
     }
 
     sdb_deinit(io);
+
+    return err;
 }
 
 int selva_io_quick_verify(const char *filename)
@@ -197,4 +207,38 @@ int selva_io_quick_verify(const char *filename)
     sdb_deinit(&io);
 
     return 0;
+}
+
+void selva_io_errlog(struct selva_io *io, const char *fmt, ...)
+{
+    int res;
+    va_list args;
+
+    if (!io->errlog_buf || io->errlog_left == 0) {
+        /* No space left in buffer. */
+        return;
+    }
+
+    va_start(args, fmt);
+
+    if (io->errlog_left >= 2) {
+        *io->errlog_buf++ = '>';
+        *io->errlog_buf++ = ' ';
+        io->errlog_left -= 2;
+    }
+
+    if (io->errlog_left > 0) {
+      res = vsnprintf(io->errlog_buf, io->errlog_left, fmt, args);
+      if (res > 0 && (size_t)res <= io->errlog_left) {
+          io->errlog_buf += res;
+          io->errlog_left -= res;
+      }
+    }
+
+    if (io->errlog_left >= 1) {
+        *io->errlog_buf++ = '\n';
+        io->errlog_left--;
+    }
+
+    va_end(args);
 }

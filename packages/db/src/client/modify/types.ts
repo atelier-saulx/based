@@ -31,3 +31,5 @@ export type ModifyOpts = {
   locale?: LangName
   overwrite?: boolean
 }
+
+// export const MAX_CURSOR_LEN = 11

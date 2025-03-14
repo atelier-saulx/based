@@ -20,6 +20,8 @@ pub fn default(
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
+
+
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -51,6 +53,7 @@ pub fn default(
             ctx.totalResults += 1;
         }
     }
+    // ctx.totalResults
 }
 
 pub fn search(

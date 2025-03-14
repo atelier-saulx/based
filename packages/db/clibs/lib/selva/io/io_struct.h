@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -52,4 +52,11 @@ struct selva_io {
      */
     int (*sdb_error)(struct selva_io *restrict io);
     void (*sdb_clearerr)(struct selva_io *restrict io);
+
+    /*
+     * Error log.
+     * Use with selva_io_errlog().
+     */
+    char *errlog_buf; /*!< Error log buffer. */
+    size_t errlog_left; /*!< Bytes left in errlog_buf. */
 };

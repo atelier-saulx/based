@@ -54,7 +54,7 @@ export type QueryDefSearch =
     }
   | {
       size: number
-      query: Buffer
+      query: Uint8Array
       prop: number
       isVector: true
       opts: FilterOpts
@@ -66,6 +66,8 @@ export type QueryDefSort = {
   lang: LangCode
 }
 
+// ADD AGGREGATES
+//   similair to filter
 export type QueryDefShared = {
   errors: QueryError[]
   lang: LangCode

@@ -1,26 +1,29 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
 
-var compressor: any = null
-var decompressor: any = null
+const selvaIoErrlog = new Uint8Array(256)
+const textEncoder = new TextEncoder()
+var compressor = db.createCompressor()
+var decompressor = db.createDecompressor()
+
+function SelvaIoErrlogToString(buf: Uint8Array) {
+  let i: number
+  let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
+
+  return new TextDecoder().decode(selvaIoErrlog.slice(0, len))
+}
 
 export default {
-  historyAppend(history: any, typeId: number, nodeId: number) {
-    return db.historyCreate(history, typeId, nodeId)
+  historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
+    return db.historyAppend(history, typeId, nodeId, dbCtx)
   },
   historyCreate(pathname: string, mainLen: number): any {
-    return db.historyCreate(
-      Buffer.from(pathname),
-      mainLen + 16 - (mainLen % 16),
-    )
+    const pathBuf = textEncoder.encode(pathname + '\0')
+    return db.historyCreate(pathBuf, mainLen + 16 - (mainLen % 16))
   },
 
   workerCtxInit: (): void => {
     return db.workerCtxInit()
-  },
-
-  markMerkleBlock: (buf: Buffer): any => {
-    // pstart,
   },
 
   externalFromInt(address: BigInt): any {
@@ -49,8 +52,8 @@ export default {
   },
 
   saveCommon: (path: string, dbCtx: any): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveCommon(buf, dbCtx)
+    const pathBuf = textEncoder.encode(path + '\0')
+    return db.saveCommon(pathBuf, dbCtx)
   },
 
   saveRange: (
@@ -59,23 +62,33 @@ export default {
     start: number,
     end: number,
     dbCtx: any,
-    hashOut: Buffer,
+    hashOut: Uint8Array,
   ): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)
+    const pathBuf = textEncoder.encode(path + '\0')
+    return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
   },
 
-  loadCommon: (path: string, dbCtx: any): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.loadCommon(buf, dbCtx)
+  loadCommon: (path: string, dbCtx: any): void => {
+    const pathBuf = textEncoder.encode(path + '\0')
+    const err: number = db.loadCommon(pathBuf, dbCtx, selvaIoErrlog)
+    if (err) {
+      throw new Error(
+        `Failed to load common. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
+      )
+    }
   },
 
-  loadRange: (path: string, dbCtx: any): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.loadRange(buf, dbCtx)
+  loadRange: (path: string, dbCtx: any): void => {
+    const pathBuf = textEncoder.encode(path + '\0')
+    const err: number = db.loadRange(pathBuf, dbCtx, selvaIoErrlog)
+    if (err) {
+      throw new Error(
+        `Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
+      )
+    }
   },
 
-  updateSchemaType: (prefix: number, buf: Buffer, dbCtx: any) => {
+  updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
     return db.updateSchema(prefix, buf, dbCtx)
   },
 
@@ -96,14 +109,19 @@ export default {
   createHash: () => {
     const state = db.hashCreate()
     const hash = {
-      update: (buf: Buffer) => {
+      update: (buf: Buffer | Uint8Array) => {
         db.hashUpdate(state, buf)
         return hash
       },
-      digest: (encoding?: BufferEncoding): Buffer | string => {
-        const buf = Buffer.allocUnsafe(16)
+      digest: (encoding?: 'hex'): Uint8Array | string => {
+        const buf = new Uint8Array(16)
         db.hashDigest(state, buf)
-        return encoding ? buf.toString(encoding) : buf
+        if (encoding === 'hex') {
+          // TODO Remove Buffer
+          return Buffer.from(buf).toString('hex')
+        } else {
+          return buf
+        }
       },
       reset: () => {
         db.hashReset(state)
@@ -113,22 +131,20 @@ export default {
     return hash
   },
 
-  // needs to pass dbCtx: any
-  compress: (buf: Buffer, offset: number, stringSize: number) => {
-    if (compressor === null) {
-      compressor = db.createCompressor()
-    }
+  compress: (buf: Buffer | Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },
 
-  decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
-    if (decompressor === null) {
-      decompressor = db.createDecompressor()
-    }
+  decompress: (
+    input: Buffer | Uint8Array,
+    output: Buffer | Uint8Array,
+    offset: number,
+    len: number,
+  ) => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
-  crc32: (buf: Buffer) => {
+  crc32: (buf: Buffer | Uint8Array) => {
     return db.crc32(buf)
   },
 
@@ -140,7 +156,18 @@ export default {
     return db.destroySortIndex(dbCtx, buf)
   },
 
-  xxHash64: (buf: Buffer, target: Buffer, index: number) => {
+  xxHash64: (
+    buf: Buffer | Uint8Array,
+    target: Buffer | Uint8Array,
+    index: number,
+  ) => {
     return db.xxHash64(buf, target, index)
   },
+
+  equals: (a: Uint8Array, b: Uint8Array): boolean => {
+    db.equals(a, b, tmp)
+    return tmp[0] == 1
+  },
 }
+
+const tmp = new Uint8Array([0])

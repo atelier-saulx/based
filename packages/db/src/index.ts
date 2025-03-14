@@ -4,7 +4,6 @@ import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import picocolors from 'picocolors'
 export * from './client/modify/modify.js'
-
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
 export { DbClient, DbServer }
@@ -12,6 +11,9 @@ export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'
 export * from './client/query/serialize.js'
 export * from './client/query/BasedDbQuery.js'
+import native from './native.js'
+
+export const equals = native.equals
 
 export class BasedDb {
   client: DbClient

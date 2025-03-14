@@ -3,7 +3,7 @@ import { DbServer, DbWorker } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { createTree } from './csmt/index.js'
+import { createTree, hashEq } from './csmt/index.js'
 import { foreachBlock } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
@@ -40,7 +40,7 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(db: DbServer, opts: { clean?: boolean }) {
+export async function start(db: DbServer, opts: { clean?: boolean, hosted?: boolean }) {
   const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
@@ -62,16 +62,22 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
     )
 
     // Load the common dump
-    native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+    try {
+      native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+    } catch (e) {
+      console.log(e.message)
+      throw e
+    }
 
     // Load all range dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       for (const dump of dumps) {
         const fname = dump.file
-        const err = native.loadRange(join(path, fname), db.dbCtxExternal)
-        if (err) {
-          console.log(`Failed to load a range. file: "${fname}": ${err}`)
+        try {
+          native.loadRange(join(path, fname), db.dbCtxExternal)
+        } catch (e) {
+          console.log(e.message)
         }
       }
     }
@@ -81,7 +87,9 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
       // Prop need to not call setting in selva
       db.putSchema(JSON.parse(schema.toString()), true)
     }
-  } catch (err) {}
+  } catch (err) {
+    // TODO In some cases we really should give up!
+  }
 
   // The merkle tree should be empty at start.
   if (!db.merkleTree || db.merkleTree.getRoot()) {
@@ -122,11 +130,13 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
   }
 
   if (writelog?.hash) {
-    const oldHash = Buffer.from(writelog.hash, 'hex')
+    // Uint8Array.fromHex() Iint8Array.toHex() are not available in V8
+    // https://issues.chromium.org/issues/42204568
+    const oldHash = Uint8Array.from(Buffer.from(writelog.hash, 'hex'))
     const newHash = db.merkleTree.getRoot()?.hash
-    if (!oldHash.equals(newHash)) {
+    if (!hashEq(oldHash, newHash)) {
       console.error(
-        `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
+        `WARN: CSMT hash mismatch: ${writelog.hash} != ${Buffer.from(newHash).toString('hex')}`,
       )
     }
   }
@@ -141,9 +151,21 @@ export async function start(db: DbServer, opts: { clean?: boolean }) {
     db.workers[i] = new DbWorker(address, db)
   }
 
-  db.unlistenExit = exitHook((signal) => {
-    console.log(`Exiting with signal: ${signal}`)
-    save(db, true)
-    console.log('Successfully saved.')
-  })
+  if (!opts?.hosted) {
+    db.unlistenExit = exitHook(async (signal) => {
+      const blockSig = () => {}
+      const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
+      // A really dumb way to block signals temporarily while saving.
+      // This is needed because there is no way to set the process signal mask
+      // in Node.js.
+      signals.forEach((sig) => process.on(sig, blockSig))
+
+      console.log(`Exiting with signal: ${signal}`)
+      save(db, true)
+      console.log('Successfully saved.')
+
+      signals.forEach((sig) => process.off(sig, blockSig))
+    })
+  }
 }

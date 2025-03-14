@@ -2,7 +2,7 @@ const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
-const read = @import("../../utils.zig").read;
+const utils = @import("../../utils.zig");
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
@@ -10,6 +10,7 @@ const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const IncludeOp = types.IncludeOp;
 const selva = @import("../../selva.zig");
+const read = utils.read;
 
 inline fn addResult(
     field: u8,
@@ -127,7 +128,11 @@ pub fn getFields(
             std.debug.print("include isEdge {any} \n", .{isEdge});
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
-            value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
+            if (prop == t.Prop.CARDINALITY) {
+                value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema) orelse undefined;
+            } else {
+                value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
+            }
         } else {
             fieldSchema = try db.getFieldSchema(field, typeEntry);
             value = db.getField(typeEntry, id, node, fieldSchema, prop);

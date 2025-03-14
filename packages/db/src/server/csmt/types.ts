@@ -2,16 +2,17 @@ import { Proof } from './memebership-proof.js'
 
 export type TreeKey = number
 export const TreeKeyNil = 0
+export type Hash = Uint8Array
 
 export interface TreeNode {
-  hash: Buffer
+  hash: Hash
   key: TreeKey
   data?: any // Only on a leaf
   left: TreeNode | null
   right: TreeNode | null
 }
 
-export type KeyHashPair = [TreeKey, Buffer]
+export type KeyHashPair = [TreeKey, Hash]
 
 export interface TreeDiff {
   left: KeyHashPair[]
@@ -27,7 +28,7 @@ export interface Csmt {
   /**
    * Insert a new key-hash pair.
    */
-  insert: (k: TreeKey, h: Buffer, data?: any) => void
+  insert: (k: TreeKey, h: Hash, data?: any) => void
 
   /**
    * Delete a key-hash pair from the tree.

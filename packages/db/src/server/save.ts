@@ -46,7 +46,7 @@ export function save(db: DbServer, sync = false) {
   foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
     const file = block_sdb_file(typeId, start, end)
     const path = join(db.fileSystemPath, file)
-    const hash = Buffer.allocUnsafe(16)
+    const hash = new Uint8Array(16)
     err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hash)
     if (err) {
       console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
@@ -83,7 +83,7 @@ export function save(db: DbServer, sync = false) {
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId] = destructureCsmtKey(leaf.key)
     const data: CsmtNodeRange = leaf.data
-    dumps[typeId].push({ ...data, hash: leaf.hash.toString('hex') })
+    dumps[typeId].push({ ...data, hash: Buffer.from(leaf.hash).toString('hex') }) // TODO .toHex() is not available in Node
   })
 
   const data: Writelog = {
@@ -94,7 +94,7 @@ export function save(db: DbServer, sync = false) {
   }
   const mtRoot = db.merkleTree.getRoot()
   if (mtRoot) {
-    data.hash = mtRoot.hash.toString('hex')
+    data.hash = Buffer.from(mtRoot.hash).toString('hex')
   }
   const filePath = join(db.fileSystemPath, WRITELOG_FILE)
   const content = JSON.stringify(data)

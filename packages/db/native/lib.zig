@@ -1,5 +1,6 @@
 const std = @import("std");
 const c = @import("c.zig");
+const selva = @import("selva.zig");
 const dump = @import("./db/dump.zig");
 const info = @import("./db/info.zig");
 const errors = @import("errors.zig");
@@ -37,9 +38,17 @@ pub fn registerFunction(
     }
 }
 
-fn workerCtxInit(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
-    db.workerCtxInit();
-    return null;
+fn workerCtxDeinit(_: c.napi_env, _: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
+    selva.worker_ctx_deinit();
+}
+
+fn workerCtxInit(env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    var result: c.napi_value = undefined;
+    _ = c.napi_create_external(env, null, workerCtxDeinit, null, &result);
+
+    selva.worker_ctx_init();
+
+    return result;
 }
 
 fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -110,5 +119,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
     registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
     registerFunction(env, exports, "destroySortIndex", sort.destroySortIndexNode) catch return null;
+
+    registerFunction(env, exports, "equals", string.equals) catch return null;
+
     return exports;
 }

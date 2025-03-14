@@ -359,7 +359,13 @@ pub fn remove(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             removeFromIntIndex(i64, data, sortIndex, node);
         },
-        types.Prop.CARDINALITY => removeFromIntIndex(u32, data, sortIndex, node),
+        types.Prop.CARDINALITY => {
+            if (data.len > 0) {
+                removeFromIntIndex(u32, data, sortIndex, node);
+            } else {
+                removeFromIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
+            }
+        },
         types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => removeFromIntIndex(u64, data, sortIndex, node),
@@ -405,7 +411,14 @@ pub fn insert(
         types.Prop.TIMESTAMP, types.Prop.INT64 => {
             insertIntIndex(i64, data, sortIndex, node);
         },
-        types.Prop.CARDINALITY => insertIntIndex(u32, data, sortIndex, node),
+        types.Prop.CARDINALITY => {
+            // const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
+            if (data.len > 0) {
+                insertIntIndex(u32, data, sortIndex, node);
+            } else {
+                insertIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
+            }
+        },
         types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
         types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),
