@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "selva/fast_memcmp.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
 #include "db_panic.h"
@@ -162,7 +163,7 @@ int selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SI
         io->sdb_flush(io);
     } else { /* SELVA_IO_FLAGS_READ */
         err = sdb_read_footer(io);
-        if (!err && memcmp(io->computed_hash, io->stored_hash, SELVA_IO_HASH_SIZE)) {
+        if (!err && !fast_memcmp(io->computed_hash, io->stored_hash, SELVA_IO_HASH_SIZE)) {
             char act[64];
             char expected[64];
 

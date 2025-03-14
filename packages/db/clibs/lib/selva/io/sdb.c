@@ -11,6 +11,7 @@
 #include "jemalloc_selva.h"
 #include "libdeflate.h"
 #include "selva/endian.h"
+#include "selva/fast_memcmp.h"
 #include "selva/selva_hash128.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
@@ -534,7 +535,7 @@ int sdb_read_header(struct selva_io *io)
     size_t res;
 
     res = io->sdb_read(magic, sizeof(char), sizeof(magic), io);
-    if (res != sizeof(magic) || memcmp(magic, magic_start, sizeof(magic))) {
+    if (res != sizeof(magic) || !fast_memcmp(magic, magic_start, sizeof(magic))) {
         return SELVA_EINVAL;
     }
 
@@ -598,7 +599,7 @@ int sdb_read_footer(struct selva_io *io)
     io->flags &= ~_SELVA_IO_FLAGS_EN_COMPRESS;
 
     res = io->sdb_read(magic, sizeof(char), sizeof(magic), io);
-    if (res != sizeof(magic) || memcmp(magic, magic_end, sizeof(magic))) {
+    if (res != sizeof(magic) || !fast_memcmp(magic, magic_end, sizeof(magic))) {
 #if 0
         fprintf(stderr, "Bad magic: %.2x %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n",
                 (uint8_t)magic[0], (uint8_t)magic[1],
