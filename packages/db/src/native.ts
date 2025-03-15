@@ -101,7 +101,7 @@ export default {
     typeId: number,
     start: number,
     end: number,
-    bufOut: Buffer,
+    bufOut: Uint8Array,
     dbCtx: any,
   ) => {
     return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)

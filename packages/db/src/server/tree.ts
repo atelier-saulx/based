@@ -29,12 +29,12 @@ export const makeCsmtKeyFromNodeId = (
 export async function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
-  cb: (start: number, end: number, hash: Buffer) => void,
+  cb: (start: number, end: number, hash: Uint8Array) => void,
 ) {
   const step = def.blockCapacity
   for (let start = 1; start <= def.lastId; start += step) {
     const end = start + step - 1
-    const hash = Buffer.allocUnsafe(16)
+    const hash = new Uint8Array(16)
     native.getNodeRangeHash(def.id, start, end, hash, db.dbCtxExternal)
     cb(start, end, hash)
   }
