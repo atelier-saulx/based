@@ -40,7 +40,7 @@ export const writeFixed = (
     if (typeof value === 'string') {
       const size = buf.write(value, offset + 1, 'utf8')
       buf[offset] = size
-    } else if (value instanceof Buffer) {
+    } else if (value instanceof Uint8Array) {
       buf.set(value, offset)
     } else {
       throw new Error('Incorrect filter value for ' + prop.path)
