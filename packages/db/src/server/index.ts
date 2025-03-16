@@ -446,16 +446,17 @@ export class DbServer {
         // insert a root node
         const data = [2, 1, 0, 0, 0, 17, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 1)
-        const buf = Buffer.alloc(data.length + 2 + 8 + 4)
+        const buf = new Uint8Array(data.length + 2 + 8 + 4)
+        const view = new DataView(buf.buffer, 0, buf.byteLength)
         // add content
         buf.set(data)
         // add typesLen
-        buf.writeDoubleLE(0, data.length)
+        view.setFloat64(data.length, 0, true)
         // add dirty key
-        buf.writeDoubleLE(blockKey, data.length + 2)
+        view.setFloat64(data.length + 2, blockKey, true)
         // add dataLen
-        buf.writeUint32LE(data.length, buf.length - 4)
-        this.modify(buf)
+        view.setUint32(buf.length - 4, data.length, true)
+        this.modify(Buffer.from(buf))
       }
     }
 
