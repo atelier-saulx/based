@@ -136,9 +136,8 @@ function getDestinationLibraryPath(platform: Platform): string {
 }
 
 async function main() {
-  const AVAILABLE_NODE_VERSIONS = await fetchAvailableNodeVersions()
   const NODE_VERSIONS = isRelease
-    ? Array.from(AVAILABLE_NODE_VERSIONS.entries())
+    ? Array.from((await fetchAvailableNodeVersions()).entries())
     : [[process.version.match(/^v(\d+)\./)?.[1] ?? '20', process.version]]
 
   for (const platform of PLATFORMS) {
