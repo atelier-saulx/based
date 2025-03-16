@@ -78,7 +78,7 @@ export const createVariableFilterBuffer = (
 ) => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
-  let buf: Buffer
+  let buf: Uint8Array
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR

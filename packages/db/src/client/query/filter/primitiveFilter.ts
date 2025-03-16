@@ -26,7 +26,7 @@ export const primitiveFilter = (
     return
   }
   let [, ctx, value] = filter
-  let buf: Buffer
+  let buf: Uint8Array
   const fieldIndexChar = prop.prop
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
 
@@ -75,6 +75,6 @@ export const primitiveFilter = (
     bufferMap.set(fieldIndexChar, arr)
   }
   size += buf.byteLength
-  arr.push(buf)
+  arr.push(Buffer.from(buf))
   return size
 }
