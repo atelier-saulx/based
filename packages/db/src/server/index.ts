@@ -35,11 +35,11 @@ const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
 class SortIndex {
-  constructor(buf: Buffer, dbCtxExternal: any) {
+  constructor(buf: Uint8Array, dbCtxExternal: any) {
     this.buf = buf
     this.idx = native.createSortIndex(buf, dbCtxExternal)
   }
-  buf: Buffer
+  buf: Uint8Array
   idx: any
   cnt = 0
 }
@@ -210,13 +210,16 @@ export class DbServer {
     if (sortIndex) {
       return sortIndex
     }
-    const buf = Buffer.allocUnsafe(8)
+    const buf = new Uint8Array(8)
     // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
     // call createSortBuf here
-    buf.writeUint16LE(t.id, 0)
+    buf[0] = t.id
+    buf[1] = t.id >>> 8
     buf[2] = prop.prop
-    buf.writeUint16LE(prop.start, 3)
-    buf.writeUint16LE(prop.len, 5)
+    buf[3] = prop.start
+    buf[4] = prop.start >>> 8
+    buf[5] = prop.len
+    buf[6] = prop.len >>> 8
     buf[7] = prop.typeIndex
     buf[8] = langCode
     sortIndex = new SortIndex(buf, this.dbCtxExternal)
@@ -240,10 +243,12 @@ export class DbServer {
     if (sortIndex) {
       // [2 type] [1 field] [2 start] [1 lang]
 
-      const buf = Buffer.allocUnsafe(6)
-      buf.writeUint16LE(t.id, 0)
+      const buf = new Uint8Array(6)
+      buf[0] = t.id
+      buf[1] = t.id >>> 8
       buf[2] = prop.prop
-      buf.writeUint16LE(prop.start, 3)
+      buf[3] = prop.start
+      buf[4] = prop.start >>> 8
       buf[5] =
         langCodesMap.get(
           lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
@@ -292,10 +297,12 @@ export class DbServer {
     start: number,
     lang: number,
   ): SortIndex {
-    const buf = Buffer.allocUnsafe(9)
-    buf.writeUint16LE(typeId, 0)
+    const buf = new Uint8Array(9)
+    buf[0] = typeId
+    buf[1] = typeId >>> 8
     buf[2] = field
-    buf.writeUint16LE(start, 3)
+    buf[3] = start
+    buf[4] = start >>> 8
     let typeDef: SchemaTypeDef
     let prop: PropDef
     for (const t in this.schemaTypesParsed) {
@@ -317,7 +324,8 @@ export class DbServer {
     if (!prop) {
       throw new Error(`Cannot find prop on db from query for sort ${field}`)
     }
-    buf.writeUint16LE(prop.len, 5)
+    buf[5] = prop.len
+    buf[6] = prop.len >>> 8
     buf[7] = prop.typeIndex
     buf[8] = lang
     // put in modify stuff

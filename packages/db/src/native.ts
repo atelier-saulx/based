@@ -148,11 +148,11 @@ export default {
     return db.crc32(buf)
   },
 
-  createSortIndex: (buf: Buffer, dbCtx: any) => {
+  createSortIndex: (buf: Uint8Array, dbCtx: any) => {
     return db.createSortIndex(dbCtx, buf)
   },
 
-  destroySortIndex: (buf: Buffer, dbCtx: any) => {
+  destroySortIndex: (buf: Uint8Array, dbCtx: any) => {
     return db.destroySortIndex(dbCtx, buf)
   },
 
