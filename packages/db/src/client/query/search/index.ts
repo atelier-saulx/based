@@ -144,7 +144,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     const result = new Uint8Array(search.size)
     result[0] = 1 // search.isVector 1
     result[1] = search.query.byteLength
-    result[2] = search.query.byteLength << 8
+    result[2] = search.query.byteLength >>> 8
     result[3] = search.prop
     result[4] = getVectorFn(search.opts.fn)
     result.set(
@@ -157,7 +157,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     const result = new Uint8Array(search.size)
     result[0] = 0 // search.isVector 0
     result[1] = search.query.byteLength
-    result[2] = search.query.byteLength << 8
+    result[2] = search.query.byteLength >>> 8
     result.set(search.query, 3)
     const offset = search.query.byteLength + 3
     // @ts-ignore
@@ -171,7 +171,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
       result[i + offset] = f.field
       result[i + offset + 1] = f.weight
       result[i + offset + 2] = f.start
-      result[i + offset + 3] = f.start << 8
+      result[i + offset + 3] = f.start >>> 8
       result[i + offset + 4] = f.lang
     }
     return result
