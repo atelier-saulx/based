@@ -342,7 +342,7 @@ export class DbServer {
     foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
       const oldLeaf = this.merkleTree.search(mtKey)
 
-      const hash = Buffer.allocUnsafe(16)
+      const hash = new Uint8Array(16)
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
       if (oldLeaf) {
