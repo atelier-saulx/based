@@ -42,7 +42,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     let filter: Buffer
     let filterSize = 0
 
-    let search: Buffer
+    let search: Uint8Array
     let searchSize = 0
 
     if (def.search) {
