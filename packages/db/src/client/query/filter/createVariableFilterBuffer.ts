@@ -59,7 +59,7 @@ const parseValue = (
   if (val?.BYTES_PER_ELEMENT > 1) {
     val = val.buffer
   }
-  if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
+  if (!(val instanceof Uint8Array || val instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
