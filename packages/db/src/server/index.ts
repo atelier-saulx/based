@@ -44,6 +44,14 @@ class SortIndex {
   cnt = 0
 }
 
+function readUint16LE(buf: Buffer | Uint8Array, off: number): number {
+    return buf[off] | buf[off + 1] << 8
+}
+
+function readUint32LE(buf: Buffer | Uint8Array, off: number): number {
+    return buf[off] | buf[off + 1] << 8 | buf[off + 2] << 16 | buf[off + 3] << 24
+}
+
 export class DbWorker {
   constructor(address: BigInt, db: DbServer) {
     const { port1, port2 } = new MessageChannel()
@@ -474,21 +482,21 @@ export class DbServer {
 
   modify(buf: Buffer): Record<number, number> {
     const offsets = {}
-    const dataLen = buf.readUint32LE(buf.length - 4)
-    let typesSize = buf.readUint16LE(dataLen)
+    const dataLen = readUint32LE(buf, buf.length - 4)
+    let typesSize = readUint16LE(buf, dataLen)
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = buf.readUint16LE(i)
+      const typeId = readUint16LE(buf, i)
       i += 2
-      const startId = buf.readUint32LE(i)
+      const startId = readUint32LE(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
 
       buf.writeUint32LE(offset, i)
 
       i += 4
-      const lastId = buf.readUint32LE(i)
+      const lastId = readUint32LE(buf, i)
       i += 4
       def.lastId = lastId + offset
       offsets[typeId] = offset
@@ -505,8 +513,8 @@ export class DbServer {
 
   #modify(buf: Buffer) {
     const end = buf.length - 4
-    const dataLen = buf.readUint32LE(end)
-    let typesSize = buf.readUint16LE(dataLen)
+    const dataLen = readUint32LE(buf, end)
+    let typesSize = readUint16LE(buf, dataLen)
     const typesLen = typesSize * 10
     const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
     const data = buf.subarray(0, dataLen)
@@ -514,7 +522,7 @@ export class DbServer {
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = buf.readUint16LE(i)
+      const typeId = readUint16LE(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       const key = makeCsmtKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
       this.dirtyRanges.add(key)
@@ -538,13 +546,13 @@ export class DbServer {
     } else {
       const queryType = buf[0]
       if (queryType == 2) {
-        const s = 13 + buf.readUint16LE(11)
-        const sortLen = buf.readUint16LE(s)
+        const s = 13 + readUint16LE(buf, 11)
+        const sortLen = readUint16LE(buf, s)
         if (sortLen) {
-          const typeId = buf.readUint16LE(1)
+          const typeId = readUint16LE(buf, 1)
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]
-          const start = sort.readUint16LE(2 + 1)
+          const start = readUint16LE(sort, 3)
           let sortIndex = this.getSortIndex(typeId, field, start, 0)
           if (!sortIndex) {
             if (this.processingQueries) {
