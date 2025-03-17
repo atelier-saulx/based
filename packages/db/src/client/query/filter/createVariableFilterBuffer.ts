@@ -122,20 +122,21 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== VECTOR
       ) {
         if (prop.typeIndex === TEXT) {
-          buf = writeVarFilter(
-            mode,
-            Buffer.concat([
-              Buffer.from(
-                new Uint32Array([crc32(val.slice(0, -1)), val.byteLength - 1])
-                  .buffer,
-              ),
-              Buffer.from(new Uint8Array([val[val.length - 1]]).buffer),
-            ]),
-            ctx,
-            prop,
-            0,
-            0,
-          )
+          const crc = crc32(val.slice(0, -1));
+          const len = val.byteLength - 1
+          const v = new Uint8Array(9)
+
+          v[0] = crc
+          v[1] = crc >>> 8
+          v[2] = crc >>> 16
+          v[3] = crc >>> 24
+          v[4] = len
+          v[5] = len >>> 8
+          v[6] = len >>> 16
+          v[7] = len >>> 24
+          v[8] = val[val.length - 1]
+
+          buf = writeVarFilter(mode, v, ctx, prop, 0, 0)
         } else {
           buf = createFixedFilterBuffer(
             prop,
@@ -146,9 +147,13 @@ export const createVariableFilterBuffer = (
           )
         }
       } else {
+        if (val instanceof ArrayBuffer) {
+          val = new Uint8Array(val)
+        }
         buf = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }
     } else {
+      // RFE is val always an Uint8Array?
       buf = writeVarFilter(mode, val, ctx, prop, prop.start, prop.len)
     }
   }
@@ -157,24 +162,30 @@ export const createVariableFilterBuffer = (
 
 function writeVarFilter(
   mode: FILTER_MODE,
-  val: Buffer,
+  val: Uint8Array,
   ctx: FilterCtx,
   prop: PropDef | PropDefEdge,
   start: number,
   len: number,
-) {
+): Uint8Array {
   const size = val.byteLength
-  const buf = Buffer.allocUnsafe(12 + size)
+  const buf = new Uint8Array(12 + size)
+
   buf[0] = ctx.type
   buf[1] = mode
   buf[2] = prop.typeIndex
-  buf.writeUInt16LE(start, 3)
-  buf.writeUint16LE(len, 5)
-  buf.writeUint32LE(size, 7)
+  buf[3] = start
+  buf[4] = start >>> 8
+  buf[5] = len
+  buf[6] = len >>> 8
+  buf[7] = size
+  buf[8] = size >>> 8
+  buf[9] = size >>> 16
+  buf[10] = size >>> 24
   buf[11] = ctx.operation
   // need to pas LANG FROM QUERY
   // need to set on 12 if TEXT
-  buf.set(Buffer.from(val), 12)
+  buf.set(val, 12)
 
   return buf
 }
