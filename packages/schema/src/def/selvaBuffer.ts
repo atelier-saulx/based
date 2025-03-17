@@ -83,9 +83,11 @@ const propDefBuffer = (
 ): number[] => {
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
+
   if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
     const buf = new Uint8Array(3)
     const view = new DataView(buf.buffer)
+
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
     return [...buf]
@@ -94,6 +96,7 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
+
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
@@ -103,6 +106,7 @@ const propDefBuffer = (
       prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
       buf[4] = prop.inversePropNumber
+
       if (prop.edges) {
         const props = Object.values(prop.edges)
           .filter((v) => v.separate === true)
@@ -123,6 +127,7 @@ const propDefBuffer = (
         view.setUint32(5, eschema.length, true)
       }
     }
+
     return [...buf, ...eschema]
   } else if (
     type === STRING ||
@@ -131,6 +136,9 @@ const propDefBuffer = (
     type === JSON
   ) {
     return [selvaType, prop.len < 50 ? prop.len : 0]
+  }
+  {
+    return [selvaType]
   }
 }
 
