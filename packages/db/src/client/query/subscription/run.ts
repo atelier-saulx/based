@@ -16,7 +16,7 @@ export const resultsAreEqual = (a: Uint8Array, b: Uint8Array): boolean => {
   return true
 }
 
-const EMPTY = new Uint8Array(Buffer.alloc(4))
+const EMPTY = new Uint8Array(4)
 
 export const runSubscription = (subscription: Subscription) => {
   if (!subscription.inProgress) {

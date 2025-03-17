@@ -14,16 +14,19 @@ import {
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
+import { concatUint8Arr } from '../../../utils.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
+const ENCODER = new TextEncoder()
 
 const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
   lang: LangCode,
-): Buffer => {
+): Uint8Array => {
   let val = value
+  // TODO should we do .normalize('NFKD') for all strings?
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
@@ -49,24 +52,28 @@ const parseValue = (
     !prop.separate ||
     ctx.operation !== EQUAL
   ) {
+    if (typeof val === 'string') {
+      val = ENCODER.encode(val)
+    }
     if (prop.typeIndex === TEXT) {
-      // can be optmized replace when using uint8array
-      val = Buffer.concat([Buffer.from(val), Buffer.from([lang])])
-    } else {
-      val = Buffer.from(val)
+      const tmp = new Uint8Array(val.byteLength + 1)
+      tmp.set(val)
+      tmp[tmp.byteLength - 1] = lang
+      val = tmp
     }
   }
   if (val?.BYTES_PER_ELEMENT > 1) {
     val = val.buffer
   }
-  if (!(val instanceof Buffer || val instanceof ArrayBuffer)) {
+  if (!(val instanceof Uint8Array || val instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
-    // @ts-ignore
-    val = Buffer.concat([val, Buffer.from([ctx.opts.score ?? 2])])
+    const tmp = new Uint8Array(val.byteLength + 1)
+    tmp.set((val instanceof ArrayBuffer) ? new Uint8Array(val) : val)
+    tmp[tmp.byteLength -1 ] = ctx.opts.score ?? 2
+    val = tmp
   }
-  // @ts-ignore
   return val
 }
 
@@ -78,18 +85,19 @@ export const createVariableFilterBuffer = (
 ) => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
-  let buf: Buffer
+  let buf: Uint8Array
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
       const x = []
       for (const v of value) {
         const a = parseValue(v, prop, ctx, lang)
-        const size = Buffer.allocUnsafe(2)
-        size.writeUint16LE(a.byteLength)
+        const size = new Uint8Array(2)
+        size[0] = a.byteLength
+        size[1] = a.byteLength >>> 8
         x.push(size, a)
       }
-      val = Buffer.concat(x)
+      val = concatUint8Arr(x)
     } else {
       const x = []
       for (const v of value) {
@@ -114,20 +122,21 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== VECTOR
       ) {
         if (prop.typeIndex === TEXT) {
-          buf = writeVarFilter(
-            mode,
-            Buffer.concat([
-              Buffer.from(
-                new Uint32Array([crc32(val.slice(0, -1)), val.byteLength - 1])
-                  .buffer,
-              ),
-              Buffer.from(new Uint8Array([val[val.length - 1]]).buffer),
-            ]),
-            ctx,
-            prop,
-            0,
-            0,
-          )
+          const crc = crc32(val.slice(0, -1));
+          const len = val.byteLength - 1
+          const v = new Uint8Array(9)
+
+          v[0] = crc
+          v[1] = crc >>> 8
+          v[2] = crc >>> 16
+          v[3] = crc >>> 24
+          v[4] = len
+          v[5] = len >>> 8
+          v[6] = len >>> 16
+          v[7] = len >>> 24
+          v[8] = val[val.length - 1]
+
+          buf = writeVarFilter(mode, v, ctx, prop, 0, 0)
         } else {
           buf = createFixedFilterBuffer(
             prop,
@@ -138,9 +147,13 @@ export const createVariableFilterBuffer = (
           )
         }
       } else {
+        if (val instanceof ArrayBuffer) {
+          val = new Uint8Array(val)
+        }
         buf = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }
     } else {
+      // RFE is val always an Uint8Array?
       buf = writeVarFilter(mode, val, ctx, prop, prop.start, prop.len)
     }
   }
@@ -149,24 +162,30 @@ export const createVariableFilterBuffer = (
 
 function writeVarFilter(
   mode: FILTER_MODE,
-  val: Buffer,
+  val: Uint8Array,
   ctx: FilterCtx,
   prop: PropDef | PropDefEdge,
   start: number,
   len: number,
-) {
+): Uint8Array {
   const size = val.byteLength
-  const buf = Buffer.allocUnsafe(12 + size)
+  const buf = new Uint8Array(12 + size)
+
   buf[0] = ctx.type
   buf[1] = mode
   buf[2] = prop.typeIndex
-  buf.writeUInt16LE(start, 3)
-  buf.writeUint16LE(len, 5)
-  buf.writeUint32LE(size, 7)
+  buf[3] = start
+  buf[4] = start >>> 8
+  buf[5] = len
+  buf[6] = len >>> 8
+  buf[7] = size
+  buf[8] = size >>> 8
+  buf[9] = size >>> 16
+  buf[10] = size >>> 24
   buf[11] = ctx.operation
   // need to pas LANG FROM QUERY
   // need to set on 12 if TEXT
-  buf.set(Buffer.from(val), 12)
+  buf.set(val, 12)
 
   return buf
 }

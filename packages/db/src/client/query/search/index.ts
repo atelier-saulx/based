@@ -7,6 +7,7 @@ import {
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
+import { concatUint8Arr } from '../../../utils.js'
 
 export type Search =
   | string[]
@@ -45,20 +46,6 @@ export const vectorSearch = (
   }
 }
 
-function concatBufs(bufs: Uint8Array[], totalByteLength: number): Uint8Array {
-  const res = new Uint8Array(totalByteLength)
-  let off = 0
-
-  for (let i = 0; i < bufs.length; i++) {
-    const buf = bufs[i]
-
-    res.set(buf, off)
-    off += buf.byteLength
-  }
-
-  return res
-}
-
 export const search = (def: QueryDef, q: string, s?: Search) => {
   const bufs: Uint8Array[] = []
   let nrBlocks = 0
@@ -82,7 +69,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   }
   bufs.unshift(Uint8Array.from([nrBlocks]))
 
-  const query = concatBufs(bufs, totalByteLength)
+  const query = concatUint8Arr(bufs, totalByteLength)
   def.search = {
     size: query.byteLength + 3,
     query,
@@ -141,9 +128,10 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
 export const searchToBuffer = (search: QueryDefSearch) => {
   if (search.isVector) {
     // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
-    const result = Buffer.allocUnsafe(search.size)
+    const result = new Uint8Array(search.size)
     result[0] = 1 // search.isVector 1
-    result.writeUint16LE(search.query.byteLength, 1)
+    result[1] = search.query.byteLength
+    result[2] = search.query.byteLength >>> 8
     result[3] = search.prop
     result[4] = getVectorFn(search.opts.fn)
     result.set(
@@ -153,9 +141,10 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     result.set(search.query, 9)
     return result
   } else {
-    const result = Buffer.allocUnsafe(search.size)
+    const result = new Uint8Array(search.size)
     result[0] = 0 // search.isVector 0
-    result.writeUint16LE(search.query.byteLength, 1)
+    result[1] = search.query.byteLength
+    result[2] = search.query.byteLength >>> 8
     result.set(search.query, 3)
     const offset = search.query.byteLength + 3
     // @ts-ignore
@@ -167,9 +156,10 @@ export const searchToBuffer = (search: QueryDefSearch) => {
       // @ts-ignore
       const f = search.fields[i / 5]
       result[i + offset] = f.field
-      result[i + 1 + offset] = f.weight
-      result.writeUInt16LE(f.start, i + 2 + offset)
-      result[i + 4 + offset] = f.lang
+      result[i + offset + 1] = f.weight
+      result[i + offset + 2] = f.start
+      result[i + offset + 3] = f.start >>> 8
+      result[i + offset + 4] = f.lang
     }
     return result
   }

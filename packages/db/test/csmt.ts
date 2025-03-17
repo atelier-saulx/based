@@ -2,17 +2,34 @@ import { strict as assert } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
+import { base64encode } from '../src/utils.js'
 import { Csmt, createTree } from '../src/server/csmt/index.js'
+import {decodeBase64} from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
 
-const shortHash = (buf: Uint8Array) => Buffer.from(buf).toString('base64').substring(0, 5)
+const shortHash = (buf: Uint8Array) => base64encode(buf).substring(0, 5)
+
+function testHashGen() {
+  const f = createHash('sha256')
+
+  const o = {
+    update: (data) => {
+      f.update(data)
+      return o
+    },
+    digest: () => new Uint8Array(f.digest()),
+  }
+
+  return o
+}
+
 function genNodeHash(lHash: Uint8Array, rHash: Uint8Array) {
-  return createHash('sha256').update(lHash).update(rHash).digest()
+  return testHashGen().update(lHash).update(rHash).digest()
 }
 
 await test('insert: A basic tree is formed correctly', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(2, ENCODER.encode('b'))
@@ -21,7 +38,7 @@ await test('insert: A basic tree is formed correctly', async (t) => {
 
   const root = tree.getRoot()
   assert.ok(root)
-  assert.ok(root.hash instanceof Buffer)
+  assert.ok(root.hash instanceof Uint8Array)
   assert.equal(shortHash(root.hash), 'jq/kE')
   assert.equal(root.key, 4)
 
@@ -59,7 +76,7 @@ await test('insert: A basic tree is formed correctly', async (t) => {
 })
 
 await test('insert: The root hash is recomputed on every insert', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   assert.equal(shortHash(tree.getRoot().hash), 'YQ==')
@@ -72,8 +89,8 @@ await test('insert: The root hash is recomputed on every insert', async (t) => {
 })
 
 await test('insert: Trees are reproducible regardless of the insertion order', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -89,8 +106,8 @@ await test('insert: Trees are reproducible regardless of the insertion order', a
 })
 
 await test.skip('insert: Trees are reproducible regardless of the insertion order 2', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(4294967297, ENCODER.encode('a'))
   tree1.insert(8589934593, ENCODER.encode('b'))
@@ -104,8 +121,8 @@ await test.skip('insert: Trees are reproducible regardless of the insertion orde
 })
 
 await test('insert: Difference in a single node causes the root hash to differ', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -121,8 +138,8 @@ await test('insert: Difference in a single node causes the root hash to differ',
 })
 
 await test('delete: two trees are no longer equal after deleting a key', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -146,8 +163,8 @@ await test('delete: two trees are no longer equal after deleting a key', async (
 })
 
 await test('delete: delete rebalances the tree properly', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -194,8 +211,8 @@ await test('delete: delete rebalances the tree properly', async (t) => {
 })
 
 await test('delete: delete rebalances the tree properly (upped boundary)', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -214,8 +231,8 @@ await test('delete: delete rebalances the tree properly (upped boundary)', async
 })
 
 await test('delete rebalances the tree properly (lower boundary)', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(4, ENCODER.encode('b'))
@@ -234,8 +251,8 @@ await test('delete rebalances the tree properly (lower boundary)', async (t) => 
 })
 
 await test('diff: Equal trees have zero diff', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -254,8 +271,8 @@ await test('diff: Equal trees have zero diff', async (t) => {
 })
 
 await test('diff: Equal trees have zero diff both ways', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(2, ENCODER.encode('b'))
@@ -277,7 +294,7 @@ await test('diff: Equal trees have zero diff both ways', async (t) => {
 })
 
 await test('diff: A tree has no diff against itself', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(2, ENCODER.encode('b'))
@@ -289,8 +306,8 @@ await test('diff: A tree has no diff against itself', async (t) => {
 })
 
 await test('diff: Right tree has one new node', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(4, ENCODER.encode('b'))
@@ -312,8 +329,8 @@ await test('diff: Right tree has one new node', async (t) => {
 })
 
 await test('diff: The same key is marked as a diff in both because the hash has changed', async (t) => {
-  const tree1 = createTree(() => createHash('sha256'))
-  const tree2 = createTree(() => createHash('sha256'))
+  const tree1 = createTree(testHashGen)
+  const tree2 = createTree(testHashGen)
 
   tree1.insert(1, ENCODER.encode('a'))
   tree1.insert(4, ENCODER.encode('b'))
@@ -337,7 +354,7 @@ await test('diff: The same key is marked as a diff in both because the hash has 
 })
 
 await test('proof: Prove that 3 is a member of the tree', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(4, ENCODER.encode('b'))
@@ -345,10 +362,7 @@ await test('proof: Prove that 3 is a member of the tree', async (t) => {
   tree.insert(5, ENCODER.encode('d'))
 
   const proof = tree.membershipProof(3)
-  const rightHash = Buffer.from(
-    'XmV/9hWNPiptI+KlI5F6IwWs7pQjNl4mhpXEt7iRn0w=',
-    'base64',
-  )
+  const rightHash = decodeBase64('XmV/9hWNPiptI+KlI5F6IwWs7pQjNl4mhpXEt7iRn0w=')
 
   assert.equal(proof.length, 3)
   proof.forEach((el: (typeof proof)[0]) =>
@@ -367,7 +381,7 @@ await test('proof: Prove that 3 is a member of the tree', async (t) => {
 })
 
 await test('proof: Prove that 5 is a member of the tree (boundary)', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(4, ENCODER.encode('b'))
@@ -394,7 +408,7 @@ await test('proof: Prove that 5 is a member of the tree (boundary)', async (t) =
 })
 
 await test('proof: Show a proof that 6 is greater than the greatest key in the tree (5)', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(3, ENCODER.encode('b'))
@@ -423,7 +437,7 @@ await test('proof: Show a proof that 6 is greater than the greatest key in the t
 })
 
 await test('proof: Show a proof that 10 is greater than the greatest key in the tree (5)', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(1, ENCODER.encode('a'))
   tree.insert(3, ENCODER.encode('b'))
@@ -452,7 +466,7 @@ await test('proof: Show a proof that 10 is greater than the greatest key in the 
 })
 
 await test('proof: Show a proof that 1 is smaller than the smallest key in the tree (2)', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(2, ENCODER.encode('a'))
   tree.insert(3, ENCODER.encode('b'))
@@ -473,7 +487,7 @@ await test('proof: Show a proof that 1 is smaller than the smallest key in the t
 })
 
 await test('search', async (t) => {
-  const tree = createTree(() => createHash('sha256'))
+  const tree = createTree(testHashGen)
 
   tree.insert(2, ENCODER.encode('a'))
   tree.insert(3, ENCODER.encode('b'))

@@ -42,7 +42,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     let filter: Buffer
     let filterSize = 0
 
-    let search: Buffer
+    let search: Uint8Array
     let searchSize = 0
 
     if (def.search) {
@@ -88,7 +88,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
       }
       result.push(buf)
     } else {
-      let sort: Buffer
+      let sort: Uint8Array
       let sortSize = 0
       if (def.sort) {
         sort = createSortBuffer(def.sort)
@@ -179,7 +179,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     if (def.filter.size) {
       filter = filterToBuffer(def.filter)
     }
-    let sort: Buffer
+    let sort: Uint8Array
     if (def.sort) {
       sort = createSortBuffer(def.sort)
     }

@@ -35,13 +35,21 @@ const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
 class SortIndex {
-  constructor(buf: Buffer, dbCtxExternal: any) {
+  constructor(buf: Uint8Array, dbCtxExternal: any) {
     this.buf = buf
     this.idx = native.createSortIndex(buf, dbCtxExternal)
   }
-  buf: Buffer
+  buf: Uint8Array
   idx: any
   cnt = 0
+}
+
+function readUint16LE(buf: Buffer | Uint8Array, off: number): number {
+    return buf[off] | buf[off + 1] << 8
+}
+
+function readUint32LE(buf: Buffer | Uint8Array, off: number): number {
+    return buf[off] | buf[off + 1] << 8 | buf[off + 2] << 16 | buf[off + 3] << 24
 }
 
 export class DbWorker {
@@ -210,13 +218,16 @@ export class DbServer {
     if (sortIndex) {
       return sortIndex
     }
-    const buf = Buffer.allocUnsafe(8)
+    const buf = new Uint8Array(8)
     // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
     // call createSortBuf here
-    buf.writeUint16LE(t.id, 0)
+    buf[0] = t.id
+    buf[1] = t.id >>> 8
     buf[2] = prop.prop
-    buf.writeUint16LE(prop.start, 3)
-    buf.writeUint16LE(prop.len, 5)
+    buf[3] = prop.start
+    buf[4] = prop.start >>> 8
+    buf[5] = prop.len
+    buf[6] = prop.len >>> 8
     buf[7] = prop.typeIndex
     buf[8] = langCode
     sortIndex = new SortIndex(buf, this.dbCtxExternal)
@@ -240,10 +251,12 @@ export class DbServer {
     if (sortIndex) {
       // [2 type] [1 field] [2 start] [1 lang]
 
-      const buf = Buffer.allocUnsafe(6)
-      buf.writeUint16LE(t.id, 0)
+      const buf = new Uint8Array(6)
+      buf[0] = t.id
+      buf[1] = t.id >>> 8
       buf[2] = prop.prop
-      buf.writeUint16LE(prop.start, 3)
+      buf[3] = prop.start
+      buf[4] = prop.start >>> 8
       buf[5] =
         langCodesMap.get(
           lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
@@ -292,10 +305,12 @@ export class DbServer {
     start: number,
     lang: number,
   ): SortIndex {
-    const buf = Buffer.allocUnsafe(9)
-    buf.writeUint16LE(typeId, 0)
+    const buf = new Uint8Array(9)
+    buf[0] = typeId
+    buf[1] = typeId >>> 8
     buf[2] = field
-    buf.writeUint16LE(start, 3)
+    buf[3] = start
+    buf[4] = start >>> 8
     let typeDef: SchemaTypeDef
     let prop: PropDef
     for (const t in this.schemaTypesParsed) {
@@ -317,7 +332,8 @@ export class DbServer {
     if (!prop) {
       throw new Error(`Cannot find prop on db from query for sort ${field}`)
     }
-    buf.writeUint16LE(prop.len, 5)
+    buf[5] = prop.len
+    buf[6] = prop.len >>> 8
     buf[7] = prop.typeIndex
     buf[8] = lang
     // put in modify stuff
@@ -334,7 +350,7 @@ export class DbServer {
     foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
       const oldLeaf = this.merkleTree.search(mtKey)
 
-      const hash = Buffer.allocUnsafe(16)
+      const hash = new Uint8Array(16)
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
       if (oldLeaf) {
@@ -446,16 +462,17 @@ export class DbServer {
         // insert a root node
         const data = [2, 1, 0, 0, 0, 17, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 1)
-        const buf = Buffer.alloc(data.length + 2 + 8 + 4)
+        const buf = new Uint8Array(data.length + 2 + 8 + 4)
+        const view = new DataView(buf.buffer, 0, buf.byteLength)
         // add content
         buf.set(data)
         // add typesLen
-        buf.writeDoubleLE(0, data.length)
+        view.setFloat64(data.length, 0, true)
         // add dirty key
-        buf.writeDoubleLE(blockKey, data.length + 2)
+        view.setFloat64(data.length + 2, blockKey, true)
         // add dataLen
-        buf.writeUint32LE(data.length, buf.length - 4)
-        this.modify(buf)
+        view.setUint32(buf.length - 4, data.length, true)
+        this.modify(Buffer.from(buf))
       }
     }
 
@@ -465,21 +482,21 @@ export class DbServer {
 
   modify(buf: Buffer): Record<number, number> {
     const offsets = {}
-    const dataLen = buf.readUint32LE(buf.length - 4)
-    let typesSize = buf.readUint16LE(dataLen)
+    const dataLen = readUint32LE(buf, buf.length - 4)
+    let typesSize = readUint16LE(buf, dataLen)
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = buf.readUint16LE(i)
+      const typeId = readUint16LE(buf, i)
       i += 2
-      const startId = buf.readUint32LE(i)
+      const startId = readUint32LE(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
 
       buf.writeUint32LE(offset, i)
 
       i += 4
-      const lastId = buf.readUint32LE(i)
+      const lastId = readUint32LE(buf, i)
       i += 4
       def.lastId = lastId + offset
       offsets[typeId] = offset
@@ -496,8 +513,8 @@ export class DbServer {
 
   #modify(buf: Buffer) {
     const end = buf.length - 4
-    const dataLen = buf.readUint32LE(end)
-    let typesSize = buf.readUint16LE(dataLen)
+    const dataLen = readUint32LE(buf, end)
+    let typesSize = readUint16LE(buf, dataLen)
     const typesLen = typesSize * 10
     const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
     const data = buf.subarray(0, dataLen)
@@ -505,7 +522,7 @@ export class DbServer {
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = buf.readUint16LE(i)
+      const typeId = readUint16LE(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       const key = makeCsmtKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
       this.dirtyRanges.add(key)
@@ -529,13 +546,13 @@ export class DbServer {
     } else {
       const queryType = buf[0]
       if (queryType == 2) {
-        const s = 13 + buf.readUint16LE(11)
-        const sortLen = buf.readUint16LE(s)
+        const s = 13 + readUint16LE(buf, 11)
+        const sortLen = readUint16LE(buf, s)
         if (sortLen) {
-          const typeId = buf.readUint16LE(1)
+          const typeId = readUint16LE(buf, 1)
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]
-          const start = sort.readUint16LE(2 + 1)
+          const start = readUint16LE(sort, 3)
           let sortIndex = this.getSortIndex(typeId, field, start, 0)
           if (!sortIndex) {
             if (this.processingQueries) {

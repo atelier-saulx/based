@@ -1,5 +1,6 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
+import { base64encode, bufToHex } from './utils.js'
 
 const selvaIoErrlog = new Uint8Array(256)
 const textEncoder = new TextEncoder()
@@ -100,7 +101,7 @@ export default {
     typeId: number,
     start: number,
     end: number,
-    bufOut: Buffer,
+    bufOut: Uint8Array,
     dbCtx: any,
   ) => {
     return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)
@@ -117,8 +118,7 @@ export default {
         const buf = new Uint8Array(16)
         db.hashDigest(state, buf)
         if (encoding === 'hex') {
-          // TODO Remove Buffer
-          return Buffer.from(buf).toString('hex')
+          return bufToHex(buf)
         } else {
           return buf
         }
@@ -148,11 +148,11 @@ export default {
     return db.crc32(buf)
   },
 
-  createSortIndex: (buf: Buffer, dbCtx: any) => {
+  createSortIndex: (buf: Uint8Array, dbCtx: any) => {
     return db.createSortIndex(dbCtx, buf)
   },
 
-  destroySortIndex: (buf: Buffer, dbCtx: any) => {
+  destroySortIndex: (buf: Uint8Array, dbCtx: any) => {
     return db.destroySortIndex(dbCtx, buf)
   },
 
@@ -164,9 +164,11 @@ export default {
     return db.xxHash64(buf, target, index)
   },
 
+  base64encode: (dst: Uint8Array, src: Uint8Array, lineMax: number): Uint8Array => {
+    return db.base64encode(dst, src, lineMax)
+  },
+
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
     return !!db.equals(a, b)
   },
 }
-
-const tmp = new Uint8Array([0])

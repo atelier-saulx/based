@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { CsmtNodeRange, destructureCsmtKey, foreachDirtyBlock } from './tree.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
+import { bufToHex } from '../utils.js'
 
 const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
@@ -83,7 +84,7 @@ export function save(db: DbServer, sync = false) {
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId] = destructureCsmtKey(leaf.key)
     const data: CsmtNodeRange = leaf.data
-    dumps[typeId].push({ ...data, hash: Buffer.from(leaf.hash).toString('hex') }) // TODO .toHex() is not available in Node
+    dumps[typeId].push({ ...data, hash: bufToHex(leaf.hash) })
   })
 
   const data: Writelog = {
@@ -94,7 +95,7 @@ export function save(db: DbServer, sync = false) {
   }
   const mtRoot = db.merkleTree.getRoot()
   if (mtRoot) {
-    data.hash = Buffer.from(mtRoot.hash).toString('hex')
+    data.hash = bufToHex(mtRoot.hash)
   }
   const filePath = join(db.fileSystemPath, WRITELOG_FILE)
   const content = JSON.stringify(data)

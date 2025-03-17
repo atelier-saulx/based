@@ -91,15 +91,15 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
-    registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
     registerFunction(env, exports, "workerCtxInit", workerCtxInit) catch return null;
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
+
     registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;
     registerFunction(env, exports, "saveRange", dump.saveRange) catch return null;
     registerFunction(env, exports, "loadCommon", dump.loadCommon) catch return null;
     registerFunction(env, exports, "loadRange", dump.loadRange) catch return null;
+
     registerFunction(env, exports, "getTypeInfo", info.ofType) catch return null;
     registerFunction(env, exports, "getNodeRangeHash", info.nodeRangeHash) catch return null;
     registerFunction(env, exports, "updateSchema", schema.updateSchema) catch return null;
@@ -107,6 +107,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "modify", modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
+
     registerFunction(env, exports, "hashCreate", string.hashCreate) catch return null;
     registerFunction(env, exports, "hashReset", string.hashReset) catch return null;
     registerFunction(env, exports, "hashUpdate", string.hashUpdate) catch return null;
@@ -117,10 +118,14 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "decompress", string.decompress) catch return null;
     registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
+    registerFunction(env, exports, "equals", string.equals) catch return null;
+    registerFunction(env, exports, "base64encode", string.base64encode) catch return null;
+
     registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
     registerFunction(env, exports, "destroySortIndex", sort.destroySortIndexNode) catch return null;
 
-    registerFunction(env, exports, "equals", string.equals) catch return null;
+    registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
+    registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
 
     return exports;
 }
