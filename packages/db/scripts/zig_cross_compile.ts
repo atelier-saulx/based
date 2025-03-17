@@ -27,7 +27,6 @@ const AVAILABLE_PLATFORMS = [
 ]
 
 async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
-  //Promise<string[]> {
   const { data } = await axios.get('https://nodejs.org/dist/index.json')
   const versions = new Map()
   for (const release of data) {
@@ -37,7 +36,7 @@ async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
       versions.set(major, `v${major}.${minor}.${patch}`)
     }
   }
-  return versions //Array.from(versions.values())
+  return versions
 }
 
 const PLATFORMS = isRelease
