@@ -13,6 +13,3 @@ RUN apt-get update && \
 ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/v$NODE_VERSION/bin:$PATH
 CMD ["/bin/bash", "-c", "cd /usr/src/based-db/packages/db/clibs && make"]
-
-# now you can run something like this
-# % podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_aarch64 sh -c '\. "/usr/local/nvm/nvm.sh"; cd /usr/src/based-db; npm i; npm run build; cd packages/db; npm run test-fast'
