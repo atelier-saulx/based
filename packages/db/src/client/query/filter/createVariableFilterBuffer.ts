@@ -16,14 +16,16 @@ import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
+const ENCODER = new TextEncoder()
 
 const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
   lang: LangCode,
-): Buffer => {
+): Uint8Array => {
   let val = value
+  // TODO should we do .normalize('NFKD') for all strings?
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
@@ -49,11 +51,14 @@ const parseValue = (
     !prop.separate ||
     ctx.operation !== EQUAL
   ) {
+    if (typeof val === 'string') {
+      val = ENCODER.encode(val)
+    }
     if (prop.typeIndex === TEXT) {
-      // can be optmized replace when using uint8array
-      val = Buffer.concat([Buffer.from(val), Buffer.from([lang])])
-    } else {
-      val = Buffer.from(val)
+      const tmp = new Uint8Array(val.byteLength + 1)
+      tmp.set(val)
+      tmp[tmp.byteLength - 1] = lang
+      val = tmp
     }
   }
   if (val?.BYTES_PER_ELEMENT > 1) {
@@ -63,10 +68,11 @@ const parseValue = (
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
-    // @ts-ignore
-    val = Buffer.concat([val, Buffer.from([ctx.opts.score ?? 2])])
+    const tmp = new Uint8Array(val.byteLength + 1)
+    tmp.set((val instanceof ArrayBuffer) ? new Uint8Array(val) : val)
+    tmp[tmp.byteLength -1 ] = ctx.opts.score ?? 2
+    val = tmp
   }
-  // @ts-ignore
   return val
 }
 
