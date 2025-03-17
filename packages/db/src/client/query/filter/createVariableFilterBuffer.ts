@@ -14,6 +14,7 @@ import {
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
+import { concatUint8Arr } from '../../../utils.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 const ENCODER = new TextEncoder()
@@ -91,11 +92,12 @@ export const createVariableFilterBuffer = (
       const x = []
       for (const v of value) {
         const a = parseValue(v, prop, ctx, lang)
-        const size = Buffer.allocUnsafe(2)
-        size.writeUint16LE(a.byteLength)
+        const size = new Uint8Array(2)
+        size[0] = a.byteLength
+        size[1] = a.byteLength >>> 8
         x.push(size, a)
       }
-      val = Buffer.concat(x)
+      val = concatUint8Arr(x)
     } else {
       const x = []
       for (const v of value) {

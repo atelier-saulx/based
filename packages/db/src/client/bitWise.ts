@@ -75,17 +75,3 @@ export const readInt16 = (val: Uint8Array, offset: number): number => {
 export const readUint16 = (val: Uint8Array, offset: number): number => {
   return (val[offset] | (val[offset + 1] << 8)) >>> 0
 }
-
-export const concatUint8Arr = (arrs: Uint8Array[]): Uint8Array => {
-  const totalLength = arrs.reduce(
-    (total, uint8array) => total + uint8array.byteLength,
-    0,
-  )
-  const result = new Uint8Array(totalLength)
-  let offset = 0
-  arrs.forEach((u8) => {
-    result.set(u8, offset)
-    offset += u8.byteLength
-  })
-  return result
-}

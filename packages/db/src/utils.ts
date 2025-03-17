@@ -25,7 +25,8 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   }
 }
 
-export function concatBufs(bufs: Uint8Array[], totalByteLength: number): Uint8Array {
+export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Uint8Array {
+  totalByteLength = totalByteLength ?? bufs.reduce((acc, cur) => acc + cur.byteLength, 0)
   const res = new Uint8Array(totalByteLength)
   let off = 0
 
