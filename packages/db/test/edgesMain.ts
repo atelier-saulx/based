@@ -136,8 +136,6 @@ await test('multiple', async (t) => {
     ],
   )
 
-  console.log('\n\n\n\n\n\n\n\n\n\n\n\n\n\n------------------------------')
-
   await db.create('article', {
     name: 'Typical Thursday',
     contributors: [
@@ -165,6 +163,45 @@ await test('multiple', async (t) => {
         name: 'Fantastical Friday',
         contributors: [
           { id: 1, $rating: 22, $rdy: true, $derp: 'a' },
+          { id: 2, $rating: 0, $rdy: true, $derp: 'b' },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Typical Thursday',
+        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+      },
+    ],
+  )
+
+  await db.update('article', fantasticalFriday, {
+    contributors: {
+      set: [
+        {
+          id: mrDerp,
+          $rating: { increment: 1 },
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('name')
+        .include('contributors.$rdy')
+        .include('contributors.$rating')
+        .include('contributors.$derp')
+        .get()
+        .inspect()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        name: 'Fantastical Friday',
+        contributors: [
+          { id: 1, $rating: 23, $rdy: true, $derp: 'a' },
           { id: 2, $rating: 0, $rdy: true, $derp: 'b' },
         ],
       },

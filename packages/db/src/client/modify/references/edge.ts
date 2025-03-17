@@ -362,7 +362,10 @@ export function writeEdges(
         ctx.buf[sIndexI + 5] = edge.typeIndex
         ctx.len += edge.start
         writtenFields += edge.start + edge.len
-        const err = appendFixedValue(ctx, value, edge)
+        const err =
+          op !== UPDATE
+            ? appendFixedValue(ctx, value.increment, edge)
+            : appendFixedValue(ctx, value, edge)
         if (err) {
           return err
         }

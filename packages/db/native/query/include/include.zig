@@ -111,8 +111,7 @@ pub fn getFields(
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
         var value: []u8 = undefined;
 
-        // MAIN
-        if (field == 0) {
+        if (field == t.MAIN_PROP) {
             prop = t.Prop.MICRO_BUFFER;
             const mainIncludeSize = read(u16, operation, 0);
             if (mainIncludeSize != 0) {
@@ -170,9 +169,9 @@ pub fn getFields(
             }
         } else {
             if (isEdge) {
+                // double check if this ok
                 size += 1;
             }
-
             if (field == 0) {
                 main = value;
                 if (includeMain.?.len != 0) {
@@ -193,7 +192,6 @@ pub fn getFields(
                     size += 4;
                 }
             }
-
             try ctx.results.append(result);
         }
     }
