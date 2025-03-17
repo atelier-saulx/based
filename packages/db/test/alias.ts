@@ -24,6 +24,8 @@ await test('simple', async (t) => {
     },
   })
 
+  console.info('------------------------')
+
   const user1 = db.create('user', {
     externalId: 'cool',
   })
@@ -45,8 +47,6 @@ await test('simple', async (t) => {
     externalId: 'cool2',
     potato: '',
   })
-
-  // console.log (db.create)
 
   deepEqual(
     (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
