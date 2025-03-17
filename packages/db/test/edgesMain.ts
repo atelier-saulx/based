@@ -157,9 +157,8 @@ await test('multiple', async (t) => {
         .include('contributors.$rating')
         .include('contributors.$derp')
         .get()
-    )
-      .debug()
-      .toObject(),
+        .inspect()
+    ).toObject(),
     [
       {
         id: 1,

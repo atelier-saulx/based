@@ -125,9 +125,5 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     result.push(includeBuffer)
   }
 
-  if (def.type === QueryDefType.Edge) {
-    console.log(new Uint8Array(Buffer.concat(result)))
-  }
-
   return result
 }
