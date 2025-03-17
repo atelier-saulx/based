@@ -2,9 +2,15 @@
  * Copyright (c) 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
+/*
+ * RFE the symbol is here twice because LLVM on Darwin can't find fast_memcmp and Linux can't find _fast_memcmp.
+ * Moreover, alias is not supported in clang on Darwin.
+ */
     .globl _fast_memcmp
+    .globl fast_memcmp
     .p2align 2
 _fast_memcmp:
+fast_memcmp:
     .cfi_startproc
     ldrb    w8, [x0]
     ldrb    w9, [x1]
