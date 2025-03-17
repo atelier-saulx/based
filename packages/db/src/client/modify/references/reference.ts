@@ -76,8 +76,8 @@ function singleReferenceEdges(
 
       // def.edgeMainLen
       const edgesLen = getEdgeSize(def, ref)
+      // edgeMainLen can be done better
 
-      // edgeMainLen
       if (ctx.len + 4 + edgesLen > ctx.max) {
         return RANGE_ERR
       }
