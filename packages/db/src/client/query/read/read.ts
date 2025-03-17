@@ -20,7 +20,7 @@ import {
   JSON,
   CARDINALITY,
 } from '@based/schema/def'
-import { QueryDef, QueryDefEdges, QueryDefType } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   readDoubleLE,
@@ -402,6 +402,7 @@ export const readAllFields = (
   return i - offset
 }
 
+let cnt = 0
 export const resultToObject = (
   q: QueryDef,
   result: Uint8Array,

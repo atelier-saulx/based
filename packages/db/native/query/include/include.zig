@@ -127,15 +127,11 @@ pub fn getFields(
         if (isEdge) {
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
-
             if (prop == t.Prop.CARDINALITY) {
                 value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema) orelse undefined;
             } else {
                 value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
             }
-
-            // check if this is ok?
-
         } else {
             fieldSchema = try db.getFieldSchema(field, typeEntry);
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
@@ -174,7 +170,7 @@ pub fn getFields(
             }
         } else {
             if (isEdge) {
-                size += 2;
+                size += 1;
             }
 
             if (field == 0) {
@@ -197,6 +193,7 @@ pub fn getFields(
                     size += 4;
                 }
             }
+
             try ctx.results.append(result);
         }
     }

@@ -59,21 +59,39 @@ await test('multiple', async (t) => {
       {
         id: mrFrap,
         $rdy: true,
-
-        // $rating: 99,
         $derp: 'b',
       },
     ],
   })
 
-  await db
-    .query('article')
-    .include('contributors.$rdy')
-    .include('contributors.$rating')
-    .include('contributors.$derp')
-    .get()
-    .inspect()
-    .then((v) => v.debug())
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$rdy')
+      .include('contributors.$rating')
+      .include('contributors.$derp')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $rating: 66,
+            $rdy: true,
+            $derp: 'a',
+          },
+          {
+            id: 2,
+            $rating: 0,
+            $rdy: true,
+            $derp: 'b',
+          },
+        ],
+      },
+    ],
+  )
 
   await db.update('article', fantasticalFriday, {
     contributors: {
@@ -87,32 +105,75 @@ await test('multiple', async (t) => {
     },
   })
 
-  await db
-    .query('article')
-    .include('contributors.$rdy')
-    .include('contributors.$rating')
-    .include('contributors.$derp')
-    .get()
-    .inspect()
-    .then((v) => v.debug())
+  deepEqual(
+    await db
+      .query('article')
+      .include('name')
+      .include('contributors.$rdy')
+      .include('contributors.$rating')
+      .include('contributors.$derp')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        name: 'Fantastical Friday',
+        contributors: [
+          {
+            id: 1,
+            $rating: 22,
+            $rdy: true,
+            $derp: 'a',
+          },
+          {
+            id: 2,
+            $rating: 0,
+            $rdy: true,
+            $derp: 'b',
+          },
+        ],
+      },
+    ],
+  )
 
-  // const typicalThursday = await db.create('article', {
-  //   name: 'Typical Thursday',
-  //   contributors: [
-  //     {
-  //       id: mrDerp,
-  //       $rating: 1,
-  //     },
-  //   ],
-  // })
+  console.log('\n\n\n\n\n\n\n\n\n\n\n\n\n\n------------------------------')
 
-  // await db.update('article', fantasticalFriday, {
-  //   name: 'Fantastical Friday',
-  //   contributors: [
-  //     {
-  //       id: mrDerp,
-  //       $rating: 2,
-  //     },
-  //   ],
-  // })
+  await db.create('article', {
+    name: 'Typical Thursday',
+    contributors: [
+      {
+        id: mrDerp,
+        $rating: 1,
+      },
+    ],
+  })
+
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .include('name')
+        .include('contributors.$rdy')
+        .include('contributors.$rating')
+        .include('contributors.$derp')
+        .get()
+    )
+      .debug()
+      .toObject(),
+    [
+      {
+        id: 1,
+        name: 'Fantastical Friday',
+        contributors: [
+          { id: 1, $rating: 22, $rdy: true, $derp: 'a' },
+          { id: 2, $rating: 0, $rdy: true, $derp: 'b' },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Typical Thursday',
+        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+      },
+    ],
+  )
 })
