@@ -111,6 +111,7 @@ await test('multi reference', async (t) => {
       .get()
       .then((v) => v.toObject()),
     [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
+    'age 66',
   )
 
   deepEqual(

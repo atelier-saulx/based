@@ -17,12 +17,14 @@ pub fn fillReferenceFilter(
     };
     var i: usize = 3;
     var found: bool = false;
+
     while (i < query.len) : (i += 8) {
         const id = read(u32, query, i);
         const ref = db.getNode(id, typeEntry);
         if (ref) |r| {
             const arr: [*]u8 = @ptrCast(@alignCast(r));
             @memcpy(query[i .. i + 8], arr[0..8]);
+
             found = true;
         } else {
             @memcpy(query[i .. i + 8], &empty);
@@ -32,6 +34,7 @@ pub fn fillReferenceFilter(
         query[0] = 1;
     } else {
         query[0] = 2;
+        // TODO HAS TO BE RESET
     }
     return true;
 }

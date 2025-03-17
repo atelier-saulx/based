@@ -302,6 +302,9 @@ export function writeEdges(
 
       // Keep track of written bytes from append fixed
       let writtenFields = 0
+
+      // do this different...
+      let startMain = ctx.len
       for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
         const value = mainFields[i + 1]
@@ -315,8 +318,10 @@ export function writeEdges(
         ctx.buf[sIndexI + 3] = len >>>= 8
         ctx.buf[sIndexI + 4] = op
         ctx.buf[sIndexI + 5] = edge.typeIndex
-        ctx.len += edge.start
-        writtenFields += edge.start + edge.len
+        ctx.len = startMain + edge.start
+        if (edge.start + edge.len > writtenFields) {
+          writtenFields = edge.start + edge.len
+        }
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err

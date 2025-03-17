@@ -155,7 +155,6 @@ await test('multiple', async (t) => {
         .include('contributors.$rating')
         .include('contributors.$derp')
         .get()
-        .inspect()
     ).toObject(),
     [
       {
@@ -194,7 +193,6 @@ await test('multiple', async (t) => {
         .include('contributors.$rating')
         .include('contributors.$derp')
         .get()
-        .inspect()
     ).toObject(),
     [
       {
@@ -285,5 +283,93 @@ await test('single', async (t) => {
         },
       },
     ],
+  )
+
+  deepEqual(
+    await db.query('article').include('contributor.$rdy').get().toObject(),
+    [
+      {
+        id: 1,
+        contributor: {
+          id: 1,
+          $rdy: true,
+        },
+      },
+    ],
+  )
+})
+
+await test('manyFields', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.start({ clean: true })
+
+  await db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
+      },
+
+      article: {
+        props: {
+          name: 'string',
+          contributors: {
+            type: 'references',
+            items: {
+              ref: 'user',
+              prop: 'articles',
+              $derp: 'uint8',
+              $age: 'uint32',
+              $plonki: 'uint32',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const mrSnurp = db.create('user', {
+    name: 'Mr snurp',
+  })
+
+  const mrDerp3 = db.create('user', {
+    name: 'Mr Derp3',
+  })
+
+  await db.drain()
+
+  await db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: [
+      {
+        id: mrSnurp,
+        $derp: 99,
+        $age: 66,
+      },
+    ],
+  })
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$age')
+      .get()
+      .then((v) => v.toObject()),
+    [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
+    'age 66',
   )
 })

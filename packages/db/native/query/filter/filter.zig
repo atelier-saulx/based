@@ -80,7 +80,6 @@ pub fn filter(
     var i: usize = offset;
     var orJump: ?[]u8 = jump;
     var end: usize = conditions.len;
-
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
     while (i < end) {
@@ -249,6 +248,7 @@ pub fn filter(
                     if (prop == Prop.REFERENCE) {
                         // if edge different
                         const checkRef = db.getReference(ctx, node, field);
+
                         if (checkRef) |r| {
                             value = @as([*]u8, @ptrCast(r))[0..8];
                         } else {

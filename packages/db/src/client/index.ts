@@ -112,7 +112,7 @@ export class DbClient {
       this.schemaTypesParsedById,
     )
     // TODO should not need this, but it modifies the schema
-    // schemaToSelvaBuffer(this.schemaTypesParsed)
+    schemaToSelvaBuffer(this.schemaTypesParsed)
     return this.schema
   }
 

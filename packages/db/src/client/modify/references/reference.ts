@@ -56,7 +56,6 @@ function singleReferenceEdges(
 
   // TODO SINGLE REF
   if (id > 0) {
-    // const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
     if (def.edgesSeperateCnt === 0 && def.edgeMainLen === 0) {
       // edgeMainLen, edgesSeperateCnt
       return writeRef(id, ctx, schema, def, parentId, modifyOp, false, isTmpId)
@@ -74,7 +73,12 @@ function singleReferenceEdges(
       if (err) {
         return err
       }
-      if (ctx.len + 4 > ctx.max) {
+
+      // def.edgeMainLen
+      const edgesLen = getEdgeSize(def, ref)
+
+      // edgeMainLen
+      if (ctx.len + 4 + edgesLen > ctx.max) {
         return RANGE_ERR
       }
       let sizepos = ctx.len

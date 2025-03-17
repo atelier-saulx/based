@@ -17,7 +17,7 @@ for (let i = 0; i < 1_000_000; i++) {
 console.log(performance.now() - d, 'ms')
 // 21.899999976158142 'ms'
 
-await test.skip('multi reference', async (t) => {
+await test('multi reference', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -95,7 +95,7 @@ await test.skip('multi reference', async (t) => {
   )
 })
 
-await test.skip('multiple references', async (t) => {
+await test('multiple references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
