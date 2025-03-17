@@ -25,6 +25,20 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   }
 }
 
+export function concatBufs(bufs: Uint8Array[], totalByteLength: number): Uint8Array {
+  const res = new Uint8Array(totalByteLength)
+  let off = 0
+
+  for (let i = 0; i < bufs.length; i++) {
+    const buf = bufs[i]
+
+    res.set(buf, off)
+    off += buf.byteLength
+  }
+
+  return res
+}
+
 const charMap = new TextEncoder().encode("0123456789abcdef");
 const DECODER = new TextDecoder()
 

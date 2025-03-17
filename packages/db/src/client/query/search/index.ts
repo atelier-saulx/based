@@ -7,6 +7,7 @@ import {
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
+import { concatBufs } from '../../../utils.js'
 
 export type Search =
   | string[]
@@ -43,20 +44,6 @@ export const vectorSearch = (
     isVector: true,
     opts,
   }
-}
-
-function concatBufs(bufs: Uint8Array[], totalByteLength: number): Uint8Array {
-  const res = new Uint8Array(totalByteLength)
-  let off = 0
-
-  for (let i = 0; i < bufs.length; i++) {
-    const buf = bufs[i]
-
-    res.set(buf, off)
-    off += buf.byteLength
-  }
-
-  return res
 }
 
 export const search = (def: QueryDef, q: string, s?: Search) => {
