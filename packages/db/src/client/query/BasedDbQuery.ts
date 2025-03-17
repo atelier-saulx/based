@@ -298,8 +298,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       return
     }
 
-    console.log({ buf: new Uint8Array(buf) })
-
     const d = performance.now()
     const res = await this.db.hooks.getQueryBuf(buf)
     if (res instanceof Error) {

@@ -46,6 +46,20 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   return size
 }
 
+type FieldOp = typeof INCREMENT | typeof DECREMENT | typeof UPDATE
+
+function valueOperation(value: any): FieldOp | 0 {
+  if (typeof value === 'object' && value !== null) {
+    if (value.increment > 0) {
+      return INCREMENT
+    } else if (value.increment < 0) {
+      return DECREMENT
+    }
+    return 0
+  }
+  return UPDATE
+}
+
 function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
   for (let i = 0; i < value.length; i++) {
     let id = value[i]
@@ -70,24 +84,34 @@ function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
   }
 }
 
+const EDGE_HEADER_SIZE = 7
+
 export function writeEdges(
   t: PropDef,
   ref: RefModifyOpts,
   ctx: ModifyCtx,
 ): ModifyErr {
-  // mergeEdgeMain: (PropDef | any)[] | null
-
-  let mainFields: (PropDefEdge | any)[]
+  let mainFields: (PropDefEdge | any | FieldOp)[]
   let mainSize = 0
   let hasIncr = false
 
   for (const key in t.edges) {
-    // handle if main better
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
+      if (edge.separate === true) {
+        /*
+          Seperate fields:
 
-      if (edge.len === 0) {
+          | Offset  | Field       | Size (bytes)| Description                           |
+          |---------|-------------|-------------|---------------------------------------|
+          | 0       | modify op   | 1           | Modify operation identifier           |
+          | 1       | prop        | 1           | Field identifier                      |
+          | 2       | type        | 1           | Indicates MICRO_BUFFER type           |
+          | 3       | size        | 4           | Size of the data in bytes             |
+          | 7       | data        | Variable    | Content                               |
+        */
+
         if (edge.typeIndex === BINARY) {
           let size = 0
           if (value === null) {
@@ -99,7 +123,7 @@ export function writeEdges(
             }
             size = buf.byteLength
           }
-          if (ctx.len + 7 + size > ctx.max) {
+          if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = UPDATE
@@ -117,7 +141,7 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(edge, value)
           }
-          if (ctx.len + 7 + Buffer.byteLength(value) > ctx.max) {
+          if (ctx.len + EDGE_HEADER_SIZE + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = UPDATE
@@ -154,7 +178,7 @@ export function writeEdges(
             return new ModifyError(edge, value)
           }
           let size = value.length * 4
-          if (ctx.len + 7 + size > ctx.max) {
+          if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = UPDATE
@@ -171,24 +195,34 @@ export function writeEdges(
           }
           const len = value.length
           let size = 4 + len * 8
-          if (ctx.len + size + 11 > ctx.max) {
+          if (ctx.len + size + EDGE_HEADER_SIZE > ctx.max) {
             return RANGE_ERR
           }
+          ctx.buf[ctx.len++] = UPDATE
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = CARDINALITY
           writeHllBuf(value, ctx, t, size)
         }
       } else {
-        // if incr / decr
-        // do stuff
+        const op = valueOperation(value)
+        if (op === 0) {
+          return new ModifyError(edge, value)
+        }
+        hasIncr = op != UPDATE
 
-        // INCREMENT / DECREMENT
-        // if (typeof value === 'object' && value !== null) {
-        // }
-        // hasIncr
-        // if total len === 1
+        if (!hasIncr && t.edgeMainLen == edge.len) {
+          /*
+          Full main update:
 
-        if (t.edgeMainLen == edge.len) {
+          | Offset  | Field       | Size (bytes)| Description                           |
+          |---------|-------------|-------------|---------------------------------------|
+          | 0       | modify op   | 1           | Modify operation identifier           |
+          | 1       | prop        | 1           | Field identifier (0)                  |
+          | 2       | type        | 1           | Indicates MICRO_BUFFER type           |
+          | 3       | mainSize    | 4           | Size of the main data in bytes        |
+          | 7       | main buffer | Variable    | Main data content                     |
+          */
+
           if (ctx.len + 7 + edge.len > ctx.max) {
             return RANGE_ERR
           }
@@ -208,15 +242,15 @@ export function writeEdges(
         } else {
           mainSize += edge.len
           if (!mainFields) {
-            mainFields = [edge, value]
+            mainFields = [edge, value, op]
           } else {
             const len = mainFields.length
-            for (let i = 0; i < len; i += 2) {
+            for (let i = 0; i < len; i += 3) {
               if (edge.start < mainFields[i].start) {
-                mainFields.splice(i, 0, edge, value)
+                mainFields.splice(i, 0, edge, value, op)
                 break
-              } else if (mainFields[len - i - 2].start < edge.start) {
-                mainFields.splice(len - i, 0, edge, value)
+              } else if (mainFields[len - i - 3].start < edge.start) {
+                mainFields.splice(len - i, 0, edge, value, op)
                 break
               }
             }
@@ -227,7 +261,20 @@ export function writeEdges(
   }
 
   if (mainFields) {
-    if (mainSize === t.edgeMainLen) {
+    // Single field in main buffer can immediately setup the main buffer
+    if (!hasIncr && mainSize === t.edgeMainLen) {
+      /*
+      Full main update:
+
+      | Offset  | Field       | Size (bytes)| Description                           |
+      |---------|-------------|-------------|---------------------------------------|
+      | 0       | modify op   | 1           | Modify operation identifier           |
+      | 1       | prop        | 1           | Field identifier (0)                  |
+      | 2       | type        | 1           | Indicates MICRO_BUFFER type           |
+      | 3       | mainSize    | 4           | Size of the main data in bytes        |
+      | 7       | main buffer | Variable    | Main data content                     |
+      */
+
       if (ctx.len + 7 + mainSize > ctx.max) {
         return RANGE_ERR
       }
@@ -239,7 +286,7 @@ export function writeEdges(
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
-      for (let i = 0; i < mainFields.length; i += 2) {
+      for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
         const err = appendFixedValue(ctx, mainFields[i + 1], edge)
         if (err) {
@@ -247,14 +294,37 @@ export function writeEdges(
         }
       }
     } else {
-      // [size][size][size][size][len][len][start-1][start-1][len-1][len-1][start-2][start-2][len-2][len-2][MAIN..len]
-      // size - len
+      /*
+      Partial main update:
+
+      | Offset  | Field       | Size (bytes)| Description                          |
+      |---------|-------------|-------------|--------------------------------------|
+      | 0       | modify op   | 1           | Modify operation identifier          |
+      | 1       | prop        | 1           | Field identifier (0 in this case)    |
+      | 2       | type        | 1           | Indicates MICRO_BUFFER type          |
+      | 3       | size        | 4           | Total size of the payload            |
+      | 7       | mainSize    | 2           | Length of the main data block        |
+      | 9       | start       | 2           | Start position of first section      |
+      | 11      | len         | 2           | Length of first section              |
+      | 12      | field op    | 1           | Field operation type e.g. INCREMENT  |
+      | 13      | propType    | 1           | Prop typeIndex                       |
+      | ...     | ...         | ...         | Additional (start, len) pairs        |
+      | X       | main        | len         | Actual main content                  |
+
+      ### Notes:
+      - The number of `(start, len, operation)` pairs is not explicitly stored 
+        but **derived** from the structure.
+      - Parsing logic must determine the end of pairs by computing:  
+        `Pairs End Offset = (size - mainSize)`  
+        Sections are processed until the `MAIN` data block begins.
+      */
+
       const mainFieldsStartSize = mainFields.length * 2
+
       if (ctx.len + 7 + mainSize + mainFieldsStartSize > ctx.max) {
         return RANGE_ERR
       }
       ctx.buf[ctx.len++] = UPDATE_PARTIAL
-      // Main buffer is always 0
       ctx.buf[ctx.len++] = 0
       ctx.buf[ctx.len++] = MICRO_BUFFER
 
@@ -268,17 +338,19 @@ export function writeEdges(
       ctx.buf[ctx.len++] = mainTotal
       ctx.buf[ctx.len++] = mainTotal >>>= 8
 
-      // index of start of fields
+      // Index of start of fields
       const sIndex = ctx.len
       ctx.len += mainFieldsStartSize
 
       // Add zeroes
       ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
+
       // Keep track of written bytes from append fixed
       let writtenFields = 0
-      for (let i = 0; i < mainFields.length; i += 2) {
+      for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
         const value = mainFields[i + 1]
+        const op = mainFields[i + 2]
         const sIndexI = i + sIndex
         let start = edge.start
         ctx.buf[sIndexI] = start
@@ -286,7 +358,8 @@ export function writeEdges(
         let len = edge.len
         ctx.buf[sIndexI + 2] = len
         ctx.buf[sIndexI + 3] = len >>>= 8
-
+        ctx.buf[sIndexI + 4] = op
+        ctx.buf[sIndexI + 5] = edge.typeIndex
         ctx.len += edge.start
         writtenFields += edge.start + edge.len
         const err = appendFixedValue(ctx, value, edge)
@@ -294,6 +367,7 @@ export function writeEdges(
           return err
         }
       }
+
       // Correction to reuse append fixed value
       ctx.len += t.edgeMainLen - writtenFields
     }
