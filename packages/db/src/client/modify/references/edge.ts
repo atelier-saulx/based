@@ -84,7 +84,7 @@ function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
   }
 }
 
-const EDGE_HEADER_SIZE = 7
+const EDGE_HEADER_SIZE = 5
 
 export function writeEdges(
   t: PropDef,
@@ -100,6 +100,12 @@ export function writeEdges(
       const edge = t.edges[key]
       let value = ref[key]
       if (edge.separate === true) {
+        if (ctx.len + 2 > ctx.max) {
+          return RANGE_ERR
+        }
+        ctx.buf[ctx.len++] = UPDATE
+        ctx.buf[ctx.len++] = edge.prop
+
         /*
           Seperate fields:
 
@@ -126,8 +132,6 @@ export function writeEdges(
           if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
             return RANGE_ERR
           }
-          ctx.buf[ctx.len++] = UPDATE
-          ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
           if (size) {
             writeBinaryRaw(value, ctx)
@@ -144,8 +148,6 @@ export function writeEdges(
           if (ctx.len + EDGE_HEADER_SIZE + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
           }
-          ctx.buf[ctx.len++] = UPDATE
-          ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
           let size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
           let sizeU32 = size
@@ -163,8 +165,6 @@ export function writeEdges(
             }
           }
           if (value > 0) {
-            ctx.buf[ctx.len++] = UPDATE
-            ctx.buf[ctx.len++] = edge.prop
             ctx.buf[ctx.len++] = REFERENCE
             ctx.buf[ctx.len++] = value
             ctx.buf[ctx.len++] = value >>>= 8
@@ -181,8 +181,6 @@ export function writeEdges(
           if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
             return RANGE_ERR
           }
-          ctx.buf[ctx.len++] = UPDATE
-          ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = REFERENCES
           ctx.buf[ctx.len++] = size
           ctx.buf[ctx.len++] = size >>>= 8
@@ -198,8 +196,6 @@ export function writeEdges(
           if (ctx.len + size + EDGE_HEADER_SIZE > ctx.max) {
             return RANGE_ERR
           }
-          ctx.buf[ctx.len++] = UPDATE
-          ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = CARDINALITY
           writeHllBuf(value, ctx, t, size)
         }
@@ -208,7 +204,11 @@ export function writeEdges(
         if (op === 0) {
           return new ModifyError(edge, value)
         }
-        hasIncr = op != UPDATE
+
+        if (op != UPDATE) {
+          hasIncr = true
+          value = value.increment
+        }
 
         if (!hasIncr && t.edgeMainLen == edge.len) {
           /*
@@ -362,10 +362,7 @@ export function writeEdges(
         ctx.buf[sIndexI + 5] = edge.typeIndex
         ctx.len += edge.start
         writtenFields += edge.start + edge.len
-        const err =
-          op !== UPDATE
-            ? appendFixedValue(ctx, value.increment, edge)
-            : appendFixedValue(ctx, value, edge)
+        const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err
         }
