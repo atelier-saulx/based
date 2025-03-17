@@ -328,7 +328,7 @@ pub fn getEdgeReferences(
         return selva.selva_fields_get_weak_references(
             ctx.selva,
             ref.meta,
-            field - 1,
+            field,
         );
     }
     return null;
@@ -347,7 +347,7 @@ pub fn getEdgeReference(
         return selva.selva_fields_get_weak_reference(
             ctx.selva,
             ref.meta,
-            field - 1,
+            field,
         );
     }
     return null;

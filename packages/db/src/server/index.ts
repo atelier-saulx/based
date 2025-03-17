@@ -484,8 +484,6 @@ export class DbServer {
 
     this.onSchemaChange?.(this.schema)
 
-    console.log('SCHEMA TIME')
-
     return this.schema
   }
 

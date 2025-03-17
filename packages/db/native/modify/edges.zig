@@ -28,7 +28,7 @@ pub fn writeEdges(
         var len: u32 = undefined;
         var offset: u32 = 0;
 
-        // Relevant for MAIN buffer
+        // Only relevant for MAIN buffer
         if (op == types.ModOp.UPDATE_PARTIAL) {
             len = read(u32, data, i);
             const totalMainBufferLen = read(u16, data, i + 4);
@@ -46,7 +46,6 @@ pub fn writeEdges(
                     if (fieldOp == types.ModOp.INCREMENT or fieldOp == types.ModOp.DECREMENT) {
                         _ = update.incrementBuffer(op, @enumFromInt(data[j + 5]), val, edgeData);
                     } else {
-                        std.debug.print("OP: {any} \n", .{fieldOp});
                         @memcpy(val[start .. start + l], edgeData[start .. start + l]);
                     }
                 }
@@ -61,43 +60,49 @@ pub fn writeEdges(
                     prop,
                 );
             }
+        } else if (t == p.REFERENCE) {
+            len = 4;
+            offset = 0;
+            const edgeData = data[i + offset .. i + offset + len];
+            try db.writeEdgeProp(
+                ctx.db,
+                edgeData,
+                ctx.node.?,
+                edgeConstraint,
+                ref,
+                prop,
+            );
+        } else if (t == p.CARDINALITY) {
+            len = read(u32, data, i);
+            offset = 4;
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
+            const hll = selva.selva_fields_ensure_string2(
+                ctx.db.selva.?,
+                ctx.node.?,
+                edgeConstraint,
+                ref,
+                edgeFieldSchema,
+                selva.HLL_INIT_SIZE,
+            );
+            selva.hll_init(hll, 14, true);
+            var it: usize = i + offset;
+            while (it < len) {
+                const hash = read(u64, data, it);
+                selva.hll_add(hll, hash);
+                it += 8;
+            }
         } else {
             len = read(u32, data, i);
             offset = 4;
-
-            std.debug.print("flap {any} \n", .{len});
-
-            if (t == p.CARDINALITY) {
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
-                const hll = selva.selva_fields_ensure_string2(
-                    ctx.db.selva.?,
-                    ctx.node.?,
-                    edgeConstraint,
-                    ref,
-                    edgeFieldSchema,
-                    selva.HLL_INIT_SIZE,
-                );
-                selva.hll_init(hll, 14, true);
-                var it: usize = i + offset;
-                while (it < len) {
-                    const hash = read(u64, data, it);
-                    selva.hll_add(hll, hash);
-                    it += 8;
-                }
-            } else {
-                // if TEXT
-                // add languages etc....
-                // later add sort on edges
-                const edgeData = data[i + offset .. i + offset + len];
-                try db.writeEdgeProp(
-                    ctx.db,
-                    edgeData,
-                    ctx.node.?,
-                    edgeConstraint,
-                    ref,
-                    prop,
-                );
-            }
+            const edgeData = data[i + offset .. i + offset + len];
+            try db.writeEdgeProp(
+                ctx.db,
+                edgeData,
+                ctx.node.?,
+                edgeConstraint,
+                ref,
+                prop,
+            );
         }
 
         i += offset + len;

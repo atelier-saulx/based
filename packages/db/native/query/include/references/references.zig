@@ -58,7 +58,7 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ctx.db,ref.?.reference.?, refField)) |r| {
+        if (db.getEdgeReferences(ctx.db, ref.?.reference.?, refField)) |r| {
             const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint, refField) catch {
                 return 0;
             };

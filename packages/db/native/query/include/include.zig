@@ -76,6 +76,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, score);
             }
+
             size += getRefsFields(
                 ctx,
                 multiRefs,
@@ -172,7 +173,7 @@ pub fn getFields(
                 // double check if this ok
                 size += 1;
             }
-            if (field == 0) {
+            if (field == t.MAIN_PROP) {
                 main = value;
                 if (includeMain.?.len != 0) {
                     size += read(u16, includeMain.?, 0) + 1;

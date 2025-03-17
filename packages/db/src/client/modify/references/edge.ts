@@ -1,4 +1,4 @@
-import { BasedDb, ModifyCtx } from '../../../index.js'
+import { ModifyCtx } from '../../../index.js'
 import {
   BINARY,
   MICRO_BUFFER,
@@ -23,28 +23,7 @@ import {
 } from '../types.js'
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
-
-export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
-  let size = 0
-  for (const key in t.edges) {
-    if (key in ref) {
-      const edge = t.edges[key]
-      const value = ref[key]
-      if (edge.len === 0) {
-        if (edge.typeIndex === STRING) {
-          size += Buffer.byteLength(value) + 4
-        } else if (edge.typeIndex === REFERENCE) {
-          size += 4
-        } else if (edge.typeIndex === REFERENCES) {
-          size += value.length * 4 + 4
-        }
-      } else {
-        size += edge.len
-      }
-    }
-  }
-  return size
-}
+import { appendRefs } from './appendRefs.js'
 
 type FieldOp = typeof INCREMENT | typeof DECREMENT | typeof UPDATE
 
@@ -58,30 +37,6 @@ function valueOperation(value: any): FieldOp | 0 {
     return 0
   }
   return UPDATE
-}
-
-function appendRefs(t: PropDefEdge, ctx: ModifyCtx, value: any[]): ModifyErr {
-  for (let i = 0; i < value.length; i++) {
-    let id = value[i]
-    if (typeof id !== 'number') {
-      if (id instanceof ModifyState) {
-        if (id.error) {
-          return id.error
-        }
-        id = id.tmpId
-      } else {
-        return new ModifyError(t, value)
-      }
-    }
-    if (id > 0) {
-      ctx.buf[ctx.len++] = id
-      ctx.buf[ctx.len++] = id >>>= 8
-      ctx.buf[ctx.len++] = id >>>= 8
-      ctx.buf[ctx.len++] = id >>>= 8
-    } else {
-      return new ModifyError(t, value)
-    }
-  }
 }
 
 const EDGE_HEADER_SIZE = 5
