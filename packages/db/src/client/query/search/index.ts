@@ -55,7 +55,12 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
-  const x = q.toLowerCase().normalize('NFKD').trim().split(' ').map((s) => `  ${s}`)
+  const x = q
+    .toLowerCase()
+    .normalize('NFKD')
+    .trim()
+    .split(' ')
+    .map((s) => `  ${s}`)
   for (const s of x) {
     if (s) {
       const buf = ENCODER.encode(s)
@@ -115,8 +120,9 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
       searchIncorrectType(def, prop)
     }
-    def.search.size += 5
+    def.search.size += 6
     def.search.fields.push({
+      typeIndex: prop.typeIndex,
       weight: s[key],
       lang,
       field: prop.prop,
@@ -127,7 +133,17 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
 
 export const searchToBuffer = (search: QueryDefSearch) => {
   if (search.isVector) {
-    // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
+    /* Vector Binary Schema:
+    | Offset | Field    | Size (bytes) | Description                                     |
+    |--------|----------|--------------|-------------------------------------------------|
+    | 0      | isVector | 1            | Indicates if search is a vector (always 1)      |
+    | 1      | queryLen | 2            | Length of the query in bytes (u16)              |
+    | 3      | field    | 1            | Field identifier                                |
+    | 4      | func     | 1            | Function identifier (enum)                      |
+    | 5      | score    | 4            | Score value (f32)                               |
+    | 9      | query    | queryLen     | Query data (array of f32 values)                |
+    */
+
     const result = new Uint8Array(search.size)
     result[0] = 1 // search.isVector 1
     result[1] = search.query.byteLength
@@ -141,6 +157,30 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     result.set(search.query, 9)
     return result
   } else {
+    /* Non-Vector Search Binary Schema:
+
+    | Offset | Field    | Size (bytes) | Description                                |
+    |--------|----------|--------------|--------------------------------------------|
+    | 0      | isVector | 1            | Indicates if search is a vector (always 0) |
+    | 1      | queryLen | 2            | Length of the query in bytes (u16)         |
+    | 3      | query    | queryLen     | Query data                                 |
+    | X      | fields   | Variable     | Sorted fields metadata                     |
+
+    ### Fields Metadata Structure:
+    Each field entry consists of 6 bytes:
+
+    | Offset | Field     | Size (bytes)| Description                          |
+    |--------|-----------|-------------|--------------------------------------|
+    | 0      | field     | 1           | Field identifier                     |
+    | 1      | typeIndex | 1           | Type index of the field              |
+    | 2      | weight    | 1           | Field weight value                   |
+    | 3      | start     | 2           | Start position in the query (u16)    |
+    | 5      | lang      | 1           | Language identifier                  |
+
+    ### Notes:
+    - The number of field entries is inferred from the total packet size.
+    - `fields` are sorted by `weight` before being stored in the buffer.*/
+
     const result = new Uint8Array(search.size)
     result[0] = 0 // search.isVector 0
     result[1] = search.query.byteLength
@@ -152,14 +192,15 @@ export const searchToBuffer = (search: QueryDefSearch) => {
       return a.weight - b.weight
     })
     // @ts-ignore
-    for (let i = 0; i < search.fields.length * 5; i += 5) {
+    for (let i = 0; i < search.fields.length * 6; i += 6) {
       // @ts-ignore
-      const f = search.fields[i / 5]
+      const f = search.fields[Math.floor(i / 6)]
       result[i + offset] = f.field
-      result[i + offset + 1] = f.weight
-      result[i + offset + 2] = f.start
-      result[i + offset + 3] = f.start >>> 8
-      result[i + offset + 4] = f.lang
+      result[i + offset + 1] = f.typeIndex
+      result[i + offset + 2] = f.weight
+      result[i + offset + 3] = f.start
+      result[i + offset + 4] = f.start >>> 8
+      result[i + offset + 5] = f.lang
     }
     return result
   }

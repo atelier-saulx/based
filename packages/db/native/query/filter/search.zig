@@ -18,6 +18,7 @@ const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
+const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
 
 inline fn isSeparator(ch: u8) bool {
     return simd.countElementsWithValue(seperatorChars, ch) > 0;
@@ -27,7 +28,7 @@ pub fn SearchCtx(comptime isVector: bool) type {
     if (isVector) {
         return struct {
             field: u8,
-            query: []f32, // support more types later
+            query: []f32,
             func: VectorFn,
             score: f32,
         };
@@ -45,6 +46,31 @@ pub fn SearchCtx(comptime isVector: bool) type {
 
 pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVector) {
     if (!isVector) {
+
+        // Non-Vector Search Binary Schema:
+
+        // | Offset | Field    | Size (bytes) | Description                                |
+        // |--------|----------|--------------|--------------------------------------------|
+        // | 0      | isVector | 1            | Indicates if search is a vector (always 0) |
+        // | 1      | queryLen | 2            | Length of the query in bytes (u16)         |
+        // | 3      | query    | queryLen     | Query data                                 |
+        // | X      | fields   | Variable     | Sorted fields metadata                     |
+
+        // ### Fields Metadata Structure:
+        // Each field entry consists of 6 bytes:
+
+        // | Offset | Field     | Size (bytes)| Description                          |
+        // |--------|-----------|-------------|--------------------------------------|
+        // | 0      | field     | 1           | Field identifier                     |
+        // | 1      | typeIndex | 1           | Type index of the field              |
+        // | 2      | weight    | 1           | Field weight value                   |
+        // | 3      | start     | 2           | Start position in the query (u16)    |
+        // | 5      | lang      | 1           | Language identifier                  |
+
+        // ### Notes:
+        // - The number of field entries is inferred from the total packet size.
+        // - `fields` are sorted by `weight` before being stored in the buffer.
+
         const sLen = read(u16, searchBuf, 1);
         const words = read(u8, searchBuf, 3);
         const fields = searchBuf[3 + sLen .. searchBuf.len];
@@ -52,9 +78,9 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         var totalfields: u8 = 0;
         var totalWeights: u8 = 0;
         while (j < fields.len) {
-            const weight = fields[j + 1];
+            const weight = fields[j + 2];
             totalWeights += weight;
-            j += 2;
+            j += 6;
             totalfields += 1;
         }
         return .{
@@ -68,7 +94,17 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         };
     } else {
         const sLen = read(u16, searchBuf, 1);
-        // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
+
+        // Vector Binary Schema:
+        // | Offset | Field    | Size (bytes) | Description                                     |
+        // |--------|----------|--------------|-------------------------------------------------|
+        // | 0      | isVector | 1            | Indicates if search is a vector (always 1)      |
+        // | 1      | queryLen | 2            | Length of the query in bytes (u16)              |
+        // | 3      | field    | 1            | Field identifier                                |
+        // | 4      | func     | 1            | Function identifier (enum)                      |
+        // | 5      | score    | 4            | Score value (f32)                               |
+        // | 9      | query    | queryLen     | Query data (array of f32 values)                |
+
         return .{
             .field = searchBuf[3],
             .func = @enumFromInt(searchBuf[4]),
@@ -297,18 +333,17 @@ pub fn search(
         p += qLen + 2;
         j = 0;
         bestScore = 255;
-        fieldLoop: while (j < fl) : (j += 5) {
+        fieldLoop: while (j < fl) : (j += 6) {
             const field = ctx.fields[j];
-            const penalty = ctx.fields[j + 1];
+            const prop: Prop = @enumFromInt(ctx.fields[j + 1]);
+            const penalty = ctx.fields[j + 2];
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
-            // Prop has to be passed....
-            const prop: Prop = @enumFromInt(fieldSchema.*.type);
             var score: u8 = 255;
-            if (field == 0) {
+            if (field == MAIN_PROP) {
                 const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
-                const start = read(u16, ctx.fields, j + 2);
+                const start = read(u16, ctx.fields, j + 3);
                 const len = value[start];
                 if (len < query.len) {
                     continue :fieldLoop;
@@ -327,8 +362,9 @@ pub fn search(
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
+                std.debug.print("flap {any} {any} \n", .{ prop, penalty });
                 if (prop == Prop.TEXT) {
-                    const code: LangCode = @enumFromInt(ctx.fields[j + 4]);
+                    const code: LangCode = @enumFromInt(ctx.fields[j + 5]);
                     var iter = db.textIterator(value, code);
                     while (iter.next()) |s| {
                         score = 255;
