@@ -3,6 +3,7 @@ import { ModifyCtx } from './client/operations.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import picocolors from 'picocolors'
+import { wait } from '@saulx/utils'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -127,10 +128,12 @@ export class BasedDb {
     return this.server.migrateSchema.apply(this.server, arguments)
   }
 
-  // both
-  destroy() {
+  async destroy() {
+    // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
+    // this is a bug somewhere
+    await wait(10)
     this.client.destroy()
-    return this.server.destroy()
+    await this.server.destroy()
   }
 
   async wipe() {

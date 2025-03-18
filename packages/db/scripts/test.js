@@ -13,7 +13,7 @@ const args = process.argv
 
 const repeat = args[2] && /\d+/.test(args[2]) ? Number(args[2]) : 1
 
-const match = args.slice(2)
+const match = args.slice(repeat == 1 ? 2 : 3)
 
 const testsToRun = []
 
@@ -68,7 +68,7 @@ let cnt = 0
 
 for (let i = 0; i < repeat; i++) {
   if (repeat > 1) {
-    console.log(`\n\nREPEAT ${i}/repeat\n`)
+    console.log(`\n\nREPEAT ${i + 1}/${repeat}\n`)
   }
 
   for (const test of testsToRun) {
@@ -104,4 +104,6 @@ for (let i = 0; i < repeat; i++) {
 
 if (repeat == 1) {
   printSummary()
+} else {
+  console.log(`\n\nRAN TESTS ${repeat} TIMES\n`)
 }
