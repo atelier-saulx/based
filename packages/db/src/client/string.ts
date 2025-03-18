@@ -2,9 +2,7 @@ import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32 } from './bitWise.js'
 import makeTmpBuffer from './tmpBuffer.js'
-
-const DECODER = new TextDecoder('utf-8')
-const ENCODER = new TextEncoder();
+import { DECODER, ENCODER } from '../utils.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 

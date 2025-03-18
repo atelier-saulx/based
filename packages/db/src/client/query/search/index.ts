@@ -7,7 +7,7 @@ import {
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
-import { concatUint8Arr } from '../../../utils.js'
+import { ENCODER, concatUint8Arr } from '../../../utils.js'
 
 export type Search =
   | string[]
@@ -15,8 +15,6 @@ export type Search =
       [field: string]: number
     }
   | string
-
-const ENCODER = new TextEncoder()
 
 // vector
 export const vectorSearch = (

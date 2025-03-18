@@ -12,8 +12,7 @@ import {
 } from '@based/schema/def'
 import { crc32 } from '../../crc32.js'
 import { convertToTimestamp } from '../../timestamp.js'
-
-const ENCODER = new TextEncoder()
+import { ENCODER } from '../../../utils.js'
 
 // -------------------------------------------
 // conditions normal

@@ -1,5 +1,8 @@
 import native from './native.js'
 
+export const DECODER = new TextDecoder('utf-8')
+export const ENCODER = new TextEncoder()
+
 export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   const len = aB.byteLength
   if (len != bB.byteLength) {
@@ -40,8 +43,7 @@ export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Ui
   return res
 }
 
-const charMap = new TextEncoder().encode("0123456789abcdef");
-const DECODER = new TextDecoder()
+const charMap = ENCODER.encode("0123456789abcdef");
 
 // Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
 // https://issues.chromium.org/issues/42204568

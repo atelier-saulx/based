@@ -4,6 +4,7 @@ import { ModifyOp, ModifyErr, RANGE_ERR, CREATE, SIZE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'
+import { ENCODER } from '../../utils.js'
 
 export function writeHll(
   value:
@@ -67,7 +68,7 @@ export function writeHllBuf(
   ctx.len += 4
   for (let val of value) {
     if (typeof val === 'string') {
-      xxHash64(new TextEncoder().encode(val), ctx.buf, ctx.len)
+      xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
     } else if (
       (val instanceof Buffer || val instanceof Uint8Array) &&
       val.byteLength === 8

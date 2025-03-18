@@ -1,9 +1,8 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
-import { base64encode, bufToHex } from './utils.js'
+import { DECODER, ENCODER, bufToHex } from './utils.js'
 
 const selvaIoErrlog = new Uint8Array(256)
-const textEncoder = new TextEncoder()
 var compressor = db.createCompressor()
 var decompressor = db.createDecompressor()
 
@@ -11,7 +10,7 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   let i: number
   let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
 
-  return new TextDecoder().decode(selvaIoErrlog.slice(0, len))
+  return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
 export default {
@@ -19,7 +18,7 @@ export default {
     return db.historyAppend(history, typeId, nodeId, dbCtx)
   },
   historyCreate(pathname: string, mainLen: number): any {
-    const pathBuf = textEncoder.encode(pathname + '\0')
+    const pathBuf = ENCODER.encode(pathname + '\0')
     return db.historyCreate(pathBuf, mainLen + 16 - (mainLen % 16))
   },
 
@@ -53,7 +52,7 @@ export default {
   },
 
   saveCommon: (path: string, dbCtx: any): number => {
-    const pathBuf = textEncoder.encode(path + '\0')
+    const pathBuf = ENCODER.encode(path + '\0')
     return db.saveCommon(pathBuf, dbCtx)
   },
 
@@ -65,12 +64,12 @@ export default {
     dbCtx: any,
     hashOut: Uint8Array,
   ): number => {
-    const pathBuf = textEncoder.encode(path + '\0')
+    const pathBuf = ENCODER.encode(path + '\0')
     return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
   },
 
   loadCommon: (path: string, dbCtx: any): void => {
-    const pathBuf = textEncoder.encode(path + '\0')
+    const pathBuf = ENCODER.encode(path + '\0')
     const err: number = db.loadCommon(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
@@ -80,7 +79,7 @@ export default {
   },
 
   loadRange: (path: string, dbCtx: any): void => {
-    const pathBuf = textEncoder.encode(path + '\0')
+    const pathBuf = ENCODER.encode(path + '\0')
     const err: number = db.loadRange(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
