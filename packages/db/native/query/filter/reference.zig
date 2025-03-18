@@ -5,6 +5,7 @@ const read = utils.read;
 const copy = utils.copy;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
+const ReferenceTarget = @import("./types.zig").ReferenceTarget;
 
 const empty: [8]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -14,7 +15,7 @@ pub fn fillReferenceFilter(
 ) bool {
     const schemaType = read(u16, query, 1);
     const typeEntry = db.getType(ctx, schemaType) catch {
-        query[0] = 2;
+        query[0] = @intFromEnum(ReferenceTarget.notFound);
         return false;
     };
     var i: usize = 3;
@@ -31,9 +32,9 @@ pub fn fillReferenceFilter(
         }
     }
     if (found) {
-        query[0] = 1;
+        query[0] = @intFromEnum(ReferenceTarget.found);
     } else {
-        query[0] = 2;
+        query[0] = @intFromEnum(ReferenceTarget.notFound);
         // TODO HAS TO BE RESET
     }
     return true;

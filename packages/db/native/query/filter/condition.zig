@@ -118,17 +118,16 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
     const op: Op = @enumFromInt(q[i + 6]);
     const next = 10 + valueSize * repeat;
     if (op == Op.equal) {
-        const refType = q[i + 7];
-        if (refType == 2) {
+        const refType: t.ReferenceTarget = @enumFromInt(q[i + 7]);
+        if (refType == t.ReferenceTarget.notFound) {
             return .{ next, false };
-        } else if (refType == 0) {
+        } else if (refType == t.ReferenceTarget.notSet) {
             if (!fillReferenceFilter(ctx, q[i + 7 .. i + 10 + repeat * 8])) {
                 return .{ next, true };
             }
         }
         var j: u8 = 0;
         const query = q[i + 10 .. i + repeat * 8 + 10];
-
         if (repeat > 1) {
             if (!batch.equalsOr(8, v, query)) {
                 return .{ next, false };

@@ -8,7 +8,6 @@ const QueryCtx = @import("../types.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const sort = @import("../../db/sort.zig");
 const types = @import("../../types.zig");
-const hasId = @import("../hasId.zig").hasId;
 const searchStr = @import("../filter/search.zig");
 const read = @import("../../utils.zig").read;
 const Result = @import("../results.zig").Result;

@@ -3,13 +3,16 @@ const simd = std.simd;
 const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig");
 
+const vectorLen = std.simd.suggestVectorLength(u8).?;
+const indexes = std.simd.iota(u8, vectorLen);
+const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
+
 pub fn simdEqualsOr(
     T: type,
     value: []u8,
     values: []u8,
 ) bool {
     var i: usize = 0;
-    const vectorLen = std.simd.suggestVectorLength(T).?;
     const bytes: u16 = @divExact(@typeInfo(T).Int.bits, 8);
     const l = values.len / bytes;
     const valueExpanded = read(T, value, 0);
@@ -40,7 +43,6 @@ pub fn simdEqualsOr(
 pub fn hasQueryValueOr(value: []u8, query: []u8) bool {
     // put block deocmpression here
     // query packed
-    const vectorLen = std.simd.suggestVectorLength(u8).?;
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
@@ -64,8 +66,7 @@ pub fn hasQueryValueOr(value: []u8, query: []u8) bool {
         return false;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(query[0]);
-    const indexes = std.simd.iota(u8, vectorLen);
-    const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
+
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         // do some math

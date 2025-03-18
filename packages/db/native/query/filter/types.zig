@@ -62,3 +62,9 @@ pub const MaxVectorScore: f32 = 9999999;
 pub const MaxStringScore: u8 = 255;
 
 pub const ConditionsResult = std.meta.Tuple(&.{ usize, bool });
+
+pub const ReferenceTarget = enum(u8) {
+    notSet = 0,
+    found = 1,
+    notFound = 2,
+};

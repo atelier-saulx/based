@@ -9,16 +9,16 @@ const decompress = compressed.decompress;
 const Prop = @import("../../types.zig").Prop;
 const LangCode = @import("../../types.zig").LangCode;
 const VectorFn = @import("./types.zig").VectorFn;
-
+const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
 const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
+
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
 const minDist = 2; // 0,1 is fine
-const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
 
 inline fn isSeparator(ch: u8) bool {
     return simd.countElementsWithValue(seperatorChars, ch) > 0;
