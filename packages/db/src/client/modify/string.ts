@@ -1,5 +1,5 @@
 import { LangCode } from '@based/schema'
-import { ModifyCtx } from '../../index.js'
+import { ENCODER, ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import {
   CREATE,
@@ -42,7 +42,7 @@ export function writeString(
   } else {
     let size = isBuffer
       ? value.byteLength
-      : Buffer.byteLength(value, 'utf8') + 6
+      : ENCODER.encode(value).byteLength + 6
     if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
       // +10 OR +11, teh original check was +20 but
       // there are 10 addtional bytes in this scope

@@ -14,8 +14,9 @@ import {
   TypeIndex,
 } from '@based/schema/def'
 import { BasedQueryResponse } from './BasedIterable.js'
+import { ENCODER } from '../../utils.js'
 
-const decimals = (v) => ~~(v * 100) / 100
+const decimals = (v: number) => ~~(v * 100) / 100
 
 const sizeCalc = (size: number) => {
   if (size > 1e6) {
@@ -56,6 +57,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
   if (type === BINARY) {
     const nr = 12
     const isLarger = v.length > nr
+    // RFE Doesn't slice make a new alloc? subarray would be probably sufficient here.
     const x = [...v.slice(0, nr)].map((v) => {
       return `${v}`.padStart(3, '0') + ' '
     })
@@ -64,7 +66,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
       (isLarger ? picocolors.dim('... ') : '') +
       picocolors.italic(
         picocolors.dim(
-          `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+          `${~~((v.byteLength / 1e3) * 100) / 100}kb`,
         ),
       )
     )
@@ -72,9 +74,10 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
 
   if (type === STRING || type === TEXT) {
     if (v.length > 50) {
+      const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
         picocolors.dim(
-          `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+          `${~~((byteLength / 1e3) * 100) / 100}kb`,
         ),
       )
       v =
