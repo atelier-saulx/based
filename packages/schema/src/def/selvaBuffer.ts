@@ -8,7 +8,6 @@ import {
   EMPTY_MICRO_BUFFER,
   CARDINALITY,
   MICRO_BUFFER,
-  NULL,
   REFERENCE,
   REFERENCES,
   STRING,
@@ -20,20 +19,19 @@ import {
 } from './types.js'
 
 const selvaTypeMap = new Uint8Array(32) // 1.2x faster than JS array
-selvaTypeMap[NULL] = 0
-selvaTypeMap[CARDINALITY] = 11
-selvaTypeMap[STRING] = 11
-selvaTypeMap[TEXT] = 12
-selvaTypeMap[REFERENCE] = 13
-selvaTypeMap[REFERENCES] = 14
-selvaTypeMap[WEAK_REFERENCE] = 15
-selvaTypeMap[WEAK_REFERENCES] = 16
-selvaTypeMap[MICRO_BUFFER] = 17
-selvaTypeMap[ALIAS] = 18
-selvaTypeMap[ALIASES] = 19
-selvaTypeMap[BINARY] = 11
-selvaTypeMap[VECTOR] = 17
-selvaTypeMap[JSON] = 11
+selvaTypeMap[MICRO_BUFFER] = 1
+selvaTypeMap[VECTOR] = 1
+selvaTypeMap[BINARY] = 2
+selvaTypeMap[CARDINALITY] = 2
+selvaTypeMap[JSON] = 2
+selvaTypeMap[STRING] = 2
+selvaTypeMap[TEXT] = 3
+selvaTypeMap[REFERENCE] = 4
+selvaTypeMap[REFERENCES] = 5
+selvaTypeMap[WEAK_REFERENCE] = 6
+selvaTypeMap[WEAK_REFERENCES] = 7
+selvaTypeMap[ALIAS] = 8
+selvaTypeMap[ALIASES] = 9
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 

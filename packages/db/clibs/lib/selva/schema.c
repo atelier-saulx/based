@@ -43,6 +43,28 @@ static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSch
     return SELVA_EINTYPE;
 }
 
+static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    uint16_t len;
+
+    if (ctx->len < 1 + sizeof(len)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&len, ctx->buf + 1, sizeof(len));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .smb = {
+            .len = len,
+        },
+    };
+
+    return 1 + sizeof(len);
+}
+
 static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -186,28 +208,6 @@ static int type2fs_weak_references(struct schemabuf_parser_ctx *ctx, struct Selv
     return type2fs_weak_refs(ctx, schema, field, SELVA_FIELD_TYPE_WEAK_REFERENCES);
 }
 
-static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-    uint16_t len;
-
-    if (ctx->len < 1 + sizeof(len)) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&len, ctx->buf + 1, sizeof(len));
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
-        .smb = {
-            .len = len,
-        },
-    };
-
-    return 1 + sizeof(len);
-}
-
 static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -242,6 +242,10 @@ static struct schemabuf_parser {
         .type = 0,
         .type2fs = type2fs_reserved,
     },
+    [SELVA_FIELD_TYPE_MICRO_BUFFER] = {
+        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .type2fs = type2fs_micro_buffer,
+    },
     [SELVA_FIELD_TYPE_STRING] = {
         .type = SELVA_FIELD_TYPE_STRING,
         .type2fs = type2fs_string,
@@ -265,10 +269,6 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = {
         .type = SELVA_FIELD_TYPE_WEAK_REFERENCES,
         .type2fs = type2fs_weak_references,
-    },
-    [SELVA_FIELD_TYPE_MICRO_BUFFER] = {
-        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
-        .type2fs = type2fs_micro_buffer,
     },
     [SELVA_FIELD_TYPE_ALIAS] = {
         .type = SELVA_FIELD_TYPE_ALIAS,
