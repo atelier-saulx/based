@@ -110,3 +110,22 @@ pub const ModOp = enum(u8) {
 pub const LangCode = enum(u8) { NONE = 0, _ };
 
 pub const MAIN_PROP: u8 = 0;
+
+pub const ReadOp = enum(u8) {
+    ID = 255,
+    EDGE = 252,
+    REFERENCES = 253,
+    REFERENCE = 254,
+};
+
+pub const IncludeOp = enum(u8) {
+    edge = 252,
+    references = 254,
+    reference = 255,
+    _,
+};
+
+pub const ReadRefOp = enum(u8) {
+    REFERENCES = @intFromEnum(ReadOp.REFERENCES),
+    REFERENCE = @intFromEnum(ReadOp.REFERENCE),
+};

@@ -8,7 +8,7 @@ pub fn addIdOnly(
 ) !usize {
     try ctx.results.append(.{
         .id = id,
-        .field = 255, // id result enum
+        .field = @intFromEnum(t.ReadOp.ID), // id result enum
         .val = null,
         .refSize = null,
         .includeMain = &.{},

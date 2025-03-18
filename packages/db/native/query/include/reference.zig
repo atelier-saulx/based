@@ -9,6 +9,14 @@ const results = @import("../results.zig");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
 
+//  Single Reference Protocol Schema:
+
+// | Offset  | Field     | Size (bytes)| Description                          |
+// |---------|-----------|-------------|--------------------------------------|
+// | 0       | op        | 1           | Operation identifier (254)           |
+// | 1       | field     | 1           | Field identifier                     |
+// | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
@@ -21,10 +29,6 @@ pub fn getSingleRefFields(
     const typeId: db.TypeId = read(u16, include, 0);
     const refField = include[2];
 
-    // SINGLE REF
-    // op, field, bytes
-    // u8, u8, u32
-    // [254, 2, 4531]
     ctx.results.append(.{
         .id = null,
         .score = null,
@@ -32,7 +36,7 @@ pub fn getSingleRefFields(
         .val = null,
         .refSize = 0,
         .includeMain = null,
-        .refType = 254, // from result
+        .refType = t.ReadRefOp.REFERENCE, // from result
         .totalRefs = null,
         .isEdge = if (isEdge) t.Prop.REFERENCE else t.Prop.NULL,
     }) catch return 0;

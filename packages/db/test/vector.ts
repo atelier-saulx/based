@@ -154,13 +154,17 @@ await test('search', async (t) => {
     })
   }
 
-  console.log('maak 5 M', await db.drain(), 'ms')
-
-  await db
-    .query('data')
-    .include('id', 'name')
-    .range(0, 1e6)
-    .search(fruit, 'a', { fn: 'euclideanDistance', score: 10000 })
-    .get()
-    .inspect(3)
+  deepEqual(
+    await db
+      .query('data')
+      .include('id', 'name')
+      .range(0, 3)
+      .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
+      .get()
+      .toObject(),
+    [
+      { id: 3, $searchScore: 0.6100001335144043, name: 'apple' },
+      { id: 4, $searchScore: 0.7999996542930603, name: 'strawberry' },
+    ],
+  )
 })

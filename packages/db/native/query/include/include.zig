@@ -8,7 +8,6 @@ const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
-const IncludeOp = types.IncludeOp;
 const selva = @import("../../selva.zig");
 const read = utils.read;
 
@@ -49,10 +48,10 @@ pub fn getFields(
     var edgeType: t.Prop = t.Prop.NULL;
 
     includeField: while (includeIterator < include.len) {
-        const op: IncludeOp = @enumFromInt(include[includeIterator]);
+        const op: t.IncludeOp = @enumFromInt(include[includeIterator]);
         includeIterator += 1;
         const operation = include[includeIterator..];
-        if (op == IncludeOp.edge) {
+        if (op == t.IncludeOp.edge) {
             const edgeSize = read(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
             if (!idIsSet) {
@@ -68,7 +67,7 @@ pub fn getFields(
             continue :includeField;
         }
 
-        if (op == IncludeOp.references) {
+        if (op == t.IncludeOp.references) {
             const refSize = read(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
@@ -88,7 +87,7 @@ pub fn getFields(
             continue :includeField;
         }
 
-        if (op == IncludeOp.reference) {
+        if (op == t.IncludeOp.reference) {
             const refSize = read(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;

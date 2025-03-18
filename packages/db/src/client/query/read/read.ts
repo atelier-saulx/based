@@ -31,7 +31,12 @@ import {
   readUint32,
 } from '../../bitWise.js'
 import { inverseLangMap } from '@based/schema'
-import { READ_EDGE, READ_ID, READ_REFERENCE, READ_REFERENCES } from './types.js'
+import {
+  READ_EDGE,
+  READ_ID,
+  READ_REFERENCE,
+  READ_REFERENCES,
+} from '../types.js'
 
 export type Item = {
   id: number

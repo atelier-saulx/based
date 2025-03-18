@@ -9,10 +9,6 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
     if (a === null) {
       return null
     }
-    // if (a instanceof BasedNode) {
-    //   // will be changed
-    //   return 'basedNode'
-    // }
     if (a instanceof Buffer) {
       return new Uint8Array(a)
     }

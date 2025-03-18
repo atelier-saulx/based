@@ -14,7 +14,7 @@ const writeInt = utils.writeInt;
 pub const Result = struct {
     id: ?u32,
     field: u8,
-    refType: ?u8, // 253 | 254 make into enums
+    refType: ?t.ReadRefOp,
     val: ?[]u8,
     refSize: ?usize,
     includeMain: ?[]u8,
@@ -23,6 +23,8 @@ pub const Result = struct {
     score: ?[4]u8,
 };
 
+const HEADER_SIZE = 8;
+
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
     env: c.napi_env,
@@ -30,7 +32,7 @@ pub fn createResultsBuffer(
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_arraybuffer(env, ctx.size + 8, &resultBuffer, &result) != c.napi_ok) {
+    if (c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
 
@@ -40,58 +42,67 @@ pub fn createResultsBuffer(
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
-        if (item.refType != null) {
-            // switch case
-            if (item.refType == 254) {
-                if (item.isEdge != t.Prop.NULL) {
-                    data[i] = 252;
-                    i += 1;
-                }
-                // SINGLE REF
-                // op, field, bytes
-                // [254, 2, 4531]
-                data[i] = 254;
-                data[i + 1] = item.field;
-                writeInt(u32, data, i + 2, item.refSize.?);
-                i += 6;
-            } else if (item.refType == 253) {
-                if (item.isEdge != t.Prop.NULL) {
-                    data[i] = 252;
-                    i += 1;
-                }
-                // MULTIPLE REFS
-                // op, field, bytes, len (u32)
-                // [253, 2, 2124, 10]
-                data[i] = 253;
-                data[i + 1] = item.field;
-                writeInt(u32, data, i + 2, item.refSize.?);
-                writeInt(u32, data, i + 6, item.totalRefs.?);
-                i += 10;
+        if (item.refType) |refType| {
+            switch (refType) {
+                t.ReadRefOp.REFERENCE => {
+                    if (item.isEdge != t.Prop.NULL) {
+                        data[i] = @intFromEnum(t.ReadOp.EDGE);
+                        i += 1;
+                    }
+
+                    //  Single Reference Protocol Schema:
+
+                    // | Offset  | Field     | Size (bytes)| Description                          |
+                    // |---------|-----------|-------------|--------------------------------------|
+                    // | 0       | op        | 1           | Operation identifier (254)           |
+                    // | 1       | field     | 1           | Field identifier                     |
+                    // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+
+                    data[i] = @intFromEnum(t.ReadOp.REFERENCE);
+                    data[i + 1] = item.field;
+                    writeInt(u32, data, i + 2, item.refSize.?);
+                    i += 6;
+                },
+                t.ReadRefOp.REFERENCES => {
+                    if (item.isEdge != t.Prop.NULL) {
+                        data[i] = @intFromEnum(t.ReadOp.EDGE);
+                        i += 1;
+                    }
+
+                    //  Multiple References Protocol Schema:
+
+                    // | Offset  | Field     | Size (bytes)| Description                          |
+                    // |---------|-----------|-------------|--------------------------------------|
+                    // | 0       | op        | 1           | Operation identifier (253)           |
+                    // | 1       | field     | 1           | Field identifier                     |
+                    // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+                    // | 6       | totalRefs | 4           | Total number of references (u32)     |
+
+                    data[i] = @intFromEnum(t.ReadOp.REFERENCES);
+                    data[i + 1] = item.field;
+                    writeInt(u32, data, i + 2, item.refSize.?);
+                    writeInt(u32, data, i + 6, item.totalRefs.?);
+                    i += 10;
+                },
             }
             continue;
-        } else {
-            if (item.id != null) {
-                data[i] = 255;
-                i += 1;
-                writeInt(u32, data, i, item.id.?);
+        } else if (item.id != null) {
+            data[i] = @intFromEnum(t.ReadOp.ID);
+            i += 1;
+            writeInt(u32, data, i, item.id.?);
+            i += 4;
+            if (item.score != null) {
+                copy(data[i .. i + 4], &item.score.?);
                 i += 4;
-                if (item.score != null) {
-                    copy(data[i .. i + 4], &item.score.?);
-                    i += 4;
-                }
             }
         }
 
-        if (item.field == 255) {
-            continue;
-        }
-
-        if (item.val == null) {
+        if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
             continue;
         }
 
         if (item.isEdge != t.Prop.NULL) {
-            data[i] = 252;
+            data[i] = @intFromEnum(t.ReadOp.EDGE);
             i += 1;
         }
 

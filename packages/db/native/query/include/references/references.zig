@@ -15,9 +15,14 @@ const defaultReferences = @import("./default.zig").defaultReferences;
 const std = @import("std");
 const t = @import("../../../types.zig");
 
-// MULTIPLE REFS RESULT BUFFER
-// [ op u8, field u8, bytes u32, len u32 ]
-// [253, 2, 2124, 10]
+//  Multiple References Protocol Schema:
+
+// | Offset  | Field     | Size (bytes)| Description                          |
+// |---------|-----------|-------------|--------------------------------------|
+// | 0       | op        | 1           | Operation identifier (253)           |
+// | 1       | field     | 1           | Field identifier                     |
+// | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+// | 6       | totalRefs | 4           | Total number of references (u32)     |
 
 pub inline fn getRefsFields(
     ctx: *QueryCtx,
@@ -47,7 +52,7 @@ pub inline fn getRefsFields(
         .refSize = 0,
         .includeMain = null,
         .score = null,
-        .refType = 253,
+        .refType = t.ReadRefOp.REFERENCES,
         .totalRefs = 0,
         .isEdge = if (isEdge) t.Prop.WEAK_REFERENCES else t.Prop.NULL,
     }) catch return 0;
