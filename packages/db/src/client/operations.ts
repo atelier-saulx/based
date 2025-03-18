@@ -12,7 +12,6 @@ export class ModifyCtx {
   // default values
   len: number = 0
   id = -1
-  lastMain = -1
   hasSortField = -1
   hasSortText = -1
   queue = new Map<(payload: any) => void, ModifyState>()
@@ -27,6 +26,7 @@ export class ModifyCtx {
   prefix0: number = -1
   prefix1: number = -1
 
+  lastMain = -1
   mergeMain: (PropDef | any)[] | null
   mergeMainSize: number
 

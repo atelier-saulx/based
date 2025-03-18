@@ -45,11 +45,13 @@ class SortIndex {
 }
 
 function readUint16LE(buf: Buffer | Uint8Array, off: number): number {
-    return buf[off] | buf[off + 1] << 8
+  return buf[off] | (buf[off + 1] << 8)
 }
 
 function readUint32LE(buf: Buffer | Uint8Array, off: number): number {
-    return buf[off] | buf[off + 1] << 8 | buf[off + 2] << 16 | buf[off + 3] << 24
+  return (
+    buf[off] | (buf[off + 1] << 8) | (buf[off + 2] << 16) | (buf[off + 3] << 24)
+  )
 }
 
 export class DbWorker {
@@ -133,7 +135,7 @@ export class DbServer {
     this.onSchemaChange = onSchemaChange
   }
 
-  start(opts?: { clean?: boolean, hosted?: boolean }) {
+  start(opts?: { clean?: boolean; hosted?: boolean }) {
     return start(this, opts)
   }
 
@@ -452,7 +454,11 @@ export class DbServer {
         const type = this.schemaTypesParsed[types[i]]
         // TODO should not crash!
         try {
-          native.updateSchemaType(type.id, new Uint8Array(s[i]), this.dbCtxExternal)
+          native.updateSchemaType(
+            type.id,
+            new Uint8Array(s[i]),
+            this.dbCtxExternal,
+          )
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
@@ -477,6 +483,7 @@ export class DbServer {
     }
 
     this.onSchemaChange?.(this.schema)
+
     return this.schema
   }
 

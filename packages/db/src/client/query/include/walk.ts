@@ -50,7 +50,8 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
             return
           }
         } else {
-          def.edges.include.props.set(edgeProp.prop, edgeProp)
+          // use include here
+          includeProp(def.edges, edgeProp)
         }
         return
       }

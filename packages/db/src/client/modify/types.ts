@@ -3,6 +3,7 @@ import { ModifyError } from './ModifyRes.js'
 
 export const CREATE = 3
 export const UPDATE = 6
+export const UPDATE_PARTIAL = 5
 export const DELETE = 11
 export const DELETE_SORT_INDEX = 4
 export const DELETE_NODE = 10

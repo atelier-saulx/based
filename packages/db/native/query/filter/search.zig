@@ -102,7 +102,6 @@ fn hamming_mbs(
     const mbs = value[i + 1 .. value.len];
     const t = query[1..query.len];
     const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
-
     return d;
 }
 

@@ -20,7 +20,7 @@ import {
   JSON,
   CARDINALITY,
 } from '@based/schema/def'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   readDoubleLE,
@@ -151,11 +151,18 @@ const readMain = (
 ) => {
   const mainInclude = q.include.main
   let i = offset
-  if (mainInclude.len === q.schema.mainLen) {
-    for (const start in q.schema.main) {
-      readMainValue(q.schema.main[start], result, Number(start) + i, item)
+
+  const isEdge = q.type === QueryDefType.Edge
+
+  const main = isEdge ? q.target.ref.reverseMainEdges : q.schema.main
+
+  const len = isEdge ? q.target.ref.edgeMainLen : q.schema.mainLen
+
+  if (mainInclude.len === len) {
+    for (const start in main) {
+      readMainValue(main[start], result, Number(start) + i, item)
     }
-    i += q.schema.mainLen
+    i += len
   } else {
     for (const k in mainInclude.include) {
       const [index, prop] = mainInclude.include[k]
@@ -169,6 +176,7 @@ const readMain = (
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
+      // Only relvant for seperate props
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
         addField(prop, 0, item)
@@ -250,40 +258,39 @@ export const readAllFields = (
         i += size + 4
         // ----------------
       } else {
-        const edgeDef = q.edges.reverseProps[prop]
-        const t = edgeDef.typeIndex
-        if (t === JSON) {
-          i++
-          const size = readUint32(result, i)
-          addField(
-            edgeDef,
-            global.JSON.parse(readUtf8(result, i + 6, size + i)),
-            item,
-          )
-          i += size + 4
-        } else if (t === BINARY) {
-          i++
-          const size = readUint32(result, i)
-          addField(edgeDef, result.subarray(i + 6, size + i), item)
-          i += size + 4
-        } else if (t === STRING || t === ALIAS || t === ALIASES) {
-          i++
-          const size = readUint32(result, i)
-          if (size === 0) {
-            addField(edgeDef, '', item)
-          } else {
-            addField(edgeDef, read(result, i + 4, size), item)
-          }
-          i += size + 4
-        } else if (t === CARDINALITY) {
-          i++
-          const size = readUint32(result, i)
-          addField(edgeDef, readUint32(result, i + 4), item)
-          i += size + 4
+        i++
+        const target = 'ref' in q.edges.target && q.edges.target.ref
+        if (prop === 0) {
+          i += readMain(q.edges, result, i, item)
+          // i += edgeDef.len
         } else {
-          i++
-          readMainValue(edgeDef, result, i, item)
-          i += edgeDef.len
+          const edgeDef: PropDefEdge = target.reverseSeperateEdges[prop]
+          const t = edgeDef.typeIndex
+          if (t === JSON) {
+            const size = readUint32(result, i)
+            addField(
+              edgeDef,
+              global.JSON.parse(readUtf8(result, i + 6, size + i)),
+              item,
+            )
+            i += size + 4
+          } else if (t === BINARY) {
+            const size = readUint32(result, i)
+            addField(edgeDef, result.subarray(i + 6, size + i), item)
+            i += size + 4
+          } else if (t === STRING || t === ALIAS || t === ALIASES) {
+            const size = readUint32(result, i)
+            if (size === 0) {
+              addField(edgeDef, '', item)
+            } else {
+              addField(edgeDef, read(result, i + 4, size), item)
+            }
+            i += size + 4
+          } else if (t === CARDINALITY) {
+            const size = readUint32(result, i)
+            addField(edgeDef, readUint32(result, i + 4), item)
+            i += size + 4
+          }
         }
       }
     } else if (index === READ_REFERENCE) {
@@ -395,6 +402,7 @@ export const readAllFields = (
   return i - offset
 }
 
+let cnt = 0
 export const resultToObject = (
   q: QueryDef,
   result: Uint8Array,

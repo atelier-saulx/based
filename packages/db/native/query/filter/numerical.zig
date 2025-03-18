@@ -43,6 +43,7 @@ pub inline fn compare(
     if (prop == Prop.REFERENCES) {
         return operateSwitch(u32, op, read(u32, query, 0), @truncate(v.len / 4));
     }
+
     const value = v[start .. start + size];
     if (size == 4) {
         if (isSigned) {

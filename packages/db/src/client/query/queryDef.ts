@@ -52,7 +52,7 @@ export const createQueryDef = (
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges
     q.props = t.ref.edges
-    q.reverseProps = t.ref.reverseEdges
+    // q.reverseProps = t.ref.reverseEdges
     q.type = type
     q.target = t
     return q

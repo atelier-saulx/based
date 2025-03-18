@@ -1,41 +1,43 @@
 import { getPropType, SchemaReference } from '../index.js'
 import {
   PropDef,
-  SIZE_MAP,
   TYPE_INDEX_MAP,
   PropDefEdge,
   REFERENCES,
   REFERENCE,
   ENUM,
 } from './types.js'
+import { getPropLen, isSeparate } from './utils.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
-  let edgesCnt = 0
   for (const key in refProp) {
     if (key[0] === '$') {
       if (!prop.edges) {
+        prop.edgeMainLen = 0
         prop.edges = {}
-        prop.reverseEdges = {}
-        prop.edgesTotalLen = 0
+        prop.reverseSeperateEdges = {}
+        prop.reverseMainEdges = {}
+        prop.edgesSeperateCnt = 0
       }
-      edgesCnt++
-      const edgeType = getPropType(refProp[key])
+      const edgeProp = refProp[key]
+      const edgeType = getPropType(edgeProp)
+      const len = getPropLen(edgeProp)
+      const separate = isSeparate(edgeProp, len)
+      if (separate) {
+        prop.edgesSeperateCnt++
+      }
       const edge: PropDefEdge = {
         __isPropDef: true,
         __isEdge: true,
-        prop: edgesCnt,
+        prop: separate ? prop.edgesSeperateCnt : 0,
         name: key,
         typeIndex: TYPE_INDEX_MAP[edgeType],
-        len: SIZE_MAP[edgeType],
-        separate: true,
+        len,
+        separate,
         path: [...prop.path, key],
+        start: prop.edgeMainLen,
       }
-      if (edge.len == 0) {
-        prop.edgesTotalLen = 0
-      } else {
-        // [field] [size] [data]
-        prop.edgesTotalLen += 1 + 2 + edge.len // field len
-      }
+      prop.edgeMainLen += edge.len
       if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
@@ -50,7 +52,11 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         edge.inverseTypeName = refProp[key].ref
       }
       prop.edges[key] = edge
-      prop.reverseEdges[edge.prop] = edge
+      if (separate) {
+        prop.reverseSeperateEdges[edge.prop] = edge
+      } else {
+        prop.reverseMainEdges[edge.start] = edge
+      }
     }
   }
 }

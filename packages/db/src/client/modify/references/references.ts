@@ -112,7 +112,6 @@ function deleteRefs(
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = 2
-
   for (let ref of refs) {
     if (typeof ref === 'number') {
       ctx.buf[ctx.len++] = ref

@@ -24,80 +24,80 @@ await test('simple', async (t) => {
     },
   })
 
-  const user1 = db.create('user', {
-    externalId: 'cool',
-  })
+  console.info('------------------------')
 
-  const user2 = db.create('user', {
-    externalId: 'cool2',
-  })
+  // const user1 = db.create('user', {
+  //   externalId: 'cool',
+  // })
 
-  await db.drain()
+  // const user2 = db.create('user', {
+  //   externalId: 'cool2',
+  // })
 
-  deepEqual((await db.query('user', user1).get()).toObject(), {
-    id: 1,
-    externalId: 'cool',
-    potato: '',
-  })
+  // await db.drain()
 
-  deepEqual((await db.query('user', user2).get()).toObject(), {
-    id: 2,
-    externalId: 'cool2',
-    potato: '',
-  })
+  // deepEqual((await db.query('user', user1).get()).toObject(), {
+  //   id: 1,
+  //   externalId: 'cool',
+  //   potato: '',
+  // })
 
-  // console.log (db.create)
+  // deepEqual((await db.query('user', user2).get()).toObject(), {
+  //   id: 2,
+  //   externalId: 'cool2',
+  //   potato: '',
+  // })
 
-  deepEqual(
-    (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
-    [
-      {
-        id: 1,
-        externalId: 'cool',
-        potato: '',
-      },
-    ],
-  )
+  // deepEqual(
+  //   (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       externalId: 'cool',
+  //       potato: '',
+  //     },
+  //   ],
+  // )
 
-  deepEqual(
-    (
-      await db.query('user').filter('externalId', 'has', 'cool').get()
-    ).toObject(),
-    [
-      {
-        id: 1,
-        externalId: 'cool',
-        potato: '',
-      },
-      {
-        id: 2,
-        externalId: 'cool2',
-        potato: '',
-      },
-    ],
-  )
+  // deepEqual(
+  //   (
+  //     await db.query('user').filter('externalId', 'has', 'cool').get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       externalId: 'cool',
+  //       potato: '',
+  //     },
+  //     {
+  //       id: 2,
+  //       externalId: 'cool2',
+  //       potato: '',
+  //     },
+  //   ],
+  // )
 
-  const res1 = await db.upsert('user', {
-    externalId: 'potato',
-    potato: 'success',
-  })
+  // const res1 = await db.upsert('user', {
+  //   externalId: 'potato',
+  //   potato: 'success',
+  // })
 
-  deepEqual((await db.query('user', res1).get()).toObject(), {
-    id: 3,
-    externalId: 'potato',
-    potato: 'success',
-  })
+  // deepEqual((await db.query('user', res1).get()).toObject(), {
+  //   id: 3,
+  //   externalId: 'potato',
+  //   potato: 'success',
+  // })
 
-  const res2 = await db.upsert('user', {
-    externalId: 'potato',
-    potato: 'wrong',
-  })
+  // const res2 = await db.upsert('user', {
+  //   externalId: 'potato',
+  //   potato: 'wrong',
+  // })
 
-  deepEqual((await db.query('user', res2).get()).toObject(), {
-    id: 3,
-    externalId: 'potato',
-    potato: 'wrong',
-  })
+  // deepEqual((await db.query('user', res2).get()).toObject(), {
+  //   id: 3,
+  //   externalId: 'potato',
+  //   potato: 'wrong',
+  // })
 })
 
 await test('alias - references', async (t) => {

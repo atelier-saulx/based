@@ -108,3 +108,5 @@ pub const ModOp = enum(u8) {
 };
 
 pub const LangCode = enum(u8) { NONE = 0, _ };
+
+pub const MAIN_PROP: u8 = 0;

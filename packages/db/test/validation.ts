@@ -81,7 +81,7 @@ await test('update', async (t) => {
       db.create('user', {
         countryCode: 'nope',
       }),
-    true,
+    false,
     'Test OK: Correctly throws!',
   )
 
@@ -171,43 +171,43 @@ await test('query', async (t) => {
     await db.create('user')
   }
 
-  await throws(() => db.query('derp').get(), true, 'non existing type')
+  await throws(() => db.query('derp').get(), false, 'non existing type')
 
   // @ts-ignore
-  await throws(() => db.query('user', 'derp derp').get(), true, 'incorrect id')
+  await throws(() => db.query('user', 'derp derp').get(), false, 'incorrect id')
 
   await throws(
     () => db.query('user', [1, 1221.11, 0]).get(),
-    true,
+    false,
     'incorrect ids',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user', [1, 'X', {}]).get(),
-    true,
+    false,
     'incorrect ids 2',
   )
 
   const x = new Uint32Array(new Array(2e6).map((v) => 1))
-  await throws(() => db.query('user', x).get(), true, 'incorrect ids 2')
+  await throws(() => db.query('user', x).get(), false, 'incorrect ids 2')
 
   await throws(
     () => db.query('user').include('derp').get(),
-    true,
+    false,
     'non existing field in include',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user', { $id: 1 }).get(),
-    true,
+    false,
     'incorrect alias',
   )
 
   await throws(
     () => db.query('user').filter('derp', '=', true).get(),
-    true,
+    false,
     'non existing field in filter',
   )
 
@@ -221,59 +221,59 @@ await test('query', async (t) => {
 
   await throws(
     () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
-    true,
+    false,
     'non existing lang in filter',
   )
 
   await throws(
     () => db.query('user').filter('friend.description.flap', '=', 'nice').get(),
-    true,
+    false,
     'non existing lang in filter',
   )
 
   await throws(
     () => db.query('user').filter('friend.description.fr', '=', 'nice').get(),
-    true,
+    false,
     'non existing lang in filter',
   )
 
   await throws(
     () => db.query('user').include('friend.description.flap').get(),
-    true,
+    false,
     'non existing lang in include #1',
   )
 
   await throws(
     () => db.query('user').include('friend.description.fr').get(),
-    true,
+    false,
     'non existing lang in include #2',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user').filter('friend.description.fr', 'derp', 1).get(),
-    true,
+    false,
     'Filter non existing operator',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user').filter('friend.description.en', '>', 1).get(),
-    true,
+    false,
     'Filter incorrect operator on text',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user').filter('rating', 'has', 1).get(),
-    true,
+    false,
     'Filter incorrect operator on uint32',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user').filter('isOn', 'has', 1).get(),
-    true,
+    false,
     'Filter incorrect operator on bool',
   )
 
@@ -284,14 +284,14 @@ await test('query', async (t) => {
   await throws(
     // @ts-ignore
     () => db.query('user').filter('friend', 'has', 1).get(),
-    true,
+    false,
     'Filter incorrect operator on reference',
   )
 
   await throws(
     // @ts-ignore
     () => db.query('user').filter('connections', 'like', 1).get(),
-    true,
+    false,
     'Filter incorrect operator on references',
   )
 
@@ -314,7 +314,6 @@ await test('query', async (t) => {
       .filter('name', 'has', '')
       .include('name')
       .get()
-      .inspect()
       .toObject(),
     allData,
     'skip empty string',
@@ -326,7 +325,6 @@ await test('query', async (t) => {
       .filter('name', 'has', '')
       .include('name')
       .get()
-      .inspect()
       .toObject(),
     [],
     'ignore empty ids',
@@ -338,7 +336,6 @@ await test('query', async (t) => {
       .filter('friend.description.en', '=', undefined)
       .include('name')
       .get()
-      .inspect()
       .toObject(),
     allData,
     'skip undefined',
@@ -347,7 +344,7 @@ await test('query', async (t) => {
   await throws(
     // @ts-ignore
     () => db.query('user').filter('friend.description', 'like', 999).get(),
-    true,
+    false,
     'Filter incorrect value on text',
   )
 
@@ -358,7 +355,7 @@ await test('query', async (t) => {
         // @ts-ignore
         .query({ id: 1, rating: 'derp' })
         .get(),
-    true,
+    false,
     'Incorrect payload',
   )
 
@@ -380,72 +377,72 @@ await test('query', async (t) => {
         // @ts-ignore
         .query({ id: 1, rating: 'derp' })
         .get(),
-    true,
+    false,
     'Incorrect payload',
   )
 
-  await db.query('user').sort('drip', 'desc').get().inspect()
+  await db.query('user').sort('drip', 'desc').get()
 
   await throws(
     async () => {
       await db.query('user').sort('flurp').get()
     },
-    true,
+    false,
     'Non existing field on sort',
   )
 
   await throws(async () => {
     // @ts-ignore
-    await db.query('user').sort('drip', 'gurk').get().inspect()
-  }, true)
+    await db.query('user').sort('drip', 'gurk').get()
+  }, false)
 
   await throws(async () => {
-    await db.query('user').sort('connections').get().inspect()
-  }, true)
+    await db.query('user').sort('connections').get()
+  }, false)
 
   await throws(async () => {
-    await db.query('user').sort('friend').get().inspect()
-  }, true)
+    await db.query('user').sort('friend').get()
+  }, false)
 
   await throws(async () => {
-    await db.query('user', 1).sort('drip').get().inspect()
-  }, true)
+    await db.query('user', 1).sort('drip').get()
+  }, false)
 
-  await db.query('user', []).sort('drip').get().inspect()
+  await db.query('user', []).sort('drip').get()
 
-  await db.query('user', [1, 2, 3]).sort('drip').get().inspect()
-
-  await throws(async () => {
-    await db.query('user').sort('drip').range(0, -10).get().inspect()
-  }, true)
+  await db.query('user', [1, 2, 3]).sort('drip').get()
 
   await throws(async () => {
-    // @ts-ignore
-    await db.query('user').sort('drip').range('derp', -100).get().inspect()
-  }, true)
-
-  await throws(async () => {
-    await db.query('user').locale('az').get().inspect()
-  }, true)
-
-  await throws(async () => {
-    await db.query('user').search('xyz', 'derpderp').get().inspect()
-  }, true)
-
-  await throws(async () => {
-    await db.query('user').search('xyz', 'derpderp').get().inspect()
-  }, true)
-
-  await throws(async () => {
-    await db.query('user').search('xyz', 'blap').get().inspect()
-  }, true)
+    await db.query('user').sort('drip').range(0, -10).get()
+  }, false)
 
   await throws(async () => {
     // @ts-ignore
-    await db.query('user').search([1, 2, 3, 4], 'blap').get().inspect()
-  }, true)
+    await db.query('user').sort('drip').range('derp', -100).get()
+  }, false)
+
+  await throws(async () => {
+    await db.query('user').locale('az').get()
+  }, false)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get()
+  }, false)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'derpderp').get()
+  }, false)
+
+  await throws(async () => {
+    await db.query('user').search('xyz', 'blap').get()
+  }, false)
+
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').search([1, 2, 3, 4], 'blap').get()
+  }, false)
 
   // await throws(async () => {
-  //   await db.query('user').sort('description').get().inspect()
+  //   await db.query('user').sort('description').get()
   // }, true)
 })

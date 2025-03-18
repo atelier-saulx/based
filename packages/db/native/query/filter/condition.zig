@@ -113,7 +113,6 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
 }
 
 pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    // PROP
     const valueSize = read(u16, q, i + 2);
     const repeat = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);
@@ -129,6 +128,7 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
         }
         var j: u8 = 0;
         const query = q[i + 10 .. i + repeat * 8 + 10];
+
         if (repeat > 1) {
             if (!batch.equalsOr(8, v, query)) {
                 return .{ next, false };
@@ -171,8 +171,6 @@ pub inline fn default(
     i: usize,
 ) ConditionsResult {
     const prop: Prop = @enumFromInt(q[i + 1]);
-    // std.debug.print("DEF {any}\n", .{prop});
-
     const valueSize = read(u16, q, i + 2);
     const start = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);

@@ -76,6 +76,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, score);
             }
+
             size += getRefsFields(
                 ctx,
                 multiRefs,
@@ -111,8 +112,7 @@ pub fn getFields(
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
         var value: []u8 = undefined;
 
-        // MAIN
-        if (field == 0) {
+        if (field == t.MAIN_PROP) {
             prop = t.Prop.MICRO_BUFFER;
             const mainIncludeSize = read(u16, operation, 0);
             if (mainIncludeSize != 0) {
@@ -170,14 +170,10 @@ pub fn getFields(
             }
         } else {
             if (isEdge) {
-                size += 2;
-                const propLen = t.Size(edgeType);
-                if (propLen == 0) {
-                    size += (valueLen + 4);
-                } else {
-                    size += propLen;
-                }
-            } else if (field == 0) {
+                // double check if this ok
+                size += 1;
+            }
+            if (field == t.MAIN_PROP) {
                 main = value;
                 if (includeMain.?.len != 0) {
                     size += read(u16, includeMain.?, 0) + 1;

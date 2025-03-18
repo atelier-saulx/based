@@ -297,6 +297,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       reject(err)
       return
     }
+
     const d = performance.now()
     const res = await this.db.hooks.getQueryBuf(buf)
     if (res instanceof Error) {

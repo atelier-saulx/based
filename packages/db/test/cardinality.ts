@@ -181,13 +181,15 @@ await test('hll', async (t) => {
     ],
   )
 
-  const feeling = ['folish', 'superficial', 'deep', 'moving', 'fake']
+  const feeling = ['foolish', 'superficial', 'deep', 'moving', 'fake']
 
   let feelings = []
   for (let i = 0; i < 1e6; i++) {
     feelings.push(
       xxHash64(
-        ENCODER.encode(feeling[Math.floor(Math.random() * (feeling.length - 1))]),
+        ENCODER.encode(
+          feeling[Math.floor(Math.random() * (feeling.length - 1))],
+        ),
       ),
     )
   }

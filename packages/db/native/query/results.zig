@@ -10,6 +10,8 @@ const selva = @import("../selva.zig");
 const builtin = @import("builtin");
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 
+// use this in modify
+// make all read things in enum
 pub inline fn copy(dest: []u8, source: []const u8) void {
     if (builtin.link_libc) {
         _ = memcpy(dest.ptr, source.ptr, source.len);
@@ -53,6 +55,7 @@ pub fn createResultsBuffer(
 
     for (ctx.results.items) |*item| {
         if (item.refType != null) {
+            // switch case
             if (item.refType == 254) {
                 if (item.isEdge != t.Prop.NULL) {
                     data[i] = 252;
@@ -111,13 +114,7 @@ pub fn createResultsBuffer(
 
         const val = item.val.?;
 
-        // STRING & ALIAS
-        if (item.isEdge != t.Prop.NULL and t.Size(item.isEdge) != 0) {
-            const propLen = t.Size(item.isEdge);
-            // if 1 len can optmize
-            copy(data[i .. i + propLen], val);
-            i += propLen;
-        } else if (item.field == 0) {
+        if (item.field == t.MAIN_PROP) {
             if (item.includeMain != null and item.includeMain.?.len != 0) {
                 var mainPos: usize = 2;
                 while (mainPos < item.includeMain.?.len) {

@@ -1,5 +1,5 @@
 import { DbClient } from '../../index.js'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
@@ -27,8 +27,17 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     }
   }
 
+  // main
+
   if (def.include.main.len > 0) {
-    if (def.include.main.len === def.schema.mainLen) {
+    // if (def.target.)
+
+    const len =
+      def.type === QueryDefType.Edge
+        ? def.target.ref.edgeMainLen
+        : def.schema.mainLen
+
+    if (def.include.main.len === len) {
       // GET ALL MAIN FIELDS
       let m = 0
       for (const key in def.include.main.include) {
