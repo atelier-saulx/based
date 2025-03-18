@@ -1,4 +1,4 @@
-import { ModifyCtx } from '../../index.js'
+import { ENCODER, ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import {
   CREATE,
@@ -30,7 +30,8 @@ export function writeAlias(
         ctx.buf[ctx.len++] = DELETE
       }
     } else {
-      let size = Buffer.byteLength(value, 'utf8')
+      const valueBuf = ENCODER.encode(value)
+      let size = valueBuf.byteLength
       if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
         // 5 compression size
         return RANGE_ERR
@@ -45,7 +46,8 @@ export function writeAlias(
       ctx.buf[ctx.len++] = size >>>= 8
       ctx.buf[ctx.len++] = size >>>= 8
       ctx.buf[ctx.len++] = size >>>= 8
-      ctx.len += ctx.buf.write(value, ctx.len, 'utf8')
+      ctx.buf.set(valueBuf, ctx.len)
+      ctx.len += valueBuf.byteLength
     }
   } else if (value === null) {
     if (modifyOp === UPDATE) {
