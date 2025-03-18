@@ -131,14 +131,25 @@ await test('vector like', async (t) => {
 
   await db.drain()
 
-  await db
-    .query('data')
-    .include('name')
-    .range(0, 1e6)
-    .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 1 })
-    // .filter('age', '>', 1e6 - 2)
-    .get()
-    .inspect()
+  deepEqual(
+    await db
+      .query('data')
+      .include('name')
+      .range(0, 1e6)
+      .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 1 })
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        name: 'apple',
+      },
+      {
+        id: 4,
+        name: 'strawberry',
+      },
+    ],
+  )
 })
 
 await test('search', async (t) => {
