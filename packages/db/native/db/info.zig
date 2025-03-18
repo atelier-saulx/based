@@ -2,6 +2,7 @@ const c = @import("../c.zig");
 const db = @import("db.zig");
 const selva = @import("../selva.zig");
 const napi = @import("../napi.zig");
+const copy = @import("../utils.zig").copy;
 
 pub fn ofType(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(2, env, info) catch return null;
@@ -47,7 +48,7 @@ pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c
     }
 
     const hash = db.getNodeRangeHash(ctx.selva.?, te.?, start, end);
-    @memcpy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
+    copy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
 
     return null;
 }

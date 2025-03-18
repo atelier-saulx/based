@@ -11,7 +11,7 @@ enum QueryDefType {
   Edge = 1,
   Reference = 2,
   References = 3,
-  Root = 4, // need id
+  Root = 4,
 }
 
 export type EdgeTarget = {
@@ -66,8 +66,6 @@ export type QueryDefSort = {
   lang: LangCode
 }
 
-// ADD AGGREGATES
-//   similair to filter
 export type QueryDefShared = {
   errors: QueryError[]
   lang: LangCode

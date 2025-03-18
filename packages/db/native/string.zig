@@ -3,6 +3,7 @@ const napi = @import("./napi.zig");
 const std = @import("std");
 const selva = @import("./selva.zig");
 const writeInt = @import("./utils.zig").writeInt;
+const copy = @import("./utils.zig").copy;
 
 pub fn napi_finalize_hash(_: c.napi_env, finalize_data: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
     _ = selva.selva_hash_free_state(@ptrCast(finalize_data));
@@ -36,7 +37,7 @@ pub fn hashDigest(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
     const hash = selva.selva_hash_digest(state);
-    @memcpy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
+    copy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
     return null;
 }
 

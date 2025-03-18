@@ -7,6 +7,7 @@ const types = @import("../types.zig");
 const update = @import("./update.zig");
 const std = @import("std");
 const read = utils.read;
+const copy = utils.copy;
 
 const ModifyCtx = Modify.ModifyCtx;
 const p = types.Prop;
@@ -46,7 +47,7 @@ pub fn writeEdges(
                     if (fieldOp == types.ModOp.INCREMENT or fieldOp == types.ModOp.DECREMENT) {
                         _ = update.incrementBuffer(op, @enumFromInt(data[j + 5]), val, edgeData);
                     } else {
-                        @memcpy(val[start .. start + l], edgeData[start .. start + l]);
+                        copy(val[start .. start + l], edgeData[start .. start + l]);
                     }
                 }
             } else {

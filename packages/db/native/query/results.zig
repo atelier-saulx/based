@@ -7,29 +7,17 @@ const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig");
 
-const builtin = @import("builtin");
-extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
-
-// use this in modify
-// make all read things in enum
-pub inline fn copy(dest: []u8, source: []const u8) void {
-    if (builtin.link_libc) {
-        _ = memcpy(dest.ptr, source.ptr, source.len);
-    } else {
-        @memcpy(dest[0..source.len], source);
-    }
-}
-
+const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
 
 pub const Result = struct {
     id: ?u32,
     field: u8,
-    refType: ?u8, // 253 | 254
+    refType: ?u8, // 253 | 254 make into enums
     val: ?[]u8,
     refSize: ?usize,
-    includeMain: ?[]u8, // make this optional
+    includeMain: ?[]u8,
     totalRefs: ?usize,
     isEdge: t.Prop,
     score: ?[4]u8,
@@ -45,8 +33,6 @@ pub fn createResultsBuffer(
     if (c.napi_create_arraybuffer(env, ctx.size + 8, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
-
-    // c.napi_create_a
 
     var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 8];
     var i: usize = 4;
@@ -137,7 +123,7 @@ pub fn createResultsBuffer(
         }
     }
 
-    // nice to add this with comptime - debug or SAFE or something
+    // Nice to add this with comptime - debug or SAFE or something
     // if (i > data.len - 4) {
     //     std.log.err("Wrong writing of result buffer i:{d} \n", .{i});
     // }

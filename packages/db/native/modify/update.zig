@@ -5,12 +5,12 @@ const selva = @import("../selva.zig");
 const Modify = @import("./ctx.zig");
 const utils = @import("../utils.zig");
 const ModifyCtx = Modify.ModifyCtx;
-// const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 
 const read = utils.read;
+const copy = utils.copy;
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     switch (ctx.fieldType) {
@@ -147,13 +147,13 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                         sort.insert(ctx.db, sI.?, slice[4..], ctx.node.?);
                     }
                 }
-                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else if (ctx.currentSortIndex != null) {
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
-                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else {
-                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
             }
             j += 4 + l;
         }

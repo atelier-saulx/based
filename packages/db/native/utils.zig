@@ -1,8 +1,10 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const config = @import("config");
+extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
+
+// Only little endian for us (at least for now)
 // const native_endian = builtin.cpu.arch.endian();
-// Only little endian for us
 
 pub inline fn readInt(comptime T: type, buffer: []const u8, offset: usize) T {
     if (T == f64) {
@@ -43,5 +45,14 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
 pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     if (config.enable_debug) {
         std.debug.print(format, args);
+    }
+}
+
+// Faster to use the c memcpy function then ZIG's built-in
+pub inline fn copy(dest: []u8, source: []const u8) void {
+    if (builtin.link_libc) {
+        _ = memcpy(dest.ptr, source.ptr, source.len);
+    } else {
+        @memcpy(dest[0..source.len], source);
     }
 }

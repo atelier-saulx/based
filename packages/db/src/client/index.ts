@@ -111,7 +111,7 @@ export class DbClient {
       this.schemaTypesParsed,
       this.schemaTypesParsedById,
     )
-    // TODO should not need this, but it modifies the schema
+    // Adds bidrectional refs on defs
     schemaToSelvaBuffer(this.schemaTypesParsed)
     return this.schema
   }

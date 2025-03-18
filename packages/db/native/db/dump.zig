@@ -4,6 +4,7 @@ const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const selva = @import("../selva.zig");
 const std = @import("std");
+const copy = @import("../utils.zig").copy;
 
 pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(2, napi_env, info) catch return null;
@@ -37,7 +38,7 @@ pub fn saveRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
     const rc = selva.selva_dump_save_range(ctx.selva, te, sdb_filename.ptr, start, end, &hash);
     _ = c.napi_create_int32(napi_env, rc, &res);
     const hp: [*]u8 = @ptrCast(&hash);
-    @memcpy(hash_out, hp);
+    copy(hash_out, hp[0..16]);
 
     return res;
 }
