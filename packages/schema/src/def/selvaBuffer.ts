@@ -5,26 +5,14 @@ import {
   ALIAS,
   ALIASES,
   BINARY,
-  BOOLEAN,
-  CREATED,
   EMPTY_MICRO_BUFFER,
-  ENUM,
   CARDINALITY,
-  INT16,
-  INT32,
-  INT8,
   MICRO_BUFFER,
   NULL,
-  NUMBER,
   REFERENCE,
   REFERENCES,
   STRING,
   TEXT,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-  UPDATED,
   VECTOR,
   WEAK_REFERENCE,
   WEAK_REFERENCES,
@@ -33,19 +21,7 @@ import {
 
 const selvaTypeMap = new Uint8Array(32) // 1.2x faster than JS array
 selvaTypeMap[NULL] = 0
-selvaTypeMap[TIMESTAMP] = 4
-selvaTypeMap[CREATED] = 1
-selvaTypeMap[UPDATED] = 1
-selvaTypeMap[NUMBER] = 4
 selvaTypeMap[CARDINALITY] = 11
-selvaTypeMap[INT8] = 20
-selvaTypeMap[UINT8] = 6
-selvaTypeMap[INT16] = 21
-selvaTypeMap[UINT16] = 22
-selvaTypeMap[INT32] = 23
-selvaTypeMap[UINT32] = 7
-selvaTypeMap[BOOLEAN] = 9
-selvaTypeMap[ENUM] = 10
 selvaTypeMap[STRING] = 11
 selvaTypeMap[TEXT] = 12
 selvaTypeMap[REFERENCE] = 13

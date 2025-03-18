@@ -42,15 +42,6 @@ static void ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct S
  */
 static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
-    [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(union SelvaStaticFields, number),
-    [SELVA_FIELD_TYPE_INT8] = sizeof_field(union SelvaStaticFields, int8),
-    [SELVA_FIELD_TYPE_UINT8] = sizeof_field(union SelvaStaticFields, uint8),
-    [SELVA_FIELD_TYPE_INT16] = sizeof_field(union SelvaStaticFields, int16),
-    [SELVA_FIELD_TYPE_UINT16] = sizeof_field(union SelvaStaticFields, uint16),
-    [SELVA_FIELD_TYPE_INT32] = sizeof_field(union SelvaStaticFields, int32),
-    [SELVA_FIELD_TYPE_UINT32] = sizeof_field(union SelvaStaticFields, uint32),
-    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof_field(union SelvaStaticFields, boolean),
-    [SELVA_FIELD_TYPE_ENUM] = sizeof_field(union SelvaStaticFields, enu),
     [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string),
     [SELVA_FIELD_TYPE_TEXT] = sizeof(struct SelvaTextField),
     [SELVA_FIELD_TYPE_REFERENCE] = sizeof(struct SelvaNodeReference),
@@ -722,15 +713,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
          * Note: We don't verify len in this function. We merely expect that
          * the caller is passing it correctly.
          */
-    case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INT8:
-    case SELVA_FIELD_TYPE_UINT8:
-    case SELVA_FIELD_TYPE_INT16:
-    case SELVA_FIELD_TYPE_UINT16:
-    case SELVA_FIELD_TYPE_INT32:
-    case SELVA_FIELD_TYPE_UINT32:
-    case SELVA_FIELD_TYPE_BOOLEAN:
-    case SELVA_FIELD_TYPE_ENUM:
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
@@ -1704,15 +1686,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
             .off = (nfo->off << SELVA_FIELDS_OFF),
             .len = 0,
         };
-    case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INT8:
-    case SELVA_FIELD_TYPE_UINT8:
-    case SELVA_FIELD_TYPE_INT16:
-    case SELVA_FIELD_TYPE_UINT16:
-    case SELVA_FIELD_TYPE_INT32:
-    case SELVA_FIELD_TYPE_UINT32:
-    case SELVA_FIELD_TYPE_BOOLEAN:
-    case SELVA_FIELD_TYPE_ENUM:
     case SELVA_FIELD_TYPE_TEXT:
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_REFERENCES:
@@ -1784,15 +1757,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
 
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
-    case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INT8:
-    case SELVA_FIELD_TYPE_UINT8:
-    case SELVA_FIELD_TYPE_INT16:
-    case SELVA_FIELD_TYPE_UINT16:
-    case SELVA_FIELD_TYPE_INT32:
-    case SELVA_FIELD_TYPE_UINT32:
-    case SELVA_FIELD_TYPE_BOOLEAN:
-    case SELVA_FIELD_TYPE_ENUM:
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         /* NOP */
         break;
@@ -2018,15 +1982,6 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
             /* Also NULL must cause a change in the hash. */
             selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
             break;
-        case SELVA_FIELD_TYPE_NUMBER:
-        case SELVA_FIELD_TYPE_INT8:
-        case SELVA_FIELD_TYPE_UINT8:
-        case SELVA_FIELD_TYPE_INT16:
-        case SELVA_FIELD_TYPE_UINT16:
-        case SELVA_FIELD_TYPE_INT32:
-        case SELVA_FIELD_TYPE_UINT32:
-        case SELVA_FIELD_TYPE_BOOLEAN:
-        case SELVA_FIELD_TYPE_ENUM:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             selva_hash_update(hash_state, p, selva_fields_get_data_size(fs));
