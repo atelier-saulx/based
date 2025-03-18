@@ -43,7 +43,7 @@ export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Ui
   return res
 }
 
-const charMap = ENCODER.encode("0123456789abcdef");
+const charMap = ENCODER.encode('0123456789abcdef');
 
 // Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
 // https://issues.chromium.org/issues/42204568
