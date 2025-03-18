@@ -11,6 +11,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const args = process.argv
 
+const repeat = args[2] && /d+/.test(args[2]) ? 1 : Number(args[2])
+
 const match = args.slice(2)
 
 const testsToRun = []
@@ -62,37 +64,44 @@ console.log(
 )
 console.log('')
 
-for (const test of testsToRun) {
-  const fullPath = test[0]
-  const relPath = relative(p, fullPath)
-  console.log(
-    picocolors.bgBlue(` ${picocolors.bold(picocolors.black(relPath))} `),
-  )
+let cnt = 0
 
-  if (test[1]) {
-    process.env.TEST_TO_RUN = test[1]
-  } else {
-    process.env.TEST_TO_RUN = ''
+for (let i = 0; i < repeat; i++) {
+  if (repeat > 1) {
+    console.log(`\n\nREPEAT ${i}/repeat\n`)
   }
 
-  global._currentTestPath = fullPath
-    .replace('/dist/', '/')
-    .replace('.js', '.ts')
+  for (const test of testsToRun) {
+    const fullPath = test[0]
+    const relPath = relative(p, fullPath)
+    console.log(
+      picocolors.bgBlue(` ${picocolors.bold(picocolors.black(relPath))} `),
+    )
 
-  await import(fullPath)
-    .catch((err) => {
-      console.log('')
-      console.log(picocolors.bgRed(` Err: ${relPath} `))
-      console.error(err)
-    })
-    .then(() => {
-      //   console.log('')
-      //   console.log(picocolors.bgGreen(` 👌 ${test} `))
-    })
+    if (test[1]) {
+      process.env.TEST_TO_RUN = test[1]
+    } else {
+      process.env.TEST_TO_RUN = ''
+    }
 
-  console.log('\n')
+    global._currentTestPath = fullPath
+      .replace('/dist/', '/')
+      .replace('.js', '.ts')
 
-  await wait(0)
+    await import(fullPath + `?_=${++cnt}`)
+      .catch((err) => {
+        console.log('')
+        console.log(picocolors.bgRed(` Err: ${relPath} `))
+        console.error(err)
+      })
+      .then(() => {})
+
+    console.log('\n')
+
+    await wait(0)
+  }
 }
 
-printSummary()
+if (repeat == 1) {
+  printSummary()
+}

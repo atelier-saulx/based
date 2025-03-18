@@ -75,12 +75,14 @@ function singleReferenceEdges(
       }
 
       // def.edgeMainLen
-      const edgesLen = getEdgeSize(def, ref)
+      // const edgesLen = getEdgeSize(def, ref)
       // edgeMainLen can be done better
 
-      if (ctx.len + 4 + edgesLen > ctx.max) {
+      // TODO REOMVE - SEEMS REDUNDANT
+      if (ctx.len + 4 > ctx.max) {
         return RANGE_ERR
       }
+
       let sizepos = ctx.len
       ctx.len += 4
       err = writeEdges(def, ref, ctx)
