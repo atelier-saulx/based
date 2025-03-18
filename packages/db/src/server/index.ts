@@ -466,7 +466,7 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
-        const data = [2, 1, 0, 0, 0, 17, 9, 1, 0, 0, 0, 7, 1, 0, 1]
+        const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 1)
         const buf = new Uint8Array(data.length + 2 + 8 + 4)
         const view = new DataView(buf.buffer, 0, buf.byteLength)

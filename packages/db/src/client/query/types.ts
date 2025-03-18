@@ -50,13 +50,19 @@ export type QueryDefSearch =
       size: number
       query: Uint8Array
       isVector: false
-      fields: { weight: number; field: number; start: number; lang: LangCode }[]
+      fields: {
+        weight: number
+        field: number
+        start: number
+        lang: LangCode
+        typeIndex: number
+      }[]
     }
   | {
       size: number
       query: Uint8Array
       prop: number
-      isVector: true
+      isVector: true // could add typeIndex / len
       opts: FilterOpts
     }
 
