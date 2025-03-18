@@ -1,13 +1,10 @@
 const db = @import("../db/db.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
-// const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
-// const getOrCreateShard = Modify.getOrCreateShard;
-// const getSortIndex = Modify.getSortIndex;
 const edge = @import("./edges.zig");
 
 // 0 overwrite, 1 add, 2 delete, 3 update, 4 put
@@ -25,7 +22,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     var i: usize = 9;
 
     _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
-    // prealloc_refs(ctx, data);
 
     // TODO if !edges use batch operation
     // set this whole thing
@@ -33,7 +29,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     // optional faster check of the id
     // BST
     // TODO if a node gets created optmize insert on the other
-    // check in schema if ASS
 
     // 4 bytes buffer
     while (i < len) : (i += 5) {
