@@ -362,7 +362,6 @@ pub fn search(
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
-                std.debug.print("flap {any} {any} \n", .{ prop, penalty });
                 if (prop == Prop.TEXT) {
                     const code: LangCode = @enumFromInt(ctx.fields[j + 5]);
                     var iter = db.textIterator(value, code);
