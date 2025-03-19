@@ -18,6 +18,8 @@ await test('mem', async (t) => {
     types: {
       data: {
         props: {
+          a: { ref: 'data', prop: 'b' },
+          b: { items: { prop: 'a', ref: 'data' } },
           age: { type: 'uint32' },
           name: { type: 'string' },
         },
@@ -37,19 +39,37 @@ await test('mem', async (t) => {
     })
 
     const ids = []
+    let cnt = 0
     for (let i = 0; i < amount; i++) {
+      const x = ids[Math.floor(Math.random() * ids.length)]
+      if (x) {
+        cnt++
+      }
       ids.push(
         db.create('data', {
           age: i,
-          name: 'mr flap flap',
-        }).tmpId,
+          name: `Mr flap flap ${i}`,
+          a: x ? ids[Math.floor(Math.random() * ids.length)] : null,
+        }),
       )
     }
 
     await db.drain()
 
+    equal(
+      (
+        await db
+          .query('data')
+          .include('b')
+          .filter('b', 'exists')
+          .range(0, amount)
+          .get()
+      ).length > 1,
+      true,
+    )
+
     for (let i = 0; i < amount; i++) {
-      db.delete('data', ids[i])
+      db.delete('data', ids[i].tmpId)
     }
 
     await db.drain()
