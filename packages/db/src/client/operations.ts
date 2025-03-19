@@ -84,8 +84,9 @@ export class ModifyCtx {
       data[i++] = lastId >>> 16
       data[i++] = lastId >>> 24
     }
+    const view = new DataView(data.buffer, data.byteOffset)
     for (let key of this.dirtyRanges) {
-      data.writeDoubleLE(key, i)
+      view.setFloat64(i, key, true)
       i += 8
     }
     data[i++] = this.len

@@ -92,7 +92,10 @@ map[NUMBER] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-  ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
+
+  const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
+  ctx.len += 8
+  view.setFloat64(0, val, true)
 }
 
 map[TIMESTAMP] = (ctx, val, def) => {
@@ -103,7 +106,10 @@ map[TIMESTAMP] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-  ctx.len = ctx.buf.writeDoubleLE(parsedValue, ctx.len)
+
+  const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
+  ctx.len += 8
+  view.setFloat64(0, parsedValue, true)
 }
 
 map[UINT32] = (ctx, val, def) => {
