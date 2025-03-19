@@ -26,7 +26,7 @@ export function getBuffer(value: any): Uint8Array | undefined {
   }
 }
 
-export function writeBinaryRaw(value: Buffer, ctx: ModifyCtx) {
+export function writeBinaryRaw(value: Uint8Array, ctx: ModifyCtx) {
   let size = value.byteLength + 6
   let crc = native.crc32(value)
 
