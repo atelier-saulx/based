@@ -355,11 +355,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     )
   }
 
-  toBuffer() {
+  toBuffer(): Uint8Array {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeField(this.def, '*')
     }
     const b = defToBuffer(this.db, this.def)
-    return Buffer.concat(b)
+    return concatUint8Arr(b)
   }
 }

@@ -478,7 +478,7 @@ export class DbServer {
         view.setFloat64(data.length + 2, blockKey, true)
         // add dataLen
         view.setUint32(buf.length - 4, data.length, true)
-        this.modify(Buffer.from(buf))
+        this.modify(buf)
       }
     }
 
