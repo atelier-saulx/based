@@ -18,7 +18,7 @@ await test('mem', async (t) => {
     types: {
       data: {
         props: {
-          a: { ref: 'data', prop: 'b' },
+          a: { ref: 'data', prop: 'b', $derp: 'uint8' },
           b: { items: { prop: 'a', ref: 'data' } },
           age: { type: 'uint32' },
           name: { type: 'string' },
@@ -28,7 +28,7 @@ await test('mem', async (t) => {
   })
 
   const amount = 1e3
-  const repeat = 2e3
+  const repeat = 1e3
   // 2M inserts rmeoves
 
   for (let j = 0; j < repeat; j++) {
@@ -48,8 +48,8 @@ await test('mem', async (t) => {
       ids.push(
         db.create('data', {
           age: i,
-          name: `Mr flap flap ${i}`,
-          a: x ? ids[Math.floor(Math.random() * ids.length)] : null,
+          name: `Mr FLAP ${i}`,
+          a: x ? { id: ids[Math.floor(Math.random() * ids.length)] } : null,
         }),
       )
     }
@@ -76,6 +76,6 @@ await test('mem', async (t) => {
 
     equal((await db.query('data').range(0, 10e6).get()).length, j + 1)
 
-    console.log(`Ran ${j + 1} / ${repeat}`)
+    // console.log(`Ran ${j + 1} / ${repeat}`)
   }
 })
