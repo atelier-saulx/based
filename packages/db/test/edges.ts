@@ -251,7 +251,6 @@ await test('multiple references', async (t) => {
     ],
   )
 
-  console.log('----------------')
   await db.update('article', lastArticle, {
     contributors: {
       set: [
@@ -263,13 +262,16 @@ await test('multiple references', async (t) => {
     },
   })
 
-  console.log(
-    '---------->',
+  deepEqual(
     await db
       .query('article', lastArticle)
       .include('contributors.$rating')
       .get()
       .toObject(),
+    {
+      id: 5,
+      contributors: [{ id: 2, $rating: 2 }, { id: 3 }, { id: 1 }],
+    },
   )
 })
 
