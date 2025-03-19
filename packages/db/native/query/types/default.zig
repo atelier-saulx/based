@@ -3,10 +3,12 @@ const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
+const AggFn = @import("../../types.zig").AggFn;
 const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
 const s = @import("./search.zig");
 const std = @import("std");
+const utils = @import("../../utils.zig");
 
 pub fn default(
     ctx: *QueryCtx,
@@ -15,12 +17,12 @@ pub fn default(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
+    aggregation: AggFn,
 ) !void {
     var correctedForOffset: u32 = offset;
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
-
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -53,7 +55,9 @@ pub fn default(
             ctx.totalResults += 1;
         }
     }
-    // ctx.totalResults
+    if (aggregation == AggFn.count) {
+        utils.debugPrint("count: {any}\n", .{ctx.totalResults});
+    }
 }
 
 pub fn search(

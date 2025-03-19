@@ -4,6 +4,7 @@ import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
+import { createAggFnBuffer } from './aggregationFn.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -95,6 +96,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         sortSize = sort.byteLength
       }
 
+      let aggregation: Uint8Array
+      aggregation = createAggFnBuffer(def.count)
+
       if (def.target.ids) {
         // type 1
         // 1: 4 + ids * 4 [ids len] [id,id,id]
@@ -148,7 +152,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         // ?filter
         // 2: 2 [sort size]
         // ?sort
-        const buf = Buffer.allocUnsafe(17 + filterSize + sortSize + searchSize)
+        const buf = Buffer.allocUnsafe(18 + filterSize + sortSize + searchSize)
         buf[0] = 2
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -169,6 +173,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         if (searchSize) {
           buf.set(search, 17 + filterSize + sortSize)
         }
+
+        buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
 
         result.push(buf)
       }

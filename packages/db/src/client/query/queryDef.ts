@@ -2,6 +2,7 @@ import { langCodesMap } from '@based/schema'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
+  AggFn,
   EdgeTarget,
   QueryDef,
   QueryDefEdges,
@@ -37,6 +38,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     },
     sort: null,
     references: new Map(),
+    count: null,
   }
   return q
 }

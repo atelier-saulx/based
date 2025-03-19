@@ -68,11 +68,18 @@ await test('branchedCount', async (t) => {
 
   await db.drain()
 
-  await db.query('article', strudelArticle).include('*', '**').get().inspect()
+  // await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
   await db
-    .query('article', strudelArticle)
-    .include((q) => q('contributors').include('name').filter('flap', '>', 25))
+    .query('article')
+    // @ts-ignore
+    .count()
     .get()
     .inspect()
+
+  // await db
+  //   .query('article', strudelArticle)
+  //   .include((q) => q('contributors').include('name').filter('flap', '>', 25))
+  //   .get()
+  //   .inspect()
 })
