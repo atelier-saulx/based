@@ -44,11 +44,11 @@ class SortIndex {
   cnt = 0
 }
 
-function readUint16LE(buf: Buffer | Uint8Array, off: number): number {
+function readUint16LE(buf: Uint8Array, off: number): number {
   return buf[off] | (buf[off + 1] << 8)
 }
 
-function readUint32LE(buf: Buffer | Uint8Array, off: number): number {
+function readUint32LE(buf: Uint8Array, off: number): number {
   return (
     buf[off] | (buf[off + 1] << 8) | (buf[off + 2] << 16) | (buf[off + 3] << 24)
   )
@@ -89,7 +89,7 @@ export class DbWorker {
     return new Promise(this.callback)
   }
 
-  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     this.channel.postMessage(buf)
     return new Promise(this.callback)
   }
@@ -115,8 +115,8 @@ export class DbServer {
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
-  modifyQueue: Buffer[] = []
-  queryQueue: Map<Function, Buffer> = new Map()
+  modifyQueue: Uint8Array[] = []
+  queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean
   onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
@@ -487,7 +487,7 @@ export class DbServer {
     return this.schema
   }
 
-  modify(buf: Buffer): Record<number, number> {
+  modify(buf: Uint8Array): Record<number, number> {
     const offsets = {}
     const dataLen = readUint32LE(buf, buf.length - 4)
     let typesSize = readUint16LE(buf, dataLen)
@@ -520,7 +520,7 @@ export class DbServer {
     return offsets
   }
 
-  #modify(buf: Buffer) {
+  #modify(buf: Uint8Array) {
     const end = buf.length - 4
     const dataLen = readUint32LE(buf, end)
     let typesSize = readUint16LE(buf, dataLen)
@@ -548,7 +548,7 @@ export class DbServer {
     native.modify(data, types, this.dbCtxExternal)
   }
 
-  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.queryQueue.set(resolve, buf)

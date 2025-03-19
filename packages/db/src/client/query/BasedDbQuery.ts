@@ -290,7 +290,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeField(this.def, '*')
     }
-    let buf: Buffer
+    let buf: Uint8Array
     try {
       buf = registerQuery(this)
     } catch (err) {
@@ -316,7 +316,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     return new GetPromise(this.#getInternal)
   }
 
-  buffer: Buffer
+  buffer: Uint8Array
 
   register() {
     registerQuery(this)

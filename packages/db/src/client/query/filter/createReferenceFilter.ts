@@ -5,10 +5,10 @@ export const createReferenceFilter = (
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
   value: any,
-) => {
-  let buf: Buffer
+): Uint8Array => {
   const len = Array.isArray(value) ? value.length : 1
-  buf = Buffer.allocUnsafe(11 + len * 8)
+  const buf = new Uint8Array(11 + len * 8)
+
   buf[0] = ctx.type
   buf[1] = MODE_REFERENCE
   buf[2] = prop.typeIndex
@@ -38,5 +38,6 @@ export const createReferenceFilter = (
     buf[13] = value >>> 16
     buf[14] = value >>> 24
   }
+
   return buf
 }

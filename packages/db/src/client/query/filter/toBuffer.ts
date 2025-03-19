@@ -25,10 +25,10 @@ import {
 // -------------------------------------------
 
 const writeConditions = (
-  result: Buffer,
+  result: Uint8Array,
   k: number,
   offset: number,
-  conditions: Buffer[],
+  conditions: Uint8Array[],
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
@@ -47,7 +47,7 @@ const writeConditions = (
 }
 
 export const fillConditionsBuffer = (
-  result: Buffer,
+  result: Uint8Array,
   conditions: QueryDefFilter,
   offset: number,
 ) => {
@@ -124,14 +124,13 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-// TODO convert to UINT8ARRAY
-export const filterToBuffer = (conditions: QueryDefFilter) => {
-  let result: Buffer
+export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
+  let result: Uint8Array
   if (conditions.size > 0) {
-    result = Buffer.allocUnsafe(conditions.size)
+    result = new Uint8Array(conditions.size)
     fillConditionsBuffer(result, conditions, 0)
   } else {
-    result = Buffer.alloc(0)
+    result = new Uint8Array(0)
   }
   return result
 }

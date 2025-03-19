@@ -7,7 +7,7 @@ export class ModifyCtx {
   constructor(db: DbClient) {
     this.max = db.maxModifySize
     this.db = db
-    this.buf = Buffer.allocUnsafe(db.maxModifySize)
+    this.buf = new Uint8Array(db.maxModifySize)
   }
   // default values
   len: number = 0
@@ -17,10 +17,10 @@ export class ModifyCtx {
   queue = new Map<(payload: any) => void, ModifyState>()
   ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 
-  payload: Buffer
+  payload: Uint8Array
 
   max: number
-  buf: Buffer
+  buf: Uint8Array
 
   field: number
   prefix0: number = -1

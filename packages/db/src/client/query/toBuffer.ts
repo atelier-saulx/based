@@ -4,15 +4,16 @@ import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
+import { ENCODER } from '../../utils.js'
 
-const byteSize = (arr: Buffer[]) => {
+const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
   }, 0)
 }
 
-export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
-  const result: Buffer[] = []
+export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
+  const result: Uint8Array[] = []
   const include = includeToBuffer(db, def)
 
   def.references.forEach((ref) => {
@@ -22,7 +23,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     }
   })
 
-  let edges: Buffer[]
+  let edges: Uint8Array[]
   let edgesSize = 0
 
   if (def.edges) {
@@ -39,7 +40,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
   if (def.type === QueryDefType.Root) {
-    let filter: Buffer
+    let filter: Uint8Array
     let filterSize = 0
 
     let search: Uint8Array
@@ -59,27 +60,28 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     if (def.target.resolvedAlias) {
       // put this somehwere else at some point
       const alias = def.target.resolvedAlias
-      const s = Buffer.byteLength(alias.value)
+      const aliasStr = ENCODER.encode(alias.value)
+      const aliasLen = aliasStr.byteLength
       // filter is nice for things like access
-      const buf = Buffer.allocUnsafe(8 + filterSize + s)
+      const buf = new Uint8Array(8 + filterSize + aliasLen)
       buf[0] = 3
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf[3] = alias.def.prop
-      buf[4] = s
-      buf[5] = s >>> 8
-      buf.write(alias.value, 6)
-      buf[6 + s] = filterSize
-      buf[7 + s] = filterSize >>> 8
+      buf[4] = aliasLen
+      buf[5] = aliasLen >>> 8
+      buf.set(aliasStr, 6)
+      buf[6 + aliasLen] = filterSize
+      buf[7 + aliasLen] = filterSize >>> 8
       if (filterSize) {
-        buf.set(filter, 8 + s)
+        buf.set(filter, 8 + aliasLen)
       }
       result.push(buf)
     } else if (def.target.id) {
       // type 0
       // 0: 4 [id]
       // 0: 2 [filterSize]
-      const buf = Buffer.allocUnsafe(9 + filterSize)
+      const buf = new Uint8Array(9 + filterSize)
       buf[0] = 0
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
@@ -119,9 +121,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
           )
         }
         const idsSize = def.target.ids.length * 4
-        const buf = Buffer.allocUnsafe(
-          21 + idsSize + filterSize + sortSize + searchSize,
-        )
+        const buf = new Uint8Array(21 + idsSize + filterSize + sortSize + searchSize)
         buf[0] = 1
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -165,7 +165,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         // ?filter
         // 2: 2 [sort size]
         // ?sort
-        const buf = Buffer.allocUnsafe(17 + filterSize + sortSize + searchSize)
+        const buf = new Uint8Array(17 + filterSize + sortSize + searchSize)
         buf[0] = 2
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -200,7 +200,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     }
   } else if (def.type === QueryDefType.References) {
     // TODO filter edge
-    let filter: Buffer
+    let filter: Uint8Array
     if (def.filter.size) {
       filter = filterToBuffer(def.filter)
     }
@@ -214,7 +214,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     const filterSize = filter?.byteLength ?? 0
 
     const modsSize = filterSize + sortSize
-    const meta = Buffer.allocUnsafe(modsSize + 10 + 8)
+    const meta = new Uint8Array(modsSize + 10 + 8)
     const sz = size + 7 + modsSize + 8
     meta[0] = 254
     meta[1] = sz
@@ -243,7 +243,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     meta[15 + 2 + modsSize] = def.target.propDef.prop
     result.push(meta)
   } else if (def.type === QueryDefType.Reference) {
-    const meta = Buffer.allocUnsafe(6)
+    const meta = new Uint8Array(6)
     const sz = size + 3
     meta[0] = 255
     meta[1] = sz
@@ -257,7 +257,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
   result.push(...include)
 
   if (edges) {
-    const metaEdgeBuffer = Buffer.allocUnsafe(3)
+    const metaEdgeBuffer = new Uint8Array(3)
     metaEdgeBuffer[0] = 252
     metaEdgeBuffer[1] = edgesSize
     metaEdgeBuffer[2] = edgesSize >>> 8

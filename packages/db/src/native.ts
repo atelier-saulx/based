@@ -34,11 +34,11 @@ export default {
     return db.intFromExternal(external)
   },
 
-  modify: (data: Buffer, types: Buffer, dbCtx: any): any => {
+  modify: (data: Uint8Array, types: Uint8Array, dbCtx: any): any => {
     db.modify(data, types, dbCtx)
   },
 
-  getQueryBuf: (q: Buffer, dbCtx: any): ArrayBuffer | null => {
+  getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
     const x = db.getQueryBuf(dbCtx, q)
     return x
   },

@@ -35,12 +35,12 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
 
 export type QueryDefFilter = {
   size: number
-  conditions: Map<number, Buffer[]>
+  conditions: Map<number, Uint8Array[]>
   exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
   references?: Map<number, QueryDefFilter>
   fromRef?: PropDef
   schema?: SchemaTypeDef
-  edges?: Map<number, Buffer[]>
+  edges?: Map<number, Uint8Array[]>
   or?: QueryDefFilter
   and?: QueryDefFilter
 }

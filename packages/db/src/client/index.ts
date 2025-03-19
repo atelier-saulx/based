@@ -29,10 +29,10 @@ export type DbClientHooks = {
     fromStart?: boolean,
     transformFns?: TransformFns,
   ): Promise<DbServer['schema']>
-  flushModify(buf: Buffer): Promise<{
+  flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
   }>
-  getQueryBuf(buf: Buffer): Promise<Uint8Array>
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
 }
 
 type DbClientOpts = {
