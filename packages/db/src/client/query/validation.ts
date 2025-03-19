@@ -159,7 +159,7 @@ export const isValidId = (id: number) => {
 export const isValidString = (v: any) => {
   const isVal =
     typeof v === 'string' ||
-    (v as any) instanceof Buffer ||
+    (v as any) instanceof Uint8Array ||
     ArrayBuffer.isView(v)
   return isVal
 }

@@ -30,6 +30,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
+import { concatUint8Arr } from '../../utils.js'
 
 export { QueryByAliasObj }
 

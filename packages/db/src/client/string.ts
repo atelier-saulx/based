@@ -15,7 +15,7 @@ const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page si
 // make this into a package
 // write the type Byte
 export const write = (
-  buf: Buffer | Uint8Array,
+  buf: Uint8Array,
   value: string,
   offset: number,
   noCompression: boolean,

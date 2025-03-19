@@ -109,7 +109,7 @@ export default {
   createHash: () => {
     const state = db.hashCreate()
     const hash = {
-      update: (buf: Buffer | Uint8Array) => {
+      update: (buf: Uint8Array) => {
         db.hashUpdate(state, buf)
         return hash
       },
@@ -130,20 +130,20 @@ export default {
     return hash
   },
 
-  compress: (buf: Buffer | Uint8Array, offset: number, stringSize: number) => {
+  compress: (buf: Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },
 
   decompress: (
-    input: Buffer | Uint8Array,
-    output: Buffer | Uint8Array,
+    input: Uint8Array,
+    output: Uint8Array,
     offset: number,
     len: number,
   ) => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
-  crc32: (buf: Buffer | Uint8Array) => {
+  crc32: (buf: Uint8Array) => {
     return db.crc32(buf)
   },
 
@@ -156,8 +156,8 @@ export default {
   },
 
   xxHash64: (
-    buf: Buffer | Uint8Array,
-    target: Buffer | Uint8Array,
+    buf: Uint8Array,
+    target: Uint8Array,
     index: number,
   ) => {
     return db.xxHash64(buf, target, index)
