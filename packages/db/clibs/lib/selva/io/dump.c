@@ -288,27 +288,25 @@ static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
         struct SelvaAliases *aliases = &te->aliases[i];
         const struct SelvaAlias *alias_first;
         const struct SelvaAlias *alias;
-        sdb_nr_aliases_t n = 0;
-
+        sdb_nr_aliases_t nr_aliases_by_dest = 0;
 
         alias_first = alias = selva_get_alias_by_dest(aliases, node_id);
-        while (alias_first && (alias = alias->next)) {
-            n++;
+        while (alias) {
+            nr_aliases_by_dest++;
+            alias = alias->next;
         }
 
-        io->sdb_write(&n, sizeof(n), 1, io);
-        if (n == 0) {
-            /* No aliases on this field. */
-            continue;
-        }
+        io->sdb_write(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
 
         alias = alias_first;
-        while ((alias = alias->next)) {
+        while (alias) {
             const char *name_str = alias->name;
-            const size_t name_len = strlen(name_str);
+            const sdb_arr_len_t name_len = strlen(name_str);
 
             io->sdb_write(&name_len, sizeof(name_len), 1, io);
             io->sdb_write(name_str, sizeof(*name_str), name_len, io);
+
+            alias = alias->next;
         }
     }
 }
@@ -882,10 +880,10 @@ static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, nod
 
     io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
     for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
-        sdb_nr_aliases_t n;
+        sdb_nr_aliases_t nr_aliases_by_dest;
 
-        io->sdb_read(&n, sizeof(n), 1, io);
-        for (size_t j = 0; j < n; j++) {
+        io->sdb_read(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
+        for (size_t j = 0; j < nr_aliases_by_dest; j++) {
             sdb_arr_len_t name_len;
             struct SelvaAlias *alias;
 
