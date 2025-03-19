@@ -500,9 +500,11 @@ export class DbServer {
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
 
-      buf.writeUint32LE(offset, i)
+      buf[i++] = offset
+      buf[i++] = offset >>> 8
+      buf[i++] = offset >>> 16
+      buf[i++] = offset >>> 24
 
-      i += 4
       const lastId = readUint32LE(buf, i)
       i += 4
       def.lastId = lastId + offset

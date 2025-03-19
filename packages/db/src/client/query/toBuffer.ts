@@ -83,7 +83,10 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
       buf[0] = 0
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
-      buf.writeUInt32LE(def.target.id, 3)
+      buf[3] = def.target.id
+      buf[4] = def.target.id >>> 8
+      buf[5] = def.target.id >>> 16
+      buf[6] = def.target.id >>> 24
       buf[7] = filterSize
       buf[8] = filterSize >>> 8
       if (filterSize) {
@@ -122,11 +125,19 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         buf[0] = 1
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
-        buf.writeUint32LE(idsSize, 3)
+        buf[3] = idsSize
+        buf[4] = idsSize >>> 8
+        buf[5] = idsSize >>> 16
+        buf[6] = idsSize >>> 24
         buf.set(new Uint8Array(def.target.ids.buffer), 7)
-        buf.writeUint32LE(def.range.offset, idsSize + 7)
-        buf.writeUint32LE(def.range.limit, idsSize + 11)
-
+        buf[idsSize + 7] = def.range.offset
+        buf[idsSize + 8] = def.range.offset >>> 8
+        buf[idsSize + 9] = def.range.offset >>> 16
+        buf[idsSize + 10] = def.range.offset >>> 24
+        buf[idsSize + 11] = def.range.limit
+        buf[idsSize + 12] = def.range.limit >>> 8
+        buf[idsSize + 13] = def.range.limit >>> 16
+        buf[idsSize + 14] = def.range.limit >>> 24
         buf[idsSize + 15] = filterSize
         buf[idsSize + 16] = filterSize >>> 8
         if (filterSize) {
@@ -158,9 +169,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         buf[0] = 2
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
-        buf.writeUint32LE(def.range.offset, 3)
-        buf.writeUint32LE(def.range.limit, 7)
-
+        buf[3] = def.range.offset
+        buf[4] = def.range.offset >>> 8
+        buf[5] = def.range.offset >>> 16
+        buf[6] = def.range.offset >>> 24
+        buf[7] = def.range.limit
+        buf[8] = def.range.limit >>> 8
+        buf[9] = def.range.limit >>> 16
+        buf[10] = def.range.limit >>> 24
         buf[11] = filterSize
         buf[12] = filterSize >>> 8
         if (filterSize) {
@@ -207,9 +223,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     meta[4] = filterSize >>> 8
     meta[5] = sortSize
     meta[6] = sortSize >>> 8
-
-    meta.writeUint32LE(def.range.offset, 7)
-    meta.writeUint32LE(def.range.limit, 7 + 4)
+    meta[7] = def.range.offset
+    meta[8] = def.range.offset >>> 8
+    meta[9] = def.range.offset >>> 16
+    meta[10] = def.range.offset >>> 24
+    meta[11] = def.range.limit
+    meta[12] = def.range.limit >>> 8
+    meta[13] = def.range.limit >>> 16
+    meta[14] = def.range.limit >>> 24
 
     if (filter) {
       meta.set(filter, 15)

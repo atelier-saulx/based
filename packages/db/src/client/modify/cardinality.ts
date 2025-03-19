@@ -64,8 +64,10 @@ export function writeHllBuf(
   t: PropDef,
   len: number,
 ) {
-  ctx.buf.writeUint32LE(len, ctx.len)
-  ctx.len += 4
+  ctx.buf[ctx.len++] = len
+  ctx.buf[ctx.len++] = len >>> 8
+  ctx.buf[ctx.len++] = len >>> 16
+  ctx.buf[ctx.len++] = len >>> 24
   for (let val of value) {
     if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)

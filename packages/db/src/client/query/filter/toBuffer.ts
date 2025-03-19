@@ -101,7 +101,10 @@ export const fillConditionsBuffer = (
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
     result[orJumpIndex] = size
     result[orJumpIndex + 1] = size >>> 8
-    result.writeUint32LE(lastWritten, orJumpIndex + 2)
+    result[orJumpIndex + 2] = lastWritten
+    result[orJumpIndex + 3] = lastWritten >>> 8
+    result[orJumpIndex + 4] = lastWritten >>> 16
+    result[orJumpIndex + 5] = lastWritten >>> 24
     lastWritten += size
   }
 

@@ -75,16 +75,23 @@ export class ModifyCtx {
       data[i] = id
       data[i + 1] = id >>> 8
       i += 2
-      data.writeUint32LE(startId, i)
-      i += 4
-      data.writeUint32LE(lastId, i)
-      i += 4
+      data[i++] = startId
+      data[i++] = startId >>> 8
+      data[i++] = startId >>> 16
+      data[i++] = startId >>> 24
+      data[i++] = lastId
+      data[i++] = lastId >>> 8
+      data[i++] = lastId >>> 16
+      data[i++] = lastId >>> 24
     }
     for (let key of this.dirtyRanges) {
       data.writeDoubleLE(key, i)
       i += 8
     }
-    data.writeUint32LE(this.len, i)
+    data[i++] = this.len
+    data[i++] = this.len >>> 8
+    data[i++] = this.len >>> 16
+    data[i++] = this.len >>> 24
     return data
   }
 }
