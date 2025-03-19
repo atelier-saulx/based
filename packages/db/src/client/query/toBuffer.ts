@@ -66,9 +66,11 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf[3] = alias.def.prop
-      buf.writeUint16LE(s, 4)
+      buf[4] = s
+      buf[5] = s >>> 8
       buf.write(alias.value, 6)
-      buf.writeUint16LE(filterSize, s + 6)
+      buf[6 + s] = filterSize
+      buf[7 + s] = filterSize >>> 8
       if (filterSize) {
         buf.set(filter, 8 + s)
       }
@@ -82,7 +84,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf.writeUInt32LE(def.target.id, 3)
-      buf.writeUint16LE(filterSize, 7)
+      buf[7] = filterSize
+      buf[8] = filterSize >>> 8
       if (filterSize) {
         buf.set(filter, 9)
       }
@@ -124,17 +127,20 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         buf.writeUint32LE(def.range.offset, idsSize + 7)
         buf.writeUint32LE(def.range.limit, idsSize + 11)
 
-        buf.writeUint16LE(filterSize, idsSize + 15)
+        buf[idsSize + 15] = filterSize
+        buf[idsSize + 16] = filterSize >>> 8
         if (filterSize) {
           buf.set(filter, idsSize + 17)
         }
 
-        buf.writeUint16LE(sortSize, 17 + filterSize + idsSize)
+        buf[17 + filterSize + idsSize] = sortSize
+        buf[18 + filterSize + idsSize] = sortSize >>> 8
         if (sortSize) {
           buf.set(sort, 19 + filterSize + idsSize)
         }
 
-        buf.writeUint16LE(searchSize, 19 + filterSize + idsSize + sortSize)
+        buf[19 + filterSize + idsSize + sortSize] = searchSize
+        buf[20 + filterSize + idsSize + sortSize] = searchSize >>> 8
         if (searchSize) {
           buf.set(search, 21 + filterSize + idsSize + sortSize)
         }
@@ -155,17 +161,20 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
         buf.writeUint32LE(def.range.offset, 3)
         buf.writeUint32LE(def.range.limit, 7)
 
-        buf.writeUint16LE(filterSize, 11)
+        buf[11] = filterSize
+        buf[12] = filterSize >>> 8
         if (filterSize) {
           buf.set(filter, 13)
         }
 
-        buf.writeUint16LE(sortSize, 13 + filterSize)
+        buf[13 + filterSize] = sortSize
+        buf[14 + filterSize] = sortSize >>> 8
         if (sortSize) {
           buf.set(sort, 15 + filterSize)
         }
 
-        buf.writeUint16LE(searchSize, 15 + filterSize + sortSize)
+        buf[15 + filterSize + sortSize] = searchSize
+        buf[16 + filterSize + sortSize] = searchSize >>> 8
         if (searchSize) {
           buf.set(search, 17 + filterSize + sortSize)
         }
@@ -190,10 +199,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
 
     const modsSize = filterSize + sortSize
     const meta = Buffer.allocUnsafe(modsSize + 10 + 8)
+    const sz = size + 7 + modsSize + 8
     meta[0] = 254
-    meta.writeUint16LE(size + 7 + modsSize + 8, 1)
-    meta.writeUint16LE(filterSize, 3)
-    meta.writeUint16LE(sortSize, 5)
+    meta[1] = sz
+    meta[2] = sz >>> 8
+    meta[3] = filterSize
+    meta[4] = filterSize >>> 8
+    meta[5] = sortSize
+    meta[6] = sortSize >>> 8
 
     meta.writeUint32LE(def.range.offset, 7)
     meta.writeUint32LE(def.range.limit, 7 + 4)
@@ -210,8 +223,10 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
     result.push(meta)
   } else if (def.type === QueryDefType.Reference) {
     const meta = Buffer.allocUnsafe(6)
+    const sz = size + 3
     meta[0] = 255
-    meta.writeUint16LE(size + 3, 1)
+    meta[1] = sz
+    meta[2] = sz >>> 8
     meta[3] = def.schema.idUint8[0]
     meta[4] = def.schema.idUint8[1]
     meta[5] = def.target.propDef.prop
@@ -223,7 +238,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Buffer[] {
   if (edges) {
     const metaEdgeBuffer = Buffer.allocUnsafe(3)
     metaEdgeBuffer[0] = 252
-    metaEdgeBuffer.writeUint16LE(edgesSize, 1)
+    metaEdgeBuffer[1] = edgesSize
+    metaEdgeBuffer[2] = edgesSize >>> 8
     result.push(metaEdgeBuffer, ...edges)
   }
 

@@ -51,15 +51,18 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
       // GET SOME MAIN FIELDS
       const size = Object.keys(def.include.main.include).length
       mainBuffer = Buffer.allocUnsafe(size * 4 + 2)
-      mainBuffer.writeUint16LE(def.include.main.len, 0)
+      mainBuffer[0] = def.include.main.len
+      mainBuffer[1] = def.include.main.len >>> 8
       let i = 2
       let m = 0
       for (const key in def.include.main.include) {
         const v = def.include.main.include[key]
-        mainBuffer.writeUint16LE(v[1].start, i)
+        mainBuffer[i] = v[1].start
+        mainBuffer[i + 1] = v[1].start >>> 8
         const len = v[1].len
         v[0] = m
-        mainBuffer.writeUint16LE(len, i + 2)
+        mainBuffer[i + 2] = len
+        mainBuffer[i + 3] = len >>> 8
         i += 4
         m += len
       }

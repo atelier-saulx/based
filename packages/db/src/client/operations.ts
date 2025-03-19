@@ -66,12 +66,14 @@ export class ModifyCtx {
       this.len + 4 + 2 + typesSize * 10 + rangesSize * 8,
     )
     let i = this.len
-    data.writeUint16LE(typesSize, i)
+    data[i] = typesSize
+    data[i + 1] = typesSize >>> 8
     i += 2
     for (const [id, startId] of this.dirtyTypes) {
       const lastId = this.db.schemaTypesParsedById[id].lastId
       lastIds[id] = lastId
-      data.writeUint16LE(id, i)
+      data[i] = id
+      data[i + 1] = id >>> 8
       i += 2
       data.writeUint32LE(startId, i)
       i += 4
