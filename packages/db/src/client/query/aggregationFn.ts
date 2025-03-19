@@ -7,5 +7,5 @@ export const createAggFnBuffer = (aggregation: AggFn) => {
 }
 
 export const count = (def: QueryDef) => {
-  def.count = AggFn.COUNT
+  def.aggregation = AggFn.COUNT
 }

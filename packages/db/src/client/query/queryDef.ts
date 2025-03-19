@@ -38,7 +38,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     },
     sort: null,
     references: new Map(),
-    count: null,
+    aggregation: null,
   }
   return q
 }

@@ -105,7 +105,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       }
 
       let aggregation: Uint8Array
-      aggregation = createAggFnBuffer(def.count)
+      aggregation = createAggFnBuffer(def.aggregation)
 
       if (def.target.ids) {
         // type 1

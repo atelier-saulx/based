@@ -98,7 +98,7 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDef
-  count: AggFn
+  aggregation: AggFn
 }
 
 export type QueryDefEdges = {
