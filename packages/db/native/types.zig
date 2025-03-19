@@ -129,3 +129,18 @@ pub const ReadRefOp = enum(u8) {
     REFERENCES = @intFromEnum(ReadOp.REFERENCES),
     REFERENCE = @intFromEnum(ReadOp.REFERENCE),
 };
+
+pub const AggFn = enum(u8) {
+    avg = 1,
+    cardinality = 2,
+    concat = 3, // str aggregation, delimiter should be an argument
+    count = 4,
+    max = 5,
+    min = 6,
+    mode = 7, // ordered-set
+    percentile = 8, // continuous or discrete should be optional parameters, default = discrete
+    rank = 9, // hypothetical-set, dense should be optional parameter
+    stdDev = 10, // population or sample should be optional parameters
+    sum = 11,
+    variance = 12,
+};

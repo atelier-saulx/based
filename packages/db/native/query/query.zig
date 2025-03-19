@@ -69,7 +69,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const sortSize = read(u16, q, 13 + filterSize);
         const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
         const searchSize = read(u16, q, 15 + filterSize + sortSize);
-        const include = q[17 + filterSize + sortSize + searchSize .. q.len];
+        const aggregation: types.AggFn = @enumFromInt(q[17 + filterSize + sortSize + searchSize]);
+        const include = q[18 + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
             if (searchSize > 0) {
                 const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
@@ -97,7 +98,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
                     );
                 }
             } else {
-                try QueryDefault.default(&ctx, offset, limit, typeId, filterBuf, include);
+                try QueryDefault.default(&ctx, offset, limit, typeId, filterBuf, include, aggregation);
             }
         } else {
             const s = sortBuf[1..sortBuf.len];

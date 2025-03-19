@@ -68,11 +68,19 @@ await test('branchedCount', async (t) => {
 
   await db.drain()
 
-  await db.query('article', strudelArticle).include('*', '**').get().inspect()
+  // await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
-  await db
-    .query('article', strudelArticle)
-    .include((q) => q('contributors').include('name').filter('flap', '>', 25))
-    .get()
-    .inspect()
+  // await db.query('user').count().get().inspect()
+
+  // await db.query('user').filter('flap', '>', 20).count().get().inspect()
+
+  // await db.query('article').include('contributors').count().get().inspect()
+
+  // await db
+  //   .query('article')
+  //   .include((q) => q('contributors').count())
+  //   .get()
+  //   .inspect()
+
+  //  {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
 })

@@ -12,6 +12,7 @@ import {
   isAlias,
   includeField,
   includeFields,
+  count,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -137,6 +138,12 @@ export class QueryBranch<T> {
     } else {
       search(this.def, query)
     }
+    // @ts-ignore
+    return this
+  }
+
+  count(): T {
+    count(this.def)
     // @ts-ignore
     return this
   }

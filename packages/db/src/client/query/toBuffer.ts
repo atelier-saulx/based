@@ -4,6 +4,7 @@ import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
+import { createAggFnBuffer } from './aggregationFn.js'
 import { ENCODER } from '../../utils.js'
 
 const byteSize = (arr: Uint8Array[]) => {
@@ -103,6 +104,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         sortSize = sort.byteLength
       }
 
+      let aggregation: Uint8Array
+      aggregation = createAggFnBuffer(def.count)
+
       if (def.target.ids) {
         // type 1
         // 1: 4 + ids * 4 [ids len] [id,id,id]
@@ -121,7 +125,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
           )
         }
         const idsSize = def.target.ids.length * 4
-        const buf = new Uint8Array(21 + idsSize + filterSize + sortSize + searchSize)
+        const buf = new Uint8Array(
+          21 + idsSize + filterSize + sortSize + searchSize,
+        )
         buf[0] = 1
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -165,7 +171,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         // ?filter
         // 2: 2 [sort size]
         // ?sort
-        const buf = new Uint8Array(17 + filterSize + sortSize + searchSize)
+        const buf = new Uint8Array(18 + filterSize + sortSize + searchSize)
         buf[0] = 2
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -194,6 +200,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         if (searchSize) {
           buf.set(search, 17 + filterSize + sortSize)
         }
+
+        buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
 
         result.push(buf)
       }
