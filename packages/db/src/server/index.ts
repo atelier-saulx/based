@@ -538,8 +538,9 @@ export class DbServer {
       i += 10
     }
 
+    const view = new DataView(buf.buffer, buf.byteOffset)
     while (i < end) {
-      const key = buf.readDoubleLE(i)
+      const key = view.getFloat64(i, true)
       this.dirtyRanges.add(key)
       i += 8
     }

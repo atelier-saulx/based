@@ -123,7 +123,8 @@ const getFilterFields = (
     conditions.forEach((v, k) => {
       if (k === 0) {
         for (const buf of v) {
-          results.main.add(buf.readUint16LE(4))
+          const x = buf[4] | buf[5] << 8
+          results.main.add(x)
         }
       } else {
         results.props.add(k)
