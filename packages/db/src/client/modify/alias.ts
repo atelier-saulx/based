@@ -13,7 +13,7 @@ import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 export function writeAlias(
-  value: string | null | Buffer,
+  value: string | null,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
