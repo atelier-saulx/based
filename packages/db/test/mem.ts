@@ -59,6 +59,11 @@ await test('mem', async (t) => {
 
     await db.drain()
 
+    await db.create('data', {
+      age: 667,
+      name: 'BASIC2 ' + j,
+    })
+
     equal(
       (
         await db
@@ -77,7 +82,7 @@ await test('mem', async (t) => {
 
     await db.drain()
 
-    equal((await db.query('data').range(0, 10e6).get()).length, j + 1)
+    equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
 
     // console.log(`Ran ${j + 1} / ${repeat}`)
   }
