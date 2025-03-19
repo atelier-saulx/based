@@ -512,7 +512,7 @@ export class DbServer {
     }
 
     if (this.processingQueries) {
-      this.modifyQueue.push(Buffer.from(buf))
+      this.modifyQueue.push(new Uint8Array(buf))
     } else {
       this.#modify(buf)
     }
