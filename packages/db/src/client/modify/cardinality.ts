@@ -10,9 +10,8 @@ export function writeHll(
   value:
     | string
     | null
-    | Buffer
     | Uint8Array
-    | Array<string | Buffer | Uint8Array>,
+    | Array<string | Uint8Array>,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -41,7 +40,7 @@ export function writeHll(
 }
 
 function addHll(
-  value: (string | Buffer | Uint8Array)[],
+  value: (string | Uint8Array)[],
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -59,7 +58,7 @@ function addHll(
 }
 
 export function writeHllBuf(
-  value: (string | Buffer | Uint8Array)[],
+  value: (string | Uint8Array)[],
   ctx: ModifyCtx,
   t: PropDef,
   len: number,
@@ -72,9 +71,7 @@ export function writeHllBuf(
     if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
     } else if (
-      (val instanceof Buffer || val instanceof Uint8Array) &&
-      val.byteLength === 8
-    ) {
+      (val instanceof Uint8Array) && val.byteLength === 8) {
       ctx.buf.set(val, ctx.len)
     } else {
       return new ModifyError(t, val)
