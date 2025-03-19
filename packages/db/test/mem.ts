@@ -1,11 +1,12 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 import { equal } from 'assert'
 
 await test('mem', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
+    // low amount to force many flushes
+    maxModifySize: 10000,
   })
 
   await db.start({ clean: true })
@@ -18,7 +19,7 @@ await test('mem', async (t) => {
     types: {
       data: {
         props: {
-          a: { ref: 'data', prop: 'b', $derp: 'uint8' },
+          a: { ref: 'data', prop: 'b', $derp: 'uint16' },
           b: { items: { prop: 'a', ref: 'data' } },
           age: { type: 'uint32' },
           name: { type: 'string' },
@@ -49,7 +50,9 @@ await test('mem', async (t) => {
         db.create('data', {
           age: i,
           name: `Mr FLAP ${i}`,
-          a: x ? { id: ids[Math.floor(Math.random() * ids.length)] } : null,
+          a: x
+            ? { id: ids[Math.floor(Math.random() * ids.length)], $derp: i }
+            : null,
         }),
       )
     }
