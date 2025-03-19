@@ -99,7 +99,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     len = mainBuffer.byteLength + 3 + propSize * 2
     includeBuffer = Buffer.allocUnsafe(len)
     includeBuffer[0] = 0
-    includeBuffer.writeInt16LE(mainBuffer.byteLength, 1)
+    includeBuffer[1] = mainBuffer.byteLength
+    includeBuffer[2] = mainBuffer.byteLength >>> 8
     const offset = 3 + mainBuffer.byteLength
     mainBuffer.copy(includeBuffer, 3)
     if (propSize) {
