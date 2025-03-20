@@ -25,10 +25,10 @@ import {
 // -------------------------------------------
 
 const writeConditions = (
-  result: Buffer,
+  result: Uint8Array,
   k: number,
   offset: number,
-  conditions: Buffer[],
+  conditions: Uint8Array[],
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
@@ -41,12 +41,13 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
-  result.writeUint16LE(conditionSize, sizeIndex)
+  result[sizeIndex] = conditionSize
+  result[sizeIndex + 1] = conditionSize >>> 8
   return lastWritten - offset
 }
 
 export const fillConditionsBuffer = (
-  result: Buffer,
+  result: Uint8Array,
   conditions: QueryDefFilter,
   offset: number,
 ) => {
@@ -71,12 +72,14 @@ export const fillConditionsBuffer = (
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
-      result.writeUint16LE(refConditions.schema.id, lastWritten)
+      result[lastWritten] = refConditions.schema.id
+      result[lastWritten + 1] = refConditions.schema.id >>> 8
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      result.writeUint16LE(size, sizeIndex)
+      result[sizeIndex] = size
+      result[sizeIndex + 1] = size >>> 8
       lastWritten += size
     }
   }
@@ -89,14 +92,19 @@ export const fillConditionsBuffer = (
       lastWritten += 2
       const size = writeConditions(result, k, lastWritten, v)
       lastWritten += size
-      result.writeUint16LE(size, sizeIndex)
+      result[sizeIndex] = size
+      result[sizeIndex + 1] = size >>> 8
     })
   }
 
   if (conditions.or) {
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
-    result.writeUint16LE(size, orJumpIndex)
-    result.writeUint32LE(lastWritten, orJumpIndex + 2)
+    result[orJumpIndex] = size
+    result[orJumpIndex + 1] = size >>> 8
+    result[orJumpIndex + 2] = lastWritten
+    result[orJumpIndex + 3] = lastWritten >>> 8
+    result[orJumpIndex + 4] = lastWritten >>> 16
+    result[orJumpIndex + 5] = lastWritten >>> 24
     lastWritten += size
   }
 
@@ -116,14 +124,13 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-// TODO convert to UINT8ARRAY
-export const filterToBuffer = (conditions: QueryDefFilter) => {
-  let result: Buffer
+export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
+  let result: Uint8Array
   if (conditions.size > 0) {
-    result = Buffer.allocUnsafe(conditions.size)
+    result = new Uint8Array(conditions.size)
     fillConditionsBuffer(result, conditions, 0)
   } else {
-    result = Buffer.alloc(0)
+    result = new Uint8Array(0)
   }
   return result
 }

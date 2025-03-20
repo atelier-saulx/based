@@ -12,6 +12,7 @@ import {
   isAlias,
   includeField,
   includeFields,
+  count,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -30,6 +31,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
+import { concatUint8Arr } from '../../utils.js'
 
 export { QueryByAliasObj }
 
@@ -136,6 +138,12 @@ export class QueryBranch<T> {
     } else {
       search(this.def, query)
     }
+    // @ts-ignore
+    return this
+  }
+
+  count(): T {
+    count(this.def)
     // @ts-ignore
     return this
   }
@@ -290,7 +298,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeField(this.def, '*')
     }
-    let buf: Buffer
+    let buf: Uint8Array
     try {
       buf = registerQuery(this)
     } catch (err) {
@@ -316,7 +324,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     return new GetPromise(this.#getInternal)
   }
 
-  buffer: Buffer
+  buffer: Uint8Array
 
   register() {
     registerQuery(this)
@@ -354,11 +362,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     )
   }
 
-  toBuffer() {
+  toBuffer(): Uint8Array {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeField(this.def, '*')
     }
     const b = defToBuffer(this.db, this.def)
-    return Buffer.concat(b)
+    return concatUint8Arr(b)
   }
 }

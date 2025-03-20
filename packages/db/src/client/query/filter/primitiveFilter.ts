@@ -75,6 +75,6 @@ export const primitiveFilter = (
     bufferMap.set(fieldIndexChar, arr)
   }
   size += buf.byteLength
-  arr.push(Buffer.from(buf))
+  arr.push(buf)
   return size
 }

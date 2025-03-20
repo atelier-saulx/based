@@ -52,7 +52,7 @@ await test('dependent', async (t) => {
     },
   } as const
 
-  await db.putSchema(schema)
+  await db.setSchema(schema)
 
   const showId = await db.create('show', {
     editions: [

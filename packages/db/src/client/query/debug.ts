@@ -9,7 +9,7 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
     if (a === null) {
       return null
     }
-    if (a instanceof Buffer) {
+    if (a instanceof Buffer) { // RFE is this necessary?
       return new Uint8Array(a)
     }
     if (a instanceof Uint8Array) {

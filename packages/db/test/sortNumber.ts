@@ -15,7 +15,7 @@ await test('numbers', async (t) => {
 
   const animals = ['pony', 'whale', 'dolphin', 'dog']
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       example: {
         props: {

@@ -14,7 +14,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     locales: {
       en: {},
       it: { fallback: ['en'] },
@@ -312,7 +312,7 @@ await test('search', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     locales: {
       en: {},
       fi: { fallback: ['en'] },
@@ -343,6 +343,7 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('finland', 'fun')
     .get()
+  console.log(await db.query('dialog').get())
   deepEqual(
     result.toObject(),
     [
@@ -481,7 +482,7 @@ await test('reference text', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: { required: true },
       fr: { required: true },
@@ -546,7 +547,7 @@ await test('sort', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     locales: {
       en: {},
       it: { fallback: ['en'] },

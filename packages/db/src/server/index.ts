@@ -1,4 +1,5 @@
 import native from '../native.js'
+import createDbHash from './dbHash.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
@@ -44,11 +45,11 @@ class SortIndex {
   cnt = 0
 }
 
-function readUint16LE(buf: Buffer | Uint8Array, off: number): number {
+function readUint16LE(buf: Uint8Array, off: number): number {
   return buf[off] | (buf[off + 1] << 8)
 }
 
-function readUint32LE(buf: Buffer | Uint8Array, off: number): number {
+function readUint32LE(buf: Uint8Array, off: number): number {
   return (
     buf[off] | (buf[off + 1] << 8) | (buf[off + 2] << 16) | (buf[off + 3] << 24)
   )
@@ -89,7 +90,7 @@ export class DbWorker {
     return new Promise(this.callback)
   }
 
-  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     this.channel.postMessage(buf)
     return new Promise(this.callback)
   }
@@ -111,12 +112,12 @@ export class DbServer {
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
   dirtyRanges = new Set<number>()
-  csmtHashFun = native.createHash()
+  csmtHashFun = createDbHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
-  modifyQueue: Buffer[] = []
-  queryQueue: Map<Function, Buffer> = new Map()
+  modifyQueue: Uint8Array[] = []
+  queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean
   onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
@@ -374,7 +375,7 @@ export class DbServer {
     })
   }
 
-  putSchema(
+  setSchema(
     strictSchema: StrictSchema,
     fromStart: boolean = false,
     transformFns?: TransformFns,
@@ -478,7 +479,7 @@ export class DbServer {
         view.setFloat64(data.length + 2, blockKey, true)
         // add dataLen
         view.setUint32(buf.length - 4, data.length, true)
-        this.modify(Buffer.from(buf))
+        this.modify(buf)
       }
     }
 
@@ -487,7 +488,7 @@ export class DbServer {
     return this.schema
   }
 
-  modify(buf: Buffer): Record<number, number> {
+  modify(buf: Uint8Array): Record<number, number> {
     const offsets = {}
     const dataLen = readUint32LE(buf, buf.length - 4)
     let typesSize = readUint16LE(buf, dataLen)
@@ -500,9 +501,11 @@ export class DbServer {
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
 
-      buf.writeUint32LE(offset, i)
+      buf[i++] = offset
+      buf[i++] = offset >>> 8
+      buf[i++] = offset >>> 16
+      buf[i++] = offset >>> 24
 
-      i += 4
       const lastId = readUint32LE(buf, i)
       i += 4
       def.lastId = lastId + offset
@@ -510,7 +513,7 @@ export class DbServer {
     }
 
     if (this.processingQueries) {
-      this.modifyQueue.push(Buffer.from(buf))
+      this.modifyQueue.push(new Uint8Array(buf))
     } else {
       this.#modify(buf)
     }
@@ -518,7 +521,7 @@ export class DbServer {
     return offsets
   }
 
-  #modify(buf: Buffer) {
+  #modify(buf: Uint8Array) {
     const end = buf.length - 4
     const dataLen = readUint32LE(buf, end)
     let typesSize = readUint16LE(buf, dataLen)
@@ -536,8 +539,9 @@ export class DbServer {
       i += 10
     }
 
+    const view = new DataView(buf.buffer, buf.byteOffset)
     while (i < end) {
-      const key = buf.readDoubleLE(i)
+      const key = view.getFloat64(i, true)
       this.dirtyRanges.add(key)
       i += 8
     }
@@ -545,7 +549,7 @@ export class DbServer {
     native.modify(data, types, this.dbCtxExternal)
   }
 
-  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.queryQueue.set(resolve, buf)

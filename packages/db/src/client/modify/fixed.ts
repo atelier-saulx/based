@@ -1,4 +1,4 @@
-import { ModifyCtx } from '../../index.js'
+import { ENCODER, ModifyCtx } from '../../index.js'
 import {
   BINARY,
   BOOLEAN,
@@ -46,7 +46,8 @@ map[STRING] = (ctx, val, def) => {
     }
     val = ''
   }
-  const size = Buffer.byteLength(val, 'utf8')
+  const valBuf = ENCODER.encode(val)
+  const size = valBuf.byteLength;
   if (size + 1 > def.len) {
     return new ModifyError(def, val, `max length of ${def.len - 1},`)
   }
@@ -54,7 +55,8 @@ map[STRING] = (ctx, val, def) => {
     return RANGE_ERR
   }
   ctx.buf[ctx.len++] = size
-  ctx.len += ctx.buf.write(val, ctx.len, 'utf8')
+  ctx.buf.set(valBuf, ctx.len)
+  ctx.len += size
 }
 
 map[BOOLEAN] = (ctx, val, def) => {
@@ -90,7 +92,10 @@ map[NUMBER] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-  ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
+
+  const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
+  ctx.len += 8
+  view.setFloat64(0, val, true)
 }
 
 map[TIMESTAMP] = (ctx, val, def) => {
@@ -101,7 +106,10 @@ map[TIMESTAMP] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-  ctx.len = ctx.buf.writeDoubleLE(parsedValue, ctx.len)
+
+  const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
+  ctx.len += 8
+  view.setFloat64(0, parsedValue, true)
 }
 
 map[UINT32] = (ctx, val, def) => {

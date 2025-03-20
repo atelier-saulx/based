@@ -1,4 +1,4 @@
-import { ModifyCtx } from '../../../index.js'
+import { ENCODER, ModifyCtx } from '../../../index.js'
 import {
   BINARY,
   MICRO_BUFFER,
@@ -100,7 +100,7 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(edge, value)
           }
-          if (ctx.len + EDGE_HEADER_SIZE + Buffer.byteLength(value) > ctx.max) {
+          if (ctx.len + EDGE_HEADER_SIZE + ENCODER.encode(value).byteLength > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = STRING
@@ -267,10 +267,10 @@ export function writeEdges(
       | X       | main        | len         | Actual main content                  |
 
       ### Notes:
-      - The number of `(start, len, operation)` pairs is not explicitly stored 
+      - The number of `(start, len, operation)` pairs is not explicitly stored
         but **derived** from the structure.
-      - Parsing logic must determine the end of pairs by computing:  
-        `Pairs End Offset = (size - mainSize)`  
+      - Parsing logic must determine the end of pairs by computing:
+        `Pairs End Offset = (size - mainSize)`
         Sections are processed until the `MAIN` data block begins.
       */
 

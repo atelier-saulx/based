@@ -1,4 +1,5 @@
 import { ModifyCtx } from '../../index.js'
+import { ENCODER } from '../../utils.js'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import {
   UPDATE,
@@ -11,8 +12,6 @@ import {
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import native from '../../native.js'
-
-const ENCODER = new TextEncoder()
 
 export function getBuffer(value: any): Uint8Array | undefined {
   if (typeof value === 'object') {
@@ -27,7 +26,7 @@ export function getBuffer(value: any): Uint8Array | undefined {
   }
 }
 
-export function writeBinaryRaw(value: Buffer, ctx: ModifyCtx) {
+export function writeBinaryRaw(value: Uint8Array, ctx: ModifyCtx) {
   let size = value.byteLength + 6
   let crc = native.crc32(value)
 

@@ -7,7 +7,7 @@ export class ModifyCtx {
   constructor(db: DbClient) {
     this.max = db.maxModifySize
     this.db = db
-    this.buf = Buffer.allocUnsafe(db.maxModifySize)
+    this.buf = new Uint8Array(db.maxModifySize)
   }
   // default values
   len: number = 0
@@ -17,10 +17,10 @@ export class ModifyCtx {
   queue = new Map<(payload: any) => void, ModifyState>()
   ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
 
-  payload: Buffer
+  payload: Uint8Array
 
   max: number
-  buf: Buffer
+  buf: Uint8Array
 
   field: number
   prefix0: number = -1
@@ -66,23 +66,33 @@ export class ModifyCtx {
       this.len + 4 + 2 + typesSize * 10 + rangesSize * 8,
     )
     let i = this.len
-    data.writeUint16LE(typesSize, i)
+    data[i] = typesSize
+    data[i + 1] = typesSize >>> 8
     i += 2
     for (const [id, startId] of this.dirtyTypes) {
       const lastId = this.db.schemaTypesParsedById[id].lastId
       lastIds[id] = lastId
-      data.writeUint16LE(id, i)
+      data[i] = id
+      data[i + 1] = id >>> 8
       i += 2
-      data.writeUint32LE(startId, i)
-      i += 4
-      data.writeUint32LE(lastId, i)
-      i += 4
+      data[i++] = startId
+      data[i++] = startId >>> 8
+      data[i++] = startId >>> 16
+      data[i++] = startId >>> 24
+      data[i++] = lastId
+      data[i++] = lastId >>> 8
+      data[i++] = lastId >>> 16
+      data[i++] = lastId >>> 24
     }
+    const view = new DataView(data.buffer, data.byteOffset)
     for (let key of this.dirtyRanges) {
-      data.writeDoubleLE(key, i)
+      view.setFloat64(i, key, true)
       i += 8
     }
-    data.writeUint32LE(this.len, i)
+    data[i++] = this.len
+    data[i++] = this.len >>> 8
+    data[i++] = this.len >>> 16
+    data[i++] = this.len >>> 24
     return data
   }
 }

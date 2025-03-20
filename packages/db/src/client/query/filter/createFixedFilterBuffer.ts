@@ -4,7 +4,6 @@ import {
   BINARY,
   STRING,
   REFERENCES,
-  propIsSigned,
 } from '@based/schema/def'
 import {
   EQUAL,
@@ -14,8 +13,7 @@ import {
   MODE_OR_FIXED,
 } from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
-
-const ENCODER = new TextEncoder()
+import { ENCODER } from '../../../utils.js'
 
 // -------------------------------------------
 // conditions normal

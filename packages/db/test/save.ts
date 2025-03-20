@@ -13,7 +13,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: { required: true },
       fr: { required: true },
@@ -46,6 +46,7 @@ await test('simple', async (t) => {
           age: { type: 'uint32' },
           story: { type: 'string' },
           test: { ref: 'typeTest', prop: 'q' },
+          alias: { type: 'alias' },
         },
       },
       typeTest: {
@@ -70,7 +71,7 @@ await test('simple', async (t) => {
           r: { type: 'enum', enum: ['a', 'b', 'c'] },
           s: { type: 'vector', size: 1 },
           //t: { type: 'set' },
-        }
+        },
       },
     },
   })
@@ -78,10 +79,12 @@ await test('simple', async (t) => {
   db.create('user', {
     name: 'youzi',
     email: 'youzi@yazi.yo',
+    alias: 'best',
   })
   db.create('user', {
     name: 'youri',
     email: 'youri@yari.yo',
+    alias: 'alsobest',
   })
   db.create('typeTest', {})
 
@@ -98,9 +101,7 @@ await test('simple', async (t) => {
   await db2.start()
   const a = await db.query('user').get().toObject()
   const b = await db2.query('user').get().toObject()
-
-  //console.log(a, b)
-  deepEqual(a, b)
+  deepEqual(b, a)
 
   const c = await db.create('user', { name: 'jerp' })
   const d = await db2.create('user', { name: 'jerp' })
@@ -140,7 +141,7 @@ await test('empty root', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     props: {
       rando: { type: 'string' },
     },
@@ -169,7 +170,7 @@ await test('refs', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       group: {
         props: {
@@ -238,7 +239,7 @@ await test('auto save', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       group: {
         props: {
@@ -274,7 +275,7 @@ await test('text', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: {},
       fi: { fallback: ['en'] },

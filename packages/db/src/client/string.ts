@@ -2,9 +2,7 @@ import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32 } from './bitWise.js'
 import makeTmpBuffer from './tmpBuffer.js'
-
-const DECODER = new TextDecoder('utf-8')
-const ENCODER = new TextEncoder();
+import { DECODER, ENCODER } from '../utils.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
@@ -17,7 +15,7 @@ const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page si
 // make this into a package
 // write the type Byte
 export const write = (
-  buf: Buffer | Uint8Array,
+  buf: Uint8Array,
   value: string,
   offset: number,
   noCompression: boolean,

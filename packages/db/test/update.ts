@@ -13,7 +13,7 @@ await test('update with payload.id', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         body: 'string',
@@ -57,7 +57,7 @@ await test('update', async (t) => {
     uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
   */
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       mep: {
         props: {

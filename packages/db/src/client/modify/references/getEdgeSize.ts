@@ -1,5 +1,6 @@
 import { PropDef, STRING, REFERENCE, REFERENCES } from '@based/schema/def'
 import { RefModifyOpts } from './references.js'
+import { ENCODER } from '../../../utils.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   let size = 0
@@ -9,7 +10,7 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
       const value = ref[key]
       if (edge.len === 0) {
         if (edge.typeIndex === STRING) {
-          size += Buffer.byteLength(value) + 4
+          size += ENCODER.encode(value).byteLength + 4
         } else if (edge.typeIndex === REFERENCE) {
           size += 4
         } else if (edge.typeIndex === REFERENCES) {

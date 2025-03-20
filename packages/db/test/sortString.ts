@@ -32,7 +32,7 @@ await test('compression / large strings', async (t) => {
       path: t.tmp,
     })
     await db.start({ clean: true })
-    await db.putSchema({
+    await db.setSchema({
       types: {
         article: {
           props: {
@@ -127,7 +127,7 @@ await test('fixed len strings', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   t.after(() => db.destroy())
   await db.start({ clean: true })
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         props: {

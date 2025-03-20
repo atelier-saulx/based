@@ -35,12 +35,12 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
 
 export type QueryDefFilter = {
   size: number
-  conditions: Map<number, Buffer[]>
+  conditions: Map<number, Uint8Array[]>
   exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
   references?: Map<number, QueryDefFilter>
   fromRef?: PropDef
   schema?: SchemaTypeDef
-  edges?: Map<number, Buffer[]>
+  edges?: Map<number, Uint8Array[]>
   or?: QueryDefFilter
   and?: QueryDefFilter
 }
@@ -98,6 +98,7 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDef
+  aggregation: AggFn
 }
 
 export type QueryDefEdges = {
@@ -143,3 +144,18 @@ export const READ_ID = 255
 export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
+
+export const enum AggFn {
+  AVG = 1,
+  CARDINALITY = 2,
+  CONCAT = 3, // str aggregation, delimiter should be an argument
+  COUNT = 4,
+  MAX = 5,
+  MIN = 6,
+  MODE = 7, // ordered-set
+  PERCENTILE = 8, // continuous or discrete should be optional parameters, default = discrete
+  RANK = 9, // hypothetical-set, dense should be optional parameter
+  STDDEV = 10, // population or sample should be optional parameters
+  SUM = 11,
+  VARIANCE = 12,
+}

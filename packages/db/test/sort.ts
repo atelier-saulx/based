@@ -13,7 +13,7 @@ await test('1M', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -87,7 +87,7 @@ await test('basic', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -532,7 +532,7 @@ await test('sort - from start (1M items)', async (t) => {
 
   // db.blockSize = 1e5
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -644,7 +644,7 @@ await test('unset value on create', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       dialog: {
         props: {

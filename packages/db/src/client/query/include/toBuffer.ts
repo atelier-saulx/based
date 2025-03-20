@@ -2,10 +2,10 @@ import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
 
-const EMPTY_BUFFER = Buffer.alloc(0)
+const EMPTY_BUFFER = new Uint8Array(0)
 
-export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
-  const result: Buffer[] = []
+export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
+  const result: Uint8Array[] = []
 
   if (
     !def.include.stringFields.size &&
@@ -17,9 +17,9 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     return result
   }
 
-  let mainBuffer: Buffer
+  let mainBuffer: Uint8Array
   let len = 0
-  let includeBuffer: Buffer
+  let includeBuffer: Uint8Array
 
   if (def.include.stringFields) {
     for (const f of def.include.stringFields) {
@@ -50,16 +50,19 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     } else {
       // GET SOME MAIN FIELDS
       const size = Object.keys(def.include.main.include).length
-      mainBuffer = Buffer.allocUnsafe(size * 4 + 2)
-      mainBuffer.writeUint16LE(def.include.main.len, 0)
+      mainBuffer = new Uint8Array(size * 4 + 2)
+      mainBuffer[0] = def.include.main.len
+      mainBuffer[1] = def.include.main.len >>> 8
       let i = 2
       let m = 0
       for (const key in def.include.main.include) {
         const v = def.include.main.include[key]
-        mainBuffer.writeUint16LE(v[1].start, i)
+        mainBuffer[i] = v[1].start
+        mainBuffer[i + 1] = v[1].start >>> 8
         const len = v[1].len
         v[0] = m
-        mainBuffer.writeUint16LE(len, i + 2)
+        mainBuffer[i + 2] = len
+        mainBuffer[i + 3] = len >>> 8
         i += 4
         m += len
       }
@@ -73,14 +76,14 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
     ] of def.include.langTextFields.entries()) {
       def.include.propsRead[prop] = 0
       if (codes.has(0)) {
-        const b = Buffer.allocUnsafe(3)
+        const b = new Uint8Array(3)
         b[0] = prop
         b[1] = propDef.typeIndex
         b[2] = 0
         result.push(b)
       } else {
         for (const code of codes) {
-          const b = Buffer.allocUnsafe(3)
+          const b = new Uint8Array(3)
           b[0] = prop
           b[1] = propDef.typeIndex
           b[2] = code
@@ -94,11 +97,12 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
 
   if (mainBuffer) {
     len = mainBuffer.byteLength + 3 + propSize * 2
-    includeBuffer = Buffer.allocUnsafe(len)
+    includeBuffer = new Uint8Array(len)
     includeBuffer[0] = 0
-    includeBuffer.writeInt16LE(mainBuffer.byteLength, 1)
+    includeBuffer[1] = mainBuffer.byteLength
+    includeBuffer[2] = mainBuffer.byteLength >>> 8
     const offset = 3 + mainBuffer.byteLength
-    mainBuffer.copy(includeBuffer, 3)
+    includeBuffer.set(mainBuffer, 3)
     if (propSize) {
       let i = 0
       for (const [prop, propDef] of def.include.props.entries()) {
@@ -108,7 +112,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Buffer[] => {
       }
     }
   } else if (propSize) {
-    const buf = Buffer.allocUnsafe(propSize * 2)
+    const buf = new Uint8Array(propSize * 2)
     let i = 0
     for (const [prop, propDef] of def.include.props.entries()) {
       buf[i] = prop

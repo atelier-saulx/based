@@ -23,7 +23,7 @@ async function initDb(t) {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       data: {
         props: {

@@ -1,4 +1,8 @@
-import native from './native.js'
+import {encodeBase64} from '@saulx/utils'
+
+const native = (typeof window === 'undefined') ? (await import('./native.js')).default : null
+export const DECODER = new TextDecoder('utf-8')
+export const ENCODER = new TextEncoder()
 
 export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   const len = aB.byteLength
@@ -6,7 +10,7 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
     return false
   }
   let i = 0
-  if (len < 50) {
+  if (len < 50 || !native) {
     while (i < len) {
       if (aB[i] != bB[i]) {
         return false
@@ -21,6 +25,7 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
       }
       i++
     }
+
     return native.equals(aB, bB)
   }
 }
@@ -40,8 +45,7 @@ export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Ui
   return res
 }
 
-const charMap = new TextEncoder().encode("0123456789abcdef");
-const DECODER = new TextDecoder()
+const charMap = ENCODER.encode('0123456789abcdef');
 
 // Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
 // https://issues.chromium.org/issues/42204568
@@ -109,5 +113,9 @@ export const base64encode = (a: Uint8Array, lineMax: number = 72): string => {
   // TODO Could fallback to @saulx/utils if native is not available
   const tmp = new Uint8Array(base64OutLen(a.byteLength, lineMax))
 
-  return DECODER.decode(native.base64encode(tmp, a, lineMax))
+  if ((a.length < 10 && lineMax === 72) || !native) {
+    return encodeBase64(a)
+  } else {
+    return DECODER.decode(native.base64encode(tmp, a, lineMax))
+  }
 }
