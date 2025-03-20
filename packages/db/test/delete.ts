@@ -78,3 +78,68 @@ await test('delete', async (t) => {
     },
   ])
 })
+
+await test('non existing', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      nurp: {
+        props: {
+          email: { type: 'string' },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const simple = db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp',
+  })
+
+  await db.drain()
+
+  db.delete('user', simple)
+
+  await db.drain()
+
+  deepEqual((await db.query('user').get()).toObject(), [])
+
+  const nurp = db.create('nurp', {})
+
+  await db.drain()
+
+  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+    {
+      email: '',
+      id: 1,
+    },
+  ])
+
+  // this can be handled in js
+  db.delete('nurp', 213123123)
+  await db.drain()
+
+  db.delete('user', simple)
+  await db.drain()
+
+  // this has to be ignored in C
+  db.delete('user', simple)
+  await db.drain()
+})
