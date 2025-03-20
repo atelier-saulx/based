@@ -35,37 +35,39 @@ const walk = (val) => {
 
 const parseVal = (val) => {
   if (typeof val === 'object' && val !== null) {
-    return JSON.stringify(walk(val)).replace(MAGIC_REG, '')
+    const str = JSON.stringify(walk(val)).replace(MAGIC_REG, '')
+    val = str
+  }
+  if (typeof val === 'string' && val.length > 35) {
+    return val.slice(0, 35) + `... (${val.length - 35} more characters)`
   }
   return val
 }
 
-export class ModifyError {
+const parseErrorMsg = (
+  prop: PropDef | PropDefEdge | SchemaPropTree,
+  val: any,
+  msg?: string,
+) => {
+  if (isPropDef(prop)) {
+    if (msg) {
+      return `Invalid value at '${prop.path.join('.')}'. Expected ${msg} received '${parseVal(val)}'`
+    }
+    return `Invalid value at '${prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex]}, received '${parseVal(val)}'`
+  }
+
+  return `Unknown property '${val}'. Expected one of: ${Object.keys(prop).join(', ')}`
+}
+
+export class ModifyError extends Error {
   constructor(
     prop: PropDef | PropDefEdge | SchemaPropTree,
     val: any,
     msg?: string,
   ) {
-    this.#prop = prop
-    this.#val = val
-    this.#msg = msg
-  }
-  #msg: string
-  #prop: PropDef | PropDefEdge | SchemaPropTree
-  #val: any
-  toString() {
-    if (isPropDef(this.#prop)) {
-      if (this.#msg) {
-        return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${this.#msg} received '${parseVal(this.#val)}'`
-      }
-      return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received '${parseVal(this.#val)}'`
-    }
-
-    return `Unknown property '${this.#val}'. Expected one of: ${Object.keys(this.#prop).join(', ')}`
-  }
-
-  [inspect.custom]() {
-    return this.toString()
+    super(parseErrorMsg(prop, val, msg))
+    const a = this.stack.split('\n')
+    this.stack = a[0] + '\n' + a.slice(5, -1).join('\n')
   }
 }
 

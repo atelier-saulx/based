@@ -92,9 +92,13 @@ await test('simple', async (t) => {
     }
   }
 
-  db.update('transaction', transaction, {
-    myHash: m,
-  })
+  try {
+    db.update('transaction', transaction, {
+      myHash: m,
+    })
+  } catch (err) {
+    //
+  }
 
   await db.drain()
 

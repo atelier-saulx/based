@@ -30,27 +30,43 @@ await test('update', async (t) => {
     },
   })
 
+  await throws(async () => {
+    db.create('user', {
+      friend: { id: undefined },
+    })
+  })
+
   const good = await db.create('user', {
     name: 'youzi',
   })
 
-  const bad = db.create('user', {
-    name: 1,
+  const bad = 'xxx'
+
+  await throws(async () => {
+    db.create('user', {
+      name: 1,
+    })
   })
 
-  db.create('user', {
-    name: 'jamex',
-    friend: bad,
+  await throws(async () => {
+    db.create('user', {
+      name: 'jamex',
+      friend: bad,
+    })
   })
 
-  db.create('user', {
-    name: 'fred',
-    connections: [good, bad],
+  await throws(async () => {
+    db.create('user', {
+      name: 'fred',
+      connections: [good, bad],
+    })
   })
 
-  db.create('user', {
-    name: 'wrongRating',
-    rating: 'not a number',
+  await throws(async () => {
+    db.create('user', {
+      name: 'wrongRating',
+      rating: 'not a number',
+    })
   })
 
   await db.create('user', {
@@ -59,14 +75,18 @@ await test('update', async (t) => {
     connections: [good],
   })
 
-  db.create('user', {
-    name: 'fred',
-    connections: [good, bad],
+  await throws(async () => {
+    db.create('user', {
+      name: 'fred',
+      connections: [good, bad],
+    })
   })
 
-  db.create('user', {
-    name: 'wrongRating',
-    rating: 'not a number',
+  await throws(async () => {
+    db.create('user', {
+      name: 'wrongRating',
+      rating: 'not a number',
+    })
   })
 
   await throws(() =>

@@ -108,9 +108,7 @@ export const update = (
       return update(db, type, id, obj, opts)
     }
 
-    res.error = err
-    // @ts-ignore
-    return res
+    throw err
   }
 
   if (!db.isDraining) {

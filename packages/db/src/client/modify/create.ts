@@ -165,7 +165,6 @@ export function create(
   if (err) {
     ctx.prefix0 = -1 // force a new cursor
     ctx.len = pos
-
     if (err === RANGE_ERR) {
       if (pos === 0) {
         throw new Error('!No range available')
@@ -173,10 +172,7 @@ export function create(
       flushBuffer(db)
       return db.create(type, obj, opts)
     }
-
-    res.error = err
-    // @ts-ignore
-    return res
+    throw err
   }
 
   if (!db.isDraining) {

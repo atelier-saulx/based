@@ -44,7 +44,6 @@ export function writeVector(
   if (size === 0) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
-        // TODO ???
         return RANGE_ERR
       }
 
@@ -53,7 +52,6 @@ export function writeVector(
     }
   } else {
     if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
-      // TODO ???
       return RANGE_ERR
     }
     setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)

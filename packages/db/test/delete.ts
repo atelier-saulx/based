@@ -133,13 +133,10 @@ await test('non existing', async (t) => {
   ])
 
   // this can be handled in js
-  db.delete('nurp', 213123123)
-  await db.drain()
+  await db.delete('nurp', 213123123)
 
-  db.delete('user', simple)
-  await db.drain()
+  await db.delete('user', simple)
 
   // this has to be ignored in C
-  db.delete('user', simple)
-  await db.drain()
+  await db.delete('user', simple)
 })
