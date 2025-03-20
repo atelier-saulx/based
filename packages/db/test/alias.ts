@@ -101,7 +101,14 @@ await test('simple', async (t) => {
     (
       await db.query('user', { externalId: 'i-dont-exists-haha!' }).get()
     ).toObject(),
-    undefined,
+    null,
+    'Get non existing alias',
+  )
+
+  deepEqual(
+    (await db.query('user', 123).get()).toObject(),
+    null,
+    'Get non existing id',
   )
 })
 
