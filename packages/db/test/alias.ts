@@ -96,6 +96,13 @@ await test('simple', async (t) => {
     externalId: 'potato',
     potato: 'wrong',
   })
+
+  deepEqual(
+    (
+      await db.query('user', { externalId: 'i-dont-exists-haha!' }).get()
+    ).toObject(),
+    undefined,
+  )
 })
 
 await test('alias - references', async (t) => {
