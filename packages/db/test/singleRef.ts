@@ -12,7 +12,7 @@ await test('single special cases', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -74,7 +74,7 @@ await test('single simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -128,7 +128,7 @@ await test('simple nested', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -230,7 +230,7 @@ await test('single reference object', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -312,7 +312,7 @@ await test('nested', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -454,7 +454,7 @@ await test('nested', async (t) => {
       await db
         .query('simple') // lastRes
         .include('user.myBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -499,7 +499,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup', 'user.name')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -538,7 +538,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -566,7 +566,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user', 'user.myBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -624,7 +624,7 @@ await test('single reference multi refs strings', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -721,7 +721,7 @@ await test('update same value', async (t) => {
     return db.destroy()
   })
   await db.start({ clean: true })
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: { required: true },
       fr: { required: true },

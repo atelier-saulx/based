@@ -417,6 +417,9 @@ export const resultToObject = (
   const len = readUint32(result, offset)
 
   if (len === 0) {
+    if ('id' in q.target || 'alias' in q.target) {
+      return null
+    }
     return []
   }
   let items = []

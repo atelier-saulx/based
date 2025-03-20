@@ -31,7 +31,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       transaction: {
         props: {
@@ -125,7 +125,7 @@ await test('simple', async (t) => {
     await db
       .query('transaction')
       .include('id', 'myHash')
-      .range(813, 2)
+      .range(813, 815)
       .get()
       .toObject(),
     [
@@ -144,7 +144,7 @@ await test('simple', async (t) => {
     await db
       .query('transactionN')
       .include('id', 'myNativeMadeHash')
-      .range(813, 2)
+      .range(813, 815)
       .get()
       .toObject(),
     [

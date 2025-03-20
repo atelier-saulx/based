@@ -15,7 +15,7 @@ await test('hll', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         derp: 'number',
@@ -201,9 +201,6 @@ await test('hll', async (t) => {
   console.timeEnd('1M values with 5 distinct feelings update')
 
   console.log(await db.drain(), 'ms')
-
-  // await db.query('article').range(0, 1e6).get().inspect(10)
-  // await db.query('article').range(0, 1e6).get().inspect(10)
 
   deepEqual(
     (

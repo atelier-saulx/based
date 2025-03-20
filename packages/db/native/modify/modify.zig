@@ -79,7 +79,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             },
             types.ModOp.DELETE_NODE => {
-                db.deleteNode(ctx.db, ctx.typeEntry.?, ctx.node.?) catch {};
+                if (ctx.node) |node| {
+                    db.deleteNode(ctx.db, ctx.typeEntry.?, node) catch {};
+                }
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {

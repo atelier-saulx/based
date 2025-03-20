@@ -1,6 +1,9 @@
 // @ts-ignore
 import db from '../../basedDbNative.cjs'
-import { DECODER, ENCODER, bufToHex } from './utils.js'
+
+// Can't import these from utils or it would be a cyclic import.
+const DECODER = new TextDecoder('utf-8')
+const ENCODER = new TextEncoder()
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
@@ -104,30 +107,6 @@ export default {
     dbCtx: any,
   ) => {
     return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)
-  },
-
-  createHash: () => {
-    const state = db.hashCreate()
-    const hash = {
-      update: (buf: Uint8Array) => {
-        db.hashUpdate(state, buf)
-        return hash
-      },
-      digest: (encoding?: 'hex'): Uint8Array | string => {
-        const buf = new Uint8Array(16)
-        db.hashDigest(state, buf)
-        if (encoding === 'hex') {
-          return bufToHex(buf)
-        } else {
-          return buf
-        }
-      },
-      reset: () => {
-        db.hashReset(state)
-      },
-    }
-
-    return hash
   },
 
   compress: (buf: Uint8Array, offset: number, stringSize: number) => {

@@ -11,7 +11,7 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -125,7 +125,7 @@ await test('query', async (t) => {
 
   const drip = ['dope', 'cringe', 'meh']
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: {},
       it: { fallback: ['en'] },

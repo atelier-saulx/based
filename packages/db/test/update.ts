@@ -13,7 +13,7 @@ await test('update with payload.id', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         body: 'string',
@@ -57,7 +57,7 @@ await test('update', async (t) => {
     uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
   */
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       mep: {
         props: {
@@ -236,11 +236,15 @@ await test('update', async (t) => {
 
   equal((await db.query('snurp', ids).range(0, 100).get()).length, 100)
 
-  equal((await db.query('snurp', ids).range(10, 100).get()).length, 100)
+  equal((await db.query('snurp', ids).range(10, 110).get()).length, 100)
 
   deepEqual(
     (
-      await db.query('snurp', ids).range(1e5, 2).sort('a', 'desc').get()
+      await db
+        .query('snurp', ids)
+        .range(1e5, 1e5 + 2)
+        .sort('a', 'desc')
+        .get()
     ).toObject(),
     [
       {

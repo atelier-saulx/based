@@ -1,4 +1,5 @@
 import native from '../native.js'
+import createDbHash from './dbHash.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
@@ -111,7 +112,7 @@ export class DbServer {
   maxModifySize: number
   merkleTree: ReturnType<typeof createTree>
   dirtyRanges = new Set<number>()
-  csmtHashFun = native.createHash()
+  csmtHashFun = createDbHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
@@ -374,7 +375,7 @@ export class DbServer {
     })
   }
 
-  putSchema(
+  setSchema(
     strictSchema: StrictSchema,
     fromStart: boolean = false,
     transformFns?: TransformFns,

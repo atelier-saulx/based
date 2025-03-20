@@ -78,10 +78,10 @@ const db = new BasedDb({
 
 ## Schema Definition
 
-Define your schema using the `putSchema` method. Here is an example:
+Define your schema using the `setSchema` method. Here is an example:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     user: {
       name: 'string',
@@ -277,8 +277,8 @@ const server = new DbServer({
 await server.start({ clean: true })
 
 const hooks: DbClientHooks = {
-  async putSchema(schema, fromStart, transformFns) {
-    return server.putSchema(schema, fromStart, transformFns)
+  async setSchema(schema, fromStart, transformFns) {
+    return server.setSchema(schema, fromStart, transformFns)
   },
   async flushModify(buf) {
     const offsets = server.modify(buf)
@@ -292,7 +292,7 @@ const hooks: DbClientHooks = {
 const client1 = new DbClient({ hooks })
 const client2 = new DbClient({ hooks })
 
-await client1.putSchema({
+await client1.setSchema({
   types: {
     user: {
       name: 'string',
@@ -322,7 +322,7 @@ await db.query('article').include('*', '_checksum')
 Use cardinality for unique value counts:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     article: {
       myUniqueValuesCount: 'cardinality',
@@ -340,7 +340,7 @@ const myArticle = await db.create('article', {
 Handle boolean properties:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     user: {
       props: {
@@ -368,7 +368,7 @@ deepEqual((await db.query('user').get()).toObject(), [
 Handle binary data:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     user: {
       props: {
@@ -397,7 +397,7 @@ deepEqual((await db.query('user').get()).toObject(), [
 Perform analytics on data:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     page: {
       name: 'string',
@@ -435,7 +435,7 @@ const page = await db.create('page', {
 Use aliases for properties:
 
 ```typescript
-await db.putSchema({
+await db.setSchema({
   types: {
     user: {
       props: {

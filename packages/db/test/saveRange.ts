@@ -16,7 +16,7 @@ await test('save simple range', async (t) => {
     // return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -122,7 +122,11 @@ await test('save simple range', async (t) => {
   )
   deepEqual(
     (
-      await newDb.query('user').include('age').range(200000, 1).get()
+      await newDb
+        .query('user')
+        .include('age')
+        .range(200000, 200000 + 1)
+        .get()
     ).toObject(),
     [
       {
@@ -148,7 +152,11 @@ await test('save simple range', async (t) => {
 
   deepEqual(
     (
-      await newDb.query('user').include('name').range(200_000, 2).get()
+      await newDb
+        .query('user')
+        .include('name')
+        .range(200_000, 200_000 + 2)
+        .get()
     ).toObject(),
     [
       {
@@ -173,7 +181,7 @@ await test('delete a range', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -231,7 +239,7 @@ await test('reference changes', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {

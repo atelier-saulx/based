@@ -14,7 +14,7 @@ await test('wipe', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       data: {
         props: {
@@ -53,7 +53,7 @@ await test('wipe', async (t) => {
 
   await db.wipe()
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       x: {
         props: {

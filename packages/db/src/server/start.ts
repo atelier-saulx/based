@@ -41,7 +41,10 @@ type CsmtNodeRange = {
   end: number
 }
 
-export async function start(db: DbServer, opts: { clean?: boolean, hosted?: boolean }) {
+export async function start(
+  db: DbServer,
+  opts: { clean?: boolean; hosted?: boolean },
+) {
   const path = db.fileSystemPath
   const id = stringHash(path) >>> 0
   const noop = () => {}
@@ -86,7 +89,7 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
       // Prop need to not call setting in selva
-      db.putSchema(JSON.parse(schema.toString()), true)
+      db.setSchema(JSON.parse(schema.toString()), true)
     }
   } catch (err) {
     // TODO In some cases we really should give up!
@@ -97,16 +100,15 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
     db.merkleTree = createTree(db.createCsmtHashFun)
   }
 
-
   // FDN-791 CSMT is unstable (not history independent)
   // For now we just sort the types to ensure that we always
   // load in the same order.
-  const types = Object.keys(db.schemaTypesParsed).sort((a, b) => db.schemaTypesParsed[a].id - db.schemaTypesParsed[b].id).reduce((obj, key) => {
-      obj[key] = db.schemaTypesParsed[key];
-      return obj;
-    },
-    {}
-  )
+  const types = Object.keys(db.schemaTypesParsed)
+    .sort((a, b) => db.schemaTypesParsed[a].id - db.schemaTypesParsed[b].id)
+    .reduce((obj, key) => {
+      obj[key] = db.schemaTypesParsed[key]
+      return obj
+    }, {})
 
   for (const key in types) {
     const def = types[key]
@@ -153,7 +155,7 @@ export async function start(db: DbServer, opts: { clean?: boolean, hosted?: bool
   if (!opts?.hosted) {
     db.unlistenExit = exitHook(async (signal) => {
       const blockSig = () => {}
-      const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+      const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
 
       // A really dumb way to block signals temporarily while saving.
       // This is needed because there is no way to set the process signal mask

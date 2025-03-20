@@ -13,7 +13,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: { required: true },
       fr: { required: true },
@@ -71,7 +71,7 @@ await test('simple', async (t) => {
           r: { type: 'enum', enum: ['a', 'b', 'c'] },
           s: { type: 'vector', size: 1 },
           //t: { type: 'set' },
-        }
+        },
       },
     },
   })
@@ -141,7 +141,7 @@ await test('empty root', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     props: {
       rando: { type: 'string' },
     },
@@ -170,7 +170,7 @@ await test('refs', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       group: {
         props: {
@@ -239,7 +239,7 @@ await test('auto save', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       group: {
         props: {
@@ -275,7 +275,7 @@ await test('text', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: {},
       fi: { fallback: ['en'] },

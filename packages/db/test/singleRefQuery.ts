@@ -13,7 +13,7 @@ await test('single reference query', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {

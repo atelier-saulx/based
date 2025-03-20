@@ -50,8 +50,8 @@ export class BasedDb {
     const client = new DbClient({
       maxModifySize,
       hooks: {
-        putSchema(schema, fromStart) {
-          return Promise.resolve(server.putSchema(schema, fromStart))
+        setSchema(schema, fromStart) {
+          return Promise.resolve(server.setSchema(schema, fromStart))
         },
         flushModify(buf) {
           const offsets = server.modify(buf)
@@ -97,8 +97,15 @@ export class BasedDb {
     return this.client.query.apply(this.client, arguments)
   }
 
-  putSchema: DbClient['putSchema'] = function () {
-    return this.client.putSchema.apply(this.client, arguments)
+  setSchema: DbClient['setSchema'] = function () {
+    return this.client.setSchema.apply(this.client, arguments)
+  }
+
+  putSchema: DbClient['setSchema'] = function () {
+    console.warn(
+      'URGENT: putSchema will be removed in next release. Use setSchema instead!',
+    )
+    return this.setSchema.apply(this, arguments)
   }
 
   drain: DbClient['drain'] = function () {

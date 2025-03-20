@@ -1,7 +1,7 @@
 import { benchmark } from '../utils'
 
 benchmark('create 1m booleans', async (db) => {
-  db.putSchema({
+  db.setSchema({
     types: {
       test: {
         boolean: 'boolean',

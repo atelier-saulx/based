@@ -11,7 +11,7 @@ await test('copy', async (t) => {
     return db.destroy()
   })
   await db.start({ clean: true })
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         name: 'string',

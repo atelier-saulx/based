@@ -14,7 +14,7 @@ await test('references', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -109,7 +109,7 @@ await test('one to many', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -218,7 +218,7 @@ await test('update', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -298,7 +298,7 @@ await test('filter', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -444,7 +444,7 @@ await test('filter', async (t) => {
 //     return db.destroy()
 //   })
 
-//   await db.putSchema({
+//   await db.setSchema({
 //     locales: {
 //       en: { required: true },
 //       fr: { required: true },

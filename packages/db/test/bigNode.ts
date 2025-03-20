@@ -20,7 +20,7 @@ await test('big nodes', async (t) => {
     return props
   }
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       mega: {
         props: {
@@ -32,7 +32,7 @@ await test('big nodes', async (t) => {
         props: {
           ...makeALot(16383),
           ref: { type: 'reference', ref: 'mega', prop: 'ref' },
-        }
+        },
       },
       //giga: {
       //  props: {
@@ -61,7 +61,6 @@ await test('big nodes', async (t) => {
   })
   await db.drain()
 
-
   const mega = (await db.query('mega').get()).toObject()
   const giga = (await db.query('giga').get()).toObject()
   deepEqual(mega[1].f4092, 1337)
@@ -73,6 +72,6 @@ await test('big nodes', async (t) => {
 
   const megaRef = (await db.query('mega').include('ref').get()).toObject()
   const gigaRef = (await db.query('giga').include('ref').get()).toObject()
-  deepEqual(gigaRef[0].ref.id, 2);
-  deepEqual(megaRef[1].ref.id, 1);
+  deepEqual(gigaRef[0].ref.id, 2)
+  deepEqual(megaRef[1].ref.id, 1)
 })

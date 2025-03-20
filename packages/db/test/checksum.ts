@@ -12,7 +12,7 @@ await test('checksum', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         body: 'string',

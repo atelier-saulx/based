@@ -80,7 +80,7 @@ const runEuobserver = async (path: string) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -176,7 +176,7 @@ const runSimple = async (path: string) => {
 
   const name = 'Benedict Timothy Carlton Cumberbatch'
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       person: {
         props: {

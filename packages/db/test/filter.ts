@@ -12,7 +12,7 @@ await test('single', async (t) => {
   })
   const status = ['error', 'danger', 'ok', '🦄']
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       org: {
         props: {
@@ -124,7 +124,7 @@ await test('simple', async (t) => {
 
   const status = ['error', 'danger', 'ok', '🦄']
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       org: {
         props: {
@@ -598,7 +598,7 @@ await test('or', async (t) => {
 
   const status = ['error', 'danger', 'ok', '🦄']
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       machine: {
         props: {
@@ -748,7 +748,7 @@ await test('or numerical', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       machine: {
         props: {
@@ -835,7 +835,7 @@ await test('or numerical', async (t) => {
         .query('machine')
         .include('temperature')
         .filter('id', '<=', 20000)
-        .range(10000, 10000)
+        .range(10000, 20000)
         .get()
     ).node(-1).id,
     20000,

@@ -14,7 +14,7 @@ await test('range', async (t) => {
   })
 
   // schema
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -66,7 +66,7 @@ await test('range', async (t) => {
 
   await db.drain()
 
-  const result = await db.query('user').include('nr').range(1, 1).get()
+  const result = await db.query('user').include('nr').range(1, 2).get()
 
   deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
 
@@ -74,7 +74,7 @@ await test('range', async (t) => {
     .query('user')
     .include('nr')
     .sort('email')
-    .range(1, 1)
+    .range(1, 2)
     .get()
 
   deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
