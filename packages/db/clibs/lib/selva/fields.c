@@ -1059,12 +1059,12 @@ int selva_fields_references_insert(
         }
         return err;
     } else {
-        struct SelvaFields *fields = &node->fields;
-        struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-        struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
-        ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
-
         if (ref_out) {
+            struct SelvaFields *fields = &node->fields;
+            struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+            struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
+            ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+
             *ref_out = &refs->refs[index];
         }
         return SELVA_EEXIST;
