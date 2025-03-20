@@ -632,9 +632,9 @@ static int load_reference_meta(
             break;
         }
         if (err) {
-            selva_io_errlog(io, "Failed to set field (%d:%d:%d): %s",
+            selva_io_errlog(io, "Failed to set edge (%d:%d:%d %s): %s",
                             node->type, node->node_id, rd.field,
-                            selva_strerror(err));
+                            selva_str_field_type(rd.type), selva_strerror(err));
         }
 
         if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
@@ -661,7 +661,14 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
     struct SelvaNode *dst_node = selva_upsert_node(dst_te, dst_id);
 
     err = selva_fields_set(db, node, fs, dst_node, sizeof(dst_node));
-    if (err) {
+    if (err == SELVA_EEXIST) {
+        fprintf(stderr, "%s: Reference %u:%u.%u <-> %u:%u.%u exists: %s\n",
+                __func__,
+                node->type, node->node_id, fs->field,
+                dst_te->type, dst_id, fs->edge_constraint.inverse_field,
+                selva_strerror(err));
+        err = 0;
+    } else if (err) {
         return SELVA_EIO;
     }
 
@@ -709,8 +716,11 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     int err = 0;
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
-    for (sdb_arr_len_t i = 0; i < nr_refs && !err; i++) {
+    for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
         err = load_ref(io, db, node, fs);
+        if (err) {
+            break;
+        }
     }
 
     return err;
@@ -832,9 +842,9 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             break;
         }
         if (err) {
-            selva_io_errlog(io, "Failed to set field (%d:%d:%d): %s",
+            selva_io_errlog(io, "Failed to set field (%d:%d:%d %s): %s",
                             node->type, node->node_id, rd.field,
-                            selva_strerror(err));
+                            selva_str_field_type(rd.type), selva_strerror(err));
         }
         if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
             selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
