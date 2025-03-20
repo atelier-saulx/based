@@ -375,7 +375,7 @@ export class DbServer {
     })
   }
 
-  putSchema(
+  setSchema(
     strictSchema: StrictSchema,
     fromStart: boolean = false,
     transformFns?: TransformFns,

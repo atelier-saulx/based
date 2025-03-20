@@ -17,7 +17,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -194,7 +194,7 @@ await test('string + refs', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -353,7 +353,7 @@ await test('Big string disable compression', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       file: {
         props: {
@@ -443,7 +443,7 @@ await test('Big string', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       file: {
         props: {
@@ -502,7 +502,7 @@ await test('schema compression prop', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       file: {
         props: {

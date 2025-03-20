@@ -22,8 +22,8 @@ if (isMainThread) {
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
-  await fromDb.putSchema(fromSchema, true)
-  await toDb.putSchema(toSchema, true)
+  await fromDb.setSchema(fromSchema, true)
+  await toDb.setSchema(toSchema, true)
 
   const map: Record<number, { type: string; include: string[] }> = {}
   for (const type in fromDb.client.schemaTypesParsed) {

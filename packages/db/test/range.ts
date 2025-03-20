@@ -14,7 +14,7 @@ await test('range', async (t) => {
   })
 
   // schema
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {

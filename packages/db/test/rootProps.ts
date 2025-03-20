@@ -15,7 +15,7 @@ await test('rootProps', async (t) => {
     console.log(performance.now() - d, 'ms')
   })
 
-  await db.putSchema({
+  await db.setSchema({
     props: {
       myString: 'string',
       myBoolean: 'boolean',

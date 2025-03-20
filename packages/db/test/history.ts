@@ -17,7 +17,7 @@ await test.skip('history', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       page: {
         props: {
@@ -60,7 +60,7 @@ await test.skip('history', async (t) => {
     uint32_t *selva_history_find_range_node(struct selva_history *hist, int64_t from, int64_t to, node_id_t node_id, size_t *size_out);
   */
 
-  // await db.putSchema({
+  // await db.setSchema({
   //   types: {
   //     page: {
   //       props: {

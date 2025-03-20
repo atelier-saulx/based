@@ -61,7 +61,7 @@ export const migrate = async (
     return fromDbServer.schema
   }
 
-  toSchema = await toDb.putSchema(toSchema)
+  toSchema = await toDb.setSchema(toSchema)
 
   const fromSchema = fromDbServer.schema
   const fromCtx = fromDbServer.dbCtxExternal

@@ -20,8 +20,8 @@ await test('client server', async (t) => {
   })
 
   const hooks: DbClientHooks = {
-    async putSchema(schema, fromStart, transformFns) {
-      return server.putSchema(schema, fromStart, transformFns)
+    async setSchema(schema, fromStart, transformFns) {
+      return server.setSchema(schema, fromStart, transformFns)
     },
     async flushModify(buf) {
       const offsets = server.modify(buf)
@@ -40,7 +40,7 @@ await test('client server', async (t) => {
     hooks,
   })
 
-  await client1.putSchema({
+  await client1.setSchema({
     types: {
       user: {
         name: 'string',
@@ -61,7 +61,7 @@ await test('client server', async (t) => {
     { id: 2, name: 'jamez' },
   ])
 
-  await client1.putSchema({
+  await client1.setSchema({
     types: {
       user: {
         age: 'number',
@@ -74,7 +74,7 @@ await test('client server', async (t) => {
     { id: 2, age: 0 },
   ])
 
-  await client1.putSchema({
+  await client1.setSchema({
     types: {
       user: {
         name: 'string',

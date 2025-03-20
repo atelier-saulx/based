@@ -14,7 +14,7 @@ await test('references modify', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -116,7 +116,7 @@ await test('references modify', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       a: {
         name: 'string',
@@ -167,7 +167,7 @@ await test('reference move', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       a: {
         name: 'string',
@@ -213,5 +213,8 @@ await test('reference move', async (t) => {
     bees: [b2],
   })
 
-  deepEqual((await db.query('a').include('bees').get()).toObject()[0].bees[0].id, 2)
+  deepEqual(
+    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
+    2,
+  )
 })

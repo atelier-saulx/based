@@ -15,7 +15,7 @@ await test('mem', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       data: {
         props: {

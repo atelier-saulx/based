@@ -24,7 +24,7 @@ import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 
 export type DbClientHooks = {
-  putSchema(
+  setSchema(
     schema: StrictSchema,
     fromStart?: boolean,
     transformFns?: TransformFns,
@@ -76,7 +76,7 @@ export class DbClient {
   subscriptionsToRun: SubscriptionsToRun = []
   schemaChecksum: number
 
-  async putSchema(
+  async setSchema(
     schema: Schema,
     fromStart?: boolean,
     transformFns?: TransformFns,
@@ -86,7 +86,7 @@ export class DbClient {
       return this.schema
     }
     const strictSchema = fromStart ? schema : parse(schema).schema
-    const remoteSchema = await this.hooks.putSchema(
+    const remoteSchema = await this.hooks.setSchema(
       strictSchema as StrictSchema,
       fromStart,
       transformFns,

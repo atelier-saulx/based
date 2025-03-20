@@ -12,7 +12,7 @@ await test('single special cases', async (t) => {
 
   await db.start({ clean: true })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -74,7 +74,7 @@ await test('single simple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -128,7 +128,7 @@ await test('simple nested', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -230,7 +230,7 @@ await test('single reference object', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -312,7 +312,7 @@ await test('nested', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -624,7 +624,7 @@ await test('single reference multi refs strings', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -721,7 +721,7 @@ await test('update same value', async (t) => {
     return db.destroy()
   })
   await db.start({ clean: true })
-  await db.putSchema({
+  await db.setSchema({
     locales: {
       en: { required: true },
       fr: { required: true },

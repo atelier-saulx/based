@@ -17,7 +17,7 @@ await test('variable size (string/binary)', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         props: {
@@ -174,7 +174,7 @@ await test('has compressed', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -218,7 +218,7 @@ await test('has uncompressed', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -348,7 +348,7 @@ await test('main has (string/binary)', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-  await db.putSchema({
+  await db.setSchema({
     types: {
       article: {
         props: {
@@ -393,7 +393,7 @@ await test('has normalized uncompressed', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -433,7 +433,7 @@ await test('has normalized compressed', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -473,7 +473,7 @@ await test('has OR uncompressed', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -548,7 +548,7 @@ await test('has OR compressed', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -594,7 +594,7 @@ await test('OR equal', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {
@@ -638,7 +638,7 @@ await test('OR equal main', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       italy: {
         props: {

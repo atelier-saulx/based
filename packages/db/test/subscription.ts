@@ -14,7 +14,7 @@ await test('subscription  multiple', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -67,7 +67,7 @@ await test('subscription filter', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
@@ -150,7 +150,7 @@ await test('subscription id', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       user: {
         props: {
@@ -263,7 +263,7 @@ await test('subscription mixed', async (t) => {
     return db.destroy()
   })
 
-  db.putSchema({
+  db.setSchema({
     types: {
       user: {
         props: {
@@ -365,7 +365,7 @@ await test('subscription listener', async (t) => {
     return db.destroy()
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       user: {
         props: {
