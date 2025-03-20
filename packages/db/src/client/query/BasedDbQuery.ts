@@ -179,7 +179,9 @@ export class QueryBranch<T> {
     return this
   }
 
-  range(offset: number, limit: number = DEF_RANGE_PROP_LIMIT): T {
+  range(start: number, end: number = DEF_RANGE_PROP_LIMIT): T {
+    const offset = start
+    const limit = end - start
     if (validateRange(this.def, offset, limit)) {
       this.def.range.offset = 0
       this.def.range.limit = DEF_RANGE_PROP_LIMIT

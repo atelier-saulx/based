@@ -454,7 +454,7 @@ await test('nested', async (t) => {
       await db
         .query('simple') // lastRes
         .include('user.myBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -499,7 +499,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup', 'user.name')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -538,7 +538,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [
@@ -566,7 +566,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user', 'user.myBlup')
-        .range(+lastRes - 1, 1)
+        .range(+lastRes - 1, +lastRes)
         .get()
     ).toObject(),
     [

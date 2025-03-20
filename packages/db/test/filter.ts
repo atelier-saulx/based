@@ -835,7 +835,7 @@ await test('or numerical', async (t) => {
         .query('machine')
         .include('temperature')
         .filter('id', '<=', 20000)
-        .range(10000, 10000)
+        .range(10000, 20000)
         .get()
     ).node(-1).id,
     20000,

@@ -236,11 +236,15 @@ await test('update', async (t) => {
 
   equal((await db.query('snurp', ids).range(0, 100).get()).length, 100)
 
-  equal((await db.query('snurp', ids).range(10, 100).get()).length, 100)
+  equal((await db.query('snurp', ids).range(10, 110).get()).length, 100)
 
   deepEqual(
     (
-      await db.query('snurp', ids).range(1e5, 2).sort('a', 'desc').get()
+      await db
+        .query('snurp', ids)
+        .range(1e5, 1e5 + 2)
+        .sort('a', 'desc')
+        .get()
     ).toObject(),
     [
       {

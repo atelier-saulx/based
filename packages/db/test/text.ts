@@ -688,8 +688,8 @@ await test('sort', async (t) => {
     ],
   )
 
-  db.delete('dialog', id5)
-  await db.drain()
+  await db.delete('dialog', id5)
+  // await db.drain()
 
   deepEqual(
     await db

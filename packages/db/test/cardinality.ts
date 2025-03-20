@@ -202,9 +202,6 @@ await test('hll', async (t) => {
 
   console.log(await db.drain(), 'ms')
 
-  // await db.query('article').range(0, 1e6).get().inspect(10)
-  // await db.query('article').range(0, 1e6).get().inspect(10)
-
   deepEqual(
     (
       await db
