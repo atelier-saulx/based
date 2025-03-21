@@ -129,7 +129,7 @@ export const flushBuffer = (db: DbClient) => {
       if (queue.size) {
         flushPromise.then(() => {
           for (const [resolve, res] of queue) {
-            resolve(res.getId(offsets))
+            resolve(res.getId())
           }
         })
       }

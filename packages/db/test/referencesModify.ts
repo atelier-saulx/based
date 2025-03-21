@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { setTimeout } from 'node:timers/promises'
 
 await test('references modify', async (t) => {
   const db = new BasedDb({
@@ -105,7 +104,7 @@ await test('references modify', async (t) => {
   )
 })
 
-await test('references modify', async (t) => {
+await test('references modify 2', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -213,6 +212,15 @@ await test('reference move', async (t) => {
     bees: [b2],
   })
 
+  deepEqual(
+    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
+    2,
+  )
+
+  await db.update('a', a, {
+    bees: [b2, b2],
+  })
+  deepEqual((await db.query('a').include('bees').get()).toObject()[0].bees.length, 1)
   deepEqual(
     (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
     2,

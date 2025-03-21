@@ -962,16 +962,18 @@ static bool add_to_refs_index_(
         node_id_t dst)
 {
     bool res = true;
+
     if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
         assert(nfo->in_use);
 
         struct SelvaNodeReferences *refs = nfo2p(&node->fields, nfo);
-        size_t nr_refs;
+        size_t nr_refs = 0;
 
         nr_refs = refs->nr_refs;
         res = node_id_set_add(&refs->index, &nr_refs, dst);
         if (res) {
             assert(nr_refs > refs->nr_refs);
+            /* These will be equal again once the actual reference is created. */
         }
     }
 
@@ -1054,15 +1056,19 @@ int selva_fields_references_insert(
 
         err = selva_fields_references_move(node, fs, index_old, index);
 
-        *ref_out = &refs->refs[index];
+        if (ref_out) {
+            *ref_out = &refs->refs[index];
+        }
         return err;
     } else {
-        struct SelvaFields *fields = &node->fields;
-        struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-        struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
-        ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+        if (ref_out) {
+            struct SelvaFields *fields = &node->fields;
+            struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+            struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
+            ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
 
-        *ref_out = &refs->refs[index];
+            *ref_out = &refs->refs[index];
+        }
         return SELVA_EEXIST;
     }
     __builtin_unreachable();

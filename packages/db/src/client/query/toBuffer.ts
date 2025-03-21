@@ -201,7 +201,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
           buf.set(search, 17 + filterSize + sortSize)
         }
 
-        buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
+        if (aggregation) {
+          buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
+        }
 
         result.push(buf)
       }

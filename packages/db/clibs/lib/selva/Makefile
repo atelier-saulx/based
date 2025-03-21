@@ -85,6 +85,8 @@ ifeq ($(uname_M),x86_64)
 OBJ += \
 	crc32c/crc32c_x64.o \
 	string/fast_memcmp.o
+	# This is not necessarily always faster, despite being vectorized
+	# string/fast_memcmp_x64.o
 else ifeq ($(uname_M),aarch64)
 OBJ += \
 	crc32c/crc32c_arm64.o \
