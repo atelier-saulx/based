@@ -135,6 +135,8 @@ export const flushBuffer = (db: DbClient) => {
       }
     })
 
+    db.hooks.flushPromise = flushPromise
+
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()
     ctx.len = 0

@@ -69,6 +69,21 @@ await test('update', async (t) => {
     })
   })
 
+  var cnt = 0
+
+  await throws(
+    async () => {
+      db.create('user', {
+        name: 'wrongRating',
+        rating: 'not a number',
+      }).catch((err) => {
+        cnt++
+      })
+    },
+    false,
+    'edge case CATCH does not work with the system',
+  )
+
   await db.create('user', {
     name: 'jame-z',
     friend: good,

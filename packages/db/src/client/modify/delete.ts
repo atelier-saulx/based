@@ -1,5 +1,5 @@
 import { DbClient } from '../index.js'
-import { flushBuffer, startDrain } from '../operations.js'
+import { flushBuffer, startDrain } from '../flushModify.js'
 import { getSubscriptionMarkers } from '../query/subscription/markers.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'

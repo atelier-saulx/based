@@ -513,10 +513,6 @@ await test('schema compression prop', async (t) => {
     },
   })
 
-  db.create('file', {
-    contents: euobserver,
-  })
-
   await db.drain()
 
   db.create('file', {

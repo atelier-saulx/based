@@ -5,7 +5,7 @@ import {
   updateTypeDefs,
   schemaToSelvaBuffer,
 } from '@based/schema/def'
-import { flushBuffer, ModifyCtx } from './operations.js'
+import { flushBuffer, ModifyCtx } from './flushModify.js'
 import {
   SubscriptionMarkerMap,
   SubscriptionsMap,
@@ -32,6 +32,7 @@ export type DbClientHooks = {
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
   }>
+  flushPromise?: Promise<any>
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
 }
 
@@ -299,10 +300,19 @@ export class DbClient {
     this.modifyCtx.len = 0
   }
 
+  // For more advanced / internal usage - use isModified instead for most cases
   async drain() {
     await flushBuffer(this)
     const t = this.writeTime
     this.writeTime = 0
     return t
+  }
+
+  async isModified() {
+    const queue = this.modifyCtx.queue
+    if (this.hooks.flushPromise) {
+      await this.hooks.flushPromise
+    }
+    return
   }
 }

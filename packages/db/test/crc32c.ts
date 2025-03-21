@@ -92,14 +92,6 @@ await test('simple', async (t) => {
     }
   }
 
-  try {
-    db.update('transaction', transaction, {
-      myHash: m,
-    })
-  } catch (err) {
-    //
-  }
-
   await db.drain()
 
   console.timeEnd('1E7 CRC32c TS')
@@ -116,10 +108,6 @@ await test('simple', async (t) => {
       m.push(lastId)
     }
   }
-
-  db.update('transactionN', transactionN, {
-    myNativeMadeHash: m,
-  })
 
   await db.drain()
 

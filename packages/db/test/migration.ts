@@ -1,6 +1,5 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { setTimeout } from 'node:timers/promises'
 
 await test('migration', async (t) => {
   const amount = 100
@@ -92,23 +91,6 @@ await test('migration', async (t) => {
   )
 
   console.time('migration time')
-  // db.create('user', {
-  //   name: 'newuser',
-  // })
-
-  // db.update('user', 1, {
-  //   name: 'change1',
-  // })
-
-  // await setTimeout(500)
-
-  // db.create('user', {
-  //   name: 'newuser2',
-  // })
-
-  // await db.update('user', 1, {
-  //   name: 'change2',
-  // })
 
   await migrationPromise
   console.timeEnd('migration time')
@@ -120,14 +102,6 @@ await test('migration', async (t) => {
       .range(0, amount + 1000)
       .get()
   ).toObject()
-
-  console.log(
-    amount,
-    allUsers.length,
-    allUsers[0],
-    allUsers[1],
-    allUsers.at(-1),
-  )
 
   if (
     allUsers.every((node) => {

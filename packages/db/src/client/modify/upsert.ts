@@ -25,6 +25,7 @@ export async function upsert(
   }
 
   if (!q) {
+    // fix with promise
     throw new Error('no alias found for upsert operation')
   }
 

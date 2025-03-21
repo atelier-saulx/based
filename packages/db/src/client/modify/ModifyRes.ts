@@ -6,7 +6,6 @@ import {
   SchemaPropTree,
 } from '@based/schema/def'
 import { ModifyCtx } from '../../index.js'
-import { inspect } from 'node:util'
 import { SubscriptionMarkersCheck } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 import { ModifyOpts } from './types.js'
@@ -55,7 +54,6 @@ const parseErrorMsg = (
     }
     return `Invalid value at '${prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex]}, received '${parseVal(val)}'`
   }
-
   return `Unknown property '${val}'. Expected one of: ${Object.keys(prop).join(', ')}`
 }
 
@@ -67,7 +65,7 @@ export class ModifyError extends Error {
   ) {
     super(parseErrorMsg(prop, val, msg))
     const a = this.stack.split('\n')
-    this.stack = a[0] + '\n' + a.slice(5, -1).join('\n')
+    this.stack = a[0] + '\n' + a.slice(6, -1).join('\n')
   }
 }
 

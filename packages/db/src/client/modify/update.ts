@@ -1,6 +1,6 @@
 import { ModifyCtx } from '../../index.js'
 import { MICRO_BUFFER, PropDef, SchemaTypeDef } from '@based/schema/def'
-import { startDrain, flushBuffer } from '../operations.js'
+import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
@@ -108,6 +108,7 @@ export const update = (
       return update(db, type, id, obj, opts)
     }
 
+    // res.error = err
     throw err
   }
 

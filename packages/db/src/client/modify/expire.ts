@@ -1,5 +1,5 @@
 import { MICRO_BUFFER } from '@based/schema/def'
-import { startDrain, flushBuffer } from '../operations.js'
+import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { EXPIRE, SIZE } from './types.js'
 import { DbClient } from '../index.js'

@@ -1,6 +1,6 @@
-import { BasedDb, ModifyCtx } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { MICRO_BUFFER, SchemaTypeDef } from '@based/schema/def'
-import { startDrain, flushBuffer } from '../operations.js'
+import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
@@ -135,6 +135,7 @@ export function create(
 
   if (!def) {
     throw new Error(
+      // fix this with promise
       `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.schemaTypesParsed).join(', ')}`,
     )
   }
@@ -144,6 +145,7 @@ export function create(
     if (opts?.unsafe) {
       id = obj.id
     } else {
+      // fix this with promise
       throw Error('create with "id" is not allowed')
     }
   } else {
@@ -163,7 +165,7 @@ export function create(
   const err = appendCreate(ctx, def, obj, res, opts?.unsafe)
 
   if (err) {
-    ctx.prefix0 = -1 // force a new cursor
+    ctx.prefix0 = -1 // Force a new cursor
     ctx.len = pos
     if (err === RANGE_ERR) {
       if (pos === 0) {
@@ -172,6 +174,10 @@ export function create(
       flushBuffer(db)
       return db.create(type, obj, opts)
     }
+    // res.error = err
+    // @ts-ignore
+    // return Promise.reject(err)
+    // return res
     throw err
   }
 

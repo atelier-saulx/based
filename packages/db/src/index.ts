@@ -1,5 +1,5 @@
 import { compress, decompress } from './client/string.js'
-import { ModifyCtx } from './client/operations.js'
+import { ModifyCtx } from './client/flushModify.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import picocolors from 'picocolors'
@@ -130,9 +130,13 @@ export class BasedDb {
     return this.server.migrateSchema.apply(this.server, arguments)
   }
 
+  isReady: DbClient['isModified'] = function () {
+    return this.client.isReady.apply(this.client, arguments)
+  }
+
   async destroy() {
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
-    // this is a bug somewhere
+    // Todo: clear all active queries, queues ETC
     await wait(10)
     this.client.destroy()
     await this.server.destroy()

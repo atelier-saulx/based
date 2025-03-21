@@ -1,5 +1,5 @@
 import { PropDefEdge } from '@based/schema/def'
-import { ModifyCtx } from '../../operations.js'
+import { ModifyCtx } from '../../flushModify.js'
 import { ModifyState, ModifyError } from '../ModifyRes.js'
 import { ModifyErr } from '../types.js'
 
