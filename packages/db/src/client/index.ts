@@ -35,6 +35,7 @@ export type DbClientHooks = {
   flushIsReady: Promise<any>
   flushReady: (v?: any) => void
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
+  flushTime: number
 }
 
 type DbClientOpts = {
@@ -312,10 +313,8 @@ export class DbClient {
   async isModified() {
     if (!this.isDraining) {
       startDrain(this)
-      await this.hooks.flushIsReady
-    } else {
-      await this.hooks.flushIsReady
     }
+    await this.hooks.flushIsReady
     return
   }
 }

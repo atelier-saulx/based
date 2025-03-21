@@ -155,7 +155,13 @@ export const startDrain = (db: DbClient) => {
     db.hooks.flushReady = resolve
   })
   db.isDraining = true
-  process.nextTick(() => {
-    flushBuffer(db)
-  })
+  if (db.hooks.flushTime === 0) {
+    process.nextTick(() => {
+      flushBuffer(db)
+    })
+  } else {
+    setTimeout(() => {
+      flushBuffer(db)
+    }, db.hooks.flushTime)
+  }
 }

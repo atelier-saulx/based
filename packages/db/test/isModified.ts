@@ -27,12 +27,11 @@ await test('isModified', async (t) => {
     db.create('user', { nr: i })
   }
 
-  const results = await db.query('user').get().toObject()
-
-  console.log('X', results)
-
-  // deepEqual((await db.query('user').filter('isNice', false).get()).toObject(), [
-  //   { id: 1, isNice: false },
-  //   { id: 3, isNice: false },
-  // ])
+  deepEqual((await db.query('user').range(0, 5).get()).toObject(), [
+    { id: 1, nr: 0 },
+    { id: 2, nr: 1 },
+    { id: 3, nr: 2 },
+    { id: 4, nr: 3 },
+    { id: 5, nr: 4 },
+  ])
 })

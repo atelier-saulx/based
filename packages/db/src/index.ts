@@ -50,6 +50,7 @@ export class BasedDb {
     const client = new DbClient({
       maxModifySize,
       hooks: {
+        flushTime: 0,
         setSchema(schema, fromStart) {
           return Promise.resolve(server.setSchema(schema, fromStart))
         },

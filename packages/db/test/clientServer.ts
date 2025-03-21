@@ -32,6 +32,7 @@ await test('client server', async (t) => {
     },
     flushIsReady: new Promise(() => {}),
     flushReady: () => {},
+    flushTime: 0,
   }
 
   const client1 = new DbClient({
