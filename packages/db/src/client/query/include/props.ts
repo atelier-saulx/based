@@ -5,7 +5,7 @@ import {
   REFERENCES,
   TEXT,
 } from '@based/schema/def'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {
   const fields: string[] = []
@@ -23,7 +23,14 @@ export const getAllRefs = (props: QueryDef['props'], affix = ''): string[] => {
   for (const key in props) {
     const prop = props[key]
     if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
-      fields.push(prop.path.join('.') + affix)
+      const refPath = prop.path.join('.') + affix
+      fields.push(refPath)
+
+      if (prop.edges) {
+        for (const edge in prop.edges) {
+          fields.push(refPath + '.' + edge)
+        }
+      }
     }
   }
   return fields
@@ -31,6 +38,18 @@ export const getAllRefs = (props: QueryDef['props'], affix = ''): string[] => {
 
 export const includeField = (def: QueryDef, field: string) => {
   if (field === '*') {
+    if (
+      def.type === QueryDefType.Reference ||
+      def.type === QueryDefType.References
+    ) {
+      const fields: string[] = []
+      if (def.target.propDef.edges) {
+        for (const edge in def.target.propDef.edges) {
+          fields.push(edge)
+        }
+      }
+      includeFields(def, fields)
+    }
     includeFields(def, getAll(def.props))
   } else if (field === '**') {
     includeFields(def, getAllRefs(def.props))
