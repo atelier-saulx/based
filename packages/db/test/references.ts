@@ -253,28 +253,151 @@ await test('one to many really', async (t) => {
   })
   await db.drain()
 
-  console.log(1, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      }
+    ],
+  })
+
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  console.log(2, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      }
+    ],
+  })
+
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  console.log(3, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      }
+    ],
+  })
+
+
   await db.update('user', user, {
     resources: [cpu, kbd, mouse, fd],
   })
-  console.log(4, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      }
+    ],
+  })
+
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
   })
-  console.log(5, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      }
+    ],
+  })
+
   const joy = await db.create('resource', { name: 'joystick', owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
-  console.log(6, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      },
+      {
+        id: 5,
+        name: "joystick",
+      }
+    ],
+  })
+
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
   })
@@ -283,13 +406,62 @@ await test('one to many really', async (t) => {
       set: [joy],
     },
   })
-  console.log('START BUG', [joy, kbd, cpu, fd, mouse])
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      },
+      {
+        id: 5,
+        name: "joystick",
+      }
+    ],
+  })
+
   await db.update('user', user, {
     resources: {
       set: [joy, kbd, cpu, fd, mouse],
     },
   })
-  console.log(7, await db.query('user', user).include('resources').get())
+  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: "keyboard",
+      },
+      {
+        id: 1,
+        name: "cpu",
+      },
+      {
+        id: 4,
+        name: "floppy",
+      },
+      {
+        id: 3,
+        name: "mouse",
+      },
+      {
+        id: 5,
+        name: "joystick",
+      }
+    ],
+  })
 })
 
 await test('update', async (t) => {
