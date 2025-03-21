@@ -76,7 +76,7 @@ await test('vector set wrong size', async (t) => {
 
   const [ra, rb] = await db
     .query('data')
-    .filter('id', '=', [a, b])
+    .filter('id', '=', [await a, await b])
     .include('a')
     .get()
 

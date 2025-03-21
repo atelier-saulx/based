@@ -201,15 +201,25 @@ function appendRefs(
         if (ref.error) {
           return ref.error
         }
-        id = ref.tmpId
-        isTmpId = !ref.resolved
+        const resolvedId = ref.getId()
+        if (resolvedId) {
+          id = resolvedId
+        } else {
+          id = ref.tmpId
+          isTmpId = true
+        }
       } else if (ref.id instanceof ModifyState) {
         if (ref.id.error) {
           return ref.id.error
         }
-        id = ref.id.tmpId
+        const resolvedId = ref.id.getId()
+        if (resolvedId) {
+          id = resolvedId
+        } else {
+          id = ref.id.tmpId
+          isTmpId = true
+        }
         index = ref.$index
-        isTmpId = !ref.id.resolved
       } else if (ref.id > 0) {
         id = ref.id
         index = ref.$index
@@ -323,10 +333,10 @@ function putRefs(
       if (ref.error) {
         return ref.error
       }
-      if (!ref.resolved) {
+      ref = ref.getId()
+      if (!ref) {
         break
       }
-      ref = ref.tmpId
       ctx.buf[ctx.len++] = ref
       ctx.buf[ctx.len++] = ref >>>= 8
       ctx.buf[ctx.len++] = ref >>>= 8

@@ -249,25 +249,25 @@ await test('one to many really', async (t) => {
   const fd = db.create('resource', { name: 'floppy' })
   const user = db.create('user', {
     name: 'root',
-    resources: [ cpu, kbd, mouse, fd ],
+    resources: [cpu, kbd, mouse, fd],
   })
   await db.drain()
 
   console.log(1, await db.query('user', user).include('resources').get())
   await db.update('user', user, {
-    resources: [ cpu, kbd, mouse ],
+    resources: [cpu, kbd, mouse],
   })
   console.log(2, await db.query('user', user).include('resources').get())
   await db.update('user', user, {
-    resources: [ cpu, kbd, mouse ],
+    resources: [cpu, kbd, mouse],
   })
   console.log(3, await db.query('user', user).include('resources').get())
   await db.update('user', user, {
-    resources: [ cpu, kbd, mouse, fd ],
+    resources: [cpu, kbd, mouse, fd],
   })
   console.log(4, await db.query('user', user).include('resources').get())
   await db.update('user', user, {
-    resources: [ kbd, cpu, fd, mouse ],
+    resources: [kbd, cpu, fd, mouse],
   })
   console.log(5, await db.query('user', user).include('resources').get())
   const joy = await db.create('resource', { name: 'joystick', owner: user })
@@ -276,14 +276,14 @@ await test('one to many really', async (t) => {
   await db.update('resource', joy, { owner: user })
   console.log(6, await db.query('user', user).include('resources').get())
   await db.update('user', user, {
-    resources: [ kbd, cpu, fd, mouse ],
+    resources: [kbd, cpu, fd, mouse],
   })
   await db.update('user', user, {
     resources: {
       set: [joy],
     },
   })
-  console.log('START BUG')
+  console.log('START BUG', [joy, kbd, cpu, fd, mouse])
   await db.update('user', user, {
     resources: {
       set: [joy, kbd, cpu, fd, mouse],
@@ -364,7 +364,7 @@ await test('update', async (t) => {
         contributors: [
           {
             name: 'Flippie',
-            id: +flippie,
+            id: await flippie,
           },
         ],
       },

@@ -49,8 +49,13 @@ function singleReferenceEdges(
       if (id.error) {
         return id.error
       }
-      isTmpId = !id.resolved
-      id = id.tmpId
+      const resolvedId = id.getId()
+      if (resolvedId) {
+        id = resolvedId
+      } else {
+        isTmpId = !true
+        id = id.tmpId
+      }
     }
   }
 
@@ -126,6 +131,10 @@ export function writeReference(
     if (value.error) {
       return value.error
     }
+    const id = value.getId()
+    if (id) {
+      return writeRef(id, ctx, schema, def, res.tmpId, modifyOp, false, false)
+    }
     return writeRef(
       value.tmpId,
       ctx,
@@ -134,7 +143,7 @@ export function writeReference(
       res.tmpId,
       modifyOp,
       false,
-      !value.resolved,
+      true,
     )
   } else if (typeof value === 'object' && value !== null) {
     if (def.edges) {
