@@ -58,7 +58,15 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
             if (log) {
               return log
                 .split(LINE_NEW)
-                .map((line) => context.state.emojis.pipe + SPACER + line)
+                .map((line, index) => {
+                  let startLine: string = ''
+
+                  if (!index) {
+                    startLine = LINE_START
+                  }
+
+                  return startLine + context.state.emojis.pipe + SPACER + line
+                })
                 .join(LINE_NEW)
             }
 
