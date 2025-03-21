@@ -309,7 +309,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
 
     const d = performance.now()
+
+    await this.db.isModified()
+
     const res = await this.db.hooks.getQueryBuf(buf)
+
     if (res instanceof Error) {
       reject(res)
     } else {

@@ -30,6 +30,8 @@ await test('client server', async (t) => {
     async getQueryBuf(buf) {
       return server.getQueryBuf(buf)
     },
+    flushIsReady: new Promise(() => {}),
+    flushReady: () => {},
   }
 
   const client1 = new DbClient({

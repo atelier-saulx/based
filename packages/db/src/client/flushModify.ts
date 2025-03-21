@@ -133,9 +133,11 @@ export const flushBuffer = (db: DbClient) => {
           }
         })
       }
-    })
 
-    db.hooks.flushPromise = flushPromise
+      db.hooks.flushReady()
+
+      console.log('derp derp')
+    })
 
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()
@@ -144,6 +146,9 @@ export const flushBuffer = (db: DbClient) => {
     ctx.prefix1 = -1
     ctx.max = db.maxModifySize
     ctx.ctx = {}
+  } else {
+    console.log('SNERP')
+    db.hooks.flushReady()
   }
 
   db.isDraining = false
@@ -152,6 +157,9 @@ export const flushBuffer = (db: DbClient) => {
 }
 
 export const startDrain = (db: DbClient) => {
+  db.hooks.flushIsReady = new Promise((resolve) => {
+    db.hooks.flushReady = resolve
+  })
   db.isDraining = true
   process.nextTick(() => {
     flushBuffer(db)

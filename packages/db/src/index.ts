@@ -59,6 +59,8 @@ export class BasedDb {
             offsets,
           })
         },
+        flushReady: () => {},
+        flushIsReady: new Promise(() => {}),
         getQueryBuf(buf) {
           return Promise.resolve(server.getQueryBuf(buf))
         },
