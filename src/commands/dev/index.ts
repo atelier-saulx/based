@@ -312,21 +312,21 @@ async function createSpecsFromConfigs(
     await basedServer.client.call('db:set-schema', found.config)
   }
 
-  // VALIDATE THE CODE OF THE FUNCTION
-  // if (
-  //   await configsInvalidateCode(context, found.index, found.config, found.path)
-  // ) {
+  await configsInvalidateCode(context, found)
+
+  // if (!invalidate) {
   //   // ts validation
-  //     specs[found.config.name]: {
-  //       type: 'function',
-  //       async fn() {
-  //         return 'error (should log the ts error)'
-  //       },
+  //   specs[found.config.name] = {
+  //     ...found.config,
+  //     type: 'function',
+  //     async fn() {
+  //       return 'error (should log the ts error)'
   //     },
-  //   return specs
+  //   }
+
+  //   return { specs, reloadClients }
   // }
 
-  // const sourcemap = nodeBundles.map(index)
   const fn = nodeBundles.require(found.index || '')
 
   if (fn) {

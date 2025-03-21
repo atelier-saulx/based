@@ -103,14 +103,12 @@ export const configsBundle = async (
             return false
           }
 
-          const invalidate = await configsInvalidateCode(
-            context,
+          const invalidate = await configsInvalidateCode(context, {
             index,
             config,
-            path,
-          )
+          } as Based.Deploy.Configs)
 
-          if (invalidate) {
+          if (!invalidate) {
             return invalidate
           }
         }

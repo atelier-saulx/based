@@ -2,26 +2,25 @@ import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
 import type { AppContext } from '../../context/index.js'
 import { FUNCTION_TYPES } from '../../shared/constants.js'
+import { rel } from '../../shared/index.js'
 
 export const configsInvalidateCode = async (
   context: AppContext,
-  functionFile: string,
-  functionConfig: Based.Deploy.ConfigsBase,
-  functionPath: string,
+  found: Based.Deploy.Configs,
 ): Promise<boolean> => {
-  if (!functionFile) {
-    return
+  if (!found.index) {
+    return false
   }
 
-  const source = (await readFile(functionFile)).toString()
+  const source = (await readFile(found.index)).toString()
   const sourceFile = ts.createSourceFile(
-    functionFile,
+    found.index,
     source,
     ts.ScriptTarget.ESNext,
     false,
     ts.ScriptKind.TSX,
   )
-  const typeName = FUNCTION_TYPES[functionConfig.type]
+  const typeName = FUNCTION_TYPES[found.config.type]
   let hasExport: boolean = false
   let hasType: boolean = false
 
@@ -51,16 +50,22 @@ export const configsInvalidateCode = async (
   if (!hasType) {
     context.print
       .line()
+      .intro(context.i18n('methods.bundling.wrongTypeIntro'))
+      .pipe()
       .warning(
         context.i18n(
           'methods.bundling.wrongType',
-          functionConfig.name || functionConfig.type,
-          Object.keys(FUNCTION_TYPES)
+          found.config.name || found.config.type,
+          Object.values(FUNCTION_TYPES)
             .map((type) => `'<b>${type}</b>'`)
             .join(','),
         ),
       )
-      .pipe(`<dim>${functionPath}</dim>`)
+      .pipe()
+      .warning(
+        `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
+      )
+      .line()
 
     return false
   }
@@ -68,15 +73,23 @@ export const configsInvalidateCode = async (
   if (!hasExport) {
     context.print
       .line()
+      .intro(context.i18n('methods.bundling.methodNotExportedIntro'))
+      .pipe()
       .warning(
         context.i18n(
           'methods.bundling.methodNotExported',
-          functionConfig.name || functionConfig.type,
-          functionConfig.type,
+          found.config.name || found.config.type,
+          found.config.type,
         ),
       )
-      .pipe(`<dim>${functionFile}</dim>`)
+      .pipe()
+      .warning(
+        `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
+      )
+      .line()
 
     return false
   }
+
+  return true
 }
