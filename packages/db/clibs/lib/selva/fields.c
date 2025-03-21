@@ -962,16 +962,18 @@ static bool add_to_refs_index_(
         node_id_t dst)
 {
     bool res = true;
+
     if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
         assert(nfo->in_use);
 
         struct SelvaNodeReferences *refs = nfo2p(&node->fields, nfo);
-        size_t nr_refs;
+        size_t nr_refs = 0;
 
         nr_refs = refs->nr_refs;
         res = node_id_set_add(&refs->index, &nr_refs, dst);
         if (res) {
             assert(nr_refs > refs->nr_refs);
+            /* These will be equal again once the actual reference is created. */
         }
     }
 
