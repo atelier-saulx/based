@@ -310,10 +310,7 @@ export class DbClient {
   }
 
   async isModified() {
-    console.log('yo yo yo', this.hooks.flushIsReady)
-
     if (!this.isDraining) {
-      console.log('START')
       startDrain(this)
       await this.hooks.flushIsReady
     } else {
