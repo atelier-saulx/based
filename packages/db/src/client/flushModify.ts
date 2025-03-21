@@ -110,7 +110,6 @@ export const flushBuffer = (db: DbClient) => {
 
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
       resCtx.offsets = offsets
-
       for (const typeId in lastIds) {
         if (typeId in offsets) {
           const lastId = lastIds[typeId] + offsets[typeId]
@@ -124,7 +123,6 @@ export const flushBuffer = (db: DbClient) => {
           console.warn('no offset returned, very wrong')
         }
       }
-
       db.writeTime += Date.now() - d
       if (queue.size) {
         flushPromise.then(() => {
@@ -133,10 +131,7 @@ export const flushBuffer = (db: DbClient) => {
           }
         })
       }
-
       db.hooks.flushReady()
-
-      console.log('derp derp')
     })
 
     ctx.dirtyTypes.clear()
@@ -147,7 +142,6 @@ export const flushBuffer = (db: DbClient) => {
     ctx.max = db.maxModifySize
     ctx.ctx = {}
   } else {
-    console.log('SNERP')
     db.hooks.flushReady()
   }
 
