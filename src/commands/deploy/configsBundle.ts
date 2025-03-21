@@ -1,61 +1,90 @@
 import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { bundle } from '@based/bundle'
+import { hash } from '@saulx/hash'
 import { readJSON } from 'fs-extra/esm'
 import type { AppContext } from '../../context/index.js'
-import { isConfigFile, isIndexFile } from '../../shared/index.js'
+import {
+  getMtimeMs,
+  isConfigFile,
+  isIndexFile,
+  isInfraFile,
+  isSchemaFile,
+} from '../../shared/index.js'
 import { configsInvalidateCode } from './configsInvalidateCode.js'
 
 export const configsBundle = async (
   context: AppContext,
-  filter: string[],
-  configs: Based.Deploy.FunctionsFiles[],
-  entryPoints: string[],
-): Promise<Based.Deploy.Functions[]> => {
+  filter: string[] = [],
+  entryPoints: string[] = [],
+  mapping: Record<string, Based.Deploy.Configs> = {},
+): Promise<Based.Deploy.Configs[]> => {
   const bundled = await bundle({
     entryPoints,
-    debug: false,
   })
-
-  let configsResolved: Based.Deploy.Functions[] = await Promise.all(
-    configs.map(async ([dir, _, path]) => {
-      let config: Based.Deploy.FunctionBase = {}
-
-      if (path.endsWith('.json')) {
-        config = await readJSON(path)
-      } else {
-        const compiled = bundled.require(path)
-
-        config = compiled.default || compiled
-      }
-
-      config.name =
-        config.type === ('authorize' as Based.Deploy.FunctionBase['type'])
-          ? 'authorize'
-          : config.name
-
-      return {
-        dir,
-        path,
-        config,
-      }
-    }),
-  )
-
-  if (filter) {
-    const filterFunctions = new Set(filter)
-    configsResolved = configsResolved.filter(({ config }) =>
-      filterFunctions.has(config.name),
-    )
-  }
 
   const paths: Record<string, string> = {}
 
-  configsResolved = (await Promise.all(
-    configsResolved
-      .map(async ({ dir, path, config }) => {
+  let result = await Promise.all(
+    Object.entries(bundled.result.metafile.outputs).map(
+      async ([key, value]) => {
+        let config = {} as Based.Deploy.ConfigsBase
+        let type = '' as Based.Deploy.Configs['type']
+
+        if (value.entryPoint.endsWith('.json')) {
+          config = await readJSON(value.entryPoint)
+        } else {
+          const compiled = bundled.require(value.entryPoint)
+          config = compiled.default || compiled
+        }
+
+        const path: string = join(process.cwd(), value.entryPoint)
+
+        if (isConfigFile(path)) {
+          config.name =
+            config.type === ('authorize' as Based.Deploy.ConfigsBase['type'])
+              ? 'authorize'
+              : config.name
+
+          type = 'config'
+        } else if (isSchemaFile(path)) {
+          type = 'schema'
+        } else if (isInfraFile(path)) {
+          type = 'infra'
+        }
+
+        return {
+          config,
+          type,
+          dir: dirname(path),
+          rel: value.entryPoint,
+          path,
+          bundled: key,
+          checksum: 0,
+          mtimeMs: 0,
+        }
+      },
+    ),
+  )
+
+  if (filter.length) {
+    result = await Promise.all(
+      result.filter(({ config, dir }) => {
+        if (filter.length && filter.includes(config.name)) {
+          return true
+        }
+
+        delete mapping[dir]
+        return false
+      }),
+    )
+  }
+
+  result = (await Promise.all(
+    result
+      .map(async ({ dir, path, config, rel, type, bundled }) => {
         let index: string = ''
-        const files = await readdir(dir)
+        const files = await readdir(dir).catch(() => [])
 
         for (const file of files) {
           if (isIndexFile(file)) {
@@ -65,7 +94,7 @@ export const configsBundle = async (
           }
         }
 
-        if (isConfigFile(path)) {
+        if (type === 'config') {
           if (!index) {
             context.print.warning(
               context.i18n('methods.bundling.noIndex', config.name),
@@ -90,7 +119,7 @@ export const configsBundle = async (
 
         if (existingPath) {
           context.print.warning(
-            context.i18n('methods.bundling.multipleConfig', config.name),
+            context.i18n('methods.bundling.multipleConfig', config.name, rel),
           )
 
           return false
@@ -108,15 +137,32 @@ export const configsBundle = async (
           }
         }
 
-        return {
+        let result = {
           dir,
+          type,
           path,
           index,
           config,
+          rel,
+          bundled,
+          checksum: 0,
+          mtimeMs: 0,
         }
+
+        result = {
+          ...result,
+          checksum: hash([result]),
+          mtimeMs: await getMtimeMs(path),
+        }
+
+        if (mapping[dir]) {
+          mapping[dir] = result
+        }
+
+        return result
       })
       .filter(Boolean),
-  )) as Based.Deploy.Functions[]
+  )) as Based.Deploy.Configs[]
 
-  return configsResolved
+  return result
 }

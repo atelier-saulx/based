@@ -2,19 +2,22 @@ import { readdir } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import type { AppContext } from '../../context/index.js'
 import { gitIgnore } from '../../shared/gitIgnore.js'
-import { isConfigFile, isSchemaFile, rel } from '../../shared/pathAndFiles.js'
+import {
+  isConfigFile,
+  isInfraFile,
+  isSchemaFile,
+  rel,
+} from '../../shared/pathAndFiles.js'
 
 export const getBasedFiles = async (
   context: AppContext,
-): Promise<{
-  configs: Based.Deploy.FunctionsFiles[]
-  entryPoints: string[]
-}> => {
+): Promise<Based.Deploy.BasedFiles> => {
   const { ignore, ignoreDir } = await gitIgnore()
 
-  const configs: Based.Deploy.FunctionsFiles[] = []
-  const schemas: string[] = []
-  let entryPoints: string[] = []
+  const multipleSchemas: string[] = []
+  const multipleInfras: string[] = []
+  const entryPoints: string[] = []
+  const mapping: Record<string, Based.Deploy.Configs> = {}
 
   const walk = async (dir = process.cwd()) => {
     const files = await readdir(dir).catch(() => [])
@@ -35,10 +38,22 @@ export const getBasedFiles = async (
         }
 
         if (isConfigFile(file)) {
-          configs.push([dir, file, join(dir, file)])
+          entryPoints.push(join(dir, file))
+          mapping[dir] = {} as Based.Deploy.Configs
         } else if (isSchemaFile(file)) {
-          schemas.push(join(dir, file))
-          configs.push([dir, file, join(dir, file)])
+          if (!multipleSchemas.length) {
+            entryPoints.push(join(dir, file))
+            mapping[dir] = {} as Based.Deploy.Configs
+          } else {
+            multipleSchemas.push(file)
+          }
+        } else if (isInfraFile(file)) {
+          if (!multipleInfras.length) {
+            entryPoints.push(join(dir, file))
+            mapping[dir] = {} as Based.Deploy.Configs
+          } else {
+            multipleInfras.push(file)
+          }
         }
 
         return null
@@ -46,13 +61,13 @@ export const getBasedFiles = async (
     )
   }
 
-  if (schemas.length) {
+  if (multipleSchemas.length) {
     context.print
       .intro(`<red>${context.i18n('methods.schema.multiple')}</red>`)
       .pipe()
       .pipe(context.i18n('methods.schema.multipleDesc'))
 
-    schemas.map((schema) => context.print.pipe(rel(schema)))
+    multipleSchemas.map((schema) => context.print.pipe(rel(schema)))
 
     context.print.outro(context.i18n('methods.schema.remove'))
 
@@ -61,9 +76,5 @@ export const getBasedFiles = async (
 
   await walk()
 
-  if (configs.length) {
-    entryPoints = configs.map(([_, __, path]) => path)
-  }
-
-  return { configs, entryPoints }
+  return { entryPoints, mapping }
 }

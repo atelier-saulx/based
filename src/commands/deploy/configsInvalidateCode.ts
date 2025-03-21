@@ -6,7 +6,7 @@ import { FUNCTION_TYPES } from '../../shared/constants.js'
 export const configsInvalidateCode = async (
   context: AppContext,
   functionFile: string,
-  functionConfig: Based.Deploy.FunctionBase,
+  functionConfig: Based.Deploy.ConfigsBase,
   functionPath: string,
 ): Promise<boolean> => {
   if (!functionFile) {
