@@ -71,27 +71,26 @@ export function save(db: DbServer, sync = false) {
   db.dirtyRanges.clear()
 
   const types: Writelog['types'] = {}
+  const rangeDumps: Writelog['rangeDumps'] = {}
   for (const key in db.schemaTypesParsed) {
-    const def = db.schemaTypesParsed[key]
-    types[def.id] = { lastId: def.lastId, blockCapacity: def.blockCapacity }
-  }
-
-  const dumps: Writelog['rangeDumps'] = {}
-  for (const key in db.schemaTypesParsed) {
-    const def = db.schemaTypesParsed[key]
-    dumps[def.id] = []
+    const { id, lastId, blockCapacity } = db.schemaTypesParsed[key]
+    types[id] = { lastId, blockCapacity }
+    rangeDumps[id] = []
   }
   db.merkleTree.visitLeafNodes((leaf) => {
-    const [typeId] = destructureCsmtKey(leaf.key)
+    const [typeId, start] = destructureCsmtKey(leaf.key)
     const data: CsmtNodeRange = leaf.data
-    dumps[typeId].push({ ...data, hash: bufToHex(leaf.hash) })
+    if (start != data.start) {
+      console.error(`csmtKey start and range start mismatch: ${start} != ${data.start}`)
+    }
+    rangeDumps[typeId].push({ ...data, hash: bufToHex(leaf.hash) })
   })
 
   const data: Writelog = {
     ts,
     types,
     commonDump: COMMON_SDB_FILE,
-    rangeDumps: dumps,
+    rangeDumps,
   }
   const mtRoot = db.merkleTree.getRoot()
   if (mtRoot) {

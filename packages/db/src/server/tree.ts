@@ -9,13 +9,13 @@ export type CsmtNodeRange = {
   end: number
 }
 
-export const makeCsmtKey = (typeId: number, start: number) =>
-  typeId * 4294967296 + start
-
 export const destructureCsmtKey = (key: number) => [
   (key / 4294967296) | 0, // typeId
   (key >>> 31) * 2147483648 + (key & 0x7fffffff), // start_node_id
 ]
+
+export const makeCsmtKey = (typeId: number, start: number) =>
+  typeId * 4294967296 + start
 
 export const makeCsmtKeyFromNodeId = (
   typeId: number,
