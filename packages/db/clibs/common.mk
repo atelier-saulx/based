@@ -43,6 +43,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	CFLAGS += -fstack-clash-protection
 
 	ifeq ($(uname_M),x86_64)
+		ASFLAGS += -march=x86-64 -mtune=intel
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
 		CFLAGS += -fcf-protection=full
 	endif
