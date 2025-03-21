@@ -79,8 +79,6 @@ await test('dependent', async (t) => {
 
   await db.drain()
 
-  console.log('-----------------------------')
-
   console.dir(
     await db
       .query('show')

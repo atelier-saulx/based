@@ -27,11 +27,21 @@ await test('isModified', async (t) => {
     db.create('user', { nr: i })
   }
 
-  deepEqual((await db.query('user').range(0, 5).get()).toObject(), [
-    { id: 1, nr: 0 },
-    { id: 2, nr: 1 },
-    { id: 3, nr: 2 },
-    { id: 4, nr: 3 },
-    { id: 5, nr: 4 },
-  ])
+  const q: any = []
+
+  for (let i = 0; i < 10; i++) {
+    q.push(db.query('user').range(0, 5).get())
+  }
+
+  const r = await Promise.all(q)
+
+  for (const result of r) {
+    deepEqual(result.toObject(), [
+      { id: 1, nr: 0 },
+      { id: 2, nr: 1 },
+      { id: 3, nr: 2 },
+      { id: 4, nr: 3 },
+      { id: 5, nr: 4 },
+    ])
+  }
 })

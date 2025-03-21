@@ -140,7 +140,7 @@ export class BasedDb {
   async destroy() {
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
-    await wait(10)
+    await wait(Math.max(this.client.hooks.flushTime + 10, 10))
     this.client.destroy()
     await this.server.destroy()
   }

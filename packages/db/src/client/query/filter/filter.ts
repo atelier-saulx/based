@@ -142,6 +142,10 @@ export const filterOr = (
       size: 0,
       conditions: new Map(),
     }
+  } else {
+    const r = filterOr(db, def, filterAst, conditions.or)
+    conditions.size += r.size + 7
+    return r
   }
   filter(db, def, filterAst, conditions.or)
   conditions.size += conditions.or.size

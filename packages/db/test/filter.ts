@@ -758,13 +758,11 @@ await test('or numerical', async (t) => {
     },
   })
 
-  console.log('-----------')
   for (let i = 0; i < 1e6; i++) {
     db.create('machine', {
       temperature: ~~(Math.random() * 200) + 1,
     })
   }
-  console.log('----- end ------')
   await db.drain()
 
   const r = (

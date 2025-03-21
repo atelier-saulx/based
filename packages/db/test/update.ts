@@ -216,7 +216,6 @@ await test('update', async (t) => {
     },
   ])
 
-  // ------------------------------
   const ids = []
   let snurpId = 1
   for (; snurpId <= 1e6; snurpId++) {

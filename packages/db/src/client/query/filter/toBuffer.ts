@@ -132,5 +132,6 @@ export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
   } else {
     result = new Uint8Array(0)
   }
+
   return result
 }
