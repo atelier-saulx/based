@@ -207,6 +207,91 @@ await test('one to many', async (t) => {
   )
 })
 
+await test('one to many really', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string', max: 8 },
+          resources: {
+            items: {
+              ref: 'resource',
+              prop: 'owner',
+            },
+          },
+        },
+      },
+      resource: {
+        props: {
+          name: { type: 'string', max: 8 },
+          owner: {
+            ref: 'user',
+            prop: 'resources',
+          },
+        },
+      },
+    },
+  })
+
+  const cpu = db.create('resource', { name: 'cpu' })
+  const kbd = db.create('resource', { name: 'keyboard' })
+  const mouse = db.create('resource', { name: 'mouse' })
+  const fd = db.create('resource', { name: 'floppy' })
+  const user = db.create('user', {
+    name: 'root',
+    resources: [ cpu, kbd, mouse, fd ],
+  })
+  await db.drain()
+
+  console.log(1, await db.query('user', user).include('resources').get())
+  await db.update('user', user, {
+    resources: [ cpu, kbd, mouse ],
+  })
+  console.log(2, await db.query('user', user).include('resources').get())
+  await db.update('user', user, {
+    resources: [ cpu, kbd, mouse ],
+  })
+  console.log(3, await db.query('user', user).include('resources').get())
+  await db.update('user', user, {
+    resources: [ cpu, kbd, mouse, fd ],
+  })
+  console.log(4, await db.query('user', user).include('resources').get())
+  await db.update('user', user, {
+    resources: [ kbd, cpu, fd, mouse ],
+  })
+  console.log(5, await db.query('user', user).include('resources').get())
+  const joy = await db.create('resource', { name: 'joystick', owner: user })
+  await db.update('resource', joy, { owner: user })
+  await db.update('resource', joy, { owner: user })
+  await db.update('resource', joy, { owner: user })
+  console.log(6, await db.query('user', user).include('resources').get())
+  await db.update('user', user, {
+    resources: [ kbd, cpu, fd, mouse ],
+  })
+  await db.update('user', user, {
+    resources: {
+      set: [joy],
+    },
+  })
+  console.log('START BUG')
+  await db.update('user', user, {
+    resources: {
+      set: [joy, kbd, cpu, fd, mouse],
+    },
+  })
+  console.log(7, await db.query('user', user).include('resources').get())
+})
+
 await test('update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
