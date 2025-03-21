@@ -991,6 +991,12 @@ static bool add_to_refs_index(
     const bool added_src = add_to_refs_index_(src, fs_src, nfo_src, dst->node_id);
     const bool added_dst = add_to_refs_index_(dst, fs_dst, nfo_dst, src->node_id);
 
+    /*
+     * If both are refs then:
+     * added_src && added_dst || !added_src && !added_src == true
+     * If one is ref then it's always true and the other is either false or true.
+     */
+
     return added_src && added_dst;
 }
 
