@@ -7,3 +7,5 @@ export * from './error/index.js'
 export * from './functionApi/index.js'
 export * from './query/types.js'
 export * from './protocol.js'
+
+process.title = 'BasedServer'

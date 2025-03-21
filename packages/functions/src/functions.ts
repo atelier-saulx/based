@@ -409,6 +409,7 @@ export type BasedRouteComplete<
   'type' | 'name' | 'maxPayloadSize' | 'rateLimitTokens'
 > & {
   tokens?: PathToken[]
+  nameOnPath?: boolean
 }
 
 export function isBasedRoute<T extends BasedFunctionTypes>(

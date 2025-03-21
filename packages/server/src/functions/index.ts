@@ -16,6 +16,7 @@ import { destroyObs, start } from '../query/index.js'
 import { destroyChannel, startChannel } from '../channel/index.js'
 import { genVersion } from './genVersion.js'
 import { pathMatcher, tokenizePattern } from '../incoming/http/pathMatcher.js'
+import { SLASH } from '../incoming/http/types.js'
 
 export * from './types.js'
 
@@ -98,8 +99,9 @@ export class BasedFunctions {
         if (path) {
           route = this.getRoute(path)
         }
-
-        return route || this.routes[path] || this.routes[this.paths['/']] || null
+        
+        // deprecate this.routes[this.paths['/']]
+        return route || this.routes[path] || this.routes['404'] || this.routes[this.paths['/']] || null
       }
     }
 
@@ -208,11 +210,34 @@ export class BasedFunctions {
       nRoute.rateLimitTokens = 1
     }
     if (!nRoute.tokens) {
-      let finalPath: string = `/${nRoute.name}`
+      let finalPath: string = ''
       
       if (nRoute.path) {
-        const clearPath = nRoute.path.replace(`/${nRoute.name}`, '')
-        finalPath += clearPath
+        finalPath = nRoute.path
+        if (nRoute.path.charCodeAt(0) !== SLASH) {
+          finalPath = `/${nRoute.path}`
+        }
+        if (nRoute.path.length >= nRoute.name.length + 1) {
+          let match = true
+
+          for (let i = 0; i < nRoute.name.length; i++) {
+            if (nRoute.path.charCodeAt(i + 1) !== nRoute.name.charCodeAt(i)) {
+              match = false
+
+              break
+            }
+          }
+
+          if (match) {
+            nRoute.nameOnPath = true
+          } else {
+            finalPath = `/${nRoute.name}` + finalPath
+            nRoute.nameOnPath = false
+          }
+        }
+      } else {
+        finalPath = `/${nRoute.name}`
+        nRoute.nameOnPath = false
       }
       
       nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
@@ -409,33 +434,31 @@ export class BasedFunctions {
     let tokens = []
     const bufferPath = Buffer.from(path)
     const routesKeys = Object.keys(this.routes)
-        
+    
     while (i < routesKeys.length) {
       tokens = [...this.routes[routesKeys[i]].tokens]      
 
-      if (removeNameFromTokens && tokens) {
-        tokens.shift()        
+      if (removeNameFromTokens && !this.routes[routesKeys[i]].nameOnPath) {
+        if (tokens.length > 1) {
+          tokens.shift() 
+        } else {
+          i++
+          continue
+        }
       }
-
+      
       if (pathMatcher(tokens, bufferPath)) {
-        if (tokens.length === this.routes[routesKeys[i]].tokens.length) {
-          return this.routes[routesKeys[i]]
-        }
-
-        return {
-          ...this.routes[routesKeys[i]],
-          tokens
-        }
+        return this.routes[routesKeys[i]]
       }
-
+      
       i++
 
-      if (i === routesKeys.length && !removeNameFromTokens) {
+      if (i === routesKeys.length && !removeNameFromTokens) {   
         removeNameFromTokens = true
         i = 0        
       }
 
-      if (i === routesKeys.length && removeNameFromTokens) {
+      if (i === routesKeys.length && removeNameFromTokens) {        
         return null
       }
     }
@@ -477,6 +500,7 @@ export class BasedFunctions {
       }
     }
     delete this.specs[name]
+
     return true
   }
 }
