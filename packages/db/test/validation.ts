@@ -147,6 +147,9 @@ await test('update', async (t) => {
       },
     ],
   )
+
+  // dont throw
+  const id = await db.create('user', undefined)
 })
 
 await test('query', async (t) => {
