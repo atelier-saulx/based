@@ -805,7 +805,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         }
 
         const size_t value_size = selva_fields_get_data_size(fs);
-        char value_buf[value_size];
+        char value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
 
         err = SELVA_EINVAL;
 
