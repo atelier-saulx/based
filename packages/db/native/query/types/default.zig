@@ -1,6 +1,7 @@
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
+const addCount = @import("../include/addAgg.zig").addCount;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const AggFn = @import("../../types.zig").AggFn;
@@ -56,7 +57,8 @@ pub fn default(
         }
     }
     if (aggregation == AggFn.count) {
-        utils.debugPrint("count: {any}\n", .{ctx.totalResults});
+        const sz = try addCount(ctx, std.mem.asBytes(&ctx.totalResults)); // TODO: use the allocator to not mix up with &ctx.totalResults and maybe to another aggFn
+        ctx.size += sz;
     }
 }
 

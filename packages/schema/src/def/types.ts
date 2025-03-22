@@ -103,6 +103,14 @@ export type PropDefEdge = Partial<PropDef> & {
   __isEdge: true
 }
 
+export type PropDefAggregate = Partial<PropDef> & {
+  __isPropDef: true
+  typeIndex: TypeIndex
+  len: number
+  prop: number // (0-250)
+  name: string
+}
+
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
 
 export type SchemaSortUndefinedHandler = {

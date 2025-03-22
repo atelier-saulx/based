@@ -70,22 +70,26 @@ await test('branchedCount', async (t) => {
 
   // await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
-  await db
-    .query('user')
-    //lala
-    .count()
-    .get()
-    .inspect(100)
+  console.log(
+    await db
+      .query('user')
+      //lala
+      .filter('flap', '>', 20)
+      .count()
+      .get()
+      .toObject(),
+  )
+  // .inspect(100)
 
   // await db.query('user').filter('flap', '>', 20).count().get().inspect()
 
-  // await db.query('article').include('contributors').count().get().inspect()
+  // await db.query('article').include('contributors').get().inspect()
 
   // await db
   //   .query('article')
-  //   .include((q) => q('contributors').count())
+  //   .include((q) => q('contributors'), 'name')
   //   .get()
-  //   .inspect()
+  //   .inspect(100)
 
   //  {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
 })

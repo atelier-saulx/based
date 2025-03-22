@@ -96,6 +96,17 @@ pub fn createResultsBuffer(
                 i += 4;
             }
         }
+        //  else if (item.field == @intFromEnum(t.ReadOp.AGGREGATION)) {
+        //     data[i] = @intFromEnum(t.ReadOp.AGGREGATION);
+        //     i += 1;
+        //     const val = item.val.?;
+        //     writeInt(u32, data, i, val.len);
+        //     i += 4;
+        //     copy(data[i .. i + val.len], val);
+        //     i += val.len;
+        //     utils.debugPrint("data: {any}, i: {any}, val.len: {any}\n", .{ data, i, item.val.?.len });
+        //     continue;
+        // }
 
         if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
             continue;

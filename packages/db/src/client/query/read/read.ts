@@ -10,6 +10,7 @@ import {
   NUMBER,
   PropDef,
   PropDefEdge,
+  PropDefAggregate,
   STRING,
   TEXT,
   TIMESTAMP,
@@ -36,6 +37,8 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
+  READ_AGGREGATION,
+  AggFn,
 } from '../types.js'
 
 export type Item = {
@@ -43,7 +46,7 @@ export type Item = {
 } & { [key: string]: any }
 
 const addField = (
-  p: PropDef | PropDefEdge,
+  p: PropDef | PropDefEdge | PropDefAggregate,
   value: any,
   item: Item,
   defaultOnly: boolean = false,
@@ -330,6 +333,16 @@ export const readAllFields = (
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
       i += size + 4
+    } else if (index === READ_AGGREGATION) {
+      // TODO: To change to a map and also to get the aggregate field name from a query function parameter
+      const propAgg: PropDefAggregate = {
+        name: 'count',
+        path: ['count'],
+        typeIndex: UINT32,
+      } as PropDefAggregate
+      const size = readUint32(result, i)
+      addField(propAgg, readUint32(result, i + 4), item)
+      i += 4 + size + 4
     } else if (index === 0) {
       i += readMain(q, result, i, item)
     } else {

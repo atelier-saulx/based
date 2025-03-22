@@ -116,6 +116,7 @@ pub const ReadOp = enum(u8) {
     EDGE = 252,
     REFERENCES = 253,
     REFERENCE = 254,
+    AGGREGATION = 251,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -133,14 +134,14 @@ pub const ReadRefOp = enum(u8) {
 pub const AggFn = enum(u8) {
     avg = 1,
     cardinality = 2,
-    concat = 3, // str aggregation, delimiter should be an argument
+    concat = 3, // string aggregation, delimiter should be an argument
     count = 4,
     max = 5,
     min = 6,
     mode = 7, // ordered-set
     percentile = 8, // continuous or discrete should be optional parameters, default = discrete
     rank = 9, // hypothetical-set, dense should be optional parameter
-    stdDev = 10, // population or sample should be optional parameters
+    stddev = 10, // population or sample should be optional parameters, default = sample
     sum = 11,
     variance = 12,
 };

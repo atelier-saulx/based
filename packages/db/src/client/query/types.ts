@@ -144,18 +144,19 @@ export const READ_ID = 255
 export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
+export const READ_AGGREGATION = 251
 
 export const enum AggFn {
   AVG = 1,
   CARDINALITY = 2,
-  CONCAT = 3, // str aggregation, delimiter should be an argument
+  CONCAT = 3, // string aggregation, delimiter should be an argument
   COUNT = 4,
   MAX = 5,
   MIN = 6,
   MODE = 7, // ordered-set
   PERCENTILE = 8, // continuous or discrete should be optional parameters, default = discrete
   RANK = 9, // hypothetical-set, dense should be optional parameter
-  STDDEV = 10, // population or sample should be optional parameters
+  STDDEV = 10, // population or sample should be optional parameters, default = sample
   SUM = 11,
   VARIANCE = 12,
 }
