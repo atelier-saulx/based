@@ -144,6 +144,7 @@ export const READ_ID = 255
 export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
+export const CREATE_AGGREGATION = 250
 export const READ_AGGREGATION = 251
 
 export const enum AggFn {
@@ -159,4 +160,5 @@ export const enum AggFn {
   STDDEV = 10, // population or sample should be optional parameters, default = sample
   SUM = 11,
   VARIANCE = 12,
+  NONE = -999
 }

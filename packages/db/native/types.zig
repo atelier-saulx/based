@@ -116,7 +116,7 @@ pub const ReadOp = enum(u8) {
     EDGE = 252,
     REFERENCES = 253,
     REFERENCE = 254,
-    AGGREGATION = 251,
+    AGGREGATION = 250,
 };
 
 pub const IncludeOp = enum(u8) {

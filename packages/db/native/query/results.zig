@@ -151,6 +151,5 @@ pub fn createResultsBuffer(
     // }
 
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
-
     return result;
 }

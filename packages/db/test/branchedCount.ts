@@ -79,9 +79,15 @@ await test('branchedCount', async (t) => {
       .get()
       .toObject(),
   )
-  // .inspect(100)
 
-  // await db.query('user').filter('flap', '>', 20).count().get().inspect()
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     .include('name', 'contributors')
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
   // await db.query('article').include('contributors').get().inspect()
 
