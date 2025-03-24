@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
     const lib = b.addSharedLibrary(.{
-        .name = "based-db-zig",
+        .name = "based_db_zig",
         .root_source_file = b.path("native/lib.zig"),
         .target = target,
         .optimize = .ReleaseFast,

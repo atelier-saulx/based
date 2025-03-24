@@ -13,7 +13,7 @@ pub fn simdEqualsOr(
     values: []u8,
 ) bool {
     var i: usize = 0;
-    const bytes: u16 = @divExact(@typeInfo(T).Int.bits, 8);
+    const bytes: u16 = @sizeOf(T);
     const l = values.len / bytes;
     const valueExpanded = read(T, value, 0);
     const tmp: [*]T = @alignCast(@ptrCast(values.ptr));

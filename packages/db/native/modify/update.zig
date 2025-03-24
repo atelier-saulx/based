@@ -176,7 +176,7 @@ fn incrementBuf(
         value[0..8].* = @bitCast(v);
         return 8;
     } else {
-        const size = @divExact(@typeInfo(T).Int.bits, 8);
+        const size = @sizeOf(T);
         value[0..size].* = @bitCast(v);
         return size;
     }
