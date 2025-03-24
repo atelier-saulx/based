@@ -123,7 +123,7 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
 [[nodiscard]]
 SELVA_EXPORT
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
-    __attribute__((access(read_only, 1, 2)));
+    __attribute__((access(read_only, 1)));
 
 /**
  * Create a new string with a user provided CRC.
@@ -205,7 +205,7 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
  */
 SELVA_EXPORT
 int selva_string_append(struct selva_string *s, const char *str, size_t len)
-    __attribute__((access(read_only, 2, 3)));
+    __attribute__((access(read_only, 2)));
 
 /**
  * Replace current value of the string s with str.
