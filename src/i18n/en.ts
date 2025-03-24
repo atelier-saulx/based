@@ -228,7 +228,7 @@ export default {
           description: 'Backup current environment state.',
           methods: {
             confirmation:
-              'Would you like to make a backup for <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>?',
+              'Would you like to make a backup for <dim>Org: <b><white>${org}</white></b> | Project: <b><white>${project}</white></b> | Env:</dim> <b><white>${env}</white></b>?',
             success: 'Backup created successfully!',
             making: 'Making a new backup...',
           },

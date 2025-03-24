@@ -187,6 +187,10 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     }),
   })
 
+  if (Object.keys(form).length > 1) {
+    context.print.pipe()
+  }
+
   const basedProject = {
     ...form,
     ...(cluster && { cluster }),
@@ -197,7 +201,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
 
   const globalOptions = context.get('globalOptions')
 
-  if (globalOptions.createBasedFile) {
+  if (globalOptions?.createBasedFile) {
     await saveAsFile(
       basedProject,
       join(process.cwd(), `${BASED_FILE}.ts`),

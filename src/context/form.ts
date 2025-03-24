@@ -241,6 +241,10 @@ export function contextForm(context: AppContext): FormMaker {
         options,
       })) as boolean
 
+      if (isCancel(result)) {
+        return errorMessage(context.i18n('methods.aborted'))
+      }
+
       if (result) {
         return true
       }
