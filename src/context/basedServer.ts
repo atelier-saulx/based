@@ -184,5 +184,9 @@ export const contextBasedServer =
     })
     await server.start()
 
+    if (!cloud) {
+      await client.once('connect')
+    }
+
     return server
   }

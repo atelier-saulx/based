@@ -3,7 +3,7 @@ import type { AppContext } from '../../context/index.js'
 
 export const schemaDeploy = async (
   context: AppContext,
-  schema: Based.Deploy.Functions,
+  schema: Based.Deploy.Configs,
   configsMap: Record<string, number>,
 ) => {
   if (schema) {

@@ -460,7 +460,8 @@ export default {
       options: [
         {
           parameter: '-co, --command <command>',
-          description: "To run a specific command in your 'package.json'.",
+          description:
+            "Execute a specific NPM script defined in your 'package.json'.",
           default: 'test',
         },
         {

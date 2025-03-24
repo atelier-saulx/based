@@ -6,7 +6,7 @@ import { queuedFnDeploy } from './queues.js'
 
 export const configsDeploy = async (
   context: AppContext,
-  functions: Based.Deploy.Functions[],
+  functions: Based.Deploy.Configs[],
   nodeBundles: BundleResult,
   browserBundles: BundleResult,
   outputs: BundleResult['result']['metafile']['outputs'],
@@ -45,13 +45,13 @@ export const configsDeploy = async (
         config,
       ]
 
-      if (forceReload) {
-        const num = Number(forceReload)
-        const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
-        config.appParams.forceReload = Date.now() + seconds
+      // if (forceReload) {
+      //   const num = Number(forceReload)
+      //   const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
+      //   config.appParams.forceReload = Date.now() + seconds
 
-        checksumSeed.push(Date.now())
-      }
+      //   checksumSeed.push(Date.now())
+      // }
 
       checksum = hash(checksumSeed)
     } else {
