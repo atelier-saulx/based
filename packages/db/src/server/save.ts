@@ -2,15 +2,14 @@ import native from '../native.js'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { CsmtNodeRange, destructureCsmtKey, foreachBlock, foreachDirtyBlock, makeCsmtKey } from './tree.js'
-import { DbServer } from './index.js'
+import { DbServer, WRITELOG_FILE } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '../utils.js'
 import {createTree} from './csmt/tree.js'
 
-const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
 
-type Writelog = {
+export type Writelog = {
   ts: number
   types: { [t: number]: { lastId: number; blockCapacity: number } }
   hash?: string

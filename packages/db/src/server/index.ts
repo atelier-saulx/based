@@ -30,7 +30,9 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
-const SCHEMA_FILE = 'schema.json'
+
+export const SCHEMA_FILE = 'schema.json'
+export const WRITELOG_FILE = 'writelog.json'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')

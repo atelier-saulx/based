@@ -1,45 +1,16 @@
 import { stringHash } from '@saulx/hash'
-import { DbServer, DbWorker } from './index.js'
+import { DbServer, DbWorker, SCHEMA_FILE, WRITELOG_FILE } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createTree, hashEq } from './csmt/index.js'
-import { foreachBlock } from './tree.js'
+import { CsmtNodeRange, foreachBlock, makeCsmtKey } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import './worker.js'
-import { save } from './save.js'
+import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
 import { bufToHex, hexToBuf } from '../utils.js'
-
-const SCHEMA_FILE = 'schema.json'
-const WRITELOG_FILE = 'writelog.json'
-
-const makeCsmtKey = (typeId: number, start: number) =>
-  typeId * 4294967296 + start
-
-type Writelog = {
-  ts: number
-  types: { [t: number]: { lastId: number; blockCapacity: number } }
-  hash?: string
-  commonDump: string
-  rangeDumps: {
-    [t: number]: {
-      // TODO add type
-      file: string
-      hash: string
-      start: number
-      end: number
-    }[]
-  }
-}
-
-type CsmtNodeRange = {
-  file: string
-  typeId: number
-  start: number
-  end: number
-}
 
 export async function start(
   db: DbServer,
