@@ -56,11 +56,16 @@ function _modify(
 
     let err: ModifyErr
     if (isPropDef(def)) {
+      const val = obj[key]
+
+      if (val === undefined) {
+        continue
+      }
+
       if (res.subMarkers) {
         checkSubscriptionMarkers(ctx.db, res.subMarkers, def)
       }
 
-      const val = obj[key]
       const type = def.typeIndex
       if (def.separate) {
         if (type === STRING) {
