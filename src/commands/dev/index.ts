@@ -176,11 +176,15 @@ export const devServer = async ({
         const found = await findConfigFile(file, mapping, nodeBundles)
 
         if (found) {
-          if (found?.app) {
-            file = found.app
-          } else if (found?.index) {
-            file = found.index
-          } else {
+          file = found.app || found.index || found.path
+
+          if (!file) {
+            continue
+          }
+
+          if (found.type === 'schema') {
+            await basedServer.client.call('db:set-schema', found.config)
+
             continue
           }
 
@@ -194,7 +198,6 @@ export const devServer = async ({
             devPort,
             liveReloadPort,
             client,
-            basedServer,
           )
 
           if (
@@ -280,13 +283,11 @@ async function createSpecsFromConfigs(
   devPort: number,
   liveReloadPort: number,
   client: BasedClient,
-  basedServer: BasedServer,
 ): Promise<{ specs: Based.Deploy.Specs; reloadClients: boolean }> {
   let checksum: number = 0
   const isApp = found.config.type === 'app' && found.app !== undefined
   const isAuthorize =
     (found.config.type as BasedAuthorizeFunctionConfig['type']) === 'authorize'
-  const isSchema = found.type === 'schema'
   const specs: Based.Deploy.Specs = {}
   let reloadClients: boolean = false
 
@@ -323,10 +324,6 @@ async function createSpecsFromConfigs(
   }
 
   found.checksum = checksum
-
-  if (isSchema) {
-    await basedServer.client.call('db:set-schema', found.config)
-  }
 
   await configsInvalidateCode(context, found)
 
