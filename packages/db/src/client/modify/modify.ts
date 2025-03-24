@@ -113,8 +113,8 @@ function _modify(
         } else {
           err = writeFixedValue(ctx, val, def, ctx.lastMain + def.start)
         }
-      } else if (typeof val === 'object') {
-        if (val !== null && 'increment' in val) {
+      } else if (typeof val === 'object' && val !== null) {
+        if ('increment' in val) {
           let increment = val.increment
           if (increment === 0) {
             continue
