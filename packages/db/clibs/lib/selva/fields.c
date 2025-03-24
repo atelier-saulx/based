@@ -80,7 +80,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     const size_t field_data_size = selva_fields_get_data_size(fs);
     const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
-    if (new_size > (1 << bitsizeof(struct SelvaFields, data_len)) - 1) {
+    if ((ssize_t)new_size > (ssize_t)((1 << bitsizeof(struct SelvaFields, data_len)) - 1)) {
         db_panic("new_size too large: %zu", new_size);
     }
     if ((off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {

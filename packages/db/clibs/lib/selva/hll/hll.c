@@ -207,21 +207,23 @@ int main(void) {
     ** Single value test
     ** -----------------------------------------*/
 
-    // size_t precision = 14;
+#if 0
+    size_t precision = 14;
 
-    // const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
+    const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
 
-    // int initial_capacity = sizeof(bool) \
-    //                         + sizeof(precision) \
-    //                         + sizeof(uint32_t);
+    int initial_capacity = sizeof(bool) \
+                            + sizeof(precision) \
+                            + sizeof(uint32_t);
 
-    // struct selva_string hll;
+    struct selva_string hll;
 
-    // selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
-    // hll_init(&hll, precision, SPARSE);
-    // hll_add(&hll, hash);
-    // double estimated_cardinality = hll_count(&hll);
-    // printf("Estimated cardinality: %f\n", estimated_cardinality);
+    selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    hll_init(&hll, precision, SPARSE);
+    hll_add(&hll, hash);
+    double estimated_cardinality = hll_count(&hll);
+    printf("Estimated cardinality: %f\n", estimated_cardinality);
+#endif
 
     /* -------------------------------------------
     ** Array union test
