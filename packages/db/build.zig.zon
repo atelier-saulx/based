@@ -1,12 +1,7 @@
 .{
+    .fingerprint = 0x79260f69e2d445c4,
     .paths = .{ "src", "build.zig", "build.zig.zon" },
-    // the name of your project
-    .name = "based-db-zig",
-    // the version of your project
+    .name = .based_db_zig,
     .version = "0.0.1",
-
-    // the actual packages you need as dependencies of your project
-    .dependencies = .{
-        // the name of the package
-    },
+    .dependencies = .{},
 }
