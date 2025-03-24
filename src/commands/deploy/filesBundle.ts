@@ -14,8 +14,8 @@ export const filesBundle = async (
   plugins: BasedBundleOptions['plugins'],
   onChange: (err: BuildFailure | null, res: BundleResult) => void,
   environment: 'development' | 'production',
-  publicPath: string,
-  staticPath: string,
+  staticURL: string,
+  wsURL: string,
   connectToCloud: boolean = false,
 ) => {
   const isProduction: boolean = environment === 'production'
@@ -34,7 +34,7 @@ export const filesBundle = async (
     ),
     await bundle(
       {
-        publicPath,
+        publicPath: staticURL,
         entryPoints: browser,
         sourcemap: true,
         platform: 'browser',
@@ -43,7 +43,7 @@ export const filesBundle = async (
         plugins: [
           replaceBasedConfigPlugin(context)({
             cloud: connectToCloud,
-            url: staticPath,
+            url: wsURL,
           }),
           ...plugins,
         ],

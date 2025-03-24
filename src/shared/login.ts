@@ -109,6 +109,7 @@ export const connectToHub = async (
 export const login = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
+  // console.log('lol2')
 
   const users: Based.Auth.AuthenticatedUser[] =
     await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)

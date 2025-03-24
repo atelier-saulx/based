@@ -11,6 +11,7 @@ import type { Command } from 'commander'
 import getPort from 'get-port'
 import { WebSocket, WebSocketServer } from 'ws'
 import { AppContext } from '../../context/index.js'
+import { SharedBasedClient } from '../../shared/SharedBasedClient.js'
 import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
@@ -21,6 +22,7 @@ import { configsParse } from '../deploy/configsParse.js'
 import { filesBundle } from '../deploy/filesBundle.js'
 import { getBasedFiles } from '../deploy/getBasedFiles.js'
 import { configsInvalidateCode } from '../deploy/index.js'
+// import { BundleFlow } from './BundleFlow.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
 
@@ -73,13 +75,13 @@ export const devServer = async ({
   const newPort =
     port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
 
-  const [devPort, lrPort] = await Promise.all([
+  const [devPort, liveReloadPort] = await Promise.all([
     getPort({ port: newPort }),
     getPort({ port: 4000 }),
   ])
   const ip = getOwnIp()
-  const devServerWSPath = `ws://${ip}:${devPort}`
-  const publicPath = `http://${ip}:${devPort}/static/`
+  const wsURL = `ws://${ip}:${devPort}`
+  const staticURL = `http://${ip}:${devPort}/static/`
 
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
@@ -97,6 +99,15 @@ export const devServer = async ({
     entryPoints,
     mapping,
   )
+
+  // const bundleFlow = new BundleFlow(configs, node, browser, plugins)
+  // const bundled = await bundleFlow.bundle(
+  //   'development',
+  //   staticURL,
+  //   wsURL,
+  //   cloud,
+  // )
+
   const { nodeBundles, browserBundles } = await filesBundle(
     context,
     node,
@@ -104,13 +115,20 @@ export const devServer = async ({
     plugins,
     onChange,
     'development',
-    publicPath,
-    devServerWSPath,
+    staticURL,
+    wsURL,
     cloud,
   )
 
-  const client = basedClient.get('project')
-  const { clients } = new WebSocketServer({ port: lrPort })
+  let client: BasedClient
+
+  if (!cloud) {
+    client = SharedBasedClient.getInstance({ url: wsURL })
+  } else {
+    client = basedClient.get('project')
+  }
+
+  const { clients } = new WebSocketServer({ port: liveReloadPort })
   const basedServer: BasedServer = await context.basedServer(
     devPort,
     client,
@@ -123,8 +141,6 @@ export const devServer = async ({
     onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
   }
 
-  const watching = onChange ? 'Waiting for changes...' : 'Not watching files'
-
   context.print
     .line()
     .intro('<primary><b>Based Dev Server</b></primary>')
@@ -132,7 +148,7 @@ export const devServer = async ({
     .step(`<dim><b>Local</b>: http://localhost:${devPort}</dim>`)
     .step(`<dim><b>Public</b>: http://${ip}:${devPort}</dim>`)
     .pipe()
-    .step(`<dim>${watching}</dim>`)
+    .step('<dim>Waiting for changes...</dim>')
 
   async function onChange(err: BuildFailure | null, result?: BundleResult) {
     const updates = result?.updates
@@ -176,7 +192,7 @@ export const devServer = async ({
             browserBundles,
             ip,
             devPort,
-            lrPort,
+            liveReloadPort,
             client,
             basedServer,
           )
@@ -262,7 +278,7 @@ async function createSpecsFromConfigs(
   browserBundles: BundleResult,
   ip: string,
   devPort: number,
-  lrPort: number,
+  liveReloadPort: number,
   client: BasedClient,
   basedServer: BasedServer,
 ): Promise<{ specs: Based.Deploy.Specs; reloadClients: boolean }> {
@@ -364,7 +380,7 @@ async function createSpecsFromConfigs(
           if (errorTarget) {
             const vsCodeLink = (str) =>
               `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
-            let str = `${LIVE_RELOAD_SCRIPT(lrPort)}<pre>`
+            let str = `${LIVE_RELOAD_SCRIPT(liveReloadPort)}<pre>`
             for (const { location, text } of errorTarget.error.errors) {
               if (location) {
                 const { file, column, line } = location
@@ -409,7 +425,7 @@ async function createSpecsFromConfigs(
             return html
           }
           return `${html.substring(0, i)}${LIVE_RELOAD_SCRIPT(
-            lrPort,
+            liveReloadPort,
           )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`
         },
       }
