@@ -47,7 +47,7 @@ map[STRING] = (ctx, val, def) => {
     val = ''
   }
   const valBuf = ENCODER.encode(val)
-  const size = valBuf.byteLength;
+  const size = valBuf.byteLength
   if (size + 1 > def.len) {
     return new ModifyError(def, val, `max length of ${def.len - 1},`)
   }
@@ -77,7 +77,7 @@ map[ENUM] = (ctx, val, def) => {
     return RANGE_ERR
   }
   if (val === null) {
-    ctx.buf[ctx.len++] = 1
+    ctx.buf[ctx.len++] = 0
   } else if (val in def.reverseEnum) {
     ctx.buf[ctx.len++] = def.reverseEnum[val] + 1
   } else {

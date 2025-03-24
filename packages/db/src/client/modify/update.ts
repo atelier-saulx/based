@@ -19,7 +19,6 @@ const appendUpdate = (
   overwrite?: boolean,
 ) => {
   const err = modify(ctx, res, obj, def, UPDATE, def.tree, overwrite)
-
   if (err) {
     return err
   }
