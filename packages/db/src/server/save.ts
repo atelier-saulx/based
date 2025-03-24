@@ -28,7 +28,8 @@ type Writelog = {
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-export function save(db: DbServer, sync = false) {
+export function save<T extends boolean>(db: DbServer, sync?: T): T extends true ? void : Promise<void>;
+export function save(db: DbServer, sync = false): void | Promise<void> {
   if (!db.dirtyRanges.size) {
     return
   }
