@@ -80,6 +80,13 @@ await test('branchedCount', async (t) => {
       .toObject(),
   )
 
+  await db
+  .query('user')
+  .filter('flap', '>', 20)
+  .count()
+  .get()
+  .inspect()
+
   // console.log(
   //   await db
   //     .query('article')

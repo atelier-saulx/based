@@ -451,7 +451,7 @@ export const resultToObject = (
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
-    var item: AggItem
+    let item: AggItem
     if (q.aggregation == AggFn.NONE){
       item = {}
     }

@@ -1,7 +1,7 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
-import { QueryDef } from './types.js'
-import { debug, resultToObject, Item, readAllFields } from './query.js'
+import { QueryDef, AggFn } from './types.js'
+import { debug, resultToObject, Item, AggItem, readAllFields } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '../bitWise.js'
 
@@ -81,8 +81,14 @@ export class BasedQueryResponse {
     while (i < result.byteLength - 4) {
       let id = readUint32(result, i)
       i += 4
-      const item: Item = {
-        id,
+      let item: AggItem
+      if (this.def.aggregation == AggFn.NONE){
+        item = {}
+      }
+      else {
+        item = {
+          id,
+        }
       }
       if (this.def.search) {
         item.$searchScore = readFloatLE(result, i)
