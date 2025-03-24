@@ -12,7 +12,7 @@ const COMMON_SDB_FILE = 'common.sdb'
 export type Writelog = {
   ts: number
   types: { [t: number]: { lastId: number; blockCapacity: number } }
-  hash?: string
+  hash: string
   commonDump: string
   rangeDumps: {
     [t: number]: {
@@ -120,10 +120,7 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
     types,
     commonDump: COMMON_SDB_FILE,
     rangeDumps,
-  }
-  const mtRoot = db.merkleTree.getRoot()
-  if (mtRoot) {
-    data.hash = bufToHex(mtRoot.hash)
+    hash: bufToHex(db.merkleTree.getRoot()?.hash ?? new Uint8Array(0)),
   }
   const filePath = join(db.fileSystemPath, WRITELOG_FILE)
   const content = JSON.stringify(data)
