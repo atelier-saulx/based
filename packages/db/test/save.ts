@@ -327,3 +327,75 @@ await test('text', async (t) => {
   const articles2 = await db2.query('article').get().toObject()
   deepEqual(articles1, articles2)
 })
+
+await test('simulated periodic save', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.setSchema({
+    types: {
+      book: {
+        props: {
+          name: { type: 'string', max: 16 },
+          isbn: { type: 'string', max: 13 },
+          owner: { ref: 'person', prop: 'books' },
+        },
+      },
+      person: {
+        props: {
+          name: { type: 'string', max: 16 },
+          age: { type: 'uint32' },
+          bf: { ref: 'person', prop: 'bf' },
+          books: { items: { ref: 'book', prop: 'owner' } },
+          alias: { type: 'alias' },
+        },
+      },
+    },
+  })
+
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+
+  const people = await Promise.all([
+    db.create('person', {
+      name: 'Slim'
+    }),
+    db.create('person', {
+      name: 'Slick'
+    }),
+    db.create('person', {
+      name: 'Joe',
+    })
+  ])
+  db.update('person', people[1], {
+    bf: people[2]
+  })
+
+  for (let i = 0; i < 1000; i++) {
+    db.create('book', {
+      name: `book ${i}`,
+      isbn: '9789295055025',
+      owner: people[i % people.length],
+    })
+  }
+  await db.save()
+  for (let i = 0; i < 1000; i++) {
+    db.create('book', {
+      name: `book ${1000 + i}`,
+      isbn: '9789295055025',
+      owner: people[i % people.length],
+    })
+  }
+  await db.save()
+
+  const db2 = new BasedDb({
+    path: t.tmp,
+  })
+  t.after(() => {
+    return db2.destroy()
+  })
+  await db2.start()
+})
