@@ -1,14 +1,14 @@
 import type { AppContext } from '../../../context/index.js'
 import { isNotEmpty } from '../../../shared/validations.js'
 
-type MachineList = {
-  name?: string
-  label: string
-  value: string
-  basedPrice?: string
-  cpus?: string
-  memory?: string
-}
+// type MachineList = {
+//   name?: string
+//   label: string
+//   value: string
+//   basedPrice?: string
+//   cpus?: string
+//   memory?: string
+// }
 
 // const newOrg = async () => {
 //   const result = await context.form.text({

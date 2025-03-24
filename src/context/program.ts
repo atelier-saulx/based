@@ -17,9 +17,15 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     )
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
-      this.print
-        .warning(this.i18n('context.configurationFileNotFound'), true)
-        .pipe()
+      this.print.warning(this.i18n('context.configurationFileNotFound'), true)
+
+      const createBasedFile = await this.form.boolean({
+        message: this.i18n('context.createBasedFile', process.cwd()),
+      })
+
+      this.put('globalOptions', { createBasedFile })
+
+      this.print.pipe()
     }
   }
 

@@ -196,33 +196,34 @@ export const envSelect =
       results: { project },
     } = results
 
-    console.log({ results })
-
     // if (!orgs?.[org]?.[project]) {
     // return newEnv(results)
     // }
 
     const branch = await getBranch()
+    const branchOption = context.i18n('commands.init.methods.env.new[0]')
+    const options = []
 
-    console.log({ branch })
+    if (branch) {
+      options.push(branchOption)
+    } else {
+      context.print
+        .pipe()
+        .warning(context.i18n('commands.init.methods.env.branchNotFound'))
+    }
 
-    const newEnvOptions = context.i18n('commands.init.methods.env.new')
-    const options = [
-      ...newEnvOptions,
+    options.push(
       ...context.form.normalizeOptions(envs.filter((env) => env !== branch)),
-    ]
+    )
 
-    input = !input && options.length === 1 ? options[0].value : input
-
-    if (options.length === 1) {
+    if (options.length === 1 && branch) {
       context.print
         .pipe()
         .log(
           `You only have one env for project <b>${project}</b>, and it has the same name as your branch <b>${branch}</b>.`,
-          true,
+          false,
         )
-        .log(`Deploying by #branch: <b>${branch}</b>.`, true)
-        .pipe()
+        .log(`Deploying by #branch: <b>${branch}</b>.`, false)
     }
 
     const env = await context.form.select({
@@ -237,7 +238,7 @@ export const envSelect =
       ],
     })
 
-    if (env === newEnvOptions[0].value) {
+    if (env === branchOption.value) {
       return branch
     }
 

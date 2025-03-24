@@ -20,12 +20,15 @@ export const setMake = async (context: AppContext) => {
   const { org, env, project, file } = await context.getProgram()
   const { skip } = context.getGlobalOptions()
 
-  context.print.line()
-
   if (!skip) {
-    const doIt: boolean = await context.input.confirm(
-      context.i18n('commands.backups.subCommands.make.methods.confirmation'),
-    )
+    const doIt: boolean = await context.form.boolean({
+      message: context.i18n(
+        'commands.backups.subCommands.make.methods.confirmation',
+        org,
+        project,
+        env,
+      ),
+    })
 
     if (!doIt) {
       return

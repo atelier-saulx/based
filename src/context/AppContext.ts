@@ -102,6 +102,11 @@ export class AppContext {
         ...this.state[key],
         ...value,
       }
+    } else if (
+      typeof this.state[key] === 'undefined' &&
+      typeof value === 'object'
+    ) {
+      this.set(key, value)
     }
   }
 
