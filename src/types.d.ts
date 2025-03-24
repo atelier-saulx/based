@@ -511,13 +511,21 @@ declare global {
         forceReload: boolean | number
       }
 
-      type ParsedFunction = {
-        configs: Based.Deploy.Functions[]
+      type EsbuildEntrypoints = {
+        configs: Based.Deploy.Configs[]
         favicons: Set<string>
-        nodeEntryPoints: string[]
-        browserEntryPoints: string[]
-        browserEsbuildPlugins: BasedBundleOptions['plugins']
+        node: string[]
+        browser: string[]
+        plugins: BasedBundleOptions['plugins']
       }
+
+      type Specs = Record<
+        string,
+        BasedFunctionConfig & {
+          fn?: (...args: any[]) => any
+          httpResponse?: (...args: any[]) => any
+        }
+      >
 
       type FilesToUpload = {
         path: string
@@ -534,12 +542,24 @@ declare global {
         path: string
       }
 
+      type BasedFile = {
+        path: string
+        dir: string
+        file: string
+        checksum?: number
+      }
+
+      type BasedFiles = {
+        entryPoints: string[]
+        mapping: Record<string, Based.Deploy.Configs>
+      }
+
       type SchemaBase = { schema: any; path: string }
 
       type FunctionsFiles = [dir: string, file: string, path: string]
 
-      type FunctionBase = BasedFunctionConfig &
-        BasedAppFunctionConfig & {
+      type ConfigsBase = BasedFunctionConfig &
+        BasedFunctionConfig<'app'> & {
           type: 'authorize' & BasedFunctionConfig['type']
           main: string
           appParams?: {
@@ -550,13 +570,19 @@ declare global {
           files?: string[]
         }
 
-      type Functions = {
-        config: FunctionBase
+      type Configs = {
+        config: ConfigsBase
+        type: 'config' | 'schema' | 'infra'
         path: string
         dir: string
+        rel: string
         index?: string
         app?: string
         favicon?: string
+        bundled: string
+        checksum: number
+        mtimeMs: number
+        serverFunction?: string
       }
     }
   }

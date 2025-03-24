@@ -9,9 +9,9 @@ import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
 
 export const filesBundle = async (
   context: AppContext,
-  nodeEntryPoints: string[],
-  browserEntryPoints: string[],
-  browserEsbuildPlugins: BasedBundleOptions['plugins'],
+  node: string[],
+  browser: string[],
+  plugins: BasedBundleOptions['plugins'],
   onChange: (err: BuildFailure | null, res: BundleResult) => void,
   environment: 'development' | 'production',
   publicPath: string,
@@ -27,7 +27,7 @@ export const filesBundle = async (
   const [nodeBundles, browserBundles] = await Promise.all([
     await bundle(
       {
-        entryPoints: nodeEntryPoints,
+        entryPoints: node,
         sourcemap: 'external',
       },
       onChange,
@@ -35,7 +35,7 @@ export const filesBundle = async (
     await bundle(
       {
         publicPath,
-        entryPoints: browserEntryPoints,
+        entryPoints: browser,
         sourcemap: true,
         platform: 'browser',
         minify: isProduction,
@@ -45,7 +45,7 @@ export const filesBundle = async (
             cloud: connectToCloud,
             url: staticPath,
           }),
-          ...browserEsbuildPlugins,
+          ...plugins,
         ],
         define: {
           global: 'window',

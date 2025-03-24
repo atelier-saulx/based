@@ -124,7 +124,6 @@ export const contextBasedServer =
                   contentData,
                   {
                     'Content-Type': contentType,
-                    'Access-Control-Allow-Origin': '*',
                   },
                   200,
                 )
@@ -187,7 +186,7 @@ export const contextBasedServer =
       context.print
         .line()
         .error(context.i18n('methods.server.name'))
-        .log(data, ' ')
+        .log(data, false)
     })
     await server.start()
 

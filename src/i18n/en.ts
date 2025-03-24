@@ -762,14 +762,12 @@ export default {
       noIndex:
         "Could not find <b>'index.ts'</b> or <b>'index.js'</b> for <b>'${function}'</b>",
       multipleConfig:
-        "Found <b>multiple configs</b> for the function <b>'${function}'</b>",
+        "Found <b>multiple configs</b> for the function <b>'${function}'</b>. The config file: <b>'${file}'</b> will not be used for this function.",
       noMainTypeApp:
         "No <b>'main'</b> field defined for <b>'${function}'<b> of type 'app', this is a required field",
-      loadingFunctions: 'Loading your functions',
-      loadingSchema: 'Loading your schema',
-      noSchema: 'invalid or not found',
-      noFunctions:
-        'No matching function configurations found. Check your Based Functions files and try again.',
+      loadingConfigs: 'Loading your <b>Based</b> files',
+      noConfigs:
+        'No matching files found. Check your <b>Based</b> files and try again.',
       project: 'Bundling your project',
       functionsLabel_one: '<b>Function</b>: ${number}',
       functionsLabel_many: '<b>Functions</b>: ${number}',
@@ -778,8 +776,10 @@ export default {
       pluginLabel: '<b>Plugins</b>: ${number}',
       changeDetected: 'Detected changes, rebundling files',
       errorDetected: 'Error detected while bundling',
+      wrongTypeIntro: '<yellow><b>Wrong type</b></yellow>',
       wrongType:
         "The type key of the function '<b>${name}</b>' is missing or invalid. The only valid values are: ${types}",
+      methodNotExportedIntro: '<yellow><b>Export default missing</b></yellow>',
       methodNotExported:
         "No <b>default</b> export pointing to a method related to the function '<b>${name}</b>' of type '<b>${type}</b>' was found",
       error: {

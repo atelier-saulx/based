@@ -1,5 +1,6 @@
 import type { BuildFailure, BundleResult } from '@based/bundle'
 import type { AppContext } from '../../context/index.js'
+import { rel } from '../../shared/index.js'
 
 export const bundlingErrorHandling =
   (context: AppContext) =>
@@ -61,14 +62,23 @@ export const bundlingUpdateHandling =
       return false
     }
 
-    context.print
-      .line()
-      .intro(context.i18n('methods.bundling.changeDetected'))
-      .pipe()
+    let intro: boolean = false
 
     for (const [type, file] of updates) {
+      if (type === 'bundled') {
+        continue
+      }
+
+      if (!intro) {
+        context.print
+          .line()
+          .intro(context.i18n('methods.bundling.changeDetected'))
+          .pipe()
+        intro = true
+      }
+
       context.print.log(
-        context.i18n(`methods.bundling.types.${type}`, file),
+        context.i18n(`methods.bundling.types.${type}`, rel(file)),
         '<secondary>◆</secondary>',
       )
     }

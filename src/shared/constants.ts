@@ -33,7 +33,7 @@ export const FUNCTION_TYPES = {
   app: 'BasedAppFunction',
   stream: 'BasedStreamFunction',
   channel: 'BasedChannelFunction',
-  job: 'BasedFunction',
+  job: 'BasedJobFunction',
   http: 'BasedHttpFunction',
 }
 export const LIVE_RELOAD_SCRIPT = (port: number): string =>

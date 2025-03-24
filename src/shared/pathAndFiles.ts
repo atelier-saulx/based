@@ -1,7 +1,10 @@
 import * as fs from 'node:fs'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, isAbsolute, join, relative } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import type { BundleResult } from '@based/bundle'
+import { configsParse } from '../commands/deploy/configsParse.js'
+import { getFileByPath } from './getFile.js'
 
 export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']
@@ -183,3 +186,43 @@ export const stringMaxLength = (strings: string[]) =>
     (acc, string) => (string.length > acc ? string.length : acc),
     0,
   )
+
+export async function getMtimeMs(path: string): Promise<number> {
+  const fileStat = await stat(path)
+  const { mtimeMs } = fileStat
+
+  return mtimeMs
+}
+
+export const findConfigFile = async (
+  file: string,
+  mapping: Record<string, Based.Deploy.Configs>,
+  nodeBundles: BundleResult,
+): Promise<Based.Deploy.Configs | undefined> => {
+  let currentDir = dirname(resolve(process.cwd(), file))
+
+  while (currentDir !== dirname(currentDir)) {
+    if (mapping[currentDir]) {
+      if (isConfigFile(file)) {
+        const mtimeMs = await getMtimeMs(file)
+
+        if (mapping[currentDir].mtimeMs !== mtimeMs) {
+          if (file.endsWith('.json')) {
+            mapping[currentDir].config = await getFileByPath(file)
+          } else {
+            const compiled = nodeBundles.require(file)
+            mapping[currentDir].config = compiled.default || compiled
+          }
+
+          mapping[currentDir].mtimeMs = mtimeMs
+        }
+      }
+
+      return mapping[currentDir]
+    }
+
+    currentDir = dirname(currentDir)
+  }
+
+  return undefined
+}
