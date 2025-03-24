@@ -623,9 +623,11 @@ static int load_reference_meta(
         case SELVA_FIELD_TYPE_REFERENCES:
             selva_io_errlog(io, "References not supported in edge meta");
             err = SELVA_ENOTSUP;
+            break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             selva_io_errlog(io, "Muffer not supported in edge meta");
             err = SELVA_ENOTSUP;
+            break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
