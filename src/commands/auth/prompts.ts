@@ -196,11 +196,15 @@ export const envSelect =
       results: { project },
     } = results
 
+    console.log({ results })
+
     // if (!orgs?.[org]?.[project]) {
     // return newEnv(results)
     // }
 
     const branch = await getBranch()
+
+    console.log({ branch })
 
     const newEnvOptions = context.i18n('commands.init.methods.env.new')
     const options = [
