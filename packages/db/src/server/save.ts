@@ -1,10 +1,11 @@
 import native from '../native.js'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { CsmtNodeRange, destructureCsmtKey, foreachDirtyBlock } from './tree.js'
+import { CsmtNodeRange, destructureCsmtKey, foreachBlock, foreachDirtyBlock, makeCsmtKey } from './tree.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '../utils.js'
+import {createTree} from './csmt/tree.js'
 
 const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
@@ -28,9 +29,9 @@ type Writelog = {
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-export function save<T extends boolean>(db: DbServer, sync?: T): T extends true ? void : Promise<void>;
-export function save(db: DbServer, sync = false): void | Promise<void> {
-  if (!db.dirtyRanges.size) {
+export function save<T extends boolean>(db: DbServer, sync?: T, forceFullDump?: boolean): T extends true ? void : Promise<void>;
+export function save(db: DbServer, sync = false, forceFullDump = false): void | Promise<void> {
+  if (!db.dirtyRanges.size && !forceFullDump) {
     return
   }
 
@@ -45,29 +46,57 @@ export function save(db: DbServer, sync = false): void | Promise<void> {
     console.error(`Save common failed: ${err}`)
   }
 
-  foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
-    const file = block_sdb_file(typeId, start, end)
-    const path = join(db.fileSystemPath, file)
-    const hash = new Uint8Array(16)
-    err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hash)
-    if (err) {
-      console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
-      return // TODO What to do with the merkle tree in db situation?
-    }
+  if (forceFullDump) {
+    // We just rebuild the whole tree
+    db.merkleTree = createTree(db.createCsmtHashFun) // TODO This could be somewhere else.
 
-    const data: CsmtNodeRange = {
-      file,
-      typeId,
-      start,
-      end,
+    for (const key in db.schemaTypesParsed) {
+      const def = db.schemaTypesParsed[key]
+      foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) => {
+        const typeId = def.id
+        const file = block_sdb_file(typeId, start, end)
+        const hash = new Uint8Array(16) // TODO One is unnecessary, probably the arg of this cb
+        err = native.saveRange(join(db.fileSystemPath, file), typeId, start, end, db.dbCtxExternal, hash)
+        if (err) {
+          console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
+          return // TODO What to do with the merkle tree in db situation?
+        }
+
+        const mtKey = makeCsmtKey(typeId, start)
+        const data: CsmtNodeRange = {
+          file,
+          typeId,
+          start,
+          end,
+        }
+        db.merkleTree.insert(mtKey, hash, data)
+      });
     }
-    try {
-      db.merkleTree.delete(mtKey)
-    } catch (err) {
-      // console.error({ err })
-    }
-    db.merkleTree.insert(mtKey, hash, data)
-  })
+  } else {
+    foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
+      const file = block_sdb_file(typeId, start, end)
+      const path = join(db.fileSystemPath, file)
+      const hash = new Uint8Array(16)
+      err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hash)
+      if (err) {
+        console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
+        return // TODO What to do with the merkle tree in db situation?
+      }
+
+      const data: CsmtNodeRange = {
+        file,
+        typeId,
+        start,
+        end,
+      }
+      try {
+        db.merkleTree.delete(mtKey)
+      } catch (err) {
+        // console.error({ err })
+      }
+      db.merkleTree.insert(mtKey, hash, data)
+    })
+  }
 
   db.dirtyRanges.clear()
 

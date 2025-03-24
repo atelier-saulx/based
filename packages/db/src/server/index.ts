@@ -140,8 +140,8 @@ export class DbServer {
     return start(this, opts)
   }
 
-  save() {
-    return save(this)
+  save(opts?: { forceFullDump?: boolean }) {
+    return save(this, false, opts?.forceFullDump ?? false)
   }
 
   createCsmtHashFun = () => {

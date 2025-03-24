@@ -137,7 +137,7 @@ export async function start(
     const newHash = db.merkleTree.getRoot()?.hash
     if (!hashEq(oldHash, newHash)) {
       console.error(
-        `WARN: CSMT hash mismatch: ${writelog.hash} != ${bufToHex(newHash)}`,
+        `WARN: CSMT hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
       )
     }
   }

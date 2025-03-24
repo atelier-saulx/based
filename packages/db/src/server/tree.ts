@@ -26,7 +26,7 @@ export const makeCsmtKeyFromNodeId = (
   return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
 }
 
-export async function foreachBlock(
+export function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
   cb: (start: number, end: number, hash: Uint8Array) => void,
