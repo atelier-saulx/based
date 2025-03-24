@@ -21,8 +21,7 @@ void worker_ctx_init()
 void worker_ctx_deinit()
 {
     if (worker_initialized) {
+        selva_string_deinit_tls();
+        worker_initialized = false;
     }
-
-    selva_string_deinit_tls();
-    worker_initialized = false;
 }
