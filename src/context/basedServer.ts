@@ -57,6 +57,12 @@ const localServerConfig: BasedFunctionConfigs = {
       }
     },
   },
+  'db:file-upload': {
+    type: 'stream',
+    fn: async () => {
+      throw new Error('file-upload unsupported locally')
+    },
+  },
 }
 
 export const contextBasedServer =
