@@ -333,6 +333,7 @@ await test('simulated periodic save', async (t) => {
     path: t.tmp,
   })
 
+  await db.start({ clean: true })
   await db.setSchema({
     types: {
       book: {
@@ -354,24 +355,23 @@ await test('simulated periodic save', async (t) => {
     },
   })
 
-  await db.start({ clean: true })
   t.after(() => {
     return db.destroy()
   })
 
   const people = await Promise.all([
     db.create('person', {
-      name: 'Slim'
+      name: 'Slim',
     }),
     db.create('person', {
-      name: 'Slick'
+      name: 'Slick',
     }),
     db.create('person', {
       name: 'Joe',
-    })
+    }),
   ])
   db.update('person', people[1], {
-    bf: people[2]
+    bf: people[2],
   })
 
   for (let i = 0; i < 1000; i++) {
