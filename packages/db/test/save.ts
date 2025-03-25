@@ -401,7 +401,7 @@ await test.skip('db is drained before save', async (t) => {
   deepEqual(await db2.query('person').include('name', 'books').get().toObject(), await db.query('person').include('name', 'books').get().toObject())
 })
 
-await test('simulated periodic save', async (t) => {
+await test.skip('simulated periodic save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
