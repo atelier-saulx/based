@@ -432,21 +432,26 @@ await test('simulated periodic save', async (t) => {
     return db.destroy()
   })
 
+  // create some people
   const people = await Promise.all([
     db.create('person', {
       name: 'Slim',
+      alias: 'slim',
     }),
     db.create('person', {
       name: 'Slick',
+      alias: 'slick',
     }),
     db.create('person', {
       name: 'Joe',
+      alias: 'joe',
     }),
   ])
   db.update('person', people[1], {
     bf: people[2],
   })
 
+  // create some books
   for (let i = 0; i < 1000; i++) {
     db.create('book', {
       name: `book ${i}`,
@@ -454,7 +459,10 @@ await test('simulated periodic save', async (t) => {
       owner: people[i % people.length],
     })
   }
+  await db.drain()
   await db.save()
+
+  // more books
   for (let i = 0; i < 1000; i++) {
     db.create('book', {
       name: `book ${1000 + i}`,
@@ -462,8 +470,18 @@ await test('simulated periodic save', async (t) => {
       owner: people[i % people.length],
     })
   }
+  await db.drain()
   await db.save()
 
+  // change a node using an alias
+  db.upsert('person', {
+    alias: 'slim',
+    name: 'Shady',
+  })
+  await db.drain()
+  await db.save()
+
+  // load the same db into a new instance
   const db2 = new BasedDb({
     path: t.tmp,
   })
@@ -471,4 +489,8 @@ await test('simulated periodic save', async (t) => {
     return db2.destroy()
   })
   await db2.start()
+
+  deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [ { id: 1, alias: 'slim', name: 'Shady' } ])
+  deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [ { id: 1, alias: 'slim', name: 'Shady' } ])
+  deepEqual(await db2.query('person').include('name', 'alias', 'books').get().toObject(), await db.query('person').include('name', 'alias', 'books').get().toObject())
 })

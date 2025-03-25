@@ -79,7 +79,9 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
       err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hash)
       if (err) {
         console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
-        return // TODO What to do with the merkle tree in db situation?
+        // The previous state should remain in the merkle tree for
+        // load and sync purposes.
+        return
       }
 
       const data: CsmtNodeRange = {
