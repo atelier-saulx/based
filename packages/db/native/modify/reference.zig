@@ -12,7 +12,7 @@ const edge = @import("./edges.zig");
 pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const op = data[0];
     const hasEdges = op == 1 or op == 2;
-    const isTmpId = op == 0 or op == 3;
+    const isTmpId = op == 2 or op == 3;
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     var id = read(u32, data, 1);

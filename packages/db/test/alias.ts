@@ -145,8 +145,8 @@ await test('alias - references', async (t) => {
   })
 
   await db.upsert('user', {
-    name: 'youri',
-    email: 'youri@saulx.com',
+    name: '2',
+    email: '2@saulx.com',
     bestFriend: {
       upsert: {
         email: 'jim@saulx.com',
@@ -178,9 +178,9 @@ await test('alias - references', async (t) => {
       {
         friends: [
           {
-            email: 'youri@saulx.com',
+            email: '2@saulx.com',
             id: 1,
-            name: 'youri',
+            name: '2',
           },
         ],
         id: 2,
@@ -190,8 +190,8 @@ await test('alias - references', async (t) => {
   )
 
   await db.upsert('user', {
-    name: 'Youri',
-    email: 'youri@saulx.com',
+    name: '2',
+    email: '2@saulx.com',
     bestFriend: {
       upsert: {
         email: 'jim@saulx.com',
@@ -213,7 +213,7 @@ await test('alias - references', async (t) => {
     [
       {
         id: 1,
-        email: 'youri@saulx.com',
+        email: '2@saulx.com',
         friends: [
           {
             email: 'jim@saulx.com',
@@ -227,9 +227,9 @@ await test('alias - references', async (t) => {
         email: 'jim@saulx.com',
         friends: [
           {
-            email: 'youri@saulx.com',
+            email: '2@saulx.com',
             id: 1,
-            name: 'Youri',
+            name: '2',
           },
         ],
       },
@@ -240,14 +240,14 @@ await test('alias - references', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .filter('email', 'has', 'youri', { lowerCase: true })
+      .filter('email', 'has', '2', { lowerCase: true })
       .get()
       .toObject(),
     [
       {
-        email: 'youri@saulx.com',
+        email: '2@saulx.com',
         id: 1,
-        name: 'Youri',
+        name: '2',
       },
     ],
     'update 2',
@@ -277,22 +277,22 @@ await test('Get single node by alias', async (t) => {
   })
 
   await db.upsert('user', {
-    name: 'youri',
-    email: 'youri@saulx.com',
+    name: '2',
+    email: '2@saulx.com',
   })
 
   deepEqual(
     await db
       .query('user', {
-        email: 'youri@saulx.com',
+        email: '2@saulx.com',
       })
       .get()
       .inspect()
       .toObject(),
     {
       id: 1,
-      name: 'youri',
-      email: 'youri@saulx.com',
+      name: '2',
+      email: '2@saulx.com',
     },
   )
 })
@@ -426,4 +426,57 @@ await test('Update existing alias field', async (t) => {
       currentToken: newToken,
     },
   )
+})
+
+await test('alias save', async (t) => {
+  let db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start()
+
+  const schema = {
+    types: {
+      user: {
+        name: 'string',
+        email: { type: 'alias', format: 'email' },
+        invitedBy: { ref: 'user', prop: 'invited' },
+      },
+    },
+  } as const
+
+  await db.setSchema(schema)
+
+  const users = [{ email: '1@saulx.com' }, { email: '2@saulx.com' }]
+
+  for (const user of users) {
+    await db.upsert('user', user)
+  }
+
+  await db.stop()
+
+  db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start()
+  await db.create('user', {
+    email: '3@saulx.com',
+    invitedBy: 2,
+  })
+
+  deepEqual(
+    await db.query('user').include('email', 'invitedBy').get().toObject(),
+    [
+      { id: 1, email: '1@saulx.com', invitedBy: null },
+      { id: 2, email: '2@saulx.com', invitedBy: null },
+      {
+        id: 3,
+        email: '3@saulx.com',
+        invitedBy: { id: 2, email: '2@saulx.com', name: '' },
+      },
+    ],
+  )
+
+  await db.stop()
 })

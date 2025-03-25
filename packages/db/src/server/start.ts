@@ -124,7 +124,7 @@ export async function start(
   }
 
   if (!opts?.hosted) {
-    db.unlistenExit = exitHook(async (signal) => {
+    db.unlistenExit = exitHook((signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
 
@@ -132,11 +132,9 @@ export async function start(
       // This is needed because there is no way to set the process signal mask
       // in Node.js.
       signals.forEach((sig) => process.on(sig, blockSig))
-
       console.log(`Exiting with signal: ${signal}`)
       save(db, true)
       console.log('Successfully saved.')
-
       signals.forEach((sig) => process.off(sig, blockSig))
     })
   }
