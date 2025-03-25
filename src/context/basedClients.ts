@@ -21,12 +21,10 @@ export async function contextBasedClient(): Promise<Based.API.Client> {
     } catch (error) {
       const message = Object.keys(error).length ? JSON.stringify(error) : ''
 
-      throw new Error(
-        this.i18n(
-          'errors.404',
-          basedProject?.file ?? this.i18n('appCommand'),
-          message,
-        ),
+      throw this.i18n(
+        'errors.404',
+        basedProject?.file ?? this.i18n('appCommand'),
+        message,
       )
     }
   }

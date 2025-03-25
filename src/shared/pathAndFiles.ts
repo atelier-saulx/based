@@ -3,7 +3,6 @@ import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { BundleResult } from '@based/bundle'
-import { configsParse } from '../commands/deploy/configsParse.js'
 import { getFileByPath } from './getFile.js'
 
 export const fileExtensions = ['ts', 'js', 'json']

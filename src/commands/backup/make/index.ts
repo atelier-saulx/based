@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
 import { AppContext } from '../../../context/index.js'
+import { LINE_UP } from '../../../shared/constants.js'
 
 export const make = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
@@ -20,12 +21,19 @@ export const setMake = async (context: AppContext) => {
   const { org, env, project, file } = await context.getProgram()
   const { skip } = context.getGlobalOptions()
 
-  context.print.line()
-
   if (!skip) {
-    const doIt: boolean = await context.input.confirm(
-      context.i18n('commands.backups.subCommands.make.methods.confirmation'),
-    )
+    console.log(LINE_UP, LINE_UP)
+
+    const doIt: boolean = await context.form.boolean({
+      message: context.i18n(
+        'commands.backups.subCommands.make.methods.confirmation',
+        org,
+        project,
+        env,
+      ),
+    })
+
+    context.print.pipe()
 
     if (!doIt) {
       return
@@ -36,9 +44,10 @@ export const setMake = async (context: AppContext) => {
 
   try {
     const envInfo = await basedClient.call(context.endpoints.ENV_INFO)
+
     envId = envInfo.envId
   } catch {
-    throw new Error(context.i18n('errors.404', file))
+    throw context.i18n('errors.404', file)
   }
 
   context.spinner.start(

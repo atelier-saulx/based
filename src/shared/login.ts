@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type { BasedClient, BasedOpts } from '@based/client'
 import { confirm } from '@clack/prompts'
 import {
@@ -16,7 +17,12 @@ import {
 } from '../helpers/auth/index.js'
 import { parseOrgsData } from '../helpers/infra/index.js'
 import { CONNECTION_TIMEOUT, LOCAL_AUTH_INFO } from './constants.js'
-import { SharedBasedClient, getFileByPath, saveAsFile } from './index.js'
+import {
+  BASED_FILE,
+  SharedBasedClient,
+  getFileByPath,
+  saveAsFile,
+} from './index.js'
 
 // TODO
 // Move this logic to the client
@@ -181,6 +187,10 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     }),
   })
 
+  if (Object.keys(form).length > 1) {
+    context.print.pipe()
+  }
+
   const basedProject = {
     ...form,
     ...(cluster && { cluster }),
@@ -189,7 +199,15 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...(env && { env }),
   }
 
-  console.log({ basedProject })
+  const globalOptions = context.get('globalOptions')
+
+  if (globalOptions?.createBasedFile) {
+    await saveAsFile(
+      basedProject,
+      join(process.cwd(), `${BASED_FILE}.ts`),
+      'ts',
+    )
+  }
 
   const basedClientEnv: BasedClient = await connectToHub(context, {
     ...basedProject,

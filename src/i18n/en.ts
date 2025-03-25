@@ -190,6 +190,8 @@ export default {
           input:
             "What is the name of the environment in <b>${project}</b>? <dim>(this env will be created if it doesn't exists in your account).</dim>",
           notFound: "The env <b>${env}</b> doesn't exist.",
+          branchNotFound:
+            "It looks like you're working in a directory that isn't under Git version control, as no branch was found.",
           found:
             'The environment <b>${env}</b> already exists in your account.',
           new: [
@@ -226,7 +228,7 @@ export default {
           description: 'Backup current environment state.',
           methods: {
             confirmation:
-              'Would you like to make a backup for <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>?',
+              'Would you like to make a backup for <dim>Org: <b><white>${org}</white></b> | Project: <b><white>${project}</white></b> | Env:</dim> <b><white>${env}</white></b>?',
             success: 'Backup created successfully!',
             making: 'Making a new backup...',
           },
@@ -710,6 +712,8 @@ export default {
   context: {
     configurationFileNotFound:
       'No <b>Based</b> configuration file found or it is empty. <b>Consider creating one.</b>',
+    createBasedFile:
+      'Do you want to create a Based file? If you continue without creating the file, your session will not be saved. If you proceed with this operation, a file named <b>based.ts</b> will be created in the current directory: <dim><b>${directory}</b></dim>. ',
     file: '<dim>Project file:</dim> <b>${file}</b>',
     cluster: '<dim>Cluster:</dim> <b>${cluster}</b>',
     org: '<dim>Org:</dim> <b>${org}</b>',

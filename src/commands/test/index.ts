@@ -66,7 +66,7 @@ export const test = async (program: Command): Promise<void> => {
 
       destroy()
     } catch (error) {
-      throw new Error(error)
+      throw error
     }
   })
 }
