@@ -1,193 +1,194 @@
-import { colorize } from '../shared/colorize.js'
+import { colorize } from "../shared/colorize.js";
 import {
   IS_VALID_CHAR,
   LINE_CLEAR,
   LINE_NEW,
   LINE_START,
   SPACER,
-} from '../shared/constants.js'
-import type { AppContext } from './AppContext.js'
+} from "../shared/constants.js";
+import type { AppContext } from "./AppContext.js";
 
 export const contextPrint = (context: AppContext): Based.Context.Print => {
-  const originalStdoutWrite = process.stdout.write.bind(process.stdout)
-  const originalStderrWrite = process.stderr.write.bind(process.stderr)
-  const originalConsoleLog = console.log
-  const originalConsoleWarn = console.warn
-  const originalConsoleError = console.error
-  const global = context.program?.opts()
-  const isBasicLog = global?.display !== 'silent' || global?.display !== 'debug'
-  const isDebug = global?.display === 'debug'
+  const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+  const originalStderrWrite = process.stderr.write.bind(process.stderr);
+  const originalConsoleLog = console.log;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  const global = context.program?.opts();
+  const isBasicLog =
+    global?.display !== "silent" || global?.display !== "debug";
+  const isDebug = global?.display === "debug";
 
   function stdlog(
     chunk: any,
     encoding?: BufferEncoding,
-    callback?: (error?: Error | null) => void,
+    callback?: (error?: Error | null) => void
   ): any[] {
     const str: string =
-      typeof chunk === 'string' ? chunk : JSON.stringify(chunk, null, 2)
+      typeof chunk === "string" ? chunk : JSON.stringify(chunk, null, 2);
 
-    return [colorize(str), encoding, callback]
+    return [colorize(str), encoding, callback];
   }
 
   process.stdout.write = ((
     chunk: any,
     encoding?: BufferEncoding,
-    callback?: (error?: Error | null) => void,
+    callback?: (error?: Error | null) => void
   ): boolean =>
     originalStdoutWrite(
-      ...stdlog(chunk, encoding, callback),
-    )) as typeof process.stdout.write
+      ...stdlog(chunk, encoding, callback)
+    )) as typeof process.stdout.write;
 
   process.stderr.write = ((
     chunk: any,
     encoding?: BufferEncoding,
-    callback?: (error?: Error | null) => void,
+    callback?: (error?: Error | null) => void
   ): boolean =>
     originalStderrWrite(
-      ...stdlog(chunk, encoding, callback),
-    )) as typeof process.stderr.write
+      ...stdlog(chunk, encoding, callback)
+    )) as typeof process.stderr.write;
 
   const logger =
     (icon: string) =>
     (...args: any[]): string => {
       let log: string = args
         .map((arg) => {
-          if (typeof arg !== 'string' && typeof arg !== 'number' && arg) {
-            const log = JSON.stringify(arg, null, 2)
+          if (typeof arg !== "string" && typeof arg !== "number" && arg) {
+            const log = JSON.stringify(arg, null, 2);
 
             if (log) {
               return log
                 .split(LINE_NEW)
                 .map((line, index) => {
-                  let startLine: string = ''
+                  let startLine: string = "";
 
                   if (!index) {
-                    startLine = LINE_START
+                    startLine = LINE_START;
                   }
 
-                  return startLine + context.state.emojis.pipe + SPACER + line
+                  return startLine + context.state.emojis.pipe + SPACER + line;
                 })
-                .join(LINE_NEW)
+                .join(LINE_NEW);
             }
 
-            return log
+            return log;
           }
 
-          return arg
+          return arg;
         })
-        .join('')
+        .join("");
 
       if (!log.length) {
-        return ''
+        return "";
       }
 
-      if (IS_VALID_CHAR(log.charCodeAt(0)) || log[0] === '[') {
-        log = `${icon || context.state.emojis.log}  ${log}`
+      if (IS_VALID_CHAR(log.charCodeAt(0)) || log[0] === "[") {
+        log = `${icon || context.state.emojis.log}  ${log}`;
       }
 
       if (isDebug) {
-        const debug = isDebug ? `${LINE_CLEAR}${LINE_START}[debug] ` : ''
-        log = debug + log
+        const debug = isDebug ? `${LINE_CLEAR}${LINE_START}[debug] ` : "";
+        log = debug + log;
       }
 
-      return LINE_CLEAR + LINE_START + log
-    }
+      return LINE_CLEAR + LINE_START + log;
+    };
 
   console.log = (...args: any[]): void =>
-    originalConsoleLog(logger(context.state.emojis.log)(...args))
+    originalConsoleLog(logger(context.state.emojis.log)(...args));
   console.warn = (...args: any[]): void =>
     originalConsoleWarn(
-      `<yellow>${logger(context.state.emojis.warning)(...args)}</yellow>`,
-    )
+      `<yellow>${logger(context.state.emojis.warning)(...args)}</yellow>`
+    );
   console.error = (...args: any[]): void =>
     originalConsoleError(
-      `<red>${logger(context.state.emojis.error)(...args)}</red>`,
-    )
+      `<red>${logger(context.state.emojis.error)(...args)}</red>`
+    );
 
   return {
     intro: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
         console.log(
           context.state.emojis.intro,
           context.state.emojis.line,
-          message,
-        )
+          message
+        );
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     outro: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
         console.log(
           context.state.emojis.outro,
           context.state.emojis.line,
-          message,
-        )
+          message
+        );
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     step: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.log(context.state.emojis.step, SPACER, message)
+        console.log(context.state.emojis.step, SPACER, message);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     pipe: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.log(context.state.emojis.pipe, SPACER, message)
+        console.log(context.state.emojis.pipe, SPACER, message);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     log: (message, icon) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
         if (icon === false) {
-          console.log(context.state.emojis.pipe, SPACER, message)
-        } else if (icon && typeof icon === 'string') {
-          console.log(icon, SPACER, message)
+          console.log(context.state.emojis.pipe, SPACER, message);
+        } else if (icon && typeof icon === "string") {
+          console.log(icon, SPACER, message);
         } else {
-          console.log(context.state.emojis.log, SPACER, message)
+          console.log(context.state.emojis.log, SPACER, message);
         }
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     success: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.log(context.state.emojis.success, SPACER, message)
+        console.log(context.state.emojis.success, SPACER, message);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     error: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.error(context.state.emojis.error, SPACER, message)
+        console.error(context.state.emojis.error, SPACER, message);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     warning: (message) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.warn(context.state.emojis.warning, SPACER, message)
+        console.warn(context.state.emojis.warning, SPACER, message);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     line: () => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.log('')
+        console.log("");
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
     separator: (width = process.stdout.columns) => {
-      context.spinner.stop()
+      context.spinner.stop();
       if (isBasicLog) {
-        console.log(`<gray>${'─'.repeat(width)}</gray>`)
+        console.log(`<gray>${"─".repeat(width)}</gray>`);
       }
-      return contextPrint(context)
+      return contextPrint(context);
     },
-  }
-}
+  };
+};
