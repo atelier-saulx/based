@@ -128,7 +128,7 @@ declare global {
         outro: (message: string) => this
         step: (message: string) => this
         pipe: (message?: string) => this
-        log: (message: string, icon?: boolean | string) => this
+        log: (message: string, icon?: boolean | string | null) => this
         success: (message: string) => this
         error: (message: string) => this
         warning: (message: string) => this

@@ -318,6 +318,7 @@ export default {
             },
           ],
           methods: {
+            confirmation: 'Do you want to proceed with the backup restoration?',
             restoring: 'Restoring your backup...',
             success: 'Backup <cyan>${file}</cyan> restored successfully!',
             summary: {
