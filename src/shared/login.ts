@@ -241,7 +241,6 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
           authenticatedUser.email,
         ),
       )
-      .line()
   }
 
   return clients

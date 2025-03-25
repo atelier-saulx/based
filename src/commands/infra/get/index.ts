@@ -5,7 +5,9 @@ import { getMachines } from '../../../helpers/index.js'
 import {
   isFormatValid,
   isValidPath,
+  rel,
   saveAsFile,
+  summaryMaker,
 } from '../../../shared/index.js'
 
 export const get =
@@ -16,7 +18,7 @@ export const get =
     const { skip } = context.getGlobalOptions()
 
     const errorMessage = (option: string, value: string | number) => {
-      throw new Error(context.i18n('errors.901', option, value))
+      throw context.i18n('errors.901', option, value)
     }
 
     args.machines = await getMachines()
@@ -42,25 +44,20 @@ export const get =
 
     if (!skip) {
       if (!args.format) {
-        const choices = [
-          {
-            name: context.i18n('methods.format.ts.label'),
-            value: context.i18n('methods.format.ts.value'),
-          },
-          {
-            name: context.i18n('methods.format.json.label'),
-            value: context.i18n('methods.format.json.value'),
-          },
-          {
-            name: context.i18n('methods.format.js.label'),
-            value: context.i18n('methods.format.js.value'),
-          },
+        const options = [
+          context.i18n('methods.format.ts'),
+          context.i18n('methods.format.js'),
+          context.i18n('methods.format.json'),
         ]
 
-        args.format = await context.input.select(
-          context.i18n('commands.infra.subCommands.get.methods.fileExtension'),
-          choices,
-        )
+        args.format = (await context.form.select({
+          message: context.i18n(
+            'commands.infra.subCommands.get.methods.fileExtension',
+          ),
+          input: args.format,
+          options,
+          required: true,
+        })) as 'ts' | 'js' | 'json'
       }
     } else {
       if (!args.format) {
@@ -81,6 +78,7 @@ export const get =
 export const saveInfra = async (args: Based.Infra.Get.Save) => {
   const { context, infra } = args
   const { skip } = context.getGlobalOptions()
+  const { env } = await context.getProgram()
   const machinesKeys = Object.keys(infra.machines)
 
   if (!infra.format) {
@@ -90,13 +88,25 @@ export const saveInfra = async (args: Based.Infra.Get.Save) => {
   }
 
   if (!skip) {
+    const validationMessage = (option: string) => (value: string | number) =>
+      context.i18n('errors.901', option, value ?? '')
+
     if (!infra.path) {
-      infra.path = await context.input.default(
-        context.i18n('commands.infra.subCommands.get.methods.inputPath'),
-        './',
-        false,
-        isValidPath,
-      )
+      infra.path = await context.form.text({
+        message: context.i18n(
+          'commands.infra.subCommands.init.methods.inputPath',
+        ),
+        input: '',
+        required: !skip,
+        skip: false,
+        placeholder: './',
+        validation: [
+          context.form.collider(
+            isValidPath,
+            validationMessage(context.i18n('commands.infra.validations.path')),
+          ),
+        ],
+      })
     }
   } else {
     if (!infra.path) {
@@ -111,39 +121,39 @@ export const saveInfra = async (args: Based.Infra.Get.Save) => {
     infra.path = fullPath
   }
 
-  context.print
-    .line()
-    .info(context.i18n('commands.infra.subCommands.get.methods.summary.header'))
-    .info(
-      context.i18n(
-        'commands.infra.subCommands.get.methods.summary',
-        machinesKeys.length,
-        machinesKeys.join(' | '),
-      ),
-    )
-    .info(
-      context.i18n(
-        'commands.infra.subCommands.get.methods.summary.saveIn',
-        infra.path,
-      ),
-    )
-    .line()
-
   if (!skip) {
-    const doIt: boolean = await context.input.confirm()
+    const doIt = await summaryMaker(
+      context,
+      [
+        context.i18n('commands.infra.subCommands.get.methods.summary.header'),
+        context.i18n(
+          'commands.infra.subCommands.get.methods.summary.currentEnv',
+          env,
+        ),
+        context.i18n(
+          'commands.infra.subCommands.get.methods.summary.saving',
+          machinesKeys.length,
+          machinesKeys.join(' | '),
+        ),
+        context.i18n(
+          'commands.infra.subCommands.get.methods.summary.saveIn',
+          infra.path,
+        ),
+      ].filter(Boolean),
+    )
 
     if (!doIt) {
-      throw new Error(context.i18n('methods.aborted'))
+      throw context.i18n('methods.aborted')
     }
   }
 
   try {
     context.spinner.start(context.i18n('methods.savingFile'))
 
-    await saveAsFile(infra.machines, infra.path, infra.format)
+    await saveAsFile({ [env]: infra.machines }, infra.path, infra.format)
   } catch (error) {
-    throw new Error(context.i18n('errors.902', error))
+    throw context.i18n('errors.902', error)
   }
 
-  context.print.success(context.i18n('methods.savedFile', infra.path), true)
+  context.print.success(context.i18n('methods.savedFile', rel(infra.path)))
 }

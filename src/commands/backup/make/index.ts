@@ -21,14 +21,14 @@ export const setMake = async (context: AppContext) => {
   const { skip } = context.getGlobalOptions()
 
   if (!skip) {
-    const doIt: boolean = await context.form.boolean({
-      message: context.i18n(
+    const doIt: boolean = await context.form.boolean(
+      context.i18n(
         'commands.backups.subCommands.make.methods.confirmation',
         org,
         project,
         env,
       ),
-    })
+    )
 
     context.print.pipe()
 
