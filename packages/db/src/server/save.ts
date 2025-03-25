@@ -1,4 +1,5 @@
 import native from '../native.js'
+import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { CsmtNodeRange, destructureCsmtKey, foreachBlock, foreachDirtyBlock, makeCsmtKey } from './tree.js'
@@ -30,7 +31,7 @@ const block_sdb_file = (typeId: number, start: number, end: number) =>
 
 export function save<T extends boolean>(db: DbServer, sync?: T, forceFullDump?: boolean): T extends true ? void : Promise<void>;
 export function save(db: DbServer, sync = false, forceFullDump = false): void | Promise<void> {
-  if (!db.dirtyRanges.size && !forceFullDump) {
+  if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
     return
   }
 
