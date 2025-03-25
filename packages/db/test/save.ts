@@ -481,6 +481,14 @@ await test('simulated periodic save', async (t) => {
   await db.drain()
   await db.save()
 
+  // replace alias
+  db.create('person', {
+    name: 'Slide',
+    alias: 'slick',
+  })
+  await db.drain()
+  await db.save()
+
   // load the same db into a new instance
   const db2 = new BasedDb({
     path: t.tmp,
@@ -490,7 +498,9 @@ await test('simulated periodic save', async (t) => {
   })
   await db2.start()
 
-  deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [ { id: 1, alias: 'slim', name: 'Shady' } ])
-  deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [ { id: 1, alias: 'slim', name: 'Shady' } ])
+  deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
+  deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
+  deepEqual(await db.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 4, alias: 'slick', name: 'Slide' }])
+  deepEqual(await db2.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 4, alias: 'slick', name: 'Slide' }])
   deepEqual(await db2.query('person').include('name', 'alias', 'books').get().toObject(), await db.query('person').include('name', 'alias', 'books').get().toObject())
 })
