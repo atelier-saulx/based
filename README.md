@@ -185,7 +185,7 @@ _Example:_ `npx @based/cli test [options]`
 
 | Option | Description |
 |--------|-------------|
-| `-co, --command <command>` | To run a specific command in your 'package.json'. |
+| `-co, --command <command>` | Execute a specific NPM script defined in your 'package.json'. |
 | `-nb, --no-backup` | To not make a new backup before running the tests. |
 | `-nr, --no-restore` | To not restore the backup after running the tests. |
 | `--db <db>` | The DB instance name to be used to create/restore your backups. |

@@ -63,7 +63,7 @@ type FormMaker = {
     nameKey?: string,
     valueKey?: string | 'object',
   ) => FieldOption[]
-  boolean?: <T>(field: Pick<SelectField, 'message'>) => Promise<boolean | T>
+  boolean?: <T>(message?: string) => Promise<boolean | T>
   select?: <T>(field: SelectField) => Promise<string | T>
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
   collider: Collider
@@ -224,7 +224,11 @@ export function contextForm(context: AppContext): FormMaker {
       })
     },
 
-    boolean: async ({ message }) => {
+    boolean: async (message) => {
+      if (!message) {
+        message = context.i18n('context.input.continue')
+      }
+
       const options = [
         {
           label: context.i18n('context.input.positive'),

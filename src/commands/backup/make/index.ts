@@ -1,6 +1,5 @@
 import type { Command } from 'commander'
 import { AppContext } from '../../../context/index.js'
-import { LINE_UP } from '../../../shared/constants.js'
 
 export const make = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
@@ -22,16 +21,14 @@ export const setMake = async (context: AppContext) => {
   const { skip } = context.getGlobalOptions()
 
   if (!skip) {
-    console.log(LINE_UP, LINE_UP)
-
-    const doIt: boolean = await context.form.boolean({
-      message: context.i18n(
+    const doIt: boolean = await context.form.boolean(
+      context.i18n(
         'commands.backups.subCommands.make.methods.confirmation',
         org,
         project,
         env,
       ),
-    })
+    )
 
     context.print.pipe()
 

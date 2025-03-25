@@ -148,6 +148,8 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
           console.log(context.state.emojis.pipe, SPACER, message)
         } else if (icon && typeof icon === 'string') {
           console.log(icon, SPACER, message)
+        } else if (icon === null) {
+          console.log(message)
         } else {
           console.log(context.state.emojis.log, SPACER, message)
         }

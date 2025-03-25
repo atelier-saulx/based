@@ -8,15 +8,15 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
 
   for (const [index, element] of summary.entries()) {
     if (!index) {
-      context.print.intro(element).pipe()
+      context.print.line().intro(element).pipe()
 
       continue
     }
-    context.print.log(element, true)
+    context.print.pipe(element)
   }
 
   if (!skip) {
-    const doIt: boolean = await context.input.confirm()
+    const doIt: boolean = await context.form.boolean()
 
     if (!doIt) {
       throw context.i18n('methods.aborted')
