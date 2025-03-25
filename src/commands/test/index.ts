@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
-import { checkScript, runTests } from '../../helpers/index.js'
 import { AppContext } from '../../context/index.js'
+import { checkScript, runTests } from '../../helpers/index.js'
+import { LINE_UP } from '../../shared/constants.js'
 import { getList, setMake, setRestore } from '../backup/index.js'
 
 export const test = async (program: Command): Promise<void> => {
@@ -11,12 +12,7 @@ export const test = async (program: Command): Promise<void> => {
     let { command, backup, restore, db, file, date } = args
     await context.getProgram()
     const { destroy } = await context.getBasedClient()
-    const { skip } = context.getGlobalOptions()
     db = db !== '' ? db : 'default'
-
-    if (!skip) {
-      context.put('globalOptions', { skip: true })
-    }
 
     try {
       if (command) {
@@ -24,6 +20,7 @@ export const test = async (program: Command): Promise<void> => {
       }
 
       if (backup || file) {
+        console.log(LINE_UP, LINE_UP)
         await setMake(context)
       }
 
@@ -40,7 +37,10 @@ export const test = async (program: Command): Promise<void> => {
       await runTests({ context, command })
 
       if (restore) {
+        context.print.line()
+
         if (file || date) {
+          console.log(LINE_UP, LINE_UP)
           await setRestore({
             context,
             db,
@@ -53,6 +53,7 @@ export const test = async (program: Command): Promise<void> => {
           const previousBackup = backups?.sorted?.[db]?.[1]?.key
 
           if (previousBackup) {
+            console.log(LINE_UP, LINE_UP)
             await setRestore({
               context,
               db,
@@ -66,7 +67,7 @@ export const test = async (program: Command): Promise<void> => {
 
       destroy()
     } catch (error) {
-      throw error
+      throw `${error}`
     }
   })
 }

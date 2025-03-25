@@ -1,104 +1,104 @@
-import { networkInterfaces } from 'node:os'
-import { join } from 'node:path'
-import { Readable } from 'node:stream'
-import { buffer } from 'node:stream/consumers'
-import type { BuildFailure, BundleResult, OutputFile } from '@based/bundle'
-import type { BasedClient } from '@based/client'
-import type { BasedAuthorizeFunctionConfig } from '@based/functions'
-import type { BasedServer } from '@based/server'
-import { hash } from '@saulx/hash'
-import type { Command } from 'commander'
-import getPort from 'get-port'
-import { WebSocket, WebSocketServer } from 'ws'
-import { AppContext } from '../../context/index.js'
-import { SharedBasedClient } from '../../shared/SharedBasedClient.js'
+import { networkInterfaces } from "node:os";
+import { join } from "node:path";
+import { Readable } from "node:stream";
+import { buffer } from "node:stream/consumers";
+import type { BuildFailure, BundleResult, OutputFile } from "@based/bundle";
+import type { BasedClient } from "@based/client";
+import type { BasedAuthorizeFunctionConfig } from "@based/functions";
+import type { BasedServer } from "@based/server";
+import { hash } from "@saulx/hash";
+import type { Command } from "commander";
+import getPort from "get-port";
+import { WebSocket, WebSocketServer } from "ws";
+import { AppContext } from "../../context/index.js";
+import { SharedBasedClient } from "../../shared/SharedBasedClient.js";
 import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
-} from '../../shared/constants.js'
-import { findConfigFile } from '../../shared/pathAndFiles.js'
-import { configsBundle } from '../deploy/configsBundle.js'
-import { configsParse } from '../deploy/configsParse.js'
-import { filesBundle } from '../deploy/filesBundle.js'
-import { getBasedFiles } from '../deploy/getBasedFiles.js'
-import { configsInvalidateCode } from '../deploy/index.js'
+} from "../../shared/constants.js";
+import { findConfigFile } from "../../shared/pathAndFiles.js";
+import { configsBundle } from "../deploy/configsBundle.js";
+import { configsParse } from "../deploy/configsParse.js";
+import { filesBundle } from "../deploy/filesBundle.js";
+import { getBasedFiles } from "../deploy/getBasedFiles.js";
+import { configsInvalidateCode } from "../deploy/index.js";
 // import { BundleFlow } from './BundleFlow.js'
-import { FunctionFile } from './FunctionFile.js'
-import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
+import { FunctionFile } from "./FunctionFile.js";
+import { bundlingErrorHandling, bundlingUpdateHandling } from "./handlers.js";
 
 const getOwnIp = () => {
-  const nets = networkInterfaces()
-  const results: Record<string, string[]> = {}
+  const nets = networkInterfaces();
+  const results: Record<string, string[]> = {};
 
   for (const name in nets) {
     for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        results[name] ??= []
-        results[name].push(net.address)
+      if (net.family === "IPv4" && !net.internal) {
+        results[name] ??= [];
+        results[name].push(net.address);
       }
     }
   }
 
-  let ip = results.en0?.[0]
+  let ip = results.en0?.[0];
 
   if (!ip) {
     for (const k in results) {
-      ip = results[k][0]
+      ip = results[k][0];
       if (ip) {
-        return ip
+        return ip;
       }
     }
   }
 
-  return ip
-}
+  return ip;
+};
 
 export const dev = async (program: Command) => {
-  const context: AppContext = AppContext.getInstance(program)
-  const cmd: Command = context.commandMaker('dev')
+  const context: AppContext = AppContext.getInstance(program);
+  const cmd: Command = context.commandMaker("dev");
 
-  cmd.action(devServer)
-}
+  cmd.action(devServer);
+};
 
 export const devServer = async ({
   functions = [],
-  port = '1234',
+  port = "1234",
   cloud = false,
 }: {
-  functions?: string[]
-  port?: string
-  cloud?: boolean
+  functions?: string[];
+  port?: string;
+  cloud?: boolean;
 }) => {
-  const context: AppContext = AppContext.getInstance()
-  await context.getProgram()
-  const basedClient = await context.getBasedClient()
+  const context: AppContext = AppContext.getInstance();
+  await context.getProgram();
+  const basedClient = await context.getBasedClient();
   const newPort =
-    port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
+    port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined;
 
   const [devPort, liveReloadPort] = await Promise.all([
     getPort({ port: newPort }),
     getPort({ port: 4000 }),
-  ])
-  const ip = getOwnIp()
-  const wsURL = `ws://${ip}:${devPort}`
-  const staticURL = `http://${ip}:${devPort}/static/`
+  ]);
+  const ip = getOwnIp();
+  const wsURL = `ws://${ip}:${devPort}`;
+  const staticURL = `http://${ip}:${devPort}/static/`;
 
-  process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
-  process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
+  process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`;
+  process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`;
 
-  const { entryPoints, mapping } = await getBasedFiles(context)
+  const { entryPoints, mapping } = await getBasedFiles(context);
   const bundledConfigs = await configsBundle(
     context,
     functions,
     entryPoints,
-    mapping,
-  )
+    mapping
+  );
   const { configs, node, browser, plugins } = await configsParse(
     context,
     bundledConfigs,
     entryPoints,
-    mapping,
-  )
+    mapping
+  );
 
   // const bundleFlow = new BundleFlow(configs, node, browser, plugins)
   // const bundled = await bundleFlow.bundle(
@@ -114,78 +114,81 @@ export const devServer = async ({
     browser,
     plugins,
     onChange,
-    'development',
+    "development",
     staticURL,
     wsURL,
-    cloud,
-  )
+    cloud
+  );
 
-  let client: BasedClient
+  let client: BasedClient;
 
   if (!cloud) {
-    client = SharedBasedClient.getInstance({ url: wsURL })
+    client = SharedBasedClient.getInstance({ url: wsURL });
   } else {
-    client = basedClient.get('project')
+    client = basedClient.get("project");
   }
 
-  const { clients } = new WebSocketServer({ port: liveReloadPort })
+  const { clients } = new WebSocketServer({ port: liveReloadPort });
   const basedServer: BasedServer = await context.basedServer(
     devPort,
     client,
     () => browserBundles.result.outputFiles,
     true,
-    cloud,
-  )
+    cloud
+  );
 
   for (const found of configs) {
-    onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
+    onChange(null, { updates: [["bundled", found.path]] } as BundleResult);
   }
 
   context.print
     .line()
-    .intro('<primary><b>Based Dev Server</b></primary>')
+    .intro("<primary><b>Based Dev Server</b></primary>")
     .pipe()
     .step(`<dim><b>Local</b>: http://localhost:${devPort}</dim>`)
     .step(`<dim><b>Public</b>: http://${ip}:${devPort}</dim>`)
     .pipe()
-    .step('<dim>Waiting for changes...</dim>')
+    .step("<dim>Waiting for changes...</dim>");
 
   async function onChange(err: BuildFailure | null, result?: BundleResult) {
-    const updates = result?.updates
-    let specs: Based.Deploy.Specs
-    let reloadClients: boolean = false
+    const updates = result?.updates;
+    let specs: Based.Deploy.Specs;
+    let reloadClients: boolean = false;
 
     if (
       err ||
       browserBundles?.error?.errors.length ||
       result?.error?.errors.length
     ) {
-      const errors = result?.error?.errors || browserBundles?.error?.errors
+      const errors = result?.error?.errors || browserBundles?.error?.errors;
 
       if (bundlingErrorHandling(context)(errors)) {
-        reloadClients = true
-
-        return
+        reloadClients = true;
+        return;
       }
     }
 
     if (updates?.length) {
-      bundlingUpdateHandling(context)(updates)
+      bundlingUpdateHandling(context)(updates);
 
       for (let [_type, file] of updates) {
-        const found = await findConfigFile(file, mapping, nodeBundles)
-
+        const found = await findConfigFile(
+          file,
+          mapping,
+          nodeBundles,
+          browserBundles
+        );
         if (found) {
-          file = found.app || found.index || found.path
+          file = found.app || found.index || found.path;
 
           if (!file) {
-            continue
+            continue;
           }
 
-          if (found.type === 'schema') {
-            await basedServer.client.call('db:set-schema', found.config)
+          if (found.type === "schema") {
+            await basedServer.client.call("db:set-schema", found.config);
 
-            continue
+            continue;
           }
 
           const specsResult = await createSpecsFromConfigs(
@@ -197,43 +200,43 @@ export const devServer = async ({
             ip,
             devPort,
             liveReloadPort,
-            client,
-          )
+            client
+          );
 
           if (
             specsResult?.specs !== undefined &&
             specsResult?.reloadClients !== undefined
           ) {
-            specs = specsResult.specs
-            reloadClients = specsResult.reloadClients
+            specs = specsResult.specs;
+            reloadClients = specsResult.reloadClients;
           }
 
           if (specs) {
             for (const spec in specs) {
               if (
-                (specs[spec].type as BasedAuthorizeFunctionConfig['type']) ===
-                'authorize'
+                (specs[spec].type as BasedAuthorizeFunctionConfig["type"]) ===
+                "authorize"
               ) {
                 basedServer.auth.updateConfig({
                   authorize: specs[spec].fn,
-                })
+                });
               }
             }
 
             if (!found.serverFunction) {
-              found.serverFunction = found.config.name
+              found.serverFunction = found.config.name;
             } else {
-              await basedServer.functions.removeRoute(found.serverFunction)
-              found.serverFunction = found.config.name
+              await basedServer.functions.removeRoute(found.serverFunction);
+              found.serverFunction = found.config.name;
             }
 
-            basedServer.functions.add(specs)
+            basedServer.functions.add(specs);
           }
 
           if (reloadClients) {
             for (const client of clients) {
               if (client.readyState === WebSocket.OPEN) {
-                client.send('')
+                client.send("");
               }
             }
           }
@@ -241,36 +244,36 @@ export const devServer = async ({
       }
     }
   }
-}
+};
 
 function prepareAppFiles(
   file: string,
   favicon: string,
-  browserBundles: BundleResult,
-): Record<'html' | 'js' | 'css' | 'favicon', OutputFile> {
-  const app = {} as Record<'html' | 'js' | 'css' | 'favicon', OutputFile>
+  browserBundles: BundleResult
+): Record<"html" | "js" | "css" | "favicon", OutputFile> {
+  const app = {} as Record<"html" | "js" | "css" | "favicon", OutputFile>;
 
-  const faviconFile = browserBundles.find(favicon || '')
+  const faviconFile = browserBundles.find(favicon || "");
   const faviconPath =
     faviconFile &&
     favicon &&
-    browserBundles.result.metafile.outputs[faviconFile]?.imports[0]?.path
-  const faviconPathAbsolute = faviconPath && join(process.cwd(), faviconPath)
+    browserBundles.result.metafile.outputs[faviconFile]?.imports[0]?.path;
+  const faviconPathAbsolute = faviconPath && join(process.cwd(), faviconPath);
 
-  if (file.endsWith('.html')) {
-    app.html = browserBundles.html(file || '')
+  if (file.endsWith(".html")) {
+    app.html = browserBundles.html(file || "");
   } else {
-    app.js = browserBundles.js(file || '')
-    app.css = browserBundles.css(file || '')
+    app.js = browserBundles.js(file || "");
+    app.css = browserBundles.css(file || "");
 
     app.favicon =
       faviconPath &&
       browserBundles.result.outputFiles.find(
-        ({ path }) => path === faviconPathAbsolute,
-      )
+        ({ path }) => path === faviconPathAbsolute
+      );
   }
 
-  return app
+  return app;
 }
 
 async function createSpecsFromConfigs(
@@ -282,28 +285,28 @@ async function createSpecsFromConfigs(
   ip: string,
   devPort: number,
   liveReloadPort: number,
-  client: BasedClient,
+  client: BasedClient
 ): Promise<{ specs: Based.Deploy.Specs; reloadClients: boolean }> {
-  let checksum: number = 0
-  const isApp = found.config.type === 'app' && found.app !== undefined
+  let checksum: number = 0;
+  const isApp = found.config.type === "app" && found.app !== undefined;
   const isAuthorize =
-    (found.config.type as BasedAuthorizeFunctionConfig['type']) === 'authorize'
-  const specs: Based.Deploy.Specs = {}
-  let reloadClients: boolean = false
+    (found.config.type as BasedAuthorizeFunctionConfig["type"]) === "authorize";
+  const specs: Based.Deploy.Specs = {};
+  let reloadClients: boolean = false;
 
-  let app: Record<'html' | 'js' | 'css' | 'favicon', OutputFile>
+  let app: Record<"html" | "js" | "css" | "favicon", OutputFile>;
 
   if (isApp) {
-    app = prepareAppFiles(file, found.favicon, browserBundles)
+    app = prepareAppFiles(file, found.favicon, browserBundles);
   }
 
-  const js = nodeBundles.js(found.index)
+  const js = nodeBundles.js(found.index);
 
   if (!js) {
-    return undefined
+    return undefined;
   }
 
-  const hashSeed = [js.hash, found.bundled, found.mtimeMs, found.config]
+  const hashSeed = [js.hash, found.bundled, found.mtimeMs, found.config];
 
   if (isApp) {
     hashSeed.push(
@@ -313,19 +316,19 @@ async function createSpecsFromConfigs(
       app.js?.path,
       app.css?.hash,
       app.css?.path,
-      app.favicon?.path,
-    )
+      app.favicon?.path
+    );
   }
 
-  checksum = hash(hashSeed.filter(Boolean))
+  checksum = hash(hashSeed.filter(Boolean));
 
   if (found.checksum === checksum) {
-    return undefined
+    return undefined;
   }
 
-  found.checksum = checksum
+  found.checksum = checksum;
 
-  await configsInvalidateCode(context, found)
+  await configsInvalidateCode(context, found);
 
   // if (!invalidate) {
   //   // ts validation
@@ -340,10 +343,10 @@ async function createSpecsFromConfigs(
   //   return { specs, reloadClients }
   // }
 
-  const fn = nodeBundles.require(found.index || '')
+  const fn = nodeBundles.require(found.index || "");
 
   if (fn) {
-    const defaultFn = fn.default || fn
+    const defaultFn = fn.default || fn;
 
     if (isApp) {
       const params = {
@@ -363,92 +366,92 @@ async function createSpecsFromConfigs(
           ip,
           port: devPort,
         }),
-      }
+      };
 
-      reloadClients = true
+      reloadClients = true;
       specs[found.config.name] = {
         ...found.config,
-        type: 'function',
+        type: "function",
         async fn(based, _payload, ctx) {
           const errorTarget =
             (browserBundles.error && browserBundles) ||
-            (nodeBundles.error && nodeBundles)
+            (nodeBundles.error && nodeBundles);
 
           if (errorTarget) {
             const vsCodeLink = (str) =>
-              `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
-            let str = `${LIVE_RELOAD_SCRIPT(liveReloadPort)}<pre>`
+              `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`;
+            let str = `${LIVE_RELOAD_SCRIPT(liveReloadPort)}<pre>`;
             for (const { location, text } of errorTarget.error.errors) {
               if (location) {
-                const { file, column, line } = location
-                str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`
+                const { file, column, line } = location;
+                str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`;
               }
             }
 
             if (errorTarget.updates.length) {
-              str += '\n'
+              str += "\n";
               for (const [type, path] of errorTarget.updates) {
-                str += `\n${type}: ${vsCodeLink(path)}`
+                str += `\n${type}: ${vsCodeLink(path)}`;
               }
             }
 
-            str += '</pre>'
-            return str
+            str += "</pre>";
+            return str;
           }
 
-          let html = await defaultFn(based, params, ctx)
-          let i = -1
+          let html = await defaultFn(based, params, ctx);
+          let i = -1;
 
           if (html instanceof Readable) {
-            html = (await buffer(html)).toString()
+            html = (await buffer(html)).toString();
           }
 
-          if (typeof html === 'string') {
-            i = html.indexOf('</head>')
+          if (typeof html === "string") {
+            i = html.indexOf("</head>");
 
             if (i === -1) {
-              i = html.indexOf('</body>')
+              i = html.indexOf("</body>");
             }
 
             if (i === -1) {
-              i = html.indexOf('</html>')
+              i = html.indexOf("</html>");
             }
           }
 
           if (i === -1) {
             context.print.warning(
-              'Invalid html, skip livereload tag and based opts tag',
-            )
-            return html
+              "Invalid html, skip livereload tag and based opts tag"
+            );
+            return html;
           }
           return `${html.substring(0, i)}${LIVE_RELOAD_SCRIPT(
-            liveReloadPort,
-          )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`
+            liveReloadPort
+          )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`;
         },
-      }
+      };
     } else if (isAuthorize) {
-      specs[found.config.name || 'authorize'] = {
+      specs[found.config.name || "authorize"] = {
         ...found.config,
-        name: found.config.name || 'authorize',
+        name: found.config.name || "authorize",
         fn(...args) {
-          return defaultFn(...args)
+          return defaultFn(...args);
         },
-      }
+      };
     } else {
       if (found.config.name) {
         specs[found.config.name] = {
           ...found.config,
           fn(...args) {
-            return defaultFn(...args)
+            return defaultFn(...args);
           },
-        }
+        };
       }
     }
 
     if (fn.httpResponse && found.config.name) {
-      specs[found.config.name].httpResponse = fn.httpResponse
+      specs[found.config.name].httpResponse = fn.httpResponse;
     }
   }
 
-  return { specs, reloadClients }
+  return { specs, reloadClients };
 }

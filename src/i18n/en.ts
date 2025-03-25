@@ -227,8 +227,7 @@ export default {
         make: {
           description: 'Backup current environment state.',
           methods: {
-            confirmation:
-              'Would you like to make a backup for <dim>Org: <b><white>${org}</white></b> | Project: <b><white>${project}</white></b> | Env:</dim> <b><white>${env}</white></b>?',
+            confirmation: 'Would you like to proceed and make a new backup?',
             success: 'Backup created successfully!',
             making: 'Making a new backup...',
           },
@@ -318,6 +317,7 @@ export default {
             },
           ],
           methods: {
+            confirmation: 'Do you want to proceed with the backup restoration?',
             restoring: 'Restoring your backup...',
             success: 'Backup <cyan>${file}</cyan> restored successfully!',
             summary: {
@@ -603,12 +603,12 @@ export default {
               '@commands.infra.subCommands.init.methods.fileExtension',
             summary: {
               header: '<b>Infra summary:</b>',
+              currentEnv: 'Current env: <dim>${env}</dim>',
               saving_one:
-                '<b>Saving data from:</b> <reset><cyan>${number} machine</cyan></reset>\n<b>Machine:</b> <reset><cyan>${name}</cyan></reset>',
+                'Saving data from: <dim>${number} machine</dim> | <b>Machine:</b> <dim>${name}</dim>',
               saving_many:
-                '<b>Saving data from:</b> <reset><cyan>${number} machines</cyan></reset>\n<b>Machines:</b> <reset><cyan>${name}</cyan></reset>',
-              saveIn:
-                '<b>Saving infra file in:</b> <reset><cyan>${path}</cyan></reset>',
+                'Saving data from: <dim>${number} machines</dim> | <b>Machines:</b> <dim>${name}</dim>',
+              saveIn: 'Saving infra file in: <dim>${path}</dim>',
             },
           },
         },
@@ -736,7 +736,7 @@ export default {
     savingFile: 'Saving file...',
     uploadingFile: 'Uploading file...',
     downloading: 'Downloading file...',
-    savedFile: 'Saved file in: <reset><b>${path}</b></reset>',
+    savedFile: 'Saved file: <reset><b>${path}</b></reset>',
     projectCreation: 'Creating your project',
     projectCreated: 'Project created at: ${path}',
     warning:

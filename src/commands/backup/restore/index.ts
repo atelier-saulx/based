@@ -98,10 +98,16 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
 
   if (isCloudFile) {
     if (!skip) {
-      const doIt: boolean = await context.input.confirm()
+      const doIt: boolean = await context.form.boolean({
+        message: context.i18n(
+          'commands.backups.subCommands.restore.methods.confirmation',
+        ),
+      })
+
+      context.print.pipe()
 
       if (!doIt) {
-        throw new Error(context.i18n('methods.aborted'))
+        return
       }
     }
 
