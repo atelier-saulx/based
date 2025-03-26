@@ -45,6 +45,7 @@ export const getBasedFiles = async (
             entryPoints.push(join(dir, file))
             mapping[dir] = {} as Based.Deploy.Configs
           } else {
+            // TODO: this never happens?
             multipleSchemas.push(file)
           }
         } else if (isInfraFile(file)) {
@@ -52,6 +53,7 @@ export const getBasedFiles = async (
             entryPoints.push(join(dir, file))
             mapping[dir] = {} as Based.Deploy.Configs
           } else {
+            // TODO: this never happens?
             multipleInfras.push(file)
           }
         }
@@ -70,6 +72,19 @@ export const getBasedFiles = async (
     multipleSchemas.map((schema) => context.print.pipe(rel(schema)))
 
     context.print.outro(context.i18n('methods.schema.remove'))
+
+    throw new Error(context.i18n('methods.aborted'))
+  }
+
+  if (multipleInfras.length) {
+    context.print
+      .intro(`<red>${context.i18n('methods.infra.multiple')}</red>`)
+      .pipe()
+      .pipe(context.i18n('methods.infra.multipleDesc'))
+
+    multipleSchemas.map((schema) => context.print.pipe(rel(schema)))
+
+    context.print.outro(context.i18n('methods.infra.remove'))
 
     throw new Error(context.i18n('methods.aborted'))
   }

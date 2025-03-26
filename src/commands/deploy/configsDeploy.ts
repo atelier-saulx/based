@@ -37,7 +37,7 @@ export const configsDeploy = async (
         favicon: assetsMap[appFavicon?.path],
       }
 
-      const checksumSeed = [
+      const checksumSeed: any[] = [
         appJs?.hash,
         appCss?.hash,
         appFavicon?.path,
@@ -45,13 +45,13 @@ export const configsDeploy = async (
         config,
       ]
 
-      // if (forceReload) {
-      //   const num = Number(forceReload)
-      //   const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
-      //   config.appParams.forceReload = Date.now() + seconds
+      if (forceReload) {
+        const num = Number(forceReload)
+        const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
+        config.appParams.forceReload = Date.now() + seconds
 
-      //   checksumSeed.push(Date.now())
-      // }
+        checksumSeed.push(Date.now())
+      }
 
       checksum = hash(checksumSeed)
     } else {

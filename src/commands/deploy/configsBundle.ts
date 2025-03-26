@@ -113,17 +113,19 @@ export const configsBundle = async (
           }
         }
 
-        const existingPath = paths[config.name]
+        if (config.name) {
+          const existingPath = paths[config.name]
 
-        if (existingPath) {
-          context.print.warning(
-            context.i18n('methods.bundling.multipleConfig', config.name, rel),
-          )
+          if (existingPath) {
+            context.print.warning(
+              context.i18n('methods.bundling.multipleConfig', config.name, rel),
+            )
 
-          return false
+            return false
+          }
+
+          paths[config.name] = path
         }
-
-        paths[config.name] = path
 
         if (config.type === 'app') {
           if (!config.main) {
