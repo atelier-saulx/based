@@ -110,7 +110,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
-                    try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                    _ = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                 } else {
                     db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
                         if (e != error.SELVA_ENOENT) return e;

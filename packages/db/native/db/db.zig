@@ -426,14 +426,21 @@ pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u3
     return selva.selva_node_hash_range(db, typeEntry, start, end);
 }
 
-pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !void {
+pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !u32 {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
-    selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
+    const old_dest = selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
+    return old_dest;
 }
 
-pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
+pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !u32 {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
-    try errors.selva(selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len));
+    const old_dest = selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len);
+
+    if (old_dest == 0) {
+        return errors.SelvaError.SELVA_ENOENT;
+    }
+
+    return old_dest;
 }
 
 pub fn delAlias(typeEntry: Type, node_id: selva.node_id_t, field: u8) !void {
