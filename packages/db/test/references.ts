@@ -252,150 +252,167 @@ await test('one to many really', async (t) => {
   })
   await db.drain()
 
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      }
-    ],
-  })
-
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: [cpu, kbd, mouse, fd],
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+      ],
+    },
+  )
 
   const joy = await db.create('resource', { name: 'joystick', owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      },
-      {
-        id: 5,
-        name: "joystick",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+        {
+          id: 5,
+          name: 'joystick',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
@@ -405,62 +422,68 @@ await test('one to many really', async (t) => {
       set: [joy],
     },
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      },
-      {
-        id: 5,
-        name: "joystick",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+        {
+          id: 5,
+          name: 'joystick',
+        },
+      ],
+    },
+  )
 
   await db.update('user', user, {
     resources: {
       set: [joy, kbd, cpu, fd, mouse],
     },
   })
-  deepEqual(await db.query('user', user).include('resources').get().toObject(), {
-    id: 1,
-    resources: [
-      {
-        id: 2,
-        name: "keyboard",
-      },
-      {
-        id: 1,
-        name: "cpu",
-      },
-      {
-        id: 4,
-        name: "floppy",
-      },
-      {
-        id: 3,
-        name: "mouse",
-      },
-      {
-        id: 5,
-        name: "joystick",
-      }
-    ],
-  })
+  deepEqual(
+    await db.query('user', user).include('resources').get().toObject(),
+    {
+      id: 1,
+      resources: [
+        {
+          id: 2,
+          name: 'keyboard',
+        },
+        {
+          id: 1,
+          name: 'cpu',
+        },
+        {
+          id: 4,
+          name: 'floppy',
+        },
+        {
+          id: 3,
+          name: 'mouse',
+        },
+        {
+          id: 5,
+          name: 'joystick',
+        },
+      ],
+    },
+  )
 })
 
 await test('update', async (t) => {
@@ -855,3 +878,56 @@ await test('filter', async (t) => {
 //       .toObject(),
 //   )
 // })
+
+await test('single ref save and load', async (t) => {
+  let db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start()
+
+  const schema = {
+    types: {
+      user: {
+        name: 'string',
+        email: { type: 'alias', format: 'email' },
+        invitedBy: { ref: 'user', prop: 'invited' },
+      },
+    },
+  } as const
+
+  await db.setSchema(schema)
+
+  const users = [{ email: '1@saulx.com' }, { email: '2@saulx.com' }]
+
+  for (const user of users) {
+    await db.upsert('user', user)
+  }
+
+  await db.stop()
+
+  db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start()
+  await db.create('user', {
+    email: '3@saulx.com',
+    invitedBy: 2,
+  })
+
+  deepEqual(
+    await db.query('user').include('email', 'invitedBy').get().toObject(),
+    [
+      { id: 1, email: '1@saulx.com', invitedBy: null },
+      { id: 2, email: '2@saulx.com', invitedBy: null },
+      {
+        id: 3,
+        email: '3@saulx.com',
+        invitedBy: { id: 2, email: '2@saulx.com', name: '' },
+      },
+    ],
+  )
+
+  await db.stop()
+})

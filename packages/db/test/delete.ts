@@ -140,3 +140,117 @@ await test('non existing', async (t) => {
   // this has to be ignored in C
   await db.delete('user', simple)
 })
+
+await test('non existing', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.putSchema({
+    types: {
+      nurp: {
+        props: {
+          email: { type: 'string' },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const simple = db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp',
+  })
+
+  await db.drain()
+
+  db.delete('user', simple)
+
+  await db.drain()
+
+  deepEqual((await db.query('user').get()).toObject(), [])
+
+  const nurp = db.create('nurp', {})
+
+  await db.drain()
+
+  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+    {
+      email: '',
+      id: 1,
+    },
+  ])
+
+  // this can be handled in js
+  await db.delete('nurp', 213123123)
+
+  await db.delete('user', simple)
+
+  // this has to be ignored in C
+  await db.delete('user', simple)
+})
+
+await test('save', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const first = db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp',
+  })
+  db.create('user', {
+    name: 'mr slurp',
+    age: 99,
+    email: 'slurp@snurp.snurp',
+  })
+
+  await db.drain()
+  await db.save()
+  db.delete('user', first)
+  await db.drain()
+  await db.save()
+
+  const db2 = new BasedDb({
+    path: t.tmp,
+  })
+  t.after(() => {
+    return db2.destroy()
+  })
+  await db2.start()
+
+  deepEqual(await db2.query('user').include('id').get().toObject(), [{ id: 2 }])
+  deepEqual(await db.query('user').include('id').get().toObject(),  [{id: 2 }])
+})
