@@ -110,6 +110,21 @@ await test('simple', async (t) => {
     null,
     'Get non existing id',
   )
+
+  await db.create('user', {
+    potato: 'power',
+    externalId: 'cool'
+  })
+
+  deepEqual(
+    await db.query('user').get().toObject(),
+    [
+      { id: 1, externalId: '', potato: '' },
+      { id: 2, externalId: 'cool2', potato: '' },
+      { id: 3, externalId: 'potato', potato: 'wrong' },
+      { id: 4, externalId: 'cool', potato: 'power' }
+    ],
+  )
 })
 
 await test('alias - references', async (t) => {
