@@ -446,6 +446,13 @@ await test.skip('simulated periodic save', async (t) => {
       name: 'Joe',
       alias: 'joe',
     }),
+    db.create('person', {
+      name: 'Ben',
+      alias: 'boss',
+    }),
+    db.create('person', {
+      name: 'Steve',
+    }),
   ])
   db.update('person', people[1], {
     bf: people[2],
@@ -489,6 +496,13 @@ await test.skip('simulated periodic save', async (t) => {
   await db.drain()
   await db.save()
 
+  // move alias
+  db.update('person', people[4], {
+    alias: 'boss',
+  })
+  await db.drain()
+  await db.save()
+
   // load the same db into a new instance
   const db2 = new BasedDb({
     path: t.tmp,
@@ -500,7 +514,9 @@ await test.skip('simulated periodic save', async (t) => {
 
   deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
   deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
-  deepEqual(await db.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 4, alias: 'slick', name: 'Slide' }])
-  deepEqual(await db2.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 4, alias: 'slick', name: 'Slide' }])
+  deepEqual(await db.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
+  deepEqual(await db2.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
+  deepEqual(await db.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
+  deepEqual(await db2.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
   deepEqual(await db2.query('person').include('name', 'alias', 'books').get().toObject(), await db.query('person').include('name', 'alias', 'books').get().toObject())
 })
