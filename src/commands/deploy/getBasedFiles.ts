@@ -66,7 +66,6 @@ export const getBasedFiles = async (
   if (multipleSchemas.length) {
     context.print
       .intro(`<red>${context.i18n('methods.schema.multiple')}</red>`)
-      .pipe()
       .pipe(context.i18n('methods.schema.multipleDesc'))
 
     multipleSchemas.map((schema) => context.print.pipe(rel(schema)))
@@ -79,7 +78,6 @@ export const getBasedFiles = async (
   if (multipleInfras.length) {
     context.print
       .intro(`<red>${context.i18n('methods.infra.multiple')}</red>`)
-      .pipe()
       .pipe(context.i18n('methods.infra.multipleDesc'))
 
     multipleSchemas.map((schema) => context.print.pipe(rel(schema)))

@@ -8,7 +8,7 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
 
   for (const [index, element] of summary.entries()) {
     if (!index) {
-      context.print.line().intro(element).pipe()
+      context.print.intro(element)
 
       continue
     }

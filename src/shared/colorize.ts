@@ -36,7 +36,7 @@ export function colorize(content: string | string[]): string | string[] {
   if (!content) return ''
 
   if (Array.isArray(content)) {
-    return content.map(processText)
+    return content.map(processText).join('')
   }
 
   return processText(content)

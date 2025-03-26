@@ -8,7 +8,7 @@ export const configsParse = async (
   entryPoints: string[] = [],
   mapping: Record<string, Based.Deploy.Configs> = {},
 ): Promise<Based.Deploy.EsbuildEntrypoints> => {
-  context.print.intro(context.i18n('methods.bundling.loadingConfigs')).pipe()
+  context.print.intro(context.i18n('methods.bundling.loadingConfigs'))
 
   if (!configs.length) {
     context.print.error(context.i18n('methods.bundling.noConfigs'))

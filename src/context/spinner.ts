@@ -6,7 +6,7 @@ import {
   LINE_UP,
   SPACER,
 } from '../shared/constants.js'
-import { colorizerLength } from '../shared/index.js'
+import { colorize, colorizerLength } from '../shared/index.js'
 
 export function contextSpinner(context: AppContext): Based.Context.Spinner {
   return {
@@ -34,11 +34,13 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
           context.spinner.message
         const messageLength = colorizerLength(message)
         const terminalLength = process.stdout.columns
-        const LINES_UP: string[] = new Array(
+        const LINES_UP: string = new Array(
           Math.ceil(messageLength / terminalLength),
-        ).fill(LINE_UP)
+        )
+          .fill(LINE_UP)
+          .join('')
 
-        console.log(...LINES_UP, LINE_CLEAR, message)
+        console.log(colorize([LINES_UP, LINE_CLEAR, LINE_START, message]))
 
         spinnerIndex = (spinnerIndex + 1) % context.state.emojis.spinner.length
       }, 1e3 / 4)
@@ -61,10 +63,12 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
       const messageLength = colorizerLength(context.spinner.message)
       const terminalLength = process.stdout.columns
       const LINES_UP: string[] = new Array(
-        Math.ceil(messageLength || (terminalLength + 1) / terminalLength),
+        Math.ceil(messageLength / terminalLength),
       ).fill(LINE_UP)
 
-      console.log(...LINES_UP, LINE_START, context.spinner.message)
+      console.log(
+        colorize([...LINES_UP, context.state.emojis.step, SPACER, message]),
+      )
     },
   }
 }

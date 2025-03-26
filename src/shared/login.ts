@@ -92,7 +92,6 @@ export const connectToHub = async (
 
   const timeout = setTimeout(() => {
     context.print.error(context.i18n('errors.408'))
-    context.spinner.stop()
   }, CONNECTION_TIMEOUT)
 
   try {
@@ -105,7 +104,7 @@ export const connectToHub = async (
     throw new Error(context.i18n('errors.404', file, error))
   }
 
-  context.print.step(context.i18n('methods.hubConnection.connected', target))
+  context.spinner.stop(context.i18n('methods.hubConnection.connected', target))
 
   clearTimeout(timeout)
 

@@ -49,9 +49,7 @@ export const configsInvalidateCode = async (
 
   if (!hasType) {
     context.print
-      .line()
       .intro(context.i18n('methods.bundling.wrongTypeIntro'))
-      .pipe()
       .warning(
         context.i18n(
           'methods.bundling.wrongType',
@@ -72,9 +70,7 @@ export const configsInvalidateCode = async (
 
   if (!hasExport) {
     context.print
-      .line()
       .intro(context.i18n('methods.bundling.methodNotExportedIntro'))
-      .pipe()
       .warning(
         context.i18n(
           'methods.bundling.methodNotExported',

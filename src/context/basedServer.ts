@@ -144,7 +144,7 @@ export const contextBasedServer =
       },
     })
 
-    context.print.line().intro(context.i18n('methods.database.name')).pipe()
+    context.print.intro(context.i18n('methods.database.name'))
 
     if (!cloud) {
       try {
@@ -177,10 +177,12 @@ export const contextBasedServer =
     }
 
     server.on('error', (_message, data, _error) => {
-      context.print
-        .line()
-        .error(context.i18n('methods.server.name'))
-        .log(data, false)
+      if (data) {
+        context.print
+          .line()
+          .error(context.i18n('methods.server.name'))
+          .log(data, false)
+      }
     })
     await server.start()
 

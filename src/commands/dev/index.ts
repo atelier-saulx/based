@@ -142,9 +142,7 @@ export const devServer = async ({
   }
 
   context.print
-    .line()
     .intro('<primary><b>Based Dev Server</b></primary>')
-    .pipe()
     .step(`<dim><b>Local</b>: http://localhost:${devPort}</dim>`)
     .step(`<dim><b>Public</b>: http://${ip}:${devPort}</dim>`)
     .pipe()
@@ -177,7 +175,6 @@ export const devServer = async ({
       result.changed
         ?.map(
           ({ path }) =>
-            // TODO: check if this is enough for css
             this.result.metafile.outputs[relative(process.cwd(), path)]
               .entryPoint,
         )
