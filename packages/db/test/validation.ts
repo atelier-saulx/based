@@ -1,3 +1,4 @@
+import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'
@@ -10,6 +11,8 @@ await test('update', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => db.destroy())
+
+  // add filter validation thing
 
   await db.setSchema({
     types: {
@@ -479,8 +482,33 @@ await test('query', async (t) => {
     // @ts-ignore
     await db.query('user').search([1, 2, 3, 4], 'blap').get()
   }, false)
+})
 
-  // await throws(async () => {
-  //   await db.query('user').sort('description').get()
-  // }, true)
+await test('query - no schema', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  setTimeout(async () => {
+    await db.setSchema({
+      types: {
+        user: {
+          props: {
+            name: 'string',
+          },
+        },
+      },
+    })
+  }, 100)
+
+  await throws(async () => {
+    db.query('user')
+  }, false)
+
+  await db.schemaIsSet()
+  deepEqual(await db.query('user').get().toObject(), [])
 })

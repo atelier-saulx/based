@@ -137,6 +137,10 @@ export class BasedDb {
     return this.client.isReady.apply(this.client, arguments)
   }
 
+  schemaIsSet: DbClient['schemaIsSet'] = function () {
+    return this.client.schemaIsSet.apply(this.client, arguments)
+  }
+
   async destroy() {
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
