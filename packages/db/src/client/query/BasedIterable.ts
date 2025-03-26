@@ -3,7 +3,7 @@ import picocolors from 'picocolors'
 import { QueryDef, AggFn } from './types.js'
 import { debug, resultToObject, Item, AggItem, readAllFields } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
-import { readFloatLE, readUint32 } from '../bitWise.js'
+import { readFloatLE, readUint32 } from '../../utils.js'
 
 export { time, size, inspectData }
 
@@ -82,10 +82,9 @@ export class BasedQueryResponse {
       let id = readUint32(result, i)
       i += 4
       let item: AggItem
-      if (this.def.aggregation == AggFn.NONE){
+      if (this.def.aggregation == AggFn.NONE) {
         item = {}
-      }
-      else {
+      } else {
         item = {
           id,
         }
