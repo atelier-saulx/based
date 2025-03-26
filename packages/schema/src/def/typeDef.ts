@@ -26,7 +26,7 @@ import { isSeparate } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { fillEmptyMain } from './fillEmptyMain.js'
+import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
@@ -217,6 +217,8 @@ export const createSchemaTypeDef = (
       }
     }
     result.mainEmpty = fillEmptyMain(vals, result.mainLen)
+    result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
+
     makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)

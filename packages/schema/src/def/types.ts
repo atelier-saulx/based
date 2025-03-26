@@ -148,6 +148,7 @@ export type SchemaTypeDef = {
     [start: string]: PropDef
   }
   mainEmpty: Uint8Array
+  mainEmptyAllZeroes: boolean
   tree: SchemaPropTree
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler

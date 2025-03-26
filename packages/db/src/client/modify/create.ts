@@ -51,12 +51,27 @@ const appendCreate = (
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
         ctx.lastMain = ctx.len
-        ctx.buf.fill(0, ctx.len, (ctx.len += def.mainLen))
+        ctx.buf.set(def.mainEmpty, ctx.len)
+        ctx.len += def.mainLen
       }
       err = writeFixedValue(ctx, createTs, prop, ctx.lastMain + prop.start)
       if (err) {
         return err
       }
+    }
+  } else if (ctx.lastMain === -1 && !def.mainEmptyAllZeroes) {
+    // this is there to handle different defaults
+    if (ctx.lastMain === -1) {
+      let mainLenU32 = def.mainLen
+      setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, CREATE)
+      ctx.buf[ctx.len++] = CREATE
+      ctx.buf[ctx.len++] = mainLenU32
+      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+      ctx.lastMain = ctx.len
+      ctx.buf.set(def.mainEmpty, ctx.len)
+      ctx.len += def.mainLen
     }
   }
 

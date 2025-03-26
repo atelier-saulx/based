@@ -29,7 +29,7 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
     const s = f.start
     let val = f.default
     if (t === BOOLEAN || t === INT8 || t === UINT8 || t === ENUM) {
-      mainEmpty[s] = f.default
+      mainEmpty[s] = val === true ? 1 : 0
     } else if (t === UINT32 || t === INT32) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
@@ -56,5 +56,17 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
       }
     }
   }
+
   return mainEmpty
+}
+
+export const isZeroes = (buf: Uint8Array) => {
+  let i = 0
+  while (i < buf.byteLength) {
+    if (buf[i] !== 0) {
+      return false
+    }
+    i++
+  }
+  return true
 }

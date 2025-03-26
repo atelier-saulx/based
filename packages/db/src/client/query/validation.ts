@@ -561,4 +561,5 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   propNames: new Uint8Array([]),
   packed: new Uint8Array([]),
   idUint8: new Uint8Array([0, 0]),
+  mainEmptyAllZeroes: true,
 }
