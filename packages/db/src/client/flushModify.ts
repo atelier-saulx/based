@@ -1,7 +1,16 @@
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { DbClient } from './index.js'
 import { ModifyState } from './modify/ModifyRes.js'
-import { makeCsmtKeyFromNodeId } from './tree.js'
+
+// TODO This definitely shouldn't be copy-pasted here from server/tree.ts
+const makeCsmtKeyFromNodeId = (
+  typeId: number,
+  blockCapacity: number,
+  nodeId: number,
+) => {
+  const tmp = nodeId - +!(nodeId % blockCapacity)
+  return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
+}
 
 export class ModifyCtx {
   constructor(db: DbClient) {

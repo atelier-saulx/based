@@ -1,3 +1,4 @@
+import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'
@@ -11,11 +12,18 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
+  // add filter validation thing
+
   await db.setSchema({
     types: {
       user: {
         props: {
-          rating: 'uint32',
+          u32: 'uint32',
+          u8: 'uint8',
+          i8: 'int8',
+          i32: 'int32',
+          u16: 'uint16',
+          i16: 'int16',
           name: 'string',
           friend: { ref: 'user', prop: 'friend' },
           countryCode: { type: 'string', maxBytes: 2 },
@@ -65,7 +73,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'wrongRating',
-      rating: 'not a number',
+      u32: 'not a number',
     })
   })
 
@@ -75,7 +83,7 @@ await test('update', async (t) => {
     async () => {
       db.create('user', {
         name: 'wrongRating',
-        rating: 'not a number',
+        u32: 'not a number',
       }).catch((err) => {
         cnt++
       })
@@ -100,7 +108,7 @@ await test('update', async (t) => {
   await throws(async () => {
     db.create('user', {
       name: 'wrongRating',
-      rating: 'not a number',
+      u32: 'not a number',
     })
   })
 
@@ -130,7 +138,12 @@ await test('update', async (t) => {
         name: 'youzi',
         friend: {
           id: 2,
-          rating: 0,
+          u32: 0,
+          i32: 0,
+          u16: 0,
+          i16: 0,
+          u8: 0,
+          i8: 0,
           countryCode: '',
           name: 'jame-z',
         },
@@ -140,7 +153,12 @@ await test('update', async (t) => {
         name: 'jame-z',
         friend: {
           id: 1,
-          rating: 0,
+          u32: 0,
+          i32: 0,
+          u16: 0,
+          i16: 0,
+          u8: 0,
+          i8: 0,
           countryCode: '',
           name: 'youzi',
         },
@@ -148,8 +166,104 @@ await test('update', async (t) => {
     ],
   )
 
-  // dont throw
+  // Don't throw
   const id = await db.create('user', undefined)
+
+  await throws(
+    async () => {
+      await db.create('user', { u8: 255 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (u8)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i8: 127 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (i8)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { u16: 65535 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (u16)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { u32: 4294967295 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (u32)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i32: 2147483647 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (i32)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i16: 32767 + 1 })
+    },
+    false,
+    'Out of bounds value should throw (i16)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { u8: -10 })
+    },
+    false,
+    'Negative value should throw (u8)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { u16: -10 })
+    },
+    false,
+    'Negative value should throw (u16)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { u32: -10 })
+    },
+    false,
+    'Negative value should throw (u32)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i32: -(2147483648 + 1) })
+    },
+    false,
+    'Too small out of bounds value should throw (int32)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i16: -(32768 + 1) })
+    },
+    false,
+    'Too small out of bounds value should throw (int16)',
+  )
+
+  await throws(
+    async () => {
+      await db.create('user', { i8: -(128 + 1) })
+    },
+    false,
+    'Too small out of bounds value should throw (int8)',
+  )
 })
 
 await test('query', async (t) => {
@@ -479,8 +593,33 @@ await test('query', async (t) => {
     // @ts-ignore
     await db.query('user').search([1, 2, 3, 4], 'blap').get()
   }, false)
+})
 
-  // await throws(async () => {
-  //   await db.query('user').sort('description').get()
-  // }, true)
+await test('query - no schema', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  setTimeout(async () => {
+    await db.setSchema({
+      types: {
+        user: {
+          props: {
+            name: 'string',
+          },
+        },
+      },
+    })
+  }, 100)
+
+  await throws(async () => {
+    db.query('user')
+  }, false)
+
+  await db.schemaIsSet()
+  deepEqual(await db.query('user').get().toObject(), [])
 })

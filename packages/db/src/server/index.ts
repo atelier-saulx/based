@@ -72,6 +72,9 @@ export class DbWorker {
 
     port1.on('message', (buf) => {
       // TODO FIX TYPES CHECK IF THIS MAKES A COPY
+      // It's a copy, if you don't want a copy you'd need to make it an explicit view
+      // to the underlying buffer:
+      // new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
       this.resolvers.shift()(new Uint8Array(buf))
       this.db.onQueryEnd()
     })

@@ -54,7 +54,7 @@ export const fillConditionsBuffer = (
   let lastWritten = offset
   let orJumpIndex = 0
 
-  if (conditions.or) {
+  if (conditions.or && conditions.or.size != 0) {
     result[lastWritten] = META_OR_BRANCH
     lastWritten++
     orJumpIndex = lastWritten
@@ -97,7 +97,7 @@ export const fillConditionsBuffer = (
     })
   }
 
-  if (conditions.or) {
+  if (conditions.or && conditions.or.size != 0) {
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
     result[orJumpIndex] = size
     result[orJumpIndex + 1] = size >>> 8

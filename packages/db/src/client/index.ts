@@ -58,6 +58,8 @@ export class DbClient {
     types: {},
   }
 
+  schemaIsSetValue: boolean = false
+
   schemaTypesParsed: Record<string, SchemaTypeDef> = {}
   schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
 
@@ -84,6 +86,7 @@ export class DbClient {
     fromStart?: boolean,
     transformFns?: TransformFns,
   ): Promise<StrictSchema> {
+    this.schemaIsSetValue = true
     const checksum = hash(schema)
     if (checksum === this.schemaChecksum) {
       return this.schema
@@ -99,6 +102,7 @@ export class DbClient {
   }
 
   putLocalSchema(schema) {
+    this.schemaIsSetValue = true
     if (deepEqual(this.schema, schema)) {
       return this.schema
     }
@@ -316,5 +320,18 @@ export class DbClient {
     }
     await this.hooks.flushIsReady
     return
+  }
+
+  schemaIsSet(): Promise<true> {
+    return new Promise((resolve) => {
+      if (this.schemaIsSetValue) {
+        resolve(true)
+      } else {
+        setTimeout(() => {
+          // TODO use subscription when its done
+          resolve(this.schemaIsSet())
+        }, 12)
+      }
+    })
   }
 }

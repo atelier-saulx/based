@@ -4,7 +4,7 @@ import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { base64encode } from '../src/utils.js'
 import { Csmt, createTree } from '../src/server/csmt/index.js'
-import {decodeBase64} from '@saulx/utils'
+import { decodeBase64, deepEqual } from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
 
@@ -88,6 +88,22 @@ await test('insert: The root hash is recomputed on every insert', async (t) => {
   assert.equal(shortHash(tree.getRoot().hash), 'OvuAS')
 })
 
+await test('insert: Same key can be only inserted once', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(1, ENCODER.encode('a'))
+  assert.equal(shortHash(tree.getRoot().hash), 'YQ==')
+
+  tree.insert(2, ENCODER.encode('b'))
+  assert.equal(shortHash(tree.getRoot().hash), '+44g/')
+
+  tree.insert(5, ENCODER.encode('c'))
+  assert.equal(shortHash(tree.getRoot().hash), 'OvuAS')
+
+  assert.throws(() => tree.insert(5, ENCODER.encode('c')))
+  assert.equal(shortHash(tree.getRoot().hash), 'OvuAS')
+})
+
 await test('insert: Trees are reproducible regardless of the insertion order', async (t) => {
   const tree1 = createTree(testHashGen)
   const tree2 = createTree(testHashGen)
@@ -135,6 +151,33 @@ await test('insert: Difference in a single node causes the root hash to differ',
   tree2.insert(4, ENCODER.encode('d'))
 
   assert.notEqual(tree2.getRoot().hash, tree1.getRoot().hash)
+})
+
+await test('delete: delete throws', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(1, ENCODER.encode('a'))
+  tree.insert(2, ENCODER.encode('b'))
+  tree.insert(3, ENCODER.encode('c'))
+  tree.insert(4, ENCODER.encode('d'))
+
+  assert.doesNotThrow(() => tree.delete(4))
+  assert.throws(() => tree.delete(4))
+  assert.throws(() => tree.delete(5))
+})
+
+await test('delete and insert same', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(1, ENCODER.encode('a'))
+  tree.insert(2, ENCODER.encode('b'))
+
+  assert.doesNotThrow(() => tree.delete(2))
+  assert.doesNotThrow(() => tree.insert(2, ENCODER.encode('c')))
+
+  const l = tree.search(2)
+  assert.equal(l.key, 2)
+  deepEqual(l.hash, ENCODER.encode('c'))
 })
 
 await test('delete: two trees are no longer equal after deleting a key', async (t) => {
@@ -230,7 +273,7 @@ await test('delete: delete rebalances the tree properly (upped boundary)', async
   assert.deepEqual(tree1.getRoot(), tree2.getRoot())
 })
 
-await test('delete rebalances the tree properly (lower boundary)', async (t) => {
+await test('delete: rebalances the tree properly (lower boundary)', async (t) => {
   const tree1 = createTree(testHashGen)
   const tree2 = createTree(testHashGen)
 

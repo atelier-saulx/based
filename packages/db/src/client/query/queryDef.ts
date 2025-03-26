@@ -2,7 +2,6 @@ import { langCodesMap } from '@based/schema'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
-  AggFn,
   EdgeTarget,
   QueryDef,
   QueryDefEdges,
@@ -54,7 +53,6 @@ export const createQueryDef = (
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges
     q.props = t.ref.edges
-    // q.reverseProps = t.ref.reverseEdges
     q.type = type
     q.target = t
     return q

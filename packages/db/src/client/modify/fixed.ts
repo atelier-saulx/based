@@ -92,7 +92,6 @@ map[NUMBER] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   view.setFloat64(0, val, true)
@@ -106,7 +105,9 @@ map[TIMESTAMP] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
-
+  if (val < 0) {
+    return new ModifyError(def, val)
+  }
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   view.setFloat64(0, parsedValue, true)
@@ -118,6 +119,9 @@ map[UINT32] = (ctx, val, def) => {
   }
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
+  }
+  if (val > 4294967295 || val < 0) {
+    return new ModifyError(def, val)
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
@@ -132,6 +136,9 @@ map[UINT16] = (ctx, val, def) => {
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
+  if (val > 65535 || val < 0) {
+    return new ModifyError(def, val)
+  }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
@@ -143,14 +150,54 @@ map[UINT8] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
+  if (val > 255 || val < 0) {
+    return new ModifyError(def, val)
+  }
   ctx.buf[ctx.len++] = val
 }
 
-map[INT32] = map[UINT32]
+map[INT32] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
+  if (ctx.len + 4 > ctx.max) {
+    return RANGE_ERR
+  }
+  if (val > 2147483647 || val < -2147483648) {
+    return new ModifyError(def, val)
+  }
+  ctx.buf[ctx.len++] = val
+  ctx.buf[ctx.len++] = val >>>= 8
+  ctx.buf[ctx.len++] = val >>>= 8
+  ctx.buf[ctx.len++] = val >>>= 8
+}
 
-map[INT16] = map[UINT16]
+map[INT16] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
+  if (ctx.len + 2 > ctx.max) {
+    return RANGE_ERR
+  }
+  if (val > 32767 || val < -32768) {
+    return new ModifyError(def, val)
+  }
+  ctx.buf[ctx.len++] = val
+  ctx.buf[ctx.len++] = val >>>= 8
+}
 
-map[INT8] = map[UINT8]
+map[INT8] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
+  if (ctx.len + 1 > ctx.max) {
+    return RANGE_ERR
+  }
+  if (val > 127 || val < -128) {
+    return new ModifyError(def, val)
+  }
+  ctx.buf[ctx.len++] = val
+}
 
 export const writeFixedValue = (
   ctx: ModifyCtx,

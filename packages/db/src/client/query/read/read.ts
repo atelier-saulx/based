@@ -184,8 +184,12 @@ const readMain = (
   return i - offset
 }
 
-const handleUndefinedProps = (id: number, q: QueryDef, item: Item | AggItem) => {
-  if (q.aggregation != AggFn.NONE){
+const handleUndefinedProps = (
+  id: number,
+  q: QueryDef,
+  item: Item | AggItem,
+) => {
+  if (q.aggregation != AggFn.NONE) {
     for (const k in q.include.propsRead) {
       if (q.include.propsRead[k] !== id) {
         // Only relvant for seperate props
@@ -213,7 +217,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item | AggItem) => 
           addField(prop, prop.typeIndex === JSON ? null : '', item)
         }
       }
-    }   
+    }
   }
 }
 
@@ -342,7 +346,7 @@ export const readAllFields = (
       i--
       result[i] = READ_AGGREGATION
       q.aggregation = AggFn.NONE
-      return i - offset - 4 - ( q.search ? 4 : 0)
+      return i - offset - 4 - (q.search ? 4 : 0)
     } else if (index === READ_AGGREGATION) {
       // TODO: To change to a map and also to get the aggregate field name from a query function parameter
       const propAgg: PropDefAggregate = {
@@ -452,15 +456,14 @@ export const resultToObject = (
     const id = readUint32(result, i)
     i += 4
     let item: AggItem
-    if (q.aggregation == AggFn.NONE){
+    if (q.aggregation == AggFn.NONE) {
       item = {}
-    }
-    else {
+    } else {
       item = {
         id,
       }
     }
-    
+
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
