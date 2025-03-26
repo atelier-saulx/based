@@ -4,7 +4,6 @@ import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
 import { writeEdges } from './edge.js'
-import { getEdgeSize } from './getEdgeSize.js'
 import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
 
 function writeRef(
