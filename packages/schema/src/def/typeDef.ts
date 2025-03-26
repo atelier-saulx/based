@@ -217,7 +217,7 @@ export const createSchemaTypeDef = (
     result.mainEmpty = new Uint8Array(result.mainLen)
     for (const f of vals) {
       if (!f.separate) {
-        console.log(f)
+        // console.log(f)
       }
     }
     makePacked(result, typeName, vals, len)
