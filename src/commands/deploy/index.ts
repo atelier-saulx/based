@@ -129,12 +129,7 @@ export const deploy = async (program: Command) => {
           bundlingUpdateHandling(context)(updates)
 
           for (let [_type, file] of updates) {
-            const found = await findConfigFile(
-              file,
-              mapping,
-              nodeBundles,
-              browserBundles,
-            )
+            const found = await findConfigFile(file, mapping, nodeBundles)
 
             if (found) {
               file = found.app || found.index || found.path
