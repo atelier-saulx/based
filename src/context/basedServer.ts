@@ -43,21 +43,24 @@ const remoteServerConfig: BasedFunctionConfigs = {
   },
 }
 
-const localServerConfig: BasedFunctionConfigs = {
+const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
   'db:set-schema': {
     type: 'function',
     fn: async (based, schema) => {
       const db = based.db.v2 as BasedDb
 
       try {
-        await db.putSchema(schema)
+        await db.setSchema(schema)
       } catch (error) {
-        console.error('db:set-schema')
-        console.error(error)
+        context.print
+          .line()
+          .error(context.i18n('methods.server.name'))
+          .log('<b>db:set-schema</b>', null)
+          .log(`<red>${error}</red>`, null)
       }
     },
   },
-}
+})
 
 export const contextBasedServer =
   (context: AppContext) =>
@@ -130,7 +133,7 @@ export const contextBasedServer =
               }
             },
           },
-          ...(cloud ? remoteServerConfig : localServerConfig),
+          ...(cloud ? remoteServerConfig : localServerConfig(context)),
         },
       },
       auth: {
@@ -181,7 +184,8 @@ export const contextBasedServer =
         context.print
           .line()
           .error(context.i18n('methods.server.name'))
-          .log(data, false)
+          .log(`<red>${JSON.stringify(data, null, 2)}</red>`, null)
+          .line()
       }
     })
     await server.start()

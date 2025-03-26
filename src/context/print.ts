@@ -156,7 +156,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
         } else if (icon && typeof icon === 'string') {
           console.log(colorize([icon, SPACER, message]))
         } else if (icon === null) {
-          console.log('aqq', colorize(message))
+          console.log(colorize(message))
         } else {
           console.log(colorize([context.state.emojis.log, SPACER, message]))
         }
