@@ -45,6 +45,7 @@ export const getBasedFiles = async (
             entryPoints.push(join(dir, file))
             mapping[dir] = {} as Based.Deploy.Configs
           } else {
+            // TODO: this never happens?
             multipleSchemas.push(file)
           }
         } else if (isInfraFile(file)) {
@@ -52,6 +53,7 @@ export const getBasedFiles = async (
             entryPoints.push(join(dir, file))
             mapping[dir] = {} as Based.Deploy.Configs
           } else {
+            // TODO: this never happens?
             multipleInfras.push(file)
           }
         }
