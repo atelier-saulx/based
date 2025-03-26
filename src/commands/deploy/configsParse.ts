@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type { BasedBundleOptions, Plugin } from '@based/bundle'
 import type { AppContext } from '../../context/index.js'
 import { abs, rel as relative, stringMaxLength } from '../../shared/index.js'
@@ -95,21 +96,28 @@ export const configsParse = async (
         }
 
         const result = {
-          config,
           dir,
-          index,
-          app,
-          favicon,
-          bundled,
-          path,
-          rel,
           type,
+          path,
+          index,
+          config,
+          rel,
+          bundled,
           checksum,
           mtimeMs,
+          app,
+          favicon,
         }
 
-        if (mapping[dir]) {
-          mapping[dir] = result
+        if (mapping[path]) {
+          mapping[path] = result
+          if (result.index) {
+            mapping[result.index] = result
+          }
+
+          if (result.config.type === 'app') {
+            mapping[join(result.dir, result.config.main)] = result
+          }
         }
 
         return result

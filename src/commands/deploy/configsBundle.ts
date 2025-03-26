@@ -69,12 +69,12 @@ export const configsBundle = async (
 
   if (filter.length) {
     result = await Promise.all(
-      result.filter(({ config, dir }) => {
+      result.filter(({ config, path }) => {
         if (filter.length && filter.includes(config.name)) {
           return true
         }
 
-        delete mapping[dir]
+        delete mapping[path]
         return false
       }),
     )
@@ -155,8 +155,15 @@ export const configsBundle = async (
           mtimeMs: await getMtimeMs(path),
         }
 
-        if (mapping[dir]) {
-          mapping[dir] = result
+        if (mapping[path]) {
+          mapping[path] = result
+          if (result.index) {
+            mapping[result.index] = result
+          }
+
+          if (result.config.type === 'app') {
+            mapping[join(result.dir, result.config.main)] = result
+          }
         }
 
         return result

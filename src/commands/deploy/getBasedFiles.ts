@@ -28,34 +28,27 @@ export const getBasedFiles = async (
           return null
         }
 
+        const path = join(dir, file)
+
         if (!file.includes('.')) {
-          const path = join(dir, file)
           if (ignore(relative(ignoreDir, path), file)) {
             return null
           }
 
-          return walk(join(dir, file))
+          return walk(path)
         }
 
         if (isConfigFile(file)) {
-          entryPoints.push(join(dir, file))
-          mapping[dir] = {} as Based.Deploy.Configs
+          entryPoints.push(path)
+          mapping[path] = {} as Based.Deploy.Configs
         } else if (isSchemaFile(file)) {
-          if (!multipleSchemas.length) {
-            entryPoints.push(join(dir, file))
-            mapping[dir] = {} as Based.Deploy.Configs
-          } else {
-            // TODO: this never happens?
-            multipleSchemas.push(file)
-          }
+          entryPoints.push(path)
+          mapping[path] = {} as Based.Deploy.Configs
+          multipleSchemas.push(file)
         } else if (isInfraFile(file)) {
-          if (!multipleInfras.length) {
-            entryPoints.push(join(dir, file))
-            mapping[dir] = {} as Based.Deploy.Configs
-          } else {
-            // TODO: this never happens?
-            multipleInfras.push(file)
-          }
+          entryPoints.push(path)
+          mapping[path] = {} as Based.Deploy.Configs
+          multipleInfras.push(file)
         }
 
         return null
