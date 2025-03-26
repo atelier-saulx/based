@@ -222,8 +222,8 @@ export function createTree(createHash: () => any): Csmt {
   return {
     getRoot: () => root,
     insert: (k: TreeKey, h: Hash, data: any = null) => {
-      if (!(h instanceof Uint8Array)) { // TODO can we extract the name somehow from Hash?
-        throw new TypeError('`h` must be a Uint8Array') // TODO can we extract the name somehow from Hash?
+      if (!(h instanceof Uint8Array)) {
+        throw new TypeError('`h` must be a Uint8Array')
       }
 
       const newLeaf = createLeaf(k, h, data)
