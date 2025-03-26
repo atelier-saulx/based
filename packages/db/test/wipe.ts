@@ -14,7 +14,7 @@ await test('wipe', async (t) => {
     return db.destroy()
   })
 
-  db.setSchema({
+  await db.setSchema({
     types: {
       data: {
         props: {
@@ -36,6 +36,7 @@ await test('wipe', async (t) => {
   }
 
   console.log('set 1m', await db.drain())
+
   deepEqual(await db.query('data').range(0, 10).get().toObject(), [
     { id: 1, age: 0, name: '', a: '' },
     { id: 2, age: 1, name: '', a: '' },
