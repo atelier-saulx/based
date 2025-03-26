@@ -14,6 +14,7 @@ export const createEmptyDef = (
     props: {},
     reverseProps: {},
     idUint8: new Uint8Array([0, 0]),
+    // empty main buffer
     id: 0,
     mainLen: 0,
     separate: [],

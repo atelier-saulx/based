@@ -102,6 +102,7 @@ export class DbClient {
   }
 
   putLocalSchema(schema) {
+    this.schemaIsSetValue = true
     if (deepEqual(this.schema, schema)) {
       return this.schema
     }
