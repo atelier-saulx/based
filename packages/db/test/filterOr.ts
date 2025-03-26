@@ -97,4 +97,21 @@ await test('filter or', async (t) => {
     ],
     'double or',
   )
+
+  deepEqual(
+    (
+      await db
+        .query('user')
+        .filter('nr', '>', 8)
+        .or(() => {})
+        .get()
+    ).toObject(),
+    [
+      {
+        id: 10,
+        nr: 9,
+      },
+    ],
+    'empty or branch',
+  )
 })
