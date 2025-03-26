@@ -806,6 +806,12 @@ export default {
       unavailable: '<yellow>Schema unavailable</yellow>',
       setSchema: `Your schema was successfully found and parsed, but the 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
     },
+    infra: {
+      multiple: 'Multiple infras found',
+      multipleDesc: 'You should have only one infra in your project.',
+      remove: 'Remove the files and try again.',
+      loading: 'Loading your infra',
+    },
     server: {
       name: '<dim><b>Based Dev Server</b> error:</dim>',
     },

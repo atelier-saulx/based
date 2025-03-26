@@ -566,6 +566,7 @@ declare global {
             js?: string
             css?: string
             favicon?: string
+            forceReload?: number
           }
           files?: string[]
         }

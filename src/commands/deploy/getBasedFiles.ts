@@ -76,6 +76,19 @@ export const getBasedFiles = async (
     throw new Error(context.i18n('methods.aborted'))
   }
 
+  if (multipleInfras.length) {
+    context.print
+      .intro(`<red>${context.i18n('methods.infra.multiple')}</red>`)
+      .pipe()
+      .pipe(context.i18n('methods.infra.multipleDesc'))
+
+    multipleSchemas.map((schema) => context.print.pipe(rel(schema)))
+
+    context.print.outro(context.i18n('methods.infra.remove'))
+
+    throw new Error(context.i18n('methods.aborted'))
+  }
+
   await walk()
 
   return { entryPoints, mapping }

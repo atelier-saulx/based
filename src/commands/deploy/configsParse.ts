@@ -44,7 +44,7 @@ export const configsParse = async (
         layout = `<b>schema</b> ${pipe} <blueBright>default</blueBright> ${pipe} ${fileLabel}`
         icon = '<blueBright>◆</blueBright>'
       } else if (type === 'infra') {
-        layout = `<b>infra</b> ${pipe} ${fileLabel}`
+        layout = `<b>infra</b> ${pipe} <red>unavailable</red> ${pipe} ${fileLabel}`
         icon = '<cyan>◆</cyan>'
       }
 
