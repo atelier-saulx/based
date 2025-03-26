@@ -512,11 +512,20 @@ await test.skip('simulated periodic save', async (t) => {
   })
   await db2.start()
 
+  //console.log(await db.query('person').include('name', 'alias').get().toObject())
+  //console.log(await db2.query('person').include('name', 'alias').get().toObject())
+  // Change node using alias saved
   deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
   deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
+
+  // Replace alias saved
   deepEqual(await db.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
   deepEqual(await db2.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
+
+  // Move alias saved
   deepEqual(await db.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
   deepEqual(await db2.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
+
+  // All have the same books
   deepEqual(await db2.query('person').include('name', 'alias', 'books').get().toObject(), await db.query('person').include('name', 'alias', 'books').get().toObject())
 })
