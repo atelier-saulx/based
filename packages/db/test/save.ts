@@ -507,6 +507,61 @@ await test('upsert', async (t) => {
   console.log(await db2.query('person').get().toObject())
 })
 
+await test.skip('alias blocks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  await db.setSchema({
+    types: {
+      person: {
+        props: {
+          name: { type: 'string', max: 8 },
+          alias: { type: 'alias' },
+        },
+      },
+    },
+  })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  for (let i = 0; i < 100_000; i++) {
+    db.create('person', {
+      name: 'Joe',
+    })
+  }
+  await db.drain()
+  await db.save()
+  const john = await db.create('person', {
+    name: 'John',
+    alias: 'bf',
+  })
+  await db.drain()
+  await db.save()
+  db.update('person', 1, { alias: 'bf' })
+  for (let id = 2; id < john; id++) {
+    db.delete('person', id)
+  }
+  await db.drain()
+  await db.save()
+
+  // load the same db into a new instance
+  const db2 = new BasedDb({
+    path: t.tmp,
+  })
+  t.after(() => {
+    return db2.destroy()
+  })
+  await db2.start()
+
+  deepEqual(
+    await db2.query('person').get().toObject(),
+    await db.query('person').get().toObject())
+})
+
 await test('simulated periodic save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
