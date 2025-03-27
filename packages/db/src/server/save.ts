@@ -57,7 +57,6 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
     console.error(`Save common failed: ${err}`)
   }
 
-  console.log(db.dirtyRanges)
   if (forceFullDump) {
     // We just rebuild the whole tree
     db.merkleTree = createTree(db.createCsmtHashFun) // TODO This could be somewhere else.
@@ -81,7 +80,6 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
           start,
           end,
         }
-        console.log(mtKey, data, bufToHex(hash))
         db.merkleTree.insert(mtKey, hash, data)
       });
     }

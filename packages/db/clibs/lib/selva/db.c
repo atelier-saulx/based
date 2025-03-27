@@ -361,6 +361,8 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
     return te;
 }
 
+extern inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
+
 extern inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 
 extern inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field);

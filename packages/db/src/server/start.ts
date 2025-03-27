@@ -28,6 +28,7 @@ export async function start(
 
   // not doing db yet
   // db.modifyBuf = new SharedArrayBuffer(db.maxModifySize)
+  db.modifyDirtyRanges = new Float64Array(1000)
   db.dbCtxExternal = native.start(id)
 
   let writelog: Writelog = null

@@ -127,7 +127,7 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
         return buffer[0 .. size / 4];
     }
 
-      if (T == []u64) {
+    if (T == []u64) {
         var buffer: [*]u64 = undefined;
         var arrayType: c.napi_typedarray_type = undefined;
         var arrayLen: usize = undefined;
@@ -138,6 +138,16 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
         return buffer[0 .. size / 8];
     }
 
+    if (T == []f64) {
+        var buffer: [*]f64 = undefined;
+        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayLen: usize = undefined;
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
+            return errors.Napi.CannotGetBuffer;
+        }
+        const size: usize = calcTypedArraySize(arrayType, arrayLen);
+        return buffer[0 .. size / 8];
+    }
 
     var external: ?*anyopaque = undefined;
     const x = c.napi_get_value_external(env, value, &external);

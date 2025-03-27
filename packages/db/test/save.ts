@@ -507,7 +507,7 @@ await test('upsert', async (t) => {
   console.log(await db2.query('person').get().toObject())
 })
 
-await test.skip('alias blocks', async (t) => {
+await test('alias blocks', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

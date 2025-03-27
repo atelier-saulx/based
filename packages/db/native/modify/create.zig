@@ -59,7 +59,10 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
 
             if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
-                    _ = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                    const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                    if (old > 0) {
+                        Modify.markDirtyRange(ctx, ctx.typeId, old);
+                    }
                 }
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
