@@ -13,6 +13,8 @@ export { crc32 } from './client/crc32.js'
 export * from './client/query/serialize.js'
 export * from './utils.js'
 export * from './client/query/query.js'
+export * from './client/query/BasedDbQuery.js'
+export * from './client/query/BasedIterable.js'
 
 export class BasedDb {
   client: DbClient

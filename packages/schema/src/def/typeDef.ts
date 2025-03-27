@@ -14,9 +14,9 @@ import {
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
-  DEFAULT_MAP,
   BOOLEAN,
 } from './types.js'
+import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
 import { makePacked } from './makePacked.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'

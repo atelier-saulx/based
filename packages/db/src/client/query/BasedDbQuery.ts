@@ -232,7 +232,11 @@ export class QueryBranch<T> {
           }
         })
       } else if (Array.isArray(f)) {
-        includeFields(this.def, f)
+        if (f.length === 0) {
+          includeFields(this.def, ['id'])
+        } else {
+          includeFields(this.def, f)
+        }
       } else if (f !== undefined) {
         throw new Error(
           'Invalid include statement: expected props, refs and edges (string or array) or function',

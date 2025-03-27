@@ -1,9 +1,5 @@
-import {
-  DEFAULT_MAP,
-  PropDef,
-  REVERSE_SIZE_MAP,
-  SchemaTypeDef,
-} from './types.js'
+import { PropDef, REVERSE_SIZE_MAP, SchemaTypeDef } from './types.js'
+import { DEFAULT_MAP } from './defaultMap.js'
 
 export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   const size = (packed[0] | (packed[1] << 8)) >>> 0

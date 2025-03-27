@@ -56,7 +56,7 @@ const test = async (
         backupChecksums.push(x.checksum)
       }
 
-      deepEqual(checksums, backupChecksums, 'From backup is equal')
+      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
       await wait(10)
       await newDb.destroy()

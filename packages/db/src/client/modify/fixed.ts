@@ -117,11 +117,11 @@ map[UINT32] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
   }
-  if (ctx.len + 4 > ctx.max) {
-    return RANGE_ERR
-  }
   if (val > 4294967295 || val < 0) {
     return new ModifyError(def, val)
+  }
+  if (ctx.len + 4 > ctx.max) {
+    return RANGE_ERR
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
@@ -133,11 +133,11 @@ map[UINT16] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
   }
-  if (ctx.len + 2 > ctx.max) {
-    return RANGE_ERR
-  }
   if (val > 65535 || val < 0) {
     return new ModifyError(def, val)
+  }
+  if (ctx.len + 2 > ctx.max) {
+    return RANGE_ERR
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
@@ -160,11 +160,11 @@ map[INT32] = (ctx, val, def) => {
   if (typeof val !== 'number') {
     return new ModifyError(def, val)
   }
-  if (ctx.len + 4 > ctx.max) {
-    return RANGE_ERR
-  }
   if (val > 2147483647 || val < -2147483648) {
     return new ModifyError(def, val)
+  }
+  if (ctx.len + 4 > ctx.max) {
+    return RANGE_ERR
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8

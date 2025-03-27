@@ -197,34 +197,6 @@ for (const k in TYPE_INDEX_MAP) {
   reverseMap[TYPE_INDEX_MAP[k]] = k
 }
 
-// TODO update defaults
-export const DEFAULT_MAP: Record<TypeIndex, any> = {
-  [TYPE_INDEX_MAP.alias]: '',
-  [TYPE_INDEX_MAP.binary]: undefined,
-  [TYPE_INDEX_MAP.boolean]: false,
-  [TYPE_INDEX_MAP.cardinality]: 0,
-  [TYPE_INDEX_MAP.created]: 0,
-  [TYPE_INDEX_MAP.updated]: 0,
-  [TYPE_INDEX_MAP.number]: 0,
-  [TYPE_INDEX_MAP.timestamp]: 0,
-  [TYPE_INDEX_MAP.enum]: 0,
-  [TYPE_INDEX_MAP.id]: 0,
-  [TYPE_INDEX_MAP.int16]: 0,
-  [TYPE_INDEX_MAP.int32]: 0,
-  [TYPE_INDEX_MAP.int8]: 0,
-  [TYPE_INDEX_MAP.uint8]: 0,
-  [TYPE_INDEX_MAP.uint16]: 0,
-  [TYPE_INDEX_MAP.uint32]: 0,
-  [TYPE_INDEX_MAP.json]: undefined,
-  [TYPE_INDEX_MAP.microbuffer]: undefined,
-  [TYPE_INDEX_MAP.reference]: undefined,
-  [TYPE_INDEX_MAP.references]: [],
-  [TYPE_INDEX_MAP.string]: '',
-  [TYPE_INDEX_MAP.aliases]: [],
-  [TYPE_INDEX_MAP.text]: '',
-  [TYPE_INDEX_MAP.vector]: undefined, // maybe not can set a vec with 0
-}
-
 export const REVERSE_SIZE_MAP: Record<TypeIndex, number> = {}
 
 for (const k in SIZE_MAP) {
