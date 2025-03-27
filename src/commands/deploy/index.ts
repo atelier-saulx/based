@@ -140,9 +140,7 @@ export const deploy = async (program: Command) => {
 
               if (found.type === 'schema') {
                 context.print
-                  .line()
                   .intro(context.i18n('methods.schema.unavailable'))
-                  .pipe()
                   .warning(context.i18n('methods.schema.setSchema'))
 
                 continue
@@ -177,10 +175,9 @@ export const deploy = async (program: Command) => {
                 if (logs.some(Boolean) && !greetings) {
                   greetings = true
 
-                  context.print
-                    .line()
-                    .intro(context.i18n('commands.deploy.methods.deployLive'))
-                    .pipe()
+                  context.print.intro(
+                    context.i18n('commands.deploy.methods.deployLive'),
+                  )
 
                   for (const log of logs) {
                     if (log) {
@@ -188,17 +185,13 @@ export const deploy = async (program: Command) => {
                     }
                   }
 
-                  context.print
-                    .pipe()
-                    .outro(
-                      context.i18n('commands.deploy.methods.deployComplete'),
-                    )
+                  context.print.outro(
+                    context.i18n('commands.deploy.methods.deployComplete'),
+                  )
                 } else {
-                  context.print
-                    .pipe()
-                    .outro(
-                      context.i18n('commands.deploy.methods.deployComplete'),
-                    )
+                  context.print.outro(
+                    context.i18n('commands.deploy.methods.deployComplete'),
+                  )
                 }
               }
             }

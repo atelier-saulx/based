@@ -34,9 +34,9 @@
   },
   "dependencies": {
     "@based/functions": "^3.2.1",
-    "@based/bundle": "^0.4.10",
+    "@based/bundle": "^0.4.11",
     "@based/client": "^6.11.1",
-    "@based/db": "^0.0.20",
+    "@based/db": "^0.0.25",
     "@based/i18n": "^0.3.0",
     "@based/server": "^9.2.1",
     "@clack/prompts": "^0.7.0",

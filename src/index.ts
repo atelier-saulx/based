@@ -36,11 +36,9 @@ export const cli = async () => {
 
     const appName = context.get('appName')
     const versionNo = context.get('appVersion')
-    context.print
-      .intro(
-        `<bgPrimary><b> ${appName} </b></bgPrimary> <dim>${versionNo}</dim>`,
-      )
-      .pipe()
+    context.print.intro(
+      `<bgPrimary><b> ${appName} </b></bgPrimary> <dim>${versionNo}</dim>`,
+    )
 
     await program.parseAsync(process.argv)
   } catch (error) {

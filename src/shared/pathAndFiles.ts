@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { dirname, isAbsolute, join, relative } from 'node:path'
 import type { BundleResult } from '@based/bundle'
 import { getFileByPath } from './getFile.js'
 
@@ -200,38 +200,27 @@ export const findConfigFile = async (
   file: string,
   mapping: Record<string, Based.Deploy.Configs>,
   nodeBundles: BundleResult,
-  // browserBundles: BundleResult
 ): Promise<Based.Deploy.Configs | undefined> => {
-  // const target = mapping[file]
+  const found = mapping[file]
 
-  // if (target) {
+  if (found) {
+    if (isConfigFile(file)) {
+      const mtimeMs = await getMtimeMs(file)
 
-  // } else {
-  //   console.warn
-  // }
-
-  let currentDir = dirname(resolve(process.cwd(), file))
-  while (currentDir !== dirname(currentDir)) {
-    if (mapping[currentDir]) {
-      if (isConfigFile(file)) {
-        const mtimeMs = await getMtimeMs(file)
-
-        if (mapping[currentDir].mtimeMs !== mtimeMs) {
-          if (file.endsWith('.json')) {
-            mapping[currentDir].config = await getFileByPath(file)
-          } else {
-            const compiled = nodeBundles.require(file)
-            mapping[currentDir].config = compiled.default || compiled
-          }
-
-          mapping[currentDir].mtimeMs = mtimeMs
+      if (found.mtimeMs !== mtimeMs) {
+        if (file.endsWith('.json')) {
+          found.config = await getFileByPath(file)
+        } else {
+          const compiled = nodeBundles.require(file)
+          found.config = compiled.default || compiled
         }
-      }
 
-      return mapping[currentDir]
+        found.mtimeMs = mtimeMs
+      }
     }
 
-    currentDir = dirname(currentDir)
+    return found
   }
+
   return undefined
 }

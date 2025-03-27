@@ -16,7 +16,13 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
-import { findConfigFile } from '../../shared/pathAndFiles.js'
+import {
+  findConfigFile,
+  isConfigFile,
+  isIndexFile,
+  isInfraFile,
+  isSchemaFile,
+} from '../../shared/pathAndFiles.js'
 import { configsBundle } from '../deploy/configsBundle.js'
 import { configsParse } from '../deploy/configsParse.js'
 import { filesBundle } from '../deploy/filesBundle.js'
@@ -142,9 +148,7 @@ export const devServer = async ({
   }
 
   context.print
-    .line()
     .intro('<primary><b>Based Dev Server</b></primary>')
-    .pipe()
     .step(`<dim><b>Local</b>: http://localhost:${devPort}</dim>`)
     .step(`<dim><b>Public</b>: http://${ip}:${devPort}</dim>`)
     .pipe()
@@ -167,20 +171,27 @@ export const devServer = async ({
       }
     }
 
-    /*
-    // /a/b/c/index.js // bundle JS/CSS
-    /a/b/c/based.config.js type: config
-    // /a/b/c/based.schema.js type: schema
-    */
-
     const changedEntryPoints =
       result.changed
-        ?.map(
-          ({ path }) =>
-            // TODO: check if this is enough for css
-            this.result.metafile.outputs[relative(process.cwd(), path)]
-              .entryPoint,
-        )
+        ?.map(({ path }) => {
+          const changedFile = relative(process.cwd(), path)
+          const entryPoint =
+            this.result.metafile.outputs[changedFile].entryPoint
+
+          if (entryPoint) {
+            return join(process.cwd(), entryPoint)
+          }
+
+          for (const file in this.result.metafile.outputs) {
+            const output = this.result.metafile.outputs[file]
+
+            if (output.cssBundle === changedFile) {
+              return join(process.cwd(), output.entryPoint)
+            }
+          }
+
+          return ''
+        })
         .filter(Boolean) ||
       result.updates.map(([_type, file]) => file) ||
       []
@@ -191,7 +202,13 @@ export const devServer = async ({
       const found = await findConfigFile(file, mapping, nodeBundles)
 
       if (found) {
-        file = found.app || found.index || found.path
+        if (isConfigFile(file) || isSchemaFile(file) || isInfraFile(file)) {
+          file = found.path
+        } else if (isIndexFile(file)) {
+          file = found.index
+        } else if (found.app) {
+          file = found.app
+        }
 
         if (!file) {
           continue
@@ -203,9 +220,12 @@ export const devServer = async ({
           continue
         }
 
+        if (found.type === 'infra') {
+          continue
+        }
+
         const specsResult = await createSpecsFromConfigs(
           context,
-          file,
           found,
           nodeBundles,
           browserBundles,
@@ -284,7 +304,6 @@ function prepareAppFiles(
 
 async function createSpecsFromConfigs(
   context: AppContext,
-  file: string,
   found: Based.Deploy.Configs,
   nodeBundles: BundleResult,
   browserBundles: BundleResult,
@@ -303,10 +322,10 @@ async function createSpecsFromConfigs(
   let app: Record<'html' | 'js' | 'css' | 'favicon', OutputFile>
 
   if (isApp) {
-    app = prepareAppFiles(file, found.favicon, browserBundles)
+    app = prepareAppFiles(found.app, found.favicon, browserBundles)
   }
 
-  const js = nodeBundles.js(found.index)
+  const js: OutputFile = nodeBundles.js(found.index || found.path)
 
   if (!js) {
     return undefined

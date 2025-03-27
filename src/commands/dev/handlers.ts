@@ -12,9 +12,9 @@ export const bundlingErrorHandling =
     }
 
     if (errors.length) {
-      context.print
-        .line()
-        .intro(`<red>${context.i18n('methods.bundling.errorDetected')}</red>`)
+      context.print.intro(
+        `<red>${context.i18n('methods.bundling.errorDetected')}</red>`,
+      )
 
       for (const error of errors) {
         if (error.location) {
@@ -70,10 +70,7 @@ export const bundlingUpdateHandling =
       }
 
       if (!intro) {
-        context.print
-          .line()
-          .intro(context.i18n('methods.bundling.changeDetected'))
-          .pipe()
+        context.print.intro(context.i18n('methods.bundling.changeDetected'))
         intro = true
       }
 

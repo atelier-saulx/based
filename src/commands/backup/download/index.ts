@@ -136,10 +136,10 @@ export const getDownload = async (
       await writeFile(replaceTilde(path), buffer)
 
       context.spinner.stop()
-    } catch (error) {
+    } catch {
       throw new Error(context.i18n('errors.902', path))
     }
-  } catch (error) {
+  } catch {
     throw new Error(context.i18n('errors.905'))
   }
 
