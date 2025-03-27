@@ -71,7 +71,7 @@ await test('single simple', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -125,7 +125,7 @@ await test('simple nested', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -227,7 +227,7 @@ await test('single reference object', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -309,7 +309,7 @@ await test('nested', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -621,7 +621,7 @@ await test('single reference multi refs strings', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -718,7 +718,7 @@ await test('update same value', async (t) => {
     path: t.tmp,
   })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
   await db.start({ clean: true })
   await db.setSchema({

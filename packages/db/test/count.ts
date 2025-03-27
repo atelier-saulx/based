@@ -10,7 +10,7 @@ await test('branchedCount', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -80,12 +80,7 @@ await test('branchedCount', async (t) => {
       .toObject(),
   )
 
-  await db
-  .query('user')
-  .filter('flap', '>', 20)
-  .count()
-  .get()
-  .inspect()
+  await db.query('user').filter('flap', '>', 20).count().get().inspect()
 
   // console.log(
   //   await db

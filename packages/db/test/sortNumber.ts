@@ -10,7 +10,7 @@ await test('numbers', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   const animals = ['pony', 'whale', 'dolphin', 'dog']

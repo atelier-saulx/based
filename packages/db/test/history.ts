@@ -12,7 +12,7 @@ await test.skip('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })

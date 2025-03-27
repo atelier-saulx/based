@@ -14,7 +14,7 @@ await test('simple', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -191,7 +191,7 @@ await test('string + refs', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -350,7 +350,7 @@ await test('Big string disable compression', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -440,7 +440,7 @@ await test('Big string', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -499,7 +499,7 @@ await test('schema compression prop', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({

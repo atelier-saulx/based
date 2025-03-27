@@ -11,7 +11,7 @@ await test('subscription  multiple', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -64,7 +64,7 @@ await test('subscription filter', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -147,7 +147,7 @@ await test('subscription id', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   db.setSchema({
@@ -260,7 +260,7 @@ await test('subscription mixed', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   db.setSchema({
@@ -362,7 +362,7 @@ await test('subscription listener', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({

@@ -14,7 +14,7 @@ await test('variable size (string/binary)', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -172,7 +172,7 @@ await test('has compressed', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
   await db.setSchema({
     types: {
@@ -215,7 +215,7 @@ await test('has uncompressed', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -346,7 +346,7 @@ await test('main has (string/binary)', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
   await db.setSchema({
     types: {
@@ -390,7 +390,7 @@ await test('has normalized uncompressed', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -430,7 +430,7 @@ await test('has normalized compressed', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -470,7 +470,7 @@ await test('has OR uncompressed', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -545,7 +545,7 @@ await test('has OR compressed', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -591,7 +591,7 @@ await test('OR equal', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -635,7 +635,7 @@ await test('OR equal main', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({

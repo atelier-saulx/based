@@ -8,7 +8,7 @@ await test('single', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
   const status = ['error', 'danger', 'ok', '🦄']
 
@@ -119,7 +119,7 @@ await test('simple', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   const status = ['error', 'danger', 'ok', '🦄']
@@ -593,7 +593,7 @@ await test('or', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   const status = ['error', 'danger', 'ok', '🦄']
@@ -745,7 +745,7 @@ await test('or numerical', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({

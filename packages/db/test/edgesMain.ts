@@ -8,7 +8,7 @@ await test('multiple', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -218,7 +218,7 @@ await test('single', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -305,7 +305,7 @@ await test('manyFields', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })

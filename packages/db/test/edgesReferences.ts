@@ -8,7 +8,7 @@ await test('multi reference', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -165,7 +165,7 @@ await test('multiple references', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })

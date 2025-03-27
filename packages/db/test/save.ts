@@ -10,7 +10,7 @@ await test('simple', async (t) => {
 
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -138,7 +138,7 @@ await test('empty root', async (t) => {
   await db.start()
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -167,7 +167,7 @@ await test('refs', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -236,7 +236,7 @@ await test('auto save', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -272,7 +272,7 @@ await test('text', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -355,7 +355,7 @@ await test.skip('db is drained before save', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   const people = await Promise.all([
@@ -398,7 +398,10 @@ await test.skip('db is drained before save', async (t) => {
   })
   await db2.start()
 
-  deepEqual(await db2.query('person').include('name', 'books').get().toObject(), await db.query('person').include('name', 'books').get().toObject())
+  deepEqual(
+    await db2.query('person').include('name', 'books').get().toObject(),
+    await db.query('person').include('name', 'books').get().toObject(),
+  )
 })
 
 await test('create', async (t) => {
@@ -419,7 +422,7 @@ await test('create', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   db.create('person', {
@@ -456,7 +459,8 @@ await test('create', async (t) => {
 
   deepEqual(
     await db2.query('person').get().toObject(),
-    await db.query('person').get().toObject())
+    await db.query('person').get().toObject(),
+  )
 })
 
 await test('upsert', async (t) => {
@@ -478,7 +482,7 @@ await test('upsert', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   const joe = db.create('person', {
@@ -525,7 +529,7 @@ await test.skip('alias blocks', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   for (let i = 0; i < 100_000; i++) {
@@ -559,7 +563,8 @@ await test.skip('alias blocks', async (t) => {
 
   deepEqual(
     await db2.query('person').get().toObject(),
-    await db.query('person').get().toObject())
+    await db.query('person').get().toObject(),
+  )
 })
 
 await test('simulated periodic save', async (t) => {
@@ -590,7 +595,7 @@ await test('simulated periodic save', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   // create some people
@@ -676,17 +681,72 @@ await test('simulated periodic save', async (t) => {
   //console.log(await db.query('person').include('name', 'alias').get().toObject())
   //console.log(await db2.query('person').include('name', 'alias').get().toObject())
   // Change node using alias saved
-  deepEqual(await db.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
-  deepEqual(await db2.query('person').filter('alias', 'has', 'slim').include('alias', 'name').get().toObject(), [{ id: 1, alias: 'slim', name: 'Shady' }])
+  deepEqual(
+    await db
+      .query('person')
+      .filter('alias', 'has', 'slim')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 1, alias: 'slim', name: 'Shady' }],
+  )
+  deepEqual(
+    await db2
+      .query('person')
+      .filter('alias', 'has', 'slim')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 1, alias: 'slim', name: 'Shady' }],
+  )
 
   // Replace alias saved
-  deepEqual(await db.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
-  deepEqual(await db2.query('person').filter('alias', 'has', 'slick').include('alias', 'name').get().toObject(), [{ id: 6, alias: 'slick', name: 'Slide' }])
+  deepEqual(
+    await db
+      .query('person')
+      .filter('alias', 'has', 'slick')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 6, alias: 'slick', name: 'Slide' }],
+  )
+  deepEqual(
+    await db2
+      .query('person')
+      .filter('alias', 'has', 'slick')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 6, alias: 'slick', name: 'Slide' }],
+  )
 
   // Move alias saved
-  deepEqual(await db.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
-  deepEqual(await db2.query('person').filter('alias', 'has', 'boss').include('alias', 'name').get().toObject(), [{ id: 5, name: 'Steve', alias: 'boss' }])
+  deepEqual(
+    await db
+      .query('person')
+      .filter('alias', 'has', 'boss')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 5, name: 'Steve', alias: 'boss' }],
+  )
+  deepEqual(
+    await db2
+      .query('person')
+      .filter('alias', 'has', 'boss')
+      .include('alias', 'name')
+      .get()
+      .toObject(),
+    [{ id: 5, name: 'Steve', alias: 'boss' }],
+  )
 
   // All have the same books
-  deepEqual(await db2.query('person').include('name', 'alias', 'books').get().toObject(), await db.query('person').include('name', 'alias', 'books').get().toObject())
+  deepEqual(
+    await db2
+      .query('person')
+      .include('name', 'alias', 'books')
+      .get()
+      .toObject(),
+    await db.query('person').include('name', 'alias', 'books').get().toObject(),
+  )
 })

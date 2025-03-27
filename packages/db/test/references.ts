@@ -8,7 +8,7 @@ await test('references', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -105,7 +105,7 @@ await test('one to many', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -214,7 +214,7 @@ await test('one to many really', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -494,7 +494,7 @@ await test('update', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -574,7 +574,7 @@ await test('filter', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({

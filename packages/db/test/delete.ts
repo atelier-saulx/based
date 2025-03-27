@@ -10,7 +10,7 @@ await test('delete', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -87,7 +87,7 @@ await test('non existing', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.putSchema({
@@ -149,7 +149,7 @@ await test('non existing', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.putSchema({
@@ -211,7 +211,7 @@ await test('save', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -252,5 +252,5 @@ await test('save', async (t) => {
   await db2.start()
 
   deepEqual(await db2.query('user').include('id').get().toObject(), [{ id: 2 }])
-  deepEqual(await db.query('user').include('id').get().toObject(),  [{id: 2 }])
+  deepEqual(await db.query('user').include('id').get().toObject(), [{ id: 2 }])
 })

@@ -8,7 +8,7 @@ await test('references modify', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -110,7 +110,7 @@ await test('references modify 2', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -161,7 +161,7 @@ await test('reference move', async (t) => {
   })
 
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.start({ clean: true })
@@ -220,7 +220,10 @@ await test('reference move', async (t) => {
   await db.update('a', a, {
     bees: [b2, b2],
   })
-  deepEqual((await db.query('a').include('bees').get()).toObject()[0].bees.length, 1)
+  deepEqual(
+    (await db.query('a').include('bees').get()).toObject()[0].bees.length,
+    1,
+  )
   deepEqual(
     (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
     2,
