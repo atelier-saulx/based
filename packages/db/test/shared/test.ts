@@ -86,7 +86,23 @@ const test = async (
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
   }
 
-  await Promise.all(afters.map((f) => f()))
+  try {
+    await Promise.all(afters.map((f) => f()))
+  } catch (err) {
+    counts.errors++
+    console.log(
+      picocolors.red(`! ${name}`),
+      picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
+    )
+
+    const msg =
+      (err.stack ?? err.msg ?? err)
+        .replace(/\.js(?=\s|$)/g, '.ts')
+        .replaceAll('/dist/', '/')
+        .replace('Error: ', '\n') + '\n'
+    console.log(picocolors.red(msg))
+    errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
+  }
 }
 
 test.skip = async (name: string, fn: (t?: any) => Promise<void>) => {
@@ -152,7 +168,7 @@ Good: ${counts.success}
 
   if (counts.errors > 0) {
     if (!process.env.TEST_TO_RUN) {
-      msg = `Failed tests: \n${Array.from(errors).join('\n\n')}\n${msg}`
+      // msg = `Failed tests: \n${Array.from(errors).join('\n\n')}\n${msg}`
     }
     console.log(picocolors.red(msg))
   } else if (counts.success) {
