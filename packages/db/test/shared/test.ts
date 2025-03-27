@@ -1,6 +1,10 @@
 import picocolors from 'picocolors'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
+import { BasedDb } from '../../src/index.js'
+import { lastExec } from './assert.js'
+import { deepEqual } from 'assert'
+import { wait } from '@saulx/utils'
 
 export const counts = {
   errors: 0,
@@ -16,6 +20,7 @@ const test = async (
   name: string,
   fn: (t?: any) => Promise<void>,
 ): Promise<any> => {
+  lastExec.args = undefined
   if (
     process.env.TEST_TO_RUN &&
     !name.toLowerCase().includes(process.env.TEST_TO_RUN.toLowerCase())
@@ -31,6 +36,32 @@ const test = async (
   const t = {
     after: (fn) => {
       afters.push(fn)
+    },
+    backup: async (db: BasedDb) => {
+      const checksums = []
+
+      for (const type in db.server.schema.types) {
+        const x = await db.query(type).include().get()
+        checksums.push(x.checksum)
+      }
+
+      await db.stop()
+      const newDb = new BasedDb({
+        path: t.tmp,
+      })
+      await newDb.start()
+
+      const backupChecksums = []
+
+      for (const type in newDb.server.schema.types) {
+        const x = await newDb.query(type).get()
+        backupChecksums.push(x.checksum)
+      }
+
+      deepEqual(checksums, backupChecksums, 'From backup is equal')
+
+      await wait(10)
+      await newDb.destroy()
     },
     tmp: resolve(join(__dirname, relativePath)),
   }

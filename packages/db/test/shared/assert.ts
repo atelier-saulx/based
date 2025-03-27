@@ -3,7 +3,13 @@ import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
 import color from 'picocolors'
 
+export const lastExec: any = {
+  args: [],
+}
+
+// add fn
 export const deepEqual = (a, b, msg?: string) => {
+  lastExec.args = [a, b, msg]
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
