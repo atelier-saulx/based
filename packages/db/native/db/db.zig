@@ -6,6 +6,7 @@ const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 
+
 const read = utils.read;
 
 pub const TypeId = u16;
@@ -37,6 +38,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
+    const dirtyBlocks = try allocator.create([100]u64);
     b.* = .{
         .id = 0,
         .arena = arena.*,
