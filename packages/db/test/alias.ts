@@ -427,3 +427,53 @@ await test('Update existing alias field', async (t) => {
     },
   )
 })
+
+await test('same-name-alias', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          name: 'alias',
+        },
+      },
+      round: {
+        props: {
+          name: 'alias',
+        },
+      },
+    },
+  })
+
+  const sequences = [
+    { name: 'semi1' },
+    { name: 'semi1-othershit' },
+    { name: 'semi2' },
+    { name: 'semi2-othershit' },
+  ]
+  const rounds = [{ name: 'semi1' }, { name: 'semi2' }, { name: 'final' }]
+
+  for (const sequence of sequences) {
+    db.upsert('sequence', sequence)
+  }
+  for (const round of rounds) {
+    await db.upsert('round', round)
+  }
+
+  await db.drain()
+
+  deepEqual(await db.query('round').get().toObject(), [
+    { id: 1, name: 'semi1' },
+    { id: 2, name: 'semi2' },
+    { id: 3, name: 'final' },
+  ])
+})
