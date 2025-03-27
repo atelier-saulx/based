@@ -150,8 +150,9 @@ export class DbServer {
       maxNrChanges += def.lastId
     }
 
-    if (this.modifyDirtyRanges.length < maxNrChanges) {
-      this.modifyDirtyRanges = new Float64Array(maxNrChanges * 1.2 | 0)
+    if (!this.modifyDirtyRanges || this.modifyDirtyRanges.length < maxNrChanges) {
+      const min = Math.max(maxNrChanges * 1.2, 1000) | 0
+      this.modifyDirtyRanges = new Float64Array(min)
     }
   }
 
