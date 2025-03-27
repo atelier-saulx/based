@@ -21,7 +21,7 @@ pub const ModifyCtx = struct {
     fieldType: types.Prop,
     db: *db.DbCtx,
     typeInfo: []u8,
-    dirtyBlocks: std.AutoHashMap(u64, null); ,
+    dirtyBlocks: std.AutoArrayHashMap(u64, u64),
 };
 
 pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
@@ -35,6 +35,6 @@ pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
     return 0;
 }
 
-pub inline markDirtyRange(ctx: *ModifyCtx) void {
-    ctx.dirtyBlocks.put(ctx.id, null);    
+pub inline fn markDirtyRange(ctx: *ModifyCtx) void {
+    ctx.dirtyBlocks.put(ctx.id, ctx.id) catch return;
 }

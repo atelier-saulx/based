@@ -15,7 +15,7 @@ const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
-const dbSort = @import("../db//sort.zig");
+const dbSort = @import("../db/sort.zig");
 const increment = Update.increment;
 
 const read = utils.read;
@@ -32,7 +32,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const batch = try napi.get([]u8, env, args[0]);
     const typeInfo = try napi.get([]u8, env, args[1]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
-    const dirtyBlocks = try napi.get([]u8, env, args[3]);
+    //const dirtyBlocks = try napi.get([]u8, env, args[3]);
 
     var i: usize = 0;
     var ctx: ModifyCtx = .{
@@ -47,9 +47,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .fieldType = types.Prop.NULL,
         .db = dbCtx,
         .typeInfo = typeInfo,
-        // dont want
-        .dirtyBlocks = ModifyCtx.dirtyBlocks.init(dbCtx.allocator),
+        .dirtyBlocks = std.AutoArrayHashMap(u64, u64).init(dbCtx.allocator),
     };
+    defer ctx.dirtyBlocks.deinit(); // is this enough or will it leak something, the docs are unclear??
 
     var offset: u32 = 0;
     var idOffset: u32 = 0;
@@ -95,7 +95,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.SWITCH_NODE => {
                 // put the correct
                 // dirtyBlocks
-                markDirtyRange(&ctx);
+                Modify.markDirtyRange(&ctx);
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
@@ -144,12 +144,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     }
 
     selva.selva_db_expire_tick(dbCtx.selva, std.time.timestamp());
-
-    // it hurts!
-
-    // first 8 bytes of dirtyBlocks - is SIZE 
-    // then loops trough each in the set
-    dbCtx.allocator.free(ModifyCtx.dirtyBlocks);
 
     return null;
 }
