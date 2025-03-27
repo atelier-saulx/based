@@ -147,11 +147,15 @@ export class DbServer {
 
     for (const typeId in this.schemaTypesParsedById) {
       const def = this.schemaTypesParsedById[typeId]
-      maxNrChanges += def.lastId
+      const lastId = def.lastId
+      const blockCapacity = def.blockCapacity
+      const tmp = lastId - +!(lastId % def.blockCapacity)
+      const lastBlock = Math.ceil((((tmp / blockCapacity) | 0) * blockCapacity + 1) / blockCapacity)
+      maxNrChanges += lastBlock
     }
 
     if (!this.modifyDirtyRanges || this.modifyDirtyRanges.length < maxNrChanges) {
-      const min = Math.max(maxNrChanges * 1.2, 1000) | 0
+      const min = Math.max(maxNrChanges * 1.2, 1024) | 0
       this.modifyDirtyRanges = new Float64Array(min)
     }
   }
