@@ -101,7 +101,10 @@ function _modify(
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8
           ctx.lastMain = ctx.len
-          ctx.buf.fill(0, ctx.len, (ctx.len += schema.mainLen))
+
+          ctx.buf.set(schema.mainEmpty, ctx.len)
+          ctx.len += schema.mainLen
+          // ctx.buf.fill(0, ctx.len, (ctx.len += schema.mainLen))
         }
         if (typeof val === 'object' && val !== null && 'increment' in val) {
           err = writeFixedValue(

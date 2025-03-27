@@ -100,7 +100,10 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(edge, value)
           }
-          if (ctx.len + EDGE_HEADER_SIZE + ENCODER.encode(value).byteLength > ctx.max) {
+          if (
+            ctx.len + EDGE_HEADER_SIZE + ENCODER.encode(value).byteLength >
+            ctx.max
+          ) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = STRING
@@ -297,6 +300,7 @@ export function writeEdges(
       const sIndex = ctx.len
       ctx.len += mainFieldsStartSize
 
+      // this has to be replaced
       // Add zeroes
       ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
 

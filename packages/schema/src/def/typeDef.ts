@@ -15,6 +15,7 @@ import {
   SchemaTypesParsedById,
   SchemaTypesParsed,
   DEFAULT_MAP,
+  BOOLEAN,
 } from './types.js'
 import { StrictSchema } from '../types.js'
 import { makePacked } from './makePacked.js'
@@ -25,6 +26,7 @@ import { isSeparate } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
@@ -135,7 +137,7 @@ export const createSchemaTypeDef = (
         path: propPath,
         start: 0,
         len,
-        default: DEFAULT_MAP[TYPE_INDEX_MAP[propType]],
+        default: schemaProp.default ?? DEFAULT_MAP[TYPE_INDEX_MAP[propType]],
         prop: isseparate ? ++result.cnt : 0,
       }
       if (isPropType('enum', schemaProp)) {
@@ -214,12 +216,9 @@ export const createSchemaTypeDef = (
         setByPath(result.tree, f.path, f)
       }
     }
-    result.mainEmpty = new Uint8Array(result.mainLen)
-    for (const f of vals) {
-      if (!f.separate) {
-        // console.log(f)
-      }
-    }
+    result.mainEmpty = fillEmptyMain(vals, result.mainLen)
+    result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
+
     makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)

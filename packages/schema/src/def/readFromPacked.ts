@@ -105,6 +105,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
     },
 
     mainEmpty: new Uint8Array([]),
+    mainEmptyAllZeroes: true,
     // need this...
     locales: {},
     localeSize: 0,
