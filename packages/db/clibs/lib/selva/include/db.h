@@ -177,6 +177,6 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  * Set new alias.
  * `new_alias` must be allocated with selva_jemalloc.
  */
-void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
+node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
 #include "selva/db.h"
