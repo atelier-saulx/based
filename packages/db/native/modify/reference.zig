@@ -18,7 +18,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     var id = read(u32, data, 1);
 
     if (isTmpId) {
-        id = id + Modify.getIdOffset(ctx.*, refTypeId);
+        id = id + Modify.getIdOffset(ctx, refTypeId);
     }
 
     const node = try db.upsertNode(id, refTypeEntry);

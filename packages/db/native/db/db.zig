@@ -38,7 +38,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
-    const dirtyBlocks = try allocator.create([100]u64);
     b.* = .{
         .id = 0,
         .arena = arena.*,
