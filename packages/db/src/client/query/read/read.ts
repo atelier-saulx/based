@@ -449,6 +449,7 @@ export const resultToObject = (
     }
     return []
   }
+
   let items = []
   let i = 5 + offset
 
@@ -474,6 +475,10 @@ export const resultToObject = (
   }
 
   if ('id' in q.target || 'alias' in q.target) {
+    if (q.type === QueryDefType.Root) {
+      // Todo can be optimized
+      delete items[0].id
+    }
     return items[0]
   }
 

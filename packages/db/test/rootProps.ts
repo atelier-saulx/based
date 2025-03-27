@@ -8,12 +8,7 @@ await test('rootProps', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(async () => {
-    const d = performance.now()
-    await db.destroy()
-    console.log(performance.now() - d, 'ms')
-  })
+  t.after(async () => t.backup(db))
 
   await db.setSchema({
     props: {
@@ -47,20 +42,17 @@ await test('rootProps', async (t) => {
 
   await db.update(rootData)
 
-  let rootRes = (await db.query().get()).toObject()
+  let rootRes = await db.query().get()
 
-  deepEqual(rootRes, { id: 1, ...rootData })
-
-  console.log({ article })
+  deepEqual(rootRes, rootData)
 
   await db.update({
     bestArticles: [article],
   })
 
-  rootRes = (await db.query().include('bestArticles').get()).toObject()
+  rootRes = await db.query().include('bestArticles').get()
 
   deepEqual(rootRes, {
-    id: 1,
     bestArticles: [{ id: 1, name: 'best article', body: 'success' }],
   })
 })
