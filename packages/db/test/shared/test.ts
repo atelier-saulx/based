@@ -2,8 +2,7 @@ import picocolors from 'picocolors'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
-import { lastExec } from './assert.js'
-import { deepEqual } from 'assert'
+import { deepEqual } from './assert.js'
 import { wait } from '@saulx/utils'
 
 export const counts = {
@@ -20,7 +19,6 @@ const test = async (
   name: string,
   fn: (t?: any) => Promise<void>,
 ): Promise<any> => {
-  lastExec.args = undefined
   if (
     process.env.TEST_TO_RUN &&
     !name.toLowerCase().includes(process.env.TEST_TO_RUN.toLowerCase())
