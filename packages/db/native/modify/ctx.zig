@@ -6,6 +6,9 @@ const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
 
+
+
+
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
@@ -18,9 +21,10 @@ pub const ModifyCtx = struct {
     fieldType: types.Prop,
     db: *db.DbCtx,
     typeInfo: []u8,
+    dirtyBlocks: std.AutoHashMap(u64, null); ,
 };
 
-pub fn getIdOffset(ctx: ModifyCtx, typeId: u16) u32 {
+pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
     var j: usize = 0;
     while (j < ctx.typeInfo.len) : (j += 10) {
         const tId = read(u16, ctx.typeInfo, j);
@@ -29,4 +33,8 @@ pub fn getIdOffset(ctx: ModifyCtx, typeId: u16) u32 {
         }
     }
     return 0;
+}
+
+pub inline markDirtyRange(ctx: *ModifyCtx) void {
+    ctx.dirtyBlocks.put(ctx.id, null);    
 }
