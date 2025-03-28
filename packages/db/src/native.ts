@@ -37,8 +37,8 @@ export default {
     return db.intFromExternal(external)
   },
 
-  modify: (data: Uint8Array, types: Uint8Array, dbCtx: any): any => {
-    db.modify(data, types, dbCtx)
+  modify: (data: Uint8Array, types: Uint8Array, dbCtx: any, dirtyBlocksOut: Float64Array): any => {
+    db.modify(data, types, dbCtx, dirtyBlocksOut)
   },
 
   getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {

@@ -308,6 +308,9 @@ export class DbClient {
 
   // For more advanced / internal usage - use isModified instead for most cases
   async drain() {
+    if (this.upserting.size) {
+      await Promise.all(this.upserting.values().map(({ p }) => p))
+    }
     await flushBuffer(this)
     const t = this.writeTime
     this.writeTime = 0

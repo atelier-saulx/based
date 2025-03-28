@@ -71,6 +71,16 @@ struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_ty
 SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
+SELVA_EXPORT
+inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
+#if !__zig
+{
+    return te->blocks->block_capacity;
+}
+#else
+;
+#endif
+
 /**
  * Get the node schema for type.
  */

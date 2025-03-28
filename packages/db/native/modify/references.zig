@@ -18,7 +18,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
-    const idOffset = Modify.getIdOffset(ctx.*, refTypeId);
+    const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 
     _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
