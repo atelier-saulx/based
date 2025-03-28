@@ -655,8 +655,7 @@ static int load_reference_meta(
                             node->type, node->node_id, rd.field,
                             selva_str_field_type(rd.type),
                             selva_strerror(err));
-        }
-        if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+        } else if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
             selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
                             node->type, node->node_id, rd.field);
             err = SELVA_EINVAL;
@@ -853,8 +852,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
                             node->type, node->node_id, rd.field,
                             selva_str_field_type(rd.type),
                             selva_strerror(err));
-        }
-        if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+        } else if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
             selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
                             node->type, node->node_id, rd.field);
         }
