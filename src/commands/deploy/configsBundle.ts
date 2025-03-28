@@ -5,7 +5,6 @@ import { hash } from '@saulx/hash'
 import { readJSON } from 'fs-extra/esm'
 import type { AppContext } from '../../context/index.js'
 import {
-  getMtimeMs,
   isConfigFile,
   isIndexFile,
   isInfraFile,
@@ -152,7 +151,7 @@ export const configsBundle = async (
         result = {
           ...result,
           checksum: hash([result]),
-          mtimeMs: await getMtimeMs(path),
+          mtimeMs: 0,
         }
 
         if (mapping[path]) {

@@ -144,7 +144,7 @@ export const devServer = async ({
   )
 
   for (const found of configs) {
-    onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
+    await onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
   }
 
   context.print
@@ -216,7 +216,6 @@ export const devServer = async ({
 
         if (found.type === 'schema') {
           await basedServer.client.call('db:set-schema', found.config)
-
           continue
         }
 
@@ -477,7 +476,9 @@ async function createSpecsFromConfigs(
       specs[found.config.name].httpResponse = fn.httpResponse
     }
 
-    specs[found.config.name].version = checksum
+    if (found.config.name) {
+      specs[found.config.name].version = checksum
+    }
   }
 
   return { specs, reloadClients }
