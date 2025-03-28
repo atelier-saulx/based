@@ -104,7 +104,6 @@ export class DbWorker {
 type OnSchemaChange = (schema: StrictSchema) => void
 
 export class DbServer {
-  modifyBuf: SharedArrayBuffer
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
   schema: StrictSchema & { lastId: number } = {
