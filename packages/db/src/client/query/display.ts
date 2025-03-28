@@ -1,3 +1,4 @@
+import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import {
@@ -65,9 +66,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
       picocolors.blue(x.join('')) +
       (isLarger ? picocolors.dim('... ') : '') +
       picocolors.italic(
-        picocolors.dim(
-          `${~~((v.byteLength / 1e3) * 100) / 100}kb`,
-        ),
+        picocolors.dim(`${~~((v.byteLength / 1e3) * 100) / 100}kb`),
       )
     )
   }
@@ -76,9 +75,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
-        picocolors.dim(
-          `${~~((byteLength / 1e3) * 100) / 100}kb`,
-        ),
+        picocolors.dim(`${~~((byteLength / 1e3) * 100) / 100}kb`),
       )
       v =
         v.slice(0, 50).replace(/\n/g, '\\n ') +
@@ -148,6 +145,10 @@ const inspectObject = (
   isObject: boolean,
   depth: number,
 ) => {
+  console.log(
+    '------->',
+    inspect(object, { depth: null, customInspect: false }),
+  )
   const prefix = ''.padEnd(level, ' ')
   let str = ''
   if (isFirst || isObject) {
@@ -331,6 +332,7 @@ export const inspectData = (
       break
     }
   }
+
   if (length > max) {
     const morePrefix = ''.padStart(top ? 2 : level + 3, ' ')
     str +=

@@ -20,6 +20,7 @@ import {
   VECTOR,
   JSON,
   CARDINALITY,
+  NULL,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -39,8 +40,9 @@ import {
   READ_REFERENCES,
   READ_AGGREGATION,
   CREATE_AGGREGATION,
-  AggFn,
+  AggFlag,
 } from '../types.js'
+import { inspect } from 'node:util'
 
 export type Item = {
   id: number
@@ -189,7 +191,7 @@ const handleUndefinedProps = (
   q: QueryDef,
   item: Item | AggItem,
 ) => {
-  if (q.aggregation != AggFn.NONE) {
+  if (q.aggregation == AggFlag.NONE || q.aggregation == null) {
     for (const k in q.include.propsRead) {
       if (q.include.propsRead[k] !== id) {
         // Only relvant for seperate props
@@ -345,7 +347,8 @@ export const readAllFields = (
     } else if (index === CREATE_AGGREGATION) {
       i--
       result[i] = READ_AGGREGATION
-      q.aggregation = AggFn.NONE
+      result[0] = result[0] + 1
+      q.aggregation = AggFlag.TEMP
       return i - offset - 4 - (q.search ? 4 : 0)
     } else if (index === READ_AGGREGATION) {
       // TODO: To change to a map and also to get the aggregate field name from a query function parameter
@@ -356,6 +359,9 @@ export const readAllFields = (
       } as PropDefAggregate
       const size = readUint32(result, i)
       addField(propAgg, readUint32(result, i + 4), item)
+      result[0] = result[0] - 1
+      i--
+      result[i] = CREATE_AGGREGATION
       i += 4 + size + 4
     } else if (index === 0) {
       i += readMain(q, result, i, item)
@@ -456,8 +462,9 @@ export const resultToObject = (
     const id = readUint32(result, i)
     i += 4
     let item: AggItem
-    if (q.aggregation == AggFn.NONE) {
+    if (q.aggregation == AggFlag.TEMP) {
       item = {}
+      q.aggregation = AggFlag.COUNT
     } else {
       item = {
         id,

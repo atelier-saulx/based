@@ -98,7 +98,7 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDef
-  aggregation: AggFn
+  aggregation: AggFlag
 }
 
 export type QueryDefEdges = {
@@ -147,7 +147,8 @@ export const READ_REFERENCE = 254
 export const CREATE_AGGREGATION = 250
 export const READ_AGGREGATION = 251
 
-export const enum AggFn {
+export const enum AggFlag {
+  NONE = 0,
   AVG = 1,
   CARDINALITY = 2,
   CONCAT = 3, // string aggregation, delimiter should be an argument
@@ -160,5 +161,5 @@ export const enum AggFn {
   STDDEV = 10, // population or sample should be optional parameters, default = sample
   SUM = 11,
   VARIANCE = 12,
-  NONE = -999
+  TEMP = 255,
 }
