@@ -137,7 +137,7 @@ export const createSchemaTypeDef = (
         separate: isseparate,
         path: propPath,
         start: 0,
-        validation: VALIDATION_MAP[typeIndex],
+        validation: schemaProp.validate ?? VALIDATION_MAP[typeIndex],
         len,
         default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
         prop: isseparate ? ++result.cnt : 0,

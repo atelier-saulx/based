@@ -92,11 +92,16 @@ export class DbClient {
       return this.schema
     }
     const strictSchema = fromStart ? schema : parse(schema).schema
+
+    console.trace('Client stage this.hooks.setSchema')
+
     const remoteSchema = await this.hooks.setSchema(
       strictSchema as StrictSchema,
       fromStart,
       transformFns,
     )
+    console.log('Client DONE stage this.hooks.setSchema')
+
     this.schemaChecksum = checksum
     return this.putLocalSchema(remoteSchema)
   }

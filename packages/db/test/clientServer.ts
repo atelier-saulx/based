@@ -8,6 +8,7 @@ await test('client server', async (t) => {
   const server = new DbServer({
     path: t.tmp,
     onSchemaChange(schema) {
+      console.log('server schema change hook')
       client1.putLocalSchema(schema)
       client2.putLocalSchema(schema)
     },
@@ -21,6 +22,7 @@ await test('client server', async (t) => {
 
   const hooks: DbClientHooks = {
     async setSchema(schema, fromStart, transformFns) {
+      console.log('client schema hook flap')
       return server.setSchema(schema, fromStart, transformFns)
     },
     async flushModify(buf) {
@@ -59,10 +61,13 @@ await test('client server', async (t) => {
     name: 'jamez',
   })
 
-  deepEqual(await client1.query('user').get().toObject(), [
+  deepEqual(await client1.query('user').get(), [
     { id: 1, name: 'youzi' },
     { id: 2, name: 'jamez' },
   ])
+
+  console.log('\n\n---------------------------')
+  console.log('STEP 1: xx')
 
   await client1.setSchema({
     types: {
@@ -72,7 +77,9 @@ await test('client server', async (t) => {
     },
   })
 
-  deepEqual(await client1.query('user').get().toObject(), [
+  console.log('Y ---')
+
+  deepEqual(await client1.query('user').get(), [
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
@@ -104,23 +111,22 @@ await test('client server', async (t) => {
     name: 'marie',
   })
 
+  await client1.isModified()
+
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],
     favoriteUser: marie,
   })
 
-  deepEqual(
-    await client1.query('user', res).include('*', '**').get().toObject(),
-    {
-      id: 1,
-      age: 0,
-      name: 'youzi',
-      others: [
-        { id: 3, age: 0, name: 'fred' },
-        { id: 4, age: 0, name: 'marie' },
-      ],
-      favoriteUser: { id: 4, age: 0, name: 'marie' },
-    },
-  )
+  deepEqual(await client1.query('user', res).include('*', '**').get(), {
+    id: 1,
+    age: 0,
+    name: 'youzi',
+    others: [
+      { id: 3, age: 0, name: 'fred' },
+      { id: 4, age: 0, name: 'marie' },
+    ],
+    favoriteUser: { id: 4, age: 0, name: 'marie' },
+  })
 })

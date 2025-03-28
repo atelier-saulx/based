@@ -142,18 +142,23 @@ export class DbServer {
   }
 
   #resizeModifyDirtyRanges() {
-    let maxNrChanges = 0;
+    let maxNrChanges = 0
 
     for (const typeId in this.schemaTypesParsedById) {
       const def = this.schemaTypesParsedById[typeId]
       const lastId = def.lastId
       const blockCapacity = def.blockCapacity
       const tmp = lastId - +!(lastId % def.blockCapacity)
-      const lastBlock = Math.ceil((((tmp / blockCapacity) | 0) * blockCapacity + 1) / blockCapacity)
+      const lastBlock = Math.ceil(
+        (((tmp / blockCapacity) | 0) * blockCapacity + 1) / blockCapacity,
+      )
       maxNrChanges += lastBlock
     }
 
-    if (!this.modifyDirtyRanges || this.modifyDirtyRanges.length < maxNrChanges) {
+    if (
+      !this.modifyDirtyRanges ||
+      this.modifyDirtyRanges.length < maxNrChanges
+    ) {
       const min = Math.max(maxNrChanges * 1.2, 1024) | 0
       this.modifyDirtyRanges = new Float64Array(min)
     }
@@ -403,7 +408,9 @@ export class DbServer {
     fromStart: boolean = false,
     transformFns?: TransformFns,
   ) {
+    console.log('SERVER SETSCHEMA')
     if (!fromStart && Object.keys(this.schema.types).length > 0) {
+      console.log('?? need migrate')
       return this.migrateSchema(strictSchema, transformFns)
     }
 

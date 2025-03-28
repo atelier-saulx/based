@@ -94,8 +94,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 5;
             },
             types.ModOp.SWITCH_NODE => {
-                // put the correct
-                // dirtyBlocks
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 // RFE Do we actually want to do this here?
