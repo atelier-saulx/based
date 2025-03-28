@@ -497,6 +497,10 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
+    if (meta.len == 0) {
+        return 0;
+    }
+
     err = selva_fields_get_mutable_string(node, fs, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
