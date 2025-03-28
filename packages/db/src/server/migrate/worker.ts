@@ -7,7 +7,7 @@ import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { deepCopy } from '@saulx/utils'
+import { isTypedArray } from 'node:util/types'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -19,6 +19,28 @@ if (isMainThread) {
   const path = null
   const fromDb = new BasedDb({ path })
   const toDb = new BasedDb({ path })
+  const cp = (obj) => {
+    let copy: object
+    for (const key in obj) {
+      const val = obj[key]
+      if (typeof val === 'number') {
+        // only copy numbers
+        copy ??= Array.isArray(obj) ? [] : {}
+        copy[key] = val
+      } else if (
+        typeof val === 'object' &&
+        val !== null &&
+        !isTypedArray(val)
+      ) {
+        const res = cp(val)
+        if (res) {
+          copy ??= Array.isArray(obj) ? [] : {}
+          copy[key] = cp(val)
+        }
+      }
+    }
+    return copy
+  }
 
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
@@ -87,28 +109,10 @@ if (isMainThread) {
 
     await toDb.drain()
 
-    const fnMakeStringsOfFn = (obj) => {
-      for (const key in obj) {
-        if (typeof obj[key] === 'function') {
-          obj[key] = obj[key].toString()
-        } else if (typeof obj[key] === 'object') {
-          fnMakeStringsOfFn(obj[key])
-        }
-      }
-    }
-
-    console.log('--------#EQWEWEQ')
-
-    console.log(deepCopy(toDb.server.schema))
-
-    const x = fnMakeStringsOfFn(deepCopy(toDb.server.schema))
-    console.log({ x })
-
-    const y = fnMakeStringsOfFn(deepCopy(toDb.server.schemaTypesParsed))
-
-    console.log(x, y)
-    //
-    channel.postMessage([x, y])
+    channel.postMessage([
+      cp(toDb.server.schema),
+      cp(toDb.server.schemaTypesParsed),
+    ])
     // put it to sleep
     atomics[0] = 0
     Atomics.notify(atomics, 0)
