@@ -161,11 +161,16 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     assert(s && ((uintptr_t)s & 7) == 0);
 
     if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
+        int err;
+
         if (fs->string.fixed_len == 0) {
-            selva_string_init(s, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+            err = selva_string_init(s, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
         } else {
             assert(len <= fs->string.fixed_len);
-            selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
+            err = selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
+        }
+        if (err) {
+            s = nullptr;
         }
     }
 
@@ -776,7 +781,7 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
     nfo = ensure_field(fields, fs);
     *s = get_mutable_string(fields, fs, nfo, len);
 
-    return 0;
+    return !*s ? SELVA_EINVAL : 0;
 }
 
 struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
