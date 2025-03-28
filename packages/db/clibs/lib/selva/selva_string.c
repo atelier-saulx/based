@@ -17,8 +17,9 @@
 #include "libdeflate_strings.h"
 #include "selva_error.h"
 #include "selva/crc32c.h"
-#include "selva/selva_string.h"
 #include "finalizer.h"
+#include "bits.h"
+#include "selva/selva_string.h"
 
 /**
  * Don't use libdeflate_strings functions for compressed strings under this size.
@@ -223,12 +224,17 @@ static struct selva_string *set_string_crc(struct selva_string *s, const char *s
     return s;
 }
 
-static int init_check(const char *str, size_t len __unused, enum selva_string_flags flags)
+static int init_check(const char *str, size_t len, enum selva_string_flags flags)
 {
+#if 0
+    static_assert(bitsizeof(struct selva_string, len) == 56);
+#endif
+
     /* TODO Support compression. */
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_COMPRESS)) ||
         test_mutually_exclusive_flags(flags, (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
-        (!(flags & (SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_MUTABLE)) && !str)) {
+        (!(flags & (SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_MUTABLE)) && !str) ||
+        len > 72057594037927936) /* 2^56 */ {
         return SELVA_EINVAL;
     }
     return 0;
