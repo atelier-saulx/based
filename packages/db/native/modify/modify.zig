@@ -1,3 +1,4 @@
+const assert = std.debug.assert;
 const std = @import("std");
 const c = @import("../c.zig");
 const selva = @import("../selva.zig");
@@ -32,7 +33,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const batch = try napi.get([]u8, env, args[0]);
     const typeInfo = try napi.get([]u8, env, args[1]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
-    //const dirtyBlocks = try napi.get([]u8, env, args[3]);
+    const dirtyRanges = try napi.get([]f64, env, args[3]);
 
     var i: usize = 0;
     var ctx: ModifyCtx = .{
@@ -47,9 +48,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .fieldType = types.Prop.NULL,
         .db = dbCtx,
         .typeInfo = typeInfo,
-        .dirtyBlocks = std.AutoArrayHashMap(u64, u64).init(dbCtx.allocator),
+        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
     };
-    defer ctx.dirtyBlocks.deinit(); // is this enough or will it leak something, the docs are unclear??
+    defer ctx.dirtyRanges.deinit(); // is this enough or will it leak something, the docs are unclear??
 
     var offset: u32 = 0;
     var idOffset: u32 = 0;
@@ -95,9 +96,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.SWITCH_NODE => {
                 // put the correct
                 // dirtyBlocks
-                Modify.markDirtyRange(&ctx);
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                // RFE Do we actually want to do this here?
+                //Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {
@@ -142,6 +144,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
         }
     }
+
+    // Pass back newly discovered dirty blocks
+    const newDirtyRanges = ctx.dirtyRanges.values();
+    assert(newDirtyRanges.len < dirtyRanges.len);
+    _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    dirtyRanges[newDirtyRanges.len] = 0.0;
 
     selva.selva_db_expire_tick(dbCtx.selva, std.time.timestamp());
 

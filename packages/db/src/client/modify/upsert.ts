@@ -11,7 +11,7 @@ export async function upsert(
 ) {
   const tree = db.schemaTypesParsed[type].tree
   let q: BasedDbQuery
-  let id = ''
+  let id = type
 
   for (const key in obj) {
     if (tree[key].typeIndex === ALIAS) {
