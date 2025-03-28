@@ -1,4 +1,9 @@
-import { PropDef, REVERSE_SIZE_MAP, SchemaTypeDef } from './types.js'
+import {
+  DEFAULT_MAP,
+  PropDef,
+  REVERSE_SIZE_MAP,
+  SchemaTypeDef,
+} from './types.js'
 
 export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   const size = (packed[0] | (packed[1] << 8)) >>> 0
@@ -99,6 +104,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       props: [],
     },
 
+    mainEmpty: new Uint8Array([]),
     // need this...
     locales: {},
     localeSize: 0,
@@ -112,6 +118,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       separate: false,
       __isPropDef: true,
       start: s,
+      default: DEFAULT_MAP[p.typeIndex], // tmp
       typeIndex: p.typeIndex,
       path: p.path.split('.'),
       len,
@@ -128,6 +135,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       __isPropDef: true,
       start: 0,
       typeIndex: p.typeIndex,
+      default: DEFAULT_MAP[p.typeIndex], // tmp
       path: p.path.split('.'),
       len: 0,
       compression: 1,

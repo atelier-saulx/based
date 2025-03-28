@@ -1,6 +1,6 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
-import { readUint32 } from './bitWise.js'
+import { readUint32 } from './../utils.js'
 import makeTmpBuffer from './tmpBuffer.js'
 import { DECODER, ENCODER } from '../utils.js'
 

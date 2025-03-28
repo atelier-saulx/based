@@ -76,6 +76,9 @@ export type PropDef = {
   inversePropNumber?: number
   enum?: any[]
   dependent?: boolean
+  // default here?
+
+  default: any
 
   // edge stuff
   edgeMainLen?: 0
@@ -90,6 +93,7 @@ export type PropDef = {
   reverseMainEdges?: {
     [start: string]: PropDefEdge
   }
+  edgeMainEmpty?: Uint8Array
   __isEdge?: boolean
 }
 
@@ -143,6 +147,7 @@ export type SchemaTypeDef = {
   main: {
     [start: string]: PropDef
   }
+  mainEmpty: Uint8Array
   tree: SchemaPropTree
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler
@@ -191,10 +196,35 @@ for (const k in TYPE_INDEX_MAP) {
   reverseMap[TYPE_INDEX_MAP[k]] = k
 }
 
-export let REVERSE_SIZE_MAP: Record<TypeIndex, number>
+// TODO update defaults
+export const DEFAULT_MAP: Record<TypeIndex, any> = {
+  [TYPE_INDEX_MAP.alias]: '',
+  [TYPE_INDEX_MAP.binary]: undefined,
+  [TYPE_INDEX_MAP.boolean]: false,
+  [TYPE_INDEX_MAP.cardinality]: 0,
+  [TYPE_INDEX_MAP.created]: 0,
+  [TYPE_INDEX_MAP.updated]: 0,
+  [TYPE_INDEX_MAP.enum]: 0,
+  [TYPE_INDEX_MAP.id]: 0,
+  [TYPE_INDEX_MAP.int16]: 0,
+  [TYPE_INDEX_MAP.int32]: 0,
+  [TYPE_INDEX_MAP.int8]: 0,
+  [TYPE_INDEX_MAP.uint8]: 0,
+  [TYPE_INDEX_MAP.uint16]: 0,
+  [TYPE_INDEX_MAP.uint32]: 0,
+  [TYPE_INDEX_MAP.json]: undefined,
+  [TYPE_INDEX_MAP.microbuffer]: undefined,
+  [TYPE_INDEX_MAP.number]: 0,
+  [TYPE_INDEX_MAP.reference]: undefined,
+  [TYPE_INDEX_MAP.references]: [],
+  [TYPE_INDEX_MAP.string]: '',
+  [TYPE_INDEX_MAP.aliases]: [],
+  [TYPE_INDEX_MAP.text]: '',
+  [TYPE_INDEX_MAP.vector]: undefined, // maybe not can set a vec with 0
+}
 
-// @ts-ignore
-REVERSE_SIZE_MAP = {}
+export const REVERSE_SIZE_MAP: Record<TypeIndex, number> = {}
+
 for (const k in SIZE_MAP) {
   REVERSE_SIZE_MAP[TYPE_INDEX_MAP[k]] = SIZE_MAP[k]
 }
@@ -208,6 +238,7 @@ export const ID_FIELD_DEF: PropDef = {
   path: ['id'],
   start: 0,
   prop: 255,
+  default: 0,
   len: 4,
   __isPropDef: true,
 }
@@ -217,6 +248,7 @@ export const EMPTY_MICRO_BUFFER: PropDef = {
   separate: true,
   path: [''],
   start: 0,
+  default: undefined,
   prop: 0,
   len: 1,
   __isPropDef: true,

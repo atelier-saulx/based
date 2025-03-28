@@ -6,6 +6,7 @@ const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 
+
 const read = utils.read;
 
 pub const TypeId = u16;
@@ -79,6 +80,14 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
         typeEntry.?,
         @bitCast(field),
     );
+    if (s == null) {
+        return errors.SelvaError.SELVA_EINVAL;
+    }
+    return s.?;
+}
+
+pub fn getFieldSchemaByNode(ctx: *DbCtx, node: Node, field: u8) !FieldSchema {
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_node(ctx.selva.?, node, field);
     if (s == null) {
         return errors.SelvaError.SELVA_EINVAL;
     }
@@ -161,21 +170,21 @@ pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
     return str;
 }
 
-pub fn getReference(ctx: *DbCtx, node: Node, field: u8) ?Node {
-    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
+pub fn getReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?Node {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, selvaFieldSchema);
     if (result == null) {
         return null;
     }
     return result.?.*.dst;
 }
 
-pub fn getSingleReference(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReference {
-    const result = selva.selva_fields_get_reference(ctx.selva, node, field);
+pub fn getSingleReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?*selva.SelvaNodeReference {
+    const result = selva.selva_fields_get_reference(ctx.selva, node, selvaFieldSchema);
     return result;
 }
 
-pub fn getReferences(ctx: *DbCtx, node: Node, field: u8) ?*selva.SelvaNodeReferences {
-    const result = selva.selva_fields_get_references(ctx.selva, node, field);
+pub fn getReferences(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?*selva.SelvaNodeReferences {
+    const result = selva.selva_fields_get_references(ctx.selva, node, selvaFieldSchema);
     return result;
 }
 
@@ -187,7 +196,7 @@ pub fn deleteReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, i
     try errors.selva(selva.selva_fields_del_ref(
         ctx.selva,
         node,
-        selvaFieldSchema.field,
+        selvaFieldSchema,
         id,
     ));
 }
@@ -212,8 +221,7 @@ pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: Field
         @ptrCast(&ref),
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
-            const field = fieldSchema.field;
-            const result = selva.selva_fields_get_reference(ctx.selva, target, field);
+            const result = selva.selva_fields_get_reference(ctx.selva, target, fieldSchema);
             if (result == null) {
                 return err;
             }
@@ -426,14 +434,21 @@ pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u3
     return selva.selva_node_hash_range(db, typeEntry, start, end);
 }
 
-pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !void {
+pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !u32 {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
-    selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
+    const old_dest = selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
+    return old_dest;
 }
 
-pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !void {
+pub fn delAliasByName(typeEntry: Type, field: u8, aliasName: []u8) !u32 {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
-    try errors.selva(selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len));
+    const old_dest = selva.selva_del_alias_by_name(typeAliases, aliasName.ptr, aliasName.len);
+
+    if (old_dest == 0) {
+        return errors.SelvaError.SELVA_ENOENT;
+    }
+
+    return old_dest;
 }
 
 pub fn delAlias(typeEntry: Type, node_id: selva.node_id_t, field: u8) !void {

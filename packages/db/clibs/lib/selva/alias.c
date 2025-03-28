@@ -64,7 +64,7 @@ static void remove_alias_by_name(struct SelvaAliases *aliases, struct SelvaAlias
     aliases->nr_aliases--;
 }
 
-static int del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
+static void del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
 {
     remove_alias_by_name(aliases, alias);
 
@@ -92,8 +92,6 @@ static int del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
 
     selva_free(alias);
     aliases->nr_aliases--;
-
-    return 0;
 }
 
 size_t selva_alias_count(const struct SelvaAliases *aliases)
@@ -101,9 +99,10 @@ size_t selva_alias_count(const struct SelvaAliases *aliases)
     return aliases->nr_aliases;
 }
 
-void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias)
+node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias)
 {
     struct SelvaAlias *old_alias;
+    node_id_t old_dest = 0;
 
     new_alias->prev = nullptr;
     new_alias->next = nullptr;
@@ -111,6 +110,7 @@ void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alia
 retry:
     old_alias = insert_alias_by_name(aliases, new_alias);
     if (old_alias) {
+        old_dest = old_alias->dest;
         (void)del_alias(aliases, old_alias);
         goto retry;
     }
@@ -127,9 +127,11 @@ retry:
             (void)del_alias(aliases, prev_by_dest);
         }
     }
+
+    return old_dest;
 }
 
-void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len)
+node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len)
 {
     struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
 
@@ -137,24 +139,26 @@ void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *n
     memcpy(new_alias->name, name_str, name_len);
     new_alias->name[name_len] = '\0';
 
-    selva_set_alias_p(aliases, new_alias);
+    return selva_set_alias_p(aliases, new_alias);
 }
 
-int selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len)
+node_id_t selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
     struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
     struct SelvaAlias *alias;
+    node_id_t old_dest = 0;
 
     memset(find, 0, sizeof(*find));
     memcpy(find->name, name_str, name_len);
     find->name[name_len] = '\0';
 
     alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, find);
-    if (!alias) {
-        return SELVA_ENOENT;
+    if (alias) {
+        old_dest = alias->dest;
+        del_alias(aliases, alias);
     }
 
-    return (alias) ? del_alias(aliases, alias) : SELVA_ENOENT;
+    return old_dest;
 }
 
 void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)

@@ -15,6 +15,7 @@ import {
   VECTOR,
   propIsNumerical,
   createEmptyDef,
+  DEFAULT_MAP,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -528,6 +529,7 @@ export const EMPTY_ALIAS_PROP_DEF: PropDef = {
   separate: true,
   len: 0,
   start: 0,
+  default: DEFAULT_MAP[ALIAS],
   path: ['ERROR_ALIAS'],
 }
 
@@ -538,6 +540,7 @@ export const ERROR_STRING: PropDef = {
   separate: true,
   len: 0,
   start: 0,
+  default: DEFAULT_MAP[STRING],
   path: ['ERROR_STRING'],
 }
 
@@ -548,6 +551,7 @@ export const ERROR_VECTOR: PropDef = {
   separate: true,
   len: 0,
   start: 0,
+  default: DEFAULT_MAP[VECTOR],
   path: ['ERROR_VECTOR'],
 }
 

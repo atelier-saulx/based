@@ -6,6 +6,9 @@ const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
 
+
+
+
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
@@ -18,9 +21,10 @@ pub const ModifyCtx = struct {
     fieldType: types.Prop,
     db: *db.DbCtx,
     typeInfo: []u8,
+    dirtyRanges: std.AutoArrayHashMap(u64, f64),
 };
 
-pub fn getIdOffset(ctx: ModifyCtx, typeId: u16) u32 {
+pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
     var j: usize = 0;
     while (j < ctx.typeInfo.len) : (j += 10) {
         const tId = read(u16, ctx.typeInfo, j);
@@ -29,4 +33,12 @@ pub fn getIdOffset(ctx: ModifyCtx, typeId: u16) u32 {
         }
     }
     return 0;
+}
+
+pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
+    const blockCapacity: u64 = selva.selva_get_block_capacity(ctx.typeEntry.?);
+    const tmp: u64 = nodeId - @as(u64, @intFromBool((nodeId % blockCapacity) == 0));
+    const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
+
+    ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;
 }

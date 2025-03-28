@@ -104,7 +104,7 @@ export class DbWorker {
 type OnSchemaChange = (schema: StrictSchema) => void
 
 export class DbServer {
-  modifyBuf: SharedArrayBuffer
+  modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
   schema: StrictSchema & { lastId: number } = {
     lastId: 1, // we reserve one for root props
@@ -139,6 +139,24 @@ export class DbServer {
     this.fileSystemPath = path
     this.sortIndexes = {}
     this.onSchemaChange = onSchemaChange
+  }
+
+  #resizeModifyDirtyRanges() {
+    let maxNrChanges = 0;
+
+    for (const typeId in this.schemaTypesParsedById) {
+      const def = this.schemaTypesParsedById[typeId]
+      const lastId = def.lastId
+      const blockCapacity = def.blockCapacity
+      const tmp = lastId - +!(lastId % def.blockCapacity)
+      const lastBlock = Math.ceil((((tmp / blockCapacity) | 0) * blockCapacity + 1) / blockCapacity)
+      maxNrChanges += lastBlock
+    }
+
+    if (!this.modifyDirtyRanges || this.modifyDirtyRanges.length < maxNrChanges) {
+      const min = Math.max(maxNrChanges * 1.2, 1024) | 0
+      this.modifyDirtyRanges = new Float64Array(min)
+    }
   }
 
   start(opts?: { clean?: boolean; hosted?: boolean }) {
@@ -551,7 +569,14 @@ export class DbServer {
       i += 8
     }
 
-    native.modify(data, types, this.dbCtxExternal)
+    this.#resizeModifyDirtyRanges()
+    native.modify(data, types, this.dbCtxExternal, this.modifyDirtyRanges)
+    for (let key of this.modifyDirtyRanges) {
+      if (key === 0) {
+        break
+      }
+      this.dirtyRanges.add(key)
+    }
   }
 
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {

@@ -71,6 +71,16 @@ struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_ty
 SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
+SELVA_EXPORT
+inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
+#if !__zig
+{
+    return te->blocks->block_capacity;
+}
+#else
+;
+#endif
+
 /**
  * Get the node schema for type.
  */
@@ -332,15 +342,17 @@ size_t selva_alias_count(const struct SelvaAliases *aliases);
 /**
  * Set new alias.
  * @param name is copied.
+ * @returns the previous node_id the alias was pointing to; Otherwise 0.
  */
 SELVA_EXPORT
-void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len);
+node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len);
 
 /**
  * Delete alias by name.
+ * @return the destination node_id the alias was pointing to; 0 if SELVA_ENOENT.
  */
 SELVA_EXPORT
-int selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len);
+node_id_t selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len);
 
 /**
  * Delete all aliases pointing to dest.

@@ -14,6 +14,7 @@ import {
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
+  DEFAULT_MAP,
 } from './types.js'
 import { StrictSchema } from '../types.js'
 import { makePacked } from './makePacked.js'
@@ -91,6 +92,7 @@ export const createSchemaTypeDef = (
   let separateSortProps: number = 0
   let separateSortText: number = 0
   for (const key in target) {
+    // Create prop def
     const schemaProp = target[key]
     const propPath = [...path, key]
     const propType = getPropType(schemaProp)
@@ -125,6 +127,7 @@ export const createSchemaTypeDef = (
         separateSortText++
       }
       const isseparate = isSeparate(schemaProp, len)
+
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
         __isPropDef: true,
@@ -132,6 +135,7 @@ export const createSchemaTypeDef = (
         path: propPath,
         start: 0,
         len,
+        default: DEFAULT_MAP[TYPE_INDEX_MAP[propType]],
         prop: isseparate ? ++result.cnt : 0,
       }
       if (isPropType('enum', schemaProp)) {
@@ -178,6 +182,7 @@ export const createSchemaTypeDef = (
     }
   }
   if (top) {
+    // Put top level together
     const vals = Object.values(result.props)
     vals.sort((a, b) => {
       if (
@@ -207,6 +212,12 @@ export const createSchemaTypeDef = (
         f.start = result.mainLen
         result.mainLen += f.len
         setByPath(result.tree, f.path, f)
+      }
+    }
+    result.mainEmpty = new Uint8Array(result.mainLen)
+    for (const f of vals) {
+      if (!f.separate) {
+        // console.log(f)
       }
     }
     makePacked(result, typeName, vals, len)

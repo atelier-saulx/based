@@ -26,8 +26,6 @@ export async function start(
 
   await mkdir(path, { recursive: true }).catch(noop)
 
-  // not doing db yet
-  // db.modifyBuf = new SharedArrayBuffer(db.maxModifySize)
   db.dbCtxExternal = native.start(id)
 
   let writelog: Writelog = null

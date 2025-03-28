@@ -1,6 +1,7 @@
-import {encodeBase64} from '@saulx/utils'
+import { encodeBase64 } from '@saulx/utils'
 
-const native = (typeof window === 'undefined') ? (await import('./native.js')).default : null
+const native =
+  typeof window === 'undefined' ? (await import('./native.js')).default : null
 export const DECODER = new TextDecoder('utf-8')
 export const ENCODER = new TextEncoder()
 
@@ -30,8 +31,12 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   }
 }
 
-export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Uint8Array {
-  totalByteLength = totalByteLength ?? bufs.reduce((acc, cur) => acc + cur.byteLength, 0)
+export function concatUint8Arr(
+  bufs: Uint8Array[],
+  totalByteLength?: number,
+): Uint8Array {
+  totalByteLength =
+    totalByteLength ?? bufs.reduce((acc, cur) => acc + cur.byteLength, 0)
   const res = new Uint8Array(totalByteLength)
   let off = 0
 
@@ -45,7 +50,7 @@ export function concatUint8Arr(bufs: Uint8Array[], totalByteLength?: number): Ui
   return res
 }
 
-const charMap = ENCODER.encode('0123456789abcdef');
+const charMap = ENCODER.encode('0123456789abcdef')
 
 // Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
 // https://issues.chromium.org/issues/42204568
@@ -53,7 +58,7 @@ export const bufToHex = (a: Uint8Array): string => {
   const tmp = new Uint8Array(2 * a.byteLength)
   const n = charMap.length
 
-  let j = 0;
+  let j = 0
   for (let i = 0; i < a.byteLength; i++) {
     tmp[j++] = charMap[a[i] >>> 4 % n]
     tmp[j++] = charMap[a[i] & 0x0f % n]
@@ -73,12 +78,12 @@ const intMap = {
   '7': 0x7,
   '8': 0x8,
   '9': 0x9,
-  'a': 0xa,
-  'b': 0xb,
-  'c': 0xc,
-  'd': 0xd,
-  'e': 0xe,
-  'f': 0xf,
+  a: 0xa,
+  b: 0xb,
+  c: 0xc,
+  d: 0xd,
+  e: 0xe,
+  f: 0xf,
 }
 
 // Uint8Array.fromHex() and Uint8Array.toHex() are not available in V8
@@ -94,19 +99,18 @@ export const hexToBuf = (s: string): Uint8Array => {
     buf[i] = (intMap[x] << 4) + intMap[y]
   }
 
-  return buf;
+  return buf
 }
 
-function base64OutLen(n: number, lineMax: number): number
-{
-  let olen: number;
+function base64OutLen(n: number, lineMax: number): number {
+  let olen: number
 
   /* This version would be with padding but we don't pad */
   //olen = n * 4 / 3 + 4; /* 3-byte blocks to 4-byte */
-  olen = ((4 * n / 3) + 3) & ~3;
-  olen += lineMax > 0 ? olen / lineMax : 0; // line feeds
+  olen = ((4 * n) / 3 + 3) & ~3
+  olen += lineMax > 0 ? olen / lineMax : 0 // line feeds
 
-  return olen;
+  return olen
 }
 
 export const base64encode = (a: Uint8Array, lineMax: number = 72): string => {
@@ -118,4 +122,82 @@ export const base64encode = (a: Uint8Array, lineMax: number = 72): string => {
   } else {
     return DECODER.decode(native.base64encode(tmp, a, lineMax))
   }
+}
+
+export const readDoubleLE = (val: Uint8Array, offset: number): number => {
+  const low =
+    (val[offset] |
+      (val[offset + 1] << 8) |
+      (val[offset + 2] << 16) |
+      (val[offset + 3] << 24)) >>>
+    0
+  const high =
+    (val[offset + 4] |
+      (val[offset + 5] << 8) |
+      (val[offset + 6] << 16) |
+      (val[offset + 7] << 24)) >>>
+    0
+  const sign = high >>> 31 ? -1 : 1
+  let exponent = (high >>> 20) & 0x7ff
+  let fraction = (high & 0xfffff) * 2 ** 32 + low
+  if (exponent === 0x7ff) {
+    if (fraction === 0) return sign * Infinity
+    return NaN
+  }
+  if (exponent === 0) {
+    if (fraction === 0) return sign * 0
+    exponent = 1
+  } else {
+    fraction += 2 ** 52
+  }
+  return sign * fraction * 2 ** (exponent - 1075)
+}
+
+export const readFloatLE = (val: Uint8Array, offset: number): number => {
+  const bits =
+    val[offset] |
+    (val[offset + 1] << 8) |
+    (val[offset + 2] << 16) |
+    (val[offset + 3] << 24)
+  const sign = bits >>> 31 ? -1 : 1
+  let exponent = (bits >>> 23) & 0xff
+  let fraction = bits & 0x7fffff
+  if (exponent === 0xff) {
+    if (fraction === 0) return sign * Infinity
+    return NaN
+  }
+  if (exponent === 0) {
+    if (fraction === 0) return sign * 0
+    exponent = 1
+  } else {
+    fraction |= 0x800000
+  }
+  return sign * fraction * 2 ** (exponent - 150)
+}
+
+export const readUint32 = (val: Uint8Array, offset: number): number => {
+  return (
+    (val[offset] |
+      (val[offset + 1] << 8) |
+      (val[offset + 2] << 16) |
+      (val[offset + 3] << 24)) >>>
+    0
+  )
+}
+
+export const readInt32 = (val: Uint8Array, offset: number): number => {
+  return (
+    val[offset] |
+    (val[offset + 1] << 8) |
+    (val[offset + 2] << 16) |
+    (val[offset + 3] << 24)
+  )
+}
+
+export const readInt16 = (val: Uint8Array, offset: number): number => {
+  return ((val[offset] | (val[offset + 1] << 8)) << 16) >> 16
+}
+
+export const readUint16 = (val: Uint8Array, offset: number): number => {
+  return (val[offset] | (val[offset + 1] << 8)) >>> 0
 }

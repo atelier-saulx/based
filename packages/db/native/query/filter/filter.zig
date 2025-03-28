@@ -111,11 +111,11 @@ pub fn filter(
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
-            const selvaRef = db.getSingleReference(ctx, node, refField);
-            const refNode: ?db.Node = selvaRef.?.*.dst;
             const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
+            const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
+            const refNode: ?db.Node = selvaRef.?.*.dst;
             const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -170,12 +170,18 @@ pub fn filter(
                 }
             } else {
                 if (prop == Prop.REFERENCES) {
-                    const refs = db.getReferences(ctx, node, field);
+                    const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    const refs = db.getReferences(ctx, node, fs);
                     if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else if (prop == Prop.REFERENCE) {
-                    const checkRef = db.getReference(ctx, node, field);
+                    const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    const checkRef = db.getReference(ctx, node, fs);
                     if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -247,7 +253,10 @@ pub fn filter(
                 } else {
                     if (prop == Prop.REFERENCE) {
                         // if edge different
-                        const checkRef = db.getReference(ctx, node, field);
+                        const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
+                        const checkRef = db.getReference(ctx, node, fs);
 
                         if (checkRef) |r| {
                             value = @as([*]u8, @ptrCast(r))[0..8];
@@ -256,7 +265,10 @@ pub fn filter(
                         }
                     } else if (prop == Prop.REFERENCES) {
                         // if edge different
-                        const refs = db.getReferences(ctx, node, field);
+                        const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
+                        const refs = db.getReferences(ctx, node, fs);
                         if (refs) |r| {
                             const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
                             value = arr[0 .. r.nr_refs * 4];

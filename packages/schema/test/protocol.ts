@@ -46,6 +46,8 @@ await test('protocol', async (t) => {
     },
   }
 
+  // console.log(new Uint8Array(Buffer.from(JSON.stringify(schema))))
+
   // TODO
   // fixedLen STRINGS
   // reference
@@ -57,6 +59,11 @@ await test('protocol', async (t) => {
   updateTypeDefs(schema, parsed, parsedIDs)
 
   const simple = await d(JSON.stringify(schema))
+
+  // console.log({
+  //   u8: parsed.thing.packed,
+  //   x: Buffer.from(parsed.thing.packed).toString(),
+  // })
 
   console.log(
     simple.byteLength,
