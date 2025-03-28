@@ -12,6 +12,7 @@ import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
+import { deepMerge } from '@saulx/utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -139,8 +140,11 @@ export const migrate = async (
     while ((msg = receiveMessageOnPort(port1))) {
       ;[schema, schemaTypesParsed] = msg.message
     }
-    fromDbServer.schema = schema
-    fromDbServer.schemaTypesParsed = schemaTypesParsed
+    fromDbServer.schema = deepMerge(toDb.server.schema, schema)
+    fromDbServer.schemaTypesParsed = deepMerge(
+      toDb.server.schemaTypesParsed,
+      schemaTypesParsed,
+    )
     fromDbServer.dbCtxExternal = toCtx
     toDb.server.dbCtxExternal = fromCtx
   }
