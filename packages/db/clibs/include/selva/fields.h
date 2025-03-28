@@ -309,7 +309,7 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct Se
  * Delete an edge from a references field.
  */
 SELVA_EXPORT
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id);
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id);
 
 SELVA_EXPORT
 void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);

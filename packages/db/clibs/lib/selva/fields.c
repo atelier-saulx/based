@@ -1826,11 +1826,8 @@ static void reference_meta_del(struct SelvaDb *db, const struct EdgeFieldConstra
     fields_del(db, nullptr, fields, fs);
 }
 
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id)
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id)
 {
-    struct SelvaTypeEntry *type = selva_get_type_by_node(db, node);
-    const struct SelvaFieldSchema *fs = selva_get_fs_by_te_field(type, field);
-
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES) {
         return SELVA_EINTYPE;
     }

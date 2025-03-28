@@ -196,7 +196,7 @@ pub fn deleteReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, i
     try errors.selva(selva.selva_fields_del_ref(
         ctx.selva,
         node,
-        selvaFieldSchema.field,
+        selvaFieldSchema,
         id,
     ));
 }
