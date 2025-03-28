@@ -45,8 +45,6 @@ if (isMainThread) {
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
-  console.log('--------#EQWE22WEQ')
-
   await fromDb.setSchema(fromSchema, true)
   await toDb.setSchema(toSchema, true)
 

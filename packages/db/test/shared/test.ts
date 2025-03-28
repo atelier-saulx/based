@@ -40,28 +40,22 @@ const test = async (
 
       const fields = ['*', '**']
 
-      console.log(picocolors.gray('Create queries'))
-
       for (const type in db.server.schema.types) {
         const x = await db.query(type).include(fields).get()
         checksums.push(x.checksum)
       }
-
-      console.log(picocolors.gray('Stop db'))
-
+      let d = Date.now()
       await db.stop()
-      console.log(
-        picocolors.gray(
-          'Saved - start new db and start loading from backups...',
-        ),
-      )
+      console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
 
       const newDb = new BasedDb({
         path: t.tmp,
       })
+
+      d = Date.now()
       await newDb.start()
 
-      console.log(picocolors.gray('Start loading from backups...'))
+      console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
       const backupChecksums = []
 
       for (const type in newDb.server.schema.types) {
@@ -72,6 +66,7 @@ const test = async (
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
       await wait(10)
+
       await newDb.destroy()
     },
     tmp: resolve(join(__dirname, relativePath)),
