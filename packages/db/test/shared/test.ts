@@ -38,21 +38,34 @@ const test = async (
     backup: async (db: BasedDb) => {
       const checksums = []
 
+      const fields = ['*']
+
+      console.log(picocolors.gray('Create queries'))
+
       for (const type in db.server.schema.types) {
-        const x = await db.query(type).include('*', '**').get()
+        const x = await db.query(type).include(fields).get()
         checksums.push(x.checksum)
       }
 
+      console.log(picocolors.gray('Stop db'))
+
       await db.stop()
+      console.log(
+        picocolors.gray(
+          'Saved - start new db and start loading from backups...',
+        ),
+      )
+
       const newDb = new BasedDb({
         path: t.tmp,
       })
       await newDb.start()
 
+      console.log(picocolors.gray('Start loading from backups...'))
       const backupChecksums = []
 
       for (const type in newDb.server.schema.types) {
-        const x = await newDb.query(type).include('*', '**').get()
+        const x = await newDb.query(type).include(fields).get()
         backupChecksums.push(x.checksum)
       }
 

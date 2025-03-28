@@ -408,9 +408,7 @@ export class DbServer {
     fromStart: boolean = false,
     transformFns?: TransformFns,
   ) {
-    console.log('SERVER SETSCHEMA')
     if (!fromStart && Object.keys(this.schema.types).length > 0) {
-      console.log('?? need migrate')
       return this.migrateSchema(strictSchema, transformFns)
     }
 

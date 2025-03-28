@@ -8,7 +8,6 @@ await test('client server', async (t) => {
   const server = new DbServer({
     path: t.tmp,
     onSchemaChange(schema) {
-      console.log('server schema change hook')
       client1.putLocalSchema(schema)
       client2.putLocalSchema(schema)
     },
@@ -22,7 +21,6 @@ await test('client server', async (t) => {
 
   const hooks: DbClientHooks = {
     async setSchema(schema, fromStart, transformFns) {
-      console.log('client schema hook flap')
       return server.setSchema(schema, fromStart, transformFns)
     },
     async flushModify(buf) {
@@ -66,9 +64,6 @@ await test('client server', async (t) => {
     { id: 2, name: 'jamez' },
   ])
 
-  console.log('\n\n---------------------------')
-  console.log('STEP 1: xx')
-
   await client1.setSchema({
     types: {
       user: {
@@ -76,8 +71,6 @@ await test('client server', async (t) => {
       },
     },
   })
-
-  console.log('Y ---')
 
   deepEqual(await client1.query('user').get(), [
     { id: 1, age: 0 },

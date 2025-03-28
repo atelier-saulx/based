@@ -123,7 +123,8 @@ export class BasedDb {
     return this.server.start.apply(this.server, arguments)
   }
 
-  stop: DbServer['stop'] = function () {
+  stop: DbServer['stop'] = async function () {
+    await this.isModified()
     this.client.stop()
     return this.server.stop.apply(this.server, arguments)
   }
