@@ -21,8 +21,12 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         id = id + Modify.getIdOffset(ctx, refTypeId);
     }
 
-    const node = try db.upsertNode(id, refTypeEntry);
+    const oldRefDst = db.getReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+    if (oldRefDst) |dstNode| {
+        Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), selva.selva_get_node_id(dstNode));
+    }
 
+    const node = try db.upsertNode(id, refTypeEntry);
     const ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
 
     if (hasEdges) {
