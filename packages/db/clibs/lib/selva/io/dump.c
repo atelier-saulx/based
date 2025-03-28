@@ -636,6 +636,7 @@ static int load_reference_meta(
 #if 0
             err = load_field_text(io, ns, node, fs);
 #endif
+            err = SELVA_ENOTSUP;
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_REFERENCES:
