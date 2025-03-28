@@ -569,6 +569,7 @@ declare global {
             forceReload?: number
           }
           files?: string[]
+          schema?: any
         }
 
       type Configs = {

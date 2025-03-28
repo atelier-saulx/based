@@ -190,10 +190,13 @@ export const stringMaxLength = (strings: string[]) =>
   )
 
 export async function getMtimeMs(path: string): Promise<number> {
-  const fileStat = await stat(path)
-  const { mtimeMs } = fileStat
-
-  return mtimeMs
+  try {
+    const fileStat = await stat(path)
+    const { mtimeMs } = fileStat
+    return mtimeMs
+  } catch (error) {
+    throw error.message
+  }
 }
 
 export const findConfigFile = async (
@@ -204,18 +207,29 @@ export const findConfigFile = async (
   const found = mapping[file]
 
   if (found) {
-    if (isConfigFile(file)) {
+    if (isConfigFile(file) || isSchemaFile(file) || isInfraFile(file)) {
       const mtimeMs = await getMtimeMs(file)
 
       if (found.mtimeMs !== mtimeMs) {
         if (file.endsWith('.json')) {
           found.config = await getFileByPath(file)
         } else {
-          const compiled = nodeBundles.require(file)
-          found.config = compiled.default || compiled
+          let bundled = nodeBundles.require(file)
+          bundled = bundled.default || bundled
+
+          found.config = bundled
         }
 
         found.mtimeMs = mtimeMs
+      }
+    }
+
+    if (isSchemaFile(file)) {
+      if (!Array.isArray(found.config)) {
+        if (!found.config.schema) {
+          found.config = { schema: found.config } as Based.Deploy.ConfigsBase
+        }
+        found.config = [found.config] as any
       }
     }
 

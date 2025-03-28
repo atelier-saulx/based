@@ -28,8 +28,6 @@ export const deploy = async (program: Command) => {
         .get('project')
         .call('based:env-info')
 
-      context.print.line()
-
       const { entryPoints, mapping } = await getBasedFiles(context)
       const bundledConfigs = await configsBundle(
         context,
@@ -62,144 +60,154 @@ export const deploy = async (program: Command) => {
       forceReload = parseNumberAndBoolean(forceReload)
 
       for (const found of configs) {
-        onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
+        await onChange(null, {
+          updates: [['bundled', found.path]],
+        } as BundleResult)
       }
-
-      if (!watch) {
-        await basedClient.get('project').destroy()
-      }
-
-      const client = basedClient.get('env')
-      const remoteFunctions = (await client
-        .query('db', {
-          $db: 'config',
-          functions: {
-            id: true,
-            current: {
-              id: true,
-              config: true,
-              checksum: true,
-            },
-            $list: {
-              $find: {
-                $traverse: 'children',
-                $filter: {
-                  $field: 'type',
-                  $operator: '=',
-                  $value: ['job', 'function'],
-                },
-              },
-            },
-          },
-        })
-        .get()) as {
-        functions: {
-          id?: string
-          current?: {
-            id: string
-            config: any
-            checksum: number
-          }
-        }[]
-      }
-
-      const remoteChecksum = remoteFunctions.functions.reduce((acc, config) => {
-        Object.assign(acc, {
-          [config.current.config.name]: config.current.checksum,
-        })
-        return acc
-      }, {})
 
       async function onChange(err: BuildFailure | null, result?: BundleResult) {
-        const updates = result?.updates
+        try {
+          const updates = result?.updates
 
-        if (
-          err ||
-          browserBundles?.error?.errors.length ||
-          result?.error?.errors.length
-        ) {
-          const errors = result?.error?.errors || browserBundles?.error?.errors
-
-          if (bundlingErrorHandling(context)(errors)) {
-            return
+          const client = basedClient.get('env')
+          const remoteFunctions = (await client
+            .query('db', {
+              $db: 'config',
+              functions: {
+                id: true,
+                current: {
+                  id: true,
+                  config: true,
+                  checksum: true,
+                },
+                $list: {
+                  $find: {
+                    $traverse: 'children',
+                    $filter: {
+                      $field: 'type',
+                      $operator: '=',
+                      $value: ['job', 'function'],
+                    },
+                  },
+                },
+              },
+            })
+            .get()) as {
+            functions: {
+              id?: string
+              current?: {
+                id: string
+                config: any
+                checksum: number
+              }
+            }[]
           }
-        }
 
-        if (updates?.length) {
-          bundlingUpdateHandling(context)(updates)
+          const remoteChecksum = remoteFunctions.functions.reduce(
+            (acc, config) => {
+              Object.assign(acc, {
+                [config.current.config.name]: config.current.checksum,
+              })
+              return acc
+            },
+            {},
+          )
 
-          for (let [_type, file] of updates) {
-            const found = await findConfigFile(file, mapping, nodeBundles)
+          console.log({ remoteChecksum })
 
-            if (found) {
-              file = found.app || found.index || found.path
+          if (
+            err ||
+            browserBundles?.error?.errors.length ||
+            result?.error?.errors.length
+          ) {
+            const errors =
+              result?.error?.errors || browserBundles?.error?.errors
 
-              if (!file) {
-                continue
-              }
+            if (bundlingErrorHandling(context)(errors)) {
+              return
+            }
+          }
 
-              if (found.type === 'schema') {
-                context.print
-                  .intro(context.i18n('methods.schema.unavailable'))
-                  .warning(context.i18n('methods.schema.setSchema'))
+          if (updates?.length) {
+            bundlingUpdateHandling(context)(updates)
+            for (let [_type, file] of updates) {
+              const found = await findConfigFile(file, mapping, nodeBundles)
 
-                continue
-              }
+              if (found) {
+                file = found.app || found.index || found.path
 
-              const assets = browserBundles.result.outputFiles
-              const { outputs } = browserBundles.result.metafile
+                if (!file) {
+                  continue
+                }
 
-              const uploads = prepareFilesToUpload(
-                assets,
-                favicons,
-                outputs,
-                assetsMap,
-              )
+                if (found.type === 'schema') {
+                  context.print
+                    .intro(context.i18n('methods.schema.unavailable'))
+                    .warning(context.i18n('methods.schema.setSchema'))
 
-              if (uploads.length) {
-                await uploadFiles(context)(uploads, publicPath, assetsMap)
-              }
+                  await schemaDeploy(context, found)
 
-              const { deploys, logs } = await configsDeploy(
-                context,
-                configs,
-                nodeBundles,
-                browserBundles,
-                outputs,
-                forceReload,
-                assetsMap,
-                configsMap,
-              )
+                  continue
+                }
 
-              if (deploys.length) {
-                if (logs.some(Boolean) && !greetings) {
-                  greetings = true
+                const assets = browserBundles.result.outputFiles
+                const { outputs } = browserBundles.result.metafile
 
-                  context.print.intro(
-                    context.i18n('commands.deploy.methods.deployLive'),
-                  )
+                const uploads = prepareFilesToUpload(
+                  assets,
+                  favicons,
+                  outputs,
+                  assetsMap,
+                )
 
-                  for (const log of logs) {
-                    if (log) {
-                      context.print.step(log)
+                if (uploads.length) {
+                  await uploadFiles(context)(uploads, publicPath, assetsMap)
+                }
+
+                const { deploys, logs } = await configsDeploy(
+                  context,
+                  configs,
+                  nodeBundles,
+                  browserBundles,
+                  outputs,
+                  forceReload,
+                  assetsMap,
+                  configsMap,
+                )
+
+                if (deploys.length) {
+                  if (logs.some(Boolean) && !greetings) {
+                    greetings = true
+
+                    context.print.intro(
+                      context.i18n('commands.deploy.methods.deployLive'),
+                    )
+
+                    for (const log of logs) {
+                      if (log) {
+                        context.print.step(log)
+                      }
                     }
-                  }
 
-                  context.print.outro(
-                    context.i18n('commands.deploy.methods.deployComplete'),
-                  )
-                } else {
-                  context.print.outro(
-                    context.i18n('commands.deploy.methods.deployComplete'),
-                  )
+                    context.print.outro(
+                      context.i18n('commands.deploy.methods.deployComplete'),
+                    )
+                  } else {
+                    context.print.outro(
+                      context.i18n('commands.deploy.methods.deployComplete'),
+                    )
+                  }
                 }
               }
             }
           }
+        } catch (error) {
+          console.log(error)
         }
       }
 
       if (!watch) {
+        await basedClient.get('project').destroy()
         process.exit(0)
       }
     },

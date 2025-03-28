@@ -56,7 +56,8 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
           .line()
           .error(context.i18n('methods.server.name'))
           .log('<b>db:set-schema</b>', null)
-          .log(`<red>${error}</red>`, null)
+          .log(`<red>${error.message.trim()}</red>`, null)
+          .line()
       }
     },
   },

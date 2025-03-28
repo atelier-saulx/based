@@ -803,8 +803,8 @@ export default {
       multipleDesc: 'You should have only one schema in your project.',
       remove: 'Remove the files and try again.',
       loading: 'Loading your schema',
-      unavailable: '<yellow>Schema unavailable</yellow>',
-      setSchema: `Your schema was successfully found and parsed, but the 'db:set-schema' function is not available in the cloud at the moment. Please set the schema manually.`,
+      unavailable: '<yellow>Schema unavailable for BasedDB v2</yellow>',
+      setSchema: `Your Schema was successfully found, but schemas can only be defined for BasedDB v1. If you're trying to apply a Schema to BasedDB v2, you'll need to do it manually through a function temporarily.`,
     },
     infra: {
       multiple: 'Multiple infras found',
