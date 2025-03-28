@@ -93,6 +93,8 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
+void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc);
+
 /**
  * Set field value.
  */
@@ -110,6 +112,11 @@ int selva_fields_get_mutable_string(
         size_t len,
         struct selva_string **s)
     __attribute__((access(write_only, 4)));
+
+
+SELVA_EXPORT
+struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
+
 
 /*
  * TODO Document diff to get_mutable_string

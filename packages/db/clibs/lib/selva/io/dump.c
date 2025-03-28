@@ -546,6 +546,16 @@ static int load_field_text(struct selva_io *io, struct SelvaNode *node, const st
 
     return 0;
 }
+__attribute__((warn_unused_result))
+static int load_field_micro_buffer(struct selva_io *io, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFieldInfo *nfo = selva_fields_ensure(fields, fs);
+    void *smb = selva_fields_nfo2p(fields, nfo);
+
+    io->sdb_read(smb, sizeof(uint8_t), fs->smb.len, io);
+
+    return 0;
+}
 
 /**
  * Load meta fields of an edge in an edge field of node.
@@ -566,6 +576,10 @@ static int load_reference_meta(
 
     sdb_nr_fields_t nr_fields;
     io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
+
+    if (nr_fields > 0) {
+        selva_fields_ensure_ref_meta(db, node, ref, efc);
+    }
 
     for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
         struct {
@@ -625,8 +639,7 @@ static int load_reference_meta(
             err = SELVA_ENOTSUP;
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            selva_io_errlog(io, "Muffer not supported in edge meta");
-            err = SELVA_ENOTSUP;
+            err = load_field_micro_buffer(io, ref->meta, fs);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
@@ -752,18 +765,6 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
 }
 
 __attribute__((warn_unused_result))
-static int load_field_micro_buffer(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-{
-    struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-    void *smb = selva_fields_nfo2p(fields, nfo);
-
-    io->sdb_read(smb, sizeof(uint8_t), fs->smb.len, io);
-
-    return 0;
-}
-
-__attribute__((warn_unused_result))
 static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     struct SelvaNodeSchema *ns = &te->ns;
@@ -836,7 +837,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             err = load_field_weak_references(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            err = load_field_micro_buffer(io, node, fs);
+            err = load_field_micro_buffer(io, &node->fields, fs);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:

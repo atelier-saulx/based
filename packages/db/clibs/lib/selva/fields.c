@@ -35,7 +35,6 @@
 static void destroy_fields(struct SelvaFields *fields);
 static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fields);
 static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReference *ref);
-static void ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc);
 
 /**
  * Size of each type in fields.data.
@@ -144,6 +143,11 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaFields *fields, const str
     }
 
     return nfo;
+}
+
+struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    return ensure_field(fields, fs);
 }
 
 /**
@@ -801,7 +805,7 @@ struct selva_string *selva_fields_ensure_string2(
         return nullptr;
     }
 
-    ensure_ref_meta(db, node, ref, efc);
+    selva_fields_ensure_ref_meta(db, node, ref, efc);
     nfo = ensure_field(ref->meta, fs);
 
     return get_mutable_string(ref->meta, fs, nfo, initial_len);
@@ -1443,7 +1447,7 @@ int selva_fields_references_swap(
  * Most importantly this function makes sure that the object is shared between
  * both ends of the edge.
  */
-static void ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
+void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
     const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
     const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields : 0;
@@ -1526,7 +1530,7 @@ int selva_fields_set_reference_meta(
         return SELVA_ENOTSUP;
     }
 
-    ensure_ref_meta(db, node, ref, efc);
+    selva_fields_ensure_ref_meta(db, node, ref, efc);
     return fields_set(nullptr, nullptr, fs, ref->meta, value, len);
 }
 
@@ -1553,7 +1557,7 @@ int selva_fields_get_reference_meta_mutable_string(
         return SELVA_ENOBUFS;
     }
 
-    ensure_ref_meta(db, node, ref, efc);
+    selva_fields_ensure_ref_meta(db, node, ref, efc);
     *s = get_mutable_string(ref->meta, fs, ensure_field(ref->meta, fs), len);
 
     return 0;
