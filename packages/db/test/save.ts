@@ -642,7 +642,7 @@ await test('simulated periodic save', async (t) => {
   await db.save()
 
   // change a node using an alias
-  await db.upsert('person', {
+  db.upsert('person', {
     alias: 'slim',
     name: 'Shady',
   })
