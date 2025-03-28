@@ -1,4 +1,3 @@
-import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import {
@@ -156,7 +155,8 @@ const inspectObject = (
   let edges = []
   for (const k in object) {
     const key = path ? path + '.' + k : k
-    let def: PropDef | PropDefEdge = q.props[key]
+    let def: PropDef | PropDefEdge
+    def = q.props[key]
     let v = object[k]
     const isEdge = k[0] === '$'
 
@@ -179,7 +179,15 @@ const inspectObject = (
         picocolors.italic(picocolors.dim(` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
-      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      if (Object.keys(object)[0] == 'count') {
+        // TODO: to flag the agg someway. This is ugly as hell!!!
+        str += picocolors.blue(v)
+        str += picocolors.italic(picocolors.dim(' count'))
+        str += ',\n'
+      } else {
+        str +=
+          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      }
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === REFERENCES) {
         str += inspectData(
