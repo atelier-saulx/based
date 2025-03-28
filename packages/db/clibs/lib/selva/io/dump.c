@@ -651,11 +651,11 @@ static int load_reference_meta(
             break;
         }
         if (err) {
-            selva_io_errlog(io, "Failed to set edge (%d:%d:%d %s): %s",
+            selva_io_errlog(io, "Failed to set edge (%d:%d.%d %s): %s",
                             node->type, node->node_id, rd.field,
-                            selva_str_field_type(rd.type), selva_strerror(err));
+                            selva_str_field_type(rd.type),
+                            selva_strerror(err));
         }
-
         if (!err && !read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
             selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
                             node->type, node->node_id, rd.field);
