@@ -37,15 +37,12 @@ await test('delete', async (t) => {
   })
 
   await db.drain()
-
   db.delete('user', simple)
-
   await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const nurp = db.create('nurp', {})
-
   await db.drain()
 
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
@@ -56,19 +53,16 @@ await test('delete', async (t) => {
   ])
 
   db.delete('nurp', nurp)
-
   await db.drain()
 
   deepEqual((await db.query('user').include('email').get()).toObject(), [])
 
   const nurp2 = db.create('nurp', { email: 'flippie' })
-
   await db.drain()
 
   db.update('nurp', nurp2, {
     email: null,
   })
-
   await db.drain()
 
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
