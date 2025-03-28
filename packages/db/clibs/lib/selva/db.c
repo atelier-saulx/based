@@ -787,10 +787,9 @@ size_t selva_node_count(const struct SelvaTypeEntry *type)
     return type->nr_nodes;
 }
 
-node_id_t selva_get_node_id(const struct SelvaNode *node)
-{
-    return node->node_id;
-}
+extern inline node_id_t selva_get_node_id(const struct SelvaNode *node);
+
+extern inline node_type_t selva_get_node_type(const struct SelvaNode *node);
 
 /**
  * Hash the aliases pointing to the given node.

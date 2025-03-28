@@ -72,6 +72,17 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     return len;
 }
 
+pub fn clearReferences(ctx: *ModifyCtx) void {
+    const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+    if (refs) |r| {
+        const refsIndex = r.index[0..r.nr_refs];
+        const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
+        Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
+
+        db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+    }
+}
+
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
 

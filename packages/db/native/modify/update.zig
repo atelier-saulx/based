@@ -18,7 +18,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
                 // overwrite
                 types.RefOp.OVERWRITE => {
-                    db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+                    references.clearReferences(ctx);
                     return references.updateReferences(ctx, data);
                 },
                 // add
@@ -31,7 +31,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
                 // put
                 types.RefOp.PUT_OVERWRITE => {
-                    db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+                    references.clearReferences(ctx);
                     return references.putReferences(ctx, data);
                 },
                 // put

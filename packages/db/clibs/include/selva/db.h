@@ -308,7 +308,29 @@ size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnul
  * Get the node id of of node.
  */
 SELVA_EXPORT
-node_id_t selva_get_node_id(const struct SelvaNode *node) __attribute__((nonnull, pure));
+__attribute__((nonnull, pure))
+inline node_id_t selva_get_node_id(const struct SelvaNode *node)
+#if !__zig
+{
+    return node->node_id;
+}
+#else
+;
+#endif
+
+/**
+ * Get the type of of node.
+ */
+SELVA_EXPORT
+__attribute__((nonnull, pure))
+inline node_type_t selva_get_node_type(const struct SelvaNode *node)
+#if !__zig
+{
+    return node->type;
+}
+#else
+;
+#endif
 
 /**
  * \addtogroup node_hash

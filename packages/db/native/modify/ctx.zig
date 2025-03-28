@@ -39,3 +39,9 @@ pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
 
     ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;
 }
+
+pub fn markReferencesDirty(ctx: *ModifyCtx, dstTypeId: u16, refs: []u32) void {
+    for (refs) |nodeId| {
+        markDirtyRange(ctx, dstTypeId, nodeId);
+    }
+}

@@ -211,17 +211,17 @@ pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema)
     ));
 }
 
-pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
+pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
     errors.selva(selva.selva_fields_reference_set(
         ctx.selva,
-        target,
+        src,
         fieldSchema,
         value,
         @ptrCast(&ref),
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
-            const result = selva.selva_fields_get_reference(ctx.selva, target, fieldSchema);
+            const result = selva.selva_fields_get_reference(ctx.selva, src, fieldSchema);
             if (result == null) {
                 return err;
             }
