@@ -14,10 +14,10 @@ export const schemaDeploy = async (
   checksum = hash(found.config)
 
   if (found.checksum !== checksum) {
-    context.spinner.start(
-      context.i18n('commands.deploy.methods.deploying') +
-        context.i18n('commands.deploy.methods.schema', 1, 1),
-    )
+    // context.spinner.start(
+    //   context.i18n('commands.deploy.methods.deploying') +
+    //     context.i18n('commands.deploy.methods.schema', 1, 1),
+    // )
 
     await basedClient.call(context.endpoints.DEPLOY_SET_SCHEMA, found.config)
 

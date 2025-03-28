@@ -69,51 +69,49 @@ export const deploy = async (program: Command) => {
         try {
           const updates = result?.updates
 
-          const client = basedClient.get('env')
-          const remoteFunctions = (await client
-            .query('db', {
-              $db: 'config',
-              functions: {
-                id: true,
-                current: {
-                  id: true,
-                  config: true,
-                  checksum: true,
-                },
-                $list: {
-                  $find: {
-                    $traverse: 'children',
-                    $filter: {
-                      $field: 'type',
-                      $operator: '=',
-                      $value: ['job', 'function'],
-                    },
-                  },
-                },
-              },
-            })
-            .get()) as {
-            functions: {
-              id?: string
-              current?: {
-                id: string
-                config: any
-                checksum: number
-              }
-            }[]
-          }
+          // const client = basedClient.get('env')
+          // const remoteFunctions = (await client
+          //   .query('db', {
+          //     $db: 'config',
+          //     functions: {
+          //       id: true,
+          //       current: {
+          //         id: true,
+          //         config: true,
+          //         checksum: true,
+          //       },
+          //       $list: {
+          //         $find: {
+          //           $traverse: 'children',
+          //           $filter: {
+          //             $field: 'type',
+          //             $operator: '=',
+          //             $value: ['job', 'function'],
+          //           },
+          //         },
+          //       },
+          //     },
+          //   })
+          //   .get()) as {
+          //   functions: {
+          //     id?: string
+          //     current?: {
+          //       id: string
+          //       config: any
+          //       checksum: number
+          //     }
+          //   }[]
+          // }
 
-          const remoteChecksum = remoteFunctions.functions.reduce(
-            (acc, config) => {
-              Object.assign(acc, {
-                [config.current.config.name]: config.current.checksum,
-              })
-              return acc
-            },
-            {},
-          )
-
-          console.log({ remoteChecksum })
+          // const remoteChecksum = remoteFunctions.functions.reduce(
+          //   (acc, config) => {
+          //     Object.assign(acc, {
+          //       [config.current.config.name]: config.current.checksum,
+          //     })
+          //     return acc
+          //   },
+          //   {},
+          // )
 
           if (
             err ||
@@ -144,11 +142,23 @@ export const deploy = async (program: Command) => {
                   context.print
                     .intro(context.i18n('methods.schema.unavailable'))
                     .warning(context.i18n('methods.schema.setSchema'))
+                    .line()
 
                   await schemaDeploy(context, found)
 
                   continue
                 }
+
+                if (!found.config.name) {
+                  continue
+                }
+
+                // if (
+                //   found.config.name &&
+                //   remoteChecksum[found.config.name] === found.checksum
+                // ) {
+                //   continue
+                // }
 
                 const assets = browserBundles.result.outputFiles
                 const { outputs } = browserBundles.result.metafile
@@ -166,7 +176,7 @@ export const deploy = async (program: Command) => {
 
                 const { deploys, logs } = await configsDeploy(
                   context,
-                  configs,
+                  found,
                   nodeBundles,
                   browserBundles,
                   outputs,
@@ -189,20 +199,24 @@ export const deploy = async (program: Command) => {
                       }
                     }
 
-                    context.print.outro(
-                      context.i18n('commands.deploy.methods.deployComplete'),
-                    )
+                    // context.print.outro(
+                    //   context.i18n('commands.deploy.methods.deployComplete'),
+                    // )
+
+                    context.print.line()
                   } else {
-                    context.print.outro(
-                      context.i18n('commands.deploy.methods.deployComplete'),
-                    )
+                    // context.print.outro(
+                    //   context.i18n('commands.deploy.methods.deployComplete'),
+                    // )
                   }
+
+                  // context.print.line()
                 }
               }
             }
           }
         } catch (error) {
-          console.log(error)
+          throw error.message
         }
       }
 

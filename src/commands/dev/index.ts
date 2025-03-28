@@ -330,7 +330,7 @@ async function createSpecsFromConfigs(
     return undefined
   }
 
-  const hashSeed = [js.hash, found.bundled, found.mtimeMs, found.config]
+  const hashSeed = [js.hash, found.config]
 
   if (isApp) {
     hashSeed.push(
