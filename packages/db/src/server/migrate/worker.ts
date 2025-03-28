@@ -7,6 +7,7 @@ import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
+import { deepCopy } from '@saulx/utils'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -21,6 +22,8 @@ if (isMainThread) {
 
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
+
+  console.log('--------#EQWE22WEQ')
 
   await fromDb.setSchema(fromSchema, true)
   await toDb.setSchema(toSchema, true)
@@ -83,7 +86,29 @@ if (isMainThread) {
     }
 
     await toDb.drain()
-    channel.postMessage([toDb.server.schema, toDb.server.schemaTypesParsed])
+
+    const fnMakeStringsOfFn = (obj) => {
+      for (const key in obj) {
+        if (typeof obj[key] === 'function') {
+          obj[key] = obj[key].toString()
+        } else if (typeof obj[key] === 'object') {
+          fnMakeStringsOfFn(obj[key])
+        }
+      }
+    }
+
+    console.log('--------#EQWEWEQ')
+
+    console.log(deepCopy(toDb.server.schema))
+
+    const x = fnMakeStringsOfFn(deepCopy(toDb.server.schema))
+    console.log({ x })
+
+    const y = fnMakeStringsOfFn(deepCopy(toDb.server.schemaTypesParsed))
+
+    console.log(x, y)
+    //
+    channel.postMessage([x, y])
     // put it to sleep
     atomics[0] = 0
     Atomics.notify(atomics, 0)
