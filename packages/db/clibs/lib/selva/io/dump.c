@@ -618,7 +618,7 @@ static int load_reference_meta(
 
         err = SELVA_EINVAL;
 
-        switch (fs->type) {
+        switch (rd.type) {
         case SELVA_FIELD_TYPE_NULL:
             err = 0;
             break;
