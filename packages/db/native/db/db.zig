@@ -342,6 +342,9 @@ pub fn getEdgeReferences(
 }
 
 pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.SelvaNodeWeakReference) ?Node {
+    if (ref.dst_id == 0) {
+        return null;
+    }
     return selva.selva_fields_resolve_weak_reference(ctx.selva, fieldSchema, ref);
 }
 

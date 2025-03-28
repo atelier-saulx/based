@@ -38,7 +38,7 @@ const test = async (
     backup: async (db: BasedDb) => {
       const checksums = []
 
-      const fields = ['*']
+      const fields = ['*', '**']
 
       console.log(picocolors.gray('Create queries'))
 
