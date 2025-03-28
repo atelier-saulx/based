@@ -27,9 +27,6 @@ export function writeString(
   modifyOp: ModifyOp,
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
-  if (typeof value !== 'string' && value !== null && !isBuffer) {
-    return new ModifyError(t, value)
-  }
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {

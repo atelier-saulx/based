@@ -1,10 +1,9 @@
-import type { LangCode, LangName, SchemaLocales } from '../index.js'
+import type { LangCode, SchemaLocales } from '../index.js'
+import { Validation } from './validation.js'
 
 // WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
 export const TIMESTAMP = 1
-export const CREATED = 2
-export const UPDATED = 3
 export const NUMBER = 4
 export const CARDINALITY = 5
 export const INT8 = 20
@@ -37,8 +36,6 @@ export const TYPE_INDEX_MAP = {
   reference: REFERENCE,
   timestamp: TIMESTAMP,
   boolean: BOOLEAN,
-  created: CREATED,
-  updated: UPDATED,
   number: NUMBER,
   string: STRING,
   text: TEXT,
@@ -77,6 +74,7 @@ export type PropDef = {
   enum?: any[]
   dependent?: boolean
   // default here?
+  validation: Validation
 
   default: any
 
@@ -166,8 +164,6 @@ export type SchemaTypeDef = {
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   timestamp: 8, // 64bit
-  created: 8,
-  updated: 8,
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
   int8: 1,
@@ -214,6 +210,7 @@ export const ID_FIELD_DEF: PropDef = {
   prop: 255,
   default: 0,
   len: 4,
+  validation: () => true,
   __isPropDef: true,
 }
 
@@ -225,6 +222,7 @@ export const EMPTY_MICRO_BUFFER: PropDef = {
   default: undefined,
   prop: 0,
   len: 1,
+  validation: () => true,
   __isPropDef: true,
 }
 

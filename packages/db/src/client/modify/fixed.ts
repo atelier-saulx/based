@@ -40,12 +40,6 @@ map[BINARY] = (ctx, val, def) => {
 }
 
 map[STRING] = (ctx, val, def) => {
-  if (typeof val !== 'string') {
-    if (val !== null) {
-      return new ModifyError(def, val)
-    }
-    val = ''
-  }
   const valBuf = ENCODER.encode(val)
   const size = valBuf.byteLength
   if (size + 1 > def.len) {
@@ -86,9 +80,6 @@ map[ENUM] = (ctx, val, def) => {
 }
 
 map[NUMBER] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
@@ -99,14 +90,8 @@ map[NUMBER] = (ctx, val, def) => {
 
 map[TIMESTAMP] = (ctx, val, def) => {
   const parsedValue = convertToTimestamp(val)
-  if (typeof parsedValue !== 'number') {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
-  }
-  if (val < 0) {
-    return new ModifyError(def, val)
   }
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
@@ -114,12 +99,6 @@ map[TIMESTAMP] = (ctx, val, def) => {
 }
 
 map[UINT32] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
-  if (val > 4294967295 || val < 0) {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
@@ -130,12 +109,6 @@ map[UINT32] = (ctx, val, def) => {
 }
 
 map[UINT16] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
-  if (val > 65535 || val < 0) {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
@@ -144,25 +117,13 @@ map[UINT16] = (ctx, val, def) => {
 }
 
 map[UINT8] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
-  }
-  if (val > 255 || val < 0) {
-    return new ModifyError(def, val)
   }
   ctx.buf[ctx.len++] = val
 }
 
 map[INT32] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
-  if (val > 2147483647 || val < -2147483648) {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
@@ -173,28 +134,16 @@ map[INT32] = (ctx, val, def) => {
 }
 
 map[INT16] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
-  }
-  if (val > 32767 || val < -32768) {
-    return new ModifyError(def, val)
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
 
 map[INT8] = (ctx, val, def) => {
-  if (typeof val !== 'number') {
-    return new ModifyError(def, val)
-  }
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
-  }
-  if (val > 127 || val < -128) {
-    return new ModifyError(def, val)
   }
   ctx.buf[ctx.len++] = val
 }

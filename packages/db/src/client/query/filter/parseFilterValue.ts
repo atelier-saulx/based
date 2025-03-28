@@ -2,8 +2,6 @@ import {
   PropDef,
   PropDefEdge,
   TIMESTAMP,
-  CREATED,
-  UPDATED,
   ENUM,
   BOOLEAN,
   STRING,
@@ -54,11 +52,7 @@ export const parseFilterValue = (
     return value ? 1 : 0
   } else if (prop.typeIndex === ENUM) {
     return prop.reverseEnum[value] + 1
-  } else if (
-    prop.typeIndex === TIMESTAMP ||
-    prop.typeIndex === CREATED ||
-    prop.typeIndex === UPDATED
-  ) {
+  } else if (prop.typeIndex === TIMESTAMP) {
     const v = convertToTimestamp(value)
     if (typeof v !== 'number') {
       throw new Error(`Incorrect value for timestamp ${prop.path.join('.')}`)

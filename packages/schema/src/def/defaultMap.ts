@@ -6,8 +6,6 @@ export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [TYPE_INDEX_MAP.binary]: undefined,
   [TYPE_INDEX_MAP.boolean]: false,
   [TYPE_INDEX_MAP.cardinality]: 0,
-  [TYPE_INDEX_MAP.created]: 0,
-  [TYPE_INDEX_MAP.updated]: 0,
   [TYPE_INDEX_MAP.number]: 0,
   [TYPE_INDEX_MAP.timestamp]: 0,
   [TYPE_INDEX_MAP.enum]: 0,

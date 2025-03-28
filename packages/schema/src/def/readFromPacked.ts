@@ -1,5 +1,6 @@
 import { PropDef, REVERSE_SIZE_MAP, SchemaTypeDef } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
+import { VALIDATION_MAP } from './validation.js'
 
 export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   const size = (packed[0] | (packed[1] << 8)) >>> 0
@@ -55,8 +56,6 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
   // Text not supported yet
   // Ref not supported yet
   //   compression: 1 (0)
-
-  // YET
 
   const result: SchemaTypeDef = {
     cnt: 0,
@@ -114,6 +113,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       prop: p.prop,
       separate: false,
       __isPropDef: true,
+      validation: VALIDATION_MAP[p.typeIndex],
       start: s,
       default: DEFAULT_MAP[p.typeIndex], // tmp
       typeIndex: p.typeIndex,
@@ -130,6 +130,7 @@ export const readFromPacked = (packed: Uint8Array): SchemaTypeDef => {
       prop: p.prop,
       separate: true,
       __isPropDef: true,
+      validation: VALIDATION_MAP[p.typeIndex],
       start: 0,
       typeIndex: p.typeIndex,
       default: DEFAULT_MAP[p.typeIndex], // tmp

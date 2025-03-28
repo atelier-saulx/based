@@ -1,7 +1,6 @@
 import {
   BINARY,
   BOOLEAN,
-  CREATED,
   ENUM,
   INT16,
   INT32,
@@ -13,7 +12,6 @@ import {
   UINT16,
   UINT32,
   UINT8,
-  UPDATED,
 } from './types.js'
 
 // Lets add validation of values in here - need to validate DEFAULT!
@@ -38,12 +36,7 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
     } else if (t === UINT16 || t === INT16) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
-    } else if (
-      t === NUMBER ||
-      t === TIMESTAMP ||
-      t === CREATED ||
-      t === UPDATED
-    ) {
+    } else if (t === NUMBER || t === TIMESTAMP) {
       const view = new DataView(mainEmpty.buffer, s, 8)
       view.setFloat64(0, val, true)
     } else if (t === STRING) {

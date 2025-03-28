@@ -25,20 +25,6 @@ export function writeText(
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  const isBuffer = value instanceof Uint8Array
-
-  if (
-    typeof value !== 'string' &&
-    value !== null &&
-    !isBuffer &&
-    value &&
-    typeof value !== 'object'
-  ) {
-    return new ModifyError(t, value)
-  }
-
-  // const len = value?.length
-  // think about this
   if (value === null && !res.locale) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {

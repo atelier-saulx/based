@@ -1,3 +1,4 @@
+import { LangCode } from '../lang.js'
 import { TypeIndex, TYPE_INDEX_MAP, PropDef } from './types.js'
 
 // use typeIndex here
@@ -6,7 +7,11 @@ import { TypeIndex, TYPE_INDEX_MAP, PropDef } from './types.js'
 // this way we can actually write custom ones
 // TODO update defaults
 
-export type Validation = (payload: any, prop: PropDef) => boolean
+export type Validation = (
+  payload: any,
+  prop: PropDef,
+  locale?: LangCode,
+) => boolean
 
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [TYPE_INDEX_MAP.alias]: (value) => {
@@ -16,9 +21,9 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.binary]: (value) => {
-    if (!(value instanceof Uint8Array) && value != null) {
-      return false
-    }
+    // if (!(value instanceof Uint8Array) && value != null) {
+    //   return false
+    // }
     return true
   },
   [TYPE_INDEX_MAP.boolean]: (value) => {
@@ -30,19 +35,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [TYPE_INDEX_MAP.cardinality]: (value) => {
     return true
   },
-  [TYPE_INDEX_MAP.created]: (value) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
-      return false
-    }
-    return true
-  },
-  [TYPE_INDEX_MAP.updated]: (value) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
-      return false
-    }
-    return true
-  },
   [TYPE_INDEX_MAP.timestamp]: (value) => {
+    if (typeof value === 'string') {
+      return true // tmp
+    }
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
@@ -67,6 +63,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.int8]: (value) => {
+    // use % for steps size
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
@@ -178,18 +175,30 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.text]: (value) => {
+  [TYPE_INDEX_MAP.text]: (value, prop, lang) => {
+    // need locales as well....
     if (
       typeof value !== 'string' &&
+      value !== null &&
       !(value instanceof Uint8Array) &&
-      value != null
+      value &&
+      typeof value !== 'object'
     ) {
       return false
     }
+    // later
+    // if (
+    //   lang !== 0 &&
+    //   typeof value !== 'string' &&
+    //   !(value instanceof Uint8Array) &&
+    //   value != null
+    // ) {
+    //   return false
+    // }
     return true
   },
   [TYPE_INDEX_MAP.vector]: (value) => {
-    // Array
+    // Array should be supported
     if (!(value instanceof Float32Array)) {
       return false
     }

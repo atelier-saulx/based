@@ -36,9 +36,6 @@ export function writeVector(
   if (value === null) {
     size = 0
   } else {
-    if (!value) {
-      return new ModifyError(t, value)
-    }
     size = value.byteLength + 4
   }
   if (size === 0) {
@@ -46,7 +43,6 @@ export function writeVector(
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
-
       setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }

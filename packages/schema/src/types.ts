@@ -1,5 +1,6 @@
 import { getPropType } from './parse/utils.js'
 import { LangName } from './lang.js'
+import { Validation } from './def/validation.js'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -174,7 +175,7 @@ type Letter =
 
 type AllowedKey = `${Letter}${string}`
 type QueryFn = Function
-type PropValues = { type?: string; default?: any }
+type PropValues = { type?: string; default?: any; validation?: Validation }
 type Prop<V extends PropValues> = {
   required?: boolean
   title?: string | Record<string, string>

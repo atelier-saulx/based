@@ -27,6 +27,7 @@ import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
+import { VALIDATION_MAP } from './validation.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
@@ -129,17 +130,19 @@ export const createSchemaTypeDef = (
         separateSortText++
       }
       const isseparate = isSeparate(schemaProp, len)
-
+      const typeIndex = TYPE_INDEX_MAP[propType]
       const prop: PropDef = {
-        typeIndex: TYPE_INDEX_MAP[propType],
+        typeIndex,
         __isPropDef: true,
         separate: isseparate,
         path: propPath,
         start: 0,
+        validation: VALIDATION_MAP[typeIndex],
         len,
-        default: schemaProp.default ?? DEFAULT_MAP[TYPE_INDEX_MAP[propType]],
+        default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
         prop: isseparate ? ++result.cnt : 0,
       }
+
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
         prop.reverseEnum = {}
