@@ -6,7 +6,6 @@ const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 
-
 const read = utils.read;
 
 pub const TypeId = u16;

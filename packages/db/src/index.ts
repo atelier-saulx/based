@@ -128,7 +128,8 @@ export class BasedDb {
     return this.server.stop.apply(this.server, arguments)
   }
 
-  save: DbServer['save'] = function () {
+  save: DbServer['save'] = async function () {
+    await this.isModified()
     return this.server.save.apply(this.server, arguments)
   }
 
@@ -136,8 +137,8 @@ export class BasedDb {
     return this.server.migrateSchema.apply(this.server, arguments)
   }
 
-  isReady: DbClient['isModified'] = function () {
-    return this.client.isReady.apply(this.client, arguments)
+  isModified: DbClient['isModified'] = function () {
+    return this.client.isModified.apply(this.client, arguments)
   }
 
   schemaIsSet: DbClient['schemaIsSet'] = function () {
@@ -145,6 +146,7 @@ export class BasedDb {
   }
 
   async destroy() {
+    await this.isModified()
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
     await wait(Math.max(this.client.hooks.flushTime + 10, 10))

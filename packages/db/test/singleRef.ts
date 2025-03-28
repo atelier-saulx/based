@@ -83,12 +83,17 @@ await test('single simple', async (t) => {
             ref: 'simple',
             prop: 'user',
           },
+
           name: { type: 'string' },
         },
       },
       simple: {
         props: {
           bla: { type: 'uint32' },
+          mySelf: {
+            ref: 'simple',
+            prop: 'mySelf',
+          },
           user: {
             ref: 'user',
             prop: 'simple',
@@ -104,9 +109,7 @@ await test('single simple', async (t) => {
     }),
   })
 
-  await db.drain()
-
-  deepEqual((await db.query('simple').include('user.name').get()).toObject(), [
+  deepEqual(await db.query('simple').include('user.name').get(), [
     {
       id: 1,
       user: {
@@ -115,6 +118,47 @@ await test('single simple', async (t) => {
       },
     },
   ])
+
+  db.update('simple', 1, {
+    user: null,
+  })
+
+  deepEqual(await db.query('simple').include('user.name').get(), [
+    {
+      id: 1,
+      user: null,
+    },
+  ])
+
+  const x = db.create('user', {
+    name: 'Mr snurp',
+  })
+
+  const blax = await db.create('simple', {
+    user: x,
+  })
+
+  const ids = []
+  for (let i = 0; i < 1e5; i++) {
+    ids.push(db.create('simple', {}))
+  }
+
+  const bla2 = await db.create('simple', {
+    user: x,
+    mySelf: blax,
+  })
+
+  await db.isModified()
+
+  for (let i = 0; i < 1e5; i++) {
+    ids.push(db.delete('simple', ids[i]))
+  }
+
+  await db.save()
+
+  db.update('simple', blax, {
+    mySelf: null,
+  })
 })
 
 await test('simple nested', async (t) => {

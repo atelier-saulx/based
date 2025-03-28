@@ -2,11 +2,17 @@ import native from '../native.js'
 import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { CsmtNodeRange, destructureCsmtKey, foreachBlock, foreachDirtyBlock, makeCsmtKey } from './tree.js'
+import {
+  CsmtNodeRange,
+  destructureCsmtKey,
+  foreachBlock,
+  foreachDirtyBlock,
+  makeCsmtKey,
+} from './tree.js'
 import { DbServer, WRITELOG_FILE } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '../utils.js'
-import {createTree} from './csmt/tree.js'
+import { createTree } from './csmt/tree.js'
 
 const COMMON_SDB_FILE = 'common.sdb'
 
@@ -28,10 +34,23 @@ export type Writelog = {
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-function saveRange(db: DbServer, typeId: number, start: number, end: number, hashOut: Uint8Array): string | null {
+function saveRange(
+  db: DbServer,
+  typeId: number,
+  start: number,
+  end: number,
+  hashOut: Uint8Array,
+): string | null {
   const file = block_sdb_file(typeId, start, end)
   const path = join(db.fileSystemPath, file)
-  const err = native.saveRange(path, typeId, start, end, db.dbCtxExternal, hashOut)
+  const err = native.saveRange(
+    path,
+    typeId,
+    start,
+    end,
+    db.dbCtxExternal,
+    hashOut,
+  )
   if (err) {
     // TODO print the error string
     console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
@@ -40,8 +59,16 @@ function saveRange(db: DbServer, typeId: number, start: number, end: number, has
   return file
 }
 
-export function save<T extends boolean>(db: DbServer, sync?: T, forceFullDump?: boolean): T extends true ? void : Promise<void>;
-export function save(db: DbServer, sync = false, forceFullDump = false): void | Promise<void> {
+export function save<T extends boolean>(
+  db: DbServer,
+  sync?: T,
+  forceFullDump?: boolean,
+): T extends true ? void : Promise<void>
+export function save(
+  db: DbServer,
+  sync = false,
+  forceFullDump = false,
+): void | Promise<void> {
   if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
     return
   }
@@ -81,7 +108,7 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
           end,
         }
         db.merkleTree.insert(mtKey, hash, data)
-      });
+      })
     }
   } else {
     foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
@@ -121,7 +148,9 @@ export function save(db: DbServer, sync = false, forceFullDump = false): void | 
     const [typeId, start] = destructureCsmtKey(leaf.key)
     const data: CsmtNodeRange = leaf.data
     if (start != data.start) {
-      console.error(`csmtKey start and range start mismatch: ${start} != ${data.start}`)
+      console.error(
+        `csmtKey start and range start mismatch: ${start} != ${data.start}`,
+      )
     }
     rangeDumps[typeId].push({ ...data, hash: bufToHex(leaf.hash) })
   })

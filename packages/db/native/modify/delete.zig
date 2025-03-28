@@ -4,6 +4,7 @@ const Modify = @import("./ctx.zig");
 const std = @import("std");
 const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
+const selva = @import("../selva.zig");
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
@@ -74,6 +75,13 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
+        if (ctx.fieldType == types.Prop.REFERENCE) {
+            const oldRefDst = db.getReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+            if (oldRefDst) |dstNode| {
+                Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), selva.selva_get_node_id(dstNode));
+            }
+        }
+
         try db.deleteField(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;

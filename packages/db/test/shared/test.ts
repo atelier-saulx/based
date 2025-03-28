@@ -39,7 +39,7 @@ const test = async (
       const checksums = []
 
       for (const type in db.server.schema.types) {
-        const x = await db.query(type).include().get()
+        const x = await db.query(type).include('*', '**').get()
         checksums.push(x.checksum)
       }
 
@@ -52,7 +52,7 @@ const test = async (
       const backupChecksums = []
 
       for (const type in newDb.server.schema.types) {
-        const x = await newDb.query(type).get()
+        const x = await newDb.query(type).include('*', '**').get()
         backupChecksums.push(x.checksum)
       }
 
