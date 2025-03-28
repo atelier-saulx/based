@@ -6,9 +6,6 @@ const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
 
-
-
-
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
@@ -41,4 +38,10 @@ pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
     const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
 
     ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;
+}
+
+pub fn markReferencesDirty(ctx: *ModifyCtx, dstTypeId: u16, refs: []u32) void {
+    for (refs) |nodeId| {
+        markDirtyRange(ctx, dstTypeId, nodeId);
+    }
 }
