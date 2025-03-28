@@ -1559,14 +1559,13 @@ int selva_fields_get_reference_meta_mutable_string(
     return 0;
 }
 
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
     struct SelvaFields *fields = &node->fields;
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReference *ref;
 
-    if (field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use) {
+    if (fs->field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use) {
         return nullptr;
     }
 
@@ -1580,14 +1579,13 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct
     return ref;
 }
 
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
     struct SelvaFields *fields = &node->fields;
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
-    if (field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use) {
+    if (fs->field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use) {
         return nullptr;
     }
 
@@ -1837,7 +1835,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t fie
         return SELVA_EINTYPE;
     }
 
-    struct SelvaNodeReferences *refs = selva_fields_get_references(db, node, field);
+    struct SelvaNodeReferences *refs = selva_fields_get_references(db, node, fs);
     if (!refs) {
         return SELVA_ENOENT;
     }

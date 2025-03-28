@@ -72,9 +72,11 @@ pub inline fn getRefsFields(
             return 0;
         }
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+            return 0;
+        };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
-        refs = db.getReferences(ctx.db, node, refField);
+        refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) {
             return 0;
         }
