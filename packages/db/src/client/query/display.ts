@@ -145,10 +145,6 @@ const inspectObject = (
   isObject: boolean,
   depth: number,
 ) => {
-  console.log(
-    '------->',
-    inspect(object, { depth: null, customInspect: false }),
-  )
   const prefix = ''.padEnd(level, ' ')
   let str = ''
   if (isFirst || isObject) {
