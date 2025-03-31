@@ -54,6 +54,7 @@ await test('update', async (t) => {
     },
   })
 
+  // --- fix this creates a SEG FAULT
   // await throws(async () => {
   //   db.create('user', {
   //     text: {
