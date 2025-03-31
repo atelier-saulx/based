@@ -12,16 +12,22 @@ export function writeJson(
   parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  // try catch cleaner error...
   try {
-    return writeBinary(
-      value === null ? null : JSON.stringify(value),
-      ctx,
-      schema,
-      t,
-      parentId,
-      modifyOp,
-    )
+    if (value === null) {
+      return writeBinary(null, ctx, schema, t, parentId, modifyOp)
+    } else {
+      if (!t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
+      return writeBinary(
+        JSON.stringify(value),
+        ctx,
+        schema,
+        t,
+        parentId,
+        modifyOp,
+      )
+    }
   } catch (err) {
     return new ModifyError(t, value)
   }

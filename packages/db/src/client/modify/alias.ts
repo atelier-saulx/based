@@ -30,6 +30,9 @@ export function writeAlias(
         ctx.buf[ctx.len++] = DELETE
       }
     } else {
+      if (!t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
       const valueBuf = ENCODER.encode(value)
       let size = valueBuf.byteLength
       if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {

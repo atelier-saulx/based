@@ -11,7 +11,7 @@ export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
 
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [TYPE_INDEX_MAP.alias]: (value) => {
-    if (typeof value !== 'string' && value != null) {
+    if (typeof value !== 'string') {
       return false
     }
     return true
@@ -23,7 +23,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.boolean]: (value) => {
-    if (typeof value !== 'boolean' && value != null) {
+    if (typeof value !== 'boolean') {
       return false
     }
     return true
@@ -96,7 +96,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.number]: (value) => {
-    if (typeof value !== 'number' && value != null) {
+    if (typeof value !== 'number') {
       return false
     }
     return true
@@ -114,7 +114,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return false
   },
   [TYPE_INDEX_MAP.id]: (value) => {
-    if (typeof value !== 'string' && value != null) {
+    if (typeof value !== 'string') {
       return false
     }
     return true
@@ -124,7 +124,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.microbuffer]: (value) => {
-    if (!(value instanceof Uint8Array) && value != null) {
+    if (!(value instanceof Uint8Array)) {
       return false
     }
     return true
@@ -150,11 +150,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.string]: (value) => {
-    if (
-      typeof value !== 'string' &&
-      !(value instanceof Uint8Array) &&
-      value != null
-    ) {
+    if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }
     return true
@@ -171,28 +167,6 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.text]: (value, prop) => {
-    // need locales as well....
-    if (
-      typeof value !== 'string' &&
-      value !== null &&
-      !(value instanceof Uint8Array) &&
-      value &&
-      typeof value !== 'object'
-    ) {
-      return false
-    }
-    // later
-    // if (
-    //   lang !== 0 &&
-    //   typeof value !== 'string' &&
-    //   !(value instanceof Uint8Array) &&
-    //   value != null
-    // ) {
-    //   return false
-    // }
-    return true
-  },
   [TYPE_INDEX_MAP.vector]: (value) => {
     // Array should be supported
     if (!(value instanceof Float32Array)) {
@@ -201,3 +175,5 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
 }
+
+export const defaultValidation = () => true

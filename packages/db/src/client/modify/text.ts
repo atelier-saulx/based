@@ -43,8 +43,15 @@ export function writeText(
       // @ts-ignore
       value = ''
     }
-    // @ts-ignore
-    const err = writeString(res.locale, value, ctx, def, t, res.tmpId, modifyOp)
+    const err = writeString(
+      res.locale,
+      value as string,
+      ctx,
+      def,
+      t,
+      res.tmpId,
+      modifyOp,
+    )
     if (modifyOp === CREATE) {
       const index = t.prop * (def.localeSize + 1)
       const langIndex = def.seperateTextSort.localeToIndex.get(locale)

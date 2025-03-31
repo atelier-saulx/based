@@ -27,13 +27,8 @@ export function writeString(
   modifyOp: ModifyOp,
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
-  const len = value?.length
 
-  if (!t.validation(value, t)) {
-    return new ModifyError(t, value)
-  }
-
-  if (!len) {
+  if (value === '' || value === null) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
@@ -42,6 +37,10 @@ export function writeString(
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
+    if (!t.validation(value, t)) {
+      return new ModifyError(t, value)
+    }
+
     let size = isBuffer
       ? value.byteLength
       : ENCODER.encode(value).byteLength + 6

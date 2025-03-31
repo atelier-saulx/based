@@ -14,7 +14,6 @@ import {
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
-  BOOLEAN,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -27,7 +26,7 @@ import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
-import { VALIDATION_MAP } from './validation.js'
+import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
 
@@ -137,7 +136,8 @@ export const createSchemaTypeDef = (
         separate: isseparate,
         path: propPath,
         start: 0,
-        validation: schemaProp.validate ?? VALIDATION_MAP[typeIndex],
+        validation:
+          schemaProp.validate ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
         len,
         default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
         prop: isseparate ? ++result.cnt : 0,
