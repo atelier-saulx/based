@@ -8,6 +8,7 @@ import {
   ENUM,
 } from './types.js'
 import { getPropLen, isSeparate } from './utils.js'
+import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   for (const key in refProp) {
@@ -26,12 +27,14 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       if (separate) {
         prop.edgesSeperateCnt++
       }
+      const typeIndex = TYPE_INDEX_MAP[edgeType]
       const edge: PropDefEdge = {
         __isPropDef: true,
         __isEdge: true,
         prop: separate ? prop.edgesSeperateCnt : 0,
+        validation: VALIDATION_MAP[typeIndex] ?? defaultValidation,
         name: key,
-        typeIndex: TYPE_INDEX_MAP[edgeType],
+        typeIndex,
         len,
         separate,
         path: [...prop.path, key],
