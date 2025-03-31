@@ -48,16 +48,20 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
     type: "function",
     fn: async (based, schema) => {
       const db = based.db.v2 as BasedDb;
-
-      try {
-        await db.setSchema(schema);
-      } catch (error) {
-        context.print
-          .line()
-          .error(context.i18n("methods.server.name"))
-          .log("<b>db:set-schema</b>", null)
-          .log(`<red>${error.message.trim()}</red>`, null)
-          .line();
+      if (!Array.isArray(schema)) {
+        schema = [schema.schema ? schema : { schema }];
+      }
+      for (const { schema: schemaItem } of schema) {
+        try {
+          await db.setSchema(schemaItem);
+        } catch (error) {
+          context.print
+            .line()
+            .error(context.i18n("methods.server.name"))
+            .log("<b>db:set-schema</b>", null)
+            .log(`<red>${error.message.trim()}</red>`, null)
+            .line();
+        }
       }
     },
   },
