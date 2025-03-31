@@ -16,6 +16,7 @@ await test('update', async (t) => {
     types: {
       user: {
         props: {
+          on: 'boolean',
           u32: 'uint32',
           u8: 'uint8',
           i8: 'int8',
@@ -38,6 +39,10 @@ await test('update', async (t) => {
         },
       },
     },
+  })
+
+  await throws(async () => {
+    await db.create('user', { on: 255 + 1 })
   })
 
   await throws(async () => {
@@ -198,6 +203,7 @@ await test('update', async (t) => {
           cardinality: 0,
           number: 0,
           numberMax: 0,
+          on: false,
         },
       },
       {
@@ -217,6 +223,7 @@ await test('update', async (t) => {
           cardinality: 0,
           number: 0,
           numberMax: 0,
+          on: false,
         },
       },
     ],
