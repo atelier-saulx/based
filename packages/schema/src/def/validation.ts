@@ -29,6 +29,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.cardinality]: (value) => {
+    // add all things
     return true
   },
   [TYPE_INDEX_MAP.timestamp]: (value) => {

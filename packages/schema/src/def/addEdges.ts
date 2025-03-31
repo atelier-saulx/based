@@ -28,6 +28,8 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesSeperateCnt++
       }
       const typeIndex = TYPE_INDEX_MAP[edgeType]
+
+      // add default
       const edge: PropDefEdge = {
         __isPropDef: true,
         __isEdge: true,

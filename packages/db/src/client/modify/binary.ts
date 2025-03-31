@@ -57,7 +57,7 @@ export function writeBinary(
     size = 0
   } else {
     value = getBuffer(value)
-    if (!value) {
+    if (!value || !t.validation(value, t)) {
       return new ModifyError(t, value)
     }
     size = value.byteLength + 6

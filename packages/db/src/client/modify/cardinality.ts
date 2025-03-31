@@ -7,11 +7,7 @@ import { xxHash64 } from '../xxHash64.js'
 import { ENCODER } from '../../utils.js'
 
 export function writeHll(
-  value:
-    | string
-    | null
-    | Uint8Array
-    | Array<string | Uint8Array>,
+  value: string | null | Uint8Array | Array<string | Uint8Array>,
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
@@ -21,16 +17,13 @@ export function writeHll(
   if (!value) {
     return new ModifyError(t, value)
   }
-
   if (value === null) {
     // Future hll_reset function
     return
   } else if (!Array.isArray(value)) {
     value = [value]
   }
-
   const err = addHll(value, ctx, def, t, parentId, modifyOp)
-
   if (!err && modifyOp === CREATE) {
     def.seperateSort.bufferTmp[t.prop] = 2
     ctx.hasSortField++
@@ -49,6 +42,9 @@ function addHll(
 ): ModifyErr {
   const len = value.length
   let size = 4 + len * 8
+  if (!t.validation(value, t)) {
+    return new ModifyError(t, value)
+  }
   if (ctx.len + size + SIZE.DEFAULT_CURSOR > ctx.max) {
     return RANGE_ERR
   }
@@ -70,8 +66,7 @@ export function writeHllBuf(
   for (let val of value) {
     if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
-    } else if (
-      (val instanceof Uint8Array) && val.byteLength === 8) {
+    } else if (val instanceof Uint8Array && val.byteLength === 8) {
       ctx.buf.set(val, ctx.len)
     } else {
       return new ModifyError(t, val)
