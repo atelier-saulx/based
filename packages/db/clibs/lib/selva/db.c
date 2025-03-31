@@ -819,6 +819,7 @@ selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry
     selva_hash128_t res;
 
     selva_hash_reset(tmp_hash_state);
+    selva_hash_update(tmp_hash_state, &node->node_id, sizeof(node->node_id));
     selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, &node->fields);
     hash_aliases(tmp_hash_state, type, node->node_id);
     res = selva_hash_digest(tmp_hash_state);
