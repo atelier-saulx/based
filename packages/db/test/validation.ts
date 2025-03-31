@@ -12,6 +12,9 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
+  // $edge: {}
+  // $edge ...
+
   await db.setSchema({
     types: {
       user: {
