@@ -765,6 +765,11 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
     return fields_set(db, node, fs, &node->fields, value, len);
 }
 
+int fields_set2(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+{
+    return fields_set(db, node, fs, fields, value, len);
+}
+
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
 {
     struct SelvaFields *fields = &node->fields;
