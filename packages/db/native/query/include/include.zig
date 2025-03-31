@@ -174,8 +174,10 @@ pub fn getFields(
             }
             if (field == t.MAIN_PROP) {
                 main = value;
-                if (includeMain.?.len != 0) {
-                    size += read(u16, includeMain.?, 0) + 1;
+                if (includeMain) |incMain| {
+                    if (incMain.len != 0) {
+                        size += read(u16, incMain, 0) + 1;
+                    }
                 } else {
                     size += (valueLen + 1);
                 }
