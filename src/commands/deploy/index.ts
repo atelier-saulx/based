@@ -186,8 +186,6 @@ export const deploy = async (program: Command) => {
                   configsMap,
                 )
 
-                console.log({ deploys })
-
                 if (deploys?.length) {
                   deployed = true
 
