@@ -84,7 +84,7 @@ await test('non existing', async (t) => {
     return t.backup(db)
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       nurp: {
         props: {
@@ -108,15 +108,12 @@ await test('non existing', async (t) => {
   })
 
   await db.drain()
-
   db.delete('user', simple)
-
   await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const nurp = db.create('nurp', {})
-
   await db.drain()
 
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
@@ -146,7 +143,7 @@ await test('non existing', async (t) => {
     return t.backup(db)
   })
 
-  await db.putSchema({
+  await db.setSchema({
     types: {
       nurp: {
         props: {
