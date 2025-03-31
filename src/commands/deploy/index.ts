@@ -213,8 +213,6 @@ export const deploy = async (program: Command) => {
                         context.print.step(log)
                       }
                     }
-
-                    context.print.line()
                   }
                 }
               }
