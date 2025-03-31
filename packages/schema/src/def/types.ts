@@ -75,9 +75,7 @@ export type PropDef = {
   dependent?: boolean
   // default here?
   validation: Validation
-
   default: any
-
   // edge stuff
   edgeMainLen?: 0
   reverseEnum?: { [key: string]: number }
@@ -93,6 +91,9 @@ export type PropDef = {
   }
   edgeMainEmpty?: Uint8Array
   __isEdge?: boolean
+  // Schema stuff
+  max?: number
+  min?: number
 }
 
 export type PropDefEdge = Partial<PropDef> & {

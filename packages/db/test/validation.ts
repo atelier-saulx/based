@@ -23,6 +23,8 @@ await test('update', async (t) => {
           u16: 'uint16',
           i16: 'int16',
           name: 'string',
+          number: 'number',
+          numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
           cardinality: 'cardinality',
           friend: { ref: 'user', prop: 'friend' },
@@ -36,6 +38,18 @@ await test('update', async (t) => {
         },
       },
     },
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      number: 'nla',
+    })
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      numberMax: 21,
+    })
   })
 
   await throws(async () => {
@@ -182,6 +196,8 @@ await test('update', async (t) => {
           countryCode: '',
           name: 'jame-z',
           cardinality: 0,
+          number: 0,
+          numberMax: 0,
         },
       },
       {
@@ -199,6 +215,8 @@ await test('update', async (t) => {
           countryCode: '',
           name: 'youzi',
           cardinality: 0,
+          number: 0,
+          numberMax: 0,
         },
       },
     ],

@@ -25,34 +25,54 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     const x = typeof value === 'string' || value instanceof Uint8Array
     return x
   },
-  [TYPE_INDEX_MAP.timestamp]: (value) => {
+  [TYPE_INDEX_MAP.timestamp]: (value, t) => {
     if (typeof value === 'string') {
       return true
     }
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
+
+    // TODO have to fix
+    // if (t.min && value < t.min) {
+    //   return false
+    // }
+    // if (t.max && value > t.max) {
+    //   return false
+    // }
     return true
   },
-  [TYPE_INDEX_MAP.int16]: (value) => {
+  [TYPE_INDEX_MAP.int16]: (value, t) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     if (value > 32767 || value < -32768) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.int32]: (value) => {
+  [TYPE_INDEX_MAP.int32]: (value, t) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     if (value > 2147483647 || value < -2147483648) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.int8]: (value) => {
+  [TYPE_INDEX_MAP.int8]: (value, t) => {
     // use % for steps size
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
@@ -60,37 +80,67 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 127 || value < -128) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.uint8]: (value) => {
+  [TYPE_INDEX_MAP.uint8]: (value, t) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     if (value > 255 || value < 0) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.uint16]: (value) => {
+  [TYPE_INDEX_MAP.uint16]: (value, t) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     if (value > 65535 || value < 0) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.uint32]: (value) => {
+  [TYPE_INDEX_MAP.uint32]: (value, t) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     if (value > 4294967295 || value < 0) {
       return false
     }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
+      return false
+    }
     return true
   },
-  [TYPE_INDEX_MAP.number]: (value) => {
+  [TYPE_INDEX_MAP.number]: (value, t) => {
     if (typeof value !== 'number') {
+      return false
+    }
+    if (t.min && value < t.min) {
+      return false
+    }
+    if (t.max && value > t.max) {
       return false
     }
     return true
@@ -143,7 +193,8 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     // }
     return true
   },
-  [TYPE_INDEX_MAP.string]: (value) => {
+  [TYPE_INDEX_MAP.string]: (value, t) => {
+    // add max etc all here - make a ref to the original SCHEMA
     if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }

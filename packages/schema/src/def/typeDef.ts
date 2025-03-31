@@ -143,6 +143,14 @@ export const createSchemaTypeDef = (
         prop: isseparate ? ++result.cnt : 0,
       }
 
+      if (schemaProp.max) {
+        prop.max = schemaProp.max
+      }
+
+      if (schemaProp.min) {
+        prop.min = schemaProp.min
+      }
+
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
         prop.reverseEnum = {}
