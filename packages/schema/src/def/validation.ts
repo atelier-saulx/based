@@ -1,5 +1,5 @@
 import { LangCode } from '../lang.js'
-import { TypeIndex, TYPE_INDEX_MAP, PropDef } from './types.js'
+import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
 
 // use typeIndex here
 // end export them per type
@@ -7,11 +7,7 @@ import { TypeIndex, TYPE_INDEX_MAP, PropDef } from './types.js'
 // this way we can actually write custom ones
 // TODO update defaults
 
-export type Validation = (
-  payload: any,
-  prop: PropDef,
-  locale?: LangCode,
-) => boolean
+export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
 
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [TYPE_INDEX_MAP.alias]: (value) => {
@@ -175,7 +171,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.text]: (value, prop, lang) => {
+  [TYPE_INDEX_MAP.text]: (value, prop) => {
     // need locales as well....
     if (
       typeof value !== 'string' &&

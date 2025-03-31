@@ -28,6 +28,11 @@ export function writeString(
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
   const len = value?.length
+
+  if (!t.validation(value, t)) {
+    return new ModifyError(t, value)
+  }
+
   if (!len) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
@@ -41,7 +46,7 @@ export function writeString(
       ? value.byteLength
       : ENCODER.encode(value).byteLength + 6
     if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
-      // +10 OR +11, teh original check was +20 but
+      // +10 OR +11, the original check was +20 but
       // there are 10 addtional bytes in this scope
       // 5 compression size
       return RANGE_ERR

@@ -84,6 +84,6 @@ export const throws = async (
     }
   }
   if (didThrow === false) {
-    throw new Error(`"${label ?? 'Function '}" should throw`)
+    throw new Error(`"${label ?? '   ' + fn.toString()}" should throw`)
   }
 }

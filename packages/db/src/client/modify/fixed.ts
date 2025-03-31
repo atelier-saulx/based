@@ -154,6 +154,9 @@ export const writeFixedValue = (
   def: PropDef | PropDefEdge,
   pos: number,
 ): ModifyErr => {
+  if (!def.validation(val, def)) {
+    return new ModifyError(def, val)
+  }
   const len = ctx.len
   ctx.len = pos
   const res = map[def.typeIndex](ctx, val, def)
@@ -166,5 +169,8 @@ export const appendFixedValue = (
   val: any,
   def: PropDef | PropDefEdge,
 ): ModifyErr => {
+  if (!def.validation(val, def)) {
+    return new ModifyError(def, val)
+  }
   return map[def.typeIndex](ctx, val, def)
 }

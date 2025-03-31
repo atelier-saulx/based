@@ -62,10 +62,6 @@ function _modify(
         continue
       }
 
-      if (!def.validation(val, def, res.locale)) {
-        return new ModifyError(def, val)
-      }
-
       if (res.subMarkers) {
         checkSubscriptionMarkers(ctx.db, res.subMarkers, def)
       }
