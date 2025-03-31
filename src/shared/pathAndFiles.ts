@@ -42,10 +42,10 @@ export const isFileFromCloud = (key: string) =>
 
 export const cwd = process.cwd()
 
-export const rel = (str: string) => relative(cwd, str)
+export const rel = (path: string) => relative(cwd, path)
 
-export const abs = (str: string, dir: string) =>
-  isAbsolute(str) ? str : join(dir, str)
+export const abs = (path: string, dir: string) =>
+  isAbsolute(path) ? path : join(dir, path)
 
 export const sanitizeFileName = (fileName: string) =>
   fileName.replace(/\//gm, '-')
@@ -204,6 +204,7 @@ export const findConfigFile = async (
   mapping: Record<string, Based.Deploy.Configs>,
   nodeBundles: BundleResult,
 ): Promise<Based.Deploy.Configs | undefined> => {
+  file = abs(file, process.cwd())
   const found = mapping[file]
 
   if (found) {
