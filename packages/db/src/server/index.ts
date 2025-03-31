@@ -671,12 +671,12 @@ export class DbServer {
 
   async destroy() {
     await this.stop(true)
-    await rm(this.fileSystemPath, { recursive: true }).catch((err) =>
-      console.warn(
-        'Error removing dump folder',
-        this.fileSystemPath,
-        err.message,
-      ),
-    )
+    await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
+      // console.warn(
+      //   'Error removing dump folder',
+      //   this.fileSystemPath,
+      //   err.message,
+      // ),
+    })
   }
 }

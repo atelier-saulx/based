@@ -39,53 +39,53 @@ const test = async (
       const checksums = []
       const a = []
       const b = []
-
       const fields = ['*', '**']
-
       for (const type in db.server.schema.types) {
         const x = await db.query(type).include(fields).get()
         checksums.push(x.checksum)
         a.push(x.toObject())
       }
       let d = Date.now()
+      afters.push(async () => {
+        try {
+          await db.destroy()
+        } catch (err) {}
+      })
       await db.stop()
       console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
-
       const newDb = new BasedDb({
         path: t.tmp,
       })
-
+      afters.push(async () => {
+        try {
+          await newDb.destroy()
+        } catch (err) {}
+      })
       d = Date.now()
       await newDb.start()
-
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
       const backupChecksums = []
-
       for (const type in newDb.server.schema.types) {
         const x = await newDb.query(type).include(fields).get()
         backupChecksums.push(x.checksum)
         b.push(x.toObject())
       }
-
       function findFirstDiffPos(a, b) {
         for (let i = 0; i < a.length; i++) {
           if (a[i] !== b[i]) return i
         }
         return -1
       }
-
       const di = findFirstDiffPos(checksums, backupChecksums)
       if (di >= 0) {
         deepEqual(b[di], a[di])
       }
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
-
       await wait(10)
-
-      await newDb.destroy()
     },
     tmp: resolve(join(__dirname, relativePath)),
   }
+
   try {
     await fn(t)
     counts.success++
@@ -99,7 +99,6 @@ const test = async (
       picocolors.red(`! ${name}`),
       picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
     )
-
     const msg =
       (err.stack ?? err.msg ?? err)
         .replace(/\.js(?=\s|$)/g, '.ts')
@@ -110,7 +109,9 @@ const test = async (
   }
 
   try {
-    await Promise.all(afters.map((f) => f()))
+    for (let i = 0; i < afters.length; i++) {
+      await afters[i]()
+    }
   } catch (err) {
     counts.errors++
     console.log(
