@@ -20,7 +20,7 @@ export const test = async (program: Command): Promise<void> => {
       }
 
       if (backup || file) {
-        console.log(LINE_UP, LINE_UP)
+        console.log(LINE_UP)
         await setMake(context)
       }
 

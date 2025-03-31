@@ -55,15 +55,11 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
 
   if (isExternalFile) {
     if (!(await pathExists(selectedFile))) {
-      throw new Error(
-        `The specified file '${selectedFile}' is invalid or does not exist. Please provide a valid file.`,
-      )
+      throw `The specified file '${selectedFile}' is invalid or does not exist. Please provide a valid file.`
     }
 
     if (!file.endsWith('.rdb')) {
-      throw new Error(
-        `The specified file '${selectedFile}' is invalid. Only '<b>.rdb</b>' files can be restored.`,
-      )
+      throw `The specified file '${selectedFile}' is invalid. Only '<b>.rdb</b>' files can be restored.`
     }
 
     if (verbose) {
@@ -98,13 +94,11 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
 
   if (isCloudFile) {
     if (!skip) {
-      const doIt: boolean = await context.form.boolean({
-        message: context.i18n(
+      const doIt: boolean = await context.form.boolean(
+        context.i18n(
           'commands.backups.subCommands.restore.methods.confirmation',
         ),
-      })
-
-      context.print.pipe()
+      )
 
       if (!doIt) {
         return
@@ -120,6 +114,8 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
         db: dbInfo,
         key: selectedFile,
       })
+
+      context.spinner.stop()
     } catch (error: unknown) {
       throw new Error(context.i18n('errors.908', error))
     }
@@ -135,6 +131,8 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
           db: dbInfo,
         },
       })
+
+      context.spinner.stop()
 
       if (!result.ok) {
         throw new Error(result)
