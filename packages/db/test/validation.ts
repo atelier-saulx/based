@@ -16,7 +16,8 @@ await test('update', async (t) => {
     types: {
       user: {
         props: {
-          on: 'boolean',
+          json: 'json',
+          bool: 'boolean',
           u32: 'uint32',
           u8: 'uint8',
           i8: 'int8',
@@ -39,6 +40,10 @@ await test('update', async (t) => {
         },
       },
     },
+  })
+
+  await throws(async () => {
+    await db.create('user', { json: function () {} })
   })
 
   await throws(async () => {
@@ -203,7 +208,8 @@ await test('update', async (t) => {
           cardinality: 0,
           number: 0,
           numberMax: 0,
-          on: false,
+          bool: false,
+          json: null,
         },
       },
       {
@@ -223,7 +229,8 @@ await test('update', async (t) => {
           cardinality: 0,
           number: 0,
           numberMax: 0,
-          on: false,
+          bool: false,
+          json: null,
         },
       },
     ],
