@@ -43,6 +43,9 @@ await test('update', async (t) => {
     },
   })
 
+  // Add wrong string validation
+  // ---------------------------
+
   await throws(async () => {
     await db.create('user', { date: {} })
   })
