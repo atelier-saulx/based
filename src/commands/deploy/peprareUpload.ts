@@ -4,12 +4,13 @@ import mimeTypes from 'mime-types'
 import type { AppContext } from '../../context/index.js'
 import { queuedFileUpload } from './queues.js'
 
-export const prepareFilesToUpload = (
+export const prepareFilesToUpload = async (
   files: OutputFile[],
   favicons: Set<string>,
   outputs: BundleResult['result']['metafile']['outputs'],
+  publicPath: string,
   assetsMap: Record<string, string>,
-): Based.Deploy.FilesToUpload[] => {
+): Promise<Based.Deploy.FilesToUpload[]> => {
   const result: Based.Deploy.FilesToUpload[] = []
 
   for (const { path, contents } of files) {
@@ -30,10 +31,13 @@ export const prepareFilesToUpload = (
       }
     }
 
+    const destUrl = `${publicPath}/${fileName}`
+    assetsMap[path] = destUrl
+
     result.push({ path, contents, fileName, ext })
   }
 
-  return result
+  return Promise.resolve(result)
 }
 
 export const uploadFiles =
@@ -41,7 +45,6 @@ export const uploadFiles =
   async (
     uploads: Based.Deploy.FilesToUpload[],
     publicPath: string,
-    assetsMap: Record<string, string>,
   ): Promise<void> => {
     if (!uploads || !uploads.length) {
       return
@@ -62,7 +65,7 @@ export const uploadFiles =
       // )
 
       await Promise.all(
-        uploads.map(async ({ path, contents, ext, fileName }) => {
+        uploads.map(async ({ contents, ext, fileName }) => {
           const id = `fi${hashCompact(fileName, 8)}`
           const destUrl = `${publicPath}/${fileName}`
 
@@ -86,8 +89,6 @@ export const uploadFiles =
           //     ++uploading,
           //     uploads.length,
           //   )
-
-          assetsMap[path] = destUrl
         }),
       )
 

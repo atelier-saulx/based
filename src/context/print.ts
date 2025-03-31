@@ -3,8 +3,8 @@ import { LINE_NEW, SPACER } from '../shared/constants.js'
 import type { AppContext } from './AppContext.js'
 
 export const contextPrint = (context: AppContext): Based.Context.Print => {
-  // const originalStdoutWrite = process.stdout.write.bind(process.stdout)
-  // const originalStderrWrite = process.stderr.write.bind(process.stderr)
+  const originalStdoutWrite = process.stdout.write.bind(process.stdout)
+  const originalStderrWrite = process.stderr.write.bind(process.stderr)
   // const originalConsoleLog = console.log
   // const originalConsoleWarn = console.warn
   // const originalConsoleError = console.error
@@ -12,34 +12,33 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
   const isBasicLog = global?.display !== 'silent' || global?.display !== 'debug'
   // const isDebug = global?.display === 'debug'
 
-  // function stdlog(
-  //   chunk: any,
-  //   encoding?: BufferEncoding,
-  //   callback?: (error?: Error | null) => void,
-  // ): any[] {
-  //   const str: string =
-  //     typeof chunk === 'string' ? chunk : JSON.stringify(chunk, null, 2)
+  function stdlog(
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): any[] {
+    const str: string = typeof chunk === 'string' ? colorize(chunk) : chunk
 
-  //   return [str, encoding, callback]
-  // }
+    return [str, encoding, callback]
+  }
 
-  // process.stdout.write = ((
-  //   chunk: any,
-  //   encoding?: BufferEncoding,
-  //   callback?: (error?: Error | null) => void,
-  // ): boolean =>
-  //   originalStdoutWrite(
-  //     ...stdlog(chunk, encoding, callback),
-  //   )) as typeof process.stdout.write
+  process.stdout.write = ((
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): boolean =>
+    originalStdoutWrite(
+      ...stdlog(chunk, encoding, callback),
+    )) as typeof process.stdout.write
 
-  // process.stderr.write = ((
-  //   chunk: any,
-  //   encoding?: BufferEncoding,
-  //   callback?: (error?: Error | null) => void,
-  // ): boolean =>
-  //   originalStderrWrite(
-  //     ...stdlog(chunk, encoding, callback),
-  //   )) as typeof process.stderr.write
+  process.stderr.write = ((
+    chunk: any,
+    encoding?: BufferEncoding,
+    callback?: (error?: Error | null) => void,
+  ): boolean =>
+    originalStderrWrite(
+      ...stdlog(chunk, encoding, callback),
+    )) as typeof process.stderr.write
 
   // const logger =
   //   (icon: string) =>

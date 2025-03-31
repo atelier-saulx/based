@@ -1,7 +1,6 @@
 import type { BundleResult } from '@based/bundle'
 import { hash } from '@saulx/hash'
 import type { AppContext } from '../../context/index.js'
-// import { isConfigFile } from '../../shared/pathAndFiles.js'
 import { queuedFnDeploy } from './queues.js'
 
 export const configsDeploy = async (
@@ -17,10 +16,6 @@ export const configsDeploy = async (
   const result: Based.Deploy.FunctionsToDeploy[] = []
 
   const { index, config, app, favicon, path } = found
-  // for (const { index, config, app, favicon, path } of functions) {
-  // if (!isConfigFile(path)) {
-  //   continue
-  // }
 
   const js = nodeBundles.js(index)
   const sourcemap = nodeBundles.map(index)
@@ -38,33 +33,27 @@ export const configsDeploy = async (
       favicon: assetsMap[appFavicon?.path],
     }
 
-    const checksumSeed: any[] = [
-      appJs?.hash,
-      appCss?.hash,
-      appFavicon?.path,
-      js.hash,
-      config,
-    ]
+    const checksumSeed: any[] = [js.text, config.appParams]
 
     if (forceReload) {
-      const num = Number(forceReload)
-      const seconds = Number.isNaN(num) ? 10e3 : num * 1e3
-      config.appParams.forceReload = Date.now() + seconds
-
       checksumSeed.push(Date.now())
     }
 
     checksum = hash(checksumSeed)
   } else {
-    checksum = hash([js.hash, config])
+    checksum = hash([js.text])
   }
 
-  if (configsMap[path] !== checksum) {
+  if (forceReload && app) {
+    const seconds = Number.isNaN(forceReload) ? 10e3 : Number(forceReload) * 1e3
+    config.appParams.forceReload = Date.now() + seconds
+  }
+
+  if (configsMap[found.config.name] !== checksum) {
     result.push({ checksum, config, js, sourcemap, path })
   }
-  // }
 
-  if (result.length) {
+  if (result?.length) {
     const basedClient = await context.getBasedClient()
 
     // let deploying = 0
@@ -124,4 +113,6 @@ export const configsDeploy = async (
 
     return { deploys: result, logs }
   }
+
+  return { deploys: result, logs: [] }
 }

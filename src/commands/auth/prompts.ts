@@ -1,7 +1,7 @@
 import type { BasedClient } from '@based/client'
 import type { AppContext } from '../../context/index.js'
 import { authByEmail, authByState } from '../../helpers/auth/index.js'
-import { getBranch } from '../../shared/index.js'
+import { getBranch, getFile } from '../../shared/index.js'
 import { isEmailValid, isValueInOptions } from '../../shared/validations.js'
 
 export const newUserText =
@@ -239,8 +239,109 @@ export const envSelect =
     })
 
     if (env === branchOption.value) {
-      return branch
+      return '#branch'
     }
 
     return env
   }
+
+export const envCreate = async (
+  context: AppContext,
+  org: string,
+  project: string,
+  env: string,
+  useDataFrom: string,
+  basedClientAdmin: BasedClient,
+) => {
+  if (!env) {
+    return ''
+  }
+
+  const basedInfraFile = await getFile([
+    'based.infra.ts',
+    'based.infra.json',
+    'based.infra.js',
+  ])
+
+  const options = [
+    {
+      label: `Create a small and clean env named: <b>'${env}'</b>`,
+      value: '<new_env>',
+      hint: 'Recommended',
+    },
+  ]
+
+  if (useDataFrom) {
+    options.push({
+      label: `Create an env named: <b>'${env}'</b>, but cloning: <b>'${useDataFrom}'</b>`,
+      value: '<clone_env>',
+      hint: '',
+    })
+  }
+
+  if (basedInfraFile) {
+    options.push({
+      label: `Create a new env named: <b>'${env}'</b>, but using my Based Infra file`,
+      value: '<infra_file>',
+      hint: '',
+    })
+  }
+
+  const createEnv = await context.form.select({
+    message: `Couldn't validate your data in the cloud. No env found with the name <b>'${env}'</b>.`,
+    input: '',
+    options,
+    required: true,
+  })
+
+  try {
+    context.print.pipe()
+    context.spinner.start('Creating your new env...')
+
+    switch (createEnv) {
+      case '<new_env>':
+        await basedClientAdmin.call('create-env', {
+          org,
+          project,
+          env,
+          region: 'eu-central-1',
+          config: 'small',
+        })
+
+        break
+      case '<clone_env>':
+        await basedClientAdmin.call('clone-env', {
+          source: {
+            org,
+            project,
+            env: useDataFrom,
+          },
+          dest: {
+            org,
+            project,
+            env,
+          },
+          keepConfig: false,
+        })
+
+        break
+      case '<infra_file>':
+        await basedClientAdmin.call('create-env', {
+          org,
+          project,
+          env,
+          region: 'eu-central-1',
+          envConfig: basedInfraFile,
+        })
+
+        break
+    }
+
+    context.print.success('You env is ready!')
+    context.print.pipe()
+
+    return true
+  } catch (error) {
+    throw error.message
+  }
+}

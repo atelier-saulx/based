@@ -1,3 +1,4 @@
+import { getBranch } from '../shared/getBranch.js'
 import { getFile } from '../shared/getFile.js'
 
 export async function contextProgram(): Promise<Based.Context.Project> {
@@ -40,6 +41,17 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     ...(file !== undefined && { file }),
   }
 
+  if (basedProject.env.endsWith('#branch')) {
+    basedProject.branch = {} as Based.Context.Project['branch']
+
+    basedProject.branch.name = await getBranch()
+
+    const envInfo = basedProject.env.split('/')
+    const useDataFrom = envInfo.length === 2 ? envInfo[0] : null
+
+    basedProject.branch.useDataFrom = useDataFrom
+  }
+
   this.set('basedProject', basedProject)
 
   if (Object.keys(basedProject).length > 1) {
@@ -52,7 +64,12 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     this.print
       .pipe(this.i18n('context.org', basedProject.org))
       .pipe(this.i18n('context.project', basedProject.project))
-      .pipe(this.i18n('context.env', basedProject.env))
+      .pipe(
+        this.i18n(
+          'context.env',
+          `${basedProject.env} <reset><dim>(${basedProject.branch.name ?? ''})</dim></reset>`,
+        ),
+      )
 
     if (basedProject.apiKey) {
       this.print.pipe(

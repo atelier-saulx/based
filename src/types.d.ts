@@ -74,6 +74,10 @@ declare global {
         env?: string
         apiKey?: string
         file?: string
+        branch?: {
+          name: string
+          useDataFrom: string | null
+        }
       }
 
       type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'
@@ -417,7 +421,7 @@ declare global {
         }[]
       }
 
-      type ParsedUserEnvs = {
+      type UserCloudInfo = {
         org?: {
           project: string[]
         }
@@ -536,7 +540,7 @@ declare global {
 
       type FunctionsToDeploy = {
         checksum: number
-        config: any
+        config: ConfigsBase
         js: OutputFile
         sourcemap: OutputFile
         path: string
@@ -570,6 +574,7 @@ declare global {
           }
           files?: string[]
           schema?: any
+          finalPath?: string
         }
 
       type Configs = {

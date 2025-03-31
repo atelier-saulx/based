@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import type { BasedClient, BasedOpts } from '@based/client'
 import { confirm } from '@clack/prompts'
 import {
+  envCreate,
   envSelect,
   orgSelect,
   projectSelect,
@@ -68,17 +69,35 @@ const buildClients = (
   }
 }
 
+export const checkCloudInfo = async (
+  client: BasedClient,
+  org: string,
+  project: string,
+  env: string,
+) => {
+  try {
+    await client.query('env', { org, project, env }).get()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const connectToHub = async (
   context: AppContext,
   opts: BasedOpts,
 ): Promise<BasedClient> => {
-  const { file } = await context.get('basedProject')
+  const { file, branch } = await context.get('basedProject')
   const target =
     opts.org === 'saulx' && opts.project === 'based-cloud'
       ? context.i18n('methods.hubConnection.cluster')
       : opts.optionalKey
         ? context.i18n('methods.hubConnection.project')
         : context.i18n('methods.hubConnection.environment')
+
+  if (opts.env.endsWith('#branch') && branch) {
+    opts.env = branch.name
+  }
 
   const basedClient: BasedClient = SharedBasedClient.getInstance(opts)
 
@@ -113,7 +132,7 @@ export const connectToHub = async (
 
 export const login = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
-  const { cluster, org, env, project } = await context.getProgram()
+  let { cluster, org, env, project, branch } = await context.getProgram()
 
   const users: Based.Auth.AuthenticatedUser[] =
     await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
@@ -153,26 +172,26 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     'json',
   )
 
-  let parsedUserEnvs: Based.Infra.ParsedUserEnvs
+  let userCloudInfo: Based.Infra.UserCloudInfo
 
   if (!cluster || !org || !project || !env) {
-    const userCloudInfo: Based.Infra.UserEnvs[] = await basedClientAdmin
+    const userEnvs: Based.Infra.UserEnvs[] = await basedClientAdmin
       .query(context.endpoints.USER_CLOUD_INFO.endpoint, {
         userId: basedClientAdmin.authState?.userId,
       })
       .get()
 
-    parsedUserEnvs = parseOrgsData(userCloudInfo)
+    userCloudInfo = parseOrgsData(userEnvs)
   }
 
   const form = await context.form.group({
     cluster: clusterText(context, false, cluster),
-    ...(!org && { org: orgSelect(context, Object.keys(parsedUserEnvs), org) }),
+    ...(!org && { org: orgSelect(context, Object.keys(userCloudInfo), org) }),
     ...(!project && {
       project: (results) =>
         projectSelect(
           context,
-          Object.keys(parsedUserEnvs[results.results.org]),
+          Object.keys(userCloudInfo[results.results.org]),
           project,
         )(results),
     }),
@@ -180,7 +199,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
       env: (results) =>
         envSelect(
           context,
-          parsedUserEnvs[results.results.org][results.results.project],
+          userCloudInfo[results.results.org][results.results.project],
           env,
         )(results),
     }),
@@ -191,11 +210,11 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
   }
 
   const basedProject = {
-    ...form,
     ...(cluster && { cluster }),
     ...(org && { org }),
     ...(project && { project }),
     ...(env && { env }),
+    ...form,
   }
 
   const globalOptions = context.get('globalOptions')
@@ -205,6 +224,28 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
       basedProject,
       join(process.cwd(), `${BASED_FILE}.ts`),
       'ts',
+    )
+  }
+
+  if (env.endsWith('#branch') && branch) {
+    env = branch.name
+  }
+
+  const isCloudInfoValid = await checkCloudInfo(
+    basedClientAdmin,
+    org,
+    project,
+    env,
+  )
+
+  if (!isCloudInfoValid) {
+    await envCreate(
+      context,
+      org,
+      project,
+      env,
+      branch.useDataFrom,
+      basedClientAdmin,
     )
   }
 

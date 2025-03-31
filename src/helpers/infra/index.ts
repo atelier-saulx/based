@@ -119,8 +119,8 @@ export const getMachines = async () => {
 
 export const parseOrgsData = (
   data: Based.Infra.UserEnvs[],
-): Based.Infra.ParsedUserEnvs => {
-  const result: Based.Infra.ParsedUserEnvs = {}
+): Based.Infra.UserCloudInfo => {
+  const result: Based.Infra.UserCloudInfo = {}
 
   for (const item of data) {
     for (const env of item.envs) {

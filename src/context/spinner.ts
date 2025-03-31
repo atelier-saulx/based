@@ -66,9 +66,16 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
         Math.ceil(messageLength / terminalLength),
       ).fill(LINE_UP)
 
-      console.log(
-        colorize([...LINES_UP, context.state.emojis.step, SPACER, message]),
-      )
+      if (message) {
+        console.log(
+          ...LINES_UP,
+          LINE_CLEAR,
+          LINE_START,
+          colorize([context.state.emojis.step, SPACER, message]),
+        )
+      } else {
+        console.log(...LINES_UP, LINE_CLEAR, LINE_START)
+      }
     },
   }
 }

@@ -1,7 +1,6 @@
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { bundle } from '@based/bundle'
-import { hash } from '@saulx/hash'
 import { readJSON } from 'fs-extra/esm'
 import type { AppContext } from '../../context/index.js'
 import {
@@ -136,7 +135,7 @@ export const configsBundle = async (
           }
         }
 
-        let result = {
+        const result: any = {
           dir,
           type,
           path,
@@ -148,14 +147,9 @@ export const configsBundle = async (
           mtimeMs: 0,
         }
 
-        result = {
-          ...result,
-          checksum: hash([result]),
-          mtimeMs: 0,
-        }
-
         if (mapping[path]) {
           mapping[path] = result
+
           if (result.index) {
             mapping[result.index] = result
           }

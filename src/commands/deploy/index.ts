@@ -55,9 +55,12 @@ export const deploy = async (program: Command) => {
       )
 
       const assetsMap: Record<string, string> = {}
-      const configsMap: Record<string, number> = {}
       let greetings: boolean = false
-      forceReload = parseNumberAndBoolean(forceReload)
+      forceReload = forceReload
+        ? parseNumberAndBoolean(forceReload)
+        : watch
+          ? 10
+          : 0
 
       for (const found of configs) {
         await onChange(null, {
@@ -67,51 +70,53 @@ export const deploy = async (program: Command) => {
 
       async function onChange(err: BuildFailure | null, result?: BundleResult) {
         try {
+          let deployed: boolean = false
+          let deployType: string = ''
           const updates = result?.updates
 
-          // const client = basedClient.get('env')
-          // const remoteFunctions = (await client
-          //   .query('db', {
-          //     $db: 'config',
-          //     functions: {
-          //       id: true,
-          //       current: {
-          //         id: true,
-          //         config: true,
-          //         checksum: true,
-          //       },
-          //       $list: {
-          //         $find: {
-          //           $traverse: 'children',
-          //           $filter: {
-          //             $field: 'type',
-          //             $operator: '=',
-          //             $value: ['job', 'function'],
-          //           },
-          //         },
-          //       },
-          //     },
-          //   })
-          //   .get()) as {
-          //   functions: {
-          //     id?: string
-          //     current?: {
-          //       id: string
-          //       config: any
-          //       checksum: number
-          //     }
-          //   }[]
-          // }
+          const client = basedClient.get('env')
+          const remoteFunctions = (await client
+            .query('db', {
+              $db: 'config',
+              functions: {
+                id: true,
+                current: {
+                  id: true,
+                  config: true,
+                  checksum: true,
+                },
+                $list: {
+                  $find: {
+                    $traverse: 'children',
+                    $filter: {
+                      $field: 'type',
+                      $operator: '=',
+                      $value: ['job', 'function'],
+                    },
+                  },
+                },
+              },
+            })
+            .get()) as {
+            functions: {
+              id?: string
+              current?: {
+                id: string
+                config: any
+                checksum: number
+              }
+            }[]
+          }
 
-          // const remoteChecksum = remoteFunctions.functions.reduce(
-          //   (acc, config) => {
-          //     Object.assign(acc, {
-          //       [config.current.config.name]: config.current.checksum,
-          //     })
-          //     return acc
-          //   },
-          //   {},
-          // )
+          const configsMap = remoteFunctions.functions.reduce(
+            (acc, config) => {
+              Object.assign(acc, {
+                [config.current.config.name]: config.current.checksum,
+              })
+              return acc
+            },
+            {} as Record<string, number>,
+          )
 
           if (
             err ||
@@ -128,8 +133,14 @@ export const deploy = async (program: Command) => {
 
           if (updates?.length) {
             bundlingUpdateHandling(context)(updates)
-            for (let [_type, file] of updates) {
-              const found = await findConfigFile(file, mapping, nodeBundles)
+            for (let [type, file] of updates) {
+              deployType = type
+              const found = await findConfigFile(
+                file,
+                mapping,
+                nodeBundles,
+                browserBundles,
+              )
 
               if (found) {
                 file = found.app || found.index || found.path
@@ -153,26 +164,16 @@ export const deploy = async (program: Command) => {
                   continue
                 }
 
-                // if (
-                //   found.config.name &&
-                //   remoteChecksum[found.config.name] === found.checksum
-                // ) {
-                //   continue
-                // }
-
                 const assets = browserBundles.result.outputFiles
                 const { outputs } = browserBundles.result.metafile
 
-                const uploads = prepareFilesToUpload(
+                const uploads = await prepareFilesToUpload(
                   assets,
                   favicons,
                   outputs,
+                  publicPath,
                   assetsMap,
                 )
-
-                if (uploads.length) {
-                  await uploadFiles(context)(uploads, publicPath, assetsMap)
-                }
 
                 const { deploys, logs } = await configsDeploy(
                   context,
@@ -185,7 +186,23 @@ export const deploy = async (program: Command) => {
                   configsMap,
                 )
 
-                if (deploys.length) {
+                console.log({ deploys })
+
+                if (deploys?.length) {
+                  deployed = true
+
+                  if (deploys.some((deploy) => deploy.config.type === 'app')) {
+                    // const uploads = prepareFilesToUpload(
+                    //   assets,
+                    //   favicons,
+                    //   outputs,
+                    //   assetsMap,
+                    // )
+                    if (uploads.length) {
+                      await uploadFiles(context)(uploads, publicPath)
+                    }
+                  }
+
                   if (logs.some(Boolean) && !greetings) {
                     greetings = true
 
@@ -199,25 +216,33 @@ export const deploy = async (program: Command) => {
                       }
                     }
 
-                    // context.print.outro(
-                    //   context.i18n('commands.deploy.methods.deployComplete'),
-                    // )
-
                     context.print.line()
-                  } else {
-                    // context.print.outro(
-                    //   context.i18n('commands.deploy.methods.deployComplete'),
-                    // )
                   }
-
-                  // context.print.line()
                 }
+              }
+            }
+
+            if (deployType !== 'bundled') {
+              if (deployed) {
+                context.print
+                  .outro(context.i18n('commands.deploy.methods.deployComplete'))
+                  .line()
+              } else {
+                context.print.outro('Nothing changed.').line()
               }
             }
           }
         } catch (error) {
           throw error.message
         }
+      }
+
+      context.print.outro(
+        context.i18n('commands.deploy.methods.deployComplete'),
+      )
+
+      if (watch) {
+        context.print.line().step('<dim>Waiting for changes...</dim>')
       }
 
       if (!watch) {

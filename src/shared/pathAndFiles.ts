@@ -203,9 +203,25 @@ export const findConfigFile = async (
   file: string,
   mapping: Record<string, Based.Deploy.Configs>,
   nodeBundles: BundleResult,
+  browserBundles: BundleResult,
 ): Promise<Based.Deploy.Configs | undefined> => {
+  const relFile = file
   file = abs(file, process.cwd())
-  const found = mapping[file]
+  let found = mapping[file]
+
+  if (file.endsWith('.css') && !found) {
+    for (const key in browserBundles.result.metafile.inputs) {
+      const imports = browserBundles.result.metafile.inputs[key].imports
+
+      if (browserBundles.result.metafile.inputs[key].imports.length) {
+        const match = imports.find(({ path }) => path === relFile)
+
+        if (match) {
+          found = mapping[abs(key, process.cwd())]
+        }
+      }
+    }
+  }
 
   if (found) {
     if (isConfigFile(file) || isSchemaFile(file) || isInfraFile(file)) {

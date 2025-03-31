@@ -199,7 +199,12 @@ export const devServer = async ({
     bundlingUpdateHandling(context)(result.updates)
 
     for (let file of changedEntryPoints) {
-      const found = await findConfigFile(file, mapping, nodeBundles)
+      const found = await findConfigFile(
+        file,
+        mapping,
+        nodeBundles,
+        browserBundles,
+      )
 
       if (found) {
         if (isConfigFile(file) || isSchemaFile(file) || isInfraFile(file)) {

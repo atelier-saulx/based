@@ -13,7 +13,6 @@ export const getFile = async (
 
   const basedFile = await findUp(files)
   let basedFileContent: Based.Context.Project = {}
-  const basedProject: Based.Context.Project = {}
   const file: string = basedFile?.split('/').at(-1)
 
   if (basedFile) {
@@ -28,9 +27,7 @@ export const getFile = async (
       basedFileContent = { ...(compiled.default || compiled), file }
     }
 
-    Object.assign(basedProject, basedFileContent)
-
-    return basedProject
+    return basedFileContent
   }
 
   return null

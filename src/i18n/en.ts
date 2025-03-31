@@ -640,7 +640,6 @@ export default {
           parameter: '-fr, --force-reload <boolean|seconds>',
           description:
             'Enable or disable this function in the cloud, or set the update time window (in seconds) to ensure users stay in sync with your cache.',
-          default: 10,
         },
         {
           parameter: '-f, --functions <functions...>',
@@ -658,7 +657,7 @@ export default {
         function_many: '${item}/${max} functions',
         schema_one: '${item}/${max} schema',
         schema_many: '${item}/${max} schemas',
-        deployComplete: 'Deployment completed successfully',
+        deployComplete: 'Deployment completed successfully.',
         deployLive: 'Your application is now <b>LIVE</b> at:',
       },
     },
