@@ -36,21 +36,24 @@ const test = async (
       afters.push(fn)
     },
     backup: async (db: BasedDb) => {
-      const checksums = []
-      const a = []
-      const b = []
-      const fields = ['*', '**']
-      for (const type in db.server.schema.types) {
-        const x = await db.query(type).include(fields).get()
-        checksums.push(x.checksum)
-        a.push(x.toObject())
-      }
-      let d = Date.now()
       afters.push(async () => {
         try {
           await db.destroy()
         } catch (err) {}
       })
+      const checksums = []
+      const a = []
+      const b = []
+      const fields = ['*', '**']
+      console.dir(db.server.schema, { depth: 10 })
+      for (const type in db.server.schema.types) {
+        const x = await db.query(type).include(fields).get()
+        checksums.push(x.checksum)
+        a.push(x.toObject())
+      }
+      console.log('2??')
+
+      let d = Date.now()
       await db.stop()
       console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
       const newDb = new BasedDb({
