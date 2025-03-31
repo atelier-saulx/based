@@ -45,13 +45,17 @@ const test = async (
       const a = []
       const b = []
       const fields = ['*', '**']
-      console.dir(db.server.schema, { depth: 10 })
+      // console.dir(db.server.schema, { depth: 10 })
       for (const type in db.server.schema.types) {
-        const x = await db.query(type).include(fields).get()
-        checksums.push(x.checksum)
+        let x = await db.query(type).include(fields).get()
+        // if (type === 'article') {
+        //   x = await db.query(type).include(['*', 'contributors.$role']).get()
+        // } else {
+        //   x = await db.query(type).include(fields).get()
+        // }
         a.push(x.toObject())
       }
-      console.log('2??')
+      // console.log('2??')
 
       let d = Date.now()
       await db.stop()
