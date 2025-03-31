@@ -26,6 +26,7 @@ await test('update', async (t) => {
           i16: 'int16',
           name: 'string',
           number: 'number',
+          date: 'timestamp',
           numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
           cardinality: 'cardinality',
@@ -40,6 +41,10 @@ await test('update', async (t) => {
         },
       },
     },
+  })
+
+  await throws(async () => {
+    await db.create('user', { date: {} })
   })
 
   await throws(async () => {
@@ -210,6 +215,7 @@ await test('update', async (t) => {
           numberMax: 0,
           bool: false,
           json: null,
+          date: 0,
         },
       },
       {
@@ -231,6 +237,7 @@ await test('update', async (t) => {
           numberMax: 0,
           bool: false,
           json: null,
+          date: 0,
         },
       },
     ],
