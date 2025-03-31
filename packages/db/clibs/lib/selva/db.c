@@ -455,11 +455,13 @@ struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_i
 
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
+    if (unlikely(node_id == 0)) {
+        return nullptr;
+    }
+
     block_id_t block_i = node_id2block_i(type->blocks, node_id);
     struct SelvaNodeIndex *nodes = &type->blocks->blocks[block_i].nodes;
     struct SelvaNode *node = mempool_get(&type->nodepool);
-
-    assert(node_id != 0);
 
     node->node_id = node_id;
     node->type = type->type;
