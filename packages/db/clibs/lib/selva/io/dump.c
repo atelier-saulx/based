@@ -856,6 +856,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         } else if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
             selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
                             node->type, node->node_id, rd.field);
+            err = SELVA_EINVAL;
         }
     }
 
