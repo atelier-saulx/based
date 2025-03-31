@@ -16,6 +16,7 @@ await test('update', async (t) => {
   // $edge ...
 
   await db.setSchema({
+    locales: { en: {}, de: {} },
     types: {
       user: {
         props: {
@@ -33,6 +34,7 @@ await test('update', async (t) => {
           numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
           cardinality: 'cardinality',
+          text: 'text',
           friend: { ref: 'user', prop: 'friend' },
           countryCode: { type: 'string', maxBytes: 2 },
           connections: {
@@ -46,8 +48,25 @@ await test('update', async (t) => {
     },
   })
 
-  // Add wrong string validation
-  // ---------------------------
+  db.create('user', {
+    text: {
+      en: 'xxx',
+    },
+  })
+
+  // await throws(async () => {
+  //   db.create('user', {
+  //     text: {
+  //       en: 123,
+  //     },
+  //   })
+  // })
+
+  await throws(async () => {
+    db.create('user', {
+      name: 1,
+    })
+  })
 
   await throws(async () => {
     await db.create('user', { date: {} })
@@ -202,48 +221,51 @@ await test('update', async (t) => {
     [
       { id: 1, friend: null, name: '' },
       { id: 2, friend: null, name: '' },
+      { id: 3, friend: null, name: '' },
       {
-        id: 3,
+        id: 4,
         name: 'youzi',
         friend: {
-          id: 4,
+          id: 5,
+          bool: false,
           u32: 0,
           u8: 0,
           i8: 0,
           i32: 0,
           u16: 0,
           i16: 0,
+          number: 0,
+          date: 0,
+          numberMax: 0,
           derp: undefined,
           countryCode: '',
           name: 'jame-z',
-          cardinality: 0,
-          number: 0,
-          numberMax: 0,
-          bool: false,
           json: null,
-          date: 0,
+          cardinality: 0,
+          text: { en: '', de: '' },
         },
       },
       {
-        id: 4,
+        id: 5,
         name: 'jame-z',
         friend: {
-          id: 3,
+          id: 4,
+          bool: false,
           u32: 0,
           u8: 0,
           i8: 0,
           i32: 0,
           u16: 0,
           i16: 0,
+          number: 0,
+          date: 0,
+          numberMax: 0,
           derp: undefined,
           countryCode: '',
           name: 'youzi',
-          cardinality: 0,
-          number: 0,
-          numberMax: 0,
-          bool: false,
           json: null,
-          date: 0,
+          cardinality: 0,
+          text: { en: '', de: '' },
         },
       },
     ],
