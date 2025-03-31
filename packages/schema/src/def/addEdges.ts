@@ -32,7 +32,8 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         __isPropDef: true,
         __isEdge: true,
         prop: separate ? prop.edgesSeperateCnt : 0,
-        validation: VALIDATION_MAP[typeIndex] ?? defaultValidation,
+        validation:
+          edgeProp.validate ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
         name: key,
         typeIndex,
         len,
