@@ -4,7 +4,7 @@ import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
-import { createAggFnBuffer } from './aggregationFn.js'
+import { createAggFlagBuffer } from './aggregation.js'
 import { ENCODER } from '../../utils.js'
 
 const byteSize = (arr: Uint8Array[]) => {
@@ -105,7 +105,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       }
 
       let aggregation: Uint8Array
-      aggregation = createAggFnBuffer(def.aggregation)
+      aggregation = createAggFlagBuffer(def.aggregation)
 
       if (def.target.ids) {
         // type 1

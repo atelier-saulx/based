@@ -80,24 +80,32 @@ await test('branchedCount', async (t) => {
       .toObject(),
   )
 
-  await db.query('user').filter('flap', '>', 20).count().get().inspect()
+  await db
+    .query('user')
+    //lala
+    .filter('flap', '>', 20)
+    .count()
+    .get()
+    .inspect(100)
 
-  // console.log(
-  //   await db
-  //     .query('article')
-  //     .include('name', 'contributors')
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  console.log(
+    await db
+      .query('article')
+      .include('name', 'contributors')
+      .count()
+      .get()
+      .toObject(),
+  )
 
-  // await db.query('article').include('contributors').get().inspect()
+  console.log(
+    await db.query('article').include('contributors').count().get().inspect(),
+  )
 
-  // await db
-  //   .query('article')
-  //   .include((q) => q('contributors'), 'name')
-  //   .get()
-  //   .inspect(100)
-
-  //  {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
+  // Here to experiment in branched queries
+  await db
+    .query('article')
+    .include((q) => q('contributors').count(), 'name')
+    .get()
+    .inspect(100)
+  // Wish: {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
 })

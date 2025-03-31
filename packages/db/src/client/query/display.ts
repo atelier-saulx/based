@@ -65,9 +65,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
       picocolors.blue(x.join('')) +
       (isLarger ? picocolors.dim('... ') : '') +
       picocolors.italic(
-        picocolors.dim(
-          `${~~((v.byteLength / 1e3) * 100) / 100}kb`,
-        ),
+        picocolors.dim(`${~~((v.byteLength / 1e3) * 100) / 100}kb`),
       )
     )
   }
@@ -76,9 +74,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
-        picocolors.dim(
-          `${~~((byteLength / 1e3) * 100) / 100}kb`,
-        ),
+        picocolors.dim(`${~~((byteLength / 1e3) * 100) / 100}kb`),
       )
       v =
         v.slice(0, 50).replace(/\n/g, '\\n ') +
@@ -159,7 +155,8 @@ const inspectObject = (
   let edges = []
   for (const k in object) {
     const key = path ? path + '.' + k : k
-    let def: PropDef | PropDefEdge = q.props[key]
+    let def: PropDef | PropDefEdge
+    def = q.props[key]
     let v = object[k]
     const isEdge = k[0] === '$'
 
@@ -182,7 +179,15 @@ const inspectObject = (
         picocolors.italic(picocolors.dim(` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
-      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      if (Object.keys(object)[0] == 'count') {
+        // TODO: to flag the agg someway. This is ugly as hell!!!
+        str += picocolors.blue(v)
+        str += picocolors.italic(picocolors.dim(' count'))
+        str += ',\n'
+      } else {
+        str +=
+          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      }
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === REFERENCES) {
         str += inspectData(
@@ -331,6 +336,7 @@ export const inspectData = (
       break
     }
   }
+
   if (length > max) {
     const morePrefix = ''.padStart(top ? 2 : level + 3, ' ')
     str +=
