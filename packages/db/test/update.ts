@@ -46,17 +46,6 @@ await test('update', async (t) => {
     return t.backup(db)
   })
 
-  /*
-    float32	JSON numbers	3.14
-    float64	JSON numbers	3.14
-    int8	Whole JSON numbers that fit in a signed 8-bit integer	127
-    uint8	Whole JSON numbers that fit in an unsigned 8-bit integer	255
-    int16	Whole JSON numbers that fit in a signed 16-bit integer	32767
-    uint16	Whole JSON numbers that fit in an unsigned 16-bit integer	65535
-    int32	Whole JSON numbers that fit in a signed 32-bit integer	2147483647
-    uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
-  */
-
   await db.setSchema({
     types: {
       mep: {

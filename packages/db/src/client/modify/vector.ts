@@ -38,6 +38,9 @@ export function writeVector(
   } else {
     size = value.byteLength + 4
   }
+  if (!t.validation(value, t)) {
+    return new ModifyError(t, value)
+  }
   if (size === 0) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {

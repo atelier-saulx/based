@@ -1,11 +1,4 @@
-import { LangCode } from '../lang.js'
 import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
-
-// use typeIndex here
-// end export them per type
-// can also add validate on the prop def
-// this way we can actually write custom ones
-// TODO update defaults
 
 export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
 
@@ -17,10 +10,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.binary]: (value) => {
-    // if (!(value instanceof Uint8Array) && value != null) {
-    //   return false
-    // }
-    return true
+    if (value instanceof Uint8Array) {
+      return true
+    }
+    return false
   },
   [TYPE_INDEX_MAP.boolean]: (value) => {
     if (typeof value !== 'boolean') {
@@ -29,12 +22,12 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.cardinality]: (value) => {
-    // add all things
-    return true
+    const x = typeof value === 'string' || value instanceof Uint8Array
+    return x
   },
   [TYPE_INDEX_MAP.timestamp]: (value) => {
     if (typeof value === 'string') {
-      return true // tmp
+      return true
     }
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
@@ -115,7 +108,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return false
   },
   [TYPE_INDEX_MAP.id]: (value) => {
-    if (typeof value !== 'string') {
+    if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     return true

@@ -12,8 +12,6 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
-  // add filter validation thing
-
   await db.setSchema({
     types: {
       user: {
@@ -25,6 +23,8 @@ await test('update', async (t) => {
           u16: 'uint16',
           i16: 'int16',
           name: 'string',
+          derp: ['a', 'b', 'derp'],
+          cardinality: 'cardinality',
           friend: { ref: 'user', prop: 'friend' },
           countryCode: { type: 'string', maxBytes: 2 },
           connections: {
@@ -36,6 +36,38 @@ await test('update', async (t) => {
         },
       },
     },
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      countryCode: 'nla',
+    })
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      derp: [1, 2, 3, 4],
+    })
+  })
+
+  db.create('user', {
+    derp: 'a',
+  })
+
+  db.create('user', {
+    derp: undefined,
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      cardinality: [1, 2, 3, 4],
+    })
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      cardinality: { id: [1, 2, 3, 4] },
+    })
   })
 
   await throws(async () => {
@@ -133,34 +165,40 @@ await test('update', async (t) => {
   deepEqual(
     (await db.query('user').include('name', 'friend').get()).toObject(),
     [
+      { id: 1, friend: null, name: '' },
+      { id: 2, friend: null, name: '' },
       {
-        id: 1,
+        id: 3,
         name: 'youzi',
         friend: {
-          id: 2,
+          id: 4,
           u32: 0,
+          u8: 0,
+          i8: 0,
           i32: 0,
           u16: 0,
           i16: 0,
-          u8: 0,
-          i8: 0,
+          derp: undefined,
           countryCode: '',
           name: 'jame-z',
+          cardinality: 0,
         },
       },
       {
-        id: 2,
+        id: 4,
         name: 'jame-z',
         friend: {
-          id: 1,
+          id: 3,
           u32: 0,
+          u8: 0,
+          i8: 0,
           i32: 0,
           u16: 0,
           i16: 0,
-          u8: 0,
-          i8: 0,
+          derp: undefined,
           countryCode: '',
           name: 'youzi',
+          cardinality: 0,
         },
       },
     ],

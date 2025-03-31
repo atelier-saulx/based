@@ -42,15 +42,12 @@ function addHll(
 ): ModifyErr {
   const len = value.length
   let size = 4 + len * 8
-  if (!t.validation(value, t)) {
-    return new ModifyError(t, value)
-  }
   if (ctx.len + size + SIZE.DEFAULT_CURSOR > ctx.max) {
     return RANGE_ERR
   }
   setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
-  writeHllBuf(value, ctx, t, len)
+  return writeHllBuf(value, ctx, t, len)
 }
 
 export function writeHllBuf(
@@ -64,6 +61,9 @@ export function writeHllBuf(
   ctx.buf[ctx.len++] = len >>> 16
   ctx.buf[ctx.len++] = len >>> 24
   for (let val of value) {
+    if (!t.validation(val, t)) {
+      return new ModifyError(t, val)
+    }
     if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
     } else if (val instanceof Uint8Array && val.byteLength === 8) {
