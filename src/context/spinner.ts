@@ -68,10 +68,14 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
 
       if (message) {
         console.log(
-          ...LINES_UP,
-          LINE_CLEAR,
-          LINE_START,
-          colorize([context.state.emojis.step, SPACER, message]),
+          colorize([
+            ...LINES_UP,
+            LINE_CLEAR,
+            LINE_START,
+            context.state.emojis.step,
+            SPACER,
+            message,
+          ]),
         )
       } else {
         console.log(...LINES_UP, LINE_CLEAR, LINE_START)
