@@ -32,14 +32,12 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
-
-    // TODO have to fix
-    // if (t.min ?? value < t.min) {
-    //   return false
-    // }
-    // if (t.max ?? value > t.max) {
-    //   return false
-    // }
+    if (t.min ?? value < t.min) {
+      return false
+    }
+    if (t.max ?? value > t.max) {
+      return false
+    }
     return true
   },
   [TYPE_INDEX_MAP.int16]: (value, t) => {
