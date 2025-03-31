@@ -37,12 +37,15 @@ const test = async (
     },
     backup: async (db: BasedDb) => {
       const checksums = []
+      const a = []
+      const b = []
 
       const fields = ['*', '**']
 
       for (const type in db.server.schema.types) {
         const x = await db.query(type).include(fields).get()
         checksums.push(x.checksum)
+        a.push(x.toObject())
       }
       let d = Date.now()
       await db.stop()
@@ -61,8 +64,20 @@ const test = async (
       for (const type in newDb.server.schema.types) {
         const x = await newDb.query(type).include(fields).get()
         backupChecksums.push(x.checksum)
+        b.push(x.toObject())
       }
 
+      function findFirstDiffPos(a, b) {
+        for (let i = 0; i < a.length; i++) {
+          if (a[i] !== b[i]) return i
+        }
+        return -1
+      }
+
+      const di = findFirstDiffPos(checksums, backupChecksums)
+      if (di >= 0) {
+        deepEqual(b[di], a[di])
+      }
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
       await wait(10)
