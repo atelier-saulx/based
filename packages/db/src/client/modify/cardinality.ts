@@ -61,9 +61,10 @@ export function writeHllBuf(
   ctx.buf[ctx.len++] = len >>> 16
   ctx.buf[ctx.len++] = len >>> 24
   for (let val of value) {
-    if (!t.validation(val, t)) {
-      return new ModifyError(t, val)
-    }
+    // if (!t.validation(val, t)) {
+    // console.log('here')
+    // return new ModifyError(t, val)
+    // }
     if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
     } else if (val instanceof Uint8Array && val.byteLength === 8) {
