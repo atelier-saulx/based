@@ -238,6 +238,10 @@ function appendRefs(
       return new ModifyError(def, refs)
     }
 
+    if (!def.validation(id, def)) {
+      return new ModifyError(def, refs)
+    }
+
     if (hasEdges) {
       if (index === undefined) {
         if (ctx.len + 9 > ctx.max) {
@@ -330,19 +334,21 @@ function putRefs(
   let i = 0
   for (; i < refs.length; i++) {
     let ref = refs[i]
-    if (!def.validation(ref, def)) {
-      break
-    } else if (typeof ref === 'number') {
-      ctx.buf[ctx.len++] = ref
-      ctx.buf[ctx.len++] = ref >>>= 8
-      ctx.buf[ctx.len++] = ref >>>= 8
-      ctx.buf[ctx.len++] = ref >>>= 8
+    if (typeof ref === 'number') {
+      if (!def.validation(ref, def)) {
+        break
+      } else {
+        ctx.buf[ctx.len++] = ref
+        ctx.buf[ctx.len++] = ref >>>= 8
+        ctx.buf[ctx.len++] = ref >>>= 8
+        ctx.buf[ctx.len++] = ref >>>= 8
+      }
     } else if (ref instanceof ModifyState) {
       if (ref.error) {
         return ref.error
       }
       ref = ref.getId()
-      if (!ref) {
+      if (!def.validation(ref, def)) {
         break
       }
       ctx.buf[ctx.len++] = ref

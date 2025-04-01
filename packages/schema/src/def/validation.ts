@@ -177,8 +177,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     // }
     return true
   },
-  [TYPE_INDEX_MAP.references]: (value) => {
-    const v = typeof value === 'object' ? value.tmpId : value
+  [TYPE_INDEX_MAP.references]: (v) => {
     if (typeof v !== 'number') {
       return false
     }
