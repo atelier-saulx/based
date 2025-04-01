@@ -18,7 +18,7 @@ export const get =
     const { skip } = context.getGlobalOptions()
 
     const errorMessage = (option: string, value: string | number) => {
-      throw context.i18n('errors.901', option, value)
+      throw new Error(context.i18n('errors.901', option, value))
     }
 
     args.machines = await getMachines()
@@ -143,7 +143,7 @@ export const saveInfra = async (args: Based.Infra.Get.Save) => {
     )
 
     if (!doIt) {
-      throw context.i18n('methods.aborted')
+      throw new Error(context.i18n('methods.aborted'))
     }
   }
 
@@ -152,7 +152,7 @@ export const saveInfra = async (args: Based.Infra.Get.Save) => {
 
     await saveAsFile({ [env]: infra.machines }, infra.path, infra.format)
   } catch (error) {
-    throw context.i18n('errors.902', error)
+    throw new Error(context.i18n('errors.902', error))
   }
 
   context.print.success(context.i18n('methods.savedFile', rel(infra.path)))

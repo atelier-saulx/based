@@ -12,9 +12,9 @@ export const checkScript = async (context: AppContext, command: string) => {
       return true
     }
 
-    throw context.i18n('errors.911', command)
+    throw new Error(context.i18n('errors.911', command))
   } catch {
-    throw context.i18n('errors.911', command)
+    throw new Error(context.i18n('errors.911', command))
   }
 }
 
@@ -56,13 +56,15 @@ export const runTests = async ({
     })
 
     if (code) {
-      throw code
+      throw new Error(String(code))
     }
 
     context.print
       .separator()
       .success(`NPM script '<b>${command}</b>' executed successfully!`)
   } catch (error) {
-    throw `An error occurred while executing the script: ${error.message} | <b>Details</b>: ${error.stderr || error.stdout}`
+    throw new Error(
+      `An error occurred while executing the script: ${error.message} | <b>Details</b>: ${error.stderr || error.stdout}`,
+    )
   }
 }

@@ -229,7 +229,7 @@ export const deploy = async (program: Command) => {
             }
           }
         } catch (error) {
-          throw error.message
+          throw new Error(error)
         }
       }
 

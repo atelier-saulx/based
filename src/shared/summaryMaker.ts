@@ -19,7 +19,7 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
     const doIt: boolean = await context.form.boolean()
 
     if (!doIt) {
-      throw context.i18n('methods.aborted')
+      throw new Error(context.i18n('methods.aborted'))
     }
   }
 

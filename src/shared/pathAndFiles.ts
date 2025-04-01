@@ -90,11 +90,11 @@ const ensureDirectoryExists = async (filePath: string): Promise<void> => {
 
   try {
     await stat(directory)
-  } catch (err) {
-    if (err.code === 'ENOENT') {
+  } catch (error) {
+    if (error.code === 'ENOENT') {
       await mkdir(directory, { recursive: true })
     } else {
-      throw err
+      throw new Error(error)
     }
   }
 }
@@ -195,7 +195,7 @@ export async function getMtimeMs(path: string): Promise<number> {
     const { mtimeMs } = fileStat
     return mtimeMs
   } catch (error) {
-    throw error.message
+    throw new Error(error)
   }
 }
 

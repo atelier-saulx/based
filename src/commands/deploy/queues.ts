@@ -35,7 +35,7 @@ export const queuedFnDeploy = queued(
     })
 
     if (error) {
-      throw error.message
+      throw new Error(error)
     }
 
     if (distId) {

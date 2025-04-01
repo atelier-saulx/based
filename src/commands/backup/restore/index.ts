@@ -55,11 +55,15 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
 
   if (isExternalFile) {
     if (!(await pathExists(selectedFile))) {
-      throw `The specified file '${selectedFile}' is invalid or does not exist. Please provide a valid file.`
+      throw new Error(
+        `The specified file '${selectedFile}' is invalid or does not exist. Please provide a valid file.`,
+      )
     }
 
     if (!file.endsWith('.rdb')) {
-      throw `The specified file '${selectedFile}' is invalid. Only '<b>.rdb</b>' files can be restored.`
+      throw new Error(
+        `The specified file '${selectedFile}' is invalid. Only '<b>.rdb</b>' files can be restored.`,
+      )
     }
 
     if (verbose) {

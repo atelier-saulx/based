@@ -101,6 +101,6 @@ export const uploadFiles =
           ),
       )
     } catch (error) {
-      throw error.message
+      throw new Error(error)
     }
   }

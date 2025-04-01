@@ -102,7 +102,7 @@ export const connectToHub = async (
   const basedClient: BasedClient = SharedBasedClient.getInstance(opts)
 
   if (!basedClient) {
-    throw context.i18n('errors.404', file)
+    throw new Error(context.i18n('errors.404', file))
   }
 
   if (basedClient.connected) {
@@ -120,7 +120,7 @@ export const connectToHub = async (
 
     await basedClient.once('connect')
   } catch (error) {
-    throw context.i18n('errors.404', file, error)
+    throw new Error(context.i18n('errors.404', file, error))
   }
 
   context.spinner.stop(context.i18n('methods.hubConnection.connected', target))

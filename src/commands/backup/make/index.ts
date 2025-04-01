@@ -44,7 +44,7 @@ export const setMake = async (context: AppContext) => {
 
     envId = envInfo.envId
   } catch {
-    throw context.i18n('errors.404', file)
+    throw new Error(context.i18n('errors.404', file))
   }
 
   context.spinner.start(
