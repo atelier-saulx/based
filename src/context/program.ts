@@ -43,7 +43,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
   let envLabel: string = basedProject.env
 
-  if (basedProject.env.endsWith('#branch')) {
+  if (basedProject?.env?.endsWith('#branch')) {
     basedProject.branch = {} as Based.Context.Project['branch']
 
     basedProject.branch.name = await getBranch()
@@ -52,7 +52,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     const useDataFrom = envInfo.length === 2 ? envInfo[0] : null
 
     basedProject.branch.useDataFrom = useDataFrom
-    envLabel += ` <reset><dim>(${basedProject?.branch?.name ?? ''})</dim></reset>`
+    envLabel += ` <reset><dim>(${basedProject.branch.name ?? ''})</dim></reset>`
   }
 
   this.set('basedProject', basedProject)
