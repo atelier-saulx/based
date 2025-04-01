@@ -412,21 +412,21 @@ export const makeProject = async (args: Based.Init.Make) => {
 
       await saveAsFile(basedProjectTemplate, project.path, project.format)
 
-      context.spinner.stop('<green>♥</green>  Project created!')
+      context.print.line()
+      context.spinner.stop('Project created!')
 
       const npm = await confirm({
         message: 'Do you want to install your dependencies now?',
       })
 
       if (npm) {
+        context.print.line()
         context.spinner.start('Installing your dependencies')
 
         const install = await npmInstall()
 
         if (install) {
-          context.print
-            .line()
-            .success('Dependencies installed successfully!', true)
+          context.print.success('Dependencies installed successfully!', true)
         }
       }
     }

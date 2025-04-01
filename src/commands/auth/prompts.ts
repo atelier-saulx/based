@@ -207,9 +207,9 @@ export const envSelect =
     if (branch) {
       options.push(branchOption)
     } else {
-      context.print
-        .pipe()
-        .warning(context.i18n('commands.init.methods.env.branchNotFound'))
+      context.print.warning(
+        context.i18n('commands.init.methods.env.branchNotFound'),
+      )
     }
 
     options.push(

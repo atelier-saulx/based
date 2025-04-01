@@ -42,7 +42,21 @@ export const cli = async () => {
 
     await program.parseAsync(process.argv)
   } catch (error) {
-    context.print.line().error(`<reset><red>${error}</red></reset>`)
+    if (error.stack) {
+      console.error(
+        context.state.emojis.error,
+        '<reset><red>',
+        error.stack,
+        '</red></reset>',
+      )
+    } else {
+      console.error(
+        context.state.emojis.error,
+        '<reset><red>',
+        error,
+        '</red></reset>',
+      )
+    }
 
     process.exit(1)
   }

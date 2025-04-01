@@ -17,7 +17,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
       file ? [file] : ['based.ts', 'based.json', 'based.js'],
     )
 
-    if (!basedFile || !Object.keys(basedFile)?.length) {
+    if (!basedFile || Object.keys(basedFile)?.length <= 1) {
       this.print.warning(this.i18n('context.configurationFileNotFound'), true)
 
       const createBasedFile = await this.form.boolean(
@@ -57,7 +57,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
   this.set('basedProject', basedProject)
 
-  if (Object.keys(basedProject).length > 1) {
+  if (Object.keys(basedProject).length > 2) {
     this.print.pipe(this.i18n('context.file', basedProject.file))
 
     if (basedProject.cluster !== 'production') {

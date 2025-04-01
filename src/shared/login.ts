@@ -95,14 +95,14 @@ export const connectToHub = async (
         ? context.i18n('methods.hubConnection.project')
         : context.i18n('methods.hubConnection.environment')
 
-  if (opts.env.endsWith('#branch') && branch) {
+  if (opts.env?.endsWith('#branch') && branch) {
     opts.env = branch.name
   }
 
   const basedClient: BasedClient = SharedBasedClient.getInstance(opts)
 
   if (!basedClient) {
-    throw new Error(context.i18n('errors.404', file))
+    throw context.i18n('errors.404', file)
   }
 
   if (basedClient.connected) {
@@ -120,7 +120,7 @@ export const connectToHub = async (
 
     await basedClient.once('connect')
   } catch (error) {
-    throw new Error(context.i18n('errors.404', file, error))
+    throw context.i18n('errors.404', file, error)
   }
 
   context.spinner.stop(context.i18n('methods.hubConnection.connected', target))
@@ -132,7 +132,7 @@ export const connectToHub = async (
 
 export const login = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
-  let { cluster, org, env, project, branch } = await context.getProgram()
+  const { cluster, org, env, project, branch } = await context.getProgram()
 
   const users: Based.Auth.AuthenticatedUser[] =
     await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
@@ -227,23 +227,23 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     )
   }
 
-  if (env.endsWith('#branch') && branch) {
-    env = branch.name
+  if (basedProject?.env?.endsWith('#branch') && branch) {
+    basedProject.env = branch.name
   }
 
   const isCloudInfoValid = await checkCloudInfo(
     basedClientAdmin,
-    org,
-    project,
-    env,
+    basedProject.org,
+    basedProject.project,
+    basedProject.env,
   )
 
   if (!isCloudInfoValid) {
     await envCreate(
       context,
-      org,
-      project,
-      env,
+      basedProject.org,
+      basedProject.project,
+      basedProject.env,
       branch.useDataFrom,
       basedClientAdmin,
     )

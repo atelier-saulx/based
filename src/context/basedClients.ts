@@ -19,12 +19,12 @@ export async function contextBasedClient(): Promise<Based.API.Client> {
         basedClient = await login()
       }
     } catch (error) {
-      const message = Object.keys(error).length ? JSON.stringify(error) : ''
-
-      throw this.i18n(
-        'errors.404',
-        basedProject?.file ?? this.i18n('appCommand'),
-        message,
+      throw new Error(
+        this.i18n(
+          'errors.404',
+          basedProject?.file ?? this.i18n('appCommand'),
+          error,
+        ),
       )
     }
   }
