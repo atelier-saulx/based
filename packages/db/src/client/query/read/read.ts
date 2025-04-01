@@ -485,10 +485,10 @@ export const resultToObject = (
   }
 
   if ('id' in q.target || 'alias' in q.target) {
-    // if (q.type === QueryDefType.Root) {
-    //   // Todo can be optimized
-    //   delete items[0].id
-    // }
+    if (q.type === QueryDefType.Root && q.target.type === '_root') {
+      // Todo can be optimized
+      delete items[0].id
+    }
     return items[0]
   }
 
