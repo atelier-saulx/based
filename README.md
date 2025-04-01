@@ -30,6 +30,16 @@ export default {
 }
 ```
 
+For branch deployment you can also use something like this in your `based.ts`:
+```typescript
+export default {
+  org: 'my-org',
+  project: 'my-project',
+  env: 'main/#branch', // with this you set that you want to deploy your branch but cloning all the data from the env 'main'
+}
+```
+*If any selected `env` is missing from your account, the CLI will offer to create it before proceeding with the deployment.*
+
 You can also use an API Key if you're setting up a CI/CD, like this:
 
 ```typescript
