@@ -43,6 +43,8 @@ struct EdgeFieldConstraint {
         EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED = 0x40,
         /**
          * Skip saving this field while dumping.
+         * If the field is of type SELVA_FIELD_TYPE_WEAK_REFERENCES it's saved
+         * regardless of this flag to preserve the original order of references.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
