@@ -17,7 +17,7 @@
   "dependencies": {
     "utility-types": "^3.10.0",
     "@based/uws": "^6.0.0",
-    "@saulx/diff": "^2.0.2",
+    "@saulx/diff": "^2.0.3",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^5.0.0",
     "picocolors": "^1.0.0",

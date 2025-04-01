@@ -1,0 +1,64 @@
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
+import { BasedServer } from '@based/server'
+import { wait } from '@saulx/utils'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('null', async (t: T) => {
+  const client = new BasedClient()
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: {
+        nullFn: {
+          type: 'function',
+          fn: async () => {
+            return null
+          },
+        },
+        null: {
+          type: 'query',
+          fn: (_, __, update) => {
+            let cnt = 0
+            const counter = setInterval(() => {
+              update(null)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        nestedNull: {
+          type: 'query',
+          fn: (b, __, update) => {
+            return b.query('null').subscribe(update)
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  const val = await client.query('null').get()
+  t.deepEqual(val, null)
+
+  const x = await client.call('nullFn')
+  t.deepEqual(x, null)
+
+  const val2 = await client.query('nestedNull').get()
+  t.deepEqual(val2, null)
+})
