@@ -77,11 +77,11 @@ const test = async (
         }
         return -1
       }
-      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
       const di = findFirstDiffPos(checksums, backupChecksums)
       if (di >= 0) {
         deepEqual(b[di], a[di])
       }
+      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
       await wait(10)
     },
     tmp: resolve(join(__dirname, relativePath)),

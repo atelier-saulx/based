@@ -2,21 +2,42 @@ import { deepEqual as uDeepEqual } from '@saulx/utils'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
 import color from 'picocolors'
+import * as jsondiffpatch from 'jsondiffpatch'
+import * as c from 'jsondiffpatch/formatters/console'
+import { hash } from '@saulx/hash'
+
+const diffpatcher = jsondiffpatch.create({
+  objectHash: function (obj) {
+    return String(hash(obj))
+  },
+})
 
 // add fn
 export const deepEqual = (a, b, msg?: string) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }
+
   if (!uDeepEqual(a, b)) {
-    const m = `${msg || ``}
+    if (typeof a === 'object' && typeof b === 'object') {
+      const delta = diffpatcher.diff(a, b)
+      const output = c.format(delta)
+      const m = `${msg || ``}
+------------------ DIFF ----------------------
+${output}
+--------------------------------------------------`
+      const error = new Error(m)
+      throw error
+    } else {
+      const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
 ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 ------------------- ACTUAL -----------------------
 ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 --------------------------------------------------`
-    const error = new Error(m)
-    throw error
+      const error = new Error(m)
+      throw error
+    }
   }
 }
 

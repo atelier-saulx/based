@@ -43,6 +43,7 @@
     "@based/locale-x86-64-gnu": "*"
   },
   "devDependencies": {
+    "jsondiffpatch": "^0.7.3",
     "@based/crc32c": "^1.0.0",
     "@types/node": "^22.5.3",
     "axios": "^1.7.9",
