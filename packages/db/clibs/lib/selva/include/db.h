@@ -112,6 +112,9 @@ struct SelvaTypeEntry {
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 } __attribute__((aligned(65536)));
 
+/**
+ * Node expire token.
+ */
 struct SelvaDbExpireToken {
     struct SelvaExpireToken token;
     struct SelvaDb *db;

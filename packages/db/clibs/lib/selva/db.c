@@ -829,7 +829,7 @@ selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry
     return res;
 }
 
-selva_hash128_t selva_node_hash_update2(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
+selva_hash128_t selva_node_hash(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_hash128_t res;
 

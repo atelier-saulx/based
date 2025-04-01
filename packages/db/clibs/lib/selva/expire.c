@@ -20,6 +20,22 @@ void selva_expire_init(struct SelvaExpire *ex)
 
 void selva_expire_deinit(struct SelvaExpire *ex)
 {
+    struct SVectorIterator it;
+    struct SelvaExpireToken *token;
+
+    /*
+     * Free all tokens first.
+     */
+    SVector_ForeachBegin(&it, &ex->list);
+    while (!SVector_Done(&it)) {
+        token = SVector_Foreach(&it);
+        do {
+            struct SelvaExpireToken *next = token->next;
+            ex->cancel_cb(token);
+            token = next;
+        } while (token);
+    }
+
     SVector_Destroy(&ex->list);
     ex->next = SELVA_EXPIRE_NEVER;
 }
@@ -85,4 +101,21 @@ found:
         prev->next = token->next;
     }
     ex->cancel_cb(token);
+}
+
+size_t selva_expire_count(const struct SelvaExpire *ex)
+{
+    struct SVectorIterator it;
+    struct SelvaExpireToken *token;
+    size_t n = 0;
+
+    SVector_ForeachBegin(&it, &ex->list);
+    while (!SVector_Done(&it)) {
+        token = SVector_Foreach(&it);
+        do {
+            n++;
+        } while ((token = token->next));
+    }
+
+    return n;
 }

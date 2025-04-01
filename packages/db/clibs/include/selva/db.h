@@ -346,7 +346,7 @@ SELVA_EXPORT
 selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, struct XXH3_state_s *tmp_hash_state);
 
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_update2(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
+selva_hash128_t selva_node_hash(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 SELVA_EXPORT
 selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, node_id_t end) __attribute__((nonnull));
