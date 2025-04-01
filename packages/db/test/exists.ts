@@ -39,72 +39,58 @@ await test('exists', async (t) => {
 
   const id2 = await db.create('user', {})
 
-  await db.query('user').get().inspect(10)
-
-  deepEqual(await db.query('user').filter('name', 'exists').get().toObject(), [
+  deepEqual(await db.query('user').filter('name', 'exists').get(), [
     {
       id: 1,
       name: 'mr derp',
     },
   ])
 
-  deepEqual(await db.query('user').filter('name', '!exists').get().toObject(), [
+  deepEqual(await db.query('user').filter('name', '!exists').get(), [
     {
       id: 2,
       name: '',
     },
   ])
 
-  deepEqual(
-    await db.query('user').filter('friend', '!exists').get().toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr derp',
-      },
-      {
-        id: 2,
-        name: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').filter('friend', '!exists').get(), [
+    {
+      id: 1,
+      name: 'mr derp',
+    },
+    {
+      id: 2,
+      name: '',
+    },
+  ])
 
-  deepEqual(
-    await db.query('user').filter('friends', '!exists').get().toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr derp',
-      },
-      {
-        id: 2,
-        name: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').filter('friends', '!exists').get(), [
+    {
+      id: 1,
+      name: 'mr derp',
+    },
+    {
+      id: 2,
+      name: '',
+    },
+  ])
 
   await db.update('user', id1, { friends: [id2] })
 
-  deepEqual(
-    await db.query('user').filter('friends', 'exists').get().toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr derp',
-      },
-      {
-        id: 2,
-        name: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').filter('friends', 'exists').get(), [
+    {
+      id: 1,
+      name: 'mr derp',
+    },
+    {
+      id: 2,
+      name: '',
+    },
+  ])
 
   await db.update('user', id1, { friends: null })
 
-  deepEqual(
-    await db.query('user').filter('friends', 'exists').get().toObject(),
-    [],
-  )
+  deepEqual(await db.query('user').filter('friends', 'exists').get(), [])
 
   const ids = []
   for (let i = 0; i < 10e6; i++) {
@@ -115,10 +101,7 @@ await test('exists', async (t) => {
 
   await db.update('user', id1, { friends: ids })
 
-  deepEqual(
-    await db.query('user').filter('friends', '!exists').get().toObject(),
-    [{ id: 2, name: '' }],
-  )
-
-  await db.query('user').filter('friends', '!exists').get().inspect()
+  deepEqual(await db.query('user').filter('friends', '!exists').get(), [
+    { id: 2, name: '' },
+  ])
 })
