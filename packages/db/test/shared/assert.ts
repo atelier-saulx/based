@@ -7,9 +7,9 @@ import * as c from 'jsondiffpatch/formatters/console'
 import { hash } from '@saulx/hash'
 
 const diffpatcher = jsondiffpatch.create({
-  objectHash: function (obj) {
-    return String(hash(obj))
-  },
+  // objectHash: function (obj) {
+  //   return String(hash(obj))
+  // },
 })
 
 // add fn
