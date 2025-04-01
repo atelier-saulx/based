@@ -28,9 +28,12 @@ test('null', async (t: T) => {
           type: 'query',
           fn: (_, __, update) => {
             let cnt = 0
+
             const counter = setInterval(() => {
-              update(null)
-            }, 1000)
+              const v = cnt % 2 ? { mrx: true } : null
+              cnt++
+              update(v)
+            }, 500)
             return () => {
               clearInterval(counter)
             }
@@ -61,4 +64,16 @@ test('null', async (t: T) => {
 
   const val2 = await client.query('nestedNull').get()
   t.deepEqual(val2, null)
+
+  const obs = []
+
+  const close = client.query('null').subscribe((v) => {
+    obs.push(v)
+  })
+
+  await wait(501)
+
+  t.deepEqual(val2, [null, { mrx: true }])
+
+  close()
 })
