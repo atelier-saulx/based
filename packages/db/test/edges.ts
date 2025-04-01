@@ -273,6 +273,37 @@ await test('multiple references', async (t) => {
       contributors: [{ id: 2, $rating: 2 }, { id: 3 }, { id: 1 }],
     },
   )
+
+  deepEqual(
+    await db.query('article', 3).include('contributors.$countries.id').get(),
+    {
+      id: 3,
+      contributors: [
+        { id: 2, $countries: [] },
+        { id: 3, $countries: [] },
+        { id: 1, $countries: [] },
+      ],
+    },
+  )
+
+  for (let i = 0; i < 3; i++) {
+    lastArticle = await db.create('article', {
+      name: 'Totaly empty ' + i,
+    })
+  }
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors')
+      .range(lastArticle - 3, 1000)
+      .get(),
+    [
+      { id: 6, contributors: [] },
+      { id: 7, contributors: [] },
+      { id: 8, contributors: [] },
+    ],
+  )
 })
 
 await test('single reference', async (t) => {

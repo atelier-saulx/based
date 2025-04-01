@@ -21,7 +21,7 @@ const t = @import("../../../types.zig");
 // |---------|-----------|-------------|--------------------------------------|
 // | 0       | op        | 1           | Operation identifier (253)           |
 // | 1       | field     | 1           | Field identifier                     |
-// | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+// | 2       | refSize   | 4           | Reference size (u32)                 |
 // | 6       | totalRefs | 4           | Total number of references (u32)     |
 
 pub inline fn getRefsFields(
@@ -65,20 +65,24 @@ pub inline fn getRefsFields(
     if (isEdge) {
         if (db.getEdgeReferences(ctx.db, ref.?.reference.?, refField)) |r| {
             const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint, refField) catch {
-                return 0;
+                // 10 + 1 for edge marker
+                return 11;
             };
             refs = .{ .weakRefs = r, .fs = edgeFs };
         } else {
-            return 0;
+            // 10 + 1 for edge marker
+            return 11;
         }
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch {
-            return 0;
+            // default empty size - means a bug!
+            return 10;
         };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) {
-            return 0;
+            // default empty size - this should never happen
+            return 10;
         }
     }
 

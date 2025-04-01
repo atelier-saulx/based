@@ -45,17 +45,11 @@ const test = async (
       const a = []
       const b = []
       const fields = ['*', '**']
-      // console.dir(db.server.schema, { depth: 10 })
       for (const type in db.server.schema.types) {
         let x = await db.query(type).include(fields).get()
-        // if (type === 'article') {
-        //   x = await db.query(type).include(['*', 'contributors.$role']).get()
-        // } else {
-        //   x = await db.query(type).include(fields).get()
-        // }
+        checksums.push(x.checksum)
         a.push(x.toObject())
       }
-      // console.log('2??')
 
       let d = Date.now()
       await db.stop()
@@ -83,11 +77,11 @@ const test = async (
         }
         return -1
       }
+      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
       const di = findFirstDiffPos(checksums, backupChecksums)
       if (di >= 0) {
         deepEqual(b[di], a[di])
       }
-      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
       await wait(10)
     },
     tmp: resolve(join(__dirname, relativePath)),

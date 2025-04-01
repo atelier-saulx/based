@@ -351,7 +351,7 @@ export const readAllFields = (
       q.aggregation = AggFlag.TEMP
       return i - offset - 4 - (q.search ? 4 : 0)
     } else if (index === READ_AGGREGATION) {
-      // TODO: To change to a map and also to get the aggregate field name from a query function parameter
+      // TODO: Change to a map and also to get the aggregate field name from a query function parameter
       const propAgg: PropDefAggregate = {
         name: 'count',
         path: ['count'],
@@ -367,6 +367,9 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
+      if (!prop) {
+        console.log({ prop: !!prop }, index)
+      }
       if (prop.typeIndex === CARDINALITY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
