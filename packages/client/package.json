@@ -20,10 +20,8 @@
   "exports": {
     "./ssr": "./dist/src/ssr.js",
     ".": {
-      "node": {
-        "require": "./dist/index.cjs"
-      },
-      "default": "./dist/src/index.js"
+      "require": "./dist/index.cjs",
+      "import": "./dist/src/index.js"
     }
   },
   "ava": {
@@ -61,3 +59,4 @@
     "vite": "^5.2.8"
   }
 }
+
