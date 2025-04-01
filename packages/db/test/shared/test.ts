@@ -110,8 +110,16 @@ const test = async (
   }
 
   try {
+    const errs = []
     for (let i = 0; i < afters.length; i++) {
-      await afters[i]()
+      try {
+        await afters[i]()
+      } catch (err) {
+        errs.push(err)
+      }
+    }
+    if (errs.length > 0) {
+      throw errs[0]
     }
   } catch (err) {
     counts.errors++
