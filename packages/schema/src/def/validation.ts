@@ -32,10 +32,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -47,10 +47,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 32767 || value < -32768) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -62,10 +62,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 2147483647 || value < -2147483648) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -78,10 +78,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 127 || value < -128) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -93,10 +93,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 255 || value < 0) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -108,10 +108,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 65535 || value < 0) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -123,10 +123,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value > 4294967295 || value < 0) {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
@@ -135,10 +135,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof value !== 'number') {
       return false
     }
-    if (t.min ?? value < t.min) {
+    if (t.min !== undefined && value < t.min) {
       return false
     }
-    if (t.max ?? value > t.max) {
+    if (t.max !== undefined && value > t.max) {
       return false
     }
     return true
