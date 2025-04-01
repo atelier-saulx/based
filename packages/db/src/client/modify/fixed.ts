@@ -155,13 +155,6 @@ export const writeFixedValue = (
   pos: number,
 ): ModifyErr => {
   if (!def.validation(val, def)) {
-    console.log(
-      '-----DERPPPPP---',
-      def.path,
-      typeof val,
-      def.validation.toString(),
-    )
-
     return new ModifyError(def, val)
   }
   const len = ctx.len
