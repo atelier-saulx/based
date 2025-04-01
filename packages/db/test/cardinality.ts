@@ -242,7 +242,11 @@ await test('hll', async (t) => {
       .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$tokens')
-      .get(),
+      .get()
+      .then((v) => {
+        v.debug()
+        return v
+      }),
     [
       {
         id: 3,
