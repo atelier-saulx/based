@@ -73,7 +73,7 @@ test('null', async (t: T) => {
 
   await wait(501)
 
-  t.deepEqual(val2, [null, { mrx: true }])
+  t.deepEqual(obs, [null, { mrx: true }])
 
   close()
 })
