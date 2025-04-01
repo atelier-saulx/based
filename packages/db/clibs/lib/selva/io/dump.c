@@ -593,6 +593,7 @@ static int load_reference_meta(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
+    const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
     int err = 0;
 
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
@@ -605,6 +606,7 @@ static int load_reference_meta(
 
     if (nr_fields > 0) {
         selva_fields_ensure_ref_meta(db, node, ref, efc);
+        assert(ref->meta);
     }
 
     for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
@@ -624,7 +626,7 @@ static int load_reference_meta(
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
 
-        fs = get_fs_by_fields_schema_field(selva_get_edge_field_fields_schema(db, efc), rd.field);
+        fs = get_fs_by_fields_schema_field(schema, rd.field);
         if (!fs) {
             selva_io_errlog(io, "Field schema not found for the field %d", rd.field);
             return SELVA_EINVAL;
@@ -696,7 +698,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
     node_id_t dst_id;
     uint8_t meta_present;
     struct SelvaNode *dst_node;
-    struct SelvaNodeReference *ref;
+    struct SelvaNodeReference *ref = nullptr;
     int err;
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);

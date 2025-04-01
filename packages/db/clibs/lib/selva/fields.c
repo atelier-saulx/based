@@ -1065,17 +1065,18 @@ int selva_fields_references_insert(
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
         struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
         ssize_t index_old;
-        int err;
+        int err = 0;
 
         index_old = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
         if (index_old < 0) {
             return SELVA_EGENERAL;
         } else if (index_old == index) {
-            return 0;
+            goto done;
         }
 
         err = selva_fields_references_move(node, fs, index_old, index);
 
+done:
         if (ref_out) {
             *ref_out = &refs->refs[index];
         }
