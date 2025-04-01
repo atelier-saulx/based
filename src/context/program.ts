@@ -20,9 +20,9 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     if (!basedFile || !Object.keys(basedFile)?.length) {
       this.print.warning(this.i18n('context.configurationFileNotFound'), true)
 
-      const createBasedFile = await this.form.boolean({
-        message: this.i18n('context.createBasedFile', process.cwd()),
-      })
+      const createBasedFile = await this.form.boolean(
+        this.i18n('context.createBasedFile', process.cwd()),
+      )
 
       this.put('globalOptions', { createBasedFile })
 
@@ -41,6 +41,8 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     ...(file !== undefined && { file }),
   }
 
+  let envLabel: string = basedProject.env
+
   if (basedProject.env.endsWith('#branch')) {
     basedProject.branch = {} as Based.Context.Project['branch']
 
@@ -50,6 +52,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     const useDataFrom = envInfo.length === 2 ? envInfo[0] : null
 
     basedProject.branch.useDataFrom = useDataFrom
+    envLabel += ` <reset><dim>(${basedProject?.branch?.name ?? ''})</dim></reset>`
   }
 
   this.set('basedProject', basedProject)
@@ -64,12 +67,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     this.print
       .pipe(this.i18n('context.org', basedProject.org))
       .pipe(this.i18n('context.project', basedProject.project))
-      .pipe(
-        this.i18n(
-          'context.env',
-          `${basedProject.env} <reset><dim>(${basedProject.branch.name ?? ''})</dim></reset>`,
-        ),
-      )
+      .pipe(this.i18n('context.env', envLabel))
 
     if (basedProject.apiKey) {
       this.print.pipe(
