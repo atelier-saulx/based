@@ -52,7 +52,11 @@ export function writeReferences(
       err = new ModifyError(def, value)
     } else if (key === 'delete') {
       err = deleteRefs(def, ctx, schema, mod, val, res.tmpId)
-    } else if (key === 'add' || key === 'update') {
+    } else if (key === 'update') {
+      // and add add: []
+      // replace this with update
+      err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
+    } else if (key === 'add') {
       // and add add: []
       // replace this with update
       err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
@@ -326,7 +330,9 @@ function putRefs(
   let i = 0
   for (; i < refs.length; i++) {
     let ref = refs[i]
-    if (typeof ref === 'number') {
+    if (!def.validation(ref, def)) {
+      break
+    } else if (typeof ref === 'number') {
       ctx.buf[ctx.len++] = ref
       ctx.buf[ctx.len++] = ref >>>= 8
       ctx.buf[ctx.len++] = ref >>>= 8

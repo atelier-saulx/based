@@ -178,17 +178,12 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.references]: (value) => {
-    // if (!Array.isArray(value)) {
-    //   return false
-    // }
-    // const len = value.length
-    // let x = true
-    // for (let i = 0; i < len; i++) {
-    //   if (typeof value[i] !== 'string') {
-    //     x = false
-    //     break
-    //   }
-    // }
+    if (typeof value !== 'number') {
+      return false
+    }
+    if (value === 0) {
+      return false
+    }
     return true
   },
   [TYPE_INDEX_MAP.string]: (value, t) => {
