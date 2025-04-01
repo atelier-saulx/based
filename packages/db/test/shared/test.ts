@@ -41,15 +41,22 @@ const test = async (
           await db.destroy()
         } catch (err) {}
       })
-      const checksums = []
-      const a = []
-      const b = []
+
       const fields = ['*', '**']
-      for (const type in db.server.schema.types) {
-        let x = await db.query(type).include(fields).get()
-        checksums.push(x.checksum)
-        a.push(x.toObject())
+      const make = async (db) => {
+        const checksums = []
+        const data = []
+
+        for (const type in db.server.schema.types) {
+          let x = await db.query(type).include(fields).get()
+          checksums.push(x.checksum)
+          data.push(x.toObject())
+        }
+
+        return [checksums, data]
       }
+
+      const [checksums, a] = await make(db)
 
       let d = Date.now()
       await db.stop()
@@ -65,12 +72,9 @@ const test = async (
       d = Date.now()
       await newDb.start()
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
-      const backupChecksums = []
-      for (const type in newDb.server.schema.types) {
-        const x = await newDb.query(type).include(fields).get()
-        backupChecksums.push(x.checksum)
-        b.push(x.toObject())
-      }
+
+      const [backupChecksums, b] = await make(newDb)
+
       function findFirstDiffPos(a, b) {
         for (let i = 0; i < a.length; i++) {
           if (a[i] !== b[i]) return i
@@ -81,6 +85,7 @@ const test = async (
       if (di >= 0) {
         deepEqual(b[di], a[di])
       }
+
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
       await wait(10)
     },
