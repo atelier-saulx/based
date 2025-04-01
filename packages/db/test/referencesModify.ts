@@ -48,7 +48,7 @@ await test('references modify', async (t) => {
   await db.update('user', john, {
     friends: {
       delete: [bob],
-      set: [marie],
+      update: [marie],
     },
   })
 
@@ -66,7 +66,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [bob],
+      update: [bob],
     },
   })
 

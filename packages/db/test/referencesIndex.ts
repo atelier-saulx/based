@@ -58,7 +58,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [
+      update: [
         {
           id: bob,
           $index: -1,
@@ -69,7 +69,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [
+      update: [
         {
           id: bob,
           $index: -1,
@@ -96,7 +96,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [
+      update: [
         {
           id: billy,
           $index: 0,
@@ -124,7 +124,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [
+      update: [
         {
           id: malcolm,
           $index: 2,
@@ -149,7 +149,7 @@ await test('references modify', async (t) => {
 
   await db.update('user', john, {
     friends: {
-      set: [
+      update: [
         {
           id: malcolm,
           $index: -1,

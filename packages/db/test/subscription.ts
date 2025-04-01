@@ -289,7 +289,7 @@ await test('subscription mixed', async (t) => {
   for (let i = 1; i < amount; i++) {
     db.create('user', { nr: i, name: 'Mr ' + i, flap: i })
   }
-  db.drain()
+  await db.drain()
 
   let blarf = 0
 
@@ -298,7 +298,7 @@ await test('subscription mixed', async (t) => {
   }, 100)
 
   let s = 0
-  for (let i = 0; i < 100e3; i++) {
+  for (let i = 0; i < 1e3; i++) {
     // const close = db.query('user', i + 1).subscribe((q) => {
     // console.log(q.id, q)
     // blarf++

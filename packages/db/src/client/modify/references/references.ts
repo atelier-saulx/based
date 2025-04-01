@@ -52,7 +52,9 @@ export function writeReferences(
       err = new ModifyError(def, value)
     } else if (key === 'delete') {
       err = deleteRefs(def, ctx, schema, mod, val, res.tmpId)
-    } else if (key === 'set') {
+    } else if (key === 'add' || key === 'update') {
+      // and add add: []
+      // replace this with update
       err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
     } else if (key === 'upsert') {
       dbUpdateFromUpsert(

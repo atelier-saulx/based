@@ -419,7 +419,7 @@ await test('one to many really', async (t) => {
   })
   await db.update('user', user, {
     resources: {
-      set: [joy],
+      update: [joy],
     },
   })
   deepEqual(
@@ -453,7 +453,7 @@ await test('one to many really', async (t) => {
 
   await db.update('user', user, {
     resources: {
-      set: [joy, kbd, cpu, fd, mouse],
+      update: [joy, kbd, cpu, fd, mouse],
     },
   })
   deepEqual(

@@ -95,7 +95,7 @@ await test('multiple', async (t) => {
 
   await db.update('article', fantasticalFriday, {
     contributors: {
-      set: [
+      update: [
         {
           id: mrDerp,
           $rating: 22,
@@ -175,7 +175,7 @@ await test('multiple', async (t) => {
 
   await db.update('article', fantasticalFriday, {
     contributors: {
-      set: [
+      update: [
         {
           id: mrDerp,
           $rating: { increment: 1 },
