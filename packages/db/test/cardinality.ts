@@ -238,13 +238,11 @@ await test('hll', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .filter('id', '>=', 3)
-        .include('contributors.$tokens')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .filter('id', '>=', 3)
+      .include('contributors.$tokens')
+      .get(),
     [
       {
         id: 3,
@@ -256,6 +254,7 @@ await test('hll', async (t) => {
         ],
       },
     ],
+    '3 distinct filter',
   )
 
   await db.update('article', edge, {
