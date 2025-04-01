@@ -102,3 +102,20 @@ found:
     }
     ex->cancel_cb(token);
 }
+
+size_t selva_expire_count(const struct SelvaExpire *ex)
+{
+    struct SVectorIterator it;
+    struct SelvaExpireToken *token;
+    size_t n = 0;
+
+    SVector_ForeachBegin(&it, &ex->list);
+    while (!SVector_Done(&it)) {
+        token = SVector_Foreach(&it);
+        do {
+            n++;
+        } while ((token = token->next));
+    }
+
+    return n;
+}

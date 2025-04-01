@@ -21,6 +21,7 @@
 #include "auto_free.h"
 #include "db.h"
 #include "db_panic.h"
+#include "expire.h"
 #include "io.h"
 #include "print_ready.h"
 #include "io_struct.h"
@@ -32,6 +33,7 @@
  * Pick 32-bit primes for these.
  */
 #define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
+#define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
 #define DUMP_MAGIC_TYPES        3550908863 /* [range].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
@@ -330,6 +332,32 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
+static void save_expire(struct selva_io *io, struct SelvaDb *db)
+{
+
+    struct SVectorIterator it;
+    struct SelvaExpireToken *token;
+    const sdb_arr_len_t count = selva_expire_count(&db->expiring);
+
+    write_dump_magic(io, DUMP_MAGIC_EXPIRE);
+    io->sdb_write(&count, sizeof(count), 1, io);
+
+    SVector_ForeachBegin(&it, &db->expiring.list);
+    while (!SVector_Done(&it)) {
+        token = SVector_Foreach(&it);
+        do {
+            struct SelvaDbExpireToken *dbToken = containerof(token, typeof(*dbToken), token);
+            node_type_t type = dbToken->type;
+            node_id_t node_id = dbToken->node_id;
+            int64_t expire = dbToken->token.expire;
+
+            io->sdb_write(&type, sizeof(type), 1, io);
+            io->sdb_write(&node_id, sizeof(node_id), 1, io);
+            io->sdb_write(&expire, sizeof(expire), 1, io);
+        } while ((token = token->next));
+    }
+
+}
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
 {
@@ -351,6 +379,7 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
      * Save all the common data here that can't be split up.
      */
     save_schema(&io, db);
+    save_expire(&io, db);
     selva_io_end(&io, nullptr);
 
     return 0;
@@ -471,6 +500,33 @@ static int load_schema(struct selva_io *io, struct SelvaDb *db)
             selva_io_errlog(io, "Failed to create a node type entry: %s", selva_strerror(err));
             return SELVA_EINVAL;
         }
+    }
+
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_expire(struct selva_io *io, struct SelvaDb *db)
+{
+    sdb_arr_len_t count;
+
+    if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
+    }
+
+    io->sdb_read(&count, sizeof(count), 1, io);
+
+    for (sdb_arr_len_t i = 0; i < count; i++) {
+        node_type_t type;
+        node_id_t node_id;
+        int64_t expire;
+
+        io->sdb_read(&type, sizeof(type), 1, io);
+        io->sdb_read(&node_id, sizeof(node_id), 1, io);
+        io->sdb_read(&expire, sizeof(expire), 1, io);
+
+        selva_expire_node(db, type, node_id, expire);
     }
 
     return 0;
@@ -960,7 +1016,6 @@ static int load_types(struct selva_io *io, struct SelvaDb *db)
     return load_nodes(io, db, te);
 }
 
-
 int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io;
@@ -975,6 +1030,7 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlo
     io.errlog_left = errlog_size;
 
     err = load_schema(&io, db);
+    err = err ?: load_expire(&io, db);
     selva_io_end(&io, nullptr);
 
     return err;
