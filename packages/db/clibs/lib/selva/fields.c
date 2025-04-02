@@ -1026,7 +1026,6 @@ int selva_fields_references_insert(
 {
     const struct SelvaFieldSchema *fs_dst;
     node_type_t type_dst = te_dst->type;
-    int err;
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
         type_dst != dst->type ||
@@ -1040,6 +1039,8 @@ int selva_fields_references_insert(
     }
 
     if (add_to_refs_index(node, dst, fs, fs_dst)) {
+        int err;
+
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0, -1, false);
         }
