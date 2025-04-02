@@ -7,7 +7,6 @@ JEMALLOC_CONFIG := --with-version=VERSION \
 				   --with-lg-quantum=3 \
 				   --disable-cxx \
 				   --enable-xmalloc \
-				   --disable-initial-exec-tls \
 				   --enable-prof \
 				   --with-jemalloc-prefix=selva_ \
 				   --with-private-namespace=selva_ \
