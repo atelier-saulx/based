@@ -892,7 +892,6 @@ int selva_fields_set_text(
         const char *str,
         size_t len)
 {
-    struct SelvaFields *fields = &node->fields;
     enum selva_lang_code lang = str[0];
     struct ensure_text_field tf;
     uint32_t crc;
