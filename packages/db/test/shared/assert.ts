@@ -84,9 +84,12 @@ export const isSorted = (
 
 export const throws = async (
   fn: () => Promise<any>,
-  logErr?: boolean,
+  logErr?: string | boolean,
   label?: string,
 ) => {
+  if (typeof logErr === 'string') {
+    label = logErr
+  }
   var didThrow = false
   try {
     await fn()
@@ -94,7 +97,7 @@ export const throws = async (
     didThrow = true
     const e = new Error('')
     e.stack.split('\n').slice(-1).join('')
-    if (logErr) {
+    if (logErr == true) {
       console.log('')
       if (label) {
         console.log(color.gray(`${label} "${err.stack}"`))
