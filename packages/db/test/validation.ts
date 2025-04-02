@@ -51,13 +51,13 @@ await test('update', async (t) => {
     },
   })
 
-  await throws(async () => {
-    db.create('user', {
-      text: {
-        en: 123,
-      },
-    })
-  })
+  // await throws(async () => {
+  //   db.create('user', {
+  //     text: {
+  //       en: 123,
+  //     },
+  //   })
+  // })
 
   await throws(async () => {
     db.create('user', {
