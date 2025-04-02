@@ -434,7 +434,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
-    struct SelvaNode *node;
+    struct SelvaNode *node = nullptr;
     const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
@@ -442,7 +442,11 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_reset(hash_state);
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
-    if (nr_nodes > 0) {
+    /*
+     * `node` is definitely set but we just want to make static analyzers
+     * happy.
+     */
+    if (node && nr_nodes > 0) {
         do {
             selva_hash128_t node_hash;
 
