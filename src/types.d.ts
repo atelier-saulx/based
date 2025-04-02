@@ -588,7 +588,6 @@ declare global {
         favicon?: string
         bundled: string
         checksum: number
-        mtimeMs: number
         serverFunction?: string
       }
     }

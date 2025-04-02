@@ -144,7 +144,9 @@ export const devServer = async ({
   )
 
   for (const found of configs) {
-    await onChange(null, { updates: [['bundled', found.path]] } as BundleResult)
+    await onChange(null, {
+      updates: [['bundled', found.path]],
+    } as BundleResult)
   }
 
   context.print
@@ -220,6 +222,7 @@ export const devServer = async ({
         }
 
         if (found.type === 'schema') {
+          console.dir(found.config, { depth: null })
           await basedServer.client.call('db:set-schema', found.config)
           continue
         }
