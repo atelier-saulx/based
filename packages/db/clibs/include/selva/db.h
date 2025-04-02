@@ -73,7 +73,7 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
 
 SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
-#if !__zig
+#ifndef __zig
 {
     return te->blocks->block_capacity;
 }
@@ -87,7 +87,7 @@ inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
-#if !__zig
+#ifndef __zig
 {
     return &te->ns;
 }
@@ -98,7 +98,7 @@ inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEn
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
-#if !__zig
+#ifndef __zig
 {
     if (field >= fields_schema->nr_fields) {
         return nullptr;
@@ -116,7 +116,7 @@ inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct SelvaTypeEntry *te, field_t field)
-#if !__zig
+#ifndef __zig
 {
     return get_fs_by_fields_schema_field(&te->ns.fields_schema, field);
 }
@@ -130,7 +130,7 @@ inline const struct SelvaFieldSchema *selva_get_fs_by_te_field(const struct Selv
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
-#if !__zig
+#ifndef __zig
 {
     return get_fs_by_fields_schema_field(&ns->fields_schema, field);
 }
@@ -144,7 +144,7 @@ inline const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct Selv
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
-#if !__zig
+#ifndef __zig
 {
     struct SelvaTypeEntry *type;
 
@@ -164,7 +164,7 @@ SELVA_EXPORT
 [[reproducible]]
 #endif
 inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
-#if !__zig
+#ifndef __zig
 {
     return fs->type;
 }
@@ -181,7 +181,7 @@ inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
 SELVA_EXPORT
 __attribute__((nonnull))
 inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
-#if !__zig
+#ifndef __zig
 {
     return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
         ? &fs->edge_constraint
@@ -310,7 +310,7 @@ size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnul
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline node_id_t selva_get_node_id(const struct SelvaNode *node)
-#if !__zig
+#ifndef __zig
 {
     return node->node_id;
 }
@@ -324,7 +324,7 @@ inline node_id_t selva_get_node_id(const struct SelvaNode *node)
 SELVA_EXPORT
 __attribute__((nonnull, pure))
 inline node_type_t selva_get_node_type(const struct SelvaNode *node)
-#if !__zig
+#ifndef __zig
 {
     return node->type;
 }
