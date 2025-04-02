@@ -153,3 +153,4 @@ zig-cache
 zig-out
 deps/node-*
 packages/db/*.o
+.zigversion

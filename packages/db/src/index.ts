@@ -30,7 +30,7 @@ export class BasedDb {
         const fn = this[key]
         if (typeof fn === 'function') {
           // @ts-ignore
-          this[key] = function () {
+          this[key] = function (this: BasedDb) {
             const str = [`[${key}]`, ...arguments].join(' ')
             console.info(picocolors.dim(str))
             return fn.apply(this, arguments)
@@ -75,74 +75,74 @@ export class BasedDb {
   }
 
   // client
-  create: DbClient['create'] = function () {
+  create: DbClient['create'] = function (this: BasedDb) {
     return this.client.create.apply(this.client, arguments)
   }
 
-  copy: DbClient['copy'] = function () {
+  copy: DbClient['copy'] = function (this: BasedDb) {
     return this.client.copy.apply(this.client, arguments)
   }
 
-  update: DbClient['update'] = function () {
+  update: DbClient['update'] = function (this: BasedDb) {
     return this.client.update.apply(this.client, arguments)
   }
 
-  upsert: DbClient['upsert'] = function () {
+  upsert: DbClient['upsert'] = function (this: BasedDb) {
     return this.client.upsert.apply(this.client, arguments)
   }
 
-  delete: DbClient['delete'] = function () {
+  delete: DbClient['delete'] = function (this: BasedDb) {
     return this.client.delete.apply(this.client, arguments)
   }
 
-  expire: DbClient['expire'] = function () {
+  expire: DbClient['expire'] = function (this: BasedDb) {
     return this.client.expire.apply(this.client, arguments)
   }
 
-  query: DbClient['query'] = function () {
+  query: DbClient['query'] = function (this: BasedDb) {
     return this.client.query.apply(this.client, arguments)
   }
 
-  setSchema: DbClient['setSchema'] = function () {
+  setSchema: DbClient['setSchema'] = function (this: BasedDb) {
     return this.client.setSchema.apply(this.client, arguments)
   }
 
-  putSchema: DbClient['setSchema'] = function () {
+  putSchema: DbClient['setSchema'] = function (this: BasedDb) {
     console.warn(
       'URGENT: putSchema will be removed in next release. Use setSchema instead!',
     )
     return this.setSchema.apply(this, arguments)
   }
 
-  drain: DbClient['drain'] = function () {
+  drain: DbClient['drain'] = function (this: BasedDb) {
     return this.client.drain.apply(this.client, arguments)
   }
 
   // server
-  start: DbServer['start'] = function () {
+  start: DbServer['start'] = function (this: BasedDb) {
     return this.server.start.apply(this.server, arguments)
   }
 
-  stop: DbServer['stop'] = async function () {
+  stop: DbServer['stop'] = async function (this: BasedDb) {
     await this.isModified()
     this.client.stop()
     return this.server.stop.apply(this.server, arguments)
   }
 
-  save: DbServer['save'] = async function () {
+  save: DbServer['save'] = async function (this: BasedDb) {
     await this.isModified()
     return this.server.save.apply(this.server, arguments)
   }
 
-  migrateSchema: DbServer['migrateSchema'] = function () {
+  migrateSchema: DbServer['migrateSchema'] = function (this: BasedDb) {
     return this.server.migrateSchema.apply(this.server, arguments)
   }
 
-  isModified: DbClient['isModified'] = function () {
+  isModified: DbClient['isModified'] = function (this: BasedDb) {
     return this.client.isModified.apply(this.client, arguments)
   }
 
-  schemaIsSet: DbClient['schemaIsSet'] = function () {
+  schemaIsSet: DbClient['schemaIsSet'] = function (this: BasedDb) {
     return this.client.schemaIsSet.apply(this.client, arguments)
   }
 
@@ -163,5 +163,13 @@ export class BasedDb {
     await this.destroy()
     this.#init(opts)
     await this.start({ clean: true })
+  }
+
+  on: DbClient['on'] = function (this: BasedDb) {
+    return this.client.on.apply(this.client, arguments)
+  }
+
+  off: DbClient['off'] = function (this: BasedDb) {
+    return this.client.on.apply(this.client, arguments)
   }
 }

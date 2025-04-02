@@ -203,6 +203,7 @@ export type SchemaReferencesOneWay = Prop<{
 export type SchemaText = Prop<{
   type: 'text'
   default?: Record<string, string>
+  format?: StringFormat
 }>
 
 type NumberType =

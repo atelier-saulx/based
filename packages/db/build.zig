@@ -3,19 +3,24 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
-    const lib = b.addSharedLibrary(.{
-        .name = "based_db_zig",
-        .root_source_file = b.path("native/lib.zig"),
-        .target = target,
-        .optimize = .ReleaseFast,
-        .link_libc = true,
-    });
-    lib.linker_allow_shlib_undefined = true;
-
     const enable_debug = b.option(bool, "enable_debug", "Enable debugging prints") orelse false;
 
     const options = b.addOptions();
     options.addOption(bool, "enable_debug", enable_debug);
+
+    const opt: std.builtin.OptimizeMode = switch (enable_debug) {
+        true => .Debug,
+        false => .ReleaseFast,
+    };
+
+    const lib = b.addSharedLibrary(.{
+        .name = "based_db_zig",
+        .root_source_file = b.path("native/lib.zig"),
+        .target = target,
+        .optimize = opt,
+        .link_libc = true,
+    });
+    lib.linker_allow_shlib_undefined = true;
 
     lib.root_module.addOptions("config", options);
 
