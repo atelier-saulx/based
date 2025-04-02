@@ -363,6 +363,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
 
     s->len = fread(get_buf(s), 1, size, fp);
     flags |= len_parity(s->len);
+    s->flags = flags;
 
     update_crc(s);
     return s;
