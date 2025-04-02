@@ -52,21 +52,25 @@ static inline int node_id_cmp(node_id_t a, node_id_t b)
     return a < b ? -1 : a > b ? 1 : 0;
 }
 
+__attribute__((nonnull))
 int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b)
 {
     return node_id_cmp(a->node_id, b->node_id);
 }
 
+__attribute__((nonnull))
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
     return strcmp(a->name, b->name);
 }
 
+__attribute__((nonnull))
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
     return node_id_cmp(a->dest, b->dest);
 }
 
+__attribute__((nonnull))
 static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
 {
     uint16_t a_type = 0xFFFF & (uintptr_t)(*a_raw);
@@ -75,11 +79,13 @@ static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const vo
     return (int)a_type - (int)b_type;
 }
 
+__attribute__((nonnull))
 static int SelvaTypeCursor_cmp(const struct SelvaTypeCursor *a, const struct SelvaTypeCursor *b)
 {
     return (int)(a->cursor_id - b->cursor_id);
 }
 
+__attribute__((nonnull))
 static int SelvaTypeCursors_cmp(const struct SelvaTypeCursors *a, const struct SelvaTypeCursors *b)
 {
     return node_id_cmp(a->node_id, b->node_id);

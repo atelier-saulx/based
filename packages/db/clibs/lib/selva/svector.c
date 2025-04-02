@@ -33,7 +33,7 @@
 #define SVECTOR_FOREACH_RBTREE(var, vec) \
         RB_FOREACH((var), SVector_rbtree, (struct SVector_rbtree *)&((vec)->vec_rbhead))
 
-static int svector_rbtree_compar_wrap(struct SVector_rbnode *a, struct SVector_rbnode *b);
+static int svector_rbtree_compar_wrap(struct SVector_rbnode *a, struct SVector_rbnode *b) __attribute__((nonnull));
 RB_PROTOTYPE_STATIC(SVector_rbtree, SVector_rbnode, entry, svector_rbtree_compar_wrap)
 static void *SVector_InsertFast(SVector *vec, void *el);
 
