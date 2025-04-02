@@ -21,6 +21,7 @@ if (isMainThread) {
   const toDb = new BasedDb({ path })
   const cp = (obj) => {
     let copy: object
+
     for (const key in obj) {
       const val = obj[key]
       if (typeof val === 'number') {
@@ -39,6 +40,7 @@ if (isMainThread) {
         }
       }
     }
+
     return copy
   }
 
