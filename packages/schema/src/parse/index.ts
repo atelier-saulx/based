@@ -4,12 +4,13 @@ import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
 import { expectBoolean, expectObject } from './assert.js'
+import { deepCopy } from '@saulx/utils'
 
 export { getPropType }
 
 export class SchemaParser {
   constructor(schema: Schema) {
-    this.schema = schema
+    this.schema = deepCopy(schema)
   }
 
   isItems: boolean
@@ -85,7 +86,7 @@ export class SchemaParser {
     }
   }
 
-  parse() {
+  parse(): StrictSchema {
     expectObject(this.schema)
     // always do types first because it removes props shorthand
     if ('types' in this.schema) {
@@ -100,6 +101,8 @@ export class SchemaParser {
         throw Error(UNKNOWN_PROP)
       }
     }
+
+    return this.schema as StrictSchema
   }
 }
 
@@ -126,9 +129,7 @@ export const print = (schema: Schema, path: string[]) => {
 export const parse = (schema: Schema): { schema: StrictSchema } => {
   const parser = new SchemaParser(schema)
   try {
-    parser.parse()
-    // @ts-ignore
-    return { schema }
+    return { schema: parser.parse() }
   } catch (e) {
     const cause = parser.path.slice(0, Math.min(4, parser.lvl) + 1)
     e.message += '\n\n' + print(schema, cause) + '\n'
