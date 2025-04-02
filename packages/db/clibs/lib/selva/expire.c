@@ -70,8 +70,8 @@ void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token)
         while (old_token->next) {
             old_token = old_token->next;
         }
-        old_token = token;
-        token->next = NULL;
+        old_token->next = token;
+        token->next = nullptr;
     }
 
     if (ex->next > token->expire) {
