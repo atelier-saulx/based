@@ -75,15 +75,17 @@ const test = async (
 
       const [backupChecksums, b] = await make(newDb)
 
-      function findFirstDiffPos(a, b) {
-        for (let i = 0; i < a.length; i++) {
-          if (a[i] !== b[i]) return i
+      if (a.length === b.length) {
+        function findFirstDiffPos(a, b) {
+          for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return i
+          }
+          return -1
         }
-        return -1
-      }
-      const di = findFirstDiffPos(checksums, backupChecksums)
-      if (di >= 0) {
-        deepEqual(b[di], a[di])
+        const di = findFirstDiffPos(checksums, backupChecksums)
+        if (di >= 0) {
+          deepEqual(b[di], a[di])
+        }
       }
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
