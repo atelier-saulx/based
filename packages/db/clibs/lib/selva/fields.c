@@ -1087,9 +1087,8 @@ done:
             struct SelvaFields *fields = &node->fields;
             struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
             struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
-            ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
 
-            *ref_out = &refs->refs[index];
+            *ref_out = &refs->refs[fast_linear_search_references(refs->refs, refs->nr_refs, dst)];
         }
         return SELVA_EEXIST;
     }
