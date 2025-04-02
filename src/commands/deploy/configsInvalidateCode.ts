@@ -23,6 +23,7 @@ export const configsInvalidateCode = async (
   const typeName = FUNCTION_TYPES[found.config.type]
   let hasExport: boolean = false
   let hasType: boolean = false
+  let isAsync: boolean = false
 
   ts.forEachChild(sourceFile, function walk(node) {
     if (
@@ -40,6 +41,22 @@ export const configsInvalidateCode = async (
       node.type?.typeName?.escapedText === typeName
     ) {
       hasType = true
+    }
+
+    if (
+      (node.kind === ts.SyntaxKind.FunctionDeclaration ||
+        node.kind === ts.SyntaxKind.FunctionExpression ||
+        node.kind === ts.SyntaxKind.ArrowFunction) &&
+      found.config.type === 'job'
+    ) {
+      if (
+        // @ts-ignore
+        node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AsyncKeyword)
+      ) {
+        isAsync = true
+      }
+
+      return
     }
 
     if (!hasType || !hasExport) {
@@ -63,7 +80,6 @@ export const configsInvalidateCode = async (
       .warning(
         `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
       )
-      .line()
 
     return false
   }
@@ -82,7 +98,18 @@ export const configsInvalidateCode = async (
       .warning(
         `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
       )
-      .line()
+
+    return false
+  }
+
+  if (isAsync) {
+    context.print
+      .intro(context.i18n('methods.bundling.asyncJobIntro'))
+      .warning(context.i18n('methods.bundling.asyncJob', found.config.name))
+      .pipe()
+      .warning(
+        `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
+      )
 
     return false
   }

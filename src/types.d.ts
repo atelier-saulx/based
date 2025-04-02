@@ -508,6 +508,12 @@ declare global {
       }
     }
 
+    namespace Dev {
+      type WorkerData = {
+        filePath: string
+      }
+    }
+
     namespace Deploy {
       type Command = {
         functions: string[]

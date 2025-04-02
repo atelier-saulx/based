@@ -18,7 +18,7 @@ export const configsParse = async (
   }
 
   const configsNames: string[] = configs
-    .map(({ config }) => config.name)
+    .map(({ config }) => config?.name)
     .filter(Boolean)
 
   const configsNamesLength = stringMaxLength(configsNames)
@@ -72,17 +72,17 @@ export const configsParse = async (
         type,
         checksum,
       }) => {
-        if (config.type === 'app') {
+        if (config?.type === 'app') {
           if (config?.plugins) {
             plugins.push(...(config.plugins as Plugin[]))
           }
 
-          if (config.main) {
+          if (config?.main) {
             app = abs(config.main, dir)
             browser.push(app)
           }
 
-          if (config.favicon) {
+          if (config?.favicon) {
             favicon = abs(config.favicon, dir)
 
             browser.push(favicon)
@@ -113,7 +113,7 @@ export const configsParse = async (
             mapping[result.index] = result
           }
 
-          if (result.config.type === 'app') {
+          if (result?.config?.type === 'app') {
             mapping[join(result.dir, result.config.main)] = result
           }
         }

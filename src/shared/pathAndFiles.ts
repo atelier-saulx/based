@@ -195,6 +195,10 @@ export const findConfigFile = async (
   nodeBundles: BundleResult,
   browserBundles: BundleResult,
 ): Promise<Based.Deploy.Configs | undefined> => {
+  if (!file) {
+    return
+  }
+
   const relFile = file
   file = abs(file, process.cwd())
   let found = mapping[file]

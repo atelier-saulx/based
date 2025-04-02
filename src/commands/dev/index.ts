@@ -4,7 +4,10 @@ import { Readable } from 'node:stream'
 import { buffer } from 'node:stream/consumers'
 import type { BuildFailure, BundleResult, OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
-import type { BasedAuthorizeFunctionConfig } from '@based/functions'
+import type {
+  BasedAuthorizeFunctionConfig,
+  BasedFunctionConfig,
+} from '@based/functions'
 import type { BasedServer } from '@based/server'
 import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
@@ -127,6 +130,7 @@ export const devServer = async ({
   )
 
   let client: BasedClient
+  let jobFunction = null
 
   if (!cloud) {
     client = SharedBasedClient.getInstance({ url: wsURL })
@@ -263,6 +267,15 @@ export const devServer = async ({
               })
             } else {
               basedServer.functions.update(spec, specs[spec].version)
+            }
+
+            if (specs[spec].type === 'job' && specs[spec].fn) {
+              if (jobFunction !== null) {
+                jobFunction()
+                jobFunction = null
+              }
+
+              jobFunction = specs[spec].fn(basedServer.client)
             }
           }
         }
@@ -401,68 +414,71 @@ async function createSpecsFromConfigs(
       }
 
       reloadClients = true
-      specs[found.config.name] = {
-        ...found.config,
-        type: 'function',
-        async fn(based, _payload, ctx) {
-          const errorTarget =
-            (browserBundles.error && browserBundles) ||
-            (nodeBundles.error && nodeBundles)
 
-          if (errorTarget) {
-            const vsCodeLink = (str) =>
-              `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
-            let str = `${LIVE_RELOAD_SCRIPT(liveReloadPort)}<pre>`
-            for (const { location, text } of errorTarget.error.errors) {
-              if (location) {
-                const { file, column, line } = location
-                str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`
+      if (found.config?.name) {
+        specs[found.config.name] = {
+          ...found.config,
+          type: 'function',
+          async fn(based, _payload, ctx) {
+            const errorTarget =
+              (browserBundles.error && browserBundles) ||
+              (nodeBundles.error && nodeBundles)
+
+            if (errorTarget) {
+              const vsCodeLink = (str) =>
+                `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
+              let str = `${LIVE_RELOAD_SCRIPT(liveReloadPort)}<pre>`
+              for (const { location, text } of errorTarget.error.errors) {
+                if (location) {
+                  const { file, column, line } = location
+                  str += `\n${vsCodeLink(`${file}:${line}:${column}`)} ${text}`
+                }
+              }
+
+              if (errorTarget.updates.length) {
+                str += '\n'
+                for (const [type, path] of errorTarget.updates) {
+                  str += `\n${type}: ${vsCodeLink(path)}`
+                }
+              }
+
+              str += '</pre>'
+              return str
+            }
+
+            let html = await defaultFn(based, params, ctx)
+            let i = -1
+
+            if (html instanceof Readable) {
+              html = (await buffer(html)).toString()
+            }
+
+            if (typeof html === 'string') {
+              i = html.indexOf('</head>')
+
+              if (i === -1) {
+                i = html.indexOf('</body>')
+              }
+
+              if (i === -1) {
+                i = html.indexOf('</html>')
               }
             }
 
-            if (errorTarget.updates.length) {
-              str += '\n'
-              for (const [type, path] of errorTarget.updates) {
-                str += `\n${type}: ${vsCodeLink(path)}`
-              }
-            }
-
-            str += '</pre>'
-            return str
-          }
-
-          let html = await defaultFn(based, params, ctx)
-          let i = -1
-
-          if (html instanceof Readable) {
-            html = (await buffer(html)).toString()
-          }
-
-          if (typeof html === 'string') {
-            i = html.indexOf('</head>')
-
             if (i === -1) {
-              i = html.indexOf('</body>')
+              context.print.warning(
+                'Invalid html, skip livereload tag and based opts tag',
+              )
+              return html
             }
-
-            if (i === -1) {
-              i = html.indexOf('</html>')
-            }
-          }
-
-          if (i === -1) {
-            context.print.warning(
-              'Invalid html, skip livereload tag and based opts tag',
-            )
-            return html
-          }
-          return `${html.substring(0, i)}${LIVE_RELOAD_SCRIPT(
-            liveReloadPort,
-          )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`
-        },
+            return `${html.substring(0, i)}${LIVE_RELOAD_SCRIPT(
+              liveReloadPort,
+            )}${BASED_OPTS_SCRIPT(client.opts)}${html.substring(i)}`
+          },
+        } as BasedFunctionConfig
       }
     } else if (isAuthorize) {
-      specs[found.config.name || 'authorize'] = {
+      specs[found.config?.name || 'authorize'] = {
         ...found.config,
         name: found.config.name || 'authorize',
         fn(...args) {
@@ -470,7 +486,7 @@ async function createSpecsFromConfigs(
         },
       }
     } else {
-      if (found.config.name) {
+      if (found.config?.name) {
         specs[found.config.name] = {
           ...found.config,
           fn(...args) {

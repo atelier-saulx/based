@@ -785,6 +785,9 @@ export default {
       methodNotExportedIntro: '<yellow><b>Export default missing</b></yellow>',
       methodNotExported:
         "No <b>default</b> export pointing to a method related to the function '<b>${name}</b>' of type '<b>${type}</b>' was found",
+      asyncJobIntro: '<yellow><b>Async jobs</b></yellow>',
+      asyncJob:
+        "<b>Based Job Functions</b> cannot be declared as an <b>async</b> function. Change the declaration of the function '<b>${name}</b>'. The job will not be executed.",
       error: {
         file: '<b>File</b>: ${file}',
         location: '<b>Location</b>: Ln ${line}, Col ${column}',
