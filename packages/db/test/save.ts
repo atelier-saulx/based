@@ -10,7 +10,7 @@ await test('simple', async (t) => {
 
   await db.start({ clean: true })
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -138,7 +138,7 @@ await test('empty root', async (t) => {
   await db.start()
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -167,7 +167,7 @@ await test('refs', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -236,7 +236,7 @@ await test('auto save', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -272,7 +272,7 @@ await test('text', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -355,7 +355,7 @@ await test.skip('db is drained before save', async (t) => {
   })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   const people = await Promise.all([
@@ -422,7 +422,7 @@ await test('create', async (t) => {
   })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   db.create('person', {
@@ -482,7 +482,7 @@ await test('upsert', async (t) => {
   })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   const joe = db.create('person', {
@@ -529,7 +529,7 @@ await test('alias blocks', async (t) => {
   })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   for (let i = 0; i < 100_000; i++) {
@@ -595,7 +595,7 @@ await test('simulated periodic save', async (t) => {
   })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   // create some people

@@ -145,10 +145,9 @@ pub fn createResultsBuffer(
         }
     }
 
-    // Nice to add this with comptime - debug or SAFE or something
-    // if (i > data.len - 4) {
-    //     std.log.err("Wrong writing of result buffer i:{d} \n", .{i});
-    // }
+    if (i > data.len - 4) {
+        utils.debugPrint("Wrong writing of result buffer i:{d} \n", .{i});
+    }
 
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
     return result;

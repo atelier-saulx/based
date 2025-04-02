@@ -10,9 +10,10 @@ import {
 import native from '../../native.js'
 import './worker.js'
 import { foreachDirtyBlock } from '../tree.js'
-import { DbServer } from '../index.js'
+import { DbServer, SCHEMA_FILE } from '../index.js'
 import { fileURLToPath } from 'url'
 import { deepMerge } from '@saulx/utils'
+import { writeFile } from 'fs/promises'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -93,8 +94,9 @@ export const migrate = async (
   let i = 0
   let ranges = []
 
-  fromDbServer.updateMerkleTree()
-  fromDbServer.dirtyRanges.clear()
+  // fromDbServer.updateMerkleTree()
+  // fromDbServer.dirtyRanges.clear()
+  await fromDbServer.save()
   fromDbServer.merkleTree.visitLeafNodes((leaf) => {
     ranges.push(leaf.data)
   })
@@ -153,9 +155,13 @@ export const migrate = async (
     worker.updateCtx(toAddress),
   )
 
-  promises.push(toDb.destroy(), worker.terminate())
+  promises.push(toDb.destroy(), worker.terminate(), fromDbServer.save({ forceFullDump: true }), writeFile(
+    join(fromDbServer.fileSystemPath, SCHEMA_FILE),
+    JSON.stringify(fromDbServer.schema),
+  ))
+  
   await Promise.all(promises)
-
+  
   fromDbServer.onSchemaChange?.(fromDbServer.schema)
 
   return fromDbServer.schema

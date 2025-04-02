@@ -365,6 +365,7 @@ p.text = propParser<SchemaText>(
     },
   },
   {
+    format: binaryOpts.format,
     default(val, prop) {
       console.warn('MAKE DEFAULT VALUE FOR TEXT')
     },

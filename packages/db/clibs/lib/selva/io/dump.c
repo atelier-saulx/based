@@ -125,11 +125,11 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 
     for (uint8_t i = 0; i < len; i++) {
         struct selva_string *tl = &text->tl[i];
-        size_t len;
-        const uint8_t *str = selva_string_to_buf(tl, &len);
+        size_t str_len;
+        const uint8_t *str = selva_string_to_buf(tl, &str_len);
         struct sdb_text_meta meta = {
             .flags = selva_string_get_flags(tl) & SDB_STRING_META_FLAGS_MASK,
-            .len = len,
+            .len = str_len,
         };
 
         /* FIXME string field CRC verification. */
@@ -140,7 +140,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 #endif
 
         io->sdb_write(&meta, sizeof(meta), 1, io);
-        io->sdb_write(str, sizeof(char), len, io);
+        io->sdb_write(str, sizeof(char), str_len, io);
     }
 }
 
@@ -158,6 +158,8 @@ static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc,
     if (meta_present) {
         /*
          * We don't pass the db here to prevent any attempt to access node schema.
+         * Static analyzers may think that ref->meta is somehow null now but it's
+         * definitely not!
          */
         save_fields(io, nullptr, schema, ref->meta);
     }
@@ -174,6 +176,7 @@ static void save_field_references(struct selva_io *io, const struct EdgeFieldCon
     }
 }
 
+__attribute__((nonnull))
 static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     const size_t nr_fields = fields->nr_fields;
@@ -217,12 +220,12 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCE:
             if (((struct SelvaNodeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
+                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, efc, schema, ref);
+                save_ref(io, efc, eschema, ref);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -230,12 +233,12 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCES:
             if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
+                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, efc, schema, refs);
+                save_field_references(io, efc, eschema, refs);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -268,6 +271,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
     }
 }
 
+__attribute__((nonnull))
 static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node)
 {
     const struct SelvaFieldsSchema *schema = &selva_get_ns_by_te(selva_get_type_by_node(db, node))->fields_schema;
@@ -432,7 +436,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
-    struct SelvaNode *node;
+    struct SelvaNode *node = nullptr;
     const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
@@ -440,7 +444,11 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_reset(hash_state);
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
-    if (nr_nodes > 0) {
+    /*
+     * `node` is definitely set but we just want to make static analyzers
+     * happy.
+     */
+    if (node && nr_nodes > 0) {
         do {
             selva_hash128_t node_hash;
 

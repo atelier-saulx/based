@@ -132,6 +132,7 @@ pub const ReadRefOp = enum(u8) {
 };
 
 pub const AggFn = enum(u8) {
+    none = 0,
     avg = 1,
     cardinality = 2,
     concat = 3, // string aggregation, delimiter should be an argument

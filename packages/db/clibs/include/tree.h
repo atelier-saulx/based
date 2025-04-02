@@ -77,10 +77,10 @@ struct name {								\
 }
 
 #define SPLAY_INITIALIZER(root)						\
-	{ NULL }
+	{ nullptr }
 
 #define SPLAY_INIT(root) do {						\
-	(root)->sph_root = NULL;					\
+	(root)->sph_root = nullptr;					\
 } while (/*CONSTCOND*/ 0)
 
 #define SPLAY_ENTRY(type)						\
@@ -92,7 +92,7 @@ struct {								\
 #define SPLAY_LEFT(elm, field)		(elm)->field.spe_left
 #define SPLAY_RIGHT(elm, field)		(elm)->field.spe_right
 #define SPLAY_ROOT(head)		(head)->sph_root
-#define SPLAY_EMPTY(head)		(SPLAY_ROOT(head) == NULL)
+#define SPLAY_EMPTY(head)		(SPLAY_ROOT(head) == nullptr)
 
 /* SPLAY_ROTATE_{LEFT,RIGHT} expect that tmp hold SPLAY_{RIGHT,LEFT} */
 #define SPLAY_ROTATE_RIGHT(head, tmp, field) do {			\
@@ -139,24 +139,24 @@ static __unused __inline struct type *					\
 name##_SPLAY_FIND(struct name *head, struct type *elm)			\
 {									\
 	if (SPLAY_EMPTY(head))						\
-		return(NULL);						\
+		return nullptr;						\
 	name##_SPLAY(head, elm);					\
 	if ((cmp)(elm, (head)->sph_root) == 0)				\
 		return (head->sph_root);				\
-	return (NULL);							\
+	return nullptr;							\
 }									\
 									\
 static __unused __inline struct type *					\
 name##_SPLAY_NEXT(struct name *head, struct type *elm)			\
 {									\
 	name##_SPLAY(head, elm);					\
-	if (SPLAY_RIGHT(elm, field) != NULL) {				\
+	if (SPLAY_RIGHT(elm, field) != nullptr) {				\
 		elm = SPLAY_RIGHT(elm, field);				\
-		while (SPLAY_LEFT(elm, field) != NULL) {		\
+		while (SPLAY_LEFT(elm, field) != nullptr) {		\
 			elm = SPLAY_LEFT(elm, field);			\
 		}							\
 	} else								\
-		elm = NULL;						\
+		elm = nullptr;						\
 	return (elm);							\
 }									\
 									\
@@ -175,24 +175,24 @@ struct type *								\
 name##_SPLAY_INSERT(struct name *head, struct type *elm)		\
 {									\
     if (SPLAY_EMPTY(head)) {						\
-	    SPLAY_LEFT(elm, field) = SPLAY_RIGHT(elm, field) = NULL;	\
+	    SPLAY_LEFT(elm, field) = SPLAY_RIGHT(elm, field) = nullptr;	\
     } else {								\
-	    __typeof(cmp(NULL, NULL)) __comp;							\
+	    __typeof(cmp((void *)1, (void *)1)) __comp;							\
 	    name##_SPLAY(head, elm);					\
 	    __comp = (cmp)(elm, (head)->sph_root);			\
 	    if (__comp < 0) {						\
 		    SPLAY_LEFT(elm, field) = SPLAY_LEFT((head)->sph_root, field);\
 		    SPLAY_RIGHT(elm, field) = (head)->sph_root;		\
-		    SPLAY_LEFT((head)->sph_root, field) = NULL;		\
+		    SPLAY_LEFT((head)->sph_root, field) = nullptr;		\
 	    } else if (__comp > 0) {					\
 		    SPLAY_RIGHT(elm, field) = SPLAY_RIGHT((head)->sph_root, field);\
 		    SPLAY_LEFT(elm, field) = (head)->sph_root;		\
-		    SPLAY_RIGHT((head)->sph_root, field) = NULL;	\
+		    SPLAY_RIGHT((head)->sph_root, field) = nullptr;	\
 	    } else							\
 		    return ((head)->sph_root);				\
     }									\
     (head)->sph_root = (elm);						\
-    return (NULL);							\
+    return nullptr;							\
 }									\
 									\
 struct type *								\
@@ -200,10 +200,10 @@ name##_SPLAY_REMOVE(struct name *head, struct type *elm)		\
 {									\
 	struct type *__tmp;						\
 	if (SPLAY_EMPTY(head))						\
-		return (NULL);						\
+		return nullptr;						\
 	name##_SPLAY(head, elm);					\
 	if ((cmp)(elm, (head)->sph_root) == 0) {			\
-		if (SPLAY_LEFT((head)->sph_root, field) == NULL) {	\
+		if (SPLAY_LEFT((head)->sph_root, field) == nullptr) {	\
 			(head)->sph_root = SPLAY_RIGHT((head)->sph_root, field);\
 		} else {						\
 			__tmp = SPLAY_RIGHT((head)->sph_root, field);	\
@@ -213,36 +213,36 @@ name##_SPLAY_REMOVE(struct name *head, struct type *elm)		\
 		}							\
 		return (elm);						\
 	}								\
-	return (NULL);							\
+	return nullptr;							\
 }									\
 									\
 void									\
 name##_SPLAY(struct name *head, struct type *elm)			\
 {									\
 	struct type __node, *__left, *__right, *__tmp;			\
-	__typeof(cmp(NULL, NULL)) __comp;							\
+	__typeof(cmp((void *)1, (void *)1)) __comp;							\
 \
-	SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = NULL;\
+	SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = nullptr;\
 	__left = __right = &__node;					\
 \
 	while ((__comp = (cmp)(elm, (head)->sph_root)) != 0) {		\
 		if (__comp < 0) {					\
 			__tmp = SPLAY_LEFT((head)->sph_root, field);	\
-			if (__tmp == NULL)				\
+			if (__tmp == nullptr)				\
 				break;					\
 			if ((cmp)(elm, __tmp) < 0){			\
 				SPLAY_ROTATE_RIGHT(head, __tmp, field);	\
-				if (SPLAY_LEFT((head)->sph_root, field) == NULL)\
+				if (SPLAY_LEFT((head)->sph_root, field) == nullptr)\
 					break;				\
 			}						\
 			SPLAY_LINKLEFT(head, __right, field);		\
 		} else if (__comp > 0) {				\
 			__tmp = SPLAY_RIGHT((head)->sph_root, field);	\
-			if (__tmp == NULL)				\
+			if (__tmp == nullptr)				\
 				break;					\
 			if ((cmp)(elm, __tmp) > 0){			\
 				SPLAY_ROTATE_LEFT(head, __tmp, field);	\
-				if (SPLAY_RIGHT((head)->sph_root, field) == NULL)\
+				if (SPLAY_RIGHT((head)->sph_root, field) == nullptr)\
 					break;				\
 			}						\
 			SPLAY_LINKRIGHT(head, __left, field);		\
@@ -258,27 +258,27 @@ void name##_SPLAY_MINMAX(struct name *head, int __comp) \
 {									\
 	struct type __node, *__left, *__right, *__tmp;			\
 \
-	SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = NULL;\
+	SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = nullptr;\
 	__left = __right = &__node;					\
 \
 	while (1) {							\
 		if (__comp < 0) {					\
 			__tmp = SPLAY_LEFT((head)->sph_root, field);	\
-			if (__tmp == NULL)				\
+			if (__tmp == nullptr)				\
 				break;					\
 			if (__comp < 0){				\
 				SPLAY_ROTATE_RIGHT(head, __tmp, field);	\
-				if (SPLAY_LEFT((head)->sph_root, field) == NULL)\
+				if (SPLAY_LEFT((head)->sph_root, field) == nullptr)\
 					break;				\
 			}						\
 			SPLAY_LINKLEFT(head, __right, field);		\
 		} else if (__comp > 0) {				\
 			__tmp = SPLAY_RIGHT((head)->sph_root, field);	\
-			if (__tmp == NULL)				\
+			if (__tmp == nullptr)				\
 				break;					\
 			if (__comp > 0) {				\
 				SPLAY_ROTATE_LEFT(head, __tmp, field);	\
-				if (SPLAY_RIGHT((head)->sph_root, field) == NULL)\
+				if (SPLAY_RIGHT((head)->sph_root, field) == nullptr)\
 					break;				\
 			}						\
 			SPLAY_LINKRIGHT(head, __left, field);		\
@@ -294,14 +294,14 @@ void name##_SPLAY_MINMAX(struct name *head, int __comp) \
 #define SPLAY_REMOVE(name, x, y)	name##_SPLAY_REMOVE(x, y)
 #define SPLAY_FIND(name, x, y)		name##_SPLAY_FIND(x, y)
 #define SPLAY_NEXT(name, x, y)		name##_SPLAY_NEXT(x, y)
-#define SPLAY_MIN(name, x)		(SPLAY_EMPTY(x) ? NULL	\
+#define SPLAY_MIN(name, x)		(SPLAY_EMPTY(x) ? nullptr	\
 					: name##_SPLAY_MIN_MAX(x, SPLAY_NEGINF))
-#define SPLAY_MAX(name, x)		(SPLAY_EMPTY(x) ? NULL	\
+#define SPLAY_MAX(name, x)		(SPLAY_EMPTY(x) ? nullptr	\
 					: name##_SPLAY_MIN_MAX(x, SPLAY_INF))
 
 #define SPLAY_FOREACH(x, name, head)					\
 	for ((x) = SPLAY_MIN(name, head);				\
-	     (x) != NULL;						\
+	     (x) != nullptr;						\
 	     (x) = SPLAY_NEXT(name, head, x))
 
 /* Macros that define a rank-balanced tree */
@@ -311,10 +311,10 @@ struct name {								\
 }
 
 #define RB_INITIALIZER(root)						\
-	{ NULL }
+	{ nullptr }
 
 #define RB_INIT(root) do {						\
-	(root)->rbh_root = NULL;					\
+	(root)->rbh_root = nullptr;					\
 } while (/*CONSTCOND*/ 0)
 
 #define RB_ENTRY(type)							\
@@ -350,7 +350,7 @@ struct {								\
 #define RB_PARENT(elm, field)		((__typeof(RB_UP(elm, field)))	\
 					 (RB_BITS(elm, field) & ~RB_RED_MASK))
 #define RB_ROOT(head)			(head)->rbh_root
-#define RB_EMPTY(head)			(RB_ROOT(head) == NULL)
+#define RB_EMPTY(head)			(RB_ROOT(head) == nullptr)
 
 #define RB_SET_PARENT(dst, src, field) do {				\
 	RB_BITS(dst, field) &= RB_RED_MASK;				\
@@ -359,10 +359,10 @@ struct {								\
 
 #define RB_SET(elm, parent, field) do {					\
 	RB_UP(elm, field) = parent;					\
-	RB_LEFT(elm, field) = RB_RIGHT(elm, field) = NULL;		\
+	RB_LEFT(elm, field) = RB_RIGHT(elm, field) = nullptr;		\
 } while (/*CONSTCOND*/ 0)
 
-#define RB_COLOR(elm, field)	(RB_PARENT(elm, field) == NULL ? 0 :	\
+#define RB_COLOR(elm, field)	(RB_PARENT(elm, field) == nullptr ? 0 :	\
 				RB_LEFT(RB_PARENT(elm, field), field) == elm ? \
 				RB_RED_LEFT(RB_PARENT(elm, field), field) : \
 				RB_RED_RIGHT(RB_PARENT(elm, field), field))
@@ -376,7 +376,7 @@ struct {								\
 #endif
 
 #define RB_SWAP_CHILD(head, out, in, field) do {			\
-	if (RB_PARENT(out, field) == NULL)				\
+	if (RB_PARENT(out, field) == nullptr)				\
 		RB_ROOT(head) = (in);					\
 	else if ((out) == RB_LEFT(RB_PARENT(out, field), field))	\
 		RB_LEFT(RB_PARENT(out, field), field) = (in);		\
@@ -386,7 +386,7 @@ struct {								\
 
 #define RB_ROTATE_LEFT(head, elm, tmp, field) do {			\
 	(tmp) = RB_RIGHT(elm, field);					\
-	if ((RB_RIGHT(elm, field) = RB_LEFT(tmp, field)) != NULL) {	\
+	if ((RB_RIGHT(elm, field) = RB_LEFT(tmp, field)) != nullptr) {	\
 		RB_SET_PARENT(RB_RIGHT(elm, field), elm, field);	\
 	}								\
 	RB_SET_PARENT(tmp, RB_PARENT(elm, field), field);		\
@@ -398,7 +398,7 @@ struct {								\
 
 #define RB_ROTATE_RIGHT(head, elm, tmp, field) do {			\
 	(tmp) = RB_LEFT(elm, field);					\
-	if ((RB_LEFT(elm, field) = RB_RIGHT(tmp, field)) != NULL) {	\
+	if ((RB_LEFT(elm, field) = RB_RIGHT(tmp, field)) != nullptr) {	\
 		RB_SET_PARENT(RB_LEFT(elm, field), elm, field);		\
 	}								\
 	RB_SET_PARENT(tmp, RB_PARENT(elm, field), field);		\
@@ -524,7 +524,7 @@ name##_RB_INSERT_COLOR(struct name *head, struct type *parent, struct type *elm)
 		}							\
 		RB_BITS(elm, field) &= ~RB_RED_MASK;			\
 		break;							\
-	} while ((parent = RB_PARENT(elm, field)) != NULL); \
+	} while ((parent = RB_PARENT(elm, field)) != nullptr); \
 }
 
 #define RB_GENERATE_REMOVE_COLOR(name, type, field, attr)		\
@@ -538,7 +538,7 @@ name##_RB_REMOVE_COLOR(struct name *head,				\
 		RB_BITS(parent, field) &= ~RB_RED_MASK;			\
 		elm = parent;						\
 		parent = RB_PARENT(elm, field);				\
-		if (parent == NULL)					\
+		if (parent == nullptr)					\
 			return;						\
 	}								\
 	do  {								\
@@ -604,7 +604,7 @@ name##_RB_REMOVE_COLOR(struct name *head,				\
 			RB_ROTATE_RIGHT(head, parent, sib, field);	\
 		}							\
 		break;							\
-	} while ((parent = RB_PARENT(elm, field)) != NULL);		\
+	} while ((parent = RB_PARENT(elm, field)) != nullptr);		\
 }
 
 #define RB_GENERATE_REMOVE(name, type, field, attr)			\
@@ -616,19 +616,19 @@ name##_RB_REMOVE(struct name *head, struct type *elm)			\
 	old = elm;							\
 	parent = RB_PARENT(elm, field);					\
 	right = RB_RIGHT(elm, field);					\
-	if (RB_LEFT(elm, field) == NULL)				\
+	if (RB_LEFT(elm, field) == nullptr)				\
 		elm = child = right;					\
-	else if (right == NULL)						\
+	else if (right == nullptr)						\
 		elm = child = RB_LEFT(elm, field);			\
 	else {								\
-		if ((child = RB_LEFT(right, field)) == NULL) {		\
+		if ((child = RB_LEFT(right, field)) == nullptr) {		\
 			child = RB_RIGHT(right, field);			\
 			RB_RIGHT(old, field) = child;			\
 			parent = elm = right;				\
 		} else {						\
 			do						\
 				elm = child;				\
-			while ((child = RB_LEFT(elm, field)) != NULL);	\
+			while ((child = RB_LEFT(elm, field)) != nullptr);	\
 			child = RB_RIGHT(elm, field);			\
 			parent = RB_PARENT(elm, field);			\
 			RB_LEFT(parent, field) = child;			\
@@ -638,11 +638,11 @@ name##_RB_REMOVE(struct name *head, struct type *elm)			\
 		elm->field = old->field;				\
 	}								\
 	RB_SWAP_CHILD(head, old, elm, field);				\
-	if (child != NULL)						\
+	if (child != nullptr)						\
 		RB_SET_PARENT(child, parent, field);			\
-	if (parent != NULL)						\
+	if (parent != nullptr)						\
 		name##_RB_REMOVE_COLOR(head, parent, child);		\
-	while (parent != NULL) {					\
+	while (parent != nullptr) {					\
 		RB_AUGMENT(parent);					\
 		parent = RB_PARENT(parent, field);			\
 	}								\
@@ -657,12 +657,12 @@ name##_RB_INSERT_FINISH(struct name *head, struct type *parent,		\
 {									\
 	RB_SET(elm, parent, field);					\
 	*pptr = elm;							\
-	if (parent != NULL) name##_RB_INSERT_COLOR(head, parent, elm); \
-	while (elm != NULL) {						\
+	if (parent != nullptr) name##_RB_INSERT_COLOR(head, parent, elm); \
+	while (elm != nullptr) {						\
 		RB_AUGMENT(elm);					\
 		elm = RB_PARENT(elm, field);				\
 	}								\
-	return NULL;							\
+	return nullptr;							\
 }
 
 #define RB_GENERATE_INSERT(name, type, field, cmp, attr)		\
@@ -672,10 +672,10 @@ name##_RB_INSERT(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp;						\
     struct type **tmpp = &RB_ROOT(head); \
-	struct type *parent = NULL;					\
-    while ((tmp = *tmpp) != NULL) { \
+	struct type *parent = nullptr;					\
+    while ((tmp = *tmpp) != nullptr) { \
         parent = tmp; \
-        __typeof(cmp(NULL, NULL)) comp = (cmp)(elm, parent); \
+        __typeof(cmp((void *)1, (void *)1)) comp = (cmp)(elm, parent); \
         if (comp < 0) tmpp = &RB_LEFT(parent, field); \
         else if (comp > 0) tmpp = &RB_RIGHT(parent, field); \
         else return (parent); \
@@ -689,7 +689,7 @@ name##_RB_INSERT_NEXT(struct name *head, struct type * restrict elm, struct type
 { \
     struct type *tmp; \
     struct type **tmpp = &RB_RIGHT(elm, field); \
-    while ((tmp = *tmpp) != NULL) { \
+    while ((tmp = *tmpp) != nullptr) { \
         elm = tmp; \
         tmpp = &RB_LEFT(elm, field); \
     } \
@@ -702,7 +702,7 @@ attr struct type *							\
 name##_RB_FIND(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp = RB_ROOT(head);				\
-	__typeof(cmp(NULL, NULL)) comp;							\
+	__typeof(cmp((void *)1, (void *)1)) comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0)						\
@@ -712,7 +712,7 @@ name##_RB_FIND(struct name *head, struct type *elm)			\
 		else							\
 			return (tmp);					\
 	}								\
-	return (NULL);							\
+	return nullptr;							\
 }
 
 #define RB_GENERATE_NFIND(name, type, field, cmp, attr)			\
@@ -721,8 +721,8 @@ attr struct type *							\
 name##_RB_NFIND(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp = RB_ROOT(head);				\
-	struct type *res = NULL;					\
-	__typeof(cmp(NULL, NULL)) comp;							\
+	struct type *res = nullptr;					\
+	__typeof(cmp((void *)1, (void *)1)) comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0) {						\
@@ -778,7 +778,7 @@ attr struct type *							\
 name##_RB_MINMAX(struct name *head, int val)				\
 {									\
 	struct type *tmp = RB_ROOT(head);				\
-	struct type *parent = NULL;					\
+	struct type *parent = nullptr;					\
 	while (tmp) {							\
 		parent = tmp;						\
 		if (val < 0)						\
@@ -794,15 +794,15 @@ attr struct type *							\
 name##_RB_REINSERT(struct name *head, struct type *elm)			\
 {									\
 	struct type *cmpelm;						\
-	if (((cmpelm = RB_PREV(name, head, elm)) != NULL &&		\
+	if (((cmpelm = RB_PREV(name, head, elm)) != nullptr &&		\
 	    cmp(cmpelm, elm) >= 0) ||					\
-	    ((cmpelm = RB_NEXT(name, head, elm)) != NULL &&		\
+	    ((cmpelm = RB_NEXT(name, head, elm)) != nullptr &&		\
 	    cmp(elm, cmpelm) >= 0)) {					\
 		/* XXXLAS: Remove/insert is heavy handed. */		\
 		RB_REMOVE(name, head, elm);				\
 		return (RB_INSERT(name, head, elm));			\
 	}								\
-	return (NULL);							\
+	return nullptr;							\
 }									\
 
 #define RB_NEGINF	-1
@@ -821,32 +821,32 @@ name##_RB_REINSERT(struct name *head, struct type *elm)			\
 
 #define RB_FOREACH(x, name, head)					\
 	for ((x) = RB_MIN(name, head);					\
-	     (x) != NULL;						\
+	     (x) != nullptr;						\
 	     (x) = name##_RB_NEXT(x))
 
 #define RB_FOREACH_FROM(x, name, y)					\
 	for ((x) = (y);							\
-	    ((x) != NULL) && ((y) = name##_RB_NEXT(x), (x) != NULL);	\
+	    ((x) != nullptr) && ((y) = name##_RB_NEXT(x), (x) != nullptr);	\
 	     (x) = (y))
 
 #define RB_FOREACH_SAFE(x, name, head, y)				\
 	for ((x) = RB_MIN(name, head);					\
-	    ((x) != NULL) && ((y) = name##_RB_NEXT(x), (x) != NULL);	\
+	    ((x) != nullptr) && ((y) = name##_RB_NEXT(x), (x) != nullptr);	\
 	     (x) = (y))
 
 #define RB_FOREACH_REVERSE(x, name, head)				\
 	for ((x) = RB_MAX(name, head);					\
-	     (x) != NULL;						\
+	     (x) != nullptr;						\
 	     (x) = name##_RB_PREV(x))
 
 #define RB_FOREACH_REVERSE_FROM(x, name, y)				\
 	for ((x) = (y);							\
-	    ((x) != NULL) && ((y) = name##_RB_PREV(x), (x) != NULL);	\
+	    ((x) != nullptr) && ((y) = name##_RB_PREV(x), (x) != nullptr);	\
 	     (x) = (y))
 
 #define RB_FOREACH_REVERSE_SAFE(x, name, head, y)			\
 	for ((x) = RB_MAX(name, head);					\
-	    ((x) != NULL) && ((y) = name##_RB_PREV(x), (x) != NULL);	\
+	    ((x) != nullptr) && ((y) = name##_RB_PREV(x), (x) != nullptr);	\
 	     (x) = (y))
 
 #endif	/* _SYS_TREE_H_ */

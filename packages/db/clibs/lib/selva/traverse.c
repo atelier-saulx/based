@@ -131,10 +131,9 @@ int selva_traverse_field_bfs(
         if (res >= 0) {
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
-
             const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
+
             if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-                const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
                 struct SelvaNodeReference *reference;
 
                 reference = selva_fields_get_reference(db, node, fs);
@@ -149,7 +148,6 @@ int selva_traverse_field_bfs(
                     BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
                 }
             } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-                const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
                 struct SelvaNodeReferences *references;
 
                 references = selva_fields_get_references(db, node, fs);

@@ -828,10 +828,10 @@ static struct selva_string *find_text_by_lang(const struct SelvaTextField *text,
     for (size_t i = 0; i < len; i++) {
         struct selva_string *s = &text->tl[i];
         const uint8_t *buf;
-        size_t len;
+        size_t blen;
 
-        buf = selva_string_to_buf(s, &len);
-        if (len > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+        buf = selva_string_to_buf(s, &blen);
+        if (blen > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
             buf[0] == lang) {
             return s;
         }
@@ -861,6 +861,7 @@ struct ensure_text_field {
     struct selva_string *tl;
 };
 
+__attribute__((nonnull))
 static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, enum selva_lang_code lang)
 {
     struct SelvaFieldInfo *nfo;
@@ -891,7 +892,6 @@ int selva_fields_set_text(
         const char *str,
         size_t len)
 {
-    struct SelvaFields *fields = &node->fields;
     enum selva_lang_code lang = str[0];
     struct ensure_text_field tf;
     uint32_t crc;
@@ -905,7 +905,7 @@ int selva_fields_set_text(
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
 
-    tf = ensure_text_field(fields, fs, lang);
+    tf = ensure_text_field(&node->fields, fs, lang);
     if (unlikely(!tf.text)) {
         db_panic("Text missing");
     } else if (!tf.tl) {
@@ -1026,7 +1026,6 @@ int selva_fields_references_insert(
 {
     const struct SelvaFieldSchema *fs_dst;
     node_type_t type_dst = te_dst->type;
-    int err;
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
         type_dst != dst->type ||
@@ -1040,6 +1039,8 @@ int selva_fields_references_insert(
     }
 
     if (add_to_refs_index(node, dst, fs, fs_dst)) {
+        int err;
+
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0, -1, false);
         }
@@ -1086,9 +1087,8 @@ done:
             struct SelvaFields *fields = &node->fields;
             struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
             struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
-            ssize_t index = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
 
-            *ref_out = &refs->refs[index];
+            *ref_out = &refs->refs[fast_linear_search_references(refs->refs, refs->nr_refs, dst)];
         }
         return SELVA_EEXIST;
     }

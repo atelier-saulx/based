@@ -475,7 +475,7 @@ export class DbServer {
       writeFile(
         join(this.fileSystemPath, SCHEMA_FILE),
         JSON.stringify(this.schema),
-      ).catch((err) => console.error(SCHEMA_FILE, err))
+      ).catch((err) => console.error('!!!', SCHEMA_FILE, err))
       let types = Object.keys(this.schemaTypesParsed)
       const s = schemaToSelvaBuffer(this.schemaTypesParsed)
       for (let i = 0; i < s.length; i++) {
