@@ -43,6 +43,8 @@ type DbClientOpts = {
   maxModifySize?: number
 }
 
+type DbClientSchema = StrictSchema & { lastId: number }
+
 export class DbClient {
   constructor({ hooks, maxModifySize = 100 * 1e3 * 1e3 }: DbClientOpts) {
     this.hooks = hooks
@@ -51,9 +53,7 @@ export class DbClient {
   }
 
   hooks: DbClientHooks
-
-  // schema
-  schema: StrictSchema & { lastId: number } = {
+  schema: DbClientSchema = {
     lastId: 1, // we reserve one for root props
     types: {},
   }
@@ -101,7 +101,7 @@ export class DbClient {
     return this.putLocalSchema(remoteSchema)
   }
 
-  putLocalSchema(schema) {
+  putLocalSchema(schema: DbClientSchema) {
     this.schemaIsSetValue = true
     if (deepEqual(this.schema, schema)) {
       return this.schema
@@ -120,6 +120,11 @@ export class DbClient {
     )
     // Adds bidrectional refs on defs
     schemaToSelvaBuffer(this.schemaTypesParsed)
+    if (this.listeners?.schema) {
+      for (const cb of this.listeners.schema) {
+        cb(this.schema)
+      }
+    }
     return this.schema
   }
 
@@ -309,7 +314,7 @@ export class DbClient {
   // For more advanced / internal usage - use isModified instead for most cases
   async drain() {
     if (this.upserting.size) {
-      await Promise.all(Array.from(this.upserting).map(([,{ p }]) => p))
+      await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
     }
     await flushBuffer(this)
     const t = this.writeTime
@@ -336,5 +341,19 @@ export class DbClient {
         }, 12)
       }
     })
+  }
+
+  listeners?: {
+    schema?: Set<(schema: DbClientSchema) => void>
+  }
+
+  on(event: 'schema', cb: (schema: DbClientSchema) => void) {
+    this.listeners ??= {}
+    this.listeners[event] ??= new Set()
+    this.listeners[event].add(cb)
+  }
+
+  off(event: 'schema', cb: (schema: DbClientSchema) => void) {
+    this.listeners?.[event]?.delete(cb)
   }
 }
