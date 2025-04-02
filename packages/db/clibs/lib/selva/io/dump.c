@@ -158,6 +158,8 @@ static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc,
     if (meta_present) {
         /*
          * We don't pass the db here to prevent any attempt to access node schema.
+         * Static analyzers may think that ref->meta is somehow null now but it's
+         * definitely not!
          */
         save_fields(io, nullptr, schema, ref->meta);
     }
