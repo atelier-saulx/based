@@ -905,7 +905,7 @@ int selva_fields_set_text(
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
 
-    tf = ensure_text_field(fields, fs, lang);
+    tf = ensure_text_field(&node->fields, fs, lang);
     if (unlikely(!tf.text)) {
         db_panic("Text missing");
     } else if (!tf.tl) {
