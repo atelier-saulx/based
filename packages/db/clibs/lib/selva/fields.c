@@ -828,10 +828,10 @@ static struct selva_string *find_text_by_lang(const struct SelvaTextField *text,
     for (size_t i = 0; i < len; i++) {
         struct selva_string *s = &text->tl[i];
         const uint8_t *buf;
-        size_t len;
+        size_t blen;
 
-        buf = selva_string_to_buf(s, &len);
-        if (len > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+        buf = selva_string_to_buf(s, &blen);
+        if (blen > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
             buf[0] == lang) {
             return s;
         }
