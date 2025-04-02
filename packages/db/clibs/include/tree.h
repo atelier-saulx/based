@@ -177,7 +177,7 @@ name##_SPLAY_INSERT(struct name *head, struct type *elm)		\
     if (SPLAY_EMPTY(head)) {						\
 	    SPLAY_LEFT(elm, field) = SPLAY_RIGHT(elm, field) = nullptr;	\
     } else {								\
-	    __typeof(cmp(nullptr, nullptr)) __comp;							\
+	    __typeof(cmp((void *)1, (void *)1)) __comp;							\
 	    name##_SPLAY(head, elm);					\
 	    __comp = (cmp)(elm, (head)->sph_root);			\
 	    if (__comp < 0) {						\
@@ -220,7 +220,7 @@ void									\
 name##_SPLAY(struct name *head, struct type *elm)			\
 {									\
 	struct type __node, *__left, *__right, *__tmp;			\
-	__typeof(cmp(nullptr, nullptr)) __comp;							\
+	__typeof(cmp((void *)1, (void *)1)) __comp;							\
 \
 	SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = nullptr;\
 	__left = __right = &__node;					\
@@ -675,7 +675,7 @@ name##_RB_INSERT(struct name *head, struct type *elm)			\
 	struct type *parent = nullptr;					\
     while ((tmp = *tmpp) != nullptr) { \
         parent = tmp; \
-        __typeof(cmp(nullptr, nullptr)) comp = (cmp)(elm, parent); \
+        __typeof(cmp((void *)1, (void *)1)) comp = (cmp)(elm, parent); \
         if (comp < 0) tmpp = &RB_LEFT(parent, field); \
         else if (comp > 0) tmpp = &RB_RIGHT(parent, field); \
         else return (parent); \
@@ -702,7 +702,7 @@ attr struct type *							\
 name##_RB_FIND(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp = RB_ROOT(head);				\
-	__typeof(cmp(nullptr, nullptr)) comp;							\
+	__typeof(cmp((void *)1, (void *)1)) comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0)						\
@@ -722,7 +722,7 @@ name##_RB_NFIND(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp = RB_ROOT(head);				\
 	struct type *res = nullptr;					\
-	__typeof(cmp(nullptr, nullptr)) comp;							\
+	__typeof(cmp((void *)1, (void *)1)) comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0) {						\
