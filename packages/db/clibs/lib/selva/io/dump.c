@@ -125,11 +125,11 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 
     for (uint8_t i = 0; i < len; i++) {
         struct selva_string *tl = &text->tl[i];
-        size_t len;
-        const uint8_t *str = selva_string_to_buf(tl, &len);
+        size_t str_len;
+        const uint8_t *str = selva_string_to_buf(tl, &str_len);
         struct sdb_text_meta meta = {
             .flags = selva_string_get_flags(tl) & SDB_STRING_META_FLAGS_MASK,
-            .len = len,
+            .len = str_len,
         };
 
         /* FIXME string field CRC verification. */
@@ -140,7 +140,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 #endif
 
         io->sdb_write(&meta, sizeof(meta), 1, io);
-        io->sdb_write(str, sizeof(char), len, io);
+        io->sdb_write(str, sizeof(char), str_len, io);
     }
 }
 
@@ -217,12 +217,12 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCE:
             if (((struct SelvaNodeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
+                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, efc, schema, ref);
+                save_ref(io, efc, eschema, ref);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -230,12 +230,12 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCES:
             if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
+                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, efc, schema, refs);
+                save_field_references(io, efc, eschema, refs);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
