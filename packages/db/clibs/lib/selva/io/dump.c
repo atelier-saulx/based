@@ -174,6 +174,7 @@ static void save_field_references(struct selva_io *io, const struct EdgeFieldCon
     }
 }
 
+__attribute__((nonnull))
 static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     const size_t nr_fields = fields->nr_fields;
