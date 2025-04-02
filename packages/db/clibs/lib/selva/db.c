@@ -92,7 +92,7 @@ static int SelvaTypeCursors_cmp(const struct SelvaTypeCursors *a, const struct S
 }
 
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
-#if __clang__
+#ifdef __clang__
     __attribute__((malloc, returns_nonnull));
 #else
     __attribute__((malloc, malloc(selva_free), returns_nonnull));

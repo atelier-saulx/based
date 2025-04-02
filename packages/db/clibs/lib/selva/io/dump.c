@@ -268,6 +268,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
     }
 }
 
+__attribute__((nonnull))
 static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node)
 {
     const struct SelvaFieldsSchema *schema = &selva_get_ns_by_te(selva_get_type_by_node(db, node))->fields_schema;

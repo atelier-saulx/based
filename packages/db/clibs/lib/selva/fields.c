@@ -861,6 +861,7 @@ struct ensure_text_field {
     struct selva_string *tl;
 };
 
+__attribute__((nonnull))
 static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, enum selva_lang_code lang)
 {
     struct SelvaFieldInfo *nfo;
