@@ -1,5 +1,5 @@
 import { ModifyCtx } from '../../index.js'
-import { SchemaTypeDef, PropDef } from '@based/schema/def'
+import { SchemaTypeDef, PropDef, PropDefEdge } from '@based/schema/def'
 import { ModifyOp, ModifyErr, RANGE_ERR, CREATE, SIZE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -53,24 +53,30 @@ function addHll(
 export function writeHllBuf(
   value: (string | Uint8Array)[],
   ctx: ModifyCtx,
-  t: PropDef,
+  t: PropDef | PropDefEdge,
   len: number,
 ) {
+  let startLen = ctx.len
   ctx.buf[ctx.len++] = len
   ctx.buf[ctx.len++] = len >>> 8
   ctx.buf[ctx.len++] = len >>> 16
   ctx.buf[ctx.len++] = len >>> 24
   for (let val of value) {
-    // if (!t.validation(val, t)) {
-    // console.log('here')
-    // return new ModifyError(t, val)
-    // }
-    if (typeof val === 'string') {
+    if (val === undefined) {
+      // not sure if this makes sense....
+      continue
+    } else if (!t.validation(val, t)) {
+      ctx.len = startLen
+      len = 0
+      ctx.buf[ctx.len++] = len
+      ctx.buf[ctx.len++] = len >>> 8
+      ctx.buf[ctx.len++] = len >>> 16
+      ctx.buf[ctx.len++] = len >>> 24
+      return new ModifyError(t, val)
+    } else if (typeof val === 'string') {
       xxHash64(ENCODER.encode(val), ctx.buf, ctx.len)
     } else if (val instanceof Uint8Array && val.byteLength === 8) {
       ctx.buf.set(val, ctx.len)
-    } else {
-      return new ModifyError(t, val)
     }
     ctx.len += 8
   }

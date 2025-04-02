@@ -155,7 +155,7 @@ export function writeEdges(
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = CARDINALITY
-          writeHllBuf(value, ctx, t, size)
+          writeHllBuf(value, ctx, edge, size)
         }
       } else {
         const op = valueOperation(value)

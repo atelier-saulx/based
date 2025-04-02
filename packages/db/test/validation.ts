@@ -12,9 +12,6 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
-  // $edge: {}
-  // $edge ...
-
   await db.setSchema({
     locales: { en: {}, de: {} },
     types: {
@@ -111,6 +108,26 @@ await test('update', async (t) => {
 
   db.create('user', {
     derp: undefined,
+  })
+
+  const cId = db.create('user', {
+    cardinality: 'derp',
+  })
+
+  db.update('user', cId, {
+    cardinality: ['derp2'],
+  })
+
+  await throws(async () => {
+    db.update('user', cId, {
+      cardinality: ['a', 'b', 1],
+    })
+  })
+
+  // cardinality: 2 unique,
+  deepEqual(await db.query('user', cId).include('cardinality').get(), {
+    id: cId.tmpId,
+    cardinality: 2,
   })
 
   await throws(async () => {
@@ -221,11 +238,12 @@ await test('update', async (t) => {
     { id: 1, friend: null, name: '' },
     { id: 2, friend: null, name: '' },
     { id: 3, friend: null, name: '' },
+    { id: 4, friend: null, name: '' },
     {
-      id: 4,
+      id: 5,
       name: 'youzi',
       friend: {
-        id: 5,
+        id: 6,
         bool: false,
         u32: 0,
         u8: 0,
@@ -245,10 +263,10 @@ await test('update', async (t) => {
       },
     },
     {
-      id: 5,
+      id: 6,
       name: 'jame-z',
       friend: {
-        id: 4,
+        id: 5,
         bool: false,
         u32: 0,
         u8: 0,

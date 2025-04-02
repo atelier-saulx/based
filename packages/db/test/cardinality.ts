@@ -226,8 +226,7 @@ await test('hll', async (t) => {
     ],
   )
 
-  // // -------- edges
-
+  // -------- edges
   const mrSnurp = db.create('user', {
     name: 900,
   })
@@ -242,11 +241,7 @@ await test('hll', async (t) => {
       .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$tokens')
-      .get()
-      .then((v) => {
-        v.debug()
-        return v
-      }),
+      .get(),
     [
       {
         id: 3,

@@ -21,9 +21,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.cardinality]: (value) => {
-    const x = typeof value === 'string' || value instanceof Uint8Array
-    return x
+  [TYPE_INDEX_MAP.cardinality]: (val) => {
+    return (
+      typeof val === 'string' ||
+      (val instanceof Uint8Array && val.byteLength === 8)
+    )
   },
   [TYPE_INDEX_MAP.timestamp]: (value, t) => {
     if (typeof value === 'string') {
