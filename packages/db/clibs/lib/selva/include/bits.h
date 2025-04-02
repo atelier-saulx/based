@@ -11,8 +11,8 @@
  * any -O level should actually optimize the results to be comptime constants.
  */
 
-#define findnz(arr) ({uint64_t i = 0; while(i < sizeof(arr) && arr[i] == 0) ++i; i; })
-#define findbit(arr, fn) ({int i = findnz(arr); (uint64_t)(i * 8 * sizeof(arr[0]) + fn(arr[i])); })
+#define findnz(arr) ({uint64_t findnz_i_ = 0; while(findnz_i_ < sizeof(arr) && arr[findnz_i_] == 0) ++findnz_i_; findnz_i_; })
+#define findbit(arr, fn) ({int findbit_i_ = findnz(arr); (uint64_t)(findbit_i_ * 8 * sizeof(arr[0]) + fn(arr[findbit_i_])); })
 
 #define __bitoffsetof(t, f, l) ({ \
     typedef unsigned long long __pad; \
