@@ -71,7 +71,6 @@ export const configsParse = async (
         rel,
         type,
         checksum,
-        mtimeMs,
       }) => {
         if (config.type === 'app') {
           if (config?.plugins) {
@@ -104,7 +103,6 @@ export const configsParse = async (
           rel,
           bundled,
           checksum,
-          mtimeMs,
           app,
           favicon,
         }

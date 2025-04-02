@@ -59,7 +59,6 @@ export const configsBundle = async (
           path,
           bundled: key,
           checksum: 0,
-          mtimeMs: 0,
         }
       },
     ),
