@@ -47,11 +47,11 @@ char *selva_mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)
         } else if (rd_bytes == (size_t)-2) {
             /* Truncated input string. */
             selva_free(dst_str);
-            return NULL;
+            return nullptr;
         } else if (rd_bytes == (size_t)-1) {
             /* Some other error (including EILSEQ). */
             selva_free(dst_str);
-            return NULL;
+            return nullptr;
         } else {
             /* A character was converted. */
             size_t wr_bytes;
@@ -62,7 +62,7 @@ char *selva_mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)
 #endif
             if (wr_bytes == (size_t)-1) {
                 selva_free(dst_str);
-                return NULL;
+                return nullptr;
             }
 
             dst_i += wr_bytes;

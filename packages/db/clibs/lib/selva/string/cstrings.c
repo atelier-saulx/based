@@ -108,7 +108,7 @@ const char *sztok(const char *s, size_t size, size_t * restrict i)
     size_t j = *i;
 
 	if (size == 0 || j >= size - 1) {
-		return NULL;
+		return nullptr;
 	}
 
     r = s + j;

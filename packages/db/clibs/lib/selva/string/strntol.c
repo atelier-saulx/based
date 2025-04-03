@@ -42,7 +42,7 @@ long int strntol(const char *s, size_t n, const char **end)
         if (valid) {
             *end = s;
         } else {
-            *end = NULL;
+            *end = nullptr;
         }
     }
 

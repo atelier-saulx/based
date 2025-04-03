@@ -21,5 +21,5 @@ char *mempbrk(const char * restrict s, size_t len, const char * restrict accept,
         }
     }
 
-    return NULL;
+    return nullptr;
 }

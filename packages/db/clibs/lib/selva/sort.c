@@ -293,7 +293,7 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
             str = selva_mbstrans(ctx->loc, str, len, ctx->loc_trans);
         }
 
-        size_t data_len = strxfrm_l(NULL, str, 0, ctx->loc);
+        size_t data_len = strxfrm_l(nullptr, str, 0, ctx->loc);
 
         if (ctx->fixed_size) {
             item = mempool_get(&ctx->mempool);

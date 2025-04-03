@@ -443,7 +443,7 @@ void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
                 schemabuf_deinit_fields_schema(efc_schema);
                 selva_free(efc_schema);
             }
-            fs->edge_constraint._fields_schema = NULL;
+            fs->edge_constraint._fields_schema = nullptr;
         }
     }
     selva_free(schema->field_map_template.buf);

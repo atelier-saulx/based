@@ -77,7 +77,7 @@ void * queue_alloc_get(queue_cb_t * cb)
 
     /* Check that the queue is not full */
     if (next_element == cb->m_read) {
-        return NULL;
+        return nullptr;
     }
 
     p = (void *)((uintptr_t)cb->data + write * b_size);

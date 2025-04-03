@@ -34,8 +34,8 @@ void poptop_deinit(struct poptop *l) {
 static struct poptop_loc poptop_find(struct poptop * restrict l, const void * restrict p) {
     const typeof(l->max_size) n = l->max_size;
     struct poptop_list_el *list = l->list;
-    struct poptop_list_el *found = NULL;
-    struct poptop_list_el *next_free = NULL;
+    struct poptop_list_el *found = nullptr;
+    struct poptop_list_el *next_free = nullptr;
 
     for (unsigned int i = 0; i < n; i++) {
         struct poptop_list_el *el = &list[i];
@@ -74,7 +74,7 @@ void poptop_remove(struct poptop * restrict l, const void * restrict p) {
     struct poptop_loc loc = poptop_find(l, p);
 
     if (loc.found) {
-        loc.found->p = NULL;
+        loc.found->p = nullptr;
         l->current_size--;
     }
 }
@@ -140,12 +140,12 @@ void *poptop_maintenance_drop(struct poptop *l) {
             void *p;
 
             p = el->p;
-            el->p = NULL;
+            el->p = nullptr;
             l->current_size--;
 
             return p;
         }
     }
 
-    return NULL;
+    return nullptr;
 }

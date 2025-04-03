@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <string.h>
@@ -27,5 +27,5 @@ const char *selva_mbsstrstr(const char *mbs1_str, size_t mbs1_len, const char *m
         nbytes1 = selva_mbstowc(&wc1, s1, left1, &ps1, trans, loc);
     } while (wc1);
 
-    return NULL;
+    return nullptr;
 }

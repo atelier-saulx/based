@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdio.h>
@@ -80,7 +80,7 @@ int selva_find(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFin
         .node_arg = &state,
         /* FIXME */
 #if 0
-        .child_cb = param->adjacent_filter_len > 0 ? adj_filter : NULL,
+        .child_cb = param->adjacent_filter_len > 0 ? adj_filter : nullptr,
 #endif
         .child_arg = &state,
     };

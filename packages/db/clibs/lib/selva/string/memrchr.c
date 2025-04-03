@@ -38,5 +38,6 @@ memrchr(const void *s, int c, size_t n)
 				return((void *)cp);
 		} while (--n != 0);
 	}
-	return(NULL);
+
+	return nullptr;
 }

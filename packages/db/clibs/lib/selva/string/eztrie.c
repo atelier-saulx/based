@@ -82,7 +82,7 @@ static struct eztrie_node ** alookup(struct eztrie_node * root, char k)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static struct eztrie_node * ainsert(struct eztrie_node ** root, struct eztrie_node * node)
@@ -103,7 +103,7 @@ static struct eztrie_node * ainsert(struct eztrie_node ** root, struct eztrie_no
         tmp = selva_realloc(*root, sizeof(struct eztrie_node) +
                             n * sizeof(struct eztrie_node *));
         if (!tmp) {
-            return NULL;
+            return nullptr;
         }
         tmp->child_count = n;
         a = tmp->children;
@@ -127,7 +127,7 @@ static struct eztrie_node * eztrie_find_root(struct eztrie_node * root,
 
         node = alookup(root, key[i]);
         if (!node || !(*node)) {
-            return NULL;
+            return nullptr;
         }
         root = *node;
     }
@@ -181,7 +181,7 @@ struct eztrie_iterator eztrie_find(struct eztrie * trie, const char * key)
 
 struct eztrie_node_value * eztrie_remove_ithead(struct eztrie_iterator * it)
 {
-    struct eztrie_node_value * value = NULL;
+    struct eztrie_node_value * value = nullptr;
 
     if (!STAILQ_EMPTY(it)) {
         value = STAILQ_FIRST(it)->value;
@@ -215,7 +215,7 @@ void * eztrie_insert(struct eztrie * trie, const char * key, const void * p)
         node = selva_calloc(1, sizeof(struct eztrie_node) +
                             sizeof(struct eztrie_node *));
         if (!node) {
-            return NULL;
+            return nullptr;
         }
         node->k = key[i];
         node->child_count = 1;
@@ -239,29 +239,29 @@ void * eztrie_remove(struct eztrie * trie, const char * key)
     struct eztrie_node * const root = trie->root;
     struct eztrie_node ** npp;
     struct eztrie_node * node = root;
-    const void * p = NULL;
+    const void * p = nullptr;
     size_t i, n = strlen(key);
 
     for (i = 0; i < n; i++) {
         npp = alookup(node, key[i]);
         if (!(npp && *npp)) {
-            return NULL;
+            return nullptr;
         }
         node = *npp;
     }
 
     if (node == root) {
-        return NULL;
+        return nullptr;
     }
 
     if (node->value) {
         p = node->value->p;
         selva_free(node->value);
-        node->value = NULL;
+        node->value = nullptr;
     }
     if (node->child_count == 0) {
         selva_free(node);
-        *npp = NULL;
+        *npp = nullptr;
     }
 
     return (void *)p;
@@ -290,5 +290,5 @@ void eztrie_destroy(struct eztrie * trie, void (*cb_free)(void * p, void * arg),
         selva_free(node);
     }
 
-    trie->root = NULL;
+    trie->root = nullptr;
 }

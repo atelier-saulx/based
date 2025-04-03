@@ -323,7 +323,7 @@ int selva_lang_set_fallback(const char *lang_str, size_t lang_len)
 
 locale_t selva_lang_getlocale(const char *lang_str, size_t lang_len)
 {
-    struct selva_lang *slang = lang_len > 0 ? find_slang(lang_str, lang_len) : NULL;
+    struct selva_lang *slang = lang_len > 0 ? find_slang(lang_str, lang_len) : nullptr;
     if (slang) {
         if (!slang->locale) {
             int err = load_lang(slang);
@@ -349,7 +349,7 @@ static struct selva_lang *get_selva_lang(enum selva_lang_code lang)
         int err = load_lang(slang);
         if (err) {
             selva_langs.err_cb(slang, err);
-            return NULL;
+            return nullptr;
         }
     }
 

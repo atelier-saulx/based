@@ -16,7 +16,7 @@ const struct backoff_timeout backoff_timeout_defaults = {
 
 void backoff_timeout_init(struct backoff_timeout *s)
 {
-    unsigned int seed = time(NULL);
+    unsigned int seed = time(nullptr);
 #if defined(__APPLE__) && defined(__MACH__)
     initstate(seed, s->rnd_state_buf, sizeof(s->rnd_state_buf));
 #else

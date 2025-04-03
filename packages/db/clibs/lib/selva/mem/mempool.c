@@ -220,7 +220,7 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
              * Add the free chunks back to the free list.
              */
 #ifdef MEMPOOL_GROWING_FREE_LIST
-    struct mempool_chunk *prev = NULL;
+    struct mempool_chunk *prev = nullptr;
 #endif
             MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
                 if (!(chunk->slab & (uintptr_t)1)) {
@@ -300,7 +300,7 @@ retry:
      * Add all new objects to the list of free objects in the pool.
      */
 #ifdef MEMPOOL_GROWING_FREE_LIST
-    struct mempool_chunk *prev = NULL;
+    struct mempool_chunk *prev = nullptr;
 #endif
     MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
         chunk->slab = (uintptr_t)slab; /* also marked as free. */

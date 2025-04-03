@@ -98,7 +98,7 @@ char * base64url_decode(const char *str_in, size_t len, size_t *out_len)
     }
 
     if (count == 0 || count % 4) {
-        return NULL;
+        return nullptr;
     }
 
     olen = count / 4 * 3;
@@ -131,7 +131,7 @@ char * base64url_decode(const char *str_in, size_t len, size_t *out_len)
                 } else {
                     /* Invalid padding */
                     selva_free(out);
-                    return NULL;
+                    return nullptr;
                 }
                 break;
             }
