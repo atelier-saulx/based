@@ -57,7 +57,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, NULL, num_registers * sizeof(uint32_t));
+        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint32_t));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
@@ -91,7 +91,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     if (hll->is_sparse) {
         if (index > hll->num_registers && hll->num_registers <= (1ULL << precision) ) {
             selva_string_append(hllss, 0, (index - hll->num_registers) * sizeof(uint32_t));
-            selva_string_append(hllss, NULL, sizeof(uint32_t));
+            selva_string_append(hllss, nullptr, sizeof(uint32_t));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
             hll->num_registers = (index + 1);
@@ -111,19 +111,19 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
 
-    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL); //&?
+    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], nullptr); //&?
 
     uint8_t precision = first_hll->precision;
     uint32_t num_registers = first_hll->num_registers;
 
     struct selva_string result;
     hll_init(&result, precision, DENSE);
-    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&result, NULL);
+    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&result, nullptr);
 
     memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint32_t));
 
     for (size_t j = 1; j < count; j++) {
-        HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], NULL);
+        HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
         if (current_hll->precision != precision) {
             db_panic("Precision mismatch is unsupported.");
         }
@@ -239,7 +239,7 @@ int main(void) {
 
     struct selva_string hll;
 
-    selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
     hll_init(&hll, precision, SPARSE);
     hll_add(&hll, hash);
     double estimated_cardinality = hll_count(&hll);
@@ -255,13 +255,13 @@ int main(void) {
                             + sizeof(precision) \
                             + sizeof(uint32_t);
     struct selva_string hll;
-    selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
 
     hll_init(&hll, precision, SPARSE);
 
     int num_elements = 1e7;
     char (*elements)[50] = malloc(num_elements * sizeof(*elements));
-    if (elements == NULL) {
+    if (elements == nullptr) {
         perror("Failed to allocate memory");
         exit(EXIT_FAILURE);
     }
