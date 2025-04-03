@@ -1865,7 +1865,7 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
 {
     fields->nr_fields = schema->nr_fields;
     fields->data_len = schema->field_map_template.fixed_data_size;
-    fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : nullptr; /* No need to tag yet. */
+    fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : nullptr; /* No need to tag yet for edge sharing. */
     memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
 }
 

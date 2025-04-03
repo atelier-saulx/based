@@ -93,7 +93,12 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
-void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc);
+void selva_fields_ensure_ref_meta(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        const struct EdgeFieldConstraint *efc)
+    __attribute__((nonnull));
 
 /**
  * Set field value.
@@ -105,6 +110,11 @@ int selva_fields_set(
         const struct SelvaFieldSchema *fs,
         const void *value, size_t len);
 
+/**
+ * Set field value by a `fields` pointer.
+ * @param fields can be either `node->fields` or any other `fields` structure
+ *               associated with the given node (currently edge).
+ */
 SELVA_EXPORT
 int fields_set2(
         struct SelvaDb *db,
@@ -121,10 +131,8 @@ int selva_fields_get_mutable_string(
         struct selva_string **s)
     __attribute__((access(write_only, 4)));
 
-
 SELVA_EXPORT
 struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
-
 
 /*
  * TODO Document diff to get_mutable_string
@@ -281,44 +289,54 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *db, struct SelvaFields *fields, field_t field)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *db, struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *db, struct SelvaFields *fields, field_t field)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
 struct SelvaNode *selva_fields_resolve_weak_reference(
         const struct SelvaDb *db,
         const struct SelvaFieldSchema *fs,
-        const struct SelvaNodeWeakReference *weak_ref);
+        const struct SelvaNodeWeakReference *weak_ref)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string3(struct SelvaNodeReference *ref, const struct SelvaFieldSchema *fs);
+struct selva_string *selva_fields_get_selva_string3(struct SelvaNodeReference *ref, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
+struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 /**
  * Delete field.
  */
 SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 /**
  * Delete an edge from a references field.
@@ -327,13 +345,15 @@ SELVA_EXPORT
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id);
 
 SELVA_EXPORT
-void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 /**
  * Init the fields struct of a node or edge.
  */
 SELVA_EXPORT
-void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
+void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+    __attribute__((nonnull));
 
 /**
  * Destroy all fields of a node.
