@@ -297,7 +297,7 @@ static void clone_schema_buf(struct SelvaTypeEntry *te, const char *schema_buf, 
 int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_info nfo;
-    const size_t te_ns_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
+    const size_t te_fs_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
     int err;
 
     if (eq_type_exists(db, type, schema_buf, schema_len)) {
@@ -313,13 +313,15 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schem
         return SELVA_EINVAL;
     }
 
-    if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
+    if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_fs_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
-    memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
+    size_t zero_size = sizeof(*te) - te_fs_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema);
+    assert(zero_size < sizeof(*te));
+    memset(te, 0, zero_size);
 
 #if 0
     fprintf(stderr, "schema_buf: [ ");
