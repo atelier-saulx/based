@@ -32,7 +32,7 @@ ifeq ($(EN_VALGRIND),1)
 CFLAGS += $(EN_VALGRIND_CFLAGS)
 endif
 
-ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
+ifeq ($(uname_S),Linux)
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize -Wstrict-aliasing=3
 	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
 	#CFLAGS += -opt-info-vec-optimized
