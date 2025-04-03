@@ -148,7 +148,7 @@ node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const ch
 
 node_id_t selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
     struct SelvaAlias *alias;
     node_id_t old_dest = 0;
 
@@ -203,7 +203,7 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
 
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
 
     memset(find, 0, sizeof(*find));
     memcpy(find->name, name_str, name_len);
