@@ -262,7 +262,9 @@ struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t fiel
 
 void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+    size_t nr_aliases = type->ns.nr_aliases;
+
+    for (size_t i = 0; i < nr_aliases; i++) {
         selva_del_alias_by_dest(&type->aliases[i], node_id);
     }
 }
