@@ -345,6 +345,14 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schem
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
 
+    /*
+     * Init cursors.
+     */
+    te->cursors.ida = ida_init(10); /* FIXME */
+    RB_INIT(&te->cursors.by_cursor_id);
+    RB_INIT(&te->cursors.by_node_id);
+    te->cursors.nr_cursors = 0;
+
     void *prev = SVector_Insert(&db->type_list, SelvaTypeEntry2vecptr(te));
     if (prev) {
         db_panic("Schema update not supported");
