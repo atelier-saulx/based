@@ -137,12 +137,6 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
     return result;
 }
 
-const double bias_correction_table[][2] = {
-    {4.0, 0.673},
-    {5.0, 0.697},
-    {6.0, 0.709},
-};
-
 // static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
 //     size_t jl = 0;
 //     size_t ju = n;
