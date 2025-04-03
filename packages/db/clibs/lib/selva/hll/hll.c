@@ -15,6 +15,9 @@
 #define SPARSE true
 #define DENSE false
 
+#define ASC true 
+#define DSC false
+
 typedef struct {
     struct {
         uint8_t is_sparse : 1;
@@ -140,14 +143,29 @@ const double bias_correction_table[][2] = {
     {6.0, 0.709},
 };
 
-static double apply_bias_correction(double alpha_m, uint8_t precision) {
-    for (size_t i = 0; i < sizeof(bias_correction_table) / sizeof(bias_correction_table[0]); i++) {
-        if (bias_correction_table[i][0] == (double)precision) {
-            return alpha_m * bias_correction_table[i][1];
-        }
-    }
-    return alpha_m;
-}
+// static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
+//     size_t jl = 0;
+//     size_t ju = n;
+
+//     while (ju - jl > 1) {
+//         size_t jm = (ju + jl) >> 1;
+//         if (x >= xx[jm] == ascnd) {
+//             jl = jm;
+//         } else {
+//             ju = jm;
+//         }
+//     }
+//     return jl;
+// }
+
+// static double apply_bias_correction(double estimate, uint8_t precision) {
+//     size_t j = locate(raw_estimate_data[precision - 4], actual_cols[precision], estimate, ASC);
+    
+//     const float avg_estimate = (raw_estimate_data[precision - 4][j] + raw_estimate_data[precision - 4][j + 1]) * 0.5f;
+//     const float avg_bias = (bias_data[precision - 4][j] + bias_data[precision - 4][j + 1]) * 0.5f;
+
+//     return (avg_estimate + avg_bias) * 0.5f);
+// }
 
 static double compute_alpha_m(size_t m) {
     switch(m) {
@@ -171,7 +189,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
         return (uint8_t *)&hll->count;
     }
 
-    uint32_t precision = hll->precision;
+    // uint32_t precision = hll->precision;
     uint32_t num_registers = hll->num_registers;
     uint32_t *registers = hll->registers;
 
@@ -194,7 +212,10 @@ uint8_t *hll_count(struct selva_string *hllss) {
         estimate = m * log(m / zero_count);
     }
 
-    estimate = apply_bias_correction(estimate, precision);
+    // bias correction is suspended until a validation of threshould table being done
+    // if (estimate <= 5 * m){
+    //     estimate = apply_bias_correction(estimate, precision);
+    // }
 
     hll->count = (uint32_t)estimate;
     hll->dirty = false;
