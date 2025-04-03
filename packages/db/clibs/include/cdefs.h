@@ -295,7 +295,7 @@
  * Size of a struct with its flexible array member.
  */
 #define sizeof_wflex(t, f, count) \
-    max(sizeof(t), offsetof(t, f[0]) + count * sizeof(((t*)0)->f[0]))
+    max(sizeof(t), offsetof(t, f[0]) + (count) * sizeof(((t*)0)->f[0]))
 
 /**
  * Check if pointer has a const qualifier.
