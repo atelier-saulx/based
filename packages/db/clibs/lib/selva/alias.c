@@ -12,10 +12,11 @@
 void selva_init_aliases(struct SelvaTypeEntry *type)
 {
     const struct SelvaFieldsSchema *fields_schema = &type->ns.fields_schema;
+    const size_t nr_fields = fields_schema->nr_fields;
 
     type->aliases = selva_malloc(type->ns.nr_aliases * sizeof(struct SelvaAliases));
 
-    for (size_t i = 0; i < fields_schema->nr_fields; i++) {
+    for (size_t i = 0; i < nr_fields; i++) {
         const struct SelvaFieldSchema *fs = &fields_schema->field_schemas[i];
         struct SelvaAliases *field_aliases = &type->aliases[fs->alias_index];
 
@@ -24,6 +25,9 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
             field_aliases->single = true;
             __attribute__((__fallthrough__));
         case SELVA_FIELD_TYPE_ALIASES:
+#if 0
+            assert(fs->alias_index < type->ns.nr_aliases);
+#endif
             field_aliases->field = fs->field;
             RB_INIT(&field_aliases->alias_by_name);
             RB_INIT(&field_aliases->alias_by_dest);
@@ -133,7 +137,7 @@ retry:
 
 node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *new_alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
 
     new_alias->dest = dest;
     memcpy(new_alias->name, name_str, name_len);
