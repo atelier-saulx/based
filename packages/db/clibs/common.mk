@@ -11,7 +11,7 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 uname_M := $(subst arm64,aarch64,$(shell sh -c 'uname -m 2>/dev/null || echo not'))
 PLATFORM := $(call lc,$(uname_S))_$(call lc,$(uname_M))
 
-EN_VALGRIND_CFLAGS := -Dselva_malloc=malloc -Dselva_calloc=calloc -Dselva_realloc=realloc -Dselva_free=free
+EN_VALGRIND_CFLAGS := -Dselva_malloc=malloc -Dselva_calloc=calloc -Dselva_realloc=realloc -Dselva_aligned_alloc=aligned_alloc -Dselva_free=free -DEN_VALGRIND
 
 # Set _DATE__ and __TIME__ macros to a deterministic value
 export SOURCE_DATE_EPOCH := $(shell sh -c 'git log -1 --pretty=%ct || date +%s')
@@ -32,7 +32,7 @@ ifeq ($(EN_VALGRIND),1)
 CFLAGS += $(EN_VALGRIND_CFLAGS)
 endif
 
-ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
+ifeq ($(uname_S),Linux)
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize -Wstrict-aliasing=3
 	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
 	#CFLAGS += -opt-info-vec-optimized

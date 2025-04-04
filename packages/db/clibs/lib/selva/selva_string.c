@@ -21,6 +21,10 @@
 #include "bits.h"
 #include "selva/selva_string.h"
 
+#ifdef EN_VALGRIND
+#define selva_sallocx(p, v)     0
+#endif
+
 /**
  * Don't use libdeflate_strings functions for compressed strings under this size.
  * This is a questimate of the minimum heap space required to use the block

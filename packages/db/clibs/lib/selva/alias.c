@@ -12,10 +12,11 @@
 void selva_init_aliases(struct SelvaTypeEntry *type)
 {
     const struct SelvaFieldsSchema *fields_schema = &type->ns.fields_schema;
+    const size_t nr_fields = fields_schema->nr_fields;
 
     type->aliases = selva_malloc(type->ns.nr_aliases * sizeof(struct SelvaAliases));
 
-    for (size_t i = 0; i < fields_schema->nr_fields; i++) {
+    for (size_t i = 0; i < nr_fields; i++) {
         const struct SelvaFieldSchema *fs = &fields_schema->field_schemas[i];
         struct SelvaAliases *field_aliases = &type->aliases[fs->alias_index];
 
@@ -24,6 +25,9 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
             field_aliases->single = true;
             __attribute__((__fallthrough__));
         case SELVA_FIELD_TYPE_ALIASES:
+#if 0
+            assert(fs->alias_index < type->ns.nr_aliases);
+#endif
             field_aliases->field = fs->field;
             RB_INIT(&field_aliases->alias_by_name);
             RB_INIT(&field_aliases->alias_by_dest);
@@ -133,7 +137,7 @@ retry:
 
 node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *new_alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
 
     new_alias->dest = dest;
     memcpy(new_alias->name, name_str, name_len);
@@ -144,7 +148,7 @@ node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const ch
 
 node_id_t selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
     struct SelvaAlias *alias;
     node_id_t old_dest = 0;
 
@@ -199,7 +203,7 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
 
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
 
     memset(find, 0, sizeof(*find));
     memcpy(find->name, name_str, name_len);
@@ -258,7 +262,9 @@ struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t fiel
 
 void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+    size_t nr_aliases = type->ns.nr_aliases;
+
+    for (size_t i = 0; i < nr_aliases; i++) {
         selva_del_alias_by_dest(&type->aliases[i], node_id);
     }
 }
