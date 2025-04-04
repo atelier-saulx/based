@@ -188,6 +188,7 @@ pub inline fn default(
             std.log.err("Start (fixed len fields) + has not supported in filters", .{});
             return .{ next, false };
         }
+
         if (!batch.simdReferencesHasSingle(read(u32, query, 0), v)) {
             return .{ next, false };
         }

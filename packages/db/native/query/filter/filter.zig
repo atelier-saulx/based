@@ -40,6 +40,9 @@ const LangCode = @import("../../types.zig").LangCode;
 // [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
+const EMPTY: [1]u8 = [_]u8{0} ** 1;
+const EMPTY_SLICE = @constCast(&EMPTY)[0..1];
+
 inline fn fail(
     ctx: *db.DbCtx,
     node: *selva.SelvaNode,
@@ -215,6 +218,9 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
+                if (i + 5 > end) {
+                    break;
+                }
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
@@ -270,8 +276,13 @@ pub fn filter(
                         };
                         const refs = db.getReferences(ctx, node, fs);
                         if (refs) |r| {
-                            const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
-                            value = arr[0 .. r.nr_refs * 4];
+                            if (r.nr_refs != 0) {
+                                const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
+                                value = arr[0 .. r.nr_refs * 4];
+                            } else {
+                                value = EMPTY_SLICE;
+                                // do something....
+                            }
                         } else {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }

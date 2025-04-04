@@ -16,6 +16,25 @@ pub fn simdEqualsOr(
     const bytes: u16 = @sizeOf(T);
     const l = values.len / bytes;
     const valueExpanded = read(T, value, 0);
+    // this has to be aligned in js
+
+    const address = @intFromPtr(values.ptr);
+    const delta = (address) & @sizeOf(T);
+
+    if (delta != 0) {
+        // std.debug.print("Incorrectly aligned {any} {any} {any} \n", .{ values.len, offset, T });
+
+        while (i < values.len) {
+            if (std.mem.eql(u8, value, values[i .. i + @sizeOf(T)])) {
+                return true;
+            }
+
+            i += @sizeOf(T);
+        }
+
+        return false;
+    }
+
     const tmp: [*]T = @alignCast(@ptrCast(values.ptr));
     const ints: []T = tmp[0..l];
     if (vectorLen <= l) {
@@ -137,7 +156,28 @@ pub fn simdReferencesHasSingle(
     values: []u8,
 ) bool {
     const l = values.len / 4;
+
+    const address = @intFromPtr(values.ptr);
+    const delta = (address) & 3;
+
+    if (delta != 0) {
+        if (values.len < 4) {
+            return false;
+        }
+        std.debug.print("v1 {any} v {any} \n", .{ value, values.len });
+        var i: usize = 0;
+
+        while (i < values.len) {
+            if (read(u32, values, i) == value) {
+                return true;
+            }
+            i += 4;
+        }
+        return false;
+    }
+
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
+
     return selva.node_id_set_bsearch(tmp, l, value) != -1;
 }
 
@@ -145,13 +185,22 @@ pub fn simdReferencesHas(
     value: []u8,
     values: []u8,
 ) bool {
-    const tmp3: [*]u32 = @alignCast(@ptrCast(value.ptr));
-    const intsValue2: []u32 = tmp3[0 .. value.len / 4];
+    // // also potentialy wrong...
+    // const tmp3: [*]u32 = @alignCast(@ptrCast(value.ptr));
+    // const intsValue2: []u32 = tmp3[0 .. value.len / 4];
     var i: usize = 0;
     const l = values.len / 4;
+
+    const address = @intFromPtr(values.ptr);
+    const delta = (address) & 3;
+
+    if (delta != 0) {
+        return false;
+    }
+
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
-    while (i < intsValue2.len) : (i += 1) {
-        if (selva.node_id_set_bsearch(tmp, l, intsValue2[i]) != -1) {
+    while (i < value.len) : (i += 4) {
+        if (selva.node_id_set_bsearch(tmp, l, read(u32, value, i)) != -1) {
             return true;
         }
     }

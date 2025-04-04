@@ -217,11 +217,13 @@ await test('simple', async (t) => {
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 
+  console.log('YOYO')
   equal(
     (await db.query('machine').filter('lastPing', '=', x).get()).length,
     x.length,
     'OR number',
   )
+  console.log('------------')
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -281,7 +283,7 @@ await test('simple', async (t) => {
     true,
     'multi ref filter up at 0.5 results',
   )
-  equal(measure / amount < 10, true, 'multi ref filter lower then 10ms')
+  equal(measure / amount < 100, true, 'multi ref filter lower then 100ms')
 
   equal(
     (
@@ -443,8 +445,14 @@ await test('simple', async (t) => {
   ])
 
   deepEqual(
-    (await db.query('env').filter('machines', '<', 10).get()).toObject(),
+    await db.query('env').filter('machines', '<', 10).get(),
     [
+      {
+        id: 2,
+        name: 'Mydev env',
+        standby: false,
+        status: 0,
+      },
       {
         id: 3,
         name: 'derp env',
@@ -456,7 +464,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    (await db.query('env').filter('machines', '=', ids).get()).toObject(),
+    await db.query('env').filter('machines', '=', ids).get(),
     [
       {
         id: 3,

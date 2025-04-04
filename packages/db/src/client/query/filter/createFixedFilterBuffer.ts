@@ -48,7 +48,8 @@ export const writeFixed = (
   } else if (size === 1) {
     buf[offset] = value
   } else {
-    if (size === 8) { // RFE no int64 for u?
+    if (size === 8) {
+      // RFE no int64 for u? prob important to add...
       const view = new DataView(buf.buffer, buf.byteOffset)
       view.setFloat64(offset, value, true)
     } else if (size === 4) {
@@ -82,6 +83,7 @@ export const createFixedFilterBuffer = (
   if (Array.isArray(value)) {
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
+
     buf = new Uint8Array(10 + len * size)
     buf[0] = ctx.type
     buf[1] =
@@ -111,6 +113,14 @@ export const createFixedFilterBuffer = (
         buf[off + 3] = val >>> 24
       }
     } else {
+      console.log('derp', len)
+
+      const propLen = prop.len
+
+      //padding
+
+      // 9
+
       for (let i = 0; i < len; i++) {
         writeFixed(
           prop,
