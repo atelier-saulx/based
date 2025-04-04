@@ -59,14 +59,11 @@ pub fn getSingleRefFields(
         if (selvaRef == null) {
             return 6 + size;
         }
+
         const edgeConstrain = selva.selva_get_edge_field_constraint(
             fieldSchema,
         );
    
-        // if (edgeConstrain == null) {
-        //     return 6 + size;
-        // }
-
         edgeRefStruct = .{
             .reference = null,
             .edgeConstaint = edgeConstrain,
@@ -84,9 +81,7 @@ pub fn getSingleRefFields(
         const edgeConstrain = selva.selva_get_edge_field_constraint(
             fieldSchema,
         );
-        // if (edgeConstrain == null) {
-        //     return 6 + size;
-        // }
+
         edgeRefStruct = .{
             .reference = @ptrCast(selvaRef.?),
             .edgeConstaint = edgeConstrain,
