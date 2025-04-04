@@ -10,7 +10,8 @@ await test('boolean', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
+    // return t.backup(db)
   })
 
   await db.setSchema({
