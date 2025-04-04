@@ -3,7 +3,7 @@ import { ModifyCtx } from '../../flushModify.js'
 import { ModifyState, ModifyError } from '../ModifyRes.js'
 import { ModifyErr } from '../types.js'
 
-export function appendRefs(
+export function appendEdgeRefs(
   t: PropDefEdge,
   ctx: ModifyCtx,
   value: any[],

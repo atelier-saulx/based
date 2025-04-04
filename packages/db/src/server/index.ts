@@ -495,6 +495,7 @@ export class DbServer {
 
       if (strictSchema.props) {
         // insert a root node
+        // TODO fix this add it in schema at least
         const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 1)
         const buf = new Uint8Array(data.length + 2 + 8 + 4)
@@ -662,7 +663,7 @@ export class DbServer {
       await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
-      await setTimeout()
+      await setTimeout(20)
     } catch (e) {
       this.stopped = false
       throw e
