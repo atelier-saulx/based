@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <assert.h>
 #include <sys/types.h>
 #include "selva/_export.h"
 #include "selva/types.h"
@@ -179,13 +180,16 @@ inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs)
  * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
  */
 SELVA_EXPORT
+__attribute__((returns_nonnull))
 __attribute__((nonnull))
 inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
 #ifndef __zig
 {
-    return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
-        ? &fs->edge_constraint
-        : nullptr;
+    assert(fs->type == SELVA_FIELD_TYPE_REFERENCE ||
+           fs->type == SELVA_FIELD_TYPE_REFERENCES ||
+           fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE ||
+           fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
+    return &fs->edge_constraint;
 }
 #else
 ;
