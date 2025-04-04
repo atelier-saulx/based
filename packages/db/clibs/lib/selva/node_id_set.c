@@ -6,7 +6,7 @@
 #include "jemalloc_selva.h"
 #include "selva/node_id_set.h"
 
-#ifdef EN_VALGRIND
+#if defined(EN_VALGRIND)
 #define selva_sallocx(p, v)     0
 #endif
 
