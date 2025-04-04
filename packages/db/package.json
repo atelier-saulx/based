@@ -6,6 +6,7 @@
   "main": "./dist/src/index.js",
   "scripts": {
     "build": "make -C clibs && npm run build-zig && tsc",
+    "build-ts": "tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
     "build-release": "(cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
