@@ -6,14 +6,7 @@
 #include "jemalloc_selva.h"
 #include "selva/node_id_set.h"
 
-/*
- * These are for valgrind.
- */
-#if 0
-#define selva_malloc            malloc
-#define selva_calloc            calloc
-#define selva_realloc           realloc
-#define selva_free              free
+#ifdef EN_VALGRIND
 #define selva_sallocx(p, v)     0
 #endif
 

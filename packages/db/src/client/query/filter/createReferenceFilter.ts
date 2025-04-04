@@ -26,7 +26,6 @@ export const createReferenceFilter = (
     for (let i = 0; i < len; i++) {
       let off = 11 + i * 8
       const v = value[i]
-
       buf[off++] = v
       buf[off++] = v >>> 8
       buf[off++] = v >>> 16

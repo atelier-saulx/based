@@ -107,18 +107,24 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
-    const len: usize = read(u32, data, 0);
+    const len: usize = read(u32, data, 0) - 1;
     const address = @intFromPtr(data.ptr);
     const delta = (address + 1) & 3;
     const offset = if (delta == 0) 0 else 4 - delta;
 
+    if (@mod(len, 4) != 0) {
+        std.log.err("Incorrect len passed to putReferences {any} \n", .{len});
+        return errors.SelvaError.SELVA_EINVAL;
+    }
+
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
-        return len + offset;
+        return len + offset + 1;
     }
 
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
+
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
     try db.putReferences(
@@ -129,5 +135,5 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         refTypeEntry,
     );
 
-    return len + offset;
+    return len + offset + 1;
 }

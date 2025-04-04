@@ -240,7 +240,9 @@ void selva_db_destroy(struct SelvaDb *db)
     del_all_types(db);
     ref_save_map_destroy(&db->schema.ref_save_map);
     selva_expire_deinit(&db->expiring);
+#if 0
     memset(db, 0, sizeof(*db));
+#endif
     selva_free(db);
 }
 

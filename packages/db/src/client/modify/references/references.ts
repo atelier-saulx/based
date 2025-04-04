@@ -189,6 +189,7 @@ function appendRefs(
   const hasEdges = !!def.edges
   ctx.buf[ctx.len++] = modifyOp
   let i = refs.length - remaining
+
   let totalpos = ctx.len
   ctx.len += 4
   ctx.buf[ctx.len++] = i === 0 ? op : 1 // if it just did a PUT, it should ADD not overwrite the remaining
@@ -323,12 +324,17 @@ function putRefs(
 ): number | ModifyError {
   let size = refs.length * 4 + 1
 
+  if (refs.length === 0) {
+    return 0
+  }
+
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = size
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = op === 0 ? 3 : 4
+
   ctx.len = (ctx.len + 3) & ~3
 
   let i = 0

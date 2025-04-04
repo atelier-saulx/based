@@ -14,7 +14,7 @@ pub fn default(value: []const u8, query: []const u8) bool {
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
             if (value[i] == query[0]) {
-                if (i + ql - 1 > l) {
+                if (i + ql > l) {
                     return false;
                 }
                 var j: usize = 1;
@@ -76,7 +76,7 @@ pub fn default(value: []const u8, query: []const u8) bool {
     while (i < l) : (i += 1) {
         const id2 = value[i];
         if (id2 == query[0]) {
-            if (i + ql - 1 > l) {
+            if (i + ql > l) {
                 return false;
             }
             var j: usize = 1;

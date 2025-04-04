@@ -43,13 +43,13 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
-    ctx.initialized = false;
 
-    if (ctx.selva != null) {
-        selva.selva_db_destroy(ctx.selva);
+    if (!ctx.initialized) {
+        std.log.err("Db allready de-initialized \n", .{});
+        return null;
     }
 
-    ctx.selva = null;
+    ctx.initialized = false;
 
     var it = ctx.sortIndexes.iterator();
     while (it.next()) |index| {
@@ -67,6 +67,10 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     selva.libdeflate_free_decompressor(ctx.decompressor);
 
     _ = db.dbHashmap.remove(ctx.id);
+
+    selva.selva_db_destroy(ctx.selva);
+
+    ctx.selva = null;
 
     // free mem
     ctx.arena.deinit();

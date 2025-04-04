@@ -119,26 +119,27 @@ await test('multi reference', async (t) => {
       .query('article')
       .include('contributors.$friend.name', 'contributors.$friend.location')
       .get()
-      .then((v) => v.toObject()),
+      .inspect(),
     [
       {
         id: 1,
         contributors: [
           {
             id: 1,
-            $friend: { id: 5, location: { long: 0, lat: 0 }, name: 'Mr Derp3' },
+            $friend: {
+              id: 5,
+              location: { long: 0, lat: 0 },
+              name: 'Mr Derp3',
+            },
           },
         ],
       },
     ],
+    'Friend include name/location',
   )
 
   deepEqual(
-    await db
-      .query('article')
-      .include('contributors.$friend')
-      .get()
-      .then((v) => v.toObject()),
+    await db.query('article').include('contributors.$friend').get(),
     [
       {
         id: 1,
@@ -156,6 +157,7 @@ await test('multi reference', async (t) => {
         ],
       },
     ],
+    'Friend include all',
   )
 })
 

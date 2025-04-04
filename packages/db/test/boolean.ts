@@ -10,6 +10,7 @@ await test('boolean', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
+    // return db.destroy()
     return t.backup(db)
   })
 
@@ -53,23 +54,4 @@ await test('boolean', async (t) => {
     { id: 1, isNice: false },
     { id: 3, isNice: false },
   ])
-
-  // // @ts-ignore
-  // Map.prototype.toJSON = function () {
-  //   return [...this]
-  // }
-  // // or, if you really want to use objects:
-  // // @ts-ignore
-  // Map.prototype.toJSON = function () {
-  //   var obj = {}
-  //   for (let [key, value] of this) obj[key] = value
-  //   return obj
-  // }
-  // // and for Sets:
-  // // @ts-ignore
-  // Set.prototype.toJSON = function () {
-  //   return [...this]
-  // }
-
-  // console.log(JSON.stringify(db.query('user').filter('isNice', false).def))
 })

@@ -23,7 +23,7 @@ import {
 } from '../types.js'
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
-import { appendRefs } from './appendRefs.js'
+import { appendEdgeRefs } from './appendEdgeRefs.js'
 
 type FieldOp = typeof INCREMENT | typeof DECREMENT | typeof UPDATE
 
@@ -144,7 +144,7 @@ export function writeEdges(
           ctx.buf[ctx.len++] = size >>>= 8
           ctx.buf[ctx.len++] = size >>>= 8
           ctx.buf[ctx.len++] = size >>>= 8
-          appendRefs(edge, ctx, value)
+          appendEdgeRefs(edge, ctx, value)
         } else if (edge.typeIndex === CARDINALITY) {
           if (!Array.isArray(value)) {
             value = [value]

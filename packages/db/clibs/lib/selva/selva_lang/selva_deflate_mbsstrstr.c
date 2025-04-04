@@ -10,6 +10,10 @@
 #include "libdeflate.h"
 #include "selva/selva_lang.h"
 
+#ifdef EN_VALGRIND
+#define selva_sallocx(p, v)     0
+#endif
+
 struct mbsstrstr_ctx {
     wctrans_t trans;
     locale_t loc;
