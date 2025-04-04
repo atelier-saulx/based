@@ -45,6 +45,8 @@ pub fn getSingleRefFields(
     const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint, refField) catch null else db.getFieldSchema(refField, originalType) catch null;
 
     if (fieldSchema == null) {
+        // this just means broken..
+        // return if (isEdge)   { return 7 + size; } else {  return 6 + size; };
         return 0;
     }
 
@@ -57,9 +59,14 @@ pub fn getSingleRefFields(
         if (selvaRef == null) {
             return 6 + size;
         }
-        const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(
+        const edgeConstrain = selva.selva_get_edge_field_constraint(
             fieldSchema,
         );
+   
+        // if (edgeConstrain == null) {
+        //     return 6 + size;
+        // }
+
         edgeRefStruct = .{
             .reference = null,
             .edgeConstaint = edgeConstrain,
@@ -74,9 +81,12 @@ pub fn getSingleRefFields(
         if (selvaRef == null) {
             return 6 + size;
         }
-        const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(
+        const edgeConstrain = selva.selva_get_edge_field_constraint(
             fieldSchema,
         );
+        // if (edgeConstrain == null) {
+        //     return 6 + size;
+        // }
         edgeRefStruct = .{
             .reference = @ptrCast(selvaRef.?),
             .edgeConstaint = edgeConstrain,
