@@ -15,6 +15,9 @@
 #define SPARSE true
 #define DENSE false
 
+#define ASC true 
+#define DSC false
+
 typedef struct {
     struct {
         uint8_t is_sparse : 1;
@@ -54,7 +57,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, NULL, num_registers * sizeof(uint32_t));
+        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint32_t));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
@@ -88,7 +91,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     if (hll->is_sparse) {
         if (index > hll->num_registers && hll->num_registers <= (1ULL << precision) ) {
             selva_string_append(hllss, 0, (index - hll->num_registers) * sizeof(uint32_t));
-            selva_string_append(hllss, NULL, sizeof(uint32_t));
+            selva_string_append(hllss, nullptr, sizeof(uint32_t));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
             hll->num_registers = (index + 1);
@@ -108,19 +111,19 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
 
-    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], NULL); //&?
+    HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], nullptr); //&?
 
     uint8_t precision = first_hll->precision;
     uint32_t num_registers = first_hll->num_registers;
 
     struct selva_string result;
     hll_init(&result, precision, DENSE);
-    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&result, NULL);
+    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&result, nullptr);
 
     memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint32_t));
 
     for (size_t j = 1; j < count; j++) {
-        HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], NULL);
+        HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
         if (current_hll->precision != precision) {
             db_panic("Precision mismatch is unsupported.");
         }
@@ -134,20 +137,29 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
     return result;
 }
 
-const double bias_correction_table[][2] = {
-    {4.0, 0.673},
-    {5.0, 0.697},
-    {6.0, 0.709},
-};
+// static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
+//     size_t jl = 0;
+//     size_t ju = n;
 
-static double apply_bias_correction(double alpha_m, uint8_t precision) {
-    for (size_t i = 0; i < sizeof(bias_correction_table) / sizeof(bias_correction_table[0]); i++) {
-        if (bias_correction_table[i][0] == (double)precision) {
-            return alpha_m * bias_correction_table[i][1];
-        }
-    }
-    return alpha_m;
-}
+//     while (ju - jl > 1) {
+//         size_t jm = (ju + jl) >> 1;
+//         if (x >= xx[jm] == ascnd) {
+//             jl = jm;
+//         } else {
+//             ju = jm;
+//         }
+//     }
+//     return jl;
+// }
+
+// static double apply_bias_correction(double estimate, uint8_t precision) {
+//     size_t j = locate(raw_estimate_data[precision - 4], actual_cols[precision], estimate, ASC);
+    
+//     const float avg_estimate = (raw_estimate_data[precision - 4][j] + raw_estimate_data[precision - 4][j + 1]) * 0.5f;
+//     const float avg_bias = (bias_data[precision - 4][j] + bias_data[precision - 4][j + 1]) * 0.5f;
+
+//     return (avg_estimate + avg_bias) * 0.5f);
+// }
 
 static double compute_alpha_m(size_t m) {
     switch(m) {
@@ -171,7 +183,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
         return (uint8_t *)&hll->count;
     }
 
-    uint32_t precision = hll->precision;
+    // uint32_t precision = hll->precision;
     uint32_t num_registers = hll->num_registers;
     uint32_t *registers = hll->registers;
 
@@ -194,7 +206,10 @@ uint8_t *hll_count(struct selva_string *hllss) {
         estimate = m * log(m / zero_count);
     }
 
-    estimate = apply_bias_correction(estimate, precision);
+    // bias correction is suspended until a validation of threshould table being done
+    // if (estimate <= 5 * m){
+    //     estimate = apply_bias_correction(estimate, precision);
+    // }
 
     hll->count = (uint32_t)estimate;
     hll->dirty = false;
@@ -218,7 +233,7 @@ int main(void) {
 
     struct selva_string hll;
 
-    selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
     hll_init(&hll, precision, SPARSE);
     hll_add(&hll, hash);
     double estimated_cardinality = hll_count(&hll);
@@ -234,13 +249,13 @@ int main(void) {
                             + sizeof(precision) \
                             + sizeof(uint32_t);
     struct selva_string hll;
-    selva_string_init(&hll, NULL, initial_capacity , SELVA_STRING_MUTABLE);
+    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
 
     hll_init(&hll, precision, SPARSE);
 
     int num_elements = 1e7;
     char (*elements)[50] = malloc(num_elements * sizeof(*elements));
-    if (elements == NULL) {
+    if (elements == nullptr) {
         perror("Failed to allocate memory");
         exit(EXIT_FAILURE);
     }

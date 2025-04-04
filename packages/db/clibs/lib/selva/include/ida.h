@@ -13,7 +13,7 @@ typedef int ida_t;
  * Create a new Id Allocator.
  * Ids are allocated from 0 to max.
  */
-struct ida *ida_init(int max) __attribute__ ((malloc));
+struct ida *ida_init(ida_t max) __attribute__ ((malloc));
 
 /**
  * Destroy an Id Allocator.

@@ -50,7 +50,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeInfo = typeInfo,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
     };
-    defer ctx.dirtyRanges.deinit(); // is this enough or will it leak something, the docs are unclear??
+    defer ctx.dirtyRanges.deinit();
 
     var offset: u32 = 0;
     var idOffset: u32 = 0;
