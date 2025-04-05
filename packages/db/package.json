@@ -6,9 +6,8 @@
   "main": "./dist/src/index.js",
   "scripts": {
     "build": "make -C clibs && npm run build-zig && tsc",
-    "build-ts": "tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
-    "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
+    "exec-linux_aarch64": "(cd clibs && podman run -it --rm -v $PWD/../../..:/usr/src/based-db localhost/based-db-clibs-build-linux_aarch64 /bin/bash)",
     "build-release": "(cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",

@@ -10,7 +10,7 @@
 #include "libdeflate.h"
 #include "selva/selva_lang.h"
 
-#ifdef EN_VALGRIND
+#if defined(EN_VALGRIND)
 #define selva_sallocx(p, v)     0
 #endif
 
