@@ -34,9 +34,10 @@ endif
 
 # Must use LD_PRELOAD=/usr/lib/gcc/aarch64-linux-gnu/12/libasan.so to load libasan
 ifeq ($(EN_ASAN),1)
-	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
+	SANITIZERS := address,leak,undefined
+	CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
 	CFLAGS += -fanalyzer -Wno-analyzer-possible-null-dereference -Wno-analyzer-null-dereference
-	LDFLAGS += -fsanitize=address
+	LDFLAGS += -fsanitize=$(SANITIZERS)
 endif
 
 ifeq ($(uname_S),Linux)
