@@ -49,6 +49,9 @@ ifeq ($(uname_S),Linux)
 	# Not yet available on macOS
 	CFLAGS += -fstack-clash-protection
 
+	#CFLAGS += -fharden-compares -fstack-protector-strong -D_GLIBCXX_ASSERTIONS
+	#LDFLAGS += -fharden-compares -fstack-protector-strong -fstack-clash-protection
+
 	ifeq ($(uname_M),x86_64)
 		ASFLAGS += -march=x86-64 -mtune=intel
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
@@ -56,6 +59,7 @@ ifeq ($(uname_S),Linux)
 	endif
 	ifeq ($(uname_M),aarch64)
 		CFLAGS += -march=armv8.2-a+simd+fp16+crc+crypto
+		CFLAGS += -mbranch-protection=standard
 	endif
 
 	LDFLAGS += -Wl,--no-as-needed -z noexecstack -z relro -z now
