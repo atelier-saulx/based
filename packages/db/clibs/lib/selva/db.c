@@ -443,7 +443,7 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 
     selva_fields_destroy(db, node);
 #if 0
-    memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.nr_fields));
+    memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif
     mempool_return(&type->nodepool, node);
     type->nr_nodes--;

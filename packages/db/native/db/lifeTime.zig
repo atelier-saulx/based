@@ -45,7 +45,7 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
 
     if (!ctx.initialized) {
-        std.log.err("Db allready de-initialized \n", .{});
+        std.log.err("Db already de-initialized \n", .{});
         return null;
     }
 
