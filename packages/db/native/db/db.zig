@@ -22,11 +22,16 @@ pub const DbCtx = struct {
     id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
-    arena: std.heap.ArenaAllocator,
+    arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
     decompressor: *selva.libdeflate_decompressor,
     libdeflate_block_state: selva.libdeflate_block_state,
+
+    pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
+        self.arena.deinit();
+        backing_allocator.destroy(self.arena);
+    }
 };
 
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
@@ -34,12 +39,14 @@ pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 pub fn createDbCtx(id: u32) !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);
+    defer globalAllocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
+
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
-        .arena = arena.*,
+        .arena = arena,
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
@@ -47,7 +54,9 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
+    errdefer b.deinit(globalAllocator);
     try dbHashmap.put(id, b);
+
     return b;
 }
 
