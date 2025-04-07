@@ -29,12 +29,18 @@ LDFLAGS += -pthread
 
 # Add these for valgrind
 ifeq ($(EN_VALGRIND),1)
-CFLAGS += $(EN_VALGRIND_CFLAGS)
+	CFLAGS += $(EN_VALGRIND_CFLAGS)
+endif
+
+# Must use LD_PRELOAD=/usr/lib/gcc/aarch64-linux-gnu/12/libasan.so to load libasan
+ifeq ($(EN_ASAN),1)
+	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
+	CFLAGS += -fanalyzer -Wno-analyzer-possible-null-dereference -Wno-analyzer-null-dereference
+	LDFLAGS += -fsanitize=address
 endif
 
 ifeq ($(uname_S),Linux)
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize -Wstrict-aliasing=3
-	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
 	#CFLAGS += -opt-info-vec-optimized
 	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
 
