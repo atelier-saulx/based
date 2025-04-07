@@ -44,5 +44,4 @@ pub fn build(b: *std.Build) void {
     });
 
     b.getInstallStep().dependOn(&install_lib.step);
-    b.installArtifact(lib);
 }
