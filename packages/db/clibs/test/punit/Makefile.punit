@@ -129,7 +129,7 @@ bin/%: %.c $(PU_OBJ)
 	@echo "Build test: $(TESTNAME)"
 	@echo "=================================================================="
 	$(eval DEPS := $(patsubst %,./$(ODIR)/%,$(notdir $(SRC-$(TESTNAME):.c=.o))))
-	$(CC)  -std=gnu2x -g3 -Wno-unknown-attributes $(CFLAGS) $(LDFLAGS) $(IDIR) $(IDIR_TEST) -include punit.h $^ $(DEPS) -o ./$@
+	$(CC)  -std=gnu23 -g3 -Wno-unknown-attributes $(CFLAGS) $(LDFLAGS) $(IDIR) $(IDIR_TEST) -include punit.h $^ $(DEPS) -o ./$@
 	@echo "=================================================================="
 
 # Run tests
