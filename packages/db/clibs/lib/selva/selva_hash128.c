@@ -15,4 +15,5 @@ selva_hash_state_t *selva_hash_create_state(void)
     return state;
 }
 
+extern inline void selva_hash_free_state(selva_hash_state_t *state);
 extern inline selva_hash128_t selva_hash_digest(selva_hash_state_t *hash_state);

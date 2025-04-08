@@ -15,10 +15,15 @@ typedef struct XXH3_state_s selva_hash_state_t;
 SELVA_EXPORT
 selva_hash_state_t *selva_hash_create_state(void);
 
-static inline void selva_hash_free_state(selva_hash_state_t *state)
+SELVA_EXPORT
+inline void selva_hash_free_state(selva_hash_state_t *state)
+#ifndef __zig
 {
     selva_free(state);
 }
+#else
+;
+#endif
 
 SELVA_EXPORT
 inline selva_hash128_t selva_hash_digest(selva_hash_state_t *hash_state)
