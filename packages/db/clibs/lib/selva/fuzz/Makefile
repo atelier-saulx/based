@@ -1,7 +1,7 @@
 # Copyright (c) 2022-2023, 2025 SAULX
 # SPDX-License-Identifier: MIT
 
-CFLAGS := -std=gnu2x -g -O1 \
+CFLAGS := -std=gnu23 -g -O1 \
 		  -I../../../include \
 		  -iquote ../include \
 		  -include ../../../include/cdefs.h \

@@ -20,8 +20,7 @@ export ZERO_AR_DATE := 1
 CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
-# TODO gnu23 when available
-CFLAGS := -std=gnu2x -pthread -O2 -MMD -fstack-protector \
+CFLAGS := -std=gnu23 -pthread -O2 -MMD -fstack-protector \
 		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes \
 		  -DDCACHE_LINESIZE=64
 
