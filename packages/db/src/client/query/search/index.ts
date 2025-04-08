@@ -57,8 +57,6 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   for (const s of x) {
     if (s) {
       const buf = ENCODER.encode(s)
-      console.log(s, buf)
-
       const lenBuf = new Uint8Array(2)
 
       let len = buf.byteLength
