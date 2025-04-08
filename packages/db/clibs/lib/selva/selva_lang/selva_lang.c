@@ -284,6 +284,7 @@ static int load_lang(struct selva_lang *lang)
             err = SELVA_EGENERAL;
         }
 
+        lang->locale = nullptr;
         return err;
     }
 
