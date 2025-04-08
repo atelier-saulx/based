@@ -5,6 +5,8 @@ const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
+const valgrind = @import("../valgrind.zig");
+const config = @import("config");
 
 const read = utils.read;
 
@@ -15,8 +17,18 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
-const globalAllocator = globalAllocatorArena.allocator();
+const base_allocator = std.heap.raw_c_allocator;
+var valgrind_wrapper_instance_storage: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
+
+pub const db_backing_allocator: std.mem.Allocator = blk: {
+    if (config.enable_debug) {
+        std.debug.print("Configuring ValgrindAllocator wrapper...\n", .{});
+        valgrind_wrapper_instance_storage = valgrind.ValgrindAllocator.init(base_allocator);
+        break :blk valgrind_wrapper_instance_storage.allocator();
+    } else {
+        break :blk base_allocator;
+    }
+};
 
 pub const DbCtx = struct {
     id: u32,
@@ -34,16 +46,21 @@ pub const DbCtx = struct {
     }
 };
 
-pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
+pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 
 pub fn createDbCtx(id: u32) !*DbCtx {
+
     // If you want any var to persist out of the stack you have to do this (including an allocator)
-    var arena = try globalAllocator.create(std.heap.ArenaAllocator);
-    defer globalAllocator.destroy(arena);
-    arena.* = std.heap.ArenaAllocator.init(globalAllocator);
+    var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
+    defer db_backing_allocator.destroy(arena);
+    arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
 
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
+    errdefer {
+        arena.deinit();
+        db_backing_allocator.destroy(arena);
+    }
     b.* = .{
         .id = 0,
         .arena = arena,
@@ -54,7 +71,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
-    errdefer b.deinit(globalAllocator);
+
     try dbHashmap.put(id, b);
 
     return b;
