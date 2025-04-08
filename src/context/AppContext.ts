@@ -91,22 +91,29 @@ export class AppContext {
   }
 
   public put(key: string, value: unknown) {
-    if (Array.isArray(this.state[key])) {
-      this.state[key] = [...this.state[key], value]
-    } else if (
-      typeof this.state[key] === 'object' &&
-      typeof value === 'object' &&
-      this.state[key] !== null
-    ) {
-      this.state[key] = {
-        ...this.state[key],
-        ...value,
-      }
-    } else if (
-      typeof this.state[key] === 'undefined' &&
-      typeof value === 'object'
-    ) {
+    if (!this.state[key]) {
       this.set(key, value)
+    } else {
+      if (Array.isArray(this.state[key])) {
+        if (!Array.isArray(value)) {
+          this.state[key] = [...this.state[key], value]
+        } else {
+          this.state[key] = [...this.state[key], ...value]
+        }
+      } else if (typeof this.state[key] === 'object') {
+        if (typeof value === 'object') {
+          this.state[key] = {
+            ...this.state[key],
+            ...value,
+          }
+        } else {
+          throw new Error(
+            'You’re trying to add a non-object value into an object.',
+          )
+        }
+      } else {
+        this.state[key] = value
+      }
     }
   }
 

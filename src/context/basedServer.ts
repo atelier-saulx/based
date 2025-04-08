@@ -1,82 +1,174 @@
-import { basename, extname } from "node:path";
-import { join } from "node:path";
-import type { OutputFile } from "@based/bundle";
-import type { BasedClient } from "@based/client";
-import type { BasedDb } from "@based/db";
-import type { BasedFunctionConfigs } from "@based/functions";
-import type { BasedServer } from "@based/server";
-import type { AppContext } from "../context/index.js";
-import { getContentType } from "../shared/index.js";
+import { basename, extname } from 'node:path'
+import { join } from 'node:path'
+import type { Readable } from 'node:stream'
+import type { BasedClient } from '@based/client'
+import type { BasedDb } from '@based/db'
+import type { BasedFunctionConfigs } from '@based/functions'
+import type { BasedServer } from '@based/server'
+import { hash } from '@saulx/hash'
+import { v4 as uuid } from 'uuid'
+import { getContentType, getMyIp, streamToUint8Array } from '../shared/index.js'
+import type { AppContext } from './AppContext.js'
 
 const remoteServerConfig: BasedFunctionConfigs = {
   db: {
-    type: "query",
-    relay: { client: "env" },
+    type: 'query',
+    relay: { client: 'env' },
   },
-  "db:schema": {
-    type: "query",
-    relay: { client: "env" },
+  'db:schema': {
+    type: 'query',
+    relay: { client: 'env' },
   },
-  "db:origins": {
-    type: "query",
-    relay: { client: "env" },
+  'db:origins': {
+    type: 'query',
+    relay: { client: 'env' },
   },
-  "db:set-schema": {
-    type: "function",
-    relay: { client: "env" },
+  'db:set-schema': {
+    type: 'function',
+    relay: { client: 'env' },
   },
-  "db:set": {
-    type: "function",
-    relay: { client: "env" },
+  'db:set': {
+    type: 'function',
+    relay: { client: 'env' },
   },
-  "db:delete": {
-    type: "function",
-    relay: { client: "env" },
+  'db:delete': {
+    type: 'function',
+    relay: { client: 'env' },
   },
-  "db:get": {
-    type: "function",
-    relay: { client: "env" },
+  'db:get': {
+    type: 'function',
+    relay: { client: 'env' },
   },
-  "db:events": {
-    type: "channel",
-    relay: { client: "env" },
+  'db:events': {
+    type: 'channel',
+    relay: { client: 'env' },
   },
-};
+}
 
 const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
-  "db:set-schema": {
-    type: "function",
+  'db:set-schema': {
+    type: 'function',
     fn: async (based, schema) => {
-      const db = based.db.v2 as BasedDb;
+      const db = based.db.v2 as BasedDb
       if (!Array.isArray(schema)) {
-        schema = [schema.schema ? schema : { schema }];
+        schema = [schema.schema ? schema : { schema }]
       }
       for (const { schema: schemaItem } of schema) {
         try {
-          await db.setSchema(schemaItem);
+          await db.setSchema(schemaItem)
         } catch (error) {
           context.print
             .line()
-            .error(context.i18n("methods.server.name"))
-            .log("<b>db:set-schema</b>", null)
+            .error(context.i18n('methods.server.name'))
+            .log('<b>db:set-schema</b>', null)
             .log(`<red>${error.message.trim()}</red>`, null)
-            .line();
+            .line()
         }
       }
     },
   },
-});
+  'db:file-upload': {
+    type: 'stream',
+    maxPayloadSize: -1,
+    async fn(
+      based,
+      { mimeType, size, stream, fileName, extension, payload = {} },
+    ) {
+      async function addVirtualFile(virtualPath: string, stream: Readable) {
+        try {
+          const fileBuffer = await streamToUint8Array(stream)
+
+          context.put('virtualFS', [
+            {
+              path: virtualPath,
+              contents: fileBuffer,
+              hash: hash(fileBuffer.length),
+              text: '',
+            },
+          ])
+        } catch (error) {
+          throw new Error('Was not possible to read the file', error)
+        }
+      }
+
+      if (!extension && fileName) {
+        extension = fileName.split('.').splice(1).join('.')
+      }
+
+      if (!payload || typeof payload !== 'object') {
+        payload = {}
+      }
+
+      const id = payload?.id || Date.now()
+      payload.name ??= fileName
+
+      // this $$fileKey is a hack because `fileName` is bugged when using node
+      const Key =
+        payload.$$fileKey ?? `${id}/${uuid()}-${uuid()}-${uuid()}.${extension}`
+      const Bucket = Date.now()
+
+      delete payload.$$fileKey
+
+      const ip = getMyIp()
+      const port = based.server.port
+      const src = `http://${ip}:${port}/static/${Bucket}/${Key}`
+      const db = based.db.v2 as BasedDb
+      const basedDbId = await db.create('file', {
+        name: fileName,
+        size,
+        progress: 0,
+        status: 'uploading',
+        statusText: 'uploading',
+        mimeType,
+        src,
+        ...payload,
+      })
+
+      stream.on('progress', async (data) => {
+        await db.update('file', basedDbId, {
+          progress: data,
+          statusText: 'uploading',
+          status: 'uploading',
+        })
+      })
+
+      stream.on('error', async () => {
+        await db.update('file', basedDbId, {
+          statusText: 'error',
+          status: 'error',
+        })
+      })
+
+      stream.on('end', async () => {
+        // if (mimeType.startsWith('video/')) {
+        //   await db.update('file', basedDbId, {
+        //     statusText: 'transcoding',
+        //     status: 'transcoding',
+        //   })
+        // } else {
+        await db.update('file', basedDbId, {
+          statusText: 'ready',
+          status: 'ready',
+        })
+        // }
+      })
+
+      await addVirtualFile(`${Bucket}/${Key}`, stream)
+
+      return { id, src }
+    },
+  },
+})
 
 export const contextBasedServer =
   (context: AppContext) =>
   async (
     port: number,
     client: BasedClient,
-    files: () => OutputFile[],
     silent: boolean,
-    cloud: boolean
+    cloud: boolean,
   ): Promise<BasedServer> => {
-    const { BasedServer } = await import("@based/server");
+    const { BasedServer } = await import('@based/server')
     const server = new BasedServer({
       silent,
       clients: {
@@ -86,56 +178,59 @@ export const contextBasedServer =
       functions: {
         configs: {
           static: {
-            type: "http",
-            path: "/static/:file?",
+            type: 'http',
+            path: '/static/:file*',
             public: true,
             fn: async (_based, payload, send, _ctx) => {
               const getFileContent = (requestedFileName: string) =>
-                files().find(
-                  (file) => basename(file.path) === requestedFileName
-                );
+                context
+                  .get('virtualFS')
+                  .find(
+                    (file: Based.Context.VirtualFS) =>
+                      basename(file.path) === requestedFileName ||
+                      file.path === requestedFileName,
+                  )
 
-              const file = payload.file;
-              const urlPath = file ? file : "/";
-              const requestedFileName =
-                urlPath === "/" ? "index.html" : urlPath;
-              const fileContent = getFileContent(requestedFileName);
+              const file = payload.file.join('/')
+              const urlPath = file ? file : '/'
+              const requestedFileName = urlPath === '/' ? 'index.html' : urlPath
+              const fileContent = getFileContent(requestedFileName)
 
               if (!fileContent) {
                 send(
-                  "File Not Allowed or Not Found",
-                  { "Content-Type": "text/plain" },
-                  404
-                );
-                return;
+                  'File Not Allowed or Not Found',
+                  { 'Content-Type': 'text/plain' },
+                  404,
+                )
+                return
               }
 
               try {
-                const dataBuffer = Buffer.from(fileContent.contents);
-                const ext = extname(fileContent.path).toLowerCase();
-                const contentType = getContentType(ext);
-                let contentData: string | Buffer<ArrayBuffer> = dataBuffer;
+                const dataBuffer = Buffer.from(fileContent.contents)
+                const ext = extname(fileContent.path).toLowerCase()
+                const contentType = getContentType(ext)
+                let contentData: string | Buffer<ArrayBuffer> = dataBuffer
 
                 if (
-                  contentType.includes("text") ||
-                  contentType.includes("javascript")
+                  contentType.includes('text') ||
+                  contentType.includes('javascript')
                 ) {
-                  contentData = dataBuffer.toString("utf8");
+                  contentData = dataBuffer.toString('utf8')
                 }
 
                 send(
                   contentData,
                   {
-                    "Content-Type": contentType,
+                    'Content-Type': contentType,
                   },
-                  200
-                );
+                  200,
+                )
               } catch {
                 send(
-                  "Internal Server Error",
-                  { "Content-Type": "text/plain" },
-                  500
-                );
+                  'Internal Server Error',
+                  { 'Content-Type': 'text/plain' },
+                  500,
+                )
               }
             },
           },
@@ -145,60 +240,60 @@ export const contextBasedServer =
       auth: {
         verifyAuthState: async (_, ctx, authState) => {
           if (authState.token !== ctx.session?.authState.token) {
-            return { ...authState };
+            return { ...authState }
           }
 
-          return true;
+          return true
         },
       },
-    });
+    })
 
-    context.print.intro(context.i18n("methods.database.name"));
+    context.print.intro(context.i18n('methods.database.name'))
 
     if (!cloud) {
       try {
-        const { BasedDb } = await import("@based/db");
+        const { BasedDb } = await import('@based/db')
         const basedDb = new BasedDb({
-          path: join(process.cwd(), "tmp"),
-        });
+          path: join(process.cwd(), 'tmp'),
+        })
 
-        await basedDb.start({});
+        await basedDb.start({})
 
-        server.client.db ??= {};
-        server.client.db.v2 = basedDb;
+        server.client.db ??= {}
+        server.client.db.v2 = basedDb
 
         context.print.step(
           context.i18n(
-            "methods.database.instance",
-            context.i18n("methods.database.running")
-          )
-        );
+            'methods.database.instance',
+            context.i18n('methods.database.running'),
+          ),
+        )
       } catch (error) {
-        context.print.error(context.i18n("methods.database.instance", error));
+        context.print.error(context.i18n('methods.database.instance', error))
       }
     } else {
       context.print.step(
         context.i18n(
-          "methods.database.instance",
-          context.i18n("methods.database.notRunning")
-        )
-      );
+          'methods.database.instance',
+          context.i18n('methods.database.notRunning'),
+        ),
+      )
     }
 
-    server.on("error", (_message, data, _error) => {
+    server.on('error', (_message, data, _error) => {
       if (data) {
         context.print
           .line()
-          .error(context.i18n("methods.server.name"))
+          .error(context.i18n('methods.server.name'))
           .log(`<red>${JSON.stringify(data, null, 2)}</red>`, null)
-          .line();
+          .line()
       }
-    });
-    await server.start();
+    })
+    await server.start()
 
     if (!cloud) {
-      await client.once("connect");
+      await client.once('connect')
     }
 
-    return server;
-  };
+    return server
+  }

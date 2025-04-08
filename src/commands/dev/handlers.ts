@@ -18,34 +18,29 @@ export const bundlingErrorHandling =
 
       for (const error of errors) {
         if (error.location) {
-          context.print
-            .pipe()
-            .log(`<b>${error.text}</b>`, context.state.emojis.error)
+          context.print.log(`<b>${error.text}</b>`, context.state.emojis.error)
 
           if (error.location.lineText) {
             context.print.pipe().pipe(`"${error.location.lineText}"`).pipe()
           }
 
-          context.print.log(
+          context.print.pipe(
             context.i18n('methods.bundling.error.file', error.location.file),
-            context.state.emojis.error,
           )
 
           if (error.location.line && error.location.column) {
-            context.print.log(
+            context.print.pipe(
               context.i18n(
                 'methods.bundling.error.location',
                 error.location.line,
                 error.location.column,
               ),
-              context.state.emojis.error,
             )
           }
 
           if (error.pluginName) {
-            context.print.log(
+            context.print.pipe(
               context.i18n('methods.bundling.error.plugin', error.pluginName),
-              context.state.emojis.error,
             )
           }
         }

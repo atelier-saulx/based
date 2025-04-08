@@ -2,6 +2,7 @@ import * as fs from 'node:fs'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, relative } from 'node:path'
+import type { Readable } from 'node:stream'
 import type { BundleResult } from '@based/bundle'
 import { getFileByPath } from './getFile.js'
 
@@ -243,4 +244,31 @@ export const findConfigFile = async (
   }
 
   return undefined
+}
+
+export async function streamToUint8Array(
+  stream: Readable,
+): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = []
+
+  for await (const chunk of stream) {
+    if (typeof chunk === 'string') {
+      chunks.push(new TextEncoder().encode(chunk))
+    } else if (chunk instanceof Uint8Array) {
+      chunks.push(chunk)
+    } else {
+      chunks.push(new Uint8Array(chunk))
+    }
+  }
+
+  const totalLength = chunks.reduce((sum, curr) => sum + curr.length, 0)
+  const result = new Uint8Array(totalLength)
+  let offset = 0
+
+  for (const chunk of chunks) {
+    result.set(chunk, offset)
+    offset += chunk.length
+  }
+
+  return result
 }

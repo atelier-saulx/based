@@ -106,6 +106,13 @@ declare global {
         }
       }
 
+      type VirtualFS = {
+        path: string
+        contents: Uint8Array<ArrayBufferLike>
+        hash: string
+        text: string
+      }
+
       type Parse = {
         date: (
           value: string | Date,

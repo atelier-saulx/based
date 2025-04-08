@@ -1,4 +1,3 @@
-import { networkInterfaces } from 'node:os'
 import { join, relative } from 'node:path'
 import { Readable } from 'node:stream'
 import { buffer } from 'node:stream/consumers'
@@ -19,6 +18,7 @@ import {
   BASED_OPTS_SCRIPT,
   LIVE_RELOAD_SCRIPT,
 } from '../../shared/constants.js'
+import { getMyIp } from '../../shared/index.js'
 import {
   findConfigFile,
   isConfigFile,
@@ -34,33 +34,6 @@ import { configsInvalidateCode } from '../deploy/index.js'
 // import { BundleFlow } from './BundleFlow.js'
 import { FunctionFile } from './FunctionFile.js'
 import { bundlingErrorHandling, bundlingUpdateHandling } from './handlers.js'
-
-const getOwnIp = () => {
-  const nets = networkInterfaces()
-  const results: Record<string, string[]> = {}
-
-  for (const name in nets) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        results[name] ??= []
-        results[name].push(net.address)
-      }
-    }
-  }
-
-  let ip = results.en0?.[0]
-
-  if (!ip) {
-    for (const k in results) {
-      ip = results[k][0]
-      if (ip) {
-        return ip
-      }
-    }
-  }
-
-  return ip
-}
 
 export const dev = async (program: Command) => {
   const context: AppContext = AppContext.getInstance(program)
@@ -88,7 +61,7 @@ export const devServer = async ({
     getPort({ port: newPort }),
     getPort({ port: 4000 }),
   ])
-  const ip = getOwnIp()
+  const ip = getMyIp()
   const wsURL = `ws://${ip}:${devPort}`
   const staticURL = `http://${ip}:${devPort}/static/`
 
@@ -130,7 +103,7 @@ export const devServer = async ({
   )
 
   let client: BasedClient
-  let jobFunction = null
+  let returnedJobFunction = null
 
   if (!cloud) {
     client = SharedBasedClient.getInstance({ url: wsURL })
@@ -142,7 +115,6 @@ export const devServer = async ({
   const basedServer: BasedServer = await context.basedServer(
     devPort,
     client,
-    () => browserBundles.result.outputFiles,
     true,
     cloud,
   )
@@ -203,6 +175,8 @@ export const devServer = async ({
       []
 
     bundlingUpdateHandling(context)(result.updates)
+
+    context.put('virtualFS', browserBundles.result.outputFiles)
 
     for (let file of changedEntryPoints) {
       const found = await findConfigFile(
@@ -269,12 +243,15 @@ export const devServer = async ({
             }
 
             if (specs[spec].type === 'job' && specs[spec].fn) {
-              if (jobFunction !== null) {
-                jobFunction()
-                jobFunction = null
+              if (
+                returnedJobFunction &&
+                typeof returnedJobFunction === 'function'
+              ) {
+                returnedJobFunction()
+                returnedJobFunction = null
               }
 
-              jobFunction = specs[spec].fn(basedServer.client)
+              returnedJobFunction = specs[spec].fn(basedServer.client)
             }
           }
         }
