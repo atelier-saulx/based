@@ -219,6 +219,7 @@ static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
     memset(te, 0, sizeof(*te));
 #endif
     selva_free(te->schema_buf);
+    ida_destroy(te->cursors.ida);
     selva_free(te);
 }
 
@@ -233,6 +234,8 @@ static void del_all_types(struct SelvaDb *db)
     while ((type = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         destroy_type(db, type);
     }
+
+    SVector_Destroy(&db->type_list);
 }
 
 void selva_db_destroy(struct SelvaDb *db)
