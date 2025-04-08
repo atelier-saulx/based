@@ -26,7 +26,9 @@ CFLAGS := -std=gnu23 -pthread -O2 -MMD -fstack-protector \
 
 LDFLAGS += -pthread
 
-export EN_VALGRIND := 1
+# Normally you don't want to set this here but if you do, then it must be exported
+#export EN_VALGRIND := 1
+
 # Add these for valgrind
 ifeq ($(EN_VALGRIND),1)
 	CFLAGS += $(EN_VALGRIND_CFLAGS)
