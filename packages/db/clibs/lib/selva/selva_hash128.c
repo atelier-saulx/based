@@ -1,10 +1,18 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
+#define XXH_STATIC_LINKING_ONLY
+#include "xxhash.h"
 #include "selva/selva_hash128.h"
 
-selva_hash128_t selva_hash_digest_zig(selva_hash_state_t *hash_state)
+selva_hash_state_t *selva_hash_create_state(void)
 {
-    return selva_hash_digest(hash_state);
+    selva_hash_state_t *const state = selva_aligned_alloc(64, sizeof(XXH3_state_t));
+
+    XXH3_INITSTATE(state);
+
+    return state;
 }
+
+extern inline selva_hash128_t selva_hash_digest(selva_hash_state_t *hash_state);

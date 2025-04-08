@@ -1,25 +1,28 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
 #include "xxhash.h"
+#include "jemalloc_selva.h"
 #include "selva/types.h"
 
 typedef struct XXH3_state_s selva_hash_state_t;
 
-#define selva_hash_create_state XXH3_createState
 #define selva_hash_reset XXH3_128bits_reset
-#define selva_hash_free_state XXH3_freeState
 #define selva_hash_update XXH3_128bits_update
 
 SELVA_EXPORT
-selva_hash128_t selva_hash_digest_zig(selva_hash_state_t *hash_state);
+selva_hash_state_t *selva_hash_create_state(void);
 
-#ifdef __zig
-#define selva_hash_digest selva_hash_digest_zig
-#else
-static inline selva_hash128_t selva_hash_digest(selva_hash_state_t *hash_state)
+static inline void selva_hash_free_state(selva_hash_state_t *state)
+{
+    selva_free(state);
+}
+
+SELVA_EXPORT
+inline selva_hash128_t selva_hash_digest(selva_hash_state_t *hash_state)
+#ifndef __zig
 {
     XXH128_hash_t res;
 
@@ -36,4 +39,6 @@ retry:
 
     return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
 }
+#else
+;
 #endif
