@@ -113,8 +113,6 @@ export const createFixedFilterBuffer = (
         buf[off + 3] = val >>> 24
       }
     } else {
-      console.log('derp', len)
-
       const propLen = prop.len
 
       //padding

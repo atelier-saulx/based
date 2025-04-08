@@ -368,7 +368,7 @@ export const readAllFields = (
     } else {
       const prop = q.schema.reverseProps[index]
       if (!prop) {
-        console.log({ prop: !!prop }, index)
+        // console.log({ prop: !!prop }, index)
       }
       if (prop.typeIndex === CARDINALITY) {
         q.include.propsRead[index] = id
