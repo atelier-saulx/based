@@ -124,7 +124,13 @@ pub fn getFields(
         }
 
         if (isEdge) {
-            fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
+            if (edgeRef.?.edgeConstaint == null) {
+                std.log.err("Trying to get an edge field from a weakRef (4) \n", .{});
+                // Is a edge ref cant filter on an edge field!
+                return 11;
+            }
+
+            fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint.?, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             if (prop == t.Prop.CARDINALITY) {
                 value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema);

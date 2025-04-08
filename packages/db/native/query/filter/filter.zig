@@ -159,14 +159,18 @@ pub fn filter(
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else {
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, r.edgeConstaint, field) catch {
+                    } else if (r.edgeConstaint != null) {
+                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, r.edgeConstaint.?, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const value = db.getEdgeProp(r.reference.?, edgeFieldSchema);
                         if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
+                    } else {
+                        std.log.err("Trying to get an edge field from a weakRef \n", .{});
+                        // Is a edge ref cant filter on an edge field!
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else if (negate == Type.default) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -210,7 +214,13 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint, field) catch {
+                if (ref.?.edgeConstaint == null) {
+                    std.log.err("Trying to get an edge field from a weakRef (2) \n", .{});
+                    // Is a edge ref cant filter on an edge field!
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                }
+
+                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint.?, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);

@@ -131,7 +131,13 @@ pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, selvaFieldSchema:
     }
 }
 
-pub fn getCardinalityReferenceOrCreate(db: *selva.SelvaDb, node: Node, edgeConstraint: EdgeFieldConstraint, ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) []u8 {
+pub fn getCardinalityReferenceOrCreate(
+    db: *selva.SelvaDb,
+    node: Node,
+    edgeConstraint: EdgeFieldConstraint,
+    ref: *selva.SelvaNodeReference,
+    selvaFieldSchema: FieldSchema,
+) []u8 {
     if (selva.selva_fields_get_selva_string3(ref, selvaFieldSchema)) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];

@@ -249,7 +249,7 @@ export class DbServer {
     if (sortIndex) {
       return sortIndex
     }
-    const buf = new Uint8Array(8)
+    const buf = new Uint8Array(9)
     // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
     // call createSortBuf here
     buf[0] = t.id

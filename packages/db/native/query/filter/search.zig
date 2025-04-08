@@ -53,7 +53,7 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         // |--------|----------|--------------|--------------------------------------------|
         // | 0      | isVector | 1            | Indicates if search is a vector (always 0) |
         // | 1      | queryLen | 2            | Length of the query in bytes (u16)         |
-        // | 3      | query    | queryLen     | Query data                                 |
+        // | 3      | words    | 1            | Query words                                 |
         // | X      | fields   | Variable     | Sorted fields metadata                     |
 
         // ### Fields Metadata Structure:
@@ -66,10 +66,6 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         // | 2      | weight    | 1           | Field weight value                   |
         // | 3      | start     | 2           | Start position in the query (u16)    |
         // | 5      | lang      | 1           | Language identifier                  |
-
-        // ### Notes:
-        // - The number of field entries is inferred from the total packet size.
-        // - `fields` are sorted by `weight` before being stored in the buffer.
 
         const sLen = read(u16, searchBuf, 1);
         const words = read(u8, searchBuf, 3);
@@ -85,7 +81,7 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         }
         return .{
             .len = sLen,
-            .allQueries = searchBuf[4..sLen],
+            .allQueries = searchBuf[4 .. sLen + 3],
             .fields = fields,
             .words = words,
             .meh = words * 1,
@@ -154,12 +150,11 @@ fn hamming(
     var j: usize = 1;
     const l = min(value.len, 5 * query.len);
     var res: bool = false;
-
-    while (j < l) : (j += 8) {
+    while (j + 8 < l) : (j += 8) {
         const x: u64 = read(u64, value, j);
         res = res or (x & 0x8080808080808080) != 0;
     }
-    while (j < l) : (j += 4) {
+    while (j + 4 < l) : (j += 4) {
         const x: u32 = read(u32, value, j);
         res = res or (x & 0x80808080) != 0;
     }

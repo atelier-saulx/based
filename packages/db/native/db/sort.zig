@@ -178,7 +178,7 @@ fn getOrCreateFromCtx(
     const tI: *TypeIndex = typeIndexes.?;
     sortIndex = getSortIndex(typeIndexes, field, start, lang);
     if (sortIndex == null) {
-        sortIndex.? = try dbCtx.allocator.create(SortIndexMeta);
+        sortIndex = try dbCtx.allocator.create(SortIndexMeta);
         sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang, field);
         if (field == 0) {
             try tI.main.put(start, sortIndex.?);
@@ -393,11 +393,11 @@ pub fn insert(
             selva.selva_sort_insert_i64(index, data[start], node);
         },
         types.Prop.STRING, types.Prop.TEXT => {
-            const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
+            const d = if (sortIndex.len > 0) data[start + 1 .. start + sortIndex.len] else data;
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(
                     index,
-                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
+                    data[start + 1 .. start + sortIndex.len].ptr,
                     sortIndex.len - 1,
                     node,
                 );

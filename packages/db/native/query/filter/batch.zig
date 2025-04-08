@@ -21,9 +21,9 @@ pub fn simdEqualsOr(
     const address = @intFromPtr(values.ptr);
     const delta = (address) & @sizeOf(T);
 
-    if (delta != 0) {
-        // std.debug.print("Incorrectly aligned {any} {any} {any} \n", .{ values.len, offset, T });
+    std.debug.print("Incorrectly aligned {any} {any}  a {any} \n", .{ values.len, delta, address });
 
+    if (delta != 0) {
         while (i < values.len) {
             if (std.mem.eql(u8, value, values[i .. i + @sizeOf(T)])) {
                 return true;

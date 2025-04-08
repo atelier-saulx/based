@@ -30,6 +30,7 @@ pub const Prop = enum(u8) {
     BINARY = 25,
     ID = 26,
     VECTOR = 27,
+    JSON = 28,
     pub fn isBuffer(self: Prop) bool {
         return switch (self) {
             Prop.BINARY,
@@ -71,7 +72,7 @@ pub fn Size(p: Prop) u8 {
             return 4;
         },
         Prop.INT16, Prop.UINT16 => {
-            return 4;
+            return 2;
         },
         else => {
             return 0;

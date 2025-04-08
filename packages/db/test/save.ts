@@ -620,6 +620,7 @@ await test('simulated periodic save', async (t) => {
       name: 'Steve',
     }),
   ])
+
   db.update('person', people[1], {
     bf: people[2],
   })
@@ -652,6 +653,7 @@ await test('simulated periodic save', async (t) => {
     name: 'Shady',
   })
   await db.drain()
+
   await db.save()
 
   // replace alias
@@ -663,9 +665,10 @@ await test('simulated periodic save', async (t) => {
   await db.save()
 
   // move alias
-  db.update('person', people[4], {
+  await db.update('person', people[4], {
     alias: 'boss',
   })
+
   await db.drain()
   await db.save()
 

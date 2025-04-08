@@ -61,6 +61,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
+                // Wrongly here.. lets find it...
                 ctx.field = operation[0];
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
@@ -134,7 +135,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.EXPIRE => {
                 selva.selva_expire_node(dbCtx.selva, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
-                i += 4;
+                i += 5;
             },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });

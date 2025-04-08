@@ -53,26 +53,27 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
-  const x = q
-    .toLowerCase()
-    .normalize('NFKD')
-    .trim()
-    .split(' ')
-    .map((s) => `  ${s}`)
+  const x = q.toLowerCase().normalize('NFKD').trim().split(' ')
   for (const s of x) {
     if (s) {
       const buf = ENCODER.encode(s)
-      let len = buf.byteLength - 2
-      buf[0] = len
-      buf[1] = len >>> 8
-      bufs.push(buf)
+      console.log(s, buf)
+
+      const lenBuf = new Uint8Array(2)
+
+      let len = buf.byteLength
+      lenBuf[0] = len
+      lenBuf[1] = len >>> 8
+
+      bufs.push(lenBuf, buf)
       nrBlocks++
-      totalByteLength += len + 2
+      totalByteLength += buf.byteLength + 2
     }
   }
   bufs.unshift(Uint8Array.from([nrBlocks]))
 
   const query = concatUint8Arr(bufs, totalByteLength)
+
   def.search = {
     size: query.byteLength + 3,
     query,

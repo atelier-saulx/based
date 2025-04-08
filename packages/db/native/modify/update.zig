@@ -274,8 +274,11 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
     const start = read(u16, data, 1);
-    const addition = data[3..];
-    const value = currentData[start .. start + addition.len];
+
+    // wastfull check
+    const propSize = types.Size(fieldType);
+    const addition = data[3 .. 3 + propSize];
+    const value = currentData[start .. start + propSize];
 
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {
@@ -287,6 +290,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     } else if (ctx.currentSortIndex != null) {
         sort.remove(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
     }
+
     const size = incrementBuffer(op, fieldType, value, addition);
     if (ctx.field == 0) {
         if (ctx.typeSortIndex != null) {

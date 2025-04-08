@@ -1,6 +1,7 @@
 const selva = @import("../../selva.zig");
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
+const std = @import("std");
 
 pub const IncludeError = error{
     Recursion,
@@ -23,7 +24,7 @@ pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {
 pub const RefStruct = struct {
     reference: ?*selva.SelvaNodeReference,
     edgeReference: ?selva.SelvaNodeWeakReference,
-    edgeConstaint: db.EdgeFieldConstraint,
+    edgeConstaint: ?db.EdgeFieldConstraint,
 };
 
 pub inline fn resolveRefsNode(
@@ -58,9 +59,13 @@ pub inline fn RefResult(
             .edgeReference = null,
         };
     }
+
+    if (edgeConstrain != null) {
+        std.debug.print("GOT EDGE CONTRAIN FOR EDGE REF WRONG! {any} \n", .{edgeConstrain});
+    }
     return .{
         .reference = null,
-        .edgeConstaint = edgeConstrain.?,
+        .edgeConstaint = null,
         .edgeReference = refs.?.weakRefs.refs[i],
     };
 }

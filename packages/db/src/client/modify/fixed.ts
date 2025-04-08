@@ -50,7 +50,11 @@ map[STRING] = (ctx, val, def) => {
   }
   ctx.buf[ctx.len++] = size
   ctx.buf.set(valBuf, ctx.len)
-  ctx.len += size
+  const fullSize = def.len - 1
+  ctx.len += fullSize
+  if (fullSize !== size) {
+    ctx.buf.fill(0, ctx.len - (fullSize - size), ctx.len)
+  }
 }
 
 map[BOOLEAN] = (ctx, val, def) => {

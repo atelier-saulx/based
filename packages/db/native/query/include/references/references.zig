@@ -64,7 +64,13 @@ pub inline fn getRefsFields(
 
     if (isEdge) {
         if (db.getEdgeReferences(ctx.db, ref.?.reference.?, refField)) |r| {
-            const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint, refField) catch {
+            if (ref.?.edgeConstaint == null) {
+                std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
+                // Is a edge ref cant filter on an edge field!
+                return 11;
+            }
+
+            const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;
             };

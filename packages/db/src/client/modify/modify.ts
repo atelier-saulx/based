@@ -136,6 +136,7 @@ function _modify(
           ctx.buf[ctx.len++] = def.typeIndex
           ctx.buf[ctx.len++] = start
           ctx.buf[ctx.len++] = start >>>= 8
+
           appendFixedValue(ctx, increment, def)
         } else {
           return new ModifyError(def, val)
