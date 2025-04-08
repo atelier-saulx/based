@@ -127,7 +127,7 @@ pub fn getFields(
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             if (prop == t.Prop.CARDINALITY) {
-                value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema) orelse undefined;
+                value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema);
             } else {
                 value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
             }
