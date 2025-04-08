@@ -50,19 +50,27 @@ pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
     return v;
 }
 
+fn compressor_finalize(_: c.napi_env, compressor: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
+    selva.libdeflate_free_compressor(@ptrCast(compressor));
+}
+
 // return queryId
 pub fn createCompressor(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     const compressor: *selva.libdeflate_compressor = selva.libdeflate_alloc_compressor(3).?;
     var externalNapi: c.napi_value = undefined;
-    _ = c.napi_create_external(napi_env, compressor, null, null, &externalNapi);
+    _ = c.napi_create_external(napi_env, compressor, compressor_finalize, null, &externalNapi);
     return externalNapi;
+}
+
+fn decompressor_finalize(_: c.napi_env, decompressor: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
+    selva.libdeflate_free_decompressor(@ptrCast(decompressor));
 }
 
 // var decompressor: ?*selva.libdeflate_decompressor = null;
 pub fn createDecompressor(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     const decompressor: *selva.libdeflate_decompressor = selva.libdeflate_alloc_decompressor().?;
     var externalNapi: c.napi_value = undefined;
-    _ = c.napi_create_external(napi_env, decompressor, null, null, &externalNapi);
+    _ = c.napi_create_external(napi_env, decompressor, decompressor_finalize, null, &externalNapi);
     return externalNapi;
 }
 
