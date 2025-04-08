@@ -272,6 +272,9 @@ static int load_lang(struct selva_lang *lang)
 
     snprintf(locale_name, sizeof(locale_name), "%s.UTF-8", lang->loc_name);
 
+    /*
+     * Note: This leaks some memory: https://sourceware.org/bugzilla/show_bug.cgi?id=25770
+     */
     loc = newlocale(LC_ALL_MASK, locale_name, 0);
     if (!loc) {
         if (errno == EINVAL) {
@@ -399,4 +402,17 @@ __constructor static void load_langs(void)
     qsort(selva_langs.langs, selva_langs.len, sizeof(struct selva_lang), wrap_lang_compare);
     /* TODO We should handle this error */
     selva_lang_set_fallback(FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
+}
+
+__destructor static void unload_langs(void)
+{
+    size_t len = selva_langs.len;
+
+    for (size_t i = 0; i < len; i++) {
+        locale_t loc = selva_langs.langs[i].locale;
+
+        if (loc) {
+            (void)freelocale(loc);
+        }
+    }
 }
