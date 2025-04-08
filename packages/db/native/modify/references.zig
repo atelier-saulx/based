@@ -75,10 +75,14 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 pub fn clearReferences(ctx: *ModifyCtx) void {
     const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     if (refs) |r| {
-        const refsIndex = r.index[0..r.nr_refs];
-        const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
-        Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
-
+        if (r.nr_refs == 0) {
+            // Is empty already
+            return;
+        } else {
+            const refsIndex = r.index[0..r.nr_refs];
+            const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
+            Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
+        }
         db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     }
 }

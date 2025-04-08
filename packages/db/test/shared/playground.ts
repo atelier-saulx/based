@@ -20,47 +20,51 @@ await test('long running', async (t) => {
       user: {
         props: {
           isNice: 'boolean',
+          powerLevel: 'uint32',
         },
       },
     },
   })
 
   const ids = []
-  for (let i = 0; i < 1e4; i++) {
-    ids.push(db.create('user', { isNice: !!(i % 2) }))
+  for (let i = 0; i < 1e6; i++) {
+    ids.push(db.create('user', { isNice: !!(i % 2), powerLevel: i }))
   }
 
-  await db.query('user').get().inspect()
+  console.log('set', await db.drain(), 'ms')
 
-  let scenario1 = 0
-  let scenario2 = 0
-  let scenario3 = 0
+  await db.query('user').range(0, 1e6).filter('isNice', false).get().inspect()
 
-  setInterval(async () => {
-    const scenario = Math.random()
-    const index = Math.floor(Math.random() * ids.length)
-    const id = ids[index]
+  await db.destroy()
+  // let scenario1 = 0
+  // let scenario2 = 0
+  // let scenario3 = 0
 
-    // await db.query('user', id).get()
-    if (scenario > 0.5) {
-      db.update('user', id, { isNice: Math.random() > 0.5 })
-      await db.query('user', id).get()
-      scenario1++
-    } else if (scenario > 0.25) {
-      db.delete('user', id)
-      ids[index] = db.create('user', { isNice: Math.random() > 0.5 })
-      scenario2++
-    } else {
-      await db.query('user').get()
-      scenario3++
-    }
-  }, 0)
+  // setInterval(async () => {
+  //   const scenario = Math.random()
+  //   const index = Math.floor(Math.random() * ids.length)
+  //   const id = ids[index]
 
-  setInterval(async () => {
-    console.log({ scenario1, scenario2, scenario3 })
-  }, 1e3)
+  //   // await db.query('user', id).get()
+  //   if (scenario > 0.5) {
+  //     db.update('user', id, { isNice: Math.random() > 0.5 })
+  //     await db.query('user', id).get()
+  //     scenario1++
+  //   } else if (scenario > 0.25) {
+  //     db.delete('user', id)
+  //     ids[index] = db.create('user', { isNice: Math.random() > 0.5 })
+  //     scenario2++
+  //   } else {
+  //     await db.query('user').get()
+  //     scenario3++
+  //   }
+  // }, 0)
 
-  while (true) {
-    await wait(1e4)
-  }
+  // setInterval(async () => {
+  //   console.log({ scenario1, scenario2, scenario3 })
+  // }, 1e3)
+
+  // while (true) {
+  //   await wait(1e4)
+  // }
 })
