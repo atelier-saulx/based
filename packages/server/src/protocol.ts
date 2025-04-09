@@ -3,6 +3,10 @@ import zlib from 'node:zlib'
 const textDecoder = new TextDecoder()
 
 export const COMPRESS_FROM_BYTES = 150
+// keep this in sync with client, don't change the order
+const T_JSON = 0
+const T_STRING = 1
+const T_U8 = 2
 
 export const decodeHeader = (
   nr: number,
@@ -78,25 +82,30 @@ export const encodeHeader = (
   return nr
 }
 
-export const valueToBuffer = (payload: any): Buffer => {
+export const valueToBuffer = (result: any): Buffer => {
   // can use a more elloborate typed response e.g. number etc in there
-  if (payload === undefined) {
+  if (result === undefined) {
     return Buffer.from([])
   }
-  // TODO: only stringify if not string...
-  return Buffer.from(JSON.stringify(payload))
-}
+  if (result instanceof Uint8Array) {
+    const buf = Buffer.allocUnsafe(result.byteLength + 1)
+    buf[0] = T_U8
+    buf.set(result, 1)
+    return buf
+  }
+  if (typeof result === 'string') {
+    const buf = Buffer.allocUnsafe(Buffer.byteLength(result) + 1)
+    buf[0] = T_STRING
+    buf.write(result, 1)
+    return buf
+  }
 
-export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
-  if (!isDeflate) {
-    return textDecoder.decode(payload)
-  }
-  try {
-    const buffer = zlib.inflateRawSync(payload)
-    return textDecoder.decode(buffer)
-  } catch (err) {
-    console.error('Error deflating payload', err)
-  }
+  // otherwise this is json
+  const str = JSON.stringify(result)
+  const buf = Buffer.allocUnsafe(Buffer.byteLength(str) + 1)
+  buf[0] = T_JSON
+  buf.write(str, 1)
+  return buf
 }
 
 export const parsePayload = (payload: any): any => {
@@ -106,6 +115,31 @@ export const parsePayload = (payload: any): any => {
     } catch (err) {}
   }
   return payload
+}
+
+export const decodeAndParsePayload = (
+  payload: Uint8Array,
+  isDeflate: boolean,
+) => {
+  if (isDeflate) {
+    try {
+      payload = zlib.inflateRawSync(payload)
+    } catch (err) {
+      console.error('Error deflating payload', err)
+    }
+  }
+
+  const type = payload[0]
+  const body = payload.subarray(1)
+
+  if (type === T_STRING) {
+    return textDecoder.decode(body)
+  }
+  if (type === T_U8) {
+    return body
+  }
+  // always try json if no type
+  return parsePayload(textDecoder.decode(body))
 }
 
 export const decodeName = (
@@ -308,10 +342,13 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   const msgSize = buffer.length
   const header = encodeHeader(type, isDeflate, msgSize)
   const array = new Uint8Array(headerSize + msgSize)
+
   storeUint8(array, header, 0, 4)
+
   if (buffer.length) {
     array.set(buffer, 4)
   }
+
   return array
 }
 
@@ -362,18 +399,4 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   storeUint8(array, type, 5, 1)
   storeUint8(array, seqId, 6, 1)
   return array
-}
-
-export const decode = (buffer: Uint8Array): any => {
-  const header = readUint8(buffer, 0, 4)
-  const { isDeflate, len, type } = decodeHeader(header)
-  if (type === 1) {
-    // | 4 header | 8 id | 8 checksum | * payload |
-    if (len === 16) {
-      return
-    }
-    const start = 20
-    const end = len + 4
-    return decodePayload(buffer.slice(start, end), isDeflate)
-  }
 }

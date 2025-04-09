@@ -9,11 +9,10 @@ import { FakeBinaryMessageHandler } from './types.js'
 import {
   readUint8,
   decodeName,
-  parsePayload,
-  decodePayload,
   valueToBuffer,
   updateId,
   encodeErrorResponse,
+  decodeAndParsePayload,
 } from '../../../protocol.js'
 import { verifyRoute } from '../../../verifyRoute.js'
 import { createError } from '../../../error/index.js'
@@ -52,13 +51,9 @@ export const handleQuery: FakeBinaryMessageHandler = (
   const payload =
     len === nameLen + 21
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(
-              arr.slice(startByte + 21 + nameLen, startByte + len),
-            ),
-            isDeflate,
-          ),
+      : decodeAndParsePayload(
+          new Uint8Array(arr.slice(startByte + 21 + nameLen, startByte + len)),
+          isDeflate,
         )
 
   if (route === null) {

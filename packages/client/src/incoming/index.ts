@@ -11,24 +11,44 @@ import {
   readUint8,
   requestFullData,
 } from './protocol.js'
-import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
+import {
+  encodeSubscribeChannelMessage,
+  T_JSON,
+  T_STRING,
+  T_U8,
+} from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue } from '../types/index.js'
 import { freeCacheMemory } from '../cache.js'
 import { convertDataToBasedError } from '@based/errors/client'
 import { forceReload } from './forceReload.js'
 
-const decodeAndDeflate = (
+const textDecoder = new TextDecoder()
+const decodeInflateAndParse = (
   start: number,
   end: number,
   isDeflate: boolean,
   buffer: Uint8Array,
-): any => {
-  return new TextDecoder().decode(
-    isDeflate
-      ? inflateSync(buffer.slice(start, end))
-      : buffer.slice(start, end),
-  )
+) => {
+  const data = isDeflate
+    ? inflateSync(buffer.slice(start, end))
+    : buffer.slice(start, end)
+  const type = data[0]
+  const body = data.subarray(1)
+
+  if (type === T_STRING) {
+    return textDecoder.decode(body)
+  }
+  if (type === T_U8) {
+    return body
+  }
+
+  const str = textDecoder.decode(body)
+  try {
+    return JSON.parse(str)
+  } catch (e) {
+    return str
+  }
 }
 
 export const incoming = async (client: BasedClient, data: any) => {
@@ -40,7 +60,6 @@ export const incoming = async (client: BasedClient, data: any) => {
     const d = data.data
     const buffer = await parseArrayBuffer(d)
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
-
     // reader for batched replies
     // ------- Function
     if (type === 0) {
@@ -52,7 +71,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = decodeInflateAndParse(start, end, isDeflate, buffer)
       }
 
       if (client.functionResponseListeners.has(id)) {
@@ -100,11 +119,27 @@ export const incoming = async (client: BasedClient, data: any) => {
       let size = 0
 
       if (len !== 24) {
-        const inflatedBuffer = isDeflate
+        const data = isDeflate
           ? inflateSync(buffer.slice(start, end))
           : buffer.slice(start, end)
-        size = inflatedBuffer.byteLength
-        diff = JSON.parse(new TextDecoder().decode(inflatedBuffer))
+        const type = data[0]
+        const body = data.subarray(1)
+
+        if (type === T_STRING) {
+          size = body.byteLength
+          diff = textDecoder.decode(body)
+        } else if (type === T_U8) {
+          size = body.byteLength
+          diff = body
+        } else {
+          size = body.byteLength
+          const str = textDecoder.decode(body)
+          try {
+            diff = JSON.parse(str)
+          } catch (e) {
+            diff = str
+          }
+        }
       }
 
       try {
@@ -157,17 +192,30 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // If not empty response, parse it
       if (len !== 16) {
-        const inflatedBuffer = isDeflate
+        const data = isDeflate
           ? inflateSync(buffer.slice(start, end))
           : buffer.slice(start, end)
+        const type = data[0]
+        const body = data.subarray(1)
 
-        size = inflatedBuffer.byteLength
-
-        payload = JSON.parse(new TextDecoder().decode(inflatedBuffer))
+        if (type === T_STRING) {
+          size = body.byteLength
+          payload = textDecoder.decode(body)
+        } else if (type === T_U8) {
+          size = body.byteLength
+          payload = body
+        } else {
+          size = body.byteLength
+          const str = textDecoder.decode(body)
+          try {
+            payload = JSON.parse(str)
+          } catch (e) {
+            payload = str
+          }
+        }
       }
 
       const cached = client.cache.get(id)
-
       const noChange = cached?.c === checksum
 
       if (!noChange) {
@@ -215,10 +263,11 @@ export const incoming = async (client: BasedClient, data: any) => {
       const start = 4
       const end = len + 4
       let payload: any
-
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = decodeInflateAndParse(start, end, isDeflate, buffer)
+      } else {
+        payload = {}
       }
 
       if (payload === true) {
@@ -248,7 +297,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = decodeInflateAndParse(start, end, isDeflate, buffer)
       }
 
       if (payload.streamRequestId) {
@@ -366,12 +415,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         // if not empty response, parse it
         if (len !== 9) {
-          const r = decodeAndDeflate(start, end, isDeflate, buffer)
-          try {
-            payload = JSON.parse(r)
-          } catch (err) {
-            payload = r
-          }
+          payload = decodeInflateAndParse(start, end, isDeflate, buffer)
         }
 
         if (client.channelState.has(id)) {
@@ -388,7 +432,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         let payload: any
         // if not empty response, parse it
         if (len !== 4) {
-          payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+          payload = decodeInflateAndParse(start, end, isDeflate, buffer)
         }
         if (client.streamFunctionResponseListeners.has(id)) {
           client.streamFunctionResponseListeners.get(id)[0](payload)

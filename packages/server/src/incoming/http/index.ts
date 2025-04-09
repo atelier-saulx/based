@@ -148,6 +148,7 @@ export const httpHandler = (
         )
         return
       }
+
       authState = parseAuthState(authorization)
     } else {
       // TODO: remove this when c++ client can encode
@@ -297,7 +298,7 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-    handleRequest(server, method, ctx, route, (payload) => {      
+    handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, basicFunction)
     })
   }
@@ -307,7 +308,7 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-    handleRequest(server, method, ctx, route, (payload) => {      
+    handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, httpFunction)
     })
   }
