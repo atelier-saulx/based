@@ -1,4 +1,4 @@
-import { QueryDefFilter } from '../types.js'
+import { QueryDefFilter, FilterCondition } from '../types.js'
 import {
   META_EDGE,
   META_EXISTS,
@@ -8,27 +8,11 @@ import {
   TYPE_NEGATE,
 } from './types.js'
 
-// or
-// [meta = 253]  [size 2] [next 4]
-// -------------------------------------------
-// edge
-// [meta = 252] [size 2]
-// -------------------------------------------
-// ref
-// [meta = 254] [field] [typeId 2] [size 2]
-// -------------------------------------------
-// conditions normal
-// -------------------------------------------
-// conditions or fixed
-// -------------------------------------------
-// conditions or variable
-// -------------------------------------------
-
 const writeConditions = (
   result: Uint8Array,
   k: number,
   offset: number,
-  conditions: Uint8Array[],
+  conditions: FilterCondition[],
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
@@ -37,9 +21,9 @@ const writeConditions = (
   lastWritten += 2
   let conditionSize = 0
   for (const condition of conditions) {
-    conditionSize += condition.byteLength
-    result.set(condition, lastWritten)
-    lastWritten += condition.byteLength
+    conditionSize += condition.buf.byteLength
+    result.set(condition.buf, lastWritten)
+    lastWritten += condition.buf.byteLength
   }
   result[sizeIndex] = conditionSize
   result[sizeIndex + 1] = conditionSize >>> 8
@@ -132,6 +116,5 @@ export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
   } else {
     result = new Uint8Array(0)
   }
-
   return result
 }

@@ -14,20 +14,7 @@ import {
 } from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { ENCODER } from '../../../utils.js'
-
-// -------------------------------------------
-// conditions normal
-// field, [size 2]
-// [or = 0] [size 2] [start 2], [op], value[size]
-// -------------------------------------------
-// conditions or fixed
-// field, [size 2]
-// [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
-// -------------------------------------------
-// conditions or variable
-// field, [size 2]
-// [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
-// -------------------------------------------
+import { FilterCondition } from '../types.js'
 
 export const writeFixed = (
   prop: PropDef | PropDefEdge,
@@ -65,10 +52,6 @@ export const writeFixed = (
     }
   }
 }
-// Modes
-// default = 0,
-// orFixed = 1,
-// orVar = 2,
 
 export const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
@@ -76,15 +59,11 @@ export const createFixedFilterBuffer = (
   ctx: FilterCtx,
   value: any,
   sort: boolean,
-) => {
-  let buf: Uint8Array
+): FilterCondition => {
   const start = prop.start
-
   if (Array.isArray(value)) {
-    // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
-
-    buf = new Uint8Array(10 + len * size)
+    const buf = new Uint8Array(10 + len * size)
     buf[0] = ctx.type
     buf[1] =
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
@@ -97,7 +76,6 @@ export const createFixedFilterBuffer = (
     buf[5] = start
     buf[6] = start >>> 8
     buf[7] = ctx.operation
-    // buf[7] = prop.typeIndex
     buf[8] = len
     buf[9] = len >>> 8
     if (sort) {
@@ -106,19 +84,12 @@ export const createFixedFilterBuffer = (
       for (let i = 0; i < len; i++) {
         const off = 10 + i * size
         const val = value[i]
-
         buf[off] = val
         buf[off + 1] = val >>> 8
         buf[off + 2] = val >>> 16
         buf[off + 3] = val >>> 24
       }
     } else {
-      const propLen = prop.len
-
-      //padding
-
-      // 9
-
       for (let i = 0; i < len; i++) {
         writeFixed(
           prop,
@@ -129,9 +100,10 @@ export const createFixedFilterBuffer = (
         )
       }
     }
+    console.log('IS OR', buf[1] == MODE_OR_FIXED)
+    return { buf, align: true }
   } else {
-    // [or = 0] [size 2] [start 2], [op], value[size]
-    buf = new Uint8Array(8 + size)
+    const buf = new Uint8Array(8 + size)
     buf[0] = ctx.type
     buf[1] = MODE_DEFAULT
     buf[2] = prop.typeIndex
@@ -141,6 +113,6 @@ export const createFixedFilterBuffer = (
     buf[6] = start >>> 8
     buf[7] = ctx.operation
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
+    return { buf, align: false }
   }
-  return buf
 }

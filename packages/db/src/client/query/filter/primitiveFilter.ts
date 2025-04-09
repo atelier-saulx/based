@@ -6,7 +6,7 @@ import {
   REFERENCES,
   REVERSE_SIZE_MAP,
 } from '@based/schema/def'
-import { QueryDef, QueryDefFilter } from '../types.js'
+import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
 import { EQUAL, EXISTS, isNumerical, TYPE_NEGATE } from './types.js'
 import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
@@ -26,7 +26,7 @@ export const primitiveFilter = (
     return
   }
   let [, ctx, value] = filter
-  let buf: Uint8Array
+  let parsedCondition: FilterCondition
   const fieldIndexChar = prop.prop
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
 
@@ -48,12 +48,12 @@ export const primitiveFilter = (
   }
   const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
   if (prop.typeIndex === REFERENCE) {
-    buf = createReferenceFilter(prop, ctx, value)
+    parsedCondition = createReferenceFilter(prop, ctx, value)
   } else if (prop.typeIndex === REFERENCES) {
     if (ctx.operation === EQUAL && !isArray) {
       value = [value]
     }
-    buf = createFixedFilterBuffer(
+    parsedCondition = createFixedFilterBuffer(
       prop,
       4,
       ctx,
@@ -61,11 +61,11 @@ export const primitiveFilter = (
       !isNumerical(ctx.operation),
     )
   } else if (prop.typeIndex === CARDINALITY) {
-    buf = createFixedFilterBuffer(prop, 2, ctx, value, false)
+    parsedCondition = createFixedFilterBuffer(prop, 2, ctx, value, false)
   } else if (propSize) {
-    buf = createFixedFilterBuffer(prop, propSize, ctx, value, false)
+    parsedCondition = createFixedFilterBuffer(prop, propSize, ctx, value, false)
   } else {
-    buf = createVariableFilterBuffer(value, prop, ctx, lang)
+    parsedCondition = createVariableFilterBuffer(value, prop, ctx, lang)
   }
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
@@ -74,7 +74,7 @@ export const primitiveFilter = (
     arr = []
     bufferMap.set(fieldIndexChar, arr)
   }
-  size += buf.byteLength
-  arr.push(buf)
+  size += parsedCondition.buf.byteLength
+  arr.push(parsedCondition)
   return size
 }

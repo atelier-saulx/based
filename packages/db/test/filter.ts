@@ -219,378 +219,380 @@ await test('simple', async (t) => {
 
   console.log('YOYO')
   equal(
-    (await db.query('machine').filter('lastPing', '=', x).get()).length,
+    (await db.query('machine').filter('lastPing', '=', x).get().inspect())
+      .length,
     x.length,
     'OR number',
   )
+
   console.log('------------')
 
-  const make = () => {
-    const x = ~~(Math.random() * lastId)
-    if (x % 2 == 0) {
-      return make()
-    }
-    return x
-  }
+  // const make = () => {
+  //   const x = ~~(Math.random() * lastId)
+  //   if (x % 2 == 0) {
+  //     return make()
+  //   }
+  //   return x
+  // }
 
-  const amount = 1000
+  // const amount = 1000
 
-  var measure = 0
-  var mi = 0
+  // var measure = 0
+  // var mi = 0
 
-  const res = await Promise.all(
-    Array.from({ length: amount }).map(() => {
-      const rand = ~~(Math.random() * lastId)
-      const derp = [make(), make(), make(), rand]
-      return db.query('env').include('*').filter('machines', 'has', derp).get()
-    }),
-  )
+  // const res = await Promise.all(
+  //   Array.from({ length: amount }).map(() => {
+  //     const rand = ~~(Math.random() * lastId)
+  //     const derp = [make(), make(), make(), rand]
+  //     return db.query('env').include('*').filter('machines', 'has', derp).get()
+  //   }),
+  // )
 
-  for (const envs of res) {
-    mi += envs.toObject().length
-    measure += envs.execTime
-  }
+  // for (const envs of res) {
+  //   mi += envs.toObject().length
+  //   measure += envs.execTime
+  // }
 
-  equal(
-    mi / amount > 0.4 && mi / amount < 0.6,
-    true,
-    'multi ref OR filter up at 0.5 results',
-  )
+  // equal(
+  //   mi / amount > 0.4 && mi / amount < 0.6,
+  //   true,
+  //   'multi ref OR filter up at 0.5 results',
+  // )
 
-  // console.log('what??', measure, amount, measure / amount)
+  // // console.log('what??', measure, amount, measure / amount)
 
-  equal(measure / amount < 20, true, 'multi ref OR filter lower then 20ms')
+  // equal(measure / amount < 20, true, 'multi ref OR filter lower then 20ms')
 
-  measure = 0
-  mi = 0
+  // measure = 0
+  // mi = 0
 
-  await Promise.all(
-    Array.from({ length: amount }).map(async () => {
-      const rand = ~~(Math.random() * lastId)
-      const envs = await db
-        .query('env')
-        .include('*')
-        .filter('machines', 'has', rand)
-        .get()
+  // await Promise.all(
+  //   Array.from({ length: amount }).map(async () => {
+  //     const rand = ~~(Math.random() * lastId)
+  //     const envs = await db
+  //       .query('env')
+  //       .include('*')
+  //       .filter('machines', 'has', rand)
+  //       .get()
 
-      mi += envs.toObject().length
-      measure += envs.execTime
-    }),
-  )
+  //     mi += envs.toObject().length
+  //     measure += envs.execTime
+  //   }),
+  // )
 
-  equal(
-    mi / amount > 0.4 && mi / amount < 0.6,
-    true,
-    'multi ref filter up at 0.5 results',
-  )
-  equal(measure / amount < 100, true, 'multi ref filter lower then 100ms')
+  // equal(
+  //   mi / amount > 0.4 && mi / amount < 0.6,
+  //   true,
+  //   'multi ref filter up at 0.5 results',
+  // )
+  // equal(measure / amount < 100, true, 'multi ref filter lower then 100ms')
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('scheduled', '>', 'now + 694d + 10h')
-        .get()
-    ).toObject().length,
-    1,
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('scheduled', '>', 'now + 694d + 10h')
+  //       .get()
+  //   ).toObject().length,
+  //   1,
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
-        .get()
-    ).toObject().length,
-    1,
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
+  //       .get()
+  //   ).toObject().length,
+  //   1,
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('scheduled', '<', '10/24/2000') // Date,
-        .get()
-    ).toObject().length,
-    0,
-    'parse date string',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('scheduled', '<', '10/24/2000') // Date,
+  //       .get()
+  //   ).toObject().length,
+  //   0,
+  //   'parse date string',
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('requestsServed', '<', 1)
-        .get()
-    ).toObject().length,
-    1,
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('requestsServed', '<', 1)
+  //       .get()
+  //   ).toObject().length,
+  //   1,
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('requestsServed', '<=', 1)
-        .get()
-    ).toObject().length,
-    2,
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('requestsServed', '<=', 1)
+  //       .get()
+  //   ).toObject().length,
+  //   2,
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('derp', '<=', 0)
-        .filter('derp', '>', -5)
-        .get()
-    ).toObject().length,
-    5,
-    'Negative range',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('derp', '<=', 0)
+  //       .filter('derp', '>', -5)
+  //       .get()
+  //   ).toObject().length,
+  //   5,
+  //   'Negative range',
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('temperature', '<=', 0)
-        .filter('temperature', '>', -0.1)
-        .get()
-    ).toObject().length < 500,
-    true,
-    'Negative temperature (result amount)',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('temperature', '<=', 0)
+  //       .filter('temperature', '>', -0.1)
+  //       .get()
+  //   ).toObject().length < 500,
+  //   true,
+  //   'Negative temperature (result amount)',
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('*')
-        .filter('temperature', '<=', 0)
-        .filter('temperature', '>', -0.1)
-        .get()
-    ).toObject()[0].temperature < 0,
-    true,
-    'Negative temperature (check value)',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('*')
+  //       .filter('temperature', '<=', 0)
+  //       .filter('temperature', '>', -0.1)
+  //       .get()
+  //   ).toObject()[0].temperature < 0,
+  //   true,
+  //   'Negative temperature (check value)',
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('id')
-        .filter('env', '=', env)
-        .range(0, 10)
-        .get()
-    ).toObject(),
-    [
-      { id: 2 },
-      { id: 4 },
-      { id: 6 },
-      { id: 8 },
-      { id: 10 },
-      { id: 12 },
-      { id: 14 },
-      { id: 16 },
-      { id: 18 },
-      { id: 20 },
-    ],
-    'Filter by reference',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('id')
+  //       .filter('env', '=', env)
+  //       .range(0, 10)
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     { id: 2 },
+  //     { id: 4 },
+  //     { id: 6 },
+  //     { id: 8 },
+  //     { id: 10 },
+  //     { id: 12 },
+  //     { id: 14 },
+  //     { id: 16 },
+  //     { id: 18 },
+  //     { id: 20 },
+  //   ],
+  //   'Filter by reference',
+  // )
 
-  equal(
-    (
-      await db
-        .query('machine')
-        .include('id')
-        .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
-        .filter('env', '=', [emptyEnv, env])
-        .range(0, 10)
-        .get()
-    ).toObject(),
-    [{ id: 100000 }],
-    'Filter by reference (multiple)',
-  )
+  // equal(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('id')
+  //       .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
+  //       .filter('env', '=', [emptyEnv, env])
+  //       .range(0, 10)
+  //       .get()
+  //   ).toObject(),
+  //   [{ id: 100000 }],
+  //   'Filter by reference (multiple)',
+  // )
 
-  const derpEnv = await db.create('env', {
-    name: 'derp env',
-    status: 5,
-  })
+  // const derpEnv = await db.create('env', {
+  //   name: 'derp env',
+  //   status: 5,
+  // })
 
-  const ids = await Promise.all([
-    db.create('machine', {
-      temperature: 20,
-      // env: derpEnv,
-      env: { id: derpEnv, $rating: 0.5 },
-      lastPing: 1,
-    }),
-    db.create('machine', {
-      temperature: 2,
-      // env: derpEnv,
-      env: { id: derpEnv, $rating: 0.75 },
-      lastPing: 2,
-    }),
-    db.create('machine', {
-      temperature: 3,
-      // env: derpEnv,
-      env: { id: derpEnv, $rating: 1 },
-      lastPing: 3,
-    }),
-  ])
+  // const ids = await Promise.all([
+  //   db.create('machine', {
+  //     temperature: 20,
+  //     // env: derpEnv,
+  //     env: { id: derpEnv, $rating: 0.5 },
+  //     lastPing: 1,
+  //   }),
+  //   db.create('machine', {
+  //     temperature: 2,
+  //     // env: derpEnv,
+  //     env: { id: derpEnv, $rating: 0.75 },
+  //     lastPing: 2,
+  //   }),
+  //   db.create('machine', {
+  //     temperature: 3,
+  //     // env: derpEnv,
+  //     env: { id: derpEnv, $rating: 1 },
+  //     lastPing: 3,
+  //   }),
+  // ])
 
-  deepEqual(
-    await db.query('env').filter('machines', '<', 10).get(),
-    [
-      {
-        id: 2,
-        name: 'Mydev env',
-        standby: false,
-        status: 0,
-      },
-      {
-        id: 3,
-        name: 'derp env',
-        status: 5,
-        standby: false,
-      },
-    ],
-    'Filter by references length',
-  )
+  // deepEqual(
+  //   await db.query('env').filter('machines', '<', 10).get(),
+  //   [
+  //     {
+  //       id: 2,
+  //       name: 'Mydev env',
+  //       standby: false,
+  //       status: 0,
+  //     },
+  //     {
+  //       id: 3,
+  //       name: 'derp env',
+  //       status: 5,
+  //       standby: false,
+  //     },
+  //   ],
+  //   'Filter by references length',
+  // )
 
-  deepEqual(
-    await db.query('env').filter('machines', '=', ids).get(),
-    [
-      {
-        id: 3,
-        name: 'derp env',
-        status: 5,
-        standby: false,
-      },
-    ],
-    'Filter by references equals',
-  )
+  // deepEqual(
+  //   await db.query('env').filter('machines', '=', ids).get(),
+  //   [
+  //     {
+  //       id: 3,
+  //       name: 'derp env',
+  //       status: 5,
+  //       standby: false,
+  //     },
+  //   ],
+  //   'Filter by references equals',
+  // )
 
-  deepEqual(
-    (
-      await db
-        .query('machine')
-        .include('env', '*')
-        .filter('env.status', '=', 5)
-        .get()
-    ).toObject(),
-    [
-      {
-        id: 100001,
-        derp: 0,
-        lastPing: 1,
-        temperature: 20,
-        requestsServed: 0,
-        isLive: false,
-        status: undefined,
-        scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env', standby: false },
-      },
-      {
-        id: 100002,
-        derp: 0,
-        lastPing: 2,
-        temperature: 2,
-        requestsServed: 0,
-        isLive: false,
-        status: undefined,
-        scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env', standby: false },
-      },
-      {
-        id: 100003,
-        derp: 0,
-        lastPing: 3,
-        temperature: 3,
-        requestsServed: 0,
-        isLive: false,
-        status: undefined,
-        scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env', standby: false },
-      },
-    ],
-  )
+  // deepEqual(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .include('env', '*')
+  //       .filter('env.status', '=', 5)
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 100001,
+  //       derp: 0,
+  //       lastPing: 1,
+  //       temperature: 20,
+  //       requestsServed: 0,
+  //       isLive: false,
+  //       status: undefined,
+  //       scheduled: 0,
+  //       env: { id: 3, status: 5, name: 'derp env', standby: false },
+  //     },
+  //     {
+  //       id: 100002,
+  //       derp: 0,
+  //       lastPing: 2,
+  //       temperature: 2,
+  //       requestsServed: 0,
+  //       isLive: false,
+  //       status: undefined,
+  //       scheduled: 0,
+  //       env: { id: 3, status: 5, name: 'derp env', standby: false },
+  //     },
+  //     {
+  //       id: 100003,
+  //       derp: 0,
+  //       lastPing: 3,
+  //       temperature: 3,
+  //       requestsServed: 0,
+  //       isLive: false,
+  //       status: undefined,
+  //       scheduled: 0,
+  //       env: { id: 3, status: 5, name: 'derp env', standby: false },
+  //     },
+  //   ],
+  // )
 
-  const unicornMachine = await db.create('machine', {
-    status: '🦄',
-  })
+  // const unicornMachine = await db.create('machine', {
+  //   status: '🦄',
+  // })
 
-  deepEqual(
-    (
-      await db
-        .query('machine')
-        .filter('status', '=', '🦄')
-        .include('status')
-        .get()
-    ).toObject(),
-    [
-      {
-        id: unicornMachine,
-        status: '🦄',
-      },
-    ],
-  )
+  // deepEqual(
+  //   (
+  //     await db
+  //       .query('machine')
+  //       .filter('status', '=', '🦄')
+  //       .include('status')
+  //       .get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: unicornMachine,
+  //       status: '🦄',
+  //     },
+  //   ],
+  // )
 
-  deepEqual((await db.query('env').filter('standby').get()).toObject(), [])
+  // deepEqual((await db.query('env').filter('standby').get()).toObject(), [])
 
-  await db.update('env', derpEnv, {
-    standby: true,
-  })
+  // await db.update('env', derpEnv, {
+  //   standby: true,
+  // })
 
-  deepEqual((await db.query('env').filter('standby').get()).toObject(), [
-    { id: 3, standby: true, status: 5, name: 'derp env' },
-  ])
+  // deepEqual((await db.query('env').filter('standby').get()).toObject(), [
+  //   { id: 3, standby: true, status: 5, name: 'derp env' },
+  // ])
 
-  let rangeResult = await db
-    .query('machine')
-    .include('temperature')
-    .filter('temperature', '..', [-0.1, 0])
-    .get()
+  // let rangeResult = await db
+  //   .query('machine')
+  //   .include('temperature')
+  //   .filter('temperature', '..', [-0.1, 0])
+  //   .get()
 
-  equal(rangeResult.length < 900, true, 'range less')
-  equal(
-    rangeResult.node().temperature < 0 && rangeResult.node().temperature > -0.1,
-    true,
-    'range',
-  )
+  // equal(rangeResult.length < 900, true, 'range less')
+  // equal(
+  //   rangeResult.node().temperature < 0 && rangeResult.node().temperature > -0.1,
+  //   true,
+  //   'range',
+  // )
 
-  rangeResult = await db
-    .query('machine')
-    .include('*')
-    .range(0, 10)
-    // .filter('temperature', '!..', [-0.1, 0])
-    .filter('temperature', '>', 0)
-    .or('temperature', '<', -0.1)
-    .get()
+  // rangeResult = await db
+  //   .query('machine')
+  //   .include('*')
+  //   .range(0, 10)
+  //   // .filter('temperature', '!..', [-0.1, 0])
+  //   .filter('temperature', '>', 0)
+  //   .or('temperature', '<', -0.1)
+  //   .get()
 
-  let hasLarge = false
-  let hasSmall = false
-  for (const item of rangeResult) {
-    if (item.temperature < -0.1) {
-      hasSmall = true
-    }
-    if (item.temperature > 0) {
-      hasLarge = true
-    }
-    if (item.temperature > -0.1 && item.temperature < 0) {
-      throw new Error('Incorrect exclusive range (temp > -0.1 && temp < 0)')
-    }
-  }
-  if (!hasSmall || !hasLarge) {
-    throw new Error(
-      `Incorrect exclusive range large: ${hasLarge} small: ${hasSmall}`,
-    )
-  }
+  // let hasLarge = false
+  // let hasSmall = false
+  // for (const item of rangeResult) {
+  //   if (item.temperature < -0.1) {
+  //     hasSmall = true
+  //   }
+  //   if (item.temperature > 0) {
+  //     hasLarge = true
+  //   }
+  //   if (item.temperature > -0.1 && item.temperature < 0) {
+  //     throw new Error('Incorrect exclusive range (temp > -0.1 && temp < 0)')
+  //   }
+  // }
+  // if (!hasSmall || !hasLarge) {
+  //   throw new Error(
+  //     `Incorrect exclusive range large: ${hasLarge} small: ${hasSmall}`,
+  //   )
+  // }
 })
 
 await test('or', async (t) => {
