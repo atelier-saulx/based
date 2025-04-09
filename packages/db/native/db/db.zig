@@ -18,17 +18,8 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
 const base_allocator = std.heap.raw_c_allocator;
-var valgrind_wrapper_instance_storage: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
-
-pub const db_backing_allocator: std.mem.Allocator = blk: {
-    if (config.enable_debug) {
-        std.debug.print("Configuring ValgrindAllocator wrapper...\n", .{});
-        valgrind_wrapper_instance_storage = valgrind.ValgrindAllocator.init(base_allocator);
-        break :blk valgrind_wrapper_instance_storage.allocator();
-    } else {
-        break :blk base_allocator;
-    }
-};
+var db_backing_allocator: std.mem.Allocator = undefined;
+var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
 
 pub var dbHashmap: std.AutoHashMap(u32, *DbCtx) = undefined;
 
@@ -49,7 +40,6 @@ pub const DbCtx = struct {
 };
 
 pub fn createDbCtx(id: u32) !*DbCtx {
-
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
@@ -79,6 +69,12 @@ pub fn createDbCtx(id: u32) !*DbCtx {
 }
 
 pub fn init() void {
+    if (config.enable_debug) {
+        valgrind_wrapper_instance = valgrind.ValgrindAllocator.init(base_allocator);
+        db_backing_allocator = valgrind_wrapper_instance.allocator();
+    } else {
+        db_backing_allocator = base_allocator;
+    }
     dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 }
 
