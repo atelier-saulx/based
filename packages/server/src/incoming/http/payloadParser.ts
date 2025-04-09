@@ -13,7 +13,12 @@ export default (
     url += '/'
   }
 
-  url += query  
+  url += query
+
+  if (!url.startsWith(`/${route.name}`)) {
+    url = `/${route.name}${url}`
+  }
+  
   const payload = pathExtractor(route.tokens, Buffer.from(url))  
 
   if ('token' in payload) {

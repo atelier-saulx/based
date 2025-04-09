@@ -272,12 +272,26 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     return extractions
   }
 
+  for (const {type, value, modifier} of tokens) {
+    if (type === PARAM) {
+      tokenValue = value.toString()
+
+      if (modifier === PLUS || modifier === ASTERISK) {        
+        extractions[tokenValue] = []
+      } else {
+        extractions[tokenValue] = ''
+      }
+    }
+  }
+
   while (i < len) { 
     if (i === 1 && path[i] === QUESTION_MARK) {
       extractions[tokenValue] = ''
     }
 
-    collected += String.fromCharCode(path[i]) || ''  
+    if (path[i] !== SLASH) {
+      collected += String.fromCharCode(path[i]) || ''  
+    }
 
     if (query) {
       if (i === len - 1 && collected && !queryValue) {
@@ -343,18 +357,6 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     if (!collected && tokenIndex + 1 < tokens.length) {            
       tokenIndex++
       token = tokens[tokenIndex]
-              
-      if (token) {
-        tokenValue = token.value.toString()  
-        
-        if (token.type === PARAM && extractions[tokenValue] === undefined) {
-          if (token.modifier === PLUS || token.modifier === ASTERISK) {        
-            extractions[tokenValue] = []
-          } else {
-            extractions[tokenValue] = ''
-          }
-        }
-      }
     }
   }
 
