@@ -777,7 +777,7 @@ int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct Selv
         return SELVA_ENOENT;
     }
 
-    assert(node && node->type == cursor->type);
+    assert(node->type == cursor->type);
     cursor->ptr = node;
     if (cursor->cursors) {
         selva_cursors_remove(type, cursor);
