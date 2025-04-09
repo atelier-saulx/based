@@ -64,6 +64,10 @@ test('[query] path extractor with static value and optional parameter', async (t
   const r13 = await (await fetch(t.context.http + '/bla/static/123')).json()
   const r14 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
   const r15 = await (await fetch(t.context.http + '/bla/static/123?extra=abc&outro=123')).json()
+  const r16 = await (await fetch(t.context.http + '/static/undefined')).json()
+  const r17 = await (await fetch(t.context.http + '/static/null')).json()
+  const r18 = await (await fetch(t.context.http + '/bla/static/undefined')).json()
+  const r19 = await (await fetch(t.context.http + '/bla/static/null')).json()
 
   await server.destroy()
 
@@ -82,6 +86,10 @@ test('[query] path extractor with static value and optional parameter', async (t
   t.deepEqual(r13, { parameter: '123' })
   t.deepEqual(r14, { parameter: '123' })
   t.deepEqual(r15, { parameter: '123', extra: 'abc', outro: '123' })
+  t.deepEqual(r16, { parameter: 'undefined' })
+  t.deepEqual(r17, { parameter: 'null' })
+  t.deepEqual(r18, { parameter: 'undefined' })
+  t.deepEqual(r19, { parameter: 'null' })
 })
 
 
@@ -107,6 +115,10 @@ test('[query] path extractor with static value and required parameter', async (t
   const r8 = await (await fetch(t.context.http + '/bla/static/123?token=123')).json()
   const r9 = await (await fetch(t.context.http + '/bla/static/123/')).json()
   const r10 = await (await fetch(t.context.http + '/bla/static/123/?extra=abc&outro=123')).json()
+  const r11 = await (await fetch(t.context.http + '/static/undefined')).json()
+  const r12 = await (await fetch(t.context.http + '/static/null')).json()
+  const r13 = await (await fetch(t.context.http + '/bla/static/undefined')).json()
+  const r14 = await (await fetch(t.context.http + '/bla/static/null')).json()
 
   await server.destroy()
 
@@ -120,6 +132,10 @@ test('[query] path extractor with static value and required parameter', async (t
   t.deepEqual(r8, { parameter: '123' })
   t.deepEqual(r9, { parameter: '123' })
   t.deepEqual(r10, { parameter: '123', extra: 'abc', outro: '123' })
+  t.deepEqual(r11, { parameter: 'undefined' })
+  t.deepEqual(r12, { parameter: 'null' })
+  t.deepEqual(r13, { parameter: 'undefined' })
+  t.deepEqual(r14, { parameter: 'null' })
 })
 
 

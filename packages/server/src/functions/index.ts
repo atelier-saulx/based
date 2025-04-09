@@ -439,7 +439,7 @@ export class BasedFunctions {
       tokens = [...this.routes[routesKeys[i]].tokens]      
 
       if (removeNameFromTokens && !this.routes[routesKeys[i]].nameOnPath) {
-        if (tokens.length > 1) {
+        if (tokens?.length > 1) {
           tokens.shift() 
         } else {
           i++

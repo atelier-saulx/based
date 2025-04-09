@@ -19,7 +19,7 @@ export default (
     url = `/${route.name}${url}`
   }
   
-  const payload = pathExtractor(route.tokens, Buffer.from(url))  
+  const payload = pathExtractor(route.tokens || [], Buffer.from(url))  
 
   if ('token' in payload) {
     ctx.session.authState = parseAuthState(payload.token)
