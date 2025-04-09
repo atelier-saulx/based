@@ -89,6 +89,48 @@ pub const RefOp = enum(u8) {
     _,
 };
 
+pub const RefEdgeOp = enum(u8) {
+    noEdgeNoIndexRealId = 0,
+    edgeNoIndexRealId = 1,
+    edgeIndexRealId = 2,
+    noEdgeIndexRealId = 3,
+    noEdgeNoIndexTmpId = 4,
+    edgeNoIndexTmpId = 5,
+    edgeIndexTmpId = 6,
+    noEdgeIndexTmpId = 7,
+    _,
+    pub fn hasEdges(self: RefEdgeOp) bool {
+        return switch (self) {
+            RefEdgeOp.edgeIndexRealId,
+            RefEdgeOp.edgeNoIndexRealId,
+            RefEdgeOp.edgeNoIndexTmpId,
+            RefEdgeOp.edgeIndexTmpId,
+            => true,
+            else => false,
+        };
+    }
+    pub fn isTmpId(self: RefEdgeOp) bool {
+        return switch (self) {
+            RefEdgeOp.noEdgeNoIndexTmpId,
+            RefEdgeOp.edgeNoIndexTmpId,
+            RefEdgeOp.edgeIndexTmpId,
+            RefEdgeOp.noEdgeIndexTmpId,
+            => true,
+            else => false,
+        };
+    }
+    pub fn hasIndex(self: RefEdgeOp) bool {
+        return switch (self) {
+            RefEdgeOp.edgeIndexRealId,
+            RefEdgeOp.noEdgeIndexRealId,
+            RefEdgeOp.edgeIndexTmpId,
+            RefEdgeOp.noEdgeIndexTmpId,
+            => true,
+            else => false,
+        };
+    }
+};
+
 pub const ModOp = enum(u8) {
     SWITCH_FIELD = 0,
     DELETE_NODE = 10,

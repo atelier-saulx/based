@@ -35,3 +35,13 @@ export type ModifyOpts = {
   locale?: LangName
   overwrite?: boolean
 }
+
+// Reference Edge Operation Types (from Zig RefEdgeOp)
+export const NOEDGE_NOINDEX_REALID = 0
+export const EDGE_NOINDEX_REALID = 1
+export const EDGE_INDEX_REALID = 2
+export const NOEDGE_INDEX_REALID = 3
+export const NOEDGE_NOINDEX_TMPID = 4
+export const EDGE_NOINDEX_TMPID = 5
+export const EDGE_INDEX_TMPID = 6
+export const NOEDGE_INDEX_TMPID = 7

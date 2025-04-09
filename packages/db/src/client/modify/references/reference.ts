@@ -2,7 +2,16 @@ import { ModifyCtx } from '../../../index.js'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
-import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
+import {
+  DELETE,
+  ModifyErr,
+  ModifyOp,
+  RANGE_ERR,
+  EDGE_NOINDEX_TMPID,
+  NOEDGE_NOINDEX_TMPID,
+  EDGE_NOINDEX_REALID,
+  NOEDGE_INDEX_REALID,
+} from '../types.js'
 import { writeEdges } from './edge.js'
 import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
 
@@ -23,9 +32,9 @@ function writeRef(
   setCursor(ctx, schema, def.prop, def.typeIndex, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   if (isTmpId) {
-    ctx.buf[ctx.len++] = hasEdges ? 2 : 3
+    ctx.buf[ctx.len++] = hasEdges ? EDGE_NOINDEX_TMPID : NOEDGE_NOINDEX_TMPID
   } else {
-    ctx.buf[ctx.len++] = hasEdges ? 1 : 0
+    ctx.buf[ctx.len++] = hasEdges ? EDGE_NOINDEX_REALID : NOEDGE_INDEX_REALID
   }
   ctx.buf[ctx.len++] = id
   ctx.buf[ctx.len++] = id >>>= 8
@@ -61,7 +70,6 @@ function singleReferenceEdges(
   // TODO SINGLE REF
   if (id > 0) {
     if (def.edgesSeperateCnt === 0 && def.edgeMainLen === 0) {
-      // edgeMainLen, edgesSeperateCnt
       return writeRef(id, ctx, schema, def, parentId, modifyOp, false, isTmpId)
     } else {
       let err = writeRef(
@@ -78,11 +86,7 @@ function singleReferenceEdges(
         return err
       }
 
-      // def.edgeMainLen
-      // const edgesLen = getEdgeSize(def, ref)
-      // edgeMainLen can be done better
-
-      // TODO REOMVE - SEEMS REDUNDANT
+      // TODO REMOVE - SEEMS REDUNDANT
       if (ctx.len + 4 > ctx.max) {
         return RANGE_ERR
       }

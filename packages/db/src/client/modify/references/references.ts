@@ -2,7 +2,18 @@ import { ModifyCtx } from '../../../index.js'
 import { PropDef, REFERENCES, SchemaTypeDef } from '@based/schema/def'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
-import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
+import {
+  DELETE,
+  EDGE_INDEX_REALID,
+  EDGE_INDEX_TMPID,
+  EDGE_NOINDEX_REALID,
+  EDGE_NOINDEX_TMPID,
+  ModifyErr,
+  ModifyOp,
+  NOEDGE_INDEX_REALID,
+  NOEDGE_INDEX_TMPID,
+  RANGE_ERR,
+} from '../types.js'
 import { writeEdges } from './edge.js'
 
 export type RefModifyOpts = {
@@ -248,7 +259,7 @@ function appendRefs(
         if (ctx.len + 9 > ctx.max) {
           return RANGE_ERR
         }
-        ctx.buf[ctx.len++] = isTmpId ? 5 : 1
+        ctx.buf[ctx.len++] = isTmpId ? EDGE_NOINDEX_TMPID : EDGE_NOINDEX_REALID
         ctx.buf[ctx.len++] = id
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
@@ -257,7 +268,7 @@ function appendRefs(
         if (ctx.len + 13 > ctx.max) {
           return RANGE_ERR
         }
-        ctx.buf[ctx.len++] = isTmpId ? 6 : 2
+        ctx.buf[ctx.len++] = isTmpId ? EDGE_INDEX_TMPID : EDGE_INDEX_REALID
         ctx.buf[ctx.len++] = id
         ctx.buf[ctx.len++] = id >>>= 8
         ctx.buf[ctx.len++] = id >>>= 8
@@ -284,7 +295,7 @@ function appendRefs(
       if (ctx.len + 5 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = isTmpId ? 4 : 0
+      ctx.buf[ctx.len++] = isTmpId ? NOEDGE_INDEX_TMPID : NOEDGE_INDEX_REALID
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
@@ -293,7 +304,7 @@ function appendRefs(
       if (ctx.len + 9 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = isTmpId ? 7 : 3
+      ctx.buf[ctx.len++] = isTmpId ? NOEDGE_INDEX_TMPID : NOEDGE_INDEX_REALID
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8
