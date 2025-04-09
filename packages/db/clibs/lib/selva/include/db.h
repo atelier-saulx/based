@@ -49,6 +49,7 @@ struct SelvaNode {
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
+static_assert(offsetof(struct SelvaNode, node_id) == 0);
 
 struct SelvaAlias {
     RB_ENTRY(SelvaAlias) _entry1;
