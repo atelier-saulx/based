@@ -30,6 +30,8 @@ pub const db_backing_allocator: std.mem.Allocator = blk: {
     }
 };
 
+pub var dbHashmap: std.AutoHashMap(u32, *DbCtx) = undefined;
+
 pub const DbCtx = struct {
     id: u32,
     initialized: bool,
@@ -46,21 +48,20 @@ pub const DbCtx = struct {
     }
 };
 
-pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
-
 pub fn createDbCtx(id: u32) !*DbCtx {
 
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
-    defer db_backing_allocator.destroy(arena);
+    errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
-
     const allocator = arena.allocator();
+
     const b = try allocator.create(DbCtx);
     errdefer {
         arena.deinit();
         db_backing_allocator.destroy(arena);
     }
+
     b.* = .{
         .id = 0,
         .arena = arena,
@@ -75,6 +76,10 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     try dbHashmap.put(id, b);
 
     return b;
+}
+
+pub fn init() void {
+    dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 }
 
 var lastQueryId: u32 = 0;
