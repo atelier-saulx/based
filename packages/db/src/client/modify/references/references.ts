@@ -12,6 +12,8 @@ import {
   ModifyOp,
   NOEDGE_INDEX_REALID,
   NOEDGE_INDEX_TMPID,
+  NOEDGE_NOINDEX_REALID,
+  NOEDGE_NOINDEX_TMPID,
   RANGE_ERR,
 } from '../types.js'
 import { writeEdges } from './edge.js'
@@ -295,7 +297,9 @@ function appendRefs(
       if (ctx.len + 5 > ctx.max) {
         return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = isTmpId ? NOEDGE_INDEX_TMPID : NOEDGE_INDEX_REALID
+      ctx.buf[ctx.len++] = isTmpId
+        ? NOEDGE_NOINDEX_TMPID
+        : NOEDGE_NOINDEX_REALID
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
       ctx.buf[ctx.len++] = id >>>= 8

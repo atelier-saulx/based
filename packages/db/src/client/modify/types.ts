@@ -36,7 +36,6 @@ export type ModifyOpts = {
   overwrite?: boolean
 }
 
-// Reference Edge Operation Types (from Zig RefEdgeOp)
 export const NOEDGE_NOINDEX_REALID = 0
 export const EDGE_NOINDEX_REALID = 1
 export const EDGE_INDEX_REALID = 2
