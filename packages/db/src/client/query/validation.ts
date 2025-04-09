@@ -384,7 +384,7 @@ export const validateSort = (
     }
   }
   const type = propDef.typeIndex
-  if (type === REFERENCES || type === REFERENCE) {
+  if (type === REFERENCES || type === REFERENCE || type === ALIAS) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
