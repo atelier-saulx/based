@@ -29,6 +29,8 @@ fn getOptPath(
 // have to pass the pointer to js
 // NAPI_VALUE here has to be the pointer
 
+// createCtx has to go to a seperate
+
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const id = try napi.get(u32, napi_env, args[0]);

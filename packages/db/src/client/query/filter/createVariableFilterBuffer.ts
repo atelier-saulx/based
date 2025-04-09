@@ -25,10 +25,11 @@ const parseValue = (
   lang: LangCode,
 ): Uint8Array => {
   let val = value
-  // TODO should we do .normalize('NFKD') for all strings?
+
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
     val = val.toLowerCase()
   }
+
   if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
     if (!(val instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
@@ -38,13 +39,16 @@ const parseValue = (
     const score: Uint8Array = ctx.opts.score
       ? new Uint8Array(new Float32Array([ctx.opts.score]).buffer)
       : DEFAULT_SCORE
-    const buf = new Uint8Array(vector.byteLength + fn.byteLength + score.byteLength)
+    const buf = new Uint8Array(
+      vector.byteLength + fn.byteLength + score.byteLength,
+    )
     let off = 0
-    off +=(buf.set(new Uint8Array(vector), off), vector.byteLength)
+    off += (buf.set(new Uint8Array(vector), off), vector.byteLength)
     off += (buf.set(fn, off), fn.byteLength)
     buf.set(score, off)
     val = buf
   }
+
   if (
     val instanceof Uint8Array ||
     typeof value === 'string' ||
@@ -52,7 +56,7 @@ const parseValue = (
     ctx.operation !== EQUAL
   ) {
     if (typeof val === 'string') {
-      val = ENCODER.encode(val)
+      val = ENCODER.encode(val.normalize('NFKD'))
     }
     if (prop.typeIndex === TEXT) {
       const tmp = new Uint8Array(val.byteLength + 1)
@@ -69,8 +73,8 @@ const parseValue = (
   }
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
     const tmp = new Uint8Array(val.byteLength + 1)
-    tmp.set((val instanceof ArrayBuffer) ? new Uint8Array(val) : val)
-    tmp[tmp.byteLength -1 ] = ctx.opts.score ?? 2
+    tmp.set(val instanceof ArrayBuffer ? new Uint8Array(val) : val)
+    tmp[tmp.byteLength - 1] = ctx.opts.score ?? 2
     val = tmp
   }
   return val
@@ -121,7 +125,7 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== VECTOR
       ) {
         if (prop.typeIndex === TEXT) {
-          const crc = crc32(val.slice(0, -1));
+          const crc = crc32(val.slice(0, -1))
           const len = val.byteLength - 1
           const v = new Uint8Array(9)
 
