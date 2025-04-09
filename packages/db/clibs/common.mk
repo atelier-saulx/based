@@ -40,7 +40,6 @@ ifeq ($(EN_SANIT),1)
 	CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
 	CFLAGS += -fanalyzer -Wno-analyzer-possible-null-dereference -Wno-analyzer-null-dereference
 	LDFLAGS += -fsanitize=$(SANITIZERS)
-	
 endif
 
 ifeq ($(uname_S),Linux)
