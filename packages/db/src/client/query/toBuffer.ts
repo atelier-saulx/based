@@ -47,7 +47,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   if (def.type === QueryDefType.Root) {
     let search: Uint8Array
     let searchSize = 0
-    const filterSize = def.filter.size ?? 0
+    const filterSize = def.filter.size || 0
 
     if (def.search) {
       search = searchToBuffer(def.search)
@@ -183,18 +183,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         }
 
         if (aggregation) {
-          try {
-            buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
-          } catch (err) {
-            console.log(filterSize, aggregation.byteLength, err)
-          }
+          buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
         }
 
         result.push(buf)
       }
     }
   } else if (def.type === QueryDefType.References) {
-    const filterSize = def.filter.size ?? 0
+    const filterSize = def.filter.size || 0
     let sort: Uint8Array
     if (def.sort) {
       sort = createSortBuffer(def.sort)

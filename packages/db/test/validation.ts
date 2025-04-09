@@ -744,6 +744,10 @@ await test('query', async (t) => {
     // @ts-ignore
     await db.query('user').search([1, 2, 3, 4], 'blap').get()
   }, false)
+
+  await throws(async () => {
+    const envs = await db.query('user').filter('connections', 'has', 0).get()
+  }, false)
 })
 
 await test('query - no schema', async (t) => {
