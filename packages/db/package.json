@@ -9,6 +9,7 @@
     "build-ts": "tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
+    "build-release-debug": "(cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
     "build-release": "(cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",
