@@ -60,7 +60,7 @@ export const bundlingUpdateHandling =
     let intro: boolean = false
 
     for (const [type, file] of updates) {
-      if (type === 'bundled') {
+      if (type === 'bundled' || file.endsWith('4913') || file.endsWith('~')) {
         continue
       }
 

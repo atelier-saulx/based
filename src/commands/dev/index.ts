@@ -103,7 +103,7 @@ export const devServer = async ({
   )
 
   let client: BasedClient
-  let returnedJobFunction = null
+  const returnedJobFunction = {}
 
   if (!cloud) {
     client = SharedBasedClient.getInstance({ url: wsURL })
@@ -244,14 +244,16 @@ export const devServer = async ({
 
             if (specs[spec].type === 'job' && specs[spec].fn) {
               if (
-                returnedJobFunction &&
-                typeof returnedJobFunction === 'function'
+                returnedJobFunction[specs[spec].name] &&
+                typeof returnedJobFunction[specs[spec].name] === 'function'
               ) {
-                returnedJobFunction()
-                returnedJobFunction = null
+                returnedJobFunction[specs[spec].name]()
+                returnedJobFunction[specs[spec].name] = null
               }
 
-              returnedJobFunction = specs[spec].fn(basedServer.client)
+              returnedJobFunction[specs[spec].name] = specs[spec].fn(
+                basedServer.client,
+              )
             }
           }
         }
