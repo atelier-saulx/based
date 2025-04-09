@@ -148,6 +148,14 @@ export const getContentType = (extension: string) => {
       return 'text/css'
     }
 
+    case '.svg': {
+      return 'image/svg+xml'
+    }
+
+    case '.wasm': {
+      return 'application/wasm'
+    }
+
     case '.json': {
       return 'application/json'
     }
