@@ -165,7 +165,6 @@ await test('compressed', async (t) => {
     2,
     'Search sorted body "giraffe"',
   )
-  console.log('sNURRRRxxx')
 
   equal(
     await db
