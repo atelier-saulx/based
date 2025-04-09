@@ -96,7 +96,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       }
 
       let aggregation: Uint8Array
-      aggregation = createAggFlagBuffer(def.aggregation)
+      if (def.aggregation) {
+        aggregation = createAggFlagBuffer(def.aggregation)
+      }
 
       if (def.target.ids) {
         if (
@@ -181,7 +183,11 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         }
 
         if (aggregation) {
-          buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
+          try {
+            buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
+          } catch (err) {
+            console.log(filterSize, aggregation.byteLength, err)
+          }
         }
 
         result.push(buf)
