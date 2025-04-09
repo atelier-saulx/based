@@ -101,11 +101,11 @@ test.only('http get authorize', async (t: T) => {
   t.true(rj2.ok)
 
   const q1 = await fetch(
-    `${t.context.http}/bla?token=${authorization}&hello=world`
+    `${t.context.http}/bla?token=${authorization}&hello=world`,
   )
   const qj1 = await q1.json()
-  t.deepEqual(qj1, { hello: 'world' })
 
+  t.deepEqual(qj1, { hello: 'world' })
   const wrongAuthorization = encodeAuthState({
     token: 'wrong',
   })

@@ -120,20 +120,34 @@ const sendGetResponseInternal = (
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
-        sendCache(ctx, obs.cache, obs.checksum, true, headers, status)
+        sendCache(
+          ctx,
+          obs.cache.subarray(1),
+          obs.checksum,
+          true,
+          headers,
+          status,
+        )
       } else {
         sendCacheSwapEncoding(
           server,
           route,
           ctx,
-          obs.cache,
+          obs.cache.subarray(1),
           obs.checksum,
           headers,
           status,
         )
       }
     } else {
-      sendCache(ctx, obs.cache, obs.checksum, false, headers, status)
+      sendCache(
+        ctx,
+        obs.cache.subarray(1),
+        obs.checksum,
+        false,
+        headers,
+        status,
+      )
     }
   } else {
     sendNotModified(ctx)
@@ -164,7 +178,13 @@ const sendGetResponse = (
         typeof status === 'string' ? status : String(status),
       )
     }
-    spec.httpResponse(server.client, obs.payload, obs.cache, send, ctx)
+    spec.httpResponse(
+      server.client,
+      obs.payload,
+      obs.cache.subarray(1),
+      send,
+      ctx,
+    )
     return
   }
 

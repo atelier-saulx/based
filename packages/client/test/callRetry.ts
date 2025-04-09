@@ -78,7 +78,7 @@ test('Call retry option', async (t: T) => {
   })
 
   t.deepEqual(payloads, [
-    ,
+    '',
     { retries: 0 },
     { retries: 1 },
     { retries: 2 },

@@ -18,7 +18,6 @@ import { installFn } from '../../installFn.js'
 import { authorize } from '../../authorize.js'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) => {
-  console.log({ payload }, '-->', encodeAuthResponse(valueToBuffer(payload)))
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
 }
 
@@ -84,10 +83,14 @@ export const authMessage: BinaryMessageHandler = (
   }
 
   // | 4 header | * payload |
-  const authState = decodeAndParsePayload(
+  let authState = decodeAndParsePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate,
   )
+
+  if (typeof authState !== 'object') {
+    authState = { error: 'invalid token' }
+  }
 
   server.auth
     .verifyAuthState(server.client, ctx, authState)
