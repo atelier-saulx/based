@@ -9,14 +9,12 @@ import {
   BasedRoute,
 } from '@based/functions'
 import { valueToBuffer, encodeErrorResponse } from './protocol.js'
-import {
-  createError,
-} from './error/index.js'
+import { createError } from './error/index.js'
 import { BasedErrorCode, BasedErrorData, ErrorPayload } from '@based/errors'
 
 const sendHttpErrorData = (
   errorData: BasedErrorData,
-  ctx: Context<HttpSession>
+  ctx: Context<HttpSession>,
 ) => {
   const { code, message, statusCode, statusMessage } = errorData
   ctx.session.res.cork(() => {
@@ -29,7 +27,7 @@ const sendHttpErrorData = (
       JSON.stringify({
         error: message,
         code,
-      })
+      }),
     )
   })
 }
@@ -38,7 +36,7 @@ export function sendHttpError<T extends BasedErrorCode>(
   server: BasedServer,
   ctx: Context<HttpSession>,
   basedCode: T,
-  payload: ErrorPayload[T]
+  payload: ErrorPayload[T],
 ) {
   if (!ctx.session) {
     return
@@ -49,7 +47,7 @@ export function sendHttpError<T extends BasedErrorCode>(
 
 export function sendErrorData(
   ctx: Context<WebSocketSession | HttpSession>,
-  errorData: BasedErrorData
+  errorData: BasedErrorData,
 ): void {
   if (!ctx.session) {
     return
@@ -60,7 +58,7 @@ export function sendErrorData(
     ctx.session.ws.send(
       encodeErrorResponse(valueToBuffer(errorData)),
       true,
-      false
+      false,
     )
   }
 }
@@ -69,7 +67,7 @@ export function sendError<T extends BasedErrorCode>(
   server: BasedServer,
   ctx: Context<WebSocketSession | HttpSession>,
   basedCode: T,
-  payload: ErrorPayload[T]
+  payload: ErrorPayload[T],
 ): void {
   if (!ctx.session) {
     return
@@ -81,7 +79,7 @@ export function sendError<T extends BasedErrorCode>(
     ctx.session.ws.send(
       encodeErrorResponse(valueToBuffer(errorData)),
       true,
-      false
+      false,
     )
   }
 }
@@ -92,7 +90,7 @@ export function sendSimpleError<T extends BasedErrorCode>(
   basedCode: T,
   route: BasedRoute,
   id?: number,
-  payload?: ErrorPayload[T]
+  payload?: ErrorPayload[T],
 ): void {
   if (!ctx.session) {
     return
@@ -102,18 +100,18 @@ export function sendSimpleError<T extends BasedErrorCode>(
     payload = id
       ? route.type === 'query'
         ? {
-          route,
-          observableId: id,
-        }
+            route,
+            observableId: id,
+          }
         : route.type === 'channel'
           ? {
-            route,
-            channelId: id,
-          }
+              route,
+              channelId: id,
+            }
           : {
-            route,
-            requestId: id,
-          }
+              route,
+              requestId: id,
+            }
       : { route }
   }
 
@@ -124,7 +122,7 @@ export function sendSimpleError<T extends BasedErrorCode>(
     ctx.session.ws.send(
       encodeErrorResponse(valueToBuffer(errorData)),
       true,
-      false
+      false,
     )
   }
 }

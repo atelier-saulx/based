@@ -1,7 +1,7 @@
 import {
   valueToBuffer,
-  decodePayload,
   encodeAuthResponse,
+  decodeAndParsePayload,
 } from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import { enableSubscribe } from './query.js'
@@ -17,20 +17,14 @@ import { enableChannelSubscribe } from './channelSubscribe.js'
 import { installFn } from '../../installFn.js'
 import { authorize } from '../../authorize.js'
 
-const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
+const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) => {
+  console.log({ payload }, '-->', encodeAuthResponse(valueToBuffer(payload)))
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
-
-const parse = (payload: string) => {
-  try {
-    return JSON.parse(payload)
-  } catch (err) {
-    return { error: 'invalid token' }
-  }
 }
 
 export const reEvaulateUnauthorized = (
   server: BasedServer,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ) => {
   const session = ctx.session
   if (!session) {
@@ -78,7 +72,7 @@ export const authMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
     ctx.session.ws.close()
@@ -90,12 +84,10 @@ export const authMessage: BinaryMessageHandler = (
   }
 
   // | 4 header | * payload |
-  const payload = decodePayload(
+  const authState = decodeAndParsePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
-    isDeflate
+    isDeflate,
   )
-
-  const authState: AuthState = parse(payload)
 
   server.auth
     .verifyAuthState(server.client, ctx, authState)
@@ -134,7 +126,7 @@ export const authMessage: BinaryMessageHandler = (
 // send and verify
 export const sendAndVerifyAuthMessage = async (
   server: BasedServer,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ): Promise<void> => {
   const session = ctx.session
   if (!session) {

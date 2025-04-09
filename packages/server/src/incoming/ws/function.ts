@@ -1,10 +1,9 @@
 import {
   readUint8,
   decodeName,
-  decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
-  parsePayload,
+  decodeAndParsePayload,
 } from '../../protocol.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
@@ -37,7 +36,7 @@ const sendFunction: IsAuthorizedHandler<
         ctx.session?.ws.send(
           encodeFunctionResponse(requestId, valueToBuffer(v)),
           true,
-          false
+          false,
         )
       })
       .catch((err: Error) => {
@@ -61,7 +60,7 @@ const sendFunction: IsAuthorizedHandler<
       ctx.session?.ws.send(
         encodeFunctionResponse(requestId, valueToBuffer(v)),
         true,
-        false
+        false,
       )
     })
     .catch((err) => {
@@ -79,7 +78,7 @@ export const functionMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
   const requestId = readUint8(arr, start + 4, 3)
@@ -96,7 +95,7 @@ export const functionMessage: BinaryMessageHandler = (
     'function',
     server.functions.route(name),
     name,
-    requestId
+    requestId,
   )
 
   // TODO: add strictness setting - if strict return false here
@@ -122,12 +121,10 @@ export const functionMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 8
       ? undefined
-      : parsePayload(
-        decodePayload(
+      : decodeAndParsePayload(
           new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-          isDeflate
+          isDeflate,
         )
-      )
 
   authorize(route, server, ctx, payload, sendFunction, requestId)
 

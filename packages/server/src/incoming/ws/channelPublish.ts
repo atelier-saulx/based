@@ -1,4 +1,4 @@
-import { readUint8, decodePayload, parsePayload } from '../../protocol.js'
+import { readUint8, decodeAndParsePayload } from '../../protocol.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { BinaryMessageHandler } from './types.js'
@@ -14,7 +14,7 @@ const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   server,
   ctx,
   payload,
-  id
+  id,
 ) => {
   const channel = server.activeChannelsById.get(id)
   if (!channel) {
@@ -43,7 +43,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id | * payload |
   const id = readUint8(arr, start + 4, 8)
@@ -69,7 +69,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     'channel',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   if (route === null) {
@@ -90,12 +90,10 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const payload =
     len === 12
       ? undefined
-      : parsePayload(
-        decodePayload(
+      : decodeAndParsePayload(
           new Uint8Array(arr.slice(start + 12, start + len)),
-          isDeflate
+          isDeflate,
         )
-      )
 
   authorize(
     route,
@@ -105,7 +103,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     publish,
     id,
     undefined,
-    route.publicPublisher
+    route.publicPublisher,
   )
 
   return true

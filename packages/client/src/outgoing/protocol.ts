@@ -15,7 +15,7 @@ const storeUint8 = (
   buff: Uint8Array,
   n: number,
   start: number,
-  len: number
+  len: number,
 ) => {
   for (let index = start; index < start + len; index++) {
     const byte = n & 0xff
@@ -27,7 +27,7 @@ const storeUint8 = (
 const encodeHeader = (
   type: number,
   isDeflate: boolean,
-  len: number
+  len: number,
 ): number => {
   // 4 bytes
   // type (3 bits)
@@ -54,7 +54,7 @@ const createBuffer = (
   type: number,
   isDeflate: boolean,
   len: number,
-  size: number = len
+  size: number = len,
 ): Uint8Array => {
   const header = encodeHeader(type, isDeflate, len)
   const buff = new Uint8Array(size)
@@ -62,28 +62,48 @@ const createBuffer = (
   return buff
 }
 
+// keep this in sync with server, don't change the order
+export const T_JSON = 0
+export const T_STRING = 1
+export const T_U8 = 2
+
 const encodePayload = (
   payload: any,
-  noDeflate = false
+  noDeflate = false,
 ): [boolean, Uint8Array] | [boolean] => {
-  let p: Uint8Array
   let isDeflate = false
   if (payload !== undefined) {
-    p = encoder.encode(
-      typeof payload === 'string' ? payload : JSON.stringify(payload)
-    )
-    if (!noDeflate && p.length > 150) {
-      p = deflateSync(p)
+    let p: Uint8Array
+    let t: number
+
+    if (typeof payload === 'string') {
+      p = encoder.encode(payload)
+      t = T_STRING
+    } else if (payload instanceof Uint8Array) {
+      p = payload
+      t = T_U8
+    } else {
+      p = encoder.encode(JSON.stringify(payload))
+      t = T_JSON
+    }
+
+    let res: Uint8Array = new Uint8Array(p.byteLength + 1)
+    res[0] = t
+    res.set(p, 1)
+
+    if (!noDeflate && res.length > 150) {
+      res = deflateSync(res)
       isDeflate = true
     }
-    return [isDeflate, p]
+
+    return [isDeflate, res]
   }
   return [false]
 }
 
 export const encodeGetObserveMessage = (
   id: number,
-  o: GetObserveQueue extends Map<any, infer I> ? I : never
+  o: GetObserveQueue extends Map<any, infer I> ? I : never,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
@@ -95,6 +115,7 @@ export const encodeGetObserveMessage = (
     const n = encoder.encode(name)
     len += 1 + n.length
     const [isDeflate, p] = encodePayload(payload)
+
     if (p) {
       len += p.length
     }
@@ -105,7 +126,9 @@ export const encodeGetObserveMessage = (
 
     storeUint8(buff, id, 4, 8)
     storeUint8(buff, checksum, 12, 8)
+
     buff[20] = n.length
+
     if (p) {
       return { buffers: [buff, n, p], len }
     } else {
@@ -118,7 +141,7 @@ export const encodeGetObserveMessage = (
 
 export const encodeSubscribeChannelMessage = (
   id: number,
-  o: ChannelQueueItem
+  o: ChannelQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, payload] = o
@@ -155,7 +178,7 @@ export const encodeSubscribeChannelMessage = (
 
 export const encodeObserveMessage = (
   id: number,
-  o: ObserveQueue extends Map<any, infer I> ? I : never
+  o: ObserveQueue extends Map<any, infer I> ? I : never,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
@@ -188,7 +211,7 @@ export const encodeObserveMessage = (
 }
 
 export const encodeFunctionMessage = (
-  f: FunctionQueueItem
+  f: FunctionQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
   let len = 7
@@ -209,7 +232,7 @@ export const encodeFunctionMessage = (
 }
 
 export const encodePublishMessage = (
-  f: ChannelPublishQueueItem
+  f: ChannelPublishQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   // | 4 header | 8 id | * payload |
   let len = 12
@@ -241,7 +264,7 @@ export const encodeAuthMessage = (authState: AuthState) => {
 }
 
 export const encodeStreamMessage = (
-  f: StreamQueueItem
+  f: StreamQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   const [subType, reqId] = f
 

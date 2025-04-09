@@ -1,9 +1,4 @@
-import {
-  decodePayload,
-  decodeName,
-  readUint8,
-  parsePayload,
-} from '../../protocol.js'
+import { decodeName, readUint8, decodeAndParsePayload } from '../../protocol.js'
 import {
   createObs,
   unsubscribeWs,
@@ -62,7 +57,7 @@ export const subscribeMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
@@ -81,7 +76,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     'query',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   // TODO: add strictness setting - if strict return false here
@@ -114,12 +109,10 @@ export const subscribeMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 21
       ? undefined
-      : parsePayload(
-        decodePayload(
+      : decodeAndParsePayload(
           new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate
+          isDeflate,
         )
-      )
 
   session.obs.add(id)
 
@@ -132,7 +125,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     id,
     checksum,
     false,
-    isNotAuthorized
+    isNotAuthorized,
   )
 
   return true
@@ -144,7 +137,7 @@ export const unsubscribeMessage: BinaryMessageHandler = (
   _len,
   _isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id |
   if (!ctx.session) {

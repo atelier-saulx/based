@@ -2,11 +2,10 @@ import { FakeBinaryMessageHandler } from './types.js'
 import {
   readUint8,
   decodeName,
-  decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
-  parsePayload,
   encodeErrorResponse,
+  decodeAndParsePayload,
 } from '../../../protocol.js'
 import { verifyRoute } from '../../../verifyRoute.js'
 import { installFn } from '../../../installFn.js'
@@ -46,11 +45,9 @@ export const handleFunction: FakeBinaryMessageHandler = (
   const payload =
     len === nameLen + 8
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
-            isDeflate,
-          ),
+      : decodeAndParsePayload(
+          new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
+          isDeflate,
         )
 
   return installFn(server, ctx, route).then(async (spec) => {
