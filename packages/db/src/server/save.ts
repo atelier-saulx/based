@@ -8,6 +8,7 @@ import {
   foreachBlock,
   foreachDirtyBlock,
   makeCsmtKey,
+  specialBlock,
 } from './tree.js'
 import { DbServer, WRITELOG_FILE } from './index.js'
 import { writeFileSync } from 'node:fs'
@@ -120,18 +121,19 @@ export function save(
         return
       }
 
-      const data: CsmtNodeRange = {
-        file,
-        typeId,
-        start,
-        end,
+      const oldLeaf = db.merkleTree.search(mtKey)
+      if (oldLeaf) {
+        oldLeaf.data.file = file
+        db.merkleTree.update(mtKey, hash)
+      } else {
+        const data: CsmtNodeRange = {
+          file,
+          typeId,
+          start,
+          end,
+        }
+        db.merkleTree.insert(mtKey, hash, data)
       }
-      try {
-        db.merkleTree.delete(mtKey)
-      } catch (err) {
-        // console.error({ err })
-      }
-      db.merkleTree.insert(mtKey, hash, data)
     })
   }
 
@@ -146,6 +148,8 @@ export function save(
   }
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId, start] = destructureCsmtKey(leaf.key)
+    if (start == specialBlock) return // skip the type specialBlock
+    console.log('save', { type: typeId, start, hash: leaf.hash })
     const data: CsmtNodeRange = leaf.data
     if (start != data.start) {
       console.error(

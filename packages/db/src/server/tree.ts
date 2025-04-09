@@ -10,6 +10,10 @@ export type CsmtNodeRange = {
   end: number
 }
 
+// This is a special start id set for every type to somewhat lock the order of the csmt.
+// While the id is valid, it's never a true start id of a block.
+export const specialBlock = 2147483647
+
 export const destructureCsmtKey = (key: number) => [
   (key / 4294967296) | 0, // typeId
   (key >>> 31) * 2147483648 + (key & 0x7fffffff), // start_node_id
@@ -38,6 +42,23 @@ export function initCsmt(db: DbServer) {
   // This function can be also called on schema change.
   if (!db.merkleTree || db.merkleTree.getRoot()) {
     db.merkleTree = createTree(db.createCsmtHashFun)
+  }
+
+  // Insert specialBlocks for types.
+  // This should ensure that the insertion order of the actual node ranges is
+  // always deterministic.
+  for (const key in types) {
+    const { id: typeId } = types[key]
+
+    const data: CsmtNodeRange = {
+      file: '',
+      typeId: typeId,
+      start: 0,
+      end: 0,
+    }
+    try {
+      db.merkleTree.insert(makeCsmtKey(typeId, specialBlock), new Uint8Array(16), data)
+    } catch (_) {}
   }
 
   return types

@@ -380,27 +380,22 @@ export class DbServer {
 
   updateMerkleTree(): void {
     foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
-      const oldLeaf = this.merkleTree.search(mtKey)
-
       const hash = new Uint8Array(16)
       native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
 
+      const oldLeaf = this.merkleTree.search(mtKey)
       if (oldLeaf) {
-        if (hashEq(oldLeaf.hash, hash)) {
-          return
+        oldLeaf.data.file = '', // not saved yet
+        this.merkleTree.update(mtKey, hash)
+      } else {
+        const data: CsmtNodeRange = {
+          file: '', // not saved yet
+          typeId,
+          start,
+          end,
         }
-        try {
-          this.merkleTree.delete(mtKey)
-        } catch (err) {}
+        this.merkleTree.insert(mtKey, hash, data)
       }
-
-      const data: CsmtNodeRange = {
-        file: '', // not saved yet
-        typeId,
-        start,
-        end,
-      }
-      this.merkleTree.insert(mtKey, hash, data)
     })
   }
 
