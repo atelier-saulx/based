@@ -4,7 +4,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createTree, hashEq } from './csmt/index.js'
-import { CsmtNodeRange, foreachBlock, makeCsmtKey } from './tree.js'
+import { CsmtNodeRange, foreachBlock, initCsmt, makeCsmtKey } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import './worker.js'
@@ -64,23 +64,9 @@ export async function start(
     // TODO In some cases we really should give up!
   }
 
-  // The merkle tree should be empty at start.
-  if (!db.merkleTree || db.merkleTree.getRoot()) {
-    db.merkleTree = createTree(db.createCsmtHashFun)
-  }
-
-  // FDN-791 CSMT is unstable (not history independent)
-  // For now we just sort the types to ensure that we always
-  // load in the same order.
-  const types = Object.keys(db.schemaTypesParsed)
-    .sort((a, b) => db.schemaTypesParsed[a].id - db.schemaTypesParsed[b].id)
-    .reduce((obj, key) => {
-      obj[key] = db.schemaTypesParsed[key]
-      return obj
-    }, {})
-
-  for (const key in types) {
-    const def = types[key]
+  const csmtTypes = initCsmt(db)
+  for (const key in csmtTypes) {
+    const def = csmtTypes[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.total = total
     def.lastId = writelog?.types[def.id]?.lastId || lastId
