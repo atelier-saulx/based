@@ -21,7 +21,7 @@ inline fn condition(
         Mode.orVar => c.orVar(ctx, q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
-        Mode.reference => c.reference(ctx, q, v, i),
+        Mode.reference => c.reference(q, v, i),
     };
 }
 

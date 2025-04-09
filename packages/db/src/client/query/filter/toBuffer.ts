@@ -21,9 +21,9 @@ const writeConditions = (
   lastWritten += 2
   let conditionSize = 0
   for (const condition of conditions) {
-    conditionSize += condition.buf.byteLength
-    result.set(condition.buf, lastWritten)
-    lastWritten += condition.buf.byteLength
+    conditionSize += condition.byteLength
+    result.set(condition, lastWritten)
+    lastWritten += condition.byteLength
   }
   result[sizeIndex] = conditionSize
   result[sizeIndex + 1] = conditionSize >>> 8

@@ -6,6 +6,7 @@ import {
   REFERENCES,
 } from '@based/schema/def'
 import {
+  ALIGNMENT_NOT_SET,
   EQUAL,
   FilterCtx,
   MODE_AND_FIXED,
@@ -63,13 +64,13 @@ export const createFixedFilterBuffer = (
   const start = prop.start
   if (Array.isArray(value)) {
     const len = value.length
-    const buf = new Uint8Array(10 + len * size)
+    // Add 8 extra bytes for alignment
+    const buf = new Uint8Array(18 + len * size)
     buf[0] = ctx.type
     buf[1] =
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
-
     buf[2] = prop.typeIndex
     buf[3] = size
     buf[4] = size >>> 8
@@ -78,11 +79,13 @@ export const createFixedFilterBuffer = (
     buf[7] = ctx.operation
     buf[8] = len
     buf[9] = len >>> 8
+    buf[10] = ALIGNMENT_NOT_SET
+
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
-        const off = 10 + i * size
+        const off = 18 + i * size
         const val = value[i]
         buf[off] = val
         buf[off + 1] = val >>> 8
@@ -96,12 +99,11 @@ export const createFixedFilterBuffer = (
           buf,
           parseFilterValue(prop, value[i]),
           size,
-          10 + i * size,
+          18 + i * size,
         )
       }
     }
-    console.log('IS OR', buf[1] == MODE_OR_FIXED)
-    return { buf, align: true }
+    return buf
   } else {
     const buf = new Uint8Array(8 + size)
     buf[0] = ctx.type
@@ -113,6 +115,6 @@ export const createFixedFilterBuffer = (
     buf[6] = start >>> 8
     buf[7] = ctx.operation
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
-    return { buf, align: false }
+    return buf
   }
 }

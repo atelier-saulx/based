@@ -2,6 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const config = @import("config");
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
+extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
 // Only little endian for us (at least for now)
 // const native_endian = builtin.cpu.arch.endian();
@@ -58,4 +59,8 @@ pub inline fn copy(dest: []u8, source: []const u8) void {
     } else {
         @memcpy(dest[0..source.len], source);
     }
+}
+
+pub inline fn move(dest: []u8, source: []const u8) void {
+    _ = memmove(dest.ptr, source.ptr, source.len);
 }

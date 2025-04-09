@@ -140,10 +140,7 @@ export const createVariableFilterBuffer = (
           v[7] = len >>> 24
           v[8] = val[val.length - 1]
 
-          parsedCondition = {
-            buf: writeVarFilter(mode, v, ctx, prop, 0, 0),
-            align: false,
-          }
+          parsedCondition = writeVarFilter(mode, v, ctx, prop, 0, 0)
         } else {
           parsedCondition = createFixedFilterBuffer(
             prop,
@@ -157,16 +154,17 @@ export const createVariableFilterBuffer = (
         if (val instanceof ArrayBuffer) {
           val = new Uint8Array(val)
         }
-        parsedCondition = {
-          buf: writeVarFilter(mode, val, ctx, prop, 0, 0),
-          align: false,
-        }
+        parsedCondition = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }
     } else {
-      parsedCondition = {
-        buf: writeVarFilter(mode, val, ctx, prop, prop.start, prop.len),
-        align: false,
-      }
+      parsedCondition = writeVarFilter(
+        mode,
+        val,
+        ctx,
+        prop,
+        prop.start,
+        prop.len,
+      )
     }
   }
   return parsedCondition

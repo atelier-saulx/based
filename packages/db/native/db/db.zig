@@ -427,7 +427,9 @@ pub fn getNode(id: u32, typeEntry: Type) ?Node {
 }
 
 pub inline fn getNodeId(node: Node) u32 {
-    return selva.selva_get_node_id(node);
+    // return read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
+    // return selva.selva_get_node_id(node);
+    return @bitCast(@as([*]u8, @ptrCast(node))[0..4].*);
 }
 
 pub fn getNodeIdArray(node: Node) [4]u8 {

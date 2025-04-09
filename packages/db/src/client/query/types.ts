@@ -33,7 +33,7 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
   )
 }
 
-export type FilterCondition = { buf: Uint8Array; align: boolean }
+export type FilterCondition = Uint8Array
 
 export type QueryDefFilter = {
   size: number
