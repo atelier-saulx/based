@@ -23,7 +23,7 @@ export const primitiveFilter = (
   lang: LangCode,
 ) => {
   if (validateFilter(def, prop, filter)) {
-    return
+    return 0
   }
   let [, ctx, value] = filter
   let parsedCondition: FilterCondition
