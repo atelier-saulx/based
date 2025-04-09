@@ -40,7 +40,6 @@ ifeq ($(EN_SANIT),1)
 	CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
 	CFLAGS += -fanalyzer -Wno-analyzer-possible-null-dereference -Wno-analyzer-null-dereference
 	LDFLAGS += -fsanitize=$(SANITIZERS)
-	
 endif
 
 ifeq ($(uname_S),Linux)
@@ -70,8 +69,6 @@ ifeq ($(uname_S),Linux)
 	LIB_SUFFIX := .so
 endif
 ifeq ($(uname_S),Darwin) # Assume macOS
-	ROSETTA2 := $(shell sh -c 'sysctl -n sysctl.proc_translated 2>/dev/null || echo 0')
-
 	CFLAGS += -g -Wno-c11-extensions -Wno-unknown-attributes
 
 	ifeq ($(uname_M),x86_64)
