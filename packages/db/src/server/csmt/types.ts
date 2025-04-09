@@ -36,6 +36,11 @@ export interface Csmt {
   delete: (k: TreeKey) => void
 
   /**
+   * Update node hash.
+   */
+  update: (k: TreeKey, h: Hash) => void
+
+  /**
    * Compute the diff between this and a given tree.
    */
   diff: (tree: Csmt) => TreeDiff
