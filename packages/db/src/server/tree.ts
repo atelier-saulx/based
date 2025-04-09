@@ -1,4 +1,5 @@
 import native from '../native.js'
+import { createTree } from './csmt/tree.js'
 import { DbServer } from './index.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
@@ -24,6 +25,22 @@ export const makeCsmtKeyFromNodeId = (
 ) => {
   const tmp = nodeId - +!(nodeId % blockCapacity)
   return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
+}
+
+export function initCsmt(db: DbServer) {
+  const types = Object.keys(db.schemaTypesParsed)
+    .sort((a, b) => db.schemaTypesParsed[a].id - db.schemaTypesParsed[b].id)
+    .reduce((obj, key) => {
+      obj[key] = db.schemaTypesParsed[key]
+      return obj
+    }, {})
+
+  // This function can be also called on schema change.
+  if (!db.merkleTree || db.merkleTree.getRoot()) {
+    db.merkleTree = createTree(db.createCsmtHashFun)
+  }
+
+  return types
 }
 
 export function foreachBlock(

@@ -65,7 +65,7 @@ export function createTree(createHash: () => any): Csmt {
       } else if (nodeKey > k) {
         return createNode(newLeaf, node)
       } else {
-        throw new Error('Key exist')
+        throw new Error(`k=${k} exists`)
       }
     }
 
