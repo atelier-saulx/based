@@ -18,6 +18,9 @@ pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
 const globalAllocator = globalAllocatorArena.allocator();
 
+const emptySlice = &.{};
+const emptyArray: []const [16]u8 = emptySlice;
+
 pub const DbCtx = struct {
     id: u32,
     initialized: bool,
@@ -54,6 +57,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
+
     errdefer b.deinit(globalAllocator);
     try dbHashmap.put(id, b);
 
@@ -127,7 +131,7 @@ pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, selvaFieldSchema:
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
     } else {
-        return &.{};
+        return emptySlice;
     }
 }
 
@@ -167,7 +171,7 @@ pub fn getField(
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == types.Prop.CARDINALITY) {
-        return getCardinalityField(node, selvaFieldSchema) orelse &.{};
+        return getCardinalityField(node, selvaFieldSchema) orelse emptySlice;
     }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
@@ -326,7 +330,7 @@ pub fn getEdgeProp(
         );
         return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
     } else {
-        return &.{};
+        return emptySlice;
     }
 }
 
@@ -401,7 +405,7 @@ pub fn deleteField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) !void
     try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
-pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
+pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     return result;
 }
@@ -513,8 +517,6 @@ pub const TextIterator = struct {
         }
     }
 };
-
-const emptyArray: []const [16]u8 = &.{};
 
 pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
     if (value.len == 0) {

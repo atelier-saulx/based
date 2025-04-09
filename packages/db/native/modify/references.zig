@@ -6,8 +6,8 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
 const edge = @import("./edges.zig");
+const RefEdgeOp = @import("../types.zig").RefEdgeOp;
 
-// 0 overwrite, 1 add, 2 delete, 3 update, 4 put
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
     if (ctx.node == null) {
@@ -15,7 +15,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
     const idOffset = Modify.getIdOffset(ctx, refTypeId);
@@ -23,29 +23,12 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
 
-    // TODO if !edges use batch operation
-    // set this whole thing
-    // check if ref b has ref a
-    // optional faster check of the id
-    // BST
-    // TODO if a node gets created optmize insert on the other
-
-    // 4 bytes buffer
     while (i < len) : (i += 5) {
-        const op = data[i];
-        // 0 no edge, no index, real id
-        // 1 edge, no index, real id
-        // 2 edge, index, real id
-        // 3 no edge, index, real id
+        const op: RefEdgeOp = @enumFromInt(data[i]);
+        const hasEdgeData = RefEdgeOp.hasEdges(op);
+        const hasIndex = RefEdgeOp.hasIndex(op);
+        const isTmpId = RefEdgeOp.isTmpId(op);
 
-        // 4 no edge, no index, tmp id
-        // 5 edge, no index, tmp id
-        // 6 edge, index, tmp id
-        // 7 no edge, index, tmp id
-
-        const hasEdgeData = op == 1 or op == 2 or op == 5 or op == 6;
-        const hasIndex = op == 2 or op == 3 or op == 6 or op == 7;
-        const isTmpId: bool = op == 4 or op == 5 or op == 6 or op == 7;
         var id = read(u32, data, i + 1);
 
         if (isTmpId) {
@@ -126,7 +109,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len + offset + 1;
     }
 
-    const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
