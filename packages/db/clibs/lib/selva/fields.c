@@ -2047,13 +2047,12 @@ nil:
             } while (0);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            if (nfo->in_use) {
+            do {
                 const struct selva_string *s = p;
-                uint32_t crc = selva_string_get_crc(s);
+                uint32_t crc = nfo->in_use ? selva_string_get_crc(s) : 0;
+
                 selva_hash_update(hash_state, &crc, sizeof(crc));
-            } else {
-                goto nil;
-            }
+            } while (0);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
