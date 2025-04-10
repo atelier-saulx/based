@@ -57,7 +57,7 @@ export function initCsmt(db: DbServer) {
       end: 0,
     }
     try {
-      db.merkleTree.insert(makeCsmtKey(typeId, specialBlock), new Uint8Array(16), data)
+      db.merkleTree.insert(makeCsmtKey(typeId, specialBlock), db.merkleTree.emptyHash, data)
     } catch (_) {}
   }
 
