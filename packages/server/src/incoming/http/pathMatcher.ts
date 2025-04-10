@@ -68,7 +68,7 @@ function splitBuffer(buffer: Buffer, delimiter: number): Buffer[] {
 
   let start = 0
 
-  for (let i = 0; i < buffer?.length; i++) {
+  for (let i = 0; i < buffer.length; i++) {
     if (buffer[i] === delimiter) {
       if (i - start > 0) {
         parts.push(buffer.slice(start, i))
@@ -95,7 +95,7 @@ function splitBuffer(buffer: Buffer, delimiter: number): Buffer[] {
  */
 function parseToken(segment: Buffer): PathToken {
   let modifier: PathToken['modifier'] = REQUIRED_MODIFIER
-  let value: Buffer = Buffer.allocUnsafe(segment.length)
+  let value: Buffer = Buffer.allocUnsafe(segment?.length)
   let type: number = STATIC
 
   let i = 0
@@ -148,7 +148,7 @@ export function tokenizePattern(pattern: Buffer): PathToken[] {
   const parts = splitBuffer(pattern, SLASH)
   const tokens: PathToken[] = []
 
-  if (!parts?.length) {
+  if (!parts.length) {
     return tokens
   }
 
@@ -166,7 +166,7 @@ export function tokenizePattern(pattern: Buffer): PathToken[] {
  * @param path - The path to test ("/users/123")
  */
 export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
-  if (!tokens?.length || path.byteLength === 0 || path[0] !== SLASH) {
+  if (!tokens?.length || path?.byteLength === 0 || path?.[0] !== SLASH) {
     return false
   }
 
@@ -235,7 +235,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
 
     i++
 
-    if (i === len - 1 && tokens?.length - 1 > tokenIndex) {            
+    if (i === len - 1 && tokens.length - 1 > tokenIndex) {            
       const nextModifier = tokens[tokenIndex + 1]?.modifier
 
       if (nextModifier === undefined ||
@@ -260,7 +260,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
  * @param path - The path to test ("/users/123")
  */
 export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[] | boolean> {
-  if (!tokens?.length || path.byteLength === 0 || path[0] !== SLASH) {    
+  if (!tokens?.length || path?.byteLength === 0 || path?.[0] !== SLASH) {    
     return {}
   }
 
@@ -363,7 +363,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
       collected = ''
     }    
 
-    if (!collected && tokenIndex + 1 < tokens?.length) {            
+    if (!collected && tokenIndex + 1 < tokens.length) {            
       tokenIndex++
       token = tokens[tokenIndex]
     }
