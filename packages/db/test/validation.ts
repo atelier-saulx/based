@@ -149,7 +149,6 @@ await test('update', async (t) => {
     })
   })
 
-  // cardinality: 2 unique,
   deepEqual(await db.query('user', cId).include('cardinality').get(), {
     id: cId.tmpId,
     cardinality: 2,
@@ -340,7 +339,6 @@ await test('update', async (t) => {
     })
   })
 
-  // Don't throw
   const id = await db.create('user', undefined)
 
   await throws(
@@ -439,34 +437,31 @@ await test('update', async (t) => {
     'Too small out of bounds value should throw (int8)',
   )
 
-  // Binary validation tests
   db.create('user', {
-    binaryData: 'not a binary', // Should throw for string
+    binaryData: 'not a binary',
   })
 
   await throws(async () => {
     db.create('user', {
-      binaryData: 12345, // Should throw for number
+      binaryData: 12345,
     })
   })
 
   await throws(async () => {
     db.create('user', {
-      binaryData: { some: 'object' }, // Should throw for object
+      binaryData: { some: 'object' },
     })
   })
 
   await throws(async () => {
     db.create('user', {
-      binaryData: [1, 2, 3, 4], // Should throw for array of numbers
+      binaryData: [1, 2, 3, 4],
     })
   })
 
-  // Valid binary data
   db.create('user', {
     binaryData: new Uint8Array([1, 2, 3, 4]),
   })
-  // End Binary validation tests
 })
 
 await test('query', async (t) => {

@@ -343,12 +343,6 @@ p.string = propParser<SchemaString>(
   STUB,
   {
     ...binaryOpts,
-    min(val) {
-      expectNumber(val)
-    },
-    max(val) {
-      expectNumber(val)
-    },
   },
   0,
 )
@@ -380,6 +374,21 @@ p.timestamp = propParser<SchemaTimestamp>(
       expectString(val)
       dateDisplaysSet ??= new Set(dateDisplays)
       dateDisplaysSet.has(val)
+    },
+    min(val) {
+      if (typeof val !== 'string' && typeof val !== 'number') {
+        throw Error(INVALID_VALUE)
+      }
+    },
+    max(val) {
+      if (typeof val !== 'string' && typeof val !== 'number') {
+        throw Error(INVALID_VALUE)
+      }
+    },
+    step(val) {
+      if (typeof val !== 'string' && typeof val !== 'number') {
+        throw Error(INVALID_VALUE)
+      }
     },
     default(val) {
       if (typeof val !== 'number' && !(val instanceof Date)) {

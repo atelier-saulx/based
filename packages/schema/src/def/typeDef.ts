@@ -14,6 +14,7 @@ import {
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
+  NUMBER,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -149,6 +150,12 @@ export const createSchemaTypeDef = (
 
       if (schemaProp.min) {
         prop.min = schemaProp.min
+      }
+
+      if (schemaProp.step) {
+        prop.step = schemaProp.step
+      } else if (prop.typeIndex !== NUMBER) {
+        prop.step = 1
       }
 
       if (isPropType('enum', schemaProp)) {
