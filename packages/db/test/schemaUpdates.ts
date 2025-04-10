@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
@@ -114,4 +115,183 @@ await test('client server schema updates', async (t) => {
     .toObject()
 
   deepEqual(ageSorted3, ageSorted2)
+})
+
+await test('rapid schema updates', async (t) => {
+  const server = new DbServer({
+    path: t.tmp,
+    onSchemaChange(schema) {
+      client1.putLocalSchema(schema)
+      client2.putLocalSchema(schema)
+    },
+  })
+
+  await server.start({ clean: true })
+
+  t.after(() => server.destroy())
+
+  const hooks: DbClientHooks = {
+    async setSchema(schema, fromStart, transformFns) {
+      return server.setSchema(schema, fromStart, transformFns)
+    },
+    async flushModify(buf) {
+      const offsets = server.modify(buf)
+      return { offsets }
+    },
+    async getQueryBuf(buf) {
+      return server.getQueryBuf(buf)
+    },
+    flushIsReady: new Promise(() => {}),
+    flushReady: () => {},
+    flushTime: 0,
+  }
+
+  const client1 = new DbClient({
+    hooks,
+  })
+
+  const client2 = new DbClient({
+    hooks,
+  })
+
+  await client1.setSchema({
+    types: {
+      user: {
+        name: 'string',
+      },
+    },
+  })
+
+  await client2.create('user', {
+    name: 'youzi',
+  })
+
+  await client1.create('user', {
+    name: 'jamez',
+  })
+
+  let field = 10
+  const promises = []
+  while (field--) {
+    await setTimeout(10 + Math.random() * 100)
+    promises.push(
+      client1.setSchema({
+        types: {
+          // @ts-ignore
+          user: {
+            name: 'string',
+            [`field${field}`]: 'string',
+          },
+        },
+      }),
+    )
+    promises.push(
+      client2.setSchema({
+        types: {
+          // @ts-ignore
+          user: {
+            [`field${field}`]: 'string',
+            name: 'string',
+          },
+        },
+      }),
+    )
+  }
+
+  await Promise.all(promises)
+
+  const res = await client1.query('user').get().toObject()
+
+  deepEqual(
+    [
+      { id: 1, name: 'youzi', field0: '' },
+      { id: 2, name: 'jamez', field0: '' },
+    ],
+    res,
+  )
+})
+
+await test('rapid modifies during schema update', async (t) => {
+  const server = new DbServer({
+    path: t.tmp,
+    onSchemaChange(schema) {
+      console.log('schema change')
+      client1.putLocalSchema(schema)
+      client2.putLocalSchema(schema)
+    },
+  })
+
+  await server.start({ clean: true })
+
+  t.after(() => server.destroy())
+
+  const hooks: DbClientHooks = {
+    async setSchema(schema, fromStart, transformFns) {
+      return server.setSchema(schema, fromStart, transformFns)
+    },
+    async flushModify(buf) {
+      const offsets = server.modify(buf)
+      return { offsets }
+    },
+    async getQueryBuf(buf) {
+      return server.getQueryBuf(buf)
+    },
+    flushIsReady: new Promise(() => {}),
+    flushReady: () => {},
+    flushTime: 0,
+  }
+
+  const client1 = new DbClient({
+    hooks,
+  })
+
+  const client2 = new DbClient({
+    hooks,
+  })
+
+  await client1.setSchema({
+    types: {
+      user: {
+        name: 'string',
+      },
+    },
+  })
+
+  const youzies = 500_000
+  let a = youzies
+  while (a--) {
+    client2.create('user', {
+      name: 'youzi' + a,
+    })
+  }
+  await client2.drain()
+
+  client1
+    .setSchema({
+      types: {
+        user: {
+          age: 'number',
+          name: 'string',
+        },
+      },
+    })
+    .then(() => {
+      console.log('schema set done!')
+    })
+
+  const jamesies = 1000
+  let b = jamesies
+  while (b--) {
+    const name = 'jamex' + b
+    const id = await client2.create('user', { name })
+    const res = await client2.query('user', id).get().toObject()
+
+    deepEqual(res.id, id)
+    deepEqual(res.name, name)
+  }
+
+  const all = await client2.query('user').range(0, 1000_000).get().toObject()
+  deepEqual(all[0], { id: 1, name: 'youzi499999' })
+  deepEqual(all.at(-1), { id: 501000, name: 'jamex0' })
+  deepEqual(all.length, youzies + jamesies)
 })
