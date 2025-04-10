@@ -114,6 +114,10 @@ const test = async (
         .replace('Error: ', '\n') + '\n'
     console.log(picocolors.red(msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
+
+    if (global.stopOnCrash) {
+      process.exit(1)
+    }
   }
 
   try {

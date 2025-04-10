@@ -11,6 +11,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const args = process.argv
 
+const stopOnCrashIndex = args.indexOf('stopOnCrash')
+global.stopOnCrash = stopOnCrashIndex != -1
+
 const repeat = args[2] && /^\d+$/.test(args[2]) ? Number(args[2]) : 1
 
 const match = args.slice(repeat == 1 ? 2 : 3)
