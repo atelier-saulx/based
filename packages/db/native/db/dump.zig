@@ -34,7 +34,7 @@ pub fn saveRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
         return res;
     }
 
-    var hash: selva.SelvaHash128 = undefined;
+    var hash: selva.SelvaHash128 = 0;
     const rc = selva.selva_dump_save_range(ctx.selva, te, sdb_filename.ptr, start, end, &hash);
     _ = c.napi_create_int32(napi_env, rc, &res);
     const hp: [*]u8 = @ptrCast(&hash);

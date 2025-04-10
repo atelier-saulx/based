@@ -52,7 +52,9 @@ function saveRange(
     db.dbCtxExternal,
     hashOut,
   )
-  if (err) {
+  if (err == -8) { // TODO ENOENT
+    return ''
+  } else if (err) {
     // TODO print the error string
     console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
     return null
@@ -93,46 +95,51 @@ export function save(
       const def = db.schemaTypesParsed[key]
       foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) => {
         const typeId = def.id
+        const mtKey = makeCsmtKey(typeId, start)
         const hash = new Uint8Array(16)
         const file = saveRange(db, typeId, start, end, hash)
-        if (!file) {
+        if (file === null) {
           // The previous state should remain in the merkle tree for
           // load and sync purposes.
-          return
+        } else if (file.length === 0) {
+          // the range is now empty
+          db.merkleTree.delete(mtKey)
+        } else {
+          const data: CsmtNodeRange = {
+            file,
+            typeId,
+            start,
+            end,
+          }
+          db.merkleTree.insert(mtKey, hash, data)
         }
-
-        const mtKey = makeCsmtKey(typeId, start)
-        const data: CsmtNodeRange = {
-          file,
-          typeId,
-          start,
-          end,
-        }
-        db.merkleTree.insert(mtKey, hash, data)
       })
     }
   } else {
     foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
       const hash = new Uint8Array(16)
+      // TODO Don't save if empty
       const file = saveRange(db, typeId, start, end, hash)
-      if (!file) {
+      if (file === null) {
         // The previous state should remain in the merkle tree for
         // load and sync purposes.
         return
-      }
-
-      const oldLeaf = db.merkleTree.search(mtKey)
-      if (oldLeaf) {
-        oldLeaf.data.file = file
-        db.merkleTree.update(mtKey, hash)
+      } else if (file.length === 0) {
+        // The range is empty
       } else {
-        const data: CsmtNodeRange = {
-          file,
-          typeId,
-          start,
-          end,
+        const oldLeaf = db.merkleTree.search(mtKey)
+        if (oldLeaf) {
+          oldLeaf.data.file = file
+          db.merkleTree.update(mtKey, hash)
+        } else {
+          const data: CsmtNodeRange = {
+            file,
+            typeId,
+            start,
+            end,
+          }
+          db.merkleTree.insert(mtKey, hash, data)
         }
-        db.merkleTree.insert(mtKey, hash, data)
       }
     })
   }
@@ -149,7 +156,7 @@ export function save(
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
-    console.log('save', { type: typeId, start, hash: leaf.hash })
+    //console.log('save', { type: typeId, start, hash: leaf.hash })
     const data: CsmtNodeRange = leaf.data
     if (start != data.start) {
       console.error(

@@ -74,7 +74,7 @@ export async function start(
       writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
 
     foreachBlock(db, def, (start, end, hash) => {
-      console.log('load', { type: def.id, start, hash })
+      //console.log('load', { type: def.id, start, hash })
       const mtKey = makeCsmtKey(def.id, start)
       const file: string =
         writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file || ''

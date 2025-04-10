@@ -94,8 +94,6 @@ export const migrate = async (
   let i = 0
   let ranges = []
 
-  // fromDbServer.updateMerkleTree()
-  // fromDbServer.dirtyRanges.clear()
   await fromDbServer.save()
   fromDbServer.merkleTree.visitLeafNodes((leaf) => {
     ranges.push(leaf.data)
@@ -159,9 +157,9 @@ export const migrate = async (
     join(fromDbServer.fileSystemPath, SCHEMA_FILE),
     JSON.stringify(fromDbServer.schema),
   ))
-  
+
   await Promise.all(promises)
-  
+
   fromDbServer.onSchemaChange?.(fromDbServer.schema)
 
   return fromDbServer.schema

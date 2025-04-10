@@ -470,8 +470,10 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u32) selva.SelvaHash128 {
-    return selva.selva_node_hash_range(db, typeEntry, start, end);
+pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
+    var hash: u128 = undefined;
+    try errors.selva(selva.selva_node_hash_range(db, typeEntry, start, end, &hash));
+    return hash;
 }
 
 pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !u32 {

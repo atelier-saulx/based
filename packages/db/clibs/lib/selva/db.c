@@ -861,18 +861,17 @@ selva_hash128_t selva_node_hash(struct SelvaDb *db, struct SelvaTypeEntry *type,
     return res;
 }
 
-selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
+int selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, node_id_t end, selva_hash128_t *hash_out)
 {
-    selva_hash_state_t *hash_state = selva_hash_create_state();
-    selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
-    selva_hash128_t res = 0;
-
-    selva_hash_reset(hash_state);
-
     struct SelvaNode *node = selva_nfind_node(type, start);
     if (!node || node->node_id > end) {
-        goto out;
+        return SELVA_ENOENT;
     }
+
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
+
+    selva_hash_reset(hash_state);
 
     do {
         selva_hash128_t node_hash = selva_node_hash_update(db, type, node, tmp_hash_state);
@@ -881,10 +880,9 @@ selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry 
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
 
-out:
-    res = selva_hash_digest(hash_state);
+    *hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
-    return res;
+    return 0;
 }
