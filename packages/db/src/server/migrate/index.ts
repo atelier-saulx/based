@@ -9,7 +9,7 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import './worker.js'
-import { foreachDirtyBlock } from '../tree.js'
+import { destructureCsmtKey, foreachDirtyBlock, specialBlock } from '../tree.js'
 import { DbServer, SCHEMA_FILE } from '../index.js'
 import { fileURLToPath } from 'url'
 import { deepMerge } from '@saulx/utils'
@@ -94,10 +94,10 @@ export const migrate = async (
   let i = 0
   let ranges = []
 
-  // fromDbServer.updateMerkleTree()
-  // fromDbServer.dirtyRanges.clear()
   await fromDbServer.save()
   fromDbServer.merkleTree.visitLeafNodes((leaf) => {
+    const [_typeId, start] = destructureCsmtKey(leaf.key)
+    if (start == specialBlock) return // skip the type specialBlock
     ranges.push(leaf.data)
   })
 
@@ -159,9 +159,9 @@ export const migrate = async (
     join(fromDbServer.fileSystemPath, SCHEMA_FILE),
     JSON.stringify(fromDbServer.schema),
   ))
-  
+
   await Promise.all(promises)
-  
+
   fromDbServer.onSchemaChange?.(fromDbServer.schema)
 
   return fromDbServer.schema

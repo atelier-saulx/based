@@ -20,6 +20,8 @@ export interface TreeDiff {
 }
 
 export interface Csmt {
+  emptyHash: Uint8Array,
+
   /**
    * Get the root node.
    */

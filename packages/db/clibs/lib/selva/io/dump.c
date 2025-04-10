@@ -418,6 +418,16 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     struct selva_io io;
     int err;
 
+    struct SelvaNode *node = nullptr;
+    const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
+
+    if (nr_nodes == 0) {
+        /*
+         * Don't save anything if the range is empty.
+         */
+        return SELVA_ENOENT;
+    }
+
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
 #endif
@@ -436,8 +446,6 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
-    struct SelvaNode *node = nullptr;
-    const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
 

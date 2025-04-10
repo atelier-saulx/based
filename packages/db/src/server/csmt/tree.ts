@@ -243,6 +243,8 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   return {
+    emptyHash,
+
     getRoot: () => root,
     insert: (k: TreeKey, h: Hash, data: any = null) => {
       if (!(h instanceof Uint8Array)) {

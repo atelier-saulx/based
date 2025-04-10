@@ -41,14 +41,19 @@ pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c
     const end = napi.get(u32, env, args[2]) catch return null;
     const buf = napi.get([]u8, env, args[3]) catch return null;
     const ctx = napi.get(*db.DbCtx, env, args[4]) catch return null;
+    var ok: c.napi_value = undefined;
+    var nil: c.napi_value = undefined;
+
+    _ = c.napi_get_boolean(env, true, &ok);
+    _ = c.napi_get_boolean(env, false, &nil);
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeId);
     if (te == null) {
-        return null;
+        return nil;
     }
 
-    const hash = db.getNodeRangeHash(ctx.selva.?, te.?, start, end);
+    const hash = db.getNodeRangeHash(ctx.selva.?, te.?, start, end) catch return nil;
     copy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
 
-    return null;
+    return ok;
 }
