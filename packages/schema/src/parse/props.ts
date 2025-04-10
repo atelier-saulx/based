@@ -389,6 +389,9 @@ p.timestamp = propParser<SchemaTimestamp>(
       if (typeof val !== 'string' && typeof val !== 'number') {
         throw Error(INVALID_VALUE)
       }
+      if (typeof val === 'string' && val.includes('now')) {
+        throw Error(INVALID_VALUE)
+      }
     },
     default(val) {
       if (typeof val !== 'number' && !(val instanceof Date)) {

@@ -1,8 +1,9 @@
+import { convertToTimestamp } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import { throws } from './shared/assert.js'
 import test from './shared/test.js'
 
-await test('min / max validation', async (t) => {
+await test('simple min / max validation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -704,4 +705,116 @@ await test('step validation on reference edges', async (t) => {
       things: { update: [{ id: thing1, $timestampStep: 1 }] },
     })
   })
+})
+
+await test('min / max / step validation on reference edges timestamp + string format', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  const minDateStr = '01/01/2000'
+  const minTs = convertToTimestamp(minDateStr)
+  const maxOffsetSeconds = 10
+  const stepMs = 1000 // 1 second
+
+  await db.setSchema({
+    types: {
+      thing: {},
+      edgeUser: {
+        props: {
+          things: {
+            items: {
+              ref: 'thing',
+              prop: 'users', // Assuming 'users' exists on 'thing' or handle appropriately
+              $timestamp: {
+                type: 'timestamp',
+                max: `now + ${maxOffsetSeconds}s`,
+                min: minDateStr,
+                step: stepMs,
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const thing1 = await db.create('thing', {})
+  const user1 = await db.create('edgeUser', {})
+  const validFutureTs = Math.floor(Date.now() / stepMs) * stepMs + stepMs * 2
+
+  // --- Valid Cases ---
+  await db.create('edgeUser', {
+    things: [{ id: thing1, $timestamp: minTs }],
+  })
+  await db.update('edgeUser', user1, {
+    things: { add: [{ id: thing1, $timestamp: minTs + stepMs * 5 }] },
+  })
+  await db.update('edgeUser', user1, {
+    things: { update: [{ id: thing1, $timestamp: validFutureTs }] },
+  })
+  await db.update('edgeUser', user1, {
+    things: { update: [{ id: thing1, $timestamp: 'now + 5s' }] }, // String format
+  })
+
+  // --- Invalid Cases ---
+
+  // Below min
+  throws(async () => {
+    db.create('edgeUser', {
+      things: [{ id: thing1, $timestamp: minTs - stepMs }],
+    })
+  }, 'Value is lower than min value')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: { add: [{ id: thing1, $timestamp: '31/12/1999' }] },
+    })
+  }, 'Value is lower than min value')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: { update: [{ id: thing1, $timestamp: minTs - stepMs }] },
+    })
+  }, 'Value is lower than min value')
+
+  // Above max
+  const aboveMaxTs = Date.now() + (maxOffsetSeconds + 5) * 1000
+  throws(async () => {
+    db.create('edgeUser', {
+      things: [{ id: thing1, $timestamp: aboveMaxTs }],
+    })
+  }, 'Value is higher than max value')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: {
+        add: [{ id: thing1, $timestamp: `now + ${maxOffsetSeconds + 5}s` }],
+      },
+    })
+  }, 'Value is higher than max value')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: { update: [{ id: thing1, $timestamp: aboveMaxTs }] },
+    })
+  }, 'Value is higher than max value')
+
+  // Incorrect step
+  const invalidStepTs = minTs + stepMs / 2
+  throws(async () => {
+    db.create('edgeUser', {
+      things: [{ id: thing1, $timestamp: invalidStepTs }],
+    })
+  }, 'Value is not divisable by step')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: { add: [{ id: thing1, $timestamp: invalidStepTs }] },
+    })
+  }, 'Value is not divisable by step')
+  throws(async () => {
+    db.update('edgeUser', user1, {
+      things: { update: [{ id: thing1, $timestamp: invalidStepTs }] },
+    })
+  }, 'Value is not divisable by step')
 })

@@ -1,3 +1,4 @@
+import { convertToTimestamp } from '@saulx/utils'
 import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
 
 export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
@@ -32,13 +33,23 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
-
-    // if string
-    if (t.min !== undefined && value < t.min) {
-      return false
+    if (t.min !== undefined) {
+      if (typeof t.min === 'number') {
+        if (value < t.min) {
+          return false
+        }
+      } else if (value < convertToTimestamp(t.min)) {
+        return false
+      }
     }
-    if (t.max !== undefined && value > t.max) {
-      return false
+    if (t.max !== undefined) {
+      if (typeof t.max === 'number') {
+        if (value > t.max) {
+          return false
+        }
+      } else if (value > convertToTimestamp(t.max)) {
+        return false
+      }
     }
     return true
   },

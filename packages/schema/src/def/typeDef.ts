@@ -22,7 +22,7 @@ import { makePacked } from './makePacked.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
 import { getPropLen } from './getPropLen.js'
-import { isSeparate } from './utils.js'
+import { isSeparate, parseMinMaxStep } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -146,16 +146,18 @@ export const createSchemaTypeDef = (
       }
 
       if (schemaProp.max) {
-        prop.max = schemaProp.max
+        prop.max = parseMinMaxStep(schemaProp.max)
       }
 
       if (schemaProp.min) {
-        prop.min = schemaProp.min
+        prop.min = parseMinMaxStep(schemaProp.min)
       }
 
       if (schemaProp.step) {
-        prop.step = schemaProp.step
-      } else if (prop.typeIndex !== NUMBER) {
+        prop.step = parseMinMaxStep(schemaProp.step)
+      }
+
+      if (prop.typeIndex !== NUMBER && prop.step === undefined) {
         prop.step = 1
       }
 

@@ -14,6 +14,7 @@ import {
 
 import { SchemaProp, isPropType } from '../types.js'
 import { getPropType } from '../parse/utils.js'
+import { convertToTimestamp } from '@saulx/utils'
 
 export function isSeparate(schemaProp: SchemaProp, len: number) {
   return len === 0 || isPropType('vector', schemaProp)
@@ -63,4 +64,16 @@ export function getPropLen(schemaProp: SchemaProp) {
   }
 
   return len
+}
+
+export const parseMinMaxStep = (val: any) => {
+  if (typeof val === 'number') {
+    return val
+  }
+  if (typeof val === 'string') {
+    if (!val.includes('now')) {
+      return val
+    }
+    return convertToTimestamp(val)
+  }
 }
