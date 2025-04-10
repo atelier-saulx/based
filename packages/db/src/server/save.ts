@@ -7,6 +7,7 @@ import {
   destructureCsmtKey,
   foreachBlock,
   foreachDirtyBlock,
+  initCsmt,
   makeCsmtKey,
   specialBlock,
 } from './tree.js'
@@ -89,7 +90,7 @@ export function save(
 
   if (forceFullDump) {
     // We just rebuild the whole tree
-    db.merkleTree = createTree(db.createCsmtHashFun) // TODO This could be somewhere else.
+    initCsmt(db)
 
     for (const key in db.schemaTypesParsed) {
       const def = db.schemaTypesParsed[key]
