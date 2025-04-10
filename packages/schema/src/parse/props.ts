@@ -343,6 +343,12 @@ p.string = propParser<SchemaString>(
   STUB,
   {
     ...binaryOpts,
+    min(val) {
+      expectNumber(val)
+    },
+    max(val) {
+      expectNumber(val)
+    },
   },
   0,
 )
