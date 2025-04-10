@@ -719,13 +719,14 @@ await test('min / max / step validation on reference edges timestamp + string fo
   const minDateStr = '01/01/2000'
   const minTs = convertToTimestamp(minDateStr)
   const maxOffsetSeconds = 10
-  const stepMs = 1000 // 1 second
+  const stepMs = 1 // 1 second
 
   await db.setSchema({
     types: {
       thing: {},
       edgeUser: {
         props: {
+          ts: { type: 'timestamp', step: '1s' },
           things: {
             items: {
               ref: 'thing',
@@ -747,7 +748,16 @@ await test('min / max / step validation on reference edges timestamp + string fo
   const user1 = await db.create('edgeUser', {})
   const validFutureTs = Math.floor(Date.now() / stepMs) * stepMs + stepMs * 2
 
-  // --- Valid Cases ---
+  await db.create('edgeUser', {
+    ts: '01/02/2000',
+  })
+
+  throws(async () => {
+    db.create('edgeUser', {
+      ts: 'now + 1',
+    })
+  }, 'Wrong step')
+
   await db.create('edgeUser', {
     things: [{ id: thing1, $timestamp: minTs }],
   })
@@ -757,13 +767,11 @@ await test('min / max / step validation on reference edges timestamp + string fo
   await db.update('edgeUser', user1, {
     things: { update: [{ id: thing1, $timestamp: validFutureTs }] },
   })
+
   await db.update('edgeUser', user1, {
     things: { update: [{ id: thing1, $timestamp: 'now + 5s' }] }, // String format
   })
 
-  // --- Invalid Cases ---
-
-  // Below min
   throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: minTs - stepMs }],

@@ -72,8 +72,8 @@ export const parseMinMaxStep = (val: any) => {
   }
   if (typeof val === 'string') {
     if (!val.includes('now')) {
-      return val
+      return convertToTimestamp(val)
     }
-    return convertToTimestamp(val)
+    return val
   }
 }
