@@ -18,7 +18,7 @@ await test('alias', async (t) => {
 
   for (let i = 0; i < 10; i++) {
     db.create('article', {
-      email: i + ' flap',
+      email: i + ' create',
     })
   }
 
@@ -28,20 +28,23 @@ await test('alias', async (t) => {
     await db.query('article').sort('email', 'desc').get(),
     'email',
     'desc',
+    'After create',
   )
 
   for (let i = 0; i < 10; i++) {
+    const x = ~~(Math.random() * 5 + 1) + ' update'
     db.update('article', i + 1, {
-      email: ~~(Math.random() * 100) + ' flap',
+      email: x,
     })
   }
 
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get(),
+    await db.query('article').sort('email', 'desc').get().inspect(100),
     'email',
     'desc',
+    'After update',
   )
 
   for (let i = 0; i < 3; i++) {
@@ -54,5 +57,22 @@ await test('alias', async (t) => {
     await db.query('article').sort('email', 'desc').get(),
     'email',
     'desc',
+    'After delete',
+  )
+
+  for (let i = 0; i < 100; i++) {
+    const x = ~~(Math.random() * 5 + 1) + ' update'
+    db.create('article', {
+      email: x,
+    })
+  }
+
+  await db.drain()
+
+  isSorted(
+    await db.query('article').sort('email', 'desc').get(),
+    'email',
+    'desc',
+    'After create (same values)',
   )
 })
