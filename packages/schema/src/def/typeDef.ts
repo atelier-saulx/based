@@ -63,8 +63,9 @@ export const updateTypeDefs = (
           en: {},
         },
       )
+      // TODO this should come from somewhere else
       def.blockCapacity =
-        field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
+        field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
       schemaTypesParsed[field] = def
       schemaTypesParsedById[type.id] = def
     }
