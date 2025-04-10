@@ -107,8 +107,12 @@ export class BasedQueryResponse {
     }
   }
 
-  inspect(depth: number = 2) {
-    console.log(this[inspect.custom](depth))
+  inspect(depth: number = 2, raw?: boolean) {
+    if (raw) {
+      console.dir(this.toObject(), { depth })
+    } else {
+      console.log(this[inspect.custom](depth))
+    }
     return this
   }
 

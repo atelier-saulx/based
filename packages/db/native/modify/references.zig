@@ -38,6 +38,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
 
         const node = try db.upsertNode(id, refTypeEntry);
+
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
         if (hasEdgeData) {
             const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -98,11 +99,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const address = @intFromPtr(data.ptr);
     const delta = (address + 1) & 3;
     const offset = if (delta == 0) 0 else 4 - delta;
-
-    // if (@mod(len, 4) != 0) {
-    //     std.log.err("Incorrect len passed to putReferences {any} \n", .{len});
-    //     return errors.SelvaError.SELVA_EINVAL;
-    // }
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});

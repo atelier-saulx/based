@@ -1,4 +1,3 @@
-import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'

@@ -260,10 +260,10 @@ class GetPromise extends Promise<BasedQueryResponse> {
   toJSON() {
     return this.then(resToJSON)
   }
-  inspect(depth?: number) {
+  inspect(depth?: number, raw?: boolean) {
     return this.then(
       (res: BasedQueryResponse) =>
-        new GetPromise((resolve) => resolve(res.inspect(depth))),
+        new GetPromise((resolve) => resolve(res.inspect(depth, raw))),
     ) as GetPromise
   }
 }

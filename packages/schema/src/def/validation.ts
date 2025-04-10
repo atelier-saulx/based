@@ -170,10 +170,13 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.reference]: (value) => {
-    // if (typeof value !== 'number' && value != null) {
-    //   return false
-    // }
+  [TYPE_INDEX_MAP.reference]: (v) => {
+    if (typeof v !== 'number') {
+      return false
+    }
+    if (v === 0) {
+      return false
+    }
     return true
   },
   [TYPE_INDEX_MAP.references]: (v) => {
@@ -186,14 +189,14 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.string]: (value, t) => {
-    // add max etc all here - make a ref to the original SCHEMA
+    // add max etc all here - make a ref to the original SCHEMA on DEF
     if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }
     return true
   },
   [TYPE_INDEX_MAP.text]: (value, t) => {
-    // add max etc all here - make a ref to the original SCHEMA
+    // add max etc all here - make a ref to the original SCHEMA on DEF
     if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }

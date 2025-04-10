@@ -46,6 +46,7 @@ await test('single special cases', async (t) => {
         data.bestBud = prevId
         data.buddies = [prevId]
       }
+
       prevId = db.create('user', data)
       if (i === 5e3) {
         break
