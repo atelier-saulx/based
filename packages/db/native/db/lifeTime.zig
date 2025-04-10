@@ -26,11 +26,6 @@ fn getOptPath(
     return if (!(t == c.napi_null or t == c.napi_undefined)) try napi.get([]u8, env, value) else null;
 }
 
-// have to pass the pointer to js
-// NAPI_VALUE here has to be the pointer
-
-// createCtx has to go to a seperate
-
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const id = try napi.get(u32, napi_env, args[0]);
@@ -75,7 +70,6 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
 
     ctx.selva = null;
 
-    // free mem
     ctx.arena.deinit();
 
     return null;

@@ -13,6 +13,7 @@ const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
 const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
 const move = @import("../../utils.zig").move;
+const Compression = @import("../../types.zig").Compression;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
@@ -297,8 +298,7 @@ inline fn getScore(
     score: *u8,
     penalty: u8,
 ) bool {
-    const isCompressed = value[1] == 1;
-    if (isCompressed) {
+    if (value[1] == @intFromEnum(Compression.compressed)) {
         _ = decompress(
             *u8,
             strSearchCompressed,
@@ -404,7 +404,6 @@ pub fn searchVector(
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(true),
 ) f32 {
-    // add FS on ctx
     const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
         return MaxVectorScore;
     };

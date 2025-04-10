@@ -313,7 +313,7 @@ inline fn parseString(
         }
         return &arr;
     } else {
-        if (data[1] == 0) {
+        if (data[1] == @intFromEnum(types.Compression.none)) {
             const slice = data[2 .. SIZE + 2];
             return slice.ptr;
         } else {

@@ -189,3 +189,8 @@ pub const AggFn = enum(u8) {
     sum = 11,
     variance = 12,
 };
+
+pub const Compression = enum(u8) {
+    none = 0,
+    compressed = 1,
+};
