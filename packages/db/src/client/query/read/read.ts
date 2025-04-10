@@ -164,13 +164,9 @@ const readMain = (
 ) => {
   const mainInclude = q.include.main
   let i = offset
-
   const isEdge = q.type === QueryDefType.Edge
-
   const main = isEdge ? q.target.ref.reverseMainEdges : q.schema.main
-
   const len = isEdge ? q.target.ref.edgeMainLen : q.schema.mainLen
-
   if (mainInclude.len === len) {
     for (const start in main) {
       readMainValue(main[start], result, Number(start) + i, item)
@@ -215,6 +211,8 @@ const handleUndefinedProps = (
               }
             }
           }
+        } else if (prop.typeIndex === BINARY) {
+          addField(prop, new Uint8Array(0), item)
         } else {
           addField(prop, prop.typeIndex === JSON ? null : '', item)
         }
@@ -367,9 +365,6 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      if (!prop) {
-        // console.log({ prop: !!prop }, index)
-      }
       if (prop.typeIndex === CARDINALITY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)

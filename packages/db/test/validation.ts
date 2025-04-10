@@ -27,6 +27,7 @@ await test('update', async (t) => {
           i16: 'int16',
           name: 'string',
           number: 'number',
+          binaryData: 'binary',
           date: 'timestamp',
           numberMax: { type: 'number', max: 20, min: 10 },
           derp: ['a', 'b', 'derp'],
@@ -259,58 +260,64 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query('user').include('name', 'friend').get(), [
-    { id: 1, friend: null, name: '' },
-    { id: 2, friend: null, name: '' },
-    { id: 3, friend: null, name: '' },
-    { id: 4, friend: null, name: '' },
-    {
-      id: 5,
-      name: 'youzi',
-      friend: {
-        id: 6,
-        bool: false,
-        u32: 0,
-        u8: 0,
-        i8: 0,
-        i32: 0,
-        u16: 0,
-        i16: 0,
-        number: 0,
-        date: 0,
-        numberMax: 0,
-        derp: undefined,
-        countryCode: '',
-        name: 'jame-z',
-        json: null,
-        cardinality: 0,
-        text: { en: '', de: '' },
-      },
-    },
-    {
-      id: 6,
-      name: 'jame-z',
-      friend: {
+  deepEqual(
+    await db.query('user').include('name', 'friend').get(),
+    [
+      { id: 1, friend: null, name: '' },
+      { id: 2, friend: null, name: '' },
+      { id: 3, friend: null, name: '' },
+      { id: 4, friend: null, name: '' },
+      {
         id: 5,
-        bool: false,
-        u32: 0,
-        u8: 0,
-        i8: 0,
-        i32: 0,
-        u16: 0,
-        i16: 0,
-        number: 0,
-        date: 0,
-        numberMax: 0,
-        derp: undefined,
-        countryCode: '',
         name: 'youzi',
-        json: null,
-        cardinality: 0,
-        text: { en: '', de: '' },
+        friend: {
+          id: 6,
+          bool: false,
+          u32: 0,
+          u8: 0,
+          i8: 0,
+          i32: 0,
+          u16: 0,
+          i16: 0,
+          number: 0,
+          date: 0,
+          numberMax: 0,
+          derp: undefined,
+          countryCode: '',
+          name: 'jame-z',
+          json: null,
+          cardinality: 0,
+          text: { en: '', de: '' },
+          binaryData: new Uint8Array([]),
+        },
       },
-    },
-  ])
+      {
+        id: 6,
+        name: 'jame-z',
+        friend: {
+          id: 5,
+          bool: false,
+          u32: 0,
+          u8: 0,
+          i8: 0,
+          i32: 0,
+          u16: 0,
+          i16: 0,
+          number: 0,
+          date: 0,
+          numberMax: 0,
+          derp: undefined,
+          countryCode: '',
+          name: 'youzi',
+          json: null,
+          cardinality: 0,
+          text: { en: '', de: '' },
+          binaryData: new Uint8Array([]),
+        },
+      },
+    ],
+    'get all',
+  )
 
   await throws(async () => {
     db.create('user', {
@@ -325,15 +332,6 @@ await test('update', async (t) => {
       connections: 1,
     })
   })
-
-  // later..
-  // await throws(async () => {
-  //   db.create('user', {
-  //     connections: {
-  //       update: [1],
-  //     },
-  //   })
-  // })
 
   await throws(async () => {
     db.create('user', {
@@ -441,6 +439,35 @@ await test('update', async (t) => {
     false,
     'Too small out of bounds value should throw (int8)',
   )
+
+  // Binary validation tests
+  db.create('user', {
+    binaryData: 'not a binary', // Should throw for string
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      binaryData: 12345, // Should throw for number
+    })
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      binaryData: { some: 'object' }, // Should throw for object
+    })
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      binaryData: [1, 2, 3, 4], // Should throw for array of numbers
+    })
+  })
+
+  // Valid binary data
+  db.create('user', {
+    binaryData: new Uint8Array([1, 2, 3, 4]),
+  })
+  // End Binary validation tests
 })
 
 await test('query', async (t) => {

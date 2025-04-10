@@ -28,9 +28,6 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     )
   },
   [TYPE_INDEX_MAP.timestamp]: (value, t) => {
-    if (typeof value === 'string') {
-      return true
-    }
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
