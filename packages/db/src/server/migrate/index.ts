@@ -125,19 +125,21 @@ export const migrate = async (
     // exec queued modifies
     fromDbServer.onQueryEnd()
 
-    if (i === ranges.length && fromDbServer.dirtyRanges.size) {
-      ranges = []
-      i = 0
+    if (i === ranges.length) {
+      if (fromDbServer.dirtyRanges.size) {
+        ranges = []
+        i = 0
 
-      foreachDirtyBlock(fromDbServer, (_mtKey, typeId, start, end) => {
-        ranges.push({
-          typeId,
-          start,
-          end,
+        foreachDirtyBlock(fromDbServer, (_mtKey, typeId, start, end) => {
+          ranges.push({
+            typeId,
+            start,
+            end,
+          })
         })
-      })
 
-      fromDbServer.dirtyRanges.clear()
+        fromDbServer.dirtyRanges.clear()
+      }
     }
   }
 
