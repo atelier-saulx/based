@@ -57,7 +57,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         edge.step = parseMinMaxStep(edgeProp.step)
       }
 
-      if (edgeProp.typeIndex !== NUMBER && edge.step === undefined) {
+      if (edge.typeIndex !== NUMBER && edge.step === undefined) {
         edge.step = 1
       }
 
