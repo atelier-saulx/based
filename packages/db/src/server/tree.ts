@@ -39,10 +39,7 @@ export function initCsmt(db: DbServer) {
       return obj
     }, {})
 
-  // This function can be also called on schema change.
-  if (!db.merkleTree || db.merkleTree.getRoot()) {
-    db.merkleTree = createTree(db.createCsmtHashFun)
-  }
+  db.merkleTree = createTree(db.createCsmtHashFun)
 
   // Insert specialBlocks for types.
   // This should ensure that the insertion order of the actual node ranges is
