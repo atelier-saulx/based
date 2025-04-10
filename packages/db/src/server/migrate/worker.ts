@@ -85,6 +85,7 @@ if (isMainThread) {
           .include(include)
           .range(leafData.start - 1, leafData.end - 1)
           ._getSync(fromCtx)
+
         for (const node of nodes) {
           const res = typeTransformFn(node)
           if (res === null) {
@@ -102,6 +103,7 @@ if (isMainThread) {
           .include(include)
           .range(leafData.start - 1, leafData.end - 1)
           ._getSync(fromCtx)
+
         for (const node of nodes) {
           toDb.create(type, node, { unsafe: true })
         }

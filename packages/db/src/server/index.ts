@@ -18,13 +18,7 @@ import {
 } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import {
-  CsmtNodeRange,
-  foreachDirtyBlock,
-  initCsmt,
-  makeCsmtKey,
-  makeCsmtKeyFromNodeId,
-} from './tree.js'
+import { initCsmt, makeCsmtKey, makeCsmtKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
