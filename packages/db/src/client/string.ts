@@ -17,9 +17,7 @@ export const write = (
   lang?: LangCode,
 ): number => {
   value = value.normalize('NFKD')
-
   buf[offset] = lang || 0
-
   const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
   let crc = native.crc32(buf.subarray(offset + 2, offset + 2 + l))
 

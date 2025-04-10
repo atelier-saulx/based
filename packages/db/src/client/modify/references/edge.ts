@@ -50,18 +50,26 @@ export function writeEdges(
   let mainSize = 0
   let hasIncr = false
 
-  for (const key in t.edges) {
-    if (key in ref) {
-      const edge = t.edges[key]
-      let value = ref[key]
-      if (edge.separate === true) {
-        if (ctx.len + 2 > ctx.max) {
-          return RANGE_ERR
-        }
-        ctx.buf[ctx.len++] = UPDATE
-        ctx.buf[ctx.len++] = edge.prop
+  for (const key in ref) {
+    const edge = t.edges[key]
 
-        /*
+    if (key === 'id' || key === '$index') {
+      continue
+    }
+
+    if (!edge) {
+      return new ModifyError(t, key, `Does not exist`)
+    }
+
+    let value = ref[key]
+    if (edge.separate === true) {
+      if (ctx.len + 2 > ctx.max) {
+        return RANGE_ERR
+      }
+      ctx.buf[ctx.len++] = UPDATE
+      ctx.buf[ctx.len++] = edge.prop
+
+      /*
           Seperate fields:
 
           | Offset  | Field       | Size (bytes)| Description                           |
@@ -73,103 +81,119 @@ export function writeEdges(
           | 7       | data        | Variable    | Content                               |
         */
 
-        if (edge.typeIndex === BINARY) {
-          let size = 0
-          if (value === null) {
-            size = 0
-          } else {
-            const buf = getBuffer(value)
-            if (!buf) {
-              return new ModifyError(edge, value)
-            }
-            size = buf.byteLength
-          }
-          if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
-            return RANGE_ERR
-          }
-          ctx.buf[ctx.len++] = STRING
-          if (size) {
-            writeBinaryRaw(value, ctx)
-          } else {
-            ctx.buf[ctx.len++] = 0
-            ctx.buf[ctx.len++] = 0
-            ctx.buf[ctx.len++] = 0
-            ctx.buf[ctx.len++] = 0
-          }
-        } else if (edge.typeIndex === STRING) {
-          if (typeof value !== 'string') {
+      if (edge.typeIndex === BINARY) {
+        let size = 0
+        // add null
+        if (value === null) {
+          size = 0
+        } else {
+          const buf = getBuffer(value)
+          if (!buf || !edge.validation(buf, edge)) {
             return new ModifyError(edge, value)
           }
-          if (
-            ctx.len + EDGE_HEADER_SIZE + ENCODER.encode(value).byteLength >
-            ctx.max
-          ) {
-            return RANGE_ERR
-          }
-          ctx.buf[ctx.len++] = STRING
-          let size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
-          let sizeU32 = size
-          ctx.buf[ctx.len++] = sizeU32
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          ctx.len += size
-        } else if (edge.typeIndex === REFERENCE) {
-          if (typeof value !== 'number') {
-            if (value instanceof ModifyState) {
-              value = value.tmpId
-            } else {
-              return new ModifyError(edge, value)
-            }
-          }
-          if (value > 0) {
-            ctx.buf[ctx.len++] = REFERENCE
-            ctx.buf[ctx.len++] = value
-            ctx.buf[ctx.len++] = value >>>= 8
-            ctx.buf[ctx.len++] = value >>>= 8
-            ctx.buf[ctx.len++] = value >>>= 8
-          } else {
-            return new ModifyError(edge, value)
-          }
-        } else if (edge.typeIndex === REFERENCES) {
-          if (!Array.isArray(value)) {
-            return new ModifyError(edge, value)
-          }
-          let size = value.length * 4
-          if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
-            return RANGE_ERR
-          }
-          ctx.buf[ctx.len++] = REFERENCES
-          ctx.buf[ctx.len++] = size
-          ctx.buf[ctx.len++] = size >>>= 8
-          ctx.buf[ctx.len++] = size >>>= 8
-          ctx.buf[ctx.len++] = size >>>= 8
-          appendEdgeRefs(edge, ctx, value)
-        } else if (edge.typeIndex === CARDINALITY) {
-          if (!Array.isArray(value)) {
-            value = [value]
-          }
-          const len = value.length
-          let size = 4 + len * 8
-          if (ctx.len + size + EDGE_HEADER_SIZE > ctx.max) {
-            return RANGE_ERR
-          }
-          ctx.buf[ctx.len++] = CARDINALITY
-          writeHllBuf(value, ctx, edge, size)
+          size = buf.byteLength
+          value = buf
         }
-      } else {
-        const op = valueOperation(value)
-        if (op === 0) {
+        if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
+          return RANGE_ERR
+        }
+        ctx.buf[ctx.len++] = STRING
+        if (size) {
+          writeBinaryRaw(value, ctx)
+        } else {
+          ctx.buf[ctx.len++] = 0
+          ctx.buf[ctx.len++] = 0
+          ctx.buf[ctx.len++] = 0
+          ctx.buf[ctx.len++] = 0
+        }
+      } else if (edge.typeIndex === STRING) {
+        let size = 0
+        // add null
+        if (value !== null) {
+          if (!edge.validation(value, edge)) {
+            return new ModifyError(edge, value)
+          }
+          const isBuffer = value instanceof Uint8Array
+          size = isBuffer
+            ? value.byteLength
+            : ENCODER.encode(value).byteLength + 6
+          if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
+            return RANGE_ERR
+          }
+          ctx.buf[ctx.len++] = STRING
+          size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
+        }
+        let sizeU32 = size
+        ctx.buf[ctx.len++] = sizeU32
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        ctx.len += size
+      } else if (edge.typeIndex === REFERENCE) {
+        // add null
+        if (typeof value !== 'number') {
+          if (value instanceof ModifyState) {
+            value = value.tmpId
+          } else {
+            return new ModifyError(edge, value)
+          }
+        }
+        if (!edge.validation(value, edge)) {
           return new ModifyError(edge, value)
         }
-
-        if (op != UPDATE) {
-          hasIncr = true
-          value = value.increment
+        if (value > 0) {
+          ctx.buf[ctx.len++] = REFERENCE
+          ctx.buf[ctx.len++] = value
+          ctx.buf[ctx.len++] = value >>>= 8
+          ctx.buf[ctx.len++] = value >>>= 8
+          ctx.buf[ctx.len++] = value >>>= 8
+        } else {
+          return new ModifyError(edge, value)
         }
+      } else if (edge.typeIndex === REFERENCES) {
+        // add null
+        if (!Array.isArray(value)) {
+          return new ModifyError(edge, value)
+        }
+        let size = value.length * 4
+        if (ctx.len + EDGE_HEADER_SIZE + size > ctx.max) {
+          return RANGE_ERR
+        }
+        ctx.buf[ctx.len++] = REFERENCES
+        ctx.buf[ctx.len++] = size
+        ctx.buf[ctx.len++] = size >>>= 8
+        ctx.buf[ctx.len++] = size >>>= 8
+        ctx.buf[ctx.len++] = size >>>= 8
+        const err = appendEdgeRefs(edge, ctx, value)
+        if (err) {
+          return err
+        }
+      } else if (edge.typeIndex === CARDINALITY) {
+        // add null
+        if (!Array.isArray(value)) {
+          value = [value]
+        }
+        const len = value.length
+        let size = 4 + len * 8
+        if (ctx.len + size + EDGE_HEADER_SIZE > ctx.max) {
+          return RANGE_ERR
+        }
+        ctx.buf[ctx.len++] = CARDINALITY
+        writeHllBuf(value, ctx, edge, size)
+      }
+    } else {
+      const op = valueOperation(value)
+      if (op === 0) {
+        return new ModifyError(edge, value)
+      }
 
-        if (!hasIncr && t.edgeMainLen == edge.len) {
-          /*
+      if (op != UPDATE) {
+        hasIncr = true
+        value = value.increment
+      }
+
+      if (!hasIncr && t.edgeMainLen == edge.len) {
+        /*
           Full main update:
 
           | Offset  | Field       | Size (bytes)| Description                           |
@@ -181,36 +205,35 @@ export function writeEdges(
           | 7       | main buffer | Variable    | Main data content                     |
           */
 
-          if (ctx.len + 7 + edge.len > ctx.max) {
-            return RANGE_ERR
-          }
-          ctx.buf[ctx.len++] = UPDATE
-          ctx.buf[ctx.len++] = 0
-          ctx.buf[ctx.len++] = MICRO_BUFFER
-          const size = edge.len
-          let sizeU32 = size
-          ctx.buf[ctx.len++] = sizeU32
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          ctx.buf[ctx.len++] = sizeU32 >>>= 8
-          const err = appendFixedValue(ctx, value, edge)
-          if (err) {
-            return err
-          }
+        if (ctx.len + 7 + edge.len > ctx.max) {
+          return RANGE_ERR
+        }
+        ctx.buf[ctx.len++] = UPDATE
+        ctx.buf[ctx.len++] = 0
+        ctx.buf[ctx.len++] = MICRO_BUFFER
+        const size = edge.len
+        let sizeU32 = size
+        ctx.buf[ctx.len++] = sizeU32
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        ctx.buf[ctx.len++] = sizeU32 >>>= 8
+        const err = appendFixedValue(ctx, value, edge)
+        if (err) {
+          return err
+        }
+      } else {
+        mainSize += edge.len
+        if (!mainFields) {
+          mainFields = [edge, value, op]
         } else {
-          mainSize += edge.len
-          if (!mainFields) {
-            mainFields = [edge, value, op]
-          } else {
-            const len = mainFields.length
-            for (let i = 0; i < len; i += 3) {
-              if (edge.start < mainFields[i].start) {
-                mainFields.splice(i, 0, edge, value, op)
-                break
-              } else if (mainFields[len - i - 3].start < edge.start) {
-                mainFields.splice(len - i, 0, edge, value, op)
-                break
-              }
+          const len = mainFields.length
+          for (let i = 0; i < len; i += 3) {
+            if (edge.start < mainFields[i].start) {
+              mainFields.splice(i, 0, edge, value, op)
+              break
+            } else if (mainFields[len - i - 3].start < edge.start) {
+              mainFields.splice(len - i, 0, edge, value, op)
+              break
             }
           }
         }
@@ -268,13 +291,6 @@ export function writeEdges(
       | 13      | propType    | 1           | Prop typeIndex                       |
       | ...     | ...         | ...         | Additional (start, len) pairs        |
       | X       | main        | len         | Actual main content                  |
-
-      ### Notes:
-      - The number of `(start, len, operation)` pairs is not explicitly stored
-        but **derived** from the structure.
-      - Parsing logic must determine the end of pairs by computing:
-        `Pairs End Offset = (size - mainSize)`
-        Sections are processed until the `MAIN` data block begins.
       */
 
       const mainFieldsStartSize = mainFields.length * 2
@@ -300,14 +316,12 @@ export function writeEdges(
       const sIndex = ctx.len
       ctx.len += mainFieldsStartSize
 
-      // this has to be replaced
       // Add zeroes
       ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
 
       // Keep track of written bytes from append fixed
       let writtenFields = 0
 
-      // do this different...
       let startMain = ctx.len
       for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
@@ -326,6 +340,8 @@ export function writeEdges(
         if (edge.start + edge.len > writtenFields) {
           writtenFields = edge.start + edge.len
         }
+        // add null support
+
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err

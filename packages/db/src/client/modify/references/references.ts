@@ -15,6 +15,8 @@ import {
   NOEDGE_NOINDEX_REALID,
   NOEDGE_NOINDEX_TMPID,
   RANGE_ERR,
+  REF_OP,
+  REF_OP_UPDATE,
 } from '../types.js'
 import { writeEdges } from './edge.js'
 
@@ -66,12 +68,8 @@ export function writeReferences(
     } else if (key === 'delete') {
       err = deleteRefs(def, ctx, schema, mod, val, res.tmpId)
     } else if (key === 'update') {
-      // and add add: []
-      // replace this with update
       err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
     } else if (key === 'add') {
-      // and add add: []
-      // replace this with update
       err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
     } else if (key === 'upsert') {
       dbUpdateFromUpsert(
@@ -159,7 +157,7 @@ function updateRefs(
   mod: ModifyOp,
   refs: any[],
   parentId: number,
-  op: 0 | 1,
+  op: REF_OP,
 ): ModifyErr {
   if (ctx.len + 19 + refs.length * 4 > ctx.max) {
     return RANGE_ERR
@@ -173,7 +171,6 @@ function updateRefs(
   if (nrOrErr) {
     if (typeof nrOrErr === 'number') {
       if (nrOrErr === refs.length) {
-        // reset
         ctx.len = initpos
       } else if (ctx.len + 2 > ctx.max) {
         return RANGE_ERR
@@ -181,7 +178,6 @@ function updateRefs(
         ctx.buf[ctx.len++] = 0
         ctx.buf[ctx.len++] = REFERENCES
       }
-
       return appendRefs(def, ctx, mod, refs, op, nrOrErr)
     }
     return nrOrErr
@@ -193,7 +189,7 @@ function appendRefs(
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
-  op: 0 | 1,
+  op: REF_OP,
   remaining: number,
 ): ModifyErr {
   if (ctx.len + 10 > ctx.max) {
@@ -205,7 +201,8 @@ function appendRefs(
 
   let totalpos = ctx.len
   ctx.len += 4
-  ctx.buf[ctx.len++] = i === 0 ? op : 1 // if it just did a PUT, it should ADD not overwrite the remaining
+  // if it just did a PUT, it should ADD not overwrite the remaining
+  ctx.buf[ctx.len++] = i === 0 ? op : REF_OP_UPDATE
   ctx.buf[ctx.len++] = remaining
   ctx.buf[ctx.len++] = remaining >>>= 8
   ctx.buf[ctx.len++] = remaining >>>= 8
@@ -256,7 +253,7 @@ function appendRefs(
       return new ModifyError(def, refs)
     }
 
-    if (hasEdges) {
+    if (hasEdges && typeof ref === 'object' && !(ref instanceof ModifyState)) {
       if (index === undefined) {
         if (ctx.len + 9 > ctx.max) {
           return RANGE_ERR
@@ -335,7 +332,7 @@ function putRefs(
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
-  op: 0 | 1, // overwrite or add
+  op: REF_OP,
 ): number | ModifyError {
   let size = refs.length * 4 + 1
 
@@ -357,7 +354,7 @@ function putRefs(
     let ref = refs[i]
     if (typeof ref === 'number') {
       if (!def.validation(ref, def)) {
-        break
+        return new ModifyError(def, ref)
       } else {
         ctx.buf[ctx.len++] = ref
         ctx.buf[ctx.len++] = ref >>>= 8
@@ -369,8 +366,11 @@ function putRefs(
         return ref.error
       }
       ref = ref.getId()
-      if (!def.validation(ref, def)) {
+      if (!ref) {
         break
+      }
+      if (!def.validation(ref, def)) {
+        return new ModifyError(def, ref)
       }
       ctx.buf[ctx.len++] = ref
       ctx.buf[ctx.len++] = ref >>>= 8

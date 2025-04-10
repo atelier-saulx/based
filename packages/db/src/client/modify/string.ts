@@ -40,14 +40,10 @@ export function writeString(
     if (!t.validation(value, t)) {
       return new ModifyError(t, value)
     }
-
     let size = isBuffer
       ? value.byteLength
       : ENCODER.encode(value).byteLength + 6
     if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
-      // +10 OR +11, the original check was +20 but
-      // there are 10 addtional bytes in this scope
-      // 5 compression size
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {

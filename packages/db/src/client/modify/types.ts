@@ -44,3 +44,8 @@ export const NOEDGE_NOINDEX_TMPID = 4
 export const EDGE_NOINDEX_TMPID = 5
 export const EDGE_INDEX_TMPID = 6
 export const NOEDGE_INDEX_TMPID = 7
+
+export const REF_OP_UPDATE = 1
+export const REF_OP_OVERWRITE = 0
+
+export type REF_OP = typeof REF_OP_OVERWRITE | typeof REF_OP_UPDATE

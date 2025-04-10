@@ -20,6 +20,9 @@ export function appendEdgeRefs(
         return new ModifyError(t, value)
       }
     }
+    if (!t.validation(id, t)) {
+      return new ModifyError(t, value)
+    }
     if (id > 0) {
       ctx.buf[ctx.len++] = id
       ctx.buf[ctx.len++] = id >>>= 8
