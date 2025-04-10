@@ -89,19 +89,25 @@ export class BasedFunctions {
     }
 
     if (this.config.route === undefined) {
-      this.config.route = ({ path }) => {  
+      this.config.route = ({ path }) => {
         let route: BasedRouteComplete
 
         if (path === '/' && this.routes[this.paths['/']]) {
           return this.routes[this.paths['/']]
         }
-        
+
         if (path) {
           route = this.getRoute(path)
         }
-        
+
         // deprecate this.routes[this.paths['/']]
-        return route || this.routes[path] || this.routes['404'] || this.routes[this.paths['/']] || null
+        return (
+          route ||
+          this.routes[path] ||
+          this.routes['404'] ||
+          this.routes[this.paths['/']] ||
+          null
+        )
       }
     }
 
@@ -132,7 +138,10 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(externalName?: string, externalPath?: string): BasedRouteComplete | null {
+  route(
+    externalName?: string,
+    externalPath?: string,
+  ): BasedRouteComplete | null {
     return this.config.route({ path: externalPath || externalName })
   }
 
@@ -173,7 +182,7 @@ export class BasedFunctions {
 
   completeSpec(
     spec: Optional<BasedFunctionConfig, 'name'>,
-    name?: string
+    name?: string,
   ): null | BasedFunctionConfigComplete {
     if (this.completeRoute(spec, name) === null) {
       console.error('cannot completeSpec', name, spec)
@@ -189,7 +198,7 @@ export class BasedFunctions {
 
   completeRoute(
     route: Optional<BasedRoute, 'name'>,
-    name?: string
+    name?: string,
   ): null | BasedRouteComplete {
     const nRoute = route as BasedRouteComplete
     if (!nRoute.type) {
@@ -211,7 +220,7 @@ export class BasedFunctions {
     }
     if (!nRoute.tokens) {
       let finalPath: string = ''
-      
+
       if (nRoute.path) {
         finalPath = nRoute.path
         if (nRoute.path.charCodeAt(0) !== SLASH) {
@@ -239,10 +248,10 @@ export class BasedFunctions {
         finalPath = `/${nRoute.name}`
         nRoute.nameOnPath = false
       }
-      
+
       nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
     }
-    
+
     return nRoute
   }
 
@@ -259,7 +268,7 @@ export class BasedFunctions {
 
   updateRoute(
     route: BasedRouteComplete,
-    name?: string
+    name?: string,
   ):
     | null
     | (BasedRoute & {
@@ -378,7 +387,7 @@ export class BasedFunctions {
 
   async uninstall(
     name: string,
-    spec?: BasedFunctionConfig | BasedFunctionConfigComplete | null
+    spec?: BasedFunctionConfig | BasedFunctionConfigComplete | null,
   ): Promise<boolean> {
     if (this.beingUninstalled[name]) {
       console.error('Function already being uninstalled...', name)
@@ -406,7 +415,7 @@ export class BasedFunctions {
       } else {
         console.info(
           'Fn requested while being unregistered from uninstall',
-          name
+          name,
         )
       }
     }
@@ -414,7 +423,7 @@ export class BasedFunctions {
   }
 
   private async installGaurdedFromConfig(
-    name: string
+    name: string,
   ): Promise<BasedFunctionConfigComplete | null> {
     if (this.installsInProgress[name]) {
       return this.installsInProgress[name]
@@ -428,40 +437,23 @@ export class BasedFunctions {
     return s
   }
 
-  getRoute(path: string): BasedRouteComplete | null {    
-    let i: number = 0
-    let removeNameFromTokens: boolean = false
-    let tokens = []
+  getRoute(path: string): BasedRouteComplete | null {
     const bufferPath = Buffer.from(path)
-    const routesKeys = Object.keys(this.routes)
-    
-    while (i < routesKeys.length) {
-      tokens = [...this.routes[routesKeys[i]].tokens]      
-
-      if (removeNameFromTokens && !this.routes[routesKeys[i]].nameOnPath) {
-        if (tokens?.length > 1) {
-          tokens.shift() 
-        } else {
-          i++
-          continue
-        }
-      }
-      
-      if (pathMatcher(tokens, bufferPath)) {
-        return this.routes[routesKeys[i]]
-      }
-      
-      i++
-
-      if (i === routesKeys.length && !removeNameFromTokens) {   
-        removeNameFromTokens = true
-        i = 0        
-      }
-
-      if (i === routesKeys.length && removeNameFromTokens) {        
-        return null
+    for (const key in this.routes) {
+      const route = this.routes[key]
+      if (pathMatcher(route.tokens, bufferPath)) {
+        return route
       }
     }
+    for (const key in this.routes) {
+      const route = this.routes[key]
+      if (!route.nameOnPath) {
+        if (pathMatcher(route.tokens.slice(1), bufferPath)) {
+          return route
+        }
+      }
+    }
+    return null
   }
 
   getFromStore(name: string): BasedFunctionConfigComplete | null {
