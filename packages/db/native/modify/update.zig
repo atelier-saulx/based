@@ -47,6 +47,13 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
+        types.Prop.VECTOR => {
+            const len = read(u32, data, 0);
+            const padding = data[4];
+            const slice = data[8 - padding .. len + 4];
+            try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+            return len;
+        },
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
             var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);

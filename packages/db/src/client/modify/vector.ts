@@ -12,17 +12,28 @@ import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 function write(value: Float32Array, ctx: ModifyCtx, fieldSize: number) {
-  const size = Math.min(value.byteLength, fieldSize)
-  let tmp = size
+  let size = Math.min(value.byteLength, fieldSize)
+  let padding = 0
 
-  // 16-bits would be enough but the zig code now expects 32-bits
+  if (ctx.len % 4 != 0) {
+    padding = ctx.len % 4
+  }
+
+  size -= padding
+  let tmp = size + 4
+
+  // 16-bits would be enough but the zig expects 32-bits
   ctx.buf[ctx.len++] = tmp
   ctx.buf[ctx.len++] = tmp >>>= 8
   ctx.buf[ctx.len++] = tmp >>>= 8
   ctx.buf[ctx.len++] = tmp >>>= 8
 
-  // TODO add alignment (little bit of space)
-  ctx.buf.set(new Uint8Array(value.buffer).subarray(0, size), ctx.len)
+  ctx.buf[ctx.len++] = padding
+  ctx.buf[ctx.len++] = 0
+  ctx.buf[ctx.len++] = 0
+  ctx.buf[ctx.len++] = 0
+
+  ctx.buf.set(new Uint8Array(value.buffer).subarray(0, size), ctx.len - padding)
   ctx.len += size
 }
 
