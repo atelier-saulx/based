@@ -8,7 +8,7 @@ import {
   ENUM,
   NUMBER,
 } from './types.js'
-import { getPropLen, isSeparate } from './utils.js'
+import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
@@ -45,17 +45,19 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         start: prop.edgeMainLen,
       }
 
-      if (edgeProp.max) {
-        edge.max = edgeProp.max
+      if (edgeProp.max !== undefined) {
+        edge.max = parseMinMaxStep(edgeProp.max)
       }
 
-      if (edgeProp.min) {
-        edge.min = edgeProp.min
+      if (edgeProp.min !== undefined) {
+        edge.min = parseMinMaxStep(edgeProp.min)
       }
 
-      if (edgeProp.step) {
-        edge.step = edgeProp.step
-      } else if (edge.typeIndex !== NUMBER) {
+      if (edgeProp.step !== undefined) {
+        edge.step = parseMinMaxStep(edgeProp.step)
+      }
+
+      if (edgeProp.typeIndex !== NUMBER && edge.step === undefined) {
         edge.step = 1
       }
 

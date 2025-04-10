@@ -340,8 +340,8 @@ export function writeEdges(
         if (edge.start + edge.len > writtenFields) {
           writtenFields = edge.start + edge.len
         }
-        // add null support
 
+        // add null support
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err
