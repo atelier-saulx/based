@@ -323,7 +323,7 @@ await test('update', async (t) => {
         set: [],
       },
     })
-  })
+  }, 'Invalid key')
 
   await throws(async () => {
     db.create('user', {
