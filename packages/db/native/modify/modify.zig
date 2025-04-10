@@ -71,7 +71,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 } else {
                     offset = 5;
                 }
-
                 if (ctx.field != 0) {
                     ctx.currentSortIndex = dbSort.getSortIndex(
                         ctx.typeSortIndex,
