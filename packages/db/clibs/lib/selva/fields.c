@@ -1989,38 +1989,48 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
     for (field_t field = 0; field < nr_fields; field++) {
         const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
         const struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-        const enum SelvaFieldType type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
         const void *p = nfo2p(fields, nfo);
 
-        switch (type) {
+        switch (fs->type) {
         case SELVA_FIELD_TYPE_NULL:
             /* Also NULL must cause a change in the hash. */
+nil:
             selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            selva_hash_update(hash_state, p, selva_fields_get_data_size(fs));
+            if (nfo->in_use) {
+                selva_hash_update(hash_state, p, selva_fields_get_data_size(fs));
+            } else {
+                goto nil;
+            }
             break;
         case SELVA_FIELD_TYPE_TEXT:
             do {
                 const struct SelvaTextField *text = p;
+                const size_t len = nfo->in_use ? text->len : 0;
 
-                selva_hash_update(hash_state, &text->len, sizeof(text->len));
-                for (size_t i = 0; i < text->len; i++) {
+                selva_hash_update(hash_state, &len, sizeof(len));
+                for (size_t i = 0; i < len; i++) {
                     uint32_t crc = selva_string_get_crc(&text->tl[i]);
                     selva_hash_update(hash_state, &crc, sizeof(crc));
                 }
             } while (0);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), p);
+            if (nfo->in_use) {
+                hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), p);
+            } else {
+                goto nil;
+            }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             do {
                 const struct SelvaNodeReferences *refs = p;
+                const size_t len = nfo->in_use ? refs->nr_refs : 0;
 
-                selva_hash_update(hash_state, &refs->nr_refs, sizeof(refs->nr_refs));
-                for (size_t i = 0; i < refs->nr_refs; i++) {
+                selva_hash_update(hash_state, &len, sizeof(len));
+                for (size_t i = 0; i < len; i++) {
                     hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), &refs->refs[i]);
                 }
             } while (0);
@@ -2028,17 +2038,22 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             do {
                 const struct SelvaNodeWeakReferences *refs = p;
+                const size_t len = nfo->in_use ? refs->nr_refs : 0;
 
-                selva_hash_update(hash_state, &refs->nr_refs, sizeof(refs->nr_refs));
-                selva_hash_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+                selva_hash_update(hash_state, &len, sizeof(len));
+                if (len) {
+                    selva_hash_update(hash_state, refs->refs, len * sizeof(*refs->refs));
+                }
             } while (0);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            do {
+            if (nfo->in_use) {
                 const struct selva_string *s = p;
                 uint32_t crc = selva_string_get_crc(s);
                 selva_hash_update(hash_state, &crc, sizeof(crc));
-            } while (0);
+            } else {
+                goto nil;
+            }
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
