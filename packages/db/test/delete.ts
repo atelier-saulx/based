@@ -160,17 +160,13 @@ await test('non existing', async (t) => {
     },
   })
 
-  const simple = db.create('user', {
+  const simple = await db.create('user', {
     name: 'mr snurp',
     age: 99,
     email: 'snurp@snurp.snurp',
   })
 
-  await db.drain()
-
-  db.delete('user', simple)
-
-  await db.drain()
+  await db.delete('user', simple)
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
@@ -192,6 +188,8 @@ await test('non existing', async (t) => {
 
   // this has to be ignored in C
   await db.delete('user', simple)
+
+  console.log('POWERFUL')
 })
 
 await test('save', async (t) => {

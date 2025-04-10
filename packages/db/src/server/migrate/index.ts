@@ -148,6 +148,7 @@ export const migrate = async (
       schemaTypesParsed,
     )
     fromDbServer.dbCtxExternal = toCtx
+    fromDbServer.sortIndexes = {}
     toDb.server.dbCtxExternal = fromCtx
   }
 
@@ -155,10 +156,15 @@ export const migrate = async (
     worker.updateCtx(toAddress),
   )
 
-  promises.push(toDb.destroy(), worker.terminate(), fromDbServer.save({ forceFullDump: true }), writeFile(
-    join(fromDbServer.fileSystemPath, SCHEMA_FILE),
-    JSON.stringify(fromDbServer.schema),
-  ))
+  promises.push(
+    toDb.destroy(),
+    worker.terminate(),
+    fromDbServer.save({ forceFullDump: true }),
+    writeFile(
+      join(fromDbServer.fileSystemPath, SCHEMA_FILE),
+      JSON.stringify(fromDbServer.schema),
+    ),
+  )
 
   await Promise.all(promises)
 
