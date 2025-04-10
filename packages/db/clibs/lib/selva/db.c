@@ -881,9 +881,8 @@ selva_hash128_t selva_node_hash_range(struct SelvaDb *db, struct SelvaTypeEntry 
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
 
-    res = selva_hash_digest(hash_state);
-
 out:
+    res = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
