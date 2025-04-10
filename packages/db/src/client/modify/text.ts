@@ -36,9 +36,15 @@ export function writeText(
     return
   }
 
-  // todo proper fallback as well
   if ((value && typeof value !== 'object') || value === null) {
-    const locale = res.locale ?? langCodesMap.get('en') // TODO: Add def lang option...
+    let locale = res.locale
+    if (!locale) {
+      // TODO: Add def lang option...
+      for (const localeCode of def.seperateTextSort.localeToIndex.keys()) {
+        locale = localeCode
+        break
+      }
+    }
 
     if (!def.seperateTextSort.localeToIndex.has(locale)) {
       return new ModifyError(t, locale, 'Invalid locale')
