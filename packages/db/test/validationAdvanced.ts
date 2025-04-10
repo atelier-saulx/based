@@ -16,7 +16,6 @@ await test('min / max validation', async (t) => {
     types: {
       user: {
         props: {
-          // min: 10, max: 20, step: 10 => only valid value is 10 or 20
           u32: { type: 'uint32', max: 20, min: 10, step: 10 },
           u8: { type: 'uint8', max: 20, min: 10, step: 10 },
           i8: { type: 'int8', max: 20, min: 10, step: 10 },
@@ -29,9 +28,6 @@ await test('min / max validation', async (t) => {
       },
     },
   })
-
-  // --- Min/Max Tests ---
-  // These test values that are multiples of step=10, so failures are due to min/max
 
   throws(async () => {
     db.create('user', {
@@ -154,7 +150,6 @@ await test('step validation', async (t) => {
     types: {
       user: {
         props: {
-          // min: 0, max: 100, step: 5 => valid values are 0, 5, 10, ..., 100
           u32Step: { type: 'uint32', max: 100, min: 0, step: 5 },
           u8Step: { type: 'uint8', max: 100, min: 0, step: 5 },
           i8Step: { type: 'int8', max: 100, min: 0, step: 5 },
@@ -168,10 +163,6 @@ await test('step validation', async (t) => {
     },
   })
 
-  // --- Step Tests ---
-  // These test values within min/max but not multiples of step=5
-
-  // Valid step values (should not throw for step)
   await db.create('user', { u32Step: 15 })
   await db.create('user', { u8Step: 10 })
   await db.create('user', { i8Step: 5 })
