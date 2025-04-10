@@ -51,6 +51,7 @@ export const migrate = async (
 ): Promise<DbServer['schema']> => {
   const migrationId = migrationCnt++
   fromDbServer.migrating = migrationId
+
   const abort = () => fromDbServer.migrating !== migrationId
   const toDb = new BasedDb({
     path: join(tmpdir(), (~~Math.random()).toString(36)),
@@ -113,7 +114,6 @@ export const migrate = async (
     Atomics.notify(atomics, 0)
     // wait until it's done
     await Atomics.waitAsync(atomics, 0, 1).value
-
     // exec queued modifies
     fromDbServer.onQueryEnd()
 
@@ -124,6 +124,7 @@ export const migrate = async (
     if (i === ranges.length && fromDbServer.dirtyRanges.size) {
       ranges = []
       i = 0
+
       foreachDirtyBlock(fromDbServer, (_mtKey, typeId, start, end) => {
         ranges.push({
           typeId,
@@ -131,6 +132,7 @@ export const migrate = async (
           end,
         })
       })
+
       fromDbServer.dirtyRanges.clear()
     }
   }

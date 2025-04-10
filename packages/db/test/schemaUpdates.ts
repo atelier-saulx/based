@@ -95,4 +95,23 @@ await test('client server schema updates', async (t) => {
     .toObject()
 
   deepEqual(ageSorted, ageSorted2)
+
+  await client1.setSchema({
+    types: {
+      rando: {
+        power: 'boolean',
+      },
+      user: {
+        age: 'uint8',
+      },
+    },
+  })
+
+  const ageSorted3 = await client1
+    .query('user')
+    .sort('age', 'asc')
+    .get()
+    .toObject()
+
+  deepEqual(ageSorted3, ageSorted2)
 })
