@@ -3,7 +3,7 @@ import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
-await test('client server', async (t) => {
+await test('client server schema updates', async (t) => {
   const server = new DbServer({
     path: t.tmp,
     onSchemaChange(schema) {
@@ -14,9 +14,7 @@ await test('client server', async (t) => {
 
   await server.start({ clean: true })
 
-  t.after(() => {
-    return server.destroy()
-  })
+  t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
     async setSchema(schema, fromStart, transformFns) {
@@ -50,11 +48,11 @@ await test('client server', async (t) => {
     },
   })
 
-  const youzi = await client1.create('user', {
+  await client1.create('user', {
     name: 'youzi',
   })
 
-  const jamez = await client1.create('user', {
+  await client1.create('user', {
     name: 'jamez',
   })
 
@@ -76,49 +74,25 @@ await test('client server', async (t) => {
     { id: 2, age: 0 },
   ])
 
+  const ageSorted = await client2
+    .query('user')
+    .sort('age', 'asc')
+    .get()
+    .toObject()
+
   await client1.setSchema({
     types: {
       user: {
-        name: 'string',
-        age: 'number',
-        others: {
-          items: {
-            ref: 'user',
-            prop: 'others',
-          },
-        },
-        favoriteUser: {
-          ref: 'user',
-          prop: 'favoriteUser',
-        },
+        age: 'uint8',
       },
     },
   })
 
-  const fred = client1.create('user', {
-    name: 'fred',
-  })
+  const ageSorted2 = await client1
+    .query('user')
+    .sort('age', 'asc')
+    .get()
+    .toObject()
 
-  const marie = client1.create('user', {
-    name: 'marie',
-  })
-
-  await client1.isModified()
-
-  const res = await client1.update('user', youzi, {
-    name: 'youzi',
-    others: [fred, marie],
-    favoriteUser: marie,
-  })
-
-  deepEqual(await client1.query('user', res).include('*', '**').get(), {
-    id: 1,
-    age: 0,
-    name: 'youzi',
-    others: [
-      { id: 3, age: 0, name: 'fred' },
-      { id: 4, age: 0, name: 'marie' },
-    ],
-    favoriteUser: { id: 4, age: 0, name: 'marie' },
-  })
+  deepEqual(ageSorted, ageSorted2)
 })

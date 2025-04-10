@@ -16,7 +16,7 @@ import {
   SchemaTypesParsed,
   SchemaTypesParsedById,
 } from '@based/schema/def'
-import { createTree, hashEq } from './csmt/index.js'
+import { createTree } from './csmt/index.js'
 import { start } from './start.js'
 import {
   CsmtNodeRange,

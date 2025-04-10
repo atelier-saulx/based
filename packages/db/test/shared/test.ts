@@ -59,6 +59,7 @@ const test = async (
       const [checksums, a] = await make(db)
 
       let d = Date.now()
+      await db.save()
       const oldCsmt = db.server.merkleTree.getRoot()
       await db.stop()
       console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
@@ -73,9 +74,8 @@ const test = async (
       d = Date.now()
       await newDb.start()
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
-      //console.log(oldCsmt, newDb.server.merkleTree.getRoot())
-      // TODO Enable this check
       //deepEqual(oldCsmt, newDb.server.merkleTree.getRoot())
+      deepEqual(oldCsmt.hash, newDb.server.merkleTree.getRoot().hash)
 
       const [backupChecksums, b] = await make(newDb)
 
