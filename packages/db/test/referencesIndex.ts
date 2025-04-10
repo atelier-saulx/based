@@ -263,8 +263,8 @@ await test('index>len', async (t) => {
       id: 3,
       name: 'john',
       friends: [
-        { id: 1, name: 'bob' },
         { id: 2, name: 'marie' },
+        { id: 1, name: 'bob' },
       ],
     },
   )

@@ -44,8 +44,6 @@ await test('hll', async (t) => {
     },
   })
 
-  // console.log('------- create --------')
-
   let myArticle = await db.create('article', {
     myUniqueValuesCount: 'myCoolValue',
   })
@@ -143,8 +141,6 @@ await test('hll', async (t) => {
     [],
   )
 
-  // console.log('------- update --------')
-
   await db.update('article', myArticle, {
     myUniqueValuesCount: [
       'myCoolValue',
@@ -166,7 +162,7 @@ await test('hll', async (t) => {
     ],
   })
 
-  console.log(await db.drain(), 'ms')
+  await db.drain()
 
   deepEqual(
     (
@@ -194,13 +190,11 @@ await test('hll', async (t) => {
     )
   }
 
-  console.time('1M values with 5 distinct feelings update')
   await db.update('article', myArticle, {
     myUniqueValuesCount: feelings,
   })
-  console.timeEnd('1M values with 5 distinct feelings update')
 
-  console.log(await db.drain(), 'ms')
+  await db.drain()
 
   deepEqual(
     (

@@ -2,21 +2,6 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-let d = performance.now()
-let x = new Map()
-for (let i = 0; i < 1_000_000; i++) {
-  x.set(i, 'hello')
-}
-console.log(performance.now() - d, 'ms')
-// 62.69999998807907 'ms'
-d = performance.now()
-let y = {}
-for (let i = 0; i < 1_000_000; i++) {
-  y[i] = 'hello'
-}
-console.log(performance.now() - d, 'ms')
-// 21.899999976158142 'ms'
-
 await test('multi reference', async (t) => {
   const db = new BasedDb({
     path: t.tmp,

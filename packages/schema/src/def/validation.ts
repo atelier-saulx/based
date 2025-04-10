@@ -1,6 +1,7 @@
 import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
 
 export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
+const EPSILON = 1e-9 // Small tolerance for floating point comparisons
 
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [TYPE_INDEX_MAP.alias]: (value) => {
@@ -28,9 +29,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     )
   },
   [TYPE_INDEX_MAP.timestamp]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
+
+    // if string
     if (t.min !== undefined && value < t.min) {
       return false
     }
@@ -40,7 +43,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.int16]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 32767 || value < -32768) {
@@ -55,7 +58,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.int32]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 2147483647 || value < -2147483648) {
@@ -71,7 +74,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   },
   [TYPE_INDEX_MAP.int8]: (value, t) => {
     // use % for steps size
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 127 || value < -128) {
@@ -86,7 +89,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.uint8]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 255 || value < 0) {
@@ -101,7 +104,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.uint16]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 65535 || value < 0) {
@@ -116,7 +119,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.uint32]: (value, t) => {
-    if (typeof value !== 'number' || value % 1 !== 0) {
+    if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
     if (value > 4294967295 || value < 0) {
@@ -131,6 +134,12 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.number]: (value, t) => {
+    if (t.step) {
+      const div = value / t.step
+      if (Math.abs(div - Math.round(div)) > EPSILON) {
+        return false
+      }
+    }
     if (typeof value !== 'number') {
       return false
     }

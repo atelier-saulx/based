@@ -1,3 +1,4 @@
+import { deepEqual } from './shared/assert.js'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
@@ -66,29 +67,11 @@ await test('dependent', async (t) => {
     ],
   })
 
-  console.dir(
-    await db
-      .query('show')
-      .include('editions.sequences.pages.items')
-      .get()
-      .toObject(),
-    { depth: null },
-  )
-
   db.delete('show', showId)
 
   await db.drain()
 
-  console.dir(
-    await db
-      .query('show')
-      .include('editions.sequences.pages.items')
-      .get()
-      .toObject(),
-    { depth: null },
-  )
-
   for (const type in schema.types) {
-    console.log(type, await db.query(type).get().toObject())
+    deepEqual(await db.query(type).get(), [], `${type} is empty`)
   }
 })

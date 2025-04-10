@@ -66,11 +66,9 @@ export const runSubscription = (subscription: Subscription) => {
 }
 
 export const startSubscription = (db: DbClient) => {
-  console.log('start subscription')
   if (!db.subscriptionsInProgress) {
     db.subscriptionsInProgress = true
     setTimeout(() => {
-      console.log('run it')
       db.subscriptionsToRun.forEach((s) => {
         runSubscription(s)
       })

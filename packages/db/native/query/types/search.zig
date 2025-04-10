@@ -63,7 +63,6 @@ pub fn addToScore(
     }
     if (isVector) {
         ctx.score = searchMethods.searchVector(node, typeEntry, searchCtx);
-        // std.debug.print("ABS {any} \n", .{ctx.score});
         if (ctx.score > searchCtx.score) {
             return;
         }

@@ -6,6 +6,7 @@ import {
   REFERENCES,
   REFERENCE,
   ENUM,
+  NUMBER,
 } from './types.js'
 import { getPropLen, isSeparate } from './utils.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
@@ -43,6 +44,21 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         path: [...prop.path, key],
         start: prop.edgeMainLen,
       }
+
+      if (edgeProp.max) {
+        edge.max = edgeProp.max
+      }
+
+      if (edgeProp.min) {
+        edge.min = edgeProp.min
+      }
+
+      if (edgeProp.step) {
+        edge.step = edgeProp.step
+      } else if (edge.typeIndex !== NUMBER) {
+        edge.step = 1
+      }
+
       prop.edgeMainLen += edge.len
       if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])

@@ -109,12 +109,6 @@ await test('references', async (t) => {
     contributors: ids,
   })
 
-  await db
-    .query('article', id)
-    .include((s) => s('contributors').sort('flap'))
-    .get()
-    .then((v) => v.inspect())
-
   isSorted(
     (
       await db

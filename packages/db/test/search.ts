@@ -397,15 +397,6 @@ await test('search ids', async (t) => {
     })
   }
 
-  await db
-    .query('article')
-    .search('blurf', 'body')
-    .include('id', 'date', 'title')
-    .range(0, 1e3)
-    .get()
-    .inspect()
-  // .then((v) => v.length)
-
   equal(
     await db
       .query('article', [first, second])

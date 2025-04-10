@@ -92,8 +92,9 @@ export type PropDef = {
   edgeMainEmpty?: Uint8Array
   __isEdge?: boolean
   // Schema stuff
-  max?: number
-  min?: number
+  max?: any
+  min?: any
+  step?: any
 }
 
 export type PropDefEdge = Partial<PropDef> & {

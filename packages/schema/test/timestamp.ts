@@ -18,3 +18,5 @@ await test('timestamp', () => {
     },
   })
 })
+
+// ADD STRING OPTION HERE

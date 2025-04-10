@@ -118,8 +118,7 @@ await test('multi reference', async (t) => {
     await db
       .query('article')
       .include('contributors.$friend.name', 'contributors.$friend.location')
-      .get()
-      .inspect(),
+      .get(),
     [
       {
         id: 1,

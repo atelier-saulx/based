@@ -14,6 +14,7 @@ import {
   REFERENCE,
   SchemaTypesParsedById,
   SchemaTypesParsed,
+  NUMBER,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -62,8 +63,9 @@ export const updateTypeDefs = (
           en: {},
         },
       )
+      // TODO this should come from somewhere else
       def.blockCapacity =
-        field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY // TODO this should come from somewhere else
+        field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
       schemaTypesParsed[field] = def
       schemaTypesParsedById[type.id] = def
     }
@@ -149,6 +151,12 @@ export const createSchemaTypeDef = (
 
       if (schemaProp.min) {
         prop.min = schemaProp.min
+      }
+
+      if (schemaProp.step) {
+        prop.step = schemaProp.step
+      } else if (prop.typeIndex !== NUMBER) {
+        prop.step = 1
       }
 
       if (isPropType('enum', schemaProp)) {

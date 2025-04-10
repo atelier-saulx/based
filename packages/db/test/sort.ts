@@ -34,12 +34,10 @@ await test('1M', async (t) => {
   }
 
   const dbTime = await db.drain()
-  console.log('db modify', dbTime, 'ms')
   equal(dbTime < 1000, true, 'db modify should not take longer then 1s')
 
   let d = Date.now()
   let siTime = Date.now() - d
-  console.log('create sort index (string)', siTime, 'ms')
   equal(
     siTime < 500,
     true,
@@ -53,7 +51,6 @@ await test('1M', async (t) => {
     .sort('email')
     .filter('age', '>', 1e6 - 1e5)
     .get()
-    .then((v) => v.inspect())
 
   deepEqual(
     r.node(0),
@@ -68,11 +65,10 @@ await test('1M', async (t) => {
 
   d = Date.now()
   siTime = Date.now() - d
-  console.log('create sort index (uint32)', siTime, 'ms')
   equal(
     siTime < 250,
     true,
-    'creating string sort index should not take longer then 250s',
+    `creating string sort index should not take longer then 250s (${siTime})`,
   )
 })
 
@@ -166,14 +162,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .sort('email', 'asc')
-        .include('email', 'age')
-        .get()
-        .then((v) => v.inspect())
-    ).toObject(),
+    await db.query('user').sort('email', 'asc').include('email', 'age').get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -185,9 +174,7 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').sort('email', 'desc').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('email', 'desc').include('email', 'age').get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -207,9 +194,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').sort('email').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('email').include('email', 'age').get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -222,9 +207,7 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').sort('age').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('age').include('email', 'age').get(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -243,9 +226,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').sort('email').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('email').include('email', 'age').get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 6, email: 'dd@dd.dd', age: 999 },
@@ -269,9 +250,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').sort('age').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('age').include('email', 'age').get(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -290,9 +269,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').sort('age').include('email', 'age').get()
-    ).toObject(),
+    await db.query('user').sort('age').include('email', 'age').get(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
       { id: 5, email: 'z@z.z', age: 1 },
@@ -304,19 +281,14 @@ await test('basic', async (t) => {
     'update mrX to age 0',
   )
 
-  deepEqual(
-    (
-      await db.query('user').sort('age').include('email', 'age').get()
-    ).toObject(),
-    [
-      { id: 6, email: 'dd@dd.dd', age: 0 },
-      { id: 5, email: 'z@z.z', age: 1 },
-      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-    ],
-  )
+  deepEqual(await db.query('user').sort('age').include('email', 'age').get(), [
+    { id: 6, email: 'dd@dd.dd', age: 0 },
+    { id: 5, email: 'z@z.z', age: 1 },
+    { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+    { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+    { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+    { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+  ])
 
   const ids = []
   for (let i = 0; i < 10; i++) {
@@ -331,9 +303,7 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user', ids).include('name', 'age').sort('age').get()
-    ).toObject(),
+    await db.query('user', ids).include('name', 'age').sort('age').get(),
     [
       { id: 6, name: 'mr x', age: 0 },
       { id: 5, name: 'mr z', age: 1 },
@@ -350,13 +320,11 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('user', ids)
-        .include('name', 'age')
-        .sort('age', 'desc')
-        .get()
-    ).toObject(),
+    await db
+      .query('user', ids)
+      .include('name', 'age')
+      .sort('age', 'desc')
+      .get(),
     [
       { id: 10, name: 'mr 3', age: 303 },
       { id: 9, name: 'mr 2', age: 302 },
@@ -378,13 +346,11 @@ await test('basic', async (t) => {
   }
 
   deepEqual(
-    (
-      await db
-        .query('user', ids2)
-        .include('name', 'age')
-        .sort('age', 'asc')
-        .get()
-    ).toObject(),
+    await db
+      .query('user', ids2)
+      .include('name', 'age')
+      .sort('age', 'asc')
+      .get(),
     [
       { id: 6, name: 'mr x', age: 0 },
       { id: 5, name: 'mr z', age: 1 },
@@ -410,13 +376,11 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('user', ids2)
-        .include('name', 'age')
-        .sort('age', 'asc')
-        .get()
-    ).toObject(),
+    await db
+      .query('user', ids2)
+      .include('name', 'age')
+      .sort('age', 'asc')
+      .get(),
     [
       { id: 5, name: 'mr z', age: 1 },
       { id: 2, name: 'mr flap', age: 50 },

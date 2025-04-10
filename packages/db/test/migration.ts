@@ -90,10 +90,7 @@ await test('migration', async (t) => {
     },
   )
 
-  console.time('migration time')
-
   await migrationPromise
-  console.timeEnd('migration time')
 
   allUsers = (
     await db
@@ -103,8 +100,6 @@ await test('migration', async (t) => {
       .get()
   ).toObject()
 
-  // console.dir(allUsers, { depth: null})
-
   if (
     allUsers.every((node) => {
       return (
@@ -112,7 +107,7 @@ await test('migration', async (t) => {
       )
     })
   ) {
-    console.log('success')
+    // --------
   } else {
     throw 'Missing email from migration'
   }

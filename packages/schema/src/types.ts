@@ -275,6 +275,9 @@ export type SchemaTimestamp = Prop<{
   default?: number | Date
   on?: 'create' | 'update'
   display?: DateDisplay
+  min?: number | string
+  max?: number | string
+  step?: number | 'any' | string
 }>
 
 export type SchemaReferenceOneWay = Prop<{

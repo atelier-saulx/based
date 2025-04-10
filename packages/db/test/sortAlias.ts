@@ -41,7 +41,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').sort('email', 'desc').get().inspect(100),
+    await db.query('article').sort('email', 'desc').get(),
     'email',
     'desc',
     'After update',

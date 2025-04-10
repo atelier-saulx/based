@@ -1349,7 +1349,7 @@ int selva_fields_references_move(
     }
 
     index_old = ary_idx_to_abs(refs.nr_refs, index_old);
-    index_new = ary_idx_to_abs(refs.nr_refs, index_new);
+    index_new = min(ary_idx_to_abs(refs.nr_refs, index_new), refs.nr_refs - 1);
 
     if (index_old < 0 || index_old >= refs.nr_refs ||
         index_new < 0 || index_new >= refs.nr_refs) {

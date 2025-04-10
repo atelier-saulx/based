@@ -38,7 +38,7 @@ export async function start(
     try {
       native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
     } catch (e) {
-      console.log(e.message)
+      console.error(e.message)
       throw e
     }
 
@@ -50,7 +50,7 @@ export async function start(
         try {
           native.loadRange(join(path, fname), db.dbCtxExternal)
         } catch (e) {
-          console.log(e.message)
+          console.error(e.message)
         }
       }
     }
@@ -74,7 +74,6 @@ export async function start(
       writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
 
     foreachBlock(db, def, (start, end, hash) => {
-      //console.log('load', { type: def.id, start, hash })
       const mtKey = makeCsmtKey(def.id, start)
       const file: string =
         writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file || ''

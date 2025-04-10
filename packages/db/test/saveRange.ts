@@ -50,13 +50,11 @@ await test('save simple range', async (t) => {
     })
   }
 
-  const res = await db.drain()
-  console.error('created all nodes', res, 'ms')
+  await db.drain()
 
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  console.error('save1 rdy', save1_end - save1_start, 'ms')
   const firstHash = db.server.merkleTree.getRoot().hash
 
   db.update('user', 1, {
@@ -104,10 +102,8 @@ await test('save simple range', async (t) => {
     return newDb.destroy()
   })
   const load_end = performance.now()
-  console.log('load rdy', load_end - load_start, 'ms')
   const thirdHash = db.server.merkleTree.getRoot().hash
 
-  //console.log([firstHash, secondHash, thirdHash])
   equal(hashEq(firstHash, secondHash), false)
   equal(hashEq(secondHash, thirdHash), true)
 
@@ -218,7 +214,6 @@ await test.skip('delete a range', async (t) => {
     true,
     "the first block hash wasn't change",
   )
-  //console.log(first, second)
   equal(
     hashEq(first.left.right.hash, second.left.right.hash),
     false,
@@ -228,7 +223,6 @@ await test.skip('delete a range', async (t) => {
   equal(hashEq(second.left.right.hash, new Uint8Array(16)), true)
 
   db.save()
-  console.log(db.server.merkleTree.getRoot())
 })
 
 await test('reference changes', async (t) => {

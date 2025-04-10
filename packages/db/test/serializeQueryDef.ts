@@ -57,24 +57,4 @@ await test('serialize', async (t) => {
   const def = db.query('user').filter('isNice', false).def
 
   const str = serialize(def)
-
-  console.log(str)
-  // // @ts-ignore
-  // Map.prototype.toJSON = function () {
-  //   return [...this]
-  // }
-  // // or, if you really want to use objects:
-  // // @ts-ignore
-  // Map.prototype.toJSON = function () {
-  //   var obj = {}
-  //   for (let [key, value] of this) obj[key] = value
-  //   return obj
-  // }
-  // // and for Sets:
-  // // @ts-ignore
-  // Set.prototype.toJSON = function () {
-  //   return [...this]
-  // }
-
-  // console.log(JSON.stringify(db.query('user').filter('isNice', false).def))
 })

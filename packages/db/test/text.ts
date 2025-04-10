@@ -278,7 +278,6 @@ await test('simple', async (t) => {
     'Exact match on fi #2',
   )
 
-  console.log('---------------------------------')
   await db.update('dialog', mrSnurfInFinland, {
     fun: { en: 'drink some tea!' },
   })
@@ -343,7 +342,6 @@ await test('search', async (t) => {
     .include('id', 'fun')
     .search('finland', 'fun')
     .get()
-  console.log(await db.query('dialog').get())
   deepEqual(
     result.toObject(),
     [
