@@ -203,3 +203,69 @@ await test('references modify', async (t) => {
     },
   )
 })
+
+await test('index>len', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.start({ clean: true })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const bob = db.create('user', {
+    name: 'bob',
+  })
+
+  const marie = db.create('user', {
+    name: 'marie',
+  })
+
+  const john = db.create('user', {
+    name: 'john',
+    friends: [bob, marie],
+  })
+
+  await db.drain()
+
+  await db.update('user', john, {
+    friends: {
+      update: [
+        {
+          id: bob,
+          $index: 2,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    {
+      id: 3,
+      name: 'john',
+      friends: [
+        { id: 1, name: 'bob' },
+        { id: 2, name: 'marie' },
+      ],
+    },
+  )
+})
