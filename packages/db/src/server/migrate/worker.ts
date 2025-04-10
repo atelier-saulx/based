@@ -8,6 +8,7 @@ import { BasedDb } from '../../index.js'
 import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { isTypedArray } from 'node:util/types'
+import { setTimeout } from 'node:timers/promises'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -82,7 +83,7 @@ if (isMainThread) {
         const nodes = fromDb
           .query(type)
           .include(include)
-          .range(leafData.start - 1, leafData.end - leafData.start + 1)
+          .range(leafData.start - 1, leafData.end - 1)
           ._getSync(fromCtx)
         for (const node of nodes) {
           const res = typeTransformFn(node)
@@ -99,7 +100,7 @@ if (isMainThread) {
         const nodes = fromDb
           .query(type)
           .include(include)
-          .range(leafData.start - 1, leafData.end - leafData.start + 1)
+          .range(leafData.start - 1, leafData.end - 1)
           ._getSync(fromCtx)
         for (const node of nodes) {
           toDb.create(type, node, { unsafe: true })

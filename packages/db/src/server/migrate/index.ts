@@ -51,9 +51,10 @@ export const migrate = async (
 ): Promise<DbServer['schema']> => {
   const migrationId = migrationCnt++
   fromDbServer.migrating = migrationId
+
   const abort = () => fromDbServer.migrating !== migrationId
   const toDb = new BasedDb({
-    path: join(tmpdir(), (~~Math.random()).toString(36)),
+    path: join(tmpdir(), (~~(Math.random() * 1e9)).toString(36)),
   })
 
   await toDb.start({ clean: true })
@@ -64,6 +65,11 @@ export const migrate = async (
   }
 
   toSchema = await toDb.setSchema(toSchema)
+
+  if (abort()) {
+    await toDb.destroy()
+    return fromDbServer.schema
+  }
 
   const fromSchema = fromDbServer.schema
   const fromCtx = fromDbServer.dbCtxExternal
@@ -104,6 +110,9 @@ export const migrate = async (
   await Atomics.waitAsync(atomics, 0, 1).value
 
   while (i < ranges.length) {
+    if (abort()) {
+      break
+    }
     // block modifies
     fromDbServer.processingQueries++
     const leafData = ranges[i++]
@@ -113,17 +122,13 @@ export const migrate = async (
     Atomics.notify(atomics, 0)
     // wait until it's done
     await Atomics.waitAsync(atomics, 0, 1).value
-
     // exec queued modifies
     fromDbServer.onQueryEnd()
-
-    if (abort()) {
-      break
-    }
 
     if (i === ranges.length && fromDbServer.dirtyRanges.size) {
       ranges = []
       i = 0
+
       foreachDirtyBlock(fromDbServer, (_mtKey, typeId, start, end) => {
         ranges.push({
           typeId,
@@ -131,26 +136,33 @@ export const migrate = async (
           end,
         })
       })
+
       fromDbServer.dirtyRanges.clear()
     }
   }
 
-  if (!abort()) {
-    let msg: any
-    let schema: any
-    let schemaTypesParsed: any
-    while ((msg = receiveMessageOnPort(port1))) {
-      ;[schema, schemaTypesParsed] = msg.message
-    }
-    fromDbServer.schema = deepMerge(toDb.server.schema, schema)
-    fromDbServer.schemaTypesParsed = deepMerge(
-      toDb.server.schemaTypesParsed,
-      schemaTypesParsed,
-    )
-    fromDbServer.dbCtxExternal = toCtx
-    fromDbServer.sortIndexes = {}
-    toDb.server.dbCtxExternal = fromCtx
+  if (abort()) {
+    await Promise.all([toDb.destroy(), worker.terminate()])
+    return fromDbServer.schema
   }
+
+  let msg: any
+  let schema: any
+  let schemaTypesParsed: any
+
+  while ((msg = receiveMessageOnPort(port1))) {
+    ;[schema, schemaTypesParsed] = msg.message
+  }
+
+  fromDbServer.dbCtxExternal = toCtx
+  fromDbServer.sortIndexes = {}
+  fromDbServer.schema = deepMerge(toDb.server.schema, schema)
+  fromDbServer.schemaTypesParsed = deepMerge(
+    toDb.server.schemaTypesParsed,
+    schemaTypesParsed,
+  )
+
+  toDb.server.dbCtxExternal = fromCtx
 
   const promises: Promise<any>[] = fromDbServer.workers.map((worker) =>
     worker.updateCtx(toAddress),
@@ -167,6 +179,10 @@ export const migrate = async (
   )
 
   await Promise.all(promises)
+
+  if (abort()) {
+    return fromDbServer.schema
+  }
 
   fromDbServer.onSchemaChange?.(fromDbServer.schema)
 
