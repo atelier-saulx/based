@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('nuno', async (t) => {
+await test('upsert', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -29,12 +29,20 @@ await test('nuno', async (t) => {
     status: 'a',
   })
 
-  console.log('-->', await db.query('user', user1).get().toObject())
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    status: 'a',
+    externalId: 'cool',
+  })
 
   await db.update('user', user1, {
     externalId: null,
     status: 'b',
   })
 
-  console.log('-->', await db.query('user', user1).get().toObject())
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    status: 'b',
+    externalId: '',
+  })
 })

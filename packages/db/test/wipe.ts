@@ -35,8 +35,6 @@ await test('wipe', async (t) => {
     })
   }
 
-  console.log('set 1m', await db.drain())
-
   deepEqual(await db.query('data').range(0, 10).get().toObject(), [
     { id: 1, age: 0, name: '', a: '' },
     { id: 2, age: 1, name: '', a: '' },
@@ -75,7 +73,6 @@ await test('wipe', async (t) => {
       age: i,
     })
   }
-  console.log('set 1m after wipe', await db.drain())
 
   deepEqual(await db.query('x').range(0, 10).get().toObject(), [
     { id: 1, age: 0, name: '', a: '' },

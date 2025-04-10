@@ -297,7 +297,6 @@ await test('Get single node by alias', async (t) => {
         email: '2@saulx.com',
       })
       .get()
-      .inspect()
       .toObject(),
     {
       id: 1,

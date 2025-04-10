@@ -507,8 +507,12 @@ await test('upsert', async (t) => {
   })
   await db2.start()
 
-  console.log(await db.query('person').get().toObject())
-  console.log(await db2.query('person').get().toObject())
+  deepEqual(await db.query('person').get(), [
+    { id: 1, name: 'Joe', age: 42, alias: 'boss' },
+  ])
+  deepEqual(await db2.query('person').get(), [
+    { id: 1, name: 'Joe', age: 42, alias: 'boss' },
+  ])
 })
 
 await test('alias blocks', async (t) => {
@@ -681,8 +685,6 @@ await test('simulated periodic save', async (t) => {
   })
   await db2.start()
 
-  //console.log(await db.query('person').include('name', 'alias').get().toObject())
-  //console.log(await db2.query('person').include('name', 'alias').get().toObject())
   // Change node using alias saved
   deepEqual(
     await db

@@ -384,7 +384,7 @@ await test('Big string disable compression', async (t) => {
   equal((await db.query('file').get()).size > 1000 * 1e3, true)
 
   deepEqual(
-    (await db.query('file').get()).inspect().toObject(),
+    await db.query('file').get(),
     [
       {
         id: 1,
@@ -408,8 +408,6 @@ await test('Big string disable compression', async (t) => {
       contents: x,
     })
   }
-  console.log('--', await db.drain(), 'ms')
-  let xx = Date.now()
   var mb = 0
   let p: any = []
   for (let i = 0; i < 9; i++) {
@@ -417,10 +415,8 @@ await test('Big string disable compression', async (t) => {
     mb += 74
   }
   await Promise.all(p)
-  console.log(Date.now() - xx, 'ms', mb)
 
   for (let i = 0; i < 9; i++) {
-    xx = Date.now()
     mb = 0
     p = []
     for (let i = 0; i < 9; i++) {
@@ -428,7 +424,6 @@ await test('Big string disable compression', async (t) => {
       mb += 74
     }
     await Promise.all(p)
-    console.log(Date.now() - xx, 'ms', mb)
   }
 })
 

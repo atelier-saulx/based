@@ -36,8 +36,6 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         }
         const edgeProp = def.edges.props[p]
 
-        // console.log(p, !!edgeProp, Object.keys(def.edges.props), def.target)
-
         if (
           edgeProp.typeIndex === REFERENCE ||
           edgeProp.typeIndex === REFERENCES

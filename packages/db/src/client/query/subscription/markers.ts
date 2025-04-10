@@ -123,7 +123,7 @@ const getFilterFields = (
     conditions.forEach((v, k) => {
       if (k === 0) {
         for (const buf of v) {
-          const x = buf[4] | buf[5] << 8
+          const x = buf[4] | (buf[5] << 8)
           results.main.add(x)
         }
       } else {
@@ -241,5 +241,4 @@ export const resetSubscriptionMarkers = (db: DbClient) => {
 
 export const deleteSubscriptionMarkers = (q: BasedDbQuery) => {
   // derp
-  console.log('delete markers!')
 }

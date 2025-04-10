@@ -188,8 +188,6 @@ await test('non existing', async (t) => {
 
   // this has to be ignored in C
   await db.delete('user', simple)
-
-  console.log('POWERFUL')
 })
 
 await test('save', async (t) => {

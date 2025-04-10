@@ -212,8 +212,7 @@ await test('simple', async (t) => {
     machines: m,
   })
 
-  console.log(await db.drain(), 'ms')
-  console.log('MAKE 100k', Date.now() - now)
+  await db.drain()
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 

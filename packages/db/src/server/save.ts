@@ -53,7 +53,8 @@ function saveRange(
     db.dbCtxExternal,
     hashOut,
   )
-  if (err == -8) { // TODO ENOENT
+  if (err == -8) {
+    // TODO ENOENT
     return ''
   } else if (err) {
     // TODO print the error string
@@ -157,7 +158,6 @@ export function save(
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
-    //console.log('save', { type: typeId, start, hash: leaf.hash })
     const data: CsmtNodeRange = leaf.data
     if (start != data.start) {
       console.error(

@@ -70,42 +70,42 @@ await test('branchedCount', async (t) => {
 
   // await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
-  console.log(
-    await db
-      .query('user')
-      //lala
-      .filter('flap', '>', 20)
-      .count()
-      .get()
-      .toObject(),
-  )
+  // console.log(
+  //   await db
+  //     .query('user')
+  //     //lala
+  //     .filter('flap', '>', 20)
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
-  await db
-    .query('user')
-    //lala
-    .filter('flap', '>', 20)
-    .count()
-    .get()
-    .inspect(100)
+  // await db
+  //   .query('user')
+  //   //lala
+  //   .filter('flap', '>', 20)
+  //   .count()
+  //   .get()
+  //   .inspect(100)
 
-  console.log(
-    await db
-      .query('article')
-      .include('name', 'contributors')
-      .count()
-      .get()
-      .toObject(),
-  )
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     .include('name', 'contributors')
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
-  console.log(
-    await db.query('article').include('contributors').count().get().inspect(),
-  )
+  // console.log(
+  //   await db.query('article').include('contributors').count().get().inspect(),
+  // )
 
-  // Here to experiment in branched queries
-  await db
-    .query('article')
-    .include((q) => q('contributors').count(), 'name')
-    .get()
-    .inspect(100)
+  // // Here to experiment in branched queries
+  // await db
+  //   .query('article')
+  //   .include((q) => q('contributors').count(), 'name')
+  //   .get()
+  //   .inspect(100)
   // Wish: {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
 })
