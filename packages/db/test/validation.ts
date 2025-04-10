@@ -51,13 +51,39 @@ await test('update', async (t) => {
     },
   })
 
-  // await throws(async () => {
-  //   db.create('user', {
-  //     text: {
-  //       en: 123,
-  //     },
-  //   })
-  // })
+  await throws(async () => {
+    db.create('user', {
+      text: {
+        en: 123,
+      },
+    })
+  })
+
+  await throws(async () => {
+    db.create(
+      'user',
+      {
+        text: 123,
+      },
+      { locale: 'en' },
+    )
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      text: { xh: 'hello!' },
+    })
+  })
+
+  await throws(async () => {
+    db.create(
+      'user',
+      {
+        text: 'hello!',
+      },
+      { locale: 'xh' },
+    )
+  })
 
   await throws(async () => {
     db.create('user', {
@@ -743,6 +769,10 @@ await test('query', async (t) => {
   await throws(async () => {
     // @ts-ignore
     await db.query('user').search([1, 2, 3, 4], 'blap').get()
+  }, false)
+
+  await throws(async () => {
+    const envs = await db.query('user').filter('connections', 'has', 0).get()
   }, false)
 })
 

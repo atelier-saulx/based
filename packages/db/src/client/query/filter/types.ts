@@ -237,3 +237,5 @@ export const operatorReverseMap: Record<OPERATOR, string> = {
   [EQUAL_CRC32]: '= (crc32)',
   [EXISTS]: 'exists',
 }
+
+export const ALIGNMENT_NOT_SET = 255

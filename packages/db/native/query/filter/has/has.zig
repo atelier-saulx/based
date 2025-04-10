@@ -11,6 +11,7 @@ const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
 const std = @import("std");
 const toSlice = @import("../../../utils.zig").toSlice;
+const Compression = @import("../../../types.zig").Compression;
 
 inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
@@ -58,7 +59,7 @@ inline fn hasInner(
         } else {
             v = v[0 .. v.len - 4];
         }
-        if (value[1] == 1) {
+        if (value[1] == @intFromEnum(Compression.compressed)) {
             if (!decompress(void, orCompare(isOr, compare).func, q, value, dbCtx, undefined)) {
                 return false;
             }

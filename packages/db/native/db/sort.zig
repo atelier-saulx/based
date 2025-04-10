@@ -72,7 +72,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
-        types.Prop.STRING, types.Prop.TEXT => {
+        types.Prop.STRING, types.Prop.TEXT, types.Prop.ALIAS => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {
@@ -313,13 +313,29 @@ inline fn parseString(
         }
         return &arr;
     } else {
-        if (data[1] == 0) {
+        if (data[1] == @intFromEnum(types.Compression.none)) {
             const slice = data[2 .. SIZE + 2];
             return slice.ptr;
         } else {
             const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
             return slice.ptr;
         }
+    }
+    return EMPTY_CHAR_SLICE.ptr;
+}
+
+inline fn parseAlias(
+    data: []u8,
+) [*]u8 {
+    if (data.len < SIZE + 2) {
+        var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
+        var i: usize = 0;
+        while (i < data.len) : (i += 1) {
+            arr[i] = data[i];
+        }
+        return &arr;
+    } else {
+        return data.ptr;
     }
     return EMPTY_CHAR_SLICE.ptr;
 }
@@ -340,6 +356,9 @@ pub fn remove(
     return switch (prop) {
         types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
             selva.selva_sort_remove_i64(index, data[start], node);
+        },
+        types.Prop.ALIAS => {
+            selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
         },
         types.Prop.STRING, types.Prop.TEXT => {
             if (sortIndex.len > 0) {
@@ -391,6 +410,9 @@ pub fn insert(
     return switch (prop) {
         types.Prop.ENUM, types.Prop.UINT8, types.Prop.INT8, types.Prop.BOOLEAN => {
             selva.selva_sort_insert_i64(index, data[start], node);
+        },
+        types.Prop.ALIAS => {
+            selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, node);
         },
         types.Prop.STRING, types.Prop.TEXT => {
             const d = if (sortIndex.len > 0) data[start + 1 .. start + sortIndex.len] else data;

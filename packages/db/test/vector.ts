@@ -33,6 +33,7 @@ async function initDb(t) {
           },
           age: { type: 'uint32' },
           name: { type: 'string', maxBytes: 10 },
+          derp: { type: 'string' },
         },
       },
     },
@@ -178,4 +179,24 @@ await test('search', async (t) => {
       { id: 4, $searchScore: 0.7999996542930603, name: 'strawberry' },
     ],
   )
+})
+
+await test('vector misalign', async (t) => {
+  const db = await initDb(t)
+  for (let i = 0; i < 2; i++) {
+    db.create('data', {
+      a: new Float32Array([1, 1, 1, 1, 1]),
+      derp: '' + i,
+      age: i,
+    })
+  }
+  await db.isModified()
+
+  for (let i = 0; i < 2; i++) {
+    db.update('data', i + 1, {
+      a: new Float32Array([2, 2, 2, 2, 2]),
+    })
+  }
+
+  await db.isModified()
 })

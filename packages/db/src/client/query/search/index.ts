@@ -30,11 +30,9 @@ export const vectorSearch = (
   if (prop.typeIndex !== VECTOR) {
     searchIncorrectType(def, prop)
   }
-  // [isVec] [q len] [q len] [field] [fn] [score] [score] [score] [score] [q..]
-  let size = 9
+  let size = 17
   const vec = new Uint8Array(q.buffer, 0, q.byteLength)
   size += vec.byteLength
-
   def.search = {
     size: size,
     prop: prop.prop,
@@ -138,7 +136,8 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     | 3      | field    | 1            | Field identifier                                |
     | 4      | func     | 1            | Function identifier (enum)                      |
     | 5      | score    | 4            | Score value (f32)                               |
-    | 9      | query    | queryLen     | Query data (array of f32 values)                |
+    | 9      | align    | 8            | Space for alignment                             |
+    | 17     | query    | queryLen     | Query data (array of f32 values)                |
     */
 
     const result = new Uint8Array(search.size)
@@ -151,7 +150,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
       new Uint8Array(new Float32Array([search.opts.score ?? 0.5]).buffer),
       5,
     )
-    result.set(search.query, 9)
+    result.set(search.query, 17)
     return result
   } else {
     /* Non-Vector Search Binary Schema:

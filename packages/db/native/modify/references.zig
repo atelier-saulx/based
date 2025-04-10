@@ -99,10 +99,10 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const delta = (address + 1) & 3;
     const offset = if (delta == 0) 0 else 4 - delta;
 
-    if (@mod(len, 4) != 0) {
-        std.log.err("Incorrect len passed to putReferences {any} \n", .{len});
-        return errors.SelvaError.SELVA_EINVAL;
-    }
+    // if (@mod(len, 4) != 0) {
+    //     std.log.err("Incorrect len passed to putReferences {any} \n", .{len});
+    //     return errors.SelvaError.SELVA_EINVAL;
+    // }
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});

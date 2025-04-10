@@ -65,7 +65,7 @@ export function createTree(createHash: () => any): Csmt {
       } else if (nodeKey > k) {
         return createNode(newLeaf, node)
       } else {
-        throw new Error('Key exist')
+        throw new Error(`k=${k} exists`)
       }
     }
 
@@ -130,6 +130,29 @@ export function createTree(createHash: () => any): Csmt {
       } else {
         throw new Error(`k=${k} does not exist`)
       }
+    }
+  }
+
+  function updateNodeHash(node: TreeNode) {
+    if (node.left && node.right) {
+      node.hash = genNodeHash(node.left.hash, node.right.hash)
+    }
+  }
+
+  function updateHash(node: TreeNode, k: TreeKey, hash: Hash): void {
+    if (!node) return
+    const { left, right } = node
+    if ((k === node.key && !left && !right)) {
+      node.hash = hash
+    } else {
+      if (left && k <= left.key) {
+        updateHash(left, k, hash)
+        updateNodeHash(left)
+      } else if (right && k <= right.key) {
+        updateHash(right, k, hash)
+        updateNodeHash(right)
+      }
+      updateNodeHash(node)
     }
   }
 
@@ -228,6 +251,11 @@ export function createTree(createHash: () => any): Csmt {
 
       const newLeaf = createLeaf(k, h, data)
       root = root ? insert(root, newLeaf) : newLeaf
+    },
+    update: (k: TreeKey, h: Hash) => {
+      if (root) {
+        updateHash(root, k, h)
+      }
     },
     delete: (k: TreeKey) => {
       if (root) {

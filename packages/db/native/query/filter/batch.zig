@@ -1,7 +1,10 @@
 const std = @import("std");
 const simd = std.simd;
+const move = @import("../../utils.zig").move;
 const read = @import("../../utils.zig").read;
+
 const selva = @import("../../selva.zig");
+const types = @import("./types.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const indexes = std.simd.iota(u8, vectorLen);
@@ -12,30 +15,22 @@ pub fn simdEqualsOr(
     value: []u8,
     values: []u8,
 ) bool {
-    var i: usize = 0;
-    const bytes: u16 = @sizeOf(T);
-    const l = values.len / bytes;
-    const valueExpanded = read(T, value, 0);
-    // this has to be aligned in js
+    var offset: u8 = values[0];
+    const typeSize = @sizeOf(T);
 
-    const address = @intFromPtr(values.ptr);
-    const delta = (address) & @sizeOf(T);
-
-    std.debug.print("Incorrectly aligned {any} {any}  a {any} \n", .{ values.len, delta, address });
-
-    if (delta != 0) {
-        while (i < values.len) {
-            if (std.mem.eql(u8, value, values[i .. i + @sizeOf(T)])) {
-                return true;
-            }
-
-            i += @sizeOf(T);
-        }
-
-        return false;
+    if (values[0] == @intFromEnum((types.Alignment.notSet))) {
+        const address = @intFromPtr(values.ptr);
+        offset = @truncate(address % 8);
+        values[0] = offset;
+        move(values[8 - offset .. values.len - offset], values[8..values.len]);
     }
 
-    const tmp: [*]T = @alignCast(@ptrCast(values.ptr));
+    var i: usize = 0;
+    const bytes: u16 = typeSize;
+    const l = (values.len - 8) / bytes;
+    const valueExpanded = read(T, value, 0);
+
+    const tmp: [*]T = @alignCast(@ptrCast(values[8 - offset .. values.len - offset].ptr));
     const ints: []T = tmp[0..l];
     if (vectorLen <= l) {
         while (i <= (l - vectorLen)) : (i += vectorLen) {
@@ -45,6 +40,7 @@ pub fn simdEqualsOr(
             }
         }
     }
+
     while (i < l) : (i += 1) {
         const id2 = ints[i];
         if (id2 == valueExpanded) {
@@ -54,14 +50,7 @@ pub fn simdEqualsOr(
     return false;
 }
 
-// make the hasQueryValueORalgo
-
-// make the query multiple (faster)
-// have block decompression here
-// buffer in the instance of db for dec
 pub fn hasQueryValueOr(value: []u8, query: []u8) bool {
-    // put block deocmpression here
-    // query packed
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
@@ -143,6 +132,10 @@ pub fn equalsOr(
         if (!simdEqualsOr(u64, value, values)) {
             return false;
         }
+    } else if (valueSize == 2) {
+        if (!simdEqualsOr(u16, value, values)) {
+            return false;
+        }
     } else if (!simdEqualsOr(u8, value, values)) {
         return false;
     }
@@ -155,29 +148,11 @@ pub fn simdReferencesHasSingle(
     value: u32,
     values: []u8,
 ) bool {
-    const l = values.len / 4;
-
-    const address = @intFromPtr(values.ptr);
-    const delta = (address) & 3;
-
-    if (delta != 0) {
-        if (values.len < 4) {
-            return false;
-        }
-        std.debug.print("v1 {any} v {any} \n", .{ value, values.len });
-        var i: usize = 0;
-
-        while (i < values.len) {
-            if (read(u32, values, i) == value) {
-                return true;
-            }
-            i += 4;
-        }
+    if (values.len < 4) {
         return false;
     }
-
+    const l = values.len / 4;
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
-
     return selva.node_id_set_bsearch(tmp, l, value) != -1;
 }
 
@@ -185,19 +160,11 @@ pub fn simdReferencesHas(
     value: []u8,
     values: []u8,
 ) bool {
-    // // also potentialy wrong...
-    // const tmp3: [*]u32 = @alignCast(@ptrCast(value.ptr));
-    // const intsValue2: []u32 = tmp3[0 .. value.len / 4];
-    var i: usize = 0;
-    const l = values.len / 4;
-
-    const address = @intFromPtr(values.ptr);
-    const delta = (address) & 3;
-
-    if (delta != 0) {
+    if (values.len < 4) {
         return false;
     }
-
+    var i: usize = 0;
+    const l = values.len / 4;
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
     while (i < value.len) : (i += 4) {
         if (selva.node_id_set_bsearch(tmp, l, read(u32, value, i)) != -1) {

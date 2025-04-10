@@ -217,13 +217,11 @@ await test('simple', async (t) => {
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 
-  console.log('YOYO')
   equal(
     (await db.query('machine').filter('lastPing', '=', x).get()).length,
     x.length,
     'OR number',
   )
-  console.log('------------')
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -257,8 +255,6 @@ await test('simple', async (t) => {
     'multi ref OR filter up at 0.5 results',
   )
 
-  // console.log('what??', measure, amount, measure / amount)
-
   equal(measure / amount < 20, true, 'multi ref OR filter lower then 20ms')
 
   measure = 0
@@ -272,7 +268,6 @@ await test('simple', async (t) => {
         .include('*')
         .filter('machines', 'has', rand)
         .get()
-
       mi += envs.toObject().length
       measure += envs.execTime
     }),

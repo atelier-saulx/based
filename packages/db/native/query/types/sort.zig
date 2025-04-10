@@ -33,7 +33,7 @@ pub fn default(
 
     if (sIndex == null) {
         std.log.err(
-            "Err exec query (zig) no sort index available for query type: {any} field: {any} start: {any} lang: {any}  \n",
+            "Err exec query (zig) no sort index available for query type: {any} field: {any} start: {any} lang: {any} \n",
             .{ typeId, field, start, lang },
         );
         return;

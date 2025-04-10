@@ -273,9 +273,9 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const checkRef = db.getReference(ctx, node, fs);
-
+                        // -----------
                         if (checkRef) |r| {
-                            value = @as([*]u8, @ptrCast(r))[0..8];
+                            value = @as([*]u8, @ptrCast(r))[0..4];
                         } else {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }

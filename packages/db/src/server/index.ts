@@ -21,6 +21,7 @@ import { start } from './start.js'
 import {
   CsmtNodeRange,
   foreachDirtyBlock,
+  initCsmt,
   makeCsmtKey,
   makeCsmtKeyFromNodeId,
 } from './tree.js'
@@ -510,6 +511,8 @@ export class DbServer {
         view.setUint32(buf.length - 4, data.length, true)
         this.modify(buf)
       }
+
+      initCsmt(this)
     }
 
     this.onSchemaChange?.(this.schema)

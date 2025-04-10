@@ -10,7 +10,6 @@ const Op = t.Operator;
 const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const Prop = @import("../../types.zig").Prop;
-const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
@@ -22,7 +21,6 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
     const mainLen = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 10]);
     const start = read(u16, q, i + 2);
-
     var value: []u8 = undefined;
     if (mainLen != 0) {
         value = v[start + 1 .. v[start] + start + 1];
@@ -112,24 +110,16 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
     return .{ next, pass };
 }
 
-pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u16, q, i + 2);
+pub inline fn reference(q: []u8, v: []u8, i: usize) ConditionsResult {
     const repeat = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);
-    const next = 10 + valueSize * repeat;
+    const offset: usize = if (repeat > 1) 18 else 10;
+    const next = offset + 4 * repeat;
     if (op == Op.equal) {
-        const refType: t.ReferenceTarget = @enumFromInt(q[i + 7]);
-        if (refType == t.ReferenceTarget.notFound) {
-            return .{ next, false };
-        } else if (refType == t.ReferenceTarget.notSet) {
-            if (!fillReferenceFilter(ctx, q[i + 7 .. i + 10 + repeat * 8])) {
-                return .{ next, true };
-            }
-        }
+        const query = q[i + 10 .. i + repeat * 4 + offset];
         var j: u8 = 0;
-        const query = q[i + 10 .. i + repeat * 8 + 10];
         if (repeat > 1) {
-            if (!batch.equalsOr(8, v, query)) {
+            if (!batch.equalsOr(4, v, query)) {
                 return .{ next, false };
             }
         } else {
@@ -137,27 +127,6 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
                 if (v[j] != query[j]) {
                     return .{ next, false };
                 }
-            }
-        }
-    }
-    return .{ next, true };
-}
-
-pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = read(u16, q, i + 2);
-    const op: Op = @enumFromInt(q[i + 6]);
-    const repeat = read(u16, q, i + 7);
-    const query = q[i + 9 .. i + valueSize * repeat + 9];
-    const next = 9 + valueSize * repeat;
-    // Can potentialy vectorize this
-    if (op == Op.equal) {
-        if (v.len / valueSize != repeat) {
-            return .{ next, false };
-        }
-        var j: u8 = 0;
-        while (j < query.len) : (j += 1) {
-            if (v[j] != query[j]) {
-                return .{ next, false };
             }
         }
     }
@@ -188,7 +157,6 @@ pub inline fn default(
             std.log.err("Start (fixed len fields) + has not supported in filters", .{});
             return .{ next, false };
         }
-
         if (!batch.simdReferencesHasSingle(read(u32, query, 0), v)) {
             return .{ next, false };
         }
@@ -198,6 +166,27 @@ pub inline fn default(
         }
     } else if (op == Op.equalCrc32) {
         return .{ next, crc32Equal(prop, query, v) };
+    }
+    return .{ next, true };
+}
+
+pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
+    const valueSize = read(u16, q, i + 2);
+    const op: Op = @enumFromInt(q[i + 6]);
+    const repeat = read(u16, q, i + 7);
+    const query = q[i + 9 + 8 .. i + valueSize * repeat + 17];
+    const next = 17 + valueSize * repeat;
+    // Can potentialy vectorize this
+    if (op == Op.equal) {
+        if (v.len / valueSize != repeat) {
+            return .{ next, false };
+        }
+        var j: u8 = 0;
+        while (j < query.len) : (j += 1) {
+            if (v[j] != query[j]) {
+                return .{ next, false };
+            }
+        }
     }
     return .{ next, true };
 }
@@ -212,8 +201,8 @@ pub inline fn orFixed(
     const start = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);
     const repeat = read(u16, q, i + 7);
-    const query = q[i + 9 .. i + valueSize * repeat + 9];
-    const next = 9 + valueSize * repeat;
+    const query = q[i + 9 .. i + valueSize * repeat + 17];
+    const next = 17 + valueSize * repeat;
     if (op == Op.equalCrc32) {
         const amountOfConditions = @divTrunc(query.len, 8) + 1;
         var j: usize = 0;

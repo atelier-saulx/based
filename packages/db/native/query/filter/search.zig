@@ -12,6 +12,8 @@ const VectorFn = @import("./types.zig").VectorFn;
 const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
 const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
+const move = @import("../../utils.zig").move;
+const Compression = @import("../../types.zig").Compression;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
@@ -89,8 +91,6 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
             .score = 0,
         };
     } else {
-        const sLen = read(u16, searchBuf, 1);
-
         // Vector Binary Schema:
         // | Offset | Field    | Size (bytes) | Description                                     |
         // |--------|----------|--------------|-------------------------------------------------|
@@ -99,13 +99,20 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         // | 3      | field    | 1            | Field identifier                                |
         // | 4      | func     | 1            | Function identifier (enum)                      |
         // | 5      | score    | 4            | Score value (f32)                               |
-        // | 9      | query    | queryLen     | Query data (array of f32 values)                |
+        // | 9      | align    | 8            | Space for alignment                             |
+        // | 17     | query    | queryLen     | Query data (array of f32 values)                |
+
+        const alignedV = searchBuf[9..searchBuf.len];
+        const address = @intFromPtr(alignedV.ptr);
+        const offset = address % 8;
+
+        move(alignedV[8 - offset .. alignedV.len - offset], alignedV[8..alignedV.len]);
 
         return .{
             .field = searchBuf[3],
             .func = @enumFromInt(searchBuf[4]),
             .score = read(f32, searchBuf, 5),
-            .query = read([]f32, searchBuf[9 .. 9 + sLen], 0),
+            .query = read([]f32, alignedV[8 - offset .. alignedV.len - offset], 0),
         };
     }
 }
@@ -291,8 +298,7 @@ inline fn getScore(
     score: *u8,
     penalty: u8,
 ) bool {
-    const isCompressed = value[1] == 1;
-    if (isCompressed) {
+    if (value[1] == @intFromEnum(Compression.compressed)) {
         _ = decompress(
             *u8,
             strSearchCompressed,
@@ -398,7 +404,6 @@ pub fn searchVector(
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(true),
 ) f32 {
-    // add FS on ctx
     const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
         return MaxVectorScore;
     };

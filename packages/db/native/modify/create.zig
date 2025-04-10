@@ -38,6 +38,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
+        types.Prop.VECTOR => {
+            const len = read(u32, data, 0);
+            const padding = data[4];
+            const slice = data[8 - padding .. len + 4];
+            try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+            return len;
+        },
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
             const hll = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
@@ -56,18 +63,19 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             addSortIndexOnCreation(ctx, slice) catch null;
-
             if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
+                        if (ctx.currentSortIndex != null) {
+                            sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(old, ctx.typeEntry.?).?);
+                        }
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
                 }
             } else {
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             }
-
             return len;
         },
     }

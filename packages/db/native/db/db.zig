@@ -5,6 +5,8 @@ const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
+const valgrind = @import("../valgrind.zig");
+const config = @import("config");
 
 const read = utils.read;
 
@@ -15,8 +17,11 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
-const globalAllocator = globalAllocatorArena.allocator();
+const base_allocator = std.heap.raw_c_allocator;
+var db_backing_allocator: std.mem.Allocator = undefined;
+var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
+
+pub var dbHashmap: std.AutoHashMap(u32, *DbCtx) = undefined;
 
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
@@ -37,16 +42,19 @@ pub const DbCtx = struct {
     }
 };
 
-pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
-
 pub fn createDbCtx(id: u32) !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
-    var arena = try globalAllocator.create(std.heap.ArenaAllocator);
-    defer globalAllocator.destroy(arena);
-    arena.* = std.heap.ArenaAllocator.init(globalAllocator);
-
+    var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
+    errdefer db_backing_allocator.destroy(arena);
+    arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
+
     const b = try allocator.create(DbCtx);
+    errdefer {
+        arena.deinit();
+        db_backing_allocator.destroy(arena);
+    }
+
     b.* = .{
         .id = 0,
         .arena = arena,
@@ -58,10 +66,19 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
 
-    errdefer b.deinit(globalAllocator);
     try dbHashmap.put(id, b);
 
     return b;
+}
+
+pub fn init() void {
+    if (config.enable_debug) {
+        valgrind_wrapper_instance = valgrind.ValgrindAllocator.init(base_allocator);
+        db_backing_allocator = valgrind_wrapper_instance.allocator();
+    } else {
+        db_backing_allocator = base_allocator;
+    }
+    dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 }
 
 var lastQueryId: u32 = 0;
@@ -427,7 +444,9 @@ pub fn getNode(id: u32, typeEntry: Type) ?Node {
 }
 
 pub inline fn getNodeId(node: Node) u32 {
-    return selva.selva_get_node_id(node);
+    // return read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
+    // return selva.selva_get_node_id(node);
+    return @bitCast(@as([*]u8, @ptrCast(node))[0..4].*);
 }
 
 pub fn getNodeIdArray(node: Node) [4]u8 {

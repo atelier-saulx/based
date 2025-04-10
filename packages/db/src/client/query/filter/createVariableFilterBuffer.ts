@@ -15,6 +15,7 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr } from '../../../utils.js'
+import { FilterCondition } from '../types.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
@@ -85,10 +86,10 @@ export const createVariableFilterBuffer = (
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
   lang: LangCode,
-) => {
+): FilterCondition => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
-  let buf: Uint8Array
+  let parsedCondition: FilterCondition
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
@@ -139,9 +140,9 @@ export const createVariableFilterBuffer = (
           v[7] = len >>> 24
           v[8] = val[val.length - 1]
 
-          buf = writeVarFilter(mode, v, ctx, prop, 0, 0)
+          parsedCondition = writeVarFilter(mode, v, ctx, prop, 0, 0)
         } else {
-          buf = createFixedFilterBuffer(
+          parsedCondition = createFixedFilterBuffer(
             prop,
             8,
             { operation: EQUAL_CRC32, type: ctx.type, opts: ctx.opts },
@@ -153,14 +154,20 @@ export const createVariableFilterBuffer = (
         if (val instanceof ArrayBuffer) {
           val = new Uint8Array(val)
         }
-        buf = writeVarFilter(mode, val, ctx, prop, 0, 0)
+        parsedCondition = writeVarFilter(mode, val, ctx, prop, 0, 0)
       }
     } else {
-      // RFE is val always an Uint8Array?
-      buf = writeVarFilter(mode, val, ctx, prop, prop.start, prop.len)
+      parsedCondition = writeVarFilter(
+        mode,
+        val,
+        ctx,
+        prop,
+        prop.start,
+        prop.len,
+      )
     }
   }
-  return buf
+  return parsedCondition
 }
 
 function writeVarFilter(
