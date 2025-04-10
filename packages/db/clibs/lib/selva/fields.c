@@ -2005,6 +2005,7 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
             do {
                 const struct SelvaTextField *text = p;
 
+                selva_hash_update(hash_state, &text->len, sizeof(text->len));
                 for (size_t i = 0; i < text->len; i++) {
                     uint32_t crc = selva_string_get_crc(&text->tl[i]);
                     selva_hash_update(hash_state, &crc, sizeof(crc));
@@ -2018,6 +2019,7 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
             do {
                 const struct SelvaNodeReferences *refs = p;
 
+                selva_hash_update(hash_state, &refs->nr_refs, sizeof(refs->nr_refs));
                 for (size_t i = 0; i < refs->nr_refs; i++) {
                     hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), &refs->refs[i]);
                 }
@@ -2027,6 +2029,7 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db
             do {
                 const struct SelvaNodeWeakReferences *refs = p;
 
+                selva_hash_update(hash_state, &refs->nr_refs, sizeof(refs->nr_refs));
                 selva_hash_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
             } while (0);
             break;
