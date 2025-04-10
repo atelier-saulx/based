@@ -195,6 +195,13 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
+  [TYPE_INDEX_MAP.text]: (value, t) => {
+    // add max etc all here - make a ref to the original SCHEMA
+    if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
+      return false
+    }
+    return true
+  },
   [TYPE_INDEX_MAP.aliases]: (value) => {
     if (!Array.isArray(value)) {
       return false
