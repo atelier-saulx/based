@@ -60,6 +60,32 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
+    db.create(
+      'user',
+      {
+        text: 123,
+      },
+      { locale: 'en' },
+    )
+  })
+
+  await throws(async () => {
+    db.create('user', {
+      text: { xh: 'hello!' },
+    })
+  })
+
+  await throws(async () => {
+    db.create(
+      'user',
+      {
+        text: 'hello!',
+      },
+      { locale: 'xh' },
+    )
+  })
+
+  await throws(async () => {
     db.create('user', {
       name: 1,
     })
