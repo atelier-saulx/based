@@ -10,7 +10,7 @@ await test('simple', async (t) => {
 
   await db.start({ clean: true })
   t.after(() => {
-    return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
