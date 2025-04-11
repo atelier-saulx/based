@@ -47,7 +47,7 @@ await test('upsert', async (t) => {
   })
 })
 
-await test('updates', async (t) => {
+await test('await updates', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -64,14 +64,14 @@ await test('updates', async (t) => {
     types: {
       user: {
         props: {
-          externalId: { type: 'string', max: 20 },
+          externalId: { type: 'alias' },
           status,
         },
       },
     },
   })
 
-  const total = 1e4
+  const total = 1e5
 
   var d = Date.now()
 
@@ -88,19 +88,19 @@ await test('updates', async (t) => {
   let totalAlias = 0
 
   const updateAlias = async () => {
+    const externalId = Math.ceil(Math.random() * total) + '-alias'
     const id = Math.ceil(Math.random() * total)
-    db.update('user', id, {
-      status: status[~~Math.random() * status.length],
+    await db.update('user', id, {
+      externalId,
     })
-    await db.drain()
     totalAlias++
   }
 
   const start = Date.now()
   let lastMeasure = Date.now()
-  for (let i = 0; i < 100000; i++) {
+  for (let i = 0; i < 1000000; i++) {
     await updateAlias()
-    if (!(i % 500)) {
+    if (!(i % 100000)) {
       const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
       console.log(`${~~opsPerS} per sec`)
       lastMeasure = Date.now()
