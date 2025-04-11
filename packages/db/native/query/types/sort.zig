@@ -39,6 +39,8 @@ pub fn default(
         return;
     }
 
+    std.debug.print("FLAP {any} \n", .{sIndex});
+
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     if (desc) {
@@ -46,6 +48,7 @@ pub fn default(
     } else {
         selva.selva_sort_foreach_begin(sI.index);
     }
+    // create a new iterator per CORE
     var correctedForOffset: u32 = offset;
     checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
         var node: db.Node = undefined;
