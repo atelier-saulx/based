@@ -142,14 +142,32 @@ export function createTree(createHash: () => any): Csmt {
     if (k === node.key && !left && !right) {
       node.hash = hash
     } else {
-      if (left && k <= left.key) {
+      if (left && left.key === k) {
         updateHash(left, k, hash)
         updateNodeHash(left)
-      } else if (right && k <= right.key) {
+        updateNodeHash(node)
+        return
+      }
+      if (right && right.key === k) {
         updateHash(right, k, hash)
         updateNodeHash(right)
+        updateNodeHash(node)
+        return
       }
-      updateNodeHash(node)
+      const lDist = distance(k, (left && left.key) || TreeKeyNil)
+      const rDist = distance(k, (right && right.key) || TreeKeyNil)
+      if (left && lDist <= rDist) {
+        updateHash(left, k, hash)
+        updateNodeHash(left)
+        updateNodeHash(node)
+        return
+      }
+      if (right && rDist <= lDist) {
+        updateHash(right, k, hash)
+        updateNodeHash(right)
+        updateNodeHash(node)
+        return
+      }
     }
   }
 
@@ -234,8 +252,12 @@ export function createTree(createHash: () => any): Csmt {
   function search(node: TreeNode, k: TreeKey): TreeNode | null {
     if (!node || (k === node.key && !node.left && !node.right)) return node
     const { left, right } = node
-    if (left && k <= left.key) return search(left, k)
-    if (right && k <= right.key) return search(right, k)
+    if (left && left.key === k) return search(left, k)
+    if (right && right.key === k) return search(right, k)
+    const lDist = distance(k, (left && left.key) || TreeKeyNil)
+    const rDist = distance(k, (right && right.key) || TreeKeyNil)
+    if (left && lDist <= rDist) return search(left, k)
+    if (right && rDist <= lDist) return search(right, k)
     return null
   }
 

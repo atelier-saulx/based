@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert'
+import { strict as assert, notEqual } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
@@ -535,7 +535,7 @@ await test('proof: Show a proof that 1 is smaller than the smallest key in the t
   assert.deepEqual(proof, expectedProof)
 })
 
-await test('search', async (t) => {
+await test('search: basic', async (t) => {
   const tree = createTree(testHashGen)
 
   tree.insert(2, ENCODER.encode('a'))
@@ -549,4 +549,40 @@ await test('search', async (t) => {
   equal(tree.search(3)?.key, 3)
   equal(tree.search(4)?.key, 4)
   equal(tree.search(5)?.key, 5)
+})
+
+await test('search: distance mix', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(15032385535, ENCODER.encode('a'))
+  tree.insert(10737418239, ENCODER.encode('b'))
+  tree.insert(12884901889, ENCODER.encode('c'))
+
+  equal(tree.search(15032385535)?.key, 15032385535)
+  equal(tree.search(10737418239)?.key, 10737418239)
+  equal(tree.search(12884901889)?.key, 12884901889)
+})
+
+await test('update', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(15032385535, ENCODER.encode('a'))
+  tree.insert(10737418239, ENCODER.encode('b'))
+  tree.insert(12884901889, ENCODER.encode('c'))
+
+  let prevRootHash = tree.getRoot().hash
+  tree.update(15032385535, ENCODER.encode('x'))
+  notEqual(tree.getRoot().hash, prevRootHash)
+
+  prevRootHash = tree.getRoot().hash
+  tree.update(10737418239, ENCODER.encode('y'))
+  notEqual(tree.getRoot().hash, prevRootHash)
+
+  prevRootHash = tree.getRoot().hash
+  tree.update(12884901889, ENCODER.encode('z'))
+  notEqual(tree.getRoot().hash, prevRootHash)
+
+  equal(tree.search(15032385535)?.hash, ENCODER.encode('x'))
+  equal(tree.search(10737418239)?.hash, ENCODER.encode('y'))
+  equal(tree.search(12884901889)?.hash, ENCODER.encode('z'))
 })
