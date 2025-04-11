@@ -58,13 +58,16 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
     const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+
     if (refs) |r| {
         if (r.nr_refs == 0) {
+            std.debug.print("---- clear ref empty\n", .{});
             // Is empty already
             return;
         } else {
             const refsIndex = r.index[0..r.nr_refs];
             const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
+            std.debug.print("---- clear ref {any}\n", .{refsIndex});
             Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
         }
         db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
@@ -109,7 +112,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
-
+    std.debug.print("---- put ref {any}\n", .{u32ids});
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),
