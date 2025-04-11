@@ -1,10 +1,10 @@
 import { Hash, Csmt, TreeKey, TreeKeyNil, TreeNode, TreeDiff } from './types.js'
 import { distance, min, max } from './tree-utils.js'
 import membershipProof, { Proof } from './memebership-proof.js'
-import { equals } from '../../utils.js';
+import { equals } from '../../utils.js'
 
 export function hashEq(a: Hash, b: Hash) {
-    return equals(a, b)
+  return equals(a, b)
 }
 
 export function createTree(createHash: () => any): Csmt {
@@ -16,10 +16,7 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   function createNode(left: TreeNode | null, right: TreeNode | null): TreeNode {
-    const hash =
-      left && right
-        ? genNodeHash(left.hash, right.hash)
-        : emptyHash
+    const hash = left && right ? genNodeHash(left.hash, right.hash) : emptyHash
 
     return {
       hash,
@@ -142,7 +139,7 @@ export function createTree(createHash: () => any): Csmt {
   function updateHash(node: TreeNode, k: TreeKey, hash: Hash): void {
     if (!node) return
     const { left, right } = node
-    if ((k === node.key && !left && !right)) {
+    if (k === node.key && !left && !right) {
       node.hash = hash
     } else {
       if (left && k <= left.key) {

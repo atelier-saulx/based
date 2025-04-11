@@ -9,8 +9,9 @@ await test('simple', async (t) => {
   })
 
   await db.start({ clean: true })
+
   t.after(() => {
-    return t.backup(db)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -90,6 +91,7 @@ await test('simple', async (t) => {
 
   await db.drain()
   await db.save()
+
   const db2 = new BasedDb({
     path: t.tmp,
   })
@@ -115,6 +117,7 @@ await test('simple', async (t) => {
   await db2.save()
 
   const user2 = await db2.create('user', { name: 'jerp' })
+
   await db2.update({
     coolname: 'xxx',
     users: [user1, user2],
@@ -754,4 +757,94 @@ await test('simulated periodic save', async (t) => {
       .toObject(),
     await db.query('person').include('name', 'alias', 'books').get().toObject(),
   )
+})
+
+await test('no mismatch', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(async () => {
+    return db.stop(true)
+  })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'xxx',
+  })
+
+  await db.save()
+
+  const db2 = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return t.backup(db2)
+  })
+
+  await db2.start()
+  await db2.create('user', {
+    name: 'xxx',
+  })
+
+  await db2.create('user', {
+    name: 'xxx2',
+  })
+
+  await db2.save()
+})
+
+await test('csmt after save', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.setSchema({
+    types: {
+      nurp: {
+        props: {
+          email2: { type: 'string' },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp',
+  })
+  await db.save({
+    forceFullDump: true,
+  })
+  await db.create('user', {
+    name: 'dr youz',
+  })
+
+  await db.save()
 })

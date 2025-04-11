@@ -163,6 +163,11 @@ export const migrate = async (
     toDb.server.schemaTypesParsed,
     schemaTypesParsed,
   )
+  fromDbServer.schemaTypesParsedById = {}
+  for (const key in fromDbServer.schemaTypesParsed) {
+    const def = fromDbServer.schemaTypesParsed[key]
+    fromDbServer.schemaTypesParsedById[def.id] = def
+  }
 
   toDb.server.dbCtxExternal = fromCtx
 

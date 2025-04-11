@@ -3,6 +3,7 @@ import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
+import { BasedDb } from '../src/index.js'
 
 await test('client server schema updates', async (t) => {
   const server = new DbServer({
@@ -295,3 +296,62 @@ await test('rapid modifies during schema update', async (t) => {
   deepEqual(all.at(-1), { id: 501000, name: 'jamex0' })
   deepEqual(all.length, youzies + jamesies)
 })
+
+// await test('csmt after schema update', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
+
+//   await db.start({ clean: true })
+
+//   t.after(() => {
+//     return db.destroy()
+//     // return t.backup(db)
+//   })
+
+//   await db.setSchema({
+//     types: {
+//       nurp: {
+//         props: {
+//           email2: { type: 'string' },
+//         },
+//       },
+//       user: {
+//         props: {
+//           name: { type: 'string' },
+//           age: { type: 'uint32' },
+//           email: { type: 'string' },
+//         },
+//       },
+//     },
+//   })
+
+//   await db.create('user', {
+//     name: 'mr snurp',
+//     age: 99,
+//     email: 'snurp@snurp.snurp',
+//   })
+
+//   await db.setSchema({
+//     types: {
+//       nurp: {
+//         props: {
+//           email2: { type: 'string' },
+//         },
+//       },
+//       user: {
+//         props: {
+//           name: { type: 'string' },
+//           age: { type: 'uint32' },
+//           email: { type: 'string' },
+//         },
+//       },
+//     },
+//   })
+
+//   await db.create('user', {
+//     name: 'dr youz',
+//   })
+
+//   await db.save()
+// })
