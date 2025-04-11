@@ -131,6 +131,7 @@ export function save(
         // The range is empty
       } else {
         const oldLeaf = db.merkleTree.search(mtKey)
+
         if (oldLeaf) {
           oldLeaf.data.file = file
           db.merkleTree.update(mtKey, hash)

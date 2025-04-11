@@ -59,13 +59,21 @@ const test = async (
       const [checksums, a] = await make(db)
 
       let d = Date.now()
+      console.log(1)
+
       await db.save()
+      console.log(2)
+
       const oldCsmt = db.server.merkleTree.getRoot()
+
       await db.stop()
+
       console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
+
       const newDb = new BasedDb({
         path: t.tmp,
       })
+
       afters.push(async () => {
         try {
           await newDb.destroy()
