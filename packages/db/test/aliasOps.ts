@@ -71,7 +71,7 @@ await test('await updates', async (t) => {
     },
   })
 
-  const total = 1e5
+  const total = 1e6
 
   var d = Date.now()
 
@@ -98,7 +98,7 @@ await test('await updates', async (t) => {
 
   const start = Date.now()
   let lastMeasure = Date.now()
-  for (let i = 0; i < 1000000; i++) {
+  for (let i = 0; i < 100000; i++) {
     await updateAlias()
     if (!(i % 100000)) {
       const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
