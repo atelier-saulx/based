@@ -46,15 +46,12 @@ inline fn getTextKey(
 
 fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
-        types.Prop.TIMESTAMP,
         types.Prop.INT8,
         types.Prop.UINT8,
         types.Prop.INT16,
         types.Prop.UINT16,
         types.Prop.INT32,
         types.Prop.UINT32,
-        types.Prop.INT64,
-        types.Prop.UINT64,
         types.Prop.BOOLEAN,
         types.Prop.ENUM,
         types.Prop.CARDINALITY,
@@ -65,7 +62,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
-        types.Prop.NUMBER => {
+        types.Prop.NUMBER, types.Prop.TIMESTAMP => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
             } else {
@@ -372,11 +369,12 @@ pub fn remove(
                 selva.selva_sort_remove_buf(index, parseString(dbCtx, data), SIZE, node);
             }
         },
-        types.Prop.NUMBER => {
+        types.Prop.NUMBER, types.Prop.TIMESTAMP => {
+            if (data.len == 8) {
+                std.debug.print("remove {d} {d} {any}  \n", .{ start, data.len, data });
+            }
+
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
-        },
-        types.Prop.TIMESTAMP, types.Prop.INT64 => {
-            removeFromIntIndex(i64, data, sortIndex, node);
         },
         types.Prop.CARDINALITY => {
             if (data.len > 0) {
@@ -387,7 +385,6 @@ pub fn remove(
         },
         types.Prop.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
-        types.Prop.UINT64 => removeFromIntIndex(u64, data, sortIndex, node),
         types.Prop.UINT32 => removeFromIntIndex(u32, data, sortIndex, node),
         types.Prop.UINT16 => removeFromIntIndex(u16, data, sortIndex, node),
         else => {},
@@ -427,14 +424,14 @@ pub fn insert(
                 selva.selva_sort_insert_buf(index, parseString(dbCtx, d), SIZE, node);
             }
         },
-        types.Prop.NUMBER => {
+
+        types.Prop.NUMBER, types.Prop.TIMESTAMP => {
+            if (data.len == 8) {
+                std.debug.print("insert {d} {d} {any}  \n", .{ start, data.len, data });
+            }
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
         },
-        types.Prop.TIMESTAMP, types.Prop.INT64 => {
-            insertIntIndex(i64, data, sortIndex, node);
-        },
         types.Prop.CARDINALITY => {
-            // const d = if (sortIndex.len > 0) data[start + 1 .. start + 1 + sortIndex.len] else data;
             if (data.len > 0) {
                 insertIntIndex(u32, data, sortIndex, node);
             } else {
@@ -443,7 +440,6 @@ pub fn insert(
         },
         types.Prop.INT32 => insertIntIndex(i32, data, sortIndex, node),
         types.Prop.INT16 => insertIntIndex(i16, data, sortIndex, node),
-        types.Prop.UINT64 => insertIntIndex(u64, data, sortIndex, node),
         types.Prop.UINT32 => insertIntIndex(u32, data, sortIndex, node),
         types.Prop.UINT16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},

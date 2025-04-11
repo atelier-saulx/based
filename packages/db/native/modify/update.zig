@@ -13,6 +13,11 @@ const read = utils.read;
 const copy = utils.copy;
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
+    if (ctx.node == null) {
+        const len = read(u32, data, 0);
+        return len;
+    }
+
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
@@ -141,7 +146,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u32, data, 0);
     if (ctx.node == null) {
-        std.log.err("Partial update id: {d} node does not exist \n", .{ctx.id});
         return len;
     }
     const slice = data[4 .. len + 4];
@@ -157,10 +161,14 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
                         sort.remove(ctx.db, sI.?, currentData, ctx.node.?);
-                        sort.insert(ctx.db, sI.?, slice[4..], ctx.node.?);
+                        copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                        sort.insert(ctx.db, sI.?, currentData, ctx.node.?);
+                    } else {
+                        copy(currentData[start .. start + l], operation[4 .. 4 + l]);
                     }
+                } else {
+                    copy(currentData[start .. start + l], operation[4 .. 4 + l]);
                 }
-                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else if (ctx.currentSortIndex != null) {
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
@@ -250,15 +258,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.UINT64 => {
-            return incrementBuf(
-                op,
-                u64,
-                value,
-                addition,
-            );
-        },
-        types.Prop.INT64, types.Prop.TIMESTAMP => {
+        types.Prop.TIMESTAMP => {
             return incrementBuf(
                 op,
                 i64,
@@ -281,13 +281,19 @@ pub fn incrementBuffer(
 }
 
 pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
-    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
-    const start = read(u16, data, 1);
 
     // wastfull check
     const propSize = types.Size(fieldType);
+
+    if (ctx.node == null) {
+        return propSize + 3;
+    }
+
     const addition = data[3 .. 3 + propSize];
+
+    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const start = read(u16, data, 1);
     const value = currentData[start .. start + propSize];
 
     if (ctx.field == 0) {

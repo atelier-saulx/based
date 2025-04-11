@@ -9,7 +9,7 @@ await test('update', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: { en: {}, de: {} },

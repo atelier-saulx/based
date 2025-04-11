@@ -14,8 +14,6 @@ pub const Prop = enum(u8) {
     UINT16 = 22,
     INT32 = 23,
     UINT32 = 7,
-    INT64 = 24,
-    UINT64 = 8,
     BOOLEAN = 9,
     ENUM = 10,
     STRING = 11,
@@ -44,7 +42,6 @@ pub const Prop = enum(u8) {
         return switch (self) {
             Prop.INT16,
             Prop.INT32,
-            Prop.INT64,
             Prop.TIMESTAMP,
             Prop.CREATED,
             Prop.UPDATED,
@@ -60,8 +57,6 @@ pub fn Size(p: Prop) u8 {
         Prop.CREATED,
         Prop.UPDATED,
         Prop.NUMBER,
-        Prop.UINT64,
-        Prop.INT64,
         => {
             return 8;
         },

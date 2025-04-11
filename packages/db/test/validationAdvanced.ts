@@ -10,7 +10,7 @@ await test('simple min / max validation', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: { en: {}, de: {} },
@@ -228,7 +228,7 @@ await test('min / max validation on reference edges', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -540,7 +540,7 @@ await test('step validation on reference edges', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

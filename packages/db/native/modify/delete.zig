@@ -8,9 +8,13 @@ const selva = @import("../selva.zig");
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
+    if (ctx.node == null) {
+        return 0;
+    }
     if (ctx.typeSortIndex == null) {
         return 0;
     }
+
     if (ctx.field == 0) {
         var currentData: ?[]u8 = null;
         var it = ctx.typeSortIndex.?.main.iterator();
@@ -46,6 +50,9 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
 }
 
 pub fn deleteField(ctx: *ModifyCtx) !usize {
+    if (ctx.node == null) {
+        return 0;
+    }
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
             const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
@@ -81,7 +88,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                 Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), selva.selva_get_node_id(dstNode));
             }
         }
-
         try db.deleteField(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;

@@ -190,6 +190,7 @@ pub fn getField(
     } else if (fieldType == types.Prop.CARDINALITY) {
         return getCardinalityField(node, selvaFieldSchema) orelse emptySlice;
     }
+
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }

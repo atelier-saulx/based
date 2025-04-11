@@ -118,6 +118,7 @@ map[TIMESTAMP] = (ctx, val, def) => {
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   view.setFloat64(0, parsedValue, true)
+  const ts = view.getFloat64(0)
 }
 
 map[UINT32] = (ctx, val, def) => {

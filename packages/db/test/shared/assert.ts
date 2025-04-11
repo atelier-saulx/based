@@ -5,6 +5,7 @@ import color from 'picocolors'
 import * as jsondiffpatch from 'jsondiffpatch'
 import * as c from 'jsondiffpatch/formatters/console'
 import { hash } from '@saulx/hash'
+import { REVERSE_TYPE_INDEX_MAP, TIMESTAMP } from '@based/schema/def'
 
 const diffpatcher = jsondiffpatch.create({
   // objectHash: function (obj) {
@@ -53,32 +54,57 @@ export const isSorted = (
 ) => {
   let last: any
   let i = 0
+  var s = new Set()
+  let fieldType = ''
+  const propDef = a.def.schema.props[field]
+
+  if (propDef) {
+    fieldType = ' ' + REVERSE_TYPE_INDEX_MAP[propDef.typeIndex]
+  }
+
   for (const result of a) {
     i++
     const current = result[field]
+
+    if (s.has(result.id)) {
+      throw new Error(`Duplicate id in sort${fieldType} ` + (msg || ''))
+    }
+
+    s.add(result.id)
     if (last !== undefined) {
       if (typeof last === 'string') {
         if (order === 'asc') {
           if (last.localeCompare(current) == 1) {
-            throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
+            throw new Error(
+              msg || SORT_ERR_MSG + ` String "${field}"${fieldType}`,
+            )
           }
         } else if (last.localeCompare(current) == -1) {
-          throw new Error(msg || SORT_ERR_MSG + ` String "${field}"`)
+          throw new Error(
+            msg || SORT_ERR_MSG + ` String "${field}"${fieldType}`,
+          )
         }
       } else {
         if (order === 'asc') {
           if (last > current) {
-            throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
+            throw new Error(
+              msg ||
+                SORT_ERR_MSG + ` "${field}" ${last} > ${current}${fieldType}`,
+            )
+            // }
           }
         } else if (last < current) {
-          throw new Error(msg || SORT_ERR_MSG + ` "${field}"`)
+          throw new Error(
+            msg ||
+              SORT_ERR_MSG + ` "${field}" ${last} < ${current}${fieldType}`,
+          )
         }
       }
     }
     last = current
   }
   if (i === 0) {
-    throw new Error(msg ?? '' + ' isSorted empty result')
+    throw new Error(msg ?? '' + ` isSorted empty result "${field}"${fieldType}`)
   }
 }
 
