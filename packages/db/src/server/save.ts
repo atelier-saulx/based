@@ -101,11 +101,7 @@ export function save(
         const hash = new Uint8Array(16)
         const file = saveRange(db, typeId, start, end, hash)
         if (file === null) {
-          // The previous state should remain in the merkle tree for
-          // load and sync purposes.
-        } else if (file.length === 0) {
-          // the range is now empty
-          db.merkleTree.delete(mtKey)
+          throw new Error('full dump failed')
         } else {
           const data: CsmtNodeRange = {
             file,
