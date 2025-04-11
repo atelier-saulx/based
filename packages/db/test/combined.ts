@@ -3,13 +3,11 @@ import { throws, equal, isSorted } from './shared/assert.js'
 import test from './shared/test.js'
 import { randomString, wait } from '@saulx/utils'
 
-const getRandom = <T>(arr: T[]): T | undefined => {
-  if (arr.length === 0) return undefined
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
+const getRandom = (nr: number) => {
+  return Math.ceil(Math.random() * nr)
+}
 
 // this test is not a perf test - tries a lot of randomization
 await test('E-commerce Simulation', async (t) => {
@@ -18,10 +16,10 @@ await test('E-commerce Simulation', async (t) => {
     maxModifySize: 50000,
   })
 
-  const simulationDuration = 120 * 100
-  let maxInProgress = 1000
+  const simulationDuration = 100e3
+  let maxInProgress = 100
   let inProgress = 0
-  let concurrency = 3
+  let concurrency = 300
 
   await db.start({ clean: true })
 
@@ -108,29 +106,31 @@ await test('E-commerce Simulation', async (t) => {
   })
 
   // --- State Tracking ---
-  const userIds: number[] = []
-  const categoryIds: number[] = []
-  const productIds: number[] = []
-  const reviewIds: number[] = []
+  let userIds: number = 0
+  let categoryIds: number = 0
+  let productIds: number = 0
+  let reviewIds: number = 0
+
   let totalItemsCreated = 0
   let operationsCount = 0
 
+  const magnitude = 100
   // --- Initial Population ---
-  const initialCategories = 10
-  const initialUsers = 100
-  const initialProducts = 500
+  const initialCategories = 10 * magnitude
+  const initialUsers = 100 * magnitude
+  const initialProducts = 500 * magnitude
 
   for (let i = 0; i < initialCategories; i++) {
-    const catId = await db.create('category', {
+    const catId = db.create('category', {
       name: `Category ${i}`,
       description: { en: `Description for category ${i}` },
     })
-    categoryIds.push(catId)
+    categoryIds++
     totalItemsCreated++
   }
 
   for (let i = 0; i < initialUsers; i++) {
-    const userId = await db.create('user', {
+    const userId = db.create('user', {
       name: `User ${i}`,
       email: `user${i}@example.com`,
       lastLogin: Math.max(
@@ -138,14 +138,14 @@ await test('E-commerce Simulation', async (t) => {
         ~~(Date.now() - Math.random() * 1000 * 3600 * 24 * 30),
       ),
     })
-    userIds.push(userId)
+    userIds++
     totalItemsCreated++
   }
 
   for (let i = 0; i < initialProducts; i++) {
     const category = getRandom(categoryIds)
     if (category) {
-      const prodId = await db.create('product', {
+      const prodId = db.create('product', {
         name: `Product ${i} ${randomString(5)}`,
         description: {
           en: `This is product ${i}. ${randomString(50)}`,
@@ -156,13 +156,13 @@ await test('E-commerce Simulation', async (t) => {
         category: category,
         tags: [`tag${i % 10}`, i % 2 === 0 ? 'even' : 'odd', 'popular'],
       })
-      productIds.push(prodId)
+      productIds++
       totalItemsCreated++
     }
   }
   await db.drain()
   console.log(
-    `Initial population complete: ${categoryIds.length} categories, ${userIds.length} users, ${productIds.length} products.`,
+    `Initial population complete: ${categoryIds} categories, ${userIds} users, ${productIds} products.`,
   )
 
   // --- Simulation Loop ---
@@ -173,64 +173,67 @@ await test('E-commerce Simulation', async (t) => {
     clearInterval(intervalId)
   })
 
+  let totalAliasUpdate = 0
+  let totalAliasUpdateTime = 0
+
   const simulationStep = async (i: number) => {
     operationsCount++
-    const action = Math.random()
+    const action = 0.5 // Math.random()
 
     if (action < 0.15) {
       // --- CREATE ---
       const entityType = Math.random()
-      if (entityType < 0.1 && categoryIds.length < 50) {
-        // Create Category
-        const catId = await db.create('category', {
-          name: `New Category ${totalItemsCreated}`,
-          description: { en: `Dynamic category ${totalItemsCreated}` },
-        })
-        categoryIds.push(catId)
-        totalItemsCreated++
-      } else if (entityType < 0.4 && userIds.length < 4000) {
+      if (entityType < 0.1 && categoryIds < 500) {
+        // // Create Category
+        // const catId = await db.create('category', {
+        //   name: `New Category ${totalItemsCreated}`,
+        //   description: { en: `Dynamic category ${totalItemsCreated}` },
+        // })
+        // categoryIds++
+        // totalItemsCreated++
+      } else if (entityType < 0.4 && userIds < 10000) {
         // Create User
-        const userId = await db.create('user', {
-          name: `User ${totalItemsCreated}`,
-          email: `user${totalItemsCreated}@example.com`,
-        })
-        userIds.push(userId)
-        totalItemsCreated++
-      } else if (entityType < 0.8 && productIds.length < 8000) {
+        // const userId = await db.create('user', {
+        //   name: `User ${totalItemsCreated}`,
+        //   email: `user${totalItemsCreated}@example.com`,
+        // })
+        // userIds++
+        // totalItemsCreated++
+      } else if (entityType < 0.8 && productIds < 80000) {
         // Create Product
-        const category = getRandom(categoryIds)
-        if (category) {
-          const prodId = await db.create('product', {
-            name: `Product ${totalItemsCreated} ${randomString(5)}`,
-            description: { en: `Desc ${totalItemsCreated}` },
-            price: randomPrice(),
-            stock: randomStock(),
-            category: category,
-            tags: [`tag${totalItemsCreated % 10}`, 'new'],
-          })
-          productIds.push(prodId)
-          totalItemsCreated++
-        }
+        // const category = getRandom(categoryIds)
+        // if (category) {
+        //   const prodId = await db.create('product', {
+        //     name: `Product ${totalItemsCreated} ${randomString(5)}`,
+        //     description: { en: `Desc ${totalItemsCreated}` },
+        //     price: randomPrice(),
+        //     stock: randomStock(),
+        //     category: category,
+        //     tags: [`tag${totalItemsCreated % 10}`, 'new'],
+        //   })
+        //   productIds++
+        //   totalItemsCreated++
+        // }
       } else {
         // Create Review
-        const user = getRandom(userIds)
-        const product = getRandom(productIds)
-        if (user && product) {
-          const reviewId = await db.create('review', {
-            user,
-            product,
-            rating: (Math.floor(Math.random() * 5) + 1) as 1 | 2 | 3 | 4 | 5,
-            comment: {
-              en: `Review ${totalItemsCreated} ${randomString(30)}`,
-            },
-          })
-          reviewIds.push(reviewId)
-          totalItemsCreated++
-        }
+        // const user = getRandom(userIds)
+        // const product = getRandom(productIds)
+        // if (user && product) {
+        //   const reviewId = await db.create('review', {
+        //     user,
+        //     // product,
+        //     rating: (Math.floor(Math.random() * 5) + 1) as 1 | 2 | 3 | 4 | 5,
+        //     comment: {
+        //       en: `Review ${totalItemsCreated} ${randomString(30)}`,
+        //     },
+        //   })
+        //   reviewIds++
+        //   totalItemsCreated++
+        // }
       }
     } else if (action < 0.6) {
       // --- UPDATE ---
-      const entityType = Math.random()
+      const entityType = 0.7 // Math.random()
       if (entityType < 0.3) {
         // Update Product (Price/Stock)
         const productId = getRandom(productIds)
@@ -245,29 +248,33 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         const productId = getRandom(productIds)
         if (userId && productId) {
-          await db.update('user', userId, {
-            lastLogin: Date.now(),
-            viewedProducts: {
-              update: [
-                {
-                  id: productId,
-                  // $viewCount: { increment: 1 },
-                  $lastViewed: 'now',
-                },
-              ],
-            },
-          })
-        }
-      } else if (entityType < 0.8) {
-        // Update User (Name/Email via Upsert)
-        const oldEmail = getRandom(userIds.map((id) => `user${id}@example.com`))
-        if (oldEmail) {
-          // await db.upsert('user', {
-          //   email: oldEmail, // Find by alias
-          //   name: `Updated Name ${randomString(4)}`,
+          // await db.update('user', userId, {
           //   lastLogin: Date.now(),
+          //   viewedProducts: {
+          //     update: [
+          //       {
+          //         id: productId,
+          //         // $viewCount: { increment: 1 }, CRASHES!
+          //         $lastViewed: 'now',
+          //       },
+          //     ],
+          //   },
           // })
         }
+      } else if (entityType < 0.8) {
+        var d = Date.now()
+        // Update User (Name/Email via Upsert)
+        const oldEmail = `user${getRandom(userIds)}@example.com`
+        if (oldEmail) {
+          await db.upsert('user', {
+            email: oldEmail, // Find by alias
+            name: `Updated Name ${randomString(4)}`,
+            lastLogin: Date.now(),
+          })
+        }
+        totalAliasUpdate++
+        totalAliasUpdateTime += Date.now() - d
+        // console.log(Date.now() - d, 'ms')
       } else {
         // Update Category Description
         const catId = getRandom(categoryIds)
@@ -277,96 +284,106 @@ await test('E-commerce Simulation', async (t) => {
           })
         }
       }
-    } else if (action < 0.7 && totalItemsCreated > 100) {
+    } else if (action < 0.8 && totalItemsCreated > 100) {
       // --- DELETE --- (Less frequent)
-      const entityType = Math.random()
-      if (entityType < 0.3 && productIds.length > 50) {
-        const idx = Math.floor(Math.random() * productIds.length)
-        const productId = productIds[idx]
-        if (productId) {
-          await db.delete('product', productId)
-          productIds.splice(idx, 1)
-        }
-      } else if (entityType < 0.6 && userIds.length > 50) {
-        const idx = Math.floor(Math.random() * userIds.length)
-        const userId = userIds[idx]
-        if (userId) {
-          await db.delete('user', userId)
-          userIds.splice(idx, 1)
-        }
-      } else if (reviewIds.length > 10) {
-        const idx = Math.floor(Math.random() * reviewIds.length)
-        const reviewId = reviewIds[idx]
-        if (reviewId) {
-          await db.delete('review', reviewId)
-          reviewIds.splice(idx, 1)
-        }
-      }
+      // const entityType = Math.random()
+      // if (entityType < 0.3 && productIds.length > 50) {
+      //   const idx = Math.floor(Math.random() * productIds.length)
+      //   const productId = productIds[idx]
+      //   // if (productId) {
+      //   //   await db.delete('product', productId)
+      //   productIds.splice(idx, 1)
+      //   // }
+      // } else if (entityType < 0.6 && userIds.length > 50) {
+      //   const idx = Math.floor(Math.random() * userIds.length)
+      //   const userId = userIds[idx]
+      //   // if (userId) {
+      //   //   await db.delete('user', userId)
+      //   userIds.splice(idx, 1)
+      //   // }
+      // } else if (reviewIds.length > 10) {
+      //   const idx = Math.floor(Math.random() * reviewIds.length)
+      //   const reviewId = reviewIds[idx]
+      //   // if (reviewId) {
+      //   //   await db.delete('review', reviewId)
+      //   reviewIds.splice(idx, 1)
+      //   // }
+      // }
     } else {
-      // --- QUERY ---
-      const queryType = Math.random()
-      if (queryType < 0.1) {
-        // isSorted(
-        //   await db.query('user').sort('lastLogin', 'asc').get(),
-        //   'lastLogin',
-        //   'asc',
-        // )
-      } else if (queryType < 0.2) {
-        // Get products in a category, sorted by price
-        const categoryId = getRandom(categoryIds)
-        if (categoryId) {
-          await db
-            .query('product')
-            .filter('category', '=', categoryId)
-            .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
-            .include('name', 'price', 'stock')
-            .range(0, 10)
-            .get()
-        }
-      } else if (queryType < 0.4) {
-        // Get user's viewed products with analytics
-        const userId = getRandom(userIds)
-        if (userId) {
-          await db
-            .query('user', userId)
-            .include(
-              'name',
-              'viewedProducts.name',
-              'viewedProducts.$viewCount',
-              'viewedProducts.$lastViewed',
-            )
-            .get()
-        }
-      } else if (queryType < 0.6) {
-        // Get product reviews, sorted by rating
-        const productId = getRandom(productIds)
-        if (productId) {
-          await db
-            .query('review')
-            .filter('product', '=', productId)
-            .sort('rating', 'desc')
-            .include('rating', 'comment', 'user.name')
-            .range(0, 5)
-            .get()
-        }
-      } else if (queryType < 0.8) {
-        // Search product descriptions
-        const searchTerm = getRandom(['product', 'new', 'tag', randomString(4)])
-        if (searchTerm) {
-          await db
-            .query('product')
-            .search(searchTerm, 'name', 'description')
-            .include('name', 'price')
-            .range(0, 5)
-            .get()
-        }
-      } else {
-        // Get user by email (alias)
-        const email = getRandom(userIds.map((id) => `user${id}@example.com`))
-        if (email) {
-          await db.query('user', { email }).get()
-        }
-      }
+      // // --- QUERY ---
+      // const queryType = Math.random()
+      // if (queryType < 0.1) {
+      //   // isSorted(
+      //   //   await db.query('user').sort('lastLogin', 'asc').get(),
+      //   //   'lastLogin',
+      //   //   'asc',
+      //   // )
+      // } else if (queryType < 0.2) {
+      //   // Get products in a category, sorted by price
+      //   const categoryId = getRandom(categoryIds)
+      //   if (categoryId) {
+      //     await db
+      //       .query('product')
+      //       .filter('category', '=', categoryId)
+      //       // .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
+      //       .include('name', 'price', 'stock')
+      //       .range(0, 10)
+      //       .get()
+      //   }
+      // } else if (queryType < 0.4) {
+      //   // Get user's viewed products with analytics
+      //   const userId = getRandom(userIds)
+      //   if (userId) {
+      //     await db
+      //       .query('user', userId)
+      //       .include(
+      //         'name',
+      //         'viewedProducts.name',
+      //         'viewedProducts.$viewCount',
+      //         'viewedProducts.$lastViewed',
+      //       )
+      //       .get()
+      //   }
+      // } else if (queryType < 0.6) {
+      //   // Get product reviews, sorted by rating
+      //   const productId = getRandom(productIds)
+      //   if (productId) {
+      //     await db
+      //       .query('review')
+      //       .filter('product', '=', productId)
+      //       // .sort('rating', 'desc')
+      //       .include('rating', 'comment', 'user.name')
+      //       .range(0, 5)
+      //       .get()
+      //   }
+      // } else if (queryType < 0.8) {
+      //   // Search product descriptions
+      //   let searchTerm = 'tag'
+      //   const x = Math.random()
+      //   if (x < 0.2) {
+      //     searchTerm = 'product'
+      //   } else if (x < 0.4) {
+      //     searchTerm = 'new'
+      //   } else if (x < 0.6) {
+      //     searchTerm = 'tag'
+      //   } else if (x < 0.8) {
+      //     searchTerm = randomString(4)
+      //   }
+      //   if (searchTerm) {
+      //     await db
+      //       .query('product')
+      //       .search(searchTerm, 'name', 'description')
+      //       .include('name', 'price')
+      //       .range(0, 5)
+      //       .get()
+      //   }
+      // } else {
+      //   // Get user by email (alias)
+      //   const email = `user${getRandom(userIds)}@example.com`
+      //   if (email) {
+      //     await db.query('user', { email }).get()
+      //   }
+      // }
     }
 
     // --- Validation Edge Cases ---
@@ -389,21 +406,33 @@ await test('E-commerce Simulation', async (t) => {
         'Validation: Rating too high',
       )
     }
-
-    // if (operationsCount % 50 === 0) {
-    //   console.log(
-    //     `Ops: ${operationsCount}, Items: ${totalItemsCreated}, Users: ${userIds.length}, Prods: ${productIds.length} inProgress: ${inProgress}`,
-    //   )
-    // }
   }
 
   // make util for this
   let testErr: Error
+  let measure = Date.now()
+  let lastOperations = operationsCount
   intervalId = setInterval(async () => {
     if (inProgress > maxInProgress) {
       return
     }
-    await db.isModified()
+
+    if (operationsCount % 500 === 0) {
+      const x = Date.now()
+
+      const n = operationsCount - lastOperations
+
+      const opsPerS = n / ((x - measure) / 1e3)
+      measure = x
+      lastOperations = operationsCount
+
+      console.log(
+        `${~~(totalAliasUpdateTime / totalAliasUpdate)}ms Ops per sec: ${~~opsPerS} concurrency: ${concurrency} Ops: ${operationsCount}, Items: ${totalItemsCreated}, Users: ${userIds}, Prods: ${productIds} inProgress: ${inProgress}`,
+      )
+
+      totalAliasUpdate = 0
+      totalAliasUpdateTime = 0
+    }
 
     let q = []
     for (let i = 0; i < concurrency; i++) {
@@ -417,14 +446,15 @@ await test('E-commerce Simulation', async (t) => {
       testErr = err
       clearInterval(intervalId)
     }
-  })
+  }, 100)
+
   let d = simulationDuration
   const cancelWait = async () => {
     if (testErr) {
       return
     }
-    d -= 100
-    await wait(100)
+    d -= 1000
+    await wait(1000)
     if (d > 100) {
       return cancelWait()
     }

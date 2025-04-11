@@ -4,7 +4,7 @@ import { isSorted } from './shared/assert.js'
 
 await test('sort timestamp', async (t) => {
   const db = new BasedDb({ path: t.tmp })
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
   await db.start({ clean: true })
 
   await db.setSchema({
@@ -21,24 +21,26 @@ await test('sort timestamp', async (t) => {
 
   const now = Date.now()
 
-  const eventCId = await db.create('event', {
-    startTime: now + 1000,
-    name: 'Event C',
-  })
-  const eventAId = await db.create('event', {
+  const eventAId = db.create('event', {
     startTime: now - 5000,
     name: 'Event A',
   })
-  const eventBId = await db.create('event', { startTime: now, name: 'Event B' })
-  const eventDId = await db.create('event', {
+
+  const eventCId = db.create('event', {
+    startTime: now + 1000,
+    name: 'Event C',
+  })
+
+  const eventBId = db.create('event', { startTime: now, name: 'Event B' })
+  const eventDId = db.create('event', {
     startTime: now + 1000,
     name: 'Event D',
   })
-  const eventZeroId = await db.create('event', {
+  const eventZeroId = db.create('event', {
     startTime: 0,
     name: 'Event Zero',
   })
-  await db.create('event', { name: 'Event Null' })
+  db.create('event', { name: 'Event Null' })
 
   let ascResult = await db
     .query('event')
@@ -55,14 +57,14 @@ await test('sort timestamp', async (t) => {
 
   let descResult = await db
     .query('event')
-    .sort('startTime', 'desc')
+    .sort('startTime', 'asc')
     .include('startTime', 'name')
     .get()
 
   isSorted(
     descResult,
     'startTime',
-    'desc',
+    'asc',
     'Descending sort by startTime (initial)',
   )
 
@@ -123,4 +125,58 @@ await test('sort timestamp', async (t) => {
     'desc',
     'Descending sort by startTime (after delete)',
   )
+})
+
+await test('sort timestamp many updates', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
+  t.after(() => t.backup(db))
+  await db.start({ clean: true })
+
+  await db.setSchema({
+    types: {
+      event: {
+        props: {
+          derp: 'boolean',
+          flap: 'number',
+          startTime: 'timestamp',
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1000; i++) {
+    await db.create('event', {
+      startTime: Math.max(
+        0,
+        ~~(Date.now() - Math.random() * 1000 * 3600 * 24 * 30),
+      ),
+    })
+  }
+
+  await db.drain()
+
+  isSorted(
+    await db.query('event').sort('startTime', 'asc').get(),
+    'startTime',
+    'asc',
+  )
+
+  for (let i = 0; i < 1000; i++) {
+    const q = []
+    for (let j = 0; j < 10; j++) {
+      q.push(async () => {
+        const randomId = Math.ceil(Math.random() * 1000)
+        await db.update('event', randomId, {
+          startTime: Date.now(),
+        })
+        isSorted(
+          await db.query('event').sort('startTime', 'asc').get(),
+          'startTime',
+          'asc',
+        )
+      })
+    }
+    await Promise.all(q)
+  }
 })

@@ -123,7 +123,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+
                     if (old > 0) {
+                        // db.delAlias(ctx.typeEntry.?, old, ctx.field) catch |e| {
+                        //     if (e != error.SELVA_ENOENT) return e;
+                        // };
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(old, ctx.typeEntry.?).?);
                         }
