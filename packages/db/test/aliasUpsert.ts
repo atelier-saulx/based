@@ -46,3 +46,62 @@ await test('upsert', async (t) => {
     externalId: '',
   })
 })
+
+await test(' updates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          externalId: 'alias',
+          status: ['a', 'b'],
+        },
+      },
+    },
+  })
+
+  const total = 1e4
+
+  var d = Date.now()
+
+  for (let i = 0; i < total; i++) {
+    db.create('user', {
+      externalId: i + '-alias',
+      status: 'a',
+    })
+  }
+
+  await db.isModified()
+  console.log('done setting', total, 'aliases', Date.now() - d, 'ms')
+
+  let totalTime = 0
+  let totalAlias = 0
+
+  const updateAlias = async () => {
+    const externalId = Math.ceil(Math.random() * total) + '-alias'
+    const id = Math.ceil(Math.random() * total)
+    await db.update('user', id, { externalId })
+    totalAlias++
+  }
+
+  let lastMeasure = Date.now()
+  for (let i = 0; i < 100000; i++) {
+    await updateAlias()
+
+    if (!(i % 500)) {
+      const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
+      console.log(`${~~opsPerS} per sec`)
+      lastMeasure = Date.now()
+      totalAlias = 0
+    }
+  }
+})
