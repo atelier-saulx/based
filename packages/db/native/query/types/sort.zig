@@ -39,8 +39,6 @@ pub fn default(
         return;
     }
 
-    std.debug.print("FLAP {any} \n", .{sIndex});
-
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     if (desc) {
