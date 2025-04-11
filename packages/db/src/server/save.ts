@@ -122,6 +122,7 @@ export function save(
       const hash = new Uint8Array(16)
       // TODO Don't save if empty
       const file = saveRange(db, typeId, start, end, hash)
+
       if (file === null) {
         // The previous state should remain in the merkle tree for
         // load and sync purposes.

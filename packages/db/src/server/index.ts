@@ -624,7 +624,7 @@ export class DbServer {
 
     this.stopped = true
     clearTimeout(this.cleanupTimer)
-    this?.unlistenExit()
+    this.unlistenExit()
 
     try {
       if (!noSave) {

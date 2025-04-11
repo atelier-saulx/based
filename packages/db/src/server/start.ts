@@ -65,6 +65,7 @@ export async function start(
   }
 
   const csmtTypes = initCsmt(db)
+
   for (const key in csmtTypes) {
     const def = csmtTypes[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)

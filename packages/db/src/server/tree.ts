@@ -46,7 +46,6 @@ export function initCsmt(db: DbServer) {
   // always deterministic.
   for (const key in types) {
     const { id: typeId } = types[key]
-
     const data: CsmtNodeRange = {
       file: '',
       typeId: typeId,
@@ -54,7 +53,11 @@ export function initCsmt(db: DbServer) {
       end: 0,
     }
     try {
-      db.merkleTree.insert(makeCsmtKey(typeId, specialBlock), db.merkleTree.emptyHash, data)
+      db.merkleTree.insert(
+        makeCsmtKey(typeId, specialBlock),
+        db.merkleTree.emptyHash,
+        data,
+      )
     } catch (_) {}
   }
 
@@ -70,7 +73,13 @@ export function foreachBlock(
   for (let start = 1; start <= def.lastId; start += step) {
     const end = start + step - 1
     const hash = new Uint8Array(16)
-    const res = native.getNodeRangeHash(def.id, start, end, hash, db.dbCtxExternal)
+    const res = native.getNodeRangeHash(
+      def.id,
+      start,
+      end,
+      hash,
+      db.dbCtxExternal,
+    )
     if (res) {
       cb(start, end, hash)
     }
