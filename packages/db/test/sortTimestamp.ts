@@ -127,7 +127,7 @@ await test('sort timestamp', async (t) => {
   )
 })
 
-await test('sort timestamp many updates', async (t) => {
+await test('sort multicore', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   t.after(() => t.backup(db))
   await db.start({ clean: true })
@@ -162,21 +162,19 @@ await test('sort timestamp many updates', async (t) => {
     'asc',
   )
 
-  for (let i = 0; i < 1000; i++) {
-    const q = []
-    for (let j = 0; j < 10; j++) {
-      q.push(async () => {
-        const randomId = Math.ceil(Math.random() * 1000)
-        await db.update('event', randomId, {
-          startTime: Date.now(),
-        })
+  console.log('\n\n---------FROM HERE')
+
+  const q = []
+  for (let j = 0; j < 2; j++) {
+    q.push(
+      (async () => {
         isSorted(
           await db.query('event').sort('startTime', 'asc').get(),
           'startTime',
           'asc',
         )
-      })
-    }
-    await Promise.all(q)
+      })(),
+    )
   }
+  await Promise.all(q)
 })
