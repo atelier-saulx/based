@@ -121,6 +121,7 @@ export class ModifyState {
         this.#buf.queue.set(resolve, this)
       }
     })
+
     if (this.promises?.length) {
       return Promise.allSettled(this.promises)
         .then(() => promise)

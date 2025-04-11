@@ -112,7 +112,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
-    std.debug.print("---- put ref {any}\n", .{u32ids});
+
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),

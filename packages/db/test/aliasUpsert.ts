@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('upsert', async (t) => {
   const db = new BasedDb({
@@ -62,7 +63,7 @@ await test(' updates', async (t) => {
     types: {
       user: {
         props: {
-          externalId: 'alias',
+          externalId: 'string',
           status: ['a', 'b'],
         },
       },
