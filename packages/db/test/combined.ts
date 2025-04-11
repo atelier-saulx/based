@@ -18,9 +18,9 @@ await test('E-commerce Simulation', async (t) => {
   })
 
   const simulationDuration = 5e3
-  let maxInProgress = 1000
+  let maxInProgress = 10_000
   let inProgress = 0
-  let concurrency = 300
+  let concurrency = 3000
 
   await db.start({ clean: true })
 
@@ -480,12 +480,13 @@ await test('E-commerce Simulation', async (t) => {
     throw testErr
   }
 
-  const finalProductCount = (await db.query('product').get()).length
+  const finalProductCount = (
+    await db.query('product').range(0, 10_000_000).get()
+  ).length
   console.log(`Final product count in DB: ${finalProductCount}`)
   equal(
     finalProductCount > 0,
     true,
     'Should have products left after simulation',
   )
-  console.log(reviewIdsArr)
 })

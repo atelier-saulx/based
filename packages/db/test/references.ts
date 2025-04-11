@@ -936,14 +936,13 @@ await test('single ref save and load', async (t) => {
 await test('single2many - update refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
-    debug: true,
   })
 
   await db.start({ clean: true })
 
   t.after(() => {
-    return db.destroy()
-    // return t.backup(db)
+    // return db.destroy()
+    return t.backup(db)
   })
 
   await db.setSchema({
@@ -997,14 +996,6 @@ await test('single2many - update refs', async (t) => {
 
   const products = await db.query('product').include('*', '**').get().toObject()
   const reviews = await db.query('review').include('*', '**').get().toObject()
-  console.log('-- products:')
-  console.dir(products, {
-    depth: null,
-  })
-  console.log('--- review:')
-  console.dir(reviews, {
-    depth: null,
-  })
 
   deepEqual(products, [
     { id: 1, reviews: [] },
