@@ -191,12 +191,3 @@ pub fn equals(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
         return null;
     }
 }
-
-pub fn base64encode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    const args = napi.getArgs(3, env, info) catch return null;
-    const dst = napi.get([]u8, env, args[0]) catch return null;
-    const src = napi.get([]u8, env, args[1]) catch return null;
-    const lineMax = napi.get(u32, env, args[2]) catch return null;
-    _ = selva.base64_encode_s(dst.ptr, src.ptr, src.len, lineMax);
-    return args[0];
-}

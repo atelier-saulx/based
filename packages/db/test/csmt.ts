@@ -2,13 +2,12 @@ import { strict as assert, notEqual } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
-import { base64encode } from '../src/utils.js'
 import { Csmt, createTree } from '../src/server/csmt/index.js'
-import { decodeBase64, deepEqual } from '@saulx/utils'
+import { decodeBase64, encodeBase64, deepEqual } from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
 
-const shortHash = (buf: Uint8Array) => base64encode(buf).substring(0, 5)
+const shortHash = (buf: Uint8Array) => encodeBase64(buf).substring(0, 5)
 
 function testHashGen() {
   const f = createHash('sha256')

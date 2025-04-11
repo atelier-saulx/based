@@ -57,8 +57,6 @@ OBJ := \
 	selva_lang/selva_mbstrans.o \
 	selva_string.o \
 	sort.o \
-	string/base64.o \
-	string/base64url.o \
 	string/cstrings.o \
 	string/eztrie.o \
 	string/fast_memmem.o \

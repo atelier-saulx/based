@@ -142,10 +142,6 @@ export default {
     return db.xxHash64(buf, target, index)
   },
 
-  base64encode: (dst: Uint8Array, src: Uint8Array, lineMax: number): Uint8Array => {
-    return db.base64encode(dst, src, lineMax)
-  },
-
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
     return !!db.equals(a, b)
   },

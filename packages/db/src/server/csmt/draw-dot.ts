@@ -1,8 +1,8 @@
-import { base64encode } from '../../utils.js'
+import { encodeBase64 } from '@saulx/utils'
 import { Csmt, TreeNode } from './index.js'
 
 function makeLabel(node: TreeNode) {
-  return `${node.key}\n${base64encode(node.hash, 0).substring(0, 5)}`
+  return `${node.key}\n${encodeBase64(node.hash).substring(0, 5)}`
 }
 
 export default function draw(csmt: Csmt) {
