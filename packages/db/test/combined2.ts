@@ -12,11 +12,11 @@ const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
 
 // this test is not a perf test - tries a lot of randomization
-await test.skip('E-commerce Simulation', async (t) => {
+await test('E-commerce Simulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 50000,
-    // debug: true,
+    debug: true,
   })
 
   const simulationDuration = 120 * 100
@@ -440,11 +440,13 @@ await test.skip('E-commerce Simulation', async (t) => {
     throw testErr
   }
 
-  // const finalProductCount = (await db.query('product').get()).length
-  // console.log(`Final product count in DB: ${finalProductCount}`)
-  // equal(
-  //   finalProductCount > 0,
-  //   true,
-  //   'Should have products left after simulation',
-  // )
+  clearInterval(intervalId)
+  await db.drain()
+  const finalProductCount = (await db.query('product').get()).length
+  console.log(`Final product count in DB: ${finalProductCount}`)
+  equal(
+    finalProductCount > 0,
+    true,
+    'Should have products left after simulation',
+  )
 })

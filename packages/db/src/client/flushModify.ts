@@ -150,6 +150,7 @@ export const flushBuffer = (db: DbClient) => {
     ctx.prefix1 = -1
     ctx.max = db.maxModifySize
     ctx.ctx = {}
+    ctx.queue = new Map()
   } else {
     db.hooks.flushReady()
   }
