@@ -26,7 +26,7 @@ if (isMainThread) {
       } else {
         const arrayBuf = native.getQueryBuf(msg, dbCtx)
         // transferList[0] = arrayBuf
-        channel.postMessage(arrayBuf)
+        channel.postMessage(arrayBuf, [arrayBuf])
       }
     } catch (e) {
       channel.postMessage(e)
