@@ -64,8 +64,8 @@ static void remove_alias_by_dest(struct SelvaAliases *aliases, struct SelvaAlias
 
 static void remove_alias_by_name(struct SelvaAliases *aliases, struct SelvaAlias *alias)
 {
-    RB_REMOVE(SelvaAliasesByName, &aliases->alias_by_name, alias);
-    aliases->nr_aliases--;
+    struct SelvaAlias *removed = RB_REMOVE(SelvaAliasesByName, &aliases->alias_by_name, alias);
+    assert(removed);
 }
 
 static void del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
@@ -115,7 +115,7 @@ retry:
     old_alias = insert_alias_by_name(aliases, new_alias);
     if (old_alias) {
         old_dest = old_alias->dest;
-        (void)del_alias(aliases, old_alias);
+        del_alias(aliases, old_alias);
         goto retry;
     }
 
@@ -128,7 +128,7 @@ retry:
             /*
              * Restrict this field to a single alias, i.e. this is SELVA_FIELD_TYPE_ALIAS.
              */
-            (void)del_alias(aliases, prev_by_dest);
+            del_alias(aliases, prev_by_dest);
         }
     }
 
