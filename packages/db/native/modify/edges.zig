@@ -19,7 +19,6 @@ pub fn writeEdges(
 ) !void {
     var i: usize = 0;
     const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
-
     while (i < data.len) {
         const op: types.ModOp = @enumFromInt(data[i]);
         const prop = data[i + 1];

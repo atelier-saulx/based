@@ -267,7 +267,7 @@ await test('E-commerce Simulation', async (t) => {
               update: [
                 {
                   id: productId,
-                  // $viewCount: { increment: 1 }, CRASHES!
+                  // $viewCount: { increment: 1 }, //CRASHES!
                   $lastViewed: 'now',
                 },
               ],
