@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { setTimeout } from 'node:timers/promises'
+import { wait } from '@saulx/utils'
 
 await test('upsert', async (t) => {
   const db = new BasedDb({
@@ -48,7 +48,7 @@ await test('upsert', async (t) => {
   })
 })
 
-await test(' updates', async (t) => {
+await test('updates', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -84,7 +84,6 @@ await test(' updates', async (t) => {
   await db.isModified()
   console.log('done setting', total, 'aliases', Date.now() - d, 'ms')
 
-  let totalTime = 0
   let totalAlias = 0
 
   const updateAlias = async () => {
@@ -97,7 +96,6 @@ await test(' updates', async (t) => {
   let lastMeasure = Date.now()
   for (let i = 0; i < 100000; i++) {
     await updateAlias()
-
     if (!(i % 500)) {
       const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
       console.log(`${~~opsPerS} per sec`)
