@@ -59,10 +59,8 @@ const test = async (
       const [checksums, a] = await make(db)
 
       let d = Date.now()
-      console.log(1)
 
       await db.save()
-      console.log(2)
 
       const oldCsmt = db.server.merkleTree.getRoot()
 

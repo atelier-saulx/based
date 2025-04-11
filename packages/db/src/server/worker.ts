@@ -5,7 +5,7 @@ import {
 } from 'node:worker_threads'
 import native from '../native.js'
 
-let workerCtx;
+let workerCtx
 
 if (isMainThread) {
   console.warn('running query worker.ts in mainthread')

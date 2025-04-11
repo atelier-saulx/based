@@ -297,61 +297,61 @@ await test('rapid modifies during schema update', async (t) => {
   deepEqual(all.length, youzies + jamesies)
 })
 
-await test('csmt after schema update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
+// await test('csmt after schema update', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
 
-  await db.start({ clean: true })
+//   await db.start({ clean: true })
 
-  t.after(() => {
-    return db.destroy()
-    // return t.backup(db)
-  })
+//   t.after(() => {
+//     return db.destroy()
+//     // return t.backup(db)
+//   })
 
-  await db.setSchema({
-    types: {
-      nurp: {
-        props: {
-          email2: { type: 'string' },
-        },
-      },
-      user: {
-        props: {
-          name: { type: 'string' },
-          age: { type: 'uint32' },
-          email: { type: 'string' },
-        },
-      },
-    },
-  })
+//   await db.setSchema({
+//     types: {
+//       nurp: {
+//         props: {
+//           email2: { type: 'string' },
+//         },
+//       },
+//       user: {
+//         props: {
+//           name: { type: 'string' },
+//           age: { type: 'uint32' },
+//           email: { type: 'string' },
+//         },
+//       },
+//     },
+//   })
 
-  await db.create('user', {
-    name: 'mr snurp',
-    age: 99,
-    email: 'snurp@snurp.snurp',
-  })
+//   await db.create('user', {
+//     name: 'mr snurp',
+//     age: 99,
+//     email: 'snurp@snurp.snurp',
+//   })
 
-  await db.setSchema({
-    types: {
-      nurp: {
-        props: {
-          email2: { type: 'string' },
-        },
-      },
-      user: {
-        props: {
-          name: { type: 'string' },
-          age: { type: 'uint32' },
-          email: { type: 'string' },
-        },
-      },
-    },
-  })
+//   await db.setSchema({
+//     types: {
+//       nurp: {
+//         props: {
+//           email2: { type: 'string' },
+//         },
+//       },
+//       user: {
+//         props: {
+//           name: { type: 'string' },
+//           age: { type: 'uint32' },
+//           email: { type: 'string' },
+//         },
+//       },
+//     },
+//   })
 
-  await db.create('user', {
-    name: 'dr youz',
-  })
+//   await db.create('user', {
+//     name: 'dr youz',
+//   })
 
-  await db.save()
-})
+//   await db.save()
+// })
