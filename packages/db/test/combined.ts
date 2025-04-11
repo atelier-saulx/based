@@ -390,7 +390,6 @@ await test('E-commerce Simulation', async (t) => {
       )
     }
 
-    await wait(10)
     // if (operationsCount % 50 === 0) {
     //   console.log(
     //     `Ops: ${operationsCount}, Items: ${totalItemsCreated}, Users: ${userIds.length}, Prods: ${productIds.length} inProgress: ${inProgress}`,

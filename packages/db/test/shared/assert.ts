@@ -56,7 +56,7 @@ export const isSorted = (
   let i = 0
   var s = new Set()
   let fieldType = ''
-  const propDef = a.def.schema.props[field]
+  const propDef = a.def?.schema?.props?.[field]
 
   if (propDef) {
     fieldType = ' ' + REVERSE_TYPE_INDEX_MAP[propDef.typeIndex]
