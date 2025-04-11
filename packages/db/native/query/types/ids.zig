@@ -47,9 +47,10 @@ pub fn sort(
         dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
     }
     // ------------------------------
-    selva.selva_sort_foreach_begin(metaSortIndex.index);
-    while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
-        const node: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
+    var it: selva.SelvaSortIterator = undefined;
+    selva.selva_sort_foreach_begin(metaSortIndex.index, &it);
+    while (!selva.selva_sort_foreach_done(&it)) {
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index, &it));
         ctx.totalResults += 1;
         if (offset != 0 and ctx.totalResults <= offset) {
             continue;

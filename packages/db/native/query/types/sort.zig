@@ -41,19 +41,20 @@ pub fn default(
 
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
+    var it: selva.SelvaSortIterator = undefined;
     if (desc) {
-        selva.selva_sort_foreach_begin_reverse(sI.index);
+        selva.selva_sort_foreach_begin_reverse(sI.index, &it);
     } else {
-        selva.selva_sort_foreach_begin(sI.index);
+        selva.selva_sort_foreach_begin(sI.index, &it);
     }
     // create a new iterator per CORE
     var correctedForOffset: u32 = offset;
-    checkItem: while (!selva.selva_sort_foreach_done(sI.index)) {
+    checkItem: while (!selva.selva_sort_foreach_done(&it)) {
         var node: db.Node = undefined;
         if (desc) {
-            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index));
+            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
         } else {
-            node = @ptrCast(selva.selva_sort_foreach(sI.index));
+            node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
         }
         if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
@@ -101,18 +102,19 @@ pub fn search(
     }
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
+    var it: selva.SelvaSortIterator = undefined;
     if (desc) {
-        selva.selva_sort_foreach_begin_reverse(sI.index);
+        selva.selva_sort_foreach_begin_reverse(sI.index, &it);
     } else {
-        selva.selva_sort_foreach_begin(sI.index);
+        selva.selva_sort_foreach_begin(sI.index, &it);
     }
     var searchCtxC = s.createSearchCtx(isVector, offset);
-    while (!selva.selva_sort_foreach_done(sI.index)) {
+    while (!selva.selva_sort_foreach_done(&it)) {
         var node: db.Node = undefined;
         if (desc) {
-            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index));
+            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
         } else {
-            node = @ptrCast(selva.selva_sort_foreach(sI.index));
+            node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
         }
         s.addToScore(
             isVector,
