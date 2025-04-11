@@ -10,7 +10,6 @@ await test('concurrency', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    // return db.destroy()
     return t.backup(db)
   })
 
@@ -29,7 +28,12 @@ await test('concurrency', async (t) => {
     },
   })
 
-  console.time('create stuff')
+  // let i = 1e6
+  // while (i > 2) {
+  //   db.create('user', {})
+  //   i--
+  // }
+  // await db.drain()
 
   let id = 0
   let queries = 0
@@ -39,10 +43,20 @@ await test('concurrency', async (t) => {
     timer = null
   }, 5e3)
 
+  let len = 0
+  let size = 0
+  let queriesParsed = 0
   const query = async () => {
     queries++
     try {
-      await db.query('user').include('friends').range(0, 1000_000).get()
+      const x = await db
+        .query('user')
+        .include((s) => s('friends').range(0, 10))
+        .range(0, 1000_000)
+        .get()
+      size += x.size
+      len += x.length
+      queriesParsed++
     } catch (e) {
       console.error('err:', e)
     }
@@ -66,5 +80,7 @@ await test('concurrency', async (t) => {
 
   clearTimeout(timer)
 
-  console.timeEnd('create stuff')
+  console.log(
+    `Received # of items ${len} processed ${queriesParsed} size ${size / 1e3 / 1e3}mb`,
+  )
 })

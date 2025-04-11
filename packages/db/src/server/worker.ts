@@ -15,7 +15,7 @@ if (isMainThread) {
 
   workerCtx = native.workerCtxInit()
 
-  const transferList = new Array(1)
+  // const transferList = new Array(1)
   const handleMsg = (msg) => {
     try {
       if (typeof msg === 'bigint') {
@@ -25,8 +25,8 @@ if (isMainThread) {
         channel.postMessage(null)
       } else {
         const arrayBuf = native.getQueryBuf(msg, dbCtx)
-        transferList[0] = arrayBuf
-        channel.postMessage(arrayBuf, transferList)
+        // transferList[0] = arrayBuf
+        channel.postMessage(arrayBuf)
       }
     } catch (e) {
       channel.postMessage(e)
