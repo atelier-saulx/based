@@ -12,7 +12,7 @@ await test('boolean', () => {
     },
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       props: {
         myBoolean: {

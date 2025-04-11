@@ -55,7 +55,7 @@ await test('set', () => {
     },
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         myType: {

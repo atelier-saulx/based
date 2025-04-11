@@ -185,6 +185,7 @@ type Prop<V extends PropValues> = {
   role?: Role
   readOnly?: boolean
   examples?: string[]
+  validation?: Validation
 } & V
 
 type EnumItem = string | number | boolean

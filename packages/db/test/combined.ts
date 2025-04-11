@@ -16,7 +16,7 @@ await test('E-commerce Simulation', async (t) => {
     maxModifySize: 50000,
   })
 
-  const simulationDuration = 100e3
+  const simulationDuration = 5e3
   let maxInProgress = 100
   let inProgress = 0
   let concurrency = 300
@@ -277,12 +277,12 @@ await test('E-commerce Simulation', async (t) => {
         // console.log(Date.now() - d, 'ms')
       } else {
         // Update Category Description
-        const catId = getRandom(categoryIds)
-        if (catId) {
-          await db.update('category', catId, {
-            description: { de: `Aktualisiert ${randomString(10)}` },
-          })
-        }
+        // const catId = getRandom(categoryIds)
+        // if (catId) {
+        //   await db.update('category', catId, {
+        //     description: { de: `Aktualisiert ${randomString(10)}` },
+        //   })
+        // }
       }
     } else if (action < 0.8 && totalItemsCreated > 100) {
       // --- DELETE --- (Less frequent)

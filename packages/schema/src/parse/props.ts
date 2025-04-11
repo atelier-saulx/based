@@ -86,10 +86,21 @@ const shared: PropsFns<SchemaAnyProp> = {
       throw Error(TYPE_MISMATCH)
     }
   },
-  title(val) {},
-  description(val) {},
-  readOnly(val) {},
-  examples(val) {},
+  title(val) {
+    expectString(val)
+  },
+  description(val) {
+    expectString(val)
+  },
+  readOnly(val) {
+    expectBoolean(val)
+  },
+  examples(val) {
+    expectString(val)
+  },
+  validation(val) {
+    expectFunction(val)
+  },
 }
 
 function propParser<PropType extends SchemaAnyProp>(

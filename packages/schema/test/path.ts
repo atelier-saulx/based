@@ -33,7 +33,7 @@ await test('path', () => {
     },
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         club: {

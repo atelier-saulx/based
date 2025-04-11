@@ -30,97 +30,97 @@ await test('simple min / max validation', async (t) => {
     },
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u32: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u32: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u8: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u8: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i8: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i8: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i32: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i32: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u16: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u16: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i16: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i16: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       number: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       number: 0,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       timestamp: 30,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       timestamp: 0,
     })
@@ -129,7 +129,7 @@ await test('simple min / max validation', async (t) => {
   await db.create('user', { u32: 10 })
   await db.create('user', { u32: 20 })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u32: 15,
     })
@@ -172,49 +172,49 @@ await test('step validation', async (t) => {
   await db.create('user', { numberStep: 50 })
   await db.create('user', { timestampStep: 25 })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u32Step: 12,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u8Step: 7,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i8Step: 99,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i32Step: 3,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       u16Step: 51,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       i16Step: 22,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       numberStep: 88,
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('user', {
       timestampStep: 1,
     })
@@ -257,257 +257,257 @@ await test('min / max validation on reference edges', async (t) => {
   const thing1 = await db.create('thing', {})
   const user1 = await db.create('edgeUser', {})
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u32: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u32: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u32: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u32: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u32: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u32: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u8: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u8: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u8: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u8: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u8: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u8: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i8: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i8: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i8: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i8: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i8: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i8: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i32: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i32: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i32: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i32: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i32: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i32: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u16: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u16: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u16: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u16: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u16: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u16: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i16: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i16: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i16: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i16: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i16: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i16: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $number: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $number: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $number: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $number: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $number: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $number: 0 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: 30 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $timestamp: 30 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestamp: 30 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: 0 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $timestamp: 0 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestamp: 0 }] },
     })
@@ -516,17 +516,17 @@ await test('min / max validation on reference edges', async (t) => {
   await db.create('edgeUser', { things: [{ id: thing1, $u32: 10 }] })
   await db.create('edgeUser', { things: [{ id: thing1, $u32: 20 }] })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u32: 15 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u32: 15 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u32: 15 }] },
     })
@@ -578,129 +578,129 @@ await test('step validation on reference edges', async (t) => {
   await db.create('edgeUser', { things: [{ id: thing1, $numberStep: 50 }] })
   await db.create('edgeUser', { things: [{ id: thing1, $timestampStep: 25 }] })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u32Step: 12 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u32Step: 12 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u32Step: 12 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u8Step: 7 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u8Step: 7 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u8Step: 7 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i8Step: 99 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i8Step: 99 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i8Step: 99 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i32Step: 3 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i32Step: 3 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i32Step: 3 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $u16Step: 51 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $u16Step: 51 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $u16Step: 51 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $i16Step: 22 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $i16Step: 22 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $i16Step: 22 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $numberStep: 88 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $numberStep: 88 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $numberStep: 88 }] },
     })
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestampStep: 1 }],
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $timestampStep: 1 }] },
     })
   })
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestampStep: 1 }] },
     })
@@ -752,7 +752,7 @@ await test('min / max / step validation on reference edges timestamp + string fo
     ts: '01/02/2000',
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       ts: 'now + 1',
     })
@@ -772,17 +772,17 @@ await test('min / max / step validation on reference edges timestamp + string fo
     things: { update: [{ id: thing1, $timestamp: 'now + 5s' }] }, // String format
   })
 
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: minTs - stepMs }],
     })
   }, 'Value is lower than min value')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $timestamp: '31/12/1999' }] },
     })
   }, 'Value is lower than min value')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestamp: minTs - stepMs }] },
     })
@@ -790,19 +790,19 @@ await test('min / max / step validation on reference edges timestamp + string fo
 
   // Above max
   const aboveMaxTs = Date.now() + (maxOffsetSeconds + 5) * 1000
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: aboveMaxTs }],
     })
   }, 'Value is higher than max value')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: {
         add: [{ id: thing1, $timestamp: `now + ${maxOffsetSeconds + 5}s` }],
       },
     })
   }, 'Value is higher than max value')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestamp: aboveMaxTs }] },
     })
@@ -810,17 +810,17 @@ await test('min / max / step validation on reference edges timestamp + string fo
 
   // Incorrect step
   const invalidStepTs = minTs + stepMs / 2
-  throws(async () => {
+  await throws(async () => {
     db.create('edgeUser', {
       things: [{ id: thing1, $timestamp: invalidStepTs }],
     })
   }, 'Value is not divisable by step')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { add: [{ id: thing1, $timestamp: invalidStepTs }] },
     })
   }, 'Value is not divisable by step')
-  throws(async () => {
+  await throws(async () => {
     db.update('edgeUser', user1, {
       things: { update: [{ id: thing1, $timestamp: invalidStepTs }] },
     })

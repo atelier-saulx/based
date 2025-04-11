@@ -8,7 +8,7 @@ await test('schema', () => {
     types: {},
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       props: {},
       types: {},

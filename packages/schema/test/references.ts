@@ -126,7 +126,7 @@ await test('references', (t) => {
     },
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         author: {
@@ -143,7 +143,7 @@ await test('references', (t) => {
     })
   }, 'Disallow missing type for ref')
 
-  throws(() => {
+  await throws(() => {
     parse({
       props: {
         myRefs: {
@@ -155,7 +155,7 @@ await test('references', (t) => {
     })
   }, 'Disallow missing type for refs')
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         article: {
@@ -190,7 +190,7 @@ await test('references', (t) => {
     })
   }, 'Disallow mixed ref types')
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         article: {
@@ -259,7 +259,7 @@ await test('edges', () => {
     },
   })
 
-  throws(() => {
+  await throws(() => {
     parse({
       types: {
         article: {
