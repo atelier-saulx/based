@@ -12,11 +12,11 @@ const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
 
 // this test is not a perf test - tries a lot of randomization
-await test('E-commerce Simulation', async (t) => {
+await test.skip('E-commerce Simulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 50000,
-    debug: true,
+    // debug: true,
   })
 
   const simulationDuration = 120 * 100

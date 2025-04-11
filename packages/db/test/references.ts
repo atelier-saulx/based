@@ -933,7 +933,7 @@ await test('single ref save and load', async (t) => {
   await db.stop()
 })
 
-await test('update2 refs', async (t) => {
+await test('single2many - update refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     debug: true,
