@@ -24,7 +24,6 @@ pub usingnamespace @cImport({
     @cInclude("selva/xxhash64.h");
     @cInclude("selva/selva_string.h");
     @cInclude("selva/fast_memcmp.h");
-    @cInclude("selva/base64.h");
     @cInclude("selva/hll.h");
 
     @cInclude("libdeflate.h");
