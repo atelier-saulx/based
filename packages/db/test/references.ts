@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('references', async (t) => {
   const db = new BasedDb({
@@ -930,4 +931,95 @@ await test('single ref save and load', async (t) => {
   )
 
   await db.stop()
+})
+
+await test('update2 refs', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    debug: true,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+    // return t.backup(db)
+  })
+
+  await db.setSchema({
+    types: {
+      product: {
+        props: {
+          reviews: {
+            items: {
+              ref: 'review',
+              prop: 'product',
+            },
+          },
+        },
+      },
+      review: {
+        props: {
+          product: { ref: 'product', prop: 'reviews' },
+          rating: { type: 'uint8' },
+        },
+      },
+    },
+  })
+
+  const review1 = await db.create('review', {
+    rating: 1,
+  })
+
+  const product1 = await db.create('product', {
+    reviews: [review1],
+  })
+
+  const review2 = await db.create('review', {
+    rating: 2,
+  })
+
+  const product2 = await db.create('product', {
+    reviews: [review1, review2],
+  })
+
+  const review3 = await db.create('review', {
+    rating: 3,
+  })
+
+  await db.update('product', product1, {
+    reviews: [review1, review2, review3],
+  })
+
+  await db.update('product', product2, {
+    reviews: [review1, review2, review3],
+  })
+
+  const products = await db.query('product').include('*', '**').get().toObject()
+  const reviews = await db.query('review').include('*', '**').get().toObject()
+  console.log('-- products:')
+  console.dir(products, {
+    depth: null,
+  })
+  console.log('--- review:')
+  console.dir(reviews, {
+    depth: null,
+  })
+
+  deepEqual(products, [
+    { id: 1, reviews: [] },
+    {
+      id: 2,
+      reviews: [
+        { id: 1, rating: 1 },
+        { id: 2, rating: 2 },
+        { id: 3, rating: 3 },
+      ],
+    },
+  ])
+  deepEqual(reviews, [
+    { id: 1, rating: 1, product: { id: 2 } },
+    { id: 2, rating: 2, product: { id: 2 } },
+    { id: 3, rating: 3, product: { id: 2 } },
+  ])
 })

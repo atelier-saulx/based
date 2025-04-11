@@ -4,6 +4,7 @@ import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import picocolors from 'picocolors'
 import { wait } from '@saulx/utils'
+import { inspect } from 'node:util'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -26,12 +27,15 @@ export class BasedDb {
     this.#init(opts)
 
     if (opts.debug) {
+      const opts = { showHidden: false, depth: null, colors: true }
+      const map = (v) => (typeof v === 'object' ? inspect(v, opts) : v)
+      let cnt = 0
       for (const key in this) {
         const fn = this[key]
         if (typeof fn === 'function') {
           // @ts-ignore
           this[key] = function (this: BasedDb) {
-            const str = [`[${key}]`, ...arguments].join(' ')
+            const str = [++cnt, `[${key}]`, ...arguments].map(map).join(' ')
             console.info(picocolors.dim(str))
             return fn.apply(this, arguments)
           }
