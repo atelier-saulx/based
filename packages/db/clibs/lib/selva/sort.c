@@ -49,9 +49,6 @@ struct SelvaSortCtx {
     };
     size_t fixed_size; /*!< 0 if dynamic. */
     struct mempool mempool;
-    struct {
-        struct SelvaSortItem *next;
-    } iterator;
     enum selva_lang_code lang;
     enum selva_langs_trans trans;
     locale_t loc;
@@ -178,7 +175,6 @@ struct SelvaSortCtx *selva_sort_init2(enum SelvaSortOrder order, size_t fixed_si
     ctx->order = order;
     RB_INIT(&ctx->out_none);
     ctx->fixed_size = fixed_size;
-    memset(&ctx->iterator, 0, sizeof(ctx->iterator));
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
@@ -628,51 +624,54 @@ void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t le
     }
 }
 
-void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
+void selva_sort_foreach_begin(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it)
 {
     struct SelvaSortTreeNone *head = &ctx->out_none;
 
-    ctx->iterator.next = RB_EMPTY(head) ? nullptr : RB_MIN(SelvaSortTreeNone, head);
+    it->next = RB_EMPTY(head) ? nullptr : RB_MIN(SelvaSortTreeNone, head);
 }
-void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx)
+void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it)
 {
     struct SelvaSortTreeNone *head = &ctx->out_none;
 
-    ctx->iterator.next = RB_EMPTY(head) ? nullptr : RB_MAX(SelvaSortTreeNone, head);
+    it->next = RB_EMPTY(head) ? nullptr : RB_MAX(SelvaSortTreeNone, head);
 }
 
-void *selva_sort_foreach(struct SelvaSortCtx *ctx)
+void *selva_sort_foreach(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it)
 {
-    struct SelvaSortItem *cur = ctx->iterator.next;
+    struct SelvaSortItem *cur = it->next;
 
     if (!cur) {
         return nullptr;
     }
 
-    ctx->iterator.next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
+    (void)ctx;
+    it->next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
 
     return (void *)cur->p;
 }
 
-void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx)
+void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it)
 {
-    struct SelvaSortItem *cur = ctx->iterator.next;
+    struct SelvaSortItem *cur = it->next;
 
     if (!cur) {
         return nullptr;
     }
 
-    ctx->iterator.next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
+    (void)ctx;
+    it->next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
 
     return (void *)cur->p;
 }
 
 #define SELVA_SORT_FOREACH(name, RB_DIR, vt) \
-    void *selva_sort_foreach_##name(struct SelvaSortCtx *ctx, typeof_field(struct SelvaSortItem, vt) *v) \
+    void *selva_sort_foreach_##name(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, typeof_field(struct SelvaSortItem, vt) *v) \
     { \
-        struct SelvaSortItem *cur = ctx->iterator.next; \
+        struct SelvaSortItem *cur = it->next; \
         if (!cur) return nullptr; \
-        ctx->iterator.next = RB_DIR(SelvaSortTreeNone, ctx->out_none, cur); \
+        (void)ctx; \
+        it->next = RB_DIR(SelvaSortTreeNone, ctx->out_none, cur); \
         memcpy(v, &cur->vt, sizeof(cur->vt)); \
         return (void *)cur->p; \
     }
@@ -684,35 +683,32 @@ SELVA_SORT_FOREACH(float_reverse, RB_PREV, f)
 SELVA_SORT_FOREACH(double, RB_NEXT, d)
 SELVA_SORT_FOREACH(double_reverse, RB_PREV, d)
 
-void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, void **buf, size_t *len)
 {
-    struct SelvaSortItem *cur = ctx->iterator.next;
+    struct SelvaSortItem *cur = it->next;
 
     if (!cur) return nullptr;
 
-    ctx->iterator.next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
+    (void)ctx;
+    it->next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
 
     *buf = cur->data;
     *len = cur->data_len;
     return (void *)cur->p;
 }
 
-void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, void **buf, size_t *len)
 {
-    struct SelvaSortItem *cur = ctx->iterator.next;
+    struct SelvaSortItem *cur = it->next;
 
     if (!cur) return nullptr;
 
-    ctx->iterator.next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
+    (void)ctx;
+    it->next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
 
     *buf = cur->data;
     *len = cur->data_len;
     return (void *)cur->p;
-}
-
-bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
-{
-    return !ctx->iterator.next;
 }
 
 static void reinsert_items(struct SelvaSortCtx *ctx)

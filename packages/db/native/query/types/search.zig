@@ -94,15 +94,16 @@ pub fn addToResults(
     limit: u32,
     typeEntry: db.Type,
 ) !void {
-    selva.selva_sort_foreach_begin(sCtx.scoreSortCtx);
+    var it: selva.SelvaSortIterator = undefined;
+    selva.selva_sort_foreach_begin(sCtx.scoreSortCtx, &it);
     var i: i64 = 0;
-    while (!selva.selva_sort_foreach_done(sCtx.scoreSortCtx)) {
+    while (!selva.selva_sort_foreach_done(@ptrCast(&it))) {
         var sortKey: if (isVector) f32 else i64 = undefined;
         var sortedNode: db.Node = undefined;
         if (isVector) {
-            sortedNode = @ptrCast(selva.selva_sort_foreach_float(sCtx.scoreSortCtx, &sortKey));
+            sortedNode = @ptrCast(selva.selva_sort_foreach_float(sCtx.scoreSortCtx, &it, &sortKey));
         } else {
-            sortedNode = @ptrCast(selva.selva_sort_foreach_i64(sCtx.scoreSortCtx, &sortKey));
+            sortedNode = @ptrCast(selva.selva_sort_foreach_i64(sCtx.scoreSortCtx, &it, &sortKey));
         }
         const id = db.getNodeId(sortedNode);
         i += 1;

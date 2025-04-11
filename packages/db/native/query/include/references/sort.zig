@@ -56,9 +56,10 @@ pub fn sortedReferences(
         }
     }
     i = 0;
-    selva.selva_sort_foreach_begin(metaSortIndex.index);
-    while (!selva.selva_sort_foreach_done(metaSortIndex.index)) {
-        const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index));
+    var it: selva.SelvaSortIterator = undefined;
+    selva.selva_sort_foreach_begin(metaSortIndex.index, &it);
+    while (!selva.selva_sort_foreach_done(&it)) {
+        const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index, &it));
         result.cnt += 1;
         if (offset != 0 and result.cnt <= offset) {
             i += 1;

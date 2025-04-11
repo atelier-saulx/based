@@ -40,7 +40,12 @@ enum SelvaSortOrder {
     SELVA_SORT_ORDER_TEXT_DESC,
 };
 
+struct SelvaSortItem;
 struct SelvaSortCtx;
+
+struct SelvaSortIterator {
+    struct SelvaSortItem *next;
+};
 
 SELVA_EXPORT
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order);
@@ -91,43 +96,45 @@ SELVA_EXPORT
 void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
 
 SELVA_EXPORT
-void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
+void selva_sort_foreach_begin(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it);
 
 SELVA_EXPORT
-void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx);
+void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it);
 
 SELVA_EXPORT
-void *selva_sort_foreach(struct SelvaSortCtx *ctx);
+void *selva_sort_foreach(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it);
 
 SELVA_EXPORT
-void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx);
+void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it);
 
 SELVA_EXPORT
-void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v);
+void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, int64_t *v);
 
 SELVA_EXPORT
-void *selva_sort_foreach_i64_reverse(struct SelvaSortCtx *ctx, int64_t *v);
+void *selva_sort_foreach_i64_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, int64_t *v);
 
 SELVA_EXPORT
-void *selva_sort_foreach_float(struct SelvaSortCtx *ctx, float *f);
+void *selva_sort_foreach_float(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, float *f);
 
 SELVA_EXPORT
-void *selva_sort_foreach_float_reverse(struct SelvaSortCtx *ctx, float *f);
+void *selva_sort_foreach_float_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, float *f);
 
 SELVA_EXPORT
-void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, double *d);
+void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, double *d);
 
 SELVA_EXPORT
-void *selva_sort_foreach_double_reverse(struct SelvaSortCtx *ctx, double *d);
+void *selva_sort_foreach_double_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, double *d);
 
 SELVA_EXPORT
-void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, void **buf, size_t *len);
+void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, void **buf, size_t *len);
 
 SELVA_EXPORT
-void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, size_t *len);
+void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it, void **buf, size_t *len);
 
-SELVA_EXPORT
-bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
+static inline bool selva_sort_foreach_done(struct SelvaSortIterator *it)
+{
+    return !it->next;
+}
 
 SELVA_EXPORT
 int selva_sort_defrag(struct SelvaSortCtx *ctx);
