@@ -550,3 +550,15 @@ await test('search', async (t) => {
   equal(tree.search(4)?.key, 4)
   equal(tree.search(5)?.key, 5)
 })
+
+await test('search more', async (t) => {
+  const tree = createTree(testHashGen)
+
+  tree.insert(15032385535, ENCODER.encode('a'))
+  tree.insert(10737418239, ENCODER.encode('b'))
+  tree.insert(12884901889, ENCODER.encode('c'))
+
+  equal(tree.search(15032385535)?.key, 15032385535)
+  equal(tree.search(10737418239)?.key, 10737418239)
+  equal(tree.search(12884901889)?.key, 12884901889)
+})
