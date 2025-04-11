@@ -311,6 +311,11 @@ await test('csmt after schema update', async (t) => {
 
   await db.setSchema({
     types: {
+      nurp: {
+        props: {
+          email2: { type: 'string' },
+        },
+      },
       user: {
         props: {
           name: { type: 'string' },

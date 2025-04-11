@@ -805,3 +805,46 @@ await test('no mismatch', async (t) => {
 
   await db2.save()
 })
+
+await test('csmt after save', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  await db.setSchema({
+    types: {
+      nurp: {
+        props: {
+          email2: { type: 'string' },
+        },
+      },
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp',
+  })
+  await db.save({
+    forceFullDump: true,
+  })
+  await db.create('user', {
+    name: 'dr youz',
+  })
+
+  await db.save()
+})
