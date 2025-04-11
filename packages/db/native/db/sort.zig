@@ -370,10 +370,6 @@ pub fn remove(
             }
         },
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
-            if (data.len == 8) {
-                std.debug.print("remove {d} {d} {any}  \n", .{ start, data.len, data });
-            }
-
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
         },
         types.Prop.CARDINALITY => {
@@ -426,9 +422,6 @@ pub fn insert(
         },
 
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
-            if (data.len == 8) {
-                std.debug.print("insert {d} {d} {any}  \n", .{ start, data.len, data });
-            }
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
         },
         types.Prop.CARDINALITY => {
