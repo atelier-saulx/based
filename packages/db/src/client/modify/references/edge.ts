@@ -51,11 +51,10 @@ export function writeEdges(
   let hasIncr = false
 
   for (const key in ref) {
-    const edge = t.edges[key]
-
     if (key === 'id' || key === '$index') {
       continue
     }
+    const edge = t.edges?.[key]
 
     if (!edge) {
       return new ModifyError(t, key, `Does not exist`)
@@ -302,15 +301,14 @@ export function writeEdges(
       ctx.buf[ctx.len++] = 0
       ctx.buf[ctx.len++] = MICRO_BUFFER
 
-      let sizeU32 = mainFieldsStartSize + t.edgeMainLen
-      ctx.buf[ctx.len++] = sizeU32
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      const size = mainFieldsStartSize + t.edgeMainLen
+      ctx.buf[ctx.len++] = size
+      ctx.buf[ctx.len++] = size >>> 8
+      ctx.buf[ctx.len++] = size >>> 16
+      ctx.buf[ctx.len++] = size >>> 24
 
-      let mainTotal = t.edgeMainLen
-      ctx.buf[ctx.len++] = mainTotal
-      ctx.buf[ctx.len++] = mainTotal >>>= 8
+      ctx.buf[ctx.len++] = t.edgeMainLen
+      ctx.buf[ctx.len++] = t.edgeMainLen >>> 8
 
       // Index of start of fields
       const sIndex = ctx.len
@@ -320,36 +318,35 @@ export function writeEdges(
       ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
 
       // Keep track of written bytes from append fixed
-      let writtenFields = 0
 
       let startMain = ctx.len
       for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
         const value = mainFields[i + 1]
         const op = mainFields[i + 2]
-        const sIndexI = i + sIndex
-        let start = edge.start
-        ctx.buf[sIndexI] = start
-        ctx.buf[sIndexI + 1] = start >>>= 8
-        let len = edge.len
-        ctx.buf[sIndexI + 2] = len
-        ctx.buf[sIndexI + 3] = len >>>= 8
+        const sIndexI = i * 2 + sIndex
+
+        ctx.buf[sIndexI] = edge.start
+        ctx.buf[sIndexI + 1] = edge.start >>> 8
+
+        ctx.buf[sIndexI + 2] = edge.len
+        ctx.buf[sIndexI + 3] = edge.len >>> 8
+
         ctx.buf[sIndexI + 4] = op
         ctx.buf[sIndexI + 5] = edge.typeIndex
-        ctx.len = startMain + edge.start
-        if (edge.start + edge.len > writtenFields) {
-          writtenFields = edge.start + edge.len
-        }
 
-        // add null support
+        ctx.len = startMain + edge.start
+
+        // Add null support (defaults)
         const err = appendFixedValue(ctx, value, edge)
+
         if (err) {
           return err
         }
       }
 
-      // Correction to reuse append fixed value
-      ctx.len += t.edgeMainLen - writtenFields
+      // Correction append fixed value writes the len
+      ctx.len = startMain + t.edgeMainLen
     }
   }
 }

@@ -1,5 +1,6 @@
 import { convertToTimestamp } from '@saulx/utils'
 import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
+import { MAX_ID } from '../types.js'
 
 export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
 const EPSILON = 1e-9 // Small tolerance for floating point comparisons
@@ -196,7 +197,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof v !== 'number') {
       return false
     }
-    if (v === 0) {
+    if (v === 0 || v > MAX_ID) {
       return false
     }
     return true
@@ -205,7 +206,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (typeof v !== 'number') {
       return false
     }
-    if (v === 0) {
+    if (v === 0 || v > MAX_ID) {
       return false
     }
     return true

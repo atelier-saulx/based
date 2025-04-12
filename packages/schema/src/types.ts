@@ -460,3 +460,5 @@ export const isPropType = <T extends SchemaPropTypes>(
 ): prop is SchemaPropTypeMap[T] => {
   return getPropType(prop) === type
 }
+
+export const MAX_ID = 4294967295

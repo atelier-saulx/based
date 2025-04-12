@@ -14,6 +14,12 @@ await test('update', async (t) => {
   await db.setSchema({
     locales: { en: {}, de: {} },
     types: {
+      flap: {
+        x: {
+          ref: 'user',
+          prop: 'y',
+        },
+      },
       user: {
         props: {
           name: 'string',
@@ -36,6 +42,10 @@ await test('update', async (t) => {
       },
     },
   })
+
+  await throws(async () => {
+    return db.query('flap').include('x.$derp').get()
+  }, 'Non existing reference on flap')
 
   const user1 = await db.create('user', { name: 'user1' })
   const user2 = await db.create('user', { name: 'user2' })

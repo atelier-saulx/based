@@ -2,7 +2,6 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-// Define default values for clarity and reuse
 const defaultTimestamp = 1678886400000 // Specific date: 2023-03-15T12:00:00.000Z
 const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
@@ -50,7 +49,6 @@ await test('default values for all props in user type', async (t) => {
             type: 'json',
             default: defaultJson,
           },
-          // Binary
           // avatar: {
           //   type: 'binary',
           //   default: defaultBinary,
@@ -64,14 +62,13 @@ await test('default values for all props in user type', async (t) => {
             type: 'text',
             default: defaultText,
           },
-          // References (default to empty array)
           // friends: {
           //   type: 'references',
           //   items: {
           //     ref: 'user', // Self-reference for simplicity in this test
           //     prop: 'friends',
           //   },
-          //   default: [],
+          //   default: [], // something in there
           // },
           // Nested Object
           meta: {
@@ -86,17 +83,13 @@ await test('default values for all props in user type', async (t) => {
               },
             },
           },
-          // Note: 'reference' type default doesn't make sense for an ID.
-          // Note: 'cardinality' type default doesn't make sense.
         },
       },
     },
   })
 
-  // Create a user without providing any fields, relying on defaults
   const userId = await db.create('user', {})
 
-  // Verify all default values are set correctly
   deepEqual(
     await db.query('user', userId).get(),
     {
@@ -116,33 +109,32 @@ await test('default values for all props in user type', async (t) => {
     'User created with all default values',
   )
 
-  // Test explicit null override for a few types within the user
   const userNullId = await db.create('user', {
-    name: null, // Should become ''
-    count: null, // Should become 0
-    isNice: null, // Should become false
-    config: null, // Should become null
-    avatar: null, // Should become null
-    level: null, // Should become undefined
-    label: null, // Should become {}
-    meta: { rating: null }, // Inner null, outer default applies
+    name: null,
+    count: null,
+    isNice: null,
+    config: null,
+    avatar: null,
+    level: null,
+    label: null,
+    meta: { rating: null },
   })
 
   deepEqual(
     await db.query('user', userNullId).get(),
     {
       id: userNullId,
-      isNice: false, // Overridden
-      name: '', // Overridden
-      count: 0, // Overridden
-      eventTime: defaultTimestamp, // Default
-      level: undefined, // Overridden
-      config: null, // Overridden
-      avatar: null, // Overridden
-      slug: 'default-slug', // Default
-      label: {}, // Overridden
-      friends: [], // Default
-      meta: { rating: 0, notes: 'Default Note' }, // Partially overridden
+      isNice: false,
+      name: '',
+      count: 0,
+      eventTime: defaultTimestamp,
+      level: undefined,
+      config: null,
+      avatar: null,
+      slug: 'default-slug',
+      label: {},
+      friends: [],
+      meta: { rating: 0, notes: 'Default Note' },
     },
     'User created with explicit null overrides',
   )

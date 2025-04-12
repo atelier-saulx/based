@@ -3,7 +3,7 @@ import { equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
-await test.skip('expire', async (t) => {
+await test('expire', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

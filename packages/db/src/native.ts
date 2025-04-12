@@ -37,7 +37,12 @@ export default {
     return db.intFromExternal(external)
   },
 
-  modify: (data: Uint8Array, types: Uint8Array, dbCtx: any, dirtyBlocksOut: Float64Array): any => {
+  modify: (
+    data: Uint8Array,
+    types: Uint8Array,
+    dbCtx: any,
+    dirtyBlocksOut: Float64Array,
+  ): any => {
     db.modify(data, types, dbCtx, dirtyBlocksOut)
   },
 
@@ -134,15 +139,15 @@ export default {
     return db.destroySortIndex(dbCtx, buf)
   },
 
-  xxHash64: (
-    buf: Uint8Array,
-    target: Uint8Array,
-    index: number,
-  ) => {
+  xxHash64: (buf: Uint8Array, target: Uint8Array, index: number) => {
     return db.xxHash64(buf, target, index)
   },
 
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
     return !!db.equals(a, b)
+  },
+
+  expire: (dbCtx: any) => {
+    db.expire(dbCtx)
   },
 }

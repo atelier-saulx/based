@@ -91,6 +91,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.CREATE_OR_GET => {
                 if (config.enable_debug) {
+                    // Only assert this on DEBUG scince it makes it a lot slower
                     ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
                         std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
                         return err;
