@@ -83,9 +83,9 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         };
     } else {
         if (ctx.fieldType == types.Prop.REFERENCE) {
-            const oldRefDst = db.getReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+            const oldRefDst = db.getNodeFromReference(db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?));
             if (oldRefDst) |dstNode| {
-                Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), selva.selva_get_node_id(dstNode));
+                Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), db.getNodeId(dstNode));
             }
         }
         try db.deleteField(ctx.db, ctx.node.?, ctx.fieldSchema.?);

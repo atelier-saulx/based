@@ -206,9 +206,8 @@ pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
     return str;
 }
 
-pub fn getReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?Node {
-    const result = selva.selva_fields_get_reference(ctx.selva, node, selvaFieldSchema);
-    if (result) |r| {
+pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeReference) ?Node {
+    if (ref) |r| {
         return r.*.dst;
     }
     return null;
@@ -450,15 +449,12 @@ pub fn getNode(id: u32, typeEntry: Type) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
-pub inline fn getNodeId(node: Node) u32 {
-    // return read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
-    // return selva.selva_get_node_id(node);
-    return @bitCast(@as([*]u8, @ptrCast(node))[0..4].*);
+pub inline fn getNodeIdAsSlice(node: Node) []u8 {
+    return @as([*]u8, @ptrCast(node))[0..4];
 }
 
-pub fn getNodeIdArray(node: Node) [4]u8 {
-    const x: [4]u8 = @bitCast(selva.selva_get_node_id(node));
-    return x;
+pub inline fn getNodeId(node: Node) u32 {
+    return read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
 }
 
 pub fn getFirstNode(typeEntry: Type) ?Node {

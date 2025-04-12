@@ -22,18 +22,18 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
 
     var ref: ?*selva.SelvaNodeReference = null;
     var node: db.Node = undefined;
+
     const oldRefDst = db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-    if (oldRefDst) |r| {
-        const dstNode = r.*.dst;
-        if (dstNode) |d| {
-            if (db.getNodeId(d) == id) {
-                ref = oldRefDst;
-                if (hasEdges) {
-                    Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
-                }
-            } else {
+    const dstNode = db.getNodeFromReference(oldRefDst);
+
+    if (dstNode) |d| {
+        if (db.getNodeId(d) == id) {
+            ref = oldRefDst;
+            if (hasEdges) {
                 Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
             }
+        } else {
+            Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
         }
     }
 

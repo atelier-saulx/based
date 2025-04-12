@@ -188,7 +188,7 @@ pub fn filter(
                     const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    const checkRef = db.getReference(ctx, node, fs);
+                    const checkRef = db.getNodeFromReference(db.getSingleReference(ctx, node, fs));
                     if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -209,7 +209,7 @@ pub fn filter(
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
             if (meta == Meta.id) {
-                value = @constCast(&db.getNodeIdArray(node));
+                value = db.getNodeIdAsSlice(node);
                 if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
@@ -268,14 +268,13 @@ pub fn filter(
                     }
                 } else {
                     if (prop == Prop.REFERENCE) {
-                        // if edge different
                         const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const checkRef = db.getReference(ctx, node, fs);
+                        const checkRef = db.getNodeFromReference(db.getSingleReference(ctx, node, fs));
                         // -----------
                         if (checkRef) |r| {
-                            value = @as([*]u8, @ptrCast(r))[0..4];
+                            value = db.getNodeIdAsSlice(r);
                         } else {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
@@ -291,7 +290,6 @@ pub fn filter(
                                 value = arr[0 .. r.nr_refs * 4];
                             } else {
                                 value = EMPTY_SLICE;
-                                // do something....
                             }
                         } else {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

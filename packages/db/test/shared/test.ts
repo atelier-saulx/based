@@ -30,6 +30,7 @@ const test = async (
     console.log(picocolors.gray('skip ' + name))
     return
   }
+  let hasErrored = false
   console.log(picocolors.gray(`\nstart ${name}`))
   const d = performance.now()
   const afters = []
@@ -43,6 +44,10 @@ const test = async (
           await db.destroy()
         } catch (err) {}
       })
+
+      if (hasErrored) {
+        return
+      }
 
       const fields = ['*', '**']
       const make = async (db) => {
@@ -114,6 +119,7 @@ const test = async (
       picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
     )
   } catch (err) {
+    hasErrored = true
     counts.errors++
     console.log(
       picocolors.red(`! ${name}`),
