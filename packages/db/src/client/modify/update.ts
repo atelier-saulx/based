@@ -8,6 +8,7 @@ import { ModifyOpts, RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
+import { isValidId } from '../query/validation.js'
 
 type Payload = Record<string, any>
 
@@ -80,6 +81,10 @@ export const update = (
     throw new Error(
       `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.schemaTypesParsed).join(', ')}`,
     )
+  }
+
+  if (!isValidId(id)) {
+    throw new Error(`Update ${id} is not a valid id`)
   }
 
   const ctx = db.modifyCtx

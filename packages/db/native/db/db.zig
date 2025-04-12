@@ -315,7 +315,8 @@ pub fn insertReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: Fiel
     if (code != selva.SELVA_EEXIST) {
         try errors.selva(code);
     } else {
-        std.debug.print("Flap \n", .{});
+        // here we want to be able to pass a node pointer for the prev node
+        // relevant when updating
     }
 
     return ref;

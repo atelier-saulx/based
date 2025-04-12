@@ -28,15 +28,10 @@ import {
   VECTOR_FNS,
 } from './filter/types.js'
 import { Filter } from './query.js'
-import {
-  MAX_ID,
-  MAX_ID_VALUE,
-  MAX_IDS_PER_QUERY,
-  MIN_ID_VALUE,
-} from './thresholds.js'
+import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
-import { LangCode, langCodesMap } from '@based/schema'
+import { LangCode, langCodesMap, MAX_ID } from '@based/schema'
 
 export type QueryError = {
   code: number
@@ -151,7 +146,7 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
 }
 
 export const isValidId = (id: number) => {
-  if (typeof id != 'number' || id < MIN_ID_VALUE || id > MAX_ID_VALUE) {
+  if (typeof id != 'number' || id < MIN_ID_VALUE || id > MAX_ID) {
     return false
   }
   return true
