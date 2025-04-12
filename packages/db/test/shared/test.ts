@@ -101,7 +101,11 @@ const test = async (
         }
         const di = findFirstDiffPos(checksums, backupChecksums)
         if (di >= 0) {
-          deepEqual(b[di], a[di], `${Object.keys(db.server.schema.types)[di]}`)
+          deepEqual(
+            b[di],
+            a[di],
+            `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[di]}`,
+          )
         }
       }
 

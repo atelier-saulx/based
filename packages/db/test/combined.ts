@@ -24,8 +24,14 @@ await test('E-commerce Simulation', async (t) => {
 
   await db.start({ clean: true })
 
+  let intervalId: NodeJS.Timeout | null = null
+
   t.after(() => {
-    t.backup(db)
+    clearInterval(intervalId)
+  })
+
+  t.after(async () => {
+    await t.backup(db)
   })
 
   await db.setSchema({
@@ -176,11 +182,6 @@ await test('E-commerce Simulation', async (t) => {
 
   // --- Simulation Loop ---
   const startTime = Date.now()
-  let intervalId: NodeJS.Timeout | null = null
-
-  t.after(() => {
-    clearInterval(intervalId)
-  })
 
   let totalAliasUpdate = 0
   let totalAliasUpdateTime = 0
@@ -479,6 +480,9 @@ await test('E-commerce Simulation', async (t) => {
   if (testErr) {
     throw testErr
   }
+  clearInterval(intervalId)
+
+  await wait(500)
 
   const finalProductCount = (
     await db.query('product').range(0, 10_000_000).get()
