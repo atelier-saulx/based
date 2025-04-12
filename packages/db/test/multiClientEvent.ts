@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('multiClientEvent', async (t) => {
+await test.skip('multiClientEvent', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

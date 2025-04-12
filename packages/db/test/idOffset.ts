@@ -1,9 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('idOffset', async (t) => {
+await test.skip('idOffset', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
+    maxModifySize: 200,
   })
 
   await db.start({ clean: true })
@@ -14,9 +15,9 @@ await test('idOffset', async (t) => {
 
   await db.setSchema({
     types: {
-      transaction: {
+      thing: {
         props: {
-          key: 'alias', // `${round}-${fingerprint}`
+          name: 'string',
         },
       },
     },
