@@ -32,25 +32,43 @@ export type DbClientHooks = {
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
   }>
-  flushIsReady: Promise<any>
-  flushReady: (v?: any) => void
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
-  flushTime: number
 }
 
 type DbClientOpts = {
   hooks: DbClientHooks
   maxModifySize?: number
+  flushTime?: number
 }
 
 type DbClientSchema = StrictSchema & { lastId: number }
 
+const makeFlushIsReady = (dbClient: DbClient) => {
+  dbClient.flushIsReady = new Promise<void>((resolve) => {
+    dbClient.flushReady = () => {
+      resolve()
+      makeFlushIsReady(dbClient)
+    }
+  })
+}
+
 export class DbClient {
-  constructor({ hooks, maxModifySize = 100 * 1e3 * 1e3 }: DbClientOpts) {
+  constructor({
+    hooks,
+    maxModifySize = 100 * 1e3 * 1e3,
+    flushTime = 0,
+  }: DbClientOpts) {
     this.hooks = hooks
     this.maxModifySize = maxModifySize
     this.modifyCtx = new ModifyCtx(this)
+    this.flushTime = flushTime
+    makeFlushIsReady(this)
   }
+
+  flushTime: number
+
+  flushReady: () => void
+  flushIsReady: Promise<void>
 
   hooks: DbClientHooks
   schema: DbClientSchema = {
@@ -326,7 +344,7 @@ export class DbClient {
     if (!this.isDraining) {
       startDrain(this)
     }
-    await this.hooks.flushIsReady
+    await this.flushIsReady
     return
   }
 

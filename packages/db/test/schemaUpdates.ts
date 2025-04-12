@@ -29,9 +29,6 @@ await test('client server schema updates', async (t) => {
     async getQueryBuf(buf) {
       return server.getQueryBuf(buf)
     },
-    flushIsReady: new Promise(() => {}),
-    flushReady: () => {},
-    flushTime: 0,
   }
 
   const client1 = new DbClient({
@@ -142,9 +139,6 @@ await test('rapid schema updates', async (t) => {
     async getQueryBuf(buf) {
       return server.getQueryBuf(buf)
     },
-    flushIsReady: new Promise(() => {}),
-    flushReady: () => {},
-    flushTime: 0,
   }
 
   const client1 = new DbClient({
@@ -236,9 +230,6 @@ await test('rapid modifies during schema update', async (t) => {
     async getQueryBuf(buf) {
       return server.getQueryBuf(buf)
     },
-    flushIsReady: new Promise(() => {}),
-    flushReady: () => {},
-    flushTime: 0,
   }
 
   const client1 = new DbClient({

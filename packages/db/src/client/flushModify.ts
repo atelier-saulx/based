@@ -116,7 +116,6 @@ export const flushBuffer = (db: DbClient) => {
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
     const queue = ctx.queue
-
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
       resCtx.offsets = offsets
       for (const typeId in lastIds) {
@@ -140,9 +139,8 @@ export const flushBuffer = (db: DbClient) => {
           }
         })
       }
-      db.hooks.flushReady()
+      db.flushReady()
     })
-
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()
     ctx.len = 0
@@ -152,7 +150,7 @@ export const flushBuffer = (db: DbClient) => {
     ctx.ctx = {}
     ctx.queue = new Map()
   } else {
-    db.hooks.flushReady()
+    db.flushReady()
   }
 
   db.isDraining = false
@@ -161,17 +159,14 @@ export const flushBuffer = (db: DbClient) => {
 }
 
 export const startDrain = (db: DbClient) => {
-  db.hooks.flushIsReady = new Promise((resolve) => {
-    db.hooks.flushReady = resolve
-  })
   db.isDraining = true
-  if (db.hooks.flushTime === 0) {
+  if (db.flushTime === 0) {
     process.nextTick(() => {
       flushBuffer(db)
     })
   } else {
     setTimeout(() => {
       flushBuffer(db)
-    }, db.hooks.flushTime)
+    }, db.flushTime)
   }
 }

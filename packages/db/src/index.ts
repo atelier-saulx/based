@@ -57,7 +57,6 @@ export class BasedDb {
     const client = new DbClient({
       maxModifySize,
       hooks: {
-        flushTime: 0,
         setSchema(schema, fromStart) {
           return Promise.resolve(server.setSchema(schema, fromStart))
         },
@@ -67,8 +66,6 @@ export class BasedDb {
             offsets,
           })
         },
-        flushReady: () => {},
-        flushIsReady: new Promise(() => {}),
         getQueryBuf(buf) {
           return Promise.resolve(server.getQueryBuf(buf))
         },
@@ -154,7 +151,7 @@ export class BasedDb {
     await this.isModified()
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
-    await wait(Math.max(this.client.hooks.flushTime + 10, 10))
+    await wait(Math.max(this.client.flushTime + 10, 10))
     this.client.destroy()
     await this.server.destroy()
   }

@@ -502,12 +502,13 @@ export class DbServer {
       let offset = def.lastId - startId
 
       if (offset < 0) {
-        offset = 0
+        console.log('-----------------')
         console.log(def.type, {
           offset,
           serverId: def.lastId,
           clientId: startId,
         })
+        offset = 0
       }
 
       buf[i++] = offset
@@ -517,10 +518,12 @@ export class DbServer {
 
       const lastId = readUint32LE(buf, i)
       i += 4
+
       def.lastId = lastId + offset
+
       offsets[typeId] = offset
     }
-
+    // console.log('modify', this.processingQueries)
     if (this.processingQueries) {
       this.modifyQueue.push(new Uint8Array(buf))
     } else {
@@ -574,6 +577,7 @@ export class DbServer {
   }
 
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
+    // console.log('query', this.modifyQueue.length)
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
@@ -618,6 +622,7 @@ export class DbServer {
 
   onQueryEnd() {
     this.processingQueries--
+
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
