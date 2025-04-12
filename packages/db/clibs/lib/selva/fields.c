@@ -386,7 +386,7 @@ static struct SelvaNode *del_single_ref(struct SelvaDb *db, struct SelvaNode *sr
     struct SelvaNodeReference ref;
 
     memcpy(&ref, vp, sizeof(ref));
-    memset(vp, 0, sizeof(struct SelvaNode *)); /* This is fine here because we have a copy of the original struct. */
+    memset(vp, 0, sizeof(ref)); /* This is fine here because we have a copy of the original struct. */
     reference_meta_destroy(db, efc, &ref);
 
 #if 0
