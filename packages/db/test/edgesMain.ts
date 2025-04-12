@@ -70,8 +70,7 @@ await test('multiple', async (t) => {
       .include('contributors.$rdy')
       .include('contributors.$rating')
       .include('contributors.$derp')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -112,8 +111,7 @@ await test('multiple', async (t) => {
       .include('contributors.$rdy')
       .include('contributors.$rating')
       .include('contributors.$derp')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -147,15 +145,13 @@ await test('multiple', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('name')
-        .include('contributors.$rdy')
-        .include('contributors.$rating')
-        .include('contributors.$derp')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('name')
+      .include('contributors.$rdy')
+      .include('contributors.$rating')
+      .include('contributors.$derp')
+      .get(),
     [
       {
         id: 1,
@@ -185,15 +181,13 @@ await test('multiple', async (t) => {
   })
 
   deepEqual(
-    (
-      await db
-        .query('article')
-        .include('name')
-        .include('contributors.$rdy')
-        .include('contributors.$rating')
-        .include('contributors.$derp')
-        .get()
-    ).toObject(),
+    await db
+      .query('article')
+      .include('name')
+      .include('contributors.$rdy')
+      .include('contributors.$rating')
+      .include('contributors.$derp')
+      .get(),
     [
       {
         id: 1,
@@ -270,8 +264,7 @@ await test('single', async (t) => {
       .include('contributor.$rdy')
       .include('contributor.$rating')
       .include('contributor.$derp')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -299,7 +292,7 @@ await test('single', async (t) => {
   )
 })
 
-await test('manyFields', async (t) => {
+await test('multi references update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -323,7 +316,6 @@ await test('manyFields', async (t) => {
           },
         },
       },
-
       article: {
         props: {
           name: 'string',
@@ -346,19 +338,16 @@ await test('manyFields', async (t) => {
     name: 'Mr snurp',
   })
 
-  const mrDerp3 = db.create('user', {
-    name: 'Mr Derp3',
-  })
-
   await db.drain()
 
-  await db.create('article', {
+  const strudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
         id: mrSnurp,
         $derp: 99,
         $age: 66,
+        $plonki: 100,
       },
     ],
   })
@@ -371,5 +360,101 @@ await test('manyFields', async (t) => {
       .then((v) => v.toObject()),
     [{ id: 1, contributors: [{ id: 1, $age: 66 }] }],
     'age 66',
+  )
+
+  await db.update('article', strudel, {
+    contributors: [
+      {
+        id: mrSnurp,
+        $derp: 1,
+        $age: 2,
+      },
+    ],
+  })
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$age')
+      .get()
+      .then((v) => v.toObject()),
+    [{ id: 1, contributors: [{ id: 1, $age: 2 }] }],
+    'age 2',
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors.$plonki')
+      .get()
+      .then((v) => v.toObject()),
+    [{ id: 1, contributors: [{ id: 1, $plonki: 100 }] }],
+    'plonki 100',
+  )
+})
+
+await test('single ref update', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.start({ clean: true })
+
+  await db.setSchema({
+    types: {
+      user: {},
+      article: {
+        props: {
+          writer: {
+            ref: 'user',
+            prop: 'article',
+            $derp: 'uint8',
+            $age: 'uint8',
+            $plonki: 'uint8',
+          },
+        },
+      },
+    },
+  })
+
+  const mrSnurp = await db.create('user', {})
+
+  const strudel = await db.create('article', {
+    writer: {
+      id: mrSnurp,
+      $derp: 99,
+      $age: 66,
+      $plonki: 100,
+    },
+  })
+
+  deepEqual(
+    await db.query('article').include('writer.$age').get(),
+    [{ id: 1, writer: { id: 1, $age: 66 } }],
+    'age 66',
+  )
+
+  await db.update('article', strudel, {
+    writer: {
+      id: mrSnurp,
+      $derp: 201,
+      $age: 202,
+    },
+  })
+
+  deepEqual(
+    await db.query('article').include('writer.$age').get(),
+    [{ id: 1, writer: { id: 1, $age: 202 } }],
+    'age 202',
+  )
+
+  deepEqual(
+    await db.query('article').include('writer.$plonki').get(),
+    [{ id: 1, writer: { id: 1, $plonki: 100 } }],
+    'plonki 100',
   )
 })

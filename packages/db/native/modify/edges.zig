@@ -40,8 +40,6 @@ pub fn writeEdges(
             };
             const val = db.getEdgeProp(ref, edgeFieldSchema);
 
-            // std.debug.print("DERP {any} {any} {any} {any} {any} \n", .{ edgeConstraint, ref, val, edgeFieldSchema, prop });
-
             if (val.len > 0) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;

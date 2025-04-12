@@ -40,6 +40,15 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const node = try db.upsertNode(id, refTypeEntry);
 
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
+
+        std.debug.print("YO {any} \n", .{ref});
+
+        //
+        //  const refsIndex = r.index[0..r.nr_refs];
+        // const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
+        // Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
+        //
+
         if (hasEdgeData) {
             const sizepos = if (hasIndex) i + 9 else i + 5;
             const edgelen = read(u32, data, sizepos);
