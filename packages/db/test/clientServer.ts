@@ -1,14 +1,47 @@
 import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
+import { setTimeout } from 'node:timers/promises'
 import test from './shared/test.js'
 
-await test('client server', async (t) => {
+const start = async (t, clientsN = 2) => {
+  const hooks: DbClientHooks = {
+    async setSchema(schema, fromStart, transformFns) {
+      schema = { ...schema }
+      await setTimeout(20)
+      const { ...res } = await server.setSchema(schema, fromStart, transformFns)
+      await setTimeout(~~(Math.random() * 100))
+      return res
+    },
+    async flushModify(buf) {
+      buf = new Uint8Array(buf)
+      await setTimeout(20)
+      const { ...offsets } = server.modify(buf)
+      await setTimeout(~~(Math.random() * 100))
+      return { offsets }
+    },
+    async getQueryBuf(buf) {
+      buf = new Uint8Array(buf)
+      await setTimeout(20)
+      const res = await server.getQueryBuf(buf)
+      await setTimeout(~~(Math.random() * 100))
+      return res
+    },
+  }
+
+  const clients = Array.from({ length: clientsN }).map(
+    () =>
+      new DbClient({
+        hooks: { ...hooks },
+      }),
+  )
+
   const server = new DbServer({
     path: t.tmp,
     onSchemaChange(schema) {
-      client1.putLocalSchema(schema)
-      client2.putLocalSchema(schema)
+      for (const client of clients) {
+        client.putLocalSchema(schema)
+      }
     },
   })
 
@@ -18,30 +51,13 @@ await test('client server', async (t) => {
     return server.destroy()
   })
 
-  const hooks: DbClientHooks = {
-    async setSchema(schema, fromStart, transformFns) {
-      return server.setSchema(schema, fromStart, transformFns)
-    },
-    async flushModify(buf) {
-      const offsets = server.modify(buf)
-      return { offsets }
-    },
-    async getQueryBuf(buf) {
-      return server.getQueryBuf(buf)
-    },
-    flushIsReady: new Promise(() => {}),
-    flushReady: () => {},
-    flushTime: 0,
-  }
+  return { clients, server }
+}
 
-  const client1 = new DbClient({
-    hooks,
-  })
-
-  const client2 = new DbClient({
-    hooks,
-  })
-
+await test('client server', async (t) => {
+  const {
+    clients: [client1, client2],
+  } = await start(t)
   await client1.setSchema({
     types: {
       user: {
@@ -99,7 +115,7 @@ await test('client server', async (t) => {
     name: 'fred',
   })
 
-  const marie = client1.create('user', {
+  const marie = client2.create('user', {
     name: 'marie',
   })
 
@@ -121,4 +137,62 @@ await test('client server', async (t) => {
     ],
     favoriteUser: { id: 4, age: 0, name: 'marie' },
   })
+})
+
+await test('client server rapid fire', async (t) => {
+  const promises = []
+  const clientsN = 4
+  const nodesN = 1000
+
+  const { clients } = await start(t, clientsN)
+
+  await clients[0].setSchema({
+    types: {
+      user: {
+        name: 'string',
+      },
+    },
+  })
+
+  await new Promise<void>((resolve) => {
+    let i = ~~(nodesN / clientsN)
+    let interval = setInterval(() => {
+      if (i--) {
+        promises.push(
+          clients.map(async (client, clientI) => {
+            await setTimeout(~~(Math.random() * 100))
+            await Promise.all([
+              client.create('user', {
+                name: `user${clientI} ${nodesN - i}`,
+              }),
+              client.query('user').get(),
+            ])
+          }),
+        )
+      } else {
+        clearInterval(interval)
+        resolve()
+      }
+    }, 5)
+  })
+
+  console.log('end interval', promises.length)
+  await Promise.all(promises)
+
+  console.log('done test!')
+
+  const allUsers1 = await clients[0]
+    .query('user')
+    .range(0, 100_000)
+    .get()
+    .toObject()
+
+  let id = 0
+  for (const user of allUsers1) {
+    id++
+    if (user.id !== id) {
+      console.log('incorrect', user, 'expected', id)
+      throw new Error('incorrect id sequence')
+    }
+  }
 })
