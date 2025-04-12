@@ -275,8 +275,6 @@ export class DbServer {
     }
     let sortIndex = fields[prop.start]
     if (sortIndex) {
-      // [2 type] [1 field] [2 start] [1 lang]
-
       const buf = new Uint8Array(6)
       buf[0] = t.id
       buf[1] = t.id >>> 8
@@ -573,7 +571,10 @@ export class DbServer {
     this.queryQueue.set(resolve, buf)
   }
 
-  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
+  getQueryBuf(
+    buf: Uint8Array,
+    fromQueue: boolean = false,
+  ): Promise<Uint8Array> {
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
@@ -610,6 +611,10 @@ export class DbServer {
         // This will be more advanced - sometimes has indexes / sometimes not
       }
 
+      if (!fromQueue) {
+        native.expire(this.dbCtxExternal)
+      }
+
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length
       return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
@@ -629,8 +634,9 @@ export class DbServer {
       if (this.queryQueue.size) {
         const queryQueue = this.queryQueue
         this.queryQueue = new Map()
+        native.expire(this.dbCtxExternal)
         for (const [resolve, buf] of queryQueue) {
-          resolve(this.getQueryBuf(buf))
+          resolve(this.getQueryBuf(buf, true))
         }
       }
     }
