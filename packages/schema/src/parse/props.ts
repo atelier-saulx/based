@@ -157,10 +157,15 @@ function propParser<PropType extends SchemaAnyProp>(
 
 const p: Record<string, ReturnType<typeof propParser>> = {}
 
+const isDefault = (val, prop, ctx) => {
+  // val, prop, ctx
+}
+
 p.boolean = propParser<SchemaBoolean>(
   STUB,
   {
-    default(val) {
+    default(val, prop, ctx) {
+      console.log(prop)
       expectBoolean(val)
     },
   },

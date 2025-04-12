@@ -20,6 +20,7 @@ const dbSort = @import("../db/sort.zig");
 const increment = Update.increment;
 const config = @import("config");
 const read = utils.read;
+const errors = @import("../errors.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -93,9 +94,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 if (config.enable_debug) {
                     // Only assert this on DEBUG scince it makes it a lot slower
                     ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
-                        std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
+                        std.log.err("Overflow ID error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
                         return err;
                     };
+                    if (ctx.id == 0) {
+                        std.log.err("ID == 0 error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
+                        return errors.SelvaError.SELVA_EINVAL;
+                    }
                 }
                 ctx.id = read(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);

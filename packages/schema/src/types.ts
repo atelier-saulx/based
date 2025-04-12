@@ -193,11 +193,13 @@ type NeverInItems = { required?: never }
 
 export type SchemaReferences = Prop<{
   type?: 'references'
+  default?: number[]
   items: SchemaReference & NeverInItems
 }>
 
 export type SchemaReferencesOneWay = Prop<{
   type?: 'references'
+  default?: number[]
   items: SchemaReferenceOneWay & NeverInItems
 }>
 
@@ -259,7 +261,7 @@ export type SchemaBoolean = Prop<{
 
 export type SchemaCardinality = Prop<{
   type: 'cardinality'
-  default?: string // receives a string which cardinality will be calculated
+  // default?: string[]
   maxBytes?: number // should be fixed
   mime?: Mime // TODO: check if this is correct
   format?: NumberDisplay // when queried should return the count
@@ -273,7 +275,7 @@ export type SchemaVector = Prop<{
 
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
-  default?: number | Date
+  default?: number | Date | string
   on?: 'create' | 'update'
   display?: DateDisplay
   min?: number | string
@@ -283,14 +285,14 @@ export type SchemaTimestamp = Prop<{
 
 export type SchemaReferenceOneWay = Prop<{
   type?: 'reference'
-  default?: string
+  default?: number
   ref: string
   mime?: Mime
 }>
 
 export type SchemaReference = Prop<{
   type?: 'reference'
-  default?: string
+  default?: number
   ref: string
   prop: string
   dependent?: boolean
@@ -317,7 +319,7 @@ export type SchemaReferencesWithQuery = SchemaReferencesOneWay & {
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
-  default?: EnumItem
+  default?: EnumItem | undefined
   enum: EnumItem[]
 }>
 
