@@ -120,6 +120,7 @@ await test('client server', async (t) => {
   })
 
   await client1.isModified()
+  await client2.isModified()
 
   const res = await client1.update('user', youzi, {
     name: 'youzi',
