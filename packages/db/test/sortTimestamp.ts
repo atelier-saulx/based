@@ -162,8 +162,6 @@ await test('sort multicore', async (t) => {
     'asc',
   )
 
-  console.log('\n\n---------FROM HERE')
-
   const q = []
   for (let j = 0; j < 2; j++) {
     q.push(
