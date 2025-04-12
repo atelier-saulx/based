@@ -556,10 +556,18 @@ export class DbServer {
     }
   }
 
+  addToQueryQueue(resolve, buf) {
+    if (this.queryQueue.size === 16777216) {
+      resolve(new Error('Query queue exceeded'))
+      return
+    }
+    this.queryQueue.set(resolve, buf)
+  }
+
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
-        this.queryQueue.set(resolve, buf)
+        this.addToQueryQueue(resolve, buf)
       })
     } else {
       const queryType = buf[0]
@@ -575,7 +583,7 @@ export class DbServer {
           if (!sortIndex) {
             if (this.processingQueries) {
               return new Promise((resolve) => {
-                this.queryQueue.set(resolve, buf)
+                this.addToQueryQueue(resolve, buf)
               })
             }
             sortIndex = this.createSortIndexBuffer(
@@ -603,16 +611,18 @@ export class DbServer {
     this.processingQueries--
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
-        for (const buf of this.modifyQueue) {
+        const modifyQueue = this.modifyQueue
+        this.modifyQueue = []
+        for (const buf of modifyQueue) {
           this.#modify(buf)
         }
-        this.modifyQueue = []
       }
       if (this.queryQueue.size) {
-        for (const [resolve, buf] of this.queryQueue) {
+        const queryQueue = this.queryQueue
+        this.queryQueue = new Map()
+        for (const [resolve, buf] of queryQueue) {
           resolve(this.getQueryBuf(buf))
         }
-        this.queryQueue.clear()
       }
     }
   }

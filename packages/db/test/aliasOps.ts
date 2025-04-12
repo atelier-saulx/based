@@ -102,7 +102,7 @@ await test('await updates', async (t) => {
     await updateAlias()
     if (!(i % 10000)) {
       const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
-      console.log(`${~~opsPerS} per sec`)
+      //console.log(`${~~opsPerS} per sec`)
       lastMeasure = Date.now()
       totalAlias = 0
     }

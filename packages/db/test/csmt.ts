@@ -2,13 +2,12 @@ import { strict as assert, notEqual } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
-import { base64encode } from '../src/utils.js'
 import { Csmt, createTree } from '../src/server/csmt/index.js'
-import { decodeBase64, deepEqual } from '@saulx/utils'
+import { decodeBase64, encodeBase64, deepEqual } from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
 
-const shortHash = (buf: Uint8Array) => base64encode(buf).substring(0, 5)
+const shortHash = (buf: Uint8Array) => encodeBase64(buf).substring(0, 5)
 
 function testHashGen() {
   const f = createHash('sha256')
@@ -102,44 +101,6 @@ await test('insert: Same key can be only inserted once', async (t) => {
 
   assert.throws(() => tree.insert(5, ENCODER.encode('c')))
   assert.equal(shortHash(tree.getRoot().hash), 'OvuAS')
-})
-
-// FDN-791
-// The original paper (https://eprint.iacr.org/2018/955.pdf) states:
-// > 2.4 History Independence
-// > A unique set of keys produce a deterministic root hash,
-// > regardless of the order in which keys have been inserted or removed.
-// However, this is not true.
-await test.skip('insert: Trees are reproducible regardless of the insertion order', async (t) => {
-  const tree1 = createTree(testHashGen)
-  const tree2 = createTree(testHashGen)
-
-  tree1.insert(1, ENCODER.encode('a'))
-  tree1.insert(2, ENCODER.encode('b'))
-  tree1.insert(3, ENCODER.encode('c'))
-  tree1.insert(4, ENCODER.encode('d'))
-
-  tree2.insert(2, ENCODER.encode('b'))
-  tree2.insert(4, ENCODER.encode('d'))
-  tree2.insert(3, ENCODER.encode('c'))
-  tree2.insert(1, ENCODER.encode('a'))
-
-  assert.deepEqual(tree1.getRoot(), tree2.getRoot())
-})
-
-await test.skip('insert: Trees are reproducible regardless of the insertion order 2', async (t) => {
-  const tree1 = createTree(testHashGen)
-  const tree2 = createTree(testHashGen)
-
-  tree1.insert(4294967297, ENCODER.encode('a'))
-  tree1.insert(8589934593, ENCODER.encode('b'))
-  tree1.insert(12884901889, ENCODER.encode('c'))
-
-  tree2.insert(8589934593, ENCODER.encode('b'))
-  tree2.insert(12884901889, ENCODER.encode('c'))
-  tree2.insert(4294967297, ENCODER.encode('a'))
-
-  assert.deepEqual(tree1.getRoot(), tree2.getRoot())
 })
 
 await test('insert: Difference in a single node causes the root hash to differ', async (t) => {

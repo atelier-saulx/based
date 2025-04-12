@@ -119,7 +119,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
     registerFunction(env, exports, "equals", string.equals) catch return null;
-    registerFunction(env, exports, "base64encode", string.base64encode) catch return null;
 
     registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
     registerFunction(env, exports, "destroySortIndex", sort.destroySortIndexNode) catch return null;

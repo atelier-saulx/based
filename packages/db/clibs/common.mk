@@ -35,6 +35,7 @@ ifeq ($(EN_VALGRIND),1)
 endif
 
 # Must use LD_PRELOAD=/usr/lib/gcc/aarch64-linux-gnu/12/libasan.so to load libasan
+# or /lib64/libasan.so.8 on Fedora
 ifeq ($(EN_SANIT),1)
 	SANITIZERS := address,leak,undefined
 	CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
