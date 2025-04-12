@@ -13,6 +13,8 @@ export const counts = {
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
+
+const errorFiles = new Set<string>()
 const errors = new Set<string>()
 
 const test = async (
@@ -125,6 +127,9 @@ const test = async (
     console.log(picocolors.red(msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
 
+    const x = global._currentTestPath.split('/')
+    errorFiles.add(`${x[x.length - 1]}`)
+
     if (global.stopOnCrash) {
       process.exit(1)
     }
@@ -222,7 +227,9 @@ Good: ${counts.success}
 
   if (counts.errors > 0) {
     if (!process.env.TEST_TO_RUN) {
-      // msg = `Failed tests: \n${Array.from(errors).join('\n\n')}\n${msg}`
+      msg = `Files: \n${Array.from(errorFiles)
+        .map((v) => '  ' + v)
+        .join('\n')}\n${msg}`
     }
     console.log(picocolors.red(msg))
   } else if (counts.success) {

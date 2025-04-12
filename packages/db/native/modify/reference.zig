@@ -20,13 +20,27 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         id = id + Modify.getIdOffset(ctx, refTypeId);
     }
 
-    const oldRefDst = db.getReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-    if (oldRefDst) |dstNode| {
-        Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), selva.selva_get_node_id(dstNode));
+    var ref: ?*selva.SelvaNodeReference = null;
+    var node: db.Node = undefined;
+    const oldRefDst = db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+    if (oldRefDst) |r| {
+        const dstNode = r.*.dst;
+        if (dstNode) |d| {
+            if (db.getNodeId(d) == id) {
+                ref = oldRefDst;
+                if (hasEdges) {
+                    Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
+                }
+            } else {
+                Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
+            }
+        }
     }
 
-    const node = try db.upsertNode(id, refTypeEntry);
-    const ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+    if (ref == null) {
+        node = try db.upsertNode(id, refTypeEntry);
+        ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+    }
 
     if (hasEdges) {
         const totalEdgesLen = read(u32, data, 5);

@@ -208,10 +208,10 @@ pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang
 
 pub fn getReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?Node {
     const result = selva.selva_fields_get_reference(ctx.selva, node, selvaFieldSchema);
-    if (result == null) {
-        return null;
+    if (result) |r| {
+        return r.*.dst;
     }
-    return result.?.*.dst;
+    return null;
 }
 
 pub fn getSingleReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?*selva.SelvaNodeReference {
@@ -256,15 +256,21 @@ pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSch
         value,
         @ptrCast(&ref),
     )) catch |err| {
+        // REMOVE THIS
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const result = selva.selva_fields_get_reference(ctx.selva, src, fieldSchema);
             if (result == null) {
                 return err;
             }
+
+            std.debug.print("HERE?????? \n", .{});
+            // does it get here ever?
+            return result;
         } else {
             return err;
         }
     };
+
     return ref;
 }
 

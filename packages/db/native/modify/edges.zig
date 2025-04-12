@@ -34,8 +34,14 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
-            const val = db.getEdgeProp(ref, edgeFieldSchema.?);
+            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch {
+                std.log.err("Edge field schema cannot be found \n", .{});
+                return;
+            };
+            const val = db.getEdgeProp(ref, edgeFieldSchema);
+
+            // std.debug.print("DERP {any} {any} {any} {any} {any} \n", .{ edgeConstraint, ref, val, edgeFieldSchema, prop });
+
             if (val.len > 0) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;

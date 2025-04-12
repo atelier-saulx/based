@@ -73,14 +73,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 selva.hll_add(currentData, hash);
                 i += 8;
             }
-            // utils.debugPrint("ctx.currentSortIndex: {any}\n", .{ctx.currentSortIndex});
-            // utils.debugPrint("ctx.typeSortIndex: {any}\n\n", .{ctx.typeSortIndex});
             if (ctx.currentSortIndex != null) {
                 const newCount = selva.hll_count(currentData);
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
             }
-
             return len * 8;
         },
         else => {
@@ -90,7 +87,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 return len;
             }
             const slice = data[4 .. len + 4];
-            if (ctx.field == 0) {
+
+            if (ctx.field == types.MAIN_PROP) {
                 if (ctx.typeSortIndex != null) {
                     var currentData: ?[]u8 = null;
                     var it = ctx.typeSortIndex.?.main.iterator();
@@ -123,11 +121,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
-
                     if (old > 0) {
-                        // db.delAlias(ctx.typeEntry.?, old, ctx.field) catch |e| {
-                        //     if (e != error.SELVA_ENOENT) return e;
-                        // };
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(old, ctx.typeEntry.?).?);
                         }

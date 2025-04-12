@@ -23,7 +23,7 @@ await test('number', async (t) => {
             // $number: 'number',
             // $int8: 'int8',
             $uint8: 'uint8',
-            // $int16: 'int16',
+            $int16: 'int16',
             // $uint16: 'uint16',
             // $int32: 'int32',
             // $uint32: 'uint32',
@@ -37,7 +37,17 @@ await test('number', async (t) => {
   const user2 = await db.create('user', {
     bestFriend: {
       id: user1,
-      $uint8: 1,
+      $uint8: 21,
     },
   })
+
+  console.log('\n------------DERP DERP')
+  await db.update('user', user2, {
+    bestFriend: {
+      id: user1,
+      $uint8: { increment: 66 },
+    },
+  })
+
+  await db.query('user', user2).include('**').get().inspect()
 })
