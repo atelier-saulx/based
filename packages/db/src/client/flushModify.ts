@@ -23,8 +23,11 @@ export class ModifyCtx {
   id = -1
   hasSortField = -1
   hasSortText = -1
-  queue = new Map<(payload: any) => void, ModifyState>()
-  ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
+
+  ctx: {
+    queue?: Map<(payload: any) => void, ModifyState>
+    offsets?: Record<number, number>
+  } = {}
 
   payload: Uint8Array
 
@@ -115,9 +118,10 @@ export const flushBuffer = (db: DbClient) => {
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
-    const queue = ctx.queue
+
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
       resCtx.offsets = offsets
+
       for (const typeId in lastIds) {
         if (typeId in offsets) {
           const lastId = lastIds[typeId] + offsets[typeId]
@@ -131,16 +135,19 @@ export const flushBuffer = (db: DbClient) => {
           console.warn('no offset returned, very wrong')
         }
       }
-      db.writeTime += Date.now() - d
-      if (queue.size) {
-        flushPromise.then(() => {
-          for (const [resolve, res] of queue) {
-            resolve(res.getId())
-          }
-        })
+
+      if (resCtx.queue?.size) {
+        const queue = resCtx.queue
+        resCtx.queue = null
+        for (const [resolve, res] of queue) {
+          resolve(res.getId())
+        }
       }
+
+      db.writeTime += Date.now() - d
       db.flushReady()
     })
+
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()
     ctx.len = 0
@@ -148,7 +155,6 @@ export const flushBuffer = (db: DbClient) => {
     ctx.prefix1 = -1
     ctx.max = db.maxModifySize
     ctx.ctx = {}
-    ctx.queue = new Map()
   } else {
     db.flushReady()
   }

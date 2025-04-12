@@ -2,9 +2,8 @@ import { compress, decompress } from './client/string.js'
 import { ModifyCtx } from './client/flushModify.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
-import picocolors from 'picocolors'
 import { wait } from '@saulx/utils'
-import { inspect } from 'node:util'
+import { debugMode, debugServer } from './utils.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -23,23 +22,18 @@ export class BasedDb {
   fileSystemPath: string
   maxModifySize: number
 
-  constructor(opts: { path: string; maxModifySize?: number; debug?: boolean }) {
+  constructor(opts: {
+    path: string
+    maxModifySize?: number
+    debug?: boolean | 'server'
+  }) {
     this.#init(opts)
 
     if (opts.debug) {
-      const opts = { showHidden: false, depth: null, colors: true }
-      const map = (v) => (typeof v === 'object' ? inspect(v, opts) : v)
-      let cnt = 0
-      for (const key in this) {
-        const fn = this[key]
-        if (typeof fn === 'function') {
-          // @ts-ignore
-          this[key] = function (this: BasedDb) {
-            const str = [++cnt, `[${key}]`, ...arguments].map(map).join(' ')
-            console.info(picocolors.dim(str))
-            return fn.apply(this, arguments)
-          }
-        }
+      if (opts.debug === 'server') {
+        debugServer(this.server)
+      } else {
+        debugMode(this)
       }
     }
   }

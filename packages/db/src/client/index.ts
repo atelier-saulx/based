@@ -22,6 +22,7 @@ import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
+import { debugMode } from '../utils.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -39,6 +40,7 @@ type DbClientOpts = {
   hooks: DbClientHooks
   maxModifySize?: number
   flushTime?: number
+  debug?: boolean
 }
 
 type DbClientSchema = StrictSchema & { lastId: number }
@@ -57,12 +59,16 @@ export class DbClient {
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
     flushTime = 0,
+    debug,
   }: DbClientOpts) {
     this.hooks = hooks
     this.maxModifySize = maxModifySize
     this.modifyCtx = new ModifyCtx(this)
     this.flushTime = flushTime
     makeFlushIsReady(this)
+    if (debug) {
+      debugMode(this)
+    }
   }
 
   flushTime: number

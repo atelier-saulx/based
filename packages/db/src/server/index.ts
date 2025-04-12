@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
+import { debugMode, debugServer } from '../utils.js'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -66,10 +67,6 @@ export class DbWorker {
     })
 
     port1.on('message', (buf) => {
-      // TODO FIX TYPES CHECK IF THIS MAKES A COPY
-      // It's a copy, if you don't want a copy you'd need to make it an explicit view
-      // to the underlying buffer:
-      // new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
       this.resolvers.shift()(new Uint8Array(buf))
       this.db.onQueryEnd()
     })
@@ -125,15 +122,20 @@ export class DbServer {
     path,
     maxModifySize = 100 * 1e3 * 1e3,
     onSchemaChange,
+    debug,
   }: {
     path: string
     maxModifySize?: number
     onSchemaChange?: OnSchemaChange
+    debug?: boolean
   }) {
     this.maxModifySize = maxModifySize
     this.fileSystemPath = path
     this.sortIndexes = {}
     this.onSchemaChange = onSchemaChange
+    if (debug) {
+      debugServer(this)
+    }
   }
 
   #resizeModifyDirtyRanges() {
@@ -199,7 +201,7 @@ export class DbServer {
               for (const lang in this.sortIndexes[type][field][start]) {
                 const sortIndex = this.sortIndexes[type][field][start][lang]
                 sortIndex.cnt /= 2
-                if (sortIndex.cnt < 1) {
+                if (!this.processingQueries && sortIndex.cnt < 1) {
                   native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
                   delete this.sortIndexes[type][field][start][lang]
                 } else {
