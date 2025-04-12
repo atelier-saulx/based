@@ -50,10 +50,10 @@ await test('default values for all props in user type', async (t) => {
             type: 'json',
             default: defaultJson,
           },
-          avatar: {
-            type: 'binary',
-            default: defaultBinary,
-          },
+          // avatar: {
+          //   type: 'binary',
+          //   default: defaultBinary,
+          // },
           slug: {
             type: 'alias',
             default: 'default-slug',

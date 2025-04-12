@@ -193,7 +193,7 @@ export const isDefault = (val, prop, ctx) => {
     min: parseMinMaxStep(prop.min),
   }
   if (!validation(val, propDef)) {
-    throw new Error(`Incorrect default on "${prop.type ?? 'enum'}"`)
+    throw new Error(`Incorrect default for type "${prop.type ?? 'enum'}"`)
   }
   if ('enum' in prop) {
     if (val === undefined) {
