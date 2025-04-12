@@ -1,3 +1,11 @@
+import { convertToTimestamp } from '@saulx/utils'
+import {
+  NUMBER,
+  PropDef,
+  REVERSE_TYPE_INDEX_MAP,
+  TYPE_INDEX_MAP,
+} from '../def/types.js'
+import { VALIDATION_MAP } from '../def/validation.js'
 import {
   SchemaAnyProp,
   SchemaBoolean,
@@ -45,6 +53,8 @@ import {
 } from './errors.js'
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
+import { DEFAULT_MAP } from '../def/defaultMap.js'
+import { getPropLen, parseMinMaxStep } from '../def/utils.js'
 let stringFormatsSet: Set<string>
 let numberDisplaysSet: Set<string>
 let dateDisplaysSet: Set<string>
@@ -157,16 +167,48 @@ function propParser<PropType extends SchemaAnyProp>(
 
 const p: Record<string, ReturnType<typeof propParser>> = {}
 
-const isDefault = (val, prop, ctx) => {
-  // val, prop, ctx
+export const isDefault = (val, prop, ctx) => {
+  let typeIndex: number
+  typeIndex = TYPE_INDEX_MAP[prop.type]
+  if ('enum' in prop) {
+    typeIndex = TYPE_INDEX_MAP['enum']
+  }
+  if (prop.type === 'timestamp') {
+    val = convertToTimestamp(val)
+  }
+  const validation = prop.validation || VALIDATION_MAP[typeIndex]
+  const propDef: PropDef = {
+    typeIndex,
+    __isPropDef: true,
+    start: 0,
+    path: [],
+    prop: 0,
+    len: 0,
+    separate: false,
+    enum: prop.enum,
+    validation,
+    default: DEFAULT_MAP[typeIndex],
+    step: parseMinMaxStep(prop.step ?? typeIndex === NUMBER ? 0 : 1),
+    max: parseMinMaxStep(prop.max),
+    min: parseMinMaxStep(prop.min),
+  }
+  if (!validation(val, propDef)) {
+    throw new Error(`Incorrect default for type "${prop.type ?? 'enum'}"`)
+  }
+  if ('enum' in prop) {
+    if (val === undefined) {
+      return 0
+    }
+    return prop.enum.findIndex((v) => v === val) + 1
+  }
+  return val
 }
 
 p.boolean = propParser<SchemaBoolean>(
   STUB,
   {
     default(val, prop, ctx) {
-      console.log(prop)
-      expectBoolean(val)
+      return isDefault(val, prop, ctx)
     },
   },
   0,
@@ -179,8 +221,8 @@ p.vector = propParser<SchemaVector>(
     },
   },
   {
-    default(val) {
-      expectFloat32Array(val)
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
   0,
@@ -203,10 +245,8 @@ p.enum = propParser<SchemaEnum>(
     },
   },
   {
-    default(val, prop) {
-      if (!prop.enum.includes(val)) {
-        throw Error(EXPECTED_VALUE_IN_ENUM)
-      }
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
   1,
@@ -232,21 +272,8 @@ const numberOpts = {
       throw Error(INVALID_VALUE)
     }
   },
-  default(val, prop) {
-    expectNumber(val)
-    if (val > prop.max || val < prop.min) {
-      throw Error(OUT_OF_RANGE)
-    }
-
-    if (prop.step !== 'any') {
-      const min =
-        typeof prop.min !== 'number' || prop.min === Infinity ? 0 : prop.min
-      const v = val - min
-
-      if (~~(v / prop.step) * prop.step !== v) {
-        throw Error(INVALID_VALUE)
-      }
-    }
+  default(val, prop, ctx) {
+    return isDefault(val, prop, ctx)
   },
 }
 
@@ -264,11 +291,7 @@ p.object = propParser<SchemaObject | SchemaObjectOneWay>(
       ctx.parseProps(val, ctx.type)
     },
   },
-  {
-    default(val) {
-      console.warn('TODO object default value')
-    },
-  },
+  {},
 )
 
 p.set = propParser<SchemaSet>(
@@ -319,18 +342,15 @@ p.references = propParser<SchemaReferences>(
     },
   },
   {
-    default(val, prop) {
-      console.warn('TODO SET DEFAULT VALUE')
-      // if (typeof val === 'object') {
-      //   throwErr(ERRORS.EXPECTED_PRIMITIVE, prop, 'default')
-      // }
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
 )
 
 const binaryOpts = {
-  default(val) {
-    expectString(val)
+  default(val, prop, ctx) {
+    return isDefault(val, prop, ctx)
   },
   format(val) {
     expectString(val)
@@ -383,7 +403,8 @@ p.text = propParser<SchemaText>(
   {
     format: binaryOpts.format,
     default(val, prop) {
-      console.warn('MAKE DEFAULT VALUE FOR TEXT')
+      // console.warn('MAKE DEFAULT VALUE FOR TEXT')
+      return true
     },
   },
   0,
@@ -415,10 +436,8 @@ p.timestamp = propParser<SchemaTimestamp>(
         throw Error(INVALID_VALUE)
       }
     },
-    default(val) {
-      if (typeof val !== 'number' && !(val instanceof Date)) {
-        throw Error(EXPECTED_DATE)
-      }
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
     on(val) {
       if (val !== 'create' && val !== 'update') {
@@ -498,8 +517,8 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
   },
   {
     mime: binaryOpts.mime,
-    default(val) {
-      expectString(val)
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
     edge(val, prop, ctx, key) {
       const edgeAllowed = ctx.type && !ctx.inQuery
@@ -533,8 +552,8 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
 p.alias = propParser<SchemaAlias>(
   STUB,
   {
-    default(val) {
-      expectString(val)
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
     format: binaryOpts.format,
   },
@@ -544,8 +563,8 @@ p.alias = propParser<SchemaAlias>(
 p.cardinality = propParser<SchemaCardinality>(
   STUB,
   {
-    default(val) {
-      expectNumber(val)
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
   0,
@@ -554,8 +573,8 @@ p.cardinality = propParser<SchemaCardinality>(
 p.json = propParser<SchemaJson>(
   STUB,
   {
-    default(val) {
-      expectObject(val)
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
   0,

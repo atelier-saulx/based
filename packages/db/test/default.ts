@@ -1,8 +1,9 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { convertToTimestamp } from '@saulx/utils'
 
-const defaultTimestamp = 1678886400000 // Specific date: 2023-03-15T12:00:00.000Z
+const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
@@ -53,7 +54,6 @@ await test('default values for all props in user type', async (t) => {
           //   type: 'binary',
           //   default: defaultBinary,
           // },
-          // Alias
           slug: {
             type: 'alias',
             default: 'default-slug',
@@ -62,15 +62,14 @@ await test('default values for all props in user type', async (t) => {
             type: 'text',
             default: defaultText,
           },
-          // friends: {
-          //   type: 'references',
-          //   items: {
-          //     ref: 'user', // Self-reference for simplicity in this test
-          //     prop: 'friends',
-          //   },
-          //   default: [], // something in there
-          // },
-          // Nested Object
+          friends: {
+            type: 'references',
+            items: {
+              ref: 'user', // Self-reference for simplicity in this test
+              prop: 'friends',
+            },
+            // default: [], // something in there
+          },
           meta: {
             props: {
               rating: {
@@ -91,13 +90,13 @@ await test('default values for all props in user type', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query('user', userId).get(),
+    await db.query('user', userId).include('*', '**').get().inspect(),
     {
       id: userId,
       isNice: true,
       name: 'Default Name',
       count: 42,
-      eventTime: defaultTimestamp,
+      eventTime: convertToTimestamp(defaultTimestamp),
       level: 'medium',
       config: defaultJson,
       avatar: defaultBinary,
@@ -127,7 +126,7 @@ await test('default values for all props in user type', async (t) => {
       isNice: false,
       name: '',
       count: 0,
-      eventTime: defaultTimestamp,
+      eventTime: convertToTimestamp(defaultTimestamp),
       level: undefined,
       config: null,
       avatar: null,

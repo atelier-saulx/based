@@ -1,4 +1,5 @@
 import { getPropType, SchemaReference } from '../index.js'
+import { DEFAULT_MAP } from './defaultMap.js'
 import {
   PropDef,
   TYPE_INDEX_MAP,
@@ -42,6 +43,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         len,
         separate,
         path: [...prop.path, key],
+        default: edgeProp.default ?? DEFAULT_MAP[typeIndex],
         start: prop.edgeMainLen,
       }
 

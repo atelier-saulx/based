@@ -1,5 +1,10 @@
 import { ModifyCtx } from '../../index.js'
-import { MICRO_BUFFER, PropDef, SchemaTypeDef } from '@based/schema/def'
+import {
+  MICRO_BUFFER,
+  PropDef,
+  SchemaTypeDef,
+  isValidId,
+} from '@based/schema/def'
 import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -8,7 +13,6 @@ import { ModifyOpts, RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
-import { isValidId } from '../query/validation.js'
 
 type Payload = Record<string, any>
 
