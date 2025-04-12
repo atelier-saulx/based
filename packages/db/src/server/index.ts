@@ -501,6 +501,7 @@ export class DbServer {
       const def = this.schemaTypesParsedById[typeId]
       const offset = def.lastId - startId
 
+      console.log(offset, def.lastId, startId)
       buf[i++] = offset
       buf[i++] = offset >>> 8
       buf[i++] = offset >>> 16

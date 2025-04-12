@@ -94,6 +94,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
                     return err;
                 };
+                ctx.id = read(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },

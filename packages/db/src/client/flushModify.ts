@@ -55,6 +55,7 @@ export class ModifyCtx {
     if (this.dirtyTypes.has(schema.id)) {
       return
     }
+    console.log('SET LAST ID', schema.lastId)
     this.dirtyTypes.set(schema.id, schema.lastId)
     this.updateMax()
   }
@@ -92,6 +93,8 @@ export class ModifyCtx {
       data[i++] = lastId >>> 8
       data[i++] = lastId >>> 16
       data[i++] = lastId >>> 24
+
+      console.log('xxx', startId, lastId)
     }
     const view = new DataView(data.buffer, data.byteOffset)
     for (let key of this.dirtyRanges) {
