@@ -1,3 +1,4 @@
+import { convertToTimestamp } from '@saulx/utils'
 import {
   BINARY,
   BOOLEAN,
@@ -26,7 +27,13 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
     const t = f.typeIndex
     const s = f.start
     let val = f.default
-    if (t === BOOLEAN || t === INT8 || t === UINT8 || t === ENUM) {
+
+    if (t === ENUM) {
+      mainEmpty[s] =
+        typeof f.default === 'number' ? f.default : f.reverseEnum[val]
+    } else if (t === INT8 || t === UINT8) {
+      mainEmpty[s] = val
+    } else if (t === BOOLEAN) {
       mainEmpty[s] = val === true ? 1 : 0
     } else if (t === UINT32 || t === INT32) {
       mainEmpty[s] = val
@@ -38,7 +45,7 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
       mainEmpty[s + 1] = val >>>= 8
     } else if (t === NUMBER || t === TIMESTAMP) {
       const view = new DataView(mainEmpty.buffer, s, 8)
-      view.setFloat64(0, val, true)
+      view.setFloat64(0, convertToTimestamp(val), true)
     } else if (t === STRING) {
       val = ENCODER.encode(val)
       mainEmpty[s] = val.byteLength

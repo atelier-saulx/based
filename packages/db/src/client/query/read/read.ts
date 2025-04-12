@@ -42,7 +42,6 @@ import {
   CREATE_AGGREGATION,
   AggFlag,
 } from '../types.js'
-import { inspect } from 'node:util'
 
 export type Item = {
   id: number
@@ -190,7 +189,7 @@ const handleUndefinedProps = (
   if (q.aggregation == AggFlag.NONE || q.aggregation == null) {
     for (const k in q.include.propsRead) {
       if (q.include.propsRead[k] !== id) {
-        // Only relvant for seperate props
+        // Only relevant for seperate props
         const prop = q.schema.reverseProps[k]
         if (prop.typeIndex === CARDINALITY) {
           addField(prop, 0, item)

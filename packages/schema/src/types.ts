@@ -243,7 +243,7 @@ export type SchemaString = Prop<{
 
 export type SchemaBinary = Prop<{
   type: 'binary'
-  default?: ArrayBuffer
+  default?: Uint8Array
   maxBytes?: number
   mime?: Mime
   format?: StringFormat
@@ -464,3 +464,4 @@ export const isPropType = <T extends SchemaPropTypes>(
 }
 
 export const MAX_ID = 4294967295
+export const MIN_ID = 1

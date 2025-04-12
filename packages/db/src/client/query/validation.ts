@@ -31,7 +31,13 @@ import { Filter } from './query.js'
 import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
-import { LangCode, langCodesMap, MAX_ID } from '@based/schema'
+import {
+  isValidId,
+  isValidString,
+  LangCode,
+  langCodesMap,
+  MAX_ID,
+} from '@based/schema'
 
 export type QueryError = {
   code: number
@@ -145,25 +151,10 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
   return r
 }
 
-export const isValidId = (id: number) => {
-  if (typeof id != 'number' || id < MIN_ID_VALUE || id > MAX_ID) {
-    return false
-  }
-  return true
-}
-
-export const isValidString = (v: any) => {
-  const isVal =
-    typeof v === 'string' ||
-    (v as any) instanceof Uint8Array ||
-    ArrayBuffer.isView(v)
-  return isVal
-}
-
 export const validateVal = (
   def: QueryDef,
   f: Filter,
-  validate: (v: any) => boolean,
+  validate: (v: any, p: PropDef | PropDefEdge) => boolean,
 ): boolean => {
   if (def.skipValidation) {
     return false
@@ -171,12 +162,12 @@ export const validateVal = (
   const value = f[2]
   if (Array.isArray(value)) {
     for (const v of value) {
-      if (!validate(v)) {
+      if (!validate(v, f[2])) {
         def.errors.push({ code: ERR_FILTER_INVALID_VAL, payload: f })
         return true
       }
     }
-  } else if (!validate(value)) {
+  } else if (!validate(value, f[2])) {
     def.errors.push({
       code: ERR_FILTER_INVALID_VAL,
       payload: f,
@@ -218,7 +209,7 @@ export const validateFilter = (
       })
       return true
     }
-    if (validateVal(def, f, isValidId)) {
+    if (validateVal(def, f, prop.validation)) {
       return true
     }
   } else if (t === VECTOR) {
