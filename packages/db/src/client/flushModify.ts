@@ -55,7 +55,6 @@ export class ModifyCtx {
     if (this.dirtyTypes.has(schema.id)) {
       return
     }
-    console.log('SET LAST ID', schema.lastId)
     this.dirtyTypes.set(schema.id, schema.lastId)
     this.updateMax()
   }
