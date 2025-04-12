@@ -201,7 +201,7 @@ export class DbServer {
               for (const lang in this.sortIndexes[type][field][start]) {
                 const sortIndex = this.sortIndexes[type][field][start][lang]
                 sortIndex.cnt /= 2
-                if (!this.processingQueries && sortIndex.cnt < 1) {
+                if (sortIndex.cnt < 1 && !this.processingQueries) {
                   native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
                   delete this.sortIndexes[type][field][start][lang]
                 } else {
