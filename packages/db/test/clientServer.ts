@@ -115,12 +115,11 @@ await test('client server', async (t) => {
     name: 'fred',
   })
 
-  const marie = client2.create('user', {
+  await client1.isModified()
+
+  const marie = await client2.create('user', {
     name: 'marie',
   })
-
-  await client1.isModified()
-  await client2.isModified()
 
   const res = await client1.update('user', youzi, {
     name: 'youzi',
