@@ -168,8 +168,6 @@ function propParser<PropType extends SchemaAnyProp>(
 const p: Record<string, ReturnType<typeof propParser>> = {}
 
 export const isDefault = (val, prop, ctx) => {
-  console.log(prop, val)
-
   let typeIndex: number
   typeIndex = TYPE_INDEX_MAP[prop.type]
   if ('enum' in prop) {
@@ -195,10 +193,12 @@ export const isDefault = (val, prop, ctx) => {
     min: parseMinMaxStep(prop.min),
   }
   if (!validation(val, propDef)) {
-    console.log('not valid', REVERSE_TYPE_INDEX_MAP[typeIndex], prop.type, val)
-    return propDef.default
+    throw new Error(`Incorrect default on "${prop.type ?? 'enum'}"`)
   }
   if ('enum' in prop) {
+    if (val === undefined) {
+      return 0
+    }
     return prop.enum.findIndex((v) => v === val) + 1
   }
   return val
