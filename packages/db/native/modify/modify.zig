@@ -18,7 +18,7 @@ const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const dbSort = @import("../db/sort.zig");
 const increment = Update.increment;
-
+const config = @import("config");
 const read = utils.read;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -90,10 +90,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {
-                ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
-                    std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
-                    return err;
-                };
+                if (config.enable_debug) {
+                    ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
+                        std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
+                        return err;
+                    };
+                }
                 ctx.id = read(u32, operation, 0) + idOffset;
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
