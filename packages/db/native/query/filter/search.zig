@@ -117,6 +117,11 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
     }
 }
 
+inline fn min(a: usize, b: usize) usize {
+    if (a < b) return a;
+    return b;
+}
+
 fn hamming_ascii(
     value: []u8,
     i: usize,
@@ -125,7 +130,7 @@ fn hamming_ascii(
     const queryD = query[1..query.len];
     const ql = queryD.len;
     const d: u8 = @truncate(selva.strsearch_hamming(
-        value[i + 1 .. i + 1 + ql].ptr,
+        value[i + 1 .. min(value.len, i + 1 + ql)].ptr,
         queryD.ptr,
         ql,
     ));
@@ -142,11 +147,6 @@ fn hamming_mbs(
     const t = query[1..query.len];
     const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
     return d;
-}
-
-inline fn min(a: usize, b: usize) usize {
-    if (a < b) return a;
-    return b;
 }
 
 fn hamming(

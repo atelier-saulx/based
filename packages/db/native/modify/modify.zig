@@ -90,15 +90,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {
-                ctx.id = read(u32, operation, 0) + idOffset;
+                ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
+                    std.log.err("Overflow ID error (create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
+                    return err;
+                };
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
             types.ModOp.SWITCH_NODE => {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-                // RFE Do we actually want to do this here?
-                //Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {

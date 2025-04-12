@@ -190,11 +190,13 @@ fn incrementBuf(
 ) usize {
     const a = read(T, value, 0);
     const b = read(T, addition, 0);
-    const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
     if (T == f64) {
+        const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
         value[0..8].* = @bitCast(v);
         return 8;
-    } else {
+    } else if (T != f64) {
+        const overflow = if (op == types.ModOp.DECREMENT) @subWithOverflow(a, b) else @addWithOverflow(a, b);
+        const v: T = if (overflow[1] == 1) a else overflow[0];
         const size = @sizeOf(T);
         value[0..size].* = @bitCast(v);
         return size;
