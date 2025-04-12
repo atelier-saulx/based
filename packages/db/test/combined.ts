@@ -261,7 +261,7 @@ await test('E-commerce Simulation', async (t) => {
         const userId = getRandom(userIds)
         const productId = getRandom(productIds)
         if (userId && productId) {
-          await db.update('user', 1, {
+          await db.update('user', userId, {
             lastLogin: Date.now(),
             viewedProducts: {
               update: [

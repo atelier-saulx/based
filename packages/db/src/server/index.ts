@@ -499,7 +499,16 @@ export class DbServer {
       i += 2
       const startId = readUint32LE(buf, i)
       const def = this.schemaTypesParsedById[typeId]
-      const offset = def.lastId - startId
+      let offset = def.lastId - startId
+
+      if (offset < 0) {
+        offset = 0
+        console.log(def.type, {
+          offset,
+          serverId: def.lastId,
+          clientId: startId,
+        })
+      }
 
       buf[i++] = offset
       buf[i++] = offset >>> 8
