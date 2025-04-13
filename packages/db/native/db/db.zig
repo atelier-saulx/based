@@ -285,6 +285,7 @@ pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: Fi
     ));
 }
 
+// want to have one without upsert
 pub fn putReferences(ctx: *DbCtx, ids: []u32, target: Node, fieldSchema: FieldSchema, typeEntry: Type) !void {
     try errors.selva(selva.selva_fields_references_insert_tail_wupsert(
         ctx.selva,

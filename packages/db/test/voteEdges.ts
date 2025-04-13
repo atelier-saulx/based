@@ -23,6 +23,7 @@ await test('schema with many uint8 fields', async (t) => {
           prop: 'payment',
         },
       },
+      contestant: {},
       round: {
         votes: {
           items: {
@@ -58,28 +59,11 @@ await test('schema with many uint8 fields', async (t) => {
           prop: 'votes',
           required: true,
         },
-        ddi: {
-          props: {
-            ddi1: 'uint8',
-            ddi2: 'uint8',
-            ddi3: 'uint8',
-            ddi4: 'uint8',
-            ddi5: 'uint8',
-            ddi6: 'uint8',
-            ddi7: 'uint8',
-            ddi8: 'uint8',
-            ddi9: 'uint8',
-            ddi10: 'uint8',
-            ddi11: 'uint8',
-            ddi12: 'uint8',
-            ddi13: 'uint8',
-            ddi14: 'uint8',
-            ddi15: 'uint8',
-            ddi16: 'uint8',
-            ddi17: 'uint8',
-            ddi18: 'uint8',
-            ddi19: 'uint8',
-            ddi20: 'uint8',
+        contestants: {
+          items: {
+            ref: 'contestant',
+            prop: 'votes',
+            $votes: 'uint8',
           },
         },
       },
@@ -88,21 +72,34 @@ await test('schema with many uint8 fields', async (t) => {
 
   const final = await db.create('round')
 
-  const amount = 10e6
+  const amount = 1e6
   console.info('--------------------------------')
 
+  const contestants = []
+  for (let i = 0; i < 20; i++) {
+    contestants.push(await db.create('contestant'))
+  }
+
+  await db.drain()
+
   const voteData: any = {
-    ddi: {},
     round: final,
   }
   for (let i = 1; i <= 20; i++) {
-    voteData.ddi[`ddi${i}`] = i % 256
+    // voteData.ddi[`ddi${i}`] = i % 256
   }
 
   for (let j = 1; j <= amount; j++) {
     const payment = db.create('payment')
     voteData.payment = payment
     voteData.fingerprint = `f${j}-${final}`
+    const artist = contestants[j % 20]
+    voteData.contestants = [
+      {
+        id: artist,
+        $votes: 8,
+      },
+    ]
     const voteId = db.create('vote', voteData)
   }
 

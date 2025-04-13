@@ -39,6 +39,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         const node = try db.upsertNode(id, refTypeEntry);
 
+        // pretty sure its this
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {

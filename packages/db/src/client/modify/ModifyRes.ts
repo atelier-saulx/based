@@ -80,7 +80,6 @@ export class ModifyState {
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
-    this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
     this.subMarkers = subMarkers
     this.update = update
@@ -93,7 +92,6 @@ export class ModifyState {
   update: boolean
   locale: LangCode
 
-  #buf: ModifyCtx
   #ctx: ModifyCtx['ctx']
   #typeId: number
 
@@ -111,24 +109,22 @@ export class ModifyState {
     }
   }
 
-  then(resolve, reject) {
-    const promise = new Promise((resolve) => {
-      if (this.error) {
-        reject(new Error(this.error.toString()))
-      } else if ('offsets' in this.#ctx) {
-        resolve(this.getId())
-      } else {
-        this.#buf.queue.set(resolve, this)
-      }
-    })
-
+  async then(resolve, reject) {
     if (this.promises?.length) {
-      return Promise.allSettled(this.promises)
-        .then(() => promise)
-        .then(resolve, reject)
-    } else {
-      return promise.then(resolve, reject)
+      await Promise.allSettled(this.promises)
     }
+    let promise: Promise<any>
+    if (this.error) {
+      promise = Promise.reject(new Error(this.error.toString()))
+    } else if ('offsets' in this.#ctx) {
+      promise = Promise.resolve(this.getId())
+    } else {
+      promise = new Promise((resolve) => {
+        this.#ctx.queue ??= new Map()
+        this.#ctx.queue.set(resolve, this)
+      })
+    }
+    return promise.then(resolve, reject)
   }
 
   catch(handler) {

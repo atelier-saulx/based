@@ -91,6 +91,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {
+                // dont want upsert
                 if (config.enable_debug) {
                     // Only assert this on DEBUG scince it makes it a lot slower
                     ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
@@ -103,6 +104,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     }
                 }
                 ctx.id = read(u32, operation, 0) + idOffset;
+                // we can put get here
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },

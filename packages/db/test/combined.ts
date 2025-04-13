@@ -14,7 +14,7 @@ await test('E-commerce Simulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 50000,
-    // debug: true,
+    // debug: 'server',
   })
 
   const simulationDuration = 5e3

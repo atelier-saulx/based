@@ -23,8 +23,11 @@ export class ModifyCtx {
   id = -1
   hasSortField = -1
   hasSortText = -1
-  queue = new Map<(payload: any) => void, ModifyState>()
-  ctx: { offsets?: Record<number, number> } = {} // maybe make this different?
+
+  ctx: {
+    queue?: Map<(payload: any) => void, ModifyState>
+    offsets?: Record<number, number>
+  } = {}
 
   payload: Uint8Array
 
@@ -114,7 +117,6 @@ export const flushBuffer = (db: DbClient) => {
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
-    const queue = ctx.queue
     const d = performance.now()
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
       db.writeTime += performance.now() - d
@@ -132,16 +134,16 @@ export const flushBuffer = (db: DbClient) => {
           console.error('Panic: No offset returned in flushModify')
         }
       }
-      console.log(queue.size)
-      if (queue.size) {
-        flushPromise.then(() => {
-          for (const [resolve, res] of queue) {
-            resolve(res.getId())
-          }
-        })
+      if (resCtx.queue?.size) {
+        const queue = resCtx.queue
+        resCtx.queue = null
+        for (const [resolve, res] of queue) {
+          resolve(res.getId())
+        }
       }
       db.flushReady()
     })
+
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()
     ctx.len = 0
@@ -149,7 +151,6 @@ export const flushBuffer = (db: DbClient) => {
     ctx.prefix1 = -1
     ctx.max = db.maxModifySize
     ctx.ctx = {}
-    ctx.queue = new Map()
   } else {
     db.flushReady()
   }

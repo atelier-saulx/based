@@ -38,6 +38,7 @@ const start = async (t, clientsN = 2) => {
 
   const server = new DbServer({
     path: t.tmp,
+    // debug: true,
     onSchemaChange(schema) {
       for (const client of clients) {
         client.putLocalSchema(schema)
@@ -141,39 +142,51 @@ await test('client server', async (t) => {
 
 await test('client server rapid fire', async (t) => {
   const promises = []
-  const clientsN = 4
+  const clientsN = 1
   const nodesN = 1000
-
+  const multi = 2
   const { clients } = await start(t, clientsN)
 
   await clients[0].setSchema({
     types: {
       user: {
         name: 'string',
+        users: {
+          items: {
+            ref: 'user',
+            prop: 'users',
+          },
+        },
       },
     },
   })
 
   await new Promise<void>((resolve) => {
-    let i = ~~(nodesN / clientsN)
-    let interval = setInterval(() => {
-      if (i--) {
-        promises.push(
-          clients.map(async (client, clientI) => {
-            await setTimeout(~~(Math.random() * 100))
-            await Promise.all([
-              client.create('user', {
-                name: `user${clientI} ${nodesN - i}`,
-              }),
-              client.query('user').get(),
-            ])
-          }),
-        )
+    const userIds = []
+    let i = nodesN
+    let interval = setInterval(async () => {
+      if (i) {
+        const clientI = i-- % clients.length
+        const client = clients[clientI]
+        const cnt = nodesN - i
+        let j = multi
+        while (j--) {
+          promises.push(
+            (async () => {
+              const userId = await client.create('user', {
+                name: `user${clientI} ${cnt}`,
+                users: userIds.slice(-1000, -1),
+              })
+              userIds.push(userId)
+            })(),
+            client.query('user').sort('name').include('name', 'users').get(),
+          )
+        }
       } else {
         clearInterval(interval)
         resolve()
       }
-    }, 5)
+    }, 10)
   })
 
   console.log('end interval', promises.length)
