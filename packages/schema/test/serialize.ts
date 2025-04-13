@@ -2,7 +2,7 @@ import test from 'node:test'
 import { StrictSchema } from '@based/schema'
 import { deepEqual } from 'node:assert'
 
-await test('serialize schema', async (t) => {
+await test('serialize', async (t) => {
   const schema: StrictSchema = {
     types: {
       thing: {
@@ -37,4 +37,5 @@ await test('serialize schema', async (t) => {
       },
     },
   }
+  console.log('derp')
 })

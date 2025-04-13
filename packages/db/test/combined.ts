@@ -174,9 +174,6 @@ await test('E-commerce Simulation', async (t) => {
     }
   }
   await db.drain()
-  console.log(
-    `Initial population complete: ${categoryIds} categories, ${userIds} users, ${productIds} products.`,
-  )
 
   // --- Simulation Loop ---
   const startTime = Date.now()
