@@ -482,15 +482,16 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
 
 /**
  * Delete a reference field edge.
- * The caller must invalidate pointers in ref if relevant.
  * Clears both ways.
  * @param orig_dst should be given if fs_src is of type SELVA_FIELD_TYPE_REFERENCES.
+ * @returns the removed dst_node_id.
  */
-static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst, ssize_t idx, bool ignore_src_dependent)
+static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst, ssize_t idx, bool ignore_src_dependent)
 {
     struct SelvaFields *fields_src = &src->fields;
     struct SelvaFieldInfo *nfo_src = &fields_src->fields_map[fs_src->field];
     struct SelvaNode *dst = nullptr;
+    node_id_t dst_node_id = 0;
 
 #if 0
     assert(selva_get_fs_by_node(db, src, fs_src->field) == fs_src);
@@ -529,6 +530,8 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
         struct SelvaFields *fields_dst = &dst->fields;
         struct SelvaFieldInfo *nfo_dst;
 
+        dst_node_id = dst->node_id;
+
         fs_dst = get_edge_dst_fs(db, fs_src);
         if (!fs_dst) {
             db_panic("field schema not found");
@@ -560,7 +563,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
 
                 if (!node_id_set_has(refs->index, refs->nr_refs, src->node_id)) {
-                    return;
+                    goto out;
                 }
 
                 ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, src);
@@ -569,6 +572,9 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             }
         }
     }
+
+out:
+    return dst_node_id;
 }
 
 static void remove_weak_reference(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
@@ -732,14 +738,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
         return selva_fields_set_text(node, fs, value, len);
-    case SELVA_FIELD_TYPE_REFERENCE:
-#if 0
-        assert(db && node);
-#endif
-        if (len < sizeof(struct SelvaNode *)) {
-            return SELVA_EINVAL;
-        }
-        return selva_fields_reference_set(db, node, fs, (struct SelvaNode *)value, nullptr);
     case SELVA_FIELD_TYPE_REFERENCES:
         return selva_fields_references_insert(db, node, fs, -1, false, selva_get_type_by_node(db, (struct SelvaNode *)value), (struct SelvaNode *)value, NULL);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
@@ -752,6 +750,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         memcpy(nfo2p(fields, nfo), value, len);
         memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
         break;
+    case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
         return SELVA_ENOTSUP;
@@ -1098,15 +1097,13 @@ done:
     __builtin_unreachable();
 }
 
-/**
- * Set reference to fields.
- */
 int selva_fields_reference_set(
         struct SelvaDb *db,
         struct SelvaNode * restrict src,
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReference **ref_out)
+        struct SelvaNodeReference **ref_out,
+        node_id_t dirty_nodes[static 2])
 {
     const struct SelvaFieldSchema *fs_dst;
     int err;
@@ -1133,9 +1130,12 @@ int selva_fields_reference_set(
     /*
      * Remove previous refs.
      */
-    remove_reference(db, src, fs_src, 0, -1, true);
+    dirty_nodes[0] = remove_reference(db, src, fs_src, 0, -1, true);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        remove_reference(db, dst, fs_dst, 0, -1, false);
+        /* The destination may have a ref to somewhere. */
+        dirty_nodes[1] = remove_reference(db, dst, fs_dst, 0, -1, false);
+    } else {
+        dirty_nodes[1] = 0;
     }
 
     /*

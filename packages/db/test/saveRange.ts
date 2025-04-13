@@ -305,3 +305,48 @@ await test('reference changes', async (t) => {
   await db.save()
   equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
 })
+
+await test('ref block moves', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.setSchema({
+    types: {
+      a: {
+        props: {
+          bref: { ref: 'b', prop: 'aref', },
+          x: { type: 'uint8' },
+        },
+      },
+      b: {
+        props: {
+          aref: { ref: 'a', prop: 'bref' },
+          y: { type: 'uint8' },
+        },
+      },
+    },
+  })
+
+  const a1 = await db.create('a', { x: 1 })
+  const b1 = await db.create('b', { y: 1, aref: a1 })
+  for (let i = 0; i < 100_000; i++) {
+    db.create('a', { x: i % 256 })
+    db.create('b', { y: i % 256 })
+  }
+  await db.drain()
+  for (let i = 0; i < 100_000; i++) {
+    db.delete('a', i + 2)
+    db.delete('b', i + 2)
+  }
+  const an = await db.create('a', { x: 2 })
+  const bn = await db.create('b', { y: 2, aref: an })
+  await db.save()
+
+  await db.update('a', a1, { bref: bn })
+  // t.backup will continue the test from here
+})
