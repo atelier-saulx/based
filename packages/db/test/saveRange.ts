@@ -389,7 +389,7 @@ await test('ref removal', async (t) => {
   // t.backup will continue the test from here
 })
 
-await test('refs removal', async (t) => {
+await test('refs removal with delete', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -415,7 +415,7 @@ await test('refs removal', async (t) => {
     },
   })
 
-  const a = db.create('a', { x: 1 })
+  const a = db.create('a', { x: 13 })
   for (let i = 0; i < 10; i++) {
     db.create('b', { y: 255 - i % 256, aref: a })
   }

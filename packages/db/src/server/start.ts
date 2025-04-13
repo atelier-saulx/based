@@ -47,10 +47,12 @@ export async function start(
       const dumps = writelog.rangeDumps[typeId]
       for (const dump of dumps) {
         const fname = dump.file
-        try {
-          native.loadRange(join(path, fname), db.dbCtxExternal)
-        } catch (e) {
-          console.error(e.message)
+        if (fname?.length > 0) {
+          try {
+            native.loadRange(join(path, fname), db.dbCtxExternal)
+          } catch (e) {
+            console.error(e.message)
+          }
         }
       }
     }
@@ -85,7 +87,7 @@ export async function start(
         end,
       }
       db.merkleTree.insert(mtKey, hash, data)
-    })
+    }, true)
   }
 
   if (writelog?.hash) {

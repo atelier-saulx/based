@@ -53,9 +53,8 @@ function saveRange(
     db.dbCtxExternal,
     hashOut,
   )
-  if (err == -8) {
-    // TODO ENOENT
-    return ''
+  if (err == -8) { // TODO ENOENT
+    return '' // empty range
   } else if (err) {
     // TODO print the error string
     console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
@@ -116,18 +115,17 @@ export function save(
   } else {
     foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
       const hash = new Uint8Array(16)
-      // TODO Don't save if empty
       const file = saveRange(db, typeId, start, end, hash)
 
       if (file === null) {
         // The previous state should remain in the merkle tree for
         // load and sync purposes.
         return
-      } else if (file.length === 0) {
-        // The range is empty
       } else {
         const oldLeaf = db.merkleTree.search(mtKey)
 
+        // If (file.length === 0) then the range is empty but that's fine,
+        // we'll keep them around for now to maintain the order of the tree.
         if (oldLeaf) {
           oldLeaf.data.file = file
           db.merkleTree.update(mtKey, hash)
