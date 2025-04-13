@@ -224,6 +224,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...(project && { project }),
     ...(env && { env }),
     ...form,
+    ...(envDiscoveryUrl && { discoveryUrls: [envDiscoveryUrl] }),
   }
 
   const globalOptions = context.get('globalOptions')
@@ -262,7 +263,6 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...basedProject,
     key: 'cms',
     optionalKey: true,
-    ...(envDiscoveryUrl && { discoveryUrls: [envDiscoveryUrl] }),
   })
 
   await basedClientEnv.setAuthState(authenticatedUser)
