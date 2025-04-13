@@ -77,8 +77,8 @@ The CLI has some global options that can be used from any command. These options
 | `-e, --env <env>` | Specify which environment (can be a name or "#branch" if you want to deploy by branch). |
 | `--api-key <api-key>` | API Key generated on Based.io for Service Account. |
 | `--file <file>` | If you want to use a specific Based configuration file. All other project options take precedence over this option. |
-| `-ed, --envDiscoveryUrl <url>` | If you want to define a specific URL from a different environment to connect to. |
-| `-pd, --platformDiscoveryUrl <url>` | If you want to define a specific URL from a different platform to connect to. |
+| `-ed, --envDiscoveryUrl <url...>` | If you want to define a specific URL from a different environment to connect to. |
+| `-pd, --platformDiscoveryUrl <url...>` | If you want to define a specific URL from a different platform to connect to. |
 
 ### Disconnect
 
