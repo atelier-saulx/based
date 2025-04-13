@@ -20,7 +20,7 @@ await test('text', () => {
     },
   })
 
-  await throws(() => {
+  throws(() => {
     parse({
       props: {
         myText: {
