@@ -110,9 +110,12 @@ export const deploy = async (program: Command) => {
 
           const configsMap = remoteFunctions.functions.reduce(
             (acc, config) => {
-              Object.assign(acc, {
-                [config.current.config.name]: config.current.checksum,
-              })
+              if (config.current?.config?.name) {
+                Object.assign(acc, {
+                  [config.current.config.name]: config.current.checksum,
+                })                
+              }
+
               return acc
             },
             {} as Record<string, number>,
