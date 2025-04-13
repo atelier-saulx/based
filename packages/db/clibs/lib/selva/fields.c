@@ -1134,6 +1134,7 @@ int selva_fields_reference_set(
      */
     remove_reference(db, src, fs_src, 0, -1, true);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+        /* The destination may have a ref to somewhere. */
         remove_reference(db, dst, fs_dst, 0, -1, false);
     }
 
