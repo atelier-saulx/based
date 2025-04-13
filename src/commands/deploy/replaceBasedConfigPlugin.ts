@@ -55,8 +55,9 @@ export const replaceBasedConfigPlugin =
 
           if (basedFileFound) {
             if (cloud || !url) {
-              const { cluster, org, env, project } = await context.getProgram()
-              const contents = `export default ${JSON.stringify({ cluster, org, env, project })};`
+              const { cluster, org, env, project, envDiscoveryUrl } =
+                await context.getProgram()
+              const contents = `export default ${JSON.stringify({ cluster, org, env, project, envDiscoveryUrl })};`
 
               return {
                 contents,
