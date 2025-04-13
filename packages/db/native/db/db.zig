@@ -275,18 +275,6 @@ pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSch
     return ref;
 }
 
-pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: FieldSchema) !void {
-    // selva_fields_references_insert() is slightly more optimized than this for insertions to
-    // a `references` field but does it really make a difference?
-    try errors.selva(selva.selva_fields_set(
-        ctx.selva,
-        target,
-        fieldSchema,
-        @ptrCast(value.ptr),
-        value.len * 8, // ptr len
-    ));
-}
-
 // want to have one without upsert
 pub fn putReferences(ctx: *DbCtx, ids: []u32, target: Node, fieldSchema: FieldSchema, typeEntry: Type) !void {
     try errors.selva(selva.selva_fields_references_insert_tail_wupsert(
