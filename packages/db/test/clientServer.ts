@@ -193,10 +193,7 @@ await test('client server rapid fire', async (t) => {
     }, 10)
   })
 
-  console.log('end interval', promises.length)
   await Promise.all(promises)
-
-  console.log('done test!')
 
   const allUsers1 = await clients[0]
     .query('user')
