@@ -198,7 +198,7 @@ const handleUndefinedProps = (
           if (lang.has(0)) {
             for (const locale in q.schema.locales) {
               if (!lan[locale]) {
-                console.log('???', locale, prop.default)
+                // console.log('???', locale, prop.default)
 
                 lan[locale] = prop.default[locale] || ''
               }
@@ -215,7 +215,7 @@ const handleUndefinedProps = (
           addField(prop, prop.default, item)
         } else if (prop.typeIndex === TEXT) {
           // q.lang
-          console.log('???')
+          // console.log('???')
           addField(prop, '', item)
         } else {
           addField(prop, prop.default, item)

@@ -12,11 +12,10 @@ var decompressor = db.createDecompressor()
 function SelvaIoErrlogToString(buf: Uint8Array) {
   let i: number
   let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
-
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
-export default {
+const native = {
   historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
     return db.historyAppend(history, typeId, nodeId, dbCtx)
   },
@@ -151,3 +150,6 @@ export default {
     db.expire(dbCtx)
   },
 }
+
+global.__basedDb__native__ = native
+export default native
