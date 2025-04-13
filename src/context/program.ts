@@ -9,8 +9,16 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     return basedProject
   }
 
-  const { cluster, org, project, env, apiKey, file } =
-    this.program.opts() as Based.Context.Project
+  const {
+    cluster,
+    org,
+    project,
+    env,
+    apiKey,
+    file,
+    envDiscoveryUrl,
+    platformDiscoveryUrl,
+  } = this.program.opts() as Based.Context.Project
 
   if (!basedProject) {
     basedFile = await getFile(
@@ -39,6 +47,8 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     ...(env !== undefined && { env }),
     ...(apiKey !== undefined && { apiKey }),
     ...(file !== undefined && { file }),
+    ...(envDiscoveryUrl !== undefined && { envDiscoveryUrl }),
+    ...(platformDiscoveryUrl !== undefined && { platformDiscoveryUrl }),
   }
 
   let envLabel: string = basedProject.env
@@ -58,7 +68,9 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   this.set('basedProject', basedProject)
 
   if (Object.keys(basedProject).length > 2) {
-    this.print.pipe(this.i18n('context.file', basedProject.file))
+    if (basedProject.file) {
+      this.print.pipe(this.i18n('context.file', basedProject.file))
+    }
 
     if (basedProject.cluster !== 'production') {
       this.print.pipe(this.i18n('context.cluster', basedProject.cluster))
