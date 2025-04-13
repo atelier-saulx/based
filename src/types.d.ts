@@ -78,6 +78,8 @@ declare global {
           name: string
           useDataFrom: string | null
         }
+        envDiscoveryUrl?: string
+        platformDiscoveryUrl?: string
       }
 
       type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'

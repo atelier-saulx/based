@@ -16,6 +16,7 @@ import {
   contextTerminalKit,
   endpoints,
 } from './index.js'
+
 export class AppContext {
   public program: Command
   private static instance: AppContext

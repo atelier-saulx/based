@@ -67,6 +67,16 @@ export default {
           description:
             'If you want to use a specific Based configuration file. All other project options take precedence over this option.',
         },
+        {
+          parameter: '-ed, --envDiscoveryUrl <url>',
+          description:
+            'If you want to define a specific URL from a different environment to connect to.',
+        },
+        {
+          parameter: '-pd, --platformDiscoveryUrl <url>',
+          description:
+            'If you want to define a specific URL from a different platform to connect to.',
+        },
       ],
     },
     disconnect: {

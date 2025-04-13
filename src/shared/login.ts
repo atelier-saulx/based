@@ -132,7 +132,15 @@ export const connectToHub = async (
 
 export const login = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
-  const { cluster, org, env, project, branch } = await context.getProgram()
+  const {
+    cluster,
+    org,
+    env,
+    project,
+    branch,
+    envDiscoveryUrl,
+    platformDiscoveryUrl,
+  } = await context.getProgram()
 
   const users: Based.Auth.AuthenticatedUser[] =
     await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
@@ -143,6 +151,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     project: 'based-cloud',
     name: '@based/admin-hub',
     cluster,
+    ...(platformDiscoveryUrl && { discoveryUrls: [platformDiscoveryUrl] }),
   })
 
   let lastSession = getLastSession(users)
@@ -253,6 +262,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...basedProject,
     key: 'cms',
     optionalKey: true,
+    ...(envDiscoveryUrl && { discoveryUrls: [envDiscoveryUrl] }),
   })
 
   await basedClientEnv.setAuthState(authenticatedUser)

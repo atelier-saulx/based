@@ -11,6 +11,8 @@ export function contextGlobalOptions(): Based.Context.GlobalOptions<'skip'> {
     env,
     apiKey,
     file,
+    envDiscoveryUrl,
+    platformDiscoveryUrl,
   } = this.program.opts() as Based.Context.GlobalOptions<'yes'>
 
   globalOptions = {
@@ -23,6 +25,8 @@ export function contextGlobalOptions(): Based.Context.GlobalOptions<'skip'> {
     ...(env !== undefined && { env }),
     ...(apiKey !== undefined && { apiKey }),
     ...(file !== undefined && { file }),
+    ...(envDiscoveryUrl !== undefined && { envDiscoveryUrl }),
+    ...(platformDiscoveryUrl !== undefined && { platformDiscoveryUrl }),
   }
 
   process.env.BASED_CLI_LOG_LEVEL = display
