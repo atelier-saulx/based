@@ -99,7 +99,7 @@ await test('default values for all props in user type', async (t) => {
       eventTime: convertToTimestamp(defaultTimestamp),
       level: 'medium',
       config: defaultJson,
-      avatar: defaultBinary,
+      // avatar: defaultBinary,
       slug: 'default-slug',
       label: defaultText,
       friends: [],

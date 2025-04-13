@@ -20,7 +20,6 @@ import {
   VECTOR,
   JSON,
   CARDINALITY,
-  NULL,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -199,21 +198,27 @@ const handleUndefinedProps = (
           if (lang.has(0)) {
             for (const locale in q.schema.locales) {
               if (!lan[locale]) {
-                lan[locale] = ''
+                console.log('???', locale, prop.default)
+
+                lan[locale] = prop.default[locale] || ''
               }
             }
           } else {
             for (const code of lang) {
               const locale = inverseLangMap.get(code)
               if (!lan[locale]) {
-                lan[locale] = ''
+                lan[locale] = prop.default[locale] || ''
               }
             }
           }
         } else if (prop.typeIndex === BINARY) {
-          addField(prop, new Uint8Array(0), item)
+          addField(prop, prop.default, item)
+        } else if (prop.typeIndex === TEXT) {
+          // q.lang
+          console.log('???')
+          addField(prop, '', item)
         } else {
-          addField(prop, prop.typeIndex === JSON ? null : '', item)
+          addField(prop, prop.default, item)
         }
       }
     }

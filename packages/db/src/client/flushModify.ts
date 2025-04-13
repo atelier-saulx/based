@@ -111,12 +111,13 @@ export const flushBuffer = (db: DbClient) => {
   let flushPromise: Promise<void>
 
   if (ctx.len) {
-    const d = Date.now()
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
     const queue = ctx.queue
+    const d = performance.now()
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
+      db.writeTime += performance.now() - d
       resCtx.offsets = offsets
       for (const typeId in lastIds) {
         if (typeId in offsets) {
@@ -128,10 +129,10 @@ export const flushBuffer = (db: DbClient) => {
             def.total += delta
           }
         } else {
-          console.warn('no offset returned, very wrong')
+          console.error('Panic: No offset returned in flushModify')
         }
       }
-      db.writeTime += Date.now() - d
+      console.log(queue.size)
       if (queue.size) {
         flushPromise.then(() => {
           for (const [resolve, res] of queue) {

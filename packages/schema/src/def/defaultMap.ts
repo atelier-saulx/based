@@ -22,6 +22,6 @@ export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [TYPE_INDEX_MAP.references]: [],
   [TYPE_INDEX_MAP.string]: '',
   [TYPE_INDEX_MAP.aliases]: [],
-  [TYPE_INDEX_MAP.text]: '',
+  [TYPE_INDEX_MAP.text]: {},
   [TYPE_INDEX_MAP.vector]: undefined, // maybe not can set a vec with 0
 }
