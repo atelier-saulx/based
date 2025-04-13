@@ -731,14 +731,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
         return selva_fields_set_text(node, fs, value, len);
-    case SELVA_FIELD_TYPE_REFERENCE:
-#if 0
-        assert(db && node);
-#endif
-        if (len < sizeof(struct SelvaNode *)) {
-            return SELVA_EINVAL;
-        }
-        return selva_fields_reference_set(db, node, fs, (struct SelvaNode *)value, nullptr);
     case SELVA_FIELD_TYPE_REFERENCES:
         return selva_fields_references_insert(db, node, fs, -1, false, selva_get_type_by_node(db, (struct SelvaNode *)value), (struct SelvaNode *)value, NULL);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
@@ -751,6 +743,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         memcpy(nfo2p(fields, nfo), value, len);
         memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
         break;
+    case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
         return SELVA_ENOTSUP;
