@@ -209,9 +209,10 @@ void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
 
 /**
  * Delete a node.
+ * @param dirty_cb is called for any newly dirty nodes in addition to the node being deleted.
  */
 SELVA_EXPORT
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx) __attribute__((nonnull(1, 2, 3)));
 
 /**
  * Get a node by id.

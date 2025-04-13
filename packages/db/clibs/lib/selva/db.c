@@ -147,7 +147,8 @@ static void expire_cb(struct SelvaExpireToken *tok)
     assert(te);
     node = selva_find_node(te, token->node_id);
     if (node) {
-        selva_del_node(token->db, te, node);
+        /* TODO must mark dirty. */
+        selva_del_node(token->db, te, node, nullptr, nullptr);
     }
 
     selva_free(token);
@@ -192,7 +193,8 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
         struct SelvaNode *tmp;
 
         RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
-            selva_del_node(db, te, node);
+            /* Presumably dirty_cb is not needed here. */
+            selva_del_node(db, te, node, nullptr, nullptr);
         }
     }
 }
@@ -432,7 +434,7 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
     return schema;
 }
 
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     struct SelvaTypeBlock *block = get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
@@ -444,7 +446,7 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
         type->max_node = selva_max_node(type);
     }
 
-    selva_fields_destroy(db, node);
+    selva_fields_destroy(db, node, dirty_cb, dirty_ctx);
 #if 0
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif

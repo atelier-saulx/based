@@ -3,6 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
+const modifyCtx = @import("../modify/ctx.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
@@ -223,8 +224,8 @@ pub fn getReferences(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) ?*s
     return result;
 }
 
-pub fn clearReferences(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) void {
-    selva.selva_fields_clear_references(ctx.selva, node, selvaFieldSchema);
+pub fn clearReferences(ctx: *modifyCtx.ModifyCtx, node: Node, selvaFieldSchema: FieldSchema) void {
+    selva.selva_fields_clear_references(ctx.db.selva, node, selvaFieldSchema, markDirtyCb, ctx);
 }
 
 pub fn deleteReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, id: u32) !void {
@@ -429,8 +430,13 @@ pub fn writeEdgeProp(
     ));
 }
 
-pub fn deleteField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) !void {
-    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
+fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
+    const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
+    modifyCtx.markDirtyRange(mctx, typeId, nodeId);
+}
+
+pub fn deleteField(ctx: *modifyCtx.ModifyCtx, node: Node, selvaFieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_del(ctx.db.selva, node, selvaFieldSchema, markDirtyCb, ctx));
 }
 
 pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
@@ -438,8 +444,8 @@ pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     return result;
 }
 
-pub fn deleteNode(ctx: *DbCtx, typeEntry: Type, node: Node) !void {
-    selva.selva_del_node(ctx.selva, typeEntry, node);
+pub fn deleteNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) !void {
+    selva.selva_del_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
 }
 
 pub fn upsertNode(id: u32, typeEntry: Type) !Node {
