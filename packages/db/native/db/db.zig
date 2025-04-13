@@ -246,7 +246,7 @@ pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema)
     ));
 }
 
-pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
+pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSchema, dirtyNodes: *[2]selva.node_id_t) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
     errors.selva(selva.selva_fields_reference_set(
         ctx.selva,
@@ -254,6 +254,7 @@ pub fn writeReference(ctx: *DbCtx, value: Node, src: Node, fieldSchema: FieldSch
         fieldSchema,
         value,
         @ptrCast(&ref),
+        @ptrCast(dirtyNodes),
     )) catch |err| {
         // REMOVE THIS
         if (err == errors.SelvaError.SELVA_EEXIST) {

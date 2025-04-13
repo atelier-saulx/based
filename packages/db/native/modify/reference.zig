@@ -38,8 +38,13 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     if (ref == null) {
+        var dirty: [2]selva.node_id_t = undefined;
+
         node = try db.upsertNode(id, refTypeEntry);
-        ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+        ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, &dirty);
+        if (dirty[1] != 0) {
+            Modify.markDirtyRange(ctx, selva.selva_get_node_type(ctx.node), dirty[1]);
+        }
     }
 
     if (hasEdges) {
