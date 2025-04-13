@@ -5,7 +5,7 @@ if [[ "$PWD" != *"/clibs" ]]; then
     exit 1
 fi
 
-read -p "All uncommitted files will be DELETED! Are you sure? " -n 1 -r
+read -p "All uncommitted files will be DELETED! Are you sure? (type y or Y)" -n 1 -r
 echo    # (optional) move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
