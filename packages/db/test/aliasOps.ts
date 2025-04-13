@@ -83,7 +83,6 @@ await test('await updates', async (t) => {
   }
 
   await db.isModified()
-  console.log('done setting', total, 'aliases', Date.now() - d, 'ms')
 
   let totalAlias = 0
 

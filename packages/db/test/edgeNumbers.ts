@@ -1,3 +1,4 @@
+import { deepEqual } from 'assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
@@ -41,7 +42,6 @@ await test('number', async (t) => {
     },
   })
 
-  console.log('\n------------DERP DERP')
   await db.update('user', user2, {
     bestFriend: {
       id: user1,
@@ -49,5 +49,12 @@ await test('number', async (t) => {
     },
   })
 
-  await db.query('user', user2).include('**').get().inspect()
+  deepEqual(await db.query('user', user2).include('**').get(), {
+    id: 2,
+    bestFriend: {
+      id: 1,
+      $uint8: 87,
+      $int16: 0,
+    },
+  })
 })

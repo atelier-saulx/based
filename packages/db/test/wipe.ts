@@ -35,20 +35,18 @@ await test('wipe', async (t) => {
     })
   }
 
-  deepEqual(await db.query('data').range(0, 10).get().toObject(), [
-    { id: 1, age: 0, name: '', a: '' },
-    { id: 2, age: 1, name: '', a: '' },
-    { id: 3, age: 2, name: '', a: '' },
-    { id: 4, age: 3, name: '', a: '' },
-    { id: 5, age: 4, name: '', a: '' },
-    { id: 6, age: 5, name: '', a: '' },
-    { id: 7, age: 6, name: '', a: '' },
-    { id: 8, age: 7, name: '', a: '' },
-    { id: 9, age: 8, name: '', a: '' },
-    { id: 10, age: 9, name: '', a: '' },
+  deepEqual(await db.query('data').range(0, 10).get(), [
+    { id: 1, age: 0, name: '', a: undefined },
+    { id: 2, age: 1, name: '', a: undefined },
+    { id: 3, age: 2, name: '', a: undefined },
+    { id: 4, age: 3, name: '', a: undefined },
+    { id: 5, age: 4, name: '', a: undefined },
+    { id: 6, age: 5, name: '', a: undefined },
+    { id: 7, age: 6, name: '', a: undefined },
+    { id: 8, age: 7, name: '', a: undefined },
+    { id: 9, age: 8, name: '', a: undefined },
+    { id: 10, age: 9, name: '', a: undefined },
   ])
-
-  await db.save()
 
   await db.wipe()
 
@@ -67,23 +65,24 @@ await test('wipe', async (t) => {
     },
   })
 
-  await throws(() => db.query('data').get(), true)
+  await throws(() => db.query('data').get())
+
   for (let i = 0; i < 1e6; i++) {
     db.create('x', {
       age: i,
     })
   }
 
-  deepEqual(await db.query('x').range(0, 10).get().toObject(), [
-    { id: 1, age: 0, name: '', a: '' },
-    { id: 2, age: 1, name: '', a: '' },
-    { id: 3, age: 2, name: '', a: '' },
-    { id: 4, age: 3, name: '', a: '' },
-    { id: 5, age: 4, name: '', a: '' },
-    { id: 6, age: 5, name: '', a: '' },
-    { id: 7, age: 6, name: '', a: '' },
-    { id: 8, age: 7, name: '', a: '' },
-    { id: 9, age: 8, name: '', a: '' },
-    { id: 10, age: 9, name: '', a: '' },
+  deepEqual(await db.query('x').range(0, 10).get(), [
+    { id: 1, age: 0, name: '', a: undefined },
+    { id: 2, age: 1, name: '', a: undefined },
+    { id: 3, age: 2, name: '', a: undefined },
+    { id: 4, age: 3, name: '', a: undefined },
+    { id: 5, age: 4, name: '', a: undefined },
+    { id: 6, age: 5, name: '', a: undefined },
+    { id: 7, age: 6, name: '', a: undefined },
+    { id: 8, age: 7, name: '', a: undefined },
+    { id: 9, age: 8, name: '', a: undefined },
+    { id: 10, age: 9, name: '', a: undefined },
   ])
 })

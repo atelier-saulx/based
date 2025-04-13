@@ -35,29 +35,41 @@ await test('json', async (t) => {
 
   await db.create('jsonDerulo', derulo)
 
-  deepEqual(await db.query('jsonDerulo').get().toObject(), [
-    {
-      id: 1,
-      ...derulo,
-    },
-  ])
+  deepEqual(
+    await db.query('jsonDerulo').get(),
+    [
+      {
+        id: 1,
+        ...derulo,
+      },
+    ],
+    'simple',
+  )
 
   const jay = await db.create('jsonDerulo', {
     myJson: {},
   })
 
-  deepEqual(await db.query('jsonDerulo').get().toObject(), [
-    { id: 1, ...derulo },
-    { id: 2, myJson: {}, name: '' },
-  ])
+  deepEqual(
+    await db.query('jsonDerulo').get(),
+    [
+      { id: 1, ...derulo },
+      { id: 2, myJson: {}, name: '' },
+    ],
+    'after empty object',
+  )
 
   await db.update('jsonDerulo', {
     id: jay,
     myJson: null,
   })
 
-  deepEqual(await db.query('jsonDerulo').get().toObject(), [
-    { id: 1, ...derulo },
-    { id: 2, myJson: null, name: '' },
-  ])
+  deepEqual(
+    await db.query('jsonDerulo').get(),
+    [
+      { id: 1, ...derulo },
+      { id: 2, myJson: null, name: '' },
+    ],
+    'json null',
+  )
 })

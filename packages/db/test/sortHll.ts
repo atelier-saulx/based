@@ -140,11 +140,9 @@ await test('sortCardinality', async (t) => {
     brazos.push(names[Math.floor(Math.random() * names.length)] + i)
   }
 
-  console.time('1M Distinct Brazos update')
   await db.update('article', c2, {
     brazilians: brazos,
   })
-  console.timeEnd('1M Distinct Brazos update')
 
   await db.drain()
 

@@ -74,7 +74,6 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  console.error('save2 rdy', save2_end - save2_start, 'ms')
   const secondHash = db.server.merkleTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)

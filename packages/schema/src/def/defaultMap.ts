@@ -16,7 +16,7 @@ export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [TYPE_INDEX_MAP.uint8]: 0,
   [TYPE_INDEX_MAP.uint16]: 0,
   [TYPE_INDEX_MAP.uint32]: 0,
-  [TYPE_INDEX_MAP.json]: undefined,
+  [TYPE_INDEX_MAP.json]: null,
   [TYPE_INDEX_MAP.microbuffer]: undefined,
   [TYPE_INDEX_MAP.reference]: undefined,
   [TYPE_INDEX_MAP.references]: [],
