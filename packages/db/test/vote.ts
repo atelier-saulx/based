@@ -5,7 +5,7 @@ await test('schema with many uint8 fields', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     // debug: 'server',
-    // maxModifySize: 1000 * 1000 * 10,
+    maxModifySize: 1000 * 1000 * 10,
     // maxModifySize: 1000 * 1000 * 1000,
   })
 
@@ -88,8 +88,9 @@ await test('schema with many uint8 fields', async (t) => {
 
   const final = await db.create('round')
 
-  const amount = 10e6
+  const amount = 1e5
   console.info('--------------------------------')
+  let d = performance.now()
 
   const voteData: any = {
     ddi: {},
@@ -104,9 +105,11 @@ await test('schema with many uint8 fields', async (t) => {
     voteData.payment = payment
     voteData.fingerprint = `f${j}-${final}`
     const voteId = db.create('vote', voteData)
+    await db.drain()
   }
 
-  console.log(`Create ${amount} votes`, await db.drain())
+  await db.drain()
+  console.log(`Create ${amount} votes`, performance.now() - d, 'ms')
 
   //   await db.query('vote').get().inspect(1)
 
