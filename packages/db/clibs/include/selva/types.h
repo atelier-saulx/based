@@ -43,7 +43,7 @@ struct EdgeFieldConstraint {
         EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED = 0x40,
         /**
          * Skip saving this field while dumping.
-         * If the field is of type SELVA_FIELD_TYPE_WEAK_REFERENCES it's saved
+         * If the field is of type SELVA_FIELD_TYPE_REFERENCES it's saved
          * regardless of this flag to preserve the original order of references.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
@@ -96,6 +96,8 @@ struct SelvaFieldInfo;
 struct SelvaFields;
 struct SelvaNode;
 struct SelvaTypeEntry;
+
+typedef void (*selva_dirty_node_cb_t)(void *ctx, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);

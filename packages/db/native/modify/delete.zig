@@ -88,7 +88,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                 Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), db.getNodeId(dstNode));
             }
         }
-        try db.deleteField(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+        try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;
 }

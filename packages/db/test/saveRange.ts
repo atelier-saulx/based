@@ -350,3 +350,77 @@ await test('ref block moves', async (t) => {
   await db.update('a', a1, { bref: bn })
   // t.backup will continue the test from here
 })
+
+await test('ref removal', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.setSchema({
+    types: {
+      a: {
+        props: {
+          bref: { ref: 'b', prop: 'aref', },
+          x: { type: 'uint8' },
+        },
+      },
+      b: {
+        props: {
+          aref: { ref: 'a', prop: 'bref' },
+          y: { type: 'uint8' },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 100_000; i++) {
+    const a = db.create('a', { x: i % 256 })
+    db.create('b', { y: 255 - i % 256, aref: a })
+  }
+  await db.save()
+  for (let i = 0; i < 100_000; i++) {
+      db.update('a', i + 1, { bref: null })
+  }
+
+  // t.backup will continue the test from here
+})
+
+await test('refs removal with delete', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return t.backup(db)
+  })
+
+  await db.setSchema({
+    types: {
+      a: {
+        props: {
+            brefs: { items: { ref: 'b', prop: 'aref', }},
+          x: { type: 'uint8' },
+        },
+      },
+      b: {
+        props: {
+          aref: { ref: 'a', prop: 'brefs' },
+          y: { type: 'uint8' },
+        },
+      },
+    },
+  })
+
+  const a = db.create('a', { x: 13 })
+  for (let i = 0; i < 10; i++) {
+    db.create('b', { y: 255 - i % 256, aref: a })
+  }
+  await db.save()
+  db.delete('a', a)
+
+  // t.backup will continue the test from here
+})

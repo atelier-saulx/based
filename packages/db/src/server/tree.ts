@@ -68,6 +68,7 @@ export function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
   cb: (start: number, end: number, hash: Uint8Array) => void,
+  includeEmptyBlocks: boolean = false
 ) {
   const step = def.blockCapacity
   for (let start = 1; start <= def.lastId; start += step) {
@@ -80,7 +81,7 @@ export function foreachBlock(
       hash,
       db.dbCtxExternal,
     )
-    if (res) {
+    if (res || includeEmptyBlocks) {
       cb(start, end, hash)
     }
   }

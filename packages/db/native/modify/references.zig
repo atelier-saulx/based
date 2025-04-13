@@ -74,7 +74,7 @@ pub fn clearReferences(ctx: *ModifyCtx) void {
             const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
             Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
         }
-        db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+        db.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
     }
 }
 

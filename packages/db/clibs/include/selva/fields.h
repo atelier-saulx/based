@@ -341,10 +341,11 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
 
 /**
  * Delete field.
+ * @param dirty_cb will be called with the deleted node_id in case of a reference(s) field.
  */
 SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+    __attribute__((nonnull(1, 2, 3)));
 
 /**
  * Delete an edge from a references field.
@@ -352,9 +353,12 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct Se
 SELVA_EXPORT
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id);
 
+/**
+ * Clear a references field but don't free it.
+ */
 SELVA_EXPORT
-void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+    __attribute__((nonnull(1, 2, 3)));
 
 /**
  * Init the fields struct of a node or edge.
@@ -369,7 +373,8 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
  * regardless wether the schema defines fields for this node.
  */
 SELVA_EXPORT
-void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
+void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+    __attribute__((nonnull(1, 2)));
 
 SELVA_EXPORT
 void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
