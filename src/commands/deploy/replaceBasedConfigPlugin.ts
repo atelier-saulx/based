@@ -57,7 +57,7 @@ export const replaceBasedConfigPlugin =
             if (cloud || !url) {
               const { cluster, org, env, project, envDiscoveryUrl } =
                 await context.getProgram()
-              const contents = `export default ${JSON.stringify({ cluster, org, env, project, envDiscoveryUrl })};`
+              const contents = `export default ${JSON.stringify({ cluster, org, env, project, discoveryUrls: envDiscoveryUrl })};`
 
               return {
                 contents,

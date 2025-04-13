@@ -151,7 +151,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     project: 'based-cloud',
     name: '@based/admin-hub',
     cluster,
-    ...(platformDiscoveryUrl && { discoveryUrls: [platformDiscoveryUrl] }),
+    ...(platformDiscoveryUrl && { discoveryUrls: platformDiscoveryUrl }),
   })
 
   let lastSession = getLastSession(users)
@@ -224,7 +224,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...(project && { project }),
     ...(env && { env }),
     ...form,
-    ...(envDiscoveryUrl && { discoveryUrls: [envDiscoveryUrl] }),
+    ...(envDiscoveryUrl && { discoveryUrls: envDiscoveryUrl }),
   }
 
   const globalOptions = context.get('globalOptions')
