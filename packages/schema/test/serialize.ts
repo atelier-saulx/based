@@ -1,41 +1,78 @@
 import test from 'node:test'
-import { StrictSchema } from '@based/schema'
+import { StrictSchema, deSerialize, serialize } from '@based/schema'
 import { deepEqual } from 'node:assert'
 
 await test('serialize', async (t) => {
   const schema: StrictSchema = {
     types: {
-      thing: {
-        id: 1,
+      a: {
+        // id: 1,
         props: {
           derp: {
             type: 'string',
           },
           flap: {
             type: 'uint32',
-            validation: (derp: boolean) => {
-              return true
-            },
+            // validation: (derp: boolean) => {
+            //   return true
+            // },
           },
-          snurp: {
-            type: 'object',
-            props: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-              bla: { type: 'string' },
-            },
-          },
-          gur: { type: 'uint8' },
-          hallo: { type: 'text' },
-          x: {
-            type: 'object',
-            props: {
-              snurf: { type: 'boolean' },
-            },
-          },
+          // snurp: {
+          //   type: 'object',
+          //   props: {
+          //     long: { type: 'number' },
+          //     lat: { type: 'number' },
+          //     bla: { type: 'string' },
+          //   },
+          // },
+          // gur: { type: 'uint8' },
+          // hallo: { type: 'text' },
+          // x: {
+          //   type: 'object',
+          //   props: {
+          //     snurf: { type: 'boolean' },
+          //   },
+          // },
         },
       },
     },
   }
-  console.log('derp')
+
+  const decoder = new TextDecoder()
+
+  let d = Date.now()
+
+  const serializedSchema = serialize(
+    {
+      a: {},
+      b: {},
+    },
+    true,
+  )
+
+  // const serializedSchema = serialize(schema, true)
+
+  console.log(serializedSchema, decoder.decode(serializedSchema))
+  console.dir(deSerialize(serializedSchema), { depth: 10 })
+
+  // for (let i = 0; i < 1e6; i++) {
+  //   const serializedSchema = serialize(schema, true)
+  // }
+
+  // const serializedSchema = serialize(schema, true)
+
+  // const encoder = new TextEncoder()
+
+  // const x = encoder.encode(JSON.stringify(schema))
+  // console.log(Date.now() - d, 'ms', serializedSchema, x)
+
+  // const y = decoder.decode(serializedSchema)
+
+  // console.log(`"${y}"`)
+
+  // const r = deSerialize(serializedSchema)
+
+  // console.log('derp', serializedSchema)
+
+  // console.dir(r, { depth: 10 })
 })

@@ -1,6 +1,5 @@
 import { DbClient } from '../index.js'
 import { flushBuffer, startDrain } from '../flushModify.js'
-import { getSubscriptionMarkers } from '../query/subscription/markers.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import {
@@ -27,13 +26,7 @@ export const deleteFn = (
   }
 
   const ctx = db.modifyCtx
-  const res = new ModifyState(
-    def.id,
-    id,
-    db,
-    getSubscriptionMarkers(db, def.id, id, true),
-    opts,
-  )
+  const res = new ModifyState(def.id, id, db, opts)
 
   const schema = db.schemaTypesParsed[type]
   const separate = schema.separate

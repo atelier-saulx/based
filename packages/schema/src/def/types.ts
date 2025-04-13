@@ -27,6 +27,7 @@ export const BINARY = 25
 export const ID = 26
 export const VECTOR = 27
 export const JSON = 28
+export const OBJECT = 29
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -51,6 +52,7 @@ export const TYPE_INDEX_MAP = {
   vector: VECTOR,
   cardinality: CARDINALITY,
   json: JSON,
+  object: OBJECT,
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
@@ -188,6 +190,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   binary: 0,
   vector: 0, // separate
   json: 0,
+  object: 0,
 }
 
 const reverseMap: any = {}

@@ -51,6 +51,10 @@ export class BasedDb {
     const client = new DbClient({
       maxModifySize,
       hooks: {
+        subscribe(q, onData, onError) {
+          console.warn('Subscription not supported without based-server!')
+          return () => {}
+        },
         setSchema(schema, fromStart) {
           return Promise.resolve(server.setSchema(schema, fromStart))
         },

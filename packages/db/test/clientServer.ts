@@ -6,6 +6,10 @@ import test from './shared/test.js'
 
 const start = async (t, clientsN = 2) => {
   const hooks: DbClientHooks = {
+    subscribe(q, onData, onError) {
+      console.warn('Subscription not supported without based-server!')
+      return () => {}
+    },
     async setSchema(schema, fromStart, transformFns) {
       schema = { ...schema }
       await setTimeout(20)

@@ -19,6 +19,10 @@ await test('client server schema updates', async (t) => {
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
+    subscribe(q, onData, onError) {
+      console.warn('Subscription not supported without based-server!')
+      return () => {}
+    },
     async setSchema(schema, fromStart, transformFns) {
       return server.setSchema(schema, fromStart, transformFns)
     },
@@ -129,6 +133,10 @@ await test('rapid schema updates', async (t) => {
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
+    subscribe(q, onData, onError) {
+      console.warn('Subscription not supported without based-server!')
+      return () => {}
+    },
     async setSchema(schema, fromStart, transformFns) {
       return server.setSchema(schema, fromStart, transformFns)
     },
@@ -220,6 +228,10 @@ await test('rapid modifies during schema update', async (t) => {
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
+    subscribe(q, onData, onError) {
+      console.warn('Subscription not supported without based-server!')
+      return () => {}
+    },
     async setSchema(schema, fromStart, transformFns) {
       return server.setSchema(schema, fromStart, transformFns)
     },

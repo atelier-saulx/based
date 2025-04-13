@@ -504,7 +504,7 @@ await test('has OR uncompressed', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).length,
     1,
   )
 

@@ -12,7 +12,7 @@ import {
 export const setCursor = (
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
-  field: number, // PROPDEF
+  field: number, // TODO pass propdef better
   typeIndex: number,
   id: number,
   modifyOp: ModifyOp,

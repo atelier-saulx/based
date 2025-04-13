@@ -6,11 +6,7 @@ import {
   schemaToSelvaBuffer,
 } from '@based/schema/def'
 import { flushBuffer, ModifyCtx, startDrain } from './flushModify.js'
-import {
-  SubscriptionMarkerMap,
-  SubscriptionsMap,
-  SubscriptionsToRun,
-} from './query/subscription/index.js'
+
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
@@ -23,6 +19,7 @@ import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 import { debugMode } from '../utils.js'
+import { OnClose, OnData, OnError } from './query/subscription/types.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -34,6 +31,7 @@ export type DbClientHooks = {
     offsets: Record<number, number>
   }>
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
+  subscribe(q: BasedDbQuery, onData: OnData, onError?: OnError): OnClose
 }
 
 type DbClientOpts = {
@@ -97,12 +95,6 @@ export class DbClient {
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
-  // subscriptions
-  subscriptionsInProgress: boolean = false
-  subscriptonThrottleMs: number = 20
-  subscriptions: SubscriptionsMap = new Map()
-  subscriptionMarkers: SubscriptionMarkerMap = {}
-  subscriptionsToRun: SubscriptionsToRun = []
   schemaChecksum: number
 
   async setSchema(

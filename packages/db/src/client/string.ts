@@ -21,7 +21,7 @@ export const write = (
   const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
   let crc = native.crc32(buf.subarray(offset + 2, offset + 2 + l))
 
-  // 50 maybe if lvl 1
+  // 50 len maybe if lvl 1
   if (value.length > 200 && !noCompression) {
     buf.copyWithin(offset + 6 + l, offset + 2, offset + 2 + l)
     const size = native.compress(buf, offset + 6, l)

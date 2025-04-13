@@ -1,79 +1,14 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { includeField, includeFields } from '../query.js'
 import { registerQuery } from '../registerQuery.js'
-import {
-  Subscription,
-  OnSubscription,
-  OnData,
-  OnError,
-  OnClose,
-} from './types.js'
-import { runSubscription } from './run.js'
-import { addSubscriptionMarkers, deleteSubscriptionMarkers } from './markers.js'
-
-export * from './types.js'
-export * from './markers.js'
+import { OnData, OnError, OnClose } from './types.js'
 
 export const subscribe = (
   q: BasedDbQuery,
   onData: OnData,
-  onError: OnError,
+  onError?: OnError,
 ): OnClose => {
-  let closed = false
-
-  if (!q.def.include.stringFields.size && !q.def.references.size) {
-    includeField(q.def, '*')
-  }
-
-  try {
-    registerQuery(q)
-  } catch (err) {
-    onError(err)
-    return () => q
-  }
-
-  if (!q.db.subscriptions.has(q.id)) {
-    const subscription: Subscription = {
-      query: q,
-      subs: new Set(),
-      inProgress: false,
-      closed: false,
-    }
-    q.db.subscriptions.set(q.id, subscription)
-    addSubscriptionMarkers(q, subscription)
-  }
-
-  const fn: OnSubscription = (res, err) => {
-    if (!closed) {
-      if (err) {
-        onError(err)
-      } else {
-        onData(res)
-      }
-    }
-  }
-
-  const sub = q.db.subscriptions.get(q.id)
-
-  const close = () => {
-    sub.subs.delete(fn)
-    if (sub.subs.size === 0) {
-      q.db.subscriptions.delete(q.id)
-      deleteSubscriptionMarkers(q)
-    }
-    closed = true
-    return q
-  }
-
-  sub.subs.add(fn)
-
-  if (sub.res) {
-    onData(sub.res)
-  }
-
-  if (!sub.inProgress) {
-    runSubscription(sub)
-  }
-
-  return close
+  registerQuery(q)
+  return q.db.hooks.subscribe(q, onData, onError)
 }
+
+export * from './types.js'

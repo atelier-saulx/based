@@ -6,7 +6,6 @@ import {
   SchemaPropTree,
 } from '@based/schema/def'
 import { ModifyCtx } from '../../index.js'
-import { SubscriptionMarkersCheck } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 import { ModifyOpts } from './types.js'
 import { LangCode, langCodesMap } from '@based/schema'
@@ -74,21 +73,18 @@ export class ModifyState {
     typeId: number,
     tmpId: number,
     db: DbClient,
-    subMarkers: SubscriptionMarkersCheck | false,
     opts: ModifyOpts,
     update = false,
   ) {
     this.tmpId = tmpId
     this.#typeId = typeId
     this.#ctx = db.modifyCtx.ctx
-    this.subMarkers = subMarkers
     this.update = update
     if (opts?.locale) {
       this.locale = langCodesMap.get(opts.locale)
     }
   }
 
-  subMarkers: SubscriptionMarkersCheck | false
   update: boolean
   locale: LangCode
 

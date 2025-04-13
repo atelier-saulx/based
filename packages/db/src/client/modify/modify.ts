@@ -32,7 +32,6 @@ import { appendFixedValue, writeFixedValue } from './fixed.js'
 import { writeAlias } from './alias.js'
 import { writeHll } from './cardinality.js'
 import { writeVector } from './vector.js'
-import { checkSubscriptionMarkers } from '../query/subscription/index.js'
 import { writeJson } from './json.js'
 
 function _modify(
@@ -60,10 +59,6 @@ function _modify(
 
       if (val === undefined) {
         continue
-      }
-
-      if (res.subMarkers) {
-        checkSubscriptionMarkers(ctx.db, res.subMarkers, def)
       }
 
       const type = def.typeIndex

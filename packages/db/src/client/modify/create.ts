@@ -14,7 +14,6 @@ import {
   SIZE,
 } from './types.js'
 import { writeFixedValue } from './fixed.js'
-import { getSubscriptionMarkers } from '../query/subscription/index.js'
 import { DbClient } from '../index.js'
 
 export type CreateObj = Record<string, any>
@@ -168,13 +167,7 @@ export function create(
   }
 
   const ctx = db.modifyCtx
-  const res = new ModifyState(
-    def.id,
-    id,
-    db,
-    getSubscriptionMarkers(db, def.id, id, true),
-    opts,
-  )
+  const res = new ModifyState(def.id, id, db, opts)
 
   const pos = ctx.len
   const err = appendCreate(ctx, def, obj, res, opts?.unsafe)
