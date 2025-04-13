@@ -11,7 +11,7 @@ await test('string', () => {
     },
   })
 
-  await throws(() => {
+  throws(() => {
     parse({
       props: {
         // @ts-expect-error

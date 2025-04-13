@@ -18,7 +18,7 @@ await test('enum', () => {
     },
   })
 
-  await throws(() => {
+  throws(() => {
     parse({
       props: {
         myEnum: {

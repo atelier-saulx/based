@@ -15,7 +15,7 @@ await test('number', () => {
     },
   })
 
-  await throws(() => {
+  throws(() => {
     parse({
       props: {
         myNumber: {
@@ -29,12 +29,12 @@ await test('number', () => {
     })
   }, 'should throw with out of range default')
 
-  await throws(() => {
+  throws(() => {
     parse({
       props: {
         myNumber: {
           type: 'number',
-          default: 11,
+          default: 110,
           min: 10,
           max: 100,
           step: 0.7,

@@ -27,6 +27,8 @@ CFLAGS := -std=gnu23 -pthread -O2 -MMD -fstack-protector \
 LDFLAGS += -pthread
 
 # Normally you don't want to set this here but if you do, then it must be exported
+# The best way to make debug builds for Linux on macOs:
+# podman run --rm --env EN_VALGRIND=1 --env EN_SANIT=1 -v "$PWD/../../..:/usr/src/based-db" based-db-clibs-build-linux_aarch64
 #export EN_VALGRIND := 1
 
 # Add these for valgrind
