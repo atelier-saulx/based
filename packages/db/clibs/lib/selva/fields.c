@@ -482,7 +482,6 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
 
 /**
  * Delete a reference field edge.
- * The caller must invalidate pointers in ref if relevant.
  * Clears both ways.
  * @param orig_dst should be given if fs_src is of type SELVA_FIELD_TYPE_REFERENCES.
  */
