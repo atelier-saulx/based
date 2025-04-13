@@ -4,6 +4,7 @@ import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import { wait } from '@saulx/utils'
 import { debugMode, debugServer } from './utils.js'
+import { BasedQueryResponse } from './client/query/BasedIterable.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -52,8 +53,30 @@ export class BasedDb {
       maxModifySize,
       hooks: {
         subscribe(q, onData, onError) {
-          console.warn('Subscription not supported without based-server!')
-          return () => {}
+          let timer: ReturnType<typeof setTimeout>
+          let prevChecksum: number
+          let lastLen = 0
+          let response: BasedQueryResponse
+          const get = async () => {
+            const res = await server.getQueryBuf(q.buffer)
+            if (!response) {
+              response = new BasedQueryResponse(q.id, q.def, res, 0)
+            } else {
+              response.result = res
+              response.end = res.byteLength
+            }
+            const checksum = response.checksum
+            if (lastLen != res.byteLength || checksum != prevChecksum) {
+              onData(response)
+              lastLen = res.byteLength
+              prevChecksum = checksum
+            }
+            setTimeout(get, 200)
+          }
+          get()
+          return () => {
+            clearTimeout(timer)
+          }
         },
         setSchema(schema, fromStart) {
           return Promise.resolve(server.setSchema(schema, fromStart))
