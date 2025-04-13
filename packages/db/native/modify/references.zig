@@ -112,6 +112,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len + offset + 1;
     }
 
+    // $index lets ignore for mark dirty
     // if Other side is single ref then do the same as a single ref on this side
 
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
