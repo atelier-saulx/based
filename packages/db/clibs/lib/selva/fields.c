@@ -729,7 +729,7 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
  * @param db Can be NULL if field type is not a strong reference.
  * @param node Can be NULL if field type is not a strong reference.
  */
-static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
     struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
     const enum SelvaFieldType type = fs->type;
@@ -768,17 +768,17 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     return 0;
 }
 
-int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+int selva_fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
 #if 0
     assert(selva_get_fs_by_node(db, node, fs->field) == fs);
 #endif
-    return fields_set(db, node, fs, &node->fields, value, len);
+    return fields_set(node, fs, &node->fields, value, len);
 }
 
-int fields_set2(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+int fields_set2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
-    return fields_set(db, node, fs, fields, value, len);
+    return fields_set(node, fs, fields, value, len);
 }
 
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
@@ -1557,7 +1557,7 @@ int selva_fields_set_reference_meta(
     }
 
     selva_fields_ensure_ref_meta(db, node, ref, efc);
-    return fields_set(nullptr, nullptr, fs, ref->meta, value, len);
+    return fields_set(nullptr, fs, ref->meta, value, len);
 }
 
 int selva_fields_get_reference_meta_mutable_string(

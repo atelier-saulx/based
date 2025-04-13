@@ -237,9 +237,8 @@ pub fn deleteReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, i
     ));
 }
 
-pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+pub fn writeField(_: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
-        ctx.selva,
         node,
         fieldSchema,
         data.ptr,

@@ -645,7 +645,7 @@ static int load_field_weak_references(struct selva_io *io, const struct SelvaFie
         int err;
 
         io->sdb_read(&reference, sizeof(reference), 1, io);
-        err = fields_set2(nullptr, nullptr, fs, fields, &reference, sizeof(struct SelvaNodeWeakReference));
+        err = fields_set2(nullptr, fs, fields, &reference, sizeof(struct SelvaNodeWeakReference));
         if (err) {
             return err;
         }
@@ -721,7 +721,7 @@ static int load_reference_meta(
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             /* TODO check return value */
             io->sdb_read(value_buf, sizeof(char), value_size, io);
-            err = fields_set2(nullptr, nullptr, fs, ref->meta, value_buf, value_size);
+            err = fields_set2(nullptr, fs, ref->meta, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             err = load_field_weak_references(io, fs, ref->meta);
@@ -893,7 +893,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             /* TODO check return value */
             io->sdb_read(value_buf, sizeof(char), value_size, io);
-            err = selva_fields_set(db, node, fs, value_buf, value_size);
+            err = selva_fields_set(node, fs, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
             err = load_field_string(io, node, fs);
