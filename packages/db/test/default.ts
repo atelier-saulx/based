@@ -90,7 +90,7 @@ await test('default values for all props in user type', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query('user', userId).include('*', '**').get().inspect(),
+    await db.query('user', userId).include('*', '**').get(),
     {
       id: userId,
       isNice: true,

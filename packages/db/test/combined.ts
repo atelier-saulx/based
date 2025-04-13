@@ -9,12 +9,10 @@ const getRandom = (nr: number) => {
   return Math.ceil(Math.random() * nr)
 }
 
-// this test is not a perf test - tries a lot of randomization
 await test('E-commerce Simulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 50000,
-    // debug: 'server',
   })
 
   const simulationDuration = 5e3
@@ -430,22 +428,16 @@ await test('E-commerce Simulation', async (t) => {
     if (inProgress > maxInProgress) {
       return
     }
-
     inProgress += concurrency
-    // console.log({ inProgress, maxInProgress })
     if (operationsCount % 500 === 0) {
       const x = Date.now()
-
       const n = operationsCount - lastOperations
-
       const opsPerS = n / ((x - measure) / 1e3)
       measure = x
       lastOperations = operationsCount
-
-      console.log(
-        `${~~(totalAliasUpdateTime / totalAliasUpdate)}ms Ops per sec: ${~~opsPerS} concurrency: ${concurrency} Ops: ${operationsCount}, Items: ${totalItemsCreated}, Users: ${userIds}, Prods: ${productIds} inProgress: ${inProgress}`,
-      )
-
+      // console.log(
+      //   `${~~(totalAliasUpdateTime / totalAliasUpdate)}ms Ops per sec: ${~~opsPerS} concurrency: ${concurrency} Ops: ${operationsCount}, Items: ${totalItemsCreated}, Users: ${userIds}, Prods: ${productIds} inProgress: ${inProgress}`,
+      // )
       totalAliasUpdate = 0
       totalAliasUpdateTime = 0
     }
@@ -487,7 +479,7 @@ await test('E-commerce Simulation', async (t) => {
   const finalProductCount = (
     await db.query('product').range(0, 10_000_000).get()
   ).length
-  console.log(`Final product count in DB: ${finalProductCount}`)
+
   equal(
     finalProductCount > 0,
     true,

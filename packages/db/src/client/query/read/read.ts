@@ -218,7 +218,10 @@ const handleUndefinedProps = (
           // console.log('???')
           addField(prop, '', item)
         } else {
-          addField(prop, prop.default, item)
+          1
+          if (prop.default !== undefined) {
+            addField(prop, prop.default, item)
+          }
         }
       }
     }
