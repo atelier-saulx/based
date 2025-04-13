@@ -117,9 +117,10 @@ export const flushBuffer = (db: DbClient) => {
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
-    const d = performance.now()
+    // const d = performance.now()
     flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
-      db.writeTime += performance.now() - d
+      // return time there
+      // db.writeTime += performance.now() - d
       resCtx.offsets = offsets
       for (const typeId in lastIds) {
         if (typeId in offsets) {

@@ -39,7 +39,11 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         const node = try db.upsertNode(id, refTypeEntry);
 
-        // pretty sure its this
+        // $index lets ignore for mark dirty
+
+        // if Other side is single ref then do the same as a single ref on this side
+
+        // pretty sure its this thats slow
         const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {
@@ -107,6 +111,8 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len + offset + 1;
     }
+
+    // if Other side is single ref then do the same as a single ref on this side
 
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
