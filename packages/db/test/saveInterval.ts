@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test.skip('saveInterval', async (t) => {
+await test('saveInterval', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     saveIntervalInSeconds: 1,
@@ -47,6 +47,8 @@ await test.skip('saveInterval', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
+
+  await db2.start()
 
   t.after(() => {
     return db2.destroy()
