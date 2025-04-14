@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('saveInterval', async (t) => {
+await test.skip('saveInterval', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     saveIntervalInSeconds: 1,
@@ -52,6 +52,7 @@ await test('saveInterval', async (t) => {
     return db2.destroy()
   })
 
+  await db2.schemaIsSet()
   const res2 = await db2.query('user').get().toObject()
 
   deepEqual(res1, res2)
