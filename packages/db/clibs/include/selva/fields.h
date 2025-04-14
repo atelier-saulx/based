@@ -105,7 +105,6 @@ void selva_fields_ensure_ref_meta(
  */
 SELVA_EXPORT
 int selva_fields_set(
-        struct SelvaDb *db,
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         const void *value, size_t len);
@@ -117,7 +116,6 @@ int selva_fields_set(
  */
 SELVA_EXPORT
 int fields_set2(
-        struct SelvaDb *db,
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         struct SelvaFields *fields,
