@@ -17,22 +17,22 @@ await test('serialize', async (t) => {
             //   return true
             // },
           },
-          // snurp: {
-          //   type: 'object',
-          //   props: {
-          //     long: { type: 'number' },
-          //     lat: { type: 'number' },
-          //     bla: { type: 'string' },
-          //   },
-          // },
-          // gur: { type: 'uint8' },
-          // hallo: { type: 'text' },
-          // x: {
-          //   type: 'object',
-          //   props: {
-          //     snurf: { type: 'boolean' },
-          //   },
-          // },
+          snurp: {
+            type: 'object',
+            props: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+              bla: { type: 'string' },
+            },
+          },
+          gur: { type: 'uint8' },
+          hallo: { type: 'text' },
+          x: {
+            type: 'object',
+            props: {
+              snurf: { type: 'boolean' },
+            },
+          },
         },
       },
     },
@@ -42,18 +42,20 @@ await test('serialize', async (t) => {
 
   let d = Date.now()
 
-  const serializedSchema = serialize(
-    {
-      a: {},
-      b: {},
-    },
-    true,
-  )
+  // const serializedSchema = serialize(
+  //   {
+  //     a: {},
+  //     b: {},
+  //   },
+  //   true,
+  // )
 
-  // const serializedSchema = serialize(schema, true)
+  const serializedSchema = serialize(schema, true)
 
-  console.log(serializedSchema, decoder.decode(serializedSchema))
+  console.log(serializedSchema)
   console.dir(deSerialize(serializedSchema), { depth: 10 })
+
+  console.log(serialize(schema, false))
 
   // for (let i = 0; i < 1e6; i++) {
   //   const serializedSchema = serialize(schema, true)

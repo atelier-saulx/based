@@ -68,25 +68,27 @@ await test('branchedCount', async (t) => {
 
   await db.drain()
 
-  // await db.query('article', strudelArticle).include('*', '**').get().inspect()
+  await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
-  // console.log(
-  //   await db
-  //     .query('user')
-  //     //lala
-  //     .filter('flap', '>', 20)
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  console.log(
+    await db
+      .query('user')
+      .include('id')
+      .range(0, 1e9)
+      .filter('flap', '>', 20)
+      .count()
+      .get()
+      .toObject(),
+  )
 
-  // await db
-  //   .query('user')
-  //   //lala
-  //   .filter('flap', '>', 20)
-  //   .count()
-  //   .get()
-  //   .inspect(100)
+  await db
+    .query('user')
+    //lala
+    // .filter('flap', '>', 20)
+    // .range(0, 0)
+    .count()
+    .get()
+    .inspect(100)
 
   // console.log(
   //   await db
@@ -101,7 +103,7 @@ await test('branchedCount', async (t) => {
   //   await db.query('article').include('contributors').count().get().inspect(),
   // )
 
-  // // Here to experiment in branched queries
+  // Here to experiment in branched queries
   // await db
   //   .query('article')
   //   .include((q) => q('contributors').count(), 'name')
