@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { confirm } from '@clack/prompts'
 import type { Command } from 'commander'
 import { AppContext } from '../../context/index.js'
@@ -32,7 +32,7 @@ export const projectInit = async (program: Command): Promise<void> => {
       env,
       apiKey: apiKeyProject,
     } = await context.getProgram()
-    const { skip } = context.getGlobalOptions()
+    const { skip, path: globalPath } = context.getGlobalOptions()
 
     if (skip) {
       args = {
@@ -44,6 +44,10 @@ export const projectInit = async (program: Command): Promise<void> => {
         queries: [],
         functions: [],
       }
+    }
+
+    if (!args.path && globalPath) {
+      args.path = globalPath
     }
 
     const typedChoices = (
@@ -412,7 +416,6 @@ export const makeProject = async (args: Based.Init.Make) => {
 
       await saveAsFile(basedProjectTemplate, project.path, project.format)
 
-      context.print.line()
       context.spinner.stop('Project created!')
 
       const npm = await confirm({
@@ -420,13 +423,19 @@ export const makeProject = async (args: Based.Init.Make) => {
       })
 
       if (npm) {
-        context.print.line()
-        context.spinner.start('Installing your dependencies')
+        try {
+          context.spinner.start('Installing your dependencies')
 
-        const install = await npmInstall()
+          const install = await npmInstall(
+            dirname(project.path) || process.cwd(),
+          )
 
-        if (install) {
-          context.print.success('Dependencies installed successfully!', true)
+          if (install) {
+            context.spinner.stop('Dependencies installed successfully!', true)
+            context.print.line()
+          }
+        } catch (error) {
+          throw new Error(error)
         }
       }
     }
@@ -434,7 +443,8 @@ export const makeProject = async (args: Based.Init.Make) => {
     throw new Error(context.i18n('errors.917', error))
   }
 
-  context.print
-    .line()
-    .success(context.i18n('methods.projectCreated', project.path), true)
+  context.print.success(
+    context.i18n('methods.projectCreated', `<b>${project.path}</b>`),
+    true,
+  )
 }

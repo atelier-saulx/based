@@ -1,7 +1,7 @@
-import type { Command } from 'commander'
+import { type Command, Option } from 'commander'
 
 const processOption = (option) => {
-  const args: string[] = [option.parameter, option.description]
+  const args: [string, string] = [option.parameter, option.description]
   const method: string = option.required ? 'requiredOption' : 'option'
 
   if (option.default !== undefined) {
@@ -16,7 +16,11 @@ const addOptions = (options, cmd: Command) => {
     for (const option of options) {
       const { method, args } = processOption(option)
 
-      cmd[method](...args)
+      if (option.hidden) {
+        cmd.addOption(new Option(...args).hideHelp())
+      } else {
+        cmd[method](...args)
+      }
     }
   }
 }

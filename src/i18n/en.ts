@@ -68,6 +68,11 @@ export default {
             'If you want to use a specific Based configuration file. All other project options take precedence over this option.',
         },
         {
+          parameter: '--path <path>',
+          description: 'The path to save the Based Project File.',
+          hidden: true,
+        },
+        {
           parameter: '-ed, --envDiscoveryUrl <url...>',
           description:
             'If you want to define a specific URL from a different environment to connect to.',
@@ -719,9 +724,9 @@ export default {
   },
   context: {
     configurationFileNotFound:
-      'No <b>Based</b> configuration file found or it is empty. <b>Consider creating one.</b>',
+      'No <b>Based</b> configuration file was found, or it is empty or invalid. <b>Consider creating one.</b>',
     createBasedFile:
-      'Do you want to create a Based file? If you continue without creating the file, your session will not be saved. If you proceed with this operation, a file named <b>based.ts</b> will be created in the current directory: <dim><b>${directory}</b></dim>. ',
+      'Do you want to create a Based file? If you continue without creating the file, your session will not be saved. If you proceed with this operation, a file named <b>based.ts</b> will be created in the current directory: <dim><b>${directory}</b></dim>',
     file: '<dim>Project file:</dim> <b>${file}</b>',
     cluster: '<dim>Cluster:</dim> <b>${cluster}</b>',
     org: '<dim>Org:</dim> <b>${org}</b>',

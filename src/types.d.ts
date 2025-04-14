@@ -82,14 +82,18 @@ declare global {
         platformDiscoveryUrl?: string[]
       }
 
-      type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'
-        ? Based.Context.Project & {
+      type GlobalOptions<T extends 'yes' | 'skip' = 'yes'> = T extends 'yes'
+        ? {
             display?: State['display']
             yes?: boolean
+            createBasedFile?: boolean
+            path?: string
           }
-        : Based.Context.Project & {
+        : {
             display?: State['display']
             skip?: boolean
+            createBasedFile?: boolean
+            path?: string
           }
 
       type State = {

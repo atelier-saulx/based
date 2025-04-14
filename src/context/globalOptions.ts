@@ -5,28 +5,14 @@ export function contextGlobalOptions(): Based.Context.GlobalOptions<'skip'> {
   const {
     yes: skip,
     display,
-    cluster,
-    org,
-    project,
-    env,
-    apiKey,
-    file,
-    envDiscoveryUrl,
-    platformDiscoveryUrl,
+    path,
   } = this.program.opts() as Based.Context.GlobalOptions<'yes'>
 
   globalOptions = {
     ...globalOptions,
     ...(skip !== undefined && { skip }),
     ...(display !== undefined && { display }),
-    ...(cluster !== undefined && { cluster }),
-    ...(org !== undefined && { org }),
-    ...(project !== undefined && { project }),
-    ...(env !== undefined && { env }),
-    ...(apiKey !== undefined && { apiKey }),
-    ...(file !== undefined && { file }),
-    ...(envDiscoveryUrl !== undefined && { envDiscoveryUrl }),
-    ...(platformDiscoveryUrl !== undefined && { platformDiscoveryUrl }),
+    ...(path !== undefined && { path }),
   }
 
   process.env.BASED_CLI_LOG_LEVEL = display

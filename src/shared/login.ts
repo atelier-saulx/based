@@ -227,12 +227,13 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
     ...(envDiscoveryUrl && { discoveryUrls: envDiscoveryUrl }),
   }
 
-  const globalOptions = context.get('globalOptions')
+  const globalOptions: Based.Context.GlobalOptions =
+    context.get('globalOptions')
 
   if (globalOptions?.createBasedFile) {
     await saveAsFile(
       basedProject,
-      join(process.cwd(), `${BASED_FILE}.ts`),
+      join(globalOptions.path || process.cwd(), `${BASED_FILE}.ts`),
       'ts',
     )
   }

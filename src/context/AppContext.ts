@@ -109,7 +109,7 @@ export class AppContext {
           }
         } else {
           throw new Error(
-            'You’re trying to add a non-object value into an object.',
+            "You're trying to add a non-object value into an object.",
           )
         }
       } else {

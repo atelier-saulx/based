@@ -1,5 +1,7 @@
+import { resolve } from 'node:path'
 import { getBranch } from '../shared/getBranch.js'
 import { getFile } from '../shared/getFile.js'
+import { abs } from '../shared/pathAndFiles.js'
 
 export async function contextProgram(): Promise<Based.Context.Project> {
   let basedProject: Based.Context.Project = this.get('basedProject')
@@ -20,21 +22,35 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     platformDiscoveryUrl,
   } = this.program.opts() as Based.Context.Project
 
+  const { path, yes: skip } = this.program.opts() as Based.Context.GlobalOptions
+
   if (!basedProject) {
-    basedFile = await getFile(
-      file ? [file] : ['based.ts', 'based.json', 'based.js'],
-    )
-
-    if (!basedFile || Object.keys(basedFile)?.length <= 1) {
-      this.print.warning(this.i18n('context.configurationFileNotFound'), true)
-
-      const createBasedFile = await this.form.boolean(
-        this.i18n('context.createBasedFile', process.cwd()),
+    const getBasedFiles = (path: string) =>
+      ['based.ts', 'based.json', 'based.js'].map((file) =>
+        abs(file, resolve(path)),
       )
 
-      this.put('globalOptions', { createBasedFile })
+    const files = getBasedFiles(path || process.cwd())
+    basedFile = await getFile(file ? [file] : files)
 
-      this.print.pipe()
+    if (
+      (!basedFile || Object.keys(basedFile)?.length <= 1) &&
+      (!org || !project || !env)
+    ) {
+      if (!skip) {
+        this.print.warning(this.i18n('context.configurationFileNotFound'), true)
+
+        const createBasedFile = await this.form.boolean(
+          this.i18n(
+            'context.createBasedFile',
+            abs(file || 'based.ts', resolve(path || process.cwd())),
+          ),
+        )
+
+        this.put('globalOptions', { createBasedFile })
+
+        this.print.pipe()
+      }
     }
   }
 
@@ -65,8 +81,6 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     envLabel += ` <reset><dim>(${basedProject.branch.name ?? ''})</dim></reset>`
   }
 
-  this.set('basedProject', basedProject)
-
   if (Object.keys(basedProject).length > 2) {
     if (basedProject.file) {
       this.print.pipe(this.i18n('context.file', basedProject.file))
@@ -89,6 +103,9 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
     this.print.pipe()
   }
+
+  this.put('globalOptions', { path })
+  this.set('basedProject', basedProject)
 
   return basedProject
 }

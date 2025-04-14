@@ -47,9 +47,7 @@ export const authByEmail = async (
       code,
     })
 
-    context.print
-      .success(context.i18n('commands.auth.methods.success', email))
-      .line()
+    context.print.success(context.i18n('commands.auth.methods.success', email))
   } catch (error) {
     context.print.error(
       `<red>${context.i18n('errors.401', error.message.split(']').pop().trim())}</red>`,

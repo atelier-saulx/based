@@ -5,7 +5,6 @@ import {
   isCancel,
   log,
   multiselect,
-  outro,
   select,
   text,
 } from '@clack/prompts'
@@ -139,7 +138,7 @@ export function contextForm(context: AppContext): FormMaker {
       const { header, footer, cancelMessage, ...rest } = fields
 
       if (header) {
-        context.print.log(`●  ${header}`)
+        context.print.intro(header)
       }
 
       const result = await group(rest as PromptGroup<unknown>, {
@@ -148,7 +147,7 @@ export function contextForm(context: AppContext): FormMaker {
       })
 
       if (footer) {
-        outro(footer)
+        context.print.outro(footer)
       }
 
       return result as Promise<Record<string, object>>
