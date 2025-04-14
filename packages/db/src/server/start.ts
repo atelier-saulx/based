@@ -132,9 +132,9 @@ export async function start(
     })
   }
 
-  if (this.saveIntervalInSeconds > 0) {
+  if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
-      db.save()
-    }, this.saveIntervalInSeconds * 1e3)
+      save(db)
+    }, db.saveIntervalInSeconds * 1e3)
   }
 }
