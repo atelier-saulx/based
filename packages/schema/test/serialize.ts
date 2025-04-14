@@ -17,22 +17,22 @@ await test('serialize', async (t) => {
             //   return true
             // },
           },
-          // snurp: {
-          //   type: 'object',
-          //   props: {
-          //     long: { type: 'number' },
-          //     lat: { type: 'number' },
-          //     bla: { type: 'string' },
-          //   },
-          // },
-          // gur: { type: 'uint8' },
-          // hallo: { type: 'text' },
-          // x: {
-          //   type: 'object',
-          //   props: {
-          //     snurf: { type: 'boolean' },
-          //   },
-          // },
+          snurp: {
+            type: 'object',
+            props: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+              bla: { type: 'string' },
+            },
+          },
+          gur: { type: 'uint8' },
+          hallo: { type: 'text' },
+          x: {
+            type: 'object',
+            props: {
+              snurf: { type: 'boolean' },
+            },
+          },
         },
       },
     },
@@ -40,31 +40,32 @@ await test('serialize', async (t) => {
 
   const decoder = new TextDecoder()
 
-  let d = Date.now()
+  // const serializedSchema = serialize(
+  //   {
+  //     a: {},
+  //     b: {},
+  //   },
+  //   true,
+  // )
+  const serializedSchema = serialize(schema, true)
 
-  const serializedSchema = serialize(
-    {
-      a: {},
-      b: {},
-    },
-    true,
-  )
-
-  // const serializedSchema = serialize(schema, true)
-
-  console.log(serializedSchema, decoder.decode(serializedSchema))
+  console.log(serializedSchema)
   console.dir(deSerialize(serializedSchema), { depth: 10 })
 
-  // for (let i = 0; i < 1e6; i++) {
-  //   const serializedSchema = serialize(schema, true)
-  // }
+  // console.log(serialize(schema, false))
+
+  let d = Date.now()
+
+  for (let i = 0; i < 1e6; i++) {
+    const serializedSchema = serialize(schema, true)
+  }
 
   // const serializedSchema = serialize(schema, true)
 
   // const encoder = new TextEncoder()
 
   // const x = encoder.encode(JSON.stringify(schema))
-  // console.log(Date.now() - d, 'ms', serializedSchema, x)
+  console.log(Date.now() - d, 'ms')
 
   // const y = decoder.decode(serializedSchema)
 

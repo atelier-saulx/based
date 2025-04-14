@@ -12,7 +12,6 @@ const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
 const sort = @import("./db/sort.zig");
 const string = @import("./string.zig");
-const expire = @import("./expire.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
@@ -126,8 +125,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
     registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
-
-    registerFunction(env, exports, "expire", expire.expireNapi) catch return null;
 
     return exports;
 }

@@ -40,7 +40,7 @@ void selva_expire_deinit(struct SelvaExpire *ex)
     ex->next = SELVA_EXPIRE_NEVER;
 }
 
-void selva_expire_tick(struct SelvaExpire *ex, int64_t now)
+void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now)
 {
     if (ex->next > now) {
         return;
@@ -56,7 +56,7 @@ void selva_expire_tick(struct SelvaExpire *ex, int64_t now)
         struct SelvaExpireToken *np;
         do {
             np = next->next;
-            ex->expire_cb(next);
+            ex->expire_cb(next, ctx);
             /* `next` should be freed by expire_cb(). */
         } while ((next = np));
     }

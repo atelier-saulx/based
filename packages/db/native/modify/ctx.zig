@@ -33,7 +33,7 @@ pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
 }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
-    const blockCapacity: u64 = selva.selva_get_block_capacity(ctx.typeEntry.?);
+    const blockCapacity: u64 = selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.db.selva, typeId));
     const tmp: u64 = nodeId - @as(u64, @intFromBool((nodeId % blockCapacity) == 0));
     const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
     ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;

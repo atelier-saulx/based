@@ -137,9 +137,15 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
     selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
 }
 
-static void expire_cb(struct SelvaExpireToken *tok)
+struct expire_dirty_ctx {
+    selva_dirty_node_cb_t cb;
+    void *mctx;
+};
+
+static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+    struct expire_dirty_ctx *dirty = (struct expire_dirty_ctx *)ctx;
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
@@ -147,8 +153,10 @@ static void expire_cb(struct SelvaExpireToken *tok)
     assert(te);
     node = selva_find_node(te, token->node_id);
     if (node) {
-        /* TODO must mark dirty. */
-        selva_del_node(token->db, te, node, nullptr, nullptr);
+        if (dirty->cb) {
+            dirty->cb(dirty->mctx, node->type, node->node_id);
+        }
+        selva_del_node(token->db, te, node, dirty->cb, dirty->mctx);
     }
 
     selva_free(token);
@@ -161,9 +169,14 @@ static void cancel_cb(struct SelvaExpireToken *tok)
     selva_free(token);
 }
 
-void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
+void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, int64_t now)
 {
-    selva_expire_tick(&db->expiring, now);
+    struct expire_dirty_ctx ctx = {
+        .cb = dirty_cb,
+        .mctx = dirty_ctx,
+    };
+
+    selva_expire_tick(&db->expiring, &ctx, now);
 }
 
 struct SelvaDb *selva_db_create(void)

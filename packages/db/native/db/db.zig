@@ -566,3 +566,8 @@ pub inline fn getText(
     }
     return @as([*]u8, undefined)[0..0];
 }
+
+pub fn expire(ctx: *modifyCtx.ModifyCtx) void {
+    // Expire things before query
+    selva.selva_db_expire_tick(ctx.db.selva, markDirtyCb, ctx, std.time.timestamp());
+}

@@ -32,6 +32,7 @@ export const WRITELOG_FILE = 'writelog.json'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
+const emptyUint8Array = new Uint8Array(0)
 
 class SortIndex {
   constructor(buf: Uint8Array, dbCtxExternal: any) {
@@ -567,6 +568,17 @@ export class DbServer {
     }
   }
 
+  #expire() {
+    this.#resizeModifyDirtyRanges()
+    native.modify(emptyUint8Array, emptyUint8Array, this.dbCtxExternal, this.modifyDirtyRanges)
+    for (let key of this.modifyDirtyRanges) {
+      if (key === 0) {
+        break
+      }
+      this.dirtyRanges.add(key)
+    }
+  }
+
   addToQueryQueue(resolve, buf) {
     if (this.queryQueue.size === 16777216) {
       resolve(new Error('Query queue exceeded'))
@@ -616,7 +628,7 @@ export class DbServer {
       }
 
       if (!fromQueue) {
-        native.expire(this.dbCtxExternal)
+        this.#expire()
       }
 
       this.availableWorkerIndex =
@@ -639,7 +651,7 @@ export class DbServer {
       if (this.queryQueue.size) {
         const queryQueue = this.queryQueue
         this.queryQueue = new Map()
-        native.expire(this.dbCtxExternal)
+        this.#expire()
         for (const [resolve, buf] of queryQueue) {
           resolve(this.getQueryBuf(buf, true))
         }

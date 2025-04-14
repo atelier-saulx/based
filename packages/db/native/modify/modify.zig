@@ -156,13 +156,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         }
     }
 
+    db.expire(&ctx);
+
     // Pass back newly discovered dirty blocks
     const newDirtyRanges = ctx.dirtyRanges.values();
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-    selva.selva_db_expire_tick(dbCtx.selva, std.time.timestamp());
-    // mark dirty bussiness
 
     return null;
 }
