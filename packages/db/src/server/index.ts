@@ -508,12 +508,6 @@ export class DbServer {
       let offset = def.lastId - startId
 
       if (offset < 0) {
-        console.log('-----------------')
-        console.log(def.type, {
-          offset,
-          serverId: def.lastId,
-          clientId: startId,
-        })
         offset = 0
       }
 

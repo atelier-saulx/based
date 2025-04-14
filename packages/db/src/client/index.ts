@@ -258,7 +258,7 @@ export class DbClient {
     opts?: ModifyOpts,
   ): ModifyRes
 
-  update(value: any, opts?: ModifyOpts): ModifyRes
+  update(value: Record<string, any>, opts?: ModifyOpts): ModifyRes
 
   update(
     typeOrValue: string | any,
