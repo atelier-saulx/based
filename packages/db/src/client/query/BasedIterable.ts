@@ -7,6 +7,10 @@ import { readFloatLE, readUint32 } from '../../utils.js'
 
 export { time, size, inspectData }
 
+const BITS_FOR_B = 21
+const FACTOR = 2 ** BITS_FOR_B
+const MASK_B = FACTOR - 1
+
 export class BasedQueryResponse {
   result: Uint8Array
   def: QueryDef
@@ -26,6 +30,10 @@ export class BasedQueryResponse {
     this.result = result
     this.execTime = execTime
     this.end = end
+  }
+
+  get version() {
+    return (this.checksum >>> 0) * FACTOR + (this.result.byteLength & MASK_B)
   }
 
   get size() {
