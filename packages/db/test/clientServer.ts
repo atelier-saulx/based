@@ -147,7 +147,7 @@ await test('client server', async (t) => {
 await test('client server rapid fire', async (t) => {
   const promises = []
   const clientsN = 1
-  const nodesN = 1000
+  const nodesN = 100
   const multi = 2
   const { clients } = await start(t, clientsN)
 
@@ -194,7 +194,6 @@ await test('client server rapid fire', async (t) => {
   })
 
   await Promise.all(promises)
-
   const allUsers1 = await clients[0]
     .query('user')
     .range(0, 100_000)

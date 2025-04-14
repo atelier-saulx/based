@@ -76,18 +76,24 @@ export async function start(
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
 
-    foreachBlock(db, def, (start, end, hash) => {
-      const mtKey = makeCsmtKey(def.id, start)
-      const file: string =
-        writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file || ''
-      const data: CsmtNodeRange = {
-        file,
-        typeId: def.id,
-        start,
-        end,
-      }
-      db.merkleTree.insert(mtKey, hash, data)
-    }, true)
+    foreachBlock(
+      db,
+      def,
+      (start, end, hash) => {
+        const mtKey = makeCsmtKey(def.id, start)
+        const file: string =
+          writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file ||
+          ''
+        const data: CsmtNodeRange = {
+          file,
+          typeId: def.id,
+          start,
+          end,
+        }
+        db.merkleTree.insert(mtKey, hash, data)
+      },
+      true,
+    )
   }
 
   if (writelog?.hash) {
@@ -124,5 +130,11 @@ export async function start(
       console.log('Successfully saved.')
       signals.forEach((sig) => process.off(sig, blockSig))
     })
+  }
+
+  if (db.saveIntervalInSeconds > 0) {
+    db.saveInterval ??= setInterval(() => {
+      save(db)
+    }, db.saveIntervalInSeconds * 1e3)
   }
 }
