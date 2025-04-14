@@ -51,7 +51,6 @@ await test('expire', async (t) => {
   })
   db.expire('token', token2, 1)
   await db.drain()
-
   await db.save()
 
   const db2 = new BasedDb({

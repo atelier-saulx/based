@@ -145,10 +145,6 @@ const native = {
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
     return !!db.equals(a, b)
   },
-
-  expire: (dbCtx: any) => {
-    db.expire(dbCtx)
-  },
 }
 
 global.__basedDb__native__ = native

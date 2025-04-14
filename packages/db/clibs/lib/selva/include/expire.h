@@ -28,7 +28,7 @@ struct SelvaExpire {
      * Expire callback.
      * This should also free the token.
      */
-    void (*expire_cb)(struct SelvaExpireToken *token);
+    void (*expire_cb)(struct SelvaExpireToken *token, void *ctx);
     /**
      * Cancel expiration callback.
      * This should also free the token.
@@ -43,7 +43,7 @@ typedef union {
 
 void selva_expire_init(struct SelvaExpire *ex);
 void selva_expire_deinit(struct SelvaExpire *ex);
-void selva_expire_tick(struct SelvaExpire *ex, int64_t now);
+void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now);
 void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token);
 void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg);
 size_t selva_expire_count(const struct SelvaExpire *ex);
