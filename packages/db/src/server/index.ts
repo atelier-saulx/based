@@ -118,21 +118,27 @@ export class DbServer {
   stopped: boolean
   onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
+  saveIntervalInSeconds?: number
+  saveInterval?: NodeJS.Timeout
+
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
     onSchemaChange,
     debug,
+    saveIntervalInSeconds,
   }: {
     path: string
     maxModifySize?: number
     onSchemaChange?: OnSchemaChange
     debug?: boolean
+    saveIntervalInSeconds?: number
   }) {
     this.maxModifySize = maxModifySize
     this.fileSystemPath = path
     this.sortIndexes = {}
     this.onSchemaChange = onSchemaChange
+    this.saveIntervalInSeconds = saveIntervalInSeconds
     if (debug) {
       debugServer(this)
     }
@@ -654,8 +660,17 @@ export class DbServer {
     }
 
     this.stopped = true
-    clearTimeout(this.cleanupTimer)
     this.unlistenExit()
+
+    if (this.cleanupTimer) {
+      clearTimeout(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
+
+    if (this.saveInterval) {
+      clearInterval(this.saveInterval)
+      this.saveInterval = null
+    }
 
     try {
       if (!noSave) {

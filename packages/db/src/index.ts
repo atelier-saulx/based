@@ -27,6 +27,7 @@ export class BasedDb {
     path: string
     maxModifySize?: number
     debug?: boolean | 'server'
+    saveIntervalInSeconds?: number
   }) {
     this.#init(opts)
 
@@ -39,12 +40,21 @@ export class BasedDb {
     }
   }
 
-  #init({ path, maxModifySize }: { path: string; maxModifySize?: number }) {
+  #init({
+    path,
+    maxModifySize,
+    saveIntervalInSeconds,
+  }: {
+    path: string
+    maxModifySize?: number
+    saveIntervalInSeconds?: number
+  }) {
     this.fileSystemPath = path
     this.maxModifySize = maxModifySize
     const server = new DbServer({
       path,
       maxModifySize,
+      saveIntervalInSeconds,
       onSchemaChange(schema) {
         client.putLocalSchema(schema)
       },
