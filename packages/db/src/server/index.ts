@@ -520,10 +520,9 @@ export class DbServer {
       i += 4
 
       def.lastId = lastId + offset
-
       offsets[typeId] = offset
     }
-    // console.log('modify', this.processingQueries)
+
     if (this.processingQueries) {
       this.modifyQueue.push(new Uint8Array(buf))
     } else {
