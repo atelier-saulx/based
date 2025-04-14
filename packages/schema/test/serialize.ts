@@ -40,8 +40,6 @@ await test('serialize', async (t) => {
 
   const decoder = new TextDecoder()
 
-  let d = Date.now()
-
   // const serializedSchema = serialize(
   //   {
   //     a: {},
@@ -49,24 +47,25 @@ await test('serialize', async (t) => {
   //   },
   //   true,
   // )
-
   const serializedSchema = serialize(schema, true)
 
   console.log(serializedSchema)
   console.dir(deSerialize(serializedSchema), { depth: 10 })
 
-  console.log(serialize(schema, false))
+  // console.log(serialize(schema, false))
 
-  // for (let i = 0; i < 1e6; i++) {
-  //   const serializedSchema = serialize(schema, true)
-  // }
+  let d = Date.now()
+
+  for (let i = 0; i < 1e6; i++) {
+    const serializedSchema = serialize(schema, true)
+  }
 
   // const serializedSchema = serialize(schema, true)
 
   // const encoder = new TextEncoder()
 
   // const x = encoder.encode(JSON.stringify(schema))
-  // console.log(Date.now() - d, 'ms', serializedSchema, x)
+  console.log(Date.now() - d, 'ms')
 
   // const y = decoder.decode(serializedSchema)
 

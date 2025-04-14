@@ -6,22 +6,23 @@ const hasNative = '__basedDb__native__' in global
 
 const ENCODER = new TextEncoder()
 
-let schemaBuffer: {
+type SchemaBuffer = {
   buf: Uint8Array
   len: number
+  dictMap: Record<string, number>
 }
+
+let schemaBuffer: SchemaBuffer
 
 const walk = (
   obj,
   prev: any,
   prev2: any,
   fromObject: boolean,
-  schemaBuffer: {
-    buf: Uint8Array
-    len: number
-  },
+  schemaBuffer: SchemaBuffer,
 ) => {
   let start = schemaBuffer.len
+
   // HANDLE ENUM
   const isSchemaProp =
     'type' in obj && (prev2?.type === 'object' || fromObject === false)
@@ -35,20 +36,30 @@ const walk = (
   let sizeIndex = schemaBuffer.len
   schemaBuffer.len += 2
 
-  // handle dope props
   for (const key in obj) {
-    if (key === 'type') {
-      if (isSchemaProp) {
-        continue
-      }
+    if (key === 'type' && isSchemaProp) {
+      continue
     } else {
-      const s = schemaBuffer.len++
-      const r = ENCODER.encodeInto(
-        key,
-        schemaBuffer.buf.subarray(schemaBuffer.len),
-      )
-      schemaBuffer.len += r.written
-      schemaBuffer.buf[s] = r.written
+      let address = schemaBuffer.dictMap[key]
+      // if len == 1 never from address
+      if (!address) {
+        address = schemaBuffer.len
+        schemaBuffer.len += 1
+        const r = ENCODER.encodeInto(
+          key,
+          schemaBuffer.buf.subarray(schemaBuffer.len),
+        )
+        schemaBuffer.buf[address] = r.written
+        schemaBuffer.len += r.written
+        schemaBuffer.dictMap[key] = address
+      } else {
+        schemaBuffer.buf[schemaBuffer.len] = 0
+        schemaBuffer.len += 1
+        schemaBuffer.buf[schemaBuffer.len] = address
+        schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
+        schemaBuffer.len += 2
+      }
+
       const val = obj[key]
       const type = typeof val
       // typed Array
@@ -85,30 +96,27 @@ export const serialize = (
   noCompression: boolean = false,
 ): Uint8Array => {
   if (!schemaBuffer) {
-    // 10mb buffer
-    schemaBuffer = { buf: new Uint8Array(1e7), len: 0 }
+    // 1mb buffer add check if its large enough else increase
+    schemaBuffer = {
+      buf: new Uint8Array(1e6),
+      len: 0,
+      dictMap: {},
+    }
   }
-
+  schemaBuffer.dictMap = {}
   schemaBuffer.len = 0
-
   const isDeflate = noCompression ? 0 : 1
-
-  const arr: Uint8Array[] = []
-
   walk(schema, undefined, undefined, false, schemaBuffer)
-
+  const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
   if (isDeflate) {
-    return deflate.deflateSync(
-      new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len)),
-    )
+    return deflate.deflateSync(packed)
   } else {
-    return new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
+    return packed
   }
 }
 
 const decoder = new TextDecoder()
 
-// add dict
 export const deSerializeInner = (
   buf: Uint8Array,
   obj: any,
@@ -127,10 +135,21 @@ export const deSerializeInner = (
   i += 2
   const end = size + start
   while (i < end) {
-    const keySize = buf[i]
+    let keySize = buf[i]
     i += 1
-    const key = decoder.decode(buf.subarray(i, keySize + i))
-    i += keySize
+    let key: string
+    if (keySize === 0) {
+      const dictAddress = buf[i] | ((buf[i + 1] << 8) >>> 0)
+      i += 2
+      keySize = buf[dictAddress]
+      key = decoder.decode(
+        buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
+      )
+    } else {
+      key = decoder.decode(buf.subarray(i, keySize + i))
+      i += keySize
+    }
+
     const nest = (obj[key] = {})
     const fieldSize = deSerializeInner(buf, nest, i)
     i += fieldSize
