@@ -38,6 +38,8 @@ endif
 
 # Must use LD_PRELOAD=/usr/lib/gcc/aarch64-linux-gnu/12/libasan.so to load libasan
 # or /lib64/libasan.so.8 on Fedora
+# podman:
+# podman run --privileged --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_aarch64 sh -c '\. "/usr/local/nvm/nvm.sh"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale LD_PRELOAD=/usr/lib/gcc/aarch64-linux-gnu/12/libasan.so node ./scripts/test.js'
 ifeq ($(EN_SANIT),1)
 	SANITIZERS := address,leak,undefined
 	CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
