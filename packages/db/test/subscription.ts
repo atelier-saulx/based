@@ -103,7 +103,7 @@ await test('subscription', async (t) => {
       derp: { increment: 1 },
     })
     setCnt++
-  }, 100)
+  }, 200)
 
   t.after((t) => {
     clearInterval(interval)
