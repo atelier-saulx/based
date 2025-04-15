@@ -4,12 +4,12 @@ export type TreeKey = number
 export const TreeKeyNil = 0
 export type Hash = Uint8Array
 
-export interface TreeNode {
+export interface TreeNode<T> {
   hash: Hash
-  key: TreeKey
-  data?: any // Only on a leaf
-  left: TreeNode | null
-  right: TreeNode | null
+  key: TreeKey | null
+  data?: T | null // Only on a leaf
+  left: TreeNode<T> | null
+  right: TreeNode<T> | null
 }
 
 export type KeyHashPair = [TreeKey, Hash]
@@ -19,13 +19,13 @@ export interface TreeDiff {
   right: KeyHashPair[]
 }
 
-export interface Csmt {
+export interface Csmt<T> {
   emptyHash: Uint8Array,
 
   /**
    * Get the root node.
    */
-  getRoot: () => TreeNode | null
+  getRoot: () => TreeNode<T> | null
 
   /**
    * Insert a new key-hash pair.
@@ -45,7 +45,7 @@ export interface Csmt {
   /**
    * Compute the diff between this and a given tree.
    */
-  diff: (tree: Csmt) => TreeDiff
+  diff: (tree: Csmt<T>) => TreeDiff
 
   /**
    * Provide a proof of membership if a key exist in the three;
@@ -53,7 +53,7 @@ export interface Csmt {
    */
   membershipProof: (k: TreeKey) => Proof
 
-  visitLeafNodes: (cb: (leaf: TreeNode) => void) => void
+  visitLeafNodes: (cb: (leaf: TreeNode<T>) => void) => void
 
-  search: (k: TreeKey) => TreeNode
+  search: (k: TreeKey) => TreeNode<T>
 }

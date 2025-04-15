@@ -18,7 +18,7 @@ import {
 } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import { initCsmt, makeCsmtKey, makeCsmtKeyFromNodeId } from './tree.js'
+import { CsmtNodeRange, initCsmt, makeCsmtKey, makeCsmtKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
@@ -108,7 +108,7 @@ export class DbServer {
   schemaTypesParsedById: SchemaTypesParsedById = {}
   fileSystemPath: string
   maxModifySize: number
-  merkleTree: ReturnType<typeof createTree>
+  merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()
   csmtHashFun = createDbHash()
   workers: DbWorker[] = []
@@ -554,7 +554,8 @@ export class DbServer {
     const view = new DataView(buf.buffer, buf.byteOffset)
     while (i < end) {
       const key = view.getFloat64(i, true)
-      this.dirtyRanges.add(key)
+      // These node ranges may not actually exist
+      //this.dirtyRanges.add(key)
       i += 8
     }
 

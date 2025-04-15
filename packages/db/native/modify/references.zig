@@ -44,7 +44,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         // if Other side is single ref then do the same as a single ref on this side
 
         // pretty sure its this thats slow
-        const ref = try db.insertReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
+        const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {
             const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -91,7 +91,7 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     while (i < len) : (i += 4) {
         const id = read(u32, data, i + 4);
         try db.deleteReference(
-            ctx.db,
+            ctx,
             ctx.node.?,
             ctx.fieldSchema.?,
             id,
@@ -121,7 +121,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
     try db.putReferences(
-        ctx.db,
+        ctx,
         @alignCast(u32ids),
         ctx.node.?,
         ctx.fieldSchema.?,

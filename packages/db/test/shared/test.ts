@@ -4,6 +4,8 @@ import { join, dirname, resolve } from 'path'
 import { BasedDb, bufToHex } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait } from '@saulx/utils'
+import { drawDot } from '../../src/server/csmt/index.js'
+import { CsmtNodeRange } from '../../src/server/tree.js'
 
 export const counts = {
   errors: 0,
@@ -69,7 +71,7 @@ const test = async (
 
       await db.save()
 
-      const oldCsmt = db.server.merkleTree.getRoot()
+      const oldCsmt = db.server.merkleTree
 
       await db.stop()
 
@@ -109,6 +111,7 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
+      const newCsmt = newDb.server.merkleTree
       const prettier = (key: any, value: any) => {
         if (key === 'hash') {
           return bufToHex(value)
@@ -116,9 +119,12 @@ const test = async (
           return value
         }
       }
-      //console.log(JSON.stringify(oldCsmt, prettier, 2), JSON.stringify(newDb.server.merkleTree.getRoot(), prettier, 2), 'csmt')
-      //deepEqual(oldCsmt, newDb.server.merkleTree.getRoot(), 'csmt trees')
-      deepEqual(oldCsmt.hash, newDb.server.merkleTree.getRoot().hash, 'csmt hash')
+      const fmtNodeData = (data: CsmtNodeRange) => `type: ${data?.typeId}\nstart: ${data?.start} end: ${data?.end}`
+      //console.log(JSON.stringify(oldCsmt, prettier, 2), JSON.stringify(newCsmt.getRoot(), prettier, 2), 'csmt')
+      //console.log('old', drawDot(oldCsmt, fmtNodeData))
+      //console.log('new', drawDot(newCsmt, fmtNodeData))
+      //deepEqual(oldCsmt.getRoot(), newCsmt.getRoot(), 'csmt trees')
+      deepEqual(oldCsmt.getRoot().hash, newCsmt.getRoot().hash, 'csmt hash')
 
       await wait(10)
     },

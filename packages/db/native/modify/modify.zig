@@ -106,11 +106,17 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.id = read(u32, operation, 0) + idOffset;
                 // we can put get here
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
             types.ModOp.SWITCH_NODE => {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                if (ctx.node != null) {
+                    // It would be even better if we'd mark it dirty only in the case
+                    // something was actually changed.
+                    Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                }
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {
@@ -119,6 +125,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // store offset for this type
                 idOffset = Modify.getIdOffset(&ctx, ctx.typeId);
+                // RFE shouldn't we technically unset .id and .node now?
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
