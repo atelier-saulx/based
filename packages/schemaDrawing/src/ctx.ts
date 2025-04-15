@@ -85,15 +85,14 @@ export class Ctx {
     if (!this.canvas) {
       const canvas = document.createElement('canvas')
       canvas.height = canvash
-      canvas.width = this.wTmp - this.scale * 2 - 25
-      canvas.style.margin = this.scale + 'px'
+      canvas.width = Math.floor(this.wTmp / this.scale) * this.scale
       this.canvasHolder = canvas
       this.canvas = canvas.getContext('2d')
       this.canvas.font = `${this.fontSize}px SF Pro Display`
       this.rootElement.appendChild(canvas)
     } else {
       this.canvasHolder.height = canvash
-      this.canvasHolder.width = this.wTmp - this.scale * 2 - 25
+      this.canvasHolder.width = Math.floor(this.wTmp / this.scale) * this.scale
       this.canvas.reset()
       this.canvas.font = `${this.fontSize}px SF Pro Display`
       this.canvas.strokeStyle = '#fff'
@@ -116,14 +115,14 @@ export class Ctx {
     }
   }
 
-  filter(ops: FilterOps) {
-    filterSchema(this, ops)
+  filter(filter: string) {
+    filterSchema(this, { filter })
     this.render()
   }
 
   clearFilter() {
     this.schema = this.origSchema
-    this.filter = undefined
+    this.filterInternal = undefined
     this.render()
   }
 
@@ -136,7 +135,7 @@ export class Ctx {
 
   toggleGrid(val?: boolean) {
     if (val !== undefined) {
-      this.backgroundGrid = !this.backgroundGrid
+      this.backgroundGrid = val
       this.render()
     } else {
       this.backgroundGrid = !this.backgroundGrid
@@ -146,7 +145,6 @@ export class Ctx {
 
   downloadPng() {
     window.requestAnimationFrame(() => {
-      let originPadding = this.padding
       const origGrid = this.backgroundGrid
       this.toggleGrid(false)
       var link = document.createElement('a')

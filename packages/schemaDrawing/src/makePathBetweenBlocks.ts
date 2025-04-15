@@ -110,7 +110,9 @@ export const makePathBetweenBlocks = (
     if (b.name === '__self') {
       const lP = path.path[path.path.length - 1]
       path.path.push([lP[0], lP[1] + 1, 'v'])
-      path.path.push([lP[0], lP[1] + 2, 'rt'])
+      path.path.push([lP[0], lP[1] + 1.8, 'v'])
+
+      path.path.push([lP[0], lP[1] + 2.7, 'rt'])
     }
 
     drawPath(path, ctx)

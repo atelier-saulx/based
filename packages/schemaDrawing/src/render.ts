@@ -39,10 +39,10 @@ export const render = (ctx: Ctx) => {
       let propIndex = 2
       for (const key in block.props) {
         const p = block.props[key]
+        ctx.canvas.font = `${ctx.fontSize}px SF Pro Display`
 
         if (p.isRef) {
           ctx.canvas.fillStyle = 'black'
-          ctx.canvas.font = `${ctx.fontSize}px SF Pro Display`
           ctx.canvas.fillText(
             key,
             (0.5 + block.x + p.x) * ctx.scale,
@@ -53,21 +53,23 @@ export const render = (ctx: Ctx) => {
             continue
           }
 
-          ctx.canvas.fillStyle = '#bbb'
+          ctx.canvas.fillStyle = '#888'
           ctx.canvas.fillText(
             key,
             (0.5 + block.x) * ctx.scale,
-            (block.y + propIndex * ctx.propHeight) * ctx.scale + ctx.fontSize,
+            (block.y + p.y) * ctx.scale + ctx.fontSize,
           )
         }
         propIndex++
       }
 
       ctx.canvas.fillStyle = 'black'
+      ctx.canvas.font = `${ctx.fontSize * 1.4}px SF Pro Display`
+
       ctx.canvas.fillText(
         block.type,
         (0.5 + block.x) * ctx.scale,
-        block.y * ctx.scale + ctx.fontSize,
+        block.y * ctx.scale + ctx.fontSize * 2,
       )
     }
   }
@@ -78,10 +80,16 @@ export const render = (ctx: Ctx) => {
         continue
       }
       const a = type.props[prop]
+
       if (!a.isRef) {
         continue
       }
       const b = ctx.types[a.reverseType].props[a.reverseProp]
+
+      if (!b) {
+        console.error('Cannot find b in relationship', a)
+      }
+
       if (a.created) {
         continue
       }

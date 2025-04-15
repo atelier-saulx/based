@@ -12,3 +12,12 @@ document.getElementById('download').onclick = () => {
 document.getElementById('grid').onclick = () => {
   ctx.toggleGrid()
 }
+
+document.getElementById('filter').oninput = (e) => {
+  // @ts-ignore
+  ctx.filter(e.target.value)
+}
+
+document.getElementById('clear').onclick = () => {
+  ctx.clearFilter()
+}
