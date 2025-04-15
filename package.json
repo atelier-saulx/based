@@ -1,15 +1,12 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.41",
+  "version": "8.0.0-alpha.42",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": [
-    "bin",
-    "dist"
-  ],
+  "files": ["bin", "dist"],
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
@@ -42,7 +39,7 @@
     "@based/db": "^0.0.31",
     "@based/functions": "^3.2.1",
     "@based/i18n": "latest",
-    "@based/server": "^9.2.2",
+    "@based/server": "^9.2.3",
     "@clack/prompts": "^0.7.0",
     "@inquirer/prompts": "^6.0.1",
     "@saulx/hash": "^3.0.0",
