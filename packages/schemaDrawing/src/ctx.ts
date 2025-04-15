@@ -1,9 +1,9 @@
 import { Schema, StrictSchema, parse } from '@based/schema'
 import initPathFindingLib from './pfLib.js'
 import { TypeVisual } from './types.js'
+import { render } from './render.js'
+import { positionTypes } from './positionTypes.js'
 initPathFindingLib()
-
-type Canvas = CanvasRenderingContext2D
 
 export class Ctx {
   scale: number
@@ -15,8 +15,9 @@ export class Ctx {
   w: number
   h: number
   // ------------
-  measure: Canvas
-  canvas: Canvas
+  canvasHolder: HTMLCanvasElement
+  measure: CanvasRenderingContext2D
+  canvas: CanvasRenderingContext2D
   types: { [key: string]: TypeVisual } = {}
   // ------------
   schema: StrictSchema
@@ -25,6 +26,7 @@ export class Ctx {
   // ------------
   finder: any
   grid: any
+  wTmp: number
 
   constructor(schema: Schema, element: Element) {
     this.scale = 25
@@ -43,14 +45,18 @@ export class Ctx {
     this.measure = canvasMeasure.getContext('2d')
     this.measure.font = `${this.fontSize}px SF Pro Display`
 
-    const windowW = window.innerWidth - this.scale * 2
-    const globalW = Math.floor(windowW / this.scale)
-    const MAX_AREA = 100
-    const m = MAX_AREA / globalW
-    const globalH = ~~(m * 200)
+    //  width / height
+    this.changeDimensions(element.getBoundingClientRect().width, true)
 
-    this.w = globalW
-    this.h = globalH
+    const resizeObserver = new ResizeObserver((entries) => {
+      const w = element.getBoundingClientRect().width
+      if (w !== this.wTmp) {
+        this.changeDimensions(element.getBoundingClientRect().width, false)
+        console.log('Size changed')
+      }
+    })
+
+    resizeObserver.observe(element)
 
     // @ts-ignore
     this.finder = new PF.OrthogonalJumpPointFinder({
@@ -58,6 +64,62 @@ export class Ctx {
       // @ts-ignore
       heuristic: PF.Heuristic.euclidian,
     })
+  }
+
+  createCtx() {
+    // add min height
+    let canvash = 0 // window.innerHeight - this.scale * 2 - 20
+    for (var n = 0; n < this.typesArray.length; n++) {
+      const t = this.typesArray[n]
+      const max = (t.fit.y + this.padding * 2 + t.h) * this.scale
+      if (max > canvash) {
+        canvash = max
+      }
+    }
+    if (!this.canvas) {
+      const canvas = document.createElement('canvas')
+      canvas.height = canvash
+      canvas.width = window.innerWidth - this.scale * 2 - 25
+      canvas.style.margin = this.scale + 'px'
+      this.canvasHolder = canvas
+      this.canvas = canvas.getContext('2d')
+      this.canvas.font = `${this.fontSize}px SF Pro Display`
+      this.rootElement.appendChild(canvas)
+    } else {
+      //   this.canvas.clearRect(
+      //     0,
+      //     0,
+      //     this.canvasHolder.width,
+      //     this.canvasHolder.height,
+      //   )
+      this.canvas.reset()
+      this.canvasHolder.height = canvash
+      this.canvasHolder.width = window.innerWidth - this.scale * 2 - 25
+    }
+  }
+
+  reset() {
+    this.typesArray = []
+    this.types = {}
+  }
+
+  changeDimensions(width: number, initial?: Boolean) {
+    this.wTmp = width
+    const windowW = width - this.scale * 2
+    const w = Math.floor(windowW / this.scale)
+    const MAX_AREA = 100
+    const m = MAX_AREA / w
+    const h = ~~(m * 200)
+    // 20k items max
+    this.w = w
+    this.h = h
+
+    if (!initial) {
+      this.reset()
+      // go remove canvas!
+      positionTypes(this)
+      render(this)
+    }
   }
 
   textWidth(text: string, size?: number) {
