@@ -455,7 +455,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         throw Error(MISSING_TYPE)
       }
     },
-    prop(propKey, prop, { schema, type, inQuery, path }) {
+    prop(propKey, prop, { schema, type, inQuery, path, lvl }) {
       const propAllowed = type && !inQuery
 
       if (propAllowed) {
@@ -478,7 +478,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         if (create) {
           const ref = path[1]
           let prop = ''
-          for (let i = 3; i < path.length - 1; i += 2) {
+          for (let i = 3; i < lvl; i += 2) {
             prop += prop ? `.${path[i]}` : path[i]
           }
           targetProp.readOnly = true
