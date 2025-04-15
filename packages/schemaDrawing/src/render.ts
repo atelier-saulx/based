@@ -6,19 +6,21 @@ export const render = (ctx: Ctx) => {
 
   ctx.createCtx()
 
-  for (let i = 0; i < ctx.w; i++) {
-    let j = 0
-    for (let j = 0; j < ctx.h; j++) {
-      ctx.canvas.fillStyle = '#f2f2f2'
-      ctx.canvas.fillRect(
-        i * ctx.scale,
-        j * ctx.scale,
-        ctx.scale - 2,
-        ctx.scale - 2,
-      )
+  if (ctx.backgroundGrid) {
+    for (let i = 0; i < ctx.w; i++) {
+      let j = 0
+      for (let j = 0; j < ctx.h; j++) {
+        ctx.canvas.strokeStyle = '#fff'
+        ctx.canvas.fillStyle = '#f2f2f2'
+        ctx.canvas.fillRect(
+          i * ctx.scale,
+          j * ctx.scale,
+          ctx.scale - 2,
+          ctx.scale - 2,
+        )
+      }
     }
   }
-
   // @ts-ignore
   ctx.grid = new PF.Grid(ctx.w, ctx.h)
 

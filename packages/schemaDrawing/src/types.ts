@@ -46,3 +46,5 @@ export type TypeVisual = {
 export type Node = TypeVisual | Root
 
 export type LineSegment = 'h' | 'v' | 'lt' | 'rt' | 'rb' | 'lb' | 'e'
+
+export type FilterOps = { filter?: string; onlyReference?: boolean }

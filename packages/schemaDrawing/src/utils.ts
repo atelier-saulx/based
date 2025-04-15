@@ -1,4 +1,6 @@
-import { SchemaType, SchemaProp } from '@based/schema'
+import { SchemaType, SchemaProp, Schema } from '@based/schema'
+import { Ctx } from './ctx.js'
+import { FilterOps } from './types.js'
 
 export const walkProps = (
   type: SchemaType,
@@ -19,3 +21,5 @@ export const walkProps = (
     }
   }
 }
+
+export const filterSchema = (ctx: Ctx, ops: FilterOps) => {}

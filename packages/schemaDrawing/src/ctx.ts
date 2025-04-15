@@ -1,8 +1,9 @@
 import { Schema, StrictSchema, parse } from '@based/schema'
 import initPathFindingLib from './pfLib.js'
-import { TypeVisual } from './types.js'
+import { FilterOps, TypeVisual } from './types.js'
 import { render } from './render.js'
 import { positionTypes } from './positionTypes.js'
+import { filterSchema } from './utils.js'
 initPathFindingLib()
 
 export class Ctx {
@@ -27,17 +28,23 @@ export class Ctx {
   finder: any
   grid: any
   wTmp: number
+  // ------------
+  filterInternal: FilterOps
+  origSchema: StrictSchema
+  // ------------
+  backgroundGrid: boolean = true
 
   constructor(schema: Schema, element: Element) {
     this.scale = 25
-    this.padding = 2
+    this.padding = 3
     this.margin = 8
     this.propHeight = 1
     this.propWidth = 5
     this.fontSize = this.propHeight * this.scale * 0.7
     this.rootElement = element
 
-    this.schema = parse(schema).schema
+    this.origSchema = parse(schema).schema
+    this.schema = this.origSchema
 
     const canvasMeasure = document.createElement('canvas')
     canvasMeasure.height = 30
@@ -67,8 +74,7 @@ export class Ctx {
   }
 
   createCtx() {
-    // add min height
-    let canvash = 0 // window.innerHeight - this.scale * 2 - 20
+    let canvash = 0
     for (var n = 0; n < this.typesArray.length; n++) {
       const t = this.typesArray[n]
       const max = (t.fit.y + this.padding * 2 + t.h) * this.scale
@@ -79,28 +85,19 @@ export class Ctx {
     if (!this.canvas) {
       const canvas = document.createElement('canvas')
       canvas.height = canvash
-      canvas.width = window.innerWidth - this.scale * 2 - 25
+      canvas.width = this.wTmp - this.scale * 2 - 25
       canvas.style.margin = this.scale + 'px'
       this.canvasHolder = canvas
       this.canvas = canvas.getContext('2d')
       this.canvas.font = `${this.fontSize}px SF Pro Display`
       this.rootElement.appendChild(canvas)
     } else {
-      //   this.canvas.clearRect(
-      //     0,
-      //     0,
-      //     this.canvasHolder.width,
-      //     this.canvasHolder.height,
-      //   )
-      this.canvas.reset()
       this.canvasHolder.height = canvash
-      this.canvasHolder.width = window.innerWidth - this.scale * 2 - 25
+      this.canvasHolder.width = this.wTmp - this.scale * 2 - 25
+      this.canvas.reset()
+      this.canvas.font = `${this.fontSize}px SF Pro Display`
+      this.canvas.strokeStyle = '#fff'
     }
-  }
-
-  reset() {
-    this.typesArray = []
-    this.types = {}
   }
 
   changeDimensions(width: number, initial?: Boolean) {
@@ -115,11 +112,55 @@ export class Ctx {
     this.h = h
 
     if (!initial) {
-      this.reset()
-      // go remove canvas!
-      positionTypes(this)
-      render(this)
+      this.render()
     }
+  }
+
+  filter(ops: FilterOps) {
+    filterSchema(this, ops)
+    this.render()
+  }
+
+  clearFilter() {
+    this.schema = this.origSchema
+    this.filter = undefined
+    this.render()
+  }
+
+  render() {
+    this.typesArray = []
+    this.types = {}
+    positionTypes(this)
+    render(this)
+  }
+
+  toggleGrid(val?: boolean) {
+    if (val !== undefined) {
+      this.backgroundGrid = !this.backgroundGrid
+      this.render()
+    } else {
+      this.backgroundGrid = !this.backgroundGrid
+      this.render()
+    }
+  }
+
+  downloadPng() {
+    window.requestAnimationFrame(() => {
+      let originPadding = this.padding
+      const origGrid = this.backgroundGrid
+      this.toggleGrid(false)
+      var link = document.createElement('a')
+      link.download = 'schema.png'
+      link.href = this.canvasHolder.toDataURL()
+      link.click()
+      this.toggleGrid(origGrid)
+    })
+  }
+
+  updateSchema(schema: Schema) {
+    this.origSchema = parse(schema).schema
+    this.schema = this.origSchema
+    this.render()
   }
 
   textWidth(text: string, size?: number) {
