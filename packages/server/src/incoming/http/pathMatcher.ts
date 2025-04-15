@@ -177,6 +177,10 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
   let lastIndex = 1  
   let tokenSize = token.value.length
   let tokenValueIndex = 0
+
+  if (token.type === STATIC && len <= tokenSize && path !== token.value) {
+    return false
+  }
   
   while (i < len) {
     if (path[i] === SLASH) {
@@ -184,58 +188,42 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
       i++
       lastIndex = i
       token = tokens[tokenIndex]
-      
-      if (token?.type === STATIC) {
-        if (tokenSize) {
-          return false
-        }
 
-        tokenSize = token.value.length
-        tokenValueIndex = 0
+      if (path[i] === SLASH) {
+        return false
       }
+    }
 
-      if (i === len && !token) {
+    if (i === len && !token) {
+      return true
+    }
+
+    if (i < len && !token) {
+      const previousModifier = tokens[tokenIndex - 1].modifier
+      if (previousModifier === ASTERISK ||
+        previousModifier === PLUS
+      ) {
         return true
       }
 
-      if (!token) {
-        const previousModifier = tokens[tokenIndex - 1].modifier
-        if (previousModifier === ASTERISK ||
-          previousModifier === PLUS
-        ) {          
-          return true
-        }
-
-        if (path[i] === QUESTION_MARK) {
-          return true
-        }
-        
-        return false
+      if (path[i] === QUESTION_MARK) {
+        return true
       }
+
+      return false
     }
 
-    if (token.type === INVALID) { 
-      return false
-    } else if (token.type === STATIC) { 
-      if (path[i] !== token.value[i - lastIndex]) {
-        return false  
-      } else if (path[i] === token.value[tokenValueIndex] && tokenSize) {        
-        tokenSize--
-        tokenValueIndex++
-      } else {
-        return false
-      }
-    } else if (i === len && token.type === PARAM) {          
+    if (i === len && token?.type === PARAM) {   
       if (token.modifier === QUESTION_MARK || token.modifier === ASTERISK)  {
         return true 
-      } else if (token.modifier === PLUS) {
+      }
+      
+      if (token.modifier === PLUS || token.modifier === REQUIRED_MODIFIER) {
         return false
       }
     }
 
-    i++
-
-    if (i === len - 1 && tokens.length - 1 > tokenIndex) {            
+    if (i === len - 1 && tokens.length - 1 > tokenIndex) {   
       const nextModifier = tokens[tokenIndex + 1]?.modifier
 
       if (nextModifier === undefined ||
@@ -244,9 +232,28 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
         return false
       }
     }
+
+    if (token?.type === INVALID) { 
+      return false
+    }
+
+    if (token?.type === STATIC) {
+      if (path[i] !== token.value[i - lastIndex]) {
+        return false  
+      }
+      
+      if (path[i] === token.value[tokenValueIndex] && tokenSize) {
+        tokenSize--
+        tokenValueIndex++
+        i++ 
+        continue
+      }
+    }
+
+    i++
   }
 
-  if (tokenSize && token.type === STATIC) {
+  if (tokenSize && token?.type === STATIC) {
     return false
   }
 
