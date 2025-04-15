@@ -1,4 +1,3 @@
-import { isFloat32Array } from 'util/types'
 import {
   EXPECTED_ARR,
   EXPECTED_BOOL,
@@ -15,7 +14,7 @@ export const expectObject = (obj: any, msg?: string) => {
 }
 
 export const expectFloat32Array = (arr: any) => {
-  if (!isFloat32Array(arr)) {
+  if (!(arr instanceof Float32Array)) {
     throw Error(EXPECTED_ARR)
   }
 }

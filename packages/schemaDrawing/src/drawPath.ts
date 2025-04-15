@@ -1,46 +1,59 @@
 // Assume drawSegment function from the previous answer is defined here:
-type LineSegment = 'h' | 'v' | 'lt' | 'rt' | 'rb' | 'lb' | 'e'
 
-const drawSegment = (
-  type: LineSegment,
-  x: number,
-  y: number,
-  ctx: CanvasRenderingContext2D,
-  SCALE: number,
-  grid,
-) => {
-  const cellX = x * SCALE
-  const cellY = y * SCALE
-  const halfScale = SCALE / 2
+import { Ctx } from './ctx.js'
+import { LineSegment } from './types.js'
 
-  ctx.beginPath()
+const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
+  const cellX = x * ctx.scale
+  const cellY = y * ctx.scale
+  const halfScale = ctx.scale / 2
+
+  ctx.canvas.beginPath()
 
   switch (type) {
     case 'h':
-      ctx.moveTo(cellX, cellY + halfScale)
-      ctx.lineTo(cellX + SCALE, cellY + halfScale)
+      ctx.canvas.moveTo(cellX, cellY + halfScale)
+      ctx.canvas.lineTo(cellX + ctx.scale, cellY + halfScale)
       break
     case 'v':
-      ctx.moveTo(cellX + halfScale, cellY)
-      ctx.lineTo(cellX + halfScale, cellY + SCALE)
+      ctx.canvas.moveTo(cellX + halfScale, cellY)
+      ctx.canvas.lineTo(cellX + halfScale, cellY + ctx.scale)
       //   grid.setWalkableAt(x, y, false)
       break
     case 'rb': // Connects mid-left and mid-top
-      ctx.arc(cellX + SCALE, cellY + SCALE, halfScale, Math.PI, 1.5 * Math.PI) // Center bottom-right
+      ctx.canvas.arc(
+        cellX + ctx.scale,
+        cellY + ctx.scale,
+        halfScale,
+        Math.PI,
+        1.5 * Math.PI,
+      ) // Center bottom-right
       break
     case 'lb': // Connects mid-top and mid-right
-      ctx.arc(cellX, cellY + SCALE, halfScale, 1.5 * Math.PI, 2 * Math.PI) // Center bottom-left
+      ctx.canvas.arc(
+        cellX,
+        cellY + ctx.scale,
+        halfScale,
+        1.5 * Math.PI,
+        2 * Math.PI,
+      ) // Center bottom-left
       break
     case 'lt': // Connects mid-right and mid-bottom
-      ctx.arc(cellX, cellY, halfScale, 0, 0.5 * Math.PI) // Center top-left
+      ctx.canvas.arc(cellX, cellY, halfScale, 0, 0.5 * Math.PI) // Center top-left
       break
     case 'rt': // Connects mid-bottom and mid-left
-      ctx.arc(cellX + SCALE, cellY, halfScale, 0.5 * Math.PI, Math.PI) // Center top-right
+      ctx.canvas.arc(
+        cellX + ctx.scale,
+        cellY,
+        halfScale,
+        0.5 * Math.PI,
+        Math.PI,
+      ) // Center top-right
       break
     case 'e':
-      ctx.arc(
-        cellX + SCALE * 0.5,
-        cellY + SCALE * 0.5,
+      ctx.canvas.arc(
+        cellX + ctx.scale * 0.5,
+        cellY + ctx.scale * 0.5,
         halfScale * 0.5,
         0,
         Math.PI * 2,
@@ -48,7 +61,7 @@ const drawSegment = (
       break
   }
 
-  ctx.stroke()
+  ctx.canvas.stroke()
 }
 
 const isEqual = (a: Int8Array, b: Int8Array) => {
@@ -80,20 +93,15 @@ const isEqual = (a: Int8Array, b: Int8Array) => {
 //   `rgb(171,133,212)`,
 // ]
 
-const drawPath = (
-  pathFull: any,
-  ctx: CanvasRenderingContext2D,
-  SCALE: number,
-  grid,
-) => {
+const drawPath = (pathFull: any, ctx: Ctx) => {
   //   const randomColor = colors[~~(Math.random() * colors.length)]
 
   const randomColor =
     pathFull.b.name === '__self'
       ? '#ccc'
       : `rgb(${~~(Math.random() * 255)},${~~(Math.random() * 255)},${~~(Math.random() * 255)})`
-  ctx.strokeStyle = randomColor
-  ctx.lineWidth = Math.max(1, Math.min(5, SCALE / 4))
+  ctx.canvas.strokeStyle = randomColor
+  ctx.canvas.lineWidth = Math.max(1, Math.min(5, ctx.scale / 4))
 
   const path = pathFull.path
   const startLeft = pathFull.startLeft
@@ -164,11 +172,10 @@ const drawPath = (
       segmentType = 'rb'
     } else {
       segmentType = 'e'
-
-      console.log(vec)
+      console.error('Missing vec in path create', vec)
     }
 
-    drawSegment(segmentType, currentPoint[0], currentPoint[1], ctx, SCALE, grid)
+    drawSegment(ctx, segmentType, currentPoint[0], currentPoint[1])
   }
 }
 

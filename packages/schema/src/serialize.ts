@@ -2,7 +2,7 @@ import * as deflate from 'fflate'
 import { StrictSchema } from './types.js'
 import { REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 
-const hasNative = '__basedDb__native__' in global
+// const hasNative = '__basedDb__native__' in global
 
 const ENCODER = new TextEncoder()
 
