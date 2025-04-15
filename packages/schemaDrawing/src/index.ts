@@ -6,14 +6,21 @@ import escSchema from './schema/based.schema.js'
 Pf()
 
 const SCALE = 25
-const PADDING = 3
+const PADDING = 2
 const MARGIN = 8
 const PROP_HEIGHT = 1
 const PROP_WIDTH = 5
 const FONT_SIZE = PROP_HEIGHT * SCALE * 0.7
 
-const globalW = Math.floor((window.innerWidth - SCALE * 2) / SCALE)
-const globalH = Math.floor(5000 / SCALE)
+const windowW = window.innerWidth - SCALE * 2
+
+const globalW = Math.floor(windowW / SCALE)
+
+const MAX_AREA = 100
+
+const m = MAX_AREA / globalW
+
+const globalH = ~~(m * 200)
 
 type PropVisual = {
   prop: SchemaProp
