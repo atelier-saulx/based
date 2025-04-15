@@ -10,7 +10,7 @@ await test('branchedCount', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return t.backup(db)
+    db.destroy()
   })
 
   await db.setSchema({
@@ -66,29 +66,31 @@ await test('branchedCount', async (t) => {
     contributors: [mrSnurp, flippie, derpie, dinkelDoink],
   })
 
-  await db.drain()
+  // await db.drain()
 
-  await db.query('article', strudelArticle).include('*', '**').get().inspect()
+  // await db.query('article', strudelArticle).include('*', '**').get().inspect()
 
-  console.log(
-    await db
-      .query('user')
-      .include('id')
-      .range(0, 1e9)
-      .filter('flap', '>', 20)
-      .count()
-      .get()
-      .toObject(),
-  )
+  // console.log(
+  //   await db
+  //     .query('user')
+  //     .include('id')
+  //     .range(0, 1e9)
+  //     .filter('flap', '>', 20)
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
-  await db
-    .query('user')
-    //lala
-    // .filter('flap', '>', 20)
-    // .range(0, 0)
-    .count()
-    .get()
-    .inspect(100)
+  // console.log(
+  //   await db
+  //     .query('user')
+  //     //lala
+  //     // .filter('flap', '>', 20)
+  //     // .range(0, 0)
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
   // console.log(
   //   await db
@@ -104,10 +106,19 @@ await test('branchedCount', async (t) => {
   // )
 
   // Here to experiment in branched queries
+  console.log(
+    await db
+      .query('article')
+      .include((q) => q('contributors').count(), 'name')
+      .get()
+      .toJSON(),
+  )
+
   // await db
   //   .query('article')
   //   .include((q) => q('contributors').count(), 'name')
   //   .get()
   //   .inspect(100)
+
   // Wish: {id: 1, contributors: [{ name: 'jim', votes: 2 }, { name: 'marco', votes: 5 }]}
 })
