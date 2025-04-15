@@ -2006,9 +2006,13 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
 
 static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
 {
-    selva_hash_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
-    if (ref->meta) {
-        selva_fields_hash_update(hash_state, db, selva_get_edge_field_fields_schema(db, efc), ref->meta);
+    if (ref->dst) {
+        selva_hash_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
+        if (ref->meta) {
+            selva_fields_hash_update(hash_state, db, selva_get_edge_field_fields_schema(db, efc), ref->meta);
+        }
+    } else {
+        selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
     }
 }
 

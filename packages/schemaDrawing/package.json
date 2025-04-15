@@ -1,6 +1,6 @@
 {
-  "name": "@based/schema",
-  "version": "5.0.0-alpha.11",
+  "name": "@based/schema-diagram",
+  "version": "0.0.1",
   "license": "MIT",
   "files": [
     "dist",
@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
+    "browser": "npx vite ./test"
   },
   "prettier": "@saulx/prettier-config",
   "sideEffects": false,
@@ -26,11 +26,11 @@
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "22.5.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vite": "^5.2.8"
   },
   "dependencies": {
-    "fflate": "0.8.1",
-    "@saulx/utils": "^6.4.0",
-    "picocolors": "^1.1.0"
+    "@based/schema": "5.0.0-alpha.10",
+    "@saulx/utils": "^6.4.0"
   }
 }
