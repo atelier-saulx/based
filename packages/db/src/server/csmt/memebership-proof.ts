@@ -30,11 +30,11 @@ function isList(x: any): boolean {
   return Array.isArray(x) && x.length > 0 && Array.isArray(x[0])
 }
 
-function nonMembershipProof(
+function nonMembershipProof<T = any>(
   k: TreeKey,
   key: TreeKey,
   direction: Direction,
-  sibling: TreeNode,
+  sibling: TreeNode<T>,
 ) {
   return match([k > key, direction])
     .on(aeq([true, Direction.Left]), () => [key, minInSubtree(sibling)])
@@ -46,10 +46,10 @@ function nonMembershipProof(
     })
 }
 
-function membershipProofR(
-  sibling: TreeNode | null,
+function membershipProofR<T = any>(
+  sibling: TreeNode<T> | null,
   direction: Direction | null,
-  node: TreeNode,
+  node: TreeNode<T>,
   k: TreeKey,
 ): Proof {
   const left = node.left
@@ -121,8 +121,8 @@ function membershipProofR(
   return result
 }
 
-export default function membershipProof(
-  root: TreeNode | null,
+export default function membershipProof<T = any>(
+  root: TreeNode<T> | null,
   k: TreeKey,
 ): Proof {
   if (!root) {
