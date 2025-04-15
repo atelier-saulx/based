@@ -1,5 +1,3 @@
-// Assume drawSegment function from the previous answer is defined here:
-
 import { Ctx } from './ctx.js'
 import { LineSegment } from './types.js'
 
@@ -18,7 +16,7 @@ const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
     case 'v':
       ctx.canvas.moveTo(cellX + halfScale, cellY)
       ctx.canvas.lineTo(cellX + halfScale, cellY + ctx.scale)
-      //   grid.setWalkableAt(x, y, false)
+      // ctx.grid.setWalkableAt(x, y, false)
       break
     case 'rb': // Connects mid-left and mid-top
       ctx.canvas.arc(

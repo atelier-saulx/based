@@ -21,6 +21,8 @@ export const makeType = (
     }
   }
 
+  w += 1
+
   const h = len + 3
 
   const block: TypeVisual = {
@@ -71,7 +73,7 @@ export const makeType = (
         type: block,
         name: key,
         prop,
-        x: 0,
+        x: 1,
         y: propIndex * ctx.propHeight,
         w,
         isRef: true,
@@ -90,7 +92,7 @@ export const makeType = (
         type: block,
         name: key,
         prop,
-        x: 0,
+        x: 1,
         y: propIndex * ctx.propHeight,
         w,
         isRef: false,

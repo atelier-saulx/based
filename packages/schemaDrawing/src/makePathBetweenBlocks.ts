@@ -94,6 +94,9 @@ export const makePathBetweenBlocks = (
       for (let i = 1; i < blocksDiff + 1; i++) {
         path.path.unshift([x - i, y])
       }
+    } else {
+      const p = path.path[0]
+      path.path.unshift([p[0] + 1, p[1]])
     }
 
     if (path.endLeft === false) {
@@ -105,6 +108,9 @@ export const makePathBetweenBlocks = (
       for (let i = 1; i < blocksDiff + 1; i++) {
         path.path.push([x - i, y])
       }
+    } else if (b.name !== '__self') {
+      const p = path.path[path.path.length - 1]
+      path.path.push([p[0] + 1, p[1]])
     }
 
     if (b.name === '__self') {

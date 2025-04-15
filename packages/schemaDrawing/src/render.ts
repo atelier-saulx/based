@@ -56,7 +56,7 @@ export const render = (ctx: Ctx) => {
           ctx.canvas.fillStyle = '#888'
           ctx.canvas.fillText(
             key,
-            (0.5 + block.x) * ctx.scale,
+            (0.5 + block.x + p.x) * ctx.scale,
             (block.y + p.y) * ctx.scale + ctx.fontSize,
           )
         }
