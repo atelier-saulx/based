@@ -35,6 +35,11 @@ const generateCommandMarkdown = (
   if (commandObj.options && commandObj.options.length > 0) {
     markdown += '| Option | Description |\n|--------|-------------|\n'
     for (const option of commandObj.options) {
+      // @ts-ignore
+      if (option.hidden) {
+        continue
+      }
+
       const optionDescription = option.longDescription || option.description
       markdown += `| \`${option.parameter}\` | ${optionDescription} |\n`
     }
