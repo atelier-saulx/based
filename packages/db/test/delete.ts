@@ -73,7 +73,7 @@ await test('delete', async (t) => {
   ])
 })
 
-await test('non existing', async (t) => {
+await test('non existing 1', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -132,7 +132,7 @@ await test('non existing', async (t) => {
   await db.delete('user', simple)
 })
 
-await test('non existing', async (t) => {
+await test('non existing 2', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

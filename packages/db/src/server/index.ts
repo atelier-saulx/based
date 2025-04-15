@@ -554,7 +554,8 @@ export class DbServer {
     const view = new DataView(buf.buffer, buf.byteOffset)
     while (i < end) {
       const key = view.getFloat64(i, true)
-      this.dirtyRanges.add(key)
+      // These node ranges may not actually exist
+      //this.dirtyRanges.add(key)
       i += 8
     }
 
