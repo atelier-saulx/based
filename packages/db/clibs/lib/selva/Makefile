@@ -64,7 +64,6 @@ OBJ := \
 	string/strntol.o \
 	string/strsearch_hamming.o \
 	string/strsearch_levenshtein.o \
-	string/xxhash64.o \
 	svector.o \
 	time/backoff_timeout.o \
 	time/ctime.o \

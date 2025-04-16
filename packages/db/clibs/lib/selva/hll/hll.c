@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 SAULX
+ * SPDX-License-Identifier: MIT
+ */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -5,7 +9,7 @@
 #include "cdefs.h"
 #include "selva/selva_string.h"
 #include "selva/hll.h"
-#include "selva/xxhash64.h"
+#include "xxhash.h"
 #include "db_panic.h"
 
 #define HLL_MIN_PRECISION 4
@@ -15,7 +19,7 @@
 #define SPARSE true
 #define DENSE false
 
-#define ASC true 
+#define ASC true
 #define DSC false
 
 typedef struct {
@@ -154,7 +158,7 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
 
 // static double apply_bias_correction(double estimate, uint8_t precision) {
 //     size_t j = locate(raw_estimate_data[precision - 4], actual_cols[precision], estimate, ASC);
-    
+
 //     const float avg_estimate = (raw_estimate_data[precision - 4][j] + raw_estimate_data[precision - 4][j + 1]) * 0.5f;
 //     const float avg_bias = (bias_data[precision - 4][j] + bias_data[precision - 4][j + 1]) * 0.5f;
 
@@ -225,7 +229,7 @@ int main(void) {
 #if 0
     size_t precision = 14;
 
-    const uint64_t hash = xxHash64("myCoolValue", strlen("myCoolValue"));
+    const uint64_t hash = XXH64("myCoolValue", strlen("myCoolValue"), 0);
 
     int initial_capacity = sizeof(bool) \
                             + sizeof(precision) \
@@ -262,7 +266,7 @@ int main(void) {
 
     for (int i = 0; i < num_elements; i++) {
         snprintf(elements[i], 50, "hll1_%d", i);
-        hll_add(&hll, xxHash64(elements[i], strlen(elements[i])));
+        hll_add(&hll, XXH64(elements[i], strlen(elements[i]), 0));
     }
     uint32_t estimated_cardinality = *hll_count(&hll);
 
