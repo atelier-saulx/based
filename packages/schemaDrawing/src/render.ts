@@ -1,10 +1,10 @@
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './ctx.js'
 import { makePathBetweenBlocks } from './makePathBetweenBlocks.js'
 
-export const render = (ctx: Ctx) => {
+export const render = (ctx: SchemaDiagram) => {
   // -------------- RENDER
 
-  ctx.createCtx()
+  ctx.createSchemaDiagram()
 
   if (ctx.backgroundGrid) {
     for (let i = 0; i < ctx.w; i++) {

@@ -1,9 +1,9 @@
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './ctx.js'
 import drawPath from './drawPath.js'
 import { PropVisual } from './types.js'
 
 export const makePathBetweenBlocks = (
-  ctx: Ctx,
+  ctx: SchemaDiagram,
   a: PropVisual,
   b: PropVisual,
 ) => {

@@ -1,10 +1,10 @@
 import { SchemaType } from '@based/schema'
 import { TypeVisual } from './types.js'
 import { walkProps } from './utils.js'
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './ctx.js'
 
 export const makeType = (
-  ctx: Ctx,
+  ctx: SchemaDiagram,
   type: string,
   schemaType: SchemaType,
 ): TypeVisual => {

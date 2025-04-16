@@ -1,5 +1,5 @@
 import { SchemaType, SchemaProp, Schema, StrictSchema } from '@based/schema'
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './ctx.js'
 import { FilterOps } from './types.js'
 import { getByPath, setByPath } from '@saulx/utils'
 
@@ -23,7 +23,7 @@ export const walkProps = (
   }
 }
 
-export const filterSchema = (ctx: Ctx, ops: FilterOps) => {
+export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
   const originalSchema = ctx.origSchema
   const { filter } = ops
   if (filter === '') {

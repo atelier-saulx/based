@@ -6,7 +6,7 @@ import { positionTypes } from './positionTypes.js'
 import { filterSchema } from './utils.js'
 initPathFindingLib()
 
-export class Ctx {
+export class SchemaDiagram {
   scale: number
   padding: number
   margin: number
@@ -76,7 +76,7 @@ export class Ctx {
     })
   }
 
-  createCtx() {
+  createSchemaDiagram() {
     let canvash = 0
     for (var n = 0; n < this.typesArray.length; n++) {
       const t = this.typesArray[n]

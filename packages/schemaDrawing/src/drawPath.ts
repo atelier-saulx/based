@@ -1,7 +1,12 @@
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './ctx.js'
 import { LineSegment } from './types.js'
 
-const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
+const drawSegment = (
+  ctx: SchemaDiagram,
+  type: LineSegment,
+  x: number,
+  y: number,
+) => {
   const cellX = x * ctx.scale
   const cellY = y * ctx.scale
   const halfScale = ctx.scale / 2
@@ -94,7 +99,7 @@ const isEqual = (a: Int8Array, b: Int8Array) => {
 //   `rgb(171,133,212)`,
 // ]
 
-const drawPath = (pathFull: any, ctx: Ctx) => {
+const drawPath = (pathFull: any, ctx: SchemaDiagram) => {
   //   const randomColor = colors[~~(Math.random() * colors.length)]
 
   const randomColor =
