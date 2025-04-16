@@ -1486,7 +1486,7 @@ void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, st
         struct SelvaFields *dst_fields = &ref->dst->fields;
         const struct SelvaFieldInfo *dst_nfo = &dst_fields->fields_map[efc->inverse_field];
 
-        if (!dst_nfo->in_use) {
+        if (unlikely(!dst_nfo->in_use)) {
             db_panic("dst field missing");
         }
 
