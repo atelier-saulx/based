@@ -1,7 +1,7 @@
 import { SchemaType } from '@based/schema'
 import { TypeVisual } from './types.js'
 import { walkProps } from './utils.js'
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 
 export const makeType = (
   ctx: SchemaDiagram,

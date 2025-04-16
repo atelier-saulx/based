@@ -1,5 +1,5 @@
 import { SchemaType, SchemaProp, Schema, StrictSchema } from '@based/schema'
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { FilterOps } from './types.js'
 import { getByPath, setByPath } from '@saulx/utils'
 

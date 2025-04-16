@@ -1,5 +1,5 @@
 import { StrictSchemaType } from '@based/schema'
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { makeType } from './makeType.js'
 import { TypeVisual, Node, Root } from './types.js'
 

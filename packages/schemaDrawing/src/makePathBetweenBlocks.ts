@@ -1,4 +1,4 @@
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import drawPath from './drawPath.js'
 import { PropVisual } from './types.js'
 

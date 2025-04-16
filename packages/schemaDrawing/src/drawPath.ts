@@ -1,4 +1,4 @@
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { LineSegment } from './types.js'
 
 const drawSegment = (

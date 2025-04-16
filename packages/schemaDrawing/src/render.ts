@@ -1,4 +1,4 @@
-import { SchemaDiagram } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { makePathBetweenBlocks } from './makePathBetweenBlocks.js'
 
 export const render = (ctx: SchemaDiagram) => {
