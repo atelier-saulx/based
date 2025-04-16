@@ -60,7 +60,7 @@ test('addSpecs', async (t: T) => {
     },
     () => {
       errCnt++
-    }
+    },
   )
 
   await wait(500)

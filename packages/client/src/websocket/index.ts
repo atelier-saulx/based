@@ -6,6 +6,7 @@ import { isStreaming } from '../stream/index.js'
 import fetch from '@based/fetch'
 import WebSocket from 'isomorphic-ws'
 import { FakeWebsocket } from './FakeWebsocket.js'
+import pkg from '../../package.json' with { type: 'json' }
 
 type ActiveFn = (isActive: boolean, isOffline: boolean) => void
 
@@ -149,7 +150,10 @@ const connect = (
 
       const ws = (connection.ws = connection.useFallback
         ? new FakeWebsocket(realUrl, connection.useFallback, client)
-        : new WebSocket(realUrl, [encodeAuthState(client.authState)]))
+        : new WebSocket(realUrl, [
+            encodeAuthState(client.authState),
+            pkg.version,
+          ]))
 
       ws.binaryType = 'blob'
 

@@ -11,6 +11,7 @@ export type WebSocketSession = {
   ua: string
   ip: string
   id: number // client-id
+  version: string
   method: string
   authState: AuthState
   type: '0' | '1'
