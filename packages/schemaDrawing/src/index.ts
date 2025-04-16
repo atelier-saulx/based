@@ -6,3 +6,5 @@ export const createSchemaDiagram = (schema: Schema, element: Element) => {
   ctx.render()
   return ctx
 }
+
+export * from './mermaid.js'

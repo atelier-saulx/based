@@ -10,7 +10,7 @@
   ],
   "main": "./dist/index.js",
   "exports": {
-    "./def": "./dist/def/index.js",
+    "./mermaid": "./dist/mermaid.js",
     ".": "./dist/index.js"
   },
   "scripts": {

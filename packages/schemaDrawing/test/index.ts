@@ -9,6 +9,11 @@ document.getElementById('download').onclick = () => {
   ctx.downloadPng()
 }
 
+document.getElementById('noOverlap').onclick = () => {
+  ctx.noOverlap = !ctx.noOverlap
+  ctx.render()
+}
+
 document.getElementById('grid').onclick = () => {
   ctx.toggleGrid()
 }

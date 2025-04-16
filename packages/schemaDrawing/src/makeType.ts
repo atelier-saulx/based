@@ -21,7 +21,7 @@ export const makeType = (
     }
   }
 
-  w += 1
+  w += 2
 
   const h = len + 3
 

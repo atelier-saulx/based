@@ -82,10 +82,11 @@ export const makePathBetweenBlocks = (
     if (path.path.length === 2 && path.startLeft == false) {
       for (const p of path.path) {
         const x = p[0]
-        p[0] = x - 1
+        p[0] = x - 2
       }
     }
 
+    // else {
     if (path.startLeft === false) {
       const w = a.w + a.x + 1 + a.type.x
       const x = path.path[0][0]
@@ -117,9 +118,9 @@ export const makePathBetweenBlocks = (
       const lP = path.path[path.path.length - 1]
       path.path.push([lP[0], lP[1] + 1, 'v'])
       path.path.push([lP[0], lP[1] + 1.8, 'v'])
-
       path.path.push([lP[0], lP[1] + 2.7, 'rt'])
     }
+    // }
 
     drawPath(path, ctx)
   } catch (err) {
