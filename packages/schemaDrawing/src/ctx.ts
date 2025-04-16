@@ -100,6 +100,8 @@ export class Ctx {
     } else {
       this.canvasHolder.height = canvash
       this.canvasHolder.width = Math.floor(this.wTmp / this.scale) * this.scale
+      this.canvasHolder.style.width =
+        this.canvasHolder.width * this.pixelScale + 'px'
 
       this.canvas.reset()
       this.canvas.font = `${this.fontSize}px SF Pro Display`
