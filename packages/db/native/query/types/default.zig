@@ -10,6 +10,7 @@ const searchStr = @import("../filter/search.zig");
 const s = @import("./search.zig");
 const std = @import("std");
 const utils = @import("../../utils.zig");
+const t = @import("../../types.zig");
 
 pub fn default(
     ctx: *QueryCtx,
@@ -41,23 +42,14 @@ pub fn default(
             correctedForOffset -= 1;
             continue :checkItem;
         }
-        const size = try getFields(
-            node.?,
-            ctx,
-            db.getNodeId(node.?),
-            typeEntry,
-            include,
-            null,
-            null,
-            false,
-        );
+        const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, include, null, null, false);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
         }
     }
     if (aggregation == AggFn.count) {
-        const sz = try addCount(ctx, std.mem.asBytes(&ctx.totalResults)); // TODO: use the allocator to not mix up with &ctx.totalResults and maybe to another aggFn
+        const sz = try addCount(ctx, std.mem.asBytes(&ctx.totalResults), t.ReadOp.AGGREGATION); // TODO: use the allocator to not mix up with &ctx.totalResults and maybe to another aggFn
         ctx.size += sz;
     }
 }

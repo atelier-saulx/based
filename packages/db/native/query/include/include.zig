@@ -10,6 +10,7 @@ const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const selva = @import("../../selva.zig");
 const read = utils.read;
+const AggFn = @import("../../types.zig").AggFn;
 
 inline fn addResult(
     field: u8,
@@ -30,16 +31,7 @@ inline fn addResult(
     };
 }
 
-pub fn getFields(
-    node: db.Node,
-    ctx: *QueryCtx,
-    id: u32,
-    typeEntry: db.Type,
-    include: []u8,
-    edgeRef: ?types.RefStruct,
-    score: ?[4]u8,
-    comptime isEdge: bool,
-) !usize {
+pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, include: []u8, edgeRef: ?types.RefStruct, score: ?[4]u8, comptime isEdge: bool) !usize {
     var includeMain: ?[]u8 = null;
     var size: usize = 0;
     var includeIterator: u16 = 0;
@@ -76,14 +68,7 @@ pub fn getFields(
                 size += try addIdOnly(ctx, id, score);
             }
 
-            size += getRefsFields(
-                ctx,
-                multiRefs,
-                node,
-                typeEntry,
-                edgeRef,
-                isEdge,
-            );
+            size += getRefsFields(ctx, multiRefs, node, typeEntry, edgeRef, isEdge);
             continue :includeField;
         }
 
