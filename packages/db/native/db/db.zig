@@ -424,7 +424,7 @@ pub fn getEdgeReference(
 }
 
 pub fn writeEdgeProp(
-    ctx: *DbCtx,
+    ctx: *modifyCtx.ModifyCtx,
     data: []u8,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
@@ -432,7 +432,7 @@ pub fn writeEdgeProp(
     prop: u8,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
-        ctx.selva,
+        ctx.db.selva,
         node,
         ref,
         efc,
@@ -440,6 +440,11 @@ pub fn writeEdgeProp(
         data.ptr,
         data.len,
     ));
+    if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) == 0) {
+        modifyCtx.markDirtyRange(ctx, ctx.typeId, ctx.id);
+    } else if (ref.dst) |dst| {
+        modifyCtx.markDirtyRange(ctx, efc.dst_node_type, getNodeId(dst));
+    }
 }
 
 fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {

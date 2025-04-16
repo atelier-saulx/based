@@ -56,7 +56,7 @@ pub fn writeEdges(
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 try db.writeEdgeProp(
-                    ctx.db,
+                    ctx,
                     edgeData,
                     ctx.node.?,
                     edgeConstraint,
@@ -69,7 +69,7 @@ pub fn writeEdges(
             offset = 0;
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
-                ctx.db,
+                ctx,
                 edgeData,
                 ctx.node.?,
                 edgeConstraint,
@@ -100,7 +100,7 @@ pub fn writeEdges(
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
-                ctx.db,
+                ctx,
                 edgeData,
                 ctx.node.?,
                 edgeConstraint,
