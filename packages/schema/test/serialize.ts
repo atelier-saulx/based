@@ -6,7 +6,7 @@ await test('serialize', async (t) => {
   const schema: StrictSchema = {
     types: {
       a: {
-        // id: 1,
+        id: 1,
         props: {
           derp: {
             type: 'string',
@@ -47,6 +47,7 @@ await test('serialize', async (t) => {
   //   },
   //   true,
   // )
+
   const serializedSchema = serialize(schema, true)
 
   console.log(serializedSchema)
@@ -54,18 +55,18 @@ await test('serialize', async (t) => {
 
   // console.log(serialize(schema, false))
 
-  let d = Date.now()
+  // let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
-    const serializedSchema = serialize(schema, true)
-  }
+  // for (let i = 0; i < 1e6; i++) {
+  //   const serializedSchema = serialize(schema, true)
+  // }
 
-  // const serializedSchema = serialize(schema, true)
+  // // const serializedSchema = serialize(schema, true)
 
-  // const encoder = new TextEncoder()
+  // // const encoder = new TextEncoder()
 
-  // const x = encoder.encode(JSON.stringify(schema))
-  console.log(Date.now() - d, 'ms')
+  // // const x = encoder.encode(JSON.stringify(schema))
+  // console.log(Date.now() - d, 'ms')
 
   // const y = decoder.decode(serializedSchema)
 
