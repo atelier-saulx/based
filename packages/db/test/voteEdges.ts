@@ -72,7 +72,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const final = await db.create('round')
 
-  const amount = 1e3
+  const amount = 1e5
   console.info('--------------------------------')
 
   const contestants = []
@@ -89,6 +89,7 @@ await test('schema with many uint8 fields', async (t) => {
     // voteData.ddi[`ddi${i}`] = i % 256
   }
 
+  let d = performance.now()
   for (let j = 1; j <= amount; j++) {
     const payment = db.create('payment')
     voteData.payment = payment
@@ -100,10 +101,12 @@ await test('schema with many uint8 fields', async (t) => {
         $votes: 8,
       },
     ]
-    const voteId = db.create('vote', voteData)
+    db.create('vote', voteData)
+    //await db.drain()
   }
 
-  console.log(`Create ${amount} votes`, await db.drain())
+  await db.drain()
+  console.log(`Create ${amount} votes`, performance.now() - d, 'ms')
 
   //   await db.query('vote').get().inspect(1)
 
