@@ -3,7 +3,7 @@
   "version": "6.11.2",
   "license": "MIT",
   "scripts": {
-    "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
+    "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs --tree-shaking=true",
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
@@ -13,6 +13,7 @@
   },
   "type": "module",
   "main": "./dist/src/index.js",
+  "sideEffects": false,
   "browser": {
     "./dist/src/stream/index.js": "./dist/src/stream/browser.js",
     "./dist/src/persistentStorage/index.js": "./dist/src/persistentStorage/browser.js"

@@ -41,9 +41,9 @@ const upgradeInternal = (
 
   res.writeStatus('101 Switching Protocols')
 
-  const authState = secWebSocketProtocol
-    ? parseAuthState(secWebSocketProtocol)
-    : {}
+  const [encodedAuthState, version] = secWebSocketProtocol.split(',')
+  const authState = encodedAuthState ? parseAuthState(encodedAuthState) : {}
+
   res.upgrade(
     {
       query,
@@ -54,6 +54,7 @@ const upgradeInternal = (
       type: authState.t ?? 0,
       origin,
       obs: new Set(),
+      version,
     },
     secWebSocketKey,
     secWebSocketProtocol,
