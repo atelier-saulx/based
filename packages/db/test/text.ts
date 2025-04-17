@@ -861,8 +861,7 @@ await test('sort', async (t) => {
   )
 })
 
-
-await test('in object only', async t => {
+await test('in object only', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -873,8 +872,8 @@ await test('in object only', async t => {
   await db.start({ clean: true })
   await db.setSchema({
     locales: {
-      en: { },
-      it: { },
+      en: {},
+      it: {},
     },
     types: {
       user: {
@@ -882,21 +881,24 @@ await test('in object only', async t => {
         dict: {
           type: 'object',
           props: {
-            nice: 'text'
-          }
-        }
+            nice: 'text',
+          },
+        },
       },
-      
     },
   })
 
   const user1 = await db.create('user', {
     dict: {
       nice: {
-        en: 'cool guy'
-      }
-    }
+        en: 'cool guy',
+      },
+    },
   })
 
-  deepEqual(await db.query('user',user1).get(),{id: user1, dict: {en: 'cool guy'}})
+  deepEqual(await db.query('user', user1).get().toObject(), {
+    id: 1,
+    dict: { nice: { en: 'cool guy' } },
+    // name: { en: '', it: '' },
+  })
 })
