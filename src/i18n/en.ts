@@ -667,7 +667,7 @@ export default {
         deploying: '<b>Deploying</b>: ',
         asset_one: '${item} asset',
         asset_many: '${item} assets',
-        function_one: '${item} function',
+        function_one: '${item} function <dim>${name}</dim>',
         function_many: '${item} functions',
         schema_one: '${item} schema',
         schema_many: '${item} schemas',

@@ -239,7 +239,11 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
   }
 
   if (basedProject?.env?.endsWith('#branch')) {
-    basedProject.env = branch.name
+    if (branch?.name) {
+      basedProject.env = branch.name
+    } else {
+      basedProject.env = context.get('basedProject')?.branch?.name || 'main'
+    }
   }
 
   const isCloudInfoValid = await checkCloudInfo(

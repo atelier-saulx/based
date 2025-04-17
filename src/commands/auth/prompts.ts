@@ -248,7 +248,7 @@ export const envSelect =
     })
 
     if (env === branchOption?.value) {
-      return branch
+      return '#branch'
     }
 
     return env

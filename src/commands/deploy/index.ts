@@ -22,7 +22,7 @@ export const deploy = async (program: Command) => {
   cmd.action(
     async ({ functions, watch, forceReload }: Based.Deploy.Command) => {
       const context: AppContext = AppContext.getInstance(program)
-      await context.getProgram()
+      const { cluster } = await context.getProgram()
       const basedClient = await context.getBasedClient()
       const { publicPath } = await basedClient
         .get('project')
@@ -136,6 +136,7 @@ export const deploy = async (program: Command) => {
 
           if (updates?.length) {
             bundlingUpdateHandling(context)(updates)
+
             for (let [type, file] of updates) {
               deployType = type
               const found = await findConfigFile(
@@ -153,10 +154,12 @@ export const deploy = async (program: Command) => {
                 }
 
                 if (found.type === 'schema') {
-                  context.print
-                    .intro(context.i18n('methods.schema.unavailable'))
-                    .warning(context.i18n('methods.schema.setSchema'))
-                    .line()
+                  if (cluster !== 'baseddb') {
+                    context.print
+                      .intro(context.i18n('methods.schema.unavailable'))
+                      .warning(context.i18n('methods.schema.setSchema'))
+                      .line()
+                  }
 
                   await schemaDeploy(context, found)
 
@@ -183,6 +186,7 @@ export const deploy = async (program: Command) => {
                 )
 
                 if (uploads.length) {
+                  context.print.line()
                   await uploadFiles(context)(uploads, publicPath)
                 }
 

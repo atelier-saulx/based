@@ -107,7 +107,7 @@ export const configsDeploy = async (
         context.i18n(
           'commands.deploy.methods.function',
           result.length,
-          result.length,
+          config.name,
         ),
     )
 
