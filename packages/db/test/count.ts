@@ -66,9 +66,19 @@ await test('branchedCount', async (t) => {
     flap: 40,
   })
 
+  const cipolla = db.create('user', {
+    name: 'Carlo Cipolla',
+    flap: 80,
+  })
+
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [mrSnurp, flippie, derpie, dinkelDoink],
+  })
+
+  const stupidity = db.create('article', {
+    name: 'Les lois fondamentales de la stupidité humaine',
+    contributors: [cipolla],
   })
 
   // await db.drain()
@@ -87,12 +97,12 @@ await test('branchedCount', async (t) => {
   // )
 
   // EXPECTED:
-  // [{count: 2}]
+  // [{count: 3}]
   // include in this case has no effect
   // range should not affect count, but TODO: have to check the if clause
 
   // if pass count({alias: 'users'})
-  // [{users: 2}]
+  // [{users: 3}]
 
   // console.log(
   //   await db
@@ -128,7 +138,11 @@ await test('branchedCount', async (t) => {
   // )
 
   // EXPECTED:
-  // [{"id":1, "name":"The wonders of Strudel", "count": 4}'}]
+  // [
+  //  {"id":1, "name":"The wonders of Strudel", "count": 4}'},
+  //  {"id":1, "name":"Les lois fondamentales de la stupitité humaine", "count": 1}'}
+  // ]
+
   // count replace the whole contributors key: q(key)
   // with count({alias: 'contributors'})
   // [{"id":1,"name":"The wonders of Strudel","contributors": 4}'}]
