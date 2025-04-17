@@ -40,7 +40,7 @@
     "@based/functions": "^3.2.1",
     "@based/i18n": "latest",
     "@based/server": "^9.2.3",
-    "@clack/prompts": "^0.7.0",
+    "@clack/prompts": "^0.10.1",
     "@inquirer/prompts": "^6.0.1",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^5.0.0",

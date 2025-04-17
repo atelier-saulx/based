@@ -82,7 +82,7 @@ type Collider = (
 export type FormResult = { results: { [key: string]: string } }
 
 const validator: Validator = (input, validation, skip) => {
-  if (skip && typeof input === 'string' && input.toLowerCase() === 's') {
+  if (skip && typeof input === 'string' && !input) {
     return
   }
 
@@ -193,7 +193,7 @@ export function contextForm(context: AppContext): FormMaker {
         return errorMessage(context.i18n('methods.aborted'))
       }
 
-      if (!result || (skip && result && result.toLowerCase() === 's')) {
+      if (!result || skip) {
         return ''
       }
 

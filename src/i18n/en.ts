@@ -736,7 +736,7 @@ export default {
     loading: 'Loading...',
     input: {
       enterToSkip: '<dim>(ENTER to skip)</dim>',
-      skip: '<dim>(S to skip)</dim>',
+      skip: '<dim>(Enter to skip)</dim>',
       today: '<dim>(T for today)</dim>',
       now: '<dim>(N for now)</dim>',
       empty: 'This value cannot be empty.',

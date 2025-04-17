@@ -25,7 +25,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       const value: string = await input({
         message,
         validate: (value) =>
-          (skip && value.toLowerCase() === 's') ||
+          (skip && !value) ||
           (today && value.toLowerCase() === 't') ||
           isValid(parse(value, format, new Date())),
       })
@@ -34,7 +34,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         return contextParse.date(new Date().getTime().toString())
       }
 
-      if (value === 's') {
+      if (skip && !value) {
         return null
       }
 
@@ -59,7 +59,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       const value = await input({
         message,
         validate: (value) =>
-          (skip && value.toLowerCase() === 's') ||
+          (skip && !value) ||
           (now && value.toLowerCase() === 'n') ||
           isValid(parse(value, format, new Date())),
       })
@@ -72,7 +72,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         )
       }
 
-      if (value === 's') {
+      if (skip && !value) {
         return null
       }
 
@@ -84,14 +84,13 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         message = `${message} ${context.i18n('context.input.skip')}`
       }
 
-      const prompt = input({
+      const prompt = await input({
         message,
         required: true,
-        validate: (value) =>
-          (skip && value === 's') || !Number.isNaN(Number(value)),
+        validate: (value) => (skip && !value) || !Number.isNaN(Number(value)),
       })
 
-      if ((await prompt) === 's') {
+      if (skip && !prompt) {
         return null
       }
 
@@ -151,7 +150,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
             return true
           }
 
-          if (skip && value === 's') {
+          if (skip && !value) {
             return true
           }
 

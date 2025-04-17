@@ -103,7 +103,7 @@ export const projectInit = async (program: Command): Promise<void> => {
       context.form.text({
         message: context.i18n('commands.init.methods.name'),
         input: args.name,
-        required: !skip,
+        required: skip,
         validation: [
           context.form.collider(
             isNotEmpty,
