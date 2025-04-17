@@ -217,9 +217,9 @@ export default {
         apiKey:
           'Do you have any API Key that you want to use for this project?',
         dependencies:
-          'Select the dependencies you want to be instaled in your project:',
+          'Select the dependencies you want to be installed in your project:',
         devDependencies:
-          'Select the development dependencies you want to be instaled in your project:',
+          'Select the development dependencies you want to be installed in your project:',
         summary: {
           header: '<b>Project summary:</b>',
           name: 'Name: <b>${name}</b>',
@@ -665,12 +665,12 @@ export default {
         uploading: '<b>Uploading</b>: ',
         deployed: '<b>Deployed</b>: ',
         deploying: '<b>Deploying</b>: ',
-        asset_one: '${item}/${max} asset',
-        asset_many: '${item}/${max} assets',
-        function_one: '${item}/${max} function',
-        function_many: '${item}/${max} functions',
-        schema_one: '${item}/${max} schema',
-        schema_many: '${item}/${max} schemas',
+        asset_one: '${item} asset',
+        asset_many: '${item} assets',
+        function_one: '${item} function',
+        function_many: '${item} functions',
+        schema_one: '${item} schema',
+        schema_many: '${item} schemas',
         deployComplete: 'Deployment completed successfully.',
         deployLive: 'Your application is now <b>LIVE</b> at:',
       },

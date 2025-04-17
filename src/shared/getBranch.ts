@@ -1,27 +1,31 @@
-let env: string = undefined
+import { spawn } from 'node:child_process'
 
-export const getBranch = async (): Promise<string> => {
-  if (env === undefined) {
-    env = global.ENV
+let env: string | undefined
 
-    if (!env && typeof process === 'object') {
-      env = process.env.ENV
+export async function getBranch(path?: string): Promise<string> {
+  if (env !== undefined) {
+    return env
+  }
 
-      if (!env) {
-        const { exec } = await import('node:child_process')
+  env = global?.ENV ?? process.env.ENV
 
-        env = await new Promise((resolve) => {
-          return exec('git branch --show-current', (err, stdout) => {
-            resolve(err ? '' : stdout.trim())
+  if (!env) {
+    env = await new Promise<string>((resolve) => {
+      const git = spawn('git', ['branch', '--show-current'], {
+        cwd: path ?? process.cwd(),
+        shell: true,
+      })
 
-            if (err) {
-              resolve('')
-            }
-          })
-        })
-      }
-    }
-    env ||= ''
+      let output = ''
+      git.stdout.on('data', (chunk) => {
+        output += chunk.toString()
+      })
+      git.on('error', () => resolve(''))
+      git.on('close', (code) => {
+        if (code !== 0) return resolve('')
+        resolve(output.trim())
+      })
+    })
   }
 
   return env

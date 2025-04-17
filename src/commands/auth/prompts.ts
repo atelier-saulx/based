@@ -1,7 +1,7 @@
 import type { BasedClient } from '@based/client'
 import type { AppContext } from '../../context/index.js'
 import { authByEmail, authByState } from '../../helpers/auth/index.js'
-import { getBranch, getFile } from '../../shared/index.js'
+import { getBranch, getFile, gitInit } from '../../shared/index.js'
 import { isEmailValid, isValueInOptions } from '../../shared/validations.js'
 
 export const newUserText =
@@ -199,31 +199,40 @@ export const envSelect =
     // if (!orgs?.[org]?.[project]) {
     // return newEnv(results)
     // }
-
-    const branch = await getBranch()
+    const { path } = context.get('globalOptions')
+    let branch = await getBranch(path)
     const branchOption = context.i18n('commands.init.methods.env.new[0]')
     const options = []
 
     if (branch) {
       options.push(branchOption)
     } else {
-      context.print.warning(
-        context.i18n('commands.init.methods.env.branchNotFound'),
-      )
+      await gitInit(path)
+
+      branch = 'main'
+      options.push(branchOption)
     }
 
-    options.push(
-      ...context.form.normalizeOptions(envs.filter((env) => env !== branch)),
-    )
+    context.put('basedProject', {
+      branch: {
+        name: branch,
+        useDataFrom: null,
+      },
+    })
 
-    if (options.length === 1 && branch) {
+    options.push(...context.form.normalizeOptions(envs))
+
+    if (options.length === 2 && branch) {
       context.print
         .pipe()
         .log(
           `You only have one env for project <b>${project}</b>, and it has the same name as your branch <b>${branch}</b>.`,
           false,
         )
-        .log(`Deploying by #branch: <b>${branch}</b>.`, false)
+        .log(
+          `You can deploy using your <b>#branch</b> <dim>(${branch})</dim>, or directly to the <b>main</b> environment.`,
+          false,
+        )
     }
 
     const env = await context.form.select({
@@ -238,8 +247,8 @@ export const envSelect =
       ],
     })
 
-    if (env === branchOption.value) {
-      return '#branch'
+    if (env === branchOption?.value) {
+      return branch
     }
 
     return env

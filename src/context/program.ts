@@ -1,7 +1,11 @@
-import { resolve } from 'node:path'
-import { getBranch } from '../shared/getBranch.js'
-import { getFile } from '../shared/getFile.js'
-import { abs } from '../shared/pathAndFiles.js'
+import { dirname, resolve } from 'node:path'
+import {
+  abs,
+  getBranch,
+  getFile,
+  isPathValid,
+  resolveBasedFilePath,
+} from '../shared/index.js'
 
 export async function contextProgram(): Promise<Based.Context.Project> {
   let basedProject: Based.Context.Project = this.get('basedProject')
@@ -22,17 +26,22 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     platformDiscoveryUrl,
   } = this.program.opts() as Based.Context.Project
 
-  const { path, yes: skip } = this.program.opts() as Based.Context.GlobalOptions
+  let { path, yes: skip } = this.program.opts() as Based.Context.GlobalOptions
+
+  if (path && !isPathValid(path)) {
+    throw new Error('Invalid path: no such file or directory.')
+  }
+
+  const files = resolveBasedFilePath(path || process.cwd())
+  basedFile = await getFile(file ? [file] : files)
+  const basedFilePath: string = abs(
+    file || 'based.ts',
+    resolve(path || process.cwd()),
+  )
+
+  path = dirname(basedFilePath)
 
   if (!basedProject) {
-    const getBasedFiles = (path: string) =>
-      ['based.ts', 'based.json', 'based.js'].map((file) =>
-        abs(file, resolve(path)),
-      )
-
-    const files = getBasedFiles(path || process.cwd())
-    basedFile = await getFile(file ? [file] : files)
-
     if (
       (!basedFile || Object.keys(basedFile)?.length <= 1) &&
       (!org || !project || !env)
@@ -41,10 +50,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
         this.print.warning(this.i18n('context.configurationFileNotFound'), true)
 
         const createBasedFile = await this.form.boolean(
-          this.i18n(
-            'context.createBasedFile',
-            abs(file || 'based.ts', resolve(path || process.cwd())),
-          ),
+          this.i18n('context.createBasedFile', basedFilePath),
         )
 
         this.put('globalOptions', { createBasedFile })
@@ -72,7 +78,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   if (basedProject?.env?.endsWith('#branch')) {
     basedProject.branch = {} as Based.Context.Project['branch']
 
-    basedProject.branch.name = await getBranch()
+    basedProject.branch.name = await getBranch(path)
 
     const envInfo = basedProject.env.split('/')
     const useDataFrom = envInfo.length === 2 ? envInfo[0] : null

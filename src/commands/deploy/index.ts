@@ -113,7 +113,7 @@ export const deploy = async (program: Command) => {
               if (config.current?.config?.name) {
                 Object.assign(acc, {
                   [config.current.config.name]: config.current.checksum,
-                })                
+                })
               }
 
               return acc
@@ -164,7 +164,11 @@ export const deploy = async (program: Command) => {
                 }
 
                 if (!found.config.name) {
-                  continue
+                  if (found.config.type === 'authorize') {
+                    found.config.name = 'authorize'
+                  } else {
+                    continue
+                  }
                 }
 
                 const assets = browserBundles.result.outputFiles
@@ -178,6 +182,10 @@ export const deploy = async (program: Command) => {
                   assetsMap,
                 )
 
+                if (uploads.length) {
+                  await uploadFiles(context)(uploads, publicPath)
+                }
+
                 const { deploys, logs } = await configsDeploy(
                   context,
                   found,
@@ -188,21 +196,21 @@ export const deploy = async (program: Command) => {
                   assetsMap,
                   configsMap,
                 )
-
                 if (deploys?.length) {
                   deployed = true
 
-                  if (deploys.some((deploy) => deploy.config.type === 'app')) {
-                    // const uploads = prepareFilesToUpload(
-                    //   assets,
-                    //   favicons,
-                    //   outputs,
-                    //   assetsMap,
-                    // )
-                    if (uploads.length) {
-                      await uploadFiles(context)(uploads, publicPath)
-                    }
-                  }
+                  // if (deploys.some((deploy) => deploy.config.type === 'app')) {
+                  //   // const uploads = await prepareFilesToUpload(
+                  //   //   assets,
+                  //   //   favicons,
+                  //   //   outputs,
+                  //   //   publicPath,
+                  //   //   assetsMap,
+                  //   // )
+                  //   // if (uploads.length) {
+                  //   //   await uploadFiles(context)(uploads, publicPath)
+                  //   // }
+                  // }
 
                   if (logs.some(Boolean) && !greetings) {
                     greetings = true
@@ -223,11 +231,11 @@ export const deploy = async (program: Command) => {
 
             if (deployType !== 'bundled') {
               if (deployed) {
-                context.print
-                  .outro(context.i18n('commands.deploy.methods.deployComplete'))
-                  .line()
+                context.print.outro(
+                  context.i18n('commands.deploy.methods.deployComplete'),
+                )
               } else {
-                context.print.outro('Nothing changed.').line()
+                context.print.outro('Nothing changed.')
               }
             }
           }

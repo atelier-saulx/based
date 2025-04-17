@@ -233,12 +233,12 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
   if (globalOptions?.createBasedFile) {
     await saveAsFile(
       basedProject,
-      join(globalOptions.path || process.cwd(), `${BASED_FILE}.ts`),
+      join(globalOptions.path, `${BASED_FILE}.ts`),
       'ts',
     )
   }
 
-  if (basedProject?.env?.endsWith('#branch') && branch) {
+  if (basedProject?.env?.endsWith('#branch')) {
     basedProject.env = branch.name
   }
 
@@ -255,7 +255,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
       basedProject.org,
       basedProject.project,
       basedProject.env,
-      branch.useDataFrom,
+      branch?.useDataFrom || '',
       basedClientAdmin,
     )
   }

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, isAbsolute, join, relative } from 'node:path'
+import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import type { Readable } from 'node:stream'
 import type { BundleResult } from '@based/bundle'
 import { getFileByPath } from './getFile.js'
@@ -212,7 +212,7 @@ export const findConfigFile = async (
   file = abs(file, process.cwd())
   let found = mapping[file]
 
-  if (file.endsWith('.css') && !found) {
+  if (file.endsWith('.css') || !found) {
     for (const key in browserBundles.result.metafile.inputs) {
       const imports = browserBundles.result.metafile.inputs[key].imports
 
@@ -280,3 +280,24 @@ export async function streamToUint8Array(
 
   return result
 }
+
+export const isPathValid = (path: string) => {
+  try {
+    const parsed = parse(path)
+    return !!parsed.root || !!parsed.dir || !!parsed.base
+  } catch {
+    return false
+  }
+}
+
+export const ensureDirSafe = async (path: string) => {
+  try {
+    await mkdir(path, { recursive: true })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export const resolveBasedFilePath = (path: string) =>
+  ['based.ts', 'based.json', 'based.js'].map((file) => abs(file, resolve(path)))
