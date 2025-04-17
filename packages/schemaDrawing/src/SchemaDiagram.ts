@@ -6,7 +6,7 @@ import { positionTypes } from './positionTypes.js'
 import { filterSchema } from './utils.js'
 initPathFindingLib()
 
-export class Ctx {
+export class SchemaDiagram {
   scale: number
   padding: number
   margin: number
@@ -15,6 +15,7 @@ export class Ctx {
   fontSize: number
   w: number
   h: number
+  noOverlap: boolean = true
   // ------------
   canvasHolder: HTMLCanvasElement
   measure: CanvasRenderingContext2D
@@ -28,6 +29,7 @@ export class Ctx {
   finder: any
   grid: any
   wTmp: number
+  pixelScale: number
   // ------------
   filterInternal: FilterOps
   origSchema: StrictSchema
@@ -43,6 +45,7 @@ export class Ctx {
     this.fontSize = this.propHeight * this.scale * 0.7
     this.rootElement = element
 
+    this.pixelScale = 0.75
     this.origSchema = parse(schema).schema
     this.schema = this.origSchema
 
@@ -73,7 +76,7 @@ export class Ctx {
     })
   }
 
-  createCtx() {
+  createSchemaDiagram() {
     let canvash = 0
     for (var n = 0; n < this.typesArray.length; n++) {
       const t = this.typesArray[n]
@@ -87,12 +90,19 @@ export class Ctx {
       canvas.height = canvash
       canvas.width = Math.floor(this.wTmp / this.scale) * this.scale
       this.canvasHolder = canvas
+      // canvas.style.transformOrigin = '0px 0px'
+      // canvas.style.border = '1px solid blue'
+
+      canvas.style.width = canvas.width * this.pixelScale + 'px'
       this.canvas = canvas.getContext('2d')
       this.canvas.font = `${this.fontSize}px SF Pro Display`
       this.rootElement.appendChild(canvas)
     } else {
       this.canvasHolder.height = canvash
       this.canvasHolder.width = Math.floor(this.wTmp / this.scale) * this.scale
+      this.canvasHolder.style.width =
+        this.canvasHolder.width * this.pixelScale + 'px'
+
       this.canvas.reset()
       this.canvas.font = `${this.fontSize}px SF Pro Display`
       this.canvas.strokeStyle = '#fff'
@@ -100,8 +110,8 @@ export class Ctx {
   }
 
   changeDimensions(width: number, initial?: Boolean) {
-    this.wTmp = width
-    const windowW = width - this.scale * 2
+    this.wTmp = width / this.pixelScale
+    const windowW = width / this.pixelScale - this.scale * 2
     const w = Math.floor(windowW / this.scale)
     const MAX_AREA = 100
     const m = MAX_AREA / w

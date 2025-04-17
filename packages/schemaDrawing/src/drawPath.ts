@@ -1,9 +1,12 @@
-// Assume drawSegment function from the previous answer is defined here:
-
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { LineSegment } from './types.js'
 
-const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
+const drawSegment = (
+  ctx: SchemaDiagram,
+  type: LineSegment,
+  x: number,
+  y: number,
+) => {
   const cellX = x * ctx.scale
   const cellY = y * ctx.scale
   const halfScale = ctx.scale / 2
@@ -18,7 +21,9 @@ const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
     case 'v':
       ctx.canvas.moveTo(cellX + halfScale, cellY)
       ctx.canvas.lineTo(cellX + halfScale, cellY + ctx.scale)
-      //   grid.setWalkableAt(x, y, false)
+      if (ctx.noOverlap) {
+        ctx.grid.setWalkableAt(x, y, false)
+      }
       break
     case 'rb': // Connects mid-left and mid-top
       ctx.canvas.arc(
@@ -57,6 +62,7 @@ const drawSegment = (ctx: Ctx, type: LineSegment, x: number, y: number) => {
         halfScale * 0.5,
         0,
         Math.PI * 2,
+        // ctx.grid.setWalkableAt(x, y, false),
       ) // Center top-right
       break
   }
@@ -93,7 +99,7 @@ const isEqual = (a: Int8Array, b: Int8Array) => {
 //   `rgb(171,133,212)`,
 // ]
 
-const drawPath = (pathFull: any, ctx: Ctx) => {
+const drawPath = (pathFull: any, ctx: SchemaDiagram) => {
   //   const randomColor = colors[~~(Math.random() * colors.length)]
 
   const randomColor =
@@ -101,11 +107,13 @@ const drawPath = (pathFull: any, ctx: Ctx) => {
       ? '#ccc'
       : `rgb(${~~(Math.random() * 255)},${~~(Math.random() * 255)},${~~(Math.random() * 255)})`
   ctx.canvas.strokeStyle = randomColor
-  ctx.canvas.lineWidth = Math.max(1, Math.min(5, ctx.scale / 4))
+  ctx.canvas.lineWidth = 2 // Math.max(1, Math.min(5, ctx.scale / 2))
 
   const path = pathFull.path
   const startLeft = pathFull.startLeft
   const endLeft = pathFull.endLeft
+  const a = pathFull.a
+  const b = pathFull.b
 
   for (let i = 0; i < path.length; i++) {
     const currentPoint = path[i]
@@ -175,7 +183,13 @@ const drawPath = (pathFull: any, ctx: Ctx) => {
       console.error('Missing vec in path create', vec)
     }
 
-    drawSegment(ctx, segmentType, currentPoint[0], currentPoint[1])
+    if (i === 0) {
+      drawSegment(ctx, 'e', currentPoint[0], currentPoint[1])
+    } else if (i === path.length - 1 && b.name !== '__self') {
+      drawSegment(ctx, 'e', currentPoint[0], currentPoint[1])
+    } else {
+      drawSegment(ctx, segmentType, currentPoint[0], currentPoint[1])
+    }
   }
 }
 

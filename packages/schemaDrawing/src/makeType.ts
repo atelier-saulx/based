@@ -1,10 +1,10 @@
 import { SchemaType } from '@based/schema'
 import { TypeVisual } from './types.js'
 import { walkProps } from './utils.js'
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 
 export const makeType = (
-  ctx: Ctx,
+  ctx: SchemaDiagram,
   type: string,
   schemaType: SchemaType,
 ): TypeVisual => {
@@ -20,6 +20,8 @@ export const makeType = (
       w = textSize + 1
     }
   }
+
+  w += 2
 
   const h = len + 3
 
@@ -71,7 +73,7 @@ export const makeType = (
         type: block,
         name: key,
         prop,
-        x: 0,
+        x: 1,
         y: propIndex * ctx.propHeight,
         w,
         isRef: true,
@@ -90,7 +92,7 @@ export const makeType = (
         type: block,
         name: key,
         prop,
-        x: 0,
+        x: 1,
         y: propIndex * ctx.propHeight,
         w,
         isRef: false,

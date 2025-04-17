@@ -1,9 +1,9 @@
 import { StrictSchemaType } from '@based/schema'
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { makeType } from './makeType.js'
 import { TypeVisual, Node, Root } from './types.js'
 
-const findNode = (ctx: Ctx, root: Root, w: number, h: number) => {
+const findNode = (ctx: SchemaDiagram, root: Root, w: number, h: number) => {
   if (root.used) {
     return findNode(ctx, root.right, w, h) || findNode(ctx, root.down, w, h)
   } else if (w <= root.w && h <= root.h) {
@@ -24,7 +24,7 @@ const splitNode = (node: Node, w: number, h: number) => {
   return node
 }
 
-const fit = (ctx: Ctx, root: Node) => {
+const fit = (ctx: SchemaDiagram, root: Node) => {
   let node: Node
   let block: TypeVisual
   for (let n = 0; n < ctx.typesArray.length; n++) {
@@ -37,7 +37,7 @@ const fit = (ctx: Ctx, root: Node) => {
   }
 }
 
-export const positionTypes = (ctx: Ctx) => {
+export const positionTypes = (ctx: SchemaDiagram) => {
   const Packer = function (w, h) {
     this.init(w, h)
   }

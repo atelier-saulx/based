@@ -136,7 +136,6 @@ export type SchemaTypeDef = {
   mainLen: number
   buf: Uint8Array
   propNames: Uint8Array
-  packed: Uint8Array
   props: {
     [path: string]: PropDef
   }

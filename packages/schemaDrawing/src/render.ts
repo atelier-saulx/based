@@ -1,10 +1,10 @@
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import { makePathBetweenBlocks } from './makePathBetweenBlocks.js'
 
-export const render = (ctx: Ctx) => {
+export const render = (ctx: SchemaDiagram) => {
   // -------------- RENDER
 
-  ctx.createCtx()
+  ctx.createSchemaDiagram()
 
   if (ctx.backgroundGrid) {
     for (let i = 0; i < ctx.w; i++) {
@@ -56,7 +56,7 @@ export const render = (ctx: Ctx) => {
           ctx.canvas.fillStyle = '#888'
           ctx.canvas.fillText(
             key,
-            (0.5 + block.x) * ctx.scale,
+            (0.5 + block.x + p.x) * ctx.scale,
             (block.y + p.y) * ctx.scale + ctx.fontSize,
           )
         }

@@ -105,7 +105,7 @@ await test('schema with many uint8 fields', async (t) => {
     voteData.payment = payment
     voteData.fingerprint = `f${j}-${final}`
     const voteId = db.create('vote', voteData)
-    await db.drain()
+    //await db.drain()
   }
 
   await db.drain()

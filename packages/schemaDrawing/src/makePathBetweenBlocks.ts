@@ -1,9 +1,9 @@
-import { Ctx } from './ctx.js'
+import { SchemaDiagram } from './SchemaDiagram.js'
 import drawPath from './drawPath.js'
 import { PropVisual } from './types.js'
 
 export const makePathBetweenBlocks = (
-  ctx: Ctx,
+  ctx: SchemaDiagram,
   a: PropVisual,
   b: PropVisual,
 ) => {
@@ -82,10 +82,11 @@ export const makePathBetweenBlocks = (
     if (path.path.length === 2 && path.startLeft == false) {
       for (const p of path.path) {
         const x = p[0]
-        p[0] = x - 1
+        p[0] = x - 2
       }
     }
 
+    // else {
     if (path.startLeft === false) {
       const w = a.w + a.x + 1 + a.type.x
       const x = path.path[0][0]
@@ -94,6 +95,9 @@ export const makePathBetweenBlocks = (
       for (let i = 1; i < blocksDiff + 1; i++) {
         path.path.unshift([x - i, y])
       }
+    } else {
+      const p = path.path[0]
+      path.path.unshift([p[0] + 1, p[1]])
     }
 
     if (path.endLeft === false) {
@@ -105,15 +109,20 @@ export const makePathBetweenBlocks = (
       for (let i = 1; i < blocksDiff + 1; i++) {
         path.path.push([x - i, y])
       }
+    } else if (b.name !== '__self') {
+      const p = path.path[path.path.length - 1]
+      path.path.push([p[0] + 1, p[1]])
     }
 
     if (b.name === '__self') {
       const lP = path.path[path.path.length - 1]
       path.path.push([lP[0], lP[1] + 1, 'v'])
-      path.path.push([lP[0], lP[1] + 1.8, 'v'])
+      path.path.push([lP[0], lP[1] + 2, 'v'])
+      // path.path.push([lP[0], lP[1] + 1.8, 'v'])
 
-      path.path.push([lP[0], lP[1] + 2.7, 'rt'])
+      path.path.push([lP[0], lP[1] + 2.8, 'rt'])
     }
+    // }
 
     drawPath(path, ctx)
   } catch (err) {

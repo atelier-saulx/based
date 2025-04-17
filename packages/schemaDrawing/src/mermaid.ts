@@ -1,10 +1,10 @@
-import { getPropType } from './parse/utils.js'
 import {
   isPropType,
   SchemaProps,
   SchemaPropsOneWay,
   StrictSchema,
-} from './types.js'
+  getPropType,
+} from '@based/schema'
 
 export const mermaid = (schema: StrictSchema) => {
   let mermaid = 'classDiagram'
