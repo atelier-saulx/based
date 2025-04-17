@@ -154,3 +154,4 @@ zig-out
 deps/node-*
 packages/db/*.o
 .zigversion
+aggregationNotes.md

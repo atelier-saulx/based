@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { Schema, parse, mermaid } from '@based/schema'
 
 await test('branchedCount', async (t) => {
   const db = new BasedDb({
@@ -13,7 +14,7 @@ await test('branchedCount', async (t) => {
     db.destroy()
   })
 
-  await db.setSchema({
+  const schema: Schema = {
     types: {
       user: {
         props: {
@@ -39,7 +40,11 @@ await test('branchedCount', async (t) => {
         },
       },
     },
-  })
+  }
+  await db.setSchema(schema)
+
+  // const parsed = parse(schema).schema
+  // console.log(mermaid(parsed))
 
   const mrSnurp = db.create('user', {
     name: 'Mr snurp',
@@ -81,6 +86,14 @@ await test('branchedCount', async (t) => {
   //     .toObject(),
   // )
 
+  // EXPECTED:
+  // [{count: 2}]
+  // include in this case has no effect
+  // range should not affect count, but TODO: have to check the if clause
+
+  // if pass count({alias: 'users'})
+  // [{users: 2}]
+
   // console.log(
   //   await db
   //     .query('user')
@@ -92,31 +105,57 @@ await test('branchedCount', async (t) => {
   //     .toObject(),
   // )
 
-  // console.log(
-  //   await db
-  //     .query('article')
-  //     .include('name', 'contributors')
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  console.log(
+    await db
+      .query('article')
+      .include('name', 'contributors')
+      .count()
+      .get()
+      .toJSON(),
+  )
 
   // console.log(
   //   await db.query('article').include('contributors').count().get().inspect(),
   // )
 
   // Here to experiment in branched queries
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     .include('name', (q) => q('contributors').count())
+  //     .get()
+  //     .toJSON(),
+  // )
+
+  // EXPECTED:
+  // [{"id":1, "name":"The wonders of Strudel", "count": 4}'}]
+  // count replace the whole contributors key: q(key)
+  // with count({alias: 'contributors'})
+  // [{"id":1,"name":"The wonders of Strudel","contributors": 4}'}]
+
   console.log(
     await db
       .query('article')
-      .include((q) => q('contributors').count(), 'name')
+      .include((q) => q('contributors').include('name').count())
       .get()
       .toJSON(),
   )
+  // EXPECTED:
+  // [
+  //   {
+  //     id: 1,
+  //     contributors: [
+  // { id: 1, name: 'Mr snurp', count: 1 },
+  // { id: 2, name: 'Flippie', count: 1 },
+  // { id: 3, name: 'Derpie', count: 1 },
+  // { id: 4, name: 'Dinkel Doink', count: 1 },
+  //     ],
+  //   }
+  // ]
 
   // await db
   //   .query('article')
-  //   .include((q) => q('contributors').count(), 'name')
+  //   .include((q) => q('contributors').count('votes'), 'name')
   //   .get()
   //   .inspect(100)
 

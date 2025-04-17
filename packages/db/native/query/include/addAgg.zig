@@ -3,6 +3,8 @@ const t = @import("../../types.zig");
 const utils = @import("../../utils.zig");
 
 pub fn addCount(ctx: *QueryCtx, value: ?[]u8, op: t.ReadOp) !usize {
+    ctx.results.shrinkAndFree(1);
+
     try ctx.results.append(.{
         .id = null,
         .field = @intFromEnum(t.ReadOp.AGGREGATION),
