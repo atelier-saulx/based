@@ -2,11 +2,12 @@ import { login } from '../shared/index.js'
 
 export async function contextBasedClient(): Promise<Based.API.Client> {
   let basedClient: Based.API.Client = this.get('basedClient')
-  const basedProject: Based.Context.Project = await this.get('basedProject')
 
   if (basedClient) {
     return basedClient
   }
+
+  const basedProject: Based.Context.Project = await this.get('basedProject')
 
   if (!basedClient || !Object.keys(basedClient).length) {
     try {

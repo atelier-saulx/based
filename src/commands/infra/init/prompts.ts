@@ -1,5 +1,7 @@
+import type { BasedClient } from '@based/client'
 import type { AppContext } from '../../../context/index.js'
 import { isNotEmpty } from '../../../shared/validations.js'
+import { envCreate } from '../../auth/prompts.js'
 
 // type MachineList = {
 //   name?: string
@@ -35,35 +37,48 @@ import { isNotEmpty } from '../../../shared/validations.js'
 //   return result
 // }
 
-// const newProject = (results: {
-//   results: { [key: string]: string }
-// }) => {
-//   if (!results) {
-//     return ''
-//   }
+export const newProject =
+  (
+    context: AppContext,
+    basedClientAdmin: BasedClient,
+    required: boolean,
+    input: string = '',
+  ) =>
+  async (results: {
+    results: { [key: string]: string }
+  }) => {
+    if (!results) {
+      return ''
+    }
 
-//   const {
-//     results: { org },
-//   } = results
+    const {
+      results: { org },
+    } = results
 
-//   return context.form.text({
-//     message: context.i18n('commands.init.methods.project.input', org),
-//     input: args.project,
-//     skip: false,
-//     required: true,
-//     validation: [
-//       context.form.collider(
-//         isNotEmpty,
-//         context.i18n('context.input.empty'),
-//       ),
-//       context.form.collider(
-//         isValueNotInOptions(projectOptions(org)),
-//         (project) =>
-//           context.i18n('commands.init.methods.project.found', project),
-//       ),
-//     ],
-//   })
-// }
+    const newProject = await context.form.text({
+      message: context.i18n('commands.init.methods.project.input', org),
+      input,
+      skip: false,
+      required,
+      validation: [
+        context.form.collider(isNotEmpty, context.i18n('context.input.empty')),
+      ],
+    })
+
+    if (newProject) {
+      await envCreate(
+        context,
+        org,
+        newProject,
+        'main',
+        '',
+        true,
+        basedClientAdmin,
+      )
+    }
+
+    return newProject
+  }
 
 export const clusterText =
   (context: AppContext, required: boolean, input: string = '') =>

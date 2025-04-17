@@ -3,6 +3,7 @@ import type { AppContext } from '../../context/index.js'
 import { authByEmail, authByState } from '../../helpers/auth/index.js'
 import { getBranch, getFile, gitInit } from '../../shared/index.js'
 import { isEmailValid, isValueInOptions } from '../../shared/validations.js'
+import { newProject } from '../infra/index.js'
 
 export const newUserText =
   (context: AppContext, basedClient: BasedClient) => async () => {
@@ -127,7 +128,12 @@ export const orgSelect =
   }
 
 export const projectSelect =
-  (context: AppContext, projects: unknown[], input: string) =>
+  (
+    context: AppContext,
+    basedClientAdmin: BasedClient,
+    projects: unknown[],
+    input: string,
+  ) =>
   async (results: {
     results: { [key: string]: string }
   }) => {
@@ -143,15 +149,11 @@ export const projectSelect =
       return ''
     }
 
-    //   const newProjectOption = context.i18n('commands.init.methods.project.new')
+    const newProjectOption = context.i18n('commands.init.methods.project.new')
     const options = [
+      newProjectOption,
       ...context.form.normalizeOptions(projects),
-      // newProjectOption,
     ]
-
-    // if (!userData?.[org]) {
-    //   return newProject(results)
-    // }
 
     input = !input && options.length === 1 ? options[0].value : input
 
@@ -178,9 +180,18 @@ export const projectSelect =
       ],
     })
 
-    // if (project === newProjectOption.value) {
-    //   return newProject(results)
-    // }
+    if (project === newProjectOption.value) {
+      const newProjectName = await newProject(
+        context,
+        basedClientAdmin,
+        true,
+        '',
+      )(results)
+
+      context.put('globalOptions', { newProjectName })
+
+      return newProjectName
+    }
 
     return project
   }
@@ -196,13 +207,14 @@ export const envSelect =
       results: { project },
     } = results
 
-    // if (!orgs?.[org]?.[project]) {
-    // return newEnv(results)
-    // }
     const { path } = context.get('globalOptions')
     let branch = await getBranch(path)
     const branchOption = context.i18n('commands.init.methods.env.new[0]')
     const options = []
+
+    if (!envs || !envs.length) {
+      options.push({ label: 'main', value: 'main' })
+    }
 
     if (branch) {
       options.push(branchOption)
@@ -247,10 +259,6 @@ export const envSelect =
       ],
     })
 
-    if (env === branchOption?.value) {
-      return '#branch'
-    }
-
     return env
   }
 
@@ -260,6 +268,7 @@ export const envCreate = async (
   project: string,
   env: string,
   useDataFrom: string,
+  skip: boolean,
   basedClientAdmin: BasedClient,
 ) => {
   if (!env) {
@@ -296,12 +305,18 @@ export const envCreate = async (
     })
   }
 
-  const createEnv = await context.form.select({
-    message: `Couldn't validate your data in the cloud. No env found with the name <b>'${env}'</b>.`,
-    input: '',
-    options,
-    required: true,
-  })
+  let createEnv: string
+
+  if (!skip) {
+    createEnv = await context.form.select({
+      message: `Couldn't validate your data in the cloud. No env found with the name <b>'${env}'</b>.`,
+      input: '',
+      options,
+      required: true,
+    })
+  } else {
+    createEnv = '<new_env>'
+  }
 
   try {
     context.print.pipe()

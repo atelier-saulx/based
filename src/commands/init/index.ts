@@ -103,7 +103,8 @@ export const projectInit = async (program: Command): Promise<void> => {
       context.form.text({
         message: context.i18n('commands.init.methods.name'),
         input: args.name,
-        required: skip,
+        skip: true,
+        required: !skip,
         validation: [
           context.form.collider(
             isNotEmpty,
@@ -305,7 +306,8 @@ export const makeProject = async (args: Based.Init.Make) => {
     context,
     [
       context.i18n('commands.init.methods.summary.header'),
-      context.i18n('commands.init.methods.summary.name', project.name),
+      project.name &&
+        context.i18n('commands.init.methods.summary.name', project.name),
       project.description &&
         context.i18n(
           'commands.init.methods.summary.description',
@@ -378,7 +380,7 @@ export const makeProject = async (args: Based.Init.Make) => {
         try {
           pkg = await getFileByPath<typeof pkg>(`${fullPath}/package.json`)
 
-          pkg.name = project.name
+          pkg.name = project.name || pkg.name
           pkg.description = project.description || pkg.description
           pkg.version = '0.1.0'
           pkg.dependencies = filterDependencies(

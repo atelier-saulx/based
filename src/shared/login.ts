@@ -200,6 +200,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
       project: (results) =>
         projectSelect(
           context,
+          basedClientAdmin,
           Object.keys(userCloudInfo[results.results.org]),
           project,
         )(results),
@@ -260,6 +261,7 @@ export const login = async (email?: string): Promise<Based.API.Client> => {
       basedProject.project,
       basedProject.env,
       branch?.useDataFrom || '',
+      false,
       basedClientAdmin,
     )
   }

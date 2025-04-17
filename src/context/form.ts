@@ -201,6 +201,10 @@ export function contextForm(context: AppContext): FormMaker {
     },
 
     normalizeOptions: (values, labelKey = '', valueKey = '') => {
+      if (!values || !values.length) {
+        return []
+      }
+
       return values.map((value) => {
         if (typeof value === 'string') {
           return {
