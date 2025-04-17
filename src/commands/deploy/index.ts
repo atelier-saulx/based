@@ -7,7 +7,7 @@ import {
   bundlingUpdateHandling,
 } from '../dev/handlers.js'
 import { configsBundle } from './configsBundle.js'
-import { configsDeploy } from './configsDeploy.js'
+import { configsChecksumCheck, configsDeploy } from './configsDeploy.js'
 import { configsParse } from './configsParse.js'
 import { filesBundle } from './filesBundle.js'
 import { getBasedFiles } from './getBasedFiles.js'
@@ -55,13 +55,13 @@ export const deploy = async (program: Command) => {
       )
 
       const assetsMap: Record<string, string> = {}
-      let greetings: boolean = false
       forceReload = forceReload
         ? parseNumberAndBoolean(forceReload)
         : watch
-          ? 10
+          ? 1
           : 0
 
+      context.print.line()
       for (const found of configs) {
         await onChange(null, {
           updates: [['bundled', found.path]],
@@ -136,6 +136,7 @@ export const deploy = async (program: Command) => {
 
           if (updates?.length) {
             bundlingUpdateHandling(context)(updates)
+            let filesToUpload: Based.Deploy.FilesToUpload[] = []
 
             for (let [type, file] of updates) {
               deployType = type
@@ -177,7 +178,7 @@ export const deploy = async (program: Command) => {
                 const assets = browserBundles.result.outputFiles
                 const { outputs } = browserBundles.result.metafile
 
-                const uploads = await prepareFilesToUpload(
+                filesToUpload = await prepareFilesToUpload(
                   assets,
                   favicons,
                   outputs,
@@ -185,13 +186,7 @@ export const deploy = async (program: Command) => {
                   assetsMap,
                 )
 
-                if (uploads.length) {
-                  context.print.line()
-                  await uploadFiles(context)(uploads, publicPath)
-                }
-
-                const { deploys, logs } = await configsDeploy(
-                  context,
+                const checksumResult = configsChecksumCheck(
                   found,
                   nodeBundles,
                   browserBundles,
@@ -200,35 +195,19 @@ export const deploy = async (program: Command) => {
                   assetsMap,
                   configsMap,
                 )
+
+                if (filesToUpload?.length && checksumResult?.length) {
+                  await uploadFiles(context)(filesToUpload, publicPath)
+                }
+
+                const { deploys } = await configsDeploy(
+                  context,
+                  found,
+                  checksumResult,
+                  configsMap,
+                )
                 if (deploys?.length) {
                   deployed = true
-
-                  // if (deploys.some((deploy) => deploy.config.type === 'app')) {
-                  //   // const uploads = await prepareFilesToUpload(
-                  //   //   assets,
-                  //   //   favicons,
-                  //   //   outputs,
-                  //   //   publicPath,
-                  //   //   assetsMap,
-                  //   // )
-                  //   // if (uploads.length) {
-                  //   //   await uploadFiles(context)(uploads, publicPath)
-                  //   // }
-                  // }
-
-                  if (logs.some(Boolean) && !greetings) {
-                    greetings = true
-
-                    context.print.intro(
-                      context.i18n('commands.deploy.methods.deployLive'),
-                    )
-
-                    for (const log of logs) {
-                      if (log) {
-                        context.print.step(log)
-                      }
-                    }
-                  }
                 }
               }
             }

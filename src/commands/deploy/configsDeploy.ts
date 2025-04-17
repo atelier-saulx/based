@@ -6,54 +6,12 @@ import { queuedFnDeploy } from './queues.js'
 export const configsDeploy = async (
   context: AppContext,
   found: Based.Deploy.Configs,
-  nodeBundles: BundleResult,
-  browserBundles: BundleResult,
-  outputs: BundleResult['result']['metafile']['outputs'],
-  forceReload: number | boolean,
-  assetsMap: Record<string, string>,
+  checksumResult: Based.Deploy.FunctionsToDeploy[],
   configsMap: Record<string, number>,
-): Promise<{ deploys: Based.Deploy.FunctionsToDeploy[]; logs: string[] }> => {
-  const result: Based.Deploy.FunctionsToDeploy[] = []
+): Promise<{ deploys: Based.Deploy.FunctionsToDeploy[] }> => {
+  const { config } = found
 
-  const { index, config, app, favicon, path } = found
-
-  const js = nodeBundles.js(index)
-  const sourcemap = nodeBundles.map(index)
-  const appJs = app && browserBundles.js(app)
-  let checksum: number
-
-  if (app) {
-    const appCss = browserBundles.css(app)
-    const appFavicon =
-      favicon && outputs[browserBundles.find(favicon)]?.imports[0]
-
-    config.appParams = {
-      js: assetsMap[appJs?.path],
-      css: assetsMap[appCss?.path],
-      favicon: assetsMap[appFavicon?.path],
-    }
-
-    const checksumSeed: any[] = [js.text, config.appParams]
-
-    if (forceReload) {
-      checksumSeed.push(Date.now())
-    }
-
-    checksum = hash(checksumSeed)
-  } else {
-    checksum = hash([js.text])
-  }
-
-  if (forceReload && app) {
-    const seconds = Number.isNaN(forceReload) ? 10e3 : Number(forceReload) * 1e3
-    config.appParams.forceReload = Date.now() + seconds
-  }
-
-  if (configsMap[found.config.name] !== checksum) {
-    result.push({ checksum, config, js, sourcemap, path })
-  }
-
-  if (result?.length) {
+  if (checksumResult?.length) {
     const basedClient = await context.getBasedClient()
 
     // let deploying = 0
@@ -74,7 +32,7 @@ export const configsDeploy = async (
     // )
 
     const logs = await Promise.all(
-      result.map(async ({ checksum, config, js, sourcemap, path }) => {
+      checksumResult.map(async ({ checksum, config, js, sourcemap, path }) => {
         await queuedFnDeploy(
           context,
           basedClient.get('project'),
@@ -94,7 +52,15 @@ export const configsDeploy = async (
         //     result.length,
         //   )
 
-        const { finalPath = `/${config.name}`, public: isPublic } = config
+        const parsedPath =
+          config.path?.length > 1
+            ? config.path.slice(0, config.path.indexOf('/:'))
+            : config.path
+
+        const {
+          finalPath = parsedPath || `/${config.name}`,
+          public: isPublic,
+        } = config
 
         if (isPublic) {
           return `<dim>${url}</dim>${finalPath}`
@@ -106,13 +72,70 @@ export const configsDeploy = async (
       context.i18n('commands.deploy.methods.deployed') +
         context.i18n(
           'commands.deploy.methods.function',
-          result.length,
-          config.name,
+          checksumResult?.length || '0',
+          `${config.name} | ${logs.join(' | ')}`,
         ),
     )
 
-    return { deploys: result, logs }
+    return { deploys: checksumResult }
   }
 
-  return { deploys: result, logs: [] }
+  return { deploys: checksumResult }
+}
+
+export const configsChecksumCheck = (
+  found: Based.Deploy.Configs,
+  nodeBundles: BundleResult,
+  browserBundles: BundleResult,
+  outputs: BundleResult['result']['metafile']['outputs'],
+  forceReload: number | boolean,
+  assetsMap: Record<string, string>,
+  configsMap: Record<string, number>,
+): Based.Deploy.FunctionsToDeploy[] => {
+  const result: Based.Deploy.FunctionsToDeploy[] = []
+
+  const { index, config, app, favicon, path } = found
+
+  const js = nodeBundles.js(index)
+  const sourcemap = nodeBundles.map(index)
+  let checksum: number
+
+  if (app) {
+    const appJs = browserBundles.js(app)
+    const appCss = browserBundles.css(app)
+    const appFavicon =
+      favicon && outputs[browserBundles.find(favicon)]?.imports[0]
+
+    config.appParams = {
+      js: assetsMap[appJs?.path],
+      css: assetsMap[appCss?.path],
+      favicon: assetsMap[appFavicon?.path],
+    }
+
+    const checksumSeed: any[] = [js.text, config.appParams]
+
+    if (forceReload) {
+      // const uniqueId =
+      //   Date.now().toString(36) + Math.random().toString(36).slice(2)
+
+      checksumSeed.push(Date.now())
+    }
+
+    checksum = hash(checksumSeed)
+  } else {
+    checksum = hash([js.text])
+  }
+
+  if (forceReload && app) {
+    const seconds = Number.isNaN(forceReload) ? 10e3 : Number(forceReload) * 1e3
+    config.appParams.forceReload = Date.now() + seconds
+  }
+
+  found.checksum = checksum
+
+  if (configsMap[found.config.name] !== checksum) {
+    result.push({ checksum, config, js, sourcemap, path })
+  }
+
+  return result
 }

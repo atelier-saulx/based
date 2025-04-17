@@ -55,14 +55,14 @@ export const uploadFiles =
     try {
       let uploading = 0
 
-      // context.spinner.start(
-      //   context.i18n('commands.deploy.methods.uploading') +
-      //     context.i18n(
-      //       'commands.deploy.methods.asset',
-      //       uploading.toString(),
-      //       uploads.length,
-      //     ),
-      // )
+      context.spinner.start(
+        context.i18n('commands.deploy.methods.uploading') +
+          context.i18n(
+            'commands.deploy.methods.asset',
+            uploading.toString(),
+            uploads?.length || '0',
+          ),
+      )
 
       await Promise.all(
         uploads.map(async ({ contents, ext, fileName }) => {
@@ -82,22 +82,22 @@ export const uploadFiles =
 
           uploading++
 
-          // context.spinner.message =
-          //   context.i18n('commands.deploy.methods.uploading') +
-          //   context.i18n(
-          //     'commands.deploy.methods.asset',
-          //     ++uploading,
-          //     uploads.length,
-          //   )
+          context.spinner.message =
+            context.i18n('commands.deploy.methods.uploading') +
+            context.i18n(
+              'commands.deploy.methods.asset',
+              ++uploading,
+              uploads.length || '0',
+            )
         }),
       )
 
-      context.print.success(
+      context.spinner.stop(
         context.i18n('commands.deploy.methods.uploaded') +
           context.i18n(
             'commands.deploy.methods.asset',
             uploading,
-            uploads.length,
+            uploads.length || '0',
           ),
       )
     } catch (error) {

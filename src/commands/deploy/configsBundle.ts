@@ -143,7 +143,6 @@ export const configsBundle = async (
           rel,
           bundled,
           checksum: 0,
-          mtimeMs: 0,
         }
 
         if (mapping[path]) {
