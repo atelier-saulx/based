@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.43",
+  "version": "8.0.0-alpha.44",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
@@ -34,12 +34,12 @@
     "vitest": "^2.1.1"
   },
   "dependencies": {
-    "@based/bundle": "^0.4.11",
-    "@based/client": "^6.11.2",
-    "@based/db": "^0.0.31",
-    "@based/functions": "^3.2.1",
+    "@based/bundle": "latest",
+    "@based/client": "latest",
+    "@based/db": "latest",
+    "@based/functions": "latest",
     "@based/i18n": "latest",
-    "@based/server": "^9.2.3",
+    "@based/server": "latest",
     "@clack/prompts": "^0.10.1",
     "@inquirer/prompts": "^6.0.1",
     "@saulx/hash": "^3.0.0",
