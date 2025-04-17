@@ -860,3 +860,43 @@ await test('sort', async (t) => {
     'setting lang in object to null',
   )
 })
+
+
+await test('in object only', async t => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  t.after(() => {
+    return t.backup(db)
+  })
+  await db.start({ clean: true })
+  await db.setSchema({
+    locales: {
+      en: { },
+      it: { },
+    },
+    types: {
+      user: {
+        // name: 'text', // uncommenting this fixes it!
+        dict: {
+          type: 'object',
+          props: {
+            nice: 'text'
+          }
+        }
+      },
+      
+    },
+  })
+
+  const user1 = await db.create('user', {
+    dict: {
+      nice: {
+        en: 'cool guy'
+      }
+    }
+  })
+
+  deepEqual(await db.query('user',user1).get(),{id: user1, dict: {en: 'cool guy'}})
+})
