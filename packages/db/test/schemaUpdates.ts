@@ -13,9 +13,7 @@ await test('client server schema updates', async (t) => {
       client2.putLocalSchema(schema)
     },
   })
-
   await server.start({ clean: true })
-
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
@@ -127,9 +125,7 @@ await test('rapid schema updates', async (t) => {
       client2.putLocalSchema(schema)
     },
   })
-
   await server.start({ clean: true })
-
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
@@ -222,9 +218,7 @@ await test('rapid modifies during schema update', async (t) => {
       client2.putLocalSchema(schema)
     },
   })
-
   await server.start({ clean: true })
-
   t.after(() => server.destroy())
 
   const hooks: DbClientHooks = {
@@ -299,12 +293,8 @@ await test('csmt after schema update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

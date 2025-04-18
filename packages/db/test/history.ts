@@ -5,17 +5,13 @@ import { join } from 'node:path'
 import native from '../src/native.js'
 
 /*
-1. Store history 
+1. Store history
 */
 
 await test.skip('history', async (t) => {
   const db = new BasedDb({ path: t.tmp })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

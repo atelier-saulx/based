@@ -8,12 +8,8 @@ await test('schema with many uint8 fields', async (t) => {
     maxModifySize: 1000 * 1000 * 10,
     // maxModifySize: 1000 * 1000 * 1000,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {

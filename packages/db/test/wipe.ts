@@ -1,18 +1,13 @@
-import { BasedDb, equals } from '../src/index.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import native from '../src/native.js'
 
 await test('wipe', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

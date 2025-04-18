@@ -7,12 +7,8 @@ await test('expire', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -56,9 +52,7 @@ await test('expire', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
+  t.after(() => db2.destroy())
   await db2.start()
 
   equal((await db2.query('token').get().toObject()).length, 1)

@@ -1,17 +1,12 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { setTimeout } from 'node:timers/promises'
 
 await test('references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
+  t.after(() => t.backup(db))
   await db.start({ clean: true })
 
   await db.setSchema({
@@ -102,12 +97,8 @@ await test('one to many', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -211,12 +202,8 @@ await test('one to many really', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -491,12 +478,8 @@ await test('update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -571,12 +554,8 @@ await test('filter', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -720,9 +699,7 @@ await test('filter', async (t) => {
 
 //   await db.start({ clean: true })
 
-//   t.after(() => {
-//     return db.destroy()
-//   })
+//   t.after(() =>db.destroy())
 
 //   await db.setSchema({
 //     locales: {
@@ -940,10 +917,7 @@ await test('single2many - update refs', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    // return db.destroy()
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

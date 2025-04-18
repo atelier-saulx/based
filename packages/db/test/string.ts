@@ -10,12 +10,8 @@ await test('simple', async (t) => {
     path: t.tmp,
     maxModifySize: 1e4,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -187,12 +183,8 @@ await test('string + refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -346,12 +338,8 @@ await test('Big string disable compression', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -431,12 +419,8 @@ await test('Big string', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -490,12 +474,8 @@ await test('schema compression prop', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

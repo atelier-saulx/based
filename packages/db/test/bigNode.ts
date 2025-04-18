@@ -8,9 +8,7 @@ await test('big nodes', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   const makeALot = (n: number) => {
     const props: SchemaProps = {}

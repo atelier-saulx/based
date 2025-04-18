@@ -49,12 +49,8 @@ const start = async (t, clientsN = 2) => {
       }
     },
   })
-
   await server.start({ clean: true })
-
-  t.after(() => {
-    return server.destroy()
-  })
+  t.after(() => server.destroy())
 
   return { clients, server }
 }

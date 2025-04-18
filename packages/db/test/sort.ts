@@ -6,12 +6,8 @@ await test('1M', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -76,12 +72,8 @@ await test('basic', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -574,9 +566,7 @@ await test('sort - from start (1M items)', async (t) => {
   newDb.server.createSortIndex('user', 'age')
   newDb.server.createSortIndex('user', 'name')
 
-  t.after(() => {
-    return newDb.destroy()
-  })
+  t.after(() => newDb.destroy())
 
   deepEqual(
     (
@@ -601,12 +591,8 @@ await test('unset value on create', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     types: {

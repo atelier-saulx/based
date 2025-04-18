@@ -7,12 +7,8 @@ await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -304,12 +300,8 @@ await test('search', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -473,12 +465,8 @@ await test('reference text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: {
@@ -538,12 +526,8 @@ await test('sort', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -865,10 +849,9 @@ await test('in object only', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return t.backup(db)
-  })
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     locales: {
       en: {},
@@ -904,11 +887,9 @@ await test('correct return from obj', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     locales: {
       en: {},

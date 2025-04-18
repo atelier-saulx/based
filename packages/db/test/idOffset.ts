@@ -1,18 +1,13 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 
 await test('idOffset', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 100,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

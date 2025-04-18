@@ -6,12 +6,8 @@ await test('references modify', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -108,12 +104,9 @@ await test('references modify 2', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
 
   await db.setSchema({
     types: {
@@ -159,12 +152,9 @@ await test('reference move', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
 
   await db.setSchema({
     types: {

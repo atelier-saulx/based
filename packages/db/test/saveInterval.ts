@@ -8,12 +8,8 @@ await test('saveInterval', async (t) => {
     path: t.tmp,
     saveIntervalInSeconds: 1,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {
@@ -47,12 +43,8 @@ await test('saveInterval', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-
   await db2.start()
-
-  t.after(() => {
-    return db2.destroy()
-  })
+  t.after(() => db2.destroy())
 
   await db2.schemaIsSet()
   const res2 = await db2.query('user').get().toObject()

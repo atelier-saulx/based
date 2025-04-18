@@ -9,7 +9,6 @@ await test('save simple range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
   t.after(() => {
     // TODO No crash if stopped
@@ -97,9 +96,8 @@ await test('save simple range', async (t) => {
     path: t.tmp,
   })
   await newDb.start()
-  t.after(() => {
-    return newDb.destroy()
-  })
+  t.after(() => newDb.destroy())
+
   const load_end = performance.now()
   const thirdHash = db.server.merkleTree.getRoot().hash
 
@@ -173,9 +171,7 @@ await test.skip('delete a range', async (t) => {
   })
 
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -228,11 +224,8 @@ await test('reference changes', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -311,9 +304,7 @@ await test('ref block moves', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -356,9 +347,7 @@ await test('ref removal', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -394,9 +383,7 @@ await test('refs removal with delete', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

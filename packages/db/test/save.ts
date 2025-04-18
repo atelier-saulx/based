@@ -7,12 +7,8 @@ await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     locales: {
@@ -95,12 +91,9 @@ await test('simple', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return db2.destroy()
-  })
-
   await db2.start()
+  t.after(() => db2.destroy())
+
   const a = await db.query('user').get().toObject()
   const b = await db2.query('user').get().toObject()
   deepEqual(b, a)
@@ -137,12 +130,8 @@ await test('empty root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start()
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     props: {
@@ -169,9 +158,7 @@ await test('refs', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {
@@ -220,9 +207,7 @@ await test('refs', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
+  t.after(() => db2.destroy())
   await db2.start()
 
   const users1 = await db.query('user').include('group').get().toObject()
@@ -235,12 +220,8 @@ await test('auto save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {
@@ -274,9 +255,7 @@ await test('text', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     locales: {
@@ -321,9 +300,7 @@ await test('text', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
+  t.after(() => db2.destroy())
   await db2.start()
 
   const articles1 = await db.query('article').get().toObject()
@@ -357,9 +334,7 @@ await test.skip('db is drained before save', async (t) => {
     },
   })
 
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   const people = await Promise.all([
     db.create('person', {
@@ -396,9 +371,7 @@ await test.skip('db is drained before save', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
+  t.after(() => db2.destroy())
   await db2.start()
 
   deepEqual(
@@ -424,9 +397,7 @@ await test('create', async (t) => {
     },
   })
 
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   db.create('person', {
     name: 'Joe',
@@ -455,10 +426,8 @@ await test('create', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
   await db2.start()
+  t.after(() => db2.destroy())
 
   deepEqual(
     await db2.query('person').get().toObject(),
@@ -470,8 +439,9 @@ await test('upsert', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
+  t.after(() => db.destroy())
+
   await db.setSchema({
     types: {
       person: {
@@ -482,10 +452,6 @@ await test('upsert', async (t) => {
         },
       },
     },
-  })
-
-  t.after(() => {
-    return db.destroy()
   })
 
   const joe = db.create('person', {
@@ -505,10 +471,8 @@ await test('upsert', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
   await db2.start()
+  t.after(() => db2.destroy())
 
   deepEqual(await db.query('person').get(), [
     { id: 1, name: 'Joe', age: 42, alias: 'boss' },
@@ -522,8 +486,9 @@ await test('alias blocks', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
+  t.after(() => db.destroy())
+
   await db.setSchema({
     types: {
       person: {
@@ -533,10 +498,6 @@ await test('alias blocks', async (t) => {
         },
       },
     },
-  })
-
-  t.after(() => {
-    return db.destroy()
   })
 
   for (let i = 0; i < 100_000; i++) {
@@ -563,10 +524,8 @@ await test('alias blocks', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
   await db2.start()
+  t.after(() => db2.destroy())
 
   deepEqual(
     await db2.query('person').get().toObject(),
@@ -578,8 +537,9 @@ await test('simulated periodic save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
+  t.after(() => db.destroy())
+
   await db.setSchema({
     types: {
       book: {
@@ -599,10 +559,6 @@ await test('simulated periodic save', async (t) => {
         },
       },
     },
-  })
-
-  t.after(() => {
-    return db.destroy()
   })
 
   // create some people
@@ -683,10 +639,8 @@ await test('simulated periodic save', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
   await db2.start()
+  t.after(() => db2.destroy())
 
   // Change node using alias saved
   deepEqual(
@@ -763,12 +717,8 @@ await test('no mismatch', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(async () => {
-    return db.stop(true)
-  })
+  t.after(() => db.stop(true))
 
   await db.setSchema({
     types: {
@@ -790,9 +740,7 @@ await test('no mismatch', async (t) => {
     path: t.tmp,
   })
 
-  t.after(() => {
-    return t.backup(db2)
-  })
+  t.after(() => t.backup(db2))
 
   await db2.start()
   await db2.create('user', {
@@ -810,12 +758,8 @@ await test('csmt after save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {

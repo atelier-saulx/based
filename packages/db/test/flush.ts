@@ -6,12 +6,8 @@ await test('too large payload should throw, correct size should not', async (t) 
     path: t.tmp,
     maxModifySize: 80,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
