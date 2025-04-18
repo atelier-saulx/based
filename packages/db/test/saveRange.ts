@@ -200,11 +200,11 @@ await test.skip('delete a range', async (t) => {
   }
 
   await db.drain()
-  db.save()
+  await db.save()
   const first = fun()
   db.delete('user', 100_001)
   await db.drain()
-  db.save()
+  await db.save()
   const second = fun()
 
   equal(hashEq(first.hash, second.hash), false, 'delete changes the root hash')
@@ -221,7 +221,7 @@ await test.skip('delete a range', async (t) => {
   equal(hashEq(second.right.hash, new Uint8Array(16)), true)
   equal(hashEq(second.left.right.hash, new Uint8Array(16)), true)
 
-  db.save()
+  await db.save()
 })
 
 await test('reference changes', async (t) => {
