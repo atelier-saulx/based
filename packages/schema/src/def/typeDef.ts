@@ -29,7 +29,6 @@ import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
-
 export const updateTypeDefs = (
   schema: StrictSchema,
   schemaTypesParsed: SchemaTypesParsed,
@@ -92,8 +91,7 @@ export const createSchemaTypeDef = (
   result.idUint8[0] = result.id & 255
   result.idUint8[1] = result.id >> 8
   const target = type.props
-  let separateSortProps: number = 0
-  let separateSortText: number = 0
+
   for (const key in target) {
     // Create prop def
     const schemaProp = target[key]
@@ -121,13 +119,13 @@ export const createSchemaTypeDef = (
             !(schemaProp.maxBytes < 61) ||
             !('max' in schemaProp && schemaProp.max < 31)
           ) {
-            separateSortProps++
+            result.separateSortProps++
           }
         } else {
-          separateSortProps++
+          result.separateSortProps++
         }
       } else if (isPropType('text', schemaProp)) {
-        separateSortText++
+        result.separateSortText++
       }
       const isseparate = isSeparate(schemaProp, len)
       const typeIndex = TYPE_INDEX_MAP[propType]
@@ -241,10 +239,10 @@ export const createSchemaTypeDef = (
     result.mainEmpty = fillEmptyMain(vals, result.mainLen)
     result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
 
-    if (separateSortText > 0) {
+    if (result.separateSortText > 0) {
       makeSeparateTextSort(result)
     }
-    if (separateSortProps > 0) {
+    if (result.separateSortProps > 0) {
       makeSeparateSort(result)
     }
     for (const p in result.props) {
