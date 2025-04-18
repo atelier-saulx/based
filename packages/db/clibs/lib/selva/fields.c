@@ -1486,7 +1486,7 @@ void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, st
         struct SelvaFields *dst_fields = &ref->dst->fields;
         const struct SelvaFieldInfo *dst_nfo = &dst_fields->fields_map[efc->inverse_field];
 
-        if (!dst_nfo->in_use) {
+        if (unlikely(!dst_nfo->in_use)) {
             db_panic("dst field missing");
         }
 
@@ -1495,18 +1495,17 @@ void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, st
          * i.e. set it at the other end of the edge.
          */
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-            struct SelvaNodeReference dst_ref;
+            struct SelvaNodeReference *dst_ref = nfo2p(dst_fields, dst_nfo);
 
-            memcpy(&dst_ref, nfo2p(dst_fields, dst_nfo), sizeof(dst_ref));
-            dst_ref.meta = ref->meta;
-            memcpy(nfo2p(dst_fields, dst_nfo), &dst_ref, sizeof(dst_ref));
+            dst_ref->meta = ref->meta;
         } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences refs;
-            struct SelvaNode *tmp;
             node_id_t src_node_id = node->node_id;
 
             memcpy(&refs, nfo2p(dst_fields, dst_nfo), sizeof(refs));
             for (size_t i = 0; i < refs.nr_refs; i++) {
+                struct SelvaNode *tmp;
+
                 tmp = refs.refs[i].dst;
                 if (tmp && tmp->node_id == src_node_id) {
                     refs.refs[i].meta = ref->meta;

@@ -18,7 +18,6 @@ import {
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
-import { makePacked } from './makePacked.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
 import { getPropLen } from './getPropLen.js'
@@ -242,7 +241,6 @@ export const createSchemaTypeDef = (
     result.mainEmpty = fillEmptyMain(vals, result.mainLen)
     result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
 
-    makePacked(result, typeName, vals, len)
     if (separateSortText > 0) {
       makeSeparateTextSort(result)
     }

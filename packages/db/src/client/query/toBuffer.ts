@@ -1,5 +1,5 @@
 import { createSortBuffer } from './sort.js'
-import { QueryDef, QueryDefType } from './types.js'
+import { AggFlag, QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
@@ -25,6 +25,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
   })
 
+  const aggregation = createAggFlagBuffer(def.aggregation || AggFlag.NONE)
   let edges: Uint8Array[]
   let edgesSize = 0
 
@@ -93,11 +94,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       if (def.sort) {
         sort = createSortBuffer(def.sort)
         sortSize = sort.byteLength
-      }
-
-      let aggregation: Uint8Array
-      if (def.aggregation) {
-        aggregation = createAggFlagBuffer(def.aggregation)
       }
 
       if (def.target.ids) {
@@ -181,10 +177,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         if (searchSize) {
           buf.set(search, 17 + filterSize + sortSize)
         }
-
-        if (aggregation) {
-          buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
-        }
+        buf.set(aggregation, 17 + filterSize + sortSize + searchSize)
 
         result.push(buf)
       }
@@ -197,8 +190,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
     const sortSize = sort?.byteLength ?? 0
     const modsSize = filterSize + sortSize
-    const meta = new Uint8Array(modsSize + 10 + 8)
-    const sz = size + 7 + modsSize + 8
+    const meta = new Uint8Array(modsSize + 10 + 8 + 1)
+    const sz = size + 7 + modsSize + 8 + 1
     meta[0] = 254
     meta[1] = sz
     meta[2] = sz >>> 8
@@ -224,6 +217,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     meta[15 + modsSize] = def.schema.idUint8[0]
     meta[15 + 1 + modsSize] = def.schema.idUint8[1]
     meta[15 + 2 + modsSize] = def.target.propDef.prop
+    meta[15 + 3 + modsSize] = aggregation[0]
+
     result.push(meta)
   } else if (def.type === QueryDefType.Reference) {
     const meta = new Uint8Array(6)

@@ -7,15 +7,15 @@ export function hashEq(a: Hash, b: Hash) {
   return equals(a, b)
 }
 
-export function createTree(createHash: () => any): Csmt {
-  let root: TreeNode | null = null
+export function createTree<T>(createHash: () => any): Csmt<T> {
+  let root: TreeNode<T> | null = null
   const emptyHash = createHash().digest()
 
   function genNodeHash(lHash: Hash, rHash: Hash) {
     return createHash().update(lHash).update(rHash).digest()
   }
 
-  function createNode(left: TreeNode | null, right: TreeNode | null): TreeNode {
+  function createNode(left: TreeNode<T> | null, right: TreeNode<T> | null): TreeNode<T> {
     const hash = left && right ? genNodeHash(left.hash, right.hash) : emptyHash
 
     return {
@@ -26,7 +26,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function createLeaf(k: TreeKey, h: Hash, data: any): TreeNode {
+  function createLeaf(k: TreeKey, h: Hash, data: any): TreeNode<T> {
     return {
       hash: h,
       key: k,
@@ -39,7 +39,7 @@ export function createTree(createHash: () => any): Csmt {
   /**
    * Update node properties.
    */
-  function updateNode(node: TreeNode): void {
+  function updateNode(node: TreeNode<T>): void {
     if (node.left || node.right) {
       node.key = max(node.left, node.right)
       if (node.left && node.right) {
@@ -48,7 +48,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function insert(node: TreeNode, newLeaf: TreeNode) {
+  function insert(node: TreeNode<T>, newLeaf: TreeNode<T>) {
     const { key: k } = newLeaf
     let left = node.left
     let right = node.right
@@ -82,11 +82,11 @@ export function createTree(createHash: () => any): Csmt {
     return node
   }
 
-  function checkForLeaf(node: TreeNode, k: TreeKey) {
+  function checkForLeaf(node: TreeNode<T>, k: TreeKey) {
     return !node.left && !node.right && node.key === k
   }
 
-  function deleteNode(node: TreeNode, k: TreeKey): TreeNode | null {
+  function deleteNode(node: TreeNode<T>, k: TreeKey): TreeNode<T> | null {
     const left = node.left
     const right = node.right
 
@@ -130,13 +130,13 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function updateNodeHash(node: TreeNode) {
+  function updateNodeHash(node: TreeNode<T>) {
     if (node.left && node.right) {
       node.hash = genNodeHash(node.left.hash, node.right.hash)
     }
   }
 
-  function updateHash(node: TreeNode, k: TreeKey, hash: Hash): void {
+  function updateHash(node: TreeNode<T>, k: TreeKey, hash: Hash): void {
     if (!node) return
     const { left, right } = node
     if (k === node.key && !left && !right) {
@@ -174,8 +174,8 @@ export function createTree(createHash: () => any): Csmt {
   function diffAB(
     diffA: Map<TreeKey, Hash>,
     diffB: Map<TreeKey, Hash>,
-    nodeA: TreeNode | null,
-    nodeB: TreeNode | null,
+    nodeA: TreeNode<T> | null,
+    nodeB: TreeNode<T> | null,
   ) {
     if (
       nodeA &&
@@ -226,7 +226,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function diff(tree: Csmt): TreeDiff {
+  function diff(tree: Csmt<T>): TreeDiff {
     const leftMap = new Map<TreeKey, Hash>()
     const rightMap = new Map<TreeKey, Hash>()
     const nodeA = root
@@ -240,7 +240,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function _visitLeafNodes(node: TreeNode, cb: (leaf: TreeNode) => void) {
+  function _visitLeafNodes(node: TreeNode<T>, cb: (leaf: TreeNode<T>) => void) {
     if (!node) return
     if (!node.left && !node.right) cb(node)
     else {
@@ -249,7 +249,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function search(node: TreeNode, k: TreeKey): TreeNode | null {
+  function search(node: TreeNode<T>, k: TreeKey): TreeNode<T> | null {
     if (!node || (k === node.key && !node.left && !node.right)) return node
     const { left, right } = node
     if (left && left.key === k) return search(left, k)
@@ -285,7 +285,7 @@ export function createTree(createHash: () => any): Csmt {
     },
     diff,
     membershipProof: (k: TreeKey): Proof => membershipProof(root, k),
-    visitLeafNodes: (cb: (leaf: TreeNode) => void) => _visitLeafNodes(root, cb),
+    visitLeafNodes: (cb: (leaf: TreeNode<T>) => void) => _visitLeafNodes(root, cb),
     search: (k: TreeKey) => search(root, k),
   }
 }

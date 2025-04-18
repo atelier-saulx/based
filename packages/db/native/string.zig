@@ -148,7 +148,7 @@ pub fn xxHash64(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi
     const buf = napi.get([]u8, env, args[0]) catch return null;
     const target = napi.get([]u8, env, args[1]) catch return null;
     const offset = napi.get(u32, env, args[2]) catch return null;
-    const hash = selva.xxHash64(buf.ptr, buf.len);
+    const hash = selva.XXH64(buf.ptr, buf.len, 0);
     writeInt(usize, target, offset, hash);
     return null;
 }
