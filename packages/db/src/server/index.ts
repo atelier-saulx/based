@@ -570,7 +570,12 @@ export class DbServer {
 
   #expire() {
     this.#resizeModifyDirtyRanges()
-    native.modify(emptyUint8Array, emptyUint8Array, this.dbCtxExternal, this.modifyDirtyRanges)
+    native.modify(
+      emptyUint8Array,
+      emptyUint8Array,
+      this.dbCtxExternal,
+      this.modifyDirtyRanges,
+    )
     for (let key of this.modifyDirtyRanges) {
       if (key === 0) {
         break
