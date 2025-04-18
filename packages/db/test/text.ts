@@ -900,8 +900,6 @@ await test('in object only', async (t) => {
   })
 })
 
-
-
 await test('correct return from obj', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -939,7 +937,7 @@ await test('correct return from obj', async (t) => {
 
   deepEqual(await db.query('user', user1).get().toObject(), {
     id: 1,
-    dict: { nice: { en: 'cool guy' } },
+    dict: { nice: { en: 'cool guy', it: '' } },
     name: { en: '', it: '' },
   })
 })
