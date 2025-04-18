@@ -14,6 +14,10 @@ type SchemaBuffer = {
 
 let schemaBuffer: SchemaBuffer
 
+// 3 level
+// 0 for queries (min)
+// 1 for modify
+// 2 fulls schema
 const walk = (
   obj,
   prev: any,

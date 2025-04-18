@@ -74,6 +74,8 @@ export function writeText(
   } else {
     // @ts-ignore
     for (const lang in value) {
+      console.log('?????', value, t, def.seperateTextSort)
+
       const langC: Uint8Array =
         def.seperateTextSort.localeStringToIndex.get(lang)
       if (!langC) {

@@ -865,7 +865,6 @@ await test('in object only', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   t.after(() => {
     return t.backup(db)
   })
@@ -899,6 +898,5 @@ await test('in object only', async (t) => {
   deepEqual(await db.query('user', user1).get().toObject(), {
     id: 1,
     dict: { nice: { en: 'cool guy' } },
-    // name: { en: '', it: '' },
   })
 })
