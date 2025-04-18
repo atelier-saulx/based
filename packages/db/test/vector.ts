@@ -173,6 +173,7 @@ await test('search', async (t) => {
       .range(0, 3)
       .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
       .get()
+      .inspect()
       .toObject(),
     [
       { id: 3, $searchScore: 0.6100001335144043, name: 'apple' },

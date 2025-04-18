@@ -865,7 +865,6 @@ await test('in object only', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   t.after(() => {
     return t.backup(db)
   })
@@ -877,7 +876,6 @@ await test('in object only', async (t) => {
     },
     types: {
       user: {
-        // name: 'text', // uncommenting this fixes it!
         dict: {
           type: 'object',
           props: {
@@ -891,15 +889,14 @@ await test('in object only', async (t) => {
   const user1 = await db.create('user', {
     dict: {
       nice: {
-        en: 'cool guy',
+        en: 'a',
       },
     },
   })
 
-  deepEqual(await db.query('user', user1).get().toObject(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
-    dict: { nice: { en: 'cool guy' } },
-    // name: { en: '', it: '' },
+    dict: { nice: { en: 'a', it: '' } },
   })
 })
 

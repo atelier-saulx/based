@@ -24,6 +24,8 @@ export const createEmptyDef = (
     lastId: 0,
     locales: {},
     main: {},
+    separateSortProps: 0,
+    separateSortText: 0,
     localeSize: 0,
     hasSeperateSort: false,
     seperateSort: {
