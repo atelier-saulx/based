@@ -829,3 +829,38 @@ await test('query - no schema', async (t) => {
   await db.schemaIsSet()
   deepEqual(await db.query('user').get().toObject(), [])
 })
+
+await test('minmax', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          number: { type: 'number', min: 0, max: 1 },
+        },
+      },
+    },
+  })
+
+  const id = await db.create('user', {
+    name: 'luigi',
+  })
+
+  await db.update('user', id, {
+    number: 12,
+  })
+
+  deepEqual(await db.query('user', id).get().toObject(), {
+    name: 'luigi',
+    number: 12,
+    id,
+  })
+})
