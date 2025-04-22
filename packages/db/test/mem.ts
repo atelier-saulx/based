@@ -8,12 +8,8 @@ await test('mem', async (t) => {
     // low amount to force many flushes
     maxModifySize: 10000,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     types: {

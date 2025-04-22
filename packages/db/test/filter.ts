@@ -7,9 +7,8 @@ await test('single', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
+
   const status = ['error', 'danger', 'ok', '🦄']
 
   await db.setSchema({
@@ -115,12 +114,8 @@ await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   const status = ['error', 'danger', 'ok', '🦄']
 
@@ -591,12 +586,8 @@ await test('or', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   const status = ['error', 'danger', 'ok', '🦄']
 
@@ -743,12 +734,8 @@ await test('or numerical', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

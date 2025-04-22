@@ -6,12 +6,8 @@ await test('references modify', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -208,12 +204,8 @@ await test('index>len', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

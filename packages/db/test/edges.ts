@@ -8,12 +8,8 @@ await test('multiple references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
-
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -417,7 +413,5 @@ await test('single reference', async (t) => {
     ],
   )
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 })

@@ -8,10 +8,7 @@ await test('simple', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -128,10 +125,7 @@ await test('alias - references', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -270,10 +264,7 @@ await test('Get single node by alias', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -312,10 +303,7 @@ await test('Update existing alias field', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -443,10 +431,7 @@ await test('same-name-alias', async (t) => {
   })
 
   await db.start({ clean: true })
-
-  t.after(() => {
-    return db.destroy()
-  })
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {

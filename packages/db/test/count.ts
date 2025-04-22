@@ -6,12 +6,8 @@ await test('branchedCount', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    db.destroy()
-  })
+  t.after(() => db.destroy())
 
   const schema: Schema = {
     types: {

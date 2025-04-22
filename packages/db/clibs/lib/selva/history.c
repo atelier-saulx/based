@@ -64,12 +64,13 @@ static const struct selva_history_hdr hdr_template = {
 
 int selva_history_create(const char *pathname, size_t bsize, struct selva_history **hist_out)
 {
-    struct selva_history *hist = selva_malloc(sizeof(*hist));
+    struct selva_history *hist;
 
     if (bsize % HIST_LINE_SIZE != 0) {
         return SELVA_EINVAL;
     }
 
+    hist = selva_malloc(sizeof(*hist));
     hist->file = fopen(pathname, "a+");
     hist->fd = fileno(hist->file);
     hist->bsize = bsize;
@@ -89,11 +90,13 @@ int selva_history_create(const char *pathname, size_t bsize, struct selva_histor
         hdr.crc = crc32c(0, &hdr, sizeof(hdr));
         fwrite(&hdr, sizeof(hdr), 1, hist->file);
     } else if (rd != sizeof(hdr)) {
+        selva_free(hist);
         return SELVA_EIO;
     } else {
         if (memcmp(hdr.preamble, hdr_template.preamble, sizeof(HIST_PREAMBLE)) ||
             hdr.ver != HIST_VER ||
             hdr.bsize != bsize) {
+            selva_free(hist);
             return SELVA_EINVAL;
         }
     }
