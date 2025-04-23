@@ -3,7 +3,7 @@ import { Context, HttpSession } from './context.js'
 import { BasedFunctionClient } from './client.js'
 import { BasedDataStream } from './stream.js'
 import { Authorize } from './auth.js'
-import type { BuildOptions } from 'esbuild'
+import type { Plugin } from 'esbuild'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,
@@ -332,7 +332,7 @@ type BasedAppFunctionConfig = {
   /** The path your main file will be served through HTTP */
   path?: string
   favicon?: string
-  plugins?: BuildOptions['plugins']
+  plugins?: Plugin[]
 }
 
 type BasedJobFunctionConfig = {
