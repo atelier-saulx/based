@@ -58,7 +58,7 @@ export const deploy = async (program: Command) => {
       forceReload = forceReload
         ? parseNumberAndBoolean(forceReload)
         : watch
-          ? 1
+          ? 10
           : 0
 
       context.print.line()
