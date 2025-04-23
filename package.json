@@ -6,12 +6,16 @@
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": ["bin", "dist"],
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
     "build": "npm run docs && tsc -b",
-    "watch": "tsc -b --watch"
+    "watch": "tsc -b --watch",
+    "link-i": "npm i && npm link ../based-db/packages/db ../based-db/packages/schema"
   },
   "keywords": [],
   "author": "",
