@@ -659,7 +659,11 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
         removed_dst = remove_reference(db, node, fs, dst_node_id, i, false);
         assert(removed_dst == dst_node_id);
         if (dirty_cb) {
-            /* TODO Don't call if this side of the ref is not saved. */
+            /*
+             * TODO Don't call if this side of the ref is not saved. This would
+             * be if the other side is a SELVA_FIELD_TYPE_REFERENCE field.
+             * Otherwise, it's always saved.
+             */
             dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, removed_dst);
         }
     }
