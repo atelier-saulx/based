@@ -1935,9 +1935,7 @@ static void destroy_fields(struct SelvaFields *fields)
     /*
      * Clear fields map.
      */
-    for (field_t i = 0; i < fields->nr_fields; i++) {
-        fields->fields_map[i] = (struct SelvaFieldInfo){ 0 };
-    }
+    memset(fields->fields_map, 0, fields->nr_fields * sizeof(fields->fields_map[0]));
 
     fields->nr_fields = 0;
     fields->data_len = 0;
