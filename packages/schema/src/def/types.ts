@@ -151,6 +151,8 @@ export type SchemaTypeDef = {
   mainEmpty: Uint8Array
   mainEmptyAllZeroes: boolean
   tree: SchemaPropTree
+  separateSortProps: number
+  separateSortText: number
   hasSeperateSort: boolean
   seperateSort: SchemaSortUndefinedHandler
   hasSeperateTextSort: boolean

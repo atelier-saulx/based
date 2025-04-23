@@ -1,18 +1,13 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
-import { Schema, parse, mermaid } from '@based/schema'
+import { Schema } from '@based/schema'
 
 await test('branchedCount', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    db.destroy()
-  })
+  t.after(() => db.destroy())
 
   const schema: Schema = {
     types: {

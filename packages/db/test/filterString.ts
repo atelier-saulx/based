@@ -13,9 +13,7 @@ await test('variable size (string/binary)', async (t) => {
   })
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -171,9 +169,7 @@ await test('has compressed', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
   await db.setSchema({
     types: {
       italy: {
@@ -214,9 +210,7 @@ await test('has uncompressed', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -345,9 +339,7 @@ await test('main has (string/binary)', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
   await db.setSchema({
     types: {
       article: {
@@ -389,9 +381,7 @@ await test('has normalized uncompressed', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -429,9 +419,7 @@ await test('has normalized compressed', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -469,9 +457,7 @@ await test('has OR uncompressed', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -544,9 +530,7 @@ await test('has OR compressed', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -590,9 +574,7 @@ await test('OR equal', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -634,9 +616,7 @@ await test('OR equal main', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {

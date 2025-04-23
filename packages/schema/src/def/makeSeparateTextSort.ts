@@ -11,6 +11,7 @@ export function makeSeparateTextSort(result: Partial<SchemaTypeDef>) {
       }
     }
   }
+
   const bufLen = (max + 1) * (result.localeSize + 1)
   result.seperateTextSort.buffer = new Uint8Array(bufLen)
   let index = 0

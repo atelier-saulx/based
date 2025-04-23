@@ -7,12 +7,8 @@ await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -304,12 +300,8 @@ await test('search', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -473,12 +465,8 @@ await test('reference text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: {
@@ -538,12 +526,8 @@ await test('sort', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   db.setSchema({
     locales: {
@@ -865,11 +849,9 @@ await test('in object only', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  t.after(() => {
-    return t.backup(db)
-  })
   await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     locales: {
       en: {},
@@ -877,7 +859,45 @@ await test('in object only', async (t) => {
     },
     types: {
       user: {
-        // name: 'text', // uncommenting this fixes it!
+        dict: {
+          type: 'object',
+          props: {
+            nice: 'text',
+          },
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    dict: {
+      nice: {
+        en: 'a',
+      },
+    },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    dict: { nice: { en: 'a', it: '' } },
+  })
+})
+
+await test('correct return from obj', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        name: 'text',
         dict: {
           type: 'object',
           props: {
@@ -898,7 +918,7 @@ await test('in object only', async (t) => {
 
   deepEqual(await db.query('user', user1).get().toObject(), {
     id: 1,
-    dict: { nice: { en: 'cool guy' } },
-    // name: { en: '', it: '' },
+    dict: { nice: { en: 'cool guy', it: '' } },
+    name: { en: '', it: '' },
   })
 })

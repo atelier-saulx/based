@@ -642,6 +642,8 @@ static struct SelvaTypeCursors *create_cursors_struct(struct SelvaTypeEntry *typ
  */
 static void selva_cursors_insert(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)
 {
+    assert(cursor->ptr);
+
     node_id_t node_id = cursor->ptr->node_id;
     struct SelvaTypeCursors *cursors;
 
@@ -758,6 +760,7 @@ cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node
     static_assert(sizeof(ida_t) >= sizeof(cursor_id_t));
     cursor->cursor_id = ida_alloc(type->cursors.ida);
     cursor->type = type->type;
+    cursor->ptr = node;
 
     if (RB_INSERT(SelvaTypeCursorById, &type->cursors.by_cursor_id, cursor)) {
         db_panic("cursor_id already in use");

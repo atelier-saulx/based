@@ -6,12 +6,8 @@ await test('delete', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -77,12 +73,8 @@ await test('non existing 1', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -136,12 +128,8 @@ await test('non existing 2', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -194,12 +182,8 @@ await test('save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
-
-  t.after(() => {
-    return t.backup(db)
-  })
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -233,10 +217,8 @@ await test('save', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => {
-    return db2.destroy()
-  })
   await db2.start()
+  t.after(() => db2.destroy())
 
   deepEqual(await db2.query('user').include('id').get().toObject(), [{ id: 2 }])
   deepEqual(await db.query('user').include('id').get().toObject(), [{ id: 2 }])

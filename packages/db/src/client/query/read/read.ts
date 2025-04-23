@@ -84,6 +84,7 @@ const getEmptyField = (p: PropDef | PropDefEdge, item: Item | AggItem) => {
   const path = p.path
   const len = path.length
   let select: any = item
+
   if (len - i === 1) {
     const field = path[i]
     if (!(field in item)) {
@@ -94,13 +95,7 @@ const getEmptyField = (p: PropDef | PropDefEdge, item: Item | AggItem) => {
   } else {
     for (; i < len; i++) {
       const field = path[i]
-      if (i === len - 1) {
-        if (!(field in select)) {
-          select = select[field] = {}
-        }
-      } else {
-        select = select[field] ?? (select[field] = {})
-      }
+      select = select[field] ?? (select[field] = {})
     }
   }
   return select
@@ -185,7 +180,7 @@ const handleUndefinedProps = (
   q: QueryDef,
   item: Item | AggItem,
 ) => {
-  if (q.aggregation == AggFlag.NONE || q.aggregation == null) {
+  if (q.aggregation === AggFlag.NONE || q.aggregation === null) {
     for (const k in q.include.propsRead) {
       if (q.include.propsRead[k] !== id) {
         // Only relevant for seperate props
@@ -195,11 +190,10 @@ const handleUndefinedProps = (
         } else if (prop.typeIndex === TEXT && q.lang == 0) {
           const lan = getEmptyField(prop, item)
           const lang = q.include.langTextFields.get(prop.prop).codes
+
           if (lang.has(0)) {
             for (const locale in q.schema.locales) {
-              if (!lan[locale]) {
-                // console.log('???', locale, prop.default)
-
+              if (lan[locale] == undefined) {
                 lan[locale] = prop.default[locale] || ''
               }
             }
@@ -214,8 +208,6 @@ const handleUndefinedProps = (
         } else if (prop.typeIndex === BINARY) {
           addField(prop, prop.default, item)
         } else if (prop.typeIndex === TEXT) {
-          // q.lang
-          // console.log('???')
           addField(prop, '', item)
         } else {
           1
