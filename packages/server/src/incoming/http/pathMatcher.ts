@@ -1,4 +1,4 @@
-import { PathToken } from "@based/functions"
+import { PathToken } from '@based/functions'
 import {
   NUMBER_ZERO,
   NUMBER_NINE,
@@ -19,8 +19,8 @@ import {
   INVALID,
   SLASH,
   EQUALS_SIGN,
-  AMPERSAND
-} from "./types.js"
+  AMPERSAND,
+} from './types.js'
 
 /**
  * Checks if the byte represents a character for a parameter name.
@@ -46,11 +46,7 @@ function isValidParamChar(code: number): boolean {
  * @param code - The ASCII code of the character.
  */
 function isValidParamModifier(code: number): boolean {
-  return (
-    code === PLUS ||
-    code === ASTERISK ||
-    code === QUESTION_MARK
-  )
+  return code === PLUS || code === ASTERISK || code === QUESTION_MARK
 }
 
 /**
@@ -113,15 +109,17 @@ function parseToken(segment: Buffer): PathToken {
     i++
   }
 
-  while (i < len) {    
-    if (isValidParamChar(segment[i]) ||
-      (
-        segment[i] === COLON &&
-        value[0] === 0x64 &&
-        value[1] === 0x62
-      )) {
+  while (i < len) {
+    if (
+      isValidParamChar(segment[i]) ||
+      (segment[i] === COLON && value[0] === 0x64 && value[1] === 0x62)
+    ) {
       value[j++] = segment[i]
-    } else if (isValidParamModifier(segment[i]) && type === PARAM && i === len - 1) {
+    } else if (
+      isValidParamModifier(segment[i]) &&
+      type === PARAM &&
+      i === len - 1
+    ) {
       modifier = segment[i] as PathToken['modifier']
     } else {
       type = INVALID
@@ -152,7 +150,7 @@ export function tokenizePattern(pattern: Buffer): PathToken[] {
     return tokens
   }
 
-  for (const part of parts) {    
+  for (const part of parts) {
     tokens.push(parseToken(part))
   }
 
@@ -174,79 +172,86 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
   let i = 1
   const len = path.byteLength
   let token = tokens[i - 1]
-  let lastIndex = 1  
+  let lastIndex = 1
   let tokenSize = token.value.length
   let tokenValueIndex = 0
-  
+
+  if (token.type === STATIC && len <= tokenSize && path !== token.value) {
+    return false
+  }
+
   while (i < len) {
     if (path[i] === SLASH) {
       tokenIndex++
       i++
       lastIndex = i
       token = tokens[tokenIndex]
-      
-      if (token?.type === STATIC) {
-        if (tokenSize) {
-          return false
-        }
 
-        tokenSize = token.value.length
-        tokenValueIndex = 0
-      }
-
-      if (i === len && !token) {
-        return true
-      }
-
-      if (!token) {
-        const previousModifier = tokens[tokenIndex - 1].modifier
-        if (previousModifier === ASTERISK ||
-          previousModifier === PLUS
-        ) {          
-          return true
-        }
-
-        if (path[i] === QUESTION_MARK) {
-          return true
-        }
-        
+      if (path[i] === SLASH) {
         return false
       }
     }
 
-    if (token.type === INVALID) { 
+    if (i === len && !token) {
+      return true
+    }
+
+    if (i < len && !token) {
+      const previousModifier = tokens[tokenIndex - 1].modifier
+      if (previousModifier === ASTERISK || previousModifier === PLUS) {
+        return true
+      }
+
+      if (path[i] === QUESTION_MARK) {
+        return true
+      }
+
       return false
-    } else if (token.type === STATIC) { 
-      if (path[i] !== token.value[i - lastIndex]) {
-        return false  
-      } else if (path[i] === token.value[tokenValueIndex] && tokenSize) {        
-        tokenSize--
-        tokenValueIndex++
-      } else {
+    }
+
+    if (i === len && token?.type === PARAM) {
+      if (token.modifier === QUESTION_MARK || token.modifier === ASTERISK) {
+        return true
+      }
+
+      if (token.modifier === PLUS || token.modifier === REQUIRED_MODIFIER) {
         return false
       }
-    } else if (i === len && token.type === PARAM) {          
-      if (token.modifier === QUESTION_MARK || token.modifier === ASTERISK)  {
-        return true 
-      } else if (token.modifier === PLUS) {
+    }
+
+    if (i === len - 1 && tokens.length - 1 > tokenIndex) {
+      const nextModifier = tokens[tokenIndex + 1]?.modifier
+
+      if (
+        nextModifier === undefined ||
+        nextModifier === REQUIRED_MODIFIER ||
+        nextModifier === PLUS
+      ) {
         return false
+      }
+    }
+
+    if (token?.type === INVALID) {
+      return false
+    }
+
+    if (token?.type === STATIC) {
+      if (path[i] !== token.value[i - lastIndex]) {
+        return false
+      }
+
+      if (path[i] === token.value[tokenValueIndex] && tokenSize) {
+        tokenSize--
+        tokenValueIndex++
+        i++
+        continue
       }
     }
 
     i++
-
-    if (i === len - 1 && tokens.length - 1 > tokenIndex) {            
-      const nextModifier = tokens[tokenIndex + 1]?.modifier
-
-      if (nextModifier === undefined ||
-          nextModifier === REQUIRED_MODIFIER ||
-          nextModifier === PLUS) {
-        return false
-      }
-    }
   }
 
-  if (tokenSize && token.type === STATIC) {
+  if (tokenSize && token?.type === STATIC) {
     return false
   }
 
@@ -259,9 +264,12 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
  * @param pattern - The pattern ("/users/:userId?")
  * @param path - The path to test ("/users/123")
  */
-export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string, string | string[] | boolean> {
-  if (!tokens?.length || path?.byteLength === 0 || path?.[0] !== SLASH) {    
-    return {}
+export function pathExtractor(
+  tokens: PathToken[],
+  path: Buffer,
+): Record<string, string | string[] | boolean> {
+  if (!tokens?.length || path?.byteLength === 0 || path?.[0] !== SLASH) {
+    return null
   }
 
   let tokenIndex = 0
@@ -281,11 +289,11 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     return extractions
   }
 
-  for (const {type, value, modifier} of tokens) {
+  for (const { type, value, modifier } of tokens) {
     if (type === PARAM) {
       tokenValue = value.toString()
 
-      if (modifier === PLUS || modifier === ASTERISK) {        
+      if (modifier === PLUS || modifier === ASTERISK) {
         extractions[tokenValue] = []
       } else {
         extractions[tokenValue] = ''
@@ -293,35 +301,35 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     }
   }
 
-  while (i < len) { 
+  while (i < len) {
     if (i === 1 && path[i] === QUESTION_MARK) {
       extractions[tokenValue] = ''
     }
 
     if (path[i] !== SLASH) {
-      collected += String.fromCharCode(path[i]) || ''  
+      collected += String.fromCharCode(path[i]) || ''
     }
 
     if (query) {
       if (i === len - 1 && collected && !queryValue) {
         extractions[collected] = true
-        
+
         collected = ''
       }
 
       if (path[i] === QUESTION_MARK) {
-        collected = ''      
+        collected = ''
       }
 
       if (path[i + 1] === EQUALS_SIGN) {
         i++
         extractions[collected] = ''
         queryValue = collected
-        
+
         collected = ''
       }
-      
-      if (path[i + 1] === AMPERSAND || i === len - 1 && collected) {
+
+      if (path[i + 1] === AMPERSAND || (i === len - 1 && collected)) {
         i++
         extractions[queryValue] = collected
         collected = ''
@@ -331,7 +339,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
       continue
     }
 
-    if (path[i] === QUESTION_MARK && !query) {      
+    if (path[i] === QUESTION_MARK && !query) {
       query = true
       collected = ''
       i++
@@ -339,7 +347,7 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
     }
 
     i++
-    
+
     if (path[i] === SLASH) {
       isToCollect = true
       i++
@@ -349,25 +357,25 @@ export function pathExtractor(tokens: PathToken[], path: Buffer): Record<string,
       isToCollect = true
     }
 
-    if (isToCollect) {      
+    if (isToCollect) {
       isToCollect = false
-   
+
       if (token.type === PARAM) {
         if (token.modifier === PLUS || token.modifier === ASTERISK) {
-          (extractions[tokenValue] as string[]).push(collected)
+          ;(extractions[tokenValue] as string[]).push(collected)
         } else {
           extractions[tokenValue] = collected
-        }  
+        }
       }
 
       collected = ''
-    }    
+    }
 
-    if (!collected && tokenIndex + 1 < tokens.length) {            
+    if (!collected && tokenIndex + 1 < tokens.length) {
       tokenIndex++
       token = tokens[tokenIndex]
     }
   }
 
-  return extractions 
+  return extractions
 }
