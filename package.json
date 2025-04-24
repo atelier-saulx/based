@@ -35,12 +35,12 @@
     "vitest": "^2.1.1"
   },
   "dependencies": {
-    "@based/bundle": "latest",
-    "@based/client": "latest",
-    "@based/db": "latest",
-    "@based/functions": "latest",
-    "@based/i18n": "latest",
-    "@based/server": "latest",
+    "@based/bundle": "0.4.14",
+    "@based/client": "6.11.2",
+    "@based/db": "0.0.31",
+    "@based/functions": "3.2.2",
+    "@based/i18n": "0.3.1",
+    "@based/server": "9.2.3",
     "@clack/prompts": "^0.10.1",
     "@inquirer/prompts": "^6.0.1",
     "@saulx/hash": "^3.0.0",
