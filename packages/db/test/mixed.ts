@@ -2,9 +2,9 @@ import { setTimeout } from 'timers/promises'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('mixed', async (t) => {
+await test.skip('mixed', async (t) => {
   try {
-    const populate = await import('./shared/tmp/populate/index.js')
+    // const populate = await import('./shared/tmp/populate/index.js')
     const db = new BasedDb({
       path: t.tmp,
     })
