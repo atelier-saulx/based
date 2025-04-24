@@ -41,7 +41,7 @@ pub const DbCtx = struct {
     }
 };
 
-pub fn createDbCtx(id: u32) !*DbCtx {
+pub fn createDbCtx(_: u32) !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
