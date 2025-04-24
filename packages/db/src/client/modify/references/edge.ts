@@ -132,7 +132,12 @@ export function writeEdges(
         // add null
         if (typeof value !== 'number') {
           if (value instanceof ModifyState) {
+            if (value.error) {
+              return value.error
+            }
             value = value.tmpId
+          } else if (typeof value === 'object' && value !== null && value.id) {
+            value = value.id
           } else {
             return new ModifyError(edge, value)
           }

@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('migration', async (t) => {
@@ -26,6 +27,8 @@ await test('migration', async (t) => {
             items: {
               ref: 'user',
               prop: 'friends',
+              $refUser: { ref: 'user' },
+              $number: 'number',
             },
           },
         },
@@ -41,7 +44,7 @@ await test('migration', async (t) => {
       age: i % 100,
     }
     if (prevId) {
-      data.friends = { update: [prevId] }
+      data.friends = { update: [{ id: prevId, $refUser: prevId, $number: i }] }
     }
     prevId = db.create('user', data)
     if (i === amount) {
@@ -51,7 +54,13 @@ await test('migration', async (t) => {
 
   await db.drain()
 
-  let allUsers = await db.query('user').range(0, amount).get().toObject()
+  let allUsers = await db
+    .query('user')
+    .range(0, amount + 1000)
+    .include('friends.$refUser.id', 'friends.$number')
+    .get()
+    .toObject()
+  const allFriends = allUsers.map(({ friends }) => friends).flat()
 
   const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
   let migrationPromise = db.migrateSchema(
@@ -70,6 +79,8 @@ await test('migration', async (t) => {
               items: {
                 ref: 'cmsuser',
                 prop: 'buddies',
+                $refUser: { ref: 'cmsuser' },
+                $number: 'number',
               },
             },
           },
@@ -91,10 +102,14 @@ await test('migration', async (t) => {
   allUsers = (
     await db
       .query('cmsuser')
-      .include('*', 'buddies', 'bestBud')
+      .include('*', 'buddies.$refUser.id', 'buddies.$number')
       .range(0, amount + 1000)
       .get()
   ).toObject()
+
+  const allBuddies = allUsers.map(({ buddies }) => buddies).flat()
+
+  deepEqual(allBuddies, allFriends)
 
   if (
     allUsers.every((node) => {

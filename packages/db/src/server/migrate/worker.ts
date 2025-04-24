@@ -56,6 +56,7 @@ if (isMainThread) {
     const { id, props } = fromDb.client.schemaTypesParsed[type]
     const include = Object.keys(props)
     let i = include.length
+
     while (i--) {
       const path = include[i]
       if (
@@ -63,8 +64,19 @@ if (isMainThread) {
         props[path].typeIndex === REFERENCES
       ) {
         include[i] = `${path}.id`
+        if (props[path].edges) {
+          for (const key in props[path].edges) {
+            const prop = props[path].edges[key]
+            if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+              include.push(`${path}.${key}.id`)
+            } else {
+              include.push(`${path}.${key}`)
+            }
+          }
+        }
       }
     }
+
     map[id] = { type, include }
   }
 

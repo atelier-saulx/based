@@ -16,6 +16,8 @@ export function appendEdgeRefs(
           return id.error
         }
         id = id.tmpId
+      } else if (typeof id === 'object' && id !== null && id.id) {
+        id = id.id
       } else {
         return new ModifyError(t, value)
       }
