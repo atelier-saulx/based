@@ -63,7 +63,6 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
 
     selva.libdeflate_block_state_deinit(&ctx.libdeflate_block_state);
     selva.libdeflate_free_decompressor(ctx.decompressor);
-    _ = db.dbHashmap.remove(ctx.id);
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
     ctx.arena.deinit();

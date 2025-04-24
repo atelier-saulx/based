@@ -22,8 +22,6 @@ const base_allocator = std.heap.raw_c_allocator;
 var db_backing_allocator: std.mem.Allocator = undefined;
 var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
 
-pub var dbHashmap: std.AutoHashMap(u32, *DbCtx) = undefined;
-
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
@@ -67,8 +65,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
 
-    try dbHashmap.put(id, b);
-
     return b;
 }
 
@@ -79,7 +75,6 @@ pub fn init() void {
     } else {
         db_backing_allocator = base_allocator;
     }
-    dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 }
 
 var lastQueryId: u32 = 0;
