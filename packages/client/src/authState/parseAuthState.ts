@@ -42,11 +42,13 @@ const { encode, decode } = createEncoder(
     '}',
     ' ',
   ],
-  ['0']
+  ['0'],
 )
 
 export const encodeAuthState = (authState: AuthState): string => {
+  // CLIENT VERSION
+  authState.v = 2
   return encode(
-    encodeBase64(new TextEncoder().encode(JSON.stringify(authState)))
+    encodeBase64(new TextEncoder().encode(JSON.stringify(authState))),
   )
 }

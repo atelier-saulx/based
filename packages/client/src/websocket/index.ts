@@ -151,6 +151,8 @@ const connect = (
         ? new FakeWebsocket(realUrl, connection.useFallback, client)
         : new WebSocket(realUrl, [encodeAuthState(client.authState)]))
 
+      // pretty shitty
+
       ws.binaryType = 'blob'
 
       let isError = false

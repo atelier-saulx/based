@@ -29,7 +29,7 @@ export const start = (server: BasedServer, id: number) => {
     cache,
     diff,
     fromChecksum,
-    isDeflate
+    isDeflate,
   ) => {
     if (err) {
       errorListener(server, obs, err)
@@ -43,7 +43,7 @@ export const start = (server: BasedServer, id: number) => {
       cache,
       diff,
       fromChecksum,
-      isDeflate
+      isDeflate,
     )
   }
 
@@ -82,7 +82,7 @@ export const start = (server: BasedServer, id: number) => {
       errorListener(
         server,
         obs,
-        new Error(`Relay client ${spec.relay} does not exist`)
+        new Error(`Relay client ${spec.relay} does not exist`),
       )
       return
     }

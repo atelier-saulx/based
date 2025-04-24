@@ -78,13 +78,49 @@ export const encodeHeader = (
   return nr
 }
 
+export const CONTENT_TYPE_JSON = 255
+export const CONTENT_TYPE_UINT8_ARRAY = 254
+export const CONTENT_TYPE_STRING = 253
+export const CONTENT_TYPE_UNDEFINED = 252
+export const CONTENT_TYPE_NULL = 251
+
+export type CONTENT_TYPE =
+  | typeof CONTENT_TYPE_JSON
+  | typeof CONTENT_TYPE_UINT8_ARRAY
+  | typeof CONTENT_TYPE_STRING
+  | typeof CONTENT_TYPE_UNDEFINED
+  | typeof CONTENT_TYPE_NULL
+
 export const valueToBuffer = (payload: any): Buffer => {
   // can use a more elloborate typed response e.g. number etc in there
   if (payload === undefined) {
-    return Buffer.from([])
+    return Buffer.from([CONTENT_TYPE_UNDEFINED])
   }
-  // TODO: only stringify if not string...
-  return Buffer.from(JSON.stringify(payload))
+
+  if (payload === null) {
+    return Buffer.from([CONTENT_TYPE_NULL])
+  }
+
+  if (typeof payload === 'string') {
+    return Buffer.concat([
+      Buffer.from([CONTENT_TYPE_STRING]),
+      Buffer.from(JSON.stringify(payload)),
+    ])
+  }
+
+  // mark as query object
+
+  if (payload instanceof Uint8Array) {
+    return Buffer.concat([
+      Buffer.from([CONTENT_TYPE_UINT8_ARRAY]),
+      Buffer.from(payload),
+    ])
+  }
+
+  return Buffer.concat([
+    Buffer.from([CONTENT_TYPE_JSON]),
+    Buffer.from(JSON.stringify(payload)),
+  ])
 }
 
 export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {

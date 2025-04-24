@@ -12,7 +12,7 @@ export type ObservableUpdateFunction = (
   cache?: Uint8Array,
   diff?: any,
   fromChecksum?: number,
-  isDeflate?: boolean
+  isDeflate?: boolean,
 ) => void
 
 export type ObserveErrorListener = (err: ObservableError) => void

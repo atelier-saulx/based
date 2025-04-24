@@ -44,6 +44,7 @@ const upgradeInternal = (
   const authState = secWebSocketProtocol
     ? parseAuthState(secWebSocketProtocol)
     : {}
+
   res.upgrade(
     {
       query,
@@ -54,6 +55,7 @@ const upgradeInternal = (
       type: authState.t ?? 0,
       origin,
       obs: new Set(),
+      v: authState.v ?? 1, // authState contains the protocol version...
     },
     secWebSocketKey,
     secWebSocketProtocol,

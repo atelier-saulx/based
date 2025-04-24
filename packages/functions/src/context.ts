@@ -29,6 +29,7 @@ export type WebSocketSession = {
     name: string
     payload: any
   }>
+  v?: 2
   // Optimization so we dont need to keep track of websockets outside of uws
   c?: Context<WebSocketSession>
   ws?: BasedWebSocket

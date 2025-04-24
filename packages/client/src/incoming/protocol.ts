@@ -1,6 +1,19 @@
 import { BasedClient } from '../index.js'
 import { addGetToQueue } from '../outgoing/index.js'
 
+export const CONTENT_TYPE_JSON = 255
+export const CONTENT_TYPE_UINT8_ARRAY = 254
+export const CONTENT_TYPE_STRING = 253
+export const CONTENT_TYPE_UNDEFINED = 252
+export const CONTENT_TYPE_NULL = 251
+
+export type CONTENT_TYPE =
+  | typeof CONTENT_TYPE_JSON
+  | typeof CONTENT_TYPE_UINT8_ARRAY
+  | typeof CONTENT_TYPE_STRING
+  | typeof CONTENT_TYPE_UNDEFINED
+  | typeof CONTENT_TYPE_NULL
+
 export const decodeHeader = (
   nr: number,
 ): { type: number; isDeflate: boolean; len: number } => {

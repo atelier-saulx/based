@@ -4,7 +4,7 @@ import { extendCache } from './extendCache.js'
 
 export const getObsAndStopRemove = (
   server: BasedServer,
-  id: number
+  id: number,
 ): ActiveObservable => {
   const obs = server.activeObservablesById.get(id)
   extendCache(obs)

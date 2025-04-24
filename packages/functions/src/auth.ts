@@ -10,6 +10,7 @@ export type AuthState = {
   persistent?: boolean
   type?: string
   t?: 0 | 1
+  v?: 2
 }
 
 export type Authorize = (

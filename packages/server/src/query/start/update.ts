@@ -18,7 +18,7 @@ export const updateListener = (
   reusedData?: Uint8Array,
   diff?: any,
   previousChecksum?: number,
-  isDeflate?: boolean
+  isDeflate?: boolean,
 ) => {
   if (!server.uwsApp) {
     return
@@ -57,7 +57,12 @@ export const updateListener = (
       const buff = valueToBuffer(data)
 
       const t = typeof data
-      if (t === 'string' || t === 'number' || t === 'boolean') {
+      if (
+        t === 'string' ||
+        t === 'number' ||
+        t === 'boolean' ||
+        data instanceof Uint8Array
+      ) {
         obs.rawData = data
         obs.previousChecksum = obs.checksum
       } else if (diff) {
@@ -88,7 +93,7 @@ export const updateListener = (
       ;[encodedData, isDeflate] = encodeObservableResponse(
         obs.id,
         checksum,
-        buff
+        buff,
       )
 
       if (diff) {
@@ -97,7 +102,7 @@ export const updateListener = (
           obs.id,
           checksum,
           obs.previousChecksum,
-          diffBuff
+          diffBuff,
         )
         obs.diffCache = encodedDiffData
       }
@@ -133,7 +138,7 @@ export const updateListener = (
           obs.cache,
           obs.diffCache,
           obs.previousChecksum,
-          obs.isDeflate
+          obs.isDeflate,
         )
       })
     }

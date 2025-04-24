@@ -17,18 +17,17 @@ import { CacheValue } from '../types/index.js'
 import { freeCacheMemory } from '../cache.js'
 import { convertDataToBasedError } from '@based/errors/client'
 import { forceReload } from './forceReload.js'
+import { parseIncomingData } from './parseIncomingData.js'
 
-const decodeAndDeflate = (
+const deflate = (
   start: number,
   end: number,
   isDeflate: boolean,
   buffer: Uint8Array,
 ): any => {
-  return new TextDecoder().decode(
-    isDeflate
-      ? inflateSync(buffer.slice(start, end))
-      : buffer.slice(start, end),
-  )
+  return isDeflate
+    ? inflateSync(buffer.slice(start, end))
+    : buffer.slice(start, end)
 }
 
 export const incoming = async (client: BasedClient, data: any) => {
@@ -52,7 +51,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
       }
 
       if (client.functionResponseListeners.has(id)) {
@@ -104,7 +103,8 @@ export const incoming = async (client: BasedClient, data: any) => {
           ? inflateSync(buffer.slice(start, end))
           : buffer.slice(start, end)
         size = inflatedBuffer.byteLength
-        diff = JSON.parse(new TextDecoder().decode(inflatedBuffer))
+
+        diff = parseIncomingData(inflatedBuffer)
       }
 
       try {
@@ -160,10 +160,8 @@ export const incoming = async (client: BasedClient, data: any) => {
         const inflatedBuffer = isDeflate
           ? inflateSync(buffer.slice(start, end))
           : buffer.slice(start, end)
-
         size = inflatedBuffer.byteLength
-
-        payload = JSON.parse(new TextDecoder().decode(inflatedBuffer))
+        payload = parseIncomingData(inflatedBuffer)
       }
 
       const cached = client.cache.get(id)
@@ -218,7 +216,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
       }
 
       if (payload === true) {
@@ -248,7 +246,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
       }
 
       if (payload.streamRequestId) {
@@ -366,12 +364,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         // if not empty response, parse it
         if (len !== 9) {
-          const r = decodeAndDeflate(start, end, isDeflate, buffer)
-          try {
-            payload = JSON.parse(r)
-          } catch (err) {
-            payload = r
-          }
+          payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
         }
 
         if (client.channelState.has(id)) {
@@ -388,7 +381,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         let payload: any
         // if not empty response, parse it
         if (len !== 4) {
-          payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+          payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
         }
         if (client.streamFunctionResponseListeners.has(id)) {
           client.streamFunctionResponseListeners.get(id)[0](payload)
@@ -404,11 +397,9 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         if (len > 10 - 4) {
           maxChunkSize = readUint8(buffer, 10, len - 6)
-          console.log('more data', maxChunkSize)
         }
 
         // if len is smaller its an error OR use 0 as error (1 - 255)
-
         if (client.streamFunctionResponseListeners.has(id)) {
           client.streamFunctionResponseListeners.get(id)[2](
             seqId,
@@ -425,6 +416,6 @@ export const incoming = async (client: BasedClient, data: any) => {
   } catch (err) {
     // just code can load error codes as well
     // 981 - cannot parse data
-    console.error(981, err, data)
+    console.error(981, err)
   }
 }
