@@ -647,6 +647,10 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     assert(((uintptr_t)refs & 7) == 0);
 #endif
 
+    if (dirty_cb && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
+
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
         node_id_t removed_dst;
