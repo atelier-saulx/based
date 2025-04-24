@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, filter } from '../src/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
@@ -711,6 +711,79 @@ await test('simulated periodic save', async (t) => {
       .toObject(),
     await db.query('person').include('name', 'alias', 'books').get().toObject(),
   )
+})
+
+await test('edge val', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      round: {
+        name: 'alias',
+      },
+      sequence: {
+        name: 'alias',
+      },
+      scenario: {
+        name: 'alias',
+      },
+      phase: {
+        name: 'alias',
+        round: {
+          ref: 'round',
+          prop: 'phases',
+        },
+        scenarios: {
+          items: {
+            ref: 'scenario',
+            prop: 'phases',
+            $sequence: {
+              ref: 'sequence',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const sequence1 = await db.create('sequence', {})
+  const sequence2 = await db.create('sequence', {})
+  const scenario1 = await db.create('scenario', {})
+  const scenario2 = await db.create('scenario', {})
+  const phase = await db.create('phase', {
+    scenarios: [
+      {
+        id: scenario1,
+        $sequence: sequence1,
+      }
+    ],
+  })
+  await db.save()
+  db.update('phase', phase, {
+    scenarios: {
+      add: [
+        {
+          id: scenario2,
+          $sequence: sequence2,
+        },
+      ],
+    },
+  })
+  await db.query('phase').include('scenarios.$sequence').get().inspect()
+  await db.save()
+
+  db.update('phase', phase, {
+    scenarios: {
+      delete: [
+        scenario1,
+      ]
+    }
+  })
+  await db.query('phase').include('scenarios.$sequence').get().inspect()
 })
 
 await test('no mismatch', async (t) => {

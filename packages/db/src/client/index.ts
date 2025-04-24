@@ -29,6 +29,7 @@ export type DbClientHooks = {
   ): Promise<DbServer['schema']>
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
+    dbWriteTime?: number
   }>
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
   subscribe(q: BasedDbQuery, onData: OnData, onError?: OnError): OnClose

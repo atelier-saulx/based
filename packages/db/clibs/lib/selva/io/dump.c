@@ -148,7 +148,7 @@ static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc,
 {
     /*
      * If EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP then this is a SELVA_FIELD_TYPE_REFERENCES
-     * field and meta is save on the other end.
+     * field (i.e. need to preserve the sort order) and meta is save on the other end.
      */
     const uint8_t meta_present = ref->dst && !!ref->meta && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
     const node_id_t node_id = ref->dst ? ref->dst->node_id : 0;
