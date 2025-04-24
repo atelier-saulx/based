@@ -26,7 +26,6 @@ const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
 pub const DbCtx = struct {
-    id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
@@ -41,7 +40,7 @@ pub const DbCtx = struct {
     }
 };
 
-pub fn createDbCtx(_: u32) !*DbCtx {
+pub fn createDbCtx() !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
@@ -55,7 +54,6 @@ pub fn createDbCtx(_: u32) !*DbCtx {
     }
 
     b.* = .{
-        .id = 0,
         .arena = arena,
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),

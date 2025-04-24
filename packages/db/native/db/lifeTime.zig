@@ -26,11 +26,9 @@ fn getOptPath(
     return if (!(t == c.napi_null or t == c.napi_undefined)) try napi.get([]u8, env, value) else null;
 }
 
-fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(1, napi_env, info);
-    const id = try napi.get(u32, napi_env, args[0]);
+fn startInternal(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     db.init();
-    const ctx = try db.createDbCtx(id);
+    const ctx = try db.createDbCtx();
     ctx.selva = selva.selva_db_create();
     var externalNapi: c.napi_value = undefined;
     ctx.initialized = true;

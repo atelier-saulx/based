@@ -17,7 +17,6 @@ export async function start(
   opts: { clean?: boolean; hosted?: boolean },
 ) {
   const path = db.fileSystemPath
-  const id = stringHash(path) >>> 0
   const noop = () => {}
 
   if (opts?.clean) {
@@ -26,7 +25,7 @@ export async function start(
 
   await mkdir(path, { recursive: true }).catch(noop)
 
-  db.dbCtxExternal = native.start(id)
+  db.dbCtxExternal = native.start()
 
   let writelog: Writelog = null
   try {
