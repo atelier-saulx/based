@@ -638,7 +638,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
-    if (fs->type != SELVA_FIELD_TYPE_REFERENCES && !nfo->in_use) {
+    if (!nfo->in_use) {
         return nullptr;
     }
 
@@ -646,6 +646,10 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 #if 0
     assert(((uintptr_t)refs & 7) == 0);
 #endif
+
+    if (dirty_cb && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
 
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
