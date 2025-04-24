@@ -638,7 +638,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
-    if (fs->type != SELVA_FIELD_TYPE_REFERENCES && !nfo->in_use) {
+    if (!nfo->in_use) {
         return nullptr;
     }
 
