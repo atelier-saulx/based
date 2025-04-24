@@ -62,7 +62,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
   console.info(
     `Mem before ${
       Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
-    } MB`
+    } MB`,
   )
 
   const closers: (() => void)[] = []
@@ -74,7 +74,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
         })
         .subscribe(() => {
           subCnt++
-        })
+        }),
     )
   }
 
@@ -84,7 +84,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
   console.info(
     `Mem while active ${
       Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
-    } MB`
+    } MB`,
   )
 
   await wait(11000)
