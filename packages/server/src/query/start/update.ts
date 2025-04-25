@@ -4,6 +4,8 @@ import {
   valueToBuffer,
   encodeObservableResponse,
   encodeObservableDiffResponse,
+  cacheV2toV1,
+  diffV2toV1,
 } from '../../protocol.js'
 import { deepCopy } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
@@ -120,12 +122,37 @@ export const updateListener = (
         if (obs.reusedCache) {
           prevDiffId = updateId(obs.diffCache, obs.id)
         }
+        // hello
         server.uwsApp.publish(String(obs.id), obs.diffCache, true, false)
       } else {
         if (obs.reusedCache) {
           prevId = updateId(encodedData, obs.id)
         }
         server.uwsApp.publish(String(obs.id), encodedData, true, false)
+      }
+    }
+
+    if (obs.oldClients?.size) {
+      if (obs.diffCache) {
+        if (obs.reusedCache) {
+          prevDiffId = updateId(obs.diffCache, obs.id)
+        }
+        server.uwsApp.publish(
+          String(obs.id) + '-v1',
+          diffV2toV1(obs.diffCache),
+          true,
+          false,
+        )
+      } else {
+        if (obs.reusedCache) {
+          prevId = updateId(encodedData, obs.id)
+        }
+        server.uwsApp.publish(
+          String(obs.id) + '-v1',
+          cacheV2toV1(encodedData),
+          true,
+          false,
+        )
       }
     }
 

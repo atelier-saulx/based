@@ -91,10 +91,23 @@ export type CONTENT_TYPE =
   | typeof CONTENT_TYPE_UNDEFINED
   | typeof CONTENT_TYPE_NULL
 
+export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
+  const n = new Uint8Array(buf.byteLength - 1)
+  n.set(buf.subarray(0, 20), 0)
+  n.set(buf.subarray(21), 20)
+  return n
+}
+
+export const diffV2toV1 = (buf: Uint8Array): Uint8Array => {
+  const n = new Uint8Array(buf.byteLength - 1)
+  n.set(buf.subarray(0, 20), 0)
+  n.set(buf.subarray(21), 20)
+  return n
+}
+
 export const valueToBuffer = (payload: any): Buffer => {
   // Add BASED QUERY RESULT
   // super nice to receive on the client allrdy
-
   // can use a more elloborate typed response e.g. number etc in there
   if (payload === undefined) {
     return Buffer.from([CONTENT_TYPE_UNDEFINED])

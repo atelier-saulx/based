@@ -34,20 +34,20 @@ const sendGetData = (
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ) => {
   if (!ctx.session) {
     destroyObs(server, id)
     return
   }
   if (checksum === 0) {
-    sendObsWs(ctx, obs.cache, obs)
+    sendObsWs(ctx, obs.cache, obs, false)
   } else if (checksum === obs.checksum) {
     ctx.session.ws.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
-    sendObsWs(ctx, obs.diffCache, obs)
+    sendObsWs(ctx, obs.diffCache, obs, true)
   } else {
-    sendObsWs(ctx, obs.cache, obs)
+    sendObsWs(ctx, obs.cache, obs, false)
   }
   destroyObs(server, id)
 }
@@ -56,7 +56,7 @@ const getFromExisting = (
   server: BasedServer,
   id: number,
   ctx: Context<WebSocketSession>,
-  checksum: number
+  checksum: number,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -137,7 +137,7 @@ export const getMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
   const nameLen = arr[start + 20]
@@ -155,7 +155,7 @@ export const getMessage: BinaryMessageHandler = (
     'query',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   // TODO: add strictness setting - if strict return false here
@@ -182,11 +182,11 @@ export const getMessage: BinaryMessageHandler = (
     len === nameLen + 21
       ? undefined
       : parsePayload(
-        decodePayload(
-          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate
+          decodePayload(
+            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+            isDeflate,
+          ),
         )
-      )
 
   authorize(
     route,
@@ -197,7 +197,7 @@ export const getMessage: BinaryMessageHandler = (
     id,
     checksum,
     false,
-    isNotAuthorized
+    isNotAuthorized,
   )
 
   return true

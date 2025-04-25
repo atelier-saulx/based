@@ -24,6 +24,7 @@ export type ActiveObservable = {
   reusedCache: boolean
   functionObserveClients: Set<ObservableUpdateFunction>
   clients: Set<number>
+  oldClients?: Set<number>
   onNextData?: Set<(err?: ObservableError) => void>
   payload: any
   diffCache?: Uint8Array

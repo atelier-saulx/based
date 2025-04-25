@@ -5,7 +5,7 @@ import { isBasedFunctionConfig } from '@based/functions'
 
 export const updateDestroyTimer = (
   server: BasedServer,
-  channel: ActiveObservable
+  channel: ActiveObservable,
 ) => {
   const spec = server.functions.specs[channel.name]
   if (!spec || !isBasedFunctionConfig('query', spec)) {
@@ -40,13 +40,14 @@ export const destroyObs = (server: BasedServer, id: number) => {
   if (
     obs.clients.size ||
     obs.functionObserveClients.size ||
-    obs.onNextData?.size
+    obs.onNextData?.size ||
+    obs.oldClients?.size
   ) {
     if (obs.timeTillDestroy) {
       obs.timeTillDestroy = null
       console.warn(
         `Obs being destroyed while listeners are present ${obs.name} ${obs.id}`,
-        obs.payload
+        obs.payload,
       )
     }
     return

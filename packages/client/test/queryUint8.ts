@@ -17,16 +17,39 @@ test.beforeEach(async (t: T) => {
 
 test('query uint8', async (t: T) => {
   const client = new BasedClient()
+  const clientOld = new BasedClientOld()
+
   const server = new BasedServer({
     port: t.context.port,
     functions: {
       configs: {
+        flap: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            const x = {
+              derp: 66,
+            }
+            // 0 json
+            // 1 string (simpler optmizes strings)
+            update(x)
+            // cache stuff , no compress etc etc
+            const counter = setInterval(() => {
+              x.derp++
+              update(x)
+            }, 10)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
         counter: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             var cnt = 1
             const x = new Uint8Array(1)
+            x[0] = 66
             // 0 json
             // 1 string (simpler optmizes strings)
             update(x, cnt, false, undefined, undefined, 0, false)
@@ -56,6 +79,12 @@ test('query uint8', async (t: T) => {
     },
   })
 
+  clientOld.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
   client.once('connect', (isConnected) => {
     console.info('   connect', isConnected)
   })
@@ -63,11 +92,20 @@ test('query uint8', async (t: T) => {
   const obs1Results: any[] = []
 
   const close = client
-    .query('counter', {
+    .query('flap', {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log(d)
+      console.log('NEW', d)
+      obs1Results.push(d)
+    })
+
+  const close2 = clientOld
+    .query('flap', {
+      myQuery: 123,
+    })
+    .subscribe((d) => {
+      console.log('OLD', d)
       obs1Results.push(d)
     })
 

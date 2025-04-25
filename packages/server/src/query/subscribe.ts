@@ -11,7 +11,7 @@ export const subscribeWs = (
   server: BasedServer,
   id: number,
   checksum: number,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ) => {
   const session = ctx.session
 
@@ -19,11 +19,20 @@ export const subscribeWs = (
     return
   }
 
-  ctx.session.ws.subscribe(String(id))
   const obs = getObsAndStopRemove(server, id)
 
-  session.obs.add(id)
-  obs.clients.add(session.id)
+  if (ctx.session.v < 2) {
+    session.obs.add(id)
+    if (!obs.oldClients) {
+      obs.oldClients = new Set()
+    }
+    obs.oldClients.add(session.id)
+    ctx.session.ws.subscribe(String(id) + '-v1')
+  } else {
+    session.obs.add(id)
+    obs.clients.add(session.id)
+    ctx.session.ws.subscribe(String(id))
+  }
 
   if (obs.error) {
     sendErrorData(ctx, obs.error)
@@ -36,9 +45,9 @@ export const subscribeWs = (
 
   if (obs.cache && obs.checksum !== checksum) {
     if (obs.diffCache && obs.previousChecksum === checksum) {
-      sendObsWs(ctx, obs.diffCache, obs)
+      sendObsWs(ctx, obs.diffCache, obs, true)
     } else {
-      sendObsWs(ctx, obs.cache, obs)
+      sendObsWs(ctx, obs.cache, obs, false)
     }
   }
 }
@@ -46,7 +55,7 @@ export const subscribeWs = (
 export const subscribeFunction = (
   server: BasedServer,
   id: number,
-  update: ObservableUpdateFunction
+  update: ObservableUpdateFunction,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -63,7 +72,7 @@ export const subscribeFunction = (
         obs.cache,
         obs.diffCache,
         obs.previousChecksum,
-        obs.isDeflate
+        obs.isDeflate,
       )
     }
   }
@@ -71,7 +80,7 @@ export const subscribeFunction = (
 
 export const subscribeNext = (
   obs: ActiveObservable,
-  onNext: (err?: BasedErrorData<BasedErrorCode.FunctionError>) => void
+  onNext: (err?: BasedErrorData<BasedErrorCode.FunctionError>) => void,
 ) => {
   extendCache(obs)
   if (!obs.onNextData) {
