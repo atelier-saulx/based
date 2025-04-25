@@ -92,6 +92,9 @@ export type CONTENT_TYPE =
   | typeof CONTENT_TYPE_NULL
 
 export const valueToBuffer = (payload: any): Buffer => {
+  // Add BASED QUERY RESULT
+  // super nice to receive on the client allrdy
+
   // can use a more elloborate typed response e.g. number etc in there
   if (payload === undefined) {
     return Buffer.from([CONTENT_TYPE_UNDEFINED])

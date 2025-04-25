@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -11,8 +11,7 @@
     "copy:uws": "cp src/uws.d.ts dist/uws.d.ts",
     "copy:client": "cp ./dist/client.d.ts ./dist/client_original.d.ts",
     "clean:ts:before": "rm -rf ./dist ./tsconfig.tsbuildinfo || true",
-    "clean:ts:after": "rm ./dist/tsconfig.tsbuildinfo || true",
-    "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client && npm run clean:ts:after",
+    "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
@@ -27,6 +26,6 @@
     "typescript": "^4.3.5"
   },
   "peerDependencies": {
-    "esbuild": "^0.24.2"
+    "esbuild": "*"
   }
 }

@@ -1,8 +1,9 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
-import { BasedServer, CONTENT_TYPE_UINT8_ARRAY } from '@based/server'
+import { BasedServer } from '@based/server'
 import getPort from 'get-port'
 import { wait } from '@saulx/utils'
+import { BasedClient as BasedClientOld } from '@based/client-old'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -11,6 +12,8 @@ test.beforeEach(async (t: T) => {
   t.context.ws = `ws://localhost:${t.context.port}`
   t.context.http = `http://localhost:${t.context.port}`
 })
+
+// @based/client-old
 
 test('query uint8', async (t: T) => {
   const client = new BasedClient()
