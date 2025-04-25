@@ -16,6 +16,7 @@ import {
   propIsNumerical,
   createEmptyDef,
   DEFAULT_MAP,
+  isPropDef,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -73,7 +74,7 @@ export const ERR_SORT_LANG = 24
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    return `Invalid alias prodived to query\n  ${picocolors.italic(safeStringify(p, 100))}`
+    return `Invalid alias provided to query\n  ${picocolors.italic(safeStringify(p, 100))}`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
@@ -422,6 +423,7 @@ export const validateAlias = (
       }
     }
   }
+
   def.errors.push({
     code: ERR_TARGET_INVAL_ALIAS,
     payload: alias,
