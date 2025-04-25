@@ -92,6 +92,7 @@ export type CONTENT_TYPE =
   | typeof CONTENT_TYPE_NULL
 
 export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
+  // 12 + 8
   const n = new Uint8Array(buf.byteLength - 1)
   n.set(buf.subarray(0, 20), 0)
   n.set(buf.subarray(21), 20)
@@ -99,9 +100,11 @@ export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
 }
 
 export const diffV2toV1 = (buf: Uint8Array): Uint8Array => {
+  // 12 + 16
   const n = new Uint8Array(buf.byteLength - 1)
-  n.set(buf.subarray(0, 20), 0)
-  n.set(buf.subarray(21), 20)
+  n.set(buf.subarray(0, 28), 0)
+  n.set(buf.subarray(29), 28)
+
   return n
 }
 
@@ -129,7 +132,7 @@ export const valueToBuffer = (payload: any): Buffer => {
   if (typeof payload === 'string') {
     return Buffer.concat([
       Buffer.from([CONTENT_TYPE_STRING]),
-      Buffer.from(JSON.stringify(payload)),
+      Buffer.from(payload),
     ])
   }
 

@@ -35,19 +35,14 @@ const sendFunction: IsAuthorizedHandler<
     client
       .call(spec.relay.target ?? spec.name, payload)
       .then(async (v: any) => {
-        if (ctx.session.v < 2) {
-          ctx.session?.ws.send(
-            encodeFunctionResponse(requestId, valueToBufferV1(v)),
-            true,
-            false,
-          )
-        } else {
-          ctx.session?.ws.send(
-            encodeFunctionResponse(requestId, valueToBuffer(v)),
-            true,
-            false,
-          )
-        }
+        ctx.session?.ws.send(
+          encodeFunctionResponse(
+            requestId,
+            ctx.session.v < 2 ? valueToBufferV1(v) : valueToBuffer(v),
+          ),
+          true,
+          false,
+        )
       })
       .catch((err: Error) => {
         sendError(server, ctx, BasedErrorCode.FunctionError, {
@@ -67,19 +62,14 @@ const sendFunction: IsAuthorizedHandler<
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
-      if (ctx.session.v < 2) {
-        ctx.session?.ws.send(
-          encodeFunctionResponse(requestId, valueToBufferV1(v)),
-          true,
-          false,
-        )
-      } else {
-        ctx.session?.ws.send(
-          encodeFunctionResponse(requestId, valueToBuffer(v)),
-          true,
-          false,
-        )
-      }
+      ctx.session?.ws.send(
+        encodeFunctionResponse(
+          requestId,
+          ctx.session.v < 2 ? valueToBufferV1(v) : valueToBuffer(v),
+        ),
+        true,
+        false,
+      )
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.FunctionError, {

@@ -32,6 +32,7 @@ export const unsubscribeWs = (
   }
 
   const isV1 = ctx.session.v < 2
+
   if (isV1) {
     ctx.session.ws.unsubscribe(String(id) + '-v1')
   } else {
@@ -76,8 +77,16 @@ export const unsubscribeWsIgnoreClient = (
   if (!obs) {
     return true
   }
-  if (obs.clients.delete(session.id) && server.queryEvents) {
-    server.queryEvents.unsubscribe(obs, ctx)
+
+  if (session.v < 2) {
+    if (obs.oldClients?.delete(session.id) && server.queryEvents) {
+      server.queryEvents.unsubscribe(obs, ctx)
+    }
+  } else {
+    if (obs.clients.delete(session.id) && server.queryEvents) {
+      server.queryEvents.unsubscribe(obs, ctx)
+    }
   }
+
   destroyObs(server, id)
 }

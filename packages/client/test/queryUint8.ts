@@ -143,8 +143,12 @@ test('query uint8', async (t: T) => {
   close2()
   close3()
 
-  console.log(await client.call('derpi'))
-  console.log(await clientOld.call('derpi'))
+  console.log('--------------------------------')
+
+  // console.log('NEW', await client.call('derpi'))
+  // console.log('OLD', await clientOld.call('derpi'))
+
+  await wait(1000)
 
   t.pass()
 })
