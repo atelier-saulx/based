@@ -403,20 +403,20 @@ export const validateSort = (
 }
 
 export const validateAlias = (
-  alias: QueryByAliasObj,
-  path: string[],
   def: QueryDef,
+  alias: QueryByAliasObj,
+  path?: string,
 ): { def: PropDef; value: string } => {
   const schema = def.schema
   for (const k in alias) {
     if (typeof alias[k] === 'string') {
-      const p = path.join('.') + k
+      const p = path ? `${path}.${k}` : k
       const prop = schema.props[p]
       if (prop.typeIndex === ALIAS) {
         return { def: prop, value: alias[k] }
       }
     } else if (typeof alias[k] === 'object') {
-      const propDef = validateAlias(alias[k], [...path, k], def)
+      const propDef = validateAlias(def, alias[k], path ? `${path}.${k}` : k)
       if (propDef) {
         return propDef
       }

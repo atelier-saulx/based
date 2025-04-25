@@ -471,3 +471,43 @@ await test('same-name-alias', async (t) => {
     { id: 3, name: 'final' },
   ])
 })
+
+await test('nested alias', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      thing: {
+        obj: {
+          props: {
+            a: 'alias',
+            b: 'alias',
+          },
+        },
+      },
+    },
+  })
+
+  await db.upsert('thing', {
+    obj: {
+      a: 'jibber',
+    },
+  })
+
+  await db.upsert('thing', {
+    obj: {
+      b: 'flurp',
+    },
+  })
+
+  deepEqual(await db.query('thing').get().toObject(), [
+    { id: 1, obj: { a: 'jibber', b: '' } },
+    { id: 2, obj: { b: 'flurp', a: '' } },
+  ])
+})
