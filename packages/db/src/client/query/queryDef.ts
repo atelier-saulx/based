@@ -71,7 +71,7 @@ export const createQueryDef = (
         t.ids = validateIds(q, t.ids)
         q.range.limit = t.ids.length
       } else if (t.alias) {
-        t.resolvedAlias = validateAlias(t.alias, [], q)
+        t.resolvedAlias = validateAlias(q, t.alias)
       } else {
         q.range.limit = DEF_RANGE_PROP_LIMIT
       }

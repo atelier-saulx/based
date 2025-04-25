@@ -16,6 +16,7 @@ import {
   propIsNumerical,
   createEmptyDef,
   DEFAULT_MAP,
+  isPropDef,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -73,7 +74,7 @@ export const ERR_SORT_LANG = 24
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    return `Invalid alias prodived to query\n  ${picocolors.italic(safeStringify(p, 100))}`
+    return `Invalid alias provided to query\n  ${picocolors.italic(safeStringify(p, 100))}`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
@@ -403,25 +404,26 @@ export const validateSort = (
 }
 
 export const validateAlias = (
-  alias: QueryByAliasObj,
-  path: string[],
   def: QueryDef,
+  alias: QueryByAliasObj,
+  path?: string,
 ): { def: PropDef; value: string } => {
   const schema = def.schema
   for (const k in alias) {
     if (typeof alias[k] === 'string') {
-      const p = path.join('.') + k
+      const p = path ? `${path}.${k}` : k
       const prop = schema.props[p]
       if (prop.typeIndex === ALIAS) {
         return { def: prop, value: alias[k] }
       }
     } else if (typeof alias[k] === 'object') {
-      const propDef = validateAlias(alias[k], [...path, k], def)
+      const propDef = validateAlias(def, alias[k], path ? `${path}.${k}` : k)
       if (propDef) {
         return propDef
       }
     }
   }
+
   def.errors.push({
     code: ERR_TARGET_INVAL_ALIAS,
     payload: alias,

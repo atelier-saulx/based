@@ -146,24 +146,6 @@ pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, fieldSchema: Fiel
     }
 }
 
-pub fn getCardinalityReferenceOrCreate(
-    db: *selva.SelvaDb,
-    node: Node,
-    edgeConstraint: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeReference,
-    fieldSchema: FieldSchema,
-) []u8 {
-    if (selva.selva_fields_get_selva_string3(ref, fieldSchema)) |stored| {
-        const countDistinct = selva.hll_count(@ptrCast(stored));
-        return countDistinct[0..4];
-    } else {
-        const newCardinality = selva.selva_fields_ensure_string2(db, node, edgeConstraint, ref, fieldSchema, selva.HLL_INIT_SIZE);
-        selva.hll_init(newCardinality, 14, true);
-        const countDistinct = selva.hll_count(@ptrCast(newCardinality));
-        return countDistinct[0..4];
-    }
-}
-
 pub fn getField(
     typeEntry: ?Type,
     id: u32,

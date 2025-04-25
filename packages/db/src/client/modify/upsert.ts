@@ -1,7 +1,31 @@
-import { ALIAS } from '@based/schema/def'
+import { deepMerge } from '@saulx/utils'
 import { DbClient } from '../index.js'
-import { BasedDbQuery } from '../query/BasedDbQuery.js'
 import { ModifyOpts } from './types.js'
+import { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
+import { QueryByAliasObj } from '../query/types.js'
+
+const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
+  let aliases: QueryByAliasObj
+  for (const key in obj) {
+    const def = tree[key]
+    if (def === undefined) {
+      return
+    }
+    if (isPropDef(def)) {
+      if (def.typeIndex === ALIAS) {
+        aliases ??= {}
+        aliases[key] = obj[key]
+      }
+    } else {
+      const nested = filterAliases(obj[key], def)
+      if (nested) {
+        aliases ??= {}
+        aliases[key] = nested
+      }
+    }
+  }
+  return aliases
+}
 
 export async function upsert(
   db: DbClient,
@@ -10,43 +34,31 @@ export async function upsert(
   opts?: ModifyOpts,
 ) {
   const tree = db.schemaTypesParsed[type].tree
-  let q: BasedDbQuery
-  let id = type
+  const aliases = filterAliases(obj, tree)
+  const q = db.query(type, aliases)
 
-  for (const key in obj) {
-    if (tree[key].typeIndex === ALIAS) {
-      id += `${key}:${obj[key]};`
-      if (q) {
-        q = q.or(key, '=', obj[key])
-      } else {
-        q = db.query(type).include('id').filter(key, '=', obj[key])
-      }
-    }
-  }
+  q.register()
 
-  if (!q) {
-    // fix with promise
-    throw new Error('no alias found for upsert operation')
-  }
-
-  if (db.upserting.has(id)) {
-    const store = db.upserting.get(id)
-    store.o = { ...store.o, ...obj }
+  if (db.upserting.has(q.id)) {
+    const store = db.upserting.get(q.id)
+    deepMerge(store.o, obj)
     return store.p
   }
 
   const store = {
     o: obj,
     p: q.get().then((res) => {
-      db.upserting.delete(id)
+      db.upserting.delete(q.id)
       if (res.length === 0) {
         return db.create(type, store.o, opts)
       } else {
-        return db.update(type, res.toObject()[0].id, store.o, opts)
+        const obj = res.toObject()
+        const id = Array.isArray(obj) ? obj[0].id : obj.id
+        return db.update(type, id, store.o, opts)
       }
     }),
   }
 
-  db.upserting.set(id, store)
+  db.upserting.set(q.id, store)
   return store.p
 }

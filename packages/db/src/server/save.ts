@@ -53,7 +53,8 @@ function saveRange(
     db.dbCtxExternal,
     hashOut,
   )
-  if (err == -8) { // TODO ENOENT
+  if (err == -8) {
+    // TODO ENOENT
     return '' // empty range
   } else if (err) {
     // TODO print the error string
@@ -146,11 +147,13 @@ export function save(
 
   const types: Writelog['types'] = {}
   const rangeDumps: Writelog['rangeDumps'] = {}
+
   for (const key in db.schemaTypesParsed) {
     const { id, lastId, blockCapacity } = db.schemaTypesParsed[key]
     types[id] = { lastId, blockCapacity }
     rangeDumps[id] = []
   }
+
   db.merkleTree.visitLeafNodes((leaf) => {
     const [typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
@@ -170,6 +173,7 @@ export function save(
     rangeDumps,
     hash: bufToHex(db.merkleTree.getRoot()?.hash ?? new Uint8Array(0)),
   }
+
   const filePath = join(db.fileSystemPath, WRITELOG_FILE)
   const content = JSON.stringify(data)
   return sync ? writeFileSync(filePath, content) : writeFile(filePath, content)

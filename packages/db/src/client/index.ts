@@ -92,7 +92,7 @@ export class DbClient {
   modifyCtx: ModifyCtx
   maxModifySize: number
   upserting: Map<
-    string,
+    number,
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
