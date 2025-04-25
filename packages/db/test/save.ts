@@ -773,7 +773,7 @@ await test('edge val', async (t) => {
       ],
     },
   })
-  await db.query('phase').include('scenarios.$sequence').get().inspect()
+  //await db.query('phase').include('scenarios.$sequence').get().inspect()
   await db.save()
 
   db.update('phase', phase, {
@@ -783,7 +783,7 @@ await test('edge val', async (t) => {
       ]
     }
   })
-  await db.query('phase').include('scenarios.$sequence').get().inspect()
+  //await db.query('phase').include('scenarios.$sequence').get().inspect()
 })
 
 await test('no mismatch', async (t) => {
