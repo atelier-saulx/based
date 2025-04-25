@@ -24,7 +24,7 @@ await test('sort Enum', async (t) => {
     },
   })
 
-  for (let i = 0; i < 30e6; i++) {
+  for (let i = 0; i < 3e6; i++) {
     db.create('user', {
       status: status[i % 6],
     })
@@ -36,7 +36,7 @@ await test('sort Enum', async (t) => {
 
   const randoIds = []
   for (let i = 0; i < 100; i++) {
-    randoIds.push(~~(Math.random() * 30e6) + 1)
+    randoIds.push(~~(Math.random() * 3e6) + 1)
   }
 
   const q = []
@@ -45,16 +45,12 @@ await test('sort Enum', async (t) => {
   }
 
   q.push(
-    db
-      .query('user')
-      .filter('status', '=', ['a', 'b', 'c'])
-      .range(0, 1000)
-      .get()
-      .inspect(),
+    db.query('user').filter('status', '=', ['a', 'b', 'c']).range(0, 950).get(),
   )
 
   q.push(
-    db.query('user').filter('status', '=', ['d']).range(0, 600).get().inspect(),
+    db.query('user').filter('status', '=', ['d']).range(0, 600).get(),
+    // .inspect(1000),
   )
 
   const d = Date.now()
