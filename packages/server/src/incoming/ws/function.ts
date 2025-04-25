@@ -5,6 +5,7 @@ import {
   encodeFunctionResponse,
   valueToBuffer,
   parsePayload,
+  valueToBufferV1,
 } from '../../protocol.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
@@ -34,11 +35,19 @@ const sendFunction: IsAuthorizedHandler<
     client
       .call(spec.relay.target ?? spec.name, payload)
       .then(async (v: any) => {
-        ctx.session?.ws.send(
-          encodeFunctionResponse(requestId, valueToBuffer(v)),
-          true,
-          false
-        )
+        if (ctx.session.v < 2) {
+          ctx.session?.ws.send(
+            encodeFunctionResponse(requestId, valueToBufferV1(v)),
+            true,
+            false,
+          )
+        } else {
+          ctx.session?.ws.send(
+            encodeFunctionResponse(requestId, valueToBuffer(v)),
+            true,
+            false,
+          )
+        }
       })
       .catch((err: Error) => {
         sendError(server, ctx, BasedErrorCode.FunctionError, {
@@ -58,11 +67,19 @@ const sendFunction: IsAuthorizedHandler<
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
-      ctx.session?.ws.send(
-        encodeFunctionResponse(requestId, valueToBuffer(v)),
-        true,
-        false
-      )
+      if (ctx.session.v < 2) {
+        ctx.session?.ws.send(
+          encodeFunctionResponse(requestId, valueToBufferV1(v)),
+          true,
+          false,
+        )
+      } else {
+        ctx.session?.ws.send(
+          encodeFunctionResponse(requestId, valueToBuffer(v)),
+          true,
+          false,
+        )
+      }
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.FunctionError, {
@@ -79,7 +96,7 @@ export const functionMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
   const requestId = readUint8(arr, start + 4, 3)
@@ -96,7 +113,7 @@ export const functionMessage: BinaryMessageHandler = (
     'function',
     server.functions.route(name),
     name,
-    requestId
+    requestId,
   )
 
   // TODO: add strictness setting - if strict return false here
@@ -123,11 +140,11 @@ export const functionMessage: BinaryMessageHandler = (
     len === nameLen + 8
       ? undefined
       : parsePayload(
-        decodePayload(
-          new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-          isDeflate
+          decodePayload(
+            new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+            isDeflate,
+          ),
         )
-      )
 
   authorize(route, server, ctx, payload, sendFunction, requestId)
 

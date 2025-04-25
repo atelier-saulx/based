@@ -105,6 +105,15 @@ export const diffV2toV1 = (buf: Uint8Array): Uint8Array => {
   return n
 }
 
+export const valueToBufferV1 = (payload: any): Buffer => {
+  // can use a more elloborate typed response e.g. number etc in there
+  if (payload === undefined) {
+    return Buffer.from([])
+  }
+  // TODO: only stringify if not string...
+  return Buffer.from(JSON.stringify(payload))
+}
+
 export const valueToBuffer = (payload: any): Buffer => {
   // Add BASED QUERY RESULT
   // super nice to receive on the client allrdy

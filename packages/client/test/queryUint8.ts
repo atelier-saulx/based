@@ -23,6 +23,26 @@ test('query uint8', async (t: T) => {
     port: t.context.port,
     functions: {
       configs: {
+        derpi: {
+          type: 'function',
+          fn: async () => {
+            return 'STRING FOR BOYS'
+          },
+        },
+        derpiJson: {
+          type: 'function',
+          fn: async () => {
+            return { x: 1, y: 2 }
+          },
+        },
+        derpiBuffer: {
+          type: 'function',
+          fn: async () => {
+            const x = new Uint8Array(10)
+            x.fill(66, 0)
+            return x
+          },
+        },
         flap: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
@@ -109,7 +129,22 @@ test('query uint8', async (t: T) => {
       obs1Results.push(d)
     })
 
+  const close3 = client
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe((d) => {
+      console.log('NEW BUFFER FORMAT!', d)
+      obs1Results.push(d)
+    })
+
   await wait(100)
+  close()
+  close2()
+  close3()
+
+  console.log(await client.call('derpi'))
+  console.log(await clientOld.call('derpi'))
 
   t.pass()
 })
