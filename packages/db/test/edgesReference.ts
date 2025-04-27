@@ -53,7 +53,7 @@ await test('multi reference', async (t) => {
 
   await db.drain()
 
-  await db.create('article', {
+  const strudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributor: {
       id: mrSnurp,
@@ -62,11 +62,7 @@ await test('multi reference', async (t) => {
   })
 
   deepEqual(
-    await db
-      .query('article')
-      .include('contributor.$friend')
-      .get()
-      .then((v) => v.toObject()),
+    await db.query('article').include('contributor.$friend').get().toObject(),
     [
       {
         id: 1,
@@ -81,6 +77,7 @@ await test('multiple references', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+
   t.after(() => t.backup(db))
 
   await db.setSchema({

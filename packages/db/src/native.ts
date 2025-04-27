@@ -50,8 +50,8 @@ const native = {
     return x
   },
 
-  start: (id: number) => {
-    return db.start(id)
+  start: () => {
+    return db.start()
   },
 
   stop: (dbCtx: any) => {

@@ -536,3 +536,86 @@ await test('multiple references', async (t) => {
     ],
   )
 })
+
+await test('simple references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      round: {
+        name: 'alias',
+      },
+      sequence: {
+        name: 'alias',
+      },
+      scenario: {
+        name: 'alias',
+      },
+      phase: {
+        name: 'alias',
+        round: {
+          ref: 'round',
+          prop: 'phases',
+        },
+        scenarios: {
+          items: {
+            ref: 'scenario',
+            prop: 'phases',
+            $sequence: {
+              ref: 'sequence',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const phaseId = await db.create('phase', { name: 'phase' })
+  const scenarioId1 = await db.create('scenario', { name: 'scenario' })
+  // const scenarioId2 = await db.create('scenario', { name: 'scenario' })
+  // const scenarioId3 = await db.create('scenario', { name: 'scenario' })
+  const sequenceId = await db.create('sequence', { name: 'sequence' })
+
+  await db.save()
+
+  await db.update('phase', phaseId, {
+    scenarios: {
+      add: [
+        {
+          id: scenarioId1,
+          $sequence: sequenceId,
+        },
+      ],
+    },
+  })
+
+  // await db.update('phase', phaseId, {
+  //   scenarios: {
+  //     add: [
+  //       {
+  //         id: scenarioId2,
+  //         $sequence: sequenceId,
+  //       },
+  //     ],
+  //   },
+  // })
+
+  // await db.update('phase', phaseId, {
+  //   scenarios: {
+  //     add: [
+  //       {
+  //         id: scenarioId3,
+  //         $sequence: sequenceId,
+  //       },
+  //     ],
+  //   },
+  // })
+
+  await db.save()
+})

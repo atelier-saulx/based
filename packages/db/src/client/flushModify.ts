@@ -117,33 +117,35 @@ export const flushBuffer = (db: DbClient) => {
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
-    const d = performance.now()
 
-    flushPromise = db.hooks.flushModify(data).then(({ offsets }) => {
-      db.writeTime += performance.now() - d
-      resCtx.offsets = offsets
-      for (const typeId in lastIds) {
-        if (typeId in offsets) {
-          const lastId = lastIds[typeId] + offsets[typeId]
-          const def = db.schemaTypesParsedById[typeId]
-          const delta = lastId - def.lastId
-          if (delta > 0) {
-            def.lastId += delta
-            def.total += delta
+    // pass from flushModify
+    flushPromise = db.hooks
+      .flushModify(data)
+      .then(({ offsets, dbWriteTime }) => {
+        db.writeTime += dbWriteTime ?? 0
+        resCtx.offsets = offsets
+        for (const typeId in lastIds) {
+          if (typeId in offsets) {
+            const lastId = lastIds[typeId] + offsets[typeId]
+            const def = db.schemaTypesParsedById[typeId]
+            const delta = lastId - def.lastId
+            if (delta > 0) {
+              def.lastId += delta
+              def.total += delta
+            }
+          } else {
+            console.error('Panic: No offset returned in flushModify')
           }
-        } else {
-          console.error('Panic: No offset returned in flushModify')
         }
-      }
-      if (resCtx.queue?.size) {
-        const queue = resCtx.queue
-        resCtx.queue = null
-        for (const [resolve, res] of queue) {
-          resolve(res.getId())
+        if (resCtx.queue?.size) {
+          const queue = resCtx.queue
+          resCtx.queue = null
+          for (const [resolve, res] of queue) {
+            resolve(res.getId())
+          }
         }
-      }
-      db.flushReady()
-    })
+        db.flushReady()
+      })
 
     ctx.dirtyTypes.clear()
     ctx.dirtyRanges.clear()

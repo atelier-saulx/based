@@ -525,6 +525,13 @@ await test('query', async (t) => {
     await db.create('user')
   }
 
+  await throws(
+    // @ts-ignore
+    () => db.query('user', '1').get(),
+    false,
+    'throw on string as id',
+  )
+
   await throws(() => db.query('derp').get(), false, 'non existing type')
 
   // @ts-ignore
@@ -855,12 +862,12 @@ await test('minmax', async (t) => {
   })
 
   await db.update('user', id, {
-    number: 12,
+    number: 0.5,
   })
 
   deepEqual(await db.query('user', id).get().toObject(), {
     name: 'luigi',
-    number: 12,
+    number: 0.5,
     id,
   })
 })

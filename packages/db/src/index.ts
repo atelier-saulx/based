@@ -92,9 +92,12 @@ export class BasedDb {
           return Promise.resolve(server.setSchema(schema, fromStart))
         },
         flushModify(buf) {
+          const d = performance.now()
           const offsets = server.modify(buf)
+          const dbWriteTime = performance.now() - d
           return Promise.resolve({
             offsets,
+            dbWriteTime,
           })
         },
         getQueryBuf(buf) {

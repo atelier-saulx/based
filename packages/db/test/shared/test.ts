@@ -91,7 +91,7 @@ const test = async (
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
 
       const [backupChecksums, b] = await make(newDb)
-
+      // console.dir(b, { depth: null })
       if (a.length === b.length) {
         function findFirstDiffPos(a, b) {
           for (let i = 0; i < a.length; i++) {
@@ -109,6 +109,8 @@ const test = async (
         }
       }
 
+      // console.dir({ a, b }, { depth: null })
+
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
       const newCsmt = newDb.server.merkleTree
@@ -119,7 +121,8 @@ const test = async (
           return value
         }
       }
-      const fmtNodeData = (data: CsmtNodeRange) => `type: ${data?.typeId}\nstart: ${data?.start} end: ${data?.end}`
+      const fmtNodeData = (data: CsmtNodeRange) =>
+        `type: ${data?.typeId}\nstart: ${data?.start} end: ${data?.end}`
       //console.log(JSON.stringify(oldCsmt, prettier, 2), JSON.stringify(newCsmt.getRoot(), prettier, 2), 'csmt')
       //console.log('old', drawDot(oldCsmt, fmtNodeData))
       //console.log('new', drawDot(newCsmt, fmtNodeData))

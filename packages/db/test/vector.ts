@@ -162,6 +162,8 @@ await test('search', async (t) => {
     })
   }
 
+  console.log(await db.drain())
+
   deepEqual(
     await db
       .query('data')

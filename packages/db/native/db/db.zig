@@ -22,13 +22,10 @@ const base_allocator = std.heap.raw_c_allocator;
 var db_backing_allocator: std.mem.Allocator = undefined;
 var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
 
-pub var dbHashmap: std.AutoHashMap(u32, *DbCtx) = undefined;
-
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
 pub const DbCtx = struct {
-    id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
@@ -43,7 +40,7 @@ pub const DbCtx = struct {
     }
 };
 
-pub fn createDbCtx(id: u32) !*DbCtx {
+pub fn createDbCtx() !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
@@ -57,7 +54,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     }
 
     b.* = .{
-        .id = 0,
         .arena = arena,
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
@@ -66,8 +62,6 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
-
-    try dbHashmap.put(id, b);
 
     return b;
 }
@@ -79,7 +73,6 @@ pub fn init() void {
     } else {
         db_backing_allocator = base_allocator;
     }
-    dbHashmap = std.AutoHashMap(u32, *DbCtx).init(db_backing_allocator);
 }
 
 var lastQueryId: u32 = 0;
@@ -150,24 +143,6 @@ pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, fieldSchema: Fiel
         return countDistinct[0..4];
     } else {
         return emptySlice;
-    }
-}
-
-pub fn getCardinalityReferenceOrCreate(
-    db: *selva.SelvaDb,
-    node: Node,
-    edgeConstraint: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeReference,
-    fieldSchema: FieldSchema,
-) []u8 {
-    if (selva.selva_fields_get_selva_string3(ref, fieldSchema)) |stored| {
-        const countDistinct = selva.hll_count(@ptrCast(stored));
-        return countDistinct[0..4];
-    } else {
-        const newCardinality = selva.selva_fields_ensure_string2(db, node, edgeConstraint, ref, fieldSchema, selva.HLL_INIT_SIZE);
-        selva.hll_init(newCardinality, 14, true);
-        const countDistinct = selva.hll_count(@ptrCast(newCardinality));
-        return countDistinct[0..4];
     }
 }
 

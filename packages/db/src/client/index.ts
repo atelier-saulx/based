@@ -29,6 +29,7 @@ export type DbClientHooks = {
   ): Promise<DbServer['schema']>
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
+    dbWriteTime?: number
   }>
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
   subscribe(q: BasedDbQuery, onData: OnData, onError?: OnError): OnClose
@@ -91,7 +92,7 @@ export class DbClient {
   modifyCtx: ModifyCtx
   maxModifySize: number
   upserting: Map<
-    string,
+    number,
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 

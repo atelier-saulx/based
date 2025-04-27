@@ -638,7 +638,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
-    if (fs->type != SELVA_FIELD_TYPE_REFERENCES && !nfo->in_use) {
+    if (!nfo->in_use) {
         return nullptr;
     }
 
@@ -646,6 +646,10 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 #if 0
     assert(((uintptr_t)refs & 7) == 0);
 #endif
+
+    if (dirty_cb && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
 
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
@@ -659,7 +663,11 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
         removed_dst = remove_reference(db, node, fs, dst_node_id, i, false);
         assert(removed_dst == dst_node_id);
         if (dirty_cb) {
-            /* TODO Don't call if this side of the ref is not saved. */
+            /*
+             * TODO Don't call if this side of the ref is not saved. This would
+             * be if the other side is a SELVA_FIELD_TYPE_REFERENCE field.
+             * Otherwise, it's always saved.
+             */
             dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, removed_dst);
         }
     }
@@ -1931,9 +1939,7 @@ static void destroy_fields(struct SelvaFields *fields)
     /*
      * Clear fields map.
      */
-    for (field_t i = 0; i < fields->nr_fields; i++) {
-        fields->fields_map[i] = (struct SelvaFieldInfo){ 0 };
-    }
+    memset(fields->fields_map, 0, fields->nr_fields * sizeof(fields->fields_map[0]));
 
     fields->nr_fields = 0;
     fields->data_len = 0;
