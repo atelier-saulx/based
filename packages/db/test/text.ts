@@ -943,11 +943,11 @@ await test('clear field', async (t) => {
   })
 
   const user1 = await db.create('user', {
-    name: { en: 'coolname' },
+    name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
   deepEqual(await db.query('user', user1).get().toObject(), {
     id: 1,
-    name: { en: 'coolname', it: '' },
+    name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
   await db.update(
     'user',
@@ -960,6 +960,6 @@ await test('clear field', async (t) => {
 
   deepEqual(await db.query('user', user1).get().toObject(), {
     id: 1,
-    name: { en: '', it: '' },
+    name: { en: '', it: 'coolnameIT' },
   })
 })
