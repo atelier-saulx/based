@@ -922,3 +922,44 @@ await test('correct return from obj', async (t) => {
     name: { en: '', it: '' },
   })
 })
+
+await test('clear field', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        name: 'text',
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    name: { en: 'coolname' },
+  })
+  deepEqual(await db.query('user', user1).get().toObject(), {
+    id: 1,
+    name: { en: 'coolname', it: '' },
+  })
+  await db.update(
+    'user',
+    user1,
+    {
+      name: '',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('user', user1).get().toObject(), {
+    id: 1,
+    name: { en: '', it: '' },
+  })
+})
