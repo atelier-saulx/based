@@ -525,6 +525,13 @@ await test('query', async (t) => {
     await db.create('user')
   }
 
+  await throws(
+    // @ts-ignore
+    () => db.query('user', '1').get(),
+    false,
+    'throw on string as id',
+  )
+
   await throws(() => db.query('derp').get(), false, 'non existing type')
 
   // @ts-ignore
@@ -855,12 +862,58 @@ await test('minmax', async (t) => {
   })
 
   await db.update('user', id, {
-    number: 12,
+    number: 0.5,
   })
 
   deepEqual(await db.query('user', id).get().toObject(), {
     name: 'luigi',
-    number: 12,
+    number: 0.5,
     id,
   })
+})
+
+await test('set text without locale', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db)) // commenting this out fixes the crash part
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      country: {
+        name: 'string',
+        cool: 'text',
+      },
+    },
+  })
+
+  const country1 = await db.create('country', {
+    name: 'Land1',
+    cool: {
+      it: 'italian text',
+      en: 'english text',
+    },
+  })
+
+  await db.update(
+    'country',
+    country1,
+    {
+      name: 'Land1',
+      cool: 'italian text2',
+    },
+    { locale: 'it' },
+  )
+
+  // await throws(() =>
+    db.update('country', country1, {
+      name: 'Land1',
+      cool: 'english text2',
+    })
+  // )
 })
