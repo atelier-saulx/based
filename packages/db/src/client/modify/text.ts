@@ -36,7 +36,7 @@ export function writeText(
     return
   }
 
-  if ((value && typeof value !== 'object') || value === null) {
+  if ((value && typeof value !== 'object') || value === null || value === '') {
     let locale = res.locale
     if (!locale) {
       // TODO: Add def lang option...
