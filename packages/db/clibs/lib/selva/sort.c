@@ -514,7 +514,6 @@ void selva_sort_remove(struct SelvaSortCtx *ctx, const void *p)
         (void)RB_REMOVE(SelvaSortTreeNone, &ctx->out_none, item);
         mempool_return(&ctx->mempool, item);
     }
-
 }
 
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
@@ -689,7 +688,6 @@ void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, struct SelvaSortIterat
 
     if (!cur) return nullptr;
 
-
     (void)ctx;
     it->next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
 
@@ -703,7 +701,6 @@ void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, struct SelvaSo
     struct SelvaSortItem *cur = it->next;
 
     if (!cur) return nullptr;
-
 
     (void)ctx;
     it->next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
