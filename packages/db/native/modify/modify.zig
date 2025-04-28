@@ -94,7 +94,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.DELETE_TEXT_FIELD => {
                 const lang: types.LangCode = @enumFromInt(operation[1]);
-                std.debug.print("flap {any} {any} \n", .{ operation, batch });
+                std.debug.print("flap {any} {any} {}\n", .{ operation, batch, lang });
 
                 try deleteTextLang(&ctx, lang);
                 i = i + 2;

@@ -911,6 +911,8 @@ int selva_fields_set_text(
         const char *str,
         size_t len)
 {
+    assert(len >= 2 + sizeof(uint32_t));
+
     enum selva_lang_code lang = str[0];
     struct ensure_text_field tf;
     uint32_t crc;
@@ -919,7 +921,27 @@ int selva_fields_set_text(
         return SELVA_EINVAL;
     }
 
-    assert(len >= 2 + sizeof(uint32_t));
+    if (len == 2 + sizeof(uint32_t)) {
+        struct SelvaFieldInfo *nfo;
+
+        nfo = &node->fields.fields_map[fs->field];
+        if (nfo->in_use) {
+            struct selva_string *s = find_text_by_lang(nfo2p(&node->fields, nfo), lang);
+            if (s) {
+                char *buf;
+                size_t blen;
+
+                (void)selva_string_truncate(s, 2 + sizeof(uint32_t));
+                buf = selva_string_to_mstr(s, &blen);
+#if 0
+                buf[0] = lang;
+#endif
+                memset(buf + 1, 0, 1 + sizeof(uint32_t));
+            }
+        }
+
+        return 0;
+    }
 
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
