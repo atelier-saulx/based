@@ -924,7 +924,7 @@ int selva_fields_set_text(
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
 
-    if (len == 2) {
+    if (len == 2 && crc == 0) {
         /*
          * Delete tl.
          */
