@@ -20,9 +20,11 @@ pub const SortIndexMeta = struct {
 };
 
 const SIZE = 16;
+pub const EMPTY: [0]u8 = [_]u8{0} ** 0;
+pub const EMPTY_SLICE = @constCast(&EMPTY_CHAR)[0..0];
 
-pub const EMPTY_CHAR: [SIZE]u8 = [_]u8{0} ** SIZE;
-pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..SIZE];
+const EMPTY_CHAR: [SIZE]u8 = [_]u8{0} ** SIZE;
+const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..SIZE];
 
 // key of main sort indexes is START, key of buffSort is field
 pub const MainSortIndexes = std.AutoHashMap(u16, *SortIndexMeta);
@@ -302,23 +304,22 @@ inline fn parseString(
     dbCtx: *db.DbCtx,
     data: []u8,
 ) [*]u8 {
-    if (data.len < SIZE + 2) {
+    if (data.len <= 6) {
+        return EMPTY_CHAR_SLICE.ptr;
+    } else if (data.len < SIZE - 6) {
         var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
         var i: usize = 2;
-        while (i < data.len) : (i += 1) {
+        while (i < data.len - 4) : (i += 1) {
             arr[i - 2] = data[i];
         }
         return &arr;
+    } else if (data[1] == @intFromEnum(types.Compression.none)) {
+        const slice = data[2 .. SIZE + 2];
+        return slice.ptr;
     } else {
-        if (data[1] == @intFromEnum(types.Compression.none)) {
-            const slice = data[2 .. SIZE + 2];
-            return slice.ptr;
-        } else {
-            const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
-            return slice.ptr;
-        }
+        const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
+        return slice.ptr;
     }
-    return EMPTY_CHAR_SLICE.ptr;
 }
 
 inline fn parseAlias(
@@ -408,7 +409,6 @@ pub fn insert(
             selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, node);
         },
         types.Prop.STRING, types.Prop.TEXT => {
-            const d = if (sortIndex.len > 0) data[start + 1 .. start + sortIndex.len] else data;
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(
                     index,
@@ -417,10 +417,11 @@ pub fn insert(
                     node,
                 );
             } else {
-                selva.selva_sort_insert_buf(index, parseString(dbCtx, d), SIZE, node);
+                const str = parseString(dbCtx, data);
+                std.debug.print("INSERT str: {any} size {d} ", .{ str[0..SIZE], SIZE });
+                selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },
-
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
         },

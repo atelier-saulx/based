@@ -213,6 +213,7 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 }
 
 pub fn writeField(_: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+    std.debug.print("WRITE: {any} \n", .{data});
     try errors.selva(selva.selva_fields_set(
         node,
         fieldSchema,
@@ -560,9 +561,7 @@ pub inline fn getText(
 ) []u8 {
     const data = getField(typeEntry, id, node, fieldSchema, fieldType);
     var iter = textIterator(data, langCode);
-    var found = false;
     while (iter.next()) |s| {
-        found = true;
         return s;
     }
     return @as([*]u8, undefined)[0..0];

@@ -545,7 +545,7 @@ await test('sort', async (t) => {
     },
   })
 
-  await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject()
+  await db.query('dialog').locale('fi').sort('fun', 'desc').get()
 
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
@@ -576,7 +576,7 @@ await test('sort', async (t) => {
       .locale('fi')
       .sort('fun', 'desc')
       .get()
-      .toObject(),
+      .inspect(10),
     [
       {
         id: 3,
@@ -599,6 +599,7 @@ await test('sort', async (t) => {
         fun: '',
       },
     ],
+    'Sort 1',
   )
 
   deepEqual(
@@ -799,13 +800,20 @@ await test('sort', async (t) => {
   )
   await db.drain()
 
-  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
-    { id: 4, snurf: '', fun: '' },
-    { id: 3, snurf: '3', fun: '' },
-    { id: 1, snurf: '', fun: '' },
-    { id: 2, fun: '2', snurf: '2' },
-  ])
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get().inspect(10),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'After removal of a whole field',
+  )
 
+  console.log('----------DERP---------------')
+
+  console.log('SET TO ZERO!')
   db.update('dialog', id3, {
     fun: {
       fi: '0',
@@ -813,12 +821,18 @@ await test('sort', async (t) => {
   })
   await db.drain()
 
-  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
-    { id: 4, snurf: '', fun: '' },
-    { id: 1, snurf: '', fun: '' },
-    { id: 3, snurf: '3', fun: '0' },
-    { id: 2, fun: '2', snurf: '2' },
-  ])
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get().inspect(10),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '0' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'Fun dialog',
+  )
+
+  console.log('----------NULL---------------')
 
   db.update('dialog', id3, {
     fun: {
@@ -827,8 +841,10 @@ await test('sort', async (t) => {
   })
   await db.drain()
 
+  console.log('----------------------------')
+
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get(),
+    await db.query('dialog').locale('fi').sort('fun').get().inspect(10),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
@@ -837,6 +853,8 @@ await test('sort', async (t) => {
     ],
     'setting lang in object to null',
   )
+
+  console.log('----------DONE NULL---------------')
 })
 
 await test('in object only', async (t) => {
