@@ -850,7 +850,7 @@ static struct selva_string *find_text_by_lang(const struct SelvaTextField *text,
         size_t blen;
 
         buf = selva_string_to_buf(s, &blen);
-        if (blen > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+        if (blen >= (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
             buf[0] == lang) {
             return s;
         }
