@@ -71,25 +71,26 @@ await test('branchedCount', async (t) => {
     contributors: [mrSnurp, flippie],
   })
 
-  // const stupidity = db.create('article', {
-  //   name: 'Les lois fondamentales de la stupidité humaine',
-  //   contributors: [cipolla],
-  // })
+  const stupidity = db.create('article', {
+    name: 'Les lois fondamentales de la stupidité humaine',
+    contributors: [cipolla],
+  })
 
-  // await db.drain()
+  // QueryType = 0 (id) and 1 (ids) doesn't make sense for aggs
+  // QueryType = 2 (default) makes sense for aggs
+  // await db.query('article').get().inspect()
+  // QueryType = 3 (alias) might make sense for aggs
 
-  // await db.query('article', strudelArticle).include('*', '**').get().inspect()
-
-  // console.log(
-  //   await db
-  //     .query('user')
-  //     .include('id')
-  //     .range(0, 1e9)
-  //     .filter('flap', '>', 20)
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  console.log(
+    await db
+      .query('user')
+      // .include('id')
+      // .range(0, 1e9)
+      // .filter('flap', '>', 20)
+      .count()
+      .get()
+      .toObject(),
+  )
 
   // EXPECTED:
   // {count: 3}
@@ -120,16 +121,15 @@ await test('branchedCount', async (t) => {
   //   .inspect()
   // // )
 
-  // ----------
-  console.log(
-    await db
-      .query('article')
-      // .include('name')
-      .include('contributors')
-      .count()
-      .get()
-      .toJSON(),
-  )
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     // .include('name')
+  //     .include('contributors')
+  //     .count()
+  //     .get()
+  //     .toJSON(),
+  // )
 
   // console.log(
   //   await db.query('article').include('contributors').count().get().inspect(),

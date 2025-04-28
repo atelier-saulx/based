@@ -14,6 +14,7 @@ const types = @import("../types.zig");
 const QueryType = types.QueryType;
 const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
+const AggDefault = @import("./types/aggregates.zig");
 const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
 const QueryAlias = @import("./types/alias.zig");
@@ -174,6 +175,13 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterBuf = q[8 .. 8 + filterSize];
         const include = q[8 + filterSize + valueSize .. q.len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
+    } else if (queryType == QueryType.aggregates) {
+        const offset = read(u32, q, 3);
+        const limit = read(u32, q, 7);
+        const filterSize = read(u16, q, 11);
+        const filterBuf = q[13 .. 13 + filterSize];
+        const aggFn: types.AggFn = @enumFromInt(read(u8, q, 13 + filterSize));
+        try AggDefault.default(&ctx, offset, limit, typeId, filterBuf, aggFn);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
