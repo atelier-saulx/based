@@ -110,15 +110,6 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) !void {
         sort.insert(ctx.db, sI, sort.EMPTY_CHAR_SLICE, ctx.node.?);
     }
 
-    // _ = selva.selva_fields_set_text(ctx.selva, ctx.node, ctx.fieldSchema, lang, null, 0);
-
     // selva.selva_fields_set_text(ctx.selva, ctx.node, ctx.fieldSchema, lang, null, 0);
 
-    // _ = db.setTextField(
-    //     ctx.db,
-    //     ctx.node.?,
-    //     ctx.fieldSchema.?,
-    //     @intFromEnum(lang),
-    //     null,
-    // ) catch {};
 }
