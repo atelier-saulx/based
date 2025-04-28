@@ -527,7 +527,10 @@ pub const TextIterator = struct {
     fn _lang(self: *TextIterator) ?[]u8 {
         while (self._next()) |s| {
             if (s[0] == @intFromEnum(self.code)) {
-                return s;
+                // TEMP FIELD
+                if (s.len > 6) {
+                    return s;
+                }
             }
         }
         return null;
@@ -547,6 +550,7 @@ pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
         return TextIterator{ .value = emptyArray, .code = code };
     }
     const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    std.debug.print("yop {any} \n", .{textTmp});
     const text = textTmp.*[0..value[8]];
     return TextIterator{ .value = text, .code = code };
 }

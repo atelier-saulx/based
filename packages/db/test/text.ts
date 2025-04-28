@@ -836,6 +836,13 @@ await test('sort', async (t) => {
 
   db.update('dialog', id3, {
     fun: {
+      fi: 'a',
+    },
+  })
+  await db.drain()
+
+  db.update('dialog', id3, {
+    fun: {
       fi: null,
     },
   })

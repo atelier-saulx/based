@@ -109,6 +109,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
         ctx.fieldSchema.?,
         ctx.fieldType,
     );
+
+    std.debug.print("vla {any} \n", .{data});
     var iter = db.textIterator(data, types.LangCode.NONE);
     while (iter.next()) |s| {
         std.debug.print("OK ALL TEXT FIELDS {any} \n", .{s});
@@ -133,5 +135,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
     }
 
     const str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
+
+    // db.writeField(ctx.db, @constCast(&str), ctx.node.?, ctx.fieldSchema.?) catch {};
+
     _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
 }
