@@ -68,13 +68,13 @@ await test('branchedCount', async (t) => {
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: [mrSnurp, flippie, derpie, dinkelDoink],
+    contributors: [mrSnurp, flippie],
   })
 
-  const stupidity = db.create('article', {
-    name: 'Les lois fondamentales de la stupidité humaine',
-    contributors: [cipolla],
-  })
+  // const stupidity = db.create('article', {
+  //   name: 'Les lois fondamentales de la stupidité humaine',
+  //   contributors: [cipolla],
+  // })
 
   // await db.drain()
 
@@ -92,28 +92,40 @@ await test('branchedCount', async (t) => {
   // )
 
   // EXPECTED:
-  // [{count: 3}]
+  // {count: 3}
   // include in this case has no effect
   // range should not affect count, but TODO: have to check the if clause
 
   // if pass count({alias: 'users'})
-  // [{users: 3}]
+  // {users: 3}
 
   // console.log(
   //   await db
   //     .query('user')
   //     //lala
-  //     // .filter('flap', '>', 20)
-  //     // .range(0, 0)
+  //     .filter('flap', '>', 20)
+  //     .range(0, 1)
   //     .count()
   //     .get()
   //     .toObject(),
   // )
 
+  // // console.log(
+  // await db
+  //   .query('article')
+  //   // .include('name')
+  //   .include('name', 'contributors')
+  //   // .count()
+  //   .get()
+  //   .inspect()
+  // // )
+
+  // ----------
   console.log(
     await db
       .query('article')
-      .include('name', 'contributors')
+      // .include('name')
+      .include('contributors')
       .count()
       .get()
       .toJSON(),
@@ -124,13 +136,15 @@ await test('branchedCount', async (t) => {
   // )
 
   // Here to experiment in branched queries
-  // console.log(
-  //   await db
-  //     .query('article')
-  //     .include('name', (q) => q('contributors').count())
-  //     .get()
-  //     .toJSON(),
-  // )
+  // await db
+  //   .query('article')
+  //   .include('name', (q) =>
+  //     q('contributors')
+  //       //lala
+  //       .sort('flap'),
+  //   )
+  //   .get()
+  //   .inspect()
 
   // EXPECTED:
   // [
@@ -142,13 +156,13 @@ await test('branchedCount', async (t) => {
   // with count({alias: 'contributors'})
   // [{"id":1,"name":"The wonders of Strudel","contributors": 4}'}]
 
-  console.log(
-    await db
-      .query('article')
-      .include((q) => q('contributors').include('name').count())
-      .get()
-      .toJSON(),
-  )
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     .include((q) => q('contributors').include('name').count())
+  //     .get()
+  //     .toJSON(),
+  // )
   // EXPECTED:
   // [
   //   {

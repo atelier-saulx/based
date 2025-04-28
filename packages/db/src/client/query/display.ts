@@ -179,15 +179,7 @@ const inspectObject = (
         picocolors.italic(picocolors.dim(` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
-      if (Object.keys(object)[0] == 'count') {
-        // TODO: to flag the agg someway. This is ugly as hell!!!
-        str += picocolors.blue(v)
-        str += picocolors.italic(picocolors.dim(' count'))
-        str += ',\n'
-      } else {
-        str +=
-          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
-      }
+      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === REFERENCES) {
         str += inspectData(

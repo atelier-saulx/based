@@ -1,7 +1,7 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
-import { QueryDef, AggFlag } from './types.js'
-import { debug, resultToObject, AggItem, readAllFields } from './query.js'
+import { QueryDef } from './types.js'
+import { debug, resultToObject, Item, readAllFields } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '@saulx/utils'
 
@@ -89,14 +89,8 @@ export class BasedQueryResponse {
     while (i < result.byteLength - 4) {
       let id = readUint32(result, i)
       i += 4
-      let item: AggItem
-      if (this.def.aggregation == AggFlag.TEMP) {
-        item = {}
-        this.def.aggregation = AggFlag.COUNT
-      } else {
-        item = {
-          id,
-        }
+      let item: Item = {
+        id,
       }
       if (this.def.search) {
         item.$searchScore = readFloatLE(result, i)
@@ -148,11 +142,7 @@ export class BasedQueryResponse {
 
   get length() {
     const l = readUint32(this.result, 0)
-    if (this.def.aggregation != AggFlag.NONE && this.def.aggregation != null) {
-      return l + 1
-    } else {
-      return l
-    }
+    return l
   }
 
   toObject(): any {

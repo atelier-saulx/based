@@ -19,7 +19,6 @@ pub fn default(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    aggregation: AggFn,
 ) !void {
     var correctedForOffset: u32 = offset;
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -47,10 +46,6 @@ pub fn default(
             ctx.size += size;
             ctx.totalResults += 1;
         }
-    }
-    if (aggregation == AggFn.count) {
-        const sz = try addCount(ctx, std.mem.asBytes(&ctx.totalResults), t.ReadOp.AGGREGATION); // TODO: use the allocator to not mix up with &ctx.totalResults and maybe to another aggFn
-        ctx.size += sz;
     }
 }
 

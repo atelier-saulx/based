@@ -46,8 +46,7 @@ pub inline fn getRefsFields(
     const typeId: db.TypeId = read(u16, include, start + filterSize + sortSize);
     const refField = include[start + 2 + filterSize + sortSize];
     const typeEntry = db.getType(ctx.db, typeId) catch null;
-    const aggregation: AggFn = @enumFromInt(include[start + 3 + filterSize + sortSize]);
-    const includeNested = include[(start + 4 + filterSize + sortSize)..include.len];
+    const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
 
     ctx.results.append(.{
         .id = null,
@@ -116,10 +115,6 @@ pub inline fn getRefsFields(
 
     if (isEdge) {
         result.size += 1;
-    }
-
-    if (aggregation == AggFn.count) {
-        result.size += addCount(ctx, std.mem.asBytes(&result.cnt), t.ReadOp.REFERENCES) catch 0;
     }
 
     return result.size + 10;

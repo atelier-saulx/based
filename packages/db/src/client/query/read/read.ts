@@ -10,7 +10,6 @@ import {
   NUMBER,
   PropDef,
   PropDefEdge,
-  PropDefAggregate,
   STRING,
   TEXT,
   TIMESTAMP,
@@ -37,21 +36,16 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
-  READ_AGGREGATION,
-  CREATE_AGGREGATION,
-  AggFlag,
 } from '../types.js'
 
 export type Item = {
   id: number
 } & { [key: string]: any }
 
-export type AggItem = Partial<Item>
-
 const addField = (
-  p: PropDef | PropDefEdge | PropDefAggregate,
+  p: PropDef | PropDefEdge,
   value: any,
-  item: Item | AggItem,
+  item: Item,
   defaultOnly: boolean = false,
   lang: number = 0,
 ) => {
@@ -79,7 +73,7 @@ const addField = (
   }
 }
 
-const getEmptyField = (p: PropDef | PropDefEdge, item: Item | AggItem) => {
+const getEmptyField = (p: PropDef | PropDefEdge, item: Item) => {
   let i = p.__isEdge === true ? 1 : 0
   const path = p.path
   const len = path.length
@@ -105,7 +99,7 @@ const readMainValue = (
   prop: PropDef | PropDefEdge,
   result: Uint8Array,
   index: number,
-  item: Item | AggItem,
+  item: Item,
 ) => {
   if (prop.typeIndex === TIMESTAMP || prop.typeIndex === NUMBER) {
     addField(prop, readDoubleLE(result, index), item)
@@ -153,7 +147,7 @@ const readMain = (
   q: QueryDef,
   result: Uint8Array,
   offset: number,
-  item: Item | AggItem,
+  item: Item,
 ) => {
   const mainInclude = q.include.main
   let i = offset
@@ -175,45 +169,39 @@ const readMain = (
   return i - offset
 }
 
-const handleUndefinedProps = (
-  id: number,
-  q: QueryDef,
-  item: Item | AggItem,
-) => {
-  if (q.aggregation === AggFlag.NONE || q.aggregation === null) {
-    for (const k in q.include.propsRead) {
-      if (q.include.propsRead[k] !== id) {
-        // Only relevant for seperate props
-        const prop = q.schema.reverseProps[k]
-        if (prop.typeIndex === CARDINALITY) {
-          addField(prop, 0, item)
-        } else if (prop.typeIndex === TEXT && q.lang == 0) {
-          const lan = getEmptyField(prop, item)
-          const lang = q.include.langTextFields.get(prop.prop).codes
+const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
+  for (const k in q.include.propsRead) {
+    if (q.include.propsRead[k] !== id) {
+      // Only relevant for seperate props
+      const prop = q.schema.reverseProps[k]
+      if (prop.typeIndex === CARDINALITY) {
+        addField(prop, 0, item)
+      } else if (prop.typeIndex === TEXT && q.lang == 0) {
+        const lan = getEmptyField(prop, item)
+        const lang = q.include.langTextFields.get(prop.prop).codes
 
-          if (lang.has(0)) {
-            for (const locale in q.schema.locales) {
-              if (lan[locale] == undefined) {
-                lan[locale] = prop.default[locale] || ''
-              }
-            }
-          } else {
-            for (const code of lang) {
-              const locale = inverseLangMap.get(code)
-              if (!lan[locale]) {
-                lan[locale] = prop.default[locale] || ''
-              }
+        if (lang.has(0)) {
+          for (const locale in q.schema.locales) {
+            if (lan[locale] == undefined) {
+              lan[locale] = prop.default[locale] || ''
             }
           }
-        } else if (prop.typeIndex === BINARY) {
-          addField(prop, prop.default, item)
-        } else if (prop.typeIndex === TEXT) {
-          addField(prop, '', item)
         } else {
-          1
-          if (prop.default !== undefined) {
-            addField(prop, prop.default, item)
+          for (const code of lang) {
+            const locale = inverseLangMap.get(code)
+            if (!lan[locale]) {
+              lan[locale] = prop.default[locale] || ''
+            }
           }
+        }
+      } else if (prop.typeIndex === BINARY) {
+        addField(prop, prop.default, item)
+      } else if (prop.typeIndex === TEXT) {
+        addField(prop, '', item)
+      } else {
+        1
+        if (prop.default !== undefined) {
+          addField(prop, prop.default, item)
         }
       }
     }
@@ -225,7 +213,7 @@ export const readAllFields = (
   result: Uint8Array,
   offset: number,
   end: number,
-  item: Item | AggItem,
+  item: Item,
   id: number,
 ): number => {
   let i = offset
@@ -341,25 +329,6 @@ export const readAllFields = (
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
       i += size + 4
-    } else if (index === CREATE_AGGREGATION) {
-      i--
-      result[i] = READ_AGGREGATION
-      result[0] = result[0] + 1
-      q.aggregation = AggFlag.TEMP
-      return i - offset - 4 - (q.search ? 4 : 0)
-    } else if (index === READ_AGGREGATION) {
-      // TODO: Change to a map and also to get the aggregate field name from a query function parameter
-      const propAgg: PropDefAggregate = {
-        name: 'count',
-        path: ['count'],
-        typeIndex: UINT32,
-      } as PropDefAggregate
-      const size = readUint32(result, i)
-      addField(propAgg, readUint32(result, i + 4), item)
-      result[0] = result[0] - 1
-      i--
-      result[i] = CREATE_AGGREGATION
-      i += 4 + size + 4
     } else if (index === 0) {
       i += readMain(q, result, i, item)
     } else {
@@ -459,16 +428,9 @@ export const resultToObject = (
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
-    let item: AggItem
-    if (q.aggregation == AggFlag.TEMP) {
-      item = {}
-      q.aggregation = AggFlag.COUNT
-    } else {
-      item = {
-        id,
-      }
+    let item: Item = {
+      id,
     }
-
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
