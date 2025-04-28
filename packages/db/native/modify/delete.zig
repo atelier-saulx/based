@@ -94,8 +94,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 }
 
 pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) !void {
-    std.debug.print("{any} \n", .{lang});
-
     const t = db.getText(
         ctx.typeEntry,
         ctx.id,
