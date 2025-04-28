@@ -921,46 +921,42 @@ int selva_fields_set_text(
         return SELVA_EINVAL;
     }
 
-    if (len == 2 + sizeof(uint32_t)) {
+    memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
+    len -= sizeof(crc);
+
+    if (len == 2) {
+        /*
+         * Delete tl.
+         */
         struct SelvaFieldInfo *nfo;
 
         nfo = &node->fields.fields_map[fs->field];
         if (nfo->in_use) {
             struct selva_string *s = find_text_by_lang(nfo2p(&node->fields, nfo), lang);
             if (s) {
-                char *buf;
-                size_t blen;
+                (void)selva_string_replace_crc(s, str, len, crc);
+            }
+        }
+    } else {
+        /*
+         * Set tl.
+         */
+        tf = ensure_text_field(&node->fields, fs, lang);
+        if (unlikely(!tf.text)) {
+            db_panic("Text missing");
+        } else if (!tf.tl) {
+            int err;
 
-                (void)selva_string_truncate(s, 2 + sizeof(uint32_t));
-                buf = selva_string_to_mstr(s, &blen);
-#if 0
-                buf[0] = lang;
-#endif
-                memset(buf + 1, 0, 1 + sizeof(uint32_t));
+            tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
+            tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
+            err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+            if (err) {
+                db_panic("Failed to init a text field");
             }
         }
 
-        return 0;
+        (void)selva_string_replace_crc(tf.tl, str, len, crc);
     }
-
-    memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
-    len -= sizeof(crc);
-
-    tf = ensure_text_field(&node->fields, fs, lang);
-    if (unlikely(!tf.text)) {
-        db_panic("Text missing");
-    } else if (!tf.tl) {
-        int err;
-
-        tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
-        tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
-        err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-        if (err) {
-            db_panic("Failed to init a text field");
-        }
-    }
-
-    (void)selva_string_replace_crc(tf.tl, str, len, crc);
 
     return 0;
 }

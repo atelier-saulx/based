@@ -93,7 +93,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     return 0;
 }
 
-pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) !void {
+pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
     const t = db.getText(
         ctx.typeEntry,
         ctx.id,

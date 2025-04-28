@@ -38,7 +38,6 @@ export function writeString(
       if (lang === 0) {
         ctx.buf[ctx.len++] = DELETE
       } else {
-        console.log('DELETE_TEXT_FIELD', lang)
         ctx.buf[ctx.len++] = DELETE_TEXT_FIELD
         ctx.buf[ctx.len++] = lang
       }
