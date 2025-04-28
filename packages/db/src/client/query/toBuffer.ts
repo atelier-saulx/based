@@ -5,7 +5,7 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { createAggFlagBuffer } from './aggregation.js'
-import { ENCODER } from '../../utils.js'
+import { ENCODER } from '@saulx/utils'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {

@@ -14,7 +14,7 @@ import {
   MODE_OR_FIXED,
 } from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
-import { ENCODER } from '../../../utils.js'
+import { ENCODER } from '@saulx/utils'
 import { FilterCondition } from '../types.js'
 
 export const writeFixed = (

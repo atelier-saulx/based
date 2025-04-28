@@ -1,7 +1,7 @@
 import picocolors from 'picocolors'
 import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 import { QueryDef, QueryDefType } from './types.js'
-import { concatUint8Arr } from '../../utils.js'
+import { concatUint8Arr } from '@saulx/utils'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }
@@ -9,7 +9,8 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
     if (a === null) {
       return null
     }
-    if (a instanceof Buffer) { // RFE is this necessary?
+    if (a instanceof Buffer) {
+      // RFE is this necessary?
       return new Uint8Array(a)
     }
     if (a instanceof Uint8Array) {

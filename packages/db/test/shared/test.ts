@@ -1,10 +1,9 @@
 import picocolors from 'picocolors'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb, bufToHex } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
-import { wait } from '@saulx/utils'
-import { drawDot } from '../../src/server/csmt/index.js'
+import { wait, bufToHex } from '@saulx/utils'
 import { CsmtNodeRange } from '../../src/server/tree.js'
 
 export const counts = {

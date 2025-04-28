@@ -4,7 +4,7 @@ import { ModifyOp, ModifyErr, RANGE_ERR, CREATE, SIZE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { xxHash64 } from '../xxHash64.js'
-import { ENCODER } from '../../utils.js'
+import { ENCODER } from '@saulx/utils'
 
 export function writeHll(
   value: string | null | Uint8Array | Array<string | Uint8Array>,

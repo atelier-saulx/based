@@ -30,7 +30,7 @@ import {
   readInt32,
   readUint16,
   readUint32,
-} from '../../../utils.js'
+} from '@saulx/utils'
 import { inverseLangMap } from '@based/schema'
 import {
   READ_EDGE,

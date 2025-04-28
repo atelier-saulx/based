@@ -18,14 +18,19 @@ import {
 } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import { CsmtNodeRange, initCsmt, makeCsmtKey, makeCsmtKeyFromNodeId } from './tree.js'
+import {
+  CsmtNodeRange,
+  initCsmt,
+  makeCsmtKey,
+  makeCsmtKeyFromNodeId,
+} from './tree.js'
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
-import { debugMode, debugServer } from '../utils.js'
+import { debugServer } from '../utils.js'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'

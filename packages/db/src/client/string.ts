@@ -1,8 +1,6 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
-import { readUint32 } from './../utils.js'
-import makeTmpBuffer from './tmpBuffer.js'
-import { DECODER, ENCODER } from '../utils.js'
+import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@saulx/utils'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 

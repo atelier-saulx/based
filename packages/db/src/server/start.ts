@@ -10,7 +10,7 @@ import exitHook from 'exit-hook'
 import './worker.js'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex, hexToBuf } from '../utils.js'
+import { bufToHex, hexToBuf } from '@saulx/utils'
 
 export async function start(
   db: DbServer,

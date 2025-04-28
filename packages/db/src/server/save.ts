@@ -13,8 +13,7 @@ import {
 } from './tree.js'
 import { DbServer, WRITELOG_FILE } from './index.js'
 import { writeFileSync } from 'node:fs'
-import { bufToHex } from '../utils.js'
-import { createTree } from './csmt/tree.js'
+import { bufToHex } from '@saulx/utils'
 
 const COMMON_SDB_FILE = 'common.sdb'
 

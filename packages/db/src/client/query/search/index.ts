@@ -7,7 +7,7 @@ import {
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
-import { ENCODER, concatUint8Arr } from '../../../utils.js'
+import { ENCODER, concatUint8Arr } from '@saulx/utils'
 
 export type Search =
   | string[]

@@ -1,14 +1,14 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef, AggFlag } from './types.js'
-import { debug, resultToObject, Item, AggItem, readAllFields } from './query.js'
+import { debug, resultToObject, AggItem, readAllFields } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
-import { readFloatLE, readUint32 } from '../../utils.js'
+import { readFloatLE, readUint32 } from '@saulx/utils'
 
 export { time, size, inspectData }
 
-const BITS_FOR_B = 21
-const FACTOR = 2 ** BITS_FOR_B
+const BITS_FOR_BYTE_LEN = 21
+const FACTOR = 2 ** BITS_FOR_BYTE_LEN
 const MASK_B = FACTOR - 1
 
 export class BasedQueryResponse {
