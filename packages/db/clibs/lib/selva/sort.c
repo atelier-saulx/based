@@ -645,9 +645,6 @@ void *selva_sort_foreach(struct SelvaSortCtx *ctx, struct SelvaSortIterator *it)
         return nullptr;
     }
 
-    for (size_t i = 0; i <cur->data_len; i++) { printf("%u, ", cur->data[i]); }
-    printf("\n");
-
     (void)ctx;
     it->next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
 

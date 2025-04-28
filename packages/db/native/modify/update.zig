@@ -113,9 +113,6 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
                         const currentData: []u8 = db.getText(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
-
-                        std.debug.print("CURRENT DATA {any} NEW {any} ID -> {d} \n", .{ currentData, slice, db.getNodeId(ctx.node.?) });
-
                         sort.remove(ctx.db, sortIndex, currentData, ctx.node.?);
                         sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
                     }

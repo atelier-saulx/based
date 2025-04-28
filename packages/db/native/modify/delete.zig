@@ -110,7 +110,6 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
         ctx.fieldType,
     );
 
-    std.debug.print("vla {any} \n", .{data});
     var iter = db.textIterator(data, types.LangCode.NONE);
     while (iter.next()) |s| {
         std.debug.print("OK ALL TEXT FIELDS {any} \n", .{s});

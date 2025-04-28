@@ -85,16 +85,13 @@ pub fn getQueryId() u32 {
 }
 
 pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
-    // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
         typeId,
     );
-
     if (selvaTypeEntry == null) {
         return errors.SelvaError.SELVA_EINTYPE;
     }
-
     return selvaTypeEntry.?;
 }
 
@@ -213,7 +210,6 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 }
 
 pub fn writeField(_: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
-    std.debug.print("WRITE: {any} \n", .{data});
     try errors.selva(selva.selva_fields_set(
         node,
         fieldSchema,
@@ -233,15 +229,11 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
         @ptrCast(&ref),
         @ptrCast(&dirty),
     )) catch |err| {
-        // REMOVE THIS
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const result = selva.selva_fields_get_reference(ctx.db.selva, src, fieldSchema);
             if (result == null) {
                 return err;
             }
-
-            std.debug.print("HERE?????? \n", .{});
-            // does it get here ever?
             return result;
         } else {
             return err;
@@ -300,7 +292,6 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, value: Node, target: Node, fie
     } else {
         // here we want to be able to pass a node pointer for the prev node
         // relevant when updating
-
         const efc = selva.selva_get_edge_field_constraint(fieldSchema);
         const dstType = efc.*.dst_node_type;
         modifyCtx.markDirtyRange(ctx, dstType, getNodeId(value));
@@ -527,10 +518,7 @@ pub const TextIterator = struct {
     fn _lang(self: *TextIterator) ?[]u8 {
         while (self._next()) |s| {
             if (s[0] == @intFromEnum(self.code)) {
-                // TEMP FIELD
-                if (s.len > 6) {
-                    return s;
-                }
+                return s;
             }
         }
         return null;
@@ -550,7 +538,6 @@ pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
         return TextIterator{ .value = emptyArray, .code = code };
     }
     const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
-    std.debug.print("yop {any} \n", .{textTmp});
     const text = textTmp.*[0..value[8]];
     return TextIterator{ .value = text, .code = code };
 }

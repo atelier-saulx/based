@@ -99,7 +99,6 @@ pub fn addSortIndexOnCreation(ctx: *ModifyCtx, slice: []u8) !void {
             0,
             @enumFromInt(slice[0]),
         );
-        std.debug.print("add sort index create {any} {s} \n", .{ slice, slice });
         if (sIndex) |s| {
             sort.insert(ctx.db, s, slice, ctx.node.?);
         }

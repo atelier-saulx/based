@@ -418,7 +418,6 @@ pub fn insert(
                 );
             } else {
                 const str = parseString(dbCtx, data);
-                std.debug.print("INSERT str: {any} size {d} ", .{ str[0..SIZE], SIZE });
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },
