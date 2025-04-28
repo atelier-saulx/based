@@ -689,6 +689,7 @@ void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, struct SelvaSortIterat
 
     if (!cur) return nullptr;
 
+
     (void)ctx;
     it->next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
 
@@ -702,6 +703,7 @@ void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, struct SelvaSo
     struct SelvaSortItem *cur = it->next;
 
     if (!cur) return nullptr;
+
 
     (void)ctx;
     it->next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);

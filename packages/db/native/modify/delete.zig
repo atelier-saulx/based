@@ -31,7 +31,6 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
             const sortIndex = entry.value_ptr.*;
-            // pretty slow...
             if (sortIndex.field == ctx.field) {
                 // Extra slow...
                 const t = db.getText(
@@ -57,7 +56,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         if (ctx.currentSortIndex != null) {
             const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
-            sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_CHAR_SLICE, ctx.node.?);
+            sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == types.Prop.TEXT) {
             var it = ctx.typeSortIndex.?.text.iterator();
             while (it.next()) |entry| {
@@ -72,7 +71,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                         sortIndex.langCode,
                     );
                     sort.remove(ctx.db, sortIndex, t, ctx.node.?);
-                    sort.insert(ctx.db, sortIndex, sort.EMPTY_CHAR_SLICE, ctx.node.?);
+                    sort.insert(ctx.db, sortIndex, sort.EMPTY_SLICE, ctx.node.?);
                 }
             }
         }
@@ -102,12 +101,18 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
         ctx.fieldType,
         lang,
     );
+
+    // TODO What if t is actually empty?
+    // we should do nothing
+
     const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
     if (sortIndex) |sI| {
         sort.remove(ctx.db, sI, t, ctx.node.?);
-        sort.insert(ctx.db, sI, sort.EMPTY_CHAR_SLICE, ctx.node.?);
+        sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
     }
 
-    const str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
+    var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
+    const crc: u32 = selva.crc32c(0, &str, 2);
+    _ = selva.memcpy(@constCast(str[2..5]), &crc, 4);
     _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
 }
