@@ -11,6 +11,7 @@ const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const types = @import("../types.zig");
 
+const QueryType = types.QueryType;
 const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
 const QueryId = @import("./types/id.zig");
@@ -27,13 +28,6 @@ pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
         return null;
     };
 }
-
-const QueryType = enum(u8) {
-    id = 0,
-    ids = 1,
-    default = 2,
-    alias = 3,
-};
 
 pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, env, info);

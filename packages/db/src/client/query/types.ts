@@ -7,6 +7,14 @@ export type MainIncludes = { [start: string]: [number, PropDef] }
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
+export enum QueryType {
+  id = 0,
+  ids = 1,
+  default = 2,
+  alias = 3,
+  aggregates = 4,
+}
+
 enum QueryDefType {
   Edge = 1,
   Reference = 2,
