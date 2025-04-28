@@ -1,5 +1,5 @@
 import { createSortBuffer } from './sort.js'
-import { AggFlag, QueryDef, QueryDefType } from './types.js'
+import { AggFlag, QueryDef, QueryDefType, QueryType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
@@ -60,7 +60,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       const aliasStr = ENCODER.encode(alias.value)
       const aliasLen = aliasStr.byteLength
       const buf = new Uint8Array(8 + filterSize + aliasLen)
-      buf[0] = 3
+      buf[0] = QueryType.alias
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf[3] = alias.def.prop
@@ -75,7 +75,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       result.push(buf)
     } else if (def.target.id) {
       const buf = new Uint8Array(9 + filterSize)
-      buf[0] = 0
+      buf[0] = QueryType.id
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf[3] = def.target.id
@@ -110,7 +110,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         const buf = new Uint8Array(
           21 + idsSize + filterSize + sortSize + searchSize,
         )
-        buf[0] = 1
+        buf[0] = QueryType.ids
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
         buf[3] = idsSize
@@ -148,7 +148,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         result.push(buf)
       } else {
         const buf = new Uint8Array(18 + filterSize + sortSize + searchSize)
-        buf[0] = 2
+        buf[0] = QueryType.default
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
         buf[3] = def.range.offset
