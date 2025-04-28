@@ -924,43 +924,21 @@ int selva_fields_set_text(
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
 
-    if (len == 2 && crc == 0) {
-        /*
-         * Delete tl.
-         */
-        struct SelvaFieldInfo *nfo;
+    tf = ensure_text_field(&node->fields, fs, lang);
+    if (unlikely(!tf.text)) {
+        db_panic("Text missing");
+    } else if (!tf.tl) {
+        int err;
 
-        nfo = &node->fields.fields_map[fs->field];
-        if (nfo->in_use) {
-            struct selva_string *s = find_text_by_lang(nfo2p(&node->fields, nfo), lang);
-            if (s) {
-                /* Don't trust the caller's CRC in this case. */
-#if 0
-                (void)selva_string_replace_crc(s, str, len, crc);
-#endif
-                (void)selva_string_replace(s, str, len);
-            }
+        tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
+        tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
+        err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+        if (err) {
+            db_panic("Failed to init a text field");
         }
-    } else {
-        /*
-         * Set tl.
-         */
-        tf = ensure_text_field(&node->fields, fs, lang);
-        if (unlikely(!tf.text)) {
-            db_panic("Text missing");
-        } else if (!tf.tl) {
-            int err;
-
-            tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
-            tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
-            err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-            if (err) {
-                db_panic("Failed to init a text field");
-            }
-        }
-
-        (void)selva_string_replace_crc(tf.tl, str, len, crc);
     }
+
+    (void)selva_string_replace_crc(tf.tl, str, len, crc);
 
     return 0;
 }
