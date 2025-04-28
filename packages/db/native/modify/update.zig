@@ -120,6 +120,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
                     }
                 }
+                // TODO Optimization: call selva_fields_set_text() directly.
                 try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {

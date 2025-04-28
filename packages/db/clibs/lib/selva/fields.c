@@ -994,6 +994,9 @@ int selva_fields_get_text(
         size_t res_len;
 
         res_str = (const char *)selva_string_to_buf(s, &res_len);
+        if (res_len == 2 + sizeof(uint32_t)) { /* empty string */
+            return SELVA_ENOENT;
+        }
         if (str) {
             *str = res_str;
         }
