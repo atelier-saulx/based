@@ -809,7 +809,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get(),
+    await db.query('dialog').locale('fi').sort('fun').get().inspect(10),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
