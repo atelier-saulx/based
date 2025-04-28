@@ -102,41 +102,15 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
         lang,
     );
 
-    const data = db.getField(
-        ctx.typeEntry,
-        ctx.id,
-        ctx.node.?,
-        ctx.fieldSchema.?,
-        ctx.fieldType,
-    );
-
-    std.debug.print("vla {any} \n", .{data});
-    var iter = db.textIterator(data, types.LangCode.NONE);
-    while (iter.next()) |s| {
-        std.debug.print("OK ALL TEXT FIELDS {any} \n", .{s});
-    }
-
-    std.debug.print("YO DEL {any} --> id: {d} \n", .{ t, db.getNodeId(ctx.node.?) });
-
+    // TODO What if t is actually empty?
     const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
-
-    // if (t.len > 6) {
     if (sortIndex) |sI| {
-        std.debug.print("\n-------------------\nREMOVE NON EMPTY {any} \n", .{t});
-
         sort.remove(ctx.db, sI, t, ctx.node.?);
-
-        std.debug.print("\n-----------------------\nINSERT EMPTY {any} \n", .{sort.EMPTY_SLICE});
-
-        // const str = [_]u8{ @intFromEnum(lang), 0, 97, 0, 0, 0, 0 };
-        //  @constCast(&str)[0..str.len]
-
         sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
     }
 
-    const str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
-
-    // db.writeField(ctx.db, @constCast(&str), ctx.node.?, ctx.fieldSchema.?) catch {};
-
+    var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
+    const crc: u32 = selva.crc32c(0, &str, 2);
+    _ = selva.memcpy(@constCast(str[2..5]), &crc, 4);
     _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
 }
