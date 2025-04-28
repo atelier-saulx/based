@@ -306,7 +306,7 @@ inline fn parseString(
 ) [*]u8 {
     if (data.len <= 6) {
         return EMPTY_CHAR_SLICE.ptr;
-    } else if (data.len < SIZE - 6) {
+    } else if (data.len < SIZE + 6) {
         var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
         var i: usize = 2;
         while (i < data.len - 4) : (i += 1) {
