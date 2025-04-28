@@ -13,6 +13,7 @@ import {
   includeField,
   includeFields,
   count,
+  sum,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -144,6 +145,12 @@ export class QueryBranch<T> {
 
   count(): T {
     count(this.def)
+    // @ts-ignore
+    return this
+  }
+
+  sum(): T {
+    sum(this.def)
     // @ts-ignore
     return this
   }
