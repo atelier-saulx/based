@@ -871,3 +871,49 @@ await test('minmax', async (t) => {
     id,
   })
 })
+
+await test('set text without locale', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db)) // commenting this out fixes the crash part
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      country: {
+        name: 'string',
+        cool: 'text',
+      },
+    },
+  })
+
+  const country1 = await db.create('country', {
+    name: 'Land1',
+    cool: {
+      it: 'italian text',
+      en: 'english text',
+    },
+  })
+
+  await db.update(
+    'country',
+    country1,
+    {
+      name: 'Land1',
+      cool: 'italian text2',
+    },
+    { locale: 'it' },
+  )
+
+  // await throws(() =>
+    db.update('country', country1, {
+      name: 'Land1',
+      cool: 'english text2',
+    })
+  // )
+})

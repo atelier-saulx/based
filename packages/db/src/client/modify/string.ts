@@ -28,7 +28,7 @@ export function writeString(
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
 
-  if (value === '' || value === null) {
+  if (value === null) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
