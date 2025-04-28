@@ -92,3 +92,33 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     }
     return 0;
 }
+
+pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) !void {
+    std.debug.print("{any} \n", .{lang});
+
+    const t = db.getText(
+        ctx.typeEntry,
+        ctx.id,
+        ctx.node.?,
+        ctx.fieldSchema.?,
+        ctx.fieldType,
+        lang,
+    );
+    const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
+    if (sortIndex) |sI| {
+        sort.remove(ctx.db, sI, t, ctx.node.?);
+        sort.insert(ctx.db, sI, sort.EMPTY_CHAR_SLICE, ctx.node.?);
+    }
+
+    // _ = selva.selva_fields_set_text(ctx.selva, ctx.node, ctx.fieldSchema, lang, null, 0);
+
+    // selva.selva_fields_set_text(ctx.selva, ctx.node, ctx.fieldSchema, lang, null, 0);
+
+    // _ = db.setTextField(
+    //     ctx.db,
+    //     ctx.node.?,
+    //     ctx.fieldSchema.?,
+    //     @intFromEnum(lang),
+    //     null,
+    // ) catch {};
+}

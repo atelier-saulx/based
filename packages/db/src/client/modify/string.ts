@@ -9,6 +9,7 @@ import {
   RANGE_ERR,
   DELETE,
   SIZE,
+  DELETE_TEXT_FIELD,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -28,13 +29,19 @@ export function writeString(
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
 
-  if (value === null) {
+  if (value === null || value === '') {
     if (modifyOp === UPDATE) {
-      if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
+      if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
-      ctx.buf[ctx.len++] = DELETE
+      if (lang === 0) {
+        ctx.buf[ctx.len++] = DELETE
+      } else {
+        console.log('DELETE_TEXT_FIELD', lang)
+        ctx.buf[ctx.len++] = DELETE_TEXT_FIELD
+        ctx.buf[ctx.len++] = lang
+      }
     }
   } else {
     if (!t.validation(value, t)) {

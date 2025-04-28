@@ -799,15 +799,12 @@ await test('sort', async (t) => {
   )
   await db.drain()
 
-  deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
-    [
-      { id: 4, snurf: '', fun: '' },
-      { id: 3, snurf: '3', fun: '' },
-      { id: 1, snurf: '', fun: '' },
-      { id: 2, fun: '2', snurf: '2' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
 
   db.update('dialog', id3, {
     fun: {
@@ -816,15 +813,12 @@ await test('sort', async (t) => {
   })
   await db.drain()
 
-  deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
-    [
-      { id: 4, snurf: '', fun: '' },
-      { id: 1, snurf: '', fun: '' },
-      { id: 3, snurf: '3', fun: '0' },
-      { id: 2, fun: '2', snurf: '2' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '0' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
 
   db.update('dialog', id3, {
     fun: {
@@ -834,7 +828,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
+    await db.query('dialog').locale('fi').sort('fun').get(),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
@@ -945,10 +939,12 @@ await test('clear field', async (t) => {
   const user1 = await db.create('user', {
     name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
-  deepEqual(await db.query('user', user1).get().toObject(), {
+
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
+
   await db.update(
     'user',
     user1,
@@ -958,7 +954,7 @@ await test('clear field', async (t) => {
     { locale: 'en' },
   )
 
-  deepEqual(await db.query('user', user1).get().toObject(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: '', it: 'coolnameIT' },
   })

@@ -171,10 +171,6 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn setTextField(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema, lang: selva.selva_lang_code, str: *u8) !void {
-    errors.selva(selva.selva_fields_set_text(ctx.selva, node, fieldSchema, lang, str.ptr, str.len));
-}
-
 pub fn getTextField(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema, lang: selva.selva_lang_code) !?*u8 {
     var len: usize = 0;
     var str: [len]u8 = undefined;
@@ -251,8 +247,8 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
         }
     };
 
-        const efc = selva.selva_get_edge_field_constraint(fieldSchema);
-        const dstType = efc.*.dst_node_type;
+    const efc = selva.selva_get_edge_field_constraint(fieldSchema);
+    const dstType = efc.*.dst_node_type;
     if (dirty[0] != 0) {
         modifyCtx.markDirtyRange(ctx, dstType, dirty[0]);
     }

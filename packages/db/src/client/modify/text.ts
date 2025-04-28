@@ -50,10 +50,6 @@ export function writeText(
       return new ModifyError(t, locale, 'Invalid locale')
     }
 
-    if (value == null) {
-      // @ts-ignore
-      value = ''
-    }
     const err = writeString(
       res.locale,
       value as string,
@@ -80,10 +76,7 @@ export function writeText(
         return new ModifyError(t, lang, 'Invalid locale')
       }
       let s = value[lang]
-      if (s == null) {
-        // @ts-ignore
-        s = ''
-      }
+
       const err = writeString(
         langC[1] as LangCode,
         s,

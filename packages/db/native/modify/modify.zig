@@ -9,6 +9,8 @@ const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
+const deleteTextLang = @import("./delete.zig").deleteTextLang;
+
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
@@ -89,6 +91,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     ctx.node = null;
                 }
                 i = i + 1;
+            },
+            types.ModOp.DELETE_TEXT_FIELD => {
+                const lang: types.LangCode = @enumFromInt(operation[1]);
+                std.debug.print("flap {any} {any} \n", .{ operation, batch });
+
+                try deleteTextLang(&ctx, lang);
+                i = i + 2;
             },
             types.ModOp.CREATE_OR_GET => {
                 if (config.enable_debug) {
