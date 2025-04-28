@@ -934,7 +934,11 @@ int selva_fields_set_text(
         if (nfo->in_use) {
             struct selva_string *s = find_text_by_lang(nfo2p(&node->fields, nfo), lang);
             if (s) {
+                /* Don't trust the caller's CRC in this case. */
+#if 0
                 (void)selva_string_replace_crc(s, str, len, crc);
+#endif
+                (void)selva_string_replace(s, str, len);
             }
         }
     } else {
