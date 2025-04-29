@@ -252,7 +252,9 @@ export const contextBasedServer =
 
     if (!cloud) {
       try {
-        const { BasedDb } = await import('@based/db')
+        const allDb = await import('@based/db')
+        global.__DB__ = allDb
+        const { BasedDb } = allDb
         const basedDb = new BasedDb({
           path: join(process.cwd(), 'tmp'),
         })
@@ -260,7 +262,7 @@ export const contextBasedServer =
         await basedDb.start({})
 
         server.client.db ??= {}
-        server.client.db.v2 = basedDb
+        server.client.db.v2 = basedDb.client
 
         context.print.step(
           context.i18n(
