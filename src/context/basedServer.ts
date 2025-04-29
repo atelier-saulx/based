@@ -257,6 +257,7 @@ export const contextBasedServer =
         const { BasedDb } = allDb
         const basedDb = new BasedDb({
           path: join(process.cwd(), 'tmp'),
+          saveIntervalInSeconds: 5,
         })
 
         await basedDb.start({})
