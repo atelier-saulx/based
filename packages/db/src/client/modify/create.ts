@@ -26,6 +26,7 @@ const appendCreate = (
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
+
   let err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
   if (err) {
     return err
@@ -168,7 +169,6 @@ export function create(
 
   const ctx = db.modifyCtx
   const res = new ModifyState(def.id, id, db, opts)
-
   const pos = ctx.len
   const err = appendCreate(ctx, def, obj, res, opts?.unsafe)
 
@@ -182,12 +182,12 @@ export function create(
       flushBuffer(db)
       return db.create(type, obj, opts)
     }
-    // res.error = err
-    // @ts-ignore
-    // return Promise.reject(err)
-    // return res
+    res.error = err
     throw err
   }
+
+  ctx.markTypeDirty(def)
+  ctx.markNodeDirty(def, id)
 
   if (!db.isDraining) {
     startDrain(db)
