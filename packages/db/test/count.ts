@@ -81,16 +81,16 @@ await test('branchedCount', async (t) => {
   // await db.query('article').get().inspect()
   // QueryType = 3 (alias) might make sense for aggs
 
-  console.log(
-    await db
-      .query('user')
-      .include('id')
-      .range(0, 1e9)
-      .filter('flap', '>', 20)
-      .count()
-      .get()
-      .toObject(),
-  )
+  // console.log(
+  //   await db
+  //     .query('user')
+  //     .include('id')
+  //     .range(0, 1e9)
+  //     .filter('flap', '>', 20)
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  // )
 
   // EXPECTED:
   // {count: 3}
@@ -109,15 +109,15 @@ await test('branchedCount', async (t) => {
   //   .get()
   //   .inspect() // NOT OK
 
-  // console.log(
-  //   await db
-  //     .query('article')
-  //     .include('name') // OK
-  //     // .include('name', 'contributors') // NOT OK
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  console.log(
+    await db
+      .query('article')
+      .include('name') // OK
+      // .include('name', 'contributors') // NOT OK
+      .count()
+      .get()
+      .toObject(),
+  )
 
   // console.log(
   //   await db
