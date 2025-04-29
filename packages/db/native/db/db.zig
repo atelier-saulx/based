@@ -500,7 +500,7 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
 }
 
 pub const TextIterator = struct {
-    value: []const [16]u8,
+    value: []const [selva.SELVA_STRING_STRUCT_SIZE]u8,
     index: usize = 0,
     code: types.LangCode,
     fn _next(self: *TextIterator) ?[]u8 {
@@ -508,9 +508,8 @@ pub const TextIterator = struct {
             return null;
         }
         const tl = self.value[self.index];
-        const ss: *const selva.selva_string = @ptrCast(&tl);
         var len: usize = undefined;
-        const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&tl), &len);
         const s = @as([*]u8, @constCast(str));
         self.index += 1;
         return s[0..len];
