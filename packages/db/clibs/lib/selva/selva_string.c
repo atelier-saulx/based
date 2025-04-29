@@ -277,6 +277,7 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
         return err;
     }
 
+    /* TODO remove len_parity() call */
     flags |= SELVA_STRING_STATIC | SELVA_STRING_CRC | len_parity(len);
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
         set_string_crc(s, str, len, crc, flags);
