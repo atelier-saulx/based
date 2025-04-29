@@ -840,6 +840,22 @@ struct selva_string *selva_fields_ensure_string2(
     return get_mutable_string(ref->meta, fs, nfo, initial_len);
 }
 
+static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+{
+    struct SelvaTextField *text;
+
+    assert(nfo->in_use);
+    text = nfo2p(fields, nfo);
+
+    const size_t len = text->len;
+    for (size_t i = 0; i < len; i++) {
+        selva_string_free(&text->tl[i]);
+    }
+
+    selva_free(text->tl);
+    memset(text, 0, sizeof(*text));
+}
+
 static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
 {
     const size_t len = text->len;
@@ -857,22 +873,6 @@ static struct selva_string *find_text_by_lang(const struct SelvaTextField *text,
     }
 
     return nullptr;
-}
-
-static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
-{
-    struct SelvaTextField *text;
-
-    assert(nfo->in_use);
-    text = nfo2p(fields, nfo);
-
-    const size_t len = text->len;
-    for (size_t i = 0; i < len; i++) {
-        selva_string_free(&text->tl[i]);
-    }
-
-    selva_free(text->tl);
-    memset(text, 0, sizeof(*text));
 }
 
 struct ensure_text_field {
@@ -905,6 +905,19 @@ static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, co
     return res;
 }
 
+static void init_tl(struct selva_string *tl, const char *str, size_t len, uint32_t crc)
+{
+    const enum selva_string_flags flags = (len <= sizeof(tl->emb) - sizeof(crc))
+        ? SELVA_STRING_MUTABLE_FIXED
+        : SELVA_STRING_MUTABLE;
+    int err;
+
+    err = selva_string_init_crc(tl, str, len, crc, flags);
+    if (err) {
+        db_panic("Failed to init a text field");
+    }
+}
+
 int selva_fields_set_text(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
@@ -927,18 +940,19 @@ int selva_fields_set_text(
     tf = ensure_text_field(&node->fields, fs, lang);
     if (unlikely(!tf.text)) {
         db_panic("Text missing");
-    } else if (!tf.tl) {
-        int err;
-
+    }
+    if (tf.tl) {
+        if (tf.tl->flags & SELVA_STRING_MUTABLE_FIXED) {
+            selva_string_free(tf.tl);
+            init_tl(tf.tl, str, len, crc);
+        } else {
+            (void)selva_string_replace_crc(tf.tl, str, len, crc);
+        }
+    } else {
         tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
         tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
-        err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-        if (err) {
-            db_panic("Failed to init a text field");
-        }
+        init_tl(tf.tl, str, len, crc);
     }
-
-    (void)selva_string_replace_crc(tf.tl, str, len, crc);
 
     return 0;
 }

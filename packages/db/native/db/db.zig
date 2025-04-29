@@ -500,9 +500,8 @@ pub const TextIterator = struct {
         if (self.index == self.value.len) {
             return null;
         }
-        const tl = self.value[self.index];
         var len: usize = undefined;
-        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&tl), &len);
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&self.value[self.index]), &len);
         const s = @as([*]u8, @constCast(str));
         self.index += 1;
         return s[0..len];
@@ -548,6 +547,10 @@ pub inline fn getText(
         return s;
     }
     return @as([*]u8, undefined)[0..0];
+    //var len: usize = 0;
+    //var str: [*c]const u8 = undefined;
+    //errors.selva(selva.selva_fields_get_text(node, fieldSchema, @intFromEnum(langCode), &str, &len)) catch return @as([*]u8, undefined)[0..0];
+    //return @constCast(str[0..len]);
 }
 
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {
