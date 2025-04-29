@@ -79,6 +79,29 @@ await test('Comparing hash generation collision', async (t) => {
     crc32set.add(x)
   }
   console.log(`1E4 langs CRC32c Native collision: ${collision}`)
+
+  crc32set = new Set()
+  collision = 0
+  for (let i = 0; i < 1e4; i++) {
+    const f = ENCODER.encode(JSON.stringify({ i }))
+    const x = crc32c(f)
+    if (crc32set.has(x)) {
+      collision++
+    }
+    crc32set.add(x)
+  }
+  console.log(`1E4 json CRC32c TS collision: ${collision}`)
+  crc32set = new Set()
+  collision = 0
+  for (let i = 0; i < 1e4; i++) {
+    const f = ENCODER.encode(JSON.stringify({ i }))
+    const x = nativeCrc32(f)
+    if (crc32set.has(x)) {
+      collision++
+    }
+    crc32set.add(x)
+  }
+  console.log(`1E4 json CRC32c Native collision: ${collision}`)
 })
 
 await test('simple', async (t) => {
