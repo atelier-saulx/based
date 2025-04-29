@@ -261,7 +261,7 @@ export const contextBasedServer =
         await basedDb.start({})
 
         server.client.db ??= {}
-        server.client.db.v2 = basedDb
+        server.client.db.v2 = basedDb.client
 
         context.print.step(
           context.i18n(
