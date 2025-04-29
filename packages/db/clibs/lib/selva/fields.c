@@ -944,7 +944,6 @@ int selva_fields_set_text(
 }
 
 int selva_fields_get_text(
-        struct SelvaDb *,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,

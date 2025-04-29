@@ -287,7 +287,6 @@ int selva_fields_set_text(
  */
 SELVA_EXPORT
 int selva_fields_get_text(
-        struct SelvaDb *db,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,

@@ -168,13 +168,6 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn getTextField(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema, lang: selva.selva_lang_code) !?*u8 {
-    var len: usize = 0;
-    var str: [len]u8 = undefined;
-    errors.selva(selva.selva_fields_get_text(ctx.selva, node, fieldSchema, lang, &str, &len));
-    return str;
-}
-
 pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeReference) ?Node {
     if (ref) |r| {
         return r.*.dst;
