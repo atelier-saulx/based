@@ -103,18 +103,17 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
         lang,
     );
 
-    // TODO What if t is actually empty?
-    // we should do nothing
-
-    const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
-    if (sortIndex) |sI| {
-        sort.remove(ctx.db, sI, t, ctx.node.?);
-        sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
+    // If !empty
+    if (t.len >= 6) {
+        const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
+        if (sortIndex) |sI| {
+            sort.remove(ctx.db, sI, t, ctx.node.?);
+            sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
+        }
+        var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
+        const crc: u32 = selva.crc32c(0, &str, 2);
+        const crc32Slice: [*]u8 = @constCast(@ptrCast(&crc));
+        utils.copy(str[2..5], crc32Slice[0..4]);
+        _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
     }
-
-    var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
-
-    // const crc: u32 = selva.crc32c(0, &str, 2);
-    // _ = utils.copy(str[2..5], crc_slice);
-    _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
 }
