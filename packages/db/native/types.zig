@@ -49,6 +49,20 @@ pub const Prop = enum(u8) {
             else => false,
         };
     }
+    pub fn isNumber(self: Prop) bool {
+        return switch (self) {
+            Prop.NUMBER,
+            Prop.INT8,
+            Prop.UINT8,
+            Prop.UNT16,
+            Prop.INT16,
+            Prop.UINT32,
+            Prop.INT32,
+            Prop.CARDINALITY,
+            => true,
+            else => false,
+        };
+    }
 };
 
 pub fn Size(p: Prop) u8 {
