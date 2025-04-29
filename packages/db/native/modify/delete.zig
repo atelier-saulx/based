@@ -5,6 +5,7 @@ const std = @import("std");
 const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const selva = @import("../selva.zig");
+const utils = @import("../utils.zig");
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
@@ -112,7 +113,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
     }
 
     var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
-    const crc: u32 = selva.crc32c(0, &str, 2);
-    _ = selva.memcpy(@constCast(str[2..5]), &crc, 4);
+
+    // const crc: u32 = selva.crc32c(0, &str, 2);
+    // _ = utils.copy(str[2..5], crc_slice);
     _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
 }
