@@ -84,10 +84,10 @@ await test('branchedCount', async (t) => {
   console.log(
     await db
       .query('user')
-      // .include('id')
-      // .range(0, 1e9)
-      // .filter('flap', '>', 20)
-      // .count()
+      .include('id')
+      .range(0, 1e9)
+      .filter('flap', '>', 20)
+      .count()
       .get()
       .toObject(),
   )
@@ -100,26 +100,24 @@ await test('branchedCount', async (t) => {
   // if pass count({alias: 'users'})
   // {users: 3}
 
+  // await db
+  //   .query('user')
+  //   //lala
+  //   .filter('flap', '>', 20)
+  //   .range(0, 1)
+  //   .count()
+  //   .get()
+  //   .inspect() // NOT OK
+
   // console.log(
   //   await db
-  //     .query('user')
-  //     //lala
-  //     .filter('flap', '>', 20)
-  //     .range(0, 1)
+  //     .query('article')
+  //     .include('name') // OK
+  //     // .include('name', 'contributors') // NOT OK
   //     .count()
   //     .get()
   //     .toObject(),
   // )
-
-  // // console.log(
-  // await db
-  //   .query('article')
-  //   // .include('name')
-  //   .include('name', 'contributors')
-  //   // .count()
-  //   .get()
-  //   .inspect()
-  // // )
 
   // console.log(
   //   await db

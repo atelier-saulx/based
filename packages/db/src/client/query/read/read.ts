@@ -36,6 +36,7 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
+  AggFlag,
 } from '../types.js'
 
 export type Item = {
@@ -94,6 +95,8 @@ const getEmptyField = (p: PropDef | PropDefEdge, item: Item) => {
   }
   return select
 }
+
+export type AggItem = Partial<Item>
 
 const readMainValue = (
   prop: PropDef | PropDefEdge,
@@ -422,22 +425,38 @@ export const resultToObject = (
     return []
   }
 
-  let items = []
-  let i = 5 + offset
+  let items: AggItem | [Item] = []
+  if (q.aggregation == AggFlag.NONE) {
+    let i = 5 + offset
 
-  while (i < end) {
-    const id = readUint32(result, i)
-    i += 4
-    let item: Item = {
-      id,
-    }
-    if (q.search) {
-      item.$searchScore = readFloatLE(result, i)
+    while (i < end) {
+      const id = readUint32(result, i)
       i += 4
+      let item: Item = {
+        id,
+      }
+
+      if (q.search) {
+        item.$searchScore = readFloatLE(result, i)
+        i += 4
+      }
+      const l = readAllFields(q, result, i, end, item, id)
+      i += l
+      items.push(item)
     }
-    const l = readAllFields(q, result, i, end, item, id)
-    i += l
-    items.push(item)
+  } else {
+    const aggVal = readUint32(result, 0) // MV: dont need len in result buffer. count could be always 4 or agg could be always double
+    let item: AggItem = {}
+
+    switch (q.aggregation) {
+      case AggFlag.COUNT:
+        item = { count: aggVal }
+        break
+      case AggFlag.SUM:
+        item = { sum: aggVal }
+        break
+    }
+    items = item
   }
 
   if ('id' in q.target || 'alias' in q.target) {

@@ -6,6 +6,7 @@ import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
 import { createAggFlagBuffer } from './aggregates/aggregation.js'
+import { buffer } from 'node:stream/consumers'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
@@ -72,6 +73,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
 
     result.push(buf)
     result.push(...include)
+    console.log('toBuffer.ts > result: ', result)
     return result
   }
 
