@@ -64,35 +64,25 @@ pub fn createResultsBuffer(
                     i += 6;
                 },
                 t.ReadRefOp.REFERENCES => {
-                    if (item.field == @intFromEnum(t.ReadOp.AGGREGATION)) {
-                        data[i] = @intFromEnum(t.ReadOp.AGGREGATION);
+                    if (item.isEdge != t.Prop.NULL) {
+                        data[i] = @intFromEnum(t.ReadOp.EDGE);
                         i += 1;
-                        const val = item.val.?;
-                        writeInt(u32, data, i, val.len);
-                        i += 4;
-                        copy(data[i .. i + val.len], val);
-                        i += val.len;
-                    } else {
-                        if (item.isEdge != t.Prop.NULL) {
-                            data[i] = @intFromEnum(t.ReadOp.EDGE);
-                            i += 1;
-                        }
-
-                        //  Multiple References Protocol Schema:
-
-                        // | Offset  | Field     | Size (bytes)| Description                          |
-                        // |---------|-----------|-------------|--------------------------------------|
-                        // | 0       | op        | 1           | Operation identifier (253)           |
-                        // | 1       | field     | 1           | Field identifier                     |
-                        // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
-                        // | 6       | totalRefs | 4           | Total number of references (u32)     |
-
-                        data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                        data[i + 1] = item.field;
-                        writeInt(u32, data, i + 2, item.refSize.?);
-                        writeInt(u32, data, i + 6, item.totalRefs.?);
-                        i += 10;
                     }
+
+                    //  Multiple References Protocol Schema:
+
+                    // | Offset  | Field     | Size (bytes)| Description                          |
+                    // |---------|-----------|-------------|--------------------------------------|
+                    // | 0       | op        | 1           | Operation identifier (253)           |
+                    // | 1       | field     | 1           | Field identifier                     |
+                    // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+                    // | 6       | totalRefs | 4           | Total number of references (u32)     |
+
+                    data[i] = @intFromEnum(t.ReadOp.REFERENCES);
+                    data[i + 1] = item.field;
+                    writeInt(u32, data, i + 2, item.refSize.?);
+                    writeInt(u32, data, i + 6, item.totalRefs.?);
+                    i += 10;
                 },
             }
             continue;
