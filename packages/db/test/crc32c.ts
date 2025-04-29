@@ -50,7 +50,7 @@ await test('Comparing hash generation collision', async (t) => {
 
   const randomLanguages = (i) => {
     const len = 10
-    const arr = [i + 1e4]
+    const arr = [i + 1e4, ~~(Math.random() * 4000000000)]
     for (let j = 0; j < len; j++) {
       arr.push(langs[~~(Math.random() * langs.length)])
     }
