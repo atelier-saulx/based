@@ -71,6 +71,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     buf[13 + filterSize] = aggregation[0]
 
     result.push(buf)
+    result.push(...include)
     return result
   }
 

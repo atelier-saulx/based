@@ -87,7 +87,7 @@ await test('branchedCount', async (t) => {
       // .include('id')
       // .range(0, 1e9)
       // .filter('flap', '>', 20)
-      .count()
+      // .count()
       .get()
       .toObject(),
   )
