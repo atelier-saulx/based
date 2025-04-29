@@ -111,9 +111,7 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
             sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
         }
         var str = [_]u8{ @intFromEnum(lang), 0, 0, 0, 0, 0 };
-        const crc: u32 = selva.crc32c(0, &str, 2);
-        const crc32Slice: [*]u8 = @constCast(@ptrCast(&crc));
-        utils.copy(str[2..5], crc32Slice[0..4]);
+        utils.writeInt(u32, str[2..5], 0, selva.crc32c(0, &str, 2));
         _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &str, str.len);
     }
 }
