@@ -809,7 +809,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().inspect(10),
+    await db.query('dialog').locale('fi').sort('fun').get(),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
@@ -938,5 +938,50 @@ await test('clear field', async (t) => {
   deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: '', it: 'coolnameIT' },
+  })
+})
+
+await test('text and compression', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        article: 'text',
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: { en: italy, it: 'cool' },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: italy, it: 'cool' },
+  })
+
+  await db.query('user', user1).get().inspect()
+
+  await db.update(
+    'user',
+    user1,
+    {
+      article: '',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: '', it: 'cool' },
   })
 })
