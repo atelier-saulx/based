@@ -105,7 +105,7 @@ export const dbUpdateFromUpsert = (
         payload = payload[def.path[i]] = {}
       }
       payload[def.path[i]] = result
-      return ctx.db.update(schema.type, res.tmpId, payload)
+      return ctx.db.update(schema.type, res.getId(), payload)
     }),
   )
 }
