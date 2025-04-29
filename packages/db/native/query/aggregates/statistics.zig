@@ -1,5 +1,4 @@
 const std = @import("std");
-const AggFn = @import("../../types.zig").AggFn;
 
 pub const setType = enum { Population, Sample };
 
@@ -24,8 +23,8 @@ fn accumulate(comptime data: []const f64) accumulator {
         _count += 1;
         _sum += value;
         _sum_sq += value * value;
-        _min = @min(min, value);
-        _max = @max(max, value);
+        _min = @min(_min, value);
+        _max = @max(_max, value);
     }
 
     return .{
@@ -45,26 +44,26 @@ pub fn sum(comptime data: []const f64) f64 {
     return accumulate(data).sum;
 }
 
-pub fn min(comptime data: []const f64) f64 {
+pub fn min(comptime data: []const f64) ?f64 {
     const state = accumulate(data);
     if (state.count == 0) return null;
     return state.min;
 }
 
-pub fn max(comptime data: []const f64) f64 {
+pub fn max(comptime data: []const f64) ?f64 {
     const state = accumulate(data);
     if (state.count == 0) return null;
     return state.max;
 }
 
-pub fn avg(comptime data: []const f64) f64 {
+pub fn avg(comptime data: []const f64) ?f64 {
     const state = accumulate(data);
     if (state.count == 0) return null;
     const n = @as(f64, @floatFromInt(state.count));
     return state.sum / n;
 }
 
-pub fn variancePop(comptime data: []const f64) f64 {
+pub fn variancePop(comptime data: []const f64) ?f64 {
     const state = accumulate(data);
     if (state.count == 0) return null;
     const n = @as(f64, @floatFromInt(state.count));
@@ -75,10 +74,10 @@ pub fn variancePop(comptime data: []const f64) f64 {
     if (_variance < 0.0 and _variance > -1e-12) return 0.0;
     if (_variance < 0.0) return null;
 
-    return variance;
+    return _variance;
 }
 
-pub fn varianceSample(comptime data: []const f64) f64 {
+pub fn varianceSample(comptime data: []const f64) ?f64 {
     const state = accumulate(data);
     if (state.count < 2) return null;
     const n = @as(f64, @floatFromInt(state.count));
@@ -93,10 +92,9 @@ pub fn varianceSample(comptime data: []const f64) f64 {
 }
 
 pub fn variance(comptime data: []const f64, kind: setType) ?f64 {
-    const state = accumulate(data);
     return switch (kind) {
-        .Population => state.variancePop(),
-        .Sample => state.varianceSample(),
+        .Population => variancePop(data),
+        .Sample => varianceSample(data),
     };
 }
 

@@ -6,6 +6,7 @@ const AggFn = types.AggFn;
 const std = @import("std");
 const utils = @import("../../utils.zig");
 const read = utils.read;
+const s = @import("./statistics.zig");
 
 pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, include: []u8, aggregation: AggFn) !usize {
     var includeIterator: u16 = 0;
@@ -32,6 +33,9 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
 
         fieldSchema = try db.getFieldSchema(field, typeEntry);
         value = db.getField(typeEntry, id, node, fieldSchema, prop);
+        // validateNumber
+        // cast to f64
+        s.acumulate(value);
     }
 
     ctx.size = 0;
