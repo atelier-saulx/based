@@ -1,6 +1,6 @@
 {
   "name": "@based/schema",
-  "version": "5.0.0-alpha.11",
+  "version": "5.0.0-alpha.12",
   "license": "MIT",
   "files": [
     "dist",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "fflate": "0.8.1",
-    "@saulx/utils": "^6.5.0",
+    "@saulx/utils": "^6.6.0",
     "picocolors": "^1.1.0"
   }
 }

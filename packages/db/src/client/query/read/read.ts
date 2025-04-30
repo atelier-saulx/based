@@ -290,7 +290,7 @@ export const readAllFields = (
             if (size === 0) {
               addField(edgeDef, '', item)
             } else {
-              addField(edgeDef, read(result, i + 4, size), item)
+              addField(edgeDef, read(result, i + 4, size, true), item)
             }
             i += size + 4
           } else if (t === CARDINALITY) {
@@ -361,20 +361,21 @@ export const readAllFields = (
         if (size === 0) {
           addField(prop, '', item)
         } else {
-          addField(prop, read(result, i + 4, size), item)
+          addField(prop, read(result, i + 4, size, true), item)
         }
         i += size + 4
       } else if (prop.typeIndex == TEXT) {
         const size = readUint32(result, i)
         if (size === 0) {
+          // do nothing
         } else {
           if (q.lang != 0) {
             q.include.propsRead[index] = id
-            addField(prop, read(result, i + 4, size), item)
+            addField(prop, read(result, i + 4, size, false), item)
           } else {
             addField(
               prop,
-              read(result, i + 4, size),
+              read(result, i + 4, size, false),
               item,
               false,
               result[i + 4],

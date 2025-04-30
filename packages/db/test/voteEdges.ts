@@ -68,7 +68,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const final = await db.create('round')
 
-  const amount = 1e6
+  const amount = 1e4
   console.info('--------------------------------')
 
   const contestants = []

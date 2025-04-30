@@ -54,6 +54,7 @@ export async function upsert(
       } else {
         const obj = res.toObject()
         const id = Array.isArray(obj) ? obj[0].id : obj.id
+        // don't call update if it's not necessary
         return db.update(type, id, store.o, opts)
       }
     }),

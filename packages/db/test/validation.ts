@@ -910,10 +910,8 @@ await test('set text without locale', async (t) => {
     { locale: 'it' },
   )
 
-  // await throws(() =>
-    db.update('country', country1, {
-      name: 'Land1',
-      cool: 'english text2',
-    })
-  // )
+  await db.update('country', country1, {
+    name: 'Land1',
+    cool: 'english text2',
+  })
 })

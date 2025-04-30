@@ -85,16 +85,13 @@ pub fn getQueryId() u32 {
 }
 
 pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
-    // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
         typeId,
     );
-
     if (selvaTypeEntry == null) {
         return errors.SelvaError.SELVA_EINTYPE;
     }
-
     return selvaTypeEntry.?;
 }
 
@@ -171,13 +168,6 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn getTextField(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema, lang: selva.selva_lang_code) !?*u8 {
-    var len: usize = 0;
-    var str: [len]u8 = undefined;
-    errors.selva(selva.selva_fields_get_text(ctx.selva, node, fieldSchema, lang, &str, &len));
-    return str;
-}
-
 pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeReference) ?Node {
     if (ref) |r| {
         return r.*.dst;
@@ -232,15 +222,11 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
         @ptrCast(&ref),
         @ptrCast(&dirty),
     )) catch |err| {
-        // REMOVE THIS
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const result = selva.selva_fields_get_reference(ctx.db.selva, src, fieldSchema);
             if (result == null) {
                 return err;
             }
-
-            std.debug.print("HERE?????? \n", .{});
-            // does it get here ever?
             return result;
         } else {
             return err;
@@ -299,7 +285,6 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, value: Node, target: Node, fie
     } else {
         // here we want to be able to pass a node pointer for the prev node
         // relevant when updating
-
         const efc = selva.selva_get_edge_field_constraint(fieldSchema);
         const dstType = efc.*.dst_node_type;
         modifyCtx.markDirtyRange(ctx, dstType, getNodeId(value));
@@ -508,17 +493,15 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
 }
 
 pub const TextIterator = struct {
-    value: []const [16]u8,
+    value: []const [selva.SELVA_STRING_STRUCT_SIZE]u8,
     index: usize = 0,
     code: types.LangCode,
     fn _next(self: *TextIterator) ?[]u8 {
         if (self.index == self.value.len) {
             return null;
         }
-        const tl = self.value[self.index];
-        const ss: *const selva.selva_string = @ptrCast(&tl);
         var len: usize = undefined;
-        const str: [*]const u8 = selva.selva_string_to_buf(ss, &len);
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&self.value[self.index]), &len);
         const s = @as([*]u8, @constCast(str));
         self.index += 1;
         return s[0..len];
@@ -560,12 +543,14 @@ pub inline fn getText(
 ) []u8 {
     const data = getField(typeEntry, id, node, fieldSchema, fieldType);
     var iter = textIterator(data, langCode);
-    var found = false;
     while (iter.next()) |s| {
-        found = true;
         return s;
     }
     return @as([*]u8, undefined)[0..0];
+    //var len: usize = 0;
+    //var str: [*c]const u8 = undefined;
+    //errors.selva(selva.selva_fields_get_text(node, fieldSchema, @intFromEnum(langCode), &str, &len)) catch return @as([*]u8, undefined)[0..0];
+    //return @constCast(str[0..len]);
 }
 
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {

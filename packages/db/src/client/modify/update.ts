@@ -93,9 +93,7 @@ export const update = (
   const ctx = db.modifyCtx
   const pos = ctx.len
   const res = new ModifyState(def.id, id, db, opts, true)
-
   const err = appendUpdate(ctx, def, obj, res, opts?.overwrite)
-
   if (err) {
     ctx.prefix0 = -1 // force a new cursor
     ctx.len = pos
@@ -108,9 +106,11 @@ export const update = (
       return update(db, type, id, obj, opts)
     }
 
-    // res.error = err
+    res.error = err
     throw err
   }
+
+  ctx.markNodeDirty(def, id)
 
   if (!db.isDraining) {
     startDrain(db)

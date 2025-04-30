@@ -523,9 +523,7 @@ await test('sort - from start (1M items)', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('user').include('name').sort('age').range(0, 2).get()
-    ).toObject(),
+    await db.query('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -533,9 +531,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').include('name').sort('age').range(0, 2).get()
-    ).toObject(),
+    await db.query('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -543,15 +539,22 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    (
-      await db.query('user').include('name').sort('name').range(0, 2).get()
-    ).toObject(),
+    await db
+      .query('user')
+      .include('name')
+      .sort('name')
+      .range(0, 2)
+      .get()
+      .inspect(2),
     [
       {
         id: 3,
         name: 'mr 0',
       },
-      { id: 100003, name: 'mr 100000' },
+      {
+        id: 4,
+        name: 'mr 1',
+      },
     ],
   )
 
@@ -578,8 +581,8 @@ await test('sort - from start (1M items)', async (t) => {
         name: 'mr 0',
       },
       {
-        id: 100003,
-        name: 'mr 100000',
+        id: 4,
+        name: 'mr 1',
       },
     ],
   )

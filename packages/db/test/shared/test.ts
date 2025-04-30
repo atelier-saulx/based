@@ -66,15 +66,13 @@ const test = async (
 
       const [checksums, a] = await make(db)
 
-      let d = Date.now()
-
+      let d = performance.now()
       await db.save()
+      console.log(picocolors.gray(`saved db ${performance.now() - d} ms`))
 
       const oldCsmt = db.server.merkleTree
 
       await db.stop()
-
-      console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
 
       const newDb = new BasedDb({
         path: t.tmp,
@@ -85,6 +83,7 @@ const test = async (
           await newDb.destroy()
         } catch (err) {}
       })
+
       d = Date.now()
       await newDb.start()
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))

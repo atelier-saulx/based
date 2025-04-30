@@ -94,7 +94,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.DELETE_TEXT_FIELD => {
                 const lang: types.LangCode = @enumFromInt(operation[0]);
-
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
@@ -171,7 +170,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     db.expire(&ctx);
 
-    // Pass back newly discovered dirty blocks
     const newDirtyRanges = ctx.dirtyRanges.values();
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);

@@ -121,7 +121,7 @@ export class DbServer {
   processingQueries = 0
   modifyQueue: Uint8Array[] = []
   queryQueue: Map<Function, Uint8Array> = new Map()
-  stopped: boolean
+  stopped: boolean // = true does not work
   onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
@@ -174,6 +174,7 @@ export class DbServer {
   }
 
   start(opts?: { clean?: boolean; hosted?: boolean }) {
+    this.stopped = false
     return start(this, opts)
   }
 
@@ -539,6 +540,11 @@ export class DbServer {
   }
 
   #modify(buf: Uint8Array) {
+    if (this.stopped) {
+      console.error('Db is stopped - trying to modify')
+      return
+    }
+
     const end = buf.length - 4
     const dataLen = readUint32LE(buf, end)
     let typesSize = readUint16LE(buf, dataLen)
@@ -602,6 +608,11 @@ export class DbServer {
     buf: Uint8Array,
     fromQueue: boolean = false,
   ): Promise<Uint8Array> {
+    if (this.stopped) {
+      console.error('Db is stopped - trying to query', buf.byteLength)
+      return Promise.resolve(new Uint8Array(8))
+    }
+
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
@@ -696,7 +707,7 @@ export class DbServer {
       await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
-      await setTimeout(20)
+      await setTimeout(100)
     } catch (e) {
       this.stopped = false
       throw e

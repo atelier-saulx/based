@@ -68,19 +68,33 @@ export const compress = (str: string): Uint8Array => {
 }
 
 export const decompress = (val: Uint8Array): string => {
-  return read(val, 0, val.length)
+  return read(val, 0, val.length, false)
 }
 
-export const read = (val: Uint8Array, offset: number, len: number): string => {
+export const read = (
+  val: Uint8Array,
+  offset: number,
+  len: number,
+  stripCrc32: boolean,
+): string => {
   const type = val[offset + 1]
   if (type == COMPRESSED) {
     const origSize = readUint32(val, offset + 2)
     const newBuffer = getTmpBuffer(origSize)
     // Browser fallback required for this
-    native.decompress(val, newBuffer, offset + 6, len - 6)
+    native.decompress(
+      val,
+      newBuffer,
+      offset + 6,
+      stripCrc32 ? len - 2 : len - 6,
+    )
     return DECODER.decode(newBuffer)
   } else if (type == NOT_COMPRESSED) {
-    return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
+    if (stripCrc32) {
+      return DECODER.decode(val.subarray(offset + 2, len + offset))
+    } else {
+      return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
+    }
   }
   return ''
 }

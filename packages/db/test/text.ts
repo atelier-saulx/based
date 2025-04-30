@@ -446,7 +446,7 @@ await test('search', async (t) => {
     .get()
 
   deepEqual(
-    result.toObject(),
+    result,
     [
       {
         id: 2,
@@ -545,7 +545,7 @@ await test('sort', async (t) => {
     },
   })
 
-  await db.query('dialog').locale('fi').sort('fun', 'desc').get().toObject()
+  await db.query('dialog').locale('fi').sort('fun', 'desc').get()
 
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
@@ -575,8 +575,7 @@ await test('sort', async (t) => {
       .include('fun')
       .locale('fi')
       .sort('fun', 'desc')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 3,
@@ -599,15 +598,11 @@ await test('sort', async (t) => {
         fun: '',
       },
     ],
+    'Sort 1',
   )
 
   deepEqual(
-    await db
-      .query('dialog')
-      .include('fun')
-      .sort('fun.fi', 'desc')
-      .get()
-      .toObject(),
+    await db.query('dialog').include('fun').sort('fun.fi', 'desc').get(),
     [
       { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
       { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
@@ -623,8 +618,7 @@ await test('sort', async (t) => {
       .locale('en')
       .include('fun')
       .sort('fun', 'desc')
-      .get()
-      .toObject(),
+      .get(),
     [
       { id: 1, fun: '3 en' },
       { id: 2, fun: '2 en' },
@@ -644,8 +638,7 @@ await test('sort', async (t) => {
       .locale('fi')
       .include('fun')
       .sort('fun', 'desc')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 3,
@@ -671,7 +664,6 @@ await test('sort', async (t) => {
   )
 
   await db.delete('dialog', id5)
-  // await db.drain()
 
   deepEqual(
     await db
@@ -679,8 +671,7 @@ await test('sort', async (t) => {
       .locale('fi')
       .include('fun')
       .sort('fun', 'desc')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 3,
@@ -701,20 +692,12 @@ await test('sort', async (t) => {
     ],
   )
 
-  deepEqual(
-    await db
-      .query('dialog')
-      .locale('fi')
-      .sort('snurf', 'desc')
-      .get()
-      .toObject(),
-    [
-      { id: 3, fun: '3', snurf: '3' },
-      { id: 2, fun: '2', snurf: '2' },
-      { id: 1, fun: '1', snurf: '1' },
-      { id: 4, snurf: '', fun: '' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
+    { id: 3, fun: '3', snurf: '3' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 1, fun: '1', snurf: '1' },
+    { id: 4, snurf: '', fun: '' },
+  ])
 
   db.update('dialog', id1, {
     fun: null,
@@ -728,30 +711,19 @@ await test('sort', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    await db
-      .query('dialog')
-      .locale('fi')
-      .sort('snurf', 'desc')
-      .get()
-      .toObject(),
-    [
-      { id: 3, fun: '3', snurf: '3' },
-      { id: 2, fun: '2', snurf: '2' },
-      { id: 1, fun: '', snurf: '' },
-      { id: 4, snurf: '', fun: '' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
+    { id: 3, fun: '3', snurf: '3' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 1, fun: '', snurf: '' },
+    { id: 4, snurf: '', fun: '' },
+  ])
 
-  deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
-    [
-      { id: 4, snurf: '', fun: '' },
-      { id: 1, fun: '', snurf: '' },
-      { id: 2, fun: '2', snurf: '2' },
-      { id: 3, fun: '3', snurf: '3' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 1, fun: '', snurf: '' },
+    { id: 2, fun: '2', snurf: '2' },
+    { id: 3, fun: '3', snurf: '3' },
+  ])
 
   db.update('dialog', id3, {
     fun: null,
@@ -759,15 +731,12 @@ await test('sort', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
-    [
-      { id: 4, snurf: '', fun: '' },
-      { id: 3, snurf: '3', fun: '' },
-      { id: 1, snurf: '', fun: '' },
-      { id: 2, fun: '2', snurf: '2' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
 
   db.update(
     'dialog',
@@ -779,15 +748,12 @@ await test('sort', async (t) => {
   )
   await db.drain()
 
-  deepEqual(
-    await db.query('dialog').locale('fi').sort('fun').get().toObject(),
-    [
-      { id: 4, snurf: '', fun: '' },
-      { id: 1, snurf: '', fun: '' },
-      { id: 3, snurf: '3', fun: '0' },
-      { id: 2, fun: '2', snurf: '2' },
-    ],
-  )
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
+    { id: 4, snurf: '', fun: '' },
+    { id: 1, snurf: '', fun: '' },
+    { id: 3, snurf: '3', fun: '0' },
+    { id: 2, fun: '2', snurf: '2' },
+  ])
 
   db.update(
     'dialog',
@@ -799,12 +765,16 @@ await test('sort', async (t) => {
   )
   await db.drain()
 
-  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
-    { id: 4, snurf: '', fun: '' },
-    { id: 3, snurf: '3', fun: '' },
-    { id: 1, snurf: '', fun: '' },
-    { id: 2, fun: '2', snurf: '2' },
-  ])
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get(),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'After removal of a whole field',
+  )
 
   db.update('dialog', id3, {
     fun: {
@@ -813,12 +783,23 @@ await test('sort', async (t) => {
   })
   await db.drain()
 
-  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
-    { id: 4, snurf: '', fun: '' },
-    { id: 1, snurf: '', fun: '' },
-    { id: 3, snurf: '3', fun: '0' },
-    { id: 2, fun: '2', snurf: '2' },
-  ])
+  deepEqual(
+    await db.query('dialog').locale('fi').sort('fun').get(),
+    [
+      { id: 4, snurf: '', fun: '' },
+      { id: 1, snurf: '', fun: '' },
+      { id: 3, snurf: '3', fun: '0' },
+      { id: 2, fun: '2', snurf: '2' },
+    ],
+    'Fun dialog',
+  )
+
+  db.update('dialog', id3, {
+    fun: {
+      fi: 'a',
+    },
+  })
+  await db.drain()
 
   db.update('dialog', id3, {
     fun: {
@@ -910,7 +891,7 @@ await test('correct return from obj', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user', user1).get().toObject(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     dict: { nice: { en: 'cool guy', it: '' } },
     name: { en: '', it: '' },
@@ -957,5 +938,50 @@ await test('clear field', async (t) => {
   deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: '', it: 'coolnameIT' },
+  })
+})
+
+await test('text and compression', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        article: 'text',
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: { en: italy, it: 'cool' },
+  })
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: italy, it: 'cool' },
+  })
+
+  await db.query('user', user1).get().inspect()
+
+  await db.update(
+    'user',
+    user1,
+    {
+      article: '',
+    },
+    { locale: 'en' },
+  )
+
+  deepEqual(await db.query('user', user1).get(), {
+    id: 1,
+    article: { en: '', it: 'cool' },
   })
 })

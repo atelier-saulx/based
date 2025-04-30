@@ -30,9 +30,6 @@ export const setCursor = (
     ctx.field = -1
     ctx.id = -1
     ctx.lastMain = -1
-    if (modifyOp === CREATE) {
-      ctx.markTypeDirty(schema)
-    }
   }
 
   if (!ignoreField && ctx.field !== field) {
@@ -43,7 +40,6 @@ export const setCursor = (
   }
 
   if (ctx.id !== id) {
-    ctx.markNodeDirty(schema, id)
     ctx.id = id
     ctx.lastMain = -1
     ctx.buf[ctx.len++] =
