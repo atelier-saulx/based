@@ -66,9 +66,9 @@ const test = async (
 
       const [checksums, a] = await make(db)
 
-      let d = Date.now()
+      let d = performance.now()
       await db.save()
-      console.log(picocolors.gray(`saved db ${Date.now() - d} ms`))
+      console.log(picocolors.gray(`saved db ${performance.now() - d} ms`))
 
       const oldCsmt = db.server.merkleTree
 
