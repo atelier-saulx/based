@@ -211,7 +211,6 @@ await test('schema with many uint8 fields', async (t) => {
 
     jobTimer = setTimeout(
       () => {
-        console.log('JOB TIME!')
         queueJob()
       },
       Math.max(0, timeUint - diff),
