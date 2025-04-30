@@ -286,7 +286,7 @@ await test('schema with many uint8 fields', async (t) => {
       })
     }
 
-    const timer = { t: null }
+    const timer = { sub: null, create: null }
 
     const getStuff = async () => {
       const realIds = [...ids.keys()]
@@ -315,7 +315,7 @@ await test('schema with many uint8 fields', async (t) => {
           }
         }
       }
-      timer.t = setTimeout(getStuff, timeUint * 0.5)
+      timer.sub = setTimeout(getStuff, timeUint * 0.5)
     }
     getStuff()
 
@@ -344,7 +344,7 @@ await test('schema with many uint8 fields', async (t) => {
       }
       i++
       if (i < makePaymentsFor) {
-        setTimeout(makePayments, timeUint)
+        timer.create = setTimeout(makePayments, timeUint)
       }
     }
 
@@ -370,7 +370,8 @@ await test('schema with many uint8 fields', async (t) => {
   await bla()
   clearTimeout(jobTimer)
   for (const t of x) {
-    clearTimeout(t.t)
+    clearTimeout(t.sub)
+    clearTimeout(t.create)
   }
 
   await db.query('vote').range(0, 1e3).get().inspect()
