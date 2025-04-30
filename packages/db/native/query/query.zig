@@ -14,12 +14,15 @@ const types = @import("../types.zig");
 const QueryType = types.QueryType;
 const QuerySort = @import("./types/sort.zig");
 const QueryDefault = @import("./types/default.zig");
-const AggDefault = @import("./types/aggregates.zig");
 const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
 const QueryAlias = @import("./types/alias.zig");
 
-const read = @import("../utils.zig").read;
+const createAggResultBuffer = @import("./aggregates/result.zig").createResultsBuffer;
+const AggDefault = @import("./types/aggregates.zig");
+
+const utils = @import("../utils.zig");
+const read = utils.read;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
@@ -177,14 +180,16 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const include = q[8 + filterSize + valueSize .. q.len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
     } else if (queryType == QueryType.aggregates) {
-        // const offset = read(u32, q, 3); // not passing to default
+        // const offset = read(u32, q, 3); // MV: ignored / excluded from default
         const limit = read(u32, q, 7);
         const filterSize = read(u16, q, 11);
         const filterBuf = q[13 .. 13 + filterSize];
         const aggFn: types.AggFn = @enumFromInt(read(u8, q, 13 + filterSize));
-        const aggField = read(u16, q, 14 + filterSize);
-        const include = q[14 + filterSize .. q.len];
+        const aggField = read(u16, q, 14 + filterSize); // MV: make it microbuffer?
+        const include = q[16 + filterSize .. q.len];
+
         try AggDefault.default(&ctx, limit, typeId, filterBuf, include, aggFn, aggField);
+        return createAggResultBuffer(&ctx, env);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
