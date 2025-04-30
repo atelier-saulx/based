@@ -4,6 +4,7 @@ import test from './shared/test.js'
 import { wait } from '@saulx/utils'
 import { SchemaProp } from '@based/schema'
 import { allCountryCodes } from './shared/examples.js'
+import { clearTimeout } from 'timers'
 
 await test('schema with many uint8 fields', async (t) => {
   const db = new BasedDb({
@@ -160,6 +161,7 @@ await test('schema with many uint8 fields', async (t) => {
           t.include(['status'])
         })
         .get()
+      console.log('go query1 done')
 
       const r = rdyForConfirmationToken.toObject().payments
       for (const payment of r) {
@@ -181,6 +183,9 @@ await test('schema with many uint8 fields', async (t) => {
           t.include(['status'])
         })
         .get()
+
+      console.log('go query done')
+
       const r = rdyForPaymentIntent.toObject().payments
       for (const payment of r) {
         db.update('payment', payment.id, {
@@ -287,6 +292,8 @@ await test('schema with many uint8 fields', async (t) => {
       })
     }
 
+    const timer = { t: null }
+
     const getStuff = async () => {
       const realIds = [...ids.keys()]
       const myThings = await db
@@ -314,7 +321,7 @@ await test('schema with many uint8 fields', async (t) => {
           }
         }
       }
-      setTimeout(getStuff, timeUint * 0.5)
+      timer.t = setTimeout(getStuff, timeUint * 0.5)
     }
     getStuff()
 
@@ -348,10 +355,13 @@ await test('schema with many uint8 fields', async (t) => {
     }
 
     makePayments()
+
+    return timer
   }
 
+  const x = []
   for (let i = 0; i < maxHubs; i++) {
-    startHub(i)
+    x.push(startHub(i))
   }
 
   const bla = async () => {
@@ -365,6 +375,9 @@ await test('schema with many uint8 fields', async (t) => {
 
   await bla()
   clearTimeout(jobTimer)
+  for (const t of x) {
+    clearTimeout(t.t)
+  }
 
   await db.query('vote').range(0, 1e3).get().inspect()
 
