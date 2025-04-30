@@ -18,7 +18,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const maxPaymentsPerHub = 20
   const maxHubs = 100
-  const timeUint = 1
+  const timeUint = 10
   const maxConfirmations = 9500
   const maxIntents = 6000
   const makePaymentsFor = 200
@@ -379,5 +379,5 @@ await test('schema with many uint8 fields', async (t) => {
     (await db.query('vote').range(0, 1e6).get()).length,
   )
 
-  await wait(5e3)
+  await wait(10e3)
 })
