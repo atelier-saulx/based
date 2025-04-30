@@ -1,11 +1,11 @@
 import { createSortBuffer } from './sort.js'
-import { AggFlag, QueryDef, QueryDefType, QueryType } from './types.js'
+import { QueryDef, QueryDefType, QueryType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
-import { createAggFlagBuffer } from './aggregates/aggregation.js'
+import { aggregateToBuffer } from './aggregates/aggregation.js'
 import { buffer } from 'node:stream/consumers'
 
 const byteSize = (arr: Uint8Array[]) => {
@@ -45,14 +45,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   // move down and will handle size after store the size Var
   // only for references | edges
 
-  const aggregation = createAggFlagBuffer(
-    def.aggregation.type || AggFlag.NONE,
-    0,
-  )
+  if (def.aggregate) {
+    const aggregateSize = def.aggregate.size || 0
 
-  if (def.aggregation.type !== AggFlag.NONE) {
+    if (aggregateSize === 0) {
+      throw new Error('Wrong aggregate size (0)')
+    }
     const filterSize = def.filter.size || 0
-    const buf = new Uint8Array(16 + filterSize)
+    const buf = new Uint8Array(16 + filterSize + aggregateSize)
 
     buf[0] = QueryType.aggregates
     buf[1] = def.schema.idUint8[0]
@@ -71,13 +71,21 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     if (filterSize) {
       buf.set(filterToBuffer(def.filter), 13)
     }
-    buf[13 + filterSize] = aggregation[0]
-    buf[14 + filterSize] = aggregation[1]
-    buf[15 + filterSize] = aggregation[2] // just one byte
+
+    const aggregateBuffer = aggregateToBuffer(def.aggregate)
+
+    buf[14 + filterSize] = aggregateSize
+    buf[15 + filterSize] = aggregateSize >>> 8
+
+    buf.set(aggregateBuffer, 16 + filterSize)
 
     result.push(buf)
-    result.push(...include)
+
+    // ignore this for now...
+    // result.push(...include)
     // console.log('toBuffer > result: ', result)
+
+    // later this has to be a branch
     return result
   }
 

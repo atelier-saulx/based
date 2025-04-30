@@ -82,10 +82,27 @@ export type QueryDefSort = {
   lang: LangCode
 }
 
+export const enum AggregateType {
+  SUM = 1,
+}
+
+export type Aggregation = {
+  type: AggregateType
+  propDef: PropDef // PropDefEdge |
+  // add result field
+}
+
+export type QueryDefAggregation = {
+  size: number
+  // only field 0 to start
+  aggregates: Map<number, Aggregation[]>
+}
+
 export type QueryDefShared = {
   errors: QueryError[]
   lang: LangCode
   filter: QueryDefFilter
+  aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch
   sort: null | QueryDefSort
   skipValidation: boolean
@@ -108,10 +125,6 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDef
-  aggregation: {
-    type: AggFlag
-    field: number // MV: make this similar to filter for multiple aggs
-  }
 }
 
 export type QueryDefEdges = {
@@ -157,20 +170,3 @@ export const READ_ID = 255
 export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
-
-export const enum AggFlag {
-  NONE = 0,
-  AVG = 1,
-  CARDINALITY = 2,
-  CONCAT = 3, // string aggregation, delimiter should be an argument
-  COUNT = 4,
-  MAX = 5,
-  MIN = 6,
-  MODE = 7, // ordered-set
-  PERCENTILE = 8, // continuous or discrete should be optional parameters, default = discrete
-  RANK = 9, // hypothetical-set, dense should be optional parameter
-  STDDEV = 10, // population or sample should be optional parameters, default = sample
-  SUM = 11,
-  VARIANCE = 12,
-  TEMP = 255,
-}

@@ -1,10 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test.skip('aggregate', async (t) => {
+await test('aggregate', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
-    maxModifySize: 100,
+    maxModifySize: 1e6,
   })
 
   await db.start({ clean: true })
@@ -14,34 +14,69 @@ await test.skip('aggregate', async (t) => {
     types: {
       vote: {
         props: {
-          country: 'string',
-          ddi1: 'uint32',
-          ddi2: 'uint32',
-          ddi3: 'uint32',
-          ddi4: 'uint32',
-          ddi5: 'uint32',
-          ddi6: 'uint32',
-          ddi7: 'uint32',
-          ddi8: 'uint32',
-          ddi9: 'uint32',
-          ddi10: 'uint32',
-          ddi11: 'uint32',
-          ddi12: 'uint32',
-          ddi13: 'uint32',
-          ddi14: 'uint32',
-          ddi15: 'uint32',
-          ddi16: 'uint32',
-          ddi17: 'uint32',
-          ddi18: 'uint32',
-          ddi19: 'uint32',
-          ddi20: 'uint32',
+          // country: 'string',
+          AL: 'uint8',
+          AM: 'uint8',
+          AT: 'uint8',
+          AU: 'uint8',
+          AZ: 'uint8',
+          BE: 'uint8',
+          CH: 'uint8',
+          CY: 'uint8',
+          CZ: 'uint8',
+          DE: 'uint8',
+          DK: 'uint8',
+          EE: 'uint8',
+          ES: 'uint8',
+          FI: 'uint8',
+          FR: 'uint8',
+          GB: 'uint8',
+          GE: 'uint8',
+          GR: 'uint8',
+          HR: 'uint8',
+          IE: 'uint8',
+          IL: 'uint8',
+          IS: 'uint8',
+          IT: 'uint8',
+          LT: 'uint8',
+          LU: 'uint8',
+          LV: 'uint8',
+          MD: 'uint8',
+          MT: 'uint8',
+          NL: 'uint8',
+          NO: 'uint8',
+          PL: 'uint8',
+          PT: 'uint8',
+          RS: 'uint8',
+          SE: 'uint8',
+          SI: 'uint8',
+          SM: 'uint8',
+          UA: 'uint8',
         },
       },
     },
   })
 
-  // db.query('vote')
-  //   .group('country')
-  //   .sum('ddi1', 'ddi2', 'ddi3', 'ddi4')
-  //   .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
+  const countries = Object.keys(db.client.schema.types.vote.props)
+
+  console.log(db.client.schema.types.vote.props)
+
+  for (let i = 0; i < 1e6; i++) {
+    const x = {}
+    for (const key of countries) {
+      x[key] = 1
+    }
+    db.create('vote', x)
+  }
+
+  console.log(await db.drain())
+
+  // step 1 make this work
+  // group('country')
+  ;(await db.query('vote').sum(countries).get()).debug()
+
+  console.log((await db.query('vote').sum(countries).get()).toObject())
+  // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
+
+  console.log((await db.query('vote').sum(countries).get()).execTime, 'ms')
 })

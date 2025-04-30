@@ -24,6 +24,11 @@ pub inline fn writeInt(comptime T: type, buffer: []u8, offset: usize, value: usi
     target.* = @bitCast(v);
 }
 
+pub inline fn writeIntExact(comptime T: type, buffer: []u8, offset: usize, value: T) void {
+    const target = buffer[offset..][0..@sizeOf(T)];
+    target.* = @bitCast(value);
+}
+
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
     const size = if (T == f32 or T == u32 or T == i32) 4 else if (T == f64 or T == u64 or T == i64) 8 else if (T == u16 or T == i16) 2;
     const x: []T = @as([*]T, @alignCast(@ptrCast(value.ptr)))[0..@divFloor(value.len, size)];

@@ -36,7 +36,7 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
-  AggFlag,
+  // AggFlag,
 } from '../types.js'
 
 export type Item = {
@@ -417,6 +417,10 @@ export const resultToObject = (
   end: number,
   offset: number = 0,
 ) => {
+  if (q.aggregate) {
+    return readUint32(result, 0)
+  }
+
   const len = readUint32(result, offset)
 
   if (len === 0) {
@@ -427,37 +431,22 @@ export const resultToObject = (
   }
 
   let items: AggItem | [Item] = []
-  if (q.aggregation.type == AggFlag.NONE) {
-    let i = 5 + offset
+  let i = 5 + offset
 
-    while (i < end) {
-      const id = readUint32(result, i)
+  while (i < end) {
+    const id = readUint32(result, i)
+    i += 4
+    let item: Item = {
+      id,
+    }
+
+    if (q.search) {
+      item.$searchScore = readFloatLE(result, i)
       i += 4
-      let item: Item = {
-        id,
-      }
-
-      if (q.search) {
-        item.$searchScore = readFloatLE(result, i)
-        i += 4
-      }
-      const l = readAllFields(q, result, i, end, item, id)
-      i += l
-      items.push(item)
     }
-  } else {
-    const aggVal = readUint32(result, 0) // MV: dont need len in result buffer. count could be always 4 or agg could be always double
-    let item: AggItem = {}
-
-    switch (q.aggregation.type) {
-      case AggFlag.COUNT:
-        item = { count: aggVal }
-        break
-      case AggFlag.SUM:
-        item = { sum: aggVal }
-        break
-    }
-    items = item
+    const l = readAllFields(q, result, i, end, item, id)
+    i += l
+    items.push(item)
   }
 
   if ('id' in q.target || 'alias' in q.target) {

@@ -12,7 +12,6 @@ import {
   isAlias,
   includeField,
   includeFields,
-  count,
   sum,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
@@ -143,14 +142,17 @@ export class QueryBranch<T> {
     return this
   }
 
-  count(): T {
-    count(this.def)
-    // @ts-ignore
-    return this
-  }
+  // count(): T {
+  //   count(this.def)
+  //   // @ts-ignore
+  //   return this
+  // }
 
-  sum(field: string): T {
-    sum(this.def, field)
+  //   | BranchInclude
+
+  //  | string[]
+  sum(...fields: (string | string[])[]): T {
+    sum(this.def, fields)
     // @ts-ignore
     return this
   }
