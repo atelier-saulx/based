@@ -127,7 +127,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
         }
 
-        const valueLen = value.len;
+        var valueLen = value.len;
 
         if (valueLen == 0) {
             if (prop == t.Prop.TEXT) {
@@ -159,10 +159,17 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 try ctx.results.append(result);
             }
         } else {
+            if (prop == t.Prop.STRING) {
+                // strip crc32
+                valueLen = valueLen - 4;
+                value = value[0..valueLen];
+            }
+
             if (isEdge) {
                 // double check if this ok
                 size += 1;
             }
+
             if (field == t.MAIN_PROP) {
                 main = value;
                 if (includeMain) |incMain| {
@@ -175,6 +182,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             } else {
                 size += (valueLen + 5);
             }
+
             var result = addResult(field, value, includeMain, edgeType);
             if (!idIsSet) {
                 size += 5;

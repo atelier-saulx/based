@@ -450,7 +450,7 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
          */
         if (selva_sallocx(refs->refs - refs->offset, 0) / sizeof(refs->refs[0]) >= refs->nr_refs + 131072) {
             remove_refs_offset(refs);
-            refs->refs = selva_realloc(refs->refs, refs->nr_refs);
+            refs->refs = selva_realloc(refs->refs, refs->nr_refs * sizeof(refs->refs[0]));
         }
     }
     refs->nr_refs--;
@@ -622,7 +622,7 @@ static void remove_weak_reference(struct SelvaFields *fields, const struct Selva
                  */
                 if (selva_sallocx(refs.refs - refs.offset, 0) / sizeof(refs.refs[0]) >= refs.nr_refs + 131072) {
                     remove_weak_refs_offset(&refs);
-                    refs.refs = selva_realloc(refs.refs, refs.nr_refs);
+                    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(refs.refs[0]));
                 }
 
                 memcpy(vp, &refs, sizeof(refs));
@@ -724,7 +724,7 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
      * Then add the new reference.
      */
     refs.nr_refs += nr_dsts;
-    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(*refs.refs));
+    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(refs.refs[0]));
     memcpy(refs.refs + refs.nr_refs - nr_dsts, dsts, nr_dsts * sizeof(*refs.refs));
 
     memcpy(vp, &refs, sizeof(refs));
@@ -840,25 +840,6 @@ struct selva_string *selva_fields_ensure_string2(
     return get_mutable_string(ref->meta, fs, nfo, initial_len);
 }
 
-static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
-{
-    const size_t len = text->len;
-
-    for (size_t i = 0; i < len; i++) {
-        struct selva_string *s = &text->tl[i];
-        const uint8_t *buf;
-        size_t blen;
-
-        buf = selva_string_to_buf(s, &blen);
-        if (blen > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
-            buf[0] == lang) {
-            return s;
-        }
-    }
-
-    return nullptr;
-}
-
 static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
 {
     struct SelvaTextField *text;
@@ -873,6 +854,25 @@ static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nf
 
     selva_free(text->tl);
     memset(text, 0, sizeof(*text));
+}
+
+static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
+{
+    const size_t len = text->len;
+
+    for (size_t i = 0; i < len; i++) {
+        struct selva_string *s = &text->tl[i];
+        const uint8_t *buf;
+        size_t blen;
+
+        buf = selva_string_to_buf(s, &blen);
+        if (blen >= (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+            buf[0] == lang) {
+            return s;
+        }
+    }
+
+    return nullptr;
 }
 
 struct ensure_text_field {
@@ -905,6 +905,19 @@ static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, co
     return res;
 }
 
+static void init_tl(struct selva_string *tl, const char *str, size_t len, uint32_t crc)
+{
+    const enum selva_string_flags flags = (len <= sizeof(tl->emb) - sizeof(crc))
+        ? SELVA_STRING_MUTABLE_FIXED
+        : SELVA_STRING_MUTABLE;
+    int err;
+
+    err = selva_string_init_crc(tl, str, len, crc, flags);
+    if (err) {
+        db_panic("Failed to init a text field");
+    }
+}
+
 int selva_fields_set_text(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
@@ -924,49 +937,27 @@ int selva_fields_set_text(
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
     len -= sizeof(crc);
 
-    if (len == 2) {
-        /*
-         * Delete tl.
-         */
-        struct SelvaFieldInfo *nfo;
-
-        nfo = &node->fields.fields_map[fs->field];
-        if (nfo->in_use) {
-            struct selva_string *s = find_text_by_lang(nfo2p(&node->fields, nfo), lang);
-            if (s) {
-                /* Don't trust the caller's CRC in this case. */
-#if 0
-                (void)selva_string_replace_crc(s, str, len, crc);
-#endif
-                (void)selva_string_replace(s, str, len);
-            }
+    tf = ensure_text_field(&node->fields, fs, lang);
+    if (unlikely(!tf.text)) {
+        db_panic("Text missing");
+    }
+    if (tf.tl) {
+        if (tf.tl->flags & SELVA_STRING_MUTABLE_FIXED) {
+            selva_string_free(tf.tl);
+            init_tl(tf.tl, str, len, crc);
+        } else {
+            (void)selva_string_replace_crc(tf.tl, str, len, crc);
         }
     } else {
-        /*
-         * Set tl.
-         */
-        tf = ensure_text_field(&node->fields, fs, lang);
-        if (unlikely(!tf.text)) {
-            db_panic("Text missing");
-        } else if (!tf.tl) {
-            int err;
-
-            tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
-            tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
-            err = selva_string_init(tf.tl, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-            if (err) {
-                db_panic("Failed to init a text field");
-            }
-        }
-
-        (void)selva_string_replace_crc(tf.tl, str, len, crc);
+        tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
+        tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
+        init_tl(tf.tl, str, len, crc);
     }
 
     return 0;
 }
 
 int selva_fields_get_text(
-        struct SelvaDb *,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,
@@ -1213,7 +1204,7 @@ size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFiel
     if (refs->refs) {
         remove_refs_offset(refs);
     }
-    refs->refs = selva_realloc(refs->refs, nr_refs_min * sizeof(*refs->refs));
+    refs->refs = selva_realloc(refs->refs, nr_refs_min * sizeof(refs->refs[0]));
     refs->index = selva_realloc(refs->index, nr_refs_min * sizeof(refs->index[0]));
 
 out:

@@ -4,6 +4,7 @@ import { BasedQueryResponse } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
+import { italy } from './shared/examples.js'
 
 const start = async (t, clientsN = 2) => {
   const hooks: DbClientHooks = {
@@ -36,12 +37,20 @@ const start = async (t, clientsN = 2) => {
           response.end = res.byteLength
         }
         const checksum = response.checksum
+
         if (lastLen != res.byteLength || checksum != prevChecksum) {
           onData(response)
           lastLen = res.byteLength
           prevChecksum = checksum
+        } else {
+          // console.log(
+          //   response.checksum,
+          //   prevChecksum,
+          //   response.result.subarray(-4),
+          // )
+          // response.debug()
         }
-        setTimeout(get, 10)
+        timer = setTimeout(get, 100)
       }
       get()
       return () => {
@@ -76,6 +85,8 @@ await test('subscription', async (t) => {
     types: {
       user: {
         derp: 'uint8',
+        location: 'string',
+        lang: 'string',
       },
     },
   })
@@ -88,15 +99,13 @@ await test('subscription', async (t) => {
 
   const close = clients[1]
     .query('user')
-    .include('*')
+    .include('derp')
     .subscribe((q) => {
       cnt++
     })
 
-  console.log(await clients[1].query('user').get())
-
   let setCnt = 0
-  const interval = setInterval(async () => {
+  let interval = setInterval(async () => {
     await clients[0].update('user', x, {
       derp: { increment: 1 },
     })
@@ -107,11 +116,68 @@ await test('subscription', async (t) => {
     clearInterval(interval)
   })
 
-  await wait(2e3)
+  await wait(500)
+  clearInterval(interval)
+  close()
 
   equal(cnt - 1, setCnt, 'Incoming subs is equal to sets')
 
-  close()
+  await clients[1].create('user', {
+    lang: 'de',
+    location: 'hello',
+  })
+
+  const l = await clients[1].create('user', {
+    lang: 'en',
+    location: 'flap',
+  })
+
+  const close2 = clients[1]
+    .query('user', l)
+    .include('lang')
+    .subscribe((q) => {
+      cnt++
+    })
+
+  const langs = ['aa', 'bb', 'cc']
+
+  setCnt = 0
+  interval = setInterval(async () => {
+    await clients[0].update('user', l, {
+      lang: langs[setCnt % langs.length],
+    })
+    setCnt++
+  }, 200)
+
+  await wait(1000)
+  equal(setCnt > 2, true, 'Incoming subs fired 1 ')
+
   clearInterval(interval)
-  await wait(10)
+  close2()
+
+  setCnt = 0
+  let lastSet = 'flap'
+  interval = setInterval(async () => {
+    lastSet = italy.slice(setCnt, setCnt + 4)
+    await clients[0].update('user', l, {
+      location: lastSet,
+    })
+    setCnt++
+  }, 200)
+
+  const close3 = clients[1]
+    .query('user', l)
+    .include('location')
+    .subscribe((q) => {
+      equal(lastSet, q.node(0).location, 'equals to last set')
+      cnt++
+    })
+
+  await wait(1000)
+  equal(setCnt > 3, true, 'Incoming subs fired 2')
+
+  clearInterval(interval)
+  close3()
+
+  await wait(1000)
 })

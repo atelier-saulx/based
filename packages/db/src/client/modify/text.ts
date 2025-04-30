@@ -1,4 +1,4 @@
-import { langCodesMap, LangCode } from '@based/schema'
+import { LangCode } from '@based/schema'
 import { ModifyCtx } from '../../index.js'
 import {
   ModifyOp,
@@ -51,7 +51,7 @@ export function writeText(
     }
 
     const err = writeString(
-      res.locale,
+      locale,
       value as string,
       ctx,
       def,
@@ -59,6 +59,7 @@ export function writeText(
       res.tmpId,
       modifyOp,
     )
+
     if (modifyOp === CREATE) {
       const index = t.prop * (def.localeSize + 1)
       const langIndex = def.seperateTextSort.localeToIndex.get(locale)

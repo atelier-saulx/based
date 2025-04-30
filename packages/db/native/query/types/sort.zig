@@ -42,6 +42,7 @@ pub fn default(
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     var it: selva.SelvaSortIterator = undefined;
+
     if (desc) {
         selva.selva_sort_foreach_begin_reverse(sI.index, &it);
     } else {

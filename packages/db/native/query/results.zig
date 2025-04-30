@@ -138,6 +138,8 @@ pub fn createResultsBuffer(
         utils.debugPrint("Wrong writing of result buffer i:{d} \n", .{i});
     }
 
+    // std.debug.print("flap {any} {any} \n", .{ data[4 .. data.len - 4], selva.crc32c(4, data.ptr, data.len - 8) });
+
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
     return result;
 }

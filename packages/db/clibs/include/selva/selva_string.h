@@ -75,9 +75,11 @@ struct selva_string {
 };
 static_assert(sizeof(struct selva_string) == SELVA_STRING_STRUCT_SIZE);
 
+/* RFE is + 1 extra? */
 #define SELVA_STRING_STATIC_BUF_SIZE(len) \
     (((len + 1) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *))
 
+/* RFE is + 1 extra? */
 #define SELVA_STRING_STATIC_BUF_SIZE_WCRC(len) \
     (((len + 1 + sizeof(uint32_t)) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *) + sizeof(uint32_t))
 

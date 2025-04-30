@@ -29,6 +29,7 @@ OBJ := \
 	expire.o \
 	fast_linear_search.o \
 	fields.o \
+	fields_empty_text.o \
 	find.o \
 	history.o \
 	ida.o \

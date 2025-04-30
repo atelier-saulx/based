@@ -34,6 +34,8 @@ await test('idOffset', async (t) => {
   const allUsers1 = await db.query('user').get().toObject()
   let id = 0
 
+  console.log(allUsers1.length)
+
   for (const user of allUsers1) {
     id++
     if (user.id !== id) {
