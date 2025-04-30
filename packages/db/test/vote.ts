@@ -21,6 +21,7 @@ await test('schema with many uint8 fields', async (t) => {
   const timeUint = 10
   const maxConfirmations = 95000
   const maxIntents = 60000
+  const makePaymentsFor = 20
 
   const voteCountrySchema: SchemaProp = {
     type: 'object',
@@ -150,8 +151,6 @@ await test('schema with many uint8 fields', async (t) => {
   let allPaymentsDone = false
   const queueJob = async () => {
     const confirmation = async () => {
-      console.log('go query1')
-
       const rdyForConfirmationToken = await db
         .query('round', final)
         .include((select) => {
@@ -161,8 +160,6 @@ await test('schema with many uint8 fields', async (t) => {
           t.include(['status'])
         })
         .get()
-      console.log('go query1 done')
-
       const r = rdyForConfirmationToken.toObject().payments
       for (const payment of r) {
         db.update('payment', payment.id, {
@@ -173,7 +170,6 @@ await test('schema with many uint8 fields', async (t) => {
     }
 
     const paymentIntent = async () => {
-      console.log('go query')
       const rdyForPaymentIntent = await db
         .query('round', final)
         .include((select) => {
@@ -183,8 +179,6 @@ await test('schema with many uint8 fields', async (t) => {
           t.include(['status'])
         })
         .get()
-
-      console.log('go query done')
 
       const r = rdyForPaymentIntent.toObject().payments
       for (const payment of r) {
@@ -349,7 +343,7 @@ await test('schema with many uint8 fields', async (t) => {
         createPayment()
       }
       i++
-      if (i < 20) {
+      if (i < makePaymentsFor) {
         setTimeout(makePayments, timeUint)
       }
     }
