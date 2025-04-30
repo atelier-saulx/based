@@ -84,11 +84,11 @@ await test('branchedCount', async (t) => {
   console.log(
     await db
       .query('user')
-      .include('flap')
-      // .range(0, 1e9)
+      // .include('flap')
+      .range(0, 1)
       // .filter('flap', '>', 20)
-      .count()
-      // .sum('flap')
+      // .count()
+      .sum('flap')
       .get()
       .toObject(),
   )

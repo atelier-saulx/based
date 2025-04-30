@@ -8,7 +8,7 @@ const utils = @import("../../utils.zig");
 const read = utils.read;
 const s = @import("./statistics.zig");
 
-pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, include: []u8, aggregation: AggFn) !usize {
+pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, include: []u8, aggregation: AggFn, aggField: u16) !void {
     var includeIterator: u16 = 0;
 
     while (includeIterator < include.len) {
@@ -28,18 +28,19 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             prop = @enumFromInt(operation[0]);
             includeIterator += 1;
         }
-        utils.debugPrint("types > aggregates.zig > field: {any}\n", .{aggregation});
+
         fieldSchema = try db.getFieldSchema(field, typeEntry);
-        value = db.getField(typeEntry, id, node, fieldSchema, prop);
-        // MV: uggly, just temporary
-        if (aggregation == .sum) {
-            if (value.len >= @sizeOf(u32)) {
-                const val: u32 = read(u32, value, 0);
-                ctx.aggResult = if (ctx.aggResult) |r| r + val else val;
+        const checkField: u16 = @intCast(fieldSchema.field);
+        if (checkField == aggField) {
+            value = db.getField(typeEntry, id, node, fieldSchema, prop);
+            // MV: uggly, no accum engine + u32, just temporary
+            // trust that microbuffer isNumber (filtered in JS)?
+            if (aggregation == .sum) {
+                if (value.len >= @sizeOf(u32)) {
+                    const val: u32 = read(u32, value, 0);
+                    ctx.aggResult = if (ctx.aggResult) |r| r + val else val;
+                }
             }
         }
-        utils.debugPrint("types > aggregates.zig > ctx.aggResult: {any}\n", .{ctx.aggResult});
     }
-    ctx.size = 0;
-    return 9;
 }

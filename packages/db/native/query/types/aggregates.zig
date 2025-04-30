@@ -13,7 +13,7 @@ pub fn default(ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, 
     var first = true;
     var node = db.getFirstNode(typeEntry);
 
-    checkItem: while (ctx.totalResults < limit) { // MV: nstead of limit should stop in fields.len from def
+    checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
         } else {
@@ -26,13 +26,10 @@ pub fn default(ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, 
             continue :checkItem;
         }
         if (aggFn == AggFn.count) {
-            ctx.totalResults += 1;
-        } else if (aggFn == AggFn.sum) {
-            utils.debugPrint("aggregates.zig > field: {d}\n", .{aggField}); // 0 if flap
-            const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, include, aggFn);
-            if (size > 0) {
-                ctx.size += size;
-            }
+            ctx.aggResult = if (ctx.aggResult) |r| r + 1 else 1;
+        } else {
+            try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, include, aggFn, aggField);
         }
     }
+    ctx.size = 0;
 }

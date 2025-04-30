@@ -77,7 +77,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
 
     result.push(buf)
     result.push(...include)
-    console.log('toBuffer.ts > result: ', result)
     return result
   }
 
