@@ -47,6 +47,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .id = db.getQueryId(),
         .size = 0,
         .totalResults = 0,
+        .aggResult = null,
         .allocator = allocator,
     };
 
@@ -181,8 +182,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterSize = read(u16, q, 11);
         const filterBuf = q[13 .. 13 + filterSize];
         const aggFn: types.AggFn = @enumFromInt(read(u8, q, 13 + filterSize));
+        const aggField = read(u16, q, 14 + filterSize);
         const include = q[14 + filterSize .. q.len];
-        try AggDefault.default(&ctx, limit, typeId, filterBuf, include, aggFn);
+        try AggDefault.default(&ctx, limit, typeId, filterBuf, include, aggFn, aggField);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }

@@ -8,6 +8,7 @@ pub const QueryCtx = struct {
     id: u32,
     size: usize,
     totalResults: usize,
+    aggResult: ?u32,
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
 };
