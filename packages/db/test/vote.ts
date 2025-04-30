@@ -14,8 +14,8 @@ await test('schema with many uint8 fields', async (t) => {
     // maxModifySize: 1000 * 1000 * 1000,
   })
   await db.start({ clean: true })
-  // t.after(() => t.backup(db))
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
+  // t.after(() => db.destroy())
 
   const maxPaymentsPerHub = 10000
   const maxHubs = 10
