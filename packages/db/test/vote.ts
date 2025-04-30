@@ -17,11 +17,11 @@ await test('schema with many uint8 fields', async (t) => {
   t.after(() => t.backup(db))
 
   const maxPaymentsPerHub = 200
-  const maxHubs = 10
+  const maxHubs = 100
   const timeUint = 10
   const maxConfirmations = 95000
   const maxIntents = 60000
-  const makePaymentsFor = 20
+  const makePaymentsFor = 200
 
   const voteCountrySchema: SchemaProp = {
     type: 'object',
@@ -374,7 +374,10 @@ await test('schema with many uint8 fields', async (t) => {
     clearTimeout(t.create)
   }
 
-  await db.query('vote').range(0, 1e3).get().inspect()
+  console.log(
+    'handled votes #',
+    (await db.query('vote').range(0, 1e6).get()).length,
+  )
 
   await wait(1e3)
 })
