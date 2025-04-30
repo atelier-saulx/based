@@ -45,6 +45,8 @@ struct EdgeFieldConstraint {
          * Skip saving this field while dumping.
          * If the field is of type SELVA_FIELD_TYPE_REFERENCES it's saved
          * regardless of this flag to preserve the original order of references.
+         * However, the meta is only save from one side, i.e. the side that's
+         * not skipped.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
