@@ -1,3 +1,4 @@
+import { deepEqual } from 'assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { Schema } from '@based/schema'
@@ -26,6 +27,8 @@ await test('branchedCount', async (t) => {
       article: {
         props: {
           name: { type: 'string' },
+          rate: 'uint32',
+          int16: 'uint16',
           contributors: {
             items: {
               ref: 'user',
@@ -69,11 +72,15 @@ await test('branchedCount', async (t) => {
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [mrSnurp, flippie],
+    rate: 4,
+    int16: 2,
   })
 
   const stupidity = db.create('article', {
     name: 'Les lois fondamentales de la stupidité humaine',
     contributors: [cipolla],
+    rate: 5,
+    int16: 3,
   })
 
   // QueryType = 0 (id) and 1 (ids) doesn't make sense for aggs
@@ -81,45 +88,149 @@ await test('branchedCount', async (t) => {
   // await db.query('article').get().inspect()
   // QueryType = 3 (alias) might make sense for aggs
 
-  console.log(
+  // // console.log(
+  // await db
+  //   .query('user')
+  //   .include('flap')
+  //   .range(0, 1)
+  //   // .filter('flap', '>', 20)
+  //   .count()
+  //   // .sum('flap')
+  //   .get()
+  //   .toObject(),
+  //   // )
+
+  deepEqual(
+    await db.query('user').range(0, 1).count().get().toObject(),
+    { count: 5 },
+    'Count > not constrained by range()',
+  )
+
+  deepEqual(
+    await db.query('user').include('flap').range(0, 1).count().get().toObject(),
+    { count: 5 },
+    'Count > include() ignored',
+  )
+
+  deepEqual(
+    await db.query('article').include('**').count().get().toObject(),
+    { count: 2 },
+    'Sum > summing when including **',
+  )
+
+  deepEqual(
     await db
       .query('user')
-      // .include('flap')
+      .include('flap')
       .range(0, 1)
-      // .filter('flap', '>', 20)
-      // .count()
+      .filter('flap', '>', 20)
+      .count()
+      .get()
+      .toObject(),
+    { count: 3 },
+    'Count > filtered',
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors')
+      .count()
+      .sort('rate', 'desc')
+      .get()
+      .toObject(),
+    { count: 2 },
+    'Count > sort() must not affect',
+  )
+  // if pass count({alias: 'users'})
+  // {users: 3}
+
+  deepEqual(
+    await db.query('user').sum('flap').get().toObject(),
+    { sum: 180 },
+    'Sum > include() ignored',
+  )
+
+  deepEqual(
+    await db.query('user').range(0, 1).sum('flap').get().toObject(),
+    { sum: 180 },
+    'sum > not constrained by range()',
+  )
+
+  deepEqual(
+    await db
+      .query('user')
+      .include('flap')
+      .range(0, 1)
+      .filter('flap', '>', 20)
       .sum('flap')
+      .get()
+      .toObject(),
+    { sum: 150 },
+    'Sum > filtered',
+  )
+
+  deepEqual(
+    await db
+      .query('user')
+      .include('flap')
+      .range(0, 1)
+      .filter('flap', '>', 20)
+      .sort('flap', 'desc')
+      .sum('flap')
+      .get()
+      .toObject(),
+    { sum: 150 },
+    'Sum > sort() must not affect',
+  )
+
+  deepEqual(
+    await db.query('article').sum('rate').sort('rate', 'desc').get().toObject(),
+    { sum: 9 },
+    'Sum > aggregating references (without including)',
+  )
+
+  console.log(
+    await db
+      .query('article')
+      // .include('*') // OK
+      // .include('**') // NOT OK
+      // .include('name') // OK
+      // .include('contributors') // OK count, NOT OK in sum
+      // .count()
+      // .sum('rate') // OK
+      .sum('int16') // OK
       .get()
       .toObject(),
   )
 
-  // EXPECTED:
-  // {count: 3}
-  // include in this case has no effect
-  // range should not affect count, but TODO: have to check the if clause
+  deepEqual(
+    await db
+      .query('article')
+      .include('contributors')
+      .sum('rate')
+      .get()
+      .toObject(),
+    { sum: 9 },
+    'Sum > summing when including references',
+  )
 
-  // if pass count({alias: 'users'})
-  // {users: 3}
+  deepEqual(
+    await db.query('article').include('**').sum('rate').get().toObject(),
+    { sum: 9 },
+    'Sum > summing when including **',
+  )
 
   // await db
   //   .query('user')
   //   //lala
-  //   .include('flap')
+  //   // .include('flap')
   //   // .filter('flap', '>', 20)
   //   // .range(0, 1)
-  //   // .sum()
+  //   .count()
+  //   // .sum('flap')
   //   .get()
-  //   .inspect() // NOT OK
-
-  // console.log(
-  //   await db
-  //     .query('article')
-  //     // .include('name') // OK
-  //     // .include('name', 'contributors') // NOT OK
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  // )
+  //   .inspect(), // NOT OK
 
   // console.log(
   //   await db
@@ -136,6 +247,22 @@ await test('branchedCount', async (t) => {
   // )
 
   // Here to experiment in branched queries
+
+  // console.log(
+  //   await db
+  //     .query('article')
+  //     .include(
+  //       'name',
+  //       (q) =>
+  //         q('contributors')
+  //           // don't line break
+  //           .count(),
+  //       // .sort('flap', 'desc'),
+  //     )
+  //     .get()
+  //     .toJSON(),
+  // )
+
   // await db
   //   .query('article')
   //   .include('name', (q) =>

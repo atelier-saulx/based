@@ -33,9 +33,9 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
         const checkField: u16 = @intCast(fieldSchema.field);
         if (checkField == aggField) {
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
-            // MV: uggly, no accum engine + u32, just temporary
-            // trust that microbuffer isNumber (filtered in JS)?
             if (aggregation == .sum) {
+                // MV: bit uggly, no accum engine + u32, just temporary
+                // trust that microbuffer isNumber (filtered in JS)?
                 if (value.len >= @sizeOf(u32)) {
                     const val: u32 = read(u32, value, 0);
                     ctx.aggResult = if (ctx.aggResult) |r| r + val else val;
