@@ -14,6 +14,11 @@ await test('aggregate', async (t) => {
     types: {
       vote: {
         props: {
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
           // country: 'string',
           AL: 'uint8',
           AM: 'uint8',
@@ -57,10 +62,16 @@ await test('aggregate', async (t) => {
     },
   })
 
-  const countries = Object.keys(db.client.schema.types.vote.props)
+  const countries = Object.keys(db.client.schema.types.vote.props).filter(
+    (v) => v != 'flap',
+  )
 
   for (let i = 0; i < 1e6; i++) {
-    const x = {}
+    const x = {
+      flap: {
+        hello: 1,
+      },
+    }
     for (const key of countries) {
       x[key] = 1
     }
@@ -69,10 +80,15 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
-  console.log(await db.query('vote').sum(countries).get().toObject())
+  console.log(
+    await db.query('vote').sum('flap.hello', 'SM', 'SE').get().toObject(),
+  )
+  ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
-  console.log((await db.query('vote').sum(countries).get()).execTime)
-  ;(await db.query('vote').sum('SM', 'UA').get()).debug()
+  // console.log(await db.query('vote').sum(countries).get().toObject())
+
+  // console.log((await db.query('vote').sum(countries).get()).execTime)
+  // ;(await db.query('vote').sum('SM', 'UA').get()).debug()
 
   // step 1 make this work
   // group('country')

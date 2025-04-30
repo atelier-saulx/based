@@ -70,6 +70,7 @@ export const sum = (def: QueryDef, fields: (string | string[])[]) => {
         type: AggregateType.SUM,
         resultPos: def.aggregate.totalResultsPos,
       })
+      // IF FLOAT // NUMBER ETC USE 8!
       // do this better
       def.aggregate.totalResultsPos += 4
       // needs to add an extra field WRITE TO
