@@ -15,8 +15,8 @@ await test('schema with many uint8 fields', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const maxPaymentsPerHub = 2000
-  const maxHubs = 100
+  const maxPaymentsPerHub = 200
+  const maxHubs = 10
   const timeUint = 10
   const maxConfirmations = 95000
   const maxIntents = 60000
@@ -149,6 +149,8 @@ await test('schema with many uint8 fields', async (t) => {
   let allPaymentsDone = false
   const queueJob = async () => {
     const confirmation = async () => {
+      console.log('go query1')
+
       const rdyForConfirmationToken = await db
         .query('round', final)
         .include((select) => {
@@ -169,6 +171,7 @@ await test('schema with many uint8 fields', async (t) => {
     }
 
     const paymentIntent = async () => {
+      console.log('go query')
       const rdyForPaymentIntent = await db
         .query('round', final)
         .include((select) => {

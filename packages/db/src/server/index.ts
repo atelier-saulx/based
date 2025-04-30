@@ -608,6 +608,7 @@ export class DbServer {
     fromQueue: boolean = false,
   ): Promise<Uint8Array> {
     if (this.stopped) {
+      console.log(buf)
       throw new Error('Db is stopped - trying to query')
     }
 
@@ -705,7 +706,7 @@ export class DbServer {
       await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
-      await setTimeout(20)
+      await setTimeout(100)
     } catch (e) {
       this.stopped = false
       throw e
