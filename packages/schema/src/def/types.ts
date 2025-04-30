@@ -55,6 +55,32 @@ export const TYPE_INDEX_MAP = {
   object: OBJECT,
 }
 
+export const enum numberTypes {
+  number = NUMBER,
+  uint16 = UINT16,
+  uint32 = UINT32,
+  int16 = INT16,
+  int32 = INT32,
+  uint8 = UINT8,
+  int8 = INT8,
+  cardinality = CARDINALITY,
+}
+
+const numberTypeValues = [
+  NUMBER,
+  UINT16,
+  UINT32,
+  INT16,
+  INT32,
+  UINT8,
+  INT8,
+  CARDINALITY,
+] as const
+
+export function isNumberType(type: TypeIndex): boolean {
+  return (numberTypeValues as readonly number[]).includes(type)
+}
+
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
