@@ -38,7 +38,10 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     },
     sort: null,
     references: new Map(),
-    aggregation: AggFlag.NONE,
+    aggregation: {
+      type: AggFlag.NONE,
+      field: 0,
+    },
   }
   return q
 }

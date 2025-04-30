@@ -45,12 +45,14 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   // move down and will handle size after store the size Var
   // only for references | edges
 
-  const aggregation = createAggFlagBuffer(def.aggregation || AggFlag.NONE)
+  const aggregation = createAggFlagBuffer(
+    def.aggregation.type || AggFlag.NONE,
+    0,
+  )
 
-  if (def.aggregation !== AggFlag.NONE) {
-    // is aggregate
+  if (def.aggregation.type !== AggFlag.NONE) {
     const filterSize = def.filter.size || 0
-    const buf = new Uint8Array(14 + filterSize)
+    const buf = new Uint8Array(16 + filterSize)
 
     buf[0] = QueryType.aggregates
     buf[1] = def.schema.idUint8[0]
@@ -70,6 +72,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       buf.set(filterToBuffer(def.filter), 13)
     }
     buf[13 + filterSize] = aggregation[0]
+    buf[14 + filterSize] = aggregation[1]
+    buf[15 + filterSize] = aggregation[2]
 
     result.push(buf)
     result.push(...include)

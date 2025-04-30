@@ -108,7 +108,10 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDef
-  aggregation: AggFlag
+  aggregation: {
+    type: AggFlag
+    field: number
+  }
 }
 
 export type QueryDefEdges = {

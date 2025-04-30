@@ -426,7 +426,7 @@ export const resultToObject = (
   }
 
   let items: AggItem | [Item] = []
-  if (q.aggregation == AggFlag.NONE) {
+  if (q.aggregation.type == AggFlag.NONE) {
     let i = 5 + offset
 
     while (i < end) {
@@ -448,7 +448,7 @@ export const resultToObject = (
     const aggVal = readUint32(result, 0) // MV: dont need len in result buffer. count could be always 4 or agg could be always double
     let item: AggItem = {}
 
-    switch (q.aggregation) {
+    switch (q.aggregation.type) {
       case AggFlag.COUNT:
         item = { count: aggVal }
         break
