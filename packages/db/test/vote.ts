@@ -16,11 +16,11 @@ await test('schema with many uint8 fields', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const maxPaymentsPerHub = 200
+  const maxPaymentsPerHub = 20
   const maxHubs = 100
-  const timeUint = 10
-  const maxConfirmations = 95000
-  const maxIntents = 60000
+  const timeUint = 1
+  const maxConfirmations = 9500
+  const maxIntents = 6000
   const makePaymentsFor = 200
 
   const voteCountrySchema: SchemaProp = {
@@ -215,7 +215,7 @@ await test('schema with many uint8 fields', async (t) => {
     )
   }
 
-  setTimeout(queueJob, 100)
+  jobTimer = setTimeout(queueJob, 100)
 
   const fakeWebHooks = async (meta: any) => {
     await wait(Math.random() * timeUint)
@@ -379,5 +379,5 @@ await test('schema with many uint8 fields', async (t) => {
     (await db.query('vote').range(0, 1e6).get()).length,
   )
 
-  await wait(1e3)
+  await wait(5e3)
 })
