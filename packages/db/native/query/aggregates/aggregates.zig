@@ -15,8 +15,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
         const op: types.IncludeOp = @enumFromInt(include[includeIterator]);
         includeIterator += 1;
         const operation = include[includeIterator..];
-        utils.debugPrint("types > aggregates.zig > aggregation: {any}\n", .{aggregation});
-
         const field: u8 = @intFromEnum(op);
         var prop: types.Prop = undefined;
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
@@ -30,14 +28,18 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             prop = @enumFromInt(operation[0]);
             includeIterator += 1;
         }
-
+        utils.debugPrint("types > aggregates.zig > field: {any}\n", .{aggregation});
         fieldSchema = try db.getFieldSchema(field, typeEntry);
         value = db.getField(typeEntry, id, node, fieldSchema, prop);
-        // validateNumber
-        // cast to f64
-        s.acumulate(value);
+        // MV: uggly, just temporary
+        if (aggregation == .sum) {
+            if (value.len >= @sizeOf(u32)) {
+                const val: u32 = read(u32, value, 0);
+                ctx.aggResult = if (ctx.aggResult) |r| r + val else val;
+            }
+        }
+        utils.debugPrint("types > aggregates.zig > ctx.aggResult: {any}\n", .{ctx.aggResult});
     }
-
     ctx.size = 0;
     return 9;
 }

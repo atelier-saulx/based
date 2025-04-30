@@ -149,8 +149,8 @@ export class QueryBranch<T> {
     return this
   }
 
-  sum(): T {
-    sum(this.def)
+  sum(field: string): T {
+    sum(this.def, field)
     // @ts-ignore
     return this
   }
