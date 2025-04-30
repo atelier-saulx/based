@@ -13,7 +13,7 @@ await test('schema with many uint8 fields', async (t) => {
     // maxModifySize: 1000 * 1000 * 1000,
   })
   await db.start({ clean: true })
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   const maxPaymentsPerHub = 2000
   const maxHubs = 100
@@ -108,16 +108,6 @@ await test('schema with many uint8 fields', async (t) => {
           type: 'timestamp',
           on: 'create',
         },
-
-        // envString: { type: 'string', maxBytes: }
-        // meta: {
-        //   props: {
-        //     countries: voteCountrySchema,
-        //     ipGeo: { type: 'string', maxBytes: 2 },
-        //     voteGeo: { type: 'string', maxBytes: 3 },
-        //     // envString: { type: 'string', maxBytes: }
-        //   },
-        // },
       },
       round: {
         votes: {
@@ -251,7 +241,6 @@ await test('schema with many uint8 fields', async (t) => {
   const updatePayment = async (v: any) => {
     if (v.status === 'ReadyForConfirmationToken') {
       await wait(Math.random() * timeUint)
-      // console.log('RECEIVED CONFIRMATION TOKEN WAHTS UP')
 
       db.update('payment', v.id, {
         status: 'RequestedIntent',
@@ -374,7 +363,7 @@ await test('schema with many uint8 fields', async (t) => {
   await bla()
   clearTimeout(jobTimer)
 
-  db.query('vote').range(0, 1e6).get().inspect()
+  await db.query('vote').range(0, 1e3).get().inspect()
 
-  await wait(3e3)
+  await wait(1e3)
 })

@@ -539,6 +539,10 @@ export class DbServer {
   }
 
   #modify(buf: Uint8Array) {
+    if (this.stopped) {
+      console.log('STOPPED')
+    }
+
     const end = buf.length - 4
     const dataLen = readUint32LE(buf, end)
     let typesSize = readUint16LE(buf, dataLen)
@@ -602,6 +606,10 @@ export class DbServer {
     buf: Uint8Array,
     fromQueue: boolean = false,
   ): Promise<Uint8Array> {
+    if (this.stopped) {
+      console.log('STOPPED')
+    }
+
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
