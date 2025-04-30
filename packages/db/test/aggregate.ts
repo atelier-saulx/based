@@ -59,8 +59,6 @@ await test('aggregate', async (t) => {
 
   const countries = Object.keys(db.client.schema.types.vote.props)
 
-  console.log(db.client.schema.types.vote.props)
-
   for (let i = 0; i < 1e6; i++) {
     const x = {}
     for (const key of countries) {
@@ -71,12 +69,17 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
+  console.log(await db.query('vote').sum(countries).get().toObject())
+
+  console.log((await db.query('vote').sum(countries).get()).execTime)
+  ;(await db.query('vote').sum('SM', 'UA').get()).debug()
+
   // step 1 make this work
   // group('country')
-  ;(await db.query('vote').sum(countries).get()).debug()
+  // ;(await db.query('vote').sum(countries).get()).debug()
 
-  console.log((await db.query('vote').sum(countries).get()).toObject())
+  // console.log((await db.query('vote').sum(countries).get()).toObject())
   // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
 
-  console.log((await db.query('vote').sum(countries).get()).execTime, 'ms')
+  // console.log((await db.query('vote').sum(countries).get()).execTime, 'ms')
 })

@@ -13,13 +13,27 @@ const c = @import("../../c.zig");
 
 pub const AggType = enum(u8) { SUM = 1, _ };
 
-pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, agg: []u8) !c.napi_value {
+pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
 
-    var resultNumber: u32 = 0;
-    ctx.size = 4;
+    const resultsSize = read(u16, aggInput, 0);
+
+    std.debug.print("results have the size of {d} \n", .{resultsSize});
+
+    ctx.size = resultsSize;
+
+    const agg = aggInput[2..aggInput.len];
+
+    var resultBuffer: ?*anyopaque = undefined;
+    var result: c.napi_value = undefined;
+
+    if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
+        return null;
+    }
+
+    const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
 
     // create result buffer space here
 
@@ -58,17 +72,25 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                     j += 1;
                     const start = read(u16, aggPropDef, j);
                     j += 2;
+                    const resultPos = read(u16, aggPropDef, j);
+                    j += 2;
 
                     if (aggType == AggType.SUM) {
                         // ok put on buffer
                         if (propType == types.Prop.UINT8) {
-                            resultNumber += value[start];
+
+                            // gotto go fast
+                            // Adds lots of useless stack allocation we want to increment IN MEMORY
+                            const currentResult = read(u32, data, resultPos);
+                            writeInt(u32, data, resultPos, currentResult + value[start]);
+
+                            // resultNumber += value[start];
                         } else {
                             // later..
                         }
                     }
 
-                    // std.debug.print("FIELD {any} size {any} {any} {any} {d} \n", .{ field, fieldAggsSize, aggType, propType, start });
+                    // std.debug.print("Resultpos {d} FIELD {any} size {any} {any} {any} {d} \n", .{ resultPos, field, fieldAggsSize, aggType, propType, start });
                 }
                 i += fieldAggsSize;
             }
@@ -77,18 +99,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             break :checkItem;
         }
     }
-
-    var resultBuffer: ?*anyopaque = undefined;
-    var result: c.napi_value = undefined;
-
-    if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
-        return null;
-    }
-
-    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    data[0] = 0;
-
-    writeInt(u32, data, 0, resultNumber);
 
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
 

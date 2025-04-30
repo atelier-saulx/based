@@ -89,6 +89,7 @@ export const enum AggregateType {
 export type Aggregation = {
   type: AggregateType
   propDef: PropDef // PropDefEdge |
+  resultPos: number
   // add result field
 }
 
@@ -96,6 +97,7 @@ export type QueryDefAggregation = {
   size: number
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
+  totalResultsPos: number
 }
 
 export type QueryDefShared = {

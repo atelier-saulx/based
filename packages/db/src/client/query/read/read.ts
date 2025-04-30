@@ -29,6 +29,7 @@ import {
   readInt32,
   readUint16,
   readUint32,
+  setByPath,
 } from '@saulx/utils'
 import { inverseLangMap } from '@based/schema'
 import {
@@ -418,7 +419,14 @@ export const resultToObject = (
   offset: number = 0,
 ) => {
   if (q.aggregate) {
-    return readUint32(result, 0)
+    const results = {}
+    let i = 0
+    for (const aggregatesArray of q.aggregate.aggregates.values()) {
+      for (const agg of aggregatesArray) {
+        setByPath(results, agg.propDef.path, readUint32(result, agg.resultPos))
+      }
+    }
+    return results
   }
 
   const len = readUint32(result, offset)
