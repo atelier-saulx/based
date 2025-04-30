@@ -3,7 +3,10 @@ import { join } from 'node:path'
 import type { Readable } from 'node:stream'
 import type { BasedClient } from '@based/client'
 import type { BasedDb } from '@based/db'
-import type { BasedFunctionConfigs } from '@based/functions'
+import type {
+  BasedFunctionConfigs,
+  ObservableUpdateFunction,
+} from '@based/functions'
 import type { BasedServer } from '@based/server'
 import { hash } from '@saulx/hash'
 import { v4 as uuid } from 'uuid'
@@ -169,14 +172,40 @@ export const contextBasedServer =
     cloud: boolean,
   ): Promise<BasedServer> => {
     const { BasedServer } = await import('@based/server')
+    const connectedListeners = new Set<ObservableUpdateFunction<number>>()
+    let connected = 0
     const server = new BasedServer({
       silent,
       clients: {
         env: client,
       },
       port,
+      ws: {
+        open() {
+          connected++
+          for (const update of connectedListeners) {
+            update(connected)
+          }
+        },
+        close() {
+          connected--
+          for (const update of connectedListeners) {
+            update(connected)
+          }
+        },
+      },
       functions: {
         configs: {
+          'based:connections': {
+            type: 'query',
+            fn: async (_based, _payload, update) => {
+              update(connected)
+              connectedListeners.add(update)
+              return () => {
+                connectedListeners.delete(update)
+              }
+            },
+          },
           static: {
             type: 'http',
             path: '/static/:file*',
