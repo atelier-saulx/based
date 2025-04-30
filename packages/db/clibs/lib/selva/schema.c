@@ -132,12 +132,18 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         return SELVA_EINVAL;
     }
 
+    enum EdgeFieldConstraintFlag flags = constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT;
+    if (type == SELVA_FIELD_TYPE_REFERENCE && (constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
+        flags |= EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP;
+    } else {
+        flags |= ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP;
+    }
+
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = type,
         .edge_constraint = {
-            .flags = (constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) |
-                     (ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP),
+            .flags = flags,
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
         },

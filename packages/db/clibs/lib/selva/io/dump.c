@@ -786,7 +786,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         node_id_t dirty[2]; /* never really happens in load. */
         err = selva_fields_reference_set(db, node, fs, dst_node, &ref, dirty);
     } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-        err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref);
+        err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, meta_present ? &ref : nullptr);
     } else {
         err = SELVA_EINTYPE;
     }
@@ -828,6 +828,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     int err = 0;
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
+    (void)selva_fields_prealloc_refs(node, fs, nr_refs);
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
         err = load_ref(io, db, node, fs, te_dst, i);
         if (err) {

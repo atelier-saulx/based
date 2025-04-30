@@ -34,6 +34,7 @@ selvaTypeMap[ALIAS] = 8
 selvaTypeMap[ALIASES] = 9
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
+const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -46,8 +47,9 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
 }
 
-function makeEdgeConstraintFlags(prop: PropDef): number {
-  return prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
+function makeEdgeConstraintFlags(prop: PropDef, inverseProp: PropDef): number {
+  return (prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00) |
+         ((prop.typeIndex === REFERENCE && inverseProp.typeIndex === REFERENCES) ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP : 0x00)
 }
 
 const propDefBuffer = (
@@ -73,7 +75,7 @@ const propDefBuffer = (
 
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
-    buf[1] = makeEdgeConstraintFlags(prop) // flags
+    buf[1] = makeEdgeConstraintFlags(prop, dstType.props[prop.inversePropName]) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     view.setUint32(5, 0, true) // schema_len
     if (!isEdge) {
