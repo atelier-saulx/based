@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <stdint.h>
 #include <sys/types.h>
 #include "selva/_export.h"
 #ifdef __zig
@@ -80,6 +81,16 @@ struct SelvaFieldsPointer {
     size_t off;
     size_t len;
 };
+
+/**
+ * Precalculated empty strings for text translations.
+ * The size of the string is 8 for better alignment but they are only
+ * filled upto 6 bytes.
+ */
+SELVA_EXPORT
+extern const uint8_t selva_fields_text_tl_empty[_selva_lang_last][8];
+
+#define SELVA_FIELDS_TEXT_TL_EMPTY_LEN 6
 
 #if __has_c_attribute(unsequenced)
 [[unsequenced]]

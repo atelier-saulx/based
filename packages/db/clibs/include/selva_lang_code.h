@@ -152,6 +152,7 @@ enum selva_lang_code {
     selva_lang_yi,
     selva_lang_yo,
     selva_lang_zu,
+    _selva_lang_last,
 } __packed;
 
 #endif /* SELVA_LANG_CODE_H */
