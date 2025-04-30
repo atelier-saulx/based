@@ -99,15 +99,15 @@ await test('schema with many uint8 fields', async (t) => {
   for (let j = 1; j <= amount; j++) {
     const payment = db.create('payment')
     voteData.payment = payment
-    voteData.fingerprint = `f${j}-${final}`
+    voteData.fingerprint = `fingerprint-for-you-${j}-${final}`
     const voteId = db.create('vote', voteData)
     //await db.drain()
   }
 
-  await db.drain()
+  console.log('db time', await db.drain())
   console.log(`Create ${amount} votes`, performance.now() - d, 'ms')
 
   //   await db.query('vote').get().inspect(1)
 
-  //   await db.query('round', final).include('*', '**').get().inspect(1)
+  await db.query('round', final).include('*', '**').get().inspect(1)
 })
