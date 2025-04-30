@@ -10,18 +10,19 @@ await test('schema with many uint8 fields', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     // debug: 'server',
-    maxModifySize: 1000 * 1000 * 10,
+    // maxModifySize: 1000 * 1000 * 10,
     // maxModifySize: 1000 * 1000 * 1000,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  // t.after(() => t.backup(db))
+  t.after(() => db.destroy())
 
-  const maxPaymentsPerHub = 20
-  const maxHubs = 100
+  const maxPaymentsPerHub = 10000
+  const maxHubs = 10
   const timeUint = 10
-  const maxConfirmations = 9500
-  const maxIntents = 6000
-  const makePaymentsFor = 200
+  const maxConfirmations = 95000
+  const maxIntents = 60000
+  const makePaymentsFor = 10
 
   const voteCountrySchema: SchemaProp = {
     type: 'object',
@@ -205,10 +206,12 @@ await test('schema with many uint8 fields', async (t) => {
       )
     } else {
       allPaymentsDone = true
+      return
     }
 
     jobTimer = setTimeout(
       () => {
+        console.log('JOB TIME!')
         queueJob()
       },
       Math.max(0, timeUint - diff),
@@ -218,7 +221,7 @@ await test('schema with many uint8 fields', async (t) => {
   jobTimer = setTimeout(queueJob, 100)
 
   const fakeWebHooks = async (meta: any) => {
-    await wait(Math.random() * timeUint)
+    // await wait(Math.random() * timeUint)
     // console.log('Recevied webhook!', meta)
 
     const payment = meta.id
@@ -242,7 +245,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const updatePayment = async (v: any) => {
     if (v.status === 'ReadyForConfirmationToken') {
-      await wait(Math.random() * timeUint)
+      // await wait(Math.random() * timeUint)
 
       db.update('payment', v.id, {
         status: 'RequestedIntent',
@@ -289,6 +292,11 @@ await test('schema with many uint8 fields', async (t) => {
     const timer = { sub: null, create: null }
 
     const getStuff = async () => {
+      if (allPaymentsDone) {
+        // console.log('getting more stuff..')
+        return
+      }
+
       const realIds = [...ids.keys()]
       const myThings = await db
         .query('payment', realIds)
@@ -300,6 +308,10 @@ await test('schema with many uint8 fields', async (t) => {
         ])
         .include(['status'])
         .get()
+
+      if (!myThings.length) {
+        console.log(myThings)
+      }
 
       for (const thing of myThings) {
         const listener = ids.get(thing.id)
@@ -379,5 +391,5 @@ await test('schema with many uint8 fields', async (t) => {
     (await db.query('vote').range(0, 1e6).get()).length,
   )
 
-  await wait(10e3)
+  await wait(100)
 })

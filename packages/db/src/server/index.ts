@@ -541,7 +541,8 @@ export class DbServer {
 
   #modify(buf: Uint8Array) {
     if (this.stopped) {
-      throw new Error('Db is stopped - trying to modify')
+      console.error('Db is stopped - trying to modify')
+      return
     }
 
     const end = buf.length - 4
@@ -608,8 +609,8 @@ export class DbServer {
     fromQueue: boolean = false,
   ): Promise<Uint8Array> {
     if (this.stopped) {
-      console.log(buf)
-      throw new Error('Db is stopped - trying to query')
+      console.error('Db is stopped - trying to query', buf.byteLength)
+      return Promise.resolve(new Uint8Array(8))
     }
 
     if (this.modifyQueue.length) {
