@@ -3,6 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { wait } from '@saulx/utils'
 import { SchemaProp } from '@based/schema'
+import { allCountryCodes } from './shared/examples.js'
 
 await test('schema with many uint8 fields', async (t) => {
   const db = new BasedDb({
@@ -14,9 +15,11 @@ await test('schema with many uint8 fields', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  const maxPaymentsPerHub = 1000
-  const maxHubs = 10
-  const timeUint = 10
+  const maxPaymentsPerHub = 2000
+  const maxHubs = 100
+  const timeUint = 100
+  const maxConfirmations = 95000
+  const maxIntents = 60000
 
   const voteCountrySchema: SchemaProp = {
     type: 'object',
@@ -135,7 +138,7 @@ await test('schema with many uint8 fields', async (t) => {
           type: 'alias',
         },
         // `seq-cardPar`
-
+        fromCountry: { type: 'string', maxBytes: 2 },
         payment: {
           ref: 'payment',
           prop: 'vote',
@@ -152,6 +155,8 @@ await test('schema with many uint8 fields', async (t) => {
   const final = await db.create('round')
 
   let jobTimer
+  let totalPayments = 0
+  let allPaymentsDone = false
   const queueJob = async () => {
     const confirmation = async () => {
       const rdyForConfirmationToken = await db
@@ -159,7 +164,7 @@ await test('schema with many uint8 fields', async (t) => {
         .include((select) => {
           const t = select('payments')
           t.filter('status', '=', ['Requested'])
-          t.range(0, 950)
+          t.range(0, maxConfirmations)
           t.include(['status'])
         })
         .get()
@@ -179,7 +184,7 @@ await test('schema with many uint8 fields', async (t) => {
         .include((select) => {
           const t = select('payments')
           t.filter('status', '=', ['RequestedIntent'])
-          t.range(0, 600)
+          t.range(0, maxIntents)
           t.include(['status'])
         })
         .get()
@@ -198,12 +203,16 @@ await test('schema with many uint8 fields', async (t) => {
 
     if (cl || pl) {
       console.log(
+        'total',
+        totalPayments,
         'JOB - Set',
         cl,
         'to ReadyForConfirmationToken and',
         pl,
         'to ReadyForPaymentIntent',
       )
+    } else {
+      allPaymentsDone = true
     }
 
     jobTimer = setTimeout(
@@ -214,7 +223,7 @@ await test('schema with many uint8 fields', async (t) => {
     )
   }
 
-  queueJob()
+  setTimeout(queueJob, 100)
 
   const fakeWebHooks = async (meta: any) => {
     await wait(Math.random() * timeUint)
@@ -232,6 +241,8 @@ await test('schema with many uint8 fields', async (t) => {
       countries: meta.countries,
     }
 
+    voteData.fromCountry =
+      allCountryCodes[~~(Math.random() * allCountryCodes.length)]
     voteData.payment = payment
     voteData.fingerprint = `fingerprint-for-you-${payment}-${final}`
     const voteId = db.create('vote', voteData)
@@ -316,6 +327,7 @@ await test('schema with many uint8 fields', async (t) => {
     getStuff()
 
     const createPayment = async () => {
+      totalPayments++
       subscribeToPayment(
         await db.create('payment', {
           // fingerprint: `fingerprint-for-you-${j}-${final}`,
@@ -333,7 +345,7 @@ await test('schema with many uint8 fields', async (t) => {
     let i = 0
     const makePayments = () => {
       const len = ~~(Math.random() * maxPaymentsPerHub)
-      console.log('make', len, 'payments on hub', hubName)
+      // console.log('make', len, 'payments on hub', hubName)
       for (let i = 0; i < len; i++) {
         createPayment()
       }
@@ -350,13 +362,19 @@ await test('schema with many uint8 fields', async (t) => {
     startHub(i)
   }
 
-  const interval = setInterval(() => {
-    db.query('vote').range(0, 1e6).get().inspect()
-  }, timeUint * 10)
+  const bla = async () => {
+    if (allPaymentsDone) {
+      return true
+    } else {
+      await wait(timeUint * 2)
+    }
+    return bla()
+  }
 
-  await wait(timeUint * 300)
-  clearInterval(interval)
+  await bla()
   clearTimeout(jobTimer)
 
-  await wait(timeUint * 10 + 1e3)
+  db.query('vote').range(0, 1e6).get().inspect()
+
+  await wait(3e3)
 })
