@@ -53,8 +53,6 @@ export const destroyObs = (server: BasedServer, id: number) => {
     return
   }
 
-  console.log('YO stop it')
-
   if (obs.timeTillDestroy === null) {
     updateDestroyTimer(server, obs)
     cleanUpObs(server)

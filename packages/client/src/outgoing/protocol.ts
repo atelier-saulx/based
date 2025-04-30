@@ -11,23 +11,10 @@ import {
 
 const encoder = new TextEncoder()
 
-const storeUint8 = (
-  buff: Uint8Array,
-  n: number,
-  start: number,
-  len: number
-) => {
-  for (let index = start; index < start + len; index++) {
-    const byte = n & 0xff
-    buff[index] = byte
-    n = (n - byte) / 256
-  }
-}
-
 const encodeHeader = (
   type: number,
   isDeflate: boolean,
-  len: number
+  len: number,
 ): number => {
   // 4 bytes
   // type (3 bits)
@@ -54,7 +41,7 @@ const createBuffer = (
   type: number,
   isDeflate: boolean,
   len: number,
-  size: number = len
+  size: number = len,
 ): Uint8Array => {
   const header = encodeHeader(type, isDeflate, len)
   const buff = new Uint8Array(size)
@@ -64,13 +51,13 @@ const createBuffer = (
 
 const encodePayload = (
   payload: any,
-  noDeflate = false
+  noDeflate = false,
 ): [boolean, Uint8Array] | [boolean] => {
   let p: Uint8Array
   let isDeflate = false
   if (payload !== undefined) {
     p = encoder.encode(
-      typeof payload === 'string' ? payload : JSON.stringify(payload)
+      typeof payload === 'string' ? payload : JSON.stringify(payload),
     )
     if (!noDeflate && p.length > 150) {
       p = deflateSync(p)
@@ -83,7 +70,7 @@ const encodePayload = (
 
 export const encodeGetObserveMessage = (
   id: number,
-  o: GetObserveQueue extends Map<any, infer I> ? I : never
+  o: GetObserveQueue extends Map<any, infer I> ? I : never,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
@@ -118,7 +105,7 @@ export const encodeGetObserveMessage = (
 
 export const encodeSubscribeChannelMessage = (
   id: number,
-  o: ChannelQueueItem
+  o: ChannelQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, payload] = o
@@ -155,7 +142,7 @@ export const encodeSubscribeChannelMessage = (
 
 export const encodeObserveMessage = (
   id: number,
-  o: ObserveQueue extends Map<any, infer I> ? I : never
+  o: ObserveQueue extends Map<any, infer I> ? I : never,
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
@@ -188,7 +175,7 @@ export const encodeObserveMessage = (
 }
 
 export const encodeFunctionMessage = (
-  f: FunctionQueueItem
+  f: FunctionQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
   let len = 7
@@ -209,7 +196,7 @@ export const encodeFunctionMessage = (
 }
 
 export const encodePublishMessage = (
-  f: ChannelPublishQueueItem
+  f: ChannelPublishQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   // | 4 header | 8 id | * payload |
   let len = 12
@@ -241,7 +228,7 @@ export const encodeAuthMessage = (authState: AuthState) => {
 }
 
 export const encodeStreamMessage = (
-  f: StreamQueueItem
+  f: StreamQueueItem,
 ): { buffers: Uint8Array[]; len: number } => {
   const [subType, reqId] = f
 

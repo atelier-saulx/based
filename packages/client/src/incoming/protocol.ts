@@ -43,19 +43,6 @@ export const decodeHeader = (
   }
 }
 
-export const readUint8 = (
-  buff: Uint8Array,
-  start: number,
-  len: number,
-): number => {
-  let n = 0
-  const s = len - 1 + start
-  for (let i = s; i >= start; i--) {
-    n = n * 256 + buff[i]
-  }
-  return n
-}
-
 export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
   if (d instanceof Uint8Array) {
     return d

@@ -1,8 +1,9 @@
 import zlib from 'node:zlib'
-
-const textDecoder = new TextDecoder()
+import { DECODER } from '@saulx/utils'
 
 export const COMPRESS_FROM_BYTES = 150
+
+//
 
 export const decodeHeader = (
   nr: number,
@@ -28,32 +29,6 @@ export const decodeHeader = (
     isDeflate: isDeflate === 1,
     len,
   }
-}
-
-export const storeUint8 = (
-  buff: Uint8Array,
-  n: number,
-  start: number,
-  len: number,
-) => {
-  for (let index = start; index < start + len; index++) {
-    const byte = n & 0xff
-    buff[index] = byte
-    n = (n - byte) / 256
-  }
-}
-
-export const readUint8 = (
-  buff: Uint8Array,
-  start: number,
-  len: number,
-): number => {
-  let n = 0
-  const s = len - 1 + start
-  for (let i = s; i >= start; i--) {
-    n = n * 256 + buff[i]
-  }
-  return n
 }
 
 export const encodeHeader = (
@@ -153,11 +128,11 @@ export const valueToBuffer = (payload: any): Buffer => {
 
 export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
   if (!isDeflate) {
-    return textDecoder.decode(payload)
+    return DECODER.decode(payload)
   }
   try {
     const buffer = zlib.inflateRawSync(payload)
-    return textDecoder.decode(buffer)
+    return DECODER.decode(buffer)
   } catch (err) {
     console.error('Error deflating payload', err)
   }
@@ -177,8 +152,7 @@ export const decodeName = (
   start: number,
   end: number,
 ): string => {
-  const name = new Uint8Array(arr.slice(start, end))
-  return textDecoder.decode(name)
+  return DECODER.decode(arr.subarray(start, end))
 }
 
 export const encodeFunctionResponse = (
