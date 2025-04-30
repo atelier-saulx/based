@@ -54,7 +54,7 @@ pub const Prop = enum(u8) {
             Prop.NUMBER,
             Prop.INT8,
             Prop.UINT8,
-            Prop.UNT16,
+            Prop.UINT16,
             Prop.INT16,
             Prop.UINT32,
             Prop.INT32,
