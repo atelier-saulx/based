@@ -450,7 +450,7 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
          */
         if (selva_sallocx(refs->refs - refs->offset, 0) / sizeof(refs->refs[0]) >= refs->nr_refs + 131072) {
             remove_refs_offset(refs);
-            refs->refs = selva_realloc(refs->refs, refs->nr_refs);
+            refs->refs = selva_realloc(refs->refs, refs->nr_refs * sizeof(refs->refs[0]));
         }
     }
     refs->nr_refs--;
@@ -622,7 +622,7 @@ static void remove_weak_reference(struct SelvaFields *fields, const struct Selva
                  */
                 if (selva_sallocx(refs.refs - refs.offset, 0) / sizeof(refs.refs[0]) >= refs.nr_refs + 131072) {
                     remove_weak_refs_offset(&refs);
-                    refs.refs = selva_realloc(refs.refs, refs.nr_refs);
+                    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(refs.refs[0]));
                 }
 
                 memcpy(vp, &refs, sizeof(refs));
@@ -724,7 +724,7 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
      * Then add the new reference.
      */
     refs.nr_refs += nr_dsts;
-    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(*refs.refs));
+    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(refs.refs[0]));
     memcpy(refs.refs + refs.nr_refs - nr_dsts, dsts, nr_dsts * sizeof(*refs.refs));
 
     memcpy(vp, &refs, sizeof(refs));
@@ -1204,7 +1204,7 @@ size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFiel
     if (refs->refs) {
         remove_refs_offset(refs);
     }
-    refs->refs = selva_realloc(refs->refs, nr_refs_min * sizeof(*refs->refs));
+    refs->refs = selva_realloc(refs->refs, nr_refs_min * sizeof(refs->refs[0]));
     refs->index = selva_realloc(refs->index, nr_refs_min * sizeof(refs->index[0]));
 
 out:
