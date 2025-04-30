@@ -15,6 +15,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
         const op: types.IncludeOp = @enumFromInt(include[includeIterator]);
         includeIterator += 1;
         const operation = include[includeIterator..];
+
         const field: u8 = @intFromEnum(op);
         var prop: types.Prop = undefined;
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
@@ -35,7 +36,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
             if (aggregation == .sum) {
                 // MV: bit uggly, no accum engine + u32, just temporary
-                // trust that microbuffer isNumber (filtered in JS)?
                 if (value.len >= @sizeOf(u32)) {
                     const val: u32 = read(u32, value, 0);
                     ctx.aggResult = if (ctx.aggResult) |r| r + val else val;

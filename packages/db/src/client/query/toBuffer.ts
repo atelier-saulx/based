@@ -73,10 +73,11 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
     buf[13 + filterSize] = aggregation[0]
     buf[14 + filterSize] = aggregation[1]
-    buf[15 + filterSize] = aggregation[2]
+    buf[15 + filterSize] = aggregation[2] // just one byte
 
     result.push(buf)
     result.push(...include)
+    // console.log('toBuffer > result: ', result)
     return result
   }
 

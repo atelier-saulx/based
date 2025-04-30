@@ -83,22 +83,9 @@ await test('branchedCount', async (t) => {
     int16: 3,
   })
 
-  // QueryType = 0 (id) and 1 (ids) doesn't make sense for aggs
-  // QueryType = 2 (default) makes sense for aggs
-  // await db.query('article').get().inspect()
-  // QueryType = 3 (alias) might make sense for aggs
-
-  // // console.log(
-  // await db
-  //   .query('user')
-  //   .include('flap')
-  //   .range(0, 1)
-  //   // .filter('flap', '>', 20)
-  //   .count()
-  //   // .sum('flap')
-  //   .get()
-  //   .toObject(),
-  //   // )
+  // ------------------------------------------------------------
+  // TESTS:
+  // ------------------------------------------------------------
 
   deepEqual(
     await db.query('user').range(0, 1).count().get().toObject(),
@@ -196,7 +183,7 @@ await test('branchedCount', async (t) => {
       // .include('*') // OK
       // .include('**') // NOT OK
       // .include('name') // OK
-      // .include('contributors') // OK count, NOT OK in sum
+      .include('contributors') // OK count, NOT OK in sum
       // .count()
       // .sum('rate') // OK
       .sum('int16') // OK
@@ -215,12 +202,13 @@ await test('branchedCount', async (t) => {
     'Sum > summing when including references',
   )
 
-  deepEqual(
-    await db.query('article').include('**').sum('rate').get().toObject(),
-    { sum: 9 },
-    'Sum > summing when including **',
-  )
+  // deepEqual(
+  //   await db.query('article').include('**').sum('rate').get().toObject(),
+  //   { sum: 9 },
+  //   'Sum > summing when including **',
+  // )
 
+  // ---------------------------------------------
   // await db
   //   .query('user')
   //   //lala

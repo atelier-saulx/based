@@ -110,7 +110,7 @@ export type QueryDefShared = {
   edges?: QueryDef
   aggregation: {
     type: AggFlag
-    field: number
+    field: number // MV: make this similar to filter for multiple aggs
   }
 }
 
