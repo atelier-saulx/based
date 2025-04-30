@@ -3,6 +3,7 @@ import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
 import { setTimeout } from 'node:timers/promises'
 import test from './shared/test.js'
+import { wait } from '@saulx/utils'
 
 const start = async (t, clientsN = 2) => {
   const hooks: DbClientHooks = {
@@ -33,13 +34,6 @@ const start = async (t, clientsN = 2) => {
     },
   }
 
-  const clients = Array.from({ length: clientsN }).map(
-    () =>
-      new DbClient({
-        hooks: { ...hooks },
-      }),
-  )
-
   const server = new DbServer({
     path: t.tmp,
     // debug: true,
@@ -50,12 +44,20 @@ const start = async (t, clientsN = 2) => {
     },
   })
   await server.start({ clean: true })
+
+  const clients = Array.from({ length: clientsN }).map(
+    () =>
+      new DbClient({
+        hooks: { ...hooks },
+      }),
+  )
+
   t.after(() => server.destroy())
 
   return { clients, server }
 }
 
-await test('client server', async (t) => {
+await test('client server basic', async (t) => {
   const {
     clients: [client1, client2],
   } = await start(t)

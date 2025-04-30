@@ -83,6 +83,7 @@ const test = async (
           await newDb.destroy()
         } catch (err) {}
       })
+
       d = Date.now()
       await newDb.start()
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))

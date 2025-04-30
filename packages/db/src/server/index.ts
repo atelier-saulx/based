@@ -121,7 +121,7 @@ export class DbServer {
   processingQueries = 0
   modifyQueue: Uint8Array[] = []
   queryQueue: Map<Function, Uint8Array> = new Map()
-  stopped: boolean = true
+  stopped: boolean // = true does not work
   onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number

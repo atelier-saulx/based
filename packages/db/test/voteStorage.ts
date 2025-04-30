@@ -153,5 +153,7 @@ await test('schema with many uint8 fields', async (t) => {
     })
   }
 
+  await db.save()
+
   console.log('set all items', await db.drain())
 })
