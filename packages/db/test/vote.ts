@@ -17,7 +17,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const maxPaymentsPerHub = 2000
   const maxHubs = 100
-  const timeUint = 100
+  const timeUint = 10
   const maxConfirmations = 95000
   const maxIntents = 60000
 
