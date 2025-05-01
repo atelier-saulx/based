@@ -51,7 +51,6 @@ export const migrate = async (
 ): Promise<DbServer['schema']> => {
   const migrationId = migrationCnt++
   fromDbServer.migrating = migrationId
-
   const abort = () => fromDbServer.migrating !== migrationId
   const toDb = new BasedDb({
     path: join(tmpdir(), (~~(Math.random() * 1e9)).toString(36)),

@@ -4,7 +4,7 @@ import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 import { Schema } from '@based/schema'
 
-await test('many setSchema', async (t) => {
+await test('many setSchema with different order props', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -48,7 +48,19 @@ await test('many setSchema', async (t) => {
 
   while (schemas--) {
     setTimeout(() => {
-      db.setSchema(deepCopy(schema) as Schema).then(() => {
+      const shuffled = {
+        types: {
+          user: {
+            props: Object.fromEntries(
+              Object.entries(schema.types.user.props).sort(() => {
+                return Math.random() > 0.5 ? -1 : 1
+              }),
+            ),
+          },
+        },
+      }
+
+      db.setSchema(shuffled as Schema).then(() => {
         updating--
       })
     }, 1e3 * Math.random())
@@ -64,129 +76,129 @@ await test('many setSchema', async (t) => {
   console.log(await db.query('user').get().toObject())
 })
 
-// await test('migration', async (t) => {
-//   const amount = 100
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => t.backup(db))
+await test('migration', async (t) => {
+  const amount = 100
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
-//   await db.setSchema({
-//     types: {
-//       user: {
-//         props: {
-//           name: { type: 'string' },
-//           age: { type: 'uint32' },
-//           status: ['active', 'inactive'],
-//           meta: {
-//             props: {
-//               rating: {
-//                 type: 'uint8',
-//               },
-//             },
-//           },
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          status: ['active', 'inactive'],
+          meta: {
+            props: {
+              rating: {
+                type: 'uint8',
+              },
+            },
+          },
 
-//           friends: {
-//             items: {
-//               ref: 'user',
-//               prop: 'friends',
-//               $refUser: { ref: 'user' },
-//               $number: 'number',
-//             },
-//           },
-//         },
-//       },
-//     },
-//   })
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+              $refUser: { ref: 'user' },
+              $number: 'number',
+            },
+          },
+        },
+      },
+    },
+  })
 
-//   let i = 0
-//   let prevId
-//   while (true) {
-//     const data: any = {
-//       status: i % 2 ? 'active' : 'inactive',
-//       name: 'user ' + ++i,
-//       age: i % 100,
-//     }
-//     if (prevId) {
-//       data.friends = { update: [{ id: prevId, $refUser: prevId, $number: i }] }
-//     }
-//     prevId = db.create('user', data)
-//     if (i === amount) {
-//       break
-//     }
-//   }
+  let i = 0
+  let prevId
+  while (true) {
+    const data: any = {
+      status: i % 2 ? 'active' : 'inactive',
+      name: 'user ' + ++i,
+      age: i % 100,
+    }
+    if (prevId) {
+      data.friends = { update: [{ id: prevId, $refUser: prevId, $number: i }] }
+    }
+    prevId = db.create('user', data)
+    if (i === amount) {
+      break
+    }
+  }
 
-//   await db.drain()
+  await db.drain()
 
-//   let allUsers = await db
-//     .query('user')
-//     .range(0, amount + 1000)
-//     .include('friends.$refUser.id', 'friends.$number')
-//     .get()
-//     .toObject()
-//   const allFriends = allUsers.map(({ friends }) => friends).flat()
+  let allUsers = await db
+    .query('user')
+    .range(0, amount + 1000)
+    .include('friends.$refUser.id', 'friends.$number')
+    .get()
+    .toObject()
+  const allFriends = allUsers.map(({ friends }) => friends).flat()
 
-//   const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
-//   let migrationPromise = db.migrateSchema(
-//     {
-//       types: {
-//         cmsuser: {
-//           props: {
-//             status: { enum: ['active', 'inactive'] },
-//             name: { type: 'string' },
-//             email: { type: 'string' },
-//             age: { type: 'uint8' },
+  const nameToEmail = (name: string) => name.replace(/ /g, '-') + '@gmail.com'
+  let migrationPromise = db.migrateSchema(
+    {
+      types: {
+        cmsuser: {
+          props: {
+            status: { enum: ['active', 'inactive'] },
+            name: { type: 'string' },
+            email: { type: 'string' },
+            age: { type: 'uint8' },
 
-//             bestBud: {
-//               ref: 'cmsuser',
-//               prop: 'bestBudOf',
-//             },
-//             buddies: {
-//               items: {
-//                 ref: 'cmsuser',
-//                 prop: 'buddies',
-//                 $refUser: { ref: 'cmsuser' },
-//                 $number: 'number',
-//               },
-//             },
-//           },
-//         },
-//       },
-//     },
-//     {
-//       user(node) {
-//         node.email = node.name.replace(/ /g, '-') + '@gmail.com'
-//         node.buddies = node.friends
-//         node.bestBud = node.friends[0]
-//         return ['cmsuser', node]
-//       },
-//     },
-//   )
+            bestBud: {
+              ref: 'cmsuser',
+              prop: 'bestBudOf',
+            },
+            buddies: {
+              items: {
+                ref: 'cmsuser',
+                prop: 'buddies',
+                $refUser: { ref: 'cmsuser' },
+                $number: 'number',
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      user(node) {
+        node.email = node.name.replace(/ /g, '-') + '@gmail.com'
+        node.buddies = node.friends
+        node.bestBud = node.friends[0]
+        return ['cmsuser', node]
+      },
+    },
+  )
 
-//   await migrationPromise
+  await migrationPromise
 
-//   allUsers = (
-//     await db
-//       .query('cmsuser')
-//       .include('*', 'buddies.$refUser.id', 'buddies.$number')
-//       .range(0, amount + 1000)
-//       .get()
-//   ).toObject()
+  allUsers = (
+    await db
+      .query('cmsuser')
+      .include('*', 'buddies.$refUser.id', 'buddies.$number')
+      .range(0, amount + 1000)
+      .get()
+  ).toObject()
 
-//   const allBuddies = allUsers.map(({ buddies }) => buddies).flat()
+  const allBuddies = allUsers.map(({ buddies }) => buddies).flat()
 
-//   deepEqual(allBuddies, allFriends)
+  deepEqual(allBuddies, allFriends)
 
-//   if (
-//     allUsers.every((node) => {
-//       return (
-//         node.email === nameToEmail(node.name) && typeof node.age === 'number'
-//       )
-//     })
-//   ) {
-//     // --------
-//   } else {
-//     throw 'Missing email from migration'
-//   }
-// })
+  if (
+    allUsers.every((node) => {
+      return (
+        node.email === nameToEmail(node.name) && typeof node.age === 'number'
+      )
+    })
+  ) {
+    // --------
+  } else {
+    throw 'Missing email from migration'
+  }
+})

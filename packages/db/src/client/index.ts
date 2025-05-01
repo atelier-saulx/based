@@ -91,6 +91,7 @@ export class DbClient {
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
+  schemaChecksum: number
   schemaProcessing: number
   schemaPromise: Promise<DbServer['schema']>
 
@@ -123,11 +124,11 @@ export class DbClient {
   }
 
   putLocalSchema(schema) {
-    // this one includes all the ids
-    if (deepEqual(this.schema, schema)) {
+    const checksum = hash(schema)
+    if (this.schemaChecksum === checksum) {
       return this.schema
     }
-
+    this.schemaChecksum = checksum
     this.schema = schema
     updateTypeDefs(
       this.schema,
