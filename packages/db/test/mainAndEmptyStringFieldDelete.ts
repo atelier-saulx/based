@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('enumBug', async (t) => {
+await test('main + empty', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -18,13 +18,11 @@ await test('enumBug', async (t) => {
     },
   })
 
-  console.log('----CREATE')
   const user1 = await db.create('user', {
     role: 'translator',
   })
 
   console.log(await db.query('user').get().toObject())
-  console.log('----UPDATE')
   await db.update('user', user1, {
     location: '',
   })
