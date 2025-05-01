@@ -10,6 +10,7 @@ const QueryCtx = @import("./types.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const types = @import("../types.zig");
+const aggregateTypes = @import("./aggregate/types.zig");
 
 const QueryType = types.QueryType;
 const QuerySort = @import("./types/sort.zig");
@@ -186,8 +187,12 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const aggSize = read(u16, q, 14 + filterSize);
         const agg: []u8 = q[16 + filterSize .. 16 + filterSize + aggSize];
         // const include = q[16 + filterSize .. q.len];
-
-        return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
+        const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
+        if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+            return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
+        } else {
+            return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
+        }
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }

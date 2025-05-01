@@ -7,7 +7,6 @@ export const aggregateToBuffer = (
 ): Uint8Array => {
   const aggBuffer = new Uint8Array(aggregates.size)
   let i = 0
-
   if (aggregates.groupBy) {
     aggBuffer[i] = GroupBy.HAS_GROUP
     i += 1
@@ -17,12 +16,14 @@ export const aggregateToBuffer = (
     i += 1
     writeUint16(aggBuffer, aggregates.groupBy.start, i)
     i += 2
+    writeUint16(aggBuffer, aggregates.groupBy.len, i)
+    i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
     i += 1
   }
-
   writeUint16(aggBuffer, aggregates.totalResultsPos, i)
+  i += 2
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
     i += 1
@@ -44,6 +45,8 @@ export const aggregateToBuffer = (
     writeUint16(aggBuffer, size, sizeIndex)
   }
 
+  console.log(aggBuffer)
+
   return aggBuffer
 }
 
@@ -59,16 +62,15 @@ const ensureAggregate = (def: QueryDef) => {
 
 // Group by is great for normal stuff as well (do later)
 export const groupBy = (def: QueryDef, field: string) => {
-  console.log(field)
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     throw new Error(
-      `Field for agg:groupBy does not exists ${field} make better error later...`,
+      `Field for agg:groupBy does not exists "${field}" make better error later...`,
     )
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 5
+    def.aggregate.size += 6
   }
   def.aggregate.groupBy = fieldDef
 }

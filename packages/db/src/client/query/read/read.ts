@@ -23,6 +23,7 @@ import {
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
+  DECODER,
   readDoubleLE,
   readFloatLE,
   readInt16,
@@ -420,10 +421,34 @@ export const resultToObject = (
 ) => {
   if (q.aggregate) {
     const results = {}
-    let i = 0
-    for (const aggregatesArray of q.aggregate.aggregates.values()) {
-      for (const agg of aggregatesArray) {
-        setByPath(results, agg.propDef.path, readUint32(result, agg.resultPos))
+
+    if (q.aggregate.groupBy) {
+      // key size = 2 for now... not perfect...
+      let i = 0
+      while (i < result.byteLength - 4) {
+        const key = DECODER.decode(result.subarray(i, i + 2))
+        i += 2
+        const resultKey = (results[key] = {})
+        for (const aggregatesArray of q.aggregate.aggregates.values()) {
+          for (const agg of aggregatesArray) {
+            setByPath(
+              resultKey,
+              agg.propDef.path,
+              readUint32(result, agg.resultPos + i),
+            )
+          }
+        }
+        i += q.aggregate.totalResultsPos
+      }
+    } else {
+      for (const aggregatesArray of q.aggregate.aggregates.values()) {
+        for (const agg of aggregatesArray) {
+          setByPath(
+            results,
+            agg.propDef.path,
+            readUint32(result, agg.resultPos),
+          )
+        }
       }
     }
     return results
