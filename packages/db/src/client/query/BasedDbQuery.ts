@@ -305,7 +305,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       }
     }
 
-    if (!db.schemaIsSetValue) {
+    if (!db.schema) {
       throw new Error('Query: No schema yet - use await db.schemaIsSet()')
     }
 

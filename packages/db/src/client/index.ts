@@ -13,7 +13,7 @@ import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
 import { DbServer } from '../server/index.js'
-import { deepCopy, deepEqual } from '@saulx/utils'
+import { deepCopy, deepEqual, wait } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
@@ -76,12 +76,7 @@ export class DbClient {
   flushIsReady: Promise<void>
 
   hooks: DbClientHooks
-  schema: DbClientSchema = {
-    lastId: 1, // we reserve one for root props
-    types: {},
-  }
-
-  schemaIsSetValue: boolean = false
+  schema: DbClientSchema
 
   schemaTypesParsed: Record<string, SchemaTypeDef> = {}
   schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
@@ -97,6 +92,7 @@ export class DbClient {
   > = new Map()
 
   schemaProcessing: number
+  schemaPromise: Promise<DbServer['schema']>
 
   async setSchema(
     schema: Schema,
@@ -106,30 +102,29 @@ export class DbClient {
     const strictSchema = fromStart ? schema : parse(schema).schema
     // this one excludes all the ids
     if (schemaLooseEqual(strictSchema, this.schema)) {
-      // console.log('loose equal')
       return this.schema
     }
+
     const checksum = hash(strictSchema)
-    if (checksum === this.schemaProcessing) {
-      // console.log('same as processing')
-      return this.schema
+    if (checksum !== this.schemaProcessing) {
+      this.schemaProcessing = checksum
+      this.schemaPromise = this.hooks.setSchema(
+        strictSchema as StrictSchema,
+        fromStart,
+        transformFns,
+      )
     }
-    this.schemaProcessing = checksum
-    this.schemaIsSetValue = false
-    const remoteSchema = await this.hooks.setSchema(
-      strictSchema as StrictSchema,
-      fromStart,
-      transformFns,
-    )
+    const remoteSchema = await this.schemaPromise
+
     this.schemaProcessing = null
+    this.schemaPromise = null
+
     return this.putLocalSchema(remoteSchema)
   }
 
   putLocalSchema(schema) {
-    this.schemaIsSetValue = true
     // this one includes all the ids
     if (deepEqual(this.schema, schema)) {
-      // console.log('the same!')
       return this.schema
     }
 
@@ -351,17 +346,17 @@ export class DbClient {
     return
   }
 
-  schemaIsSet(): Promise<true> {
-    return new Promise((resolve) => {
-      if (this.schemaIsSetValue) {
-        resolve(true)
-      } else {
-        setTimeout(() => {
-          // TODO use subscription when its done
-          resolve(this.schemaIsSet())
-        }, 12)
-      }
-    })
+  async schemaIsSet(): Promise<true> {
+    if (this.schema) {
+      return true
+    }
+    if (this.schemaPromise) {
+      await this.schemaPromise
+    } else {
+      await wait(12)
+    }
+
+    return this.schemaIsSet()
   }
 
   listeners?: {
