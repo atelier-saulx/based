@@ -47,16 +47,13 @@ function isValidParamChar(code: number): boolean {
  */
 function isReservedName(value: Buffer): boolean {
   return (
-    (
-      value[0] === 0x64 &&  // 'd'
-      value[1] === 0x62     // 'b'
-    ) ||
-    (
-      value[0] === 0x62 &&  // 'b'
-      value[1] === 0x61 &&  // 'a'
-      value[2] === 0x73 &&  // 's'
-      value[3] === 0x65 &&  // 'e'
-      value[4] === 0x64)    // 'd'
+    (value[0] === 0x64 && // 'd'
+      value[1] === 0x62) || // 'b'
+    (value[0] === 0x62 && // 'b'
+      value[1] === 0x61 && // 'a'
+      value[2] === 0x73 && // 's'
+      value[3] === 0x65 && // 'e'
+      value[4] === 0x64) // 'd'
   )
 }
 
