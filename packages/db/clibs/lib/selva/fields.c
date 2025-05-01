@@ -1792,8 +1792,8 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
 {
     struct selva_string *s = nfo2p(fields, nfo);
-    if (s->flags & SELVA_STRING_STATIC)
-    {
+
+    if (s->flags & SELVA_STRING_STATIC) {
         if (s->flags & SELVA_STRING_MUTABLE_FIXED) {
             selva_string_replace(s, nullptr, 0);
         } else {
@@ -1815,13 +1815,11 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
-    switch (type)
-    {
+    switch (type) {
     case SELVA_FIELD_TYPE_NULL:
-        /* DONT CLEAR IT CAN STILL HAVE A MAIN FIELD (allways has a mainfield) */
+        /* NOP */
         return 0;
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
-        /* NOP */
         break;
     case SELVA_FIELD_TYPE_STRING:
         del_field_string(fields, nfo);
