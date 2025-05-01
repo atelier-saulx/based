@@ -4,7 +4,7 @@ import { compress } from './compress.js'
 
 export const end = (
   ctx: Context<HttpSession>,
-  payload?: string | Buffer | Uint8Array
+  payload?: string | Buffer | Uint8Array,
 ) => {
   if (!ctx.session) {
     return
@@ -26,7 +26,7 @@ export const end = (
 
 export const sendHeaders = (
   ctx: Context<HttpSession>,
-  headers: HttpHeaders
+  headers: HttpHeaders,
 ) => {
   for (const header in headers) {
     const value = headers[header]
@@ -35,8 +35,8 @@ export const sendHeaders = (
       Array.isArray(value)
         ? value.join(',')
         : typeof value === 'string'
-        ? value
-        : String(value)
+          ? value
+          : String(value),
     )
   }
 }
@@ -45,7 +45,7 @@ export const sendHttpResponse = (
   ctx: Context<HttpSession>,
   result: any,
   headers?: HttpHeaders,
-  statusCode: string = '200 OK'
+  statusCode: string = '200 OK',
 ) => {
   // handle custom http response here...
   if (!ctx.session) {
@@ -54,7 +54,7 @@ export const sendHttpResponse = (
 
   let cType: string
 
-  let parsed: string | Buffer 
+  let parsed: string | Buffer
 
   if (result === undefined) {
     ctx.session.res.cork(() => {
@@ -66,7 +66,7 @@ export const sendHttpResponse = (
       ctx.session.res.end()
     })
     return
-  } else if (typeof result === 'string' || (result instanceof Buffer)) {
+  } else if (typeof result === 'string' || result instanceof Buffer) {
     cType = 'text/plain'
     parsed = result
     // TODO: more check here
@@ -93,7 +93,7 @@ export const sendHttpResponse = (
     parsed,
     headers && ('Content-Encoding' in headers || 'content-encoding' in headers)
       ? undefined
-      : ctx.session.headers.encoding
+      : ctx.session.headers.encoding,
   ).then(({ payload, encoding }) => {
     if (ctx.session?.res) {
       ctx.session.res.cork(() => {
@@ -104,7 +104,18 @@ export const sendHttpResponse = (
           if (!('Cache-Control' in headers || 'cache-control' in headers)) {
             ctx.session.res.writeHeader(
               'Cache-Control',
-              'max-age=0, must-revalidate'
+              'max-age=0, must-revalidate',
+            )
+          }
+          if (
+            !(
+              'Strict-Transport-Security' in headers ||
+              'strict-transport-security' in headers
+            )
+          ) {
+            ctx.session.res.writeHeader(
+              'Strict-Transport-Security',
+              'max-age=31536000, includeSubDomains, preload',
             )
           }
           if (!('Content-Type' in headers || 'content-type' in headers)) {
@@ -113,7 +124,11 @@ export const sendHttpResponse = (
         } else {
           ctx.session.res.writeHeader(
             'Cache-Control',
-            'max-age=0, must-revalidate'
+            'max-age=0, must-revalidate',
+          )
+          ctx.session.res.writeHeader(
+            'Strict-Transport-Security',
+            'max-age=31536000, includeSubDomains, preload',
           )
         }
 
