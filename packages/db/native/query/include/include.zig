@@ -10,7 +10,6 @@ const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const selva = @import("../../selva.zig");
 const read = utils.read;
-const AggFn = @import("../../types.zig").AggFn;
 
 inline fn addResult(
     field: u8,

@@ -1,7 +1,6 @@
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
-const addCount = @import("../include/addAgg.zig").addCount;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const AggFn = @import("../../types.zig").AggFn;

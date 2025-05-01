@@ -1,20 +1,28 @@
-import { writeUint16, writeUint32 } from '@saulx/utils'
-import { AggregateType, QueryDef, QueryDefAggregation } from '../types.js'
-import {
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  isNumberType,
-} from '@based/schema/def'
+import { writeUint16 } from '@saulx/utils'
+import { QueryDef, QueryDefAggregation } from '../types.js'
+import { AggregateType, GroupBy } from './types.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
 ): Uint8Array => {
   const aggBuffer = new Uint8Array(aggregates.size)
-  writeUint16(aggBuffer, aggregates.totalResultsPos, 0)
+  let i = 0
 
-  let i = 2
+  if (aggregates.groupBy) {
+    aggBuffer[i] = GroupBy.HAS_GROUP
+    i += 1
+    aggBuffer[i] = aggregates.groupBy.prop
+    i += 1
+    aggBuffer[i] = aggregates.groupBy.typeIndex
+    i += 1
+    writeUint16(aggBuffer, aggregates.groupBy.start, i)
+  } else {
+    aggBuffer[i] = GroupBy.NONE
+  }
+
+  i += 1
+
+  writeUint16(aggBuffer, aggregates.totalResultsPos, i)
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
     i += 1
@@ -27,39 +35,57 @@ export const aggregateToBuffer = (
       i += 1
       aggBuffer[i] = agg.propDef.typeIndex
       i += 1
-      aggBuffer[i] = agg.propDef.start
-      aggBuffer[i + 1] = agg.propDef.start >>> 8
+      writeUint16(aggBuffer, agg.propDef.start, i)
       i += 2
-
-      // for now just start here BUT will need to add the previous last start for non main fields!
-      aggBuffer[i] = agg.resultPos
-      aggBuffer[i + 1] = agg.resultPos >>> 8
+      writeUint16(aggBuffer, agg.resultPos, i)
       i += 2
-
       size += i - startI
     }
-
-    aggBuffer[sizeIndex] = size
-    aggBuffer[sizeIndex + 1] = size >>> 8
+    writeUint16(aggBuffer, size, sizeIndex)
   }
 
   return aggBuffer
 }
 
-export const sum = (def: QueryDef, fields: (string | string[])[]) => {
+const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 2,
+      size: 3,
       aggregates: new Map(),
       totalResultsPos: 0,
     }
   }
+}
+
+// Group by is great for normal stuff as well (do later)
+export const groupBy = (def: QueryDef, field: string) => {
+  const fieldDef = def.schema.props[field]
+  if (!fieldDef) {
+    throw new Error(
+      `Field for agg:groupBy does not exists ${field} make better error later...`,
+    )
+  }
+  ensureAggregate(def)
+  def.aggregate.groupBy = fieldDef
+}
+
+export const addAggregate = (
+  type: AggregateType,
+  def: QueryDef,
+  fields: (string | string[])[],
+) => {
+  ensureAggregate(def)
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
-      sum(def, field)
+      addAggregate(type, def, field)
     } else {
       const fieldDef = def.schema.props[field]
+      if (!fieldDef) {
+        throw new Error(
+          `Field for agg does not exists ${field} make better error later...`,
+        )
+      }
       if (!aggregates.get(fieldDef.prop)) {
         aggregates.set(fieldDef.prop, [])
         def.aggregate.size += 3
@@ -67,7 +93,7 @@ export const sum = (def: QueryDef, fields: (string | string[])[]) => {
       const aggregateField = aggregates.get(fieldDef.prop)
       aggregateField.push({
         propDef: fieldDef,
-        type: AggregateType.SUM,
+        type,
         resultPos: def.aggregate.totalResultsPos,
       })
       // IF FLOAT // NUMBER ETC USE 8!

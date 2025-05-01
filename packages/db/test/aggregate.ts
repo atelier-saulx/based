@@ -19,7 +19,6 @@ await test('aggregate', async (t) => {
               hello: 'uint32',
             },
           },
-          // country: 'string',
           AL: 'uint8',
           AM: 'uint8',
           AT: 'uint8',

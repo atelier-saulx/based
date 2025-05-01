@@ -15,8 +15,6 @@ const defaultReferences = @import("./default.zig").defaultReferences;
 const std = @import("std");
 const t = @import("../../../types.zig");
 const utils = @import("../../../utils.zig");
-const AggFn = @import("../../../types.zig").AggFn;
-const addCount = @import("../addAgg.zig").addCount;
 
 //  Multiple References Protocol Schema:
 

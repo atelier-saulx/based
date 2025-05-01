@@ -8,6 +8,7 @@ const std = @import("std");
 const utils = @import("../../utils.zig");
 const read = utils.read;
 const writeInt = utils.writeIntExact;
+const aggregateTypes = @import("../aggregate/types.zig");
 
 const c = @import("../../c.zig");
 
@@ -18,11 +19,17 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     var first = true;
     var node = db.getFirstNode(typeEntry);
 
-    const resultsSize = read(u16, aggInput, 0);
+    var index: usize = 0;
+    const groupBy: aggregateTypes.GroupedBy = @enumFromInt(aggInput[index]);
+
+    std.debug.print("Group? {any} \n", .{groupBy});
+
+    const resultsSize = read(u16, aggInput, index);
+    index += 2;
 
     ctx.size = resultsSize;
 
-    const agg = aggInput[2..aggInput.len];
+    const agg = aggInput[index..aggInput.len];
 
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;

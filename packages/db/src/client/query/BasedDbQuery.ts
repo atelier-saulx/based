@@ -12,7 +12,8 @@ import {
   isAlias,
   includeField,
   includeFields,
-  sum,
+  addAggregate,
+  groupBy,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -32,6 +33,7 @@ import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { concatUint8Arr } from '@saulx/utils'
+import { AggregateType } from './aggregates/types.js'
 
 export { QueryByAliasObj }
 
@@ -142,17 +144,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  // count(): T {
-  //   count(this.def)
-  //   // @ts-ignore
-  //   return this
-  // }
+  groupBy(field: string) {
+    groupBy(this.def, field)
+    // only works with aggregates for now
+  }
 
-  //   | BranchInclude
-
-  //  | string[]
+  // x
   sum(...fields: (string | string[])[]): T {
-    sum(this.def, fields)
+    addAggregate(AggregateType.SUM, this.def, fields)
     // @ts-ignore
     return this
   }

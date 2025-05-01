@@ -18,7 +18,7 @@ const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
 const QueryAlias = @import("./types/alias.zig");
 
-const AggDefault = @import("./types/aggregates.zig");
+const AggDefault = @import("./types/aggregate.zig");
 
 const utils = @import("../utils.zig");
 const read = utils.read;

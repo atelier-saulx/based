@@ -2,6 +2,7 @@ import { LangCode } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
+import { AggregateType } from './aggregates/types.js'
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 
@@ -82,10 +83,6 @@ export type QueryDefSort = {
   lang: LangCode
 }
 
-export const enum AggregateType {
-  SUM = 1,
-}
-
 export type Aggregation = {
   type: AggregateType
   propDef: PropDef // PropDefEdge |
@@ -95,6 +92,7 @@ export type Aggregation = {
 
 export type QueryDefAggregation = {
   size: number
+  groupBy?: PropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   totalResultsPos: number
