@@ -90,6 +90,11 @@ await test('aggregate', async (t) => {
   // 2 bytes string
   // var string
 
+  // ADD COUNT
+  // can use the index in selva if no filter
+  // count is going to be a seperate aggregate (like group)
+  // count is very different in that it does not require a field
+
   const q = await db
     .query('vote')
     .groupBy('country')
