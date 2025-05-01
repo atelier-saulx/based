@@ -26,13 +26,15 @@ export class BasedDb {
   constructor(opts: {
     path: string
     maxModifySize?: number
-    debug?: boolean | 'server'
+    debug?: boolean | 'server' | 'client'
     saveIntervalInSeconds?: number
   }) {
     this.#init(opts)
 
     if (opts.debug) {
-      if (opts.debug === 'server') {
+      if (opts.debug === 'client') {
+        debugServer(this.server)
+      } else if (opts.debug === 'server') {
         debugServer(this.server)
       } else {
         debugMode(this)
