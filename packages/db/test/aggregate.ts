@@ -71,7 +71,7 @@ await test('aggregate', async (t) => {
   // country: 'BB',
   // })/
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 300e3; i++) {
     const x = {
       country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
@@ -79,18 +79,22 @@ await test('aggregate', async (t) => {
       },
     }
     for (const key of countries) {
-      x[key] = 1
+      x[key] = ~~(Math.random() * 20)
     }
     db.create('vote', x)
   }
 
   console.log(await db.drain())
 
-  const q = await db.query('vote').groupBy('country').sum(countries).get()
+  // handle enum
+  // 2 bytes string
+  // var string
 
+  const q = await db.query('vote').sum(countries).get()
+  // groupBy('country')
   // q.debug()
 
-  console.log(q.toObject(), q.execTime)
+  console.log(q.toObject().NL, q.execTime, q.size)
 
   // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 

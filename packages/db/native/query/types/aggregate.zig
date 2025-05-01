@@ -24,12 +24,14 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     index += 2;
     ctx.size = resultsSize;
     const agg = aggInput[index..aggInput.len];
+
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
-    const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -71,11 +73,11 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                     if (aggType == AggType.SUM) {
                         // ok put on buffer
                         if (propType == types.Prop.UINT32) {
-                            writeInt(u32, data, resultPos, read(u32, data, resultPos) + read(u32, value, start));
+                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
                         } else if (propType == types.Prop.UINT8) {
                             // gotto go fast
                             // Adds lots of useless stack allocation we want to increment IN MEMORY
-                            writeInt(u32, data, resultPos, read(u32, data, resultPos) + value[start]);
+                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
                         } else {
                             // later..
                         }
@@ -88,7 +90,8 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             break :checkItem;
         }
     }
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+
+    writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
     return result;
 }
 
