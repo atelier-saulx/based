@@ -150,7 +150,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 resultsField = resultsHashMap.get(key).?;
             }
 
-            std.debug.print("X key {s} {any} {any} \n", .{ key, resultsField, resultsSize });
+            // std.debug.print("X key {s} {any} {any} \n", .{ key, resultsField, resultsSize });
 
             var i: usize = 0;
             while (i < agg.len) {
@@ -184,7 +184,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                         if (propType == types.Prop.UINT32) {
                             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
                         } else if (propType == types.Prop.UINT8) {
-                            std.debug.print("Start {any} {any} {d} {d} u8: {d} - {d} \n", .{ aggType, propType, start, resultPos, value[start], read(u32, resultsField, resultPos) });
+                            // std.debug.print("Start {any} {any} {d} {d} u8: {d} - {d} \n", .{ aggType, propType, start, resultPos, value[start], read(u32, resultsField, resultPos) });
 
                             // gotto go fast
                             // Adds lots of useless stack allocation we want to increment IN MEMORY
