@@ -30,7 +30,8 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
-import { debugServer } from '../utils.js'
+import { debugServer, schemaLooseEqual } from '../utils.js'
+import { deepEqual } from '@saulx/utils'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -391,6 +392,9 @@ export class DbServer {
     transformFns?: TransformFns,
   ) {
     if (!fromStart && Object.keys(this.schema.types).length > 0) {
+      if (schemaLooseEqual(strictSchema, this.schema)) {
+        return this.schema
+      }
       return this.migrateSchema(strictSchema, transformFns)
     }
 

@@ -13,12 +13,12 @@ import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
 import { DbServer } from '../server/index.js'
-import { deepEqual } from '@saulx/utils'
+import { deepCopy, deepEqual } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
-import { debugMode } from '../utils.js'
+import { debugMode, schemaLooseEqual } from '../utils.js'
 import { OnClose, OnData, OnError } from './query/subscription/types.js'
 
 export type DbClientHooks = {
@@ -96,40 +96,44 @@ export class DbClient {
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
-  schemaChecksum: number
+  schemaProcessing: number
 
   async setSchema(
     schema: Schema,
     fromStart?: boolean,
     transformFns?: TransformFns,
   ): Promise<StrictSchema> {
-    this.schemaIsSetValue = true
-    const checksum = hash(schema)
-    if (checksum === this.schemaChecksum) {
+    const strictSchema = fromStart ? schema : parse(schema).schema
+    // this one excludes all the ids
+    if (schemaLooseEqual(strictSchema, this.schema)) {
+      // console.log('loose equal')
       return this.schema
     }
-    const strictSchema = fromStart ? schema : parse(schema).schema
+    const checksum = hash(strictSchema)
+    if (checksum === this.schemaProcessing) {
+      // console.log('same as processing')
+      return this.schema
+    }
+    this.schemaProcessing = checksum
+    this.schemaIsSetValue = false
     const remoteSchema = await this.hooks.setSchema(
       strictSchema as StrictSchema,
       fromStart,
       transformFns,
     )
-    this.schemaChecksum = checksum
+    this.schemaProcessing = null
     return this.putLocalSchema(remoteSchema)
   }
 
   putLocalSchema(schema) {
     this.schemaIsSetValue = true
+    // this one includes all the ids
     if (deepEqual(this.schema, schema)) {
+      // console.log('the same!')
       return this.schema
     }
+
     this.schema = schema
-    for (const field in this.schema.types) {
-      if (!('id' in this.schema.types[field])) {
-        this.schema.lastId++
-        this.schema.types[field].id = this.schema.lastId
-      }
-    }
     updateTypeDefs(
       this.schema,
       this.schemaTypesParsed,

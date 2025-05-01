@@ -52,3 +52,50 @@ export const debugServer = (server: DbServer) =>
     () =>
       `p: ${server.processingQueries} m: ${server.modifyQueue.length} q: ${server.queryQueue.size}`,
   )
+
+const exclude = new Set(['id', 'lastId'])
+export const schemaLooseEqual = (a: any, b: any, key?: string) => {
+  if (a === b) {
+    return true
+  }
+  const typeofA = typeof a
+  if (typeofA !== 'object') {
+    return exclude.has(key)
+  }
+  const typeofB = typeof b
+  if (typeofA !== typeofB) {
+    return exclude.has(key)
+  }
+  if (a === null || b === null) {
+    return false
+  }
+  if (a.constructor !== b.constructor) {
+    return false
+  }
+  if (Array.isArray(a)) {
+    let i = a.length
+    if (i !== b.length) {
+      return false
+    }
+    while (i--) {
+      if (!schemaLooseEqual(a[i], b[i])) {
+        return false
+      }
+    }
+  } else {
+    for (const k in a) {
+      if (!schemaLooseEqual(a[k], b[k], k)) {
+        return false
+      }
+    }
+    for (const k in b) {
+      if (k in a) {
+        continue
+      }
+      if (!schemaLooseEqual(a[k], b[k], k)) {
+        return false
+      }
+    }
+  }
+  return true
+}
