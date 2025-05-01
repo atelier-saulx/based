@@ -197,7 +197,9 @@
     apply(xh, xh_ZA) \
     apply(yi, yi_US) \
     apply(yo, yo_NG) \
-    apply(zu, zu_ZA)
+    apply(zu, zu_ZA) \
+    apply(ka, ka_GE) \
+    apply(cnr, sr_ME)
 #else
 #define FORALL_LANGS(apply) \
     apply(en, en_GB)

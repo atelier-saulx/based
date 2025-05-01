@@ -162,6 +162,8 @@ const uint8_t selva_fields_text_tl_empty[_selva_lang_last][8] = {
     [selva_lang_yi] = { 142, 0, 0xa1, 0x1f, 0x79, 0xfe },
     [selva_lang_yo] = { 143, 0, 0xd6, 0x87, 0xdb, 0xed },
     [selva_lang_zu] = { 144, 0, 0xaa, 0x7c, 0x67, 0x35 },
+    [selva_lang_ka] = { 145, 0, 0xdd, 0xe4, 0xc5, 0x26 },
+    [selva_lang_cnr] = { 146, 0, 0x44, 0x4c, 0x22, 0x12 },
 };
 
 #if GEN_EMPTY_TRANSLATIONS
@@ -311,6 +313,8 @@ const char names[][16] = {
     "selva_lang_yi",
     "selva_lang_yo",
     "selva_lang_zu",
+    "selva_lang_ka",
+    "selva_lang_cnr",
 };
 
 __constructor
