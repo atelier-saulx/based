@@ -118,6 +118,9 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     // e.g if string use string hashmap
     var resultsHashMap = SimpleHashMap.init(ctx.allocator);
 
+    // lets make a specific COUNTRY CODE TYPE
+    // make predefiend stuff
+
     const resultsSize = read(u16, aggInput, index);
     index += 2;
 

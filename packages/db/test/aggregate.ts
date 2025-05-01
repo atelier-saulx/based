@@ -67,13 +67,13 @@ await test('aggregate', async (t) => {
     (v) => v !== 'flap' && v !== 'country',
   )
 
-  db.create('vote', {
-    country: 'BB',
-  })
+  // db.create('vote', {
+  // country: 'BB',
+  // })/
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     const x = {
-      country: 'AA', // allCountryCodes[~~(Math.random() * allCountryCodes.length)]
+      country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
         hello: 1,
       },
@@ -86,11 +86,11 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
-  const q = await db.query('vote').groupBy('country').sum('SE').get()
+  const q = await db.query('vote').groupBy('country').sum(countries).get()
 
-  q.debug()
+  // q.debug()
 
-  console.log(q.toObject())
+  console.log(q.toObject(), q.execTime)
 
   // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
