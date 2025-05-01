@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 
 await test('aggregate', async (t) => {
@@ -14,6 +15,7 @@ await test('aggregate', async (t) => {
     types: {
       vote: {
         props: {
+          country: { type: 'string', maxBytes: 2 },
           flap: {
             props: {
               hello: 'uint32',
@@ -62,11 +64,12 @@ await test('aggregate', async (t) => {
   })
 
   const countries = Object.keys(db.client.schema.types.vote.props).filter(
-    (v) => v != 'flap',
+    (v) => v !== 'flap' && v !== 'country',
   )
 
   for (let i = 0; i < 1e6; i++) {
     const x = {
+      country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
         hello: 1,
       },
@@ -79,10 +82,15 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
-  console.log(
-    await db.query('vote').sum('flap.hello', 'SM', 'SE').get().toObject(),
-  )
-  ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
+  const q = await db
+    .query('vote')
+    .groupBy('')
+    .sum('flap.hello', 'SM', 'SE')
+    .get()
+
+  q.debug()
+
+  // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
   // console.log(await db.query('vote').sum(countries).get().toObject())
 

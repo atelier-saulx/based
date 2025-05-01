@@ -144,9 +144,11 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string) {
+  groupBy(field: string): T {
     groupBy(this.def, field)
     // only works with aggregates for now
+    // @ts-ignore
+    return this
   }
 
   // x

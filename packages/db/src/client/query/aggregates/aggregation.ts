@@ -16,11 +16,11 @@ export const aggregateToBuffer = (
     aggBuffer[i] = aggregates.groupBy.typeIndex
     i += 1
     writeUint16(aggBuffer, aggregates.groupBy.start, i)
+    i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
+    i += 1
   }
-
-  i += 1
 
   writeUint16(aggBuffer, aggregates.totalResultsPos, i)
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
@@ -59,6 +59,7 @@ const ensureAggregate = (def: QueryDef) => {
 
 // Group by is great for normal stuff as well (do later)
 export const groupBy = (def: QueryDef, field: string) => {
+  console.log(field)
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     throw new Error(
@@ -66,6 +67,9 @@ export const groupBy = (def: QueryDef, field: string) => {
     )
   }
   ensureAggregate(def)
+  if (!def.aggregate.groupBy) {
+    def.aggregate.size += 5
+  }
   def.aggregate.groupBy = fieldDef
 }
 
