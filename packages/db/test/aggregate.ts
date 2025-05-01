@@ -90,7 +90,11 @@ await test('aggregate', async (t) => {
   // 2 bytes string
   // var string
 
-  const q = await db.query('vote').groupBy('country').sum(countries).get()
+  const q = await db
+    .query('vote')
+    .groupBy('country')
+    .sum(countries, 'flap.hello')
+    .get()
   // groupBy('country')
   // q.debug()
 
