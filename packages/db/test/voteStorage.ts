@@ -139,7 +139,7 @@ await test('schema with many uint8 fields', async (t) => {
   })
   const final = await db.create('round', {})
 
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 3e5; i++) {
     const payment = db.create('payment', {
       fingerprint: `blablabla-${i}`,
       status: 'WebhookSuccess',
