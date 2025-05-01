@@ -12,9 +12,9 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-const makeQuery = (path: string, returnValue: any) => {
+const makeQuery = (path: string, returnValue: any, functionName: string = 'bla') => {
   return {
-    bla: {
+    [functionName]: {
       type: 'query',
       path,
       closeAfterIdleTime: 3e3,
@@ -63,7 +63,9 @@ test('basic path matcher', async (t: T) => {
         ...makeFunction('/voting', true, 'voting'),
         ...makeFunction('/artists/:name', true, 'artists'),
         ...makeFunction('/musics/:name+', true, 'musics'),
-        ...makeFunction('/cms/:path*', true, 'cms')
+        ...makeFunction('/cms/:path*', true, 'cms'),
+        ...makeFunction('/panel/:path*', true, 'a:b'),
+        ...makeQuery(undefined, true, 'based:secret')
       }
     },
     auth: {
@@ -99,6 +101,10 @@ test('basic path matcher', async (t: T) => {
   const r25 = await (await fetch(t.context.http + '/cms/login')).json()
   const r26 = await (await fetch(t.context.http + '/cms/users/luigui')).json()
   const r27 = await (await fetch(t.context.http + '/cms/users/luigui/')).json()
+  const r28 = await (await fetch(t.context.http + '/panel/users/luigui/')).json()
+  const r29 = await (await fetch(t.context.http + '/a:b')).json()
+  const r30 = await (await fetch(t.context.http + '/a:b/panel')).json()
+  const r31 = await (await fetch(t.context.http + '/based:secret')).json()
   
   await server.destroy()
 
@@ -129,6 +135,10 @@ test('basic path matcher', async (t: T) => {
   t.deepEqual(r25, { result: true, path: '/cms/:path*', functionName: 'cms' })
   t.deepEqual(r26, { result: true, path: '/cms/:path*', functionName: 'cms' })
   t.deepEqual(r27, { result: true, path: '/cms/:path*', functionName: 'cms' })
+  t.deepEqual(r28, { result: true, path: '/panel/:path*', functionName: 'a:b' })
+  t.deepEqual(r29, { result: true, path: '/', functionName: 'root' })
+  t.deepEqual(r30, { result: true, path: '/', functionName: 'root' })
+  t.true(r31)
 })
 
 test('[query] path matcher with static value and optional parameter', async (t: T) => {
