@@ -10,10 +10,7 @@ const read = utils.read;
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
-
 const c = @import("../../c.zig");
-
-pub const AggType = enum(u8) { SUM = 1, _ };
 
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -48,7 +45,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 i += 1;
                 const fieldAggsSize = read(u16, agg, i);
                 if (field != types.MAIN_PROP) {
-                    // only main for now
                     continue :checkItem;
                 }
                 i += 2;
@@ -61,7 +57,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 }
                 var j: usize = 0;
                 while (j < fieldAggsSize) {
-                    const aggType: AggType = @enumFromInt(aggPropDef[j]);
+                    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
                     j += 1;
                     const propType: types.Prop = @enumFromInt(aggPropDef[j]);
                     j += 1;
@@ -70,13 +66,10 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                     const resultPos = read(u16, aggPropDef, j);
                     j += 2;
 
-                    if (aggType == AggType.SUM) {
-                        // ok put on buffer
+                    if (aggType == aggregateTypes.AggType.SUM) {
                         if (propType == types.Prop.UINT32) {
                             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
                         } else if (propType == types.Prop.UINT8) {
-                            // gotto go fast
-                            // Adds lots of useless stack allocation we want to increment IN MEMORY
                             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
                         } else {
                             // later..
@@ -116,13 +109,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     const groupType: types.Prop = if (groupField == types.MAIN_PROP) types.Prop.MICRO_BUFFER else groupPropType;
     const groupFieldSchema = try db.getFieldSchema(groupField, typeEntry);
 
-    // std.debug.print("Group? field: {d} {any} start {d} {d} \n", .{ groupField, groupPropType, groupStart, groupLen });
-    // need to have dynamic key size or at least a map for different types
-    // e.g if string use string hashmap
     var resultsHashMap = SimpleHashMap.init(ctx.allocator);
-
-    // lets make a specific COUNTRY CODE TYPE
-    // make predefiend stuff
 
     const resultsSize = read(u16, aggInput, index);
     index += 2;
@@ -156,8 +143,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 resultsField = resultsHashMap.get(key).?;
             }
 
-            // std.debug.print("X key {s} {any} {any} \n", .{ key, resultsField, resultsSize });
-
             var i: usize = 0;
             while (i < agg.len) {
                 const field = agg[i];
@@ -176,7 +161,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 }
                 var j: usize = 0;
                 while (j < fieldAggsSize) {
-                    const aggType: AggType = @enumFromInt(aggPropDef[j]);
+                    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
                     j += 1;
                     const propType: types.Prop = @enumFromInt(aggPropDef[j]);
                     j += 1;
@@ -185,15 +170,10 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                     const resultPos = read(u16, aggPropDef, j);
                     j += 2;
 
-                    if (aggType == AggType.SUM) {
-                        // ok put on buffer
+                    if (aggType == aggregateTypes.AggType.SUM) {
                         if (propType == types.Prop.UINT32) {
                             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
                         } else if (propType == types.Prop.UINT8) {
-                            // std.debug.print("Start {any} {any} {d} {d} u8: {d} - {d} \n", .{ aggType, propType, start, resultPos, value[start], read(u32, resultsField, resultPos) });
-
-                            // gotto go fast
-                            // Adds lots of useless stack allocation we want to increment IN MEMORY
                             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
                         } else {
                             // later..
