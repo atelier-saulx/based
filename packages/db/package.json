@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.0.38",
+  "version": "0.0.39",
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",
