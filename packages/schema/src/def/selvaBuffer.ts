@@ -48,8 +48,12 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(prop: PropDef, inverseProp: PropDef): number {
-  return (prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00) |
-         ((prop.typeIndex === REFERENCE && inverseProp.typeIndex === REFERENCES) ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP : 0x00)
+  return (
+    (prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00) |
+    (prop.typeIndex === REFERENCE && inverseProp && inverseProp.typeIndex === REFERENCES
+      ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
+      : 0x00)
+  )
 }
 
 const propDefBuffer = (
@@ -72,7 +76,7 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
-
+    
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop, dstType.props[prop.inversePropName]) // flags
