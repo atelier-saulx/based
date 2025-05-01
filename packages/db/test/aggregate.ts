@@ -71,7 +71,7 @@ await test('aggregate', async (t) => {
   // country: 'BB',
   // })/
 
-  for (let i = 0; i < 300e3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     const x = {
       country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
