@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('schema with many uint8 fields', async (t) => {
+await test('votesEdges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     // debug: 'server',

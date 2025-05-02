@@ -57,7 +57,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
         return null;
     }
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -90,7 +89,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 i += fieldAggsSize;
             }
         } else {
-            // means error
             break :checkItem;
         }
     }
@@ -99,15 +97,14 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     return result;
 }
 
+// add more hashmaps
 const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
 
 pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
-
     var index: usize = 1;
-
     const groupField = aggInput[index];
     index += 1;
     const groupPropType: types.Prop = @enumFromInt(aggInput[index]);
@@ -123,7 +120,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += 2;
     const emptyKey = [_]u8{0} ** 2;
     const agg = aggInput[index..aggInput.len];
-
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -135,6 +131,8 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupFieldSchema, groupType);
+
+            // key
             const key: [2]u8 = if (groupValue.len > 0) groupValue[groupStart + 1 .. groupStart + 1 + groupLen][0..2].* else emptyKey;
             var resultsField: []u8 = undefined;
             if (!resultsHashMap.contains(key)) {
@@ -145,6 +143,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             } else {
                 resultsField = resultsHashMap.get(key).?;
             }
+
             var i: usize = 0;
             while (i < agg.len) {
                 const field = agg[i];
@@ -171,14 +170,12 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             break :checkItem;
         }
     }
-
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-
     var it = resultsHashMap.iterator();
     var i: usize = 0;
     while (it.next()) |entry| {
@@ -187,7 +184,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
         copy(data[i .. i + resultsSize], entry.value_ptr.*);
         i += resultsSize;
     }
-
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
     return result;
 }
