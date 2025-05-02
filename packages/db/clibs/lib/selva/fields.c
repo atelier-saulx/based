@@ -98,7 +98,6 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
 static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
     char *data = (char *)PTAG_GETP(fields->data);
-
     void *p = data + (nfo->off << SELVA_FIELDS_OFF);
 
     if (unlikely((char *)p > data + fields->data_len)) {
