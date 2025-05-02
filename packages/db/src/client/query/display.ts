@@ -302,7 +302,7 @@ export const inspectData = (
   let str: string
   let i = 0
 
-  if (hasId) {
+  if (hasId || def.aggregate) {
     str = prefix
     level = level + 1
   } else if (top) {
@@ -310,6 +310,20 @@ export const inspectData = (
     str = prefix + '[\n' + prefix + '  '
   } else {
     str = prefix + '['
+  }
+
+  if (def.aggregate) {
+    str += inspectObject(
+      q.toObject(),
+      def,
+      '',
+      level + 1,
+      i === max - 1,
+      i === 0,
+      false,
+      depth,
+    )
+    return str
   }
 
   for (const x of q) {

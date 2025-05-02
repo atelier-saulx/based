@@ -86,6 +86,11 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
+
+
+
+  await db.query('vote').sum('NL').get().inspect()
+
   // handle enum
   // 2 bytes string
   // var string
@@ -99,11 +104,14 @@ await test('aggregate', async (t) => {
     .query('vote')
     .groupBy('country')
     .sum(countries, 'flap.hello')
+    // .count() just add on $count
     .get()
   // groupBy('country')
   // q.debug()
 
-  console.log(q.toObject().NL, q.execTime, q.size)
+  // add count!
+
+  console.log(q.toObject().NL, q.execTime, q.size, '?')
 
   // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
