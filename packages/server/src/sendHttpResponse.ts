@@ -115,7 +115,7 @@ export const sendHttpResponse = (
           ) {
             ctx.session.res.writeHeader(
               'Strict-Transport-Security',
-              'max-age=31536000, includeSubDomains, preload',
+              'max-age=31536000; includeSubDomains; preload',
             )
           }
           if (!('Content-Type' in headers || 'content-type' in headers)) {
@@ -128,7 +128,7 @@ export const sendHttpResponse = (
           )
           ctx.session.res.writeHeader(
             'Strict-Transport-Security',
-            'max-age=31536000, includeSubDomains, preload',
+            'max-age=31536000; includeSubDomains; preload',
           )
         }
 
