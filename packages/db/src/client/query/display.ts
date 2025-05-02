@@ -183,7 +183,15 @@ const inspectObject = (
       str += ',\n'
     } else if (!def) {
       if (typeof v === 'number') {
-        str += picocolors.blue(v) + '\n'
+        if (q.aggregate) {
+          str += picocolors.blue(v)
+          str += picocolors.italic(
+            picocolors.dim(` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`), // MV: better with AggregateType later
+          )
+          str += ',\n'
+        } else {
+          str += picocolors.blue(v) + '\n'
+        }
       } else {
         str +=
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
@@ -241,7 +249,16 @@ const inspectObject = (
         str += prettyPrintVal(v, def.typeIndex)
       } else {
         if (typeof v === 'number') {
-          str += picocolors.blue(v)
+          if (q.aggregate) {
+            str += picocolors.blue(v)
+            str += picocolors.italic(
+              picocolors.dim(
+                ` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`,
+              ), // MV: better with AggregateType later
+            )
+          }
+          // str += ',\n'
+          // str += picocolors.blue(v)
         } else if (typeof v === 'object' && v) {
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {

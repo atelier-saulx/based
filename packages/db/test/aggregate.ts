@@ -67,10 +67,6 @@ await test('aggregate', async (t) => {
     (v) => v !== 'flap' && v !== 'country',
   )
 
-  // db.create('vote', {
-  // country: 'BB',
-  // })/
-
   for (let i = 0; i < 1; i++) {
     const x = {
       country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
@@ -86,10 +82,13 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
+  // db.query('NL').sum('NL').get().inspect() // field error
+
   await db.query('vote').sum('NL').get().inspect()
 
   await db.query('vote').count().get().inspect()
-  ;(await db.query('vote').count().get()).debug()
+  // ;(await db.query('vote').count().get()).debug()
+
   // handle enum
   // 2 bytes string
   // var string
@@ -102,18 +101,16 @@ await test('aggregate', async (t) => {
   const q = await db
     .query('vote')
     .groupBy('country')
-    // .sum(countries, 'flap.hello')
-    .count()
-    // .count() just add on $count
+    .sum(countries, 'flap.hello')
     .get()
     .inspect()
+  console.log(q.execTime, q.size, '?')
 
-  // groupBy('country')
-  q.debug()
+  const q2 = await db.query('vote').groupBy('country').count().get().inspect()
+  console.log(q.execTime, q2.size, '?')
+  // q.debug()
 
   // add count!
-
-  console.log(q.execTime, q.size, '?')
 
   // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
