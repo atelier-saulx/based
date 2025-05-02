@@ -63,22 +63,41 @@ await test('aggregate', async (t) => {
     },
   })
 
-  const countries = Object.keys(db.client.schema.types.vote.props).filter(
-    (v) => v !== 'flap' && v !== 'country',
-  )
+  // const countries = Object.keys(db.client.schema.types.vote.props).filter(
+  //   (v) => v !== 'flap' && v !== 'country',
+  // )
 
-  for (let i = 0; i < 1; i++) {
-    const x = {
-      country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      flap: {
-        hello: 1,
-      },
-    }
-    for (const key of countries) {
-      x[key] = ~~(Math.random() * 20)
-    }
-    db.create('vote', x)
-  }
+  // for (let i = 0; i < 1; i++) {
+  //   const x = {
+  //     country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+  //     flap: {
+  //       hello: 1,
+  //     },
+  //   }
+  //   for (const key of countries) {
+  //     x[key] = ~~(Math.random() * 20)
+  //   }
+  //   db.create('vote', x)
+  // }
+
+  const nl1 = db.create('vote', {
+    NL: 10,
+    flap: {
+      hello: 813,
+    },
+  })
+  const nl2 = db.create('vote', {
+    NL: 20,
+    flap: {
+      hello: 100,
+    },
+  })
+  const nl3 = db.create('vote', {
+    AU: 15,
+    flap: {
+      hello: 900,
+    },
+  })
 
   console.log(await db.drain())
 
@@ -98,16 +117,28 @@ await test('aggregate', async (t) => {
   // count is going to be a seperate aggregate (like group)
   // count is very different in that it does not require a field
 
-  const q = await db
+  // const q = await db
+  //   .query('vote')
+  //   .groupBy('country')
+  //   .sum(countries, 'flap.hello')
+  //   .get()
+  //   .inspect()
+  // console.log(q.execTime, q.size, '?')
+
+  const q2 = await db
     .query('vote')
     .groupBy('country')
-    .sum(countries, 'flap.hello')
+    .sum(['NL', 'AU'])
     .get()
     .inspect()
-  console.log(q.execTime, q.size, '?')
+  const q3 = await db.query('vote').groupBy('country').count().get()
 
-  const q2 = await db.query('vote').groupBy('country').count().get().inspect()
-  console.log(q.execTime, q2.size, '?')
+  console.log('count + groupBy + inspect')
+  q3.inspect()
+  console.log('count + groupBy + toObject')
+  console.log(q3.toObject())
+
+  // console.log(q.execTime, q2.size, '?')
   // q.debug()
 
   // add count!
