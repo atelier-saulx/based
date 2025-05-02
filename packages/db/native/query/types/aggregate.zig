@@ -12,6 +12,36 @@ const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const c = @import("../../c.zig");
 
+pub inline fn execAgg(
+    aggPropDef: []u8,
+    resultsField: []u8,
+    value: []u8,
+    fieldAggsSize: u16,
+) void {
+    var j: usize = 0;
+    while (j < fieldAggsSize) {
+        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
+        j += 1;
+        const propType: types.Prop = @enumFromInt(aggPropDef[j]);
+        j += 1;
+        const start = read(u16, aggPropDef, j);
+        j += 2;
+        const resultPos = read(u16, aggPropDef, j);
+        j += 2;
+        if (aggType == aggregateTypes.AggType.COUNT) {
+            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
+        } else if (aggType == aggregateTypes.AggType.SUM) {
+            if (propType == types.Prop.UINT32) {
+                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
+            } else if (propType == types.Prop.UINT8) {
+                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
+            } else {
+                // later..
+            }
+        }
+    }
+}
+
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
@@ -21,7 +51,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     index += 2;
     ctx.size = resultsSize;
     const agg = aggInput[index..aggInput.len];
-
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
@@ -47,7 +76,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 i += 2;
                 const aggPropDef = agg[i .. i + fieldAggsSize];
                 var value: []u8 = undefined;
-
                 if (field != aggregateTypes.IsId) {
                     if (field != types.MAIN_PROP) {
                         continue :checkItem;
@@ -58,35 +86,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                         continue :checkItem;
                     }
                 }
-
-                var j: usize = 0;
-                while (j < fieldAggsSize) {
-                    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
-
-                    j += 1;
-                    if (aggType == aggregateTypes.AggType.COUNT) {
-                        j += 3;
-                        const resultPos = read(u16, aggPropDef, j);
-                        j += 2;
-                        writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
-                    } else {
-                        const propType: types.Prop = @enumFromInt(aggPropDef[j]);
-                        j += 1;
-                        const start = read(u16, aggPropDef, j);
-                        j += 2;
-                        const resultPos = read(u16, aggPropDef, j);
-                        j += 2;
-                        if (aggType == aggregateTypes.AggType.SUM) {
-                            if (propType == types.Prop.UINT32) {
-                                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
-                            } else if (propType == types.Prop.UINT8) {
-                                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
-                            } else {
-                                // later..
-                            }
-                        }
-                    }
-                }
+                execAgg(aggPropDef, resultsField, value, fieldAggsSize);
                 i += fieldAggsSize;
             }
         } else {
@@ -116,17 +116,12 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += 2;
     const groupLen = read(u16, aggInput, index);
     index += 2;
-
     const groupType: types.Prop = if (groupField == types.MAIN_PROP) types.Prop.MICRO_BUFFER else groupPropType;
     const groupFieldSchema = try db.getFieldSchema(groupField, typeEntry);
-
     var resultsHashMap = SimpleHashMap.init(ctx.allocator);
-
     const resultsSize = read(u16, aggInput, index);
     index += 2;
-
     const emptyKey = [_]u8{0} ** 2;
-
     const agg = aggInput[index..aggInput.len];
 
     checkItem: while (ctx.totalResults < limit) {
@@ -139,11 +134,8 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupFieldSchema, groupType);
-
             const key: [2]u8 = if (groupValue.len > 0) groupValue[groupStart + 1 .. groupStart + 1 + groupLen][0..2].* else emptyKey;
-
             var resultsField: []u8 = undefined;
             if (!resultsHashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, resultsSize);
@@ -153,7 +145,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             } else {
                 resultsField = resultsHashMap.get(key).?;
             }
-
             var i: usize = 0;
             while (i < agg.len) {
                 const field = agg[i];
@@ -161,7 +152,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 const fieldAggsSize = read(u16, agg, i);
                 i += 2;
                 const aggPropDef = agg[i .. i + fieldAggsSize];
-
                 var value: []u8 = undefined;
                 if (field != aggregateTypes.IsId) {
                     if (field != types.MAIN_PROP) {
@@ -173,29 +163,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                         continue :checkItem;
                     }
                 }
-
-                var j: usize = 0;
-                while (j < fieldAggsSize) {
-                    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
-                    j += 1;
-                    const propType: types.Prop = @enumFromInt(aggPropDef[j]);
-                    j += 1;
-                    const start = read(u16, aggPropDef, j);
-                    j += 2;
-                    const resultPos = read(u16, aggPropDef, j);
-                    j += 2;
-                    if (aggType == aggregateTypes.AggType.COUNT) {
-                        writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
-                    } else if (aggType == aggregateTypes.AggType.SUM) {
-                        if (propType == types.Prop.UINT32) {
-                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
-                        } else if (propType == types.Prop.UINT8) {
-                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
-                        } else {
-                            // later..
-                        }
-                    }
-                }
+                execAgg(aggPropDef, resultsField, value, fieldAggsSize);
                 i += fieldAggsSize;
             }
         } else {

@@ -4,6 +4,6 @@ export const enum AggregateType {
 }
 
 export const enum GroupBy {
-  NONE = 1,
+  NONE = 0,
   HAS_GROUP = 255,
 }
