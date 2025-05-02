@@ -70,6 +70,8 @@ export const ERR_SEARCH_TYPE = 22
 export const ERR_SEARCH_INCORRECT_VALUE = 23
 export const ERR_SORT_LANG = 24
 
+export const ERR_AGG_ENOENT = 25
+
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
@@ -111,6 +113,8 @@ const messages = {
   [ERR_SEARCH_INCORRECT_VALUE]: (p) =>
     `Search: incorrect query on field "${safeStringify(p)}"`,
   [ERR_SORT_LANG]: (p) => `Sort: invalid lang`,
+  [ERR_AGG_ENOENT]: (p) =>
+    `Field \"${p}\" in the aggregate function is invalid or unreacheable.`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -551,4 +555,12 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
   propNames: new Uint8Array([]),
   idUint8: new Uint8Array([0, 0]),
   mainEmptyAllZeroes: true,
+}
+
+export const aggregationFieldDoesNotExist = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_AGG_ENOENT,
+    payload: field,
+  })
+  handleErrors(def)
 }

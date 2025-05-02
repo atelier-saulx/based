@@ -2,6 +2,7 @@ import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
 import { ID, PropDef, UINT32 } from '@based/schema/def'
+import { aggregationFieldDoesNotExist } from '../validation.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -63,9 +64,7 @@ const ensureAggregate = (def: QueryDef) => {
 export const groupBy = (def: QueryDef, field: string) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
-    throw new Error(
-      `Field for agg:groupBy does not exists "${field}" make better error later...`,
-    )
+    aggregationFieldDoesNotExist(def, field)
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
@@ -101,9 +100,7 @@ export const addAggregate = (
           : def.schema.props[field]
 
       if (!fieldDef) {
-        throw new Error(
-          `Field for agg does not exists ${field} make better error later...`,
-        )
+        aggregationFieldDoesNotExist(def, field)
       }
 
       if (!aggregates.get(fieldDef.prop)) {
