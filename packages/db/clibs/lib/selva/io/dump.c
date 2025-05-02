@@ -305,7 +305,7 @@ static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
         alias = alias_first;
         while (alias) {
             const char *name_str = alias->name;
-            const sdb_arr_len_t name_len = strlen(name_str);
+            const sdb_arr_len_t name_len = alias->name_len;
 
             io->sdb_write(&name_len, sizeof(name_len), 1, io);
             io->sdb_write(name_str, sizeof(*name_str), name_len, io);
@@ -977,9 +977,9 @@ static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, nod
             struct SelvaAlias *alias;
 
             io->sdb_read(&name_len, sizeof(name_len), 1, io);
-            alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+            alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
+            alias->name_len = name_len;
             io->sdb_read(alias->name, sizeof(char), name_len, io);
-            alias->name[name_len] = '\0';
             alias->dest = node_id;
 
             selva_set_alias_p(&te->aliases[i], alias);

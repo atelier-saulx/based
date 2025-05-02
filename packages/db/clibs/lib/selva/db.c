@@ -61,7 +61,13 @@ int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b)
 __attribute__((nonnull))
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
-    return strcmp(a->name, b->name);
+    if (a->name_len == b->name_len) {
+        return memcmp(a->name, b->name, a->name_len);
+    } else if (a->name_len < b->name_len) {
+        return '\0' - b->name[b->name_len - 1];
+    } else {
+        return a->name[a->name_len - 1] - '\0';
+    }
 }
 
 __attribute__((nonnull))
@@ -846,10 +852,8 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
 
         alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
         while (alias) {
-            const char *name = alias->name;
-            size_t len = strlen(name);
 
-            selva_hash_update(hash_state, name, len);
+            selva_hash_update(hash_state, alias->name, alias->name_len);
             alias = alias->next;
         }
     }

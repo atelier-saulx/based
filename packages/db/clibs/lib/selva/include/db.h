@@ -57,7 +57,8 @@ struct SelvaAlias {
     struct SelvaAlias *prev;
     struct SelvaAlias *next; /*!< Next alias for the same destination. */
     node_id_t dest;
-    char name[];
+    uint32_t name_len;
+    char name[] __counted_by(name_len);
 };
 
 struct SelvaTypeBlock {

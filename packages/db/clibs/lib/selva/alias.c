@@ -137,24 +137,24 @@ retry:
 
 node_id_t selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *new_alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
+    struct SelvaAlias *new_alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
 
     new_alias->dest = dest;
+    new_alias->name_len = name_len;
     memcpy(new_alias->name, name_str, name_len);
-    new_alias->name[name_len] = '\0';
 
     return selva_set_alias_p(aliases, new_alias);
 }
 
 node_id_t selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len));
     struct SelvaAlias *alias;
     node_id_t old_dest = 0;
 
     memset(find, 0, sizeof(*find));
+    find->name_len = name_len;
     memcpy(find->name, name_str, name_len);
-    find->name[name_len] = '\0';
 
     alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, find);
     if (alias) {
@@ -203,11 +203,11 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
 
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
-    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len + 1));
+    struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len));
 
     memset(find, 0, sizeof(*find));
+    find->name_len = name_len;
     memcpy(find->name, name_str, name_len);
-    find->name[name_len] = '\0';
 
     struct SelvaAlias *alias = RB_FIND(SelvaAliasesByName, &aliases->alias_by_name, find);
     if (!alias) {
@@ -241,9 +241,7 @@ const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias)
 
 const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len)
 {
-    if (len) {
-        *len = strlen(alias->name);
-    }
+    *len = alias->name_len;
     return alias->name;
 }
 
