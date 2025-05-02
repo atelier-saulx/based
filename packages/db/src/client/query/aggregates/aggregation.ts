@@ -105,10 +105,12 @@ export const addAggregate = (
           `Field for agg does not exists ${field} make better error later...`,
         )
       }
+
       if (!aggregates.get(fieldDef.prop)) {
         aggregates.set(fieldDef.prop, [])
         def.aggregate.size += 3
       }
+
       const aggregateField = aggregates.get(fieldDef.prop)
       aggregateField.push({
         propDef: fieldDef,

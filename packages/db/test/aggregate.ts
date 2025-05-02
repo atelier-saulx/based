@@ -27,37 +27,37 @@ await test('aggregate', async (t) => {
           AU: 'uint8',
           AZ: 'uint8',
           BE: 'uint8',
-          CH: 'uint8',
-          CY: 'uint8',
-          CZ: 'uint8',
-          DE: 'uint8',
-          DK: 'uint8',
-          EE: 'uint8',
-          ES: 'uint8',
-          FI: 'uint8',
-          FR: 'uint8',
-          GB: 'uint8',
-          GE: 'uint8',
-          GR: 'uint8',
-          HR: 'uint8',
-          IE: 'uint8',
-          IL: 'uint8',
-          IS: 'uint8',
-          IT: 'uint8',
-          LT: 'uint8',
-          LU: 'uint8',
-          LV: 'uint8',
-          MD: 'uint8',
-          MT: 'uint8',
+          // CH: 'uint8',
+          // CY: 'uint8',
+          // CZ: 'uint8',
+          // DE: 'uint8',
+          // DK: 'uint8',
+          // EE: 'uint8',
+          // ES: 'uint8',
+          // FI: 'uint8',
+          // FR: 'uint8',
+          // GB: 'uint8',
+          // GE: 'uint8',
+          // GR: 'uint8',
+          // HR: 'uint8',
+          // IE: 'uint8',
+          // IL: 'uint8',
+          // IS: 'uint8',
+          // IT: 'uint8',
+          // LT: 'uint8',
+          // LU: 'uint8',
+          // LV: 'uint8',
+          // MD: 'uint8',
+          // MT: 'uint8',
           NL: 'uint8',
-          NO: 'uint8',
-          PL: 'uint8',
-          PT: 'uint8',
-          RS: 'uint8',
-          SE: 'uint8',
-          SI: 'uint8',
-          SM: 'uint8',
-          UA: 'uint8',
+          // NO: 'uint8',
+          // PL: 'uint8',
+          // PT: 'uint8',
+          // RS: 'uint8',
+          // SE: 'uint8',
+          // SI: 'uint8',
+          // SM: 'uint8',
+          // UA: 'uint8',
         },
       },
     },
@@ -71,7 +71,7 @@ await test('aggregate', async (t) => {
   // country: 'BB',
   // })/
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1; i++) {
     const x = {
       country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
@@ -102,15 +102,18 @@ await test('aggregate', async (t) => {
   const q = await db
     .query('vote')
     .groupBy('country')
-    .sum(countries, 'flap.hello')
+    // .sum(countries, 'flap.hello')
+    .count()
     // .count() just add on $count
     .get()
+    .inspect()
+
   // groupBy('country')
-  // q.debug()
+  q.debug()
 
   // add count!
 
-  console.log(q.toObject().NL, q.execTime, q.size, '?')
+  console.log(q.execTime, q.size, '?')
 
   // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 

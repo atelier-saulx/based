@@ -166,8 +166,8 @@ const inspectObject = (
       if (q.edges?.props?.[k]) {
         edges.push({ k, v, def: q.edges?.props?.[k] })
       } else {
-        isEdge = false
         str += prefixBody + `${k}: `
+        isEdge = false
       }
     } else {
       str += prefixBody + `${k}: `
@@ -242,6 +242,8 @@ const inspectObject = (
       } else {
         if (typeof v === 'number') {
           str += picocolors.blue(v)
+        } else if (typeof v === 'object' && v) {
+          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {
           str += v
         }
