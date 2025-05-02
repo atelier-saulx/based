@@ -144,6 +144,8 @@ const langCodes = {
   yi: 142,
   yo: 143,
   zu: 144,
+  ka: 145,
+  cnr: 146,
 } as const
 
 export const langCodesMap = new Map(Object.entries(langCodes))

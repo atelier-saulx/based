@@ -22,12 +22,9 @@ await test('main + empty', async (t) => {
     role: 'translator',
   })
 
-  console.log(await db.query('user').get().toObject())
   await db.update('user', user1, {
     location: '',
   })
-
-  console.log(await db.query('user').get().toObject())
 
   deepEqual(await db.query('user').get().toObject(), [
     { id: 1, role: 'translator', location: '' },
