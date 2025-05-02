@@ -1,5 +1,6 @@
 export const enum AggregateType {
   SUM = 1,
+  COUNT = 2,
 }
 
 export const enum GroupBy {

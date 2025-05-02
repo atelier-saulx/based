@@ -151,7 +151,13 @@ export class QueryBranch<T> {
     return this
   }
 
-  // x
+  count(field: string = '$count'): T {
+    const p = field.split('.')
+    addAggregate(AggregateType.COUNT, this.def, p)
+    // @ts-ignore
+    return this
+  }
+
   sum(...fields: (string | string[])[]): T {
     addAggregate(AggregateType.SUM, this.def, fields)
     // @ts-ignore

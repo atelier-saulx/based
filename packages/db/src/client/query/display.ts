@@ -158,13 +158,16 @@ const inspectObject = (
     let def: PropDef | PropDefEdge
     def = q.props[key]
     let v = object[k]
-    const isEdge = k[0] === '$'
+    let isEdge = k[0] === '$'
 
     if (k === '$searchScore') {
       edges.push({ k, v, def: { typeIndex: NUMBER } })
     } else if (isEdge) {
       if (q.edges?.props?.[k]) {
         edges.push({ k, v, def: q.edges?.props?.[k] })
+      } else {
+        isEdge = false
+        str += prefixBody + `${k}: `
       }
     } else {
       str += prefixBody + `${k}: `
@@ -179,7 +182,12 @@ const inspectObject = (
         picocolors.italic(picocolors.dim(` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
-      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      if (typeof v === 'number') {
+        str += picocolors.blue(v) + '\n'
+      } else {
+        str +=
+          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+      }
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === REFERENCES) {
         str += inspectData(

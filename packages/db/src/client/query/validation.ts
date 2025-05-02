@@ -16,7 +16,6 @@ import {
   propIsNumerical,
   createEmptyDef,
   DEFAULT_MAP,
-  isPropDef,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {

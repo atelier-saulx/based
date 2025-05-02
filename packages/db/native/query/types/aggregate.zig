@@ -43,36 +43,48 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             while (i < agg.len) {
                 const field = agg[i];
                 i += 1;
+
+                // var
                 const fieldAggsSize = read(u16, agg, i);
-                if (field != types.MAIN_PROP) {
-                    continue :checkItem;
-                }
                 i += 2;
                 const aggPropDef = agg[i .. i + fieldAggsSize];
 
-                const fieldSchema = try db.getFieldSchema(field, typeEntry);
-                const value = db.getField(typeEntry, db.getNodeId(n), n, fieldSchema, types.Prop.MICRO_BUFFER);
-                if (value.len == 0) {
-                    continue :checkItem;
+                var value: []u8 = undefined;
+                if (field != aggregateTypes.IsId) {
+                    if (field != types.MAIN_PROP) {
+                        continue :checkItem;
+                    }
+                    const fieldSchema = try db.getFieldSchema(field, typeEntry);
+                    value = db.getField(typeEntry, db.getNodeId(n), n, fieldSchema, types.Prop.MICRO_BUFFER);
+                    if (value.len == 0) {
+                        continue :checkItem;
+                    }
                 }
+
                 var j: usize = 0;
                 while (j < fieldAggsSize) {
                     const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
                     j += 1;
-                    const propType: types.Prop = @enumFromInt(aggPropDef[j]);
-                    j += 1;
-                    const start = read(u16, aggPropDef, j);
-                    j += 2;
-                    const resultPos = read(u16, aggPropDef, j);
-                    j += 2;
-
-                    if (aggType == aggregateTypes.AggType.SUM) {
-                        if (propType == types.Prop.UINT32) {
-                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
-                        } else if (propType == types.Prop.UINT8) {
-                            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
-                        } else {
-                            // later..
+                    if (aggType == aggregateTypes.AggType.COUNT) {
+                        j += 3;
+                        const resultPos = read(u16, aggPropDef, j);
+                        j += 2;
+                        writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
+                    } else {
+                        const propType: types.Prop = @enumFromInt(aggPropDef[j]);
+                        j += 1;
+                        const start = read(u16, aggPropDef, j);
+                        j += 2;
+                        const resultPos = read(u16, aggPropDef, j);
+                        j += 2;
+                        if (aggType == aggregateTypes.AggType.SUM) {
+                            if (propType == types.Prop.UINT32) {
+                                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
+                            } else if (propType == types.Prop.UINT8) {
+                                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
+                            } else {
+                                // later..
+                            }
                         }
                     }
                 }
@@ -147,6 +159,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             while (i < agg.len) {
                 const field = agg[i];
                 i += 1;
+
                 const fieldAggsSize = read(u16, agg, i);
                 if (field != types.MAIN_PROP) {
                     continue :checkItem;

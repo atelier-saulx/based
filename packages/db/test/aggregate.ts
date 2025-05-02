@@ -86,11 +86,10 @@ await test('aggregate', async (t) => {
 
   console.log(await db.drain())
 
-
-
-
   await db.query('vote').sum('NL').get().inspect()
 
+  await db.query('vote').count().get().inspect()
+  ;(await db.query('vote').count().get()).debug()
   // handle enum
   // 2 bytes string
   // var string

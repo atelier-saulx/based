@@ -1,6 +1,7 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
+import { ID, PropDef, UINT32 } from '@based/schema/def'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -84,7 +85,21 @@ export const addAggregate = (
     if (Array.isArray(field)) {
       addAggregate(type, def, field)
     } else {
-      const fieldDef = def.schema.props[field]
+      const fieldDef: PropDef =
+        type === AggregateType.COUNT
+          ? {
+              prop: 255,
+              path: [field],
+              __isPropDef: true,
+              len: 4,
+              start: 0,
+              typeIndex: UINT32,
+              separate: true,
+              validation: () => true,
+              default: 0,
+            }
+          : def.schema.props[field]
+
       if (!fieldDef) {
         throw new Error(
           `Field for agg does not exists ${field} make better error later...`,
