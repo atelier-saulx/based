@@ -63,22 +63,22 @@ await test('aggregate', async (t) => {
     },
   })
 
-  // const countries = Object.keys(db.client.schema.types.vote.props).filter(
-  //   (v) => v !== 'flap' && v !== 'country',
-  // )
+  const countries = Object.keys(db.client.schema.types.vote.props).filter(
+    (v) => v !== 'flap' && v !== 'country',
+  )
 
-  // for (let i = 0; i < 1; i++) {
-  //   const x = {
-  //     country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-  //     flap: {
-  //       hello: 1,
-  //     },
-  //   }
-  //   for (const key of countries) {
-  //     x[key] = ~~(Math.random() * 20)
-  //   }
-  //   db.create('vote', x)
-  // }
+  for (let i = 0; i < 1; i++) {
+    const x = {
+      country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+      flap: {
+        hello: 1,
+      },
+    }
+    for (const key of countries) {
+      x[key] = ~~(Math.random() * 20)
+    }
+    db.create('vote', x)
+  }
 
   const nl1 = db.create('vote', {
     NL: 10,
@@ -128,7 +128,7 @@ await test('aggregate', async (t) => {
   const q2 = await db
     .query('vote')
     .groupBy('country')
-    .sum(['NL', 'AU'])
+    .sum('NL', 'AU')
     .get()
     .inspect()
   const q3 = await db.query('vote').groupBy('country').count().get()
