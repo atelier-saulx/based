@@ -426,7 +426,15 @@ export const resultToObject = (
       // key size = 2 for now... not perfect...
       let i = 0
       while (i < result.byteLength - 4) {
-        const key = DECODER.decode(result.subarray(i, i + 2))
+        // if group = 0
+        // add extra thing for the keys maybe?
+        let key: string = ''
+        if (result[i] == 0) {
+          key = 'undefined' // empty ; / undefinded?
+          // undefined
+        } else {
+          key = DECODER.decode(result.subarray(i, i + 2))
+        }
         i += 2
         const resultKey = (results[key] = {})
         for (const aggregatesArray of q.aggregate.aggregates.values()) {

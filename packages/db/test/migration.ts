@@ -73,7 +73,19 @@ await test('many setSchema with different order props', async (t) => {
     await wait(5)
   }
 
-  console.log(await db.query('user').get().toObject())
+  deepEqual(await db.query('user').get(), [
+    {
+      id: 1,
+      role: 'translator',
+      status: 'clear',
+      inactive: false,
+      name: 'string',
+      email: 'email',
+      currentToken: 'currentToken',
+      location: 'xxx',
+      lang: 'string',
+    },
+  ])
 })
 
 await test('migration', async (t) => {
