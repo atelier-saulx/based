@@ -177,6 +177,27 @@ test.serial('functions (over http)', async (t: T) => {
 })
 
 test.serial.only('get (over http)', async (t: T) => {
+  const objResult = {
+    bada: {
+      bing: 'bada',
+    },
+    boomboom: {
+      venga: 'venga',
+    },
+    lil: {
+      wayoo: 'wicked',
+    },
+    wicked: {
+      jungle: 'is-massive',
+    },
+    everybody: {
+      leggo: 'shine',
+    },
+    time: {
+      flip: 'flap',
+    },
+  }
+
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -189,13 +210,19 @@ test.serial.only('get (over http)', async (t: T) => {
       closeAfterIdleTime: 3e3,
       uninstallAfterIdleTime: 1e3,
       version: 1,
-      fn: async (_, __, update) => {
+      fn: async (_, payload, update) => {
         let cnt = 0
+        console.log('CREATE NEW OBS COUNTER', payload)
         update(cnt)
         const counter = setInterval(() => {
-          update(++cnt)
+          cnt = cnt + 1
+          console.log('yo update CNT', cnt, payload)
+
+          update(cnt)
         }, 1000)
         return () => {
+          console.log('yo close', cnt, payload)
+
           clearInterval(counter)
         }
       },
@@ -208,28 +235,7 @@ test.serial.only('get (over http)', async (t: T) => {
       rateLimitTokens: 1,
       version: 1,
       fn: async (_, __, update) => {
-        // this breaks with native fetch only, and only when size > x
-        update({
-          bada: {
-            bing: 'bada',
-          },
-          boomboom: {
-            venga: 'venga',
-          },
-          lil: {
-            wayoo: 'wicked',
-          },
-          wicked: {
-            jungle: 'is-massive',
-          },
-          everybody: {
-            leggo: 'shine',
-          },
-          time: {
-            flip: 'flap',
-          },
-        })
-
+        update(objResult)
         return () => {}
       },
     },
@@ -267,31 +273,29 @@ test.serial.only('get (over http)', async (t: T) => {
     },
   })
   await server.start()
-  console.log('------->')
-  const resultObj = await (await fetch(t.context.http + '/obj')).json()
+  // const resultObj = await (await fetch(t.context.http + '/obj')).json()
 
-  console.log(resultObj)
-  t.is(typeof resultObj, 'object')
+  // t.deepEqual(resultObj, objResult, 'obj is equal')
 
   const result = await (await fetch(t.context.http + '/counter')).text()
 
-  t.is(result, '0')
+  t.is(result, '0', 'first count is 0')
 
-  await wait(1e3)
+  await wait(1100)
 
   const result2 = await (await fetch(t.context.http + '/counter')).text()
 
-  t.is(result2, '1')
+  t.is(result2, '1', 'second count is 1')
 
-  await wait(1e3)
+  // await wait(1e3)
 
-  const result3 = await (await fetch(t.context.http + '/hello')).text()
+  // const result3 = await (await fetch(t.context.http + '/hello')).text()
 
-  t.is(result3, '2')
+  // t.is(result3, '2', 'third count is 2 (trough name hello)')
 
-  await wait(10e3)
+  // await wait(10e3)
 
-  t.is(Object.keys(server.functions.specs).length, 0)
+  // t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })

@@ -9,24 +9,17 @@ import {
 
 const Decoder = new TextDecoder()
 
-export const parseIncomingData = (buf: Uint8Array) => {
-  if (buf.byteLength === 0) {
-    // what is this..?
-    return undefined
-  }
-
-  const contentType: CONTENT_TYPE = buf[0] as CONTENT_TYPE
-
+export const parseIncomingData = (contentType: number, buf: Uint8Array) => {
   if (contentType === CONTENT_TYPE_UNDEFINED) {
     return undefined
   } else if (contentType === CONTENT_TYPE_NULL) {
     return null
   } else if (contentType === CONTENT_TYPE_UINT8_ARRAY) {
-    return buf.subarray(1)
+    return buf
   } else if (contentType === CONTENT_TYPE_STRING) {
-    return Decoder.decode(buf.subarray(1))
+    return Decoder.decode(buf)
   } else if (contentType === CONTENT_TYPE_JSON) {
-    return JSON.parse(Decoder.decode(buf.subarray(1)))
+    return JSON.parse(Decoder.decode(buf))
   }
 
   throw new Error('Invalid contentType received')

@@ -89,7 +89,11 @@ export class BasedFunctions {
     }
 
     if (this.config.route === undefined) {
-      this.config.route = ({ path }) => {
+      this.config.route = ({ path, name }) => {
+        if (name) {
+          return this.routes[name] || null
+        }
+
         let route: BasedRouteComplete
 
         if (path === '/' && this.routes[this.paths['/']]) {
@@ -142,7 +146,7 @@ export class BasedFunctions {
     externalName?: string,
     externalPath?: string,
   ): BasedRouteComplete | null {
-    return this.config.route({ path: externalPath || externalName })
+    return this.config.route({ path: externalPath, name: externalName })
   }
 
   async install(name: string): Promise<BasedFunctionConfigComplete | null> {
@@ -173,7 +177,7 @@ export class BasedFunctions {
 
   addRoutes(routes: BasedRoutes) {
     for (const key in routes) {
-      const nRoute = this.completeRoute(this.routes[key], key)
+      const nRoute = this.generateRoute(this.routes[key], key)
       if (nRoute !== null) {
         this.updateRoute(nRoute, key)
       }
@@ -184,10 +188,7 @@ export class BasedFunctions {
     spec: Optional<BasedFunctionConfig, 'name'>,
     name?: string,
   ): null | BasedFunctionConfigComplete {
-    if (this.completeRoute(spec, name) === null) {
-      console.error('cannot completeSpec', name, spec)
-      return null
-    }
+    this.generateRoute(spec, name)
     if (!spec.version) {
       // @ts-ignore added name allready
       spec.version = genVersion(spec)
@@ -196,7 +197,7 @@ export class BasedFunctions {
     return nSpec
   }
 
-  completeRoute(
+  generateRoute(
     route: Optional<BasedRoute, 'name'>,
     name?: string,
   ): null | BasedRouteComplete {
@@ -220,7 +221,6 @@ export class BasedFunctions {
     }
     if (!nRoute.tokens) {
       let finalPath: string = ''
-
       if (nRoute.path) {
         finalPath = nRoute.path
         if (nRoute.path.charCodeAt(0) !== SLASH) {
@@ -228,15 +228,12 @@ export class BasedFunctions {
         }
         if (nRoute.path.length >= nRoute.name.length + 1) {
           let match = true
-
           for (let i = 0; i < nRoute.name.length; i++) {
             if (nRoute.path.charCodeAt(i + 1) !== nRoute.name.charCodeAt(i)) {
               match = false
-
               break
             }
           }
-
           if (match) {
             nRoute.nameOnPath = true
           } else {
@@ -251,7 +248,6 @@ export class BasedFunctions {
 
       nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
     }
-
     return nRoute
   }
 
@@ -275,8 +271,9 @@ export class BasedFunctions {
         maxPayloadSize: number
         rateLimitTokens: number
       }) {
-    const realRoute = this.completeRoute(route, name)
+    const realRoute = this.generateRoute(route, name)
     if (realRoute === null) {
+      console.log('ROUTE IS NULL INCORRECT')
       return null
     }
     if (realRoute.path) {
@@ -437,16 +434,20 @@ export class BasedFunctions {
     return s
   }
 
+  // DEFAULT GET ROUTE
   getRoute(path: string): BasedRouteComplete | null {
+    // this make it heavier im affraid
     const bufferPath = Buffer.from(path)
     for (const key in this.routes) {
       const route = this.routes[key]
+
       if (pathMatcher(route.tokens, bufferPath)) {
         return route
       }
     }
     for (const key in this.routes) {
       const route = this.routes[key]
+
       if (!route.nameOnPath) {
         if (pathMatcher(route.tokens.slice(1), bufferPath)) {
           return route

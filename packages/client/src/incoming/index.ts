@@ -47,7 +47,10 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(
+          buffer[start],
+          deflate(start + 1, end, isDeflate, buffer),
+        )
       }
 
       if (client.functionResponseListeners.has(id)) {
@@ -96,11 +99,11 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       if (len !== 24) {
         const inflatedBuffer = isDeflate
-          ? inflateSync(buffer.slice(start, end))
+          ? inflateSync(buffer.slice(start + 1, end))
           : buffer.slice(start, end)
         size = inflatedBuffer.byteLength
 
-        diff = parseIncomingData(inflatedBuffer)
+        diff = parseIncomingData(buffer[start], inflatedBuffer)
       }
 
       try {
@@ -154,10 +157,10 @@ export const incoming = async (client: BasedClient, data: any) => {
       // If not empty response, parse it
       if (len !== 16) {
         const inflatedBuffer = isDeflate
-          ? inflateSync(buffer.slice(start, end))
+          ? inflateSync(buffer.slice(start + 1, end))
           : buffer.slice(start, end)
         size = inflatedBuffer.byteLength
-        payload = parseIncomingData(inflatedBuffer)
+        payload = parseIncomingData(buffer[start], inflatedBuffer)
       }
 
       const cached = client.cache.get(id)
@@ -212,7 +215,10 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 4) {
-        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(
+          buffer[start],
+          deflate(start + 1, end, isDeflate, buffer),
+        )
       }
 
       if (payload === true) {
@@ -242,7 +248,10 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
+        payload = parseIncomingData(
+          start,
+          deflate(start + 1, end, isDeflate, buffer),
+        )
       }
 
       if (payload.streamRequestId) {
@@ -360,7 +369,10 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         // if not empty response, parse it
         if (len !== 9) {
-          payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
+          payload = parseIncomingData(
+            start,
+            deflate(start + 1, end, isDeflate, buffer),
+          )
         }
 
         if (client.channelState.has(id)) {
@@ -377,7 +389,10 @@ export const incoming = async (client: BasedClient, data: any) => {
         let payload: any
         // if not empty response, parse it
         if (len !== 4) {
-          payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
+          payload = parseIncomingData(
+            start,
+            deflate(start + 1, end, isDeflate, buffer),
+          )
         }
         if (client.streamFunctionResponseListeners.has(id)) {
           client.streamFunctionResponseListeners.get(id)[0](payload)

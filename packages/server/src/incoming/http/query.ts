@@ -41,6 +41,7 @@ const sendCacheSwapEncoding = async (
 ) => {
   try {
     const inflated = await inflate(buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
+
     const { payload, encoding } = await compress(
       inflated,
       ctx.session.headers.encoding,
@@ -76,11 +77,13 @@ const sendCache = (
     if (headers) {
       sendHeaders(ctx, headers)
     }
+
     ctx.session.res.writeStatus(status)
     ctx.session.res.writeHeader('ETag', String(checksum))
     if (isDeflate) {
       ctx.session.res.writeHeader('Content-Encoding', 'deflate')
     }
+
     end(ctx, buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
   })
 }

@@ -136,7 +136,7 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   }
 
   if (typeof payload === 'string') {
-    const buf = ENCODER.encode(JSON.stringify(payload))
+    const buf = ENCODER.encode(payload)
     if (deflate && buf.byteLength > COMPRESS_FROM_BYTES) {
       return {
         contentByte: CONTENT_TYPE_STRING,
@@ -145,7 +145,7 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
       }
     }
     return {
-      contentByte: CONTENT_TYPE_JSON,
+      contentByte: CONTENT_TYPE_STRING,
       buf,
       deflate: false,
     }
@@ -171,17 +171,18 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
 
   if (buf.byteLength > COMPRESS_FROM_BYTES) {
     return {
-      contentByte: CONTENT_TYPE_STRING,
+      contentByte: CONTENT_TYPE_JSON,
       buf: zlib.deflateRawSync(buf, {}),
       deflate: true,
     }
   }
-
-  return {
+  const result = {
     contentByte: CONTENT_TYPE_JSON,
     buf,
     deflate: false,
   }
+
+  return result
 }
 
 export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
