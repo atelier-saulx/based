@@ -35,11 +35,14 @@ export const decodeHeader = (
   }
 }
 
-export const encodeHeader = (
+// add buffer
+const encodeHeader = (
   type: number,
   isDeflate: boolean,
   len: number,
-): number => {
+  buffer: Uint8Array,
+  offset: number,
+) => {
   // 4 bytes
   // type (3 bits)
   //   0 = functionData
@@ -54,7 +57,7 @@ export const encodeHeader = (
   // len (28 bits)
   const encodedMeta = (type << 1) + (Number(isDeflate) | 0)
   const nr = (len << 4) + encodedMeta
-  return nr
+  writeUint32(buffer, nr, offset)
 }
 
 export const CONTENT_TYPE_JSON = 255
@@ -180,11 +183,10 @@ export const encodeFunctionResponse = (
     const headerSize = 4
     const idSize = 3
     const msgSize = idSize + buffer.length
-    const header = encodeHeader(0, isDeflate, msgSize)
+    const header = encodeHeader(0, isDeflate, msgSize, buffer, 0)
 
     // not very nessecary but ok
     const array = new Uint8Array(headerSize + msgSize)
-    writeUint32(array, header, 0)
     writeUint24(array, id, 4)
     if (buffer.length) {
       array.set(buffer, 7)
@@ -218,11 +220,10 @@ export const encodeStreamFunctionResponse = (
     const idSize = 3
     const subTypeSize = 1
     const msgSize = idSize + subTypeSize + buffer.length
-    const header = encodeHeader(7, isDeflate, msgSize)
 
     // not very nessecary but ok
     const array = new Uint8Array(headerSize + msgSize)
-    writeUint32(array, header, 0)
+    encodeHeader(7, isDeflate, msgSize, array, 0)
     array[1] = 1
     writeUint24(array, id, 5)
     if (buffer.length) {
@@ -249,11 +250,8 @@ export const encodeStreamFunctionChunkResponse = (
     msgSize += 3
   }
 
-  const header = encodeHeader(7, false, msgSize)
-
   const array = new Uint8Array(4 + msgSize)
-
-  writeUint32(array, header, 0)
+  encodeHeader(7, false, msgSize, array, 0)
   array[4] = 2
   writeUint24(array, id, 5)
   array[8] = seqId
@@ -269,9 +267,8 @@ export const encodeStreamFunctionChunkResponse = (
 export const encodeGetResponse = (id: number): Uint8Array => {
   // Type 4
   // | 4 header | 8 id |
-  const header = encodeHeader(3, false, 8)
   const array = new Uint8Array(12)
-  writeUint32(array, header, 0)
+  encodeHeader(3, false, 8, array, 0)
   writeUint64(array, id, 4)
   return array
 }
@@ -289,18 +286,14 @@ export const encodeObservableResponse = (
 ): [Uint8Array, boolean] => {
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
-
   let isDeflate = false
-
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
-
   const msgSize = 16 + buffer.length
-  const header = encodeHeader(1, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  writeUint32(array, header, 0)
+  encodeHeader(1, isDeflate, msgSize, array, 0)
   writeUint64(array, id, 4)
   writeUint64(array, checksum, 12)
   if (buffer.length) {
@@ -325,9 +318,8 @@ export const encodeObservableDiffResponse = (
   }
 
   const msgSize = 24 + buffer.length
-  const header = encodeHeader(2, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  writeUint32(array, header, 0)
+  encodeHeader(2, isDeflate, msgSize, array, 0)
   writeUint64(array, id, 4)
   writeUint64(array, checksum, 12)
   writeUint64(array, previousChecksum, 20)
@@ -348,9 +340,8 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
 
   const headerSize = 4
   const msgSize = buffer.length
-  const header = encodeHeader(type, isDeflate, msgSize)
   const array = new Uint8Array(headerSize + msgSize)
-  writeUint32(array, header, 0)
+  encodeHeader(type, isDeflate, msgSize, array, 0)
   if (buffer.length) {
     array.set(buffer, 4)
   }
@@ -379,10 +370,9 @@ export const encodeChannelMessage = (
     buffer = zlib.deflateRawSync(buffer, {})
   }
   const msgSize = 8 + buffer.length + 1
-  const header = encodeHeader(7, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
   array[4] = 0
-  writeUint32(array, header, 0)
+  encodeHeader(7, isDeflate, msgSize, array, 0)
   writeUint64(array, id, 5)
   if (buffer.length) {
     array.set(buffer, 13)
@@ -397,9 +387,8 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   // 2 = non-browser
   // | 4 header | 1 subType | 1 type \ 1 seqId
   const msgSize = 7
-  const header = encodeHeader(7, false, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  writeUint32(array, header, 0)
+  encodeHeader(7, false, msgSize, array, 0)
   array[4] = 3
   array[5] = type
   array[6] = seqId

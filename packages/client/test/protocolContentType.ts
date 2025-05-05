@@ -13,20 +13,34 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-// @based/client-old
-
-test('query uint8', async (t: T) => {
+test('fallback to old protocol - outgoing', async (t: T) => {
   const client = new BasedClient()
   const clientOld = new BasedClientOld()
+  const fnResult = 'STRING FOR BOYS'
 
   const server = new BasedServer({
     port: t.context.port,
     functions: {
       configs: {
+        myChannel: {
+          type: 'channel',
+          uninstallAfterIdleTime: 1e3,
+          subscriber: (_, __, ___, update) => {
+            let cnt = 1
+            update({ cnt })
+            const interval = setInterval(() => {
+              cnt++
+              update({ cnt })
+            }, 10)
+            return () => {
+              clearInterval(interval)
+            }
+          },
+        },
         derpi: {
           type: 'function',
           fn: async () => {
-            return 'STRING FOR BOYS'
+            return fnResult
           },
         },
         derpiJson: {
@@ -110,13 +124,14 @@ test('query uint8', async (t: T) => {
   })
 
   const obs1Results: any[] = []
+  const obs2Results: any[] = []
+  const bufResults: any[] = []
 
   const close = client
     .query('flap', {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('NEW', d)
       obs1Results.push(d)
     })
 
@@ -125,8 +140,7 @@ test('query uint8', async (t: T) => {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('OLD', d)
-      obs1Results.push(d)
+      obs2Results.push(d)
     })
 
   const close3 = client
@@ -134,8 +148,7 @@ test('query uint8', async (t: T) => {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('NEW BUFFER FORMAT!', d)
-      obs1Results.push(d)
+      bufResults.push(d)
     })
 
   await wait(100)
@@ -143,12 +156,41 @@ test('query uint8', async (t: T) => {
   close2()
   close3()
 
-  console.log('--------------------------------')
+  t.deepEqual(obs1Results, obs2Results)
 
-  // console.log('NEW', await client.call('derpi'))
-  // console.log('OLD', await clientOld.call('derpi'))
+  t.true(bufResults[0] instanceof Uint8Array)
 
-  await wait(1000)
+  t.deepEqual(await client.call('derpi'), fnResult)
+  t.deepEqual(await clientOld.call('derpi'), fnResult)
+
+  const channelNew = []
+  const channelOld = []
+
+  clientOld.channel('myChannel').subscribe((v) => {
+    channelNew.push(v)
+  })
+
+  client.channel('myChannel').subscribe((v) => {
+    channelOld.push(v)
+  })
+
+  t.deepEqual(channelNew, channelOld)
+
+  // stream response
+
+  // http!
+
+  t.deepEqual(
+    await (await fetch(t.context.http + '/derpi', {})).text(),
+    fnResult,
+    'http - function',
+  )
+
+  const x = await (await fetch(t.context.http + '/flap', {})).json()
+
+  t.true(x.derp > 0)
+
+  await wait(100)
 
   t.pass()
 })

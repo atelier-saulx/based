@@ -10,14 +10,13 @@ import { startChannel } from './start.js'
 export const subscribeChannel = (
   server: BasedServer,
   id: number,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ) => {
   const session = ctx.session
   if (!session) {
     return
   }
 
-  ctx.session.ws.subscribe(String(id))
   const channel = getChannelAndStopRemove(server, id)
 
   if (server.channelEvents) {
@@ -25,6 +24,20 @@ export const subscribeChannel = (
   }
 
   session.obs.add(id)
+
+  if (ctx.session.v < 2) {
+    session.obs.add(id)
+    if (!channel.oldClients) {
+      channel.oldClients = new Set()
+    }
+    channel.oldClients.add(session.id)
+    ctx.session.ws.subscribe(String(id) + '-v1')
+  } else {
+    session.obs.add(id)
+    channel.clients.add(session.id)
+    ctx.session.ws.subscribe(String(id))
+  }
+
   channel.clients.add(session.id)
   if (!channel.isActive && !channel.doesNotExist) {
     startChannel(server, id)
@@ -34,7 +47,7 @@ export const subscribeChannel = (
 export const subscribeChannelFunction = (
   server: BasedServer,
   id: number,
-  update: ChannelMessageFunctionInternal
+  update: ChannelMessageFunctionInternal,
 ) => {
   const channel = getChannelAndStopRemove(server, id)
 
