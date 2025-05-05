@@ -73,6 +73,10 @@ await test('many setSchema with different order props', async (t) => {
     await wait(5)
   }
 
+  await db.update('user', userId, {
+    location: 'xxx',
+  })
+
   deepEqual(await db.query('user').get(), [
     {
       id: 1,
