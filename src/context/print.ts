@@ -17,7 +17,9 @@ export const contextPrint = (context: AppContext): Based.Context.Print => {
     encoding?: BufferEncoding,
     callback?: (error?: Error | null) => void,
   ): any[] {
-    const str: string = typeof chunk === 'string' ? colorize(chunk) : chunk
+    // `colorize` breaks when the message contains html tags :(
+    // const str: string = typeof chunk === 'string' ? colorize(chunk) : chunk
+    const str: string = chunk
 
     return [str, encoding, callback]
   }
