@@ -45,7 +45,7 @@ pub inline fn execAgg(
     }
 }
 
-pub inline fn execAggregates(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) !void {
+pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) void {
     var i: usize = 0;
     const field = agg[i];
     i += 1;
@@ -54,12 +54,15 @@ pub inline fn execAggregates(agg: []u8, typeEntry: db.Type, node: db.Node, resul
     const aggPropDef = agg[i .. i + fieldAggsSize];
     var value: []u8 = undefined;
     if (field != aggregateTypes.IsId) {
-        // later need to add support for HLL
+        // Later need to add support for HLL
         if (field != types.MAIN_PROP) {
             i += fieldAggsSize;
             return;
         }
-        const fieldSchema = try db.getFieldSchema(field, typeEntry);
+        const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+            std.log.err("Cannot get fieldschema {any} \n", .{field});
+            return;
+        };
         value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
         if (value.len == 0) {
             i += fieldAggsSize;
@@ -112,7 +115,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            try execAggregates(agg, typeEntry, n, resultsField);
+            aggregate(agg, typeEntry, n, resultsField);
         } else {
             break :checkItem;
         }
@@ -166,7 +169,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 resultsField = resultsHashMap.get(key).?;
             }
 
-            try execAggregates(agg, typeEntry, n, resultsField);
+            aggregate(agg, typeEntry, n, resultsField);
         } else {
             // means error
             break :checkItem;
