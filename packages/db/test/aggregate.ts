@@ -13,8 +13,22 @@ await test('aggregate', async (t) => {
 
   await db.setSchema({
     types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
       vote: {
         props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
           flap: {
             props: {
               hello: 'uint32',
@@ -137,6 +151,19 @@ await test('aggregate', async (t) => {
   q3.inspect()
   console.log('count + groupBy + toObject')
   console.log(q3.toObject())
+
+  // this is your goal
+  db.query('sequence')
+    .include((select) => {
+      select('votes').groupBy('country').sum('NL', 'AU')
+    })
+    .get()
+
+  // db.query('sequence', seqId)
+  // .include((select) => {
+  //   select('votes').groupBy('country').sum('NL', 'AU')
+  // })
+  // .get()
 
   // console.log(q.execTime, q2.size, '?')
   // q.debug()

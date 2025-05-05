@@ -90,6 +90,8 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             continue :includeField;
         }
 
+        // if aggregate references call a function form the folder aggregates / references.zig
+
         const field: u8 = @intFromEnum(op);
         var prop: t.Prop = undefined;
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
