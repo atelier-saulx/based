@@ -15,7 +15,7 @@ const updateChannelListener = (
   channel: ActiveChannel,
   msg: any,
 ) => {
-  if (channel.oldClients.size) {
+  if (channel.oldClients?.size) {
     const data = encodeChannelMessage(channel.id, valueToBufferV1(msg))
     server.uwsApp.publish(String(channel.id) + '-v1', data, true, false)
   }

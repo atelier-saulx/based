@@ -176,10 +176,6 @@ test('fallback to old protocol - outgoing', async (t: T) => {
 
   t.deepEqual(channelNew, channelOld)
 
-  // stream response
-
-  // http!
-
   t.deepEqual(
     await (await fetch(t.context.http + '/derpi', {})).text(),
     fnResult,

@@ -87,6 +87,8 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
     } MB`,
   )
 
+  console.log(subCnt)
+
   await wait(11000)
   t.is(server.activeObservablesById.size, 1e5 - 1)
   t.is(Object.keys(server.activeObservables).length, 1)
