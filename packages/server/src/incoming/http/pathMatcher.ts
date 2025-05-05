@@ -40,6 +40,28 @@ function isValidParamChar(code: number): boolean {
 }
 
 /**
+ * Checks if the byte represents a character from a reserved function.
+ * Reserved functions are represented by 'db' or 'based'
+ *
+ * @param code - The ASCII code of the character.
+ */
+function isReservedName(value: Buffer): boolean {
+  return (
+    (value[0] === 0x64 &&   // 'd'
+      value[1] === 0x62) || // 'b'
+    (value[0] === 0x62 &&   // 'b'
+      value[1] === 0x61 &&  // 'a'
+      value[2] === 0x73 &&  // 's'
+      value[3] === 0x65 &&  // 'e'
+      value[4] === 0x64) || // 'd'
+    (value[0] === 0x66 &&   // 'f'
+      value[1] === 0x69 &&  // 'i'
+      value[2] === 0x6c &&  // 'l'
+      value[3] === 0x65)    // 'e'
+  )
+}
+
+/**
  * Checks if the byte represents a modifier for a parameter name.
  * Valid modifiers are + / * / ?
  *
@@ -112,7 +134,7 @@ function parseToken(segment: Buffer): PathToken {
   while (i < len) {
     if (
       isValidParamChar(segment[i]) ||
-      (segment[i] === COLON && value[0] === 0x64 && value[1] === 0x62)
+      (segment[i] === COLON && isReservedName(value))
     ) {
       value[j++] = segment[i]
     } else if (
