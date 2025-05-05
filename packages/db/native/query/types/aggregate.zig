@@ -11,10 +11,8 @@ const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const GroupProtocolLen = @import("../aggregate/group.zig").ProtocolLen;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-
 const setGroupResults = @import("../aggregate/group.zig").setGroupResults;
 const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
-
 const c = @import("../../c.zig");
 
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
@@ -56,12 +54,9 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     var first = true;
     var node = db.getFirstNode(typeEntry);
     var index: usize = 1;
-
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
-
     const agg = aggInput[index..aggInput.len];
-
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -73,7 +68,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-
             // key needs to be variable
             const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
             var resultsField: []u8 = undefined;
@@ -88,12 +82,10 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
 
             aggregate(agg, typeEntry, n, resultsField);
         } else {
-            // means error
             break :checkItem;
         }
     }
-
-    // Create node result
+    // Create result for node.js
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
