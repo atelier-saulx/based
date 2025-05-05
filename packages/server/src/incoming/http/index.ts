@@ -45,8 +45,11 @@ export const httpHandler = (
 
   const method = req.getMethod()
   const url = req.getUrl()
+
+  // Now we are doing this for fun
   const path = url.split('/')
 
+  // TODO Use a header for this
   if (path[1] === 'based:rpstatus') {
     res.cork(() => {
       res.writeHeader('Access-Control-Allow-Headers', defHeaders)
@@ -297,7 +300,7 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-    handleRequest(server, method, ctx, route, (payload) => {      
+    handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, basicFunction)
     })
   }
@@ -307,7 +310,7 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-    handleRequest(server, method, ctx, route, (payload) => {      
+    handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, httpFunction)
     })
   }

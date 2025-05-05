@@ -299,6 +299,7 @@ export function pathExtractor(
   const len = path.byteLength
   let token = tokens[i - 1]
   let tokenValue = token.value.toString()
+  let hasExtracted = false
   const extractions: Record<
     string,
     (number | string) | (number | string)[] | boolean
@@ -310,13 +311,14 @@ export function pathExtractor(
 
   if (i === len) {
     extractions[tokenValue] = ''
-
+    hasExtracted = true
     return extractions
   }
 
   for (const { type, value, modifier } of tokens) {
     if (type === PARAM) {
       tokenValue = value.toString()
+      hasExtracted = true
 
       if (modifier === PLUS || modifier === ASTERISK) {
         extractions[tokenValue] = []
@@ -328,6 +330,8 @@ export function pathExtractor(
 
   while (i < len) {
     if (i === 1 && path[i] === QUESTION_MARK) {
+      hasExtracted = true
+      // incorrect needs to be true e.g. ?bla -> bla: true
       extractions[tokenValue] = ''
     }
 
@@ -338,6 +342,7 @@ export function pathExtractor(
     if (query) {
       if (i === len - 1 && collected && !queryValue) {
         extractions[collected] = true
+        hasExtracted = true
 
         collected = ''
       }
@@ -349,6 +354,7 @@ export function pathExtractor(
       if (path[i + 1] === EQUALS_SIGN) {
         i++
         extractions[collected] = ''
+        hasExtracted = true
 
         queryValue = collected
         collected = ''
@@ -359,6 +365,7 @@ export function pathExtractor(
 
         // @ts-ignore
         collected = !isNaN(collected) ? Number(collected) : collected
+        hasExtracted = true
 
         extractions[queryValue] = collected
         collected = ''
@@ -393,6 +400,7 @@ export function pathExtractor(
         if (token.modifier === PLUS || token.modifier === ASTERISK) {
           ;(extractions[tokenValue] as string[]).push(collected)
         } else {
+          hasExtracted = true
           // check if it can be a number
           extractions[tokenValue] = collected
         }
@@ -406,6 +414,9 @@ export function pathExtractor(
       token = tokens[tokenIndex]
     }
   }
+  if (hasExtracted) {
+    return extractions
+  }
 
-  return extractions
+  return null
 }

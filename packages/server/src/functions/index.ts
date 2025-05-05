@@ -90,28 +90,52 @@ export class BasedFunctions {
 
     if (this.config.route === undefined) {
       this.config.route = ({ path, name }) => {
-        if (name) {
+        if (path) {
+          let route: BasedRouteComplete
+
+          if (path === '/' && this.routes[this.paths['/']]) {
+            const r = this.routes[this.paths['/']]
+            if (r && !r.tokens) {
+              this.generateRoute(r)
+            }
+            return r
+          }
+
+          if (path) {
+            route = this.getRoute(path)
+          }
+
+          // deprecate this.routes[this.paths['/']]
+          const rr =
+            route ||
+            this.routes[path] ||
+            this.routes['404'] ||
+            this.routes[this.paths['/']] ||
+            null
+
+          // dirty hack
+          if (rr && !rr.tokens) {
+            this.generateRoute(rr)
+          }
+
+          return rr
+        } else {
           return this.routes[name] || null
         }
-
-        let route: BasedRouteComplete
-
-        if (path === '/' && this.routes[this.paths['/']]) {
-          return this.routes[this.paths['/']]
+      }
+    } else {
+      // FIXME: tmp dirty hack
+      const tmpRoute = this.config.route
+      this.config.route = (x) => {
+        if (x.path) {
+          const r = tmpRoute(x)
+          if (r && !r.tokens) {
+            this.generateRoute(r)
+          }
+          return r
+        } else {
+          return tmpRoute(x)
         }
-
-        if (path) {
-          route = this.getRoute(path)
-        }
-
-        // deprecate this.routes[this.paths['/']]
-        return (
-          route ||
-          this.routes[path] ||
-          this.routes['404'] ||
-          this.routes[this.paths['/']] ||
-          null
-        )
       }
     }
 
@@ -245,7 +269,6 @@ export class BasedFunctions {
         finalPath = `/${nRoute.name}`
         nRoute.nameOnPath = false
       }
-
       nRoute.tokens = tokenizePattern(Buffer.from(finalPath))
     }
     return nRoute
@@ -434,7 +457,7 @@ export class BasedFunctions {
     return s
   }
 
-  // DEFAULT GET ROUTE
+  // FIXME: greatly refactor this - this is not get Route now thi sis MATCH PATH
   getRoute(path: string): BasedRouteComplete | null {
     // this make it heavier im affraid
     const bufferPath = Buffer.from(path)

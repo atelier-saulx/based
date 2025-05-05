@@ -91,7 +91,7 @@ test.serial('functions (over http)', async (t: T) => {
         }
         return 'flap'
       },
-      httpResponse: async (_, __, responseData, ___, ctx) => {
+      httpResponse: async (_, __, responseData, send, ctx) => {
         if (!ctx.session) {
           return
         }
@@ -176,7 +176,7 @@ test.serial('functions (over http)', async (t: T) => {
   server.destroy()
 })
 
-test.serial.only('get (over http)', async (t: T) => {
+test.serial('get (over http)', async (t: T) => {
   const objResult = {
     bada: {
       bing: 'bada',
@@ -212,17 +212,12 @@ test.serial.only('get (over http)', async (t: T) => {
       version: 1,
       fn: async (_, payload, update) => {
         let cnt = 0
-        console.log('CREATE NEW OBS COUNTER', payload)
         update(cnt)
         const counter = setInterval(() => {
           cnt = cnt + 1
-          console.log('yo update CNT', cnt, payload)
-
           update(cnt)
         }, 1000)
         return () => {
-          console.log('yo close', cnt, payload)
-
           clearInterval(counter)
         }
       },
@@ -273,9 +268,9 @@ test.serial.only('get (over http)', async (t: T) => {
     },
   })
   await server.start()
-  // const resultObj = await (await fetch(t.context.http + '/obj')).json()
+  const resultObj = await (await fetch(t.context.http + '/obj')).json()
 
-  // t.deepEqual(resultObj, objResult, 'obj is equal')
+  t.deepEqual(resultObj, objResult, 'obj is equal')
 
   const result = await (await fetch(t.context.http + '/counter')).text()
 
@@ -287,15 +282,15 @@ test.serial.only('get (over http)', async (t: T) => {
 
   t.is(result2, '1', 'second count is 1')
 
-  // await wait(1e3)
+  await wait(1e3)
 
-  // const result3 = await (await fetch(t.context.http + '/hello')).text()
+  const result3 = await (await fetch(t.context.http + '/hello')).text()
 
-  // t.is(result3, '2', 'third count is 2 (trough name hello)')
+  t.is(result3, '2', 'third count is 2 (trough name hello)')
 
-  // await wait(10e3)
+  await wait(10e3)
 
-  // t.is(Object.keys(server.functions.specs).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })

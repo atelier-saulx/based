@@ -22,7 +22,7 @@ const deflate = (
 ): any => {
   return isDeflate
     ? inflateSync(buffer.slice(start, end))
-    : buffer.slice(start, end)
+    : buffer.subarray(start, end)
 }
 
 export const incoming = async (client: BasedClient, data: any) => {
@@ -100,7 +100,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       if (len !== 24) {
         const inflatedBuffer = isDeflate
           ? inflateSync(buffer.slice(start + 1, end))
-          : buffer.slice(start, end)
+          : buffer.subarray(start + 1, end)
         size = inflatedBuffer.byteLength
 
         diff = parseIncomingData(buffer[start], inflatedBuffer)
@@ -158,7 +158,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       if (len !== 16) {
         const inflatedBuffer = isDeflate
           ? inflateSync(buffer.slice(start + 1, end))
-          : buffer.slice(start, end)
+          : buffer.subarray(start + 1, end)
         size = inflatedBuffer.byteLength
         payload = parseIncomingData(buffer[start], inflatedBuffer)
       }
@@ -249,7 +249,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       // if not empty response, parse it
       if (len !== 3) {
         payload = parseIncomingData(
-          start,
+          buffer[start],
           deflate(start + 1, end, isDeflate, buffer),
         )
       }
@@ -370,7 +370,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         // if not empty response, parse it
         if (len !== 9) {
           payload = parseIncomingData(
-            start,
+            buffer[start],
             deflate(start + 1, end, isDeflate, buffer),
           )
         }
@@ -390,7 +390,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         // if not empty response, parse it
         if (len !== 4) {
           payload = parseIncomingData(
-            start,
+            buffer[start],
             deflate(start + 1, end, isDeflate, buffer),
           )
         }

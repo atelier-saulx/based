@@ -457,8 +457,8 @@ export const encodeChannelMessage = (
   } else {
     const msgSize = 8 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
-    array[4] = 0
     encodeHeader(7, val.deflate, msgSize, array, 0)
+    array[4] = 0
     writeUint64(array, id, 5)
     array[13] = val.contentByte[0]
     if (val.buf.byteLength) {
