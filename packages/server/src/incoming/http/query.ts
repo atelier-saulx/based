@@ -40,7 +40,7 @@ const sendCacheSwapEncoding = async (
   status: string = '200 OK',
 ) => {
   try {
-    const inflated = await inflate(buffer.slice(PROTOCOL_CACHE_RAW_OFFSET))
+    const inflated = await inflate(buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
     const { payload, encoding } = await compress(
       inflated,
       ctx.session.headers.encoding,
@@ -81,7 +81,7 @@ const sendCache = (
     if (isDeflate) {
       ctx.session.res.writeHeader('Content-Encoding', 'deflate')
     }
-    end(ctx, buffer.slice(PROTOCOL_CACHE_RAW_OFFSET))
+    end(ctx, buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
   })
 }
 

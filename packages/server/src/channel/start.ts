@@ -16,11 +16,11 @@ const updateChannelListener = (
   msg: any,
 ) => {
   if (channel.oldClients?.size) {
-    const data = encodeChannelMessage(channel.id, valueToBufferV1(msg))
+    const data = encodeChannelMessage(channel.id, valueToBufferV1(msg, true))
     server.uwsApp.publish(String(channel.id) + '-v1', data, true, false)
   }
   if (channel.clients.size) {
-    const data = encodeChannelMessage(channel.id, valueToBuffer(msg))
+    const data = encodeChannelMessage(channel.id, valueToBuffer(msg, true))
     server.uwsApp.publish(String(channel.id), data, true, false)
   }
   if (channel.functionChannelClients.size) {
@@ -64,7 +64,7 @@ const errorChannelListener = (
   if (channel.clients.size) {
     server.uwsApp.publish(
       String(channel.id),
-      encodeErrorResponse(valueToBuffer(err)),
+      encodeErrorResponse(valueToBuffer(err, true)),
       true,
       false,
     )

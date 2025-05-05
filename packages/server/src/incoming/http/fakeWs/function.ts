@@ -70,13 +70,13 @@ export const handleFunction: FakeBinaryMessageHandler = (
           requestId,
         },
       )
-      return encodeErrorResponse(valueToBuffer(errorData))
+      return encodeErrorResponse(valueToBuffer(errorData, true))
     }
 
     return spec
       .fn(server.client, payload, ctx)
       .then((v) => {
-        return encodeFunctionResponse(requestId, valueToBuffer(v))
+        return encodeFunctionResponse(requestId, valueToBuffer(v, true))
       })
       .catch((err) => {
         const errorData = createError(
@@ -89,7 +89,7 @@ export const handleFunction: FakeBinaryMessageHandler = (
             err,
           },
         )
-        return encodeErrorResponse(valueToBuffer(errorData))
+        return encodeErrorResponse(valueToBuffer(errorData, true))
       })
   })
 }

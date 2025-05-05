@@ -211,7 +211,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       let payload: any
 
       // if not empty response, parse it
-      if (len !== 3) {
+      if (len !== 4) {
         payload = parseIncomingData(deflate(start, end, isDeflate, buffer))
       }
 

@@ -47,17 +47,17 @@ function isValidParamChar(code: number): boolean {
  */
 function isReservedName(value: Buffer): boolean {
   return (
-    (value[0] === 0x64 &&   // 'd'
+    (value[0] === 0x64 && // 'd'
       value[1] === 0x62) || // 'b'
-    (value[0] === 0x62 &&   // 'b'
-      value[1] === 0x61 &&  // 'a'
-      value[2] === 0x73 &&  // 's'
-      value[3] === 0x65 &&  // 'e'
+    (value[0] === 0x62 && // 'b'
+      value[1] === 0x61 && // 'a'
+      value[2] === 0x73 && // 's'
+      value[3] === 0x65 && // 'e'
       value[4] === 0x64) || // 'd'
-    (value[0] === 0x66 &&   // 'f'
-      value[1] === 0x69 &&  // 'i'
-      value[2] === 0x6c &&  // 'l'
-      value[3] === 0x65)    // 'e'
+    (value[0] === 0x66 && // 'f'
+      value[1] === 0x69 && // 'i'
+      value[2] === 0x6c && // 'l'
+      value[3] === 0x65) // 'e'
   )
 }
 
@@ -289,7 +289,7 @@ export function pathMatcher(tokens: PathToken[], path: Buffer): boolean {
 export function pathExtractor(
   tokens: PathToken[],
   path: Buffer,
-): Record<string, string | string[] | boolean> {
+): Record<string, (number | string) | (number | string)[] | boolean> {
   if (!tokens?.length || path?.byteLength === 0 || path?.[0] !== SLASH) {
     return null
   }
@@ -299,8 +299,11 @@ export function pathExtractor(
   const len = path.byteLength
   let token = tokens[i - 1]
   let tokenValue = token.value.toString()
-  const extractions: Record<string, string | string[] | boolean> = {}
-  let collected: string = ''
+  const extractions: Record<
+    string,
+    (number | string) | (number | string)[] | boolean
+  > = {}
+  let collected: string | number = ''
   let isToCollect: boolean = false
   let query: boolean = false
   let queryValue: string = ''
@@ -346,13 +349,17 @@ export function pathExtractor(
       if (path[i + 1] === EQUALS_SIGN) {
         i++
         extractions[collected] = ''
-        queryValue = collected
 
+        queryValue = collected
         collected = ''
       }
 
       if (path[i + 1] === AMPERSAND || (i === len - 1 && collected)) {
         i++
+
+        // @ts-ignore
+        collected = !isNaN(collected) ? Number(collected) : collected
+
         extractions[queryValue] = collected
         collected = ''
       }
@@ -386,6 +393,7 @@ export function pathExtractor(
         if (token.modifier === PLUS || token.modifier === ASTERISK) {
           ;(extractions[tokenValue] as string[]).push(collected)
         } else {
+          // check if it can be a number
           extractions[tokenValue] = collected
         }
       }

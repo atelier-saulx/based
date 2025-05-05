@@ -41,7 +41,7 @@ export const errorListener = (
   if (obs.clients.size) {
     server.uwsApp.publish(
       String(obs.id),
-      encodeErrorResponse(valueToBuffer(obs.error)),
+      encodeErrorResponse(valueToBuffer(obs.error, true)),
       true,
       false,
     )
@@ -50,7 +50,7 @@ export const errorListener = (
   if (obs.oldClients?.size) {
     server.uwsApp.publish(
       String(obs.id) + '-v1',
-      encodeErrorResponse(valueToBuffer(obs.error)),
+      encodeErrorResponse(valueToBuffer(obs.error, true)),
       true,
       false,
     )

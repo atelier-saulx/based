@@ -83,7 +83,7 @@ export const handleQuery: FakeBinaryMessageHandler = (
           observableId: id,
         },
       )
-      resolve(encodeErrorResponse(valueToBuffer(errorData)))
+      resolve(encodeErrorResponse(valueToBuffer(errorData, true)))
       return
     }
 

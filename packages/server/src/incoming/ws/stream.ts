@@ -6,6 +6,7 @@ import {
   encodeStreamFunctionResponse,
   valueToBuffer,
   encodeStreamFunctionChunkResponse,
+  valueToBufferV1,
 } from '../../protocol.js'
 import { BasedDataStream } from '@based/functions'
 import mimeTypes from 'mime-types'
@@ -27,7 +28,10 @@ const startStreamFunction: IsAuthorizedHandler<
     .fn(server.client, payload, ctx)
     .then(async (v) => {
       ctx.session?.ws.send(
-        encodeStreamFunctionResponse(streamRequestId, valueToBuffer(v)),
+        encodeStreamFunctionResponse(
+          streamRequestId,
+          ctx.session.v < 2 ? valueToBufferV1(v, true) : valueToBuffer(v, true),
+        ),
         true,
         false,
       )

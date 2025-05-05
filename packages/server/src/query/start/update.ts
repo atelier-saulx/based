@@ -56,7 +56,7 @@ export const updateListener = (
       }
     } else {
       obs.reusedCache = false
-      const buff = valueToBuffer(data)
+      const buff = valueToBuffer(data, true)
 
       const t = typeof data
       if (
@@ -99,7 +99,7 @@ export const updateListener = (
       )
 
       if (diff) {
-        const diffBuff = valueToBuffer(diff)
+        const diffBuff = valueToBuffer(diff, true)
         const encodedDiffData = encodeObservableDiffResponse(
           obs.id,
           checksum,

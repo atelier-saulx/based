@@ -38,7 +38,9 @@ const sendFunction: IsAuthorizedHandler<
         ctx.session?.ws.send(
           encodeFunctionResponse(
             requestId,
-            ctx.session.v < 2 ? valueToBufferV1(v) : valueToBuffer(v),
+            ctx.session.v < 2
+              ? valueToBufferV1(v, true)
+              : valueToBuffer(v, true),
           ),
           true,
           false,
@@ -65,7 +67,7 @@ const sendFunction: IsAuthorizedHandler<
       ctx.session?.ws.send(
         encodeFunctionResponse(
           requestId,
-          ctx.session.v < 2 ? valueToBufferV1(v) : valueToBuffer(v),
+          ctx.session.v < 2 ? valueToBufferV1(v, true) : valueToBuffer(v, true),
         ),
         true,
         false,

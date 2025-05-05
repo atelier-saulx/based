@@ -132,14 +132,10 @@ export const sendHttpResponse = (
           )
         }
 
-        ctx.session.res.writeHeader(
-          'Strict-Transport-Security',
-          'max-age= 31536000',
-        )
-
         if (encoding) {
           ctx.session.res.writeHeader('Content-Encoding', encoding)
         }
+
         end(ctx, payload)
       })
     }

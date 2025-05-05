@@ -13,7 +13,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('fallback to old protocol - outgoing', async (t: T) => {
+test('fallback to old protocol - incoming', async (t: T) => {
   const client = new BasedClient()
   const clientOld = new BasedClientOld()
   const fnResult = 'STRING FOR BOYS'
@@ -84,6 +84,7 @@ test('fallback to old protocol - outgoing', async (t: T) => {
             var cnt = 1
             const x = new Uint8Array(1)
             x[0] = 66
+
             // 0 json
             // 1 string (simpler optmizes strings)
             update(x, cnt, false, undefined, undefined, 0, false)
@@ -156,12 +157,15 @@ test('fallback to old protocol - outgoing', async (t: T) => {
   close2()
   close3()
 
-  t.deepEqual(obs1Results, obs2Results)
+  t.deepEqual(obs1Results, obs2Results, 'obs results are equal')
 
-  t.true(bufResults[0] instanceof Uint8Array)
+  t.true(
+    bufResults[0] instanceof Uint8Array,
+    'bufResults gets read as unint8array',
+  )
 
-  t.deepEqual(await client.call('derpi'), fnResult)
-  t.deepEqual(await clientOld.call('derpi'), fnResult)
+  t.deepEqual(await client.call('derpi'), fnResult, 'fn is correct new')
+  t.deepEqual(await clientOld.call('derpi'), fnResult, 'fn is correct old')
 
   const channelNew = []
   const channelOld = []
@@ -174,7 +178,7 @@ test('fallback to old protocol - outgoing', async (t: T) => {
     channelOld.push(v)
   })
 
-  t.deepEqual(channelNew, channelOld)
+  t.deepEqual(channelNew, channelOld, 'channel results are equal')
 
   t.deepEqual(
     await (await fetch(t.context.http + '/derpi', {})).text(),
@@ -183,8 +187,7 @@ test('fallback to old protocol - outgoing', async (t: T) => {
   )
 
   const x = await (await fetch(t.context.http + '/flap', {})).json()
-
-  t.true(x.derp > 0)
+  t.true(x.derp > 0, 'derp is large then 0 from flap')
 
   await wait(100)
 

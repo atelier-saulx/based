@@ -142,7 +142,7 @@ export const handleBinary = async (
   }
 
   if (ctx.session.authState.token || prevToken) {
-    const b = encodeAuthResponse(valueToBuffer(ctx.session.authState))
+    const b = encodeAuthResponse(valueToBuffer(ctx.session.authState, true))
     r.push(b)
   }
 
