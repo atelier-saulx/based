@@ -180,6 +180,11 @@ export const contextBasedServer =
         env: client,
       },
       port,
+      rateLimit: {
+        drain: 1e6,
+        ws: 1e6,
+        http: 1e6,
+      },
       ws: {
         open() {
           connected++
