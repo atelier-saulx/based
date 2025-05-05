@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+
+#include <stdint.h>
 
 struct ref_save_map_item;
 
@@ -15,11 +17,11 @@ struct schema_info {
 /**
  * Count the number of fields in a given node schema.
  */
-int schemabuf_get_info(struct schema_info *nfo, const char *buf, size_t len);
+int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len);
 
 /**
  * Parse node schema.
  */
-int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const char *buf, size_t len);
+int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len);
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema);

@@ -332,7 +332,7 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
 
         io->sdb_write(&type, sizeof(type), 1, io);
         io->sdb_write(&schema_len, sizeof(schema_len), 1, io);
-        io->sdb_write(te->schema_buf, sizeof(char), te->schema_len, io);
+        io->sdb_write(te->schema_buf, sizeof(te->schema_buf[0]), te->schema_len, io);
     }
 }
 
@@ -502,14 +502,14 @@ static int load_schema(struct selva_io *io, struct SelvaDb *db)
 
     for (size_t i = 0; i < nr_types; i++) {
         node_type_t type;
-        __selva_autofree char *schema_buf;
+        __selva_autofree uint8_t *schema_buf;
         sdb_arr_len_t schema_len;
         int err;
 
         io->sdb_read(&type, sizeof(type), 1, io);
         io->sdb_read(&schema_len, sizeof(schema_len), 1, io);
         schema_buf = selva_malloc(schema_len);
-        io->sdb_read(schema_buf, sizeof(char), schema_len, io);
+        io->sdb_read(schema_buf, sizeof(schema_buf[0]), schema_len, io);
 
         err = selva_db_create_type(db, type, schema_buf, schema_len);
         if (err) {

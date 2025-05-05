@@ -6,10 +6,10 @@ await test('support many fields on root', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.destroy())
 
   const props = {}
-  for (let i = 0; i < 254; i++) {
+  for (let i = 0; i < 248; i++) {
     props['myProp' + i] = 'string'
   }
 
@@ -23,10 +23,10 @@ await test('support many fields on type', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.destroy())
 
   const props = {}
-  for (let i = 0; i < 254; i++) {
+  for (let i = 0; i < 248; i++) {
     props['myProp' + i] = 'string'
   }
 

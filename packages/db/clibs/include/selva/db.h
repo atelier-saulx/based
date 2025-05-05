@@ -5,6 +5,7 @@
 #pragma once
 
 #include <assert.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include "selva/_export.h"
 #include "selva/types.h"
@@ -32,7 +33,7 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
  * @param type must not exist before.
  */
 SELVA_EXPORT
-int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len) __attribute__((nonnull));
+int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len) __attribute__((nonnull));
 
 /**
  * Save the common/shared data of the database.

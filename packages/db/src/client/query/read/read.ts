@@ -38,7 +38,6 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
-  // AggFlag,
 } from '../types.js'
 
 export type Item = {
@@ -422,6 +421,7 @@ export const resultToObject = (
   if (q.aggregate) {
     const results = {}
 
+    // range for numbers
     if (q.aggregate.groupBy) {
       // key size = 2 for now... not perfect...
       let i = 0
@@ -430,8 +430,11 @@ export const resultToObject = (
         // add extra thing for the keys maybe?
         let key: string = ''
         if (result[i] == 0) {
-          key = 'undefined' // empty ; / undefinded?
-          // undefined
+          if (q.aggregate.groupBy.default) {
+            key = q.aggregate.groupBy.default
+          } else {
+            key = `$undefined`
+          }
         } else {
           key = DECODER.decode(result.subarray(i, i + 2))
         }

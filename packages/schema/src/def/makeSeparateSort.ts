@@ -14,6 +14,7 @@ export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
       }
     }
   }
+
   result.seperateSort.buffer = new Uint8Array(max + 1)
   for (const f of result.separate) {
     if (

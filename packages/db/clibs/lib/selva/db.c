@@ -270,7 +270,7 @@ void selva_db_destroy(struct SelvaDb *db)
     selva_free(db);
 }
 
-static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
 {
     struct SelvaTypeEntry *te;
 
@@ -313,14 +313,14 @@ static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_
     return &blocks->blocks[block_i];
 }
 
-static void clone_schema_buf(struct SelvaTypeEntry *te, const char *schema_buf, size_t schema_len)
+static void clone_schema_buf(struct SelvaTypeEntry *te, const uint8_t *schema_buf, size_t schema_len)
 {
     te->schema_buf = selva_malloc(schema_len);
     memcpy(te->schema_buf, schema_buf, schema_len);
     te->schema_len = schema_len;
 }
 
-int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
 {
     struct schema_info nfo;
     const size_t te_fs_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
@@ -339,6 +339,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const char *schem
         return SELVA_EINVAL;
     }
 
+    /* RFE the actual limit is 249 fields limited by field_t and further the special fields. */
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_fs_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;

@@ -28,7 +28,7 @@
 struct schemabuf_parser_ctx {
     struct ref_save_map *ref_save_map;
     struct SelvaTypeEntry *te;
-    const char *buf; /*!< Current position in the schema buf. */
+    const uint8_t *buf; /*!< Current position in the schema buf. */
     size_t len;
     size_t alias_index;
 };
@@ -36,7 +36,7 @@ struct schemabuf_parser_ctx {
 /**
  * Parse field schema to efc.
  */
-static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const char *buf, size_t len);
+static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const uint8_t *buf, size_t len);
 
 static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *, field_t)
 {
@@ -105,7 +105,7 @@ static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema 
 
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
-    const char *buf = ctx->buf;
+    const uint8_t *buf = ctx->buf;
     size_t len = ctx->len;
     size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -286,7 +286,7 @@ static struct schemabuf_parser {
     },
 };
 
-int schemabuf_get_info(struct schema_info *nfo, const char *buf, size_t len)
+int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
 {
     uint32_t block_capacity;
 
@@ -344,7 +344,7 @@ static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
     fields_schema->field_map_template.fixed_data_size = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fields_schema, const char *buf, size_t len)
+static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fields_schema, const uint8_t *buf, size_t len)
 {
     field_t field_idx = 0;
 
@@ -379,7 +379,7 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
     return 0;
 }
 
-static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const char *buf, size_t len)
+static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const uint8_t *buf, size_t len)
 {
     struct schema_info nfo;
     int err;
@@ -412,7 +412,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
  * @param[out] ns
  * @param[out] type
  */
-int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const char *buf, size_t len)
+int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len)
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {
