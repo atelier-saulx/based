@@ -36,7 +36,7 @@ const test = async (
   const d = performance.now()
   const afters = []
   const t = {
-    after: (fn) => {
+    after: (fn: () => Promise<void> | void) => {
       afters.push(fn)
     },
     backup: async (db: BasedDb) => {
