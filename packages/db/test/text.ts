@@ -2,6 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual } from './shared/assert.js'
+import { equal, notEqual } from 'node:assert'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -984,4 +985,44 @@ await test('text and compression', async (t) => {
     id: 1,
     article: { en: '', it: 'cool' },
   })
+})
+
+await test('text and crc32', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      user: {
+        article: 'text',
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: {
+      en: '',
+      it: 'a',
+    },
+  })
+
+  const checksum = (await db.query('user', user1).get()).checksum
+
+  await db.update('user', user1, {
+    article: {
+      en: '',
+      it: 'b',
+    },
+  })
+
+  const checksum2 = (await db.query('user', user1).get()).checksum
+
+  notEqual(checksum, checksum2, 'Checksum is not the same')
 })

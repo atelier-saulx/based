@@ -143,11 +143,11 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             var iter = db.textIterator(value, code);
             while (iter.next()) |s| {
                 if (isEdge) {
-                    size += (s.len + 6);
+                    size += (s.len + 6 - 4);
                 } else {
-                    size += (s.len + 5);
+                    size += (s.len + 5 - 4);
                 }
-                var result = addResult(field, s, includeMain, edgeType);
+                var result = addResult(field, s[0 .. s.len - 4], includeMain, edgeType);
                 if (!idIsSet) {
                     size += 5;
                     result.id = id;

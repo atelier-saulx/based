@@ -372,11 +372,11 @@ export const readAllFields = (
         } else {
           if (q.lang != 0) {
             q.include.propsRead[index] = id
-            addField(prop, read(result, i + 4, size, false), item)
+            addField(prop, read(result, i + 4, size, true), item)
           } else {
             addField(
               prop,
-              read(result, i + 4, size, false),
+              read(result, i + 4, size, true),
               item,
               false,
               result[i + 4],
