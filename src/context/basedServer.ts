@@ -324,7 +324,7 @@ export const contextBasedServer =
           .line()
           .error(context.i18n('methods.server.name'))
           .log(`<red>${JSON.stringify(data, null, 2)}</red>`, null)
-          .log(error.toString(), null)
+          .log(error?.toString(), null)
           .line()
       }
     })
