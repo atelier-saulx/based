@@ -108,7 +108,7 @@ struct SelvaTypeEntry {
      * Copy of the original selvaBuffer tha was used to initialize this type.
      * Alloc & free with selva_jemalloc.
      */
-    char *schema_buf __pcounted_by(schema_len);
+    uint8_t *schema_buf __pcounted_by(schema_len);
     size_t schema_len;
 
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
