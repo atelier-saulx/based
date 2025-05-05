@@ -502,7 +502,7 @@ static int load_schema(struct selva_io *io, struct SelvaDb *db)
 
     for (size_t i = 0; i < nr_types; i++) {
         node_type_t type;
-        __selva_autofree char *schema_buf;
+        __selva_autofree uint8_t *schema_buf;
         sdb_arr_len_t schema_len;
         int err;
 
