@@ -339,6 +339,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
         return SELVA_EINVAL;
     }
 
+    /* RFE the actual limit is 249 fields limited by field_t and further the special fields. */
     if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_fs_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
