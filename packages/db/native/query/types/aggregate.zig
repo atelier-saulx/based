@@ -9,29 +9,13 @@ const utils = @import("../../utils.zig");
 const read = utils.read;
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
-
+const GroupProtocolLen = @import("../aggregate/group.zig").ProtocolLen;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 
+const setGroupResults = @import("../aggregate/group.zig").setGroupResults;
+const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
+
 const c = @import("../../c.zig");
-
-// add more hashmaps
-const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
-
-pub inline fn setGroupResults(
-    data: []u8,
-    resultsHashMap: SimpleHashMap,
-    resultsSize: u16, // should be 1 byte...
-) !void {
-    var it = resultsHashMap.iterator();
-    var i: usize = 0;
-    while (it.next()) |entry| {
-        copy(data[i .. i + 2], entry.key_ptr);
-        i += 2;
-        copy(data[i .. i + resultsSize], entry.value_ptr.*);
-        i += resultsSize;
-    }
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
-}
 
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -72,20 +56,10 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     var first = true;
     var node = db.getFirstNode(typeEntry);
     var index: usize = 1;
-    const groupField = aggInput[index];
-    index += 1;
-    const groupPropType: types.Prop = @enumFromInt(aggInput[index]);
-    index += 1;
-    const groupStart = read(u16, aggInput, index);
-    index += 2;
-    const groupLen = read(u16, aggInput, index);
-    index += 2;
-    const groupType: types.Prop = if (groupField == types.MAIN_PROP) types.Prop.MICRO_BUFFER else groupPropType;
-    const groupFieldSchema = try db.getFieldSchema(groupField, typeEntry);
-    var resultsHashMap = SimpleHashMap.init(ctx.allocator);
-    const resultsSize = read(u16, aggInput, index);
-    index += 2;
-    const emptyKey = [_]u8{0} ** 2;
+
+    const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
+    index += GroupProtocolLen;
+
     const agg = aggInput[index..aggInput.len];
 
     checkItem: while (ctx.totalResults < limit) {
@@ -98,18 +72,18 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupFieldSchema, groupType);
+            const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
 
             // key needs to be variable
-            const key: [2]u8 = if (groupValue.len > 0) groupValue[groupStart + 1 .. groupStart + 1 + groupLen][0..2].* else emptyKey;
+            const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
             var resultsField: []u8 = undefined;
-            if (!resultsHashMap.contains(key)) {
-                resultsField = try ctx.allocator.alloc(u8, resultsSize);
+            if (!groupCtx.hashMap.contains(key)) {
+                resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
                 @memset(resultsField, 0);
-                try resultsHashMap.put(key, resultsField);
-                ctx.size += 2 + resultsSize;
+                try groupCtx.hashMap.put(key, resultsField);
+                ctx.size += 2 + groupCtx.resultsSize;
             } else {
-                resultsField = resultsHashMap.get(key).?;
+                resultsField = groupCtx.hashMap.get(key).?;
             }
 
             aggregate(agg, typeEntry, n, resultsField);
@@ -126,6 +100,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    try setGroupResults(data, resultsHashMap, resultsSize);
+    try setGroupResults(data, groupCtx);
     return result;
 }

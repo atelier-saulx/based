@@ -6,9 +6,6 @@ const read = utils.read;
 const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-// add more hashmaps
-const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
-
 pub inline fn execAgg(
     aggPropDef: []u8,
     resultsField: []u8,
