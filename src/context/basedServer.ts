@@ -317,12 +317,14 @@ export const contextBasedServer =
       )
     }
 
-    server.on('error', (_message, data, _error) => {
+    server.on('error', (_message, data, error) => {
+      console.dir({ data, error }, { depth: null })
       if (data) {
         context.print
           .line()
           .error(context.i18n('methods.server.name'))
           .log(`<red>${JSON.stringify(data, null, 2)}</red>`, null)
+          .log(error.toString(), null)
           .line()
       }
     })
