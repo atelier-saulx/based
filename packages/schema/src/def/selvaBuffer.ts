@@ -76,7 +76,7 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     let eschema = []
-    
+
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
     buf[1] = makeEdgeConstraintFlags(prop, dstType.props[prop.inversePropName]) // flags
@@ -132,7 +132,13 @@ export function schemaToSelvaBuffer(schema: {
   return Object.values(schema).map((t, i) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []
+    const nrFields = 1 + sepPropCount(props)
     let refFields = 0
+
+    if (nrFields >= 250) {
+        throw new Error('Too many fields')
+    }
+
     for (const f of props) {
       if (f.separate) {
         if (f.typeIndex === REFERENCE || f.typeIndex === REFERENCES) {
@@ -141,10 +147,11 @@ export function schemaToSelvaBuffer(schema: {
         rest.push(f)
       }
     }
+
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([
       ...blockCapacity(t.blockCapacity),
-      1 + sepPropCount(props),
+      nrFields,
       1 + refFields,
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
