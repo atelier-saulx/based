@@ -1,16 +1,11 @@
 import { BasedClient } from '../index.js'
 import { inflateSync } from 'fflate'
 import { applyPatch } from '@saulx/diff'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual, readUint32, readUint24, readUint64 } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState.js'
 import { setStorage } from '../persistentStorage/index.js'
 import { CACHE_PREFIX } from '../persistentStorage/constants.js'
-import {
-  parseArrayBuffer,
-  decodeHeader,
-  readUint8,
-  requestFullData,
-} from './protocol.js'
+import { parseArrayBuffer, decodeHeader, requestFullData } from './protocol.js'
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue } from '../types/index.js'
@@ -38,13 +33,14 @@ export const incoming = async (client: BasedClient, data: any) => {
   try {
     const d = data.data
     const buffer = await parseArrayBuffer(d)
-    const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
+
+    const { type, len, isDeflate } = decodeHeader(readUint32(buffer, 0))
 
     // reader for batched replies
     // ------- Function
     if (type === 0) {
       // | 4 header | 3 id | * payload |
-      const id = readUint8(buffer, 4, 3)
+      const id = readUint24(buffer, 4)
       const start = 7
       const end = len + 4
       let payload: any
@@ -63,7 +59,7 @@ export const incoming = async (client: BasedClient, data: any) => {
     // ------- Get checksum is up to date
     else if (type === 3) {
       // | 4 header | 8 id |
-      const id = readUint8(buffer, 4, 8)
+      const id = readUint64(buffer, 4)
       if (client.getState.has(id) && client.cache.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
@@ -76,7 +72,7 @@ export const incoming = async (client: BasedClient, data: any) => {
     // ------- Subscription diff data
     else if (type === 2) {
       // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
-      const id = readUint8(buffer, 4, 8)
+      const id = readUint64(buffer, 4)
 
       const cachedData = client.cache.get(id)
 
@@ -85,8 +81,8 @@ export const incoming = async (client: BasedClient, data: any) => {
         return
       }
 
-      const checksum = readUint8(buffer, 12, 8)
-      const previousChecksum = readUint8(buffer, 20, 8)
+      const checksum = readUint64(buffer, 12)
+      const previousChecksum = readUint64(buffer, 20)
 
       if (cachedData.c !== previousChecksum) {
         requestFullData(client, id)
@@ -146,8 +142,8 @@ export const incoming = async (client: BasedClient, data: any) => {
     // ------- Subscription data
     else if (type === 1) {
       // | 4 header | 8 id | 8 checksum | * payload |
-      const id = readUint8(buffer, 4, 8)
-      const checksum = readUint8(buffer, 12, 8)
+      const id = readUint64(buffer, 4)
+      const checksum = readUint64(buffer, 12)
 
       const start = 20
       const end = len + 4
@@ -319,7 +315,7 @@ export const incoming = async (client: BasedClient, data: any) => {
     else if (type === 6) {
       // | 4 header | 8 id | * payload |
       // get id add last send on the state
-      const id = readUint8(buffer, 4, 8)
+      const id = readUint64(buffer, 4)
       const channel = client.channelState.get(id)
       if (id) {
         if (!channel.inTransit) {
@@ -351,12 +347,12 @@ export const incoming = async (client: BasedClient, data: any) => {
     } // ----------- SubType 7
     else if (type === 7) {
       // | 4 header | 1 subType |
-      const subType = readUint8(buffer, 4, 1)
+      const subType = buffer[4]
 
       // channel
       if (subType === 0) {
         // | 4 header | 1 subType | 8 id | * payload |
-        const id = readUint8(buffer, 5, 8)
+        const id = readUint64(buffer, 5)
 
         const start = 13
         const end = len + 5
@@ -375,7 +371,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
       } else if (subType === 1) {
         // | 4 header | 1 subType | 3 id | * payload |
-        const id = readUint8(buffer, 5, 3)
+        const id = readUint24(buffer, 5)
         const start = 8
         const end = len + 4
         let payload: any
@@ -389,14 +385,15 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
       } else if (subType === 2) {
         // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize
-        const id = readUint8(buffer, 5, 3)
-        const seqId = readUint8(buffer, 8, 1)
-        const code = readUint8(buffer, 9, 1)
+        const id = readUint24(buffer, 5)
+        const seqId = buffer[8]
+        const code = buffer[9]
 
         let maxChunkSize = 0
 
         if (len > 10 - 4) {
-          maxChunkSize = readUint8(buffer, 10, len - 6)
+          // derp bit weird
+          maxChunkSize = readUint24(buffer, 10)
         }
 
         // if len is smaller its an error OR use 0 as error (1 - 255)
@@ -409,7 +406,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
       } else if (subType === 3) {
         // | 4 header | 1 subType | 1 type | 1 seqId
-        forceReload(client, readUint8(buffer, 5, 1), readUint8(buffer, 6, 1))
+        forceReload(client, buffer[5], buffer[6])
       }
     }
     // ---------------------------------

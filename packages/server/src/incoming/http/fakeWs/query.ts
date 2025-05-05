@@ -7,7 +7,6 @@ import {
 } from '../../../query/index.js'
 import { FakeBinaryMessageHandler } from './types.js'
 import {
-  readUint8,
   decodeName,
   parsePayload,
   decodePayload,
@@ -18,6 +17,7 @@ import {
 import { verifyRoute } from '../../../verifyRoute.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
+import { readUint64 } from '@saulx/utils'
 
 const EMPTY = Buffer.allocUnsafe(0)
 
@@ -32,8 +32,8 @@ export const handleQuery: FakeBinaryMessageHandler = (
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
   const nameLen = arr[startByte + 20]
-  const id = readUint8(arr, startByte + 4, 8)
-  const checksum = readUint8(arr, startByte + 12, 8)
+  const id = readUint64(arr, startByte + 4)
+  const checksum = readUint64(arr, startByte + 12)
   const name = decodeName(arr, startByte + 21, startByte + 21 + nameLen)
 
   if (!name || !id) {

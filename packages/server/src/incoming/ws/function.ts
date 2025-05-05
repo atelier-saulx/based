@@ -1,5 +1,4 @@
 import {
-  readUint8,
   decodeName,
   decodePayload,
   encodeFunctionResponse,
@@ -16,6 +15,7 @@ import { authorize, IsAuthorizedHandler } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@saulx/utils'
+import { readUint24 } from '@saulx/utils'
 
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
@@ -89,7 +89,7 @@ export const functionMessage: BinaryMessageHandler = (
   server,
 ) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
-  const requestId = readUint8(arr, start + 4, 3)
+  const requestId = readUint24(arr, start + 4)
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
 

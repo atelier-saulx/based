@@ -1,5 +1,6 @@
 import { deflateSync } from 'fflate'
 import { AuthState } from '../types/auth.js'
+import { writeUint32, writeUint64, writeUint24 } from '@saulx/utils'
 import {
   ChannelPublishQueueItem,
   ChannelQueueItem,
@@ -34,6 +35,7 @@ const encodeHeader = (
   // @ts-ignore
   const encodedMeta = (type << 1) + (isDeflate | 0)
   const nr = (len << 4) + encodedMeta
+  // write in the buffer
   return nr
 }
 
@@ -44,9 +46,10 @@ const createBuffer = (
   size: number = len,
 ): Uint8Array => {
   const header = encodeHeader(type, isDeflate, len)
-  const buff = new Uint8Array(size)
-  storeUint8(buff, header, 0, 4)
-  return buff
+  const buf = new Uint8Array(size)
+
+  writeUint32(buf, header, 0)
+  return buf
 }
 
 const encodePayload = (
@@ -90,8 +93,9 @@ export const encodeGetObserveMessage = (
     len += buffLen
     const buff = createBuffer(type, isDeflate, len, 5 + buffLen)
 
-    storeUint8(buff, id, 4, 8)
-    storeUint8(buff, checksum, 12, 8)
+    writeUint64(buff, id, 4)
+    writeUint64(buff, checksum, 12)
+
     buff[20] = n.length
     if (p) {
       return { buffers: [buff, n, p], len }
@@ -109,19 +113,16 @@ export const encodeSubscribeChannelMessage = (
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, payload] = o
-
   // Type 5 = subscribe
   // | 4 header | 8 id | 1 name length | * name | * payload |
-
   // Type 7 = unsubscribe
   // | 4 header | 1    = 0 | 8 id |
   if (type === 7) {
     const buff = createBuffer(type, false, 13)
-    storeUint8(buff, 0, 4, 1)
-    storeUint8(buff, id, 5, 8)
+    buff[4] = 0
+    writeUint64(buff, id, 5)
     return { buffers: [buff], len: 13 }
   }
-
   const n = encoder.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
@@ -132,7 +133,7 @@ export const encodeSubscribeChannelMessage = (
   const buffLen = 8
   len += buffLen
   const buff = createBuffer(5, isRequestSubscriber, len, 5 + buffLen)
-  storeUint8(buff, id, 4, 8)
+  writeUint64(buff, id, 4)
   buff[12] = n.length
   if (p) {
     return { buffers: [buff, n, p], len }
@@ -148,12 +149,11 @@ export const encodeObserveMessage = (
   const [type, name, checksum, payload] = o
   // Type 1 = subscribe
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
-
   // Type 2 = unsubscribe
   // | 4 header | 8 id |
   if (type === 2) {
     const buff = createBuffer(type, false, 12)
-    storeUint8(buff, id, 4, 8)
+    writeUint64(buff, id, 4)
     return { buffers: [buff], len: 12 }
   }
   const n = encoder.encode(name)
@@ -165,8 +165,8 @@ export const encodeObserveMessage = (
   const buffLen = 16
   len += buffLen
   const buff = createBuffer(type, isDeflate, len, 5 + buffLen)
-  storeUint8(buff, id, 4, 8)
-  storeUint8(buff, checksum, 12, 8)
+  writeUint64(buff, id, 4)
+  writeUint64(buff, checksum, 12)
   buff[20] = n.length
   if (p) {
     return { buffers: [buff, n, p], len }
@@ -187,7 +187,7 @@ export const encodeFunctionMessage = (
     len += p.length
   }
   const buff = createBuffer(0, isDeflate, len, 8)
-  storeUint8(buff, id, 4, 3)
+  writeUint24(buff, id, 4)
   buff[7] = n.length
   if (p) {
     return { buffers: [buff, n, p], len }
@@ -206,7 +206,7 @@ export const encodePublishMessage = (
     len += p.length
   }
   const buff = createBuffer(6, isDeflate, len, 12)
-  storeUint8(buff, id, 4, 8)
+  writeUint64(buff, id, 4)
   if (p) {
     return { buffers: [buff, p], len }
   }
@@ -261,13 +261,13 @@ export const encodeStreamMessage = (
 
     const buff = createBuffer(7, isDeflate, len, sLen)
 
-    storeUint8(buff, 1, 4, 1)
-    storeUint8(buff, reqId, 5, 3)
-    storeUint8(buff, contentSize, 8, 4)
-    storeUint8(buff, nameEncoded.length, 12, 1)
-    storeUint8(buff, mimeTypeEncoded.length, 13, 1)
-    storeUint8(buff, fnNameEncoded.length, 14, 1)
-    storeUint8(buff, extensionEncoded.length, 15, 1)
+    buff[4] = 1
+    writeUint24(buff, reqId, 5)
+    writeUint32(buff, contentSize, 8)
+    buff[12] = nameEncoded.length
+    buff[13] = mimeTypeEncoded.length
+    buff[14] = fnNameEncoded.length
+    buff[15] = extensionEncoded.length
 
     if (p) {
       return {
@@ -295,14 +295,9 @@ export const encodeStreamMessage = (
   } else if (subType === 2) {
     // Type 7.2 Chunk
     // | 4 header | 1 subType = 2 | 3 reqId | 1 seqId | content
-
     let sLen = 9
     let len = sLen
-
     const [, , seqId, chunk] = f
-
-    // only deflate is it makes sense
-
     let isDeflate = false
     let processed = chunk
     if (chunk.length > 150) {
@@ -312,13 +307,10 @@ export const encodeStreamMessage = (
     } else {
       len += chunk.length
     }
-
     const buff = createBuffer(7, isDeflate, len, sLen)
-
-    storeUint8(buff, 2, 4, 1)
-    storeUint8(buff, reqId, 5, 3)
-    storeUint8(buff, seqId, 8, 1)
-
+    buff[4] = 2
+    writeUint24(buff, reqId, 5)
+    buff[8] = seqId
     return { buffers: [buff, processed], len }
   }
 

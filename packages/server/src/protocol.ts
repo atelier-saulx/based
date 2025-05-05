@@ -1,9 +1,13 @@
 import zlib from 'node:zlib'
-import { DECODER } from '@saulx/utils'
+import {
+  DECODER,
+  writeUint32,
+  writeUint24,
+  writeUint64,
+  readUint32,
+} from '@saulx/utils'
 
 export const COMPRESS_FROM_BYTES = 150
-
-//
 
 export const decodeHeader = (
   nr: number,
@@ -180,8 +184,8 @@ export const encodeFunctionResponse = (
 
     // not very nessecary but ok
     const array = new Uint8Array(headerSize + msgSize)
-    storeUint8(array, header, 0, 4)
-    storeUint8(array, id, 4, 3)
+    writeUint32(array, header, 0)
+    writeUint24(array, id, 4)
     if (buffer.length) {
       array.set(buffer, 7)
     }
@@ -218,9 +222,9 @@ export const encodeStreamFunctionResponse = (
 
     // not very nessecary but ok
     const array = new Uint8Array(headerSize + msgSize)
-    storeUint8(array, header, 0, 4)
-    storeUint8(array, 1, 4, 1)
-    storeUint8(array, id, 5, 3)
+    writeUint32(array, header, 0)
+    array[1] = 1
+    writeUint24(array, id, 5)
     if (buffer.length) {
       array.set(buffer, 8)
     }
@@ -249,14 +253,14 @@ export const encodeStreamFunctionChunkResponse = (
 
   const array = new Uint8Array(4 + msgSize)
 
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, 2, 4, 1)
-  storeUint8(array, id, 5, 3)
-  storeUint8(array, seqId, 8, 1)
-  storeUint8(array, code, 9, 1)
+  writeUint32(array, header, 0)
+  array[4] = 2
+  writeUint24(array, id, 5)
+  array[8] = seqId
+  array[9] = code
 
   if (maxChunkSize) {
-    storeUint8(array, maxChunkSize, 10, 3)
+    writeUint24(array, maxChunkSize, 10)
   }
 
   return array
@@ -267,14 +271,14 @@ export const encodeGetResponse = (id: number): Uint8Array => {
   // | 4 header | 8 id |
   const header = encodeHeader(3, false, 8)
   const array = new Uint8Array(12)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 4, 8)
+  writeUint32(array, header, 0)
+  writeUint64(array, id, 4)
   return array
 }
 
 export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
   const prevId = payload.slice(4, 12)
-  storeUint8(payload, id, 4, 8)
+  writeUint64(payload, id, 4)
   return prevId
 }
 
@@ -296,9 +300,9 @@ export const encodeObservableResponse = (
   const msgSize = 16 + buffer.length
   const header = encodeHeader(1, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 4, 8)
-  storeUint8(array, checksum, 12, 8)
+  writeUint32(array, header, 0)
+  writeUint64(array, id, 4)
+  writeUint64(array, checksum, 12)
   if (buffer.length) {
     array.set(buffer, 20)
   }
@@ -323,10 +327,10 @@ export const encodeObservableDiffResponse = (
   const msgSize = 24 + buffer.length
   const header = encodeHeader(2, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 4, 8)
-  storeUint8(array, checksum, 12, 8)
-  storeUint8(array, previousChecksum, 20, 8)
+  writeUint32(array, header, 0)
+  writeUint64(array, id, 4)
+  writeUint64(array, checksum, 12)
+  writeUint64(array, previousChecksum, 20)
   if (buffer.length) {
     array.set(buffer, 28)
   }
@@ -346,7 +350,7 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   const msgSize = buffer.length
   const header = encodeHeader(type, isDeflate, msgSize)
   const array = new Uint8Array(headerSize + msgSize)
-  storeUint8(array, header, 0, 4)
+  writeUint32(array, header, 0)
   if (buffer.length) {
     array.set(buffer, 4)
   }
@@ -377,9 +381,9 @@ export const encodeChannelMessage = (
   const msgSize = 8 + buffer.length + 1
   const header = encodeHeader(7, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  storeUint8(array, 0, 4, 1)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 5, 8)
+  array[4] = 0
+  writeUint32(array, header, 0)
+  writeUint64(array, id, 5)
   if (buffer.length) {
     array.set(buffer, 13)
   }
@@ -395,15 +399,15 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   const msgSize = 7
   const header = encodeHeader(7, false, msgSize)
   const array = new Uint8Array(4 + msgSize)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, 3, 4, 1)
-  storeUint8(array, type, 5, 1)
-  storeUint8(array, seqId, 6, 1)
+  writeUint32(array, header, 0)
+  array[4] = 3
+  array[5] = type
+  array[6] = seqId
   return array
 }
 
 export const decode = (buffer: Uint8Array): any => {
-  const header = readUint8(buffer, 0, 4)
+  const header = readUint32(buffer, 0)
   const { isDeflate, len, type } = decodeHeader(header)
   if (type === 1) {
     // | 4 header | 8 id | 8 checksum | * payload |

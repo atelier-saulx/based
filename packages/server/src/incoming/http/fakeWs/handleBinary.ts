@@ -3,12 +3,12 @@ import { BasedServer } from '../../../server.js'
 import { end } from '../../../sendHttpResponse.js'
 import {
   decodeHeader,
-  readUint8,
   encodeAuthResponse,
   valueToBuffer,
 } from '../../../protocol.js'
 import { handleQuery } from './query.js'
 import { handleFunction } from './function.js'
+import { readUint32 } from '@saulx/utils'
 
 const reader = (
   server: BasedServer,
@@ -16,7 +16,7 @@ const reader = (
   arr: Uint8Array,
   start: number,
 ): [number, Promise<Uint8Array>] | [undefined] | [number] => {
-  const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
+  const { len, isDeflate, type } = decodeHeader(readUint32(arr, start))
   const next = len + start
 
   // type 0 = function

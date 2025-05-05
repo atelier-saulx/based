@@ -1,8 +1,8 @@
 import fetch from '@based/fetch'
-import { readUint8 } from '../incoming/protocol.js'
 import { incoming } from '../incoming/index.js'
 import { BasedClient, encodeAuthState } from '../index.js'
 import { addObsToQueue } from '../outgoing/index.js'
+import { readUint32 } from '@saulx/utils'
 
 const syncSubs = (ws: FakeWebsocket) => {
   if (!ws._c) {
@@ -77,7 +77,7 @@ export class FakeWebsocket {
         const incomingArrayBuffer = new Uint8Array(await v.arrayBuffer())
         let i = 0
         while (i < incomingArrayBuffer.byteLength) {
-          const s = readUint8(incomingArrayBuffer, i, 4)
+          const s = readUint32(incomingArrayBuffer, i)
           const bufTime = incomingArrayBuffer.slice(i + 4, s + i + 4)
           if (s) {
             incoming(this.client, { data: bufTime })

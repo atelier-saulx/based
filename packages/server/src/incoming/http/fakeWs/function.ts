@@ -1,6 +1,5 @@
 import { FakeBinaryMessageHandler } from './types.js'
 import {
-  readUint8,
   decodeName,
   decodePayload,
   encodeFunctionResponse,
@@ -12,6 +11,7 @@ import { verifyRoute } from '../../../verifyRoute.js'
 import { installFn } from '../../../installFn.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
+import { readUint24 } from '@saulx/utils'
 
 export const handleFunction: FakeBinaryMessageHandler = (
   arr,
@@ -22,7 +22,7 @@ export const handleFunction: FakeBinaryMessageHandler = (
   server,
 ) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
-  const requestId = readUint8(arr, startByte + 4, 3)
+  const requestId = readUint24(arr, startByte + 4)
   const nameLen = arr[startByte + 7]
   const name = decodeName(arr, startByte + 8, startByte + 8 + nameLen)
 

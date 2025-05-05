@@ -1,27 +1,27 @@
-import { BinaryMessageHandler } from "./types.js";
+import { BinaryMessageHandler } from './types.js'
 import {
   decodePayload,
   decodeName,
-  readUint8,
   parsePayload,
   encodeStreamFunctionResponse,
   valueToBuffer,
   encodeStreamFunctionChunkResponse,
-} from "../../protocol.js";
-import { BasedDataStream } from "@based/functions";
-import mimeTypes from "mime-types";
-import { authorize, IsAuthorizedHandler } from "../../authorize.js";
-import { verifyRoute } from "../../verifyRoute.js";
-import { rateLimitRequest } from "../../security.js";
-import { WebSocketSession, BasedRoute } from "@based/functions";
-import { sendError } from "../../sendError.js";
-import { BasedErrorCode } from "@based/errors";
-import zlib from "node:zlib";
-import { BasedServer } from "../../server.js";
+} from '../../protocol.js'
+import { BasedDataStream } from '@based/functions'
+import mimeTypes from 'mime-types'
+import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { verifyRoute } from '../../verifyRoute.js'
+import { rateLimitRequest } from '../../security.js'
+import { WebSocketSession, BasedRoute } from '@based/functions'
+import { sendError } from '../../sendError.js'
+import { BasedErrorCode } from '@based/errors'
+import zlib from 'node:zlib'
+import { BasedServer } from '../../server.js'
+import { readUint64, readUint24, readUint32 } from '@saulx/utils'
 
 const startStreamFunction: IsAuthorizedHandler<
   WebSocketSession,
-  BasedRoute<"stream">
+  BasedRoute<'stream'>
 > = (route, spec, server, ctx, payload, streamRequestId) => {
   spec
     .fn(server.client, payload, ctx)
@@ -29,17 +29,17 @@ const startStreamFunction: IsAuthorizedHandler<
       ctx.session?.ws.send(
         encodeStreamFunctionResponse(streamRequestId, valueToBuffer(v)),
         true,
-        false
-      );
+        false,
+      )
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.FunctionError, {
         route,
         streamRequestId,
         err,
-      });
-    });
-};
+      })
+    })
+}
 
 export const registerStream: BinaryMessageHandler = (
   arr,
@@ -47,73 +47,73 @@ export const registerStream: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | 1 extensionLength | name | mime | fnName | extension | payload
   if (!ctx.session) {
-    return false;
+    return false
   }
 
-  const infoLen = 16;
+  const infoLen = 16
 
-  const reqId = readUint8(arr, start + 5, 3);
+  const reqId = readUint24(arr, start + 5)
 
   if (reqId === undefined) {
-    return false;
+    return false
   }
 
   if (ctx.session.streams?.[reqId]) {
-    return false;
+    return false
   }
 
-  const contentSize = readUint8(arr, start + 8, 4);
+  const contentSize = readUint32(arr, start + 8)
 
   if (!contentSize) {
-    return false;
+    return false
   }
 
-  const nameLen = readUint8(arr, start + 12, 1);
-  const mimeLen = readUint8(arr, start + 13, 1);
-  const fnNameLen = readUint8(arr, start + 14, 1);
-  const extensionLen = readUint8(arr, start + 15, 1);
+  const nameLen = arr[start + 12]
+  const mimeLen = arr[start + 13]
+  const fnNameLen = arr[start + 14]
+  const extensionLen = arr[start + 15]
 
-  const name = decodeName(arr, start + infoLen, start + infoLen + nameLen);
+  const name = decodeName(arr, start + infoLen, start + infoLen + nameLen)
 
   let mime = decodeName(
     arr,
     start + infoLen + nameLen,
-    start + infoLen + nameLen + mimeLen
-  );
+    start + infoLen + nameLen + mimeLen,
+  )
   const fnName = decodeName(
     arr,
     start + infoLen + nameLen + mimeLen,
-    start + infoLen + mimeLen + nameLen + fnNameLen
-  );
+    start + infoLen + mimeLen + nameLen + fnNameLen,
+  )
   let extension = decodeName(
     arr,
     start + infoLen + nameLen + mimeLen + fnNameLen,
-    start + infoLen + mimeLen + nameLen + fnNameLen + extensionLen
-  );
+    start + infoLen + mimeLen + nameLen + fnNameLen + extensionLen,
+  )
 
   const route = verifyRoute(
     server,
     ctx,
-    "stream",
+    'stream',
     server.functions.route(fnName),
     fnName,
-    reqId
-  );
+    reqId,
+  )
 
   // TODO: add strictness setting - if strict return false here
   if (route === null) {
-    return true;
+    return true
   }
 
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
   ) {
-    ctx.session.ws.close();
-    return false;
+    ctx.session.ws.close()
+    return false
   }
 
   const payload =
@@ -124,39 +124,39 @@ export const registerStream: BinaryMessageHandler = (
             new Uint8Array(
               arr.slice(
                 start + infoLen + nameLen + mimeLen + fnNameLen + extensionLen,
-                start + len
-              )
+                start + len,
+              ),
             ),
-            isDeflate
-          )
-        );
+            isDeflate,
+          ),
+        )
 
   if (!ctx.session.streams) {
-    ctx.session.streams = {};
+    ctx.session.streams = {}
   }
 
   if (!mime) {
     if (extension) {
-      const mimeLookup = mimeTypes.lookup(extension);
+      const mimeLookup = mimeTypes.lookup(extension)
       if (mimeLookup) {
-        mime = mimeLookup;
+        mime = mimeLookup
       }
     } else {
-      const e = name.split(".");
-      const extension = e[e.length - 1];
+      const e = name.split('.')
+      const extension = e[e.length - 1]
       if (name) {
-        const t = mimeTypes.lookup(extension);
+        const t = mimeTypes.lookup(extension)
         if (t) {
-          mime = t;
+          mime = t
         }
       } else {
-        mime = "*/*";
+        mime = '*/*'
       }
     }
   }
 
   if (!extension) {
-    extension = mimeTypes.extension(mime) || "";
+    extension = mimeTypes.extension(mime) || ''
   }
 
   const streamPayload = {
@@ -168,9 +168,9 @@ export const registerStream: BinaryMessageHandler = (
     payload,
     stream: new BasedDataStream(contentSize),
     seqId: 0,
-  };
+  }
 
-  ctx.session.streams[reqId] = streamPayload;
+  ctx.session.streams[reqId] = streamPayload
 
   authorize(
     route,
@@ -183,19 +183,19 @@ export const registerStream: BinaryMessageHandler = (
     route.public,
     () => {
       if (!ctx.session) {
-        return;
+        return
       }
-      console.log("not authorized...");
-      delete ctx.session.streams[reqId];
-    }
-  );
+      console.log('not authorized...')
+      delete ctx.session.streams[reqId]
+    },
+  )
 
-  return true;
-};
+  return true
+}
 
 const getMaxChunkSize = (server: BasedServer): number => {
-  return 0;
-};
+  return 0
+}
 
 // add counter for active streams
 
@@ -205,117 +205,117 @@ export const receiveChunkStream: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // Type 7.2 Chunk
   // | 4 header | 1 subType = 2 | 3 reqId | 1 seqId | content
   if (!ctx.session) {
-    return false;
+    return false
   }
 
-  const infoLen = 9;
-  const reqId = readUint8(arr, start + 5, 3);
-  const seqId = readUint8(arr, start + 8, 1);
+  const infoLen = 9
+  const reqId = readUint24(arr, start + 5)
+  const seqId = arr[start + 8]
 
   if (reqId === undefined) {
-    return false;
+    return false
   }
 
-  const streamPayload = ctx.session.streams?.[reqId];
+  const streamPayload = ctx.session.streams?.[reqId]
 
   if (!streamPayload) {
-    return false;
+    return false
   }
 
   if (seqId - 1 !== streamPayload.seqId) {
-    const sRoute: BasedRoute<"stream"> = {
-      name: "stream-chunk",
-      type: "stream",
-    };
+    const sRoute: BasedRoute<'stream'> = {
+      name: 'stream-chunk',
+      type: 'stream',
+    }
     sendError(server, ctx, BasedErrorCode.FunctionError, {
       route: sRoute,
       streamRequestId: reqId,
       err: `Chunk is out of order
 - current chunk #${seqId}, 
 - previous chunk #${streamPayload.seqId}`,
-    });
-    console.log("ERROR chunky");
-    streamPayload.stream.destroy();
-    delete ctx.session.streams[reqId];
+    })
+    console.log('ERROR chunky')
+    streamPayload.stream.destroy()
+    delete ctx.session.streams[reqId]
     // maybe return false... (something is wrong)
-    return true;
+    return true
   }
 
-  streamPayload.seqId = seqId === 255 ? 0 : seqId;
+  streamPayload.seqId = seqId === 255 ? 0 : seqId
 
   // encoding can still be a thing for streams test with png's
 
   const chunk = !isDeflate
     ? arr.slice(infoLen + start, start + len)
-    : zlib.inflateRawSync(arr.slice(infoLen + start, start + len));
+    : zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
 
   if (streamPayload.stream.paused) {
-    streamPayload.stream.once("resume", () => {
+    streamPayload.stream.once('resume', () => {
       if (!ctx.session) {
-        streamPayload.stream.destroy();
-        return false;
+        streamPayload.stream.destroy()
+        return false
       }
       if (
         streamPayload.stream.receivedBytes + chunk.byteLength ===
         streamPayload.size
       ) {
-        streamPayload.stream.end(chunk);
+        streamPayload.stream.end(chunk)
         ctx.session.ws.send(
           encodeStreamFunctionChunkResponse(
             reqId,
             seqId,
             1,
-            getMaxChunkSize(server)
+            getMaxChunkSize(server),
           ),
           true,
-          false
-        );
+          false,
+        )
       } else {
-        streamPayload.stream.write(chunk);
+        streamPayload.stream.write(chunk)
         ctx.session.ws.send(
           encodeStreamFunctionChunkResponse(
             reqId,
             seqId,
             0,
-            getMaxChunkSize(server)
+            getMaxChunkSize(server),
           ),
           true,
-          false
-        );
+          false,
+        )
       }
-    });
+    })
   } else {
-    streamPayload.stream.write(chunk);
+    streamPayload.stream.write(chunk)
     if (streamPayload.stream.receivedBytes === streamPayload.size) {
       ctx.session.ws.send(
         encodeStreamFunctionChunkResponse(
           reqId,
           seqId,
           1,
-          getMaxChunkSize(server)
+          getMaxChunkSize(server),
         ),
         true,
-        false
-      );
-      streamPayload.stream.end();
+        false,
+      )
+      streamPayload.stream.end()
     } else {
       ctx.session.ws.send(
         encodeStreamFunctionChunkResponse(
           reqId,
           seqId,
           0,
-          getMaxChunkSize(server)
+          getMaxChunkSize(server),
         ),
         true,
-        false
-      );
+        false,
+      )
     }
   }
 
-  return true;
-};
+  return true
+}
