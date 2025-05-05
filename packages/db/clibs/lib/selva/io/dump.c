@@ -710,7 +710,7 @@ static int load_reference_meta(
         }
 
         const size_t value_size = selva_fields_get_data_size(fs);
-        char value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
+        uint8_t value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
 
         err = SELVA_EINVAL;
 
@@ -720,7 +720,7 @@ static int load_reference_meta(
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             /* TODO check return value */
-            io->sdb_read(value_buf, sizeof(char), value_size, io);
+            io->sdb_read(value_buf, sizeof(uint8_t), value_size, io);
             err = fields_set2(nullptr, fs, ref->meta, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
@@ -883,7 +883,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         }
 
         const size_t value_size = selva_fields_get_data_size(fs);
-        char value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
+        uint8_t value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
 
         err = SELVA_EINVAL;
 
@@ -893,7 +893,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             /* TODO check return value */
-            io->sdb_read(value_buf, sizeof(char), value_size, io);
+            io->sdb_read(value_buf, sizeof(uint8_t), value_size, io);
             err = selva_fields_set(node, fs, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
