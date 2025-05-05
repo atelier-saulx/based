@@ -107,6 +107,17 @@ export const sendHttpResponse = (
               'max-age=0, must-revalidate',
             )
           }
+          if (
+            !(
+              'Strict-Transport-Security' in headers ||
+              'strict-transport-security' in headers
+            )
+          ) {
+            ctx.session.res.writeHeader(
+              'Strict-Transport-Security',
+              'max-age=31536000; includeSubDomains; preload',
+            )
+          }
           if (!('Content-Type' in headers || 'content-type' in headers)) {
             ctx.session.res.writeHeader('Content-Type', cType)
           }
@@ -114,6 +125,10 @@ export const sendHttpResponse = (
           ctx.session.res.writeHeader(
             'Cache-Control',
             'max-age=0, must-revalidate',
+          )
+          ctx.session.res.writeHeader(
+            'Strict-Transport-Security',
+            'max-age=31536000; includeSubDomains; preload',
           )
         }
 
