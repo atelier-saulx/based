@@ -94,8 +94,6 @@ await test('json and crc32', async (t) => {
 
   const checksum = (await db.query('user', user1).get()).checksum
 
-  ;(await db.query('user', user1).get()).debug()
-
   await db.update('user', user1, {
     article: 'b',
   })

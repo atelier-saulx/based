@@ -160,7 +160,9 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 try ctx.results.append(result);
             }
         } else {
-            if (prop == t.Prop.STRING or prop == t.Prop.JSON) {
+            // or t.Prop.ALIAS
+
+            if (prop == t.Prop.STRING or prop == t.Prop.JSON or prop == t.Prop.BINARY) {
                 // strip crc32
                 valueLen = valueLen - 4;
                 value = value[0..valueLen];

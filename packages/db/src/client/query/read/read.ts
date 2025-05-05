@@ -350,7 +350,7 @@ export const readAllFields = (
       } else if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        addField(prop, result.subarray(i + 6, i + size), item)
+        addField(prop, result.subarray(i + 6, i + size + 4), item)
         i += size + 4
       } else if (prop.typeIndex === STRING) {
         q.include.propsRead[index] = id

@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { notEqual } from 'node:assert'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -510,4 +511,36 @@ await test('nested alias', async (t) => {
     { id: 1, obj: { a: 'jibber', b: '' } },
     { id: 2, obj: { b: 'flurp', a: '' } },
   ])
+})
+
+await test('json and crc32', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        article: {
+          type: 'alias',
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {
+    article: 'a',
+  })
+
+  const checksum = (await db.query('user', user1).get()).checksum
+
+  await db.update('user', user1, {
+    article: 'b',
+  })
+
+  const checksum2 = (await db.query('user', user1).get()).checksum
+
+  notEqual(checksum, checksum2, 'Checksum is not the same')
 })
