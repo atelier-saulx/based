@@ -16,6 +16,7 @@ export * from './utils.js'
 export * from './client/query/query.js'
 export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedIterable.js'
+export * from './server/save.js'
 
 export class BasedDb {
   client: DbClient
