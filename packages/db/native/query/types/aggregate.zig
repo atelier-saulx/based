@@ -12,6 +12,9 @@ const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const c = @import("../../c.zig");
 
+// add more hashmaps
+const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
+
 pub inline fn execAgg(
     aggPropDef: []u8,
     resultsField: []u8,
@@ -42,6 +45,48 @@ pub inline fn execAgg(
     }
 }
 
+pub inline fn execAggregates(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) !void {
+    var i: usize = 0;
+    const field = agg[i];
+    i += 1;
+    const fieldAggsSize = read(u16, agg, i);
+    i += 2;
+    const aggPropDef = agg[i .. i + fieldAggsSize];
+    var value: []u8 = undefined;
+    if (field != aggregateTypes.IsId) {
+        // later need to add support for HLL
+        if (field != types.MAIN_PROP) {
+            i += fieldAggsSize;
+            return;
+        }
+        const fieldSchema = try db.getFieldSchema(field, typeEntry);
+        value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+        if (value.len == 0) {
+            i += fieldAggsSize;
+            return;
+        }
+    }
+    execAgg(aggPropDef, resultsField, value, fieldAggsSize);
+    i += fieldAggsSize;
+    return;
+}
+
+pub inline fn setGroupResults(
+    data: []u8,
+    resultsHashMap: SimpleHashMap,
+    resultsSize: u16, // should be 1 byte...
+) !void {
+    var it = resultsHashMap.iterator();
+    var i: usize = 0;
+    while (it.next()) |entry| {
+        copy(data[i .. i + 2], entry.key_ptr);
+        i += 2;
+        copy(data[i .. i + resultsSize], entry.value_ptr.*);
+        i += resultsSize;
+    }
+    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+}
+
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
@@ -67,38 +112,14 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            var i: usize = 0;
-            while (i < agg.len) {
-                const field = agg[i];
-                i += 1;
-                const fieldAggsSize = read(u16, agg, i);
-                i += 2;
-                const aggPropDef = agg[i .. i + fieldAggsSize];
-                var value: []u8 = undefined;
-                if (field != aggregateTypes.IsId) {
-                    if (field != types.MAIN_PROP) {
-                        continue :checkItem;
-                    }
-                    const fieldSchema = try db.getFieldSchema(field, typeEntry);
-                    value = db.getField(typeEntry, db.getNodeId(n), n, fieldSchema, types.Prop.MICRO_BUFFER);
-                    if (value.len == 0) {
-                        continue :checkItem;
-                    }
-                }
-                execAgg(aggPropDef, resultsField, value, fieldAggsSize);
-                i += fieldAggsSize;
-            }
+            try execAggregates(agg, typeEntry, n, resultsField);
         } else {
             break :checkItem;
         }
     }
-
     writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
     return result;
 }
-
-// add more hashmaps
-const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
 
 pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -120,6 +141,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += 2;
     const emptyKey = [_]u8{0} ** 2;
     const agg = aggInput[index..aggInput.len];
+
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -132,7 +154,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupFieldSchema, groupType);
 
-            // key
+            // key needs to be variable
             const key: [2]u8 = if (groupValue.len > 0) groupValue[groupStart + 1 .. groupStart + 1 + groupLen][0..2].* else emptyKey;
             var resultsField: []u8 = undefined;
             if (!resultsHashMap.contains(key)) {
@@ -144,46 +166,20 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 resultsField = resultsHashMap.get(key).?;
             }
 
-            var i: usize = 0;
-            while (i < agg.len) {
-                const field = agg[i];
-                i += 1;
-                const fieldAggsSize = read(u16, agg, i);
-                i += 2;
-                const aggPropDef = agg[i .. i + fieldAggsSize];
-                var value: []u8 = undefined;
-                if (field != aggregateTypes.IsId) {
-                    if (field != types.MAIN_PROP) {
-                        continue :checkItem;
-                    }
-                    const fieldSchema = try db.getFieldSchema(field, typeEntry);
-                    value = db.getField(typeEntry, db.getNodeId(n), n, fieldSchema, types.Prop.MICRO_BUFFER);
-                    if (value.len == 0) {
-                        continue :checkItem;
-                    }
-                }
-                execAgg(aggPropDef, resultsField, value, fieldAggsSize);
-                i += fieldAggsSize;
-            }
+            try execAggregates(agg, typeEntry, n, resultsField);
         } else {
             // means error
             break :checkItem;
         }
     }
+
+    // Create node result
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    var it = resultsHashMap.iterator();
-    var i: usize = 0;
-    while (it.next()) |entry| {
-        copy(data[i .. i + 2], entry.key_ptr);
-        i += 2;
-        copy(data[i .. i + resultsSize], entry.value_ptr.*);
-        i += resultsSize;
-    }
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+    try setGroupResults(data, resultsHashMap, resultsSize);
     return result;
 }
