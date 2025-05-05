@@ -345,11 +345,7 @@ export const readAllFields = (
       } else if (prop.typeIndex === JSON) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        addField(
-          prop,
-          global.JSON.parse(readUtf8(result, i + 6, size - 6)),
-          item,
-        )
+        addField(prop, global.JSON.parse(read(result, i + 4, size, true)), item)
         i += size + 4
       } else if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
