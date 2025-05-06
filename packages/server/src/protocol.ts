@@ -267,7 +267,7 @@ export const encodeStreamFunctionResponse = (
       const msgSize = idSize + subTypeSize + val.buf.byteLength
       const array = new Uint8Array(headerSize + msgSize)
       encodeHeader(7, val.deflate, msgSize, array, 0)
-      array[1] = 1
+      array[4] = 1
       writeUint24(array, id, 5)
       if (val.buf.byteLength) {
         array.set(val.buf, 8)
@@ -277,7 +277,7 @@ export const encodeStreamFunctionResponse = (
       const msgSize = idSize + subTypeSize + val.buf.byteLength + 1
       const array = new Uint8Array(headerSize + msgSize)
       encodeHeader(7, val.deflate, msgSize, array, 0)
-      array[1] = 1
+      array[4] = 1
       writeUint24(array, id, 5)
       array[8] = val.contentByte[0]
       if (val.buf.byteLength) {
@@ -445,8 +445,9 @@ export const encodeChannelMessage = (
   // | 4 header | 1 subType | 8 id | * payload |
   const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
   if (isOld) {
-    const msgSize = 8 + val.buf.byteLength
+    const msgSize = 8 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
+    // sub protocol 7.0
     array[4] = 0
     encodeHeader(7, val.deflate, msgSize, array, 0)
     writeUint64(array, id, 5)
@@ -455,9 +456,10 @@ export const encodeChannelMessage = (
     }
     return array
   } else {
-    const msgSize = 8 + val.buf.byteLength + 1
+    const msgSize = 8 + val.buf.byteLength + 2
     const array = new Uint8Array(4 + msgSize)
     encodeHeader(7, val.deflate, msgSize, array, 0)
+    // sub protocol 7.0
     array[4] = 0
     writeUint64(array, id, 5)
     array[13] = val.contentByte[0]
@@ -474,7 +476,7 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   // 1 = browser
   // 2 = non-browser
   // | 4 header | 1 subType | 1 type \ 1 seqId
-  const msgSize = 7
+  const msgSize = 3
   const array = new Uint8Array(4 + msgSize)
   encodeHeader(7, false, msgSize, array, 0)
   array[4] = 3

@@ -368,7 +368,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         let payload: any
 
         // if not empty response, parse it
-        if (len !== 9) {
+        if (len !== 9 + 1) {
           payload = parseIncomingData(
             buffer[start],
             deflate(start + 1, end, isDeflate, buffer),
@@ -388,7 +388,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         const end = len + 4
         let payload: any
         // if not empty response, parse it
-        if (len !== 4) {
+        if (len !== 4 + 1) {
           payload = parseIncomingData(
             buffer[start],
             deflate(start + 1, end, isDeflate, buffer),
@@ -406,7 +406,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         let maxChunkSize = 0
 
-        if (len > 10 - 4) {
+        if (len > 10 - 4 + 1) {
           // derp bit weird
           maxChunkSize = readUint24(buffer, 10)
         }

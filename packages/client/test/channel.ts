@@ -16,6 +16,7 @@ test.beforeEach(async (t: T) => {
 test.serial('Subscribe channel', async (t: T) => {
   let closeCalled = false
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       closeAfterIdleTime: {
@@ -89,6 +90,7 @@ test.serial('Channel publish + subscribe', async (t: T) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       closeAfterIdleTime: {
         channel: 0,
@@ -139,6 +141,7 @@ test.serial('Channel publish no subscribe', async (t: T) => {
   const r: any[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       closeAfterIdleTime: {
         channel: 0,
@@ -185,6 +188,7 @@ test.serial('Channel publish requestId (10k messages)', async (t: T) => {
   const r: any[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     ws: {
       maxBackpressureSize: 2e6,
     },
@@ -249,6 +253,7 @@ test.serial('Nested channel publish + subscribe', async (t: T) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     ws: {
       maxBackpressureSize: 2e6,
     },
@@ -329,6 +334,7 @@ test.serial('Channel publish + subscribe errors', async (t: T) => {
   const aList: any[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     auth: {
       authorize: async (_, __, name) => {
         if (name === 'a') {
@@ -405,7 +411,7 @@ test.serial('Channel publish + subscribe errors', async (t: T) => {
               },
               (err) => {
                 error(err)
-              }
+              },
             )
           },
         },
@@ -422,19 +428,19 @@ test.serial('Channel publish + subscribe errors', async (t: T) => {
     () => {},
     (err) => {
       r.push(err)
-    }
+    },
   )
   const close2 = client.channel('b').subscribe(
     () => {},
     (err) => {
       r.push(err)
-    }
+    },
   )
   const close3 = client.channel('c', 1).subscribe(
     () => {},
     (err) => {
       r.push(err)
-    }
+    },
   )
   client.channel('c', 1).publish('hello')
   client.channel('b').publish('hello')
@@ -464,6 +470,7 @@ test.serial('Channel publish over rest', async (t: T) => {
   const r: any[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         a: {
@@ -517,6 +524,7 @@ test.serial('Channel publish over rest', async (t: T) => {
 test.serial('Channel publish non existing channel', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: { channel: 10, query: 10 },
@@ -547,6 +555,7 @@ test.serial(
 
     const server = new BasedServer({
       port: t.context.port,
+      silent: true,
       rateLimit: {
         ws: 1e9,
         drain: 1e3,
@@ -629,5 +638,5 @@ test.serial(
     t.is(Object.keys(server.activeChannels).length, 0)
     t.is(server.activeChannelsById.size, 0)
     await server.destroy()
-  }
+  },
 )

@@ -22,5 +22,7 @@ export const parseIncomingData = (contentType: number, buf: Uint8Array) => {
     return JSON.parse(Decoder.decode(buf))
   }
 
+  console.error('derp', contentType, buf)
+
   throw new Error('Invalid contentType received')
 }

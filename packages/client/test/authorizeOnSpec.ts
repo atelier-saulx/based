@@ -15,6 +15,7 @@ test.beforeEach(async (t: T) => {
 test('Specific authorize on spec', async (t: T) => {
   let authCalled = 0
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     rateLimit: {
       ws: 1e9,
@@ -85,11 +86,16 @@ test('Specific authorize on spec', async (t: T) => {
   })
 
   await client.call('hello', 'snurp')
+
   await client.call('bla')
+
   t.is(authCalled, 1)
+
   await client.query('slax').get()
+
   t.is(authCalled, 2)
   client.channel('klax').subscribe(() => {})
+
   await wait(100)
   t.is(authCalled, 3)
   client.channel('klax').publish(1)

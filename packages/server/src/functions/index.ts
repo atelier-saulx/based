@@ -113,7 +113,7 @@ export class BasedFunctions {
             this.routes[this.paths['/']] ||
             null
 
-          // dirty hack
+          // FIXME: dirty hack
           if (rr && !rr.tokens) {
             this.generateRoute(rr)
           }

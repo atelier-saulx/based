@@ -14,6 +14,7 @@ test.beforeEach(async (t: T) => {
 test('custom http response', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         bla: {
