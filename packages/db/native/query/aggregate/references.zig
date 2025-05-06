@@ -39,8 +39,11 @@ pub fn aggregateRefsFields(
     const result: incTypes.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
 
-    // var resultBuffer: ?*anyopaque = undefined; // where to use without napi
-    var resultsField: [ctx.size + 4]u8 = undefined; //@as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    var resultsField = ctx.allocator.alloc(u8, ctx.size + 4) catch |err| {
+        utils.debugPrint("Allocation failed: {any}\n", .{err});
+        return 0;
+    };
+    @memset(resultsField, 0);
 
     if (isEdge) {
         //later
@@ -72,10 +75,22 @@ pub fn aggregateRefsFields(
             )) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, refNode, resultsField);
+            aggregate(agg, typeEntry.?, refNode, resultsField);
         }
     }
     // put a result and return the size
+    ctx.results.append(.{
+        .id = null,
+        .field = 0,
+        .val = resultsField,
+        .refSize = 0,
+        .includeMain = &.{},
+        .refType = null,
+        .totalRefs = refsCnt,
+        .score = null,
+        .isEdge = types.Prop.NULL,
+        .aggregateResult = read(u32, resultsField[0..3], 0),
+    }) catch unreachable;
 
     return 9;
 }

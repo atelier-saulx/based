@@ -126,16 +126,16 @@ await test('aggregate', async (t) => {
   // q2.inspect(10) // buggy
 
   //--------------------------------------------------------
-  // const q2 = await db
-  //   .query('sequence')
-  //   .include((select) => {
-  //     select('votes')
-  //       // don't break line
-  //       .sum('NL')
-  //   })
-  //   .get()
+  const q2 = await db
+    .query('sequence')
+    .include((select) => {
+      select('votes')
+        // don't break line
+        .sum('NL')
+    })
+    .get()
 
-  // console.log(q2.toJSON()) // ok
+  console.log(q2.toJSON()) // ok
 
   // await db.query('vote').sum('NL').get().inspect()
 
@@ -143,7 +143,7 @@ await test('aggregate', async (t) => {
 
   // // db.query('NL').sum('NL').get().inspect() // field error
 
-  await db.query('vote').sum('NL').get().inspect()
+  // await db.query('vote').sum('NL').get().inspect()
 
   // await db.query('vote').count().get().inspect()
   // // ;(await db.query('vote').count().get()).debug()
