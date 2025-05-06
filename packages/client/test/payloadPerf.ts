@@ -129,7 +129,7 @@ test.serial('query perf', async (t: T) => {
   t.pass()
 })
 
-test.serial.only('function perf', async (t: T) => {
+test.serial('function perf', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     silent: true,
