@@ -51,8 +51,9 @@ test('http get falsy check', async (t: T) => {
   await server.destroy()
 })
 
-test.only('http get authorize', async (t: T) => {
+test('http get authorize', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -68,7 +69,6 @@ test.only('http get authorize', async (t: T) => {
         bla: {
           type: 'query',
           fn: (_based, payload, update) => {
-            console.info(payload)
             update(payload)
             return () => {}
           },
@@ -101,7 +101,7 @@ test.only('http get authorize', async (t: T) => {
   t.true(rj2.ok)
 
   const q1 = await fetch(
-    `${t.context.http}/bla?token=${authorization}&hello=world`
+    `${t.context.http}/bla?token=${authorization}&hello=world`,
   )
   const qj1 = await q1.json()
   t.deepEqual(qj1, { hello: 'world' })

@@ -16,6 +16,7 @@ test.beforeEach(async (t: T) => {
 const setup = async (t: T) => {
   const coreClient = new BasedClient()
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -25,7 +26,7 @@ const setup = async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: (_, payload, update) => {
             update(payload)
-            return () => { }
+            return () => {}
           },
         },
         nestedAny: {
@@ -42,7 +43,7 @@ const setup = async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: (_, payload, update) => {
             update(payload.power)
-            return () => { }
+            return () => {}
           },
         },
         counter: {
@@ -127,10 +128,6 @@ test('get', async (t: T) => {
     url: async () => {
       return t.context.ws
     },
-  })
-
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
   })
 
   const str = await coreClient.query('any', 'xxx').get()
@@ -222,7 +219,7 @@ test('authorize get', async (t: T) => {
   })
 
   const error: BasedError = await t.throwsAsync(
-    coreClient.query('counter').get()
+    coreClient.query('counter').get(),
   )
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
   await coreClient.setAuthState({ token: 'mock_token' })
@@ -232,6 +229,7 @@ test('authorize get', async (t: T) => {
 test('getWhen', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {

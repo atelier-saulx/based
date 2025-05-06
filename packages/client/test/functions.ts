@@ -17,6 +17,7 @@ test('functions', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         checkPayload: {
@@ -61,9 +62,7 @@ test('functions', async (t: T) => {
     },
   })
 
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
-  })
+  coreClient.once('connect', (isConnected) => {})
 
   const power = await coreClient.call('checkPayload', {
     power: {
@@ -96,7 +95,7 @@ test('functions', async (t: T) => {
   }
 
   // max size is 10mb (compressed) so this is close (50mb uncompressed)
-  console.info('Send:', ~~((str.length / 1024 / 1024) * 100) / 100, 'mb')
+  t.log('Send:', ~~((str.length / 1024 / 1024) * 100) / 100, 'mb')
 
   const helloResponses = await Promise.all([
     coreClient.call('hello', {

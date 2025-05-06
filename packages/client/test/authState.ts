@@ -22,6 +22,7 @@ const setup = async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -65,17 +66,9 @@ test('auth string authState', async (t: T) => {
     server.destroy()
   })
 
-  client.once('connect', () => {
-    t.log('connect')
-  })
-  client.once('disconnect', () => {
-    t.log('disconnect')
-  })
-
   let authEventCount = 0
 
   client.once('authstate-change', (result) => {
-    t.log('log', { result })
     t.is(result.token, token)
     authEventCount++
   })
@@ -87,7 +80,7 @@ test('auth string authState', async (t: T) => {
   })
 
   const result = await client.setAuthState({ token })
-  t.deepEqual(result, { token })
+  t.deepEqual(result, { token, v: 2 })
   t.is(client.authState.token, token)
   t.false(client.authRequest.inProgress)
   t.is(authEventCount, 1)
@@ -109,16 +102,8 @@ test('authState simple', async (t: T) => {
     server.destroy()
   })
 
-  client.once('connect', () => {
-    t.log('connect')
-  })
-  client.once('disconnect', () => {
-    t.log('disconnect')
-  })
-
   let authEventCount = 0
   client.once('authstate-change', (result: any) => {
-    t.log('log', { result })
     t.deepEqual(result, authState)
     authEventCount++
   })

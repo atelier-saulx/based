@@ -17,6 +17,7 @@ test('nested functions internal only', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         helloInternal: {
@@ -55,6 +56,7 @@ test('nested functions fn does not exist error', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -82,6 +84,7 @@ test('nested query functions fn does not exist error', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -109,7 +112,7 @@ test('nested query functions fn does not exist error', async (t: T) => {
     },
     (err) => {
       errors.push(err)
-    }
+    },
   )
 
   await wait(500)

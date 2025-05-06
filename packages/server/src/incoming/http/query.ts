@@ -28,6 +28,8 @@ import { authorize, IsAuthorizedHandler } from '../../authorize.js'
 
 const inflate = promisify(zlib.inflateRaw)
 
+const PROTOCOL_CACHE_RAW_OFFSET = 21
+
 const sendCacheSwapEncoding = async (
   server: BasedServer,
   route: BasedRoute<'query'>,
@@ -38,7 +40,8 @@ const sendCacheSwapEncoding = async (
   status: string = '200 OK',
 ) => {
   try {
-    const inflated = await inflate(buffer.slice(20))
+    const inflated = await inflate(buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
+
     const { payload, encoding } = await compress(
       inflated,
       ctx.session.headers.encoding,
@@ -74,12 +77,14 @@ const sendCache = (
     if (headers) {
       sendHeaders(ctx, headers)
     }
+
     ctx.session.res.writeStatus(status)
     ctx.session.res.writeHeader('ETag', String(checksum))
     if (isDeflate) {
       ctx.session.res.writeHeader('Content-Encoding', 'deflate')
     }
-    end(ctx, buffer.slice(20))
+
+    end(ctx, buffer.subarray(PROTOCOL_CACHE_RAW_OFFSET))
   })
 }
 

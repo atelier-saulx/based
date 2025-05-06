@@ -18,6 +18,7 @@ const setup = async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         login: {
@@ -96,7 +97,7 @@ test('authorize functions', async (t: T) => {
   await t.throwsAsync(
     client.call('hello', {
       bla: true,
-    })
+    }),
   )
 
   await client.setAuthState({ token })
@@ -104,7 +105,7 @@ test('authorize functions', async (t: T) => {
   await t.notThrowsAsync(
     client.call('hello', {
       bla: true,
-    })
+    }),
   )
 })
 
@@ -134,11 +135,11 @@ test('authorize observe', async (t: T) => {
         myQuery: 123,
       })
       .subscribe(
-        () => { },
+        () => {},
         (err: BasedError) => {
           t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
           resolve(err)
-        }
+        },
       )
   })
 
@@ -157,7 +158,7 @@ test('authorize observe', async (t: T) => {
         (err: BasedError) => {
           t.fail('Should not error when authed')
           resolve(err)
-        }
+        },
       )
   })
 
@@ -197,7 +198,7 @@ test('authorize after observe', async (t: T) => {
       },
       (err: BasedError) => {
         t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
-      }
+      },
     )
 
   await wait(500)
@@ -242,7 +243,7 @@ test('authorize from server after observe', async (t: T) => {
       },
       (err: BasedError) => {
         t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
-      }
+      },
     )
 
   await wait(500)

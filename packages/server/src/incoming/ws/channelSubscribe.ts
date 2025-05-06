@@ -1,9 +1,4 @@
-import {
-  readUint8,
-  decodeName,
-  decodePayload,
-  parsePayload,
-} from '../../protocol.js'
+import { decodeName, decodePayload } from '../../protocol.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
@@ -24,6 +19,7 @@ import {
   destroyChannel,
   extendChannel,
 } from '../../channel/index.js'
+import { readUint64 } from '@saulx/utils'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
@@ -65,12 +61,12 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   // isDeflate is used differently here
   isChannelIdRequester,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id | 1 name length | * name | * payload |
 
   const nameLen = arr[start + 12]
-  const id = readUint8(arr, start + 4, 8)
+  const id = readUint64(arr, start + 4)
   const name = decodeName(arr, start + 13, start + 13 + nameLen)
 
   if (!name || !id) {
@@ -83,7 +79,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     'channel',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   const tmpRoute: BasedRoute<'channel'> = route || {
@@ -101,7 +97,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       isChannelIdRequester
         ? tmpRoute.rateLimitTokens * 5
         : tmpRoute.rateLimitTokens,
-      server.rateLimit.ws
+      server.rateLimit.ws,
     )
   ) {
     return false
@@ -118,12 +114,12 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       const payload =
         len === nameLen + 13
           ? undefined
-          : parsePayload(
-            decodePayload(
+          : decodePayload(
               new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-              false
+              false,
+              ctx.session.v < 2,
             )
-          )
+
       // This has to be done instantly so publish can be received immediatly
       const channel = createChannel(server, name, id, payload, true)
 
@@ -165,12 +161,11 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 13
       ? undefined
-      : parsePayload(
-        decodePayload(
+      : decodePayload(
           new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-          false
+          false,
+          ctx.session.v < 2,
         )
-      )
 
   session.obs.add(id)
 
@@ -183,7 +178,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     id,
     0,
     false,
-    isNotAuthorized
+    isNotAuthorized,
   )
 
   return true
@@ -195,14 +190,14 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
   _len,
   _isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 1 subType | 8 id |
   if (!ctx.session) {
     return false
   }
 
-  const id = readUint8(arr, start + 5, 8)
+  const id = readUint64(arr, start + 5)
 
   if (!id) {
     return false

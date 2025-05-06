@@ -8,7 +8,7 @@ export const defaultAuthorize: Authorize = async () => {
 export const defaultVerifyAuthState: VerifyAuthState = async (
   _,
   ctx,
-  authState
+  authState,
 ) => {
   if (ctx.session && !deepEqual(authState, ctx.session.authState)) {
     return authState

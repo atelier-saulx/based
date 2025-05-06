@@ -7,7 +7,7 @@ import { BasedErrorCode } from '@based/errors'
 export const errorListener = (
   server: BasedServer,
   obs: ActiveObservable,
-  err: Error | ObservableError
+  err: Error | ObservableError,
 ) => {
   delete obs.cache
   delete obs.diffCache
@@ -20,20 +20,20 @@ export const errorListener = (
   obs.error =
     err instanceof Error
       ? createError(
-        server,
-        {
-          session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
-        },
-        BasedErrorCode.FunctionError,
-        {
-          err,
-          observableId: obs.id,
-          route: {
-            name: obs.name,
-            type: 'query',
+          server,
+          {
+            session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
           },
-        }
-      )
+          BasedErrorCode.FunctionError,
+          {
+            err,
+            observableId: obs.id,
+            route: {
+              name: obs.name,
+              type: 'query',
+            },
+          },
+        )
       : err.observableId !== obs.id
         ? { ...err, observableId: obs.id }
         : err
@@ -41,9 +41,18 @@ export const errorListener = (
   if (obs.clients.size) {
     server.uwsApp.publish(
       String(obs.id),
-      encodeErrorResponse(valueToBuffer(obs.error)),
+      encodeErrorResponse(valueToBuffer(obs.error, true)),
       true,
-      false
+      false,
+    )
+  }
+
+  if (obs.oldClients?.size) {
+    server.uwsApp.publish(
+      String(obs.id) + '-v1',
+      encodeErrorResponse(valueToBuffer(obs.error, true)),
+      true,
+      false,
     )
   }
 
@@ -57,7 +66,7 @@ export const errorListener = (
         obs.cache,
         obs.diffCache,
         obs.previousChecksum,
-        obs.isDeflate
+        obs.isDeflate,
       )
     })
   }

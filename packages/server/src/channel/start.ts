@@ -4,6 +4,7 @@ import {
   valueToBuffer,
   encodeChannelMessage,
   encodeErrorResponse,
+  valueToBufferV1,
 } from '../protocol.js'
 import { createError } from '../error/index.js'
 import { isBasedFunctionConfig } from '@based/functions'
@@ -12,10 +13,14 @@ import { BasedErrorCode, BasedErrorData } from '@based/errors'
 const updateChannelListener = (
   server: BasedServer,
   channel: ActiveChannel,
-  msg: any
+  msg: any,
 ) => {
+  if (channel.oldClients?.size) {
+    const data = encodeChannelMessage(channel.id, valueToBufferV1(msg, true))
+    server.uwsApp.publish(String(channel.id) + '-v1', data, true, false)
+  }
   if (channel.clients.size) {
-    const data = encodeChannelMessage(channel.id, valueToBuffer(msg))
+    const data = encodeChannelMessage(channel.id, valueToBuffer(msg, true))
     server.uwsApp.publish(String(channel.id), data, true, false)
   }
   if (channel.functionChannelClients.size) {
@@ -28,40 +33,48 @@ const updateChannelListener = (
 const errorChannelListener = (
   server: BasedServer,
   channel: ActiveChannel,
-  err: Error | BasedErrorData<BasedErrorCode.FunctionError>
+  err: Error | BasedErrorData<BasedErrorCode.FunctionError>,
 ) => {
   err =
     err instanceof Error
       ? createError(
-        server,
-        {
-          session: {
-            type: 'channel',
-            id: channel.id,
-            name: channel.name,
-            headers: {},
+          server,
+          {
+            session: {
+              type: 'channel',
+              id: channel.id,
+              name: channel.name,
+              headers: {},
+            },
           },
-        },
-        BasedErrorCode.FunctionError,
-        {
-          err,
-          channelId: channel.id,
-          route: {
-            name: channel.name,
-            type: 'channel',
+          BasedErrorCode.FunctionError,
+          {
+            err,
+            channelId: channel.id,
+            route: {
+              name: channel.name,
+              type: 'channel',
+            },
           },
-        }
-      )
+        )
       : err.observableId !== channel.id
         ? { ...err, channelId: channel.id }
         : err
 
+  if (channel.oldClients?.size) {
+    server.uwsApp.publish(
+      String(channel.id) + '-v1',
+      encodeErrorResponse(valueToBufferV1(err, true)),
+      true,
+      false,
+    )
+  }
   if (channel.clients.size) {
     server.uwsApp.publish(
       String(channel.id),
-      encodeErrorResponse(valueToBuffer(err)),
+      encodeErrorResponse(valueToBuffer(err, true)),
       true,
-      false
+      false,
     )
   }
   if (channel.functionChannelClients.size) {
@@ -74,7 +87,7 @@ const errorChannelListener = (
 export const startChannel = (
   server: BasedServer,
   id: number,
-  fromInstall?: boolean
+  fromInstall?: boolean,
 ) => {
   const channel = server.activeChannelsById.get(id)
 
@@ -98,7 +111,7 @@ export const startChannel = (
   if (!spec || !isBasedFunctionConfig('channel', spec)) {
     console.warn(
       'Start channel - cannot find channel function spec',
-      channel.name
+      channel.name,
     )
     return
   }
@@ -109,7 +122,7 @@ export const startChannel = (
       errorChannelListener(
         server,
         channel,
-        new Error(`Relay client ${spec.relay} does not exist`)
+        new Error(`Relay client ${spec.relay} does not exist`),
       )
       return
     }
@@ -121,7 +134,7 @@ export const startChannel = (
         },
         (err) => {
           errorChannelListener(server, channel, err)
-        }
+        },
       )
   } else if (!fromInstall || channel.isActive) {
     channel.isActive = true
@@ -155,7 +168,7 @@ export const startChannel = (
           payload,
           id,
           update,
-          (err) => errorChannelListener(server, channel, err)
+          (err) => errorChannelListener(server, channel, err),
         )
       } else {
         channel.closeFunction = spec.subscriber(
@@ -163,7 +176,7 @@ export const startChannel = (
           payload,
           id,
           (msg) => updateChannelListener(server, channel, msg),
-          (err) => errorChannelListener(server, channel, err)
+          (err) => errorChannelListener(server, channel, err),
         )
       }
     } catch (err) {

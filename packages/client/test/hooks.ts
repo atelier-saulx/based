@@ -17,6 +17,7 @@ test('Channel hook', async (t: T) => {
   let subCnt = 0
   let unSubCnt = 0
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     channel: {
       subscribe: () => {
@@ -91,6 +92,7 @@ test('Query hook', async (t: T) => {
   let getCnt = 0
   let unSubCnt = 0
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     query: {
       subscribe: () => {
@@ -180,6 +182,7 @@ test('http.open', async (t: T) => {
   let openCnt = 0
   let closeCnt = 0
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     http: {
       open(ctx) {
@@ -203,7 +206,7 @@ test('http.open', async (t: T) => {
   await server.start()
 
   const res = await fetch(`${t.context.http}/hello`)
-  const text = await res.text()  
+  const text = await res.text()
 
   await server.destroy()
 

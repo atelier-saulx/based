@@ -63,7 +63,7 @@ export class BasedAuth {
    */
   async renewAuthState(
     ctx: Context,
-    authState?: AuthState
+    authState?: AuthState,
   ): Promise<AuthState> {
     if (!ctx.session) {
       return
@@ -76,7 +76,7 @@ export class BasedAuth {
     const verified = await this.server.auth.verifyAuthState(
       this.server.client,
       <Context<HttpSession> | Context<WebSocketSession>>ctx,
-      authState || ctx.session.authState
+      authState || ctx.session.authState,
     )
 
     if (verified === true || !ctx.session) {
@@ -114,9 +114,9 @@ export class BasedAuth {
   /** Sets the `authState` on the client. */
   sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {
     ctx.session?.ws.send(
-      encodeAuthResponse(valueToBuffer(authState)),
+      encodeAuthResponse(valueToBuffer(authState, true)),
       true,
-      false
+      false,
     )
   }
 }

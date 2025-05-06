@@ -16,7 +16,7 @@ test.beforeEach(async (t: T) => {
 const testShared = async (
   t: T,
   coreClient: BasedClient,
-  server: BasedServer
+  server: BasedServer,
 ) => {
   coreClient.connect({
     url: async () => {
@@ -98,6 +98,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         obsWithNestedLvl2: {
@@ -111,7 +112,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
               based.server.client.ctx,
               'json',
               update,
-              () => {}
+              () => {},
             )
           },
         },
@@ -126,7 +127,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
               based.server.client.ctx,
               payload,
               update,
-              () => {}
+              () => {},
             )
           },
         },
@@ -202,6 +203,7 @@ test.serial('nested functions (fancy api)', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         obsWithNestedLvl2: {

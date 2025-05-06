@@ -1,4 +1,4 @@
-import { readUint8, decodePayload, parsePayload } from '../../protocol.js'
+import { decodePayload } from '../../protocol.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { BinaryMessageHandler } from './types.js'
@@ -7,6 +7,7 @@ import { IsAuthorizedHandler, authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
+import { readUint64 } from '@saulx/utils'
 
 const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   route,
@@ -14,7 +15,7 @@ const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   server,
   ctx,
   payload,
-  id
+  id,
 ) => {
   const channel = server.activeChannelsById.get(id)
   if (!channel) {
@@ -43,10 +44,10 @@ export const channelPublishMessage: BinaryMessageHandler = (
   len,
   isDeflate,
   ctx,
-  server
+  server,
 ) => {
   // | 4 header | 8 id | * payload |
-  const id = readUint8(arr, start + 4, 8)
+  const id = readUint64(arr, start + 4)
 
   // how to determine it does not exist?
   if (!hasChannel(server, id)) {
@@ -69,7 +70,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     'channel',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   if (route === null) {
@@ -90,12 +91,11 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const payload =
     len === 12
       ? undefined
-      : parsePayload(
-        decodePayload(
+      : decodePayload(
           new Uint8Array(arr.slice(start + 12, start + len)),
-          isDeflate
+          isDeflate,
+          ctx.session.v < 2,
         )
-      )
 
   authorize(
     route,
@@ -105,7 +105,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     publish,
     id,
     undefined,
-    route.publicPublisher
+    route.publicPublisher,
   )
 
   return true

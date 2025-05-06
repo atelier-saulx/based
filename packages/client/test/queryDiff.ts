@@ -17,6 +17,7 @@ test('observablesDiff', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         counter: {
@@ -53,10 +54,6 @@ test('observablesDiff', async (t: T) => {
     url: async () => {
       return t.context.ws
     },
-  })
-
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
   })
 
   const results: any[] = []

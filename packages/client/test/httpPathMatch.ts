@@ -45,24 +45,7 @@ const makeFunction = (
   } as BasedFunctionConfigs
 }
 
-// FOR FUTURE: now the result is 400ms avg.
-// test('path matcher 10 million matches', async (t: T) => {
-//   const finalPath = '/static/:parameter?'
-//   const tokens = tokenizePattern(Buffer.from(finalPath))
-//   const bufferedUrl = Buffer.from('/static/yahoo')
-//   let match: boolean = false
-//   let i = 0
-//   const startTime = performance.now()
-//   while (i < 10e6) {
-//     match = pathMatcher(tokens, bufferedUrl)
-//     i++
-//   }
-//   console.log(`${((performance.now() - startTime))}ms`)
-
-//   t.true(match)
-// })
-
-test.only('basic path matcher', async (t: T) => {
+test('basic path matcher', async (t: T) => {
   const functionNames = [
     'based:analytics',
     'based:connections',
@@ -110,6 +93,7 @@ test.only('basic path matcher', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         ...makeFunction('/', true, 'root'),
@@ -228,12 +212,12 @@ test.only('basic path matcher', async (t: T) => {
   t.deepEqual(r29, { result: true, path: '/', functionName: 'root' })
   t.deepEqual(r30, { result: true, path: '/', functionName: 'root' })
   t.true(r31)
-  
 })
 
 test('[query] path matcher with static value and optional parameter', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeQuery('/static/:parameter?', true),
     },
@@ -280,6 +264,7 @@ test('[query] path matcher with static value and optional parameter', async (t: 
 
 test('[query] path matcher with static value and required parameter', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: makeQuery('/static/:parameter', true),
@@ -336,6 +321,7 @@ test('[query] path matcher with static value and required parameter', async (t: 
 test('[query] path matcher with static value and multiple required parameters (1 or more)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeQuery('/static/:parameter+', true),
     },
@@ -425,6 +411,7 @@ test('[query] path matcher with static value and multiple required parameters (1
 test('[query] path matcher with static value and multiple optional parameters (0 or more)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeQuery('/static/:parameter*', true),
     },
@@ -505,6 +492,7 @@ test('[query] path matcher with static value and multiple optional parameters (0
 test('[query] path matcher with no static value and a optional parameter', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeQuery('/:parameter?', true),
     },
@@ -567,6 +555,7 @@ test('[query] path matcher with no static value and a optional parameter', async
 test('[function] path matcher with static value and optional parameter', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeFunction('/static/:parameter?', true),
     },
@@ -616,6 +605,7 @@ test('[function] path matcher with static value and optional parameter', async (
 
 test('[function] path matcher with static value and required parameter', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: makeFunction('/static/:parameter', true),
@@ -671,6 +661,7 @@ test('[function] path matcher with static value and required parameter', async (
 
 test('[function] path matcher with static value and multiple required parameters (1 or more)', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: makeFunction('/static/:parameter+', true),
@@ -761,6 +752,7 @@ test('[function] path matcher with static value and multiple required parameters
 test('[function] path matcher with static value and multiple optional parameters (0 or more)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeFunction('/static/:parameter*', true),
     },
@@ -841,6 +833,7 @@ test('[function] path matcher with static value and multiple optional parameters
 test('[function] path matcher with no static value and a optional parameter', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: makeFunction('/:parameter?', true),
     },

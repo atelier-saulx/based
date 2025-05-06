@@ -32,6 +32,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   })
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         counter: {
@@ -155,6 +156,7 @@ test.serial('auth persist', async (t: T) => {
   const token = 'this is token'
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     auth: {
       verifyAuthState: async (_, ctx, authState) => {
         if (authState.token !== ctx.session?.authState.token) {
@@ -225,9 +227,6 @@ test.serial('auth persist', async (t: T) => {
   })
 
   t.is(client2.authState.token, token)
-
-  // this is where its at
-  console.log('call hello and not throw!')
 
   await t.notThrowsAsync(client2.call('hello'))
 

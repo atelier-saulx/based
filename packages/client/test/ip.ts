@@ -17,6 +17,7 @@ test('allow overwrite getIp', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     getIp: () => {
       // this is so you can use custom headers or proxy protocol
       return 'xxx'
@@ -50,10 +51,6 @@ test('allow overwrite getIp', async (t: T) => {
     url: async () => {
       return t.context.ws
     },
-  })
-
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
   })
 
   const ip = await coreClient.call('getIp')

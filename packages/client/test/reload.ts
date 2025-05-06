@@ -18,6 +18,7 @@ test('reload protocol', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     auth: {
       authorize: async () => true,
     },

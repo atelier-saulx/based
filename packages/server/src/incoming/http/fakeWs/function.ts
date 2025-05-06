@@ -1,17 +1,16 @@
 import { FakeBinaryMessageHandler } from './types.js'
 import {
-  readUint8,
   decodeName,
   decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
-  parsePayload,
   encodeErrorResponse,
 } from '../../../protocol.js'
 import { verifyRoute } from '../../../verifyRoute.js'
 import { installFn } from '../../../installFn.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
+import { readUint24 } from '@saulx/utils'
 
 export const handleFunction: FakeBinaryMessageHandler = (
   arr,
@@ -22,7 +21,7 @@ export const handleFunction: FakeBinaryMessageHandler = (
   server,
 ) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
-  const requestId = readUint8(arr, startByte + 4, 3)
+  const requestId = readUint24(arr, startByte + 4)
   const nameLen = arr[startByte + 7]
   const name = decodeName(arr, startByte + 8, startByte + 8 + nameLen)
 
@@ -43,14 +42,15 @@ export const handleFunction: FakeBinaryMessageHandler = (
     return
   }
 
+  const isOldClient = ctx.session.authState.v < 2
+
   const payload =
     len === nameLen + 8
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
+          isDeflate,
+          isOldClient,
         )
 
   return installFn(server, ctx, route).then(async (spec) => {
@@ -70,13 +70,13 @@ export const handleFunction: FakeBinaryMessageHandler = (
           requestId,
         },
       )
-      return encodeErrorResponse(valueToBuffer(errorData))
+      return encodeErrorResponse(valueToBuffer(errorData, true))
     }
 
     return spec
       .fn(server.client, payload, ctx)
       .then((v) => {
-        return encodeFunctionResponse(requestId, valueToBuffer(v))
+        return encodeFunctionResponse(requestId, valueToBuffer(v, true))
       })
       .catch((err) => {
         const errorData = createError(
@@ -89,7 +89,7 @@ export const handleFunction: FakeBinaryMessageHandler = (
             err,
           },
         )
-        return encodeErrorResponse(valueToBuffer(errorData))
+        return encodeErrorResponse(valueToBuffer(errorData, true))
       })
   })
 }

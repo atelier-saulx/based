@@ -15,6 +15,7 @@ test.beforeEach(async (t: T) => {
 test('lazyConnect', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         bla: {
@@ -70,10 +71,7 @@ test('lazyConnect', async (t: T) => {
   // let msgCnt = 0
 
   const close = client.query('cookie').subscribe(
-    () => {
-      // msgCnt++
-      // console.info('cookie time', d)
-    },
+    () => {},
     () => {
       errCnt++
     },

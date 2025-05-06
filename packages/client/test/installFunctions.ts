@@ -16,6 +16,7 @@ test('Uninstall hook', async (t: T) => {
   let uninstallHookFired = false
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         bla: {
@@ -50,6 +51,7 @@ test('Uninstall hook', async (t: T) => {
 test('uninstalled function is no longer callable', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         bla: {

@@ -7,6 +7,7 @@ export type ActiveChannel = {
   doesNotExist?: boolean
   functionChannelClients: Set<ChannelMessageFunctionInternal>
   clients: Set<number>
+  oldClients?: Set<number>
   isActive: boolean
   closeAfterIdleTime?: number
   timeTillDestroy: number | null

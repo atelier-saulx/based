@@ -1,19 +1,6 @@
 import { BasedClient } from '../index.js'
 import { addGetToQueue } from '../outgoing/index.js'
 
-export const CONTENT_TYPE_JSON = 255
-export const CONTENT_TYPE_UINT8_ARRAY = 254
-export const CONTENT_TYPE_STRING = 253
-export const CONTENT_TYPE_UNDEFINED = 252
-export const CONTENT_TYPE_NULL = 251
-
-export type CONTENT_TYPE =
-  | typeof CONTENT_TYPE_JSON
-  | typeof CONTENT_TYPE_UINT8_ARRAY
-  | typeof CONTENT_TYPE_STRING
-  | typeof CONTENT_TYPE_UNDEFINED
-  | typeof CONTENT_TYPE_NULL
-
 export const decodeHeader = (
   nr: number,
 ): { type: number; isDeflate: boolean; len: number } => {
@@ -41,19 +28,6 @@ export const decodeHeader = (
     isDeflate: isDeflate === 1,
     len,
   }
-}
-
-export const readUint8 = (
-  buff: Uint8Array,
-  start: number,
-  len: number,
-): number => {
-  let n = 0
-  const s = len - 1 + start
-  for (let i = s; i >= start; i--) {
-    n = n * 256 + buff[i]
-  }
-  return n
 }
 
 export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {

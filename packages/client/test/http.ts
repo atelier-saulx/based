@@ -22,6 +22,7 @@ const gzip = promisify(zlib.gzip)
 
 test.serial('functions (session url)', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -46,6 +47,7 @@ test.serial('functions (session url)', async (t: T) => {
 
 test.serial('functions (custom headers)', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -89,7 +91,7 @@ test.serial('functions (over http)', async (t: T) => {
         }
         return 'flap'
       },
-      httpResponse: async (_, __, responseData, ___, ctx) => {
+      httpResponse: async (_, __, responseData, send, ctx) => {
         if (!ctx.session) {
           return
         }
@@ -106,6 +108,7 @@ test.serial('functions (over http)', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
@@ -174,6 +177,27 @@ test.serial('functions (over http)', async (t: T) => {
 })
 
 test.serial('get (over http)', async (t: T) => {
+  const objResult = {
+    bada: {
+      bing: 'bada',
+    },
+    boomboom: {
+      venga: 'venga',
+    },
+    lil: {
+      wayoo: 'wicked',
+    },
+    wicked: {
+      jungle: 'is-massive',
+    },
+    everybody: {
+      leggo: 'shine',
+    },
+    time: {
+      flip: 'flap',
+    },
+  }
+
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -186,11 +210,12 @@ test.serial('get (over http)', async (t: T) => {
       closeAfterIdleTime: 3e3,
       uninstallAfterIdleTime: 1e3,
       version: 1,
-      fn: async (_, __, update) => {
+      fn: async (_, payload, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
-          update(++cnt)
+          cnt = cnt + 1
+          update(cnt)
         }, 1000)
         return () => {
           clearInterval(counter)
@@ -205,35 +230,15 @@ test.serial('get (over http)', async (t: T) => {
       rateLimitTokens: 1,
       version: 1,
       fn: async (_, __, update) => {
-        // this breaks with native fetch only, and only when size > x
-        update({
-          bada: {
-            bing: 'bada',
-          },
-          boomboom: {
-            venga: 'venga',
-          },
-          lil: {
-            wayoo: 'wicked',
-          },
-          wicked: {
-            jungle: 'is-massive',
-          },
-          everybody: {
-            leggo: 'shine',
-          },
-          time: {
-            flip: 'flap',
-          },
-        })
-
-        return () => { }
+        update(objResult)
+        return () => {}
       },
     },
   }
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       uninstallAfterIdleTime: 3e3,
@@ -263,26 +268,25 @@ test.serial('get (over http)', async (t: T) => {
     },
   })
   await server.start()
-
   const resultObj = await (await fetch(t.context.http + '/obj')).json()
 
-  t.is(typeof resultObj, 'object')
+  t.deepEqual(resultObj, objResult, 'obj is equal')
 
   const result = await (await fetch(t.context.http + '/counter')).text()
 
-  t.is(result, '0')
+  t.is(result, '0', 'first count is 0')
 
-  await wait(1e3)
+  await wait(1100)
 
   const result2 = await (await fetch(t.context.http + '/counter')).text()
 
-  t.is(result2, '1')
+  t.is(result2, '1', 'second count is 1')
 
   await wait(1e3)
 
   const result3 = await (await fetch(t.context.http + '/hello')).text()
 
-  t.is(result3, '2')
+  t.is(result3, '2', 'third count is 2 (trough name hello)')
 
   await wait(10e3)
 
@@ -309,22 +313,21 @@ test.serial('functions (over http + contentEncoding)', async (t: T) => {
         }
         return 'flap'
       },
-      httpResponse: async (_, __, responseData, ___, ctx) => {
+      httpResponse: async (_based, __, responseData, send, ctx) => {
         if (!ctx.session) {
-          return
+          return send('')
         }
-        ctx.session.res.writeStatus('200 OkiDoki')
         if (typeof responseData === 'object') {
-          ctx.session.res.end(JSON.stringify(responseData))
-          return
+          return send(JSON.stringify(responseData), undefined, '200 OkiDoki')
         }
-        ctx.session.res.end('yesh ' + responseData)
+        return send('yesh ' + responseData)
       },
     },
   }
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       uninstallAfterIdleTime: 3e3,
@@ -414,6 +417,7 @@ test.serial('functions (over http + contentEncoding)', async (t: T) => {
 test.serial('auth', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         flap: {
@@ -469,6 +473,7 @@ test.serial('auth', async (t: T) => {
 test.serial('bad accept-encoding header', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
   })
 
   server.functions.add({
@@ -515,7 +520,7 @@ test.serial('bad accept-encoding header', async (t: T) => {
   server.destroy()
 })
 
-test.only('handle application/x-www-form-urlencoded', async (t: T) => {
+test.serial('handle application/x-www-form-urlencoded', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -535,6 +540,7 @@ test.only('handle application/x-www-form-urlencoded', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       // closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       // uninstallAfterIdleTime: 3e3,
@@ -572,7 +578,7 @@ test.only('handle application/x-www-form-urlencoded', async (t: T) => {
   const data = {
     one: 'one',
     two: 'two',
-    three: 'four'
+    three: 'four',
   }
 
   const body = querystring.stringify(data)
@@ -583,7 +589,7 @@ test.only('handle application/x-www-form-urlencoded', async (t: T) => {
       headers: {
         'content-type': 'application/x-www-form-urlencoded',
       },
-      body
+      body,
     })
   ).json()
 

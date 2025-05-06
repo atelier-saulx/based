@@ -14,6 +14,7 @@ test.beforeEach(async (t: T) => {
 test('custom http response', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         bla: {
@@ -52,7 +53,6 @@ test('custom http response', async (t: T) => {
   const rawRespGet = await fetch(t.context.http + '/bla')
   t.is(rawRespGet.headers.get('blabla'), '1,2,3,4')
   const resultGet = await rawRespGet.text()
-  // Get is by default json parsed
-  t.is(resultGet, '"?"')
+  t.is(resultGet, '?')
   await server.destroy()
 })

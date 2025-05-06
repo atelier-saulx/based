@@ -14,6 +14,7 @@ test.beforeEach(async (t: T) => {
 
 test('addSpecs', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -54,13 +55,10 @@ test('addSpecs', async (t: T) => {
   // let msgCnt = 0
 
   client.query('cookie').subscribe(
-    () => {
-      // msgCnt++
-      // console.info('cookie time', d)
-    },
+    () => {},
     () => {
       errCnt++
-    }
+    },
   )
 
   await wait(500)

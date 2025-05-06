@@ -5,14 +5,14 @@ import { ActiveChannel } from './types.js'
 
 export const updateDestroyTimer = (
   server: BasedServer,
-  channel: ActiveChannel
+  channel: ActiveChannel,
 ) => {
   const spec = server.functions.specs[channel.name]
   if (spec && !isBasedFunctionConfig('channel', spec)) {
     console.error(
       'channel updateDestroyTimer - Not channel spec!',
       spec,
-      channel.name
+      channel.name,
     )
     return
   }
@@ -43,11 +43,15 @@ export const destroyChannel = (server: BasedServer, id: number) => {
     return
   }
 
-  if (channel.clients.size || channel.functionChannelClients.size) {
+  if (
+    channel.clients.size ||
+    channel.functionChannelClients.size ||
+    channel.oldClients?.size
+  ) {
     if (channel.timeTillDestroy) {
       console.warn(
         `Channel being destroyed while listeners are present ${channel.name} ${channel.id}`,
-        channel.payload
+        channel.payload,
       )
       channel.timeTillDestroy = null
     }

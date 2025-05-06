@@ -3,7 +3,7 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
-import { readFileSync, createReadStream } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import getPort from 'get-port'
@@ -23,6 +23,7 @@ test('stream functions - buffer contents', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -33,13 +34,10 @@ test('stream functions - buffer contents', async (t: T) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
-            stream.on('data', (c) => {
-              // console.log('CHUNK', c.toString())
-            })
+            stream.on('data', (c) => {})
             const r = await readStream(stream)
             const decoder = new TextDecoder()
             const str = decoder.decode(r)
-            // console.log(str)
             return payload
           },
         },
@@ -73,6 +71,7 @@ test('stream functions - streamContents', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -146,6 +145,7 @@ test('stream functions - streamContents', async (t: T) => {
 test('stream functions - streamContents error', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -196,7 +196,7 @@ test('stream functions - streamContents error', async (t: T) => {
       payload: { power: true },
       size: payload.byteLength,
       contents: stream,
-    })
+    }),
   )
   client.disconnect()
   await server.destroy()
@@ -205,6 +205,7 @@ test('stream functions - streamContents error', async (t: T) => {
 test('stream functions - path', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -242,6 +243,7 @@ test('stream functions - path', async (t: T) => {
 test('stream functions - path json', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -282,6 +284,7 @@ test('stream functions - filename', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
