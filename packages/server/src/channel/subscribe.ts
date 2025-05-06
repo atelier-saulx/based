@@ -38,7 +38,6 @@ export const subscribeChannel = (
     ctx.session.ws.subscribe(String(id))
   }
 
-  channel.clients.add(session.id)
   if (!channel.isActive && !channel.doesNotExist) {
     startChannel(server, id)
   }

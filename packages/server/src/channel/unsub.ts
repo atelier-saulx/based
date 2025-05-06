@@ -45,6 +45,7 @@ export const unsubscribeChannel = (
   }
 
   const channel = server.activeChannelsById.get(id)
+
   session.obs.delete(id)
   if (!channel) {
     return

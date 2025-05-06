@@ -14,7 +14,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('fallback to old protocol - incoming', async (t: T) => {
+test.serial('fallback to old protocol - incoming', async (t: T) => {
   const client = new BasedClient()
   const clientOld = new BasedClientOld()
   const fnResult = 'STRING FOR BOYS'
@@ -26,7 +26,7 @@ test('fallback to old protocol - incoming', async (t: T) => {
       configs: {
         myChannel: {
           type: 'channel',
-          closeAfterIdleTime: 10,
+          closeAfterIdleTime: 100,
           uninstallAfterIdleTime: 1e3,
           subscriber: (_, __, ___, update) => {
             let cnt = 1
@@ -67,14 +67,47 @@ test('fallback to old protocol - incoming', async (t: T) => {
             const x = {
               derp: 66,
             }
-            // 0 json
-            // 1 string (simpler optmizes strings)
             update(x)
-            // cache stuff , no compress etc etc
             const counter = setInterval(() => {
               x.derp++
               update(x)
             }, 10)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        stringQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 1
+            let snurp = 'snup-' + cnt
+            update(snurp)
+            const counter = setInterval(() => {
+              cnt++
+              update('snup-' + cnt)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        bigStringQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 1
+            const x = []
+            for (let i = 0; i < 1e2; i++) {
+              x.push('x' + i)
+            }
+            let snurp = 'snup-' + cnt + x.join('.')
+            update(snurp)
+            const counter = setInterval(() => {
+              cnt++
+              update('snup-' + cnt + x.join('.'))
+            }, 100)
             return () => {
               clearInterval(counter)
             }
@@ -140,34 +173,60 @@ test('fallback to old protocol - incoming', async (t: T) => {
   const obs2Results: any[] = []
   const bufResults: any[] = []
 
-  const close = client
-    .query('flap', {
-      myQuery: 123,
-    })
-    .subscribe((d) => {
-      obs1Results.push(d)
-    })
-
-  const close2 = clientOld
-    .query('flap', {
-      myQuery: 123,
-    })
-    .subscribe((d) => {
-      obs2Results.push(d)
-    })
-
-  const close3 = client
-    .query('counter', {
-      myQuery: 123,
-    })
-    .subscribe((d) => {
-      bufResults.push(d)
-    })
+  const closers = [
+    client
+      .query('stringQuery', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs1Results.push(d)
+      }),
+    clientOld
+      .query('stringQuery', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs2Results.push(d)
+      }),
+    client
+      .query('bigStringQuery', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs1Results.push(d)
+      }),
+    clientOld
+      .query('bigStringQuery', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs2Results.push(d)
+      }),
+    client
+      .query('flap', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs1Results.push(d)
+      }),
+    clientOld
+      .query('flap', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        obs2Results.push(d)
+      }),
+    client
+      .query('counter', {
+        myQuery: 123,
+      })
+      .subscribe((d) => {
+        bufResults.push(d)
+      }),
+  ]
 
   await wait(100)
-  close()
-  close2()
-  close3()
+  closers.forEach((fn) => fn())
 
   t.deepEqual(obs1Results, obs2Results, 'obs results are equal')
 
@@ -262,7 +321,7 @@ test('fallback to old protocol - incoming', async (t: T) => {
   await server.destroy()
 })
 
-test('fallback to old protocol - outgoing', async (t: T) => {
+test.serial('fallback to old protocol - outgoing', async (t: T) => {
   const client = new BasedClient()
   const clientOld = new BasedClientOld()
 

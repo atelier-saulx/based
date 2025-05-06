@@ -72,10 +72,36 @@ const EMPTY_BUFFER = new Uint8Array([])
 
 export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
   // 12 + 8
-  const n = new Uint8Array(buf.byteLength - 1)
-  n.set(buf.subarray(0, 20), 0)
-  n.set(buf.subarray(21), 20)
-  return n
+  const isString = buf[20] === CONTENT_TYPE_STRING_U8[0]
+  if (isString) {
+    const header = decodeHeader(readUint32(buf, 0))
+    if (!header.isDeflate) {
+      const n = new Uint8Array(buf.byteLength - 1 + 2)
+      n.set(buf.subarray(0, 20), 0)
+      encodeHeader(header.type, header.isDeflate, header.len + 1, n, 0)
+      n[20] = 34 // "
+      n.set(buf.subarray(21), 21)
+      n[n.byteLength - 1] = 34 // "
+      return n
+    } else {
+      // very heavy rly sad..
+      const valBuffer = decodePayload(buf.subarray(20), true, false)
+      const newEncoded = valueToBufferV1(valBuffer, true)
+      const len = newEncoded.buf.byteLength
+      const n = new Uint8Array(20 + len)
+      n.set(buf.subarray(0, 20), 0)
+      encodeHeader(header.type, header.isDeflate, 20 + len, n, 0)
+      n.set(newEncoded.buf, 20)
+      return n
+    }
+  } else {
+    const header = decodeHeader(readUint32(buf, 0))
+    const n = new Uint8Array(buf.byteLength - 1)
+    n.set(buf.subarray(0, 20), 0)
+    encodeHeader(header.type, header.isDeflate, header.len - 1, n, 0)
+    n.set(buf.subarray(21), 20)
+    return n
+  }
 }
 
 export const diffV2toV1 = (buf: Uint8Array): Uint8Array => {
@@ -100,9 +126,14 @@ export const valueToBufferV1 = (
 ): ValueBuffer => {
   let buf: Uint8Array
   if (payload === undefined) {
-    buf = Buffer.from([])
+    buf = new Uint8Array([])
   } else {
-    buf = Buffer.from(JSON.stringify(payload))
+    try {
+      buf = ENCODER.encode(JSON.stringify(payload))
+    } catch (err) {
+      console.log(payload)
+      buf = ENCODER.encode(payload)
+    }
   }
   if (deflate && buf.byteLength > COMPRESS_FROM_BYTES) {
     return {
@@ -224,7 +255,7 @@ export const decodePayload = (
 
   if (contentType === CONTENT_TYPE_STRING_U8[0]) {
     if (isDeflate) {
-      const buffer = zlib.inflateRawSync(payload.subarray(1)).toString()
+      return zlib.inflateRawSync(payload.subarray(1)).toString()
     }
     return DECODER.decode(payload.subarray(1))
   }
