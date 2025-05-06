@@ -24,12 +24,11 @@ const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
     false,
   )
 
-const parse = (payload: string) => {
-  try {
-    return JSON.parse(payload)
-  } catch (err) {
+const parse = (payload: AuthState) => {
+  if (typeof payload !== 'object') {
     return { error: 'invalid token' }
   }
+  return payload
 }
 
 export const reEvaulateUnauthorized = (
@@ -97,6 +96,7 @@ export const authMessage: BinaryMessageHandler = (
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate,
+    ctx.session.authState.v < 2,
   )
 
   const authState: AuthState = parse(payload)

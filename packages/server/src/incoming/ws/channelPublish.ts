@@ -1,4 +1,4 @@
-import { decodePayload, parsePayload } from '../../protocol.js'
+import { decodePayload } from '../../protocol.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { BinaryMessageHandler } from './types.js'
@@ -91,11 +91,10 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const payload =
     len === 12
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 12, start + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(start + 12, start + len)),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   authorize(

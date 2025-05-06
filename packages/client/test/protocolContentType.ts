@@ -251,4 +251,64 @@ test('fallback to old protocol - incoming', async (t: T) => {
   })
 
   t.deepEqual(s, s2, 'stream fallback')
+
+  await wait(500) // to clear channel
+  await server.destroy()
+})
+
+test('fallback to old protocol - outgoing', async (t: T) => {
+  const client = new BasedClient()
+  const clientOld = new BasedClientOld()
+
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        derpi: {
+          type: 'function',
+          fn: async (_, payload) => {
+            return payload
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  // has to send the version in 1 byte
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  clientOld.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  const json = { myderp: true }
+  t.deepEqual(json, await client.call('derpi', { myderp: true }))
+  t.deepEqual(json, await clientOld.call('derpi', { myderp: true }))
+
+  const u8 = new Uint8Array(10)
+  t.deepEqual(u8, await client.call('derpi', u8))
+
+  const nullVal = null
+  t.deepEqual(nullVal, await client.call('derpi', nullVal))
+  // t.deepEqual(nullVal, await clientOld.call('derpi', nullVal))
+
+  const x = undefined
+  t.deepEqual(x, await client.call('derpi', x))
+  // t.deepEqual(x, await clientOld.call('derpi', x))
+
+  const stringVal = 'flap'
+  t.deepEqual(stringVal, await client.call('derpi', stringVal))
+  t.deepEqual(stringVal, await clientOld.call('derpi', stringVal))
+
+  await clientOld.call('derpi', { myderp: true })
+
+  await server.destroy()
 })

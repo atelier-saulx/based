@@ -8,7 +8,6 @@ import {
 import { FakeBinaryMessageHandler } from './types.js'
 import {
   decodeName,
-  parsePayload,
   decodePayload,
   valueToBuffer,
   updateId,
@@ -52,13 +51,10 @@ export const handleQuery: FakeBinaryMessageHandler = (
   const payload =
     len === nameLen + 21
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(
-              arr.slice(startByte + 21 + nameLen, startByte + len),
-            ),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(startByte + 21 + nameLen, startByte + len)),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   if (route === null) {

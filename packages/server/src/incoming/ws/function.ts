@@ -3,7 +3,6 @@ import {
   decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
-  parsePayload,
   valueToBufferV1,
 } from '../../protocol.js'
 import { BasedErrorCode } from '@based/errors'
@@ -64,6 +63,7 @@ const sendFunction: IsAuthorizedHandler<
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
+
       ctx.session?.ws.send(
         encodeFunctionResponse(
           requestId,
@@ -131,11 +131,10 @@ export const functionMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 8
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   authorize(route, server, ctx, payload, sendFunction, requestId)

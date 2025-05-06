@@ -1,6 +1,6 @@
 import { deflateSync } from 'fflate'
 import { AuthState } from '../types/auth.js'
-import { writeUint32, writeUint64, writeUint24 } from '@saulx/utils'
+import { writeUint32, writeUint64, writeUint24, ENCODER } from '@saulx/utils'
 import {
   ChannelPublishQueueItem,
   ChannelQueueItem,
@@ -9,6 +9,13 @@ import {
   ObserveQueue,
   StreamQueueItem,
 } from '../types/index.js'
+import {
+  CONTENT_TYPE_JSON_U8,
+  CONTENT_TYPE_UINT8_ARRAY_U8,
+  CONTENT_TYPE_STRING_U8,
+  CONTENT_TYPE_UNDEFINED_U8,
+  CONTENT_TYPE_NULL,
+} from '../contentType.js'
 
 const encoder = new TextEncoder()
 
@@ -52,23 +59,70 @@ const createBuffer = (
   return buf
 }
 
-const encodePayload = (
+const COMPRESS_FROM_BYTES = 150
+
+export type ValueBuffer = {
+  contentByte: Uint8Array
+  buf: Uint8Array
+  deflate: boolean
+}
+
+const EMPTY_BUFFER = new Uint8Array([])
+
+// pass buffer and offset
+export const encodePayloadV2 = (
   payload: any,
-  noDeflate = false,
-): [boolean, Uint8Array] | [boolean] => {
-  let p: Uint8Array
-  let isDeflate = false
-  if (payload !== undefined) {
-    p = encoder.encode(
-      typeof payload === 'string' ? payload : JSON.stringify(payload),
-    )
-    if (!noDeflate && p.length > 150) {
-      p = deflateSync(p)
-      isDeflate = true
+  deflate: boolean,
+): ValueBuffer => {
+  if (payload === undefined) {
+    return {
+      contentByte: CONTENT_TYPE_UNDEFINED_U8,
+      deflate: false,
+      buf: EMPTY_BUFFER,
     }
-    return [isDeflate, p]
   }
-  return [false]
+
+  if (typeof payload === 'string') {
+    const buf = ENCODER.encode(payload)
+    if (deflate && buf.byteLength > COMPRESS_FROM_BYTES) {
+      return {
+        contentByte: CONTENT_TYPE_STRING_U8,
+        buf: deflateSync(buf),
+        deflate: true,
+      }
+    }
+    return {
+      contentByte: CONTENT_TYPE_STRING_U8,
+      buf,
+      deflate: false,
+    }
+  }
+
+  // mark as based db query object
+  if (payload instanceof Uint8Array) {
+    return {
+      contentByte: CONTENT_TYPE_UINT8_ARRAY_U8,
+      buf: payload,
+      deflate: false,
+    }
+  }
+
+  const buf = ENCODER.encode(JSON.stringify(payload))
+
+  if (buf.byteLength > COMPRESS_FROM_BYTES) {
+    return {
+      contentByte: CONTENT_TYPE_JSON_U8,
+      buf: deflateSync(buf),
+      deflate: true,
+    }
+  }
+  const result = {
+    contentByte: CONTENT_TYPE_JSON_U8,
+    buf,
+    deflate: false,
+  }
+
+  return result
 }
 
 export const encodeGetObserveMessage = (
@@ -77,33 +131,21 @@ export const encodeGetObserveMessage = (
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
-
   // Type 3 = get
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
-
   if (type === 3) {
     const n = encoder.encode(name)
     len += 1 + n.length
-    const [isDeflate, p] = encodePayload(payload)
-    if (p) {
-      len += p.length
-    }
-
+    const val = encodePayloadV2(payload, true)
+    len += val.buf.byteLength + 1
     const buffLen = 16
     len += buffLen
-    const buff = createBuffer(type, isDeflate, len, 5 + buffLen)
-
+    const buff = createBuffer(type, val.deflate, len, 5 + buffLen)
     writeUint64(buff, id, 4)
     writeUint64(buff, checksum, 12)
-
     buff[20] = n.length
-    if (p) {
-      return { buffers: [buff, n, p], len }
-    } else {
-      return { buffers: [buff, n], len }
-    }
+    return { buffers: [buff, n, val.contentByte, val.buf], len }
   }
-
   return { buffers: [], len: 0 }
 }
 
@@ -126,19 +168,15 @@ export const encodeSubscribeChannelMessage = (
   const n = encoder.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
-  const [, p] = encodePayload(payload, true)
-  if (p) {
-    len += p.length
-  }
+  const val = encodePayloadV2(payload, false)
+  len += val.buf.byteLength + 1
   const buffLen = 8
   len += buffLen
   const buff = createBuffer(5, isRequestSubscriber, len, 5 + buffLen)
   writeUint64(buff, id, 4)
   buff[12] = n.length
-  if (p) {
-    return { buffers: [buff, n, p], len }
-  }
-  return { buffers: [buff, n], len }
+
+  return { buffers: [buff, n, val.contentByte, val.buf], len }
 }
 
 export const encodeObserveMessage = (
@@ -158,20 +196,15 @@ export const encodeObserveMessage = (
   }
   const n = encoder.encode(name)
   len += 1 + n.length
-  const [isDeflate, p] = encodePayload(payload)
-  if (p) {
-    len += p.length
-  }
+  const val = encodePayloadV2(payload, true)
+  len += val.buf.byteLength + 1
   const buffLen = 16
   len += buffLen
-  const buff = createBuffer(type, isDeflate, len, 5 + buffLen)
+  const buff = createBuffer(type, val.deflate, len, 5 + buffLen)
   writeUint64(buff, id, 4)
   writeUint64(buff, checksum, 12)
   buff[20] = n.length
-  if (p) {
-    return { buffers: [buff, n, p], len }
-  }
-  return { buffers: [buff, n], len }
+  return { buffers: [buff, n, val.contentByte, val.buf], len }
 }
 
 export const encodeFunctionMessage = (
@@ -182,17 +215,12 @@ export const encodeFunctionMessage = (
   const [id, name, payload] = f
   const n = encoder.encode(name)
   len += 1 + n.length
-  const [isDeflate, p] = encodePayload(payload)
-  if (p) {
-    len += p.length
-  }
-  const buff = createBuffer(0, isDeflate, len, 8)
+  const val = encodePayloadV2(payload, true)
+  len += val.buf.byteLength + 1
+  const buff = createBuffer(0, val.deflate, len, 8)
   writeUint24(buff, id, 4)
   buff[7] = n.length
-  if (p) {
-    return { buffers: [buff, n, p], len }
-  }
-  return { buffers: [buff, n], len }
+  return { buffers: [buff, n, val.contentByte, val.buf], len }
 }
 
 export const encodePublishMessage = (
@@ -201,28 +229,22 @@ export const encodePublishMessage = (
   // | 4 header | 8 id | * payload |
   let len = 12
   const [id, payload] = f
-  const [isDeflate, p] = encodePayload(payload)
-  if (p) {
-    len += p.length
-  }
-  const buff = createBuffer(6, isDeflate, len, 12)
+  const val = encodePayloadV2(payload, true)
+  len += val.buf.byteLength + 1
+  const buff = createBuffer(6, val.deflate, len, 12)
   writeUint64(buff, id, 4)
-  if (p) {
-    return { buffers: [buff, p], len }
-  }
-  return { buffers: [buff], len }
+  return { buffers: [buff, val.contentByte, val.buf], len }
 }
 
 export const encodeAuthMessage = (authState: AuthState) => {
   // | 4 header | * payload |
   let len = 4
-  const [isDeflate, payload] = encodePayload(authState)
-  if (payload) {
-    len += payload.length
-  }
-  const buff = createBuffer(4, isDeflate, len)
-  if (payload) {
-    buff.set(payload, 4)
+  const val = encodePayloadV2(authState, true)
+  len += val.buf.byteLength + 1
+  const buff = createBuffer(4, val.deflate, len)
+  buff[4] = val.contentByte[0]
+  if (val.buf.byteLength) {
+    buff.set(val.buf, 5)
   }
   return buff
 }
@@ -244,11 +266,8 @@ export const encodeStreamMessage = (
     const nameEncoded = encoder.encode(name)
     len += nameEncoded.length
 
-    const [isDeflate, p] = encodePayload(payload)
-
-    if (p) {
-      len += p.length
-    }
+    const val = encodePayloadV2(payload, true)
+    len += val.buf.byteLength + 1
 
     const mimeTypeEncoded = encoder.encode(mimeType)
     len += mimeTypeEncoded.length
@@ -259,7 +278,7 @@ export const encodeStreamMessage = (
     const extensionEncoded = encoder.encode(extension)
     len += extensionEncoded.length
 
-    const buff = createBuffer(7, isDeflate, len, sLen)
+    const buff = createBuffer(7, val.deflate, len, sLen)
 
     buff[4] = 1
     writeUint24(buff, reqId, 5)
@@ -269,19 +288,6 @@ export const encodeStreamMessage = (
     buff[14] = fnNameEncoded.length
     buff[15] = extensionEncoded.length
 
-    if (p) {
-      return {
-        buffers: [
-          buff,
-          nameEncoded,
-          mimeTypeEncoded,
-          fnNameEncoded,
-          extensionEncoded,
-          p,
-        ],
-        len,
-      }
-    }
     return {
       buffers: [
         buff,
@@ -289,6 +295,8 @@ export const encodeStreamMessage = (
         mimeTypeEncoded,
         fnNameEncoded,
         extensionEncoded,
+        val.contentByte,
+        val.buf,
       ],
       len,
     }
@@ -307,6 +315,7 @@ export const encodeStreamMessage = (
     } else {
       len += chunk.length
     }
+    // fix fix
     const buff = createBuffer(7, isDeflate, len, sLen)
     buff[4] = 2
     writeUint24(buff, reqId, 5)

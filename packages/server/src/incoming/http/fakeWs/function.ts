@@ -4,7 +4,6 @@ import {
   decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
-  parsePayload,
   encodeErrorResponse,
 } from '../../../protocol.js'
 import { verifyRoute } from '../../../verifyRoute.js'
@@ -43,14 +42,15 @@ export const handleFunction: FakeBinaryMessageHandler = (
     return
   }
 
+  const isOldClient = ctx.session.authState.v < 2
+
   const payload =
     len === nameLen + 8
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
+          isDeflate,
+          isOldClient,
         )
 
   return installFn(server, ctx, route).then(async (spec) => {

@@ -1,9 +1,4 @@
-import {
-  decodePayload,
-  decodeName,
-  encodeGetResponse,
-  parsePayload,
-} from '../../protocol.js'
+import { decodePayload, decodeName, encodeGetResponse } from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import {
   createObs,
@@ -181,11 +176,10 @@ export const getMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 21
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   authorize(

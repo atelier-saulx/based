@@ -1,4 +1,4 @@
-import { decodePayload, decodeName, parsePayload } from '../../protocol.js'
+import { decodePayload, decodeName } from '../../protocol.js'
 import {
   createObs,
   unsubscribeWs,
@@ -110,11 +110,10 @@ export const subscribeMessage: BinaryMessageHandler = (
   const payload =
     len === nameLen + 21
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-            isDeflate,
-          ),
+      : decodePayload(
+          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   session.obs.add(id)

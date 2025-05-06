@@ -61,20 +61,12 @@ const encodeHeader = (
   writeUint32(buffer, nr, offset)
 }
 
-export const CONTENT_TYPE_JSON = new Uint8Array([255])
-export const CONTENT_TYPE_UINT8_ARRAY = new Uint8Array([254])
-export const CONTENT_TYPE_STRING = new Uint8Array([253])
-export const CONTENT_TYPE_UNDEFINED = new Uint8Array([252])
-export const CONTENT_TYPE_NULL = new Uint8Array([251])
-export const CONTENT_TYPE_VERSION_1 = new Uint8Array([250])
-
-export type CONTENT_TYPE =
-  | typeof CONTENT_TYPE_JSON
-  | typeof CONTENT_TYPE_UINT8_ARRAY
-  | typeof CONTENT_TYPE_STRING
-  | typeof CONTENT_TYPE_UNDEFINED
-  | typeof CONTENT_TYPE_NULL
-  | typeof CONTENT_TYPE_VERSION_1
+export const CONTENT_TYPE_JSON_U8 = new Uint8Array([255])
+export const CONTENT_TYPE_UINT8_ARRAY_U8 = new Uint8Array([254])
+export const CONTENT_TYPE_STRING_U8 = new Uint8Array([253])
+export const CONTENT_TYPE_UNDEFINED_U8 = new Uint8Array([252])
+export const CONTENT_TYPE_NULL_U8 = new Uint8Array([251])
+export const CONTENT_TYPE_VERSION_1_U8 = new Uint8Array([250])
 
 const EMPTY_BUFFER = new Uint8Array([])
 
@@ -114,13 +106,13 @@ export const valueToBufferV1 = (
   }
   if (deflate && payload.byteLength > COMPRESS_FROM_BYTES) {
     return {
-      contentByte: CONTENT_TYPE_VERSION_1,
+      contentByte: CONTENT_TYPE_VERSION_1_U8,
       buf: zlib.deflateRawSync(buf, {}),
       deflate: true,
     }
   }
   return {
-    contentByte: CONTENT_TYPE_VERSION_1,
+    contentByte: CONTENT_TYPE_VERSION_1_U8,
     buf,
     deflate: false,
   }
@@ -130,7 +122,15 @@ export const valueToBufferV1 = (
 export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   if (payload === undefined) {
     return {
-      contentByte: CONTENT_TYPE_UNDEFINED,
+      contentByte: CONTENT_TYPE_UNDEFINED_U8,
+      deflate: false,
+      buf: EMPTY_BUFFER,
+    }
+  }
+
+  if (payload === null) {
+    return {
+      contentByte: CONTENT_TYPE_NULL_U8,
       deflate: false,
       buf: EMPTY_BUFFER,
     }
@@ -140,13 +140,13 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
     const buf = ENCODER.encode(payload)
     if (deflate && buf.byteLength > COMPRESS_FROM_BYTES) {
       return {
-        contentByte: CONTENT_TYPE_STRING,
+        contentByte: CONTENT_TYPE_STRING_U8,
         buf: zlib.deflateRawSync(buf, {}),
         deflate: true,
       }
     }
     return {
-      contentByte: CONTENT_TYPE_STRING,
+      contentByte: CONTENT_TYPE_STRING_U8,
       buf,
       deflate: false,
     }
@@ -154,16 +154,8 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
 
   // mark as based db query object
   if (payload instanceof Uint8Array) {
-    if (deflate && payload.byteLength > COMPRESS_FROM_BYTES) {
-      // use based db native for this will improve it a lot
-      return {
-        contentByte: CONTENT_TYPE_UINT8_ARRAY,
-        buf: zlib.deflateRawSync(payload, {}),
-        deflate: true,
-      }
-    }
     return {
-      contentByte: CONTENT_TYPE_UINT8_ARRAY,
+      contentByte: CONTENT_TYPE_UINT8_ARRAY_U8,
       buf: payload,
       deflate: false,
     }
@@ -173,13 +165,13 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
 
   if (buf.byteLength > COMPRESS_FROM_BYTES) {
     return {
-      contentByte: CONTENT_TYPE_JSON,
+      contentByte: CONTENT_TYPE_JSON_U8,
       buf: zlib.deflateRawSync(buf, {}),
       deflate: true,
     }
   }
   const result = {
-    contentByte: CONTENT_TYPE_JSON,
+    contentByte: CONTENT_TYPE_JSON_U8,
     buf,
     deflate: false,
   }
@@ -187,25 +179,74 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   return result
 }
 
-export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
+export const decodePayloadV1 = (
+  payload: Uint8Array,
+  isDeflate: boolean,
+): any => {
+  if (!payload || payload.byteLength === 0) {
+    return undefined
+  }
+  let p: any
   if (!isDeflate) {
-    return DECODER.decode(payload)
-  }
-  try {
-    const buffer = zlib.inflateRawSync(payload)
-    return DECODER.decode(buffer)
-  } catch (err) {
-    console.error('Error deflating payload', err)
-  }
-}
-
-export const parsePayload = (payload: any): any => {
-  if (typeof payload === 'string') {
+    p = DECODER.decode(payload)
+  } else {
     try {
-      return JSON.parse(payload)
+      p = zlib.inflateRawSync(payload).toString()
+    } catch (err) {
+      console.error('Error deflating payload', err)
+    }
+  }
+  if (typeof p === 'string') {
+    try {
+      return JSON.parse(p)
     } catch (err) {}
   }
-  return payload
+  return p
+}
+
+export const decodePayload = (
+  payload: Uint8Array,
+  isDeflate: boolean,
+  isOldClient: boolean,
+): any => {
+  if (isOldClient) {
+    return decodePayloadV1(payload, isDeflate)
+  }
+  const contentType = payload[0]
+
+  if (contentType === CONTENT_TYPE_UNDEFINED_U8[0]) {
+    return undefined
+  }
+
+  if (contentType === CONTENT_TYPE_UINT8_ARRAY_U8[0]) {
+    return payload.subarray(1)
+  }
+
+  if (contentType === CONTENT_TYPE_STRING_U8[0]) {
+    if (isDeflate) {
+      const buffer = zlib.inflateRawSync(payload.subarray(1)).toString()
+    }
+    return DECODER.decode(payload.subarray(1))
+  }
+
+  if (contentType === CONTENT_TYPE_JSON_U8[0]) {
+    let str: string
+    if (isDeflate) {
+      str = zlib.inflateRawSync(payload.subarray(1)).toString()
+    } else {
+      str = DECODER.decode(payload.subarray(1))
+    }
+    if (typeof str === 'string') {
+      try {
+        return JSON.parse(str)
+      } catch (err) {}
+    }
+    return str
+  }
+
+  if (contentType === CONTENT_TYPE_NULL_U8[0]) {
+    return null
+  }
 }
 
 export const decodeName = (
@@ -222,34 +263,28 @@ export const encodeFunctionResponse = (
 ): Uint8Array => {
   // Type 0
   // | 4 header | 3 id | * payload |
-  const chunks = 1
-  if (chunks === 1) {
-    const headerSize = 4
-    const idSize = 3
-    const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
-    if (isOld) {
-      const msgSize = idSize + val.buf.byteLength
-      const array = new Uint8Array(headerSize + msgSize)
-      encodeHeader(0, val.deflate, msgSize, array, 0)
-      writeUint24(array, id, 4)
-      if (val.buf.byteLength) {
-        array.set(val.buf, 7)
-      }
-      return array
-    } else {
-      const msgSize = idSize + val.buf.byteLength + 1
-      const array = new Uint8Array(headerSize + msgSize)
-      encodeHeader(0, val.deflate, msgSize, array, 0)
-      writeUint24(array, id, 4)
-      array[7] = val.contentByte[0]
-      if (val.buf.byteLength) {
-        array.set(val.buf, 8)
-      }
-      return array
+  const headerSize = 4
+  const idSize = 3
+  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
+  if (isOld) {
+    const msgSize = idSize + val.buf.byteLength
+    const array = new Uint8Array(headerSize + msgSize)
+    encodeHeader(0, val.deflate, msgSize, array, 0)
+    writeUint24(array, id, 4)
+    if (val.buf.byteLength) {
+      array.set(val.buf, 7)
     }
+    return array
   } else {
-    console.warn('Function response to chunks not implemented yet')
-    return new Uint8Array(0)
+    const msgSize = idSize + val.buf.byteLength + 1
+    const array = new Uint8Array(headerSize + msgSize)
+    encodeHeader(0, val.deflate, msgSize, array, 0)
+    writeUint24(array, id, 4)
+    array[7] = val.contentByte[0]
+    if (val.buf.byteLength) {
+      array.set(val.buf, 8)
+    }
+    return array
   }
 }
 
@@ -264,7 +299,7 @@ export const encodeStreamFunctionResponse = (
     const headerSize = 4
     const idSize = 3
     const subTypeSize = 1
-    const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
+    const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
     if (isOld) {
       const msgSize = idSize + subTypeSize + val.buf.byteLength
       const array = new Uint8Array(headerSize + msgSize)
@@ -344,7 +379,7 @@ export const encodeObservableResponse = (
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
 
-  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
+  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const msgSize = 16 + val.buf.byteLength
     const array = new Uint8Array(4 + msgSize)
@@ -377,7 +412,7 @@ export const encodeObservableDiffResponse = (
 ): Uint8Array => {
   // Type 2 (diff data)
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
-  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
+  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const msgSize = 24 + val.buf.byteLength
     const array = new Uint8Array(4 + msgSize)
@@ -406,7 +441,7 @@ export const encodeObservableDiffResponse = (
 const encodeSimpleResponse = (type: number, val: ValueBuffer): Uint8Array => {
   // | 4 header | * payload |
 
-  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
+  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const headerSize = 4
     const msgSize = val.buf.byteLength
@@ -445,7 +480,7 @@ export const encodeChannelMessage = (
 ): Uint8Array => {
   // Type 7.0 (fill data)
   // | 4 header | 1 subType | 8 id | * payload |
-  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1[0]
+  const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const msgSize = 8 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
@@ -487,7 +522,8 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   return array
 }
 
-export const decode = (buffer: Uint8Array): any => {
+// FIXME
+export const decode = (buffer: Uint8Array, isOldClient: boolean): any => {
   const header = readUint32(buffer, 0)
   const { isDeflate, len, type } = decodeHeader(header)
   if (type === 1) {
@@ -497,6 +533,8 @@ export const decode = (buffer: Uint8Array): any => {
     }
     const start = 20
     const end = len + 4
-    return decodePayload(buffer.slice(start, end), isDeflate)
+
+    //  very wrong
+    return decodePayload(buffer.slice(start, end), isDeflate, false)
   }
 }

@@ -2,7 +2,6 @@ import { BinaryMessageHandler } from './types.js'
 import {
   decodePayload,
   decodeName,
-  parsePayload,
   encodeStreamFunctionResponse,
   valueToBuffer,
   encodeStreamFunctionChunkResponse,
@@ -123,16 +122,15 @@ export const registerStream: BinaryMessageHandler = (
   const payload =
     len === nameLen + infoLen + mimeLen + extensionLen
       ? undefined
-      : parsePayload(
-          decodePayload(
-            new Uint8Array(
-              arr.slice(
-                start + infoLen + nameLen + mimeLen + fnNameLen + extensionLen,
-                start + len,
-              ),
+      : decodePayload(
+          new Uint8Array(
+            arr.slice(
+              start + infoLen + nameLen + mimeLen + fnNameLen + extensionLen,
+              start + len,
             ),
-            isDeflate,
           ),
+          isDeflate,
+          ctx.session.v < 2,
         )
 
   if (!ctx.session.streams) {

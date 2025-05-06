@@ -1,11 +1,10 @@
 import {
-  CONTENT_TYPE,
   CONTENT_TYPE_JSON,
-  CONTENT_TYPE_NULL,
-  CONTENT_TYPE_STRING,
   CONTENT_TYPE_UINT8_ARRAY,
+  CONTENT_TYPE_STRING,
   CONTENT_TYPE_UNDEFINED,
-} from './protocol.js'
+  CONTENT_TYPE_NULL,
+} from '../contentType.js'
 
 const Decoder = new TextDecoder()
 
