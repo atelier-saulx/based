@@ -18,7 +18,6 @@ const c = @import("../../c.zig");
 pub fn countType(env: c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     const count: u32 = @truncate(selva.selva_node_count(typeEntry));
-    ctx.size = 4;
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size, &resultBuffer, &result) != c.napi_ok) {
