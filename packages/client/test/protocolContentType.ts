@@ -186,7 +186,7 @@ test('fallback to old protocol - incoming', async (t: T) => {
   const x = await (await fetch(t.context.http + '/flap', {})).json()
   t.true(x.derp > 0, 'derp is large then 0 from flap')
 
-  await wait(100)
+  // test for STREAMS
 
-  t.pass()
+  // test for relat
 })
