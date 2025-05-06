@@ -126,6 +126,7 @@ export const valueToBufferV1 = (
   }
 }
 
+// pass buffer and offset
 export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   if (payload === undefined) {
     return {
@@ -154,6 +155,7 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   // mark as based db query object
   if (payload instanceof Uint8Array) {
     if (deflate && payload.byteLength > COMPRESS_FROM_BYTES) {
+      // use based db native for this will improve it a lot
       return {
         contentByte: CONTENT_TYPE_UINT8_ARRAY,
         buf: zlib.deflateRawSync(payload, {}),

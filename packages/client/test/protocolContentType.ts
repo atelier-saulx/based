@@ -2,8 +2,9 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import getPort from 'get-port'
-import { wait } from '@saulx/utils'
+import { wait, readStream } from '@saulx/utils'
 import { BasedClient as BasedClientOld } from '@based/client-old'
+import { Duplex } from 'node:stream'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -76,6 +77,19 @@ test('fallback to old protocol - incoming', async (t: T) => {
             return () => {
               clearInterval(counter)
             }
+          },
+        },
+        hello: {
+          type: 'stream',
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          fn: async (_, { stream, payload, mimeType, size }) => {
+            let cnt = 0
+            stream.on('data', () => {
+              cnt++
+            })
+            await readStream(stream)
+            return { payload, cnt, mimeType, size }
           },
         },
         counter: {
@@ -186,7 +200,55 @@ test('fallback to old protocol - incoming', async (t: T) => {
   const x = await (await fetch(t.context.http + '/flap', {})).json()
   t.true(x.derp > 0, 'derp is large then 0 from flap')
 
-  // test for STREAMS
+  const bigBod: any[] = []
+  for (let i = 0; i < 10000; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
+  const payload = Buffer.from(JSON.stringify(bigBod))
+  let stream = new Duplex({
+    read() {},
+    write(x) {
+      this.push(x)
+    },
+  })
+  let index = 0
+  const streamBits = () => {
+    const readBytes = 100000
+    const end = (index + 1) * readBytes
+    if (end > payload.byteLength) {
+      stream.push(payload.slice(index * readBytes, end))
+      stream.push(null)
+    } else {
+      stream.push(payload.slice(index * readBytes, end))
+      setTimeout(() => {
+        index++
+        streamBits()
+      }, 100)
+    }
+  }
+  streamBits()
+  const s = await client.stream('hello', {
+    payload: { power: true },
+    size: payload.byteLength,
+    mimeType: 'pipo',
+    contents: stream,
+  })
 
-  // test for relat
+  stream = new Duplex({
+    read() {},
+    write(x) {
+      this.push(x)
+    },
+  })
+  index = 0
+
+  streamBits()
+  const s2 = await clientOld.stream('hello', {
+    payload: { power: true },
+    size: payload.byteLength,
+    mimeType: 'pipo',
+    contents: stream,
+  })
+
+  t.deepEqual(s, s2, 'stream fallback')
 })
