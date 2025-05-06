@@ -6,11 +6,38 @@ import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
 import { aggregateToBuffer } from './aggregates/aggregation.js'
+import { AggregateType } from './aggregates/types.js'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
   }, 0)
+}
+
+const isCountOnly = (def: QueryDef, filterSize: number) => {
+  if (filterSize != 0) {
+    return false
+  }
+  if (def.type !== QueryDefType.Root) {
+    return false
+  }
+  if (def.aggregate.groupBy) {
+    return false
+  }
+  if (def.aggregate.aggregates.size !== 1) {
+    return false
+  }
+  if (!def.aggregate.aggregates.has(255)) {
+    return false
+  }
+  const aggs = def.aggregate.aggregates.get(255)
+  if (aggs.length !== 1) {
+    return false
+  }
+  if (aggs[0].type !== AggregateType.COUNT) {
+    return false
+  }
+  return true
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
@@ -40,23 +67,17 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   }
 
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
-  // ---------------------------------------
-  // move down and will handle size after store the size Var
-  // only for references | edges
 
   if (def.aggregate) {
     const aggregateSize = def.aggregate.size || 0
-
     if (aggregateSize === 0) {
       throw new Error('Wrong aggregate size (0)')
     }
     const filterSize = def.filter.size || 0
     const buf = new Uint8Array(16 + filterSize + aggregateSize)
-
-    buf[0] =
-      filterSize == 0 && def.type === QueryDefType.Root
-        ? QueryType.aggregatesCountType
-        : QueryType.aggregates
+    buf[0] = isCountOnly(def, filterSize)
+      ? QueryType.aggregatesCountType
+      : QueryType.aggregates
     buf[1] = def.schema.idUint8[0]
     buf[2] = def.schema.idUint8[1]
     buf[3] = def.range.offset
@@ -69,25 +90,16 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     buf[10] = def.range.limit >>> 24
     buf[11] = filterSize
     buf[12] = filterSize >>> 8
-
     if (filterSize) {
       buf.set(filterToBuffer(def.filter), 13)
     }
-
     const aggregateBuffer = aggregateToBuffer(def.aggregate)
-
     buf[14 + filterSize] = aggregateSize
     buf[15 + filterSize] = aggregateSize >>> 8
-
     buf.set(aggregateBuffer, 16 + filterSize)
-
     result.push(buf)
-
     // ignore this for now...
     // result.push(...include)
-    // console.log('toBuffer > result: ', result)
-
-    // later this has to be a branch
     return result
   }
 
