@@ -5,39 +5,12 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
-import { aggregateToBuffer } from './aggregates/aggregation.js'
-import { AggregateType } from './aggregates/types.js'
+import { aggregateToBuffer, isRootCountOnly } from './aggregates/aggregation.js'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
   }, 0)
-}
-
-const isCountOnly = (def: QueryDef, filterSize: number) => {
-  if (filterSize != 0) {
-    return false
-  }
-  if (def.type !== QueryDefType.Root) {
-    return false
-  }
-  if (def.aggregate.groupBy) {
-    return false
-  }
-  if (def.aggregate.aggregates.size !== 1) {
-    return false
-  }
-  if (!def.aggregate.aggregates.has(255)) {
-    return false
-  }
-  const aggs = def.aggregate.aggregates.get(255)
-  if (aggs.length !== 1) {
-    return false
-  }
-  if (aggs[0].type !== AggregateType.COUNT) {
-    return false
-  }
-  return true
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
@@ -75,7 +48,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
     const filterSize = def.filter.size || 0
     const buf = new Uint8Array(16 + filterSize + aggregateSize)
-    buf[0] = isCountOnly(def, filterSize)
+    buf[0] = isRootCountOnly(def, filterSize)
       ? QueryType.aggregatesCountType
       : QueryType.aggregates
     buf[1] = def.schema.idUint8[0]
