@@ -211,6 +211,15 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     ));
 }
 
+pub fn setText(str: []u8, node: Node, fieldSchema: FieldSchema) !void {
+  try errors.selva(selva.selva_fields_set_text(
+        node,
+        fieldSchema,
+        str.ptr,
+        str.len,
+  ));
+}
+
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
     var dirty: [2]selva.node_id_t = undefined;

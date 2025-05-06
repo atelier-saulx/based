@@ -117,7 +117,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
                     }
                 }
-                try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
+                try db.setText(slice, ctx.node.?, ctx.fieldSchema.?);
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
