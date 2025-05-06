@@ -53,7 +53,7 @@ export const debugServer = (server: DbServer) =>
       `p: ${server.processingQueries} m: ${server.modifyQueue.length} q: ${server.queryQueue.size}`,
   )
 
-const exclude = new Set(['id', 'lastId'])
+const exclude = new Set(['id', 'lastId', 'hash'])
 export const schemaLooseEqual = (a: any, b: any, key?: string) => {
   if (a === b) {
     return true

@@ -32,6 +32,7 @@ import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer, schemaLooseEqual } from '../utils.js'
 import { deepEqual } from '@saulx/utils'
+import { hash } from '@saulx/hash'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -105,7 +106,7 @@ type OnSchemaChange = (schema: StrictSchema) => void
 export class DbServer {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
-  schema: StrictSchema & { lastId: number } = {
+  schema: StrictSchema & { lastId: number; hash?: number } = {
     lastId: 1, // we reserve one for root props
     types: {},
   }
@@ -456,6 +457,9 @@ export class DbServer {
       this.schemaTypesParsed,
       this.schemaTypesParsedById,
     )
+
+    const { hash: _, ...schemaWithoutHash } = this.schema
+    this.schema.hash = hash(schemaWithoutHash)
 
     if (!fromStart) {
       writeFile(
