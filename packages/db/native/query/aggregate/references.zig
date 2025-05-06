@@ -79,7 +79,7 @@ pub fn aggregateRefsFields(
         }
     }
     // put a result and return the size
-    ctx.results.append(.{
+    const r: results.Result = .{
         .id = null,
         .field = 0,
         .val = resultsField,
@@ -90,7 +90,8 @@ pub fn aggregateRefsFields(
         .score = null,
         .isEdge = types.Prop.NULL,
         .aggregateResult = read(u32, resultsField[0..3], 0),
-    }) catch unreachable;
+    };
+    ctx.results.append(r) catch return 0;
 
-    return 9;
+    return 1 + 4 + 4 + (&[_]u8{}).len;
 }
