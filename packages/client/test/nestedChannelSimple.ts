@@ -17,6 +17,7 @@ test('channel simple', async (t: T) => {
   const internal: any[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         nested: {

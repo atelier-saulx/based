@@ -15,6 +15,7 @@ test.beforeEach(async (t: T) => {
 test('mem tests', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -30,10 +31,10 @@ test('mem tests', async (t: T) => {
   })
   await server.start()
 
-  console.info(
+  t.log(
     `Mem before ${
       Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
-    } MB`
+    } MB`,
   )
 
   const cl: Set<BasedClient> = new Set()
@@ -54,21 +55,21 @@ test('mem tests', async (t: T) => {
         c.call('hello').catch(() => {})
       }
       return undefined
-    })
+    }),
   )
 
   const used = process.memoryUsage().heapUsed / 1024 / 1024
-  console.info(
+  t.log(
     `Mem while exec functions disconnect approximately ${
       Math.round(used * 100) / 100
-    } MB`
+    } MB`,
   )
 
   await wait(10000)
 
   const used1 = process.memoryUsage().heapUsed / 1024 / 1024
-  console.info(
-    `Mem before disconnect approximately ${Math.round(used1 * 100) / 100} MB`
+  t.log(
+    `Mem before disconnect approximately ${Math.round(used1 * 100) / 100} MB`,
   )
 
   for (const client of cl) {
@@ -81,8 +82,8 @@ test('mem tests', async (t: T) => {
   // @ts-ignore
 
   const used2 = process.memoryUsage().heapUsed / 1024 / 1024
-  console.info(
-    `Mem after disconnect approximately ${Math.round(used2 * 100) / 100} MB`
+  t.log(
+    `Mem after disconnect approximately ${Math.round(used2 * 100) / 100} MB`,
   )
 
   t.true(used2 < 160, 'Does not use too much mem')

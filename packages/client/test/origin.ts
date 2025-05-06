@@ -17,6 +17,7 @@ test('origin header is included', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         getOrigin: {
@@ -48,9 +49,7 @@ test('origin header is included', async (t: T) => {
     },
   })
 
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
-  })
+  coreClient.once('connect', (isConnected) => {})
 
   const origin = await coreClient.call('getOrigin')
 

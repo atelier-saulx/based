@@ -21,6 +21,7 @@ test('stream functions (small over http + file)', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -64,6 +65,7 @@ test('stream functions (over http + stream)', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -75,7 +77,6 @@ test('stream functions (over http + stream)', async (t: T) => {
               progressEvents.push(d)
             })
             const buf = await readStream(stream)
-            console.info('is end...', buf.byteLength)
             return 'bla'
           },
         },
@@ -123,7 +124,6 @@ test('stream functions (over http + stream)', async (t: T) => {
 
     t.is(resultBrotli, 'bla')
   } catch (err) {
-    console.info('ERROR', err)
     t.fail('Crash with uncompressing')
   }
 

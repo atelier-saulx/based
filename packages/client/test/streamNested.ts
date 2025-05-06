@@ -76,7 +76,7 @@ test('stream nested functions (string)', async (t: T) => {
   await server.destroy()
 })
 
-test('stream nested functions (stream)', async (t: T) => {
+test.serial('stream nested functions (stream)', async (t: T) => {
   const progressEvents: number[] = []
   const filePath = join(__dirname, './browser/tmp.json')
   const server = new BasedServer({

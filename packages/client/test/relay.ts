@@ -18,6 +18,7 @@ test('Relay', async (t: T) => {
 
   const server = new BasedServer({
     port: 9911,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -68,6 +69,7 @@ test('Relay', async (t: T) => {
     clients: {
       events: relayClient,
     },
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -138,7 +140,6 @@ test('Relay', async (t: T) => {
   t.deepEqual(msges, ['bla'])
 
   const count = await client.query('flap').get()
-  console.log(count)
 
   t.true(count > 0)
 

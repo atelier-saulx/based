@@ -59,19 +59,12 @@ export const app = () => {
 
   const fileUpload = document.createElement('input')
   fileUpload.type = 'file'
-  fileUpload.onchange = async (e) => {
-    // @ts-ignore
-    console.log('|--->', e.target.files[0])
-    // @ts-ignore
-    const x = await client.stream('flap', { contents: e.target.files[0] })
-    console.info('READY', { x })
-  }
+  fileUpload.onchange = async (e) => {}
   body.appendChild(fileUpload)
 
   const btn = document.createElement('button')
   btn.onclick = async (e) => {
     const x = await client.stream('flap', { contents: 'flap' })
-    console.info('READY', { x })
   }
   btn.innerHTML = 'upload from contents'
   body.appendChild(btn)

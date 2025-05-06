@@ -22,6 +22,7 @@ const setup = async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         counter: {
@@ -83,9 +84,9 @@ test('re-evaluate authState', async (t: T) => {
         () => {
           counter++
         },
-        (_err) => resolve(true)
+        (_err) => resolve(true),
       )
-    })
+    }),
   )
 
   await wait(200)

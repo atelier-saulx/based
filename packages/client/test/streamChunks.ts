@@ -16,6 +16,7 @@ test.beforeEach(async (t: T) => {
 test('stream small chunks', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -28,8 +29,8 @@ test('stream small chunks', async (t: T) => {
                 await readStream(stream, {
                   throttle: 10,
                   maxChunkSize: 5000,
-                })
-              )
+                }),
+              ),
             ).length
             return { payload, len }
           },
@@ -56,7 +57,7 @@ test('stream small chunks', async (t: T) => {
     while (index * readBytes < payload.byteLength) {
       const buf = payload.slice(
         index * readBytes,
-        Math.min(payload.byteLength, (index + 1) * readBytes)
+        Math.min(payload.byteLength, (index + 1) * readBytes),
       )
       index++
       yield buf
@@ -74,7 +75,7 @@ test('stream small chunks', async (t: T) => {
       },
       () => {
         cnt++
-      }
+      },
     )
     t.deepEqual(result.payload, { power: true })
     t.is(result.len, len)
@@ -91,6 +92,7 @@ test('stream small chunks', async (t: T) => {
 test('big boy chunks', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         hello: {
@@ -126,7 +128,7 @@ test('big boy chunks', async (t: T) => {
     while (index * readBytes < payload.byteLength) {
       const buf = payload.slice(
         index * readBytes,
-        Math.min(payload.byteLength, (index + 1) * readBytes)
+        Math.min(payload.byteLength, (index + 1) * readBytes),
       )
       index++
       yield buf
@@ -142,7 +144,7 @@ test('big boy chunks', async (t: T) => {
         mimeType: 'application/json',
         contents: Readable.from(generate()),
       },
-      (p, bytes) => {}
+      (p, bytes) => {},
     )
     t.deepEqual(result.payload, { power: true })
     t.is(result.len, len)

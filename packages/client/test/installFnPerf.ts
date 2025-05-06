@@ -15,6 +15,7 @@ test('install fn perf', async (t: T) => {
   const client = new BasedClient()
   let cnt = 0
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {

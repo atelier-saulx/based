@@ -16,6 +16,7 @@ test('message incoming/outgoing', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         a: {

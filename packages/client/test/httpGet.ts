@@ -53,6 +53,7 @@ test('http get falsy check', async (t: T) => {
 
 test('http get authorize', async (t: T) => {
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -68,7 +69,6 @@ test('http get authorize', async (t: T) => {
         bla: {
           type: 'query',
           fn: (_based, payload, update) => {
-            console.info(payload)
             update(payload)
             return () => {}
           },

@@ -22,6 +22,7 @@ test('query reuse diff', async (t: T) => {
   let checksum = 1
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         counter: {
@@ -53,9 +54,6 @@ test('query reuse diff', async (t: T) => {
       return t.context.ws
     },
   })
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
-  })
 
   const obs1Results: any[] = []
   const obs2Results: any[] = []
@@ -82,7 +80,7 @@ test('query reuse diff', async (t: T) => {
   await wait(1e3)
 
   t.true(
-    !('bla' in server.activeObservables.counter.get(12244891731268)?.rawData)
+    !('bla' in server.activeObservables.counter.get(12244891731268)?.rawData),
   )
 
   t.is(server.activeObservables.counter.get(12244891731268)?.rawData, data)

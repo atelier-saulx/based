@@ -44,6 +44,7 @@ const setup = async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -133,9 +134,7 @@ test('observable authorize error', async (t: T) => {
   // TODO: Check error instance of
   const error = (await new Promise((resolve) => {
     coreClient.query('counter', {}).subscribe(
-      (v) => {
-        console.info({ v })
-      },
+      (v) => {},
 
       (err) => {
         resolve(err)

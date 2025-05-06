@@ -18,6 +18,7 @@ test('query cache', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     rateLimit: { ws: 1e9, http: 1e9, drain: 1e3 },
     functions: {
       configs: {

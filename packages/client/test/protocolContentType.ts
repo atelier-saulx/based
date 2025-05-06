@@ -20,6 +20,7 @@ test('fallback to old protocol - incoming', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         myChannel: {
@@ -118,10 +119,6 @@ test('fallback to old protocol - incoming', async (t: T) => {
     url: async () => {
       return t.context.ws
     },
-  })
-
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
   })
 
   const obs1Results: any[] = []

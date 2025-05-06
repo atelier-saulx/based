@@ -16,6 +16,7 @@ test.beforeEach(async (t: T) => {
 test('rate limit', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         flap: {

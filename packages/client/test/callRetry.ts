@@ -16,6 +16,7 @@ test('Call retry option', async (t: T) => {
   let cnt = 0
   let payloads = []
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -44,7 +45,6 @@ test('Call retry option', async (t: T) => {
 
   const res = await client.call('hello', '', {
     retryStrategy: (err, time, retries) => {
-      console.info(err, time, retries)
       retry = retries
       return 10
     },

@@ -18,6 +18,7 @@ test('verify auth state', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     auth: {
       verifyAuthState: async (_, __, authState) => {
         if (authState.token === '9000') {
@@ -85,7 +86,6 @@ test('verify auth state', async (t: T) => {
 
   let authstateChangeCnt = 0
   client.on('authstate-change', (a) => {
-    console.info(a)
     authstateChangeCnt++
   })
 

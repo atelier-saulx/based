@@ -14,6 +14,7 @@ test.beforeEach(async (t: T) => {
 test('connect', async (t: T) => {
   const port2 = await getPort()
   const serverA = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {
@@ -33,6 +34,7 @@ test('connect', async (t: T) => {
   await serverA.start()
 
   const serverB = new BasedServer({
+    silent: true,
     port: port2,
     functions: {
       configs: {

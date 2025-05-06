@@ -473,6 +473,7 @@ test.serial('auth', async (t: T) => {
 test.serial('bad accept-encoding header', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
   })
 
   server.functions.add({

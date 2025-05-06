@@ -15,6 +15,7 @@ test.beforeEach(async (t: T) => {
 test('throttle', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     auth: {
       authorize: async () => true,
@@ -47,9 +48,6 @@ test('throttle', async (t: T) => {
     },
   })
 
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
-  })
   const obs1Results: any[] = []
 
   const close = client
@@ -75,6 +73,7 @@ test('throttle', async (t: T) => {
 test('throttle channel', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     auth: {
       authorize: async () => true,
@@ -107,9 +106,6 @@ test('throttle channel', async (t: T) => {
     },
   })
 
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
-  })
   const obs1Results: any[] = []
 
   const close = client

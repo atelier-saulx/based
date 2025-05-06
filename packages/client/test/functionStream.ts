@@ -20,6 +20,7 @@ test('function Stream (http)', async (t: T) => {
   const p = join(__dirname, '../package.json')
 
   const server = new BasedServer({
+    silent: true,
     port: t.context.port,
     functions: {
       configs: {

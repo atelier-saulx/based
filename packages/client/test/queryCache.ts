@@ -19,6 +19,7 @@ test('query cache', async (t: T) => {
 
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     rateLimit: { ws: 1e9, http: 1e9, drain: 1e3 },
     functions: {
       configs: {
@@ -44,10 +45,6 @@ test('query cache', async (t: T) => {
     url: async () => {
       return t.context.ws
     },
-  })
-
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
   })
 
   const obs1Results: any[] = []

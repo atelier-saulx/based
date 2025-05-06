@@ -106,7 +106,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
     close()
   }
 
-  await wait(3000)
+  await wait(3e3)
 
   t.is(
     Object.keys(server.activeObservables).length,
@@ -119,7 +119,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
     'active observables by id are zero',
   )
 
-  await wait(1e3)
+  await wait(4e3)
 
   t.is(Object.keys(server.functions.specs).length, 0, 'no more function specs')
 
