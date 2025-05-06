@@ -77,6 +77,21 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
             }
           },
         },
+        numberQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              cnt++
+              update(cnt)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
         stringQuery: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
@@ -174,6 +189,12 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
   const bufResults: any[] = []
 
   const closers = [
+    client.query('numberQuery').subscribe((d) => {
+      obs1Results.push(d)
+    }),
+    clientOld.query('numberQuery').subscribe((d) => {
+      obs2Results.push(d)
+    }),
     client
       .query('stringQuery', {
         myQuery: 123,
@@ -378,7 +399,7 @@ test.serial('fallback to old protocol - outgoing', async (t: T) => {
   await server.destroy()
 })
 
-test.serial.only('authstate', async (t: T) => {
+test.serial('authstate', async (t: T) => {
   const client = new BasedClient()
   const clientOld = new BasedClientOld()
 
