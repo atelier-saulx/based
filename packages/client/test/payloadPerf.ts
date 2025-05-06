@@ -12,7 +12,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('query perf', async (t: T) => {
+test.serial('query perf', async (t: T) => {
   const waitUntilReceived = 100
   const amountOfNumbers = 1e6
   const client = new BasedClient()
@@ -125,6 +125,58 @@ test('query perf', async (t: T) => {
   )
 
   await server.destroy()
+  await client.destroy()
+  t.pass()
+})
+
+test.serial.only('function perf', async (t: T) => {
+  const client = new BasedClient()
+  const server = new BasedServer({
+    silent: true,
+    ws: {
+      maxBackpressureSize: 1e10,
+    },
+    rateLimit: {
+      ws: 30e6,
+      drain: 30e6,
+      http: 30e6,
+    },
+    port: t.context.port,
+    functions: {
+      configs: {
+        dbWrite: {
+          maxPayloadSize: 11e6,
+          type: 'function',
+          fn: async (based, payload) => {
+            const reply = new Uint8Array(100)
+            return reply
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  const x = new Uint8Array(10e6)
+  for (let i = 0; i < 1e6; i++) {
+    x[i] = i % 2
+  }
+
+  let d = Date.now()
+
+  for (let i = 0; i < 1e2; i++) {
+    await client.call('dbWrite', x)
+  }
+
+  t.log(`Set 100 10mb buffers ${Date.now() - d}ms`)
+
+  await server.destroy()
+  await client.destroy()
 
   t.pass()
 })
