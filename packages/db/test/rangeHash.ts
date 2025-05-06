@@ -86,3 +86,77 @@ await test('small diff in schema', async (t) => {
   const { rangeDumps: rangeDumps2 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString())
   deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
 })
+
+await test('ref dst type change', async (t) => {
+  const db1 = new BasedDb({
+    path: path.join(t.tmp, 'db1'),
+  })
+  const db2 = new BasedDb({
+    path: path.join(t.tmp, 'db2'),
+  })
+  await db1.start({ clean: true })
+  t.after(() => db1.destroy())
+  await db2.start({ clean: true })
+  t.after(() => db2.destroy())
+
+  await db1.setSchema({
+    types: {
+      a: {
+        title: 'string',
+        other: { ref: 'a', prop: 'other' },
+      },
+      b: {
+        title: 'string',
+        other: { ref: 'b', prop: 'other' },
+      },
+    },
+  })
+  await db2.setSchema({
+    types: {
+      a: {
+        title: 'string',
+        other: { ref: 'b', prop: 'other' },
+      },
+      b: {
+        title: 'string',
+        other: { ref: 'a', prop: 'other' },
+      },
+    },
+  })
+
+  const db1a1 = await db1.create('a', {
+    title: 'haha',
+  })
+  await db1.create('a', {
+    title: 'haha',
+    other: db1a1,
+  })
+  const db1b1 = await db1.create('b', {
+    title: 'haha',
+  })
+  await db1.create('b', {
+    title: 'haha',
+    other: db1b1
+  })
+
+  const db2a1 = await db2.create('a', {
+    title: 'haha',
+  })
+  const db2a2 = await db2.create('a', {
+    title: 'haha',
+  })
+  await db2.create('b', {
+    title: 'haha',
+    other: db2a2,
+  })
+  await db2.create('b', {
+    title: 'haha',
+    other: db2a1,
+  })
+
+  await db1.save()
+  await db2.save()
+  const { rangeDumps: rangeDumps1 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db1', 'writelog.json'))).toString())
+  const { rangeDumps: rangeDumps2 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString())
+  deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
+})
