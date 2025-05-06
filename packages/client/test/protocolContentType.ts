@@ -377,3 +377,50 @@ test.serial('fallback to old protocol - outgoing', async (t: T) => {
   await clientOld.destroy()
   await server.destroy()
 })
+
+test.serial.only('authstate', async (t: T) => {
+  const client = new BasedClient()
+  const clientOld = new BasedClientOld()
+
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        derpi: {
+          type: 'function',
+          fn: async (_, payload) => {
+            return payload
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  // has to send the version in 1 byte
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  clientOld.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  await clientOld.setAuthState({ token: 'first_token' })
+  await clientOld.setAuthState({ token: 'second_token' })
+  t.is(clientOld.authState.token, 'second_token')
+
+  await client.setAuthState({ token: 'first_token' })
+  await client.setAuthState({ token: 'second_token' })
+  t.is(client.authState.token, 'second_token')
+
+  await client.destroy()
+  await clientOld.destroy()
+  await server.destroy()
+  t.pass()
+})

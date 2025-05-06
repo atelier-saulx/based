@@ -2,6 +2,7 @@ import {
   valueToBuffer,
   decodePayload,
   encodeAuthResponse,
+  valueToBufferV1,
 } from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import { enableSubscribe } from './query.js'
@@ -17,12 +18,17 @@ import { enableChannelSubscribe } from './channelSubscribe.js'
 import { installFn } from '../../installFn.js'
 import { authorize } from '../../authorize.js'
 
-const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
+const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) => {
   ctx.session?.ws.send(
-    encodeAuthResponse(valueToBuffer(payload, true)),
+    encodeAuthResponse(
+      ctx.session.v < 2
+        ? valueToBufferV1(payload, true)
+        : valueToBuffer(payload, true),
+    ),
     true,
     false,
   )
+}
 
 const parse = (payload: AuthState) => {
   if (typeof payload !== 'object') {
@@ -96,7 +102,7 @@ export const authMessage: BinaryMessageHandler = (
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate,
-    ctx.session.authState.v < 2,
+    ctx.session.v < 2,
   )
 
   const authState: AuthState = parse(payload)
