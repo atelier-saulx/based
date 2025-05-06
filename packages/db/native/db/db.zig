@@ -202,7 +202,7 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
     modifyCtx.markDirtyRange(ctx, dstType, id);
 }
 
-pub fn writeField(_: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         node,
         fieldSchema,

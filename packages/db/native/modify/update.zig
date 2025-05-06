@@ -56,7 +56,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+            try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
             return len;
         },
         types.Prop.CARDINALITY => {
@@ -117,7 +117,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
                     }
                 }
-                try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+                try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
@@ -133,7 +133,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     };
                 }
             } else {
-                try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+                try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
             }
 
             return len;
