@@ -20,10 +20,10 @@ pub fn countType(env: c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !c.napi_val
     const count: u32 = @truncate(selva.selva_node_count(typeEntry));
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
-    if (c.napi_create_arraybuffer(env, ctx.size, &resultBuffer, &result) != c.napi_ok) {
+    if (c.napi_create_arraybuffer(env, 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
-    const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0..4];
     writeInt(u32, resultsField, 0, count);
     return result;
 }
