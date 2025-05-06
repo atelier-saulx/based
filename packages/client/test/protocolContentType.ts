@@ -181,11 +181,13 @@ test('fallback to old protocol - incoming', async (t: T) => {
   const channelNew = []
   const channelOld = []
 
-  clientOld.channel('myChannel').subscribe((v) => {
+  let closeChannel1
+  closeChannel1 = clientOld.channel('myChannel').subscribe((v) => {
     channelNew.push(v)
   })
 
-  client.channel('myChannel').subscribe((v) => {
+  let closeChannel2
+  closeChannel2 = client.channel('myChannel').subscribe((v) => {
     channelOld.push(v)
   })
 
@@ -251,8 +253,8 @@ test('fallback to old protocol - incoming', async (t: T) => {
   })
 
   t.deepEqual(s, s2, 'stream fallback')
-
-  await wait(500) // to clear channel
+  closeChannel1()
+  closeChannel2()
   await server.destroy()
 })
 

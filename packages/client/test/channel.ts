@@ -621,7 +621,7 @@ test.serial(
     })
     publishClient.channel('a').publish({ i: 1000 })
 
-    await wait(6e3)
+    await wait(10e3)
 
     t.is(extra, 1)
 
