@@ -10,7 +10,6 @@ const QueryCtx = @import("./types.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const types = @import("../types.zig");
-const aggregateTypes = @import("./aggregate/types.zig");
 
 const QueryType = types.QueryType;
 const QuerySort = @import("./types/sort.zig");
@@ -19,6 +18,7 @@ const QueryId = @import("./types/id.zig");
 const QueryIds = @import("./types/ids.zig");
 const QueryAlias = @import("./types/alias.zig");
 
+const aggregateTypes = @import("./aggregate/types.zig");
 const AggDefault = @import("./types/aggregate.zig");
 
 const utils = @import("../utils.zig");

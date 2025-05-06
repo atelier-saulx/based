@@ -21,6 +21,7 @@ pub const Result = struct {
     totalRefs: ?usize,
     isEdge: t.Prop,
     score: ?[4]u8,
+    aggregateResult: ?u32,
 };
 
 const HEADER_SIZE = 8;

@@ -14,7 +14,6 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     handleErrors(q.def)
     return buf
   }
-
   handleErrors(q.def)
   return q.buffer
 }

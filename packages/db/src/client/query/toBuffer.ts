@@ -1,5 +1,5 @@
 import { createSortBuffer } from './sort.js'
-import { QueryDef, QueryDefType, QueryType } from './types.js'
+import { QueryDef, QueryDefType, QueryType, includeOp } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
@@ -7,6 +7,7 @@ import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
 import { aggregateToBuffer } from './aggregates/aggregation.js'
 import { buffer } from 'node:stream/consumers'
+import { REFERENCES } from '@based/schema/def'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
@@ -52,34 +53,64 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       throw new Error('Wrong aggregate size (0)')
     }
     const filterSize = def.filter.size || 0
-    const buf = new Uint8Array(16 + filterSize + aggregateSize)
 
-    buf[0] = QueryType.aggregates
-    buf[1] = def.schema.idUint8[0]
-    buf[2] = def.schema.idUint8[1]
-    buf[3] = def.range.offset
-    buf[4] = def.range.offset >>> 8
-    buf[5] = def.range.offset >>> 16
-    buf[6] = def.range.offset >>> 24
-    buf[7] = def.range.limit
-    buf[8] = def.range.limit >>> 8
-    buf[9] = def.range.limit >>> 16
-    buf[10] = def.range.limit >>> 24
-    buf[11] = filterSize
-    buf[12] = filterSize >>> 8
+    if ('propDef' in def.target) {
+      if (def.target.propDef.typeIndex == REFERENCES) {
+        const buf = new Uint8Array(16 + filterSize)
+        const sz = size + 13 + filterSize
 
-    if (filterSize) {
-      buf.set(filterToBuffer(def.filter), 13)
+        buf[0] = includeOp.REFERENCES_AGGREGATION
+        buf[1] = sz
+        buf[2] = sz >>> 8
+        buf[3] = filterSize
+        buf[4] = filterSize >>> 8
+        buf[5] = def.range.offset
+        buf[6] = def.range.offset >>> 8
+        buf[7] = def.range.offset >>> 16
+        buf[8] = def.range.offset >>> 24
+        buf[9] = def.range.limit
+        buf[10] = def.range.limit >>> 8
+        buf[11] = def.range.limit >>> 16
+        buf[12] = def.range.limit >>> 24
+
+        if (filterSize) {
+          buf.set(filterToBuffer(def.filter), 13)
+        }
+        buf[13 + filterSize] = def.schema.idUint8[0]
+        buf[13 + 1 + filterSize] = def.schema.idUint8[1]
+        buf[13 + 2 + filterSize] = def.target.propDef.prop
+
+        result.push(buf)
+      }
+    } else {
+      const buf = new Uint8Array(16 + filterSize + aggregateSize)
+      buf[0] = QueryType.aggregates
+      buf[1] = def.schema.idUint8[0]
+      buf[2] = def.schema.idUint8[1]
+      buf[3] = def.range.offset
+      buf[4] = def.range.offset >>> 8
+      buf[5] = def.range.offset >>> 16
+      buf[6] = def.range.offset >>> 24
+      buf[7] = def.range.limit
+      buf[8] = def.range.limit >>> 8
+      buf[9] = def.range.limit >>> 16
+      buf[10] = def.range.limit >>> 24
+      buf[11] = filterSize
+      buf[12] = filterSize >>> 8
+
+      if (filterSize) {
+        buf.set(filterToBuffer(def.filter), 13)
+      }
+
+      const aggregateBuffer = aggregateToBuffer(def.aggregate)
+
+      buf[14 + filterSize] = aggregateSize
+      buf[15 + filterSize] = aggregateSize >>> 8
+
+      buf.set(aggregateBuffer, 16 + filterSize)
+
+      result.push(buf)
     }
-
-    const aggregateBuffer = aggregateToBuffer(def.aggregate)
-
-    buf[14 + filterSize] = aggregateSize
-    buf[15 + filterSize] = aggregateSize >>> 8
-
-    buf.set(aggregateBuffer, 16 + filterSize)
-
-    result.push(buf)
 
     // ignore this for now...
     // result.push(...include)
@@ -235,7 +266,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     const modsSize = filterSize + sortSize
     const meta = new Uint8Array(modsSize + 10 + 8)
     const sz = size + 7 + modsSize + 8
-    meta[0] = 254
+    meta[0] = includeOp.REFERENCES
     meta[1] = sz
     meta[2] = sz >>> 8
     meta[3] = filterSize
@@ -265,7 +296,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   } else if (def.type === QueryDefType.Reference) {
     const meta = new Uint8Array(6)
     const sz = size + 3
-    meta[0] = 255
+    meta[0] = includeOp.REFERENCE
     meta[1] = sz
     meta[2] = sz >>> 8
     meta[3] = def.schema.idUint8[0]
@@ -278,7 +309,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
 
   if (edges) {
     const metaEdgeBuffer = new Uint8Array(3)
-    metaEdgeBuffer[0] = 252
+    metaEdgeBuffer[0] = includeOp.EDGE
     metaEdgeBuffer[1] = edgesSize
     metaEdgeBuffer[2] = edgesSize >>> 8
     result.push(metaEdgeBuffer, ...edges)

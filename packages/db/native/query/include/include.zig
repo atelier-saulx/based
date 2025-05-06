@@ -5,6 +5,7 @@ const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const utils = @import("../../utils.zig");
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
+const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefsFields;
 const std = @import("std");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
@@ -27,6 +28,7 @@ inline fn addResult(
         .refType = null,
         .totalRefs = null,
         .isEdge = edgeType,
+        .aggregateResult = null,
     };
 }
 
@@ -91,6 +93,15 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
         }
 
         // if aggregate references call a function form the folder aggregates / references.zig
+        if (op == t.IncludeOp.referencesAggregation) {
+            utils.debugPrint("split paths\n", .{});
+            const refSize = read(u16, operation, 0);
+            const multiRefs = operation[2 .. 2 + refSize];
+            includeIterator += refSize + 2;
+
+            size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
+            continue :includeField;
+        }
 
         const field: u8 = @intFromEnum(op);
         var prop: t.Prop = undefined;
@@ -149,7 +160,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 }
                 var result = addResult(field, s[0 .. s.len - 4], includeMain, edgeType);
                 if (!idIsSet) {
-                    size += 5;
+                    size += 9;
                     result.id = id;
                     idIsSet = true;
                     if (score != null) {
@@ -186,7 +197,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
 
             var result = addResult(field, value, includeMain, edgeType);
             if (!idIsSet) {
-                size += 5;
+                size += 9;
                 result.id = id;
                 idIsSet = true;
                 if (score != null) {
