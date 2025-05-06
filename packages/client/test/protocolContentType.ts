@@ -445,3 +445,59 @@ test.serial('authstate', async (t: T) => {
   await server.destroy()
   t.pass()
 })
+
+test.serial('authorize', async (t: T) => {
+  const client = new BasedClient()
+  const clientOld = new BasedClientOld()
+
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        derpi: {
+          type: 'function',
+          fn: async (_, payload) => {
+            return payload
+          },
+        },
+      },
+    },
+  })
+
+  server.auth.updateConfig({
+    authorize: async (based, ctx) => {
+      if (ctx.session.authState.token === 'first_token') {
+        await based.renewAuthState(ctx, { token: 'power_token' })
+        return true
+      }
+      return false
+    },
+  })
+
+  await server.start()
+
+  // has to send the version in 1 byte
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  clientOld.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  await clientOld.setAuthState({ token: 'first_token' })
+  await clientOld.call('derpi', { derp: true })
+
+  await client.setAuthState({ token: 'first_token' })
+  await client.call('derpi', { derp: true })
+
+  await client.destroy()
+  await clientOld.destroy()
+  await server.destroy()
+  t.pass()
+})

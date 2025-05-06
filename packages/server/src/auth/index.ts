@@ -1,4 +1,8 @@
-import { encodeAuthResponse, valueToBuffer } from '../protocol.js'
+import {
+  encodeAuthResponse,
+  valueToBuffer,
+  valueToBufferV1,
+} from '../protocol.js'
 import { BasedServer } from '../server.js'
 import {
   Context,
@@ -114,7 +118,11 @@ export class BasedAuth {
   /** Sets the `authState` on the client. */
   sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {
     ctx.session?.ws.send(
-      encodeAuthResponse(valueToBuffer(authState, true)),
+      encodeAuthResponse(
+        ctx.session.v < 2
+          ? valueToBufferV1(authState, true)
+          : valueToBuffer(authState, true),
+      ),
       true,
       false,
     )
