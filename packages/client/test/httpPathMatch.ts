@@ -62,7 +62,7 @@ const makeFunction = (
 //   t.true(match)
 // })
 
-test.only('basic path matcher', async (t: T) => {
+test('basic path matcher', async (t: T) => {
   const functionNames = [
     'based:analytics',
     'based:connections',
@@ -228,7 +228,6 @@ test.only('basic path matcher', async (t: T) => {
   t.deepEqual(r29, { result: true, path: '/', functionName: 'root' })
   t.deepEqual(r30, { result: true, path: '/', functionName: 'root' })
   t.true(r31)
-  
 })
 
 test('[query] path matcher with static value and optional parameter', async (t: T) => {

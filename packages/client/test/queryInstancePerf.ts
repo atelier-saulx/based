@@ -16,6 +16,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
   const client = new BasedClient()
   let initCnt = 0
   const server = new BasedServer({
+    silent: true,
     ws: {
       maxBackpressureSize: 1e10,
     },
@@ -33,14 +34,14 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
       configs: {
         counter: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1000,
           fn: (_, payload, update) => {
             const bla: number[] = []
             for (let i = 0; i < 100; i++) {
               bla.push(i)
             }
-            update({ cnt: 1, payload, bla })
             initCnt++
+            update({ cnt: 1, payload, bla })
             return () => {}
           },
         },
@@ -53,17 +54,20 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
       return t.context.ws
     },
   })
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
-  })
 
   let subCnt = 0
 
-  console.info(
+  t.log(
     `Mem before ${
       Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
     } MB`,
   )
+
+  let d = Date.now()
+  let done
+  let isReady = new Promise((r) => {
+    done = r
+  })
 
   const closers: (() => void)[] = []
   for (let i = 0; i < 1e5; i++) {
@@ -74,36 +78,50 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
         })
         .subscribe(() => {
           subCnt++
+          if (subCnt === 1e5) {
+            done()
+          }
         }),
     )
   }
 
-  await wait(11000)
-  closers[0]()
+  await isReady
 
-  console.info(
+  t.log(
     `Mem while active ${
       Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
     } MB`,
   )
 
-  console.log(subCnt)
+  t.log(`Took ${Date.now() - d}ms to receive 1e5`)
 
-  await wait(11000)
-  t.is(server.activeObservablesById.size, 1e5 - 1)
+  t.is(server.activeObservablesById.size, 1e5)
   t.is(Object.keys(server.activeObservables).length, 1)
-  t.is(initCnt, 1e5)
-  t.is(subCnt, 1e5)
+  t.is(initCnt, 1e5, 'Initcnt')
+  t.is(subCnt, 1e5, 'Subcnt')
+
+  await wait(500)
 
   for (const close of closers) {
     close()
   }
 
-  await wait(5000)
-  t.is(Object.keys(server.activeObservables).length, 0)
-  t.is(server.activeObservablesById.size, 0)
-  await wait(6e3)
-  t.is(Object.keys(server.functions.specs).length, 0)
+  await wait(3000)
+
+  t.is(
+    Object.keys(server.activeObservables).length,
+    0,
+    'active observables are zero',
+  )
+  t.is(
+    server.activeObservablesById.size,
+    0,
+    'active observables by id are zero',
+  )
+
+  await wait(1e3)
+
+  t.is(Object.keys(server.functions.specs).length, 0, 'no more function specs')
 
   await server.destroy()
 })

@@ -65,8 +65,6 @@ test('query cache', async (t: T) => {
 
   await wait(1500)
 
-  console.log(client.cacheSize, 'bytes')
-
   await wait(1000)
 
   const close = client

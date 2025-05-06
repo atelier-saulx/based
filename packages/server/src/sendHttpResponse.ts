@@ -53,7 +53,6 @@ export const sendHttpResponse = (
   }
 
   let cType: string
-
   let parsed: string | Buffer
 
   if (result === undefined) {
@@ -62,7 +61,6 @@ export const sendHttpResponse = (
       if (headers) {
         sendHeaders(ctx, headers)
       }
-
       ctx.session.res.end()
     })
     return
@@ -78,10 +76,14 @@ export const sendHttpResponse = (
       }
     })
     result.on('data', (d) => {
-      ctx.session?.res.write(d)
+      ctx.session.res.cork(() => {
+        ctx.session?.res.write(d)
+      })
     })
     result.on('end', () => {
-      ctx.session?.res.end()
+      ctx.session.res.cork(() => {
+        ctx.session?.res.end()
+      })
     })
     return
   } else {

@@ -25,6 +25,7 @@ test('stream nested functions (string)', async (t: T) => {
   const progressEvents: number[] = []
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         mySnur: {
@@ -80,6 +81,7 @@ test('stream nested functions (stream)', async (t: T) => {
   const filePath = join(__dirname, './browser/tmp.json')
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         mySnur: {

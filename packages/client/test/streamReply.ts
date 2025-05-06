@@ -21,6 +21,7 @@ test('reply with a stream from call fn (http)', async (t: T) => {
   const filePath = join(__dirname, './browser/tmp.json')
   const server = new BasedServer({
     port: t.context.port,
+    silent: true,
     functions: {
       configs: {
         mySnur: {
@@ -63,24 +64,3 @@ test('reply with a stream from call fn (http)', async (t: T) => {
   client.disconnect()
   await server.destroy()
 })
-
-// extra protocol in WS
-// test('reply with a stream from call fn (http)', async (t: T) => {
-//   const filePath = join(__dirname, './browser/tmp.json')
-//   const server = await createSimpleServer({ uninstallAfterIdleTime: 1e3,
-//     port: t.context.port,
-//     functions: {
-//       mySnur: async () => {
-//         return createReadStream(filePath)
-//       },
-//     },
-//   })
-//   const client = new BasedClient()
-//   client.connect({
-//     url: async () => t.context.ws,
-//   })
-//   const result = await (await fetch(t.context.http + '/mySnur')).text()
-//   t.deepEqual(result, readFileSync(filePath).toString())
-//   client.disconnect()
-//   await server.destroy()
-// })
