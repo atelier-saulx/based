@@ -337,7 +337,7 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
 export const encodeObservableResponse = (
   id: number,
   checksum: number,
-  val: ValueBuffer,
+  val: ValueBuffer, // USE THE VALUE
 ): [Uint8Array, boolean] => {
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
@@ -371,7 +371,7 @@ export const encodeObservableDiffResponse = (
   id: number,
   checksum: number,
   previousChecksum: number,
-  val: ValueBuffer,
+  val: ValueBuffer, // USE THE VALUE
 ): Uint8Array => {
   // Type 2 (diff data)
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
@@ -439,7 +439,7 @@ export const encodeErrorResponse = (val: ValueBuffer): Uint8Array => {
 
 export const encodeChannelMessage = (
   id: number,
-  val: ValueBuffer,
+  val: ValueBuffer, // USE THE VALUE
 ): Uint8Array => {
   // Type 7.0 (fill data)
   // | 4 header | 1 subType | 8 id | * payload |
