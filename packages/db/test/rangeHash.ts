@@ -1,10 +1,13 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { equal, notEqual } from 'node:assert'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
 const f = (v) => v.map((r) => r.hash)
+const sha1 = async (path: string) => createHash('sha1').update(await fs.readFile(path)).digest("hex");
 
 await test('isomorphic types have equal hashes', async (t) => {
   const db = new BasedDb({
@@ -85,6 +88,7 @@ await test('small diff in schema', async (t) => {
   const { rangeDumps: rangeDumps1 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db1', 'writelog.json'))).toString())
   const { rangeDumps: rangeDumps2 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString())
   deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
+  equal(await sha1(path.join(t.tmp, 'db1', '2_1_100000.sdb')), await sha1(path.join(t.tmp, 'db2', '2_1_100000.sdb')))
 })
 
 await test('ref dst type change', async (t) => {
@@ -159,6 +163,7 @@ await test('ref dst type change', async (t) => {
   const { rangeDumps: rangeDumps1 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db1', 'writelog.json'))).toString())
   const { rangeDumps: rangeDumps2 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString())
   deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
+  equal(await sha1(path.join(t.tmp, 'db1', '2_1_100000.sdb')), await sha1(path.join(t.tmp, 'db2', '2_1_100000.sdb')))
 })
 
 await test('small diff in schema 2', async (t) => {
@@ -214,4 +219,5 @@ await test('small diff in schema 2', async (t) => {
   const { rangeDumps: rangeDumps1 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db1', 'writelog.json'))).toString())
   const { rangeDumps: rangeDumps2 } = JSON.parse((await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString())
   deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
+  notEqual(await sha1(path.join(t.tmp, 'db1', '2_1_100000.sdb')), await sha1(path.join(t.tmp, 'db2', '2_1_100000.sdb')))
 })
