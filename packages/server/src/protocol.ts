@@ -104,7 +104,7 @@ export const valueToBufferV1 = (
   } else {
     buf = Buffer.from(JSON.stringify(payload))
   }
-  if (deflate && payload.byteLength > COMPRESS_FROM_BYTES) {
+  if (deflate && buf.byteLength > COMPRESS_FROM_BYTES) {
     return {
       contentByte: CONTENT_TYPE_VERSION_1_U8,
       buf: zlib.deflateRawSync(buf, {}),

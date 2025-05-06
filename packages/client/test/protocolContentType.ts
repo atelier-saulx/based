@@ -26,6 +26,7 @@ test('fallback to old protocol - incoming', async (t: T) => {
       configs: {
         myChannel: {
           type: 'channel',
+          closeAfterIdleTime: 10,
           uninstallAfterIdleTime: 1e3,
           subscriber: (_, __, ___, update) => {
             let cnt = 1
@@ -255,6 +256,9 @@ test('fallback to old protocol - incoming', async (t: T) => {
   t.deepEqual(s, s2, 'stream fallback')
   closeChannel1()
   closeChannel2()
+  await wait(500)
+  await client.destroy()
+  await clientOld.destroy()
   await server.destroy()
 })
 
@@ -300,17 +304,17 @@ test('fallback to old protocol - outgoing', async (t: T) => {
 
   const nullVal = null
   t.deepEqual(nullVal, await client.call('derpi', nullVal))
-  // t.deepEqual(nullVal, await clientOld.call('derpi', nullVal))
+  t.deepEqual(nullVal, await clientOld.call('derpi', nullVal))
 
   const x = undefined
   t.deepEqual(x, await client.call('derpi', x))
-  // t.deepEqual(x, await clientOld.call('derpi', x))
+  t.deepEqual(x, await clientOld.call('derpi', x))
 
   const stringVal = 'flap'
   t.deepEqual(stringVal, await client.call('derpi', stringVal))
   t.deepEqual(stringVal, await clientOld.call('derpi', stringVal))
 
-  await clientOld.call('derpi', { myderp: true })
-
+  await client.destroy()
+  await clientOld.destroy()
   await server.destroy()
 })

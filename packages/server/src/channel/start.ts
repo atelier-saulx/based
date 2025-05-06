@@ -61,6 +61,14 @@ const errorChannelListener = (
         ? { ...err, channelId: channel.id }
         : err
 
+  if (channel.oldClients?.size) {
+    server.uwsApp.publish(
+      String(channel.id) + '-v1',
+      encodeErrorResponse(valueToBufferV1(err, true)),
+      true,
+      false,
+    )
+  }
   if (channel.clients.size) {
     server.uwsApp.publish(
       String(channel.id),

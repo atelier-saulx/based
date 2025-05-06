@@ -9,7 +9,7 @@ import { destroyChannel } from './destroy.js'
 export const unsubscribeFunction = (
   server: BasedServer,
   id: number,
-  update: ChannelMessageFunction
+  update: ChannelMessageFunction,
 ): true | void => {
   const channel = server.activeChannelsById.get(id)
   if (!channel) {
@@ -27,7 +27,7 @@ export const unsubscribeFunction = (
 export const unsubscribeChannel = (
   server: BasedServer,
   id: number,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ): true | void => {
   const session = ctx.session
   if (!session) {
@@ -36,13 +36,29 @@ export const unsubscribeChannel = (
   if (!session.obs.has(id)) {
     return
   }
-  ctx.session.ws.unsubscribe(String(id))
+
+  const isV1 = ctx.session.v < 2
+  if (isV1) {
+    ctx.session.ws.unsubscribe(String(id) + '-v1')
+  } else {
+    ctx.session.ws.unsubscribe(String(id))
+  }
+
   const channel = server.activeChannelsById.get(id)
   session.obs.delete(id)
   if (!channel) {
     return
   }
-  if (channel.clients.delete(session.id)) {
+
+  if (isV1) {
+    if (channel.oldClients?.delete(session.id)) {
+      if (server.channelEvents) {
+        server.channelEvents.unsubscribe(channel, ctx)
+      }
+      destroyChannel(server, id)
+      return true
+    }
+  } else if (channel.clients.delete(session.id)) {
     if (server.channelEvents) {
       server.channelEvents.unsubscribe(channel, ctx)
     }
@@ -54,7 +70,7 @@ export const unsubscribeChannel = (
 export const unsubscribeChannelIgnoreClient = (
   server: BasedServer,
   id: number,
-  ctx: Context<WebSocketSession>
+  ctx: Context<WebSocketSession>,
 ) => {
   const session = ctx.session
   if (!session) {
@@ -65,7 +81,13 @@ export const unsubscribeChannelIgnoreClient = (
     return
   }
 
-  if (channel.clients.delete(session.id) && server.channelEvents) {
+  const isV1 = ctx.session.v < 2
+
+  if (isV1) {
+    if (channel.oldClients?.delete(session.id) && server.channelEvents) {
+      server.channelEvents.unsubscribe(channel, ctx)
+    }
+  } else if (channel.clients.delete(session.id) && server.channelEvents) {
     server.channelEvents.unsubscribe(channel, ctx)
   }
 
