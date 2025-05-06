@@ -193,6 +193,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         } else {
             return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
         }
+    } else if (queryType == QueryType.aggregatesCountType) {
+        return try AggDefault.countType(env, &ctx, typeId);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }

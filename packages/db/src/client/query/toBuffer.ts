@@ -6,7 +6,6 @@ import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
 import { aggregateToBuffer } from './aggregates/aggregation.js'
-import { buffer } from 'node:stream/consumers'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
@@ -54,7 +53,10 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     const filterSize = def.filter.size || 0
     const buf = new Uint8Array(16 + filterSize + aggregateSize)
 
-    buf[0] = QueryType.aggregates
+    buf[0] =
+      filterSize == 0 && def.type === QueryDefType.Root
+        ? QueryType.aggregatesCountType
+        : QueryType.aggregates
     buf[1] = def.schema.idUint8[0]
     buf[2] = def.schema.idUint8[1]
     buf[3] = def.range.offset
