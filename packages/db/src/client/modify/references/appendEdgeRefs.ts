@@ -1,7 +1,7 @@
-import { PropDefEdge } from '@based/schema/def'
-import { ModifyCtx } from '../../flushModify.js'
-import { ModifyState, ModifyError } from '../ModifyRes.js'
-import { ModifyErr } from '../types.js'
+import type { PropDefEdge } from '@based/schema/def'
+import type { ModifyCtx } from '../../flushModify.js'
+import type { ModifyErr } from '../types.js'
+import { ModifyError, ModifyState } from '../ModifyRes.js'
 
 export function appendEdgeRefs(
   t: PropDefEdge,

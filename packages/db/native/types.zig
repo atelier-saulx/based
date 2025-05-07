@@ -212,4 +212,5 @@ pub const QueryType = enum(u8) {
     default = 2,
     alias = 3,
     aggregates = 4,
+    aggregatesCountType = 5,
 };

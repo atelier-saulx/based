@@ -59,7 +59,7 @@ export async function start(
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
       // Prop need to not call setting in selva
-      db.setSchema(JSON.parse(schema.toString()), true)
+      await db.setSchema(JSON.parse(schema.toString()), true)
     }
   } catch (err) {
     // TODO In some cases we really should give up!

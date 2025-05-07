@@ -15,6 +15,19 @@ const setGroupResults = @import("../aggregate/group.zig").setGroupResults;
 const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
 const c = @import("../../c.zig");
 
+pub fn countType(env: c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !c.napi_value {
+    const typeEntry = try db.getType(ctx.db, typeId);
+    const count: u32 = @truncate(selva.selva_node_count(typeEntry));
+    var resultBuffer: ?*anyopaque = undefined;
+    var result: c.napi_value = undefined;
+    if (c.napi_create_arraybuffer(env, 4, &resultBuffer, &result) != c.napi_ok) {
+        return null;
+    }
+    const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0..4];
+    writeInt(u32, resultsField, 0, count);
+    return result;
+}
+
 pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
@@ -29,6 +42,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
+    const hasFilter = conditions.len > 0;
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -37,7 +51,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             node = db.getNextNode(typeEntry, node.?);
         }
         if (node) |n| {
-            if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
+            if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
             aggregate(agg, typeEntry, n, resultsField);

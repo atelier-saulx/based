@@ -1,3 +1,4 @@
+import { equal } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
@@ -213,4 +214,32 @@ await test('aggregate', async (t) => {
   // // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
 
   // // console.log((await db.query('vote').sum(countries).get()).execTime, 'ms')
+})
+
+await test('aggregate', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        bla: 'uint32',
+      },
+    },
+  })
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('sequence', { bla: i })
+  }
+
+  await db.drain()
+
+  const q = await db.query('sequence').count().get().inspect()
+
+  equal(q.toObject().$count, 1e6)
 })
