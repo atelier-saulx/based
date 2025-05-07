@@ -621,6 +621,11 @@ export class DbServer {
       return Promise.resolve(new Uint8Array(8))
     }
 
+    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
+    if (schemaChecksum !== this.schema?.hash) {
+      return Promise.resolve(new Uint8Array(1))
+    }
+
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)

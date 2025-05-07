@@ -176,7 +176,7 @@ export function create(
     ctx.prefix0 = -1 // Force a new cursor
     ctx.len = pos
     if (err === RANGE_ERR) {
-      if (pos === 0) {
+      if (pos === 8) {
         throw new Error('!No range available')
       }
       flushBuffer(db)

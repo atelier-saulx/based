@@ -99,7 +99,7 @@ export const update = (
     ctx.len = pos
 
     if (err === RANGE_ERR) {
-      if (pos === 0) {
+      if (pos === 8) {
         throw new Error('out of range')
       }
       flushBuffer(db)

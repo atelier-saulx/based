@@ -391,6 +391,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
 
     const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
+    def.schemaChecksum = db.schema?.hash || 0
 
     super(db, def)
     this.db = db
@@ -410,6 +411,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       this.skipValidation,
     )
 
+    def.schemaChecksum = this.db.schema?.hash || 0
     this.def = def
     const q = this.queryCommands
     this.queryCommands = []
@@ -434,10 +436,22 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     await this.db.isModified()
 
+    if (this.db.schema?.hash !== this.def.schemaChecksum) {
+      this.reBuildQuery()
+      return this.#getInternal(resolve, reject)
+    }
+
     const res = await this.db.hooks.getQueryBuf(buf)
 
-    if (res instanceof Error) {
+    if (res.byteLength === 1) {
+      if (res[0] === 0) {
+        reject(new Error('schema mismatch'))
+      } else {
+        reject(new Error('unexpected error'))
+      }
+    } else if (res instanceof Error) {
       reject(res)
+      return
     } else {
       resolve(
         new BasedQueryResponse(this.id, this.def, res, performance.now() - d),
