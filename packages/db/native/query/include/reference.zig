@@ -35,7 +35,6 @@ pub fn getSingleRefFields(
         .score = null,
         .field = refField,
         .val = null,
-        .includeMain = null,
         .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;
 

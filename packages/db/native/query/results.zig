@@ -16,9 +16,8 @@ pub const Result = struct {
     id: ?u32,
     field: u8,
     type: t.ResultType,
-    score: ?[4]u8,
+    score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query
     val: ?[]u8,
-    includeMain: ?[]u8, // 8 remove this just copy it in diretly
 };
 
 const HEADER_SIZE = 8;
@@ -27,7 +26,7 @@ pub fn createResultsBuffer(
     ctx: *QueryCtx,
     env: c.napi_env,
 ) !c.napi_value {
-    // std.debug.print("size of result {any} \n", .{ @sizeOf(Result) });
+    // std.debug.print("size of result {any} \n", .{@sizeOf(Result)});
 
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
@@ -134,20 +133,8 @@ pub fn createResultsBuffer(
         const val = item.val.?;
 
         if (item.field == t.MAIN_PROP) {
-            if (item.includeMain != null and item.includeMain.?.len != 0) {
-                var mainPos: usize = 2;
-                while (mainPos < item.includeMain.?.len) {
-                    const operation = item.includeMain.?[mainPos..];
-                    const start = read(u16, operation, 0);
-                    const len = read(u16, operation, 2);
-                    copy(data[i .. i + len], val[start .. start + len]);
-                    i += len;
-                    mainPos += 4;
-                }
-            } else {
-                copy(data[i .. i + val.len], val);
-                i += val.len;
-            }
+            copy(data[i .. i + val.len], val);
+            i += val.len;
         } else {
             writeInt(u32, data, i, val.len);
             i += 4;
