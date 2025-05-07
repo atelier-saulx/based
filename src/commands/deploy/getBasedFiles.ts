@@ -11,6 +11,10 @@ import {
 
 export const getBasedFiles = async (
   context: AppContext,
+  options?: {
+    schemaOnly?: boolean
+    functionsOnly?: boolean
+  },
 ): Promise<Based.Deploy.BasedFiles> => {
   const { ignore, ignoreDir } = await gitIgnore()
 
@@ -38,10 +42,10 @@ export const getBasedFiles = async (
           return walk(path)
         }
 
-        if (isConfigFile(file)) {
+        if (!options.schemaOnly && isConfigFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Based.Deploy.Configs
-        } else if (isSchemaFile(file)) {
+        } else if (!options.functionsOnly && isSchemaFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Based.Deploy.Configs
           multipleSchemas.push(file)

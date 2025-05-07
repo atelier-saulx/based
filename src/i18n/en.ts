@@ -656,6 +656,14 @@ export default {
             'Enable or disable this function in the cloud, or set the update time window (in seconds) to ensure users stay in sync with your cache.',
         },
         {
+          parameter: '--functionsOnly',
+          description: 'Only deploy functions, no schema',
+        },
+        {
+          parameter: '--schemaOnly',
+          description: 'Only deploy schema, no functions',
+        },
+        {
           parameter: '-f, --functions <functions...>',
           description: 'The function names to be served (variadic).',
         },

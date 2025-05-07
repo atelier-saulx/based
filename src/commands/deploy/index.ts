@@ -20,15 +20,29 @@ export const deploy = async (program: Command) => {
   const cmd: Command = context.commandMaker('deploy')
 
   cmd.action(
-    async ({ functions, watch, forceReload }: Based.Deploy.Command) => {
+    async ({
+      functions,
+      watch,
+      forceReload,
+      functionsOnly,
+      schemaOnly,
+    }: Based.Deploy.Command) => {
       const context: AppContext = AppContext.getInstance(program)
+      if (functionsOnly && schemaOnly) {
+        context.print.error('Please specify either functionsOnly or schemaOnly')
+        process.exit(1)
+      }
       const { cluster } = await context.getProgram()
       const basedClient = await context.getBasedClient()
       const { publicPath } = await basedClient
         .get('project')
         .call('based:env-info')
 
-      const { entryPoints, mapping } = await getBasedFiles(context)
+      const { entryPoints, mapping } = await getBasedFiles(context, {
+        functionsOnly,
+        schemaOnly,
+      })
+
       const bundledConfigs = await configsBundle(
         context,
         functions,

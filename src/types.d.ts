@@ -532,6 +532,8 @@ declare global {
         functions: string[]
         watch: boolean
         forceReload: boolean | number
+        functionsOnly: boolean
+        schemaOnly: boolean
       }
 
       type EsbuildEntrypoints = {
