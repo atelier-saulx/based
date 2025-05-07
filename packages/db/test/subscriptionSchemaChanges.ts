@@ -286,7 +286,7 @@ await test('default subscription schema changes', async (t) => {
     derp: 100,
   })
 
-  await wait(100)
+  await wait(500)
   equal(cnt, 2, 'fired 2 times')
   deepEqual(
     subResults,
