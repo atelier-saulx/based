@@ -6,9 +6,7 @@ import { handleErrors } from './validation.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
-    const checksum = new Uint8Array(8)
-    writeUint64(checksum, q.db.schemaChecksum, 0)
-    q.def.schemaChecksum = checksum
+    q.def.schemaChecksum = q.db.schema.hash
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
     let id = native.crc32(buf)
