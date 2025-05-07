@@ -37,7 +37,7 @@ pub fn getSingleRefFields(
         .refSize = 0,
         .includeMain = null,
         .refType = t.ReadRefOp.REFERENCE, // from result
-        .totalRefs = null,
+        .totalRefs = 0,
         .isEdge = if (isEdge) t.Prop.REFERENCE else t.Prop.NULL,
     }) catch return 0;
 
@@ -114,7 +114,7 @@ pub fn getSingleRefFields(
         false,
     ) catch 0;
 
-    ctx.results.items[resultIndex].refSize = resultSizeNest;
+    ctx.results.items[resultIndex].refSize = @truncate(resultSizeNest);
 
     size += 6 + resultSizeNest;
 

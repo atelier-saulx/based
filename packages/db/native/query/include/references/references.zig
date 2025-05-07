@@ -108,8 +108,8 @@ pub inline fn getRefsFields(
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];
-    r.*.refSize = result.size;
-    r.*.totalRefs = result.cnt;
+    r.*.refSize = @truncate(result.size);
+    r.*.totalRefs = @truncate(result.cnt);
 
     if (isEdge) {
         result.size += 1;

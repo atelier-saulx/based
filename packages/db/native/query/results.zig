@@ -11,17 +11,32 @@ const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
 
+// Add comptime to reduce the size of this
 pub const Result = struct {
-    id: ?u32,
-    field: u8,
-    refType: ?t.ReadRefOp,
-    val: ?[]u8,
-    refSize: ?usize,
-    includeMain: ?[]u8,
-    totalRefs: ?usize,
-    isEdge: t.Prop,
-    score: ?[4]u8,
+    id: ?u32, // 4
+    field: u8, // 1
+    refType: t.ReadRefOp, // 1
+    val: ?[]u8, // 8 (or more?)
+    refSize: u32, // use u32
+    includeMain: ?[]u8, // 8
+    totalRefs: u32, // use u32
+    isEdge: t.Prop, // 1
+    score: ?[4]u8, // 4 - do this with comptime var - would expect 35 (is 69...)
 };
+
+// pub const ResultSmaller = struct {
+//     id: ?u32, // 4
+//     field: u8, // 1
+//     refType: t.ReadRefOp, // 1
+//     val: ?[]u8, // 16 (or more?)
+//     refSize: u32, // use u32
+//     includeMain: ?[]u8, // 16
+//     totalRefs: u32, // use u32
+//     isEdge: t.Prop, // 1
+//     score: ?[4]u8,
+//     // score: u32, // 4 - do this with comptime var - would expect 35 (is 69...)
+// };
+// std.debug.print("size of result {any} {any} \n", .{ @sizeOf(Result), @sizeOf(ResultSmaller) });
 
 const HEADER_SIZE = 8;
 
@@ -42,51 +57,55 @@ pub fn createResultsBuffer(
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
-        if (item.refType) |refType| {
-            switch (refType) {
-                t.ReadRefOp.REFERENCE => {
-                    if (item.isEdge != t.Prop.NULL) {
-                        data[i] = @intFromEnum(t.ReadOp.EDGE);
-                        i += 1;
-                    }
+        switch (item.refType) {
+            t.ReadRefOp.none => {
+                // do nothing
+            },
+            t.ReadRefOp.REFERENCE => {
+                if (item.isEdge != t.Prop.NULL) {
+                    data[i] = @intFromEnum(t.ReadOp.EDGE);
+                    i += 1;
+                }
 
-                    //  Single Reference Protocol Schema:
+                //  Single Reference Protocol Schema:
 
-                    // | Offset  | Field     | Size (bytes)| Description                          |
-                    // |---------|-----------|-------------|--------------------------------------|
-                    // | 0       | op        | 1           | Operation identifier (254)           |
-                    // | 1       | field     | 1           | Field identifier                     |
-                    // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+                // | Offset  | Field     | Size (bytes)| Description                          |
+                // |---------|-----------|-------------|--------------------------------------|
+                // | 0       | op        | 1           | Operation identifier (254)           |
+                // | 1       | field     | 1           | Field identifier                     |
+                // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
 
-                    data[i] = @intFromEnum(t.ReadOp.REFERENCE);
-                    data[i + 1] = item.field;
-                    writeInt(u32, data, i + 2, item.refSize.?);
-                    i += 6;
-                },
-                t.ReadRefOp.REFERENCES => {
-                    if (item.isEdge != t.Prop.NULL) {
-                        data[i] = @intFromEnum(t.ReadOp.EDGE);
-                        i += 1;
-                    }
+                data[i] = @intFromEnum(t.ReadOp.REFERENCE);
+                data[i + 1] = item.field;
+                writeInt(u32, data, i + 2, item.refSize);
+                i += 6;
+                continue;
+            },
+            t.ReadRefOp.REFERENCES => {
+                if (item.isEdge != t.Prop.NULL) {
+                    data[i] = @intFromEnum(t.ReadOp.EDGE);
+                    i += 1;
+                }
 
-                    //  Multiple References Protocol Schema:
+                //  Multiple References Protocol Schema:
 
-                    // | Offset  | Field     | Size (bytes)| Description                          |
-                    // |---------|-----------|-------------|--------------------------------------|
-                    // | 0       | op        | 1           | Operation identifier (253)           |
-                    // | 1       | field     | 1           | Field identifier                     |
-                    // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
-                    // | 6       | totalRefs | 4           | Total number of references (u32)     |
+                // | Offset  | Field     | Size (bytes)| Description                          |
+                // |---------|-----------|-------------|--------------------------------------|
+                // | 0       | op        | 1           | Operation identifier (253)           |
+                // | 1       | field     | 1           | Field identifier                     |
+                // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
+                // | 6       | totalRefs | 4           | Total number of references (u32)     |
 
-                    data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                    data[i + 1] = item.field;
-                    writeInt(u32, data, i + 2, item.refSize.?);
-                    writeInt(u32, data, i + 6, item.totalRefs.?);
-                    i += 10;
-                },
-            }
-            continue;
-        } else if (item.id != null) {
+                data[i] = @intFromEnum(t.ReadOp.REFERENCES);
+                data[i + 1] = item.field;
+                writeInt(u32, data, i + 2, item.refSize);
+                writeInt(u32, data, i + 6, item.totalRefs);
+                i += 10;
+                continue;
+            },
+        }
+
+        if (item.id != null) {
             data[i] = @intFromEnum(t.ReadOp.ID);
             i += 1;
             writeInt(u32, data, i, item.id.?);
