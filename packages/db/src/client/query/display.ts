@@ -193,7 +193,6 @@ const inspectObject = (
           str += picocolors.blue(v) + '\n'
         }
       } else {
-        console.log('derp')
         str +=
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
       }
