@@ -309,7 +309,7 @@ await test('single reference', async (t) => {
   })
 
   await db.start({ clean: true })
-
+  t.after(() => t.backup(db))
   await db.setSchema({
     types: {
       user: {
@@ -412,6 +412,4 @@ await test('single reference', async (t) => {
       },
     ],
   )
-
-  t.after(() => t.backup(db))
 })
