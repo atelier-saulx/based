@@ -132,6 +132,7 @@ await test('aggregate', async (t) => {
     .include((select) => {
       select('votes')
         // don't break line
+        .groupBy('sequence')
         .sum('NL')
       // .include('id')
     })

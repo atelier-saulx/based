@@ -80,13 +80,13 @@ pub fn aggregateRefsFields(
                 );
                 index += GroupProtocolLen;
                 agg = aggRefInput[index..aggRefInput.len];
-
+                // MV: here to check
                 const groupValue = db.getField(typeEntry, db.getNodeId(refNode), refNode, groupCtx.fieldSchema, groupCtx.propType);
                 const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
                 if (!groupCtx.hashMap.contains(key)) {
                     if (!ctx.allocator.resize(resultsField, groupCtx.resultsSize)) {
-                        utils.debugPrint("RGroup by allocation failed.\n", .{});
-                        return 0;
+                        utils.debugPrint("GroupBy memory allocation failed.\n", .{});
+                        return 10;
                     }
                     @memset(resultsField, 0);
                     try groupCtx.hashMap.put(key, resultsField);
