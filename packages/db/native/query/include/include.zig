@@ -93,7 +93,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
         }
 
         if (op == t.IncludeOp.referencesAggregation) {
-            utils.debugPrint("split paths\n", .{});
             const refSize = read(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
@@ -101,7 +100,10 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, score);
             }
-            size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
+            size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge) catch |err| {
+                utils.debugPrint("Error aggregating References {any}.", .{err});
+                return 0;
+            };
             return size;
         }
 
