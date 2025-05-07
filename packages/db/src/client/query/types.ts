@@ -100,6 +100,7 @@ export type QueryDefAggregation = {
 }
 
 export type QueryDefShared = {
+  schemaChecksum?: Uint8Array
   errors: QueryError[]
   lang: LangCode
   filter: QueryDefFilter

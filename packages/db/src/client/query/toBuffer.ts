@@ -73,6 +73,11 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     result.push(buf)
     // ignore this for now...
     // result.push(...include)
+
+    if (def.type === QueryDefType.Root) {
+      result.push(def.schemaChecksum)
+    }
+
     return result
   }
 
@@ -269,6 +274,10 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     metaEdgeBuffer[1] = edgesSize
     metaEdgeBuffer[2] = edgesSize >>> 8
     result.push(metaEdgeBuffer, ...edges)
+  }
+
+  if (def.type === QueryDefType.Root) {
+    result.push(def.schemaChecksum)
   }
 
   return result

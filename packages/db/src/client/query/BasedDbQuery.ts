@@ -409,6 +409,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       this.target,
       this.skipValidation,
     )
+
     this.def = def
     const q = this.queryCommands
     this.queryCommands = []

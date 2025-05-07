@@ -132,7 +132,6 @@ await test('subscription schema changes', async (t) => {
   })
 
   // did this migrate?
-
   console.log('after schema update')
   await wait(100)
   q.reBuildQuery()
