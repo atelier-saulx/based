@@ -107,6 +107,9 @@ await test('subscription schema changes', async (t) => {
   const q = clients[1]
     .query('user')
     .include('derp', 'lang')
+    .include((s) => {
+      s('friends').include('*')
+    })
     .filter('lang', '=', 'de')
 
   await q.get().inspect()
@@ -114,10 +117,9 @@ await test('subscription schema changes', async (t) => {
   await clients[0].setSchema({
     types: {
       user: {
+        flap: 'uint16',
         derp: 'uint8',
         location: 'string',
-        // lang: 'string',
-        // flap: 'uint16',
         lang: { type: 'string', maxBytes: 2 },
         friends: {
           items: {
