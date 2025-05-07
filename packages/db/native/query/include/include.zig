@@ -14,7 +14,6 @@ const read = utils.read;
 inline fn addResult(
     field: u8,
     value: []u8,
-    main: ?[]u8,
     edgeType: t.Prop,
 ) results.Result {
     return .{
@@ -23,7 +22,6 @@ inline fn addResult(
         .score = null,
         .field = field,
         .val = value,
-        .includeMain = main,
     };
 }
 
@@ -144,7 +142,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 } else {
                     size += (s.len + 5 - 4);
                 }
-                var result = addResult(field, s[0 .. s.len - 4], includeMain, edgeType);
+                var result = addResult(field, s[0 .. s.len - 4], edgeType);
                 if (!idIsSet) {
                     size += 5;
                     result.id = id;
@@ -157,8 +155,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 try ctx.results.append(result);
             }
         } else {
-            // or t.Prop.ALIAS
-
             if (prop == t.Prop.STRING or prop == t.Prop.JSON or prop == t.Prop.BINARY) {
                 // strip crc32
                 valueLen = valueLen - 4;
@@ -166,7 +162,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             }
 
             if (isEdge) {
-                // double check if this ok
                 size += 1;
             }
 
@@ -174,16 +169,38 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 main = value;
                 if (includeMain) |incMain| {
                     if (incMain.len != 0) {
-                        size += read(u16, incMain, 0) + 1;
+                        const mainSelectiveSize = read(u16, incMain, 0);
+
+                        // INFO: There is a case where this can be handled better (when larger then 16 make an extra type)
+                        // if (mainSelectiveSize > 16) {
+                        //     std.debug.print("larger then 16 \n", .{});
+                        // }
+
+                        const mainSelectiveVal = try ctx.allocator.alloc(u8, mainSelectiveSize);
+                        var mainPos: usize = 2;
+                        var j: usize = 0;
+                        while (mainPos < incMain.len) {
+                            const mainOp = incMain[mainPos..];
+                            const start = read(u16, mainOp, 0);
+                            const len = read(u16, mainOp, 2);
+                            utils.copy(mainSelectiveVal[j .. j + len], value[start .. start + len]);
+                            j += len;
+                            mainPos += 4;
+                        }
+                        value = mainSelectiveVal;
+                        // len is known on client 1 for field
+                        size += mainSelectiveSize + 1;
                     }
                 } else {
+                    // len is known on client 1 for field
                     size += (valueLen + 1);
                 }
             } else {
+                // 4 for len 1 for field
                 size += (valueLen + 5);
             }
 
-            var result = addResult(field, value, includeMain, edgeType);
+            var result = addResult(field, value, edgeType);
             if (!idIsSet) {
                 size += 5;
                 result.id = id;

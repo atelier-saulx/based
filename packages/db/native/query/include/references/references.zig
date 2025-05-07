@@ -50,7 +50,6 @@ pub inline fn getRefsFields(
         .id = null,
         .field = refField,
         .val = null,
-        .includeMain = null,
         .score = null,
         .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
     }) catch return 0;

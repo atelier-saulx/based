@@ -11,7 +11,6 @@ pub fn addIdOnly(
         .type = t.ResultType.none,
         .field = @intFromEnum(t.ReadOp.ID), // id result enum
         .val = null,
-        .includeMain = &.{},
         .score = score,
     });
     if (score != null) {
