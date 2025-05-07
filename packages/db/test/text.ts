@@ -11,7 +11,7 @@ await test('simple', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  db.setSchema({
+  await db.setSchema({
     locales: {
       en: {},
       it: { fallback: ['en'] },
@@ -304,7 +304,7 @@ await test('search', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  db.setSchema({
+  await db.setSchema({
     locales: {
       en: {},
       fi: { fallback: ['en'] },
@@ -530,7 +530,7 @@ await test('sort', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  db.setSchema({
+  await db.setSchema({
     locales: {
       en: {},
       it: { fallback: ['en'] },

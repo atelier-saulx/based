@@ -5,7 +5,12 @@ import {
   updateTypeDefs,
   schemaToSelvaBuffer,
 } from '@based/schema/def'
-import { flushBuffer, ModifyCtx, startDrain } from './flushModify.js'
+import {
+  execCtxQueue,
+  flushBuffer,
+  ModifyCtx,
+  startDrain,
+} from './flushModify.js'
 
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
@@ -105,6 +110,8 @@ export class DbClient {
       return this.schema
     }
 
+    // drain current things
+    await this.drain()
     const checksum = hash(strictSchema)
     if (checksum !== this.schemaProcessing) {
       this.schemaProcessing = checksum
@@ -115,8 +122,6 @@ export class DbClient {
       )
     }
 
-    // drain current things
-    await this.drain()
     const remoteSchema = await this.schemaPromise
 
     this.schemaProcessing = null
@@ -142,16 +147,13 @@ export class DbClient {
     schemaToSelvaBuffer(this.schemaTypesParsed)
     // this has to happen before the listeners
 
+    if (this.modifyCtx.len > 8) {
+      console.info('Modify cancelled - schema updated')
+    }
+
     const resCtx = this.modifyCtx.ctx
     this.modifyCtx.reset()
-    if (resCtx.queue?.size) {
-      const queue = resCtx.queue
-      resCtx.queue = null
-      for (const [resolve] of queue) {
-        // should we throw?
-        resolve(null)
-      }
-    }
+    execCtxQueue(resCtx, true)
 
     if (this.listeners?.schema) {
       for (const cb of this.listeners.schema) {

@@ -16,7 +16,7 @@ const start = async (t, clientsN = 2) => {
     },
     async flushModify(buf) {
       buf = new Uint8Array(buf)
-      const { ...offsets } = server.modify(buf)
+      const offsets = server.modify(buf)
       return { offsets }
     },
     async getQueryBuf(buf) {

@@ -505,7 +505,6 @@ export class DbServer {
     const schemaHash = readUint64(buf, 0)
 
     if (schemaHash !== this.schema.hash) {
-      console.log('RETURN IT!', schemaHash, this.schema.hash)
       return null
     }
 

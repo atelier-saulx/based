@@ -126,11 +126,29 @@ export class ModifyCtx {
   }
 }
 
+export const execCtxQueue = (resCtx: ModifyCtx['ctx'], error?: boolean) => {
+  if (resCtx.queue?.size) {
+    const queue = resCtx.queue
+    resCtx.queue = null
+    if (error) {
+      for (const [resolve] of queue) {
+        // should we throw?
+        resolve(null)
+      }
+    } else {
+      for (const [resolve, res] of queue) {
+        resolve(res.getId())
+      }
+    }
+  }
+}
+
 export const flushBuffer = (db: DbClient) => {
   const ctx = db.modifyCtx
   let flushPromise: Promise<void>
 
-  if (ctx.len) {
+  if (ctx.len > 8) {
+    // always has schema hash
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
@@ -155,23 +173,10 @@ export const flushBuffer = (db: DbClient) => {
               console.error('Panic: No offset returned in flushModify')
             }
           }
-          if (resCtx.queue?.size) {
-            const queue = resCtx.queue
-            resCtx.queue = null
-            for (const [resolve, res] of queue) {
-              resolve(res.getId())
-            }
-          }
+          execCtxQueue(resCtx)
         } else {
-          // no offsets => schema mismatch!
-          if (resCtx.queue?.size) {
-            const queue = resCtx.queue
-            resCtx.queue = null
-            for (const [resolve] of queue) {
-              // should we throw?
-              resolve(null)
-            }
-          }
+          console.info('Modify cancelled - schema mismatch')
+          execCtxQueue(resCtx, true)
         }
 
         db.flushReady()

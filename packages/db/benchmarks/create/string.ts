@@ -1,7 +1,7 @@
 import { benchmark } from '../utils'
 
 benchmark('create 1m 2char strings', async (db) => {
-  db.setSchema({
+  await db.setSchema({
     types: {
       test: {
         string: 'string',
@@ -23,7 +23,7 @@ benchmark('create 1m 2char strings', async (db) => {
 })
 
 benchmark('create 1m 1000char strings', async (db) => {
-  db.setSchema({
+  await db.setSchema({
     types: {
       test: {
         string: 'string',

@@ -1,7 +1,7 @@
 import { benchmark } from '../utils'
 
 benchmark('create 1m items with 1 reference(s)', async (db) => {
-  db.setSchema({
+  await db.setSchema({
     types: {
       test: {
         refs: {
@@ -30,7 +30,7 @@ benchmark('create 1m items with 1 reference(s)', async (db) => {
 })
 
 benchmark('create 1m items with 100 reference(s)', async (db) => {
-  db.setSchema({
+  await db.setSchema({
     types: {
       test: {
         refs: {
