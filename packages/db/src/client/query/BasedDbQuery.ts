@@ -401,6 +401,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   reBuildQuery() {
     this.id = undefined
+    this.buffer = undefined
 
     const def = createQueryDef(
       this.db,
