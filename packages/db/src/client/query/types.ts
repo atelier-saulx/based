@@ -14,6 +14,7 @@ export enum QueryType {
   default = 2,
   alias = 3,
   aggregates = 4,
+  aggregatesCountType = 5,
 }
 
 enum QueryDefType {
@@ -99,6 +100,7 @@ export type QueryDefAggregation = {
 }
 
 export type QueryDefShared = {
+  schemaChecksum?: Uint8Array
   errors: QueryError[]
   lang: LangCode
   filter: QueryDefFilter

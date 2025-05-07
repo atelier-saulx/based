@@ -1,5 +1,5 @@
 import { writeUint16 } from '@saulx/utils'
-import { QueryDef, QueryDefAggregation } from '../types.js'
+import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
 import { ID, PropDef, UINT32 } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
@@ -121,4 +121,30 @@ export const addAggregate = (
       def.aggregate.size += 6
     }
   }
+}
+
+export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
+  if (filterSize != 0) {
+    return false
+  }
+  if (def.type !== QueryDefType.Root) {
+    return false
+  }
+  if (def.aggregate.groupBy) {
+    return false
+  }
+  if (def.aggregate.aggregates.size !== 1) {
+    return false
+  }
+  if (!def.aggregate.aggregates.has(255)) {
+    return false
+  }
+  const aggs = def.aggregate.aggregates.get(255)
+  if (aggs.length !== 1) {
+    return false
+  }
+  if (aggs[0].type !== AggregateType.COUNT) {
+    return false
+  }
+  return true
 }

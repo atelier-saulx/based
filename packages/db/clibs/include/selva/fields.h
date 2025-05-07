@@ -377,8 +377,6 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
 
 /**
  * Destroy all fields of a node.
- * This will set nr_fields = 0, making setting new field values impossible
- * regardless wether the schema defines fields for this node.
  */
 SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
