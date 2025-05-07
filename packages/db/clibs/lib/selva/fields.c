@@ -1686,8 +1686,6 @@ struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *
 
 struct SelvaNode *selva_fields_resolve_weak_reference(const struct SelvaDb *db, const struct SelvaFieldSchema *fs, const struct SelvaNodeWeakReference *weak_ref)
 {
-    enum SelvaFieldType field_type = fs->type;
-
     assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE || fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
 
     node_type_t type = fs->edge_constraint.dst_node_type;
