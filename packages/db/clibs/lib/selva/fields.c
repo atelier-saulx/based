@@ -1653,8 +1653,11 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, 
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
 
-    /* TODO Get the fs */
-    if (field >= fields->nr_fields || /* fs->type != SELVA_FIELD_TYPE_WEAK_REFERENCE || */ !nfo->in_use) {
+#if 0
+    assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE);
+#endif
+
+    if (field >= fields->nr_fields || !nfo->in_use) {
         return (struct SelvaNodeWeakReference){};
     }
 
@@ -1668,8 +1671,11 @@ struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;
 
-    /* TODO Get the fs */
-    if (field >= fields->nr_fields || /* fs->type != SELVA_FIELD_TYPE_WEAK_REFERENCES || */ !nfo->in_use) {
+#if 0
+    assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
+#endif
+
+    if (field >= fields->nr_fields || !nfo->in_use) {
         return (struct SelvaNodeWeakReferences){};
     }
 
