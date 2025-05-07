@@ -490,14 +490,33 @@ test.serial('authorize', async (t: T) => {
     },
   })
 
+  t.teardown(async () => {
+    await client.destroy()
+    await clientOld.destroy()
+    await server.destroy()
+  })
+
+  let newErr: Error
+  let oldErr: Error
+  try {
+    await client.call('derpi', { derp: true })
+  } catch (e) {
+    newErr = e
+  }
+
+  try {
+    await clientOld.call('derpi', { derp: true })
+  } catch (e) {
+    oldErr = e
+  }
+
   await clientOld.setAuthState({ token: 'first_token' })
   await clientOld.call('derpi', { derp: true })
 
   await client.setAuthState({ token: 'first_token' })
   await client.call('derpi', { derp: true })
 
-  await client.destroy()
-  await clientOld.destroy()
-  await server.destroy()
+  t.is(newErr.message, oldErr.message)
+
   t.pass()
 })

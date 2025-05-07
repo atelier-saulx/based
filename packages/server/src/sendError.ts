@@ -8,7 +8,11 @@ import {
   isWsSession,
   BasedRoute,
 } from '@based/functions'
-import { valueToBuffer, encodeErrorResponse } from './protocol.js'
+import {
+  valueToBuffer,
+  encodeErrorResponse,
+  valueToBufferV1,
+} from './protocol.js'
 import { createError } from './error/index.js'
 import { BasedErrorCode, BasedErrorData, ErrorPayload } from '@based/errors'
 
@@ -56,7 +60,11 @@ export function sendErrorData(
     sendHttpErrorData(errorData, ctx)
   } else if (isWsSession(ctx.session)) {
     ctx.session.ws.send(
-      encodeErrorResponse(valueToBuffer(errorData, true)),
+      encodeErrorResponse(
+        ctx.session.v < 2
+          ? valueToBufferV1(errorData, true)
+          : valueToBuffer(errorData, true),
+      ),
       true,
       false,
     )
@@ -77,7 +85,11 @@ export function sendError<T extends BasedErrorCode>(
   } else if (isWsSession(ctx.session)) {
     const errorData = createError(server, ctx, basedCode, payload)
     ctx.session.ws.send(
-      encodeErrorResponse(valueToBuffer(errorData, true)),
+      encodeErrorResponse(
+        ctx.session.v < 2
+          ? valueToBufferV1(errorData, true)
+          : valueToBuffer(errorData, true),
+      ),
       true,
       false,
     )
@@ -120,7 +132,11 @@ export function sendSimpleError<T extends BasedErrorCode>(
   } else if (isWsSession(ctx.session)) {
     const errorData = createError(server, ctx, basedCode, payload)
     ctx.session.ws.send(
-      encodeErrorResponse(valueToBuffer(errorData, true)),
+      encodeErrorResponse(
+        ctx.session.v < 2
+          ? valueToBufferV1(errorData, true)
+          : valueToBuffer(errorData, true),
+      ),
       true,
       false,
     )
