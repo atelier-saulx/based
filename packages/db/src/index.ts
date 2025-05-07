@@ -79,6 +79,8 @@ export class BasedDb {
               q.reBuildQuery()
               registerQuery(q)
               response = undefined
+              timer = setTimeout(get, 0)
+              return
             }
             if (killed) {
               return

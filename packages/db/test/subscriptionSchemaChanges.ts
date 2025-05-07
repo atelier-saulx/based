@@ -46,7 +46,7 @@ const start = async (t, clientsN = 2) => {
             if (killed) {
               return
             }
-            timer = setTimeout(get, 100)
+            timer = setTimeout(get, 10)
             return
           }
         } else {
@@ -70,7 +70,7 @@ const start = async (t, clientsN = 2) => {
             lastLen = res.byteLength
             prevChecksum = checksum
           }
-          timer = setTimeout(get, 100)
+          timer = setTimeout(get, 10)
           return
         }
       }
@@ -124,9 +124,7 @@ await test('subscription schema changes', async (t) => {
     derp: 20,
     lang: 'de',
   })
-
   let cnt = 0
-
   const q = clients[1]
     .query('user')
     .include('derp', 'lang')
@@ -134,9 +132,7 @@ await test('subscription schema changes', async (t) => {
       s('friends').include('*')
     })
     .filter('lang', '=', 'de')
-
   const result1 = q.get().toObject()
-
   await clients[0].setSchema({
     types: {
       user: {
@@ -153,12 +149,9 @@ await test('subscription schema changes', async (t) => {
       },
     },
   })
-
-  await wait(100)
+  await wait(20)
   q.reBuildQuery()
-
   deepEqual(result1, q.get(), 'first schema change results are correct')
-
   const subResults = []
   const close = q.subscribe((q) => {
     subResults.push(q.toObject())
@@ -167,8 +160,7 @@ await test('subscription schema changes', async (t) => {
   t.after(() => {
     close()
   })
-
-  await wait(500)
+  await wait(20)
   await clients[0].setSchema({
     types: {
       user: {
@@ -185,12 +177,10 @@ await test('subscription schema changes', async (t) => {
       },
     },
   })
-
   await clients[0].update('user', 1, {
     derp: 100,
   })
-
-  await wait(100)
+  await wait(20)
   equal(cnt, 2, 'fired 2 times')
   deepEqual(
     subResults,
@@ -200,8 +190,6 @@ await test('subscription schema changes', async (t) => {
     ],
     'sub results correct',
   )
-
-  await wait(100)
 })
 
 await test('default subscription schema changes', async (t) => {
@@ -263,7 +251,7 @@ await test('default subscription schema changes', async (t) => {
     },
   })
 
-  await wait(100)
+  await wait(200)
   q.reBuildQuery()
 
   deepEqual(result1, q.get(), 'first schema change results are correct')
@@ -277,7 +265,7 @@ await test('default subscription schema changes', async (t) => {
     close()
   })
 
-  await wait(500)
+  await wait(200)
   await db.setSchema({
     types: {
       user: {
@@ -299,8 +287,8 @@ await test('default subscription schema changes', async (t) => {
     derp: 100,
   })
 
-  await wait(500)
-  equal(cnt > 1, 'fired more then 1 times')
+  await wait(200)
+  equal(cnt, 2, 'fired more then 1 times')
   deepEqual(
     subResults,
     [
