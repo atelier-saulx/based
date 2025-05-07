@@ -1,11 +1,11 @@
-import { equals, readUint64, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { DbClient, DbClientHooks } from '../src/client/index.js'
-import { BasedQueryResponse } from '../src/index.js'
+import { BasedDb, BasedQueryResponse } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import test from './shared/test.js'
-import { equal } from './shared/assert.js'
-import { italy } from './shared/examples.js'
 import { registerQuery } from '../src/client/query/registerQuery.js'
+import { equal } from 'assert'
+import { deepEqual } from './shared/assert.js'
 
 const start = async (t, clientsN = 2) => {
   const hooks: DbClientHooks = {
@@ -30,10 +30,6 @@ const start = async (t, clientsN = 2) => {
       let lastLen = 0
       let response: BasedQueryResponse
 
-      // server.onSchemaChange((schema) => {
-      //   console.log(schema)
-      // })
-
       const get = async () => {
         const schemaVersion = q.def.schemaChecksum
         if (schemaVersion && schemaVersion !== server.schema.hash) {
@@ -47,6 +43,9 @@ const start = async (t, clientsN = 2) => {
           }
         } else {
           const res = await server.getQueryBuf(q.buffer)
+          if (res.byteLength === 0) {
+            //
+          }
 
           if (!response) {
             response = new BasedQueryResponse(q.id, q.def, res, 0)
@@ -55,18 +54,10 @@ const start = async (t, clientsN = 2) => {
             response.end = res.byteLength
           }
           const checksum = response.checksum
-
           if (lastLen != res.byteLength || checksum != prevChecksum) {
             onData(response)
             lastLen = res.byteLength
             prevChecksum = checksum
-          } else {
-            // console.log(
-            //   response.checksum,
-            //   prevChecksum,
-            //   response.result.subarray(-4),
-            // )
-            // response.debug()
           }
           timer = setTimeout(get, 100)
         }
@@ -116,7 +107,7 @@ await test('subscription schema changes', async (t) => {
     },
   })
 
-  const x = await clients[0].create('user', {
+  await clients[0].create('user', {
     derp: 20,
     lang: 'de',
   })
@@ -131,8 +122,7 @@ await test('subscription schema changes', async (t) => {
     })
     .filter('lang', '=', 'de')
 
-  await q.get().inspect()
-  console.log(q.buffer.subarray(q.buffer.byteLength - 8))
+  const result1 = q.get().toObject()
 
   await clients[0].setSchema({
     types: {
@@ -151,29 +141,21 @@ await test('subscription schema changes', async (t) => {
     },
   })
 
-  // did this migrate?
   await wait(100)
   q.reBuildQuery()
-  await q.get().inspect().catch(console.error)
-  console.log(q.buffer.subarray(q.buffer.byteLength - 8))
-  // await clients[0]
-  //   .query('user')
-  //   .include('derp', 'lang')
-  //   .filter('lang', '=', 'de')
-  //   .get()
-  //   .inspect()
 
+  deepEqual(result1, q.get(), 'first schema change results are correct')
+
+  const subResults = []
   const close = q.subscribe((q) => {
+    subResults.push(q.toObject())
     cnt++
-    q.inspect()
-    console.log({ cnt })
   })
   t.after(() => {
     close()
   })
 
   await wait(500)
-  console.log('UPDATE SCHEMA')
   await clients[0].setSchema({
     types: {
       user: {
@@ -195,8 +177,125 @@ await test('subscription schema changes', async (t) => {
     derp: 100,
   })
 
-  // close()
+  await wait(100)
+  equal(cnt, 2, 'fired 2 times')
+  deepEqual(
+    subResults,
+    [
+      [{ id: 1, derp: 20, lang: 'de', friends: [] }],
+      [{ id: 1, derp: 100, lang: 'de', friends: [] }],
+    ],
+    'sub results correct',
+  )
 
-  await wait(2e3)
-  // add a list of things
+  await wait(100)
+})
+
+await test('default subscription schema changes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      user: {
+        derp: 'uint8',
+        location: 'string',
+        lang: 'string',
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    derp: 20,
+    lang: 'de',
+  })
+
+  let cnt = 0
+
+  const q = db
+    .query('user')
+    .include('derp', 'lang')
+    .include((s) => {
+      s('friends').include('*')
+    })
+    .filter('lang', '=', 'de')
+
+  const result1 = q.get().toObject()
+
+  await db.setSchema({
+    types: {
+      user: {
+        flap: 'uint16',
+        derp: 'uint8',
+        location: 'string',
+        lang: { type: 'string', maxBytes: 2 },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
+        },
+      },
+    },
+  })
+
+  await wait(100)
+  q.reBuildQuery()
+
+  deepEqual(result1, q.get(), 'first schema change results are correct')
+
+  const subResults = []
+  const close = q.subscribe((q) => {
+    subResults.push(q.toObject())
+    cnt++
+  })
+  t.after(() => {
+    close()
+  })
+
+  await wait(500)
+  await db.setSchema({
+    types: {
+      user: {
+        flap: 'uint16',
+        derp: 'uint8',
+        location: 'string',
+        lang: { type: 'string', maxBytes: 4 },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
+        },
+      },
+    },
+  })
+
+  await db.update('user', 1, {
+    derp: 100,
+  })
+
+  await wait(100)
+  equal(cnt, 2, 'fired 2 times')
+  deepEqual(
+    subResults,
+    [
+      [{ id: 1, derp: 20, lang: 'de', friends: [] }],
+      [{ id: 1, derp: 100, lang: 'de', friends: [] }],
+    ],
+    'sub results correct',
+  )
+
+  await wait(100)
 })
