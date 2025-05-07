@@ -1688,12 +1688,7 @@ struct SelvaNode *selva_fields_resolve_weak_reference(const struct SelvaDb *db, 
 {
     enum SelvaFieldType field_type = fs->type;
 
-    if (unlikely(field_type != SELVA_FIELD_TYPE_REFERENCE &&
-        field_type != SELVA_FIELD_TYPE_REFERENCES &&
-        field_type != SELVA_FIELD_TYPE_WEAK_REFERENCE &&
-        field_type != SELVA_FIELD_TYPE_WEAK_REFERENCES)) {
-        return nullptr;
-    }
+    assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE || fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
 
     node_type_t type = fs->edge_constraint.dst_node_type;
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
