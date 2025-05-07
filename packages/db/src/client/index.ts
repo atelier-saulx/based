@@ -115,6 +115,8 @@ export class DbClient {
       )
     }
 
+    // drain current things
+    await this.drain()
     const remoteSchema = await this.schemaPromise
 
     this.schemaProcessing = null
