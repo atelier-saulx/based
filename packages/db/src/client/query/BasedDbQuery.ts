@@ -41,9 +41,15 @@ export type SelectFn = (field: string) => BasedDbReferenceQuery
 
 export type BranchInclude = (select: SelectFn) => any
 
+export type QueryCommand = {
+  method: string
+  args: any[]
+}
+
 export class QueryBranch<T> {
   db: DbClient
   def: QueryDef
+  queryCommands: QueryCommand[]
 
   constructor(db: DbClient, def: QueryDef) {
     this.db = db
@@ -51,6 +57,13 @@ export class QueryBranch<T> {
   }
 
   sort(field: string, order: 'asc' | 'desc' = 'asc'): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'filter',
+        args: [field, order],
+      })
+    }
+
     sort(this.def, field, order)
     // @ts-ignore
     return this
@@ -62,6 +75,13 @@ export class QueryBranch<T> {
     value?: any,
     opts?: FilterOpts<O>,
   ): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'filter',
+        args: [field, operator, value, opts],
+      })
+    }
+
     const f = convertFilter(this.def, field, operator, value, opts)
     if (!f) {
       // @ts-ignore
@@ -73,6 +93,13 @@ export class QueryBranch<T> {
   }
 
   filterBatch(f: FilterAst) {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'filterBatch',
+        args: [f],
+      })
+    }
+
     filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
@@ -92,6 +119,13 @@ export class QueryBranch<T> {
     opts?: Omit<FilterOpts, 'lowerCase'> | Search,
     ...fields: Search[]
   ): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'search',
+        args: [query, field, opts, ...fields],
+      })
+    }
+
     if (ArrayBuffer.isView(query)) {
       // @ts-ignore
       vectorSearch(this.def, query, field, opts ?? {})
@@ -145,6 +179,13 @@ export class QueryBranch<T> {
   }
 
   groupBy(field: string): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'groupBy',
+        args: [field],
+      })
+    }
+
     groupBy(this.def, field)
     // only works with aggregates for now
     // @ts-ignore
@@ -152,6 +193,13 @@ export class QueryBranch<T> {
   }
 
   count(field: string = '$count'): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'count',
+        args: [field],
+      })
+    }
+
     const p = field.split('.')
     addAggregate(AggregateType.COUNT, this.def, p)
     // @ts-ignore
@@ -159,6 +207,13 @@ export class QueryBranch<T> {
   }
 
   sum(...fields: (string | string[])[]): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'sum',
+        args: fields,
+      })
+    }
+
     addAggregate(AggregateType.SUM, this.def, fields)
     // @ts-ignore
     return this
@@ -177,6 +232,13 @@ export class QueryBranch<T> {
     value?: any,
     opts?: FilterOpts,
   ): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'or',
+        args: [field, operator, value, opts],
+      })
+    }
+
     if (typeof field === 'function') {
       const f = new FilterBranch(
         this.db,
@@ -196,6 +258,10 @@ export class QueryBranch<T> {
   }
 
   range(start: number, end: number = DEF_RANGE_PROP_LIMIT): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({ method: 'range', args: [start, end] })
+    }
+
     const offset = start
     const limit = end - start
     if (validateRange(this.def, offset, limit)) {
@@ -211,6 +277,10 @@ export class QueryBranch<T> {
   }
 
   include(...fields: (string | BranchInclude | string[])[]): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({ method: 'include', args: fields })
+    }
+
     for (const f of fields) {
       if (typeof f === 'string') {
         includeField(this.def, f)
@@ -286,27 +356,32 @@ class GetPromise extends Promise<BasedQueryResponse> {
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   skipValidation = false
+  target: QueryTarget
 
   constructor(
     db: DbClient,
     type: string,
-    id?: QueryByAliasObj | number | Uint32Array | (QueryByAliasObj | number)[],
+    rawTarget?:
+      | QueryByAliasObj
+      | number
+      | Uint32Array
+      | (QueryByAliasObj | number)[],
     skipValidation?: boolean, // for internal use
   ) {
     const target: QueryTarget = {
       type,
     }
 
-    if (id) {
-      if (isAlias(id)) {
-        target.alias = id
+    if (rawTarget) {
+      if (isAlias(rawTarget)) {
+        target.alias = rawTarget
       } else {
-        if (Array.isArray(id) || id instanceof Uint32Array) {
+        if (Array.isArray(rawTarget) || rawTarget instanceof Uint32Array) {
           // TODO ADD MULTI ALIAS
           // @ts-ignore
-          target.ids = id
+          target.ids = rawTarget
         } else {
-          target.id = id
+          target.id = rawTarget
         }
       }
     }
@@ -318,6 +393,27 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
 
     super(db, def)
+    this.db = db
+    this.skipValidation = skipValidation
+    this.queryCommands = []
+    this.target = target
+  }
+
+  reBuildQuery() {
+    this.id = undefined
+
+    const def = createQueryDef(
+      this.db,
+      QueryDefType.Root,
+      this.target,
+      this.skipValidation,
+    )
+    this.def = def
+    const q = this.queryCommands
+    this.queryCommands = []
+    for (const command of q) {
+      this[command.method](...command.args)
+    }
   }
 
   #getInternal = async (resolve, reject) => {
