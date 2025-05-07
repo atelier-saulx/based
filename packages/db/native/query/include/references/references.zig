@@ -51,6 +51,7 @@ pub inline fn getRefsFields(
         .field = refField,
         .val = null,
         .score = null,
+
         .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
     }) catch return 0;
 
