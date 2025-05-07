@@ -139,7 +139,17 @@ export class DbClient {
     // Adds bidrectional refs on defs
     schemaToSelvaBuffer(this.schemaTypesParsed)
     // this has to happen before the listeners
+
+    const resCtx = this.modifyCtx.ctx
     this.modifyCtx.reset()
+    if (resCtx.queue?.size) {
+      const queue = resCtx.queue
+      resCtx.queue = null
+      for (const [resolve] of queue) {
+        // should we throw?
+        resolve(null)
+      }
+    }
 
     if (this.listeners?.schema) {
       for (const cb of this.listeners.schema) {
