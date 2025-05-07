@@ -27,8 +27,6 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     }
   }
 
-  // main
-
   if (def.include.main.len > 0) {
     // if (def.target.)
 

@@ -193,6 +193,7 @@ const inspectObject = (
           str += picocolors.blue(v) + '\n'
         }
       } else {
+        console.log('derp')
         str +=
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
       }
@@ -341,7 +342,7 @@ export const inspectData = (
 
   if (def.aggregate) {
     str += inspectObject(
-      q.toObject(),
+      'toObject' in q ? q.toObject() : q,
       def,
       '',
       level + 1,

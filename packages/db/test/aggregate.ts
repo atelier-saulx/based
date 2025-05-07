@@ -141,8 +141,8 @@ await test('aggregate', async (t) => {
     })
     .get()
   q2.debug() // ok
-
-  console.info(q2.toObject())
+  q2.inspect()
+  // console.info(q2.toObject())
 
   //--------------------------------------------------------
 
@@ -156,9 +156,9 @@ await test('aggregate', async (t) => {
       // .include('id')
     })
     .get()
-  console.log('----------')
+  // console.log('----------')
   q3.debug() // ok
-  q3.inspect(10, true)
+  q3.inspect()
 
   // await db.query('vote').sum('NL').get().inspect()
 
