@@ -26,7 +26,7 @@ pub fn aggregateRefsFields(
     originalType: db.Type,
     comptime isEdge: bool,
 ) !usize {
-    utils.debugPrint("include: {any}\n", .{include});
+    std.debug.print("include: {any}\n", .{include});
     const filterSize: u16 = read(u16, include, 0);
     const offset: u32 = read(u32, include, 2);
     const start: comptime_int = 6;
@@ -34,7 +34,8 @@ pub fn aggregateRefsFields(
     const hasFilter: bool = filterArr != null;
     const typeId: db.TypeId = read(u16, include, start + filterSize);
     const refField = include[start + 2 + filterSize];
-    const aggInput = include[(start + 4 + filterSize)..include.len]; // memo: +3 to skip
+    const aggRefInput = include[(start + 3 + filterSize)..include.len];
+    const hasGroupBy = (@as(aggregateTypes.GroupedBy, @enumFromInt(aggRefInput[0])) == .hasGroup);
 
     var resultsField = ctx.allocator.alloc(u8, ctx.size + 4) catch |err| {
         utils.debugPrint("Allocation failed: {any}\n", .{err});
@@ -46,13 +47,6 @@ pub fn aggregateRefsFields(
     var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     var index: usize = 1;
-    const groupCtx = try createGroupCtx(
-        aggInput[index .. index + GroupProtocolLen],
-        typeEntry,
-        ctx,
-    );
-    index += GroupProtocolLen;
-    const agg = aggInput[index..aggInput.len];
 
     if (isEdge) {
         //later
@@ -72,34 +66,47 @@ pub fn aggregateRefsFields(
     var i: usize = offset;
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
-            const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
-
             const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                 continue :checkItem;
             }
 
-            if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+            var agg: []u8 = undefined;
+            if (hasGroupBy) {
+                const groupCtx = try createGroupCtx(
+                    aggRefInput[index .. index + GroupProtocolLen],
+                    typeEntry,
+                    ctx,
+                );
+                index += GroupProtocolLen;
+                agg = aggRefInput[index..aggRefInput.len];
+
                 const groupValue = db.getField(typeEntry, db.getNodeId(refNode), refNode, groupCtx.fieldSchema, groupCtx.propType);
                 const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
                 if (!groupCtx.hashMap.contains(key)) {
-                    resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
+                    if (!ctx.allocator.resize(resultsField, groupCtx.resultsSize)) {
+                        utils.debugPrint("RGroup by allocation failed.\n", .{});
+                        return 0;
+                    }
                     @memset(resultsField, 0);
                     try groupCtx.hashMap.put(key, resultsField);
                     ctx.size += 2 + groupCtx.resultsSize;
                 } else {
                     resultsField = groupCtx.hashMap.get(key).?;
                 }
+            } else {
+                // skip 3 bytes for groupby.none and totalResultsPos
+                agg = aggRefInput[3..aggRefInput.len];
             }
             aggregate(agg, typeEntry, refNode, resultsField);
-            utils.debugPrint("resultsField: {d}\n", .{read(u32, resultsField, 0)});
+            std.debug.print("resultsField: {d}\n", .{read(u32, resultsField, 0)});
         }
     }
 
     const r: results.Result = .{
         .id = null,
         .field = refField,
-        .val = resultsField[0..4],
+        .val = resultsField,
         .refSize = 0,
         .includeMain = &.{},
         .refType = null,

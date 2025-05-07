@@ -72,6 +72,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       buf[9 + 1 + filterSize] = def.schema.idUint8[1] // typeId
       buf[9 + 2 + filterSize] = def.target.propDef.prop // refField
       const aggregateBuffer = aggregateToBuffer(def.aggregate)
+      console.log('aggregateBuffer: ', aggregateBuffer)
       buf.set(aggregateBuffer, 9 + 3 + filterSize)
 
       // buf[12 + filterSize] = aggregateSize

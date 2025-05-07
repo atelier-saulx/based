@@ -112,7 +112,7 @@ export const debug = (
               return picocolors.red(v)
             }
             if (a[j + i * w] === 250) {
-              return picocolors.yellow(v)
+              return picocolors.redBright(v)
             }
             return v
           })
