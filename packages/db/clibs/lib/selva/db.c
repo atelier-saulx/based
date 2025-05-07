@@ -427,7 +427,6 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
     if (!schema && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
         /*
          * Schema not found on this side, try the dst_type.
-         * TODO It would be nice to share the pointer.
          */
         struct SelvaTypeEntry *type_dst;
         const struct SelvaFieldSchema *dst_fs;
