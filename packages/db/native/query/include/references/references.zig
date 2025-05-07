@@ -78,7 +78,7 @@ pub inline fn getRefsFields(
             return 11;
         }
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             // default empty size - means a bug!
             return 10;
         };

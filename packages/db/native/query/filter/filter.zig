@@ -113,7 +113,7 @@ pub fn filter(
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
-            const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
+            const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
@@ -192,7 +192,7 @@ pub fn filter(
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else {
-                    const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                    const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
                     const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
@@ -230,7 +230,7 @@ pub fn filter(
                 if (i + 5 > end) {
                     break;
                 }
-                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(conditions[i + 5]);

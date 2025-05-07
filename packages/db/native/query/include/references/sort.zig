@@ -48,7 +48,7 @@ pub fn sortedReferences(
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
             }
-            const fs = db.getFieldSchema(sortField, typeEntry) catch {
+            const fs = db.getFieldSchema(typeEntry, sortField) catch {
                 return result;
             };
             const value = db.getField(typeEntry, 0, refNode, fs, sortProp);

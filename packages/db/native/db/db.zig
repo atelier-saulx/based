@@ -95,7 +95,7 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
-pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
+pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
     const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
         typeEntry.?,
         @bitCast(field),

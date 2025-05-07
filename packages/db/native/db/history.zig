@@ -42,8 +42,8 @@ fn _historyAppend(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         typeEntry,
     );
     const fieldSchema = try db.getFieldSchema(
-        0,
         typeEntry,
+        0,
     );
     const data = db.getField(
         typeEntry,
