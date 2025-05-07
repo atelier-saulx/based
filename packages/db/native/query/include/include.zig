@@ -22,10 +22,10 @@ inline fn addResult(
         .score = null,
         .field = field,
         .val = value,
-        .refSize = null,
+        .refSize = 0,
         .includeMain = main,
-        .refType = null,
-        .totalRefs = null,
+        .refType = t.ReadRefOp.none,
+        .totalRefs = 0,
         .isEdge = edgeType,
     };
 }

@@ -10,10 +10,10 @@ pub fn addIdOnly(
         .id = id,
         .field = @intFromEnum(t.ReadOp.ID), // id result enum
         .val = null,
-        .refSize = null,
+        .refSize = 0,
+        .totalRefs = 0,
         .includeMain = &.{},
-        .refType = null,
-        .totalRefs = null,
+        .refType = t.ReadRefOp.none,
         .score = score,
         .isEdge = t.Prop.NULL,
     });

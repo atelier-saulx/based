@@ -38,6 +38,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
+
     defer arena.deinit();
     const allocator = arena.allocator();
 
