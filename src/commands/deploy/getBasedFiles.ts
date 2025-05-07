@@ -42,10 +42,10 @@ export const getBasedFiles = async (
           return walk(path)
         }
 
-        if (!options.schemaOnly && isConfigFile(file)) {
+        if (!options?.schemaOnly && isConfigFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Based.Deploy.Configs
-        } else if (!options.functionsOnly && isSchemaFile(file)) {
+        } else if (!options?.functionsOnly && isSchemaFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Based.Deploy.Configs
           multipleSchemas.push(file)
