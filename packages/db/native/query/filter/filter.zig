@@ -148,28 +148,32 @@ pub fn filter(
             const prop: Prop = @enumFromInt(conditions[i + 3]);
             if (isEdge) {
                 if (ref) |r| {
+                    if (r.edgeConstaint == null) {
+                        std.log.err("Trying to get an edge field from a weakRef \n", .{});
+                        // Is a edge ref cant filter on an edge field!
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+
+                    const edgeFs = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint.?, field) catch null;
+                    if (edgeFs == null) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+
                     if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(ctx, r.reference.?, field);
+                        const refs = db.getEdgeReferences(r.reference.?, edgeFs.?);
                         if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(ctx, r.reference.?, field);
+                        const checkRef = db.getEdgeReference(r.reference.?, edgeFs.?);
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (r.edgeConstaint != null) {
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, r.edgeConstaint.?, field) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-                        const value = db.getEdgeProp(r.reference.?, edgeFieldSchema);
+                        const value = db.getEdgeProp(r.reference.?, edgeFs.?);
                         if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else {
-                        std.log.err("Trying to get an edge field from a weakRef \n", .{});
-                        // Is a edge ref cant filter on an edge field!
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else if (negate == Type.default) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

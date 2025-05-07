@@ -352,15 +352,13 @@ pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFi
 }
 
 pub fn getEdgeReferences(
-    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
-    field: u8,
+    fieldSchema: FieldSchema,
 ) ?selva.SelvaNodeWeakReferences {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_references(
-            ctx.selva,
             ref.meta,
-            field,
+            fieldSchema,
         );
     }
     return null;
@@ -374,15 +372,13 @@ pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.S
 }
 
 pub fn getEdgeReference(
-    ctx: *DbCtx,
     ref: *selva.SelvaNodeReference,
-    field: u8,
+    fieldSchema: FieldSchema,
 ) ?selva.SelvaNodeWeakReference {
     if (ref.meta != null) {
         return selva.selva_fields_get_weak_reference(
-            ctx.selva,
             ref.meta,
-            field,
+            fieldSchema,
         );
     }
     return null;
