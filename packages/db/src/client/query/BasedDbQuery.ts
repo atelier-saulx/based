@@ -327,7 +327,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     let buf: Uint8Array
     try {
       buf = registerQuery(this)
-      console.log('b: ', buf)
     } catch (err) {
       reject(err)
       return

@@ -37,6 +37,7 @@ pub inline fn execAgg(
 }
 
 pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) void {
+    utils.debugPrint("agg: {any}\n", .{agg});
     var i: usize = 0;
     const field = agg[i];
     i += 1;

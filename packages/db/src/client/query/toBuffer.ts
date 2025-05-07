@@ -56,8 +56,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
 
     if ('propDef' in def.target) {
       if (def.target.propDef.typeIndex == REFERENCES) {
-        const buf = new Uint8Array(16 + filterSize)
-        const sz = size + 13 + filterSize
+        const buf = new Uint8Array(17 + filterSize + aggregateSize)
+        const sz = size + 13 + filterSize + aggregateSize
 
         buf[0] = includeOp.REFERENCES_AGGREGATION
         buf[1] = sz
@@ -76,9 +76,16 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         if (filterSize) {
           buf.set(filterToBuffer(def.filter), 13)
         }
-        buf[13 + filterSize] = def.schema.idUint8[0]
-        buf[13 + 1 + filterSize] = def.schema.idUint8[1]
-        buf[13 + 2 + filterSize] = def.target.propDef.prop
+
+        // required to get typeEntry and fieldSchema
+        buf[13 + filterSize] = def.schema.idUint8[0] // typeId
+        buf[13 + 1 + filterSize] = def.schema.idUint8[1] // typeId
+        buf[13 + 2 + filterSize] = def.target.propDef.prop // refField
+
+        const aggregateBuffer = aggregateToBuffer(def.aggregate)
+        // buf[16 + filterSize] = aggregateSize
+        // buf[17 + filterSize] = aggregateSize >>> 8
+        buf.set(aggregateBuffer, 16 + filterSize)
 
         result.push(buf)
       }

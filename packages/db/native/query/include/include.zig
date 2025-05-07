@@ -100,7 +100,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             includeIterator += refSize + 2;
 
             size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
-            continue :includeField;
+            return size;
         }
 
         const field: u8 = @intFromEnum(op);

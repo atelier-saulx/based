@@ -31,12 +31,13 @@ pub fn aggregateRefsFields(
     const typeId: db.TypeId = read(u16, include, start + filterSize);
     const refField = include[start + 2 + filterSize];
     const typeEntry = db.getType(ctx.db, typeId) catch null;
-    const agg = include[(start + 3 + filterSize)..include.len];
+    // const aggSize = read(u16, include, (start + 3 + filterSize));
+    const agg = include[(start + 3 + 3 + filterSize)..include.len]; // skip 3 bytes: bug
+    utils.debugPrint("agg: {any}\n", .{agg});
 
     var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
 
-    const result: incTypes.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
 
     var resultsField = ctx.allocator.alloc(u8, ctx.size + 4) catch |err| {
@@ -50,17 +51,17 @@ pub fn aggregateRefsFields(
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch {
             // default empty size - means a bug!
-            return 0; // MV: TBD
+            return 10;
         };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) { // default empty size - this should never happen
-            return 0; // MV: TBD
+            return 10;
         }
     }
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
 
-    checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
+    checkItem: while (i < refsCnt and i < limit) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
             const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(
@@ -76,22 +77,26 @@ pub fn aggregateRefsFields(
                 continue :checkItem;
             }
             aggregate(agg, typeEntry.?, refNode, resultsField);
+            utils.debugPrint("resultsField: {d}\n", .{read(u32, resultsField, 0)});
         }
     }
-    // put a result and return the size
+
+    // to be reviewed
     const r: results.Result = .{
         .id = null,
-        .field = 0,
-        .val = resultsField,
+        .field = refField,
+        .val = resultsField[0..4],
         .refSize = 0,
         .includeMain = &.{},
         .refType = null,
         .totalRefs = refsCnt,
         .score = null,
         .isEdge = types.Prop.NULL,
-        .aggregateResult = read(u32, resultsField[0..3], 0),
+        .aggregateResult = read(u32, resultsField, 0),
     };
     ctx.results.append(r) catch return 0;
+    ctx.totalResults += 1;
+    ctx.size = 9;
 
-    return 1 + 4 + 4 + (&[_]u8{}).len;
+    return 9; // @sizeOf(@TypeOf(r));
 }
