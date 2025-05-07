@@ -5,8 +5,6 @@ import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
 import { ENCODER } from '@saulx/utils'
-import { buffer } from 'node:stream/consumers'
-import { REFERENCES } from '@based/schema/def'
 import { aggregateToBuffer, isRootCountOnly } from './aggregates/aggregation.js'
 
 const byteSize = (arr: Uint8Array[]) => {
@@ -50,41 +48,36 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
     const filterSize = def.filter.size || 0
 
-    if ('propDef' in def.target) {
-      if (def.target.propDef.typeIndex == REFERENCES) {
-        const buf = new Uint8Array(17 + filterSize + aggregateSize)
-        const sz = size + 13 + filterSize + aggregateSize
+    if (def.type === QueryDefType.References) {
+      const buf = new Uint8Array(13 + filterSize + aggregateSize)
+      const sz = 10 + filterSize + aggregateSize
 
-        buf[0] = includeOp.REFERENCES_AGGREGATION
-        buf[1] = sz
-        buf[2] = sz >>> 8
-        buf[3] = filterSize
-        buf[4] = filterSize >>> 8
-        buf[5] = def.range.offset
-        buf[6] = def.range.offset >>> 8
-        buf[7] = def.range.offset >>> 16
-        buf[8] = def.range.offset >>> 24
-        buf[9] = def.range.limit
-        buf[10] = def.range.limit >>> 8
-        buf[11] = def.range.limit >>> 16
-        buf[12] = def.range.limit >>> 24
+      buf[0] = includeOp.REFERENCES_AGGREGATION
+      buf[1] = sz
+      buf[2] = sz >>> 8
+      // ---
+      buf[3] = filterSize
+      buf[4] = filterSize >>> 8
+      buf[5] = def.range.offset
+      buf[6] = def.range.offset >>> 8
+      buf[7] = def.range.offset >>> 16
+      buf[8] = def.range.offset >>> 24
 
-        if (filterSize) {
-          buf.set(filterToBuffer(def.filter), 13)
-        }
-
-        // required to get typeEntry and fieldSchema
-        buf[13 + filterSize] = def.schema.idUint8[0] // typeId
-        buf[13 + 1 + filterSize] = def.schema.idUint8[1] // typeId
-        buf[13 + 2 + filterSize] = def.target.propDef.prop // refField
-
-        const aggregateBuffer = aggregateToBuffer(def.aggregate)
-        // buf[16 + filterSize] = aggregateSize
-        // buf[17 + filterSize] = aggregateSize >>> 8
-        buf.set(aggregateBuffer, 16 + filterSize)
-
-        result.push(buf)
+      if (filterSize) {
+        buf.set(filterToBuffer(def.filter), 9)
       }
+
+      // required to get typeEntry and fieldSchema
+      buf[9 + filterSize] = def.schema.idUint8[0] // typeId
+      buf[9 + 1 + filterSize] = def.schema.idUint8[1] // typeId
+      buf[9 + 2 + filterSize] = def.target.propDef.prop // refField
+
+      const aggregateBuffer = aggregateToBuffer(def.aggregate)
+      // buf[16 + filterSize] = aggregateSize
+      // buf[17 + filterSize] = aggregateSize >>> 8
+      buf.set(aggregateBuffer, 9 + 3 + filterSize)
+
+      result.push(buf)
     } else {
       const buf = new Uint8Array(16 + filterSize + aggregateSize)
       buf[0] = isRootCountOnly(def, filterSize)

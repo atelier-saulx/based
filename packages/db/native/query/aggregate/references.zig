@@ -22,16 +22,15 @@ pub fn aggregateRefsFields(
     originalType: db.Type,
     comptime isEdge: bool,
 ) usize {
+    utils.debugPrint("include: {any}\n", .{include});
     const filterSize: u16 = read(u16, include, 0);
     const offset: u32 = read(u32, include, 2);
-    const limit: u32 = read(u32, include, 6);
-    const start: comptime_int = 10;
+    const start: comptime_int = 6;
     const filterArr: ?[]u8 = if (filterSize > 0) include[start .. start + filterSize] else null;
     const hasFilter: bool = filterArr != null;
     const typeId: db.TypeId = read(u16, include, start + filterSize);
     const refField = include[start + 2 + filterSize];
     const typeEntry = db.getType(ctx.db, typeId) catch null;
-    // const aggSize = read(u16, include, (start + 3 + filterSize));
     const agg = include[(start + 3 + 3 + filterSize)..include.len]; // skip 3 bytes: bug
     utils.debugPrint("agg: {any}\n", .{agg});
 
@@ -61,7 +60,7 @@ pub fn aggregateRefsFields(
     }
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
 
-    checkItem: while (i < refsCnt and i < limit) : (i += 1) {
+    checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
             const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
             if (hasFilter and !filter(
@@ -81,7 +80,6 @@ pub fn aggregateRefsFields(
         }
     }
 
-    // to be reviewed
     const r: results.Result = .{
         .id = null,
         .field = refField,
@@ -92,11 +90,10 @@ pub fn aggregateRefsFields(
         .totalRefs = refsCnt,
         .score = null,
         .isEdge = types.Prop.NULL,
-        .aggregateResult = read(u32, resultsField, 0),
+        .isAggregate = true,
     };
     ctx.results.append(r) catch return 0;
     ctx.totalResults += 1;
-    ctx.size = 9;
 
-    return 9; // @sizeOf(@TypeOf(r));
+    return 10;
 }
