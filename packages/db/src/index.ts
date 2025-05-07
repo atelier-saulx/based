@@ -68,6 +68,7 @@ export class BasedDb {
       maxModifySize,
       hooks: {
         subscribe(q, onData, onError) {
+          let killed = false
           let timer: ReturnType<typeof setTimeout>
           let prevChecksum: number
           let lastLen = 0
@@ -79,7 +80,13 @@ export class BasedDb {
               registerQuery(q)
               response = undefined
             }
+            if (killed) {
+              return
+            }
             const res = await server.getQueryBuf(q.buffer)
+            if (killed) {
+              return
+            }
             if (!response) {
               response = new BasedQueryResponse(q.id, q.def, res, 0)
             } else {
@@ -96,6 +103,7 @@ export class BasedDb {
           }
           get()
           return () => {
+            killed = true
             clearTimeout(timer)
           }
         },
