@@ -11,26 +11,14 @@ const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
 
-// Add comptime to reduce the size of this
+// Add comptime for SCORE to reduce the size of this
 pub const Result = struct {
-    id: ?u32, // 4
-    field: u8, // 1
+    id: ?u32,
+    field: u8,
     type: t.ResultType,
-    // refType: t.ReadRefOp, // 1 // 1 byte type (ref op, edge, aggregate)
-    // refSize: u32, // use u32 REMOVE THIS
-    // totalRefs: u32, // use u32 // REMOVE THIS
-    // isEdge: t.Prop, // 1
-    score: ?[4]u8, // 4 - do this with comptime var - would expect 35 (is 69...)
-    val: ?[]u8, // 8 (or more?)
+    score: ?[4]u8,
+    val: ?[]u8,
     includeMain: ?[]u8, // 8 remove this just copy it in diretly
-};
-
-pub const ResultSmaller = struct {
-    field: u8, // 1
-    type: t.ResultType, // 1
-    val: ?[]u8, // 16 (or more?)
-    id: ?u32, // 4
-    score: ?[4]u8, // COMPTIME FOR THIS (another 4 saved)
 };
 
 const HEADER_SIZE = 8;
@@ -39,7 +27,7 @@ pub fn createResultsBuffer(
     ctx: *QueryCtx,
     env: c.napi_env,
 ) !c.napi_value {
-    // std.debug.print("size of result {any} {any} \n", .{ @sizeOf(Result), @sizeOf(ResultSmaller) });
+    // std.debug.print("size of result {any} \n", .{ @sizeOf(Result) });
 
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;

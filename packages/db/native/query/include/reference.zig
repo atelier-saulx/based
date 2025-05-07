@@ -38,6 +38,7 @@ pub fn getSingleRefFields(
         .includeMain = null,
         .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;
+
     // way less efficient use alloc.create()....
     const resultIndex: usize = ctx.results.items.len - 1;
 
