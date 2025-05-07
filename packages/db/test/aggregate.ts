@@ -132,11 +132,12 @@ await test('aggregate', async (t) => {
     .include((select) => {
       select('votes')
         // don't break line
-        .groupBy('sequence')
-        .sum('NL')
+        // .groupBy('sequence')
+        .sum('NL', 'AU') // 'AU'
       // .include('id')
     })
     .get()
+
   q2.debug() // ok
   //--------------------------------------------------------
 

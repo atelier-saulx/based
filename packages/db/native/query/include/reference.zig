@@ -8,6 +8,7 @@ const std = @import("std");
 const results = @import("../results.zig");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
+const utils = @import("../../utils.zig");
 
 //  Single Reference Protocol Schema:
 
@@ -34,14 +35,10 @@ pub fn getSingleRefFields(
         .score = null,
         .field = refField,
         .val = null,
-        .refSize = 0,
-        .includeMain = null,
-        .refType = t.ReadRefOp.REFERENCE, // from result
-        .totalRefs = null,
-        .isEdge = if (isEdge) t.Prop.REFERENCE else t.Prop.NULL,
-        .isAggregate = false,
+        .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;
 
+    // way less efficient use alloc.create()....
     const resultIndex: usize = ctx.results.items.len - 1;
 
     // add error handler...
@@ -115,7 +112,12 @@ pub fn getSingleRefFields(
         false,
     ) catch 0;
 
-    ctx.results.items[resultIndex].refSize = resultSizeNest;
+    const val = ctx.allocator.alloc(u8, 4) catch {
+        return 10;
+    };
+
+    utils.writeInt(u32, val, 0, resultSizeNest);
+    ctx.results.items[resultIndex].val = val;
 
     size += 6 + resultSizeNest;
 

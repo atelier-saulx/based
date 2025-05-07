@@ -308,9 +308,9 @@ await test('schema with many uint8 fields', async (t) => {
         .include(['status'])
         .get()
 
-      if (!myThings.length) {
-        console.log(myThings)
-      }
+      // if (!myThings.length) {
+      //   console.log(myThings)
+      // }
 
       for (const thing of myThings) {
         const listener = ids.get(thing.id)

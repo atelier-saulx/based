@@ -256,9 +256,9 @@ const inspectObject = (
                 ` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`,
               ), // MV: better with AggregateType later
             )
+          } else {
+            str += picocolors.blue(v)
           }
-          // str += ',\n'
-          // str += picocolors.blue(v)
         } else if (typeof v === 'object' && v) {
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {

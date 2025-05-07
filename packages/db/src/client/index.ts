@@ -5,7 +5,12 @@ import {
   updateTypeDefs,
   schemaToSelvaBuffer,
 } from '@based/schema/def'
-import { flushBuffer, ModifyCtx, startDrain } from './flushModify.js'
+import {
+  execCtxQueue,
+  flushBuffer,
+  ModifyCtx,
+  startDrain,
+} from './flushModify.js'
 
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
@@ -13,7 +18,7 @@ import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
 import { DbServer } from '../server/index.js'
-import { deepCopy, deepEqual, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
@@ -42,7 +47,7 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-type DbClientSchema = StrictSchema & { lastId: number }
+type DbClientSchema = DbServer['schema']
 
 const makeFlushIsReady = (dbClient: DbClient) => {
   dbClient.flushIsReady = new Promise<void>((resolve) => {
@@ -91,7 +96,6 @@ export class DbClient {
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
-  schemaChecksum: number
   schemaProcessing: number
   schemaPromise: Promise<DbServer['schema']>
 
@@ -106,6 +110,8 @@ export class DbClient {
       return this.schema
     }
 
+    // drain current things
+    await this.drain()
     const checksum = hash(strictSchema)
     if (checksum !== this.schemaProcessing) {
       this.schemaProcessing = checksum
@@ -115,6 +121,7 @@ export class DbClient {
         transformFns,
       )
     }
+
     const remoteSchema = await this.schemaPromise
 
     this.schemaProcessing = null
@@ -123,25 +130,37 @@ export class DbClient {
     return this.putLocalSchema(remoteSchema)
   }
 
-  putLocalSchema(schema) {
-    const checksum = hash(schema)
-    if (this.schemaChecksum === checksum) {
+  putLocalSchema(schema: DbServer['schema']) {
+    if (this.schema && this.schema.hash === schema.hash) {
       return this.schema
     }
-    this.schemaChecksum = checksum
+
     this.schema = schema
+
     updateTypeDefs(
       this.schema,
       this.schemaTypesParsed,
       this.schemaTypesParsedById,
     )
+
     // Adds bidrectional refs on defs
     schemaToSelvaBuffer(this.schemaTypesParsed)
+    // this has to happen before the listeners
+
+    if (this.modifyCtx.len > 8) {
+      console.info('Modify cancelled - schema updated')
+    }
+
+    const resCtx = this.modifyCtx.ctx
+    this.modifyCtx.reset()
+    execCtxQueue(resCtx, true)
+
     if (this.listeners?.schema) {
       for (const cb of this.listeners.schema) {
         cb(this.schema)
       }
     }
+
     return this.schema
   }
 
@@ -162,12 +181,12 @@ export class DbClient {
       .toObject()
 
     if (typeof objOrTransformFn === 'function') {
-      const { id, ...props } = await objOrTransformFn(item)
+      const { id: _, ...props } = await objOrTransformFn(item)
       return this.create(type, props)
     }
 
     if (typeof objOrTransformFn === 'object' && objOrTransformFn !== null) {
-      const { id, ...props } = item
+      const { id: _, ...props } = item
       await Promise.all(
         Object.keys(objOrTransformFn).map(async (key) => {
           const val = objOrTransformFn[key]
@@ -188,7 +207,7 @@ export class DbClient {
       return this.create(type, props)
     }
 
-    const { id, ...props } = item
+    const { id: _, ...props } = item
     return this.create(type, props)
   }
 

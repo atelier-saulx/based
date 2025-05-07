@@ -5,15 +5,13 @@ import {
 } from 'node:worker_threads'
 import native from '../native.js'
 
-let workerCtx
-
 if (isMainThread) {
   console.warn('running query worker.ts in mainthread')
 } else {
   let { address, channel } = workerData
   let dbCtx = native.externalFromInt(address)
 
-  workerCtx = native.workerCtxInit()
+  native.workerCtxInit()
 
   // const transferList = new Array(1)
   const handleMsg = (msg) => {

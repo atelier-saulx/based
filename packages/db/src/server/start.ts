@@ -1,4 +1,3 @@
-import { stringHash } from '@saulx/hash'
 import { DbServer, DbWorker, SCHEMA_FILE, WRITELOG_FILE } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'

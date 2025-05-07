@@ -199,7 +199,7 @@
     apply(yo, yo_NG) \
     apply(zu, zu_ZA) \
     apply(ka, ka_GE) \
-    apply(cnr, sr_ME)
+    apply(cnr, sr_ME) /* TODO missing locale */
 #else
 #define FORALL_LANGS(apply) \
     apply(en, en_GB)

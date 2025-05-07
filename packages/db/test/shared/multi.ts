@@ -18,7 +18,8 @@ export const start = async (t, clientsN = 2) => {
     async flushModify(buf) {
       buf = new Uint8Array(buf)
       await setTimeout(20)
-      const { ...offsets } = server.modify(buf)
+      let offsets = server.modify(buf)
+      offsets = offsets && { ...offsets }
       await setTimeout(~~(Math.random() * 100))
       return { offsets }
     },

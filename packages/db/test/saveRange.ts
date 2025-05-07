@@ -11,8 +11,8 @@ await test('save simple range', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    // TODO No crash if stopped
-    // return db.destroy()
+    // TODO No crash if stopped (youzi: seems to work now)
+    return db.destroy()
   })
 
   await db.setSchema({
@@ -310,7 +310,7 @@ await test('ref block moves', async (t) => {
     types: {
       a: {
         props: {
-          bref: { ref: 'b', prop: 'aref', },
+          bref: { ref: 'b', prop: 'aref' },
           x: { type: 'uint8' },
         },
       },
@@ -353,7 +353,7 @@ await test('ref removal', async (t) => {
     types: {
       a: {
         props: {
-          bref: { ref: 'b', prop: 'aref', },
+          bref: { ref: 'b', prop: 'aref' },
           x: { type: 'uint8' },
         },
       },
@@ -368,11 +368,11 @@ await test('ref removal', async (t) => {
 
   for (let i = 0; i < 100_000; i++) {
     const a = db.create('a', { x: i % 256 })
-    db.create('b', { y: 255 - i % 256, aref: a })
+    db.create('b', { y: 255 - (i % 256), aref: a })
   }
   await db.save()
   for (let i = 0; i < 100_000; i++) {
-      db.update('a', i + 1, { bref: null })
+    db.update('a', i + 1, { bref: null })
   }
 
   // t.backup will continue the test from here
@@ -389,7 +389,7 @@ await test('refs removal with delete', async (t) => {
     types: {
       a: {
         props: {
-            brefs: { items: { ref: 'b', prop: 'aref', }},
+          brefs: { items: { ref: 'b', prop: 'aref' } },
           x: { type: 'uint8' },
         },
       },
@@ -404,7 +404,7 @@ await test('refs removal with delete', async (t) => {
 
   const a = db.create('a', { x: 13 })
   for (let i = 0; i < 10; i++) {
-    db.create('b', { y: 255 - i % 256, aref: a })
+    db.create('b', { y: 255 - (i % 256), aref: a })
   }
   await db.save()
   db.delete('a', a)

@@ -52,7 +52,7 @@ await test('expire', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  t.after(() => db2.destroy())
+  t.after(() => db2.destroy(), true)
   await db2.start()
 
   equal((await db2.query('token').get().toObject()).length, 1)

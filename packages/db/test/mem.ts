@@ -11,7 +11,7 @@ await test('mem', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  db.setSchema({
+  await db.setSchema({
     types: {
       data: {
         props: {

@@ -1,6 +1,7 @@
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { DbClient } from './index.js'
 import { ModifyState } from './modify/ModifyRes.js'
+import { writeUint64 } from '@saulx/utils'
 
 // TODO This definitely shouldn't be copy-pasted here from server/tree.ts
 const makeCsmtKeyFromNodeId = (
@@ -17,9 +18,10 @@ export class ModifyCtx {
     this.max = db.maxModifySize
     this.db = db
     this.buf = new Uint8Array(db.maxModifySize)
+    this.reset()
   }
   // default values
-  len: number = 0
+  len: number = 8
   id = -1
   hasSortField = -1
   hasSortText = -1
@@ -101,11 +103,43 @@ export class ModifyCtx {
       view.setFloat64(i, key, true)
       i += 8
     }
-    data[i++] = this.len
-    data[i++] = this.len >>> 8
-    data[i++] = this.len >>> 16
-    data[i++] = this.len >>> 24
+    const lenMinusSchemaHash = this.len - 8
+    data[i++] = lenMinusSchemaHash
+    data[i++] = lenMinusSchemaHash >>> 8
+    data[i++] = lenMinusSchemaHash >>> 16
+    data[i++] = lenMinusSchemaHash >>> 24
     return data
+  }
+  reset() {
+    this.dirtyTypes.clear()
+    this.dirtyRanges.clear()
+    writeUint64(this.buf, this.db.schema?.hash || 0, 0)
+    this.len = 8
+    this.prefix0 = -1
+    this.prefix1 = -1
+    this.lastMain = -1
+    // should these also be reset in setcursor?
+    this.hasSortText = -1
+    this.hasSortField = -1
+    this.max = this.db.maxModifySize
+    this.ctx = {}
+  }
+}
+
+export const execCtxQueue = (resCtx: ModifyCtx['ctx'], error?: boolean) => {
+  if (resCtx.queue?.size) {
+    const queue = resCtx.queue
+    resCtx.queue = null
+    if (error) {
+      for (const [resolve] of queue) {
+        // should we throw?
+        resolve(null)
+      }
+    } else {
+      for (const [resolve, res] of queue) {
+        resolve(res.getId())
+      }
+    }
   }
 }
 
@@ -113,7 +147,8 @@ export const flushBuffer = (db: DbClient) => {
   const ctx = db.modifyCtx
   let flushPromise: Promise<void>
 
-  if (ctx.len) {
+  if (ctx.len > 8) {
+    // always has schema hash
     const lastIds = {}
     const data = ctx.getData(lastIds)
     const resCtx = ctx.ctx
@@ -123,37 +158,31 @@ export const flushBuffer = (db: DbClient) => {
       .flushModify(data)
       .then(({ offsets, dbWriteTime }) => {
         db.writeTime += dbWriteTime ?? 0
-        resCtx.offsets = offsets
-        for (const typeId in lastIds) {
-          if (typeId in offsets) {
-            const lastId = lastIds[typeId] + offsets[typeId]
-            const def = db.schemaTypesParsedById[typeId]
-            const delta = lastId - def.lastId
-            if (delta > 0) {
-              def.lastId += delta
-              def.total += delta
+        if (offsets) {
+          resCtx.offsets = offsets
+          for (const typeId in lastIds) {
+            if (typeId in offsets) {
+              const lastId = lastIds[typeId] + offsets[typeId]
+              const def = db.schemaTypesParsedById[typeId]
+              const delta = lastId - def.lastId
+              if (delta > 0) {
+                def.lastId += delta
+                def.total += delta
+              }
+            } else {
+              console.error('Panic: No offset returned in flushModify')
             }
-          } else {
-            console.error('Panic: No offset returned in flushModify')
           }
+          execCtxQueue(resCtx)
+        } else {
+          console.info('Modify cancelled - schema mismatch')
+          execCtxQueue(resCtx, true)
         }
-        if (resCtx.queue?.size) {
-          const queue = resCtx.queue
-          resCtx.queue = null
-          for (const [resolve, res] of queue) {
-            resolve(res.getId())
-          }
-        }
+
         db.flushReady()
       })
 
-    ctx.dirtyTypes.clear()
-    ctx.dirtyRanges.clear()
-    ctx.len = 0
-    ctx.prefix0 = -1
-    ctx.prefix1 = -1
-    ctx.max = db.maxModifySize
-    ctx.ctx = {}
+    ctx.reset()
   } else {
     db.flushReady()
   }
