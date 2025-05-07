@@ -50,13 +50,15 @@ pub inline fn getRefsFields(
         .id = null,
         .field = refField,
         .val = null,
-        .refSize = 0,
-        .includeMain = null,
         .score = null,
+<<<<<<< HEAD
         .refType = t.ReadRefOp.REFERENCES,
         .totalRefs = 0,
         .isEdge = if (isEdge) t.Prop.WEAK_REFERENCES else t.Prop.NULL,
         .isAggregate = false,
+=======
+        .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
+>>>>>>> origin/secret-mega-project
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
@@ -109,8 +111,14 @@ pub inline fn getRefsFields(
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];
-    r.*.refSize = result.size;
-    r.*.totalRefs = result.cnt;
+
+    const val = ctx.allocator.alloc(u8, 8) catch {
+        return 10;
+    };
+
+    utils.writeInt(u32, val, 0, result.size);
+    utils.writeInt(u32, val, 4, result.cnt);
+    r.*.val = val;
 
     if (isEdge) {
         result.size += 1;

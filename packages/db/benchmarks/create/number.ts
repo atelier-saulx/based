@@ -1,7 +1,7 @@
 import { benchmark } from '../utils'
 
 benchmark('create 1m uint32', async (db) => {
-  db.setSchema({
+  await db.setSchema({
     types: {
       test: {
         uint32: 'uint32',

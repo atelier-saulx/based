@@ -19,7 +19,7 @@ async function initDb(t) {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  db.setSchema({
+  await db.setSchema({
     types: {
       data: {
         props: {

@@ -183,6 +183,7 @@ await test('save', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+
   t.after(() => t.backup(db))
 
   await db.setSchema({
@@ -210,15 +211,19 @@ await test('save', async (t) => {
 
   await db.drain()
   await db.save()
+
   db.delete('user', first)
+
   await db.drain()
   await db.save()
 
   const db2 = new BasedDb({
     path: t.tmp,
   })
+
   await db2.start()
-  t.after(() => db2.destroy())
+
+  t.after(() => db2.destroy(), true)
 
   deepEqual(await db2.query('user').include('id').get().toObject(), [{ id: 2 }])
   deepEqual(await db.query('user').include('id').get().toObject(), [{ id: 2 }])

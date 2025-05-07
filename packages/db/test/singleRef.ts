@@ -12,6 +12,8 @@ await test('single special cases', async (t) => {
 
   await db.start({ clean: true })
 
+  t.after(() => db.destroy())
+
   await db.setSchema({
     types: {
       user: {
@@ -60,8 +62,6 @@ await test('single special cases', async (t) => {
   await db.update('user', 1, {
     name: 'change2',
   })
-
-  await db.destroy()
 })
 
 await test('single simple', async (t) => {

@@ -165,6 +165,7 @@ pub const LangCode = enum(u8) { NONE = 0, _ };
 pub const MAIN_PROP: u8 = 0;
 
 pub const ReadOp = enum(u8) {
+    NONE = 0,
     ID = 255,
     EDGE = 252,
     REFERENCES = 253,
@@ -183,6 +184,17 @@ pub const IncludeOp = enum(u8) {
 pub const ReadRefOp = enum(u8) {
     REFERENCES = @intFromEnum(ReadOp.REFERENCES),
     REFERENCE = @intFromEnum(ReadOp.REFERENCE),
+    none = @intFromEnum(ReadOp.NONE),
+};
+
+pub const ResultType = enum(u8) {
+    none = 0,
+    references = 1,
+    reference = 2,
+    edge = 3,
+    referencesEdge = 4,
+    referenceEdge = 5,
+    // here we get agg
 };
 
 pub const AggFn = enum(u8) {
