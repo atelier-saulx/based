@@ -451,7 +451,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       }
     } else if (res instanceof Error) {
       reject(res)
-      return
     } else {
       resolve(
         new BasedQueryResponse(this.id, this.def, res, performance.now() - d),
