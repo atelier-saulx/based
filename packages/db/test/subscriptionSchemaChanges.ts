@@ -29,17 +29,25 @@ const start = async (t, clientsN = 2) => {
       let prevChecksum: number
       let lastLen = 0
       let response: BasedQueryResponse
+      let killed = false
 
       const get = async () => {
         const schemaVersion = q.def.schemaChecksum
         if (schemaVersion && schemaVersion !== server.schema.hash) {
           if (q.db.schema.hash === server.schema.hash) {
+            if (killed) {
+              return
+            }
             q.reBuildQuery()
             registerQuery(q)
             response = undefined
             get()
           } else {
+            if (killed) {
+              return
+            }
             timer = setTimeout(get, 100)
+            return
           }
         } else {
           const res = await server.getQueryBuf(q.buffer)
@@ -54,16 +62,21 @@ const start = async (t, clientsN = 2) => {
             response.end = res.byteLength
           }
           const checksum = response.checksum
+          if (killed) {
+            return
+          }
           if (lastLen != res.byteLength || checksum != prevChecksum) {
             onData(response)
             lastLen = res.byteLength
             prevChecksum = checksum
           }
           timer = setTimeout(get, 100)
+          return
         }
       }
       get()
       return () => {
+        killed = true
         clearTimeout(timer)
       }
     },
