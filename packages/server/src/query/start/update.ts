@@ -8,9 +8,9 @@ import {
   diffV2toV1,
 } from '../../protocol.js'
 import { deepCopy } from '@saulx/utils'
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { createPatch } from '@saulx/diff'
 import { BasedServer } from '../../server.js'
+import { genChecksum } from './genChecksum.js'
 
 export const updateListener = (
   server: BasedServer,
@@ -30,11 +30,7 @@ export const updateListener = (
     if (data === undefined) {
       checksum = 0
     } else {
-      if (typeof data === 'object' && data !== null) {
-        checksum = hashObjectIgnoreKeyOrder(data)
-      } else {
-        checksum = hash(data)
-      }
+      checksum = genChecksum(data)
     }
   }
 

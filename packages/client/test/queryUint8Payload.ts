@@ -33,6 +33,18 @@ test('query uint8Array args', async (t: T) => {
             }
           },
         },
+        bla: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let x = ''
+            for (let i = 0; i < 1e6; i++) {
+              x += 'bla' + i
+            }
+            update(x)
+            return () => {}
+          },
+        },
       },
     },
   })
@@ -45,7 +57,6 @@ test('query uint8Array args', async (t: T) => {
   })
 
   const obs1Results: any[] = []
-  const obs2Results: any[] = []
 
   const flap = new Uint8Array(200)
   const flap2 = new Uint8Array(200)
@@ -69,6 +80,11 @@ test('query uint8Array args', async (t: T) => {
 
   close()
   close2()
+
+  const x = await client.query('bla', flap2).get()
+
+  t.is(x.length, 8888890)
+
   await server.destroy()
   await client.destroy()
 })
