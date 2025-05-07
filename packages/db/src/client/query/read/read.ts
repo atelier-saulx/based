@@ -45,6 +45,53 @@ export type Item = {
   id: number
 } & { [key: string]: any }
 
+const readAggregate = (
+  q: QueryDef,
+  result: Uint8Array,
+  offset: number,
+  len: number,
+) => {
+  const results = {}
+  if (q.aggregate.groupBy) {
+    let i = offset
+    while (i < len) {
+      let key: string = ''
+      if (result[i] == 0) {
+        if (q.aggregate.groupBy.default) {
+          key = q.aggregate.groupBy.default
+        } else {
+          key = `$undefined`
+        }
+      } else {
+        key = DECODER.decode(result.subarray(i, i + 2))
+      }
+      i += 2
+      const resultKey = (results[key] = {})
+      for (const aggregatesArray of q.aggregate.aggregates.values()) {
+        for (const agg of aggregatesArray) {
+          setByPath(
+            resultKey,
+            agg.propDef.path,
+            readUint32(result, agg.resultPos + i),
+          )
+        }
+      }
+      i += q.aggregate.totalResultsPos
+    }
+  } else {
+    for (const aggregatesArray of q.aggregate.aggregates.values()) {
+      for (const agg of aggregatesArray) {
+        setByPath(
+          results,
+          agg.propDef.path,
+          readUint32(result, agg.resultPos + offset),
+        )
+      }
+    }
+  }
+  return results
+}
+
 const addField = (
   p: PropDef | PropDefEdge,
   value: any,
@@ -229,7 +276,21 @@ export const readAllFields = (
       handleUndefinedProps(id, q, item)
       return i - offset
     }
-    if (index === READ_EDGE) {
+    if (index === READ_AGGREGATION) {
+      // also for edges at some point!
+      let field = result[i]
+      i++
+      const size = readUint32(result, i)
+      i += 4
+      const ref = q.references.get(field)
+      addField(
+        // @ts-ignore
+        ref.target.propDef,
+        readAggregate(ref, result, i, i + size),
+        item,
+      )
+      i += size
+    } else if (index === READ_EDGE) {
       let prop = result[i]
       if (prop === READ_REFERENCE) {
         i++
@@ -334,8 +395,6 @@ export const readAllFields = (
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
       i += size + 4
-    } else if (index == READ_AGGREGATION) {
-      // do stuff
     } else if (index === 0) {
       i += readMain(q, result, i, item)
     } else {
@@ -418,50 +477,7 @@ export const resultToObject = (
   offset: number = 0,
 ) => {
   if (q.aggregate) {
-    const results = {}
-
-    // range for numbers
-    if (q.aggregate.groupBy) {
-      // key size = 2 for now... not perfect...
-      let i = 0
-      while (i < result.byteLength - 4) {
-        // if group = 0
-        // add extra thing for the keys maybe?
-        let key: string = ''
-        if (result[i] == 0) {
-          if (q.aggregate.groupBy.default) {
-            key = q.aggregate.groupBy.default
-          } else {
-            key = `$undefined`
-          }
-        } else {
-          key = DECODER.decode(result.subarray(i, i + 2))
-        }
-        i += 2
-        const resultKey = (results[key] = {})
-        for (const aggregatesArray of q.aggregate.aggregates.values()) {
-          for (const agg of aggregatesArray) {
-            setByPath(
-              resultKey,
-              agg.propDef.path,
-              readUint32(result, agg.resultPos + i),
-            )
-          }
-        }
-        i += q.aggregate.totalResultsPos
-      }
-    } else {
-      for (const aggregatesArray of q.aggregate.aggregates.values()) {
-        for (const agg of aggregatesArray) {
-          setByPath(
-            results,
-            agg.propDef.path,
-            readUint32(result, agg.resultPos),
-          )
-        }
-      }
-    }
-    return results
+    return readAggregate(q, result, 0, result.byteLength - 4)
   }
 
   const len = readUint32(result, offset)

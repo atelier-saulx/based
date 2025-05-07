@@ -97,18 +97,21 @@ await test('aggregate', async (t) => {
   // }
 
   const nl1 = db.create('vote', {
+    country: 'bb',
     NL: 10,
     // flap: {
     //   hello: 813,
     // },
   })
   const nl2 = db.create('vote', {
+    country: 'aa',
     NL: 20,
     // flap: {
     //   hello: 100,
     // },
   })
   const au1 = db.create('vote', {
+    country: 'aa',
     AU: 15,
     // flap: {
     //   hello: 900,
@@ -137,9 +140,25 @@ await test('aggregate', async (t) => {
       // .include('id')
     })
     .get()
-
   q2.debug() // ok
+
+  console.info(q2.toObject())
+
   //--------------------------------------------------------
+
+  const q3 = await db
+    .query('sequence')
+    .include((select) => {
+      select('votes')
+        // don't break line
+        .groupBy('country')
+        .sum('NL', 'AU') // 'AU'
+      // .include('id')
+    })
+    .get()
+  console.log('----------')
+  q3.debug() // ok
+  q3.inspect(10, true)
 
   // await db.query('vote').sum('NL').get().inspect()
 

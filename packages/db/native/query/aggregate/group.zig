@@ -35,7 +35,6 @@ pub inline fn setGroupResults(
         copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
         i += ctx.resultsSize;
     }
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
 }
 
 pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {

@@ -107,5 +107,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     try setGroupResults(data, groupCtx);
+    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
     return result;
 }
