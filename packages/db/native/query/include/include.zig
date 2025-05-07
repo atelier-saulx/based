@@ -100,6 +100,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             includeIterator += refSize + 2;
 
             size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
+            // continue :includeField;
             return size;
         }
 
@@ -160,7 +161,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 }
                 var result = addResult(field, s[0 .. s.len - 4], includeMain, edgeType);
                 if (!idIsSet) {
-                    size += 9;
+                    size += 5;
                     result.id = id;
                     idIsSet = true;
                     if (score != null) {
@@ -197,7 +198,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
 
             var result = addResult(field, value, includeMain, edgeType);
             if (!idIsSet) {
-                size += 9;
+                size += 5;
                 result.id = id;
                 idIsSet = true;
                 if (score != null) {

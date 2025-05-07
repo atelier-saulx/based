@@ -19,7 +19,7 @@ pub fn addIdOnly(
         .aggregateResult = null,
     });
     if (score != null) {
-        return 13;
+        return 9;
     }
-    return 9;
+    return 5;
 }
