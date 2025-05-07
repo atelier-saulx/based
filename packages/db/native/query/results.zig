@@ -16,12 +16,12 @@ pub const Result = struct {
     id: ?u32, // 4
     field: u8, // 1
     refType: t.ReadRefOp, // 1
-    val: ?[]u8, // 8 (or more?)
     refSize: u32, // use u32
-    includeMain: ?[]u8, // 8
     totalRefs: u32, // use u32
     isEdge: t.Prop, // 1
     score: ?[4]u8, // 4 - do this with comptime var - would expect 35 (is 69...)
+    val: ?[]u8, // 8 (or more?)
+    includeMain: ?[]u8, // 8
 };
 
 // pub const ResultSmaller = struct {
