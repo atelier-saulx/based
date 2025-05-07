@@ -15,28 +15,23 @@ const writeInt = utils.writeInt;
 pub const Result = struct {
     id: ?u32, // 4
     field: u8, // 1
-    refType: t.ReadRefOp, // 1
-    refSize: u32, // use u32
-    totalRefs: u32, // use u32
-    isEdge: t.Prop, // 1
+    type: t.ResultType,
+    // refType: t.ReadRefOp, // 1 // 1 byte type (ref op, edge, aggregate)
+    // refSize: u32, // use u32 REMOVE THIS
+    // totalRefs: u32, // use u32 // REMOVE THIS
+    // isEdge: t.Prop, // 1
     score: ?[4]u8, // 4 - do this with comptime var - would expect 35 (is 69...)
     val: ?[]u8, // 8 (or more?)
-    includeMain: ?[]u8, // 8
+    includeMain: ?[]u8, // 8 remove this just copy it in diretly
 };
 
-// pub const ResultSmaller = struct {
-//     id: ?u32, // 4
-//     field: u8, // 1
-//     refType: t.ReadRefOp, // 1
-//     val: ?[]u8, // 16 (or more?)
-//     refSize: u32, // use u32
-//     includeMain: ?[]u8, // 16
-//     totalRefs: u32, // use u32
-//     isEdge: t.Prop, // 1
-//     score: ?[4]u8,
-//     // score: u32, // 4 - do this with comptime var - would expect 35 (is 69...)
-// };
-// std.debug.print("size of result {any} {any} \n", .{ @sizeOf(Result), @sizeOf(ResultSmaller) });
+pub const ResultSmaller = struct {
+    field: u8, // 1
+    type: t.ResultType, // 1
+    val: ?[]u8, // 16 (or more?)
+    id: ?u32, // 4
+    score: ?[4]u8, // COMPTIME FOR THIS (another 4 saved)
+};
 
 const HEADER_SIZE = 8;
 
@@ -44,6 +39,8 @@ pub fn createResultsBuffer(
     ctx: *QueryCtx,
     env: c.napi_env,
 ) !c.napi_value {
+    // std.debug.print("size of result {any} {any} \n", .{ @sizeOf(Result), @sizeOf(ResultSmaller) });
+
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
@@ -57,72 +54,90 @@ pub fn createResultsBuffer(
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
-        switch (item.refType) {
-            t.ReadRefOp.none => {
-                // do nothing
-            },
-            t.ReadRefOp.REFERENCE => {
-                if (item.isEdge != t.Prop.NULL) {
-                    data[i] = @intFromEnum(t.ReadOp.EDGE);
+        switch (item.type) {
+            t.ResultType.none => {
+                if (item.id != null) {
+                    data[i] = @intFromEnum(t.ReadOp.ID);
                     i += 1;
+                    writeInt(u32, data, i, item.id.?);
+                    i += 4;
+                    if (item.score != null) {
+                        copy(data[i .. i + 4], &item.score.?);
+                        i += 4;
+                    }
                 }
-
+            },
+            t.ResultType.edge => {
+                if (item.id != null) {
+                    data[i] = @intFromEnum(t.ReadOp.ID);
+                    i += 1;
+                    writeInt(u32, data, i, item.id.?);
+                    i += 4;
+                    if (item.score != null) {
+                        copy(data[i .. i + 4], &item.score.?);
+                        i += 4;
+                    }
+                }
+                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                i += 1;
+            },
+            t.ResultType.reference => {
                 //  Single Reference Protocol Schema:
-
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (254)           |
                 // | 1       | field     | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
-
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
                 data[i + 1] = item.field;
-                writeInt(u32, data, i + 2, item.refSize);
+                if (item.val) |v| {
+                    copy(data[i + 2 .. i + 6], v);
+                }
                 i += 6;
                 continue;
             },
-            t.ReadRefOp.REFERENCES => {
-                if (item.isEdge != t.Prop.NULL) {
-                    data[i] = @intFromEnum(t.ReadOp.EDGE);
-                    i += 1;
-                }
-
+            t.ResultType.references => {
                 //  Multiple References Protocol Schema:
-
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (253)           |
                 // | 1       | field     | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
-
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
                 data[i + 1] = item.field;
-                writeInt(u32, data, i + 2, item.refSize);
-                writeInt(u32, data, i + 6, item.totalRefs);
+                if (item.val) |v| {
+                    copy(data[i + 2 .. i + 10], v);
+                }
+                i += 10;
+                continue;
+            },
+            t.ResultType.referenceEdge => {
+                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                i += 1;
+                data[i] = @intFromEnum(t.ReadOp.REFERENCE);
+                data[i + 1] = item.field;
+                if (item.val) |v| {
+                    copy(data[i + 2 .. i + 6], v);
+                }
+                i += 6;
+                continue;
+            },
+            t.ResultType.referencesEdge => {
+                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                i += 1;
+                data[i] = @intFromEnum(t.ReadOp.REFERENCES);
+                data[i + 1] = item.field;
+                if (item.val) |v| {
+                    copy(data[i + 2 .. i + 6], v);
+                }
                 i += 10;
                 continue;
             },
         }
 
-        if (item.id != null) {
-            data[i] = @intFromEnum(t.ReadOp.ID);
-            i += 1;
-            writeInt(u32, data, i, item.id.?);
-            i += 4;
-            if (item.score != null) {
-                copy(data[i .. i + 4], &item.score.?);
-                i += 4;
-            }
-        }
-
         if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
             continue;
-        }
-
-        if (item.isEdge != t.Prop.NULL) {
-            data[i] = @intFromEnum(t.ReadOp.EDGE);
-            i += 1;
         }
 
         data[i] = item.field;

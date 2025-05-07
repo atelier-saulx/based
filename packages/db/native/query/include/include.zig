@@ -18,15 +18,12 @@ inline fn addResult(
     edgeType: t.Prop,
 ) results.Result {
     return .{
+        .type = if (edgeType != t.Prop.NULL) t.ResultType.edge else t.ResultType.none,
         .id = null,
         .score = null,
         .field = field,
         .val = value,
-        .refSize = 0,
         .includeMain = main,
-        .refType = t.ReadRefOp.none,
-        .totalRefs = 0,
-        .isEdge = edgeType,
     };
 }
 

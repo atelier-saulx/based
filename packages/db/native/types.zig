@@ -187,6 +187,16 @@ pub const ReadRefOp = enum(u8) {
     none = @intFromEnum(ReadOp.NONE),
 };
 
+pub const ResultType = enum(u8) {
+    none = 0,
+    references = 1,
+    reference = 2,
+    edge = 3,
+    referencesEdge = 4,
+    referenceEdge = 5,
+    // here we get agg
+};
+
 pub const AggFn = enum(u8) {
     none = 0,
     avg = 1,
