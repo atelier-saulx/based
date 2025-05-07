@@ -56,7 +56,7 @@ pub inline fn getRefsFields(
         .refType = t.ReadRefOp.REFERENCES,
         .totalRefs = 0,
         .isEdge = if (isEdge) t.Prop.WEAK_REFERENCES else t.Prop.NULL,
-        .aggregateResult = null,
+        .isAggregate = false,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

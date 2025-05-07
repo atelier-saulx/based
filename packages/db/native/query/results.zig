@@ -21,7 +21,7 @@ pub const Result = struct {
     totalRefs: ?usize,
     isEdge: t.Prop,
     score: ?[4]u8,
-    aggregateResult: ?u32,
+    isAggregate: bool,
 };
 
 const HEADER_SIZE = 8;
@@ -104,6 +104,11 @@ pub fn createResultsBuffer(
 
         if (item.isEdge != t.Prop.NULL) {
             data[i] = @intFromEnum(t.ReadOp.EDGE);
+            i += 1;
+        }
+
+        if (item.isAggregate) { // add ater
+            data[i] = @intFromEnum(t.ReadOp.REFERENCES_AGGREGATION);
             i += 1;
         }
 

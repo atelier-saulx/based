@@ -16,7 +16,7 @@ pub fn addIdOnly(
         .totalRefs = null,
         .score = score,
         .isEdge = t.Prop.NULL,
-        .aggregateResult = null,
+        .isAggregate = false,
     });
     if (score != null) {
         return 9;

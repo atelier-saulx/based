@@ -39,7 +39,7 @@ pub fn getSingleRefFields(
         .refType = t.ReadRefOp.REFERENCE, // from result
         .totalRefs = null,
         .isEdge = if (isEdge) t.Prop.REFERENCE else t.Prop.NULL,
-        .aggregateResult = null,
+        .isAggregate = false,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

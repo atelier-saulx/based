@@ -28,7 +28,7 @@ inline fn addResult(
         .refType = null,
         .totalRefs = null,
         .isEdge = edgeType,
-        .aggregateResult = null,
+        .isAggregate = false,
     };
 }
 
@@ -92,15 +92,16 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             continue :includeField;
         }
 
-        // if aggregate references call a function form the folder aggregates / references.zig
         if (op == t.IncludeOp.referencesAggregation) {
             utils.debugPrint("split paths\n", .{});
             const refSize = read(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
-
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id, score);
+            }
             size += aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
-            // continue :includeField;
             return size;
         }
 
