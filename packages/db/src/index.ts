@@ -5,6 +5,7 @@ import { DbClient } from './client/index.js'
 import { wait } from '@saulx/utils'
 import { debugMode, debugServer } from './utils.js'
 import { BasedQueryResponse } from './client/query/BasedIterable.js'
+import { registerQuery } from './client/query/registerQuery.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -72,6 +73,12 @@ export class BasedDb {
           let lastLen = 0
           let response: BasedQueryResponse
           const get = async () => {
+            const schemaVersion = q.def.schemaChecksum
+            if (schemaVersion && schemaVersion !== server.schema.hash) {
+              q.reBuildQuery()
+              registerQuery(q)
+              response = undefined
+            }
             const res = await server.getQueryBuf(q.buffer)
             if (!response) {
               response = new BasedQueryResponse(q.id, q.def, res, 0)
@@ -85,7 +92,7 @@ export class BasedDb {
               lastLen = res.byteLength
               prevChecksum = checksum
             }
-            setTimeout(get, 200)
+            timer = setTimeout(get, 200)
           }
           get()
           return () => {
