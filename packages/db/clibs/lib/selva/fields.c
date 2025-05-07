@@ -1614,7 +1614,7 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *, struct S
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReference *ref;
 
-    if (fs->field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use) {
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use) {
         return nullptr;
     }
 
@@ -1634,7 +1634,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
-    if (fs->field >= node->fields.nr_fields || fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use) {
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use) {
         return nullptr;
     }
 
@@ -1705,10 +1705,6 @@ struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, 
 
     assert(fs->type == SELVA_FIELD_TYPE_STRING);
 
-    if (unlikely(fs->field >= fields->nr_fields)) {
-        return nullptr;
-    }
-
     nfo = &fields->fields_map[fs->field];
 
     return !nfo->in_use ? nullptr : nfo2p(fields, nfo);
@@ -1730,10 +1726,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
 {
     const struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
-
-#if 0
-    assert(fs->field < fields->nr_fields);
-#endif
 
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
@@ -1806,10 +1798,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
 {
     struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
-
-    if (unlikely(fs->field >= fields->nr_fields)) {
-        return SELVA_ENOENT;
-    }
 
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
@@ -2036,7 +2024,7 @@ static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, 
 
 void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
-    const field_t nr_fields = schema->nr_fields;
+    const field_t nr_fields = schema->nr_fields; /* same as node->fields.nr_fields */
 
     for (field_t field = 0; field < nr_fields; field++) {
         const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
