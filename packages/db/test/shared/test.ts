@@ -37,7 +37,7 @@ const test = async (
   const afters = []
   const t = {
     after: (fn: () => Promise<void> | void) => {
-      afters.push(fn)
+      afters.unshift(fn)
     },
     backup: async (db: BasedDb) => {
       afters.push(async () => {

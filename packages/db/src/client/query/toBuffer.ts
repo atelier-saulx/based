@@ -4,7 +4,7 @@ import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer } from './query.js'
 import { searchToBuffer } from './search/index.js'
 import { DbClient } from '../index.js'
-import { ENCODER } from '@saulx/utils'
+import { ENCODER, writeUint64 } from '@saulx/utils'
 import { aggregateToBuffer, isRootCountOnly } from './aggregates/aggregation.js'
 
 const byteSize = (arr: Uint8Array[]) => {
@@ -75,7 +75,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     // result.push(...include)
 
     if (def.type === QueryDefType.Root) {
-      result.push(def.schemaChecksum)
+      const checksum = new Uint8Array(8)
+      writeUint64(checksum, def.schemaChecksum ?? 0, 0)
+      result.push(checksum)
     }
 
     return result
@@ -277,7 +279,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   }
 
   if (def.type === QueryDefType.Root) {
-    result.push(def.schemaChecksum)
+    const checksum = new Uint8Array(8)
+    writeUint64(checksum, def.schemaChecksum ?? 0, 0)
+    result.push(checksum)
   }
 
   return result

@@ -1,10 +1,11 @@
-import { wait } from '@saulx/utils'
+import { equals, readUint64, wait } from '@saulx/utils'
 import { DbClient, DbClientHooks } from '../src/client/index.js'
 import { BasedQueryResponse } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
+import { registerQuery } from '../src/client/query/registerQuery.js'
 
 const start = async (t, clientsN = 2) => {
   const hooks: DbClientHooks = {
@@ -28,29 +29,47 @@ const start = async (t, clientsN = 2) => {
       let prevChecksum: number
       let lastLen = 0
       let response: BasedQueryResponse
-      const get = async () => {
-        const res = await server.getQueryBuf(q.buffer)
-        if (!response) {
-          response = new BasedQueryResponse(q.id, q.def, res, 0)
-        } else {
-          response.result = res
-          response.end = res.byteLength
-        }
-        const checksum = response.checksum
 
-        if (lastLen != res.byteLength || checksum != prevChecksum) {
-          onData(response)
-          lastLen = res.byteLength
-          prevChecksum = checksum
+      // server.onSchemaChange((schema) => {
+      //   console.log(schema)
+      // })
+
+      const get = async () => {
+        const schemaVersion = q.def.schemaChecksum
+        if (schemaVersion && schemaVersion !== server.schema.hash) {
+          if (q.db.schema.hash === server.schema.hash) {
+            q.reBuildQuery()
+            registerQuery(q)
+            response = undefined
+            get()
+          } else {
+            timer = setTimeout(get, 100)
+          }
         } else {
-          // console.log(
-          //   response.checksum,
-          //   prevChecksum,
-          //   response.result.subarray(-4),
-          // )
-          // response.debug()
+          const res = await server.getQueryBuf(q.buffer)
+
+          if (!response) {
+            response = new BasedQueryResponse(q.id, q.def, res, 0)
+          } else {
+            response.result = res
+            response.end = res.byteLength
+          }
+          const checksum = response.checksum
+
+          if (lastLen != res.byteLength || checksum != prevChecksum) {
+            onData(response)
+            lastLen = res.byteLength
+            prevChecksum = checksum
+          } else {
+            // console.log(
+            //   response.checksum,
+            //   prevChecksum,
+            //   response.result.subarray(-4),
+            // )
+            // response.debug()
+          }
+          timer = setTimeout(get, 100)
         }
-        timer = setTimeout(get, 100)
       }
       get()
       return () => {
@@ -113,6 +132,7 @@ await test('subscription schema changes', async (t) => {
     .filter('lang', '=', 'de')
 
   await q.get().inspect()
+  console.log(q.buffer.subarray(q.buffer.byteLength - 8))
 
   await clients[0].setSchema({
     types: {
@@ -132,11 +152,10 @@ await test('subscription schema changes', async (t) => {
   })
 
   // did this migrate?
-  console.log('after schema update')
   await wait(100)
   q.reBuildQuery()
   await q.get().inspect().catch(console.error)
-
+  console.log(q.buffer.subarray(q.buffer.byteLength - 8))
   // await clients[0]
   //   .query('user')
   //   .include('derp', 'lang')
@@ -144,11 +163,40 @@ await test('subscription schema changes', async (t) => {
   //   .get()
   //   .inspect()
 
-  // const close = q.subscribe((q) => {
-  //   cnt++
-  // })
+  const close = q.subscribe((q) => {
+    cnt++
+    q.inspect()
+    console.log({ cnt })
+  })
+  t.after(() => {
+    close()
+  })
+
+  await wait(500)
+  console.log('UPDATE SCHEMA')
+  await clients[0].setSchema({
+    types: {
+      user: {
+        flap: 'uint16',
+        derp: 'uint8',
+        location: 'string',
+        lang: { type: 'string', maxBytes: 4 },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
+        },
+      },
+    },
+  })
+
+  await clients[0].update('user', 1, {
+    derp: 100,
+  })
 
   // close()
 
+  await wait(2e3)
   // add a list of things
 })
