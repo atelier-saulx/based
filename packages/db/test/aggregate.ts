@@ -133,9 +133,10 @@ await test('aggregate', async (t) => {
       select('votes')
         // don't break line
         .sum('NL')
+      // .include('id')
     })
     .get()
-  console.log(q2.toJSON()) // ok
+  q2.debug() // ok
   //--------------------------------------------------------
 
   // await db.query('vote').sum('NL').get().inspect()
@@ -216,7 +217,7 @@ await test('aggregate', async (t) => {
   // // console.log((await db.query('vote').sum(countries).get()).execTime, 'ms')
 })
 
-await test('aggregate', async (t) => {
+await test('top level count', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,

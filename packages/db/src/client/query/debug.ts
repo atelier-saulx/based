@@ -111,6 +111,9 @@ export const debug = (
             if (a[j + i * w] === 252) {
               return picocolors.red(v)
             }
+            if (a[j + i * w] === 250) {
+              return picocolors.yellow(v)
+            }
             return v
           })
           .join(' '),

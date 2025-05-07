@@ -38,6 +38,7 @@ import {
   READ_ID,
   READ_REFERENCE,
   READ_REFERENCES,
+  READ_AGGREGATION,
 } from '../types.js'
 
 export type Item = {
@@ -333,6 +334,8 @@ export const readAllFields = (
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
       i += size + 4
+    } else if (index == READ_AGGREGATION) {
+      // do stuff
     } else if (index === 0) {
       i += readMain(q, result, i, item)
     } else {
