@@ -31,7 +31,7 @@ import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer, schemaLooseEqual } from '../utils.js'
-import { deepEqual } from '@saulx/utils'
+import { readUint16, readUint32, readUint64, writeUint64 } from '@saulx/utils'
 import { hash } from '@saulx/hash'
 
 export const SCHEMA_FILE = 'schema.json'
@@ -49,16 +49,6 @@ class SortIndex {
   buf: Uint8Array
   idx: any
   cnt = 0
-}
-
-function readUint16LE(buf: Uint8Array, off: number): number {
-  return buf[off] | (buf[off + 1] << 8)
-}
-
-function readUint32LE(buf: Uint8Array, off: number): number {
-  return (
-    buf[off] | (buf[off + 1] << 8) | (buf[off + 2] << 16) | (buf[off + 3] << 24)
-  )
 }
 
 export class DbWorker {
@@ -101,7 +91,7 @@ export class DbWorker {
   }
 }
 
-type OnSchemaChange = (schema: StrictSchema) => void
+type OnSchemaChange = (schema: DbServer['schema']) => void
 
 export class DbServer {
   modifyDirtyRanges: Float64Array
@@ -488,14 +478,16 @@ export class DbServer {
         // TODO fix this add it in schema at least
         const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
         const blockKey = makeCsmtKey(1, 1)
-        const buf = new Uint8Array(data.length + 2 + 8 + 4)
+        const buf = new Uint8Array(8 + data.length + 2 + 8 + 4)
         const view = new DataView(buf.buffer, 0, buf.byteLength)
+        // set schema hash
+        writeUint64(buf, this.schema.hash, 0)
         // add content
-        buf.set(data)
+        buf.set(data, 8)
         // add typesLen
-        view.setFloat64(data.length, 0, true)
+        view.setFloat64(8 + data.length, 0, true)
         // add dirty key
-        view.setFloat64(data.length + 2, blockKey, true)
+        view.setFloat64(8 + data.length + 2, blockKey, true)
         // add dataLen
         view.setUint32(buf.length - 4, data.length, true)
         this.modify(buf)
@@ -509,16 +501,25 @@ export class DbServer {
     return this.schema
   }
 
-  modify(buf: Uint8Array): Record<number, number> {
+  modify(buf: Uint8Array): Record<number, number> | null {
+    const schemaHash = readUint64(buf, 0)
+
+    if (schemaHash !== this.schema.hash) {
+      console.log('RETURN IT!', schemaHash, this.schema.hash)
+      return null
+    }
+
+    buf = buf.subarray(8)
+
     const offsets = {}
-    const dataLen = readUint32LE(buf, buf.length - 4)
-    let typesSize = readUint16LE(buf, dataLen)
+    const dataLen = readUint32(buf, buf.length - 4)
+    let typesSize = readUint16(buf, dataLen)
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = readUint16LE(buf, i)
+      const typeId = readUint16(buf, i)
       i += 2
-      const startId = readUint32LE(buf, i)
+      const startId = readUint32(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       let offset = def.lastId - startId
 
@@ -531,7 +532,7 @@ export class DbServer {
       buf[i++] = offset >>> 16
       buf[i++] = offset >>> 24
 
-      const lastId = readUint32LE(buf, i)
+      const lastId = readUint32(buf, i)
       i += 4
 
       def.lastId = lastId + offset
@@ -554,8 +555,8 @@ export class DbServer {
     }
 
     const end = buf.length - 4
-    const dataLen = readUint32LE(buf, end)
-    let typesSize = readUint16LE(buf, dataLen)
+    const dataLen = readUint32(buf, end)
+    let typesSize = readUint16(buf, dataLen)
     const typesLen = typesSize * 10
     const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
     const data = buf.subarray(0, dataLen)
@@ -563,7 +564,7 @@ export class DbServer {
     let i = dataLen + 2
 
     while (typesSize--) {
-      const typeId = readUint16LE(buf, i)
+      const typeId = readUint16(buf, i)
       const def = this.schemaTypesParsedById[typeId]
       const key = makeCsmtKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
       this.dirtyRanges.add(key)
@@ -628,13 +629,13 @@ export class DbServer {
     } else {
       const queryType = buf[0]
       if (queryType == 2) {
-        const s = 13 + readUint16LE(buf, 11)
-        const sortLen = readUint16LE(buf, s)
+        const s = 13 + readUint16(buf, 11)
+        const sortLen = readUint16(buf, s)
         if (sortLen) {
-          const typeId = readUint16LE(buf, 1)
+          const typeId = readUint16(buf, 1)
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]
-          const start = readUint16LE(sort, 3)
+          const start = readUint16(sort, 3)
           let sortIndex = this.getSortIndex(typeId, field, start, 0)
           if (!sortIndex) {
             if (this.processingQueries) {

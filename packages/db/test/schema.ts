@@ -1,6 +1,7 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-
+import { setTimeout } from 'node:timers/promises'
+import { deepEqual } from './shared/assert.js'
 await test('support many fields on root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -68,4 +69,50 @@ await test('schema hash', async (t) => {
   if (!hash1 || !hash2 || hash1 === hash2) {
     throw new Error('Incorrect hash')
   }
+})
+
+await test('dont accept modify with mismatch schema', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  db.client.hooks.flushModify = async (buf) => {
+    await setTimeout(100)
+    return {
+      offsets: db.server.modify(buf),
+    }
+  }
+
+  await db.setSchema({
+    types: {
+      flurp: {
+        name: 'string',
+      },
+    },
+  })
+
+  await db.create('flurp', {
+    name: 'xxx',
+  })
+
+  const setSchemaPromise = db.setSchema({
+    types: {
+      flurp: {
+        title: 'string',
+      },
+    },
+  })
+
+  await db.create('flurp', {
+    name: 'yyy',
+  })
+
+  await setSchemaPromise
+  const res = await db.query('flurp').get().toObject()
+
+  deepEqual(res, [{ id: 1, title: '' }])
+
+  console.log(res)
 })
