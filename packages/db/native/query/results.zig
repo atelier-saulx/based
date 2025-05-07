@@ -16,7 +16,7 @@ pub const Result = struct {
     id: ?u32,
     field: u8,
     type: t.ResultType,
-    score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query
+    score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query but another 4 bytes saved
     val: ?[]u8,
 };
 
