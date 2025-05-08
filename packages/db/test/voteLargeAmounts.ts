@@ -159,13 +159,13 @@ await test('schema with many uint8 fields', async (t) => {
   let int = setTimeout(timed, 1e3)
   t.after(() => clearInterval(int))
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 15; i++) {
     await clientWorker(
       t,
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 0
-        for (let i = 0; i < 100000; i++) {
+        for (let i = 0; i < 5e5; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })
@@ -187,10 +187,11 @@ await test('schema with many uint8 fields', async (t) => {
               allCountryCodes[~~(Math.random() * allCountryCodes.length)],
             countries: c,
           })
-          if (i % 100 === 0) {
-            await client.drain()
+          if (i % 500 === 0) {
+            // await client.drain()
           }
         }
+        await client.drain()
       },
       { allCountryCodes, countryCodesArray, status },
     )
