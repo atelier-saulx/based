@@ -1,69 +1,12 @@
 import { wait } from '@saulx/utils'
-import { DbClient, DbClientHooks } from '../src/client/index.js'
-import { BasedQueryResponse } from '../src/index.js'
+import { DbClient } from '../src/client/index.js'
+import { getDefaultHooks } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 
 const start = async (t, clientsN = 2) => {
-  const hooks: DbClientHooks = {
-    async setSchema(schema, fromStart, transformFns) {
-      schema = { ...schema }
-      const { ...res } = await server.setSchema(schema, fromStart, transformFns)
-      return res
-    },
-    async flushModify(buf) {
-      buf = new Uint8Array(buf)
-      const offsets = server.modify(buf)
-      return { offsets }
-    },
-    async getQueryBuf(buf) {
-      buf = new Uint8Array(buf)
-      const res = await server.getQueryBuf(buf)
-      return res
-    },
-    subscribe(q, onData, onError) {
-      let timer: ReturnType<typeof setTimeout>
-      let prevChecksum: number
-      let lastLen = 0
-      let response: BasedQueryResponse
-      const get = async () => {
-        const res = await server.getQueryBuf(q.buffer)
-        if (!response) {
-          response = new BasedQueryResponse(q.id, q.def, res, 0)
-        } else {
-          response.result = res
-          response.end = res.byteLength
-        }
-        const checksum = response.checksum
-
-        if (lastLen != res.byteLength || checksum != prevChecksum) {
-          onData(response)
-          lastLen = res.byteLength
-          prevChecksum = checksum
-        } else {
-          // console.log(
-          //   response.checksum,
-          //   prevChecksum,
-          //   response.result.subarray(-4),
-          // )
-          // response.debug()
-        }
-        timer = setTimeout(get, 100)
-      }
-      get()
-      return () => {
-        clearTimeout(timer)
-      }
-    },
-  }
-  const clients = Array.from({ length: clientsN }).map(
-    () =>
-      new DbClient({
-        hooks: { ...hooks },
-      }),
-  )
   const server = new DbServer({
     path: t.tmp,
     onSchemaChange(schema) {
@@ -72,6 +15,12 @@ const start = async (t, clientsN = 2) => {
       }
     },
   })
+  const clients = Array.from({ length: clientsN }).map(
+    () =>
+      new DbClient({
+        hooks: getDefaultHooks(server, 100),
+      }),
+  )
   await server.start({ clean: true })
   t.after(() => server.destroy())
   return { clients, server }

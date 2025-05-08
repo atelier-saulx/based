@@ -3,9 +3,7 @@ import { ModifyCtx } from './client/flushModify.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import { wait } from '@saulx/utils'
-import { debugMode, debugServer } from './utils.js'
-import { BasedQueryResponse } from './client/query/BasedIterable.js'
-import { registerQuery } from './client/query/registerQuery.js'
+import { debugMode, debugServer, getDefaultHooks } from './utils.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -66,65 +64,7 @@ export class BasedDb {
     })
     const client = new DbClient({
       maxModifySize,
-      hooks: {
-        subscribe(q, onData, onError) {
-          let killed = false
-          let timer: ReturnType<typeof setTimeout>
-          let prevChecksum: number
-          let lastLen = 0
-          let response: BasedQueryResponse
-          const get = async () => {
-            const schemaVersion = q.def.schemaChecksum
-            if (schemaVersion && schemaVersion !== server.schema.hash) {
-              q.reBuildQuery()
-              registerQuery(q)
-              response = undefined
-              timer = setTimeout(get, 0)
-              return
-            }
-            if (killed) {
-              return
-            }
-            const res = await server.getQueryBuf(q.buffer)
-            if (killed) {
-              return
-            }
-            if (!response) {
-              response = new BasedQueryResponse(q.id, q.def, res, 0)
-            } else {
-              response.result = res
-              response.end = res.byteLength
-            }
-            const checksum = response.checksum
-            if (lastLen != res.byteLength || checksum != prevChecksum) {
-              onData(response)
-              lastLen = res.byteLength
-              prevChecksum = checksum
-            }
-            timer = setTimeout(get, 200)
-          }
-          get()
-          return () => {
-            killed = true
-            clearTimeout(timer)
-          }
-        },
-        setSchema(schema, fromStart) {
-          return Promise.resolve(server.setSchema(schema, fromStart))
-        },
-        flushModify(buf) {
-          const d = performance.now()
-          const offsets = server.modify(buf)
-          const dbWriteTime = performance.now() - d
-          return Promise.resolve({
-            offsets,
-            dbWriteTime,
-          })
-        },
-        getQueryBuf(buf) {
-          return Promise.resolve(server.getQueryBuf(buf))
-        },
-      },
+      hooks: getDefaultHooks(server),
     })
     this.server = server
     this.client = client
