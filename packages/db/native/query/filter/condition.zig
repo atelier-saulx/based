@@ -154,7 +154,7 @@ pub inline fn default(
         }
     } else if (op == Op.has) {
         if (start > 0) {
-            std.log.err("Start (fixed len fields) + has not supported in filters", .{});
+            // std.log.err("Start (fixed len fields) + has not supported in filters", .{});
             return .{ next, false };
         }
         if (!batch.simdReferencesHasSingle(read(u32, query, 0), v)) {

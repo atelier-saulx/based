@@ -78,6 +78,7 @@ pub fn sort(
     selva.selva_sort_destroy(metaSortIndex.index);
 }
 
+// add opt filter
 pub fn default(
     ids: []u8,
     ctx: *QueryCtx,

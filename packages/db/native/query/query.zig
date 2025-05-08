@@ -1,5 +1,4 @@
 const c = @import("../c.zig");
-const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -12,19 +11,21 @@ const sort = @import("../db/sort.zig");
 const types = @import("../types.zig");
 
 const QueryType = types.QueryType;
-const QuerySort = @import("./types/sort.zig");
-const QueryDefault = @import("./types/default.zig");
-const QueryId = @import("./types/id.zig");
-const QueryIds = @import("./types/ids.zig");
-const QueryAlias = @import("./types/alias.zig");
+const QuerySort = @import("./queryTypes/sort.zig");
+const QueryDefault = @import("./queryTypes/default.zig");
+const QueryId = @import("./queryTypes/id.zig");
+const QueryIds = @import("./queryTypes/ids.zig");
+const QueryAlias = @import("./queryTypes/alias.zig");
 
 const aggregateTypes = @import("./aggregate/types.zig");
-const AggDefault = @import("./types/aggregate.zig");
+const AggDefault = @import("./queryTypes/aggregate.zig");
 
 const utils = @import("../utils.zig");
 const read = utils.read;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
+
+const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
 pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
@@ -58,73 +59,14 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .allocator = allocator,
     };
 
-    const queryType: QueryType = @enumFromInt(q[0]);
-    const typeId: db.TypeId = read(u16, q, 1);
+    var index: usize = 0;
+    const queryType: QueryType = @enumFromInt(q[index]);
+    index += 1;
+    const typeId: db.TypeId = read(u16, q, index);
+    index += 2;
 
     if (queryType == QueryType.default) {
-        const offset = read(u32, q, 3);
-        const limit = read(u32, q, 7);
-        const filterSize = read(u16, q, 11);
-        const filterBuf = q[13 .. 13 + filterSize];
-        const sortSize = read(u16, q, 13 + filterSize);
-        const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
-        const searchSize = read(u16, q, 15 + filterSize + sortSize);
-        const include = q[17 + filterSize + sortSize + searchSize .. len];
-        if (sortSize == 0) {
-            if (searchSize > 0) {
-                const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                if (isVectorSearch(search)) {
-                    try QueryDefault.search(
-                        true,
-                        &ctx,
-                        offset,
-                        limit,
-                        typeId,
-                        filterBuf,
-                        include,
-                        &createSearchCtx(true, search),
-                    );
-                } else {
-                    try QueryDefault.search(
-                        false,
-                        &ctx,
-                        offset,
-                        limit,
-                        typeId,
-                        filterBuf,
-                        include,
-                        &createSearchCtx(false, search),
-                    );
-                }
-            } else {
-                try QueryDefault.default(&ctx, offset, limit, typeId, filterBuf, include);
-            }
-        } else {
-            const s = sortBuf[1..sortBuf.len];
-            const isAsc = sortBuf[0] == 0;
-            if (searchSize > 0) {
-                const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                if (isVectorSearch(search)) {
-                    const searchCtx = &createSearchCtx(true, search);
-                    if (isAsc) {
-                        try QuerySort.search(true, false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                    } else {
-                        try QuerySort.search(true, true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                    }
-                } else {
-                    const searchCtx = &createSearchCtx(false, search);
-                    if (isAsc) {
-                        try QuerySort.search(false, false, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                    } else {
-                        try QuerySort.search(false, true, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                    }
-                }
-            } else if (isAsc) {
-                try QuerySort.default(false, &ctx, offset, limit, typeId, filterBuf, include, s);
-            } else {
-                try QuerySort.default(true, &ctx, offset, limit, typeId, filterBuf, include, s);
-            }
-        }
+        try defaultProtocol(&ctx, typeId, q, index, len);
     } else if (queryType == QueryType.id) {
         const id = read(u32, q, 3);
         const filterSize = read(u16, q, 7);
@@ -134,8 +76,10 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     } else if (queryType == QueryType.ids) {
         const idsSize = read(u32, q, 3);
         const ids: []u8 = q[7 .. idsSize + 7];
+
         const offset = read(u32, q, idsSize + 7);
         const limit = read(u32, q, idsSize + 11);
+        // add 1 extra byte for is single condition
         const filterSize = read(u16, q, idsSize + 15);
         const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
         const sortSize = read(u16, q, 17 + filterSize + idsSize);

@@ -33,6 +33,7 @@ import exitHook from 'exit-hook'
 import { debugServer, schemaLooseEqual } from '../utils.js'
 import { readUint16, readUint32, readUint64, writeUint64 } from '@saulx/utils'
 import { hash } from '@saulx/hash'
+import { QueryType } from '../client/query/types.js'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -633,10 +634,12 @@ export class DbServer {
       })
     } else {
       const queryType = buf[0]
-      if (queryType == 2) {
-        const s = 13 + readUint16(buf, 11)
+      if (queryType == QueryType.default) {
+        // TODO: make a function for this!
+        const s = 14 + readUint16(buf, 11)
         const sortLen = readUint16(buf, s)
         if (sortLen) {
+          // make function for this
           const typeId = readUint16(buf, 1)
           const sort = buf.slice(s + 2, s + 2 + sortLen)
           const field = sort[1]

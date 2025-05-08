@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
+import { wait } from '@saulx/utils'
 
 const countrySchema: SchemaType = {
   props: {
@@ -124,10 +125,14 @@ await test('schema with many uint8 fields', async (t) => {
 
   const s = countryCodesArray.map((v) => 'countries.' + v)
 
-  const int = setInterval(async () => {
+  const timeActions = async () => {
     console.log('\n----------------------Logging interval')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
+    const d = performance.now()
+    await db.save()
+    console.log('took', performance.now() - d, 'ms to save')
+
     await db.query('vote').count().get().inspect()
 
     await db
@@ -142,7 +147,16 @@ await test('schema with many uint8 fields', async (t) => {
       (await db.query('vote').groupBy('fromCountry').sum(s).get()).execTime,
       'ms',
     )
-  }, 1e3)
+  }
+
+  let stopped = false
+  let timed = async () => {
+    await timeActions()
+    if (!stopped) {
+      int = setTimeout(timed, 1e3)
+    }
+  }
+  let int = setTimeout(timed, 1e3)
   t.after(() => clearInterval(int))
 
   for (let i = 0; i < 7; i++) {
@@ -151,7 +165,7 @@ await test('schema with many uint8 fields', async (t) => {
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 0
-        for (let i = 0; i < 2e6; i++) {
+        for (let i = 0; i < 100000; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })
@@ -173,7 +187,7 @@ await test('schema with many uint8 fields', async (t) => {
               allCountryCodes[~~(Math.random() * allCountryCodes.length)],
             countries: c,
           })
-          if (i % 200 === 0) {
+          if (i % 100 === 0) {
             await client.drain()
           }
         }
@@ -182,5 +196,10 @@ await test('schema with many uint8 fields', async (t) => {
     )
   }
 
-  await db.query('vote').count().get().inspect()
+  stopped = true
+  clearTimeout(int)
+  await wait(1000)
+
+  await timeActions()
+  await wait(1000)
 })

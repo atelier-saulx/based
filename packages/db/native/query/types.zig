@@ -12,3 +12,9 @@ pub const QueryCtx = struct {
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
 };
+
+pub const FilterType = enum(u8) {
+    none = 0,
+    simple = 1,
+    default = 2,
+};
