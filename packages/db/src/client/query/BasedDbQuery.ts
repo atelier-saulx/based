@@ -24,7 +24,7 @@ import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { subscribe, OnData, OnError } from './subscription/index.js'
+import { subscribe, OnData, OnError, OnClose } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
@@ -357,7 +357,6 @@ class GetPromise extends Promise<BasedQueryResponse> {
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   skipValidation = false
   target: QueryTarget
-
   constructor(
     db: DbClient,
     type: string,

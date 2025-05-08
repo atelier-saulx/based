@@ -25,6 +25,7 @@ import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 import { debugMode, schemaLooseEqual } from '../utils.js'
 import { OnClose, OnData, OnError } from './query/subscription/types.js'
+import { SubStore } from './query/subscription/index.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -37,7 +38,11 @@ export type DbClientHooks = {
     dbWriteTime?: number
   }>
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
-  subscribe(q: BasedDbQuery, onData: OnData, onError?: OnError): OnClose
+  subscribe(
+    q: BasedDbQuery,
+    onData: (buf: Uint8Array) => ReturnType<OnData>,
+    onError?: OnError,
+  ): OnClose
 }
 
 type DbClientOpts = {
@@ -74,6 +79,8 @@ export class DbClient {
       debugMode(this)
     }
   }
+
+  subs = new Map<BasedDbQuery, SubStore>()
 
   flushTime: number
 
@@ -151,9 +158,15 @@ export class DbClient {
       console.info('Modify cancelled - schema updated')
     }
 
+    // cancel modify queue
     const resCtx = this.modifyCtx.ctx
     this.modifyCtx.reset()
     execCtxQueue(resCtx, true)
+
+    // resubscribe
+    for (const [q, store] of this.subs) {
+      store.resubscribe(q)
+    }
 
     if (this.listeners?.schema) {
       for (const cb of this.listeners.schema) {
@@ -339,11 +352,15 @@ export class DbClient {
   }
 
   destroy() {
-    this.modifyCtx.len = 0
+    this.stop()
     this.modifyCtx.db = null // Make sure we don't have a circular ref and leak mem
   }
 
   stop() {
+    for (const [, { onClose }] of this.subs) {
+      onClose()
+    }
+    this.subs.clear()
     this.modifyCtx.len = 0
   }
 
