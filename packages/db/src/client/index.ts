@@ -23,9 +23,10 @@ import { TransformFns } from '../server/migrate/index.js'
 import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
-import { debugMode, schemaLooseEqual } from '../utils.js'
+import { debugMode } from '../utils.js'
 import { OnClose, OnData, OnError } from './query/subscription/types.js'
 import { SubStore } from './query/subscription/index.js'
+import { parseSchema, schemaLooseEqual } from '../schema.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -112,8 +113,10 @@ export class DbClient {
     transformFns?: TransformFns,
   ): Promise<StrictSchema> {
     const strictSchema = fromStart ? schema : parse(schema).schema
+    const parsedSchema = parseSchema(strictSchema as StrictSchema)
+
     // this one excludes all the ids
-    if (schemaLooseEqual(strictSchema, this.schema)) {
+    if (schemaLooseEqual(parsedSchema, this.schema)) {
       return this.schema
     }
 

@@ -115,6 +115,4 @@ await test('dont accept modify with mismatch schema', async (t) => {
   const res = await db.query('flurp').get().toObject()
 
   deepEqual(res, [{ id: 1, title: '' }])
-
-  console.log('???', await q1.get().toObject())
 })
