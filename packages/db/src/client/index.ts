@@ -25,8 +25,7 @@ import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 import { debugMode, schemaLooseEqual } from '../utils.js'
 import { OnClose, OnData, OnError } from './query/subscription/types.js'
-import { subscribe, SubStore } from './query/subscription/index.js'
-import { BasedQueryResponse } from './query/BasedIterable.js'
+import { SubStore } from './query/subscription/index.js'
 
 export type DbClientHooks = {
   setSchema(
