@@ -1647,7 +1647,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     return refs;
 }
 
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
@@ -1665,7 +1665,7 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, 
     return weak_ref;
 }
 
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;

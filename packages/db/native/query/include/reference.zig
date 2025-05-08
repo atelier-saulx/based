@@ -55,7 +55,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ctx.db, ref.?.reference.?, refField);
+        var selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }

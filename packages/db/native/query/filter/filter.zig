@@ -149,12 +149,12 @@ pub fn filter(
             if (isEdge) {
                 if (ref) |r| {
                     if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(ctx, r.reference.?, field);
+                        const refs = db.getEdgeReferences(r.reference.?, field);
                         if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(ctx, r.reference.?, field);
+                        const checkRef = db.getEdgeReference(r.reference.?, field);
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
