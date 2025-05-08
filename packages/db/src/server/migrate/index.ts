@@ -82,6 +82,7 @@ export const migrate = async (
 
   const worker = new Worker(workerPath, {
     workerData: {
+      isDbMigrateWorker: true,
       from: fromAddress,
       to: toAddress,
       fromSchema,

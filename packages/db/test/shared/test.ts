@@ -158,6 +158,13 @@ const test = async (
       //console.log('old', drawDot(oldCsmt, fmtNodeData))
       //console.log('new', drawDot(newCsmt, fmtNodeData))
       //deepEqual(oldCsmt.getRoot(), newCsmt.getRoot(), 'csmt trees')
+
+      const oldHashSet = new Set()
+      const newHashSet = new Set()
+      oldCsmt.visitLeafNodes((leaf) => oldHashSet.add(leaf.hash))
+      newCsmt.visitLeafNodes((leaf) => newHashSet.add(leaf.hash))
+
+      deepEqual(oldCsmt, newCsmt)
       deepEqual(oldCsmt.getRoot().hash, newCsmt.getRoot().hash, 'csmt hash')
 
       await wait(10)
