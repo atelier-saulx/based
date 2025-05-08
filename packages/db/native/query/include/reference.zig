@@ -55,10 +55,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch {
-            return 6 + size;
-        };
-        var selvaRef = db.getEdgeReference(ref.?.reference.?, edgeFs);
+        var selvaRef = db.getEdgeReference(ctx.db, ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }

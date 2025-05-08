@@ -1647,23 +1647,34 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     return refs;
 }
 
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, struct SelvaFields *fields, field_t field)
 {
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    struct SelvaNodeWeakReference weak_ref;
 
+#if 0
     assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE);
+#endif
 
-    return (nfo->in_use) ? *(struct SelvaNodeWeakReference *)nfo2p(fields, nfo) : (struct SelvaNodeWeakReference){};
+    if (field >= fields->nr_fields || !nfo->in_use) {
+        return (struct SelvaNodeWeakReference){};
+    }
+
+    memcpy(&weak_ref, nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReference));
+
+    return weak_ref;
 }
 
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *, struct SelvaFields *fields, field_t field)
 {
-    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;
 
+#if 0
     assert(fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
+#endif
 
-    if (!nfo->in_use) {
+    if (field >= fields->nr_fields || !nfo->in_use) {
         return (struct SelvaNodeWeakReferences){};
     }
 
