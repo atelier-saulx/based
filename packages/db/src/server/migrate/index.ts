@@ -8,7 +8,6 @@ import {
   receiveMessageOnPort,
 } from 'node:worker_threads'
 import native from '../../native.js'
-import './worker.js'
 import { destructureCsmtKey, foreachDirtyBlock, specialBlock } from '../tree.js'
 import { DbServer, SCHEMA_FILE } from '../index.js'
 import { fileURLToPath } from 'url'

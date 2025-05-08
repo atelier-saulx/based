@@ -53,6 +53,13 @@ export const time = (time: number) => {
   }
 }
 
+export const printNumber = (nr: number) => {
+  if (nr > 1000) {
+    return picocolors.blue(nr.toLocaleString())
+  }
+  return picocolors.blue(nr)
+}
+
 export const prettyPrintVal = (v: any, type: TypeIndex): string => {
   if (type === BINARY) {
     const nr = 12
@@ -184,13 +191,13 @@ const inspectObject = (
     } else if (!def) {
       if (typeof v === 'number') {
         if (q.aggregate) {
-          str += picocolors.blue(v)
+          str += printNumber(v)
           str += picocolors.italic(
             picocolors.dim(` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`), // MV: better with AggregateType later
           )
           str += ',\n'
         } else {
-          str += picocolors.blue(v) + '\n'
+          str += printNumber(v) + '\n'
         }
       } else {
         str +=
@@ -250,14 +257,14 @@ const inspectObject = (
       } else {
         if (typeof v === 'number') {
           if (q.aggregate) {
-            str += picocolors.blue(v)
+            str += printNumber(v)
             str += picocolors.italic(
               picocolors.dim(
                 ` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`,
               ), // MV: better with AggregateType later
             )
           } else {
-            str += picocolors.blue(v)
+            str += printNumber(v)
           }
         } else if (typeof v === 'object' && v) {
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
