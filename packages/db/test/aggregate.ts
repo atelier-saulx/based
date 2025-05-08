@@ -153,7 +153,6 @@ await test('aggregate', async (t) => {
         // don't break line
         .groupBy('country')
         .sum('NL', 'AU') // 'AU'
-      // .include('id')
     })
     .get()
   // console.log('----------')
