@@ -6,8 +6,8 @@ import {
 import native from '../native.js'
 
 if (isMainThread) {
-  console.warn('running query worker.ts in mainthread')
-} else {
+  console.warn('running query worker.ts in mainthread - incorrect')
+} else if (workerData?.isDbWorker) {
   let { address, channel } = workerData
   let dbCtx = native.externalFromInt(address)
 
@@ -37,4 +37,6 @@ if (isMainThread) {
   if (msg) {
     handleMsg(msg.message)
   }
+} else {
+  console.info('incorrect worker db query')
 }

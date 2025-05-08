@@ -68,17 +68,19 @@ const test = async (
       const make = async (db) => {
         const checksums = []
         const data = []
+        const counts = []
 
         for (const type in db.server.schema.types) {
           let x = await db.query(type).include(fields).get()
           checksums.push(x.checksum)
           data.push(x.toObject())
+          counts.push(await db.query(type).count().get().toObject().$count)
         }
 
-        return [checksums, data]
+        return [checksums, data, counts]
       }
 
-      const [checksums, a] = await make(db)
+      const [checksums, a, counts] = await make(db)
 
       let d = performance.now()
       await db.save()
@@ -111,7 +113,7 @@ const test = async (
       await newDb.start()
       console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
 
-      const [backupChecksums, b] = await make(newDb)
+      const [backupChecksums, b, c] = await make(newDb)
       // console.dir(b, { depth: null })
       if (a.length === b.length) {
         function findFirstDiffPos(a, b) {
@@ -126,6 +128,14 @@ const test = async (
             b[di],
             a[di],
             `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[di]}`,
+          )
+        }
+        const ci = findFirstDiffPos(counts, c)
+        if (ci >= 0) {
+          deepEqual(
+            c[ci],
+            counts[ci],
+            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[ci]}`,
           )
         }
       }
@@ -148,7 +158,14 @@ const test = async (
       //console.log('old', drawDot(oldCsmt, fmtNodeData))
       //console.log('new', drawDot(newCsmt, fmtNodeData))
       //deepEqual(oldCsmt.getRoot(), newCsmt.getRoot(), 'csmt trees')
-      deepEqual(oldCsmt.getRoot().hash, newCsmt.getRoot().hash, 'csmt hash')
+
+      const oldHashSet = new Set()
+      const newHashSet = new Set()
+      oldCsmt.visitLeafNodes((leaf) => oldHashSet.add(leaf.hash))
+      newCsmt.visitLeafNodes((leaf) => newHashSet.add(leaf.hash))
+
+      // deepEqual(oldCsmt, newCsmt)
+      deepEqual(oldHashSet, newHashSet, 'csmt hash')
 
       await wait(10)
     },

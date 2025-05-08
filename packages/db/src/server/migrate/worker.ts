@@ -12,9 +12,10 @@ import { CsmtNodeRange } from '../tree.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
-} else {
+} else if (workerData?.isDbMigrateWorker) {
   const { from, to, fromSchema, toSchema, channel, atomics, transformFns } =
     workerData
+
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
   const path = null
@@ -133,4 +134,6 @@ if (isMainThread) {
     Atomics.notify(atomics, 0)
     Atomics.wait(atomics, 0, 0)
   }
+} else {
+  console.info('incorrect worker db migrate')
 }
