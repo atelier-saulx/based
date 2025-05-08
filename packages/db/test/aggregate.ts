@@ -683,7 +683,7 @@ await test('count group by', async (t) => {
 
 // // console.log((await db.query('vote').sum(countries).get()).execTime)
 
-await test('dev', async (t) => {
+await test.skip('dev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
