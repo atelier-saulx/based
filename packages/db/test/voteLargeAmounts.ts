@@ -53,7 +53,7 @@ await test('schema with many uint8 fields', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   const voteCountrySchema: SchemaProp = countrySchema
 
