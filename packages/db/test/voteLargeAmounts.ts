@@ -188,7 +188,7 @@ await test('schema with many uint8 fields', async (t) => {
             countries: c,
           })
           if (i % 500 === 0) {
-            // await client.drain()
+            await client.drain()
           }
         }
         await client.drain()
