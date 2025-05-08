@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+struct SelvaDb;
+struct SelvaNodeSchema;
 struct ref_save_map_item;
 
 struct schema_info {
