@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
+import { wait } from '@saulx/utils'
 
 const countrySchema: SchemaType = {
   props: {
@@ -128,6 +129,10 @@ await test('schema with many uint8 fields', async (t) => {
     console.log('\n----------------------Logging interval')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
+    const d = performance.now()
+    await db.save()
+    console.log('took', performance.now() - d, 'ms to save')
+
     await db.query('vote').count().get().inspect()
 
     await db
@@ -160,7 +165,7 @@ await test('schema with many uint8 fields', async (t) => {
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 0
-        for (let i = 0; i < 3e5; i++) {
+        for (let i = 0; i < 1e6; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })
@@ -193,6 +198,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   stopped = true
   clearTimeout(int)
+  await wait(1000)
 
   await info()
 })
