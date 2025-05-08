@@ -67,11 +67,11 @@ export const subscribe = (
   }
 
   return () => {
-    const { listeners, onClose } = q.db.subs.get(q)
-    listeners.delete(onData)
-    if (!listeners.size) {
+    const store = q.db.subs.get(q)
+    store.listeners.delete(onData)
+    if (!store.listeners.size) {
       q.db.subs.delete(q)
-      onClose()
+      store.onClose()
     }
   }
 }
