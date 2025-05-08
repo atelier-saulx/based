@@ -108,7 +108,21 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
+export const isSimpleMainFilter = (conditions: QueryDefFilter) => {
+  if (
+    !conditions.references &&
+    !conditions.edges &&
+    conditions.conditions.size === 1 &&
+    conditions.conditions.has(0) &&
+    !conditions.or
+  ) {
+    return true
+  }
+  return false
+}
+
 export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
+  // add extra byte IS SINGLE CONDITION
   let result: Uint8Array
   if (conditions.size > 0) {
     result = new Uint8Array(conditions.size)

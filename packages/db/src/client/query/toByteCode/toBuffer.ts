@@ -1,11 +1,15 @@
-import { createSortBuffer } from './sort.js'
-import { QueryDef, QueryDefType, QueryType, includeOp } from './types.js'
-import { includeToBuffer } from './include/toBuffer.js'
-import { filterToBuffer } from './query.js'
-import { searchToBuffer } from './search/index.js'
-import { DbClient } from '../index.js'
+import { createSortBuffer } from '../sort.js'
+import { QueryDef, QueryDefType, QueryType, includeOp } from '../types.js'
+import { includeToBuffer } from '../include/toBuffer.js'
+import { filterToBuffer, isSimpleMainFilter } from '../query.js'
+import { searchToBuffer } from '../search/index.js'
+import { DbClient } from '../../index.js'
 import { ENCODER, writeUint64 } from '@saulx/utils'
-import { aggregateToBuffer, isRootCountOnly } from './aggregates/aggregation.js'
+import {
+  aggregateToBuffer,
+  isRootCountOnly,
+} from '../aggregates/aggregation.js'
+import { defaultQuery } from './default.js'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
@@ -198,6 +202,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         buf[idsSize + 12] = def.range.limit >>> 8
         buf[idsSize + 13] = def.range.limit >>> 16
         buf[idsSize + 14] = def.range.limit >>> 24
+        // if (filterSize && isSimpleMainFilter(def.filter)) {
+        // console.log('SIMPLE FILTER!')
         buf[idsSize + 15] = filterSize
         buf[idsSize + 16] = filterSize >>> 8
         if (filterSize) {
@@ -219,38 +225,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         // ----------
         result.push(buf)
       } else {
-        const buf = new Uint8Array(17 + filterSize + sortSize + searchSize)
-        buf[0] = QueryType.default
-        buf[1] = def.schema.idUint8[0]
-        buf[2] = def.schema.idUint8[1]
-        buf[3] = def.range.offset
-        buf[4] = def.range.offset >>> 8
-        buf[5] = def.range.offset >>> 16
-        buf[6] = def.range.offset >>> 24
-        buf[7] = def.range.limit
-        buf[8] = def.range.limit >>> 8
-        buf[9] = def.range.limit >>> 16
-        buf[10] = def.range.limit >>> 24
-        buf[11] = filterSize
-        buf[12] = filterSize >>> 8
-
-        if (filterSize) {
-          buf.set(filterToBuffer(def.filter), 13)
-        }
-
-        buf[13 + filterSize] = sortSize
-        buf[14 + filterSize] = sortSize >>> 8
-        if (sortSize) {
-          buf.set(sort, 15 + filterSize)
-        }
-
-        buf[15 + filterSize + sortSize] = searchSize
-        buf[16 + filterSize + sortSize] = searchSize >>> 8
-        if (searchSize) {
-          buf.set(search, 17 + filterSize + sortSize)
-        }
-
-        result.push(buf)
+        result.push(
+          defaultQuery(def, filterSize, sortSize, searchSize, sort, search),
+        )
       }
     }
   } else if (def.type === QueryDefType.References) {

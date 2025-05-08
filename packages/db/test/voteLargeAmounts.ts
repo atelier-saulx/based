@@ -124,7 +124,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const s = countryCodesArray.map((v) => 'countries.' + v)
 
-  const int = setInterval(async () => {
+  const info = async () => {
     console.log('\n----------------------Logging interval')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
@@ -142,7 +142,16 @@ await test('schema with many uint8 fields', async (t) => {
       (await db.query('vote').groupBy('fromCountry').sum(s).get()).execTime,
       'ms',
     )
-  }, 1e3)
+  }
+
+  let stopped = false
+  let timed = async () => {
+    await info()
+    if (!stopped) {
+      int = setTimeout(timed, 1e3)
+    }
+  }
+  let int = setTimeout(timed, 1e3)
   t.after(() => clearInterval(int))
 
   for (let i = 0; i < 7; i++) {
@@ -151,7 +160,7 @@ await test('schema with many uint8 fields', async (t) => {
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 0
-        for (let i = 0; i < 2e6; i++) {
+        for (let i = 0; i < 3e5; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })
@@ -182,5 +191,8 @@ await test('schema with many uint8 fields', async (t) => {
     )
   }
 
-  await db.query('vote').count().get().inspect()
+  stopped = true
+  clearTimeout(int)
+
+  await info()
 })

@@ -50,7 +50,6 @@ inline fn fail(
     conditions: []u8,
     ref: ?types.RefStruct,
     jump: ?[]u8,
-    // offset: usize,
     comptime isEdge: bool,
 ) bool {
     if (jump) |j| {
