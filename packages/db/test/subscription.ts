@@ -1,10 +1,10 @@
 import { wait } from '@saulx/utils'
 import { DbClient } from '../src/client/index.js'
-import { getDefaultHooks } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
+import { getDefaultHooks } from '../src/hooks.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({

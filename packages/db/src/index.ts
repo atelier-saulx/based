@@ -3,7 +3,8 @@ import { ModifyCtx } from './client/flushModify.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import { wait } from '@saulx/utils'
-import { debugMode, debugServer, getDefaultHooks } from './utils.js'
+import { debugMode, debugServer } from './utils.js'
+import { getDefaultHooks } from './hooks.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx } // TODO move this somewhere
@@ -17,6 +18,8 @@ export * from './client/query/query.js'
 export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedIterable.js'
 export * from './server/save.js'
+
+export { getDefaultHooks }
 
 export class BasedDb {
   client: DbClient
