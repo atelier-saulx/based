@@ -444,6 +444,10 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     if (res.byteLength === 1) {
       if (res[0] === 0) {
+        if (this.db.schema?.hash !== this.def.schemaChecksum) {
+          this.reBuildQuery()
+          return this.#getInternal(resolve, reject)
+        }
         reject(new Error('schema mismatch'))
       } else {
         reject(new Error('unexpected error'))
