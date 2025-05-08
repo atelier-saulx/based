@@ -42,7 +42,7 @@ await test('rootProps', async (t) => {
 
   await db.update(rootData)
 
-  let rootRes = await db.query().get()
+  let rootRes = await db.query().get().toObject()
 
   deepEqual(rootRes, rootData)
 

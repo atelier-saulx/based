@@ -40,14 +40,71 @@ await test('set schema dont migrate', async (t) => {
   deepEqual(updates, 1, '1 update')
   deepEqual(migrates, 0, '0 migrates')
 
-  // await db.setSchema({
-  //   props: {
-  //     coolguy: 'string'
-  //   },
-  //   types: {
-  //     yes: {
+  await db.setSchema({
+    props: {
+      coolguy: 'string',
+      badguy: 'boolean',
+    },
+    types: {
+      yes: {
+        name: 'string',
+      },
+      nope: {
+        name: 'string',
+      },
+    },
+  })
 
-  //     }
-  //   }
-  // })
+  await db.setSchema({
+    props: {
+      badguy: 'boolean',
+      coolguy: 'string',
+    },
+    types: {
+      nope: {
+        name: 'string',
+      },
+      yes: {
+        name: 'string',
+      },
+    },
+  })
+
+  deepEqual(updates, 2, '2 update')
+  deepEqual(migrates, 1, '1 migrates')
+
+  await db.setSchema({
+    props: {
+      badguy: 'boolean',
+      coolguy: 'string',
+      okguy: 'boolean',
+    },
+    types: {
+      nope: {
+        name: 'string',
+      },
+      yes: {
+        name: 'string',
+        success: 'boolean',
+      },
+    },
+  })
+
+  deepEqual(updates, 3, '3 update')
+  deepEqual(migrates, 2, '2 migrates')
+
+  await db.update({
+    badguy: true,
+    coolguy: 'arnold',
+    okguy: true,
+  })
+
+  await db.create('nope', {
+    name: 'abe',
+  })
+
+  await db.create('yes', {
+    name: 'bill',
+    success: true,
+  })
 })

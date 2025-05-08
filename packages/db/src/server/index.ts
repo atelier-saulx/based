@@ -432,7 +432,7 @@ export class DbServer {
         }
       }
 
-      if (strictSchema.types?._root) {
+      if (strictSchema.props || strictSchema.types?._root) {
         // insert a root node
         // TODO fix this add it in schema at least
         const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]

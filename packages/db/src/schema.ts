@@ -50,8 +50,10 @@ export const schemaLooseEqual = (a: any, b: any, key?: string) => {
 export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
   let parsedSchema = strictSchema
   if (strictSchema.props) {
-    parsedSchema = { ...strictSchema }
-    parsedSchema.types ??= {}
+    parsedSchema = {
+      ...strictSchema,
+      types: { ...parsedSchema.types },
+    }
     const props = { ...strictSchema.props }
     for (const key in props) {
       const prop = props[key]
