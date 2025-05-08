@@ -20,25 +20,25 @@ export const deepEqual = (a, b, msg?: string) => {
   }
 
   if (!uDeepEqual(a, b)) {
-    if (typeof a === 'object' && typeof b === 'object') {
-      const delta = diffpatcher.diff(a, b)
-      const output = c.format(delta)
-      const m = `${msg || ``}
------------------- DIFF ----------------------
-${output}
---------------------------------------------------`
-      const error = new Error(m)
-      throw error
-    } else {
-      const m = `${msg || ``}
+    //     if (typeof a === 'object' && typeof b === 'object') {
+    //       const delta = diffpatcher.diff(a, b)
+    //       const output = c.format(delta)
+    //       const m = `${msg || ``}
+    // ------------------ DIFF ----------------------
+    // ${output}
+    // --------------------------------------------------`
+    //       const error = new Error(m)
+    //       throw error
+    //     } else {
+    const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
 ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 ------------------- ACTUAL -----------------------
 ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 --------------------------------------------------`
-      const error = new Error(m)
-      throw error
-    }
+    const error = new Error(m)
+    throw error
+    // }
   }
 }
 
