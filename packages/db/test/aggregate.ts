@@ -10,8 +10,7 @@ await test('aggregate', async (t) => {
   })
 
   await db.start({ clean: true })
-  // t.after(() => t.backup(db))
-  t.after(() => db.stop())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -52,6 +51,8 @@ await test('aggregate', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
+  // top level  ----------------------------------
+
   deepEqual(
     await db.query('vote').sum('NL').get().toObject(),
     { NL: 30 },
@@ -68,8 +69,6 @@ await test('aggregate', async (t) => {
     { NL: 20 },
     'sum with filter',
   )
-
-  // top level  ----------------------------------
   deepEqual(
     await db.query('vote').sum('NL', 'AU').get().toObject(),
     { NL: 30, AU: 15 },
@@ -155,29 +154,6 @@ await test('aggregate', async (t) => {
     [{ id: 1, votes: { NL: 20, AU: 15 } }],
     'branched include, references, filtered, groupBy',
   )
-
-  // await db.query('vote').count().get().inspect()
-  // // ;(await db.query('vote').count().get()).debug()
-
-  // // handle enum
-  // // 2 bytes string
-  // // var string
-
-  // // ADD COUNT
-  // // can use the index in selva if no filter
-  // // count is going to be a seperate aggregate (like group)
-  // // count is very different in that it does not require a field
-
-  // console.log('count + groupBy + inspect')
-  // q3.inspect()
-  // console.log('count + groupBy + toObject')
-  // console.log(q3.toObject())
-
-  // // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
-
-  // // console.log((await db.query('vote').sum(countries).get()).execTime)
-
-  // // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
 })
 
 await test('batch', async (t) => {
@@ -303,3 +279,36 @@ await test('top level count', async (t) => {
 
   equal(q.toObject().$count, 1e6)
 })
+
+await test('count', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+})
+
+// await db.query('vote').count().get().inspect()
+// // ;(await db.query('vote').count().get()).debug()
+
+// // handle enum
+// // 2 bytes string
+// // var string
+
+// // ADD COUNT
+// // can use the index in selva if no filter
+// // count is going to be a seperate aggregate (like group)
+// // count is very different in that it does not require a field
+
+// console.log('count + groupBy + inspect')
+// q3.inspect()
+// console.log('count + groupBy + toObject')
+// console.log(q3.toObject())
+
+// // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
+
+// // console.log((await db.query('vote').sum(countries).get()).execTime)
+
+// // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
