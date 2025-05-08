@@ -57,6 +57,6 @@ const client = new DbClient({
 
 client.putLocalSchema(workerData.schema)
 
-await fn.default(client)
+await fn.default(client, workerData.data)
 
 channel.postMessage('done')

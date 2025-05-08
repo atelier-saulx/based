@@ -1,8 +1,8 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { wait } from '@saulx/utils'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
+import { allCountryCodes } from './shared/examples.js'
 
 const countrySchema: SchemaType = {
   props: {
@@ -57,6 +57,18 @@ await test('schema with many uint8 fields', async (t) => {
 
   const voteCountrySchema: SchemaProp = countrySchema
 
+  const status = [
+    'Requested',
+    'ReadyForConfirmationToken',
+    'RequestedIntent',
+    // paymentStatusTime(ID TOKEN)
+    // SUB THAT IS ALSO ON THE FRONT END.getWhen(v => v.status == ReadyForPayment)
+    'ReadyForPaymentIntent',
+    'PaymentIntentIsDone',
+    'WebhookSuccess',
+    'WebhookFailed',
+  ]
+
   await db.setSchema({
     types: {
       payment: {
@@ -71,17 +83,7 @@ await test('schema with many uint8 fields', async (t) => {
         amount: 'uint32',
         bankCountry: { type: 'string', maxBytes: 2 },
         currency: { type: 'string', maxBytes: 3 },
-        status: [
-          'Requested',
-          'ReadyForConfirmationToken',
-          'RequestedIntent',
-          // paymentStatusTime(ID TOKEN)
-          // SUB THAT IS ALSO ON THE FRONT END.getWhen(v => v.status == ReadyForPayment)
-          'ReadyForPaymentIntent',
-          'PaymentIntentIsDone',
-          'WebhookSuccess',
-          'WebhookFailed',
-        ],
+        status,
         failReason: { type: 'string' },
         errorUserMessage: {
           type: 'string',
@@ -118,29 +120,66 @@ await test('schema with many uint8 fields', async (t) => {
   })
 
   const final = await db.create('round', {})
-  console.log({ final })
+  console.log({ final, countryCodesArray })
+
+  const s = countryCodesArray.map((v) => 'countries.' + v)
 
   const int = setInterval(async () => {
+    console.log('\n----------------------Logging interval')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
     await db.query('vote').count().get().inspect()
+
+    await db
+      .query('payment')
+      .include('id')
+      .filter('status', '=', 'Requested')
+      .get()
+      .inspect()
+
+    console.log(
+      'group by on all',
+      (await db.query('vote').groupBy('fromCountry').sum(s).get()).execTime,
+      'ms',
+    )
   }, 1e3)
   t.after(() => clearInterval(int))
 
-  for (let i = 0; i < 10; i++) {
-    await clientWorker(t, db, async (client) => {
-      client.flushTime = 0
-      for (let i = 0; i < 1e4; i++) {
-        for (let j = 0; j < 100; j++) {
-          const payment = client.create('payment', {})
-          client.create('vote', {
-            payment,
-            round: 1,
-          })
+  for (let i = 0; i < 7; i++) {
+    await clientWorker(
+      t,
+      db,
+      async (client, { allCountryCodes, countryCodesArray, status }) => {
+        client.flushTime = 0
+        for (let i = 0; i < 1e4; i++) {
+          for (let j = 0; j < 150; j++) {
+            const payment = client.create('payment', {
+              // status: status[~~(Math.random() * status.length)],
+            })
+            const c: any = {}
+            for (const key of countryCodesArray) {
+              const code = key
+              let max = 0
+              const p = ~~(Math.random() * 3)
+              max += p
+              if (max > 20) {
+                break
+              }
+              c[code] = p
+            }
+            client.create('vote', {
+              payment,
+              round: 1,
+              fromCountry:
+                allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+              countries: c,
+            })
+          }
+          await client.drain()
         }
-        await client.drain()
-      }
-    })
+      },
+      { allCountryCodes, countryCodesArray, status },
+    )
   }
 
   await db.query('vote').count().get().inspect()

@@ -10,10 +10,11 @@ const exists = async (path: string) => await fs.stat(path).catch((e) => false)
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export const clientWorker = async (
+export const clientWorker = async <T>(
   t: any,
   db: BasedDb,
-  fn: (client: DbClient) => Promise<void>,
+  fn: (client: DbClient, data?: T) => Promise<void>,
+  data?: T,
 ) => {
   const path = join(__dirname, '/tmp')
   if (!(await exists(path))) {
@@ -38,7 +39,12 @@ export const clientWorker = async (
   const { port1, port2 } = new MessageChannel()
 
   const worker = new Worker(join(__dirname, 'workerExec.js'), {
-    workerData: { file: filePath, channel: port2, schema: db.server.schema },
+    workerData: {
+      file: filePath,
+      channel: port2,
+      schema: db.server.schema,
+      data,
+    },
     transferList: [port2],
   })
 
