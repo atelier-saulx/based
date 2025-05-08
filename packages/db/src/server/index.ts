@@ -58,6 +58,7 @@ export class DbWorker {
     this.channel = port1
     this.worker = new Worker(workerPath, {
       workerData: {
+        isDbWorker: true,
         channel: port2,
         address,
       },
