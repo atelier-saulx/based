@@ -2,12 +2,7 @@ import native from '../native.js'
 import createDbHash from './dbHash.js'
 import { rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import {
-  getPropType,
-  langCodesMap,
-  LangName,
-  StrictSchema,
-} from '@based/schema'
+import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import {
   PropDef,
   SchemaTypeDef,
@@ -30,10 +25,11 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
-import { debugServer, schemaLooseEqual } from '../utils.js'
+import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64, writeUint64 } from '@saulx/utils'
-import { hash } from '@saulx/hash'
 import { QueryType } from '../client/query/types.js'
+import { parseSchema, schemaLooseEqual } from '../schema.js'
+import { hash, hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -384,57 +380,18 @@ export class DbServer {
     fromStart: boolean = false,
     transformFns?: TransformFns,
   ) {
+    const parsedSchema = parseSchema(strictSchema)
+
     if (!fromStart && Object.keys(this.schema.types).length > 0) {
-      if (schemaLooseEqual(strictSchema, this.schema)) {
+      if (schemaLooseEqual(parsedSchema, this.schema)) {
         return this.schema
       }
       return this.migrateSchema(strictSchema, transformFns)
     }
 
-    const { lastId } = this.schema
-
     this.schema = {
-      lastId,
-      ...strictSchema,
-    }
-
-    if (strictSchema.props) {
-      this.schema.types ??= {}
-      const props = { ...strictSchema.props }
-      for (const key in props) {
-        const prop = props[key]
-        const propType = getPropType(prop)
-        let refProp
-        if (propType === 'reference') {
-          refProp = prop
-        } else if (propType === 'references') {
-          refProp = prop.items
-        }
-        if (refProp) {
-          const type = this.schema.types[refProp.ref]
-          const inverseKey = '_' + key
-          this.schema.types[refProp.ref] = {
-            ...type,
-            props: {
-              ...type.props,
-              [inverseKey]: {
-                items: {
-                  ref: '_root',
-                  prop: key,
-                },
-              },
-            },
-          }
-          refProp.prop = inverseKey
-        }
-      }
-
-      // @ts-ignore This creates an internal type to use for root props
-      this.schema.types._root = {
-        id: 1,
-        props,
-      }
-      delete this.schema.props
+      lastId: this.schema.lastId,
+      ...parsedSchema,
     }
 
     for (const field in this.schema.types) {
@@ -444,14 +401,14 @@ export class DbServer {
       }
     }
 
+    const { hash: _, ...rest } = this.schema
+    this.schema.hash = hash(rest)
+
     updateTypeDefs(
       this.schema,
       this.schemaTypesParsed,
       this.schemaTypesParsedById,
     )
-
-    const { hash: _, ...schemaWithoutHash } = this.schema
-    this.schema.hash = hash(schemaWithoutHash)
 
     if (!fromStart) {
       writeFile(
@@ -475,7 +432,7 @@ export class DbServer {
         }
       }
 
-      if (strictSchema.props) {
+      if (strictSchema.props || strictSchema.types?._root) {
         // insert a root node
         // TODO fix this add it in schema at least
         const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]

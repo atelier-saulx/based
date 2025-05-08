@@ -436,18 +436,22 @@ await test('top level count', async (t) => {
       },
     },
   })
+
   const nl1 = db.create('vote', {
     country: 'bb',
     NL: 10,
   })
+
   const nl2 = db.create('vote', {
     country: 'aa',
     NL: 20,
   })
+
   const au1 = db.create('vote', {
     country: 'aa',
     AU: 15,
   })
+
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
