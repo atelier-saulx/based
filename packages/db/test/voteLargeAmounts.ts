@@ -125,7 +125,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   const s = countryCodesArray.map((v) => 'countries.' + v)
 
-  const info = async () => {
+  const timeActions = async () => {
     console.log('\n----------------------Logging interval')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
@@ -151,7 +151,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   let stopped = false
   let timed = async () => {
-    await info()
+    await timeActions()
     if (!stopped) {
       int = setTimeout(timed, 1e3)
     }
@@ -200,5 +200,6 @@ await test('schema with many uint8 fields', async (t) => {
   clearTimeout(int)
   await wait(1000)
 
-  await info()
+  await timeActions()
+  await wait(1000)
 })
