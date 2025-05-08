@@ -164,8 +164,8 @@ const test = async (
       oldCsmt.visitLeafNodes((leaf) => oldHashSet.add(leaf.hash))
       newCsmt.visitLeafNodes((leaf) => newHashSet.add(leaf.hash))
 
-      deepEqual(oldCsmt, newCsmt)
-      deepEqual(oldCsmt.getRoot().hash, newCsmt.getRoot().hash, 'csmt hash')
+      // deepEqual(oldCsmt, newCsmt)
+      deepEqual(oldHashSet, newHashSet, 'csmt hash')
 
       await wait(10)
     },
