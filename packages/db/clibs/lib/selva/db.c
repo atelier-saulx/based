@@ -10,6 +10,7 @@
 #include "selva/align.h"
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"
+#include "selva/colvec.h"
 #include "queue.h"
 #include "selva_error.h"
 #include "schema.h"
@@ -236,6 +237,8 @@ static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
      */
     selva_destroy_aliases(te);
 
+    colvec_deinit_te(te);
+
     /*
      * Remove this type from the type list.
      */
@@ -299,12 +302,6 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     memset(&blocks->blocks, 0, nr_blocks * sizeof(struct SelvaTypeBlock));
 
     return blocks;
-}
-
-static block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
-{
-    assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
 }
 
 static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
@@ -371,6 +368,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     clone_schema_buf(te, schema_buf, schema_len);
     te->blocks = alloc_blocks(nfo.block_capacity);
     selva_init_aliases(te);
+    colvec_init_te(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
@@ -530,7 +528,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    selva_fields_init(&type->ns.fields_schema, &node->fields);
+    selva_fields_init_node(type, node);
 
     type->nr_nodes++;
     if (!type->max_node || type->max_node->node_id < node_id) {
@@ -867,6 +865,18 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
+static void hash_col_fields(struct SelvaTypeEntry *type, node_id_t node_id, selva_hash_state_t *tmp_hash_state)
+{
+    /*
+     * colvec fields.
+     */
+    for (size_t i = 0; i < type->ns.nr_colvecs; i++) {
+        struct SelvaColvec *colvec = &type->col_fields.colvec[i];
+
+        colvec_hash_update(type, node_id, colvec, tmp_hash_state);
+    }
+}
+
 selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
     selva_hash128_t res;
@@ -875,6 +885,7 @@ selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry
     selva_hash_update(tmp_hash_state, &node->node_id, sizeof(node->node_id));
     selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, &node->fields);
     hash_aliases(tmp_hash_state, type, node->node_id);
+    hash_col_fields(type, node->node_id, tmp_hash_state);
     res = selva_hash_digest(tmp_hash_state);
 
     return res;

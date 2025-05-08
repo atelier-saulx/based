@@ -19,6 +19,7 @@ import {
   VECTOR,
   JSON,
   CARDINALITY,
+  COLVEC,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -457,7 +458,7 @@ export const readAllFields = (
           i += size
           addField(prop, string, item)
         }
-      } else if (prop.typeIndex == VECTOR) {
+      } else if (prop.typeIndex == VECTOR || prop.typeIndex == COLVEC) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
         const arr = new Float32Array(size / 4)

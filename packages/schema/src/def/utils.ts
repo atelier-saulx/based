@@ -17,7 +17,7 @@ import { getPropType } from '../parse/utils.js'
 import { convertToTimestamp } from '@saulx/utils'
 
 export function isSeparate(schemaProp: SchemaProp, len: number) {
-  return len === 0 || isPropType('vector', schemaProp)
+  return len === 0 || isPropType('vector', schemaProp) || isPropType('colvec', schemaProp)
 }
 
 export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
@@ -61,6 +61,8 @@ export function getPropLen(schemaProp: SchemaProp) {
     }
   } else if (isPropType('vector', schemaProp)) {
     len = 4 * schemaProp.size
+  } else if (isPropType('colvec', schemaProp)) {
+    len = schemaProp.size
   }
 
   return len

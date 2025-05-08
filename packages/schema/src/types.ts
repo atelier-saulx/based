@@ -273,6 +273,13 @@ export type SchemaVector = Prop<{
   size: number
 }>
 
+export type SchemaColvec = Prop<{
+  type: 'colvec'
+  default?: Float32Array
+  size: number
+  // TODO Add support for other comp types
+}>
+
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
   default?: number | Date | string
@@ -365,6 +372,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaBinary
   | SchemaCardinality
   | SchemaVector
+  | SchemaColvec
   | (isStrict extends true
       ? SchemaSet<SetItems<true>>
       : SchemaPropShorthand | SchemaSet)
@@ -452,6 +460,7 @@ export type SchemaPropTypeMap = {
   binary: SchemaBinary
   cardinality: SchemaCardinality
   vector: SchemaVector
+  colvec: SchemaColvec
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap

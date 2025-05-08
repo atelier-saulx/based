@@ -18,6 +18,8 @@ export function getPropLen(schemaProp: SchemaProp) {
     }
   } else if (isPropType('vector', schemaProp)) {
     len = 4 * schemaProp.size
+  } else if (isPropType('colvec', schemaProp)) {
+    len = schemaProp.size
   }
   return len
 }

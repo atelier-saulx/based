@@ -27,6 +27,7 @@ import {
   numberDisplays,
   SchemaVector,
   SchemaJson,
+  SchemaColvec,
 } from '../types.js'
 import {
   expectBoolean,
@@ -215,6 +216,20 @@ p.boolean = propParser<SchemaBoolean>(
 )
 
 p.vector = propParser<SchemaVector>(
+  {
+    size(val) {
+      expectNumber(val)
+    },
+  },
+  {
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
+    },
+  },
+  0,
+)
+
+p.colvec = propParser<SchemaColvec>(
   {
     size(val) {
       expectNumber(val)

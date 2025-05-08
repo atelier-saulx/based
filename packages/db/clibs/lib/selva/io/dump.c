@@ -265,6 +265,9 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
             break;
+        case SELVA_FIELD_TYPE_COLVEC:
+            /* TODO Dump colvec. */
+            break;
         }
 
         write_dump_magic(io, DUMP_MAGIC_FIELD_END);
@@ -745,6 +748,9 @@ static int load_reference_meta(
         case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
             break;
+        case SELVA_FIELD_TYPE_COLVEC:
+            /* TODO Load colvec. */
+            break;
         }
         if (err) {
             selva_io_errlog(io, "Failed to set edge (%d:%d.%d %s): %s",
@@ -914,6 +920,9 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
+            break;
+        case SELVA_FIELD_TYPE_COLVEC:
+            /* TODO load colvec. */
             break;
         }
         if (err) {

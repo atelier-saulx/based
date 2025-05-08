@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <assert.h>
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -91,6 +92,13 @@ struct SelvaTypeEntry {
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
 
     /**
+     * Columnar fields.
+     */
+    struct {
+        struct SelvaColvec *colvec __pcounted_by(ns.nr_colvecs);
+    } col_fields;
+
+    /**
      * Max node inserted so far.
      * Initially NULL but also NULLed if the node is deleted.
      * This is used to optimize new insertions because it's possible to use
@@ -168,6 +176,12 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
     struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
     __builtin_prefetch(te);
     return te;
+}
+
+static inline block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
+{
+    assert(node_id > 0);
+    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
 }
 
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)

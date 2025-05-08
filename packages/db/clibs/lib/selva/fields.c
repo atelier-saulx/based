@@ -11,6 +11,7 @@
 #include "selva/selva_hash128.h"
 #include "selva/selva_lang.h"
 #include "selva/selva_string.h"
+#include "selva/colvec.h"
 #include "selva_error.h"
 #include "bits.h"
 #include "db.h"
@@ -42,6 +43,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_MICRO_BUFFER] = 0, /* check fs. */
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
+    [SELVA_FIELD_TYPE_COLVEC] = sizeof(void *),
 };
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
@@ -705,7 +707,7 @@ static void remove_weak_references(struct SelvaFields *fields, const struct Selv
 
 static int set_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
 {
-    struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field]; /* ensure_field() was already called by fields_set() */
     void *vp = nfo2p(fields, nfo);
     struct SelvaNodeWeakReferences refs;
 
@@ -772,7 +774,9 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_COLVEC:
         return SELVA_ENOTSUP;
+        break;
     }
 
     return 0;
@@ -1803,6 +1807,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_COLVEC:
         return (struct SelvaFieldsPointer){
             .ptr = nullptr,
             .off = 0,
@@ -1873,6 +1878,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_COLVEC:
         return SELVA_ENOTSUP;
     }
 
@@ -1935,6 +1941,14 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
     fields->data_len = schema->field_map_template.fixed_data_size;
     fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : nullptr; /* No need to tag yet for edge sharing. */
     memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
+}
+
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+{
+    selva_fields_init(&te->ns.fields_schema, &node->fields);
+    if (te->ns.nr_colvecs > 0) {
+        colvec_init_node(te, node);
+    }
 }
 
 /**
@@ -2000,6 +2014,10 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirt
             fs = selva_get_fs_by_ns_field(ns, field);
             if (unlikely(!fs)) {
                 db_panic("No field schema found");
+            }
+
+            if (fs->type == SELVA_FIELD_TYPE_COLVEC) {
+                continue; /* FIXME ??? */
             }
 
             err = fields_del(db, node, &node->fields, fs, dirty_cb, dirty_ctx);
@@ -2135,8 +2153,9 @@ nil:
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
+        case SELVA_FIELD_TYPE_COLVEC:
             /*
-             * NOP Aliases are hashed in the node hash in db.c.
+             * NOP These are hashed in the node hash in db.c.
              */
             break;
         }

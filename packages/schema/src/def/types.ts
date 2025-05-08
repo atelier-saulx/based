@@ -28,6 +28,7 @@ export const ID = 26
 export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
+export const COLVEC = 30
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -53,6 +54,7 @@ export const TYPE_INDEX_MAP = {
   cardinality: CARDINALITY,
   json: JSON,
   object: OBJECT,
+  colvec: COLVEC,
 }
 
 export const enum numberTypes {
@@ -217,6 +219,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   vector: 0, // separate
   json: 0,
   object: 0,
+  colvec: 0, // separate
 }
 
 const reverseMap: any = {}

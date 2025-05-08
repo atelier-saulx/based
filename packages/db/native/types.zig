@@ -29,6 +29,7 @@ pub const Prop = enum(u8) {
     ID = 26,
     VECTOR = 27,
     JSON = 28,
+    COLVEC = 30,
     pub fn isBuffer(self: Prop) bool {
         return switch (self) {
             Prop.BINARY,
