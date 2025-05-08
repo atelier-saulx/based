@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 
-await test('aggregate', async (t) => {
+await test('sum top level', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -30,6 +30,11 @@ await test('aggregate', async (t) => {
             ref: 'sequence',
             prop: 'votes',
           },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
           country: { type: 'string', maxBytes: 2 },
           AU: 'uint8',
           NL: 'uint8',
@@ -39,6 +44,7 @@ await test('aggregate', async (t) => {
   })
   const nl1 = db.create('vote', {
     country: 'bb',
+    flap: { hello: 100 },
     NL: 10,
   })
   const nl2 = db.create('vote', {
@@ -92,7 +98,66 @@ await test('aggregate', async (t) => {
     'sum with empty result set',
   )
 
-  // groupBy  ----------------------------------
+  deepEqual(
+    await db.query('vote').sum('flap.hello').get().toObject(),
+    { flap: { hello: 100 } },
+    'nested object notation',
+  )
+})
+
+await test('sum group by', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string', maxBytes: 2 },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
     await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject(),
@@ -117,8 +182,62 @@ await test('aggregate', async (t) => {
     { bb: { NL: 10, AU: 0 } },
     'filter, groupBy on single distinct value',
   )
+})
 
-  // branched includes ----------------------------------
+await test('sum branched includes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string', maxBytes: 2 },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
   deepEqual(
     await db
       .query('sequence')
@@ -156,15 +275,14 @@ await test('aggregate', async (t) => {
   )
 })
 
-await test('batch', async (t) => {
+await test('sum performance', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
   })
 
   await db.start({ clean: true })
-  // t.after(() => t.backup(db))
-  t.after(() => db.stop())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
@@ -252,7 +370,11 @@ await test('batch', async (t) => {
   console.log(await db.drain())
 })
 
-await test('top level count', async (t) => {
+// ***********************
+// *      count
+// ***********************
+
+await test('count top level bignumber', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -275,12 +397,11 @@ await test('top level count', async (t) => {
 
   await db.drain()
 
-  const q = await db.query('sequence').count().get().inspect()
-
+  const q = await db.query('sequence').count().get()
   equal(q.toObject().$count, 1e6)
 })
 
-await test('count', async (t) => {
+await test('top level count', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -288,27 +409,269 @@ await test('count', async (t) => {
 
   await db.start({ clean: true })
   t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          country: { type: 'string', maxBytes: 2 },
+          AU: 'uint8',
+          NL: 'uint8',
+          IT: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  // top level  ----------------------------------
+
+  deepEqual(
+    await db.query('vote').count().get().toObject(),
+    { $count: 3 },
+    'count, top level, prop',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'aa')
+      .count()
+      .get()
+      .toObject(),
+    { $count: 2 },
+    'count with filter',
+  )
+
+  deepEqual(
+    await db.query('vote').include('IT').count().get().toObject(),
+    { $count: 3 },
+    'count, top level, ignoring include',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'zz')
+      .count()
+      .get()
+      .toObject(),
+    { $count: 0 },
+    'count, with no match filtering, string value',
+  )
+
+  deepEqual(
+    await db.query('vote').filter('NL', '=', 20).count().get().toObject(),
+    { $count: 1 },
+    'count, with filtering an int value',
+  )
+
+  deepEqual(
+    await db.query('vote').filter('NL', '=', 0).count().get().toObject(),
+    { $count: 0 },
+    'count, with no match filtering, int value',
+  )
 })
 
-// await db.query('vote').count().get().inspect()
-// // ;(await db.query('vote').count().get()).debug()
+await test('count branched includes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
 
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string', maxBytes: 2 },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').count()
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { $count: 3 } }],
+    'brached include, count, references',
+  )
+
+  // deepEqual(
+  //   await db
+  //     .query('sequence')
+  //     .include((select) => {
+  //       select('votes').groupBy('country').sum('NL', 'AU')
+  //     })
+  //     .get()
+  //     .toObject(),
+  //   [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+  //   'branched include, references, groupBy',
+  // )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').filter('country', '=', 'aa').count()
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { $count: 2 } }],
+    'count, branched include, references, filtered',
+  )
+})
+
+await test('count group by', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string', maxBytes: 2 },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  deepEqual(
+    await db.query('vote').count().groupBy('country').get().toObject(),
+    {
+      bb: {
+        $count: 1,
+      },
+      aa: {
+        $count: 2,
+      },
+    },
+    'count, top level, groupBy',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'bb')
+      .groupBy('country')
+      .count()
+      .get()
+      .toObject(),
+    { bb: { $count: 1 } },
+    'count, filter, groupBy on single distinct value',
+  )
+})
 // // handle enum
 // // 2 bytes string
 // // var string
-
-// // ADD COUNT
 // // can use the index in selva if no filter
-// // count is going to be a seperate aggregate (like group)
-// // count is very different in that it does not require a field
-
-// console.log('count + groupBy + inspect')
-// q3.inspect()
-// console.log('count + groupBy + toObject')
-// console.log(q3.toObject())
-
-// // ;(await db.query('vote').sum('flap.hello', 'SM').get()).debug()
 
 // // console.log((await db.query('vote').sum(countries).get()).execTime)
-
-// // .mean('ddi1', 'ddi2', 'ddi3', 'ddi4')
