@@ -5,11 +5,21 @@ import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@saulx/utils'
 import { CsmtNodeRange } from '../../src/server/tree.js'
+import fs from 'node:fs/promises'
 
 export const counts = {
   errors: 0,
   skipped: 0,
   success: 0,
+}
+
+const dirSize = async (directory) => {
+  const files = await fs.readdir(directory)
+  const stats = files.map((file) => fs.stat(join(directory, file)))
+  return (await Promise.all(stats)).reduce(
+    (accumulator, { size }) => accumulator + size,
+    0,
+  )
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -73,6 +83,15 @@ const test = async (
       let d = performance.now()
       await db.save()
       console.log(picocolors.gray(`saved db ${performance.now() - d} ms`))
+
+      const size = await dirSize(t.tmp)
+
+      const kbs = ~~(size / 1000)
+      if (kbs < 5000) {
+        console.log(picocolors.gray(`backup size ${kbs}kb`))
+      } else {
+        console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
+      }
 
       const oldCsmt = db.server.merkleTree
 

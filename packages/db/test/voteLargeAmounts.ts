@@ -151,31 +151,31 @@ await test('schema with many uint8 fields', async (t) => {
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 0
-        for (let i = 0; i < 1e4; i++) {
-          for (let j = 0; j < 150; j++) {
-            const payment = client.create('payment', {
-              // status: status[~~(Math.random() * status.length)],
-            })
-            const c: any = {}
-            for (const key of countryCodesArray) {
-              const code = key
-              let max = 0
-              const p = ~~(Math.random() * 3)
-              max += p
-              if (max > 20) {
-                break
-              }
-              c[code] = p
+        for (let i = 0; i < 2e6; i++) {
+          const payment = client.create('payment', {
+            // status: status[~~(Math.random() * status.length)],
+          })
+          const c: any = {}
+          for (const key of countryCodesArray) {
+            const code = key
+            let max = 0
+            const p = ~~(Math.random() * 3)
+            max += p
+            if (max > 20) {
+              break
             }
-            client.create('vote', {
-              payment,
-              round: 1,
-              fromCountry:
-                allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-              countries: c,
-            })
+            c[code] = p
           }
-          await client.drain()
+          client.create('vote', {
+            payment,
+            round: 1,
+            fromCountry:
+              allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+            countries: c,
+          })
+          if (i % 200 === 0) {
+            await client.drain()
+          }
         }
       },
       { allCountryCodes, countryCodesArray, status },
