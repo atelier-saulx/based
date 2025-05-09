@@ -14,7 +14,7 @@ const countrySchema: SchemaType = {
 
 const countryCodesArray = Object.keys(countrySchema.props)
 
-await test('subscriptionErrors', async (t) => {
+await test('subscriptionWorkers', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
