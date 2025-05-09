@@ -77,6 +77,36 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
             }
           },
         },
+        undefinedQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              cnt++
+              update(cnt % 2 ? undefined : cnt)
+            }, 50)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        nullQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              cnt++
+              update(cnt % 2 ? null : cnt)
+            }, 50)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
         numberQuery: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
@@ -189,6 +219,18 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
   const bufResults: any[] = []
 
   const closers = [
+    client.query('nullQuery').subscribe((d) => {
+      obs1Results.push(d === null ? undefined : d)
+    }),
+    clientOld.query('nullQuery').subscribe((d) => {
+      obs2Results.push(d)
+    }),
+    client.query('undefinedQuery').subscribe((d) => {
+      obs1Results.push(d)
+    }),
+    clientOld.query('undefinedQuery').subscribe((d) => {
+      obs2Results.push(d)
+    }),
     client.query('numberQuery').subscribe((d) => {
       obs1Results.push(d)
     }),
@@ -246,7 +288,7 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
       }),
   ]
 
-  await wait(100)
+  await wait(500)
   closers.forEach((fn) => fn())
 
   t.deepEqual(obs1Results, obs2Results, 'obs results are equal')
