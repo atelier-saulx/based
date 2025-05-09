@@ -739,7 +739,7 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
     struct SelvaFieldInfo *nfo;
 
     /*
-     * Note: We don't verify len in this function. We merely expect that
+     * Note: We mostly don't verify len in this function. We merely expect that
      * the caller is passing it correctly.
      */
     switch (fs->type) {
@@ -763,7 +763,9 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
         nfo = ensure_field(fields, fs)
-        assert(len <= fs->smb.len);
+        if (len > fs->smb.len) {
+            return SELVA_EINVAL;
+        }
         memcpy(nfo2p(fields, nfo), value, len);
         memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
         break;
