@@ -28,7 +28,7 @@ export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
         } else {
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
-          name += `  Incorrect buffer received (maybe server not started ${res.byteLength}) bytes\n`
+          name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
           onError(new Error(name))
         }
         timer = setTimeout(poll, subInterval)
