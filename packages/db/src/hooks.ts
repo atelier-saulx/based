@@ -2,6 +2,8 @@ import { StrictSchema } from '@based/schema'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
+import picocolors from 'picocolors'
+import { displayTarget } from './client/query/display.js'
 
 export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
   return {
@@ -17,14 +19,17 @@ export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
         if (killed) {
           return
         }
-        if (res.byteLength >= 8) {
+        if (res.byteLength >= 4) {
           onData(res)
         } else if (res.byteLength === 1 && res[0] === 0) {
           console.info('schema mismatch, should resolve after update')
           // ignore update and stop polling
           return
         } else {
-          onError(new Error('unexpected error'))
+          const def = this.def
+          let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+          name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
+          onError(new Error(name))
         }
         timer = setTimeout(poll, subInterval)
       }

@@ -492,10 +492,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
           // const t = displayTarget(this.def)
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
-
           name += `  Error executing onData handler in subscription\n`
           name += `  ${err.message}\n`
-
           console.error(name)
         }
       },
