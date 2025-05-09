@@ -4,7 +4,7 @@ const utils = @import("../../utils.zig");
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const types = @import("../../types.zig");
-const SimpleHashMap = std.AutoHashMap([]const u8, []u8);
+const SimpleHashMap = @import("./types.zig").GroupByHashMap;
 const read = utils.read;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -29,8 +29,9 @@ pub inline fn setGroupResults(
     var it = ctx.hashMap.iterator();
     var i: usize = 0;
     while (it.next()) |entry| {
-        copy(data[i .. i + 2], entry.key_ptr);
-        i += 2;
+        const key = entry.key_ptr.*;
+        copy(data[i .. i + key.len], key);
+        i += key.len;
         copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
         i += ctx.resultsSize;
     }
