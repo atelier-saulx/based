@@ -51,13 +51,10 @@ export const schemaLooseEqual = (a: any, b: any, key?: string) => {
 export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
   let parsedSchema = strictSchema
   if (strictSchema.props) {
-    parsedSchema = {
-      ...strictSchema,
-      types: { ...parsedSchema.types },
-    }
-    const props = deepCopy(strictSchema.props)
-    for (const key in props) {
-      const prop = props[key]
+    // TODO do this more precise
+    parsedSchema = deepCopy(strictSchema)
+    for (const key in parsedSchema.props) {
+      const prop = parsedSchema.props[key]
       const propType = getPropType(prop)
       let refProp: any
 
@@ -85,14 +82,13 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
         }
         refProp.prop = inverseKey
       }
-
-      props[key] = prop
     }
 
+    parsedSchema.types ??= {}
     // @ts-ignore This creates an internal type to use for root props
     parsedSchema.types._root = {
       id: 1,
-      props,
+      props: parsedSchema.props,
     }
 
     delete parsedSchema.props
