@@ -7,6 +7,7 @@ const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
 const edge = @import("./edges.zig");
 const RefEdgeOp = @import("../types.zig").RefEdgeOp;
+const move = @import("../utils.zig").move;
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
@@ -102,15 +103,29 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
-    const len: usize = read(u32, data, 0) - 1;
+    const len: usize = read(u32, data, 0);
     const address = @intFromPtr(data.ptr);
-    const delta = (address + 1) & 3;
-    const offset = if (delta == 0) 0 else 4 - delta;
+    const offset: u8 = @truncate(address % 4);
+    std.debug.print("DATA off: {d} len: {d} - dat: {any} - slice: {any}\n", .{ offset, len, data, data[5 .. len + 4] });
+    // const delta = (address + 1) & 3;
+    // const offset = if (delta == 0) 0 else 4 - delta;
+    // std.debug.print("HELLO {d} - {any}\n", .{ offset, data[0..len] });
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len + offset + 1;
     }
+
+    move(data[4 - offset .. len - offset], data[4..len]);
+
+    const u32ids = read([]u32, data[4..len], 0);
+
+    std.debug.print("NOW {d} - {any}\n", .{ offset, u32ids });
+
+    // const address = @intFromPtr(values.ptr);
+    // offset = @truncate(address % 8);
+    // values[0] = offset;
+    // move(values[8 - offset .. values.len - offset], values[8..values.len]);
 
     // $index lets ignore for mark dirty
     // if Other side is single ref then do the same as a single ref on this side
@@ -118,11 +133,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
-    const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
-
     try db.putReferences(
         ctx,
-        @alignCast(u32ids),
+        u32ids,
         ctx.node.?,
         ctx.fieldSchema.?,
         refTypeEntry,
