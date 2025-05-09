@@ -37,7 +37,7 @@ pub inline fn aggregateRefsGroup(
     if (isEdge) {
         //later
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 0;
         };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -116,7 +116,7 @@ pub inline fn aggregateRefsDefault(
     if (isEdge) {
         //later
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             // default empty size - means a bug!
             return 10;
         };

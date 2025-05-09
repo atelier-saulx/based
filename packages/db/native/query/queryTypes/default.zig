@@ -67,7 +67,8 @@ pub fn defaultSimpeFilter(
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
-    const fieldSchema = try db.getFieldSchema(t.MAIN_PROP, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, t.MAIN_PROP);
+
     const querySize: u16 = utils.read(u16, conditions, 1);
     const query = conditions[3 .. querySize + 3];
     checkItem: while (ctx.totalResults < limit) {
