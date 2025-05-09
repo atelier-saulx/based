@@ -3,12 +3,12 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { hashEq } from './csmt/index.js'
-import { CsmtNodeRange, foreachBlock, initCsmt, makeCsmtKey } from './tree.js'
+import { CsmtNodeRange, destructureCsmtKey, foreachBlock, initCsmt, makeCsmtKey, specialBlock } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex, hexToBuf } from '@saulx/utils'
+import { bufToHex, deepEqual, hexToBuf } from '@saulx/utils'
 
 export async function start(
   db: DbServer,
@@ -94,12 +94,27 @@ export async function start(
   }
 
   if (writelog?.hash) {
-    const oldHash = hexToBuf(writelog.hash)
-    const newHash = db.merkleTree.getRoot()?.hash
-    if (!hashEq(oldHash, newHash)) {
-      console.error(
-        `WARN: CSMT hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
-      )
+    // FIXME FDN-1301
+    //const oldHash = hexToBuf(writelog.hash)
+    //const newHash = db.merkleTree.getRoot()?.hash
+    //if (!hashEq(oldHash, newHash)) {
+    //  console.error(
+    //    `WARN: CSMT hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
+    //  )
+    //}
+
+    const oldHashSet = new Set<string>()
+    const newHashSet = new Set<string>()
+
+    for (let k in writelog.rangeDumps) writelog.rangeDumps[k].forEach(({ hash }) => oldHashSet.add(hash))
+    db.merkleTree.visitLeafNodes(({ key, hash }) => {
+        const [_typeId, start] = destructureCsmtKey(key)
+        if (start == specialBlock) return // skip the type specialBlock
+        newHashSet.add(bufToHex(hash))
+    })
+    const setEq = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value))
+    if (!setEq(oldHashSet, newHashSet)) {
+      console.error(`WARN: CSMT hash mismatch.`)
     }
   }
 
