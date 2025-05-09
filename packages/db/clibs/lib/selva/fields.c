@@ -736,29 +736,33 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
  */
 static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
-    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
-    const enum SelvaFieldType type = fs->type;
+    struct SelvaFieldInfo *nfo;
 
-    switch (type) {
+    /*
+     * Note: We don't verify len in this function. We merely expect that
+     * the caller is passing it correctly.
+     */
+    switch (fs->type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
-        /*
-         * Note: We don't verify len in this function. We merely expect that
-         * the caller is passing it correctly.
-         */
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        nfo = ensure_field(fields, fs)
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
+        nfo = ensure_field(fields, fs)
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
+        nfo = ensure_field(fields, fs)
         return selva_fields_set_text(node, fs, value, len);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        nfo = ensure_field(fields, fs)
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
+        nfo = ensure_field(fields, fs)
         assert(len <= fs->smb.len);
         memcpy(nfo2p(fields, nfo), value, len);
         memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
