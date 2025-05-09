@@ -456,6 +456,8 @@ await test('top level count', async (t) => {
 
   // top level  ----------------------------------
 
+  ;(await db.query('vote').count().get()).debug()
+
   deepEqual(
     await db.query('vote').count().get().toObject(),
     { $count: 3 },
