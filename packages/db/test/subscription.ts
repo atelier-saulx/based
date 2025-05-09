@@ -154,7 +154,8 @@ await test('subscription error', async (t) => {
     .include('derp')
     .subscribe(
       (q) => {
-        throw new Error('bla')
+        // @ts-ignore
+        console.log(q.flap.x)
       },
       (err) => {
         console.error(err)
