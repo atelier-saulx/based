@@ -386,7 +386,12 @@ export class DbServer {
       if (schemaLooseEqual(parsedSchema, this.schema)) {
         return this.schema
       }
-      return this.migrateSchema(strictSchema, transformFns)
+      try {
+        return this.migrateSchema(strictSchema, transformFns)
+      } catch (e) {
+        console.error('error migrating schema:', e)
+        return this.schema
+      }
     }
 
     this.schema = {
