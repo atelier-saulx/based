@@ -63,12 +63,12 @@ const hooks: DbClientHooks = {
     return res
   },
   async flushModify(buf) {
-    let offsets = await request('modify', buf)
+    let offsets = await request('modify', new Uint8Array(buf))
     offsets = offsets && { ...offsets }
     return { offsets }
   },
   async getQueryBuf(buf) {
-    const res = await request('getQueryBuf', buf)
+    const res = await request('getQueryBuf', new Uint8Array(buf))
     return res
   },
 }

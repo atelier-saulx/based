@@ -115,7 +115,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const idsUnAligned = data[5 .. len + 4];
     const aligned = data[5 - offset .. len - offset + 4];
 
-    move(aligned, idsUnAligned);
+    if (offset != 0) {
+        move(aligned, idsUnAligned);
+    }
 
     const u32ids = read([]u32, aligned, 0);
 
