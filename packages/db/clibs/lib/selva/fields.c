@@ -746,23 +746,23 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
     case SELVA_FIELD_TYPE_NULL:
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        nfo = ensure_field(fields, fs)
+        nfo = ensure_field(fields, fs);
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
-        nfo = ensure_field(fields, fs)
+        nfo = ensure_field(fields, fs);
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
-        nfo = ensure_field(fields, fs)
+        nfo = ensure_field(fields, fs);
         return selva_fields_set_text(node, fs, value, len);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        nfo = ensure_field(fields, fs)
+        nfo = ensure_field(fields, fs);
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        nfo = ensure_field(fields, fs)
+        nfo = ensure_field(fields, fs);
         if (len > fs->smb.len) {
             return SELVA_EINVAL;
         }
