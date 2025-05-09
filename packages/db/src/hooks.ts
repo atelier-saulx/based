@@ -28,7 +28,6 @@ export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
         } else {
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
-          name += `  Error executing onData handler in subscription\n`
           name += `  Incorrect buffer received (maybe server not started ${res.byteLength}) bytes\n`
           onError(new Error(name))
         }
