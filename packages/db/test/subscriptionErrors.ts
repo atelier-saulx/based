@@ -73,21 +73,20 @@ await test('subscriptionErrors', async (t) => {
     await clientWorker(
       t,
       db,
-      async (client, { allCountryCodes, countryCodesArray, status, i }) => {
+      async (client, { allCountryCodes, countryCodesArray, i }) => {
+        let close
+        let updates = 0
         if (i % 2) {
-          client
+          close = client
             .query('vote')
             .filter('fromCountry', '=', ['AE', 'NL'])
             .subscribe((v) => {
-              console.log('hello', i)
+              updates++
             })
         }
-
         client.flushTime = 0
         for (let i = 0; i < 1e4; i++) {
-          const payment = client.create('payment', {
-            // status: status[~~(Math.random() * status.length)],
-          })
+          const payment = client.create('payment', {})
           const c: any = {}
           for (const key of countryCodesArray) {
             const code = key
@@ -110,9 +109,16 @@ await test('subscriptionErrors', async (t) => {
             await client.drain()
           }
         }
+        if (close) {
+          close()
+          if (updates < 1) {
+            throw new Error('Not enough updates fired from sub')
+          }
+        }
+
         await client.drain()
       },
-      { allCountryCodes, countryCodesArray, status, i },
+      { allCountryCodes, countryCodesArray, i },
     )
   }
 })
