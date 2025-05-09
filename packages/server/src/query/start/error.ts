@@ -1,7 +1,11 @@
 import { ActiveObservable, ObservableError } from '../types.js'
 import { BasedServer } from '../../server.js'
 import { createError } from '../../error/index.js'
-import { encodeErrorResponse, valueToBuffer } from '../../protocol.js'
+import {
+  encodeErrorResponse,
+  valueToBuffer,
+  valueToBufferV1,
+} from '../../protocol.js'
 import { BasedErrorCode } from '@based/errors'
 
 export const errorListener = (
@@ -50,7 +54,7 @@ export const errorListener = (
   if (obs.oldClients?.size) {
     server.uwsApp.publish(
       String(obs.id) + '-v1',
-      encodeErrorResponse(valueToBuffer(obs.error, true)),
+      encodeErrorResponse(valueToBufferV1(obs.error, true)),
       true,
       false,
     )

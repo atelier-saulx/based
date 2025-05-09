@@ -92,6 +92,29 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
             }
           },
         },
+        errorQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update, updateError) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              cnt++
+              if (cnt % 2) {
+                let x = ''
+                for (let i = 0; i < 1; i++) {
+                  x += 'he-' + i
+                }
+                updateError(new Error(x))
+              } else {
+                update(cnt)
+              }
+            }, 50)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
         nullQuery: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
@@ -219,6 +242,12 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
   const bufResults: any[] = []
 
   const closers = [
+    client.query('errorQuery').subscribe((d, err) => {
+      obs1Results.push(d || err)
+    }),
+    clientOld.query('errorQuery').subscribe((d, err) => {
+      obs2Results.push(d || err)
+    }),
     client.query('nullQuery').subscribe((d) => {
       obs1Results.push(d === null ? undefined : d)
     }),
@@ -399,6 +428,12 @@ test.serial('fallback to old protocol - outgoing', async (t: T) => {
             return payload
           },
         },
+        errorFn: {
+          type: 'function',
+          fn: async (_, payload) => {
+            throw new Error('flap')
+          },
+        },
       },
     },
   })
@@ -416,6 +451,11 @@ test.serial('fallback to old protocol - outgoing', async (t: T) => {
       return t.context.ws
     },
   })
+
+  t.deepEqual(
+    await client.call('derpi', { myderp: true }).catch((e) => e),
+    await clientOld.call('derpi', { myderp: true }).catch((e) => e),
+  )
 
   const json = { myderp: true }
   t.deepEqual(json, await client.call('derpi', { myderp: true }))
