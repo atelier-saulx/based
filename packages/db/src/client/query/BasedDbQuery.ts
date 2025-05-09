@@ -34,6 +34,8 @@ import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { concatUint8Arr } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
+import { displayTarget } from './display.js'
+import picocolors from 'picocolors'
 
 export { QueryByAliasObj }
 
@@ -483,7 +485,19 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   subscribe(onData: OnData, onError?: OnError) {
     return subscribe(
       this,
-      onData,
+      (res) => {
+        try {
+          onData(res)
+        } catch (err) {
+          // const t = displayTarget(this.def)
+          const def = this.def
+          let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+
+          name += `  Error executing on data function in subscription\n`
+
+          console.error(err)
+        }
+      },
       onError ??
         ((err) => {
           console.error(err)
