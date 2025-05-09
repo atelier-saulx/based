@@ -56,14 +56,17 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
     }
     const props = { ...strictSchema.props }
     for (const key in props) {
-      const prop = props[key]
+      const prop = { ...props[key] }
       const propType = getPropType(prop)
       let refProp: any
+
       if (propType === 'reference') {
         refProp = prop
       } else if (propType === 'references') {
-        refProp = prop.items
+        refProp = { ...prop.items }
+        prop.items = refProp
       }
+
       if (refProp) {
         const type = parsedSchema.types[refProp.ref]
         const inverseKey = '_' + key
@@ -81,6 +84,8 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
         }
         refProp.prop = inverseKey
       }
+
+      props[key] = prop
     }
 
     // @ts-ignore This creates an internal type to use for root props

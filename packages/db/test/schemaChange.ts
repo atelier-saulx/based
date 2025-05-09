@@ -107,4 +107,29 @@ await test('set schema dont migrate', async (t) => {
     name: 'bill',
     success: true,
   })
+
+  await db.setSchema({
+    props: {
+      badguy: 'boolean',
+      coolguy: 'string',
+      okguy: 'boolean',
+      excludesNopes: {
+        items: {
+          ref: 'nope',
+        },
+      },
+    },
+    types: {
+      nope: {
+        name: 'string',
+      },
+      yes: {
+        name: 'string',
+        success: 'boolean',
+      },
+    },
+  })
+
+  deepEqual(updates, 4, '4 update')
+  deepEqual(migrates, 3, '3 migrates')
 })
