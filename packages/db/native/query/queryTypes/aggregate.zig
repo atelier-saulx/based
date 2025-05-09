@@ -71,6 +71,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
     const agg = aggInput[index..aggInput.len];
+    const emptyKey = &[_]u8{};
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -82,14 +83,15 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-            // key needs to be variable
-            const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
+            // const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
+            const key = if (groupValue.len > 0 and groupCtx.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + @min(groupValue.len - (groupCtx.start + 1), groupCtx.len)] else emptyKey;
+
             var resultsField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
                 @memset(resultsField, 0);
                 try groupCtx.hashMap.put(key, resultsField);
-                ctx.size += 2 + groupCtx.resultsSize;
+                ctx.size += key.len + groupCtx.resultsSize;
             } else {
                 resultsField = groupCtx.hashMap.get(key).?;
             }

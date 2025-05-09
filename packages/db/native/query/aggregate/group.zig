@@ -4,7 +4,7 @@ const utils = @import("../../utils.zig");
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const types = @import("../../types.zig");
-const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
+const SimpleHashMap = std.AutoHashMap([]const u8, []u8);
 const read = utils.read;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -20,7 +20,6 @@ pub const GroupCtx = struct {
     field: u8,
     len: u16,
     propType: types.Prop,
-    empty: [2]u8,
 };
 
 pub inline fn setGroupResults(
@@ -44,7 +43,6 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const len = read(u16, aggInput, 4);
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
     const resultsSize = read(u16, aggInput, 6);
-    const emptyKey = [_]u8{0} ** 2;
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
     groupCtx.* = .{
@@ -54,7 +52,6 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .len = len,
         .fieldSchema = fieldSchema,
         .hashMap = SimpleHashMap.init(ctx.allocator),
-        .empty = emptyKey,
         .resultsSize = resultsSize,
     };
 
