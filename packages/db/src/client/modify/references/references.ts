@@ -337,7 +337,7 @@ function putRefs(
   refs: any[],
   op: REF_OP,
 ): number | ModifyError {
-  let size = refs.length * 4 + 1 + 4
+  let size = refs.length * 4 + 1
 
   if (refs.length === 0) {
     return 0
@@ -350,11 +350,6 @@ function putRefs(
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] =
     op === REF_OP_OVERWRITE ? REF_OP_PUT_OVERWRITE : REF_OP_PUT_ADD
-
-  ctx.buf[ctx.len++] = 0
-  ctx.buf[ctx.len++] = 0
-  ctx.buf[ctx.len++] = 0
-  ctx.buf[ctx.len++] = 0
 
   let i = 0
   for (; i < refs.length; i++) {

@@ -106,29 +106,18 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
     const address = @intFromPtr(data.ptr);
     const offset: u8 = @truncate(address % 4);
-    std.debug.print("DATA off: {d} len: {d} - dat: {any} - slice: {any}\n", .{ offset, len, data, data[5 .. len + 4] });
-    // const delta = (address + 1) & 3;
-    // const offset = if (delta == 0) 0 else 4 - delta;
-    // std.debug.print("HELLO {d} - {any}\n", .{ offset, data[0..len] });
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
-        return len + offset + 1;
+        return len;
     }
 
-    move(data[4 - offset .. len - offset], data[4..len]);
+    const idsUnAligned = data[5 .. len + 4];
+    const aligned = data[5 - offset .. len - offset + 4];
 
-    const u32ids = read([]u32, data[4..len], 0);
+    move(aligned, idsUnAligned);
 
-    std.debug.print("NOW {d} - {any}\n", .{ offset, u32ids });
-
-    // const address = @intFromPtr(values.ptr);
-    // offset = @truncate(address % 8);
-    // values[0] = offset;
-    // move(values[8 - offset .. values.len - offset], values[8..values.len]);
-
-    // $index lets ignore for mark dirty
-    // if Other side is single ref then do the same as a single ref on this side
+    const u32ids = read([]u32, aligned, 0);
 
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
@@ -141,5 +130,5 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         refTypeEntry,
     );
 
-    return len + offset + 1;
+    return len;
 }
