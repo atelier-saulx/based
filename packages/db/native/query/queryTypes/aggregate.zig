@@ -83,15 +83,13 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-            // const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
-            const key = if (groupValue.len > 0 and groupCtx.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + @min(groupValue.len - (groupCtx.start + 1), groupCtx.len)] else emptyKey;
-
+            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[groupCtx.start + 1 .. groupValue.len - 4] else emptyKey;
             var resultsField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
                 @memset(resultsField, 0);
                 try groupCtx.hashMap.put(key, resultsField);
-                ctx.size += key.len + groupCtx.resultsSize;
+                ctx.size += 2 + key.len + groupCtx.resultsSize;
             } else {
                 resultsField = groupCtx.hashMap.get(key).?;
             }
@@ -101,7 +99,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             break :checkItem;
         }
     }
-    // Create result for node.js
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {

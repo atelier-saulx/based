@@ -697,7 +697,7 @@ await test('dev', async (t) => {
       user: {
         props: {
           flap: { type: 'uint32' },
-          country: { type: 'string', maxBytes: 2 },
+          // country: { type: 'string', maxBytes: 2 },
           name: { type: 'string' },
           articles: {
             items: {
@@ -722,19 +722,19 @@ await test('dev', async (t) => {
   })
 
   const mrSnurp = db.create('user', {
-    country: 'NL',
+    // country: 'NL',
     name: 'Mr snurp',
     flap: 10,
   })
 
   const flippie = db.create('user', {
-    country: 'NL',
+    // country: 'NL',
     name: 'Flippie',
     flap: 20,
   })
 
   const derpie = db.create('user', {
-    country: 'BR',
+    // country: 'BR',
     name: 'Derpie',
     flap: 30,
   })
@@ -745,7 +745,7 @@ await test('dev', async (t) => {
   })
 
   const cipolla = db.create('user', {
-    country: 'IT',
+    // country: 'IT',
     name: 'Carlo Cipolla',
     flap: 80,
   })
@@ -794,11 +794,13 @@ await test('dev', async (t) => {
   //   .inspect() // OK
 
   // TODO: string byteSize > 2
-  await db
+  const q = await db
     // dont break line
     .query('user')
     .groupBy('name')
     .sum('flap')
     .get()
-    .inspect()
+
+  q.inspect()
+  q.debug
 })

@@ -1,7 +1,7 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
-import { ID, PropDef, UINT32 } from '@based/schema/def'
+import { PropDef, UINT32, STRING } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
 
 export const aggregateToBuffer = (

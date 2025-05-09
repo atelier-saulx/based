@@ -30,7 +30,7 @@ pub inline fn execAgg(
             } else if (propType == types.Prop.UINT8) {
                 writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
             } else {
-                // later..
+                //later
             }
         }
     }
