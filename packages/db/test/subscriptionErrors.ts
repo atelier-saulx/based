@@ -3,53 +3,18 @@ import test from './shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
-import { wait } from '@saulx/utils'
 
 const countrySchema: SchemaType = {
   props: {
     AL: 'uint8',
     AM: 'uint8',
     AT: 'uint8',
-    AU: 'uint8',
-    AZ: 'uint8',
-    BE: 'uint8',
-    CH: 'uint8',
-    CY: 'uint8',
-    CZ: 'uint8',
-    DE: 'uint8',
-    DK: 'uint8',
-    EE: 'uint8',
-    ES: 'uint8',
-    FI: 'uint8',
-    FR: 'uint8',
-    GB: 'uint8',
-    GE: 'uint8',
-    GR: 'uint8',
-    HR: 'uint8',
-    IE: 'uint8',
-    IL: 'uint8',
-    IS: 'uint8',
-    IT: 'uint8',
-    LT: 'uint8',
-    LU: 'uint8',
-    LV: 'uint8',
-    MD: 'uint8',
-    MT: 'uint8',
-    NL: 'uint8',
-    NO: 'uint8',
-    PL: 'uint8',
-    PT: 'uint8',
-    RS: 'uint8',
-    SE: 'uint8',
-    SI: 'uint8',
-    SM: 'uint8',
-    UA: 'uint8',
   },
 }
 
 const countryCodesArray = Object.keys(countrySchema.props)
 
-await test('schema with many uint8 fields', async (t) => {
+await test('subscriptionErrors', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -73,25 +38,9 @@ await test('schema with many uint8 fields', async (t) => {
   await db.setSchema({
     types: {
       payment: {
-        fingerprint: 'alias',
-        // `seq-cardFingerprint`
         vote: {
           ref: 'vote',
           prop: 'payment',
-        },
-        confirmationTokenId: 'string',
-        paymentIntentId: 'string',
-        amount: 'uint32',
-        bankCountry: { type: 'string', maxBytes: 2 },
-        currency: { type: 'string', maxBytes: 3 },
-        status,
-        failReason: { type: 'string' },
-        errorUserMessage: {
-          type: 'string',
-        },
-        createdAt: {
-          type: 'timestamp',
-          on: 'create',
         },
       },
       round: {
@@ -103,9 +52,6 @@ await test('schema with many uint8 fields', async (t) => {
         },
       },
       vote: {
-        fingerprint: {
-          type: 'alias',
-        },
         fromCountry: { type: 'string', maxBytes: 2 },
         payment: {
           ref: 'payment',
@@ -121,50 +67,24 @@ await test('schema with many uint8 fields', async (t) => {
   })
 
   const final = await db.create('round', {})
-
   const s = countryCodesArray.map((v) => 'countries.' + v)
-
-  const timeActions = async () => {
-    console.log('\n----------------------Logging interval')
-    // await db.query('vote').count().get().inspect()
-    // await db.query('payment').count().get().inspect()
-    const d = performance.now()
-    await db.save()
-    console.log('took', performance.now() - d, 'ms to save')
-
-    await db.query('vote').count().get().inspect()
-
-    await db
-      .query('payment')
-      .include('id')
-      .filter('status', '=', 'Requested')
-      .get()
-      .inspect()
-
-    console.log(
-      'group by on all',
-      (await db.query('vote').groupBy('fromCountry').sum(s).get()).execTime,
-      'ms',
-    )
-  }
-
-  let stopped = false
-  let timed = async () => {
-    await timeActions()
-    if (!stopped) {
-      int = setTimeout(timed, 1e3)
-    }
-  }
-  let int = setTimeout(timed, 1e3)
-  t.after(() => clearInterval(int))
 
   for (let i = 0; i < 15; i++) {
     await clientWorker(
       t,
       db,
-      async (client, { allCountryCodes, countryCodesArray, status }) => {
+      async (client, { allCountryCodes, countryCodesArray, status, i }) => {
+        if (i % 2) {
+          client
+            .query('vote')
+            .filter('fromCountry', '=', ['AE', 'NL'])
+            .subscribe((v) => {
+              console.log('hello', i)
+            })
+        }
+
         client.flushTime = 0
-        for (let i = 0; i < 5e4; i++) {
+        for (let i = 0; i < 1e4; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })
@@ -192,14 +112,7 @@ await test('schema with many uint8 fields', async (t) => {
         }
         await client.drain()
       },
-      { allCountryCodes, countryCodesArray, status },
+      { allCountryCodes, countryCodesArray, status, i },
     )
   }
-
-  stopped = true
-  clearTimeout(int)
-  await wait(1000)
-
-  await timeActions()
-  await wait(1000)
 })
