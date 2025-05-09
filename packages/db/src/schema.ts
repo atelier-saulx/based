@@ -1,4 +1,5 @@
 import { getPropType, StrictSchema } from '@based/schema'
+import { deepCopy } from '@saulx/utils'
 
 const exclude = new Set(['id', 'lastId', 'hash'])
 export const schemaLooseEqual = (a: any, b: any, key?: string) => {
@@ -54,16 +55,16 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
       ...strictSchema,
       types: { ...parsedSchema.types },
     }
-    const props = { ...strictSchema.props }
+    const props = deepCopy(strictSchema.props)
     for (const key in props) {
-      const prop = { ...props[key] }
+      const prop = props[key]
       const propType = getPropType(prop)
       let refProp: any
 
       if (propType === 'reference') {
         refProp = prop
       } else if (propType === 'references') {
-        refProp = { ...prop.items }
+        refProp = prop.items
         prop.items = refProp
       }
 
