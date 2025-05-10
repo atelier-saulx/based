@@ -217,6 +217,7 @@ await test('empty schema dont crash', async (t) => {
   )
   equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
 
+  // to Object on nested refs does not work if combin count + sum
   equal(
     (
       await db
