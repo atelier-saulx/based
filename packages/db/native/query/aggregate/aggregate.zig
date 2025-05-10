@@ -37,12 +37,17 @@ pub inline fn execAgg(
 }
 
 pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) void {
+    if (agg.len == 0) {
+        return;
+    }
+
     var i: usize = 0;
     const field = agg[i];
     i += 1;
     const fieldAggsSize = read(u16, agg, i);
     i += 2;
     const aggPropDef = agg[i .. i + fieldAggsSize];
+
     var value: []u8 = undefined;
     if (field != aggregateTypes.IsId) {
         // Later need to add support for HLL

@@ -44,6 +44,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     }
     const hasFilter = conditions.len > 0;
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;

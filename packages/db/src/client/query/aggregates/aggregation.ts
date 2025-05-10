@@ -79,6 +79,7 @@ export const addAggregate = (
   fields: (string | string[])[],
 ) => {
   ensureAggregate(def)
+
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
@@ -144,6 +145,9 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
     return false
   }
   if (aggs[0].type !== AggregateType.COUNT) {
+    return false
+  }
+  if (def.filter && def.filter.size > 0) {
     return false
   }
   return true

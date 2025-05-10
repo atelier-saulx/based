@@ -209,6 +209,10 @@ export class QueryBranch<T> {
   }
 
   sum(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty sum() called')
+    }
+
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'sum',

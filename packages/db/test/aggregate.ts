@@ -2,6 +2,7 @@ import { equal, deepEqual } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
+import { throws } from './shared/assert.js'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -81,11 +82,9 @@ await test('sum top level', async (t) => {
     'sum, top level, multiple props',
   )
 
-  deepEqual(
-    await db.query('vote').sum().get().toObject(),
-    {},
-    'sum() returning nothing',
-  )
+  throws(async () => {
+    await db.query('vote').sum().get().toObject()
+  }, 'sum() returning nothing')
 
   deepEqual(
     await db
