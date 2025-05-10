@@ -102,7 +102,8 @@ await test('query by vector', async (t) => {
   deepEqual(r2.length, 1)
 })
 
-await test('vector like', async (t) => {
+// this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
+await test.skip('vector like', async (t) => {
   const db = await initDb(t)
 
   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])

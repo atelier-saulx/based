@@ -25,6 +25,10 @@ function writeRef(
   hasEdges: boolean,
   isTmpId: boolean,
 ): ModifyErr {
+  if (!def.validation(id, def)) {
+    return new ModifyError(def, id)
+  }
+
   if (ctx.len + 16 > ctx.max) {
     return RANGE_ERR
   }

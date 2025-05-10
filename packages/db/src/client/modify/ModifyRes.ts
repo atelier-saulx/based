@@ -8,7 +8,7 @@ import {
 import { ModifyCtx } from '../../index.js'
 import { DbClient } from '../index.js'
 import { ModifyOpts } from './types.js'
-import { LangCode, langCodesMap } from '@based/schema'
+import { isValidId, LangCode, langCodesMap, MAX_ID } from '@based/schema'
 
 export type ModifyRes = {
   tmpId: number
@@ -76,6 +76,9 @@ export class ModifyState {
     opts: ModifyOpts,
     update = false,
   ) {
+    if (!isValidId(tmpId)) {
+      throw new Error('Invalid id passed to modify')
+    }
     this.tmpId = tmpId
     this.#typeId = typeId
     this.#ctx = db.modifyCtx.ctx

@@ -104,8 +104,6 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
-    const address = @intFromPtr(data.ptr);
-    const offset: u8 = @truncate(address % 4);
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
@@ -113,6 +111,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const idsUnAligned = data[5 .. len + 4];
+    const address = @intFromPtr(idsUnAligned.ptr);
+    const offset: u8 = @truncate(address % 4);
+
     const aligned = data[5 - offset .. len - offset + 4];
 
     if (offset != 0) {
