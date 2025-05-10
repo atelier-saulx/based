@@ -179,6 +179,7 @@ export const migrate = async (
 
   tmpDb.server.dbCtxExternal = fromCtx
 
+  // TODO makes this SYNC
   const promises: Promise<any>[] = server.workers.map((worker) =>
     worker.updateCtx(toAddress),
   )

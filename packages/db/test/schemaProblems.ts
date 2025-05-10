@@ -42,17 +42,6 @@ await test('empty schema dont crash', async (t) => {
           },
         )
 
-      c.query('flap')
-        .count()
-        .subscribe(
-          (d) => {
-            console.log('count sub 4', d)
-          },
-          (err) => {
-            console.log(err)
-          },
-        )
-
       c.query('flap').subscribe(
         (d) => {
           console.log('sub2', d)
@@ -217,6 +206,7 @@ await test('empty schema dont crash', async (t) => {
   )
   equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
 
+  // to Object on nested refs does not work if combin count + sum
   equal(
     (
       await db
