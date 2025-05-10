@@ -18,7 +18,7 @@ export const clientWorker = async <T>(
 ) => {
   const path = join(__dirname, '/tmp')
   if (!(await exists(path))) {
-    await fs.mkdir(path)
+    await fs.mkdir(path).catch(() => {})
   }
 
   const body = `export default ${fn.toString()}`
