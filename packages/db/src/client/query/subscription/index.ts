@@ -30,18 +30,13 @@ export class SubStore {
     }
 
     const onError = (err: Error) => {
-      let errorListener = false
       for (const [, onError] of this.listeners) {
         onError(err)
-        errorListener = true
-      }
-      if (!errorListener) {
-        console.error(err)
       }
     }
+    let killed = false
 
     if (!q.db.schema) {
-      let killed = false
       q.db.schemaIsSet().then(() => {
         if (!killed) {
           try {
@@ -56,8 +51,13 @@ export class SubStore {
         killed = true
       }
     } else {
-      registerQuery(q)
-      this.onClose = q.db.hooks.subscribe(q, onData, onError)
+      try {
+        registerQuery(q)
+        this.onClose = q.db.hooks.subscribe(q, onData, onError)
+      } catch (err) {
+        onError(err)
+        this.onClose = () => {}
+      }
     }
   }
   resubscribe(q: BasedDbQuery) {
@@ -71,7 +71,7 @@ export class SubStore {
 export const subscribe = (
   q: BasedDbQuery,
   onData: OnData,
-  onError?: OnError,
+  onError: OnError,
 ): OnClose => {
   if (!q.db.subs.has(q)) {
     const store = new SubStore()

@@ -22,10 +22,17 @@ await test('empty schema dont crash', async (t) => {
 
   q.push(
     clientWorker(t, db, async (c) => {
-      c.query('flap').subscribe((d) => {
-        console.log('sub', d)
-      })
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      c.query('flap')
+        .include('flap')
+        .subscribe(
+          (d) => {
+            console.log('sub', d)
+          },
+          (err) => {
+            console.log(err)
+          },
+        )
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }),
   )
 
@@ -42,6 +49,17 @@ await test('empty schema dont crash', async (t) => {
       })
       await c.create('flap', {
         x: 10,
+      })
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      await c.setSchema({
+        types: {
+          flap: {
+            props: {
+              x: 'uint8',
+              flap: 'int8',
+            },
+          },
+        },
       })
     }),
   )
