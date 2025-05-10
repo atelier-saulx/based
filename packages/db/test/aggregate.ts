@@ -37,7 +37,7 @@ await test('sum top level', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -61,59 +61,59 @@ await test('sum top level', async (t) => {
 
   // top level  ----------------------------------
 
-  // deepEqual(
-  //   await db.query('vote').sum('NL').get().toObject(),
-  //   { NL: 30 },
-  //   'sum, top level, single prop',
-  // )
+  deepEqual(
+    await db.query('vote').sum('NL').get().toObject(),
+    { NL: 30 },
+    'sum, top level, single prop',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'aa')
-  //     .sum('NL')
-  //     .get()
-  //     .toObject(),
-  //   { NL: 20 },
-  //   'sum with filter',
-  // )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'aa')
+      .sum('NL')
+      .get()
+      .toObject(),
+    { NL: 20 },
+    'sum with filter',
+  )
 
-  // deepEqual(
-  //   await db.query('vote').sum('NL', 'AU').get().toObject(),
-  //   { NL: 30, AU: 15 },
-  //   'sum, top level, multiple props',
-  // )
+  deepEqual(
+    await db.query('vote').sum('NL', 'AU').get().toObject(),
+    { NL: 30, AU: 15 },
+    'sum, top level, multiple props',
+  )
 
   throws(async () => {
     await db.query('vote').sum().get().toObject()
   }, 'sum() returning nothing')
 
-  // TODO: EXPLODE
   // deepEqual(
   //   await db.query('vote').sum().get().toObject(),
   //   {},
   //   'sum() returning nothing',
   // )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'zz')
-  //     .sum('NL')
-  //     .get()
-  //     .toObject(),
-  //   { NL: 0 },
-  //   'sum with empty result set',
-  // )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'zz')
+      .sum('NL')
+      .get()
+      .toObject(),
+    { NL: 0 },
+    'sum with empty result set',
+  )
 
-  // deepEqual(
-  //   await db.query('vote').sum('flap.hello').get().toObject(),
-  //   { flap: { hello: 100 } },
-  //   'nested object notation',
-  // )
+  deepEqual(
+    await db.query('vote').sum('flap.hello').get().toObject(),
+    { flap: { hello: 100 } },
+    'nested object notation',
+  )
 })
 
-await test('sum group by', async (t) => {
+// sum group by  ----------------------------------
+await test('dev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -145,7 +145,7 @@ await test('sum group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -224,7 +224,7 @@ await test('sum branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -315,7 +315,7 @@ await test('sum performance', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AL: 'uint8',
           AM: 'uint8',
           AT: 'uint8',
@@ -437,7 +437,7 @@ await test('top level count', async (t) => {
             ref: 'sequence',
             prop: 'votes',
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
           IT: 'uint8',
@@ -546,7 +546,7 @@ await test('count branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -637,7 +637,7 @@ await test('count group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -694,7 +694,7 @@ await test('count group by', async (t) => {
 
 // // console.log((await db.query('vote').sum(countries).get()).execTime)
 
-await test('dev', async (t) => {
+await test('kev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -708,7 +708,7 @@ await test('dev', async (t) => {
       user: {
         props: {
           flap: { type: 'uint32' },
-          // country: { type: 'string', maxBytes: 2 },
+          // country: { type: 'string' },
           name: { type: 'string' },
           articles: {
             items: {

@@ -445,7 +445,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       this.reBuildQuery()
       return this.#getInternal(resolve, reject)
     }
-
+    console.log(buf)
     const res = await this.db.hooks.getQueryBuf(buf)
 
     if (res.byteLength === 1) {
