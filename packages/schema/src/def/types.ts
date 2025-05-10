@@ -153,6 +153,7 @@ export type SchemaSortUndefinedHandler = {
 }
 
 export type SchemaTypeDef = {
+  cnt: number
   checksum: number
   type: string
   lastId: number
