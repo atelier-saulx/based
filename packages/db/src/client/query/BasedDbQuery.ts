@@ -471,8 +471,15 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   locale(locale: LangName) {
-    validateLocale(this.def, locale)
-    this.def.lang = langCodesMap.get(locale) ?? 0
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'locale',
+        args: [locale],
+      })
+    } else {
+      validateLocale(this.def, locale)
+      this.def.lang = langCodesMap.get(locale) ?? 0
+    }
     return this
   }
 

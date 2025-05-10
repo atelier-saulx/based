@@ -163,6 +163,7 @@ await test('schema with many uint8 fields', async (t) => {
       t,
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
+        await client.schemaIsSet()
         client.flushTime = 10
         for (let i = 0; i < 5e5; i++) {
           const payment = client.create('payment', {
