@@ -135,9 +135,7 @@ await test('update', async (t) => {
   }, 'Expected array for field delete in connections')
 
   // --- Friends (with Edges) Validation ---
-  const now = new Date().toLocaleString('en-US', {
-    timeZone: 'Europe/Amsterdam',
-  })
+  const now = Date.now()
   const badge = new Uint8Array([1, 2, 3])
   const badgeString = 'badge-string' // String is also valid for binary
 
@@ -215,17 +213,14 @@ await test('update', async (t) => {
         {
           id: 3,
           $bestFriend: true,
-          $friendsSince: 967845600000,
+          $friendsSince: new Date('09/02/2000').getTime(),
         },
       ],
     },
     'Friends edge data after valid ops',
   )
 
-  const newTimestamp =
-    new Date().toLocaleString('en-US', {
-      timeZone: 'Europe/Amsterdam',
-    }) + 10000
+  const newTimestamp = Date.now() + 10000
 
   await db.update('user', userWithFriends, {
     friends: {
@@ -261,7 +256,7 @@ await test('update', async (t) => {
         {
           id: 3,
           $bestFriend: true,
-          $friendsSince: 967845600000,
+          $friendsSince: new Date('09/02/2000').getTime(),
           $friendShipBadge: new Uint8Array([4, 5, 6]),
         },
       ],
