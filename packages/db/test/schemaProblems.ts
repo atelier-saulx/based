@@ -42,17 +42,6 @@ await test('empty schema dont crash', async (t) => {
           },
         )
 
-      c.query('flap')
-        .count()
-        .subscribe(
-          (d) => {
-            console.log('count sub 4', d)
-          },
-          (err) => {
-            console.log(err)
-          },
-        )
-
       c.query('flap').subscribe(
         (d) => {
           console.log('sub2', d)
