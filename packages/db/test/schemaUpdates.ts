@@ -222,8 +222,8 @@ await test('rapid modifies during schema update', async (t) => {
   }
 
   const all = await client2.query('user').range(0, 1000_000).get().toObject()
-  deepEqual(all[0], { id: 1, name: 'youzi499999' })
-  deepEqual(all.at(-1), { id: 501000, name: 'jamex0' })
+  deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 })
+  deepEqual(all.at(-1), { id: 501000, name: 'jamex0', age: 0 })
   deepEqual(all.length, youzies + jamesies)
 })
 
