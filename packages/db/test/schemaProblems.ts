@@ -217,7 +217,17 @@ await test('empty schema dont crash', async (t) => {
   )
   equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
 
-  equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
+  equal(
+    (
+      await db
+        .query('seq')
+        .include((s) => s('flap').count())
+        .get()
+        .inspect()
+        .toObject()
+    )[0].flap.$count,
+    1_100_000,
+  )
 
   // setSchema (client)
   //   validates the schema
