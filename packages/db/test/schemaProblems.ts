@@ -22,6 +22,20 @@ await test('empty schema dont crash', async (t) => {
 
   q.push(
     clientWorker(t, db, async (c) => {
+      c.query('flap').subscribe(
+        (d) => {
+          console.log('sub2', d)
+        },
+        (err) => {
+          console.log(err)
+        },
+      )
+      await new Promise((resolve) => setTimeout(resolve, 20000))
+    }),
+  )
+
+  q.push(
+    clientWorker(t, db, async (c) => {
       c.query('flap')
         .include('flap')
         .subscribe(
@@ -35,14 +49,25 @@ await test('empty schema dont crash', async (t) => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }),
   )
-
   q.push(
     clientWorker(t, db, async (c) => {
       await c.setSchema({
         types: {
+          seq: {
+            flap: {
+              items: {
+                ref: 'flap',
+                prop: 'seq',
+              },
+            },
+          },
           flap: {
             props: {
               x: 'uint8',
+              seq: {
+                ref: 'seq',
+                prop: 'flap',
+              },
             },
           },
         },
@@ -53,14 +78,92 @@ await test('empty schema dont crash', async (t) => {
       await new Promise((resolve) => setTimeout(resolve, 300))
       await c.setSchema({
         types: {
+          seq: {
+            flap: {
+              items: {
+                ref: 'flap',
+                prop: 'seq',
+              },
+            },
+          },
           flap: {
             props: {
-              x: 'uint8',
+              x: 'uint32',
               flap: 'int8',
+              seq: {
+                ref: 'seq',
+                prop: 'flap',
+              },
             },
           },
         },
       })
+      console.log('schema 1 changed')
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      await c.setSchema({
+        types: {
+          seq: {
+            flap: {
+              items: {
+                ref: 'flap',
+                prop: 'seq',
+              },
+            },
+          },
+          flap: {
+            props: {
+              x: 'uint32',
+              flap: 'int8',
+              y: 'boolean',
+              seq: {
+                ref: 'seq',
+                prop: 'flap',
+              },
+            },
+          },
+        },
+      })
+      console.log('schema 2 changed')
+    }),
+    clientWorker(t, db, async (c) => {
+      await c.schemaIsSet()
+      c.flushTime = 0
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      for (let i = 0; i < 1e5; i++) {
+        await c.create('flap', {
+          x: i,
+        })
+        await c.drain()
+      }
+      await c.drain()
+    }),
+    clientWorker(t, db, async (c) => {
+      await c.schemaIsSet()
+      await new Promise((resolve) => setTimeout(resolve, 600))
+
+      for (let i = 0; i < 5e5; i++) {
+        await c.create('flap', {
+          x: i,
+        })
+        if (i % 500 === 0) {
+          await c.drain()
+        }
+      }
+      await c.drain()
+    }),
+    clientWorker(t, db, async (c) => {
+      await c.schemaIsSet()
+      await new Promise((resolve) => setTimeout(resolve, 600))
+
+      for (let i = 0; i < 5e5; i++) {
+        await c.create('flap', {
+          x: i,
+        })
+        if (i % 1500 === 0) {
+          await c.drain()
+        }
+      }
+      await c.drain()
     }),
   )
 
