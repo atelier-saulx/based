@@ -5,14 +5,16 @@ import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native from '../native.js'
 import { initCsmt, makeCsmtKey } from './tree.js'
-import { writeUint64 } from '@saulx/utils'
+import { deepCopy, writeUint64 } from '@saulx/utils'
 import { SCHEMA_FILE } from '../types.js'
+import { hash } from '@saulx/hash'
+import { getPropType, StrictSchema } from '@based/schema'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
+  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   server.schema = schema
-  server.schemaTypesParsed = {}
-  server.schemaTypesParsedById = {}
-  updateTypeDefs(schema, server.schemaTypesParsed, server.schemaTypesParsedById)
+  server.schemaTypesParsed = schemaTypesParsed
+  server.schemaTypesParsedById = schemaTypesParsedById
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
@@ -62,4 +64,64 @@ export const setNativeSchema = async (server: DbServer, schema: DbSchema) => {
     server.modify(buf)
     initCsmt(server)
   }
+}
+
+export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
+  // @ts-ignore
+  let dbSchema: DbSchema = deepCopy(schema)
+
+  // reserve 1 for root (even if you dont have it)
+  dbSchema.lastId = 1
+
+  if (dbSchema.props) {
+    for (const key in dbSchema.props) {
+      const prop = dbSchema.props[key]
+      const propType = getPropType(prop)
+      let refProp: any
+
+      if (propType === 'reference') {
+        refProp = prop
+      } else if (propType === 'references') {
+        refProp = prop.items
+        prop.items = refProp
+      }
+
+      if (refProp) {
+        const type = dbSchema.types[refProp.ref]
+        const inverseKey = '_' + key
+        dbSchema.types[refProp.ref] = {
+          ...type,
+          props: {
+            ...type.props,
+            [inverseKey]: {
+              items: {
+                ref: '_root',
+                prop: key,
+              },
+            },
+          },
+        }
+        refProp.prop = inverseKey
+      }
+    }
+
+    dbSchema.types ??= {}
+    // @ts-ignore This creates an internal type to use for root props
+    dbSchema.types._root = {
+      id: 1,
+      props: dbSchema.props,
+    }
+    delete dbSchema.props
+  }
+
+  for (const field in dbSchema.types) {
+    if (!('id' in dbSchema.types[field])) {
+      dbSchema.lastId++
+      dbSchema.types[field].id = dbSchema.lastId
+    }
+  }
+  const { hash: _, ...rest } = dbSchema
+  dbSchema.hash = hash(rest)
+
+  return dbSchema
 }

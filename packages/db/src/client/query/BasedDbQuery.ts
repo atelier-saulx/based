@@ -53,7 +53,7 @@ export class QueryBranch<T> {
   def: QueryDef
   queryCommands: QueryCommand[]
 
-  constructor(db: DbClient, def: QueryDef) {
+  constructor(db: DbClient, def?: QueryDef) {
     this.db = db
     this.def = def
   }
@@ -61,12 +61,12 @@ export class QueryBranch<T> {
   sort(field: string, order: 'asc' | 'desc' = 'asc'): T {
     if (this.queryCommands) {
       this.queryCommands.push({
-        method: 'filter',
+        method: 'sort',
         args: [field, order],
       })
+    } else {
+      sort(this.def, field, order)
     }
-
-    sort(this.def, field, order)
     // @ts-ignore
     return this
   }
@@ -82,14 +82,14 @@ export class QueryBranch<T> {
         method: 'filter',
         args: [field, operator, value, opts],
       })
+    } else {
+      const f = convertFilter(this.def, field, operator, value, opts)
+      if (!f) {
+        // @ts-ignore
+        return this
+      }
+      filter(this.db, this.def, f, this.def.filter)
     }
-
-    const f = convertFilter(this.def, field, operator, value, opts)
-    if (!f) {
-      // @ts-ignore
-      return this
-    }
-    filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
   }
@@ -100,9 +100,9 @@ export class QueryBranch<T> {
         method: 'filterBatch',
         args: [f],
       })
+    } else {
+      filter(this.db, this.def, f, this.def.filter)
     }
-
-    filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
   }
@@ -126,55 +126,55 @@ export class QueryBranch<T> {
         method: 'search',
         args: [query, field, opts, ...fields],
       })
-    }
-
-    if (ArrayBuffer.isView(query)) {
-      // @ts-ignore
-      vectorSearch(this.def, query, field, opts ?? {})
-      // @ts-ignore
-      return this
-    }
-
-    if (field) {
-      if (!fields) {
-        // @ts-ignore
-        fields = [field]
-      } else {
-        // @ts-ignore
-        fields.unshift(field)
-      }
-    }
-
-    if (opts) {
-      if (!fields) {
-        // @ts-ignore
-        fields = [opts]
-      } else {
-        // @ts-ignore
-        fields.unshift(opts)
-      }
-    }
-
-    if (fields.length) {
-      if (fields.length === 1) {
-        search(this.def, query, fields[0])
-      } else {
-        const s = {}
-        for (const f of fields) {
-          if (typeof f === 'string') {
-            s[f] = 0
-          } else if (Array.isArray(f)) {
-            for (const ff of f) {
-              s[ff] = 0
-            }
-          } else if (typeof f === 'object') {
-            Object.assign(s, f)
-          }
-        }
-        search(this.def, query, s)
-      }
     } else {
-      search(this.def, query)
+      if (ArrayBuffer.isView(query)) {
+        // @ts-ignore
+        vectorSearch(this.def, query, field, opts ?? {})
+        // @ts-ignore
+        return this
+      }
+
+      if (field) {
+        if (!fields) {
+          // @ts-ignore
+          fields = [field]
+        } else {
+          // @ts-ignore
+          fields.unshift(field)
+        }
+      }
+
+      if (opts) {
+        if (!fields) {
+          // @ts-ignore
+          fields = [opts]
+        } else {
+          // @ts-ignore
+          fields.unshift(opts)
+        }
+      }
+
+      if (fields.length) {
+        if (fields.length === 1) {
+          search(this.def, query, fields[0])
+        } else {
+          const s = {}
+          for (const f of fields) {
+            if (typeof f === 'string') {
+              s[f] = 0
+            } else if (Array.isArray(f)) {
+              for (const ff of f) {
+                s[ff] = 0
+              }
+            } else if (typeof f === 'object') {
+              Object.assign(s, f)
+            }
+          }
+          search(this.def, query, s)
+        }
+      } else {
+        search(this.def, query)
+      }
     }
     // @ts-ignore
     return this
@@ -186,9 +186,9 @@ export class QueryBranch<T> {
         method: 'groupBy',
         args: [field],
       })
+    } else {
+      groupBy(this.def, field)
     }
-
-    groupBy(this.def, field)
     // only works with aggregates for now
     // @ts-ignore
     return this
@@ -200,10 +200,10 @@ export class QueryBranch<T> {
         method: 'count',
         args: [field],
       })
+    } else {
+      const p = field.split('.')
+      addAggregate(AggregateType.COUNT, this.def, p)
     }
-
-    const p = field.split('.')
-    addAggregate(AggregateType.COUNT, this.def, p)
     // @ts-ignore
     return this
   }
@@ -218,9 +218,9 @@ export class QueryBranch<T> {
         method: 'sum',
         args: fields,
       })
+    } else {
+      addAggregate(AggregateType.SUM, this.def, fields)
     }
-
-    addAggregate(AggregateType.SUM, this.def, fields)
     // @ts-ignore
     return this
   }
@@ -243,20 +243,20 @@ export class QueryBranch<T> {
         method: 'or',
         args: [field, operator, value, opts],
       })
-    }
-
-    if (typeof field === 'function') {
-      const f = new FilterBranch(
-        this.db,
-        filterOr(this.db, this.def, [], this.def.filter),
-        this.def,
-      )
-      field(f)
-      this.def.filter.size += f.filterBranch.size
     } else {
-      const f = convertFilter(this.def, field, operator, value, opts)
-      if (f) {
-        filterOr(this.db, this.def, f, this.def.filter)
+      if (typeof field === 'function') {
+        const f = new FilterBranch(
+          this.db,
+          filterOr(this.db, this.def, [], this.def.filter),
+          this.def,
+        )
+        field(f)
+        this.def.filter.size += f.filterBranch.size
+      } else {
+        const f = convertFilter(this.def, field, operator, value, opts)
+        if (f) {
+          filterOr(this.db, this.def, f, this.def.filter)
+        }
       }
     }
     // @ts-ignore
@@ -266,18 +266,18 @@ export class QueryBranch<T> {
   range(start: number, end: number = DEF_RANGE_PROP_LIMIT): T {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'range', args: [start, end] })
+    } else {
+      const offset = start
+      const limit = end - start
+      if (validateRange(this.def, offset, limit)) {
+        this.def.range.offset = 0
+        this.def.range.limit = DEF_RANGE_PROP_LIMIT
+        // @ts-ignore
+        return this
+      }
+      this.def.range.offset = offset
+      this.def.range.limit = limit
     }
-
-    const offset = start
-    const limit = end - start
-    if (validateRange(this.def, offset, limit)) {
-      this.def.range.offset = 0
-      this.def.range.limit = DEF_RANGE_PROP_LIMIT
-      // @ts-ignore
-      return this
-    }
-    this.def.range.offset = offset
-    this.def.range.limit = limit
     // @ts-ignore
     return this
   }
@@ -285,54 +285,60 @@ export class QueryBranch<T> {
   include(...fields: (string | BranchInclude | string[])[]): T {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'include', args: fields })
-    }
-
-    for (const f of fields) {
-      if (typeof f === 'string') {
-        includeField(this.def, f)
-      } else if (typeof f === 'function') {
-        f((field: string) => {
-          if (field[0] == '$') {
-            // @ts-ignore
-            const prop = this.def.target?.propDef?.edges[field]
-            if (
-              prop &&
-              (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
-            ) {
-              const refDef = createOrGetEdgeRefQueryDef(this.db, this.def, prop)
+    } else {
+      for (const f of fields) {
+        if (typeof f === 'string') {
+          includeField(this.def, f)
+        } else if (typeof f === 'function') {
+          f((field: string) => {
+            if (field[0] == '$') {
               // @ts-ignore
-              return new QueryBranch(this.db, refDef)
+              const prop = this.def.target?.propDef?.edges[field]
+              if (
+                prop &&
+                (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+              ) {
+                const refDef = createOrGetEdgeRefQueryDef(
+                  this.db,
+                  this.def,
+                  prop,
+                )
+                // @ts-ignore
+                return new QueryBranch(this.db, refDef)
+              }
+              throw new Error(
+                `No edge reference or edge references field named "${field}"`,
+              )
+            } else {
+              const prop =
+                field[0] == '$'
+                  ? // @ts-ignore
+                    this.def.target?.propDef?.edges[field]
+                  : this.def.props[field]
+              if (
+                prop &&
+                (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+              ) {
+                const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
+                // @ts-ignore
+                return new QueryBranch(this.db, refDef)
+              }
+              throw new Error(
+                `No reference or references field named "${field}"`,
+              )
             }
-            throw new Error(
-              `No edge reference or edge references field named "${field}"`,
-            )
+          })
+        } else if (Array.isArray(f)) {
+          if (f.length === 0) {
+            includeFields(this.def, ['id'])
           } else {
-            const prop =
-              field[0] == '$'
-                ? // @ts-ignore
-                  this.def.target?.propDef?.edges[field]
-                : this.def.props[field]
-            if (
-              prop &&
-              (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
-            ) {
-              const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
-              // @ts-ignore
-              return new QueryBranch(this.db, refDef)
-            }
-            throw new Error(`No reference or references field named "${field}"`)
+            includeFields(this.def, f)
           }
-        })
-      } else if (Array.isArray(f)) {
-        if (f.length === 0) {
-          includeFields(this.def, ['id'])
-        } else {
-          includeFields(this.def, f)
+        } else if (f !== undefined) {
+          throw new Error(
+            'Invalid include statement: expected props, refs and edges (string or array) or function',
+          )
         }
-      } else if (f !== undefined) {
-        throw new Error(
-          'Invalid include statement: expected props, refs and edges (string or array) or function',
-        )
       }
     }
     // @ts-ignore
@@ -391,44 +397,25 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       }
     }
 
-    if (!db.schema) {
-      throw new Error('Query: No schema yet - use await db.schemaIsSet()')
-    }
+    // const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
+    // def.schemaChecksum = db.schema?.hash || 0
 
-    const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
-    def.schemaChecksum = db.schema?.hash || 0
+    //  def: QueryDef
 
-    super(db, def)
+    super(db)
     this.db = db
     this.skipValidation = skipValidation
     this.queryCommands = []
     this.target = target
   }
 
-  reBuildQuery() {
+  reset() {
     this.id = undefined
     this.buffer = undefined
-
-    const def = createQueryDef(
-      this.db,
-      QueryDefType.Root,
-      this.target,
-      this.skipValidation,
-    )
-
-    def.schemaChecksum = this.db.schema?.hash || 0
-    this.def = def
-    const q = this.queryCommands
-    this.queryCommands = []
-    for (const command of q) {
-      this[command.method](...command.args)
-    }
+    this.def = undefined
   }
 
   #getInternal = async (resolve, reject) => {
-    if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeField(this.def, '*')
-    }
     let buf: Uint8Array
     try {
       if (!this.db.schema) {
@@ -445,7 +432,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     await this.db.isModified()
 
     if (this.db.schema?.hash !== this.def.schemaChecksum) {
-      this.reBuildQuery()
+      this.reset()
       return this.#getInternal(resolve, reject)
     }
 
@@ -454,7 +441,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (res.byteLength === 1) {
       if (res[0] === 0) {
         if (this.db.schema?.hash !== this.def.schemaChecksum) {
-          this.reBuildQuery()
+          this.reset()
           return this.#getInternal(resolve, reject)
         }
         reject(new Error('schema mismatch'))
@@ -512,9 +499,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   _getSync(dbCtxExternal: any) {
-    if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeField(this.def, '*')
-    }
     const buf = registerQuery(this)
     const d = performance.now()
     const res = native.getQueryBuf(buf, dbCtxExternal)
@@ -524,13 +508,5 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       new Uint8Array(res),
       performance.now() - d,
     )
-  }
-
-  toBuffer(): Uint8Array {
-    if (!this.def.include.stringFields.size && !this.def.references.size) {
-      includeField(this.def, '*')
-    }
-    const b = defToBuffer(this.db, this.def)
-    return concatUint8Arr(b)
   }
 }

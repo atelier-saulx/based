@@ -70,14 +70,13 @@ const hooks: DbClientHooks = {
     return res
   },
 }
-
 const client = new DbClient({
   hooks,
 })
 
 channel.postMessage('started')
 
-await client.schemaIsSet()
+// await client.schemaIsSet()
 await fn.default(client, workerData.data)
 
 channel.postMessage('done')

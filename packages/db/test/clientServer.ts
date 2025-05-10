@@ -6,6 +6,9 @@ await test('client server basic', async (t) => {
   const {
     clients: [client1, client2],
   } = await start(t)
+
+  console.log('set scjema what...')
+
   await client1.setSchema({
     types: {
       user: {
@@ -13,10 +16,13 @@ await test('client server basic', async (t) => {
       },
     },
   })
+  console.log('schema what...')
 
   const youzi = await client1.create('user', {
     name: 'youzi',
   })
+
+  console.log('xxx to migrate...')
 
   const jamez = await client1.create('user', {
     name: 'jamez',
@@ -34,6 +40,8 @@ await test('client server basic', async (t) => {
       },
     },
   })
+
+  console.log('migrate done!')
 
   deepEqual(await client1.query('user').get(), [
     { id: 1, age: 0 },

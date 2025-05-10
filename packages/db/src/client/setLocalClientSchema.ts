@@ -8,16 +8,10 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
     return client.schema
   }
 
+  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   client.schema = schema
-
-  client.schemaTypesParsed = {}
-  client.schemaTypesParsedById = {}
-  updateTypeDefs(
-    client.schema,
-    client.schemaTypesParsed,
-    client.schemaTypesParsedById,
-  )
-
+  client.schemaTypesParsed = schemaTypesParsed
+  client.schemaTypesParsedById = schemaTypesParsedById
   // Adds bidrectional refs on defs
   schemaToSelvaBuffer(client.schemaTypesParsed)
   // this has to happen before the listeners
@@ -36,7 +30,9 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
     store.resubscribe(q)
   }
 
-  client.emit('schema', schema)
+  process.nextTick(() => {
+    client.emit('schema', schema)
+  })
 
   return schema
 }

@@ -13,11 +13,8 @@ import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64 } from '@saulx/utils'
 import { QueryType } from '../client/query/types.js'
-import {
-  DbSchema,
-  SchemaHasChanged,
-  strictSchemaToDbSchema,
-} from '../schema.js'
+import { strictSchemaToDbSchema } from './schema.js'
+import { SchemaChecksum } from '../schema.js'
 import { DbWorker } from './DbWorker.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
@@ -25,6 +22,7 @@ import {
   setSchemaOnServer,
   writeSchemaFile,
 } from './schema.js'
+import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -43,6 +41,7 @@ export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
 
   migrating: number = null
+
   fileSystemPath: string
   merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()
@@ -73,29 +72,6 @@ export class DbServer extends DbShared {
 
     if (debug) {
       debugServer(this)
-    }
-  }
-
-  #resizeModifyDirtyRanges() {
-    let maxNrChanges = 0
-
-    for (const typeId in this.schemaTypesParsedById) {
-      const def = this.schemaTypesParsedById[typeId]
-      const lastId = def.lastId
-      const blockCapacity = def.blockCapacity
-      const tmp = lastId - +!(lastId % def.blockCapacity)
-      const lastBlock = Math.ceil(
-        (((tmp / blockCapacity) | 0) * blockCapacity + 1) / blockCapacity,
-      )
-      maxNrChanges += lastBlock
-    }
-
-    if (
-      !this.modifyDirtyRanges ||
-      this.modifyDirtyRanges.length < maxNrChanges
-    ) {
-      const min = Math.max(maxNrChanges * 1.2, 1024) | 0
-      this.modifyDirtyRanges = new Float64Array(min)
     }
   }
 
@@ -302,29 +278,41 @@ export class DbServer extends DbShared {
   async setSchema(
     strictSchema: StrictSchema,
     transformFns?: TransformFns,
-  ): Promise<SchemaHasChanged> {
+  ): Promise<SchemaChecksum> {
     const schema = strictSchemaToDbSchema(strictSchema)
 
     if (schema.hash === this.schema?.hash) {
       // Todo something for sending back to actual client
-      return false
+      return schema.hash
     }
 
     if (this.schema) {
+      // skip if allrdy doing the same
+      if (schema.hash === this.migrating) {
+        await this.once('schema')
+        return this.schema.hash
+      }
+
       await migrate(this, this.schema, schema, transformFns)
-      // process.nextTick(() => this.emit('schema', this.schema))
-      await this.once('schema')
+
+      // if (this.schema.hash !== schema.hash) {
+      //   // process.nextTick(() => this.emit('schema', this.schema))
+      //   await this.once('schema')
+      // }
       // Handle this later if it gets changed back to the same schema do false
-      return true
+      // console.log(this.schema.hash == schema.hash)
+      return this.schema.hash
     }
 
     setSchemaOnServer(this, schema)
     await writeSchemaFile(this, schema)
     await setNativeSchema(this, schema)
 
-    process.nextTick(() => this.emit('schema', this.schema))
+    process.nextTick(() => {
+      this.emit('schema', this.schema)
+    })
 
-    return true
+    return schema.hash
   }
 
   modify(buf: Uint8Array): Record<number, number> | null {
@@ -404,7 +392,7 @@ export class DbServer extends DbShared {
       i += 8
     }
 
-    this.#resizeModifyDirtyRanges()
+    resizeModifyDirtyRanges(this)
     native.modify(data, types, this.dbCtxExternal, this.modifyDirtyRanges)
     for (let key of this.modifyDirtyRanges) {
       if (key === 0) {
@@ -415,7 +403,7 @@ export class DbServer extends DbShared {
   }
 
   #expire() {
-    this.#resizeModifyDirtyRanges()
+    resizeModifyDirtyRanges(this)
     native.modify(
       emptyUint8Array,
       emptyUint8Array,

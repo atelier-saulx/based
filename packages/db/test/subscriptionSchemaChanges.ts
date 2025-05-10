@@ -73,7 +73,7 @@ await test('subscription schema changes', async (t) => {
     },
   })
   await wait(20)
-  q.reBuildQuery()
+  q.reset()
   deepEqual(result1, q.get(), 'first schema change results are correct')
   const subResults = []
   const close = q.subscribe((q) => {

@@ -5,13 +5,13 @@ import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
 import { displayTarget } from './client/query/display.js'
 import { TransformFns } from './server/migrate/index.js'
-import { DbSchema, SchemaHasChanged } from './schema.js'
+import { DbSchema, SchemaChecksum } from './schema.js'
 
 export type DbClientHooks = {
   setSchema(
     schema: StrictSchema,
     transformFns?: TransformFns,
-  ): Promise<SchemaHasChanged>
+  ): Promise<SchemaChecksum>
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>
     dbWriteTime?: number
@@ -67,9 +67,12 @@ export const getDefaultHooks = (
     setSchema(schema: StrictSchema) {
       return server.setSchema(schema)
     },
-    subscribeSchema(schemaCb) {
+    subscribeSchema(setSchema) {
+      if (server.schema) {
+        setSchema(server.schema)
+      }
       server.on('schema', (schema) => {
-        schemaCb(schema)
+        setSchema(schema)
       })
     },
     flushModify(buf: Uint8Array) {

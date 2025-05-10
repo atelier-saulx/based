@@ -19,6 +19,7 @@ import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'
 import { DbClientHooks } from '../hooks.js'
 import { setLocalClientSchema } from './setLocalClientSchema.js'
+import { SchemaChecksum } from '../schema.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -72,16 +73,21 @@ export class DbClient extends DbShared {
     }
   }
 
-  async setSchema(schema: Schema, transformFns?: TransformFns): Promise<void> {
+  async setSchema(
+    schema: Schema,
+    transformFns?: TransformFns,
+  ): Promise<SchemaChecksum> {
     const strictSchema = parse(schema).schema
     await this.drain()
-    const schemaHasChanged = await this.hooks.setSchema(
+    const schemaChecksum = await this.hooks.setSchema(
       strictSchema as StrictSchema,
       transformFns,
     )
-    if (schemaHasChanged) {
+    if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
+      return this.schema.hash
     }
+    return schemaChecksum
   }
 
   create(type: string, obj: CreateObj = {}, opts?: ModifyOpts): ModifyRes {

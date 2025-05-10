@@ -23,18 +23,6 @@ await test('subscriptionWorkers', async (t) => {
 
   const voteCountrySchema: SchemaProp = countrySchema
 
-  const status = [
-    'Requested',
-    'ReadyForConfirmationToken',
-    'RequestedIntent',
-    // paymentStatusTime(ID TOKEN)
-    // SUB THAT IS ALSO ON THE FRONT END.getWhen(v => v.status == ReadyForPayment)
-    'ReadyForPaymentIntent',
-    'PaymentIntentIsDone',
-    'WebhookSuccess',
-    'WebhookFailed',
-  ]
-
   await db.setSchema({
     types: {
       payment: {
@@ -85,6 +73,7 @@ await test('subscriptionWorkers', async (t) => {
             })
         }
         client.flushTime = 0
+        await client.schemaIsSet()
         for (let i = 0; i < 1e4; i++) {
           const payment = client.create('payment', {})
           const c: any = {}

@@ -12,6 +12,9 @@ export const start = async (t, clientsN = 2) => {
       return () => {}
     },
     subscribeSchema: (setSchema) => {
+      if (server.schema) {
+        setSchema(server.schema)
+      }
       server.on('schema', (schema) => {
         setSchema(schema)
       })
@@ -20,7 +23,6 @@ export const start = async (t, clientsN = 2) => {
       schema = { ...schema }
       await setTimeout(20)
       const res = await server.setSchema(schema, transformFns)
-      await setTimeout(~~(Math.random() * 100))
       return res
     },
     async flushModify(buf) {

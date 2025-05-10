@@ -164,7 +164,7 @@ await test('schema with many uint8 fields', async (t) => {
       db,
       async (client, { allCountryCodes, countryCodesArray, status }) => {
         client.flushTime = 10
-        for (let i = 0; i < 5e4; i++) {
+        for (let i = 0; i < 5e5; i++) {
           const payment = client.create('payment', {
             // status: status[~~(Math.random() * status.length)],
           })

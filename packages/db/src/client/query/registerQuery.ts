@@ -3,9 +3,31 @@ import { concatUint8Arr, writeUint64 } from '@saulx/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toByteCode/toBuffer.js'
 import { handleErrors } from './validation.js'
+import { createQueryDef } from './queryDef.js'
+import { QueryDefType } from './types.js'
+import { includeField } from './query.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
+    const commands = q.queryCommands
+    q.queryCommands = null
+    const def = createQueryDef(
+      q.db,
+      QueryDefType.Root,
+      q.target,
+      q.skipValidation,
+    )
+    def.schemaChecksum = q.db.schema?.hash || 0
+    q.def = def
+    // proposal:
+    for (const command of commands) {
+      q[command.method](...command.args)
+    }
+    if (!q.def.include.stringFields.size && !q.def.references.size) {
+      includeField(q.def, '*')
+    }
+    q.queryCommands = commands
+
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
     let id = native.crc32(buf)

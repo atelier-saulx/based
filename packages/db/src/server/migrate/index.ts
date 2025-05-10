@@ -54,7 +54,7 @@ export const migrate = async (
   toSchema: DbSchema,
   transform?: TransformFns,
 ): Promise<void> => {
-  const migrationId = migrationCnt++
+  const migrationId = toSchema.hash
   server.migrating = migrationId
   const abort = () => server.migrating !== migrationId
 
@@ -114,7 +114,9 @@ export const migrate = async (
     if (start == specialBlock) return // skip the type specialBlock
     rangesToMigrate.push(leaf.data)
   })
+
   await waitUntilSleeping(workerState)
+
   while (i < rangesToMigrate.length) {
     if (abort()) {
       break
@@ -192,6 +194,6 @@ export const migrate = async (
   if (abort()) {
     return
   }
-
+  server.migrating = 0
   process.nextTick(() => server.emit('schema', server.schema))
 }

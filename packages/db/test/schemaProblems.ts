@@ -9,10 +9,23 @@ await test('empty schema dont crash', async (t) => {
 
   await db.start({ clean: true })
 
+  t.after(() => {
+    return t.backup(db)
+  })
+
   const q = []
   q.push(
     clientWorker(t, db, async (c) => {
       await c.query('flap').get().inspect()
+    }),
+  )
+
+  q.push(
+    clientWorker(t, db, async (c) => {
+      c.query('flap').subscribe((d) => {
+        console.log('sub', d)
+      })
+      await new Promise((resolve) => setTimeout(resolve, 300))
     }),
   )
 

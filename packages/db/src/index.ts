@@ -6,6 +6,7 @@ import { wait } from '@saulx/utils'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
+import { setLocalClientSchema } from './client/setLocalClientSchema.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx }
@@ -46,8 +47,10 @@ export class BasedDb extends Emitter {
       maxModifySize: opts.maxModifySize,
       hooks: getDefaultHooks(server),
     })
+
     this.server = server
     this.client = client
+
     if (opts.debug) {
       if (opts.debug === 'client') {
         debugServer(this.server)

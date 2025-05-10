@@ -11,6 +11,8 @@ import { isTypedArray } from 'node:util/types'
 import { CsmtNodeRange } from '../tree.js'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
+import { wait } from '@saulx/utils'
+import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -52,6 +54,8 @@ if (isMainThread) {
 
   setSchemaOnServer(fromDb.server, fromSchema)
   setSchemaOnServer(toDb.server, toSchema)
+  setLocalClientSchema(fromDb.client, fromDb.server.schema)
+  setLocalClientSchema(toDb.client, toDb.server.schema)
 
   const map: Record<number, { type: string; include: string[] }> = {}
   for (const type in fromDb.server.schemaTypesParsed) {
@@ -93,6 +97,7 @@ if (isMainThread) {
       const leafData: TreeNode<CsmtNodeRange>['data'] = msg.message
       const { type, include } = map[leafData.typeId]
       const typeTransformFn = transformFns[type]
+
       if (typeTransformFn) {
         const nodes = fromDb
           .query(type)
@@ -111,7 +116,7 @@ if (isMainThread) {
             toDb.create(type, res || node, { unsafe: true })
           }
         }
-      } else if (type in toDb.client.schemaTypesParsed) {
+      } else if (type in toDb.server.schemaTypesParsed) {
         const nodes = fromDb
           .query(type)
           .include(include)

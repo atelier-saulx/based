@@ -28,13 +28,9 @@ import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const DEFAULT_BLOCK_CAPACITY = 100_000
-export const updateTypeDefs = (
-  schema: StrictSchema, // needs DBSCHEMA
-  // needs to be in this folder
-  schemaTypesParsed: SchemaTypesParsed,
-  schemaTypesParsedById: SchemaTypesParsedById,
-  lastNodeIds?: { [type: string]: number }, // LATER
-) => {
+export const updateTypeDefs = (schema: StrictSchema) => {
+  const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+  const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
   for (const field in schemaTypesParsed) {
     if (field in schema.types) {
       continue
@@ -45,12 +41,6 @@ export const updateTypeDefs = (
   }
   for (const field in schema.types) {
     const type = schema.types[field]
-    // if (
-    //   schemaTypesParsed[field] &&
-    //   schemaTypesParsed[field].checksum === hashObjectIgnoreKeyOrder(type) // bit weird..
-    // ) {
-    //   continue
-    // } else {
     if (!type.id) {
       throw new Error('NEED ID ON TYPE')
     }
@@ -62,12 +52,11 @@ export const updateTypeDefs = (
         en: {},
       },
     )
-    // TODO this should come from somewhere else
     def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
     schemaTypesParsed[field] = def
     schemaTypesParsedById[type.id] = def
-    // }
   }
+  return { schemaTypesParsed, schemaTypesParsedById }
 }
 
 export const createSchemaTypeDef = (
