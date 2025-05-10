@@ -1,6 +1,7 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
 import { clientWorker } from './shared/startWorker.js'
+import { equal } from './shared/assert.js'
 
 await test('empty schema dont crash', async (t) => {
   const db = new BasedDb({
@@ -209,6 +210,24 @@ await test('empty schema dont crash', async (t) => {
   )
 
   await Promise.all(q)
+
+  equal(
+    (await db.query('flap').count().get().inspect().toObject()).$count,
+    1_100_001,
+  )
+  equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
+
+  equal(
+    (
+      await db
+        .query('seq')
+        .include((s) => s('flap').count())
+        .get()
+        .inspect()
+        .toObject()
+    )[0].flap.$count,
+    1_100_000,
+  )
 
   // setSchema (client)
   //   validates the schema
