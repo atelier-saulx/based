@@ -186,7 +186,6 @@ export const migrate = async (
   // pass last node IDS { type: lastId }
   setSchemaOnServer(server, toSchema)
 
-  server.schemaTypesParsedById = {}
   for (const key in schemaTypesParsed) {
     const def = server.schemaTypesParsed[key]
     def.lastId = schemaTypesParsed[key].lastId
