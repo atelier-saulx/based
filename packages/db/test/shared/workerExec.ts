@@ -32,7 +32,7 @@ const hooks: DbClientHooks = {
       if (killed) {
         return
       }
-      if (res.byteLength >= 8) {
+      if (res.byteLength >= 4) {
         onData(res)
       } else if (res.byteLength === 1 && res[0] === 0) {
         console.info('schema mismatch, should resolve after update')

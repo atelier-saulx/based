@@ -30,6 +30,28 @@ await test('empty schema dont crash', async (t) => {
 
   q.push(
     clientWorker(t, db, async (c) => {
+      c.query('seq')
+        .include('flap')
+        .subscribe(
+          (d) => {
+            console.log('sub3', d)
+          },
+          (err) => {
+            console.log(err)
+          },
+        )
+
+      c.query('flap')
+        .count()
+        .subscribe(
+          (d) => {
+            console.log('count sub 4', d)
+          },
+          (err) => {
+            console.log(err)
+          },
+        )
+
       c.query('flap').subscribe(
         (d) => {
           console.log('sub2', d)
@@ -71,6 +93,7 @@ await test('empty schema dont crash', async (t) => {
           },
           flap: {
             props: {
+              email: 'alias',
               x: 'uint8',
               seq: {
                 ref: 'seq',
@@ -82,7 +105,9 @@ await test('empty schema dont crash', async (t) => {
       })
       await c.create('flap', {
         x: 10,
+        email: 'boink@boik.com',
       })
+      await c.create('seq', {})
       await new Promise((resolve) => setTimeout(resolve, 300))
       await c.setSchema({
         types: {
@@ -96,6 +121,7 @@ await test('empty schema dont crash', async (t) => {
           },
           flap: {
             props: {
+              email: 'alias',
               x: 'uint32',
               flap: 'int8',
               seq: {
@@ -120,6 +146,7 @@ await test('empty schema dont crash', async (t) => {
           },
           flap: {
             props: {
+              email: 'alias',
               x: 'uint32',
               flap: 'int8',
               y: 'boolean',
@@ -140,6 +167,8 @@ await test('empty schema dont crash', async (t) => {
       for (let i = 0; i < 1e5; i++) {
         await c.create('flap', {
           x: i,
+          email: `boinkx${i}@boik.com`,
+          seq: 1,
         })
         await c.drain()
       }
@@ -152,6 +181,8 @@ await test('empty schema dont crash', async (t) => {
       for (let i = 0; i < 5e5; i++) {
         await c.create('flap', {
           x: i,
+          email: `boinkDoink${i}@boik.com`,
+          seq: 1,
         })
         if (i % 500 === 0) {
           await c.drain()
@@ -166,6 +197,8 @@ await test('empty schema dont crash', async (t) => {
       for (let i = 0; i < 5e5; i++) {
         await c.create('flap', {
           x: i,
+          email: `boink${i}@boik.com`,
+          seq: 1,
         })
         if (i % 1500 === 0) {
           await c.drain()
