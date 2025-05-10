@@ -1,4 +1,3 @@
-import { StrictSchema } from '@based/schema'
 import { BasedDb } from '../../index.js'
 import { dirname, join } from 'path'
 import { tmpdir } from 'os'
@@ -9,10 +8,16 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import { destructureCsmtKey, foreachDirtyBlock, specialBlock } from '../tree.js'
-import { DbServer, SCHEMA_FILE } from '../index.js'
+import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
+import { DbSchema } from '../../schema.js'
+import {
+  setNativeSchema,
+  setSchemaOnServer,
+  writeSchemaFile,
+} from '../schema.js'
+import { setToAwake, waitUntilSleeping } from './utils.js'
 import { deepMerge } from '@saulx/utils'
-import { writeFile } from 'fs/promises'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -44,41 +49,44 @@ const parseTransform = (transform?: TransformFns) => {
 }
 
 export const migrate = async (
-  fromDbServer: DbServer,
-  toSchema: StrictSchema,
+  server: DbServer,
+  fromSchema: DbSchema,
+  toSchema: DbSchema,
   transform?: TransformFns,
-): Promise<DbServer['schema']> => {
+): Promise<void> => {
   const migrationId = migrationCnt++
-  fromDbServer.migrating = migrationId
-  const abort = () => fromDbServer.migrating !== migrationId
-  const toDb = new BasedDb({
-    path: join(tmpdir(), (~~(Math.random() * 1e9)).toString(36)),
+  server.migrating = migrationId
+  const abort = () => server.migrating !== migrationId
+
+  const tmpDb = new BasedDb({
+    path: null,
   })
 
-  await toDb.start({ clean: true })
+  await tmpDb.start({ clean: true })
 
   if (abort()) {
-    await toDb.destroy()
-    return fromDbServer.schema
+    await tmpDb.destroy()
+    return
   }
 
-  toSchema = await toDb.setSchema(toSchema)
+  setSchemaOnServer(tmpDb.server, toSchema)
+  // await writeSchemaFile(this, toSchema)
+  await setNativeSchema(tmpDb.server, toSchema)
 
   if (abort()) {
-    await toDb.destroy()
-    return fromDbServer.schema
+    await tmpDb.destroy()
+    return
   }
 
-  const fromSchema = fromDbServer.schema
-  const fromCtx = fromDbServer.dbCtxExternal
-  const toCtx = toDb.server.dbCtxExternal
+  const fromCtx = server.dbCtxExternal
+  const toCtx = tmpDb.server.dbCtxExternal
   const { port1, port2 } = new MessageChannel()
-  const atomics = new Int32Array(new SharedArrayBuffer(4))
+  const workerState = new Int32Array(new SharedArrayBuffer(4))
   const fromAddress = native.intFromExternal(fromCtx)
   const toAddress = native.intFromExternal(toCtx)
   const transformFns = parseTransform(transform)
 
-  atomics[0] = 1
+  setToAwake(workerState, false)
 
   const worker = new Worker(workerPath, {
     workerData: {
@@ -88,109 +96,102 @@ export const migrate = async (
       fromSchema,
       toSchema,
       channel: port2,
-      atomics,
+      workerState,
       transformFns,
     },
     transferList: [port2],
   })
 
+  // handle?
   worker.on('error', console.error)
 
+  // Block handling
   let i = 0
-  let ranges = []
-
-  await fromDbServer.save()
-  fromDbServer.merkleTree.visitLeafNodes((leaf) => {
+  let rangesToMigrate = []
+  await server.save()
+  server.merkleTree.visitLeafNodes((leaf) => {
     const [_typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
-    ranges.push(leaf.data)
+    rangesToMigrate.push(leaf.data)
   })
-
-  await Atomics.waitAsync(atomics, 0, 1).value
-
-  while (i < ranges.length) {
+  await waitUntilSleeping(workerState)
+  while (i < rangesToMigrate.length) {
     if (abort()) {
       break
     }
     // block modifies
-    fromDbServer.processingQueries++
-    const leafData = ranges[i++]
+    server.processingQueries++
+    const leafData = rangesToMigrate[i++]
     port1.postMessage(leafData)
-    // wake up the worker
-    atomics[0] = 1
-    Atomics.notify(atomics, 0)
-    // wait until it's done
-    await Atomics.waitAsync(atomics, 0, 1).value
+    setToAwake(workerState, true)
+    await waitUntilSleeping(workerState)
     // exec queued modifies
-    fromDbServer.onQueryEnd()
-
-    if (i === ranges.length) {
-      if (fromDbServer.dirtyRanges.size) {
-        ranges = []
+    server.onQueryEnd()
+    if (i === rangesToMigrate.length) {
+      if (server.dirtyRanges.size) {
+        rangesToMigrate = []
         i = 0
-
-        foreachDirtyBlock(fromDbServer, (_mtKey, typeId, start, end) => {
-          ranges.push({
+        foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
+          rangesToMigrate.push({
             typeId,
             start,
             end,
           })
         })
-
-        fromDbServer.dirtyRanges.clear()
+        server.dirtyRanges.clear()
       }
     }
   }
+  // ---------------------------------
 
   if (abort()) {
-    await Promise.all([toDb.destroy(), worker.terminate()])
-    return fromDbServer.schema
+    await Promise.all([tmpDb.destroy(), worker.terminate()])
+    return
   }
 
   let msg: any
-  let schema: any
   let schemaTypesParsed: any
 
   while ((msg = receiveMessageOnPort(port1))) {
-    ;[schema, schemaTypesParsed] = msg.message
+    schemaTypesParsed = msg.message
   }
 
-  fromDbServer.dbCtxExternal = toCtx
-  fromDbServer.sortIndexes = {}
-  fromDbServer.schema = deepMerge(toDb.server.schema, schema)
-  fromDbServer.schemaTypesParsed = deepMerge(
-    toDb.server.schemaTypesParsed,
+  server.dbCtxExternal = toCtx
+  server.sortIndexes = {}
+
+  // ----------------MAKE NICE THIS------------------
+  // pass last node IDS { type: lastId }
+  setSchemaOnServer(server, toSchema)
+  // make schema util for this later
+  server.schemaTypesParsed = deepMerge(
+    tmpDb.server.schemaTypesParsed,
     schemaTypesParsed,
   )
-  fromDbServer.schemaTypesParsedById = {}
-  for (const key in fromDbServer.schemaTypesParsed) {
-    const def = fromDbServer.schemaTypesParsed[key]
-    fromDbServer.schemaTypesParsedById[def.id] = def
+  server.schemaTypesParsedById = {}
+  for (const key in server.schemaTypesParsed) {
+    const def = server.schemaTypesParsed[key]
+    server.schemaTypesParsedById[def.id] = def
   }
+  // -----------------------------------------
 
-  toDb.server.dbCtxExternal = fromCtx
+  tmpDb.server.dbCtxExternal = fromCtx
+  await writeSchemaFile(server, toSchema)
 
-  const promises: Promise<any>[] = fromDbServer.workers.map((worker) =>
+  const promises: Promise<any>[] = server.workers.map((worker) =>
     worker.updateCtx(toAddress),
   )
 
   promises.push(
-    toDb.destroy(),
+    tmpDb.destroy(),
     worker.terminate(),
-    fromDbServer.save({ forceFullDump: true }),
-    writeFile(
-      join(fromDbServer.fileSystemPath, SCHEMA_FILE),
-      JSON.stringify(fromDbServer.schema),
-    ),
+    server.save({ forceFullDump: true }),
   )
 
   await Promise.all(promises)
 
   if (abort()) {
-    return fromDbServer.schema
+    return
   }
 
-  fromDbServer.onSchemaChange?.(fromDbServer.schema)
-
-  return fromDbServer.schema
+  process.nextTick(() => server.emit('schema', server.schema))
 }

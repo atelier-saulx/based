@@ -1,0 +1,3 @@
+export const SCHEMA_FILE = 'schema.json'
+export const WRITELOG_FILE = 'writelog.json'
+export const COMMON_SDB_FILE = 'common.sdb'

@@ -11,11 +11,10 @@ import {
   makeCsmtKey,
   specialBlock,
 } from './tree.js'
-import { DbServer, WRITELOG_FILE } from './index.js'
+import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
-
-const COMMON_SDB_FILE = 'common.sdb'
+import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 
 export type Writelog = {
   ts: number

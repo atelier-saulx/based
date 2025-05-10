@@ -9,18 +9,19 @@ import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { isTypedArray } from 'node:util/types'
 import { CsmtNodeRange } from '../tree.js'
+import { setSchemaOnServer } from '../schema.js'
+import { setToSleep } from './utils.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
 } else if (workerData?.isDbMigrateWorker) {
-  const { from, to, fromSchema, toSchema, channel, atomics, transformFns } =
+  const { from, to, fromSchema, toSchema, channel, workerState, transformFns } =
     workerData
 
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
-  const path = null
-  const fromDb = new BasedDb({ path })
-  const toDb = new BasedDb({ path })
+  const fromDb = new BasedDb({ path: null })
+  const toDb = new BasedDb({ path: null })
   const cp = (obj) => {
     let copy: object
 
@@ -49,12 +50,12 @@ if (isMainThread) {
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
-  await fromDb.setSchema(fromSchema, true)
-  await toDb.setSchema(toSchema, true)
+  setSchemaOnServer(fromDb.server, fromSchema)
+  setSchemaOnServer(toDb.server, toSchema)
 
   const map: Record<number, { type: string; include: string[] }> = {}
-  for (const type in fromDb.client.schemaTypesParsed) {
-    const { id, props } = fromDb.client.schemaTypesParsed[type]
+  for (const type in fromDb.server.schemaTypesParsed) {
+    const { id, props } = fromDb.server.schemaTypesParsed[type]
     const include = Object.keys(props)
     let i = include.length
 
@@ -125,14 +126,10 @@ if (isMainThread) {
 
     await toDb.drain()
 
-    channel.postMessage([
-      cp(toDb.server.schema),
-      cp(toDb.server.schemaTypesParsed),
-    ])
-    // put it to sleep
-    atomics[0] = 0
-    Atomics.notify(atomics, 0)
-    Atomics.wait(atomics, 0, 0)
+    // WE ARE ONLY GOING TO SEND { type: lastNodeId }
+    channel.postMessage(cp(toDb.server.schemaTypesParsed))
+
+    setToSleep(workerState)
   }
 } else {
   console.info('incorrect worker db migrate')

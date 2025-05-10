@@ -1,11 +1,34 @@
 import { StrictSchema } from '@based/schema'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
-import { OnError } from './client/query/subscription/types.js'
+import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
 import { displayTarget } from './client/query/display.js'
+import { TransformFns } from './server/migrate/index.js'
+import { DbSchema, SchemaHasChanged } from './schema.js'
 
-export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
+export type DbClientHooks = {
+  setSchema(
+    schema: StrictSchema,
+    transformFns?: TransformFns,
+  ): Promise<SchemaHasChanged>
+  flushModify(buf: Uint8Array): Promise<{
+    offsets: Record<number, number>
+    dbWriteTime?: number
+  }>
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
+  subscribe(
+    q: BasedDbQuery,
+    onData: (buf: Uint8Array) => ReturnType<OnData>,
+    onError?: OnError,
+  ): OnClose
+  subscribeSchema(cb: (schema: DbSchema) => void): void
+}
+
+export const getDefaultHooks = (
+  server: DbServer,
+  subInterval = 200,
+): DbClientHooks => {
   return {
     subscribe(
       q: BasedDbQuery,
@@ -41,8 +64,13 @@ export const getDefaultHooks = (server: DbServer, subInterval = 200) => {
         killed = true
       }
     },
-    setSchema(schema: StrictSchema, fromStart: boolean) {
-      return Promise.resolve(server.setSchema(schema, fromStart))
+    setSchema(schema: StrictSchema) {
+      return server.setSchema(schema)
+    },
+    subscribeSchema(schemaCb) {
+      server.on('schema', (schema) => {
+        schemaCb(schema)
+      })
     },
     flushModify(buf: Uint8Array) {
       const d = performance.now()

@@ -1,6 +1,12 @@
 import { getPropType, StrictSchema } from '@based/schema'
+import { hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 
+export type DbSchema = StrictSchema & { lastId: number; hash: number }
+
+export type SchemaHasChanged = boolean
+
+// later...
 const exclude = new Set(['id', 'lastId', 'hash'])
 export const schemaLooseEqual = (a: any, b: any, key?: string) => {
   if (a === b) {
@@ -48,13 +54,22 @@ export const schemaLooseEqual = (a: any, b: any, key?: string) => {
   return true
 }
 
-export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
-  let parsedSchema = strictSchema
-  if (strictSchema.props) {
-    // TODO do this more precise
-    parsedSchema = deepCopy(strictSchema)
-    for (const key in parsedSchema.props) {
-      const prop = parsedSchema.props[key]
+export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
+  // @ts-ignore
+  let dbSchema: DbSchema = deepCopy(schema)
+
+  // if (Object.keys(this.schema.types).length > 0) {
+  //   if (schemaLooseEqual(parsedSchema, this.schema)) {
+  //     return this.schema
+  //   }
+  // }
+
+  // reserve 1 for root (even if you dont have it)
+  dbSchema.lastId = 1
+
+  if (schema.props) {
+    for (const key in dbSchema.props) {
+      const prop = dbSchema.props[key]
       const propType = getPropType(prop)
       let refProp: any
 
@@ -66,9 +81,9 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
       }
 
       if (refProp) {
-        const type = parsedSchema.types[refProp.ref]
+        const type = dbSchema.types[refProp.ref]
         const inverseKey = '_' + key
-        parsedSchema.types[refProp.ref] = {
+        dbSchema.types[refProp.ref] = {
           ...type,
           props: {
             ...type.props,
@@ -84,15 +99,23 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
       }
     }
 
-    parsedSchema.types ??= {}
+    dbSchema.types ??= {}
     // @ts-ignore This creates an internal type to use for root props
-    parsedSchema.types._root = {
+    dbSchema.types._root = {
       id: 1,
-      props: parsedSchema.props,
+      props: dbSchema.props,
     }
-
-    delete parsedSchema.props
+    delete dbSchema.props
   }
 
-  return parsedSchema
+  for (const field in dbSchema.types) {
+    if (!('id' in dbSchema.types[field])) {
+      dbSchema.lastId++
+      dbSchema.types[field].id = dbSchema.lastId
+    }
+  }
+  const { hash: _, ...rest } = dbSchema
+  dbSchema.hash = hash(rest)
+
+  return dbSchema
 }

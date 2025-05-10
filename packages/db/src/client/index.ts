@@ -1,50 +1,24 @@
 import { parse, Schema, StrictSchema } from '@based/schema'
 import { create, CreateObj } from './modify/create.js'
 import {
-  SchemaTypeDef,
-  updateTypeDefs,
-  schemaToSelvaBuffer,
-} from '@based/schema/def'
-import {
-  execCtxQueue,
   flushBuffer,
+  makeFlushIsReady,
   ModifyCtx,
   startDrain,
 } from './flushModify.js'
-
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
-import { DbServer } from '../server/index.js'
-import { wait } from '@saulx/utils'
 import { TransformFns } from '../server/migrate/index.js'
-import { hash } from '@saulx/hash'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 import { debugMode } from '../utils.js'
-import { OnClose, OnData, OnError } from './query/subscription/types.js'
 import { SubStore } from './query/subscription/index.js'
-import { parseSchema, schemaLooseEqual } from '../schema.js'
-
-export type DbClientHooks = {
-  setSchema(
-    schema: StrictSchema,
-    fromStart?: boolean,
-    transformFns?: TransformFns,
-  ): Promise<DbServer['schema']>
-  flushModify(buf: Uint8Array): Promise<{
-    offsets: Record<number, number>
-    dbWriteTime?: number
-  }>
-  getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
-  subscribe(
-    q: BasedDbQuery,
-    onData: (buf: Uint8Array) => ReturnType<OnData>,
-    onError?: OnError,
-  ): OnClose
-}
+import { DbShared } from '../shared/DbBase.js'
+import { DbClientHooks } from '../hooks.js'
+import { setLocalClientSchema } from './setLocalClientSchema.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -53,24 +27,14 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-type DbClientSchema = DbServer['schema']
-
-const makeFlushIsReady = (dbClient: DbClient) => {
-  dbClient.flushIsReady = new Promise<void>((resolve) => {
-    dbClient.flushReady = () => {
-      resolve()
-      makeFlushIsReady(dbClient)
-    }
-  })
-}
-
-export class DbClient {
+export class DbClient extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
     flushTime = 0,
     debug,
   }: DbClientOpts) {
+    super()
     this.hooks = hooks
     this.maxModifySize = maxModifySize
     this.modifyCtx = new ModifyCtx(this)
@@ -79,22 +43,20 @@ export class DbClient {
     if (debug) {
       debugMode(this)
     }
+    this.hooks.subscribeSchema((schema) => {
+      setLocalClientSchema(this, schema)
+    })
   }
 
   subs = new Map<BasedDbQuery, SubStore>()
 
-  flushTime: number
+  hooks: DbClientHooks
 
+  // modify
+  flushTime: number
   flushReady: () => void
   flushIsReady: Promise<void>
 
-  hooks: DbClientHooks
-  schema: DbClientSchema
-
-  schemaTypesParsed: Record<string, SchemaTypeDef> = {}
-  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
-
-  // modify
   writeTime: number = 0
   isDraining = false
   modifyCtx: ModifyCtx
@@ -104,80 +66,22 @@ export class DbClient {
     { o: Record<string, any>; p: Promise<number | ModifyRes> }
   > = new Map()
 
-  schemaProcessing: number
-  schemaPromise: Promise<DbServer['schema']>
-
-  async setSchema(
-    schema: Schema,
-    fromStart?: boolean,
-    transformFns?: TransformFns,
-  ): Promise<StrictSchema> {
-    const strictSchema = fromStart ? schema : parse(schema).schema
-    const parsedSchema = parseSchema(strictSchema as StrictSchema)
-
-    // this one excludes all the ids
-    if (schemaLooseEqual(parsedSchema, this.schema)) {
-      return this.schema
+  async schemaIsSet() {
+    if (!this.schema) {
+      await this.once('schema')
     }
-
-    // drain current things
-    await this.drain()
-    const checksum = hash(strictSchema)
-    if (checksum !== this.schemaProcessing) {
-      this.schemaProcessing = checksum
-      this.schemaPromise = this.hooks.setSchema(
-        strictSchema as StrictSchema,
-        fromStart,
-        transformFns,
-      )
-    }
-
-    const remoteSchema = await this.schemaPromise
-
-    this.schemaProcessing = null
-    this.schemaPromise = null
-
-    return this.putLocalSchema(remoteSchema)
   }
 
-  putLocalSchema(schema: DbServer['schema']) {
-    if (this.schema && this.schema.hash === schema.hash) {
-      return this.schema
-    }
-
-    this.schema = schema
-
-    updateTypeDefs(
-      this.schema,
-      this.schemaTypesParsed,
-      this.schemaTypesParsedById,
+  async setSchema(schema: Schema, transformFns?: TransformFns): Promise<void> {
+    const strictSchema = parse(schema).schema
+    await this.drain()
+    const schemaHasChanged = await this.hooks.setSchema(
+      strictSchema as StrictSchema,
+      transformFns,
     )
-
-    // Adds bidrectional refs on defs
-    schemaToSelvaBuffer(this.schemaTypesParsed)
-    // this has to happen before the listeners
-
-    if (this.modifyCtx.len > 8) {
-      console.info('Modify cancelled - schema updated')
+    if (schemaHasChanged) {
+      await this.once('schema')
     }
-
-    // cancel modify queue
-    const resCtx = this.modifyCtx.ctx
-    this.modifyCtx.reset()
-    execCtxQueue(resCtx, true)
-
-    // resubscribe
-    for (const [q, store] of this.subs) {
-      store.resubscribe(q)
-    }
-
-    if (this.listeners?.schema) {
-      for (const cb of this.listeners.schema) {
-        cb(this.schema)
-      }
-    }
-
-    return this.schema
   }
 
   create(type: string, obj: CreateObj = {}, opts?: ModifyOpts): ModifyRes {
@@ -331,7 +235,6 @@ export class DbClient {
         opts,
       )
     }
-
     // else it is rootProps
     return update(
       this,
@@ -356,6 +259,7 @@ export class DbClient {
 
   destroy() {
     this.stop()
+    delete this.listeners
     this.modifyCtx.db = null // Make sure we don't have a circular ref and leak mem
   }
 
@@ -384,32 +288,5 @@ export class DbClient {
     }
     await this.flushIsReady
     return
-  }
-
-  async schemaIsSet(): Promise<true> {
-    if (this.schema) {
-      return true
-    }
-    if (this.schemaPromise) {
-      await this.schemaPromise
-    } else {
-      await wait(12)
-    }
-
-    return this.schemaIsSet()
-  }
-
-  listeners?: {
-    schema?: Set<(schema: DbClientSchema) => void>
-  }
-
-  on(event: 'schema', cb: (schema: DbClientSchema) => void) {
-    this.listeners ??= {}
-    this.listeners[event] ??= new Set()
-    this.listeners[event].add(cb)
-  }
-
-  off(event: 'schema', cb: (schema: DbClientSchema) => void) {
-    this.listeners?.[event]?.delete(cb)
   }
 }

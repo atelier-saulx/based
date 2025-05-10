@@ -1,11 +1,10 @@
 import { workerData } from 'node:worker_threads'
-import { DbClient, DbClientHooks } from '../../src/client/index.js'
-import { register } from 'node:module'
-import { registerQuery } from '../../src/client/query/registerQuery.js'
+import { DbClient, DbClientHooks } from '../../src/index.js'
 
 const fn = await import(workerData.file)
 
 const channel = workerData.channel
+const schemaChannel = workerData.schemaChannel
 
 const seqIdMap = new Map()
 const request = async (name, ...args: any[]): Promise<any> => {
@@ -52,15 +51,14 @@ const hooks: DbClientHooks = {
       killed = true
     }
   },
-  async setSchema(schema, fromStart, transformFns) {
+  subscribeSchema: (cb) => {
+    schemaChannel.on('message', (s) => {
+      cb(s)
+    })
+  },
+  async setSchema(schema, transformFns) {
     schema = { ...schema }
-    const { ...res } = await request(
-      'setSchema',
-      schema,
-      fromStart,
-      transformFns,
-    )
-    return res
+    return request('setSchema', schema, transformFns)
   },
   async flushModify(buf) {
     let offsets = await request('modify', new Uint8Array(buf))
@@ -74,11 +72,12 @@ const hooks: DbClientHooks = {
 }
 
 const client = new DbClient({
-  hooks: { ...hooks },
+  hooks,
 })
 
-client.putLocalSchema(workerData.schema)
+channel.postMessage('started')
 
+await client.schemaIsSet()
 await fn.default(client, workerData.data)
 
 channel.postMessage('done')

@@ -431,6 +431,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
     let buf: Uint8Array
     try {
+      if (!this.db.schema) {
+        await this.db.once('schema')
+      }
       buf = registerQuery(this)
     } catch (err) {
       reject(err)

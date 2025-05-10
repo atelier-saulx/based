@@ -1,41 +1,31 @@
 import native from '../native.js'
 import createDbHash from './dbHash.js'
-import { rm, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
-import {
-  PropDef,
-  SchemaTypeDef,
-  updateTypeDefs,
-  schemaToSelvaBuffer,
-  SchemaTypesParsed,
-  SchemaTypesParsedById,
-} from '@based/schema/def'
+import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
 import { start } from './start.js'
-import {
-  CsmtNodeRange,
-  initCsmt,
-  makeCsmtKey,
-  makeCsmtKeyFromNodeId,
-} from './tree.js'
+import { CsmtNodeRange, makeCsmtKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
-import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { readUint16, readUint32, readUint64, writeUint64 } from '@saulx/utils'
+import { readUint16, readUint32, readUint64 } from '@saulx/utils'
 import { QueryType } from '../client/query/types.js'
-import { parseSchema, schemaLooseEqual } from '../schema.js'
-import { hash } from '@saulx/hash'
+import {
+  DbSchema,
+  SchemaHasChanged,
+  strictSchemaToDbSchema,
+} from '../schema.js'
+import { DbWorker } from './DbWorker.js'
+import { DbShared } from '../shared/DbBase.js'
+import {
+  setNativeSchema,
+  setSchemaOnServer,
+  writeSchemaFile,
+} from './schema.js'
 
-export const SCHEMA_FILE = 'schema.json'
-export const WRITELOG_FILE = 'writelog.json'
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const workerPath = join(__dirname, 'worker.js')
 const emptyUint8Array = new Uint8Array(0)
 
 class SortIndex {
@@ -48,61 +38,12 @@ class SortIndex {
   cnt = 0
 }
 
-export class DbWorker {
-  constructor(address: BigInt, db: DbServer) {
-    const { port1, port2 } = new MessageChannel()
-    this.db = db
-    this.channel = port1
-    this.worker = new Worker(workerPath, {
-      workerData: {
-        isDbWorker: true,
-        channel: port2,
-        address,
-      },
-      transferList: [port2],
-    })
-
-    port1.on('message', (buf) => {
-      this.resolvers.shift()(new Uint8Array(buf))
-      this.db.onQueryEnd()
-    })
-  }
-
-  db: DbServer
-  channel: MessagePort
-  worker: Worker
-  resolvers: any[] = []
-
-  callback = (resolve) => {
-    this.db.processingQueries++
-    this.resolvers.push(resolve)
-  }
-
-  updateCtx(address: BigInt): Promise<void> {
-    this.channel.postMessage(address)
-    return new Promise(this.callback)
-  }
-
-  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
-    this.channel.postMessage(buf)
-    return new Promise(this.callback)
-  }
-}
-
-type OnSchemaChange = (schema: DbServer['schema']) => void
-
-export class DbServer {
+export class DbServer extends DbShared {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
-  schema: StrictSchema & { lastId: number; hash?: number } = {
-    lastId: 1, // we reserve one for root props
-    types: {},
-  }
+
   migrating: number = null
-  schemaTypesParsed: SchemaTypesParsed = {}
-  schemaTypesParsedById: SchemaTypesParsedById = {}
   fileSystemPath: string
-  maxModifySize: number
   merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()
   csmtHashFun = createDbHash()
@@ -112,29 +53,24 @@ export class DbServer {
   modifyQueue: Uint8Array[] = []
   queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
-  onSchemaChange: OnSchemaChange
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
 
   constructor({
     path,
-    maxModifySize = 100 * 1e3 * 1e3,
-    onSchemaChange,
     debug,
     saveIntervalInSeconds,
   }: {
     path: string
-    maxModifySize?: number
-    onSchemaChange?: OnSchemaChange
     debug?: boolean
     saveIntervalInSeconds?: number
   }) {
-    this.maxModifySize = maxModifySize
+    super()
     this.fileSystemPath = path
     this.sortIndexes = {}
-    this.onSchemaChange = onSchemaChange
     this.saveIntervalInSeconds = saveIntervalInSeconds
+
     if (debug) {
       debugServer(this)
     }
@@ -316,18 +252,6 @@ export class DbServer {
     return fields[lang]
   }
 
-  migrateSchema(
-    schema: StrictSchema,
-    transform?: Record<
-      string,
-      (
-        node: Record<string, any>,
-      ) => Record<string, any> | [string, Record<string, any>]
-    >,
-  ) {
-    return migrate(this, schema, transform)
-  }
-
   createSortIndexBuffer(
     typeId: number,
     field: number,
@@ -375,94 +299,32 @@ export class DbServer {
     return sortIndex
   }
 
-  setSchema(
+  async setSchema(
     strictSchema: StrictSchema,
-    fromStart: boolean = false,
     transformFns?: TransformFns,
-  ) {
-    const parsedSchema = parseSchema(strictSchema)
+  ): Promise<SchemaHasChanged> {
+    const schema = strictSchemaToDbSchema(strictSchema)
 
-    if (!fromStart && Object.keys(this.schema.types).length > 0) {
-      if (schemaLooseEqual(parsedSchema, this.schema)) {
-        return this.schema
-      }
-      try {
-        return this.migrateSchema(strictSchema, transformFns)
-      } catch (e) {
-        console.error('error migrating schema:', e)
-        return this.schema
-      }
+    if (schema.hash === this.schema?.hash) {
+      // Todo something for sending back to actual client
+      return false
     }
 
-    this.schema = {
-      lastId: this.schema.lastId,
-      ...parsedSchema,
+    if (this.schema) {
+      await migrate(this, this.schema, schema, transformFns)
+      // process.nextTick(() => this.emit('schema', this.schema))
+      await this.once('schema')
+      // Handle this later if it gets changed back to the same schema do false
+      return true
     }
 
-    for (const field in this.schema.types) {
-      if (!('id' in this.schema.types[field])) {
-        this.schema.lastId++
-        this.schema.types[field].id = this.schema.lastId
-      }
-    }
+    setSchemaOnServer(this, schema)
+    await writeSchemaFile(this, schema)
+    await setNativeSchema(this, schema)
 
-    const { hash: _, ...rest } = this.schema
-    this.schema.hash = hash(rest)
+    process.nextTick(() => this.emit('schema', this.schema))
 
-    updateTypeDefs(
-      this.schema,
-      this.schemaTypesParsed,
-      this.schemaTypesParsedById,
-    )
-
-    if (!fromStart) {
-      writeFile(
-        join(this.fileSystemPath, SCHEMA_FILE),
-        JSON.stringify(this.schema),
-      ).catch((err) => console.error('!!!', SCHEMA_FILE, err))
-      let types = Object.keys(this.schemaTypesParsed)
-      const s = schemaToSelvaBuffer(this.schemaTypesParsed)
-      for (let i = 0; i < s.length; i++) {
-        //  TYPE SELVA user Uint8Array(6) [ 1, 17, 23, 0, 11, 0 ]
-        const type = this.schemaTypesParsed[types[i]]
-        // TODO should not crash!
-        try {
-          native.updateSchemaType(
-            type.id,
-            new Uint8Array(s[i]),
-            this.dbCtxExternal,
-          )
-        } catch (err) {
-          console.error('Cannot update schema on selva', type.type, err, s[i])
-        }
-      }
-
-      if (strictSchema.props || strictSchema.types?._root) {
-        // insert a root node
-        // TODO fix this add it in schema at least
-        const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
-        const blockKey = makeCsmtKey(1, 1)
-        const buf = new Uint8Array(8 + data.length + 2 + 8 + 4)
-        const view = new DataView(buf.buffer, 0, buf.byteLength)
-        // set schema hash
-        writeUint64(buf, this.schema.hash, 0)
-        // add content
-        buf.set(data, 8)
-        // add typesLen
-        view.setFloat64(8 + data.length, 0, true)
-        // add dirty key
-        view.setFloat64(8 + data.length + 2, blockKey, true)
-        // add dataLen
-        view.setUint32(buf.length - 4, data.length, true)
-        this.modify(buf)
-      }
-
-      initCsmt(this)
-    }
-
-    this.onSchemaChange?.(this.schema)
-
-    return this.schema
+    return true
   }
 
   modify(buf: Uint8Array): Record<number, number> | null {

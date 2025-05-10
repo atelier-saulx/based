@@ -37,15 +37,16 @@ export const clientWorker = async <T>(
   })
 
   const { port1, port2 } = new MessageChannel()
+  const schemaChannel = new MessageChannel()
 
   const worker = new Worker(join(__dirname, 'workerExec.js'), {
     workerData: {
       file: filePath,
       channel: port2,
-      schema: db.server.schema,
       data,
+      schemaChannel: schemaChannel.port2,
     },
-    transferList: [port2],
+    transferList: [port2, schemaChannel.port2],
   })
 
   let done
@@ -53,7 +54,17 @@ export const clientWorker = async <T>(
     done = r
   })
 
+  db.server.on('schema', (s) => {
+    schemaChannel.port1.postMessage(s)
+  })
+
   port1.on('message', async (d) => {
+    if (d === 'started') {
+      if (db.server.schema) {
+        schemaChannel.port1.postMessage(db.server.schema)
+      }
+      return
+    }
     if (d === 'done') {
       done()
       return
