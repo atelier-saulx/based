@@ -102,7 +102,7 @@ if (isMainThread) {
         const nodes = fromDb
           .query(type)
           .include(include)
-          .range(leafData.start - 1, leafData.end - 1)
+          .range(leafData.start - 1, leafData.end)
           ._getSync(fromCtx)
 
         for (const node of nodes) {
@@ -120,7 +120,7 @@ if (isMainThread) {
         const nodes = fromDb
           .query(type)
           .include(include)
-          .range(leafData.start - 1, leafData.end - 1)
+          .range(leafData.start - 1, leafData.end)
           ._getSync(fromCtx)
 
         for (const node of nodes) {
