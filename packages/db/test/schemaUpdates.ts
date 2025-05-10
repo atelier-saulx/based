@@ -201,7 +201,7 @@ await test('rapid modifies during schema update', async (t) => {
   }
   await client2.drain()
 
-  client1.setSchema({
+  await client1.setSchema({
     types: {
       user: {
         age: 'number',

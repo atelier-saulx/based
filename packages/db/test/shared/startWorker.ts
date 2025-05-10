@@ -75,5 +75,5 @@ export const clientWorker = async <T>(
   })
 
   await p
-  worker.terminate()
+  await worker.terminate()
 }
