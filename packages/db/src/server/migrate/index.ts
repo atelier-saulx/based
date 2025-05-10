@@ -56,7 +56,16 @@ export const migrate = async (
 ): Promise<void> => {
   const migrationId = toSchema.hash
   server.migrating = migrationId
-  const abort = () => server.migrating !== migrationId
+
+  server.emit('info', `migrating schema ${migrationId}`)
+
+  const abort = () => {
+    server.emit(
+      'info',
+      `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
+    )
+    return server.migrating !== migrationId
+  }
 
   const tmpDb = new BasedDb({
     path: null,

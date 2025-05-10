@@ -32,7 +32,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { concatUint8Arr } from '@saulx/utils'
+import { concatUint8Arr, wait } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
@@ -440,11 +440,22 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     if (res.byteLength === 1) {
       if (res[0] === 0) {
-        if (this.db.schema?.hash !== this.def.schemaChecksum) {
+        if (this.def && this.db.schema?.hash !== this.def.schemaChecksum) {
+          this.reset()
+          this.db.emit(
+            'info',
+            'query get schema mismatch - awaiting new schema',
+          )
+          await this.db.once('schema')
+          return this.#getInternal(resolve, reject)
+        } else {
+          this.db.emit(
+            'info',
+            'query get schema mismatch - got the same already',
+          )
           this.reset()
           return this.#getInternal(resolve, reject)
         }
-        reject(new Error('schema mismatch'))
       } else {
         reject(new Error('unexpected error'))
       }

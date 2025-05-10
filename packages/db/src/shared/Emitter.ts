@@ -2,6 +2,7 @@ import { DbSchema } from '../schema.js'
 
 export type EventMap = {
   schema: DbSchema
+  info: string
 }
 
 export type Event = keyof EventMap
