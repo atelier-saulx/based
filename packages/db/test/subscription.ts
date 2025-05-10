@@ -130,3 +130,39 @@ await test('subscription', async (t) => {
 
   await wait(1000)
 })
+
+await test('subscription error', async (t) => {
+  const clientsN = 2
+  const { clients } = await start(t, clientsN)
+
+  await clients[0].setSchema({
+    types: {
+      user: {
+        derp: 'uint8',
+        location: 'string',
+        lang: 'string',
+      },
+    },
+  })
+
+  const x = await clients[0].create('user', {
+    derp: 1,
+  })
+
+  const close = clients[1]
+    .query('user')
+    .include('derp')
+    .subscribe(
+      (q) => {
+        // @ts-ignore
+        console.log(q.flap.x)
+      },
+      (err) => {
+        console.error(err)
+      },
+    )
+
+  await wait(1000)
+
+  close()
+})

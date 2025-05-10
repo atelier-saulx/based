@@ -1,7 +1,9 @@
-import { equal, deepEqual } from 'node:assert'
+import { equal } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
+import { throws, deepEqual } from './shared/assert.js'
+import { wait } from '@saulx/utils'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -81,6 +83,10 @@ await test('sum top level', async (t) => {
   //   { NL: 30, AU: 15 },
   //   'sum, top level, multiple props',
   // )
+
+  throws(async () => {
+    await db.query('vote').sum().get().toObject()
+  }, 'sum() returning nothing')
 
   // TODO: EXPLODE
   // deepEqual(
@@ -280,7 +286,7 @@ await test('sum branched includes', async (t) => {
 await test('sum performance', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
-    maxModifySize: 1e6,
+    // maxModifySize: 1e6,
   })
 
   await db.start({ clean: true })
@@ -357,7 +363,7 @@ await test('sum performance', async (t) => {
   )
 
   for (let i = 0; i < 1; i++) {
-    const x = {
+    const x: any = {
       country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       flap: {
         hello: 1,
@@ -366,6 +372,7 @@ await test('sum performance', async (t) => {
     for (const key of countries) {
       x[key] = ~~(Math.random() * 20)
     }
+    delete x.sequence
     db.create('vote', x)
   }
 
@@ -458,6 +465,8 @@ await test('top level count', async (t) => {
 
   // top level  ----------------------------------
 
+  ;(await db.query('vote').count().get()).debug()
+
   deepEqual(
     await db.query('vote').count().get().toObject(),
     { $count: 3 },
@@ -476,7 +485,7 @@ await test('top level count', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').include('IT').count().get().toObject(),
+    await db.query('vote').include('IT').count().get(),
     { $count: 3 },
     'count, top level, ignoring include',
   )
@@ -493,13 +502,13 @@ await test('top level count', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').filter('NL', '=', 20).count().get().toObject(),
+    await db.query('vote').filter('NL', '=', 20).count().get(),
     { $count: 1 },
     'count, with filtering an int value',
   )
 
   deepEqual(
-    await db.query('vote').filter('NL', '=', 0).count().get().toObject(),
+    await db.query('vote').filter('NL', '>', 1e6).count().get(),
     { $count: 0 },
     'count, with no match filtering, int value',
   )

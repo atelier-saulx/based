@@ -34,6 +34,8 @@ import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { concatUint8Arr } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
+import { displayTarget } from './display.js'
+import picocolors from 'picocolors'
 
 export { QueryByAliasObj }
 
@@ -207,6 +209,10 @@ export class QueryBranch<T> {
   }
 
   sum(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty sum() called')
+    }
+
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'sum',
@@ -483,7 +489,18 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   subscribe(onData: OnData, onError?: OnError) {
     return subscribe(
       this,
-      onData,
+      (res) => {
+        try {
+          onData(res)
+        } catch (err) {
+          // const t = displayTarget(this.def)
+          const def = this.def
+          let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+          name += `  Error executing onData handler in subscription\n`
+          name += `  ${err.message}\n`
+          console.error(name)
+        }
+      },
       onError ??
         ((err) => {
           console.error(err)

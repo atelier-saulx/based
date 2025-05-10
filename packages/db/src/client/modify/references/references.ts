@@ -16,6 +16,9 @@ import {
   NOEDGE_NOINDEX_TMPID,
   RANGE_ERR,
   REF_OP,
+  REF_OP_OVERWRITE,
+  REF_OP_PUT_ADD,
+  REF_OP_PUT_OVERWRITE,
   REF_OP_UPDATE,
 } from '../types.js'
 import { writeEdges } from './edge.js'
@@ -345,9 +348,8 @@ function putRefs(
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
   ctx.buf[ctx.len++] = size >>>= 8
-  ctx.buf[ctx.len++] = op === 0 ? 3 : 4
-
-  ctx.len = (ctx.len + 3) & ~3
+  ctx.buf[ctx.len++] =
+    op === REF_OP_OVERWRITE ? REF_OP_PUT_OVERWRITE : REF_OP_PUT_ADD
 
   let i = 0
   for (; i < refs.length; i++) {

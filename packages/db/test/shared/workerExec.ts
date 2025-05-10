@@ -1,5 +1,7 @@
 import { workerData } from 'node:worker_threads'
 import { DbClient, DbClientHooks } from '../../src/client/index.js'
+import { register } from 'node:module'
+import { registerQuery } from '../../src/client/query/registerQuery.js'
 
 const fn = await import(workerData.file)
 
@@ -23,10 +25,32 @@ channel.on('message', (d) => {
 
 var seqId = 0
 const hooks: DbClientHooks = {
-  subscribe(q, onData, onError) {
-    // add in a bit...
-    console.warn('Subscription not supported without based-server!')
-    return () => {}
+  subscribe(q, onData: (res: Uint8Array) => void, onError) {
+    let timer: ReturnType<typeof setTimeout>
+    let killed = false
+    const poll = async () => {
+      const res = await request('getQueryBuf', q.buffer)
+      if (killed) {
+        return
+      }
+      if (res.byteLength >= 8) {
+        onData(res)
+      } else if (res.byteLength === 1 && res[0] === 0) {
+        console.info('schema mismatch, should resolve after update')
+        // ignore update and stop polling
+        return
+      } else {
+        onError(new Error('unexpected error'))
+      }
+      timer = setTimeout(poll, 100)
+    }
+
+    poll()
+
+    return () => {
+      clearTimeout(timer)
+      killed = true
+    }
   },
   async setSchema(schema, fromStart, transformFns) {
     schema = { ...schema }
@@ -39,14 +63,12 @@ const hooks: DbClientHooks = {
     return res
   },
   async flushModify(buf) {
-    buf = new Uint8Array(buf)
-    let offsets = await request('modify', buf)
+    let offsets = await request('modify', new Uint8Array(buf))
     offsets = offsets && { ...offsets }
     return { offsets }
   },
   async getQueryBuf(buf) {
-    buf = new Uint8Array(buf)
-    const res = await request('getQueryBuf', buf)
+    const res = await request('getQueryBuf', new Uint8Array(buf))
     return res
   },
 }

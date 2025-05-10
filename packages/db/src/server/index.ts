@@ -29,7 +29,7 @@ import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64, writeUint64 } from '@saulx/utils'
 import { QueryType } from '../client/query/types.js'
 import { parseSchema, schemaLooseEqual } from '../schema.js'
-import { hash, hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
+import { hash } from '@saulx/hash'
 
 export const SCHEMA_FILE = 'schema.json'
 export const WRITELOG_FILE = 'writelog.json'
@@ -386,7 +386,12 @@ export class DbServer {
       if (schemaLooseEqual(parsedSchema, this.schema)) {
         return this.schema
       }
-      return this.migrateSchema(strictSchema, transformFns)
+      try {
+        return this.migrateSchema(strictSchema, transformFns)
+      } catch (e) {
+        console.error('error migrating schema:', e)
+        return this.schema
+      }
     }
 
     this.schema = {

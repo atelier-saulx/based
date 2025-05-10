@@ -41,16 +41,20 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     var res: T = undefined;
 
     if (T == u8) {
-        if (c.napi_get_value_uint8(env, value, @ptrCast(&res)) != c.napi_ok) {
+        var x: u32 = undefined;
+        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != c.napi_ok) {
             return errors.Napi.CannotGetInt;
         }
+        res = @truncate(x);
         return res;
     }
 
     if (T == i8) {
-        if (c.napi_get_value_int8(env, value, @ptrCast(&res)) != c.napi_ok) {
+        var x: i32 = undefined;
+        if (c.napi_get_value_int32(env, value, @ptrCast(&x)) != c.napi_ok) {
             return errors.Napi.CannotGetInt;
         }
+        res = @truncate(x);
         return res;
     }
 

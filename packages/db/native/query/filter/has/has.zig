@@ -47,7 +47,10 @@ inline fn hasInner(
 ) bool {
     var q = query;
     if (prop == Prop.VECTOR) {
-        return like.vector(read([]f32, value, 0), q);
+        const vecAligned = read([]f32, value, 0);
+
+        // read([]f32, value, 0)
+        return like.vector(vecAligned, q);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         var v = value;
         // faster check

@@ -7,6 +7,7 @@ const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
 const edge = @import("./edges.zig");
 const RefEdgeOp = @import("../types.zig").RefEdgeOp;
+const move = @import("../utils.zig").move;
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
@@ -102,31 +103,35 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
-    const len: usize = read(u32, data, 0) - 1;
-    const address = @intFromPtr(data.ptr);
-    const delta = (address + 1) & 3;
-    const offset = if (delta == 0) 0 else 4 - delta;
+    const len: usize = read(u32, data, 0);
 
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
-        return len + offset + 1;
+        return len;
     }
 
-    // $index lets ignore for mark dirty
-    // if Other side is single ref then do the same as a single ref on this side
+    const idsUnAligned = data[5 .. len + 4];
+    const address = @intFromPtr(idsUnAligned.ptr);
+    const offset: u8 = @truncate(address % 4);
+
+    const aligned = data[5 - offset .. len - offset + 4];
+
+    if (offset != 0) {
+        move(aligned, idsUnAligned);
+    }
+
+    const u32ids = read([]u32, aligned, 0);
 
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
-    const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
-
     try db.putReferences(
         ctx,
-        @alignCast(u32ids),
+        u32ids,
         ctx.node.?,
         ctx.fieldSchema.?,
         refTypeEntry,
     );
 
-    return len + offset + 1;
+    return len;
 }

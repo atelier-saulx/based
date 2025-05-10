@@ -1,4 +1,5 @@
 import { getPropType, StrictSchema } from '@based/schema'
+import { deepCopy } from '@saulx/utils'
 
 const exclude = new Set(['id', 'lastId', 'hash'])
 export const schemaLooseEqual = (a: any, b: any, key?: string) => {
@@ -50,20 +51,20 @@ export const schemaLooseEqual = (a: any, b: any, key?: string) => {
 export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
   let parsedSchema = strictSchema
   if (strictSchema.props) {
-    parsedSchema = {
-      ...strictSchema,
-      types: { ...parsedSchema.types },
-    }
-    const props = { ...strictSchema.props }
-    for (const key in props) {
-      const prop = props[key]
+    // TODO do this more precise
+    parsedSchema = deepCopy(strictSchema)
+    for (const key in parsedSchema.props) {
+      const prop = parsedSchema.props[key]
       const propType = getPropType(prop)
       let refProp: any
+
       if (propType === 'reference') {
         refProp = prop
       } else if (propType === 'references') {
         refProp = prop.items
+        prop.items = refProp
       }
+
       if (refProp) {
         const type = parsedSchema.types[refProp.ref]
         const inverseKey = '_' + key
@@ -83,10 +84,11 @@ export const parseSchema = (strictSchema: StrictSchema): StrictSchema => {
       }
     }
 
+    parsedSchema.types ??= {}
     // @ts-ignore This creates an internal type to use for root props
     parsedSchema.types._root = {
       id: 1,
-      props,
+      props: parsedSchema.props,
     }
 
     delete parsedSchema.props

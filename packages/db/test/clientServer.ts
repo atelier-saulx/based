@@ -69,22 +69,27 @@ await test('client server basic', async (t) => {
     name: 'marie',
   })
 
+  console.log('got marie now put in user', marie)
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],
     favoriteUser: marie,
   })
 
-  deepEqual(await client1.query('user', res).include('*', '**').get(), {
-    id: 1,
-    age: 0,
-    name: 'youzi',
-    others: [
-      { id: 3, age: 0, name: 'fred' },
-      { id: 4, age: 0, name: 'marie' },
-    ],
-    favoriteUser: { id: 4, age: 0, name: 'marie' },
-  })
+  deepEqual(
+    await client1.query('user', res).include('*', '**').get(),
+    {
+      id: 1,
+      age: 0,
+      name: 'youzi',
+      others: [
+        { id: 3, age: 0, name: 'fred' },
+        { id: 4, age: 0, name: 'marie' },
+      ],
+      favoriteUser: { id: 4, age: 0, name: 'marie' },
+    },
+    'correct favouritUser and other for youzi',
+  )
 })
 
 await test('client server rapid fire', async (t) => {
