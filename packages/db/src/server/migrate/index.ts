@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { BasedDb, save } from '../../index.js'
 import { dirname, join } from 'path'
 import { tmpdir } from 'os'
 import {
@@ -108,7 +108,8 @@ export const migrate = async (
   // Block handling
   let i = 0
   let rangesToMigrate = []
-  await server.save()
+
+  await save(server, false, false, true)
   server.merkleTree.visitLeafNodes((leaf) => {
     const [_typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
@@ -177,23 +178,22 @@ export const migrate = async (
   // -----------------------------------------
 
   tmpDb.server.dbCtxExternal = fromCtx
-  await writeSchemaFile(server, toSchema)
 
   const promises: Promise<any>[] = server.workers.map((worker) =>
     worker.updateCtx(toAddress),
   )
 
-  promises.push(
-    tmpDb.destroy(),
-    worker.terminate(),
-    server.save({ forceFullDump: true }),
-  )
+  promises.push(tmpDb.destroy(), worker.terminate())
 
   await Promise.all(promises)
 
   if (abort()) {
     return
   }
+
+  await save(server, false, true, true)
+  await writeSchemaFile(server, toSchema)
+
   server.migrating = 0
   process.nextTick(() => server.emit('schema', server.schema))
 }

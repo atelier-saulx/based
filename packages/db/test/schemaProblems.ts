@@ -13,6 +13,14 @@ await test('empty schema dont crash', async (t) => {
     return t.backup(db)
   })
 
+  const int = setInterval(async () => {
+    await db.save()
+  }, 1e3)
+
+  t.after(() => {
+    clearInterval(int)
+  })
+
   const q = []
   q.push(
     clientWorker(t, db, async (c) => {

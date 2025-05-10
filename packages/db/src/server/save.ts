@@ -66,13 +66,19 @@ export function save<T extends boolean>(
   db: DbServer,
   sync?: T,
   forceFullDump?: boolean,
+  skipMigrationCheck?: boolean,
 ): T extends true ? void : Promise<void>
 export function save(
   db: DbServer,
   sync = false,
   forceFullDump = false,
+  skipMigrationCheck = false,
 ): void | Promise<void> {
   if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
+    return
+  }
+
+  if (db.migrating && !skipMigrationCheck) {
     return
   }
 
