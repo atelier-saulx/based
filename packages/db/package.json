@@ -38,7 +38,7 @@
     "basedDbNative.cjs"
   ],
   "dependencies": {
-    "@based/schema": "5.0.0-alpha.17",
+    "@based/schema": "5.0.0-alpha.18",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^6.7.0",
     "exit-hook": "^4.0.0",
