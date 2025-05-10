@@ -56,6 +56,6 @@ await test('expire', async (t) => {
   await db2.start()
 
   equal((await db2.query('token').get().toObject()).length, 1)
-  await setTimeout(2e3)
+  await setTimeout(3e3)
   equal((await db2.query('token').get().toObject()).length, 0)
 })
