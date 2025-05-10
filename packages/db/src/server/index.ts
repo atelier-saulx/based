@@ -318,7 +318,10 @@ export class DbServer extends DbShared {
   modify(buf: Uint8Array): Record<number, number> | null {
     const schemaHash = readUint64(buf, 0)
 
-    if (schemaHash !== this.schema.hash) {
+    // if !schema
+
+    if (schemaHash !== this.schema?.hash) {
+      this.emit('info', 'Schema mismatch in modify')
       return null
     }
 
@@ -334,6 +337,12 @@ export class DbServer extends DbShared {
       i += 2
       const startId = readUint32(buf, i)
       const def = this.schemaTypesParsedById[typeId]
+      if (!def) {
+        console.error(
+          `Wrong cannot get def in modify ${typeId} ${schemaHash} ${this.schema?.hash}!}`,
+        )
+        return null
+      }
       let offset = def.lastId - startId
 
       if (offset < 0) {
