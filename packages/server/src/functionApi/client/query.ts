@@ -24,20 +24,63 @@ export class BasedQuery extends BasedQueryAbstract {
 
   subscribe(
     onData: ObservableUpdateFunction,
-    onError?: ObserveErrorListener
+    onError?: ObserveErrorListener,
   ): () => void {
+    // @ts-ignore
+    if (!onData.safe) {
+      const unsafeOnData = onData
+      onData = (data, checksum, err, cache, diff, fromCehcksum, isDeflate) => {
+        try {
+          const x = unsafeOnData(
+            data,
+            checksum,
+            err,
+            cache,
+            diff,
+            fromCehcksum,
+            isDeflate,
+          )
+          // @ts-ignore
+          if (x != null && typeof x === 'object' && 'catch' in x) {
+            // @ts-ignore
+            return x.catch((err) => {
+              if (onError) {
+                onError(err)
+              } else {
+                console.error(
+                  `[Query:${this.name}] Async Error in observable function onData handler \n ${err.message}`,
+                )
+              }
+            })
+          } else {
+            return x
+          }
+        } catch (err) {
+          if (onError) {
+            onError(err)
+          } else {
+            console.error(
+              `[Query:${this.name}] Error in observable function onData handler \n ${err.message}`,
+            )
+          }
+        }
+      }
+      // @ts-ignore
+      onData.safe = true
+    }
+
     return observe(
       this.ctx.session.client.server,
       this.name,
       this.ctx,
       this.query,
       onData,
-      onError
+      onError,
     )
   }
 
   async getWhen(
-    condition: (data: any, checksum: number) => boolean
+    condition: (data: any, checksum: number) => boolean,
   ): Promise<any> {
     return new Promise((resolve) => {
       const close = this.subscribe((data, checksum) => {
