@@ -102,6 +102,7 @@ await test('empty schema dont crash', async (t) => {
       await c.setSchema({
         types: {
           seq: {
+            mrDerpol: 'string',
             flap: {
               items: {
                 ref: 'flap',
@@ -111,6 +112,7 @@ await test('empty schema dont crash', async (t) => {
           },
           flap: {
             props: {
+              mrDerpol: 'string',
               email: 'alias',
               x: 'uint32',
               flap: 'int8',

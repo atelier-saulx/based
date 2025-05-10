@@ -58,8 +58,15 @@ export const migrate = async (
   server.migrating = migrationId
 
   server.emit('info', `migrating schema ${migrationId}`)
-
+  let killed = false
   const abort = () => {
+    if (killed) {
+      server.emit(
+        'info',
+        `migration killed something went wrong ${migrationId}`,
+      )
+      return true
+    }
     server.emit(
       'info',
       `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
@@ -112,7 +119,11 @@ export const migrate = async (
   })
 
   // handle?
-  worker.on('error', console.error)
+
+  worker.on('error', (err) => {
+    killed = true
+    console.error(`Error in migration ${err.message}`)
+  })
 
   // Block handling
   let i = 0
@@ -174,15 +185,11 @@ export const migrate = async (
   // ----------------MAKE NICE THIS------------------
   // pass last node IDS { type: lastId }
   setSchemaOnServer(server, toSchema)
-  // make schema util for this later
-  server.schemaTypesParsed = deepMerge(
-    tmpDb.server.schemaTypesParsed,
-    schemaTypesParsed,
-  )
+
   server.schemaTypesParsedById = {}
-  for (const key in server.schemaTypesParsed) {
+  for (const key in schemaTypesParsed) {
     const def = server.schemaTypesParsed[key]
-    server.schemaTypesParsedById[def.id] = def
+    def.lastId = schemaTypesParsed[key].lastId
   }
   // -----------------------------------------
 
