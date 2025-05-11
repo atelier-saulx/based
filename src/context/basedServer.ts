@@ -306,7 +306,7 @@ export const contextBasedServer =
         server.client.db ??= {}
         server.client.db.v2 = basedDb.client
         server.client.db.getDbClient = () => {
-          return basedDb.client
+          return { dbClient: basedDb.client, dbServerClient: basedDb.server }
         }
 
         context.print.step(
