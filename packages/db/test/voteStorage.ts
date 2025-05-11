@@ -147,15 +147,13 @@ await test('vote including round', async (t) => {
   console.log('set all items', await db.drain())
 })
 
-const testVotes = (opts: { votes: null | []; amount: number }) => {
+const testVotes = (opts: { votes: any; amount: number }) => {
   return test(`vote single ref test remove ${inspect(opts)}`, async (t) => {
     const db = new BasedDb({
       path: t.tmp,
     })
     await db.start({ clean: true })
     t.after(() => t.backup(db))
-
-    const voteCountrySchema: SchemaProp = countrySchema
 
     await db.setSchema({
       types: {
@@ -167,40 +165,11 @@ const testVotes = (opts: { votes: null | []; amount: number }) => {
             },
           },
         },
-        payment: {
-          fingerprint: 'alias',
-          vote: {
-            ref: 'vote',
-            prop: 'payment',
-          },
-          createdAt: {
-            type: 'timestamp',
-            on: 'create',
-          },
-          status: [
-            'Requested',
-            'ReadyForConfirmationToken',
-            'RequestedIntent',
-            'ReadyForPaymentIntent',
-            'PaymentIntentIsDone',
-            'WebhookSuccess',
-            'WebhookFailed',
-          ],
-        },
         vote: {
-          fingerprint: {
-            type: 'alias',
-          },
           round: {
             ref: 'round',
             prop: 'votes',
           },
-          cardGeo: { type: 'string', maxBytes: 2 },
-          payment: {
-            ref: 'payment',
-            prop: 'vote',
-          },
-          countries: voteCountrySchema,
         },
       },
     })
@@ -210,50 +179,14 @@ const testVotes = (opts: { votes: null | []; amount: number }) => {
     const final = await db.create('round')
 
     for (let i = 0; i < amount; i++) {
-      for (let j = 0; j < amount; j++) {
-        const id = db.create('payment', {
-          status: 'WebhookSuccess',
-          fingerprint: `derpderp-${j}-${i}`,
-        })
-        const cardGeo =
-          allCountryCodes[~~(Math.random() * allCountryCodes.length)]
-        const c: any = {}
-        let max = 0
-        for (const key of countryCodesArray) {
-          const code = key
-          if (code === cardGeo) {
-            continue
-          }
-          const p = ~~(Math.random() * 3)
-          max += p
-          if (max > 20) {
-            break
-          }
-          c[code] = p
-        }
-        db.create('vote', {
-          cardGeo,
-          payment: id,
-          round: final,
-          fingerprint: `derp-${j}-${i}`,
-          countries: c,
-        })
-      }
-      await wait(1)
+      db.create('vote', {
+        round: final,
+      })
     }
 
-    console.log(
-      `Creating votes + payments  (${amount}x ${amount}x)ms`,
-      await db.drain(),
-    )
+    console.log(`Creating votes (${amount})ms`, await db.drain())
 
-    const payments = await db.query('payment').range(0, 1e6).include('id').get()
-    for (const payment of payments) {
-      db.delete('payment', payment.id)
-    }
-
-    console.log('Deleting payments', await db.drain(), 'ms')
-
+    console.log('Remove round final')
     await db.update('round', final, {
       votes: opts.votes,
     })
@@ -267,8 +200,7 @@ const testVotes = (opts: { votes: null | []; amount: number }) => {
 
     const len = amount === 1 ? 1 : Math.ceil(amount * 0.01)
     for (let i = 0; i < len; i++) {
-      const randomId =
-        amount === 1 ? 1 : Math.ceil(Math.random() * amount * amount)
+      const randomId = amount === 1 ? 1 : Math.ceil(Math.random() * amount)
       deepEqual(
         await db.query('vote', randomId).include('round').get(),
         { id: randomId, round: null },
@@ -294,7 +226,7 @@ const testVotes = (opts: { votes: null | []; amount: number }) => {
   })
 }
 
-await testVotes({ votes: null, amount: 100 })
-await testVotes({ votes: [], amount: 100 })
+await testVotes({ votes: null, amount: 1e3 })
+await testVotes({ votes: [], amount: 1e3 })
 // await testVotes({ votes: null, amount: 1000 })
-// await testVotes({ votes: [], amount: 1000 })
+// await testVotes({ votes: [1], amount: 1000 })
