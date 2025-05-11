@@ -86,10 +86,10 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    var i: usize = 1 + 4;
+    var i: usize = 1;
 
     while (i < len) : (i += 4) {
-        const id = read(u32, data, i);
+        const id = read(u32, data, i + 4);
         try db.deleteReference(
             ctx,
             ctx.node.?,
