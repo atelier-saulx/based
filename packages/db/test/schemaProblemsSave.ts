@@ -1,9 +1,6 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-import { clientWorker } from './shared/startWorker.js'
-import { equal } from './shared/assert.js'
 import { randomString, wait } from '@saulx/utils'
-import { randomInt } from 'node:crypto'
 
 await test('schema problems modify', async (t) => {
   let db = new BasedDb({
@@ -60,7 +57,7 @@ await test('schema problems modify', async (t) => {
     d = new BasedDb({
       path: t.tmp,
     })
-    await d.start({ clean: true })
+    await d.start()
     db = d
   }, 1e3)
 

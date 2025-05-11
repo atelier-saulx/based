@@ -11,7 +11,6 @@ import { isTypedArray } from 'node:util/types'
 import { CsmtNodeRange } from '../tree.js'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
-import { wait } from '@saulx/utils'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 
 if (isMainThread) {
