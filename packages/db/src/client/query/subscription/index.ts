@@ -37,16 +37,21 @@ export class SubStore {
     let killed = false
 
     if (!q.db.schema) {
-      q.db.schemaIsSet().then(() => {
-        if (!killed) {
-          try {
-            registerQuery(q)
-            this.onClose = q.db.hooks.subscribe(q, onData, onError)
-          } catch (err) {
-            onError(err)
+      q.db
+        .schemaIsSet()
+        .then(() => {
+          if (!killed) {
+            try {
+              registerQuery(q)
+              this.onClose = q.db.hooks.subscribe(q, onData, onError)
+            } catch (err) {
+              onError(err)
+            }
           }
-        }
-      })
+        })
+        .catch((err) => {
+          onError(err)
+        })
       this.onClose = () => {
         killed = true
       }

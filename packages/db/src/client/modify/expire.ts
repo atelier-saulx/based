@@ -22,7 +22,7 @@ export function expire(
 
   const ctx = db.modifyCtx
   if (ctx.len + SIZE.DEFAULT_CURSOR + 5 > ctx.max) {
-    flushBuffer(db)
+    void flushBuffer(db)
     return expire(db, type, id, seconds)
   }
 

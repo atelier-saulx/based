@@ -34,7 +34,9 @@ export class DbWorker {
 
     this.worker.on('error', (err) => {
       console.error('error in query worker:', err)
-      this.worker.terminate()
+      this.worker.terminate().catch((err) => {
+        console.error('error terminating query worker:', err)
+      })
     })
 
     this.worker.on('exit', (code) => {
