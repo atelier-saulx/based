@@ -186,7 +186,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
 
     console.log(`Creating votes (${amount})ms`, await db.drain())
 
-    console.log('Remove round final')
+    console.log('Remove votes from final')
     await db.update('round', final, {
       votes: opts.votes,
     })
