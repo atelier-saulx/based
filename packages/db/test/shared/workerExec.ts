@@ -35,7 +35,7 @@ const hooks: DbClientHooks = {
       if (res.byteLength >= 4) {
         onData(res)
       } else if (res.byteLength === 1 && res[0] === 0) {
-        console.info('schema mismatch, should resolve after update')
+        // console.info('schema mismatch, should resolve after update')
         // ignore update and stop polling
         return
       } else {
