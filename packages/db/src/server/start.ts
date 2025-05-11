@@ -172,7 +172,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   }
 
   if (opts?.delayInMs) {
-    this.delayInMs = opts.delayInMs
+    db.delayInMs = opts.delayInMs
     await wait(opts.delayInMs)
   }
 }
