@@ -362,24 +362,16 @@ export class DbServer extends DbShared {
     if (this.processingQueries) {
       this.modifyQueue.push(new Uint8Array(buf))
     } else {
-      this.#modify(buf, true)
+      this.#modify(buf)
     }
 
     return offsets
   }
 
-  #modify(buf: Uint8Array, schemaChecked?: true) {
+  #modify(buf: Uint8Array) {
     if (this.stopped) {
       console.error('Db is stopped - trying to modify')
       return
-    }
-
-    if (!schemaChecked) {
-      const schemaHash = readUint64(buf, 0)
-      if (schemaHash !== this.schema?.hash) {
-        this.emit('info', 'Schema mismatch in modify')
-        return null
-      }
     }
 
     const end = buf.length - 4
