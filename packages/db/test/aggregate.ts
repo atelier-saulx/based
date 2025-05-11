@@ -685,6 +685,101 @@ await test('count group by', async (t) => {
   )
 })
 
+await test('variable len keys', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          flap: { type: 'uint32' },
+          country: { type: 'string' },
+          name: { type: 'string' },
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
+      },
+      article: {
+        props: {
+          name: { type: 'string' },
+          contributors: {
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const mrSnurp = db.create('user', {
+    country: 'NL',
+    name: 'Mr snurp',
+    flap: 10,
+  })
+
+  const flippie = db.create('user', {
+    country: 'NL',
+    name: 'Flippie',
+    flap: 20,
+  })
+
+  const derpie = db.create('user', {
+    country: 'BR',
+    name: 'Derpie',
+    flap: 30,
+  })
+
+  const dinkelDoink = db.create('user', {
+    name: 'Dinkel Doink',
+    flap: 40,
+  })
+
+  const cipolla = db.create('user', {
+    country: 'IT',
+    name: 'Carlo Cipolla',
+    flap: 80,
+  })
+
+  const strudelArticle = db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: [mrSnurp, flippie, derpie, dinkelDoink],
+  })
+
+  const stupidity = db.create('article', {
+    name: 'Les lois fondamentales de la stupidité humaine',
+    contributors: [cipolla],
+  })
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
+})
+
 // test wildcards
 
 // // handle enum
@@ -779,40 +874,39 @@ await test('dev', async (t) => {
   //   .get()
   //   .inspect()
 
-  deepEqual(
-    await db
-      .query('article')
-      .include((q) => q('contributors').sum('flap'), 'name')
-      .get()
-      .toObject(),
-    [
-      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-      {
-        id: 2,
-        name: 'Les lois fondamentales de la stupidité humaine',
-        contributors: { flap: 80 },
-      },
-    ],
-    'sum, branched query, var len string',
-  )
+  // let q1 = await db
+  //   .query('article')
+  //   .include((q) => q('contributors').sum('flap'), 'name')
+  //   .get()
+
+  // q1.inspect()
+
+  // let q2 = await db
+  //   .query('contributors')
+  //   // dont break line
+  //   .sum('flap')
+  //   .groupBy('name')
+  //   .get()
+
+  // q2.inspect()
 
   // // TODO: this is concatenating the keys
-  // await db
-  //   // dont break line
-  //   .query('user')
-  //   .groupBy('country')
-  //   .sum('flap')
-  //   .get()
-  //   .inspect()
-
-  // This is ok
-  const q = await db
+  await db
     // dont break line
     .query('user')
-    .groupBy('name')
+    .groupBy('country')
     .sum('flap')
     .get()
+    .inspect()
 
-  q.inspect()
-  q.debug
+  // This is ok
+  // const q = await db
+  //   // dont break line
+  //   .query('user')
+  //   .groupBy('name')
+  //   .sum('flap')
+  //   .get()
+
+  // q.inspect()
+  // q.debug
 })
