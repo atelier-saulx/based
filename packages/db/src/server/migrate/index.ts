@@ -1,6 +1,5 @@
 import { BasedDb, save } from '../../index.js'
 import { dirname, join } from 'path'
-import { tmpdir } from 'os'
 import {
   Worker,
   MessageChannel,
@@ -17,12 +16,10 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { deepMerge } from '@saulx/utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
-let migrationCnt = 0
 
 type TransformFn = (
   node: Record<string, any>,
@@ -78,7 +75,7 @@ export const migrate = async (
     path: null,
   })
 
-  await tmpDb.start({ clean: true })
+  await tmpDb.start({ clean: true, delayInMs: server.delayInMs })
 
   if (abort()) {
     await tmpDb.destroy()

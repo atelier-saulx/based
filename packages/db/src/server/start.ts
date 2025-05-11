@@ -16,13 +16,13 @@ import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex } from '@saulx/utils'
+import { bufToHex, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
-import { setNativeSchema, setSchemaOnServer } from './schema.js'
+import { setSchemaOnServer } from './schema.js'
 
 export async function start(
   db: DbServer,
-  opts: { clean?: boolean; hosted?: boolean },
+  opts: { clean?: boolean; hosted?: boolean; delayInMs?: number },
 ) {
   const path = db.fileSystemPath
   const noop = () => {}
@@ -134,9 +134,8 @@ export async function start(
   const address: BigInt = native.intFromExternal(db.dbCtxExternal)
 
   db.workers = new Array(i)
-
   while (i--) {
-    db.workers[i] = new DbWorker(address, db)
+    db.workers[i] = new DbWorker(address, db, i)
   }
 
   if (!opts?.hosted) {
@@ -155,6 +154,8 @@ export async function start(
     })
   }
 
+  await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
+
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
       save(db)
@@ -163,5 +164,10 @@ export async function start(
 
   if (db.schema) {
     db.emit('schema', db.schema)
+  }
+
+  if (opts?.delayInMs) {
+    this.delayInMs = opts.delayInMs
+    await wait(opts.delayInMs)
   }
 }
