@@ -553,12 +553,14 @@ export class DbServer extends DbShared {
 
   async destroy() {
     await this.stop(true)
-    await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
-      // console.warn(
-      //   'Error removing dump folder',
-      //   this.fileSystemPath,
-      //   err.message,
-      // ),
-    })
+    if (this.fileSystemPath) {
+      await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
+        // console.warn(
+        //   'Error removing dump folder',
+        //   this.fileSystemPath,
+        //   err.message,
+        // ),
+      })
+    }
   }
 }
