@@ -49,7 +49,7 @@ const countrySchema: SchemaType = {
 
 const countryCodesArray = Object.keys(countrySchema.props)
 
-await test('schema with many uint8 fields', async (t) => {
+await test('vote including round', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -156,6 +156,14 @@ await test('vote single ref only remove', async (t) => {
 
   await db.setSchema({
     types: {
+      round: {
+        votes: {
+          items: {
+            ref: 'vote',
+            prop: 'round',
+          },
+        },
+      },
       payment: {
         fingerprint: 'alias',
         vote: {
@@ -180,6 +188,10 @@ await test('vote single ref only remove', async (t) => {
         fingerprint: {
           type: 'alias',
         },
+        round: {
+          ref: 'round',
+          prop: 'votes',
+        },
         cardGeo: { type: 'string', maxBytes: 2 },
         payment: {
           ref: 'payment',
@@ -189,6 +201,8 @@ await test('vote single ref only remove', async (t) => {
       },
     },
   })
+
+  const final = await db.create('round')
 
   for (let i = 0; i < 1e3; i++) {
     for (let j = 0; j < 1e3; j++) {
@@ -215,6 +229,7 @@ await test('vote single ref only remove', async (t) => {
       db.create('vote', {
         cardGeo,
         payment: id,
+        round: final,
         fingerprint: `derp-${j}-${i}`,
         countries: c,
       })
