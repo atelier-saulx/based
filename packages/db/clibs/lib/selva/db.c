@@ -736,7 +736,9 @@ static void selva_cursors_move_node(
  */
 static void selva_cursors_node_going_away(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    selva_cursors_move_node(type, node, selva_next_node(type, node));
+    if (type->cursors.nr_cursors > 0) {
+        selva_cursors_move_node(type, node, selva_next_node(type, node));
+    }
 }
 
 static void selva_cursor_destroy(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)
