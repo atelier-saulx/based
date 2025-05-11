@@ -2,6 +2,7 @@ import { MessageChannel, Worker, MessagePort } from 'node:worker_threads'
 import { DbServer } from './index.js'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { readUint64 } from '@saulx/utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -71,6 +72,10 @@ export class DbWorker {
   }
 
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
+    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
+    if (schemaChecksum !== this.db.schema?.hash) {
+      return Promise.resolve(new Uint8Array(1))
+    }
     this.channel.postMessage(buf)
     return new Promise(this.callback)
   }

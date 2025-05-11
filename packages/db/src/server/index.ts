@@ -444,7 +444,6 @@ export class DbServer extends DbShared {
       console.error('Db is stopped - trying to query', buf.byteLength)
       return Promise.resolve(new Uint8Array(8))
     }
-
     const schemaChecksum = readUint64(buf, buf.byteLength - 8)
     if (schemaChecksum !== this.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
@@ -500,7 +499,6 @@ export class DbServer extends DbShared {
 
   onQueryEnd() {
     this.processingQueries--
-
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue

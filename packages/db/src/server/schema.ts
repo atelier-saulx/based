@@ -26,7 +26,7 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
   }
 }
 
-export const setNativeSchema = async (server: DbServer, schema: DbSchema) => {
+export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
   for (let i = 0; i < s.length; i++) {
@@ -43,7 +43,6 @@ export const setNativeSchema = async (server: DbServer, schema: DbSchema) => {
       )
     }
   }
-
   // Insert a root node
   if (schema.types._root) {
     // TODO fix server add it in schema at least

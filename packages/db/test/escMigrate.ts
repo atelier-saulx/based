@@ -1,8 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
-import { SchemaProps, StrictSchema } from '@based/schema'
 import { deepCopy } from '@saulx/utils'
+import populate from './shared/populate/index.js'
 
 const schema = {
   locales: {
@@ -365,30 +364,29 @@ await test('escMigrate', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-  await db.start({ clean: true })
+  await db.start({ clean: true, queryThreads: 1 })
 
   t.after(() => t.backup(db))
 
   // @ts-ignore
   await db.setSchema(schema)
+  await populate(db)
+  console.log('-------------------')
 
-  console.log('OK!')
+  db.client.on('info', console.info)
+  const i = setTimeout(async () => {
+    console.log((await db.query('sequence').get()).length)
+  }, 200)
 
-  let i = 10
-  while (i--) {
-    db.create('contestant', {
-      name: 'youzi' + i,
-    })
-  }
-
-  await db.drain()
-
-  console.log(await db.query('contestant').get().toObject())
   const newSchema = deepCopy(schema) as typeof schema
   // @ts-ignore
-  newSchema.types.contestant.extraField = 'string'
+  newSchema.types.contestant = {
+    extraField: 'string',
+    ...newSchema.types.contestant,
+  }
+
   // @ts-ignore
   await db.setSchema(newSchema)
-
-  console.log(await db.query('contestant').get().toObject())
+  console.log('CLEAR INTERVAL')
+  // clearInterval(i)
 })
