@@ -65,7 +65,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
     const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-
     if (refs) |r| {
         if (r.nr_refs == 0) {
             // Is empty already

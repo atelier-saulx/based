@@ -4,6 +4,8 @@ import test from './shared/test.js'
 import { wait } from '@saulx/utils'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { allCountryCodes } from './shared/examples.js'
+import { deepEqual } from './shared/assert.js'
+import { inspect } from 'util'
 
 const countrySchema: SchemaType = {
   props: {
@@ -145,109 +147,87 @@ await test('vote including round', async (t) => {
   console.log('set all items', await db.drain())
 })
 
-await test('vote single ref only remove', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
+const testVotes = (opts: { votes: any; amount: number }) => {
+  return test(`vote single ref test remove ${inspect(opts)}`, async (t) => {
+    const db = new BasedDb({
+      path: t.tmp,
+    })
+    await db.start({ clean: true })
+    t.after(() => t.backup(db))
 
-  const voteCountrySchema: SchemaProp = countrySchema
-
-  await db.setSchema({
-    types: {
-      round: {
-        votes: {
-          items: {
-            ref: 'vote',
-            prop: 'round',
+    await db.setSchema({
+      types: {
+        round: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'round',
+            },
+          },
+        },
+        vote: {
+          derp: 'uint16',
+          round: {
+            ref: 'round',
+            prop: 'votes',
           },
         },
       },
-      payment: {
-        fingerprint: 'alias',
-        vote: {
-          ref: 'vote',
-          prop: 'payment',
-        },
-        createdAt: {
-          type: 'timestamp',
-          on: 'create',
-        },
-        status: [
-          'Requested',
-          'ReadyForConfirmationToken',
-          'RequestedIntent',
-          'ReadyForPaymentIntent',
-          'PaymentIntentIsDone',
-          'WebhookSuccess',
-          'WebhookFailed',
-        ],
-      },
-      vote: {
-        fingerprint: {
-          type: 'alias',
-        },
-        round: {
-          ref: 'round',
-          prop: 'votes',
-        },
-        cardGeo: { type: 'string', maxBytes: 2 },
-        payment: {
-          ref: 'payment',
-          prop: 'vote',
-        },
-        countries: voteCountrySchema,
-      },
-    },
-  })
+    })
 
-  const final = await db.create('round')
+    let amount = opts.amount
 
-  for (let i = 0; i < 1e3; i++) {
-    for (let j = 0; j < 1e3; j++) {
-      const id = db.create('payment', {
-        status: 'WebhookSuccess',
-        fingerprint: `derpderp-${j}-${i}`,
-      })
-      const cardGeo =
-        allCountryCodes[~~(Math.random() * allCountryCodes.length)]
-      const c: any = {}
-      let max = 0
-      for (const key of countryCodesArray) {
-        const code = key
-        if (code === cardGeo) {
-          continue
-        }
-        const p = ~~(Math.random() * 3)
-        max += p
-        if (max > 20) {
-          break
-        }
-        c[code] = p
-      }
+    const final = await db.create('round')
+
+    for (let i = 0; i < amount; i++) {
       db.create('vote', {
-        cardGeo,
-        payment: id,
         round: final,
-        fingerprint: `derp-${j}-${i}`,
-        countries: c,
       })
     }
-    await wait(1)
-  }
 
-  console.log('Total db time (1000x 1000x) x2', await db.drain())
+    console.log(`Creating votes (${amount})ms`, await db.drain())
 
-  const votes = await db.query('vote').range(0, 1e6).include('id').get()
-  for (const vote of votes) {
-    db.delete('vote', vote.id)
-  }
+    console.log('Remove votes from final')
+    await db.update('round', final, {
+      votes: opts.votes,
+    })
 
-  const payments = await db.query('payment').range(0, 1e6).include('id').get()
-  for (const payment of payments) {
-    db.delete('payment', payment.id)
-  }
+    deepEqual(
+      (await db.query('round', final).include('votes').get().toObject()).votes
+        .length,
+      0,
+      'clear refs',
+    )
 
-  console.log('Total db time removing all', await db.drain())
-})
+    const len = amount === 1 ? 1 : Math.ceil(amount * 0.01)
+    for (let i = 0; i < len; i++) {
+      const randomId = amount === 1 ? 1 : Math.ceil(Math.random() * amount)
+      deepEqual(
+        await db.query('vote', randomId).include('round').get(),
+        { id: randomId, round: null },
+        `clears refs on the other side ${randomId}`,
+      )
+    }
+
+    const votes = await db
+      .query('vote')
+      .range(0, 1e6)
+      .include('id')
+      .get()
+      .toObject()
+    let i = votes.length - 1
+    for (i = 0; i < votes.length; i++) {
+      db.delete('vote', votes[i].id)
+    }
+
+    console.log(
+      'Total db time removing all votes (refs in round)',
+      await db.drain(),
+    )
+  })
+}
+
+await testVotes({ votes: null, amount: 1e6 })
+await testVotes({ votes: [], amount: 1e6 })
+// await testVotes({ votes: null, amount: 1000 })
+// await testVotes({ votes: [1], amount: 1000 })
