@@ -318,9 +318,6 @@ export class DbServer extends DbShared {
 
   modify(buf: Uint8Array): Record<number, number> | null {
     const schemaHash = readUint64(buf, 0)
-
-    // if !schema
-
     if (schemaHash !== this.schema?.hash) {
       this.emit('info', 'Schema mismatch in modify')
       return null
@@ -365,16 +362,24 @@ export class DbServer extends DbShared {
     if (this.processingQueries) {
       this.modifyQueue.push(new Uint8Array(buf))
     } else {
-      this.#modify(buf)
+      this.#modify(buf, true)
     }
 
     return offsets
   }
 
-  #modify(buf: Uint8Array) {
+  #modify(buf: Uint8Array, schemaChecked?: true) {
     if (this.stopped) {
       console.error('Db is stopped - trying to modify')
       return
+    }
+
+    if (!schemaChecked) {
+      const schemaHash = readUint64(buf, 0)
+      if (schemaHash !== this.schema?.hash) {
+        this.emit('info', 'Schema mismatch in modify')
+        return null
+      }
     }
 
     const end = buf.length - 4
