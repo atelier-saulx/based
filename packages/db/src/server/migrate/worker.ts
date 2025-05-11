@@ -113,9 +113,9 @@ if (isMainThread) {
             continue
           }
           if (Array.isArray(res)) {
-            await toDb.create(res[0], res[1] || node, { unsafe: true })
+            toDb.create(res[0], res[1] || node, { unsafe: true })
           } else {
-            await toDb.create(type, res || node, { unsafe: true })
+            toDb.create(type, res || node, { unsafe: true })
           }
         }
       } else if (type in toDb.server.schemaTypesParsed) {
@@ -126,7 +126,7 @@ if (isMainThread) {
           ._getSync(fromCtx)
 
         for (const node of nodes) {
-          await toDb.create(type, node, { unsafe: true })
+          toDb.create(type, node, { unsafe: true })
         }
       }
     }
