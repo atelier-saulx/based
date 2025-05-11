@@ -310,7 +310,7 @@ export const contextBasedServer =
 
         server.client.db ??= {};
         server.client.db.v2 = basedDb.client;
-        server.client.db.getClient(() => basedDb.client);
+        server.client.db.getDbClient(() => basedDb.client);
 
         context.print.step(
           context.i18n(
