@@ -55,6 +55,7 @@ export class DbServer extends DbShared {
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
+  delayInMs?: number
 
   constructor({
     path,
@@ -75,7 +76,7 @@ export class DbServer extends DbShared {
     }
   }
 
-  start(opts?: { clean?: boolean; hosted?: boolean }) {
+  start(opts?: { clean?: boolean; hosted?: boolean; delayInMs?: number }) {
     this.stopped = false
     return start(this, opts)
   }
