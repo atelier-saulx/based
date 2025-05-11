@@ -41,7 +41,7 @@ export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
 
   migrating: number = null
-
+  saveInProgress: boolean = false
   fileSystemPath: string
   merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()

@@ -149,15 +149,18 @@ export async function start(db: DbServer, opts: StartOpts) {
       // This is needed because there is no way to set the process signal mask
       // in Node.js.
       signals.forEach((sig) => process.on(sig, blockSig))
-      console.log(`Exiting with signal: ${signal}`)
+      db.emit('info', `Exiting with signal: ${signal}`)
       save(db, true)
-      console.log('Successfully saved.')
+      db.emit('info', 'Successfully saved.')
       signals.forEach((sig) => process.off(sig, blockSig))
     })
   }
 
+  const d = performance.now()
   await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
+  db.emit('info', `Starting workers took ${d}ms`)
 
+  // use timeout
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
       save(db)
