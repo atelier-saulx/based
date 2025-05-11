@@ -66,10 +66,8 @@ export async function start(
 
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
-      // Prop need to not call setting in selva
       const s = JSON.parse(schema.toString())
       setSchemaOnServer(db, s)
-      // setNativeSchema might still be nessecary...
     }
   } catch (err) {
     // TODO In some cases we really should give up!
