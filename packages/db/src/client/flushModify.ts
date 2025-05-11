@@ -196,11 +196,11 @@ export const startDrain = (db: DbClient) => {
   db.isDraining = true
   if (db.flushTime === 0) {
     process.nextTick(() => {
-      flushBuffer(db)
+      void flushBuffer(db)
     })
   } else {
     setTimeout(() => {
-      flushBuffer(db)
+      void flushBuffer(db)
     }, db.flushTime)
   }
 }

@@ -131,7 +131,7 @@ export function save(
         )
       }
     } else {
-      foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
+      void foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
         const hash = new Uint8Array(16)
         const file = saveRange(db, typeId, start, end, hash)
 

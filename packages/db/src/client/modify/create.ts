@@ -179,7 +179,7 @@ export function create(
       if (pos === 8) {
         throw new Error('!No range available')
       }
-      flushBuffer(db)
+      void flushBuffer(db)
       return db.create(type, obj, opts)
     }
     res.error = err

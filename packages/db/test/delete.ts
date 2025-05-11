@@ -33,7 +33,7 @@ await test('delete', async (t) => {
   })
 
   await db.drain()
-  db.delete('user', simple)
+  await db.delete('user', simple)
   await db.drain()
 
   deepEqual((await db.query('user').get()).toObject(), [])
