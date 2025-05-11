@@ -65,7 +65,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
     const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-
     if (refs) |r| {
         if (r.nr_refs == 0) {
             // Is empty already
@@ -87,10 +86,10 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    var i: usize = 1;
+    var i: usize = 1 + 4;
 
     while (i < len) : (i += 4) {
-        const id = read(u32, data, i + 4);
+        const id = read(u32, data, i);
         try db.deleteReference(
             ctx,
             ctx.node.?,
