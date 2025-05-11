@@ -79,7 +79,6 @@ export async function start(
   for (const key in csmtTypes) {
     const def = csmtTypes[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
-    def.total = total
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY

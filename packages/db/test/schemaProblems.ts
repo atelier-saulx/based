@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import { clientWorker } from './shared/startWorker.js'
 import { equal } from './shared/assert.js'
 
-await test('empty schema dont crash', async (t) => {
+await test('schema problems', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
