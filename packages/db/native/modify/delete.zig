@@ -90,6 +90,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             }
             try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
         } else if (ctx.fieldType == types.Prop.REFERENCES) {
+            // handled in delete field?
             references.clearReferences(ctx);
         } else {
             try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
