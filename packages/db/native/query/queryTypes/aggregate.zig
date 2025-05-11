@@ -85,7 +85,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
             const crcLen = groupCtx.propType.crcLen();
-            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[groupCtx.start + 1 .. groupValue.len - crcLen] else emptyKey;
+            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[groupCtx.start + 2 .. groupValue.len - crcLen] else emptyKey;
             var resultsField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);

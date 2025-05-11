@@ -113,7 +113,7 @@ await test('sum top level', async (t) => {
 })
 
 // sum group by  ----------------------------------
-await test('dev', async (t) => {
+await test('sum group by', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -173,23 +173,23 @@ await test('dev', async (t) => {
     'sum, top level, groupBy',
   )
 
-  // deepEqual(
-  //   await db.query('vote').groupBy('country').get().toObject(),
-  //   { bb: {}, aa: {} },
-  //   'groupBy with no aggregation function',
-  // )
+  deepEqual(
+    await db.query('vote').groupBy('country').get().toObject(),
+    { bb: {}, aa: {} },
+    'groupBy with no aggregation function',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'bb')
-  //     .groupBy('country')
-  //     .sum('NL', 'AU')
-  //     .get()
-  //     .toObject(),
-  //   { bb: { NL: 10, AU: 0 } },
-  //   'filter, groupBy on single distinct value',
-  // )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'bb')
+      .groupBy('country')
+      .sum('NL', 'AU')
+      .get()
+      .toObject(),
+    { bb: { NL: 10, AU: 0 } },
+    'filter, groupBy on single distinct value',
+  )
 })
 
 await test('sum branched includes', async (t) => {
@@ -465,7 +465,7 @@ await test('top level count', async (t) => {
 
   // top level  ----------------------------------
 
-  ;(await db.query('vote').count().get()).debug()
+  // ;(await db.query('vote').count().get()).debug()
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
@@ -694,7 +694,7 @@ await test('count group by', async (t) => {
 
 // // console.log((await db.query('vote').sum(countries).get()).execTime)
 
-await test('kev', async (t) => {
+await test('dev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -708,7 +708,7 @@ await test('kev', async (t) => {
       user: {
         props: {
           flap: { type: 'uint32' },
-          // country: { type: 'string' },
+          country: { type: 'string' },
           name: { type: 'string' },
           articles: {
             items: {
@@ -733,19 +733,19 @@ await test('kev', async (t) => {
   })
 
   const mrSnurp = db.create('user', {
-    // country: 'NL',
+    country: 'NL',
     name: 'Mr snurp',
     flap: 10,
   })
 
   const flippie = db.create('user', {
-    // country: 'NL',
+    country: 'NL',
     name: 'Flippie',
     flap: 20,
   })
 
   const derpie = db.create('user', {
-    // country: 'BR',
+    country: 'BR',
     name: 'Derpie',
     flap: 30,
   })
@@ -756,7 +756,7 @@ await test('kev', async (t) => {
   })
 
   const cipolla = db.create('user', {
-    // country: 'IT',
+    country: 'IT',
     name: 'Carlo Cipolla',
     flap: 80,
   })
@@ -779,32 +779,33 @@ await test('kev', async (t) => {
   //   .get()
   //   .inspect()
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: 80 },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
 
+  // // TODO: this is concatenating the keys
   // await db
   //   // dont break line
   //   .query('user')
   //   .groupBy('country')
   //   .sum('flap')
   //   .get()
-  //   .inspect() // OK
+  //   .inspect()
 
-  // TODO: string byteSize > 2
+  // This is ok
   const q = await db
     // dont break line
     .query('user')
