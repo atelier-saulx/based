@@ -435,16 +435,24 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     if (res.byteLength === 1) {
       if (res[0] === 0) {
-        this.reset()
-        this.db.emit(
-          'info',
-          'query get schema mismatch - awaiting new schema (max 15s)',
-        )
-        const ok = await Promise.race([wait(15e3), this.db.once('schema')])
-        if (!ok) {
-          reject(new Error('schema mismath'))
+        if (this.def && this.def.schemaChecksum === this.db.schema?.hash) {
+          // my schema did not change since last time, wait for the schema to change
+          this.reset()
+          this.db.emit(
+            'info',
+            'query get schema mismatch - awaiting new schema',
+          )
+          await this.db.once('schema')
+          return this.#getInternal(resolve, reject)
+        } else {
+          // its changed so lets send again
+          this.db.emit(
+            'info',
+            'query get schema mismatch - got the same already',
+          )
+          this.reset()
+          return this.#getInternal(resolve, reject)
         }
-        return this.#getInternal(resolve, reject)
       } else {
         reject(new Error('unexpected error'))
       }

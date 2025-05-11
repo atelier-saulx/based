@@ -429,7 +429,6 @@ export class DbServer extends DbShared {
       resolve(new Error('Query queue exceeded'))
       return
     }
-    // TODO should we check here as well? Already will check in DbWorker
     const schemaChecksum = readUint64(buf, buf.byteLength - 8)
     if (schemaChecksum !== this.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
