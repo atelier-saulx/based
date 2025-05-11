@@ -134,9 +134,8 @@ export async function start(
   const address: BigInt = native.intFromExternal(db.dbCtxExternal)
 
   db.workers = new Array(i)
-
   while (i--) {
-    db.workers[i] = new DbWorker(address, db)
+    db.workers[i] = new DbWorker(address, db, i)
   }
 
   if (!opts?.hosted) {
@@ -154,6 +153,8 @@ export async function start(
       signals.forEach((sig) => process.off(sig, blockSig))
     })
   }
+
+  await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
 
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {

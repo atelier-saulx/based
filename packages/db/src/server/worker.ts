@@ -1,5 +1,6 @@
 import {
   isMainThread,
+  parentPort,
   receiveMessageOnPort,
   workerData,
 } from 'node:worker_threads'
@@ -32,6 +33,7 @@ if (isMainThread) {
   }
 
   channel.on('message', handleMsg)
+  parentPort.postMessage('READY')
 
   const msg = receiveMessageOnPort(channel)
   if (msg) {
