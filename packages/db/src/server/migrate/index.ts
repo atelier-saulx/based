@@ -210,6 +210,7 @@ export const migrate = async (
     return
   }
 
+  native.membarSyncRead()
   await save(server, false, true, true)
   await writeSchemaFile(server, toSchema)
 

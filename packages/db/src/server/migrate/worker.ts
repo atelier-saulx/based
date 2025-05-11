@@ -132,6 +132,7 @@ if (isMainThread) {
     }
 
     await toDb.drain()
+    native.membarSyncWrite()
 
     // WE ARE ONLY GOING TO SEND { type: lastNodeId }
     channel.postMessage(cp(toDb.server.schemaTypesParsed))

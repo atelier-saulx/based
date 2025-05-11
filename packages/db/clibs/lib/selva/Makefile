@@ -38,6 +38,7 @@ OBJ := \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
+	membar.o \
 	mem/auto_free.o \
 	mem/finalizer.o \
 	mem/mempool.o \
