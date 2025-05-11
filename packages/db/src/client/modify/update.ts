@@ -102,7 +102,7 @@ export const update = (
       if (pos === 8) {
         throw new Error('out of range')
       }
-      flushBuffer(db)
+      void flushBuffer(db)
       return update(db, type, id, obj, opts)
     }
 

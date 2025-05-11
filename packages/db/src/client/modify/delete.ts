@@ -33,7 +33,7 @@ export const deleteFn = (
   if (separate) {
     const size = SIZE.DEFAULT_CURSOR + 2 + separate.length * 12
     if (ctx.len + size > ctx.max) {
-      flushBuffer(db)
+      void flushBuffer(db)
       return deleteFn(db, type, id)
     }
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
@@ -45,7 +45,7 @@ export const deleteFn = (
     ctx.buf[ctx.len++] = DELETE_NODE
   } else {
     if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
-      flushBuffer(db)
+      void flushBuffer(db)
       return deleteFn(db, type, id)
     }
     setCursor(ctx, schema, 0, MICRO_BUFFER, id, UPDATE)
