@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
-import { start } from './start.js'
+import { start, StartOpts } from './start.js'
 import { CsmtNodeRange, makeCsmtKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
@@ -76,7 +76,7 @@ export class DbServer extends DbShared {
     }
   }
 
-  start(opts?: { clean?: boolean; hosted?: boolean; delayInMs?: number }) {
+  start(opts?: StartOpts) {
     this.stopped = false
     return start(this, opts)
   }

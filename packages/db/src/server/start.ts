@@ -3,7 +3,6 @@ import { DbWorker } from './DbWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { hashEq } from './csmt/index.js'
 import {
   CsmtNodeRange,
   destructureCsmtKey,
@@ -20,10 +19,14 @@ import { bufToHex, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 
-export async function start(
-  db: DbServer,
-  opts: { clean?: boolean; hosted?: boolean; delayInMs?: number },
-) {
+export type StartOpts = {
+  clean?: boolean
+  hosted?: boolean
+  delayInMs?: number
+  queryThreads?: number
+}
+
+export async function start(db: DbServer, opts: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
 
@@ -130,19 +133,18 @@ export async function start(
   }
 
   // start workers
-  let i = availableParallelism()
+  const queryThreads = opts?.queryThreads ?? availableParallelism()
   const address: BigInt = native.intFromExternal(db.dbCtxExternal)
 
-  db.workers = new Array(i)
-  while (i--) {
-    db.workers[i] = new DbWorker(address, db, i)
+  db.workers = []
+  for (let i = 0; i < queryThreads; i++) {
+    db.workers.push(new DbWorker(address, db, i))
   }
 
   if (!opts?.hosted) {
     db.unlistenExit = exitHook((signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
-
       // A really dumb way to block signals temporarily while saving.
       // This is needed because there is no way to set the process signal mask
       // in Node.js.

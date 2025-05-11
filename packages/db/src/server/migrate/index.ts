@@ -53,8 +53,8 @@ export const migrate = async (
 ): Promise<void> => {
   const migrationId = toSchema.hash
   server.migrating = migrationId
-
   server.emit('info', `migrating schema ${migrationId}`)
+
   let killed = false
   const abort = () => {
     if (killed) {
@@ -64,18 +64,25 @@ export const migrate = async (
       )
       return true
     }
-    server.emit(
-      'info',
-      `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
-    )
-    return server.migrating !== migrationId
+    const newMigrationInProgress = server.migrating !== migrationId
+    if (newMigrationInProgress) {
+      server.emit(
+        'info',
+        `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
+      )
+    }
+    return newMigrationInProgress
   }
 
   const tmpDb = new BasedDb({
     path: null,
   })
 
-  await tmpDb.start({ clean: true, delayInMs: server.delayInMs })
+  await tmpDb.start({
+    clean: true,
+    delayInMs: server.delayInMs,
+    queryThreads: 0,
+  })
 
   if (abort()) {
     await tmpDb.destroy()

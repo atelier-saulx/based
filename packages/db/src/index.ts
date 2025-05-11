@@ -7,6 +7,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { setLocalClientSchema } from './client/setLocalClientSchema.js'
+import { BasedDbOpts } from './types.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx }
@@ -30,12 +31,7 @@ export class BasedDb extends Emitter {
   fileSystemPath: string
   maxModifySize: number
 
-  constructor(opts: {
-    path: string
-    maxModifySize?: number
-    debug?: boolean | 'server' | 'client'
-    saveIntervalInSeconds?: number
-  }) {
+  constructor(opts: BasedDbOpts) {
     super()
     this.fileSystemPath = opts.path
     this.maxModifySize = opts.maxModifySize
