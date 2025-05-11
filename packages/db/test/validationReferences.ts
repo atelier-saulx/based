@@ -213,7 +213,7 @@ await test('update', async (t) => {
         {
           id: 3,
           $bestFriend: true,
-          $friendsSince: 967845600000,
+          $friendsSince: new Date('09/02/2000').getTime(),
         },
       ],
     },
@@ -256,7 +256,7 @@ await test('update', async (t) => {
         {
           id: 3,
           $bestFriend: true,
-          $friendsSince: 967845600000,
+          $friendsSince: new Date('09/02/2000').getTime(),
           $friendShipBadge: new Uint8Array([4, 5, 6]),
         },
       ],

@@ -195,7 +195,6 @@ export function create(
 
   if (id > def.lastId) {
     def.lastId = id
-    def.total++
   }
 
   // @ts-ignore

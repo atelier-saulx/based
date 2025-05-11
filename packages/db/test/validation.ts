@@ -830,7 +830,7 @@ await test('query - no schema', async (t) => {
   }, 100)
 
   await throws(async () => {
-    db.query('user')
+    await db.query('ploink').get()
   }, false)
 
   await db.schemaIsSet()

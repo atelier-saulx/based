@@ -5,9 +5,11 @@ import { DbClient } from './client/index.js'
 import { wait } from '@saulx/utils'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
+import { Emitter } from './shared/Emitter.js'
+import { setLocalClientSchema } from './client/setLocalClientSchema.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
-export { ModifyCtx } // TODO move this somewhere
+export { ModifyCtx }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'
@@ -18,10 +20,11 @@ export * from './client/query/query.js'
 export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedIterable.js'
 export * from './server/save.js'
+export * from './hooks.js'
 
 export { getDefaultHooks }
 
-export class BasedDb {
+export class BasedDb extends Emitter {
   client: DbClient
   server: DbServer
   fileSystemPath: string
@@ -33,7 +36,20 @@ export class BasedDb {
     debug?: boolean | 'server' | 'client'
     saveIntervalInSeconds?: number
   }) {
-    this.#init(opts)
+    super()
+    this.fileSystemPath = opts.path
+    this.maxModifySize = opts.maxModifySize
+    const server = new DbServer({
+      path: opts.path,
+      saveIntervalInSeconds: opts.saveIntervalInSeconds,
+    })
+    const client = new DbClient({
+      maxModifySize: opts.maxModifySize,
+      hooks: getDefaultHooks(server),
+    })
+
+    this.server = server
+    this.client = client
 
     if (opts.debug) {
       if (opts.debug === 'client') {
@@ -46,34 +62,6 @@ export class BasedDb {
     }
   }
 
-  #init({
-    path,
-    maxModifySize,
-    saveIntervalInSeconds,
-  }: {
-    path: string
-    maxModifySize?: number
-    saveIntervalInSeconds?: number
-  }) {
-    this.fileSystemPath = path
-    this.maxModifySize = maxModifySize
-    const server = new DbServer({
-      path,
-      maxModifySize,
-      saveIntervalInSeconds,
-      onSchemaChange(schema) {
-        client.putLocalSchema(schema)
-      },
-    })
-    const client = new DbClient({
-      maxModifySize,
-      hooks: getDefaultHooks(server),
-    })
-    this.server = server
-    this.client = client
-  }
-
-  // client
   create: DbClient['create'] = function (this: BasedDb) {
     return this.client.create.apply(this.client, arguments)
   }
@@ -100,6 +88,10 @@ export class BasedDb {
 
   query: DbClient['query'] = function (this: BasedDb) {
     return this.client.query.apply(this.client, arguments)
+  }
+
+  schemaIsSet: DbClient['schemaIsSet'] = function (this: BasedDb) {
+    return this.client.schemaIsSet.apply(this.client, arguments)
   }
 
   setSchema: DbClient['setSchema'] = function (this: BasedDb) {
@@ -133,16 +125,8 @@ export class BasedDb {
     return this.server.save.apply(this.server, arguments)
   }
 
-  migrateSchema: DbServer['migrateSchema'] = function (this: BasedDb) {
-    return this.server.migrateSchema.apply(this.server, arguments)
-  }
-
   isModified: DbClient['isModified'] = function (this: BasedDb) {
     return this.client.isModified.apply(this.client, arguments)
-  }
-
-  schemaIsSet: DbClient['schemaIsSet'] = function (this: BasedDb) {
-    return this.client.schemaIsSet.apply(this.client, arguments)
   }
 
   async destroy() {
@@ -154,21 +138,11 @@ export class BasedDb {
     await this.server.destroy()
   }
 
-  async wipe() {
-    const opts = {
-      maxModifySize: this.maxModifySize,
-      path: this.fileSystemPath,
-    }
-    await this.destroy()
-    this.#init(opts)
-    await this.start({ clean: true })
-  }
-
-  on: DbClient['on'] = function (this: BasedDb) {
+  override on() {
     return this.client.on.apply(this.client, arguments)
   }
 
-  off: DbClient['off'] = function (this: BasedDb) {
+  override off() {
     return this.client.on.apply(this.client, arguments)
   }
 }

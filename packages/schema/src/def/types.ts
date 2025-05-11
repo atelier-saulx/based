@@ -155,7 +155,6 @@ export type SchemaSortUndefinedHandler = {
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
-  total: number
   type: string
   lastId: number
   blockCapacity: number

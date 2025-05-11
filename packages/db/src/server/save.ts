@@ -11,11 +11,10 @@ import {
   makeCsmtKey,
   specialBlock,
 } from './tree.js'
-import { DbServer, WRITELOG_FILE } from './index.js'
+import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
-
-const COMMON_SDB_FILE = 'common.sdb'
+import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 
 export type Writelog = {
   ts: number
@@ -67,13 +66,19 @@ export function save<T extends boolean>(
   db: DbServer,
   sync?: T,
   forceFullDump?: boolean,
+  skipMigrationCheck?: boolean,
 ): T extends true ? void : Promise<void>
 export function save(
   db: DbServer,
   sync = false,
   forceFullDump = false,
+  skipMigrationCheck = false,
 ): void | Promise<void> {
   if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
+    return
+  }
+
+  if (db.migrating && !skipMigrationCheck) {
     return
   }
 

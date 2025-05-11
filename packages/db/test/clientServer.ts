@@ -6,6 +6,7 @@ await test('client server basic', async (t) => {
   const {
     clients: [client1, client2],
   } = await start(t)
+
   await client1.setSchema({
     types: {
       user: {
@@ -69,7 +70,6 @@ await test('client server basic', async (t) => {
     name: 'marie',
   })
 
-  console.log('got marie now put in user', marie)
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],

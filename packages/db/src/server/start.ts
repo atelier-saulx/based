@@ -1,14 +1,24 @@
-import { DbServer, DbWorker, SCHEMA_FILE, WRITELOG_FILE } from './index.js'
+import { DbServer } from './index.js'
+import { DbWorker } from './DbWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { hashEq } from './csmt/index.js'
-import { CsmtNodeRange, destructureCsmtKey, foreachBlock, initCsmt, makeCsmtKey, specialBlock } from './tree.js'
+import {
+  CsmtNodeRange,
+  destructureCsmtKey,
+  foreachBlock,
+  initCsmt,
+  makeCsmtKey,
+  specialBlock,
+} from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex, deepEqual, hexToBuf } from '@saulx/utils'
+import { bufToHex } from '@saulx/utils'
+import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
+import { setNativeSchema, setSchemaOnServer } from './schema.js'
 
 export async function start(
   db: DbServer,
@@ -56,8 +66,8 @@ export async function start(
 
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
-      // Prop need to not call setting in selva
-      await db.setSchema(JSON.parse(schema.toString()), true)
+      const s = JSON.parse(schema.toString())
+      setSchemaOnServer(db, s)
     }
   } catch (err) {
     // TODO In some cases we really should give up!
@@ -68,7 +78,6 @@ export async function start(
   for (const key in csmtTypes) {
     const def = csmtTypes[key]
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
-    def.total = total
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
@@ -106,13 +115,15 @@ export async function start(
     const oldHashSet = new Set<string>()
     const newHashSet = new Set<string>()
 
-    for (let k in writelog.rangeDumps) writelog.rangeDumps[k].forEach(({ hash }) => oldHashSet.add(hash))
+    for (let k in writelog.rangeDumps)
+      writelog.rangeDumps[k].forEach(({ hash }) => oldHashSet.add(hash))
     db.merkleTree.visitLeafNodes(({ key, hash }) => {
-        const [_typeId, start] = destructureCsmtKey(key)
-        if (start == specialBlock) return // skip the type specialBlock
-        newHashSet.add(bufToHex(hash))
+      const [_typeId, start] = destructureCsmtKey(key)
+      if (start == specialBlock) return // skip the type specialBlock
+      newHashSet.add(bufToHex(hash))
     })
-    const setEq = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value))
+    const setEq = <T>(a: Set<T>, b: Set<T>) =>
+      a.size === b.size && [...a].every((value) => b.has(value))
     if (!setEq(oldHashSet, newHashSet)) {
       console.error(`WARN: CSMT hash mismatch.`)
     }
@@ -148,5 +159,9 @@ export async function start(
     db.saveInterval ??= setInterval(() => {
       save(db)
     }, db.saveIntervalInSeconds * 1e3)
+  }
+
+  if (db.schema) {
+    db.emit('schema', db.schema)
   }
 }

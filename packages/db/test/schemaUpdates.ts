@@ -1,44 +1,24 @@
 import { setTimeout } from 'node:timers/promises'
-import { DbClient, DbClientHooks } from '../src/client/index.js'
+import { DbClient } from '../src/client/index.js'
 import { DbServer } from '../src/server/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
-import { BasedDb } from '../src/index.js'
+import { BasedDb, getDefaultHooks } from '../src/index.js'
 
 await test('client server schema updates', async (t) => {
   const server = new DbServer({
     path: t.tmp,
-    onSchemaChange(schema) {
-      client1.putLocalSchema(schema)
-      client2.putLocalSchema(schema)
-    },
   })
+
   await server.start({ clean: true })
   t.after(() => server.destroy())
 
-  const hooks: DbClientHooks = {
-    subscribe(q, onData, onError) {
-      console.warn('Subscription not supported without based-server!')
-      return () => {}
-    },
-    async setSchema(schema, fromStart, transformFns) {
-      return server.setSchema(schema, fromStart, transformFns)
-    },
-    async flushModify(buf) {
-      const offsets = server.modify(buf)
-      return { offsets }
-    },
-    async getQueryBuf(buf) {
-      return server.getQueryBuf(buf)
-    },
-  }
-
   const client1 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   const client2 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   await client1.setSchema({
@@ -120,37 +100,16 @@ await test('client server schema updates', async (t) => {
 await test('rapid schema updates', async (t) => {
   const server = new DbServer({
     path: t.tmp,
-    onSchemaChange(schema) {
-      client1.putLocalSchema(schema)
-      client2.putLocalSchema(schema)
-    },
   })
   await server.start({ clean: true })
   t.after(() => server.destroy())
 
-  const hooks: DbClientHooks = {
-    subscribe(q, onData, onError) {
-      console.warn('Subscription not supported without based-server!')
-      return () => {}
-    },
-    async setSchema(schema, fromStart, transformFns) {
-      return server.setSchema(schema, fromStart, transformFns)
-    },
-    async flushModify(buf) {
-      const offsets = server.modify(buf)
-      return { offsets }
-    },
-    async getQueryBuf(buf) {
-      return server.getQueryBuf(buf)
-    },
-  }
-
   const client1 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   const client2 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   await client1.setSchema({
@@ -213,37 +172,16 @@ await test('rapid schema updates', async (t) => {
 await test('rapid modifies during schema update', async (t) => {
   const server = new DbServer({
     path: t.tmp,
-    onSchemaChange(schema) {
-      client1.putLocalSchema(schema)
-      client2.putLocalSchema(schema)
-    },
   })
   await server.start({ clean: true })
   t.after(() => server.destroy())
 
-  const hooks: DbClientHooks = {
-    subscribe(q, onData, onError) {
-      console.warn('Subscription not supported without based-server!')
-      return () => {}
-    },
-    async setSchema(schema, fromStart, transformFns) {
-      return server.setSchema(schema, fromStart, transformFns)
-    },
-    async flushModify(buf) {
-      const offsets = server.modify(buf)
-      return { offsets }
-    },
-    async getQueryBuf(buf) {
-      return server.getQueryBuf(buf)
-    },
-  }
-
   const client1 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   const client2 = new DbClient({
-    hooks,
+    hooks: getDefaultHooks(server),
   })
 
   await client1.setSchema({
@@ -263,7 +201,7 @@ await test('rapid modifies during schema update', async (t) => {
   }
   await client2.drain()
 
-  client1.setSchema({
+  await client1.setSchema({
     types: {
       user: {
         age: 'number',
@@ -284,8 +222,8 @@ await test('rapid modifies during schema update', async (t) => {
   }
 
   const all = await client2.query('user').range(0, 1000_000).get().toObject()
-  deepEqual(all[0], { id: 1, name: 'youzi499999' })
-  deepEqual(all.at(-1), { id: 501000, name: 'jamex0' })
+  deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 })
+  deepEqual(all.at(-1), { id: 501000, name: 'jamex0', age: 0 })
   deepEqual(all.length, youzies + jamesies)
 })
 

@@ -9,11 +9,6 @@ import { deepEqual } from './shared/assert.js'
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
     path: t.tmp,
-    onSchemaChange(schema) {
-      for (const client of clients) {
-        client.putLocalSchema(schema)
-      }
-    },
   })
 
   const clients = Array.from({ length: clientsN }).map(
@@ -78,7 +73,7 @@ await test('subscription schema changes', async (t) => {
     },
   })
   await wait(20)
-  q.reBuildQuery()
+  q.reset()
   deepEqual(result1, q.get(), 'first schema change results are correct')
   const subResults = []
   const close = q.subscribe((q) => {

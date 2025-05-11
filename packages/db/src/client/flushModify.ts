@@ -204,3 +204,12 @@ export const startDrain = (db: DbClient) => {
     }, db.flushTime)
   }
 }
+
+export const makeFlushIsReady = (dbClient: DbClient) => {
+  dbClient.flushIsReady = new Promise<void>((resolve) => {
+    dbClient.flushReady = () => {
+      resolve()
+      makeFlushIsReady(dbClient)
+    }
+  })
+}

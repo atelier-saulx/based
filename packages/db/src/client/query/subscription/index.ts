@@ -11,41 +11,58 @@ export class SubStore {
   checksum?: number
   len?: number
   subscribe(q: BasedDbQuery) {
-    if (!q.def.include.stringFields.size && !q.def.references.size) {
-      includeField(q.def, '*')
+    const onData = (res: Uint8Array) => {
+      if (!this.response) {
+        this.response = new BasedQueryResponse(q.id, q.def, res, 0)
+      } else {
+        this.response.result = res
+        this.response.end = res.byteLength
+      }
+      const checksum = this.response.checksum
+      const len = res.byteLength
+      if (this.len !== len || this.checksum !== checksum) {
+        for (const [onData] of this.listeners) {
+          onData(this.response)
+        }
+        this.len = len
+        this.checksum = checksum
+      }
     }
 
-    registerQuery(q)
+    const onError = (err: Error) => {
+      for (const [, onError] of this.listeners) {
+        onError(err)
+      }
+    }
+    let killed = false
 
-    this.onClose = q.db.hooks.subscribe(
-      q,
-      (res: Uint8Array) => {
-        if (!this.response) {
-          this.response = new BasedQueryResponse(q.id, q.def, res, 0)
-        } else {
-          this.response.result = res
-          this.response.end = res.byteLength
-        }
-        const checksum = this.response.checksum
-        const len = res.byteLength
-        if (this.len !== len || this.checksum !== checksum) {
-          for (const [onData] of this.listeners) {
-            onData(this.response)
+    if (!q.db.schema) {
+      q.db.schemaIsSet().then(() => {
+        if (!killed) {
+          try {
+            registerQuery(q)
+            this.onClose = q.db.hooks.subscribe(q, onData, onError)
+          } catch (err) {
+            onError(err)
           }
-          this.len = len
-          this.checksum = checksum
         }
-      },
-      (err: Error) => {
-        for (const [, onError] of this.listeners) {
-          onError(err)
-        }
-      },
-    )
+      })
+      this.onClose = () => {
+        killed = true
+      }
+    } else {
+      try {
+        registerQuery(q)
+        this.onClose = q.db.hooks.subscribe(q, onData, onError)
+      } catch (err) {
+        onError(err)
+        this.onClose = () => {}
+      }
+    }
   }
   resubscribe(q: BasedDbQuery) {
     this.onClose()
-    q.reBuildQuery()
+    q.reset()
     this.response = null
     this.subscribe(q)
   }
@@ -54,7 +71,7 @@ export class SubStore {
 export const subscribe = (
   q: BasedDbQuery,
   onData: OnData,
-  onError?: OnError,
+  onError: OnError,
 ): OnClose => {
   if (!q.db.subs.has(q)) {
     const store = new SubStore()
