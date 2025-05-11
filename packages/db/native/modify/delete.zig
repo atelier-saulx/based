@@ -88,13 +88,14 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             if (oldRefDst) |dstNode| {
                 Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), db.getNodeId(dstNode));
             }
-            try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
-        } else if (ctx.fieldType == types.Prop.REFERENCES) {
-            // handled in delete field?
-            references.clearReferences(ctx);
-        } else {
-            try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
+            // try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
         }
+        // } else if (ctx.fieldType == types.Prop.REFERENCES) {
+        //     // handled in delete field?
+        //     references.clearReferences(ctx);
+        // } else {
+        try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
+        // }
     }
     return 0;
 }
