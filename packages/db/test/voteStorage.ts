@@ -166,6 +166,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
           },
         },
         vote: {
+          derp: 'uint16',
           round: {
             ref: 'round',
             prop: 'votes',
@@ -215,7 +216,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
       .get()
       .toObject()
     let i = votes.length - 1
-    for (; i > 0; i--) {
+    for (i = 0; i < votes.length; i++) {
       db.delete('vote', votes[i].id)
     }
 
@@ -226,7 +227,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
   })
 }
 
-await testVotes({ votes: null, amount: 1e3 })
-await testVotes({ votes: [], amount: 1e3 })
+await testVotes({ votes: null, amount: 1e6 })
+await testVotes({ votes: [], amount: 1e6 })
 // await testVotes({ votes: null, amount: 1000 })
 // await testVotes({ votes: [1], amount: 1000 })
