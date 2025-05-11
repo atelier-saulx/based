@@ -316,15 +316,14 @@ export class DbServer extends DbShared {
     return schema.hash
   }
 
-  modify(buf: Uint8Array): Record<number, number> | null {
-    const schemaHash = readUint64(buf, 0)
+  modify(bufWithHash: Uint8Array): Record<number, number> | null {
+    const schemaHash = readUint64(bufWithHash, 0)
     if (schemaHash !== this.schema?.hash) {
       this.emit('info', 'Schema mismatch in modify')
       return null
     }
 
-    buf = buf.subarray(8)
-
+    const buf = bufWithHash.subarray(8)
     const offsets = {}
     const dataLen = readUint32(buf, buf.length - 4)
     let typesSize = readUint16(buf, dataLen)
@@ -360,7 +359,7 @@ export class DbServer extends DbShared {
     }
 
     if (this.processingQueries) {
-      this.modifyQueue.push(new Uint8Array(buf))
+      this.modifyQueue.push(new Uint8Array(bufWithHash))
     } else {
       this.#modify(buf)
     }
@@ -500,7 +499,13 @@ export class DbServer extends DbShared {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
         this.modifyQueue = []
-        for (const buf of modifyQueue) {
+        for (const bufWithHash of modifyQueue) {
+          const schemaHash = readUint64(bufWithHash, 0)
+          if (schemaHash !== this.schema?.hash) {
+            this.emit('info', 'Schema mismatch in modify')
+            return null
+          }
+          const buf = bufWithHash.subarray(8)
           this.#modify(buf)
         }
       }

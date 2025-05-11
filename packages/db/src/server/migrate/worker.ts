@@ -21,6 +21,9 @@ if (isMainThread) {
 
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
+
+  native.workerCtxInit()
+
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
   const cp = (obj) => {

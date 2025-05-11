@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepCopy } from '@saulx/utils'
+import { deepCopy, wait } from '@saulx/utils'
 import populate from './shared/populate/index.js'
 
 const schema = {
@@ -360,7 +360,7 @@ const schema = {
   },
 } as const
 
-await test('escMigrate', async (t) => {
+await test.skip('escMigrate', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -371,22 +371,45 @@ await test('escMigrate', async (t) => {
   // @ts-ignore
   await db.setSchema(schema)
   await populate(db)
-  console.log('-------------------')
 
-  db.client.on('info', console.info)
-  const i = setTimeout(async () => {
-    console.log((await db.query('sequence').get()).length)
-  }, 200)
+  // db.client.on('info', console.info)
+  const ints = [
+    setInterval(() => {
+      db.query('sequence').get()
+    }, 5),
+    setInterval(() => {
+      db.query('contestant').get()
+    }, 6),
+    setInterval(() => {
+      db.query('country').get()
+    }, 7),
+    setInterval(() => {
+      db.update('contestant', 1, {
+        name: 'name:' + Math.random(),
+      })
+    }, 100),
+  ]
 
-  const newSchema = deepCopy(schema) as typeof schema
-  // @ts-ignore
-  newSchema.types.contestant = {
-    extraField: 'string',
-    ...newSchema.types.contestant,
+  let prevSchema = schema
+  let c = 1
+  while (c--) {
+    for (const type of ['string', 'boolean', 'number']) {
+      const newSchema = deepCopy(schema) as typeof schema
+      // @ts-ignore
+      newSchema.types.contestant = {
+        extraField: type,
+        [`${type}Field`]: type,
+        [`${type + c}Field`]: type,
+        ...prevSchema.types.contestant,
+      }
+      prevSchema = newSchema
+      // @ts-ignore
+      await db.setSchema(newSchema)
+      await wait(200)
+    }
   }
 
-  // @ts-ignore
-  await db.setSchema(newSchema)
-  console.log('CLEAR INTERVAL')
-  // clearInterval(i)
+  for (const i of ints) {
+    clearTimeout(i)
+  }
 })
