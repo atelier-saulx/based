@@ -163,7 +163,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   // use timeout
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
-      save(db)
+      void save(db)
     }, db.saveIntervalInSeconds * 1e3)
   }
 
