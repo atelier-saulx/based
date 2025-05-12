@@ -63,12 +63,13 @@ const readAggregate = (
         } else {
           key = `$undefined`
         }
+        i += 2
       } else {
         keyLen = readUint16(result, i)
         i += 2
         key = DECODER.decode(result.subarray(i, i + keyLen))
+        i += keyLen
       }
-      i += keyLen
       const resultKey = (results[key] = {})
       for (const aggregatesArray of q.aggregate.aggregates.values()) {
         for (const agg of aggregatesArray) {

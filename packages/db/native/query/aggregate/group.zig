@@ -30,10 +30,11 @@ pub inline fn setGroupResults(
     var i: usize = 0;
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
-        const keyLen: u16 = @intCast(key.len);
-        writeInt(u16, data, i, keyLen);
+        const rawKeyLen: u16 = @intCast(key.len);
+        writeInt(u16, data, i, rawKeyLen);
         i += 2;
-        copy(data[i .. i + key.len], key);
+        const keyLen = if (key.len == 0) 4 else key.len;
+        copy(data[i .. i + keyLen], key);
         i += key.len;
         copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
         i += ctx.resultsSize;

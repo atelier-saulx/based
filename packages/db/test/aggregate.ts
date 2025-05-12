@@ -890,23 +890,22 @@ await test('dev', async (t) => {
 
   // q2.inspect()
 
-  // // TODO: this is concatenating the keys
-  await db
-    // dont break line
-    .query('user')
-    .groupBy('country')
-    .sum('flap')
-    .get()
-    .inspect()
-
-  // This is ok
-  // const q = await db
+  // await db
   //   // dont break line
   //   .query('user')
-  //   .groupBy('name')
+  //   .groupBy('country')
   //   .sum('flap')
   //   .get()
+  //   .inspect()
 
-  // q.inspect()
+  // This is ok
+  const q = await db
+    // dont break line
+    .query('user')
+    .groupBy('name')
+    .sum('flap')
+    .get()
+
+  q.inspect()
   // q.debug
 })
