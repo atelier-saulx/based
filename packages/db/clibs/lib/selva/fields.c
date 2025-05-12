@@ -1958,10 +1958,12 @@ static void destroy_fields(struct SelvaFields *fields)
         db_panic("Can't destroy shared fields");
     }
 
+#if 0
     /*
      * Clear fields map.
      */
     memset(fields->fields_map, 0, fields->nr_fields * sizeof(fields->fields_map[0]));
+#endif
 
     fields->nr_fields = 0;
     fields->data_len = 0;
