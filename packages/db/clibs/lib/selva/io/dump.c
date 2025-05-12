@@ -317,16 +317,13 @@ static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
 
 static void save_schema(struct selva_io *io, struct SelvaDb *db)
 {
-    SVector *types = &db->type_list;
-    const sdb_nr_types_t nr_types = SVector_Size(types);
-    struct SVectorIterator it;
+    const sdb_nr_types_t nr_types = db->types.count;
     struct SelvaTypeEntry *te;
 
     write_dump_magic(io, DUMP_MAGIC_SCHEMA);
     io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
 
-    SVector_ForeachBegin(&it, types);
-    while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
+    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
         node_type_t type = te->type;
         const sdb_arr_len_t schema_len = te->schema_len;
 

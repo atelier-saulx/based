@@ -9,12 +9,12 @@
 #include <stdint.h>
 #include "tree.h"
 #include "mempool.h"
-#include "svector.h"
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
 #include "expire.h"
 #include "ref_save_map.h"
 
+RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
 RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
@@ -70,6 +70,8 @@ struct SelvaTypeBlock {
 struct SelvaTypeEntry {
     node_type_t type;
 
+    RB_ENTRY(SelvaTypeEntry) _entry;
+
     /**
      * Node blocks in this type.
      */
@@ -111,7 +113,11 @@ struct SelvaTypeEntry {
     size_t schema_len;
 
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
-} __attribute__((aligned(65536)));
+};
+
+struct SelvaTypeEntryFind {
+    node_type_t type;
+};
 
 /**
  * Node expire token.
@@ -127,7 +133,14 @@ struct SelvaDbExpireToken {
  * Database instance.
  */
 struct SelvaDb {
-    SVector type_list;
+    /**
+     * SelvaTypeEntries.
+     */
+    struct {
+        struct SelvaTypeEntryIndex index;
+        struct mempool pool; /*!< types area allocated from here. */
+        size_t count; /*!< Total count of types. */
+    } types;
 
     /**
      * Schema related items.
@@ -157,9 +170,10 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
     return te;
 }
 
+RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name);
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest);
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
