@@ -186,8 +186,7 @@ void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, vo
 struct SelvaDb *selva_db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
-
-    const size_t te_size = sizeof(struct SelvaTypeEntry) + 249 * sizeof(struct SelvaFieldSchema);
+    const size_t te_size = sizeof(struct SelvaTypeEntry);
     uint32_t slab_size = (1'048'576 / te_size) * te_size;
 
     slab_size--;
@@ -292,9 +291,12 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
 
+#if 0
     for (size_t i = 0; i < nr_blocks; i++) {
         RB_INIT(&blocks->blocks[i].nodes);
     }
+#endif
+    memset(&blocks->blocks, 0, nr_blocks * sizeof(struct SelvaTypeBlock));
 
     return blocks;
 }
@@ -348,10 +350,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
         return SELVA_ENOBUFS;
     }
 
-
     struct SelvaTypeEntry *te = mempool_get(&db->types.pool);
-    size_t zero_size = sizeof(*te) + nfo.nr_fields * sizeof(struct SelvaFieldSchema);
-    memset(te, 0, zero_size);
 
 #if 0
     fprintf(stderr, "schema_buf: [ ");
@@ -361,6 +360,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     fprintf(stderr, "]\n");
 #endif
 
+    memset(te, 0, sizeof(*te));
     te->type = type;
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
