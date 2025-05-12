@@ -157,7 +157,7 @@ export const migrate = async (
       if (server.dirtyRanges.size) {
         rangesToMigrate = []
         i = 0
-        foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
+        void foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
           rangesToMigrate.push({
             typeId,
             start,
@@ -210,6 +210,7 @@ export const migrate = async (
     return
   }
 
+  native.membarSyncRead()
   await save(server, false, true, true)
   await writeSchemaFile(server, toSchema)
 

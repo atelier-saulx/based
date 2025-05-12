@@ -59,7 +59,7 @@ export const getDefaultHooks = (
         timer = setTimeout(poll, subInterval)
       }
 
-      poll()
+      void poll()
 
       return () => {
         clearTimeout(timer)

@@ -462,6 +462,9 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
     selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
     if (node == type->max_node) {
+        /*
+         * selva_max_node() is as fast as selva_prev_node().
+         */
         type->max_node = selva_max_node(type);
     }
 

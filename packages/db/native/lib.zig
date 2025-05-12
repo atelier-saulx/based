@@ -88,6 +88,16 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
     return result;
 }
 
+fn membarSyncRead(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    selva.membar_sync_read();
+    return null;
+}
+
+fn membarSyncWrite(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    selva.membar_sync_write();
+    return null;
+}
+
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
@@ -125,6 +135,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
     registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
+
+    registerFunction(env, exports, "membarSyncRead", membarSyncRead) catch return null;
+    registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
 
     return exports;
 }

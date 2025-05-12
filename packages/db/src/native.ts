@@ -145,6 +145,14 @@ const native = {
   equals: (a: Uint8Array, b: Uint8Array): boolean => {
     return !!db.equals(a, b)
   },
+
+  membarSyncRead: () => {
+    db.membarSyncRead();
+  },
+
+  membarSyncWrite: () => {
+    db.membarSyncWrite();
+  },
 }
 
 global.__basedDb__native__ = native
