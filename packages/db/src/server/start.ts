@@ -3,7 +3,6 @@ import { DbWorker } from './DbWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { hashEq } from './csmt/index.js'
 import {
   CsmtNodeRange,
   destructureCsmtKey,
@@ -16,14 +15,18 @@ import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex } from '@saulx/utils'
+import { bufToHex, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
-import { setNativeSchema, setSchemaOnServer } from './schema.js'
+import { setSchemaOnServer } from './schema.js'
 
-export async function start(
-  db: DbServer,
-  opts: { clean?: boolean; hosted?: boolean },
-) {
+export type StartOpts = {
+  clean?: boolean
+  hosted?: boolean
+  delayInMs?: number
+  queryThreads?: number
+}
+
+export async function start(db: DbServer, opts: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
 
@@ -130,38 +133,46 @@ export async function start(
   }
 
   // start workers
-  let i = availableParallelism()
+  const queryThreads = opts?.queryThreads ?? availableParallelism()
   const address: BigInt = native.intFromExternal(db.dbCtxExternal)
 
-  db.workers = new Array(i)
-
-  while (i--) {
-    db.workers[i] = new DbWorker(address, db)
+  db.workers = []
+  for (let i = 0; i < queryThreads; i++) {
+    db.workers.push(new DbWorker(address, db, i))
   }
 
   if (!opts?.hosted) {
     db.unlistenExit = exitHook((signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
-
       // A really dumb way to block signals temporarily while saving.
       // This is needed because there is no way to set the process signal mask
       // in Node.js.
       signals.forEach((sig) => process.on(sig, blockSig))
-      console.log(`Exiting with signal: ${signal}`)
+      db.emit('info', `Exiting with signal: ${signal}`)
       save(db, true)
-      console.log('Successfully saved.')
+      db.emit('info', 'Successfully saved.')
       signals.forEach((sig) => process.off(sig, blockSig))
     })
   }
 
+  const d = performance.now()
+  await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
+  db.emit('info', `Starting workers took ${d}ms`)
+
+  // use timeout
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
-      save(db)
+      void save(db)
     }, db.saveIntervalInSeconds * 1e3)
   }
 
   if (db.schema) {
     db.emit('schema', db.schema)
+  }
+
+  if (opts?.delayInMs) {
+    db.delayInMs = opts.delayInMs
+    await wait(opts.delayInMs)
   }
 }

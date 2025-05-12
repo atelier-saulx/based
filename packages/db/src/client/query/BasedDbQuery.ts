@@ -397,11 +397,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       }
     }
 
-    // const def = createQueryDef(db, QueryDefType.Root, target, skipValidation)
-    // def.schemaChecksum = db.schema?.hash || 0
-
-    //  def: QueryDef
-
     super(db)
     this.db = db
     this.skipValidation = skipValidation
@@ -440,22 +435,16 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     if (res.byteLength === 1) {
       if (res[0] === 0) {
-        if (this.def && this.db.schema?.hash !== this.def.schemaChecksum) {
-          this.reset()
-          this.db.emit(
-            'info',
-            'query get schema mismatch - awaiting new schema',
-          )
-          await this.db.once('schema')
-          return this.#getInternal(resolve, reject)
-        } else {
-          this.db.emit(
-            'info',
-            'query get schema mismatch - got the same already',
-          )
-          this.reset()
-          return this.#getInternal(resolve, reject)
+        this.reset()
+        this.db.emit(
+          'info',
+          'query get schema mismatch - awaiting new schema (max 15s)',
+        )
+        const ok = await Promise.race([wait(15e3), this.db.once('schema')])
+        if (!ok) {
+          reject(new Error('schema mismath'))
         }
+        return this.#getInternal(resolve, reject)
       } else {
         reject(new Error('unexpected error'))
       }

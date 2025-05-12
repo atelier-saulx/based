@@ -1,3 +1,4 @@
+import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
@@ -47,12 +48,14 @@ await test('timestamp', async (t) => {
     throw 'createdAt should equal updatedAt after creation'
   }
 
+  await wait(10)
   await db.update('user', youzi, {
     name: 'youzi1',
   })
 
   res = (await db.query('user').get()).toObject()
 
+  console.log(res)
   if (!(res[0].updatedAt > res[0].createdAt)) {
     throw 'updatedAt should be updated after update'
   }

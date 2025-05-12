@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { createTree } from './csmt/index.js'
-import { start } from './start.js'
+import { start, StartOpts } from './start.js'
 import { CsmtNodeRange, makeCsmtKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
@@ -41,7 +41,7 @@ export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
 
   migrating: number = null
-
+  saveInProgress: boolean = false
   fileSystemPath: string
   merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()
@@ -55,6 +55,7 @@ export class DbServer extends DbShared {
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
+  delayInMs?: number
 
   constructor({
     path,
@@ -75,7 +76,7 @@ export class DbServer extends DbShared {
     }
   }
 
-  start(opts?: { clean?: boolean; hosted?: boolean }) {
+  start(opts?: StartOpts) {
     this.stopped = false
     return start(this, opts)
   }
@@ -315,18 +316,14 @@ export class DbServer extends DbShared {
     return schema.hash
   }
 
-  modify(buf: Uint8Array): Record<number, number> | null {
-    const schemaHash = readUint64(buf, 0)
-
-    // if !schema
-
+  modify(bufWithHash: Uint8Array): Record<number, number> | null {
+    const schemaHash = readUint64(bufWithHash, 0)
     if (schemaHash !== this.schema?.hash) {
       this.emit('info', 'Schema mismatch in modify')
       return null
     }
 
-    buf = buf.subarray(8)
-
+    const buf = bufWithHash.subarray(8)
     const offsets = {}
     const dataLen = readUint32(buf, buf.length - 4)
     let typesSize = readUint16(buf, dataLen)
@@ -362,7 +359,7 @@ export class DbServer extends DbShared {
     }
 
     if (this.processingQueries) {
-      this.modifyQueue.push(new Uint8Array(buf))
+      this.modifyQueue.push(new Uint8Array(bufWithHash))
     } else {
       this.#modify(buf)
     }
@@ -432,6 +429,11 @@ export class DbServer extends DbShared {
       resolve(new Error('Query queue exceeded'))
       return
     }
+    // TODO should we check here as well? Already will check in DbWorker
+    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
+    if (schemaChecksum !== this.schema?.hash) {
+      return Promise.resolve(new Uint8Array(1))
+    }
     this.queryQueue.set(resolve, buf)
   }
 
@@ -443,12 +445,6 @@ export class DbServer extends DbShared {
       console.error('Db is stopped - trying to query', buf.byteLength)
       return Promise.resolve(new Uint8Array(8))
     }
-
-    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
-    if (schemaChecksum !== this.schema?.hash) {
-      return Promise.resolve(new Uint8Array(1))
-    }
-
     if (this.modifyQueue.length) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
@@ -499,12 +495,17 @@ export class DbServer extends DbShared {
 
   onQueryEnd() {
     this.processingQueries--
-
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
         this.modifyQueue = []
-        for (const buf of modifyQueue) {
+        for (const bufWithHash of modifyQueue) {
+          const schemaHash = readUint64(bufWithHash, 0)
+          if (schemaHash !== this.schema?.hash) {
+            this.emit('info', 'Schema mismatch in modify')
+            return null
+          }
+          const buf = bufWithHash.subarray(8)
           this.#modify(buf)
         }
       }
@@ -554,12 +555,14 @@ export class DbServer extends DbShared {
 
   async destroy() {
     await this.stop(true)
-    await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
-      // console.warn(
-      //   'Error removing dump folder',
-      //   this.fileSystemPath,
-      //   err.message,
-      // ),
-    })
+    if (this.fileSystemPath) {
+      await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
+        // console.warn(
+        //   'Error removing dump folder',
+        //   this.fileSystemPath,
+        //   err.message,
+        // ),
+      })
+    }
   }
 }

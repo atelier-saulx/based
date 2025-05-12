@@ -31,6 +31,17 @@ await test('schema problems', async (t) => {
 
   q.push(
     clientWorker(t, db, async (c) => {
+      // c.query('flap')
+      //   .count()
+      //   .subscribe(
+      //     (d) => {
+      //       console.log('subc', d)
+      //     },
+      //     (err) => {
+      //       console.log(err)
+      //     },
+      //   )
+
       c.query('seq')
         .include('flap')
         .subscribe(

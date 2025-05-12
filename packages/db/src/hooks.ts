@@ -45,11 +45,13 @@ export const getDefaultHooks = (
         if (res.byteLength >= 4) {
           onData(res)
         } else if (res.byteLength === 1 && res[0] === 0) {
-          console.info('schema mismatch, should resolve after update')
-          // ignore update and stop polling
+          server.emit(
+            'info',
+            `[${displayTarget(q.def)}] Subscribe schema mismatch - should resolve after update`,
+          )
           return
         } else {
-          const def = this.def
+          const def = q.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
           name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
           onError(new Error(name))
@@ -57,7 +59,7 @@ export const getDefaultHooks = (
         timer = setTimeout(poll, subInterval)
       }
 
-      poll()
+      void poll()
 
       return () => {
         clearTimeout(timer)

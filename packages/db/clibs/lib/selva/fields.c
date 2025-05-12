@@ -15,7 +15,6 @@
 #include "bits.h"
 #include "db.h"
 #include "db_panic.h"
-#include "idz.h"
 #include "ptag.h"
 #include "selva/fast_linear_search.h"
 #include "selva/node_id_set.h"

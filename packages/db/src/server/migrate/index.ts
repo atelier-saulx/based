@@ -1,6 +1,5 @@
 import { BasedDb, save } from '../../index.js'
 import { dirname, join } from 'path'
-import { tmpdir } from 'os'
 import {
   Worker,
   MessageChannel,
@@ -17,12 +16,10 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { deepMerge } from '@saulx/utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
-let migrationCnt = 0
 
 type TransformFn = (
   node: Record<string, any>,
@@ -56,8 +53,8 @@ export const migrate = async (
 ): Promise<void> => {
   const migrationId = toSchema.hash
   server.migrating = migrationId
-
   server.emit('info', `migrating schema ${migrationId}`)
+
   let killed = false
   const abort = () => {
     if (killed) {
@@ -67,18 +64,25 @@ export const migrate = async (
       )
       return true
     }
-    server.emit(
-      'info',
-      `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
-    )
-    return server.migrating !== migrationId
+    const newMigrationInProgress = server.migrating !== migrationId
+    if (newMigrationInProgress) {
+      server.emit(
+        'info',
+        `abort migration - migrating: ${server.migrating} abort: ${migrationId}`,
+      )
+    }
+    return newMigrationInProgress
   }
 
   const tmpDb = new BasedDb({
     path: null,
   })
 
-  await tmpDb.start({ clean: true })
+  await tmpDb.start({
+    clean: true,
+    delayInMs: server.delayInMs,
+    queryThreads: 0,
+  })
 
   if (abort()) {
     await tmpDb.destroy()
@@ -86,8 +90,7 @@ export const migrate = async (
   }
 
   setSchemaOnServer(tmpDb.server, toSchema)
-  // await writeSchemaFile(this, toSchema)
-  await setNativeSchema(tmpDb.server, toSchema)
+  setNativeSchema(tmpDb.server, toSchema)
 
   if (abort()) {
     await tmpDb.destroy()
@@ -154,7 +157,7 @@ export const migrate = async (
       if (server.dirtyRanges.size) {
         rangesToMigrate = []
         i = 0
-        foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
+        void foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
           rangesToMigrate.push({
             typeId,
             start,
@@ -207,6 +210,7 @@ export const migrate = async (
     return
   }
 
+  native.membarSyncRead()
   await save(server, false, true, true)
   await writeSchemaFile(server, toSchema)
 

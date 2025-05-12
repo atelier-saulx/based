@@ -6,6 +6,7 @@ const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
+const references = @import("./references.zig");
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
@@ -82,6 +83,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
+        // TODO check it!
         if (ctx.fieldType == types.Prop.REFERENCE) {
             const oldRefDst = db.getNodeFromReference(db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?));
             if (oldRefDst) |dstNode| {

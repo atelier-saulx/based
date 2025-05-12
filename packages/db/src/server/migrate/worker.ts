@@ -11,7 +11,6 @@ import { isTypedArray } from 'node:util/types'
 import { CsmtNodeRange } from '../tree.js'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
-import { wait } from '@saulx/utils'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 
 if (isMainThread) {
@@ -22,6 +21,9 @@ if (isMainThread) {
 
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
+
+  native.workerCtxInit()
+
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
   const cp = (obj) => {
@@ -130,6 +132,7 @@ if (isMainThread) {
     }
 
     await toDb.drain()
+    native.membarSyncWrite()
 
     // WE ARE ONLY GOING TO SEND { type: lastNodeId }
     channel.postMessage(cp(toDb.server.schemaTypesParsed))

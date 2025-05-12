@@ -1,18 +1,16 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-import { clientWorker } from './shared/startWorker.js'
-import { equal } from './shared/assert.js'
 import { randomString, wait } from '@saulx/utils'
-import { randomInt } from 'node:crypto'
+import { Schema } from '@based/schema'
 
-await test('schema problems modify', async (t) => {
+await test('schema problems save', async (t) => {
   let db = new BasedDb({
     path: t.tmp,
   })
 
   await db.start({ clean: true })
 
-  const types = {}
+  const types: Schema['types'] = {}
 
   for (let i = 0; i < 50; i++) {
     types[(~~(Math.random() * 1e6)).toString(16)] = {
@@ -28,9 +26,27 @@ await test('schema problems modify', async (t) => {
   const keys = Object.keys(types)
   const type = keys[3]
 
+  types[type] = Object.assign(types[type], {
+    myRef: {
+      ref: 'seq',
+      prop: 'votes',
+    },
+  })
+
+  types.seq = {
+    votes: {
+      items: {
+        ref: type,
+        prop: 'myRef',
+      },
+    },
+  }
+
   await db.setSchema({
     types,
   })
+
+  const seqId = await db.create('seq', {})
 
   for (let i = 0; i < 1e5; i++) {
     await db.create(type, {
@@ -42,11 +58,19 @@ await test('schema problems modify', async (t) => {
     blurf: '213123',
   })
 
+  let update = 0
   const int2 = setInterval(async () => {
     if (db) {
+      update++
       await db.schemaIsSet()
+      if (update % 5 === 0) {
+        await db.create(type, {
+          blurf: randomString(1000),
+        })
+      }
       await db.update(type, id, {
         blurf: randomString(1000),
+        myRef: seqId,
       })
     }
   }, 10)
@@ -60,7 +84,7 @@ await test('schema problems modify', async (t) => {
     d = new BasedDb({
       path: t.tmp,
     })
-    await d.start({ clean: true })
+    await d.start()
     db = d
   }, 1e3)
 

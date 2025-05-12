@@ -462,6 +462,9 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
     selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
     if (node == type->max_node) {
+        /*
+         * selva_max_node() is as fast as selva_prev_node().
+         */
         type->max_node = selva_max_node(type);
     }
 
@@ -586,9 +589,11 @@ struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
     return selva_max_node_from(type, type->blocks->len - 1);
 }
 
+/* FIXME This seems incorrect. What if also the previous block is empty but there is a prev on somewhere? */
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
+    block_id_t i = node_id2block_i(blocks, node->node_id);
     struct SelvaNode *prev;
 
     prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
@@ -596,7 +601,6 @@ struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode 
         return prev;
     }
 
-    block_id_t i = node_id2block_i(blocks, node->node_id);
     if ( i > 0 && i - 1 < i) {
         return selva_max_node_from(type, i - 1);
     }
@@ -736,7 +740,9 @@ static void selva_cursors_move_node(
  */
 static void selva_cursors_node_going_away(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    selva_cursors_move_node(type, node, selva_next_node(type, node));
+    if (type->cursors.nr_cursors > 0) {
+        selva_cursors_move_node(type, node, selva_next_node(type, node));
+    }
 }
 
 static void selva_cursor_destroy(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)

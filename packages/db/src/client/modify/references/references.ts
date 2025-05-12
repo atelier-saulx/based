@@ -50,7 +50,7 @@ export function writeReferences(
     return new ModifyError(def, value)
   }
 
-  if (value === null) {
+  if (value === null || (Array.isArray(value) && value.length === 0)) {
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
