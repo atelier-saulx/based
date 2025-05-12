@@ -305,6 +305,12 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
+int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
+SELVA_EXPORT
+int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
+SELVA_EXPORT
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 

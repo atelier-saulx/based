@@ -42,7 +42,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
+            try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
         types.Prop.CARDINALITY => {

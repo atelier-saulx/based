@@ -220,6 +220,15 @@ pub fn setText(str: []u8, node: Node, fieldSchema: FieldSchema) !void {
   ));
 }
 
+pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
+  try errors.selva(selva.selva_fields_set_micro_buffer2(
+        node,
+        fieldSchema,
+        value.ptr,
+        value.len,
+  ));
+}
+
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
     var dirty: [2]selva.node_id_t = undefined;

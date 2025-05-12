@@ -762,13 +762,7 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        nfo = ensure_field(fields, fs);
-        if (len > fs->smb.len) {
-            return SELVA_EINVAL;
-        }
-        memcpy(nfo2p(fields, nfo), value, len);
-        memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
-        break;
+        return selva_fields_set_micro_buffer(fields, fs, value, len);
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
@@ -999,6 +993,30 @@ int selva_fields_get_text(
     }
 
     return SELVA_ENOENT;
+}
+
+int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = ensure_field(fields, fs);
+    if (len > fs->smb.len) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(nfo2p(fields, nfo), value, len);
+    memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
+
+    return 0;
+}
+
+int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    return selva_fields_set_micro_buffer(&node->fields, fs, value, len);
 }
 
 /**
