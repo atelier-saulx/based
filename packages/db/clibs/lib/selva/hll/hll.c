@@ -199,8 +199,6 @@ uint8_t *hll_count(struct selva_string *hllss) {
 
 
 #if __ARM_NEON
-    float32x4_t a = { 2.0f, 2.0f, 2.0f, 2.0f };
-
     for (uint32_t i = 0; i < num_registers;) {
         float32x4_t b;
         float32x4_t r;
@@ -211,7 +209,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
         b[2] = i < num_registers ? (float)registers[i++] : NAN;
         b[3] = i < num_registers ? (float)registers[i++] : NAN;
         zero_count += b[0] == 0.0 + b[1] == 0.0 + b[2] == 0.0 + b[3] == 0.0;
-        r = pow_ps(a, vnegq_f32(b));
+        r = exp2_ps(vnegq_f32(b));
         vmask = vceqq_f32(r, r);
         r = (float32x4_t)vandq_u32((uint32x4_t)r, vmask);
         raw_estimate += r[0] + r[1] + r[2] + r[3];

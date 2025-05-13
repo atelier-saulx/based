@@ -8,6 +8,7 @@
  */
 
 /*
+ * Copyright (c) 2025 SAULX
  * Copyright (C) 2011  Julien Pommier
  *
  *  This software is provided 'as-is', without any express or implied
@@ -297,6 +298,13 @@ static inline float32x4_t pow_ps(float32x4_t a, float32x4_t b)
 {
     // pow(x, m) = exp(m * log(x))
     return exp_ps(vmulq_f32(b, log_ps(a)));
+}
+
+static inline float32x4_t exp2_ps(float32x4_t b)
+{
+    float32x4_t a = { 6.931472e-01, 6.931472e-01, 6.931472e-01, 6.931472e-01 };
+
+    return exp_ps(vmulq_f32(b, a));
 }
 
 static inline float32x4_t sigmoid_ps(float32x4_t _v)
