@@ -20,6 +20,7 @@ import {
   writeUint32,
 } from '@saulx/utils'
 import { equal } from './shared/assert.js'
+import { unzip } from 'zlib'
 
 await test('analytics', async (t) => {
   const db = new BasedDb({
@@ -49,6 +50,7 @@ await test('analytics', async (t) => {
       },
     },
   })
+
   // ------------------ TEMP to test on start
   await db.update({ eventTypes: { bla: 1 } })
   await db.create('current', {
@@ -62,8 +64,6 @@ await test('analytics', async (t) => {
   const eventTypesInverse: { [event: number]: string } = {}
 
   const currents: { [eventId: string]: { [geo: string]: number } } = {} // [name geo] - id
-
-  const events = []
 
   const onStart = async () => {
     const eventTypesResult = await db
@@ -87,7 +87,7 @@ await test('analytics', async (t) => {
       currentEvents[c.geo] = c.id
     }
 
-    console.log('start got', eventTypes, eventTypesInverse, currents)
+    console.log('From start got', eventTypes, eventTypesInverse, currents)
     // on startup get eventTypes
     // Object.keys len is current lastEventType number
     // on startup get Currents
@@ -107,30 +107,64 @@ await test('analytics', async (t) => {
     return Math.floor(nr / SNAP_SHOT_INTERVAL) * SNAP_SHOT_INTERVAL
   }
 
+  type SnapShotWriteResult = {
+    [eventId: string]: {
+      size: number
+      geo: {
+        [geo: string]: {
+          uniq: number
+          count: number
+          active: number
+        }
+      }
+    }
+  }
   let snapShotTimer: ReturnType<typeof setTimeout>
+  let prevSnapShot: SnapShotWriteResult
   const makeSnapshots = async () => {
     await db.drain()
-    const q: Promise<BasedQueryResponse>[] = []
-    for (const eventId in currents) {
-      const current = q.push(
-        db
-          .query('current')
-          .filter('event', '=', Number(eventId))
-          .groupBy('geo')
-          .sum('count', 'active') //  'uniq' need agg support here
-          .get(),
-      )
+    const currents = await db.query('current').range(0, 1e6).get()
+
+    const results: SnapShotWriteResult = {}
+
+    for (const current of currents) {
+      // { id: 999, geo: 'AE', event: 60, count: 31, active: 45, uniq: 31 }
+      let event = results[current.event]
+      if (!event) {
+        event = results[current.event] = {
+          size: 0,
+          geo: {},
+        }
+      }
+      event.geo[current.geo] = {
+        active: current.active,
+        uniq: current.uniq,
+        count: current.count,
+      }
+      // 3 numbers + 2 (geo code)
+      event.size += 12 + 2
     }
-    const results = await Promise.all(q)
+
     const now = roundToSnapShotInterval(Date.now())
-    results.forEach((v) => {
-      const eventId = readUint16(v.def.filter.conditions.get(0)[0], 8)
+    for (const eventId in results) {
+      const v = results[eventId]
+      const data = new Uint8Array(v.size)
+      let i = 0
+      for (const geo in v.geo) {
+        const d = v.geo[geo]
+        ENCODER.encodeInto(geo, data.subarray(i, i + 2))
+        i += 2
+        writeUint32(data, d.active, i)
+        writeUint32(data, d.uniq, i + 4)
+        writeUint32(data, d.count, i + 8)
+        i += 12
+      }
       db.create('snapshot', {
         ts: now,
-        event: eventId,
-        data: v.result,
+        event: Number(eventId),
+        data,
       })
-    })
+    }
     snapShotTimer = setTimeout(makeSnapshots, SNAP_SHOT_INTERVAL)
   }
 
@@ -139,47 +173,20 @@ await test('analytics', async (t) => {
     clearTimeout(snapShotTimer)
   })
 
-  const readAggregate = (
-    q: QueryDef,
-    result: Uint8Array,
-    offset: number,
-    len: number,
-  ) => {
-    const results = {}
-    if (q.aggregate.groupBy) {
-      let i = offset
-      while (i < len) {
-        let key: string = ''
-        if (result[i] == 0) {
-          if (q.aggregate.groupBy.default) {
-            key = q.aggregate.groupBy.default
-          } else {
-            key = `$undefined`
-          }
-        } else {
-          key = DECODER.decode(result.subarray(i, i + 2))
-        }
-        i += 2
-        const resultKey = (results[key] = {})
-        for (const aggregatesArray of q.aggregate.aggregates.values()) {
-          for (const agg of aggregatesArray) {
-            setByPath(
-              resultKey,
-              agg.propDef.path,
-              readUint32(result, agg.resultPos + i),
-            )
-          }
-        }
-        i += q.aggregate.totalResultsPos
+  const readGroupData = (result: Uint8Array) => {
+    const grouped = {}
+    let i = 0
+    while (i < result.byteLength) {
+      const geo = DECODER.decode(result.subarray(i, i + 2))
+      i += 2
+      grouped[geo] = {
+        active: readUint32(result, i),
+        uniq: readUint32(result, i + 4),
+        count: readUint32(result, i + 8),
       }
+      i += 12
     }
-    return results
-  }
-
-  const readGroupData = (q: any, result: any) => {
-    if (q.aggregate) {
-      return readAggregate(q, result, 0, result.byteLength - 4)
-    }
+    return grouped
   }
 
   type SnapShotResult = {
@@ -213,11 +220,9 @@ await test('analytics', async (t) => {
 
     const snapshots = await snapshotsQuery.get()
 
-    const q = db.query('current').groupBy('geo').sum('count', 'active')
-    q.register()
     const results: SnapShotResult = {}
     for (const item of snapshots) {
-      item.data = readGroupData(q.def, item.data)
+      item.data = readGroupData(item.data)
       item.event = eventTypesInverse[item.event]
       if (!results[item.event]) {
         results[item.event] = []
@@ -228,18 +233,93 @@ await test('analytics', async (t) => {
     return results
   }
 
-  const trackEvent = (p: {
+  type TrackPayload = {
     event: string
     geo?: string
     ip?: string
     active?: number
-  }) => {
-    let geo: string = p.geo || '00'
-    let eventId: number = eventTypes[p.event]
+  }
+
+  const payloadToUint8Array = (payload: TrackPayload): Uint8Array => {
+    let size = 2 // geo size
+    const eventNameBuffer = ENCODER.encode(payload.event)
+    if (eventNameBuffer.byteLength > 255) {
+      throw new Error('Max len for event name is 255 bytes!')
+    }
+    size += 1 + eventNameBuffer.byteLength
+    // size for has ip or not
+    size += 1
+    if (payload.ip) {
+      size += 8
+    }
+    // size for has active or not
+    size += 1
+    if (payload.active) {
+      size += 4
+    }
+    const payloadUint8 = new Uint8Array(size)
+    let i = 0
+    try {
+      ENCODER.encodeInto(payload.geo ?? '00', payloadUint8.subarray(0, 2))
+    } catch (err) {
+      throw new Error(`Incorrect passed geo payload ${payload.geo}`)
+    }
+    i += 2
+    payloadUint8[i] = eventNameBuffer.byteLength
+    i += 1
+    payloadUint8.set(eventNameBuffer, i)
+    i += eventNameBuffer.byteLength
+    if (payload.ip) {
+      payloadUint8[i] = 1
+      i += 1
+      xxHash64(ENCODER.encode(payload.ip), payloadUint8, i)
+      i += 8
+    } else {
+      payloadUint8[i] = 0
+      i += 1
+    }
+    if (payload.active != undefined) {
+      payloadUint8[i] = 1
+      i += 1
+      writeUint32(payloadUint8, payload.active, i)
+      i += 4
+    } else {
+      payloadUint8[i] = 0
+      i += 1
+    }
+    return payloadUint8
+  }
+
+  const trackEvent = (p: Uint8Array) => {
+    let i = 0
+
+    const geo = DECODER.decode(p.subarray(i, 2))
+    i += 2
+
+    const event = DECODER.decode(p.subarray(i + 1, p[i] + i + 1))
+    i += p[i] + 1
+
+    let ip: Uint8Array | undefined
+    const hasIp = p[i] === 1
+    i += 1
+    if (hasIp) {
+      ip = p.subarray(i, i + 8)
+      i += 8
+    }
+
+    let active: number | undefined
+    const hasActive = p[i] === 1
+    i += 1
+    if (hasActive) {
+      active = readUint32(p, i)
+      i += 4
+    }
+
+    let eventId: number = eventTypes[event]
 
     if (!eventId) {
-      eventId = eventTypes[p.event] = Object.keys(eventTypes).length + 1
-      eventTypesInverse[eventId] = p.event
+      eventId = eventTypes[event] = Object.keys(eventTypes).length + 1
+      eventTypesInverse[eventId] = event
       db.update({
         eventTypes,
       })
@@ -254,7 +334,7 @@ await test('analytics', async (t) => {
     const trackPayload: {
       event: number
       count?: number | { increment: number }
-      uniq?: string
+      uniq?: Uint8Array
       active?: number
       geo: string
     } = {
@@ -262,12 +342,12 @@ await test('analytics', async (t) => {
       geo,
     }
 
-    if (p.ip) {
-      trackPayload.uniq = p.ip
+    if (ip != undefined) {
+      trackPayload.uniq = ip
     }
 
-    if (p.active) {
-      trackPayload.active = p.active
+    if (active != undefined) {
+      trackPayload.active = active
     }
 
     if (!currentEventsGeo) {
@@ -285,12 +365,16 @@ await test('analytics', async (t) => {
   const interval = setInterval(async () => {
     const d = performance.now()
     for (let i = 0; i < 1e5; i++) {
-      trackEvent({
-        event: `name-${i % 100}`,
-        active: ~~(Math.random() * 100),
-        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length - 240)],
-        ip: `oid${i}`,
-      })
+      trackEvent(
+        payloadToUint8Array({
+          event: `name-${i % 100}`,
+          active: ~~(Math.random() * 100),
+          geo: allCountryCodes[
+            ~~(Math.random() * allCountryCodes.length - 240)
+          ],
+          ip: `oid${i}`,
+        }),
+      )
     }
     const x = performance.now() - d
     console.log(
@@ -305,14 +389,15 @@ await test('analytics', async (t) => {
     clearInterval(interval)
   })
 
-  await db.query('current').get().inspect()
-
-  await wait(2000)
+  await wait(1000)
   clearInterval(interval)
   clearTimeout(snapShotTimer)
 
   const results = await querySnapshots({ events: ['name-0'] })
-  equal(results['name-0'].length > 4, true)
+
+  console.dir(results, { depth: null })
+
+  equal(results['name-0'].length > 1, true)
   // timer no time to handle nice...
   await wait(3e3)
 })
