@@ -290,15 +290,19 @@ await test('analytics', async (t) => {
     return payloadUint8
   }
 
-  const trackEvent = (p: Uint8Array) => {
-    let i = 0
+  type DbTrackPayload = {
+    event: string
+    ip?: Uint8Array
+    active?: number
+    geo: string
+  }
 
+  const readPayload = (p: Uint8Array): DbTrackPayload => {
+    let i = 0
     const geo = DECODER.decode(p.subarray(i, 2))
     i += 2
-
     const event = DECODER.decode(p.subarray(i + 1, p[i] + i + 1))
     i += p[i] + 1
-
     let ip: Uint8Array | undefined
     const hasIp = p[i] === 1
     i += 1
@@ -306,17 +310,19 @@ await test('analytics', async (t) => {
       ip = p.subarray(i, i + 8)
       i += 8
     }
-
     let active: number | undefined
     const hasActive = p[i] === 1
     i += 1
     if (hasActive) {
+      // this has to be handled correctly!
       active = readUint32(p, i)
       i += 4
     }
+    return { geo, ip, event, active }
+  }
 
+  const trackEvent = ({ geo, ip, active, event }: DbTrackPayload) => {
     let eventId: number = eventTypes[event]
-
     if (!eventId) {
       eventId = eventTypes[event] = Object.keys(eventTypes).length + 1
       eventTypesInverse[eventId] = event
@@ -324,13 +330,11 @@ await test('analytics', async (t) => {
         eventTypes,
       })
     }
-
     let currentEvents = currents[eventId]
     if (!currentEvents) {
       currentEvents = currents[eventId] = {}
     }
     let currentEventsGeo = currentEvents[geo]
-
     const trackPayload: {
       event: number
       count?: number | { increment: number }
@@ -341,15 +345,12 @@ await test('analytics', async (t) => {
       event: eventId,
       geo,
     }
-
     if (ip != undefined) {
       trackPayload.uniq = ip
     }
-
     if (active != undefined) {
       trackPayload.active = active
     }
-
     if (!currentEventsGeo) {
       trackPayload.count = 1
       currentEventsGeo = currentEvents[geo] = db.create(
@@ -366,14 +367,16 @@ await test('analytics', async (t) => {
     const d = performance.now()
     for (let i = 0; i < 1e5; i++) {
       trackEvent(
-        payloadToUint8Array({
-          event: `name-${i % 100}`,
-          active: ~~(Math.random() * 100),
-          geo: allCountryCodes[
-            ~~(Math.random() * allCountryCodes.length - 240)
-          ],
-          ip: `oid${i}`,
-        }),
+        readPayload(
+          payloadToUint8Array({
+            event: `name-${i % 100}`,
+            active: ~~(Math.random() * 100),
+            geo: allCountryCodes[
+              ~~(Math.random() * allCountryCodes.length - 240)
+            ],
+            ip: `oid${i}`,
+          }),
+        ),
       )
     }
     const x = performance.now() - d
