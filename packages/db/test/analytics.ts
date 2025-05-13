@@ -12,12 +12,14 @@ import { crc32 as nativeCrc32 } from '../src/index.js'
 import {
   convertToTimestamp,
   DECODER,
+  equals,
   readUint16,
   readUint32,
   setByPath,
   wait,
   writeUint32,
 } from '@saulx/utils'
+import { equal } from './shared/assert.js'
 
 await test('analytics', async (t) => {
   const db = new BasedDb({
@@ -278,6 +280,8 @@ await test('analytics', async (t) => {
 
   console.dir(await querySnapshots({ events: ['name-0'] }), { depth: null })
 
+  const results = await querySnapshots({ events: ['name-0'] })
+  equals(results['name-0'].length > 4, true)
   // timer no time to handle nice...
   await wait(3e3)
 })
