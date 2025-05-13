@@ -199,7 +199,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
         if (registers[i] == 0) {
             zero_count++;
         }
-        raw_estimate += pow(2.0, -((double)registers[i]));
+        raw_estimate += 1.0/exp2((double)registers[i]);
     }
 
     double m = (double)num_registers;
@@ -257,18 +257,21 @@ int main(void) {
 
     hll_init(&hll, precision, SPARSE);
 
-    int num_elements = 1e7;
+    int num_elements = 1e6;
     char (*elements)[50] = malloc(num_elements * sizeof(*elements));
     if (elements == nullptr) {
         perror("Failed to allocate memory");
         exit(EXIT_FAILURE);
     }
 
+    uint32_t estimated_cardinality = 0;
+
     for (int i = 0; i < num_elements; i++) {
         snprintf(elements[i], 50, "hll1_%d", i);
         hll_add(&hll, XXH64(elements[i], strlen(elements[i]), 0));
     }
-    uint32_t estimated_cardinality = *hll_count(&hll);
+
+    estimated_cardinality = *hll_count(&hll);
 
     printf("Estimated cardinality: %u\n", estimated_cardinality);
     float expected_cardinality = num_elements;
