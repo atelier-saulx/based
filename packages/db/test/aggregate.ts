@@ -802,8 +802,34 @@ await test('variable key size', async (t) => {
     'sum, groupBy, main, $undefined',
   )
 
-  // test wildcards
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => {
+        select('contributors').groupBy('name').sum('flap')
+      })
+      .get(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: 20 },
+          'Mr snurp': { flap: 10 },
+          Derpie: { flap: 30 },
+          'Dinkel Doink': { flap: 40 },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: 80 },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, referenes',
+  )
 
+  // // test wildcards
   // // handle enum
   // // can use the index in selva if no filter
 })
@@ -885,31 +911,15 @@ await test('dev', async (t) => {
     contributors: [cipolla],
   })
 
-  // Branched OK
-  // let q1 = await db
-  //   .query('article')
-  //   .include((q) => q('contributors').sum('flap'), 'name')
-  //   .get()
-  // q1.inspect()
-
-  let q = await db
-    .query('contributors')
-    // dont break line
-    .sum('flap')
-    .groupBy('name')
-    .get()
-
-  q.inspect()
-  q.debug
-
   // OK
-  // await db
-  //   // dont break line
-  //   .query('user')
-  //   .groupBy('country')
-  //   .sum('flap')
-  //   .get()
-  //   .inspect()
+  await db
+    // dont break line
+    .query('user')
+    .include('**')
+    .groupBy('country')
+    .sum('name')
+    .get()
+    .inspect()
 
   // OK
   // await db

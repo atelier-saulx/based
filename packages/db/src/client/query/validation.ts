@@ -71,6 +71,7 @@ export const ERR_SEARCH_INCORRECT_VALUE = 23
 export const ERR_SORT_LANG = 24
 
 export const ERR_AGG_ENOENT = 25
+export const ERR_AGG_TYPE = 26
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -115,6 +116,7 @@ const messages = {
   [ERR_SORT_LANG]: (p) => `Sort: invalid lang`,
   [ERR_AGG_ENOENT]: (p) =>
     `Field \"${p}\" in the aggregate function is invalid or unreacheable.`,
+  [ERR_AGG_TYPE]: (p) => `Aggregate: incorrect type "${p.path.join('.')}"`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -561,6 +563,13 @@ export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
 export const aggregationFieldDoesNotExist = (def: QueryDef, field: string) => {
   def.errors.push({
     code: ERR_AGG_ENOENT,
+    payload: field,
+  })
+  handleErrors(def)
+}
+export const aggregationFieldNotNumber = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_AGG_TYPE,
     payload: field,
   })
   handleErrors(def)
