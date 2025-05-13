@@ -685,7 +685,7 @@ await test('count group by', async (t) => {
   )
 })
 
-await test('variable len keys', async (t) => {
+await test('variable key size', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -778,16 +778,35 @@ await test('variable len keys', async (t) => {
     ],
     'sum, branched query, var len string',
   )
+
+  deepEqual(
+    await db.query('user').groupBy('name').sum('flap').get().toObject(),
+    {
+      Flippie: { flap: 20 },
+      'Carlo Cipolla': { flap: 80 },
+      'Mr snurp': { flap: 10 },
+      'Dinkel Doink': { flap: 40 },
+      Derpie: { flap: 30 },
+    },
+    'sum, groupBy, main',
+  )
+
+  deepEqual(
+    await db.query('user').groupBy('country').sum('flap').get().toObject(),
+    {
+      $undefined: { flap: 40 },
+      NL: { flap: 30 },
+      BR: { flap: 30 },
+      IT: { flap: 80 },
+    },
+    'sum, groupBy, main, $undefined',
+  )
+
+  // test wildcards
+
+  // // handle enum
+  // // can use the index in selva if no filter
 })
-
-// test wildcards
-
-// // handle enum
-// // 2 bytes string
-// // var string
-// // can use the index in selva if no filter
-
-// // console.log((await db.query('vote').sum(countries).get()).execTime)
 
 await test('dev', async (t) => {
   const db = new BasedDb({
@@ -866,30 +885,24 @@ await test('dev', async (t) => {
     contributors: [cipolla],
   })
 
-  // TODO: display is tagging "sum" when count with alias
-  // TODO: also there os a misplaced comma in inspect
-  // await db
-  //   .query('article')
-  //   .include((q) => q('contributors').count('votes'), 'name')
-  //   .get()
-  //   .inspect()
-
+  // Branched OK
   // let q1 = await db
   //   .query('article')
   //   .include((q) => q('contributors').sum('flap'), 'name')
   //   .get()
-
   // q1.inspect()
 
-  // let q2 = await db
-  //   .query('contributors')
-  //   // dont break line
-  //   .sum('flap')
-  //   .groupBy('name')
-  //   .get()
+  let q = await db
+    .query('contributors')
+    // dont break line
+    .sum('flap')
+    .groupBy('name')
+    .get()
 
-  // q2.inspect()
+  q.inspect()
+  q.debug
 
+  // OK
   // await db
   //   // dont break line
   //   .query('user')
@@ -898,14 +911,19 @@ await test('dev', async (t) => {
   //   .get()
   //   .inspect()
 
-  // This is ok
-  const q = await db
-    // dont break line
-    .query('user')
-    .groupBy('name')
-    .sum('flap')
-    .get()
+  // OK
+  // await db
+  //   // dont break line
+  //   .query('user')
+  //   .groupBy('name')
+  //   .sum('flap')
+  //   .get()
 
-  q.inspect()
-  // q.debug
+  // TODO: display is tagging "sum" when count with alias
+  // TODO: also there os a misplaced comma in inspect
+  // await db
+  //   .query('article')
+  //   .include((q) => q('contributors').count('votes'), 'name')
+  //   .get()
+  //   .inspect()
 })

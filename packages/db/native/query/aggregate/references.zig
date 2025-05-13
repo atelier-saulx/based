@@ -67,6 +67,8 @@ pub inline fn aggregateRefsGroup(
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
     var i: usize = offset;
     var resultSize: usize = 0;
+    std.debug.print("refsCnt: {d}\n", .{refsCnt});
+
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
             if (hasFilter) {
