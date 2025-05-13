@@ -11,6 +11,9 @@
 #include "selva/hll.h"
 #include "xxhash.h"
 #include "db_panic.h"
+#ifdef __ARM_NEON
+#include "arm64/neon_mathfun.h"
+#endif
 
 #define HLL_MIN_PRECISION 4
 #define HLL_MAX_PRECISION 16
@@ -195,12 +198,32 @@ uint8_t *hll_count(struct selva_string *hllss) {
     double zero_count = 0.0;
 
 
+#if __ARM_NEON
+    float32x4_t a = { 2.0f, 2.0f, 2.0f, 2.0f };
+
+    for (uint32_t i = 0; i < num_registers;) {
+        float32x4_t b;
+        float32x4_t r;
+        uint32x4_t vmask;
+
+        b[0] = (float)registers[i++];
+        b[1] = i < num_registers ? (float)registers[i++] : NAN;
+        b[2] = i < num_registers ? (float)registers[i++] : NAN;
+        b[3] = i < num_registers ? (float)registers[i++] : NAN;
+        zero_count += b[0] == 0.0 + b[1] == 0.0 + b[2] == 0.0 + b[3] == 0.0;
+        r = pow_ps(a, vnegq_f32(b));
+        vmask = vceqq_f32(r, r);
+        r = (float32x4_t)vandq_u32((uint32x4_t)r, vmask);
+        raw_estimate += r[0] + r[1] + r[2] + r[3];
+    }
+#else
     for (size_t i = 0; i < num_registers; i++) {
         if (registers[i] == 0) {
             zero_count++;
         }
         raw_estimate += pow(2.0, -((double)registers[i]));
     }
+#endif
 
     double m = (double)num_registers;
     double alpha_m = compute_alpha_m(num_registers);
