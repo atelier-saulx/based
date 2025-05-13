@@ -102,12 +102,12 @@ await test('analytics', async (t) => {
     }
   }
 
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e6; i++) {
     trackEvent({
       event: `name-${i % 100}`,
       geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
       // @ts-ignore
-      ip: `oid${i}`,
+      // ip: `oid${i}`,
     })
   }
 
