@@ -104,7 +104,7 @@ await test('analytics', async (t) => {
     trackEvent({
       event: `name-${i % 10000}`,
       geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      ip: `1.000`,
+      ip: `1.000${i}`,
     })
   }
 
