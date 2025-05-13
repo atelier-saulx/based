@@ -1,8 +1,22 @@
-import { BasedDb, crc32, ENCODER, xxHash64 } from '../src/index.js'
+import {
+  BasedDb,
+  BasedQueryResponse,
+  crc32,
+  ENCODER,
+  QueryDef,
+  xxHash64,
+} from '../src/index.js'
 import test from './shared/test.js'
 import { allCountryCodes } from './shared/examples.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
-import { wait, writeUint32 } from '@saulx/utils'
+import {
+  DECODER,
+  readUint16,
+  readUint32,
+  setByPath,
+  wait,
+  writeUint32,
+} from '@saulx/utils'
 
 await test('analytics', async (t) => {
   const db = new BasedDb({
@@ -36,6 +50,7 @@ await test('analytics', async (t) => {
   })
 
   const eventTypes: { [event: string]: number } = {}
+  const eventTypesInverse: { [event: number]: string } = {}
 
   const currents: { [eventId: string]: { [geo: string]: number } } = {} // [name geo] - id
 
@@ -50,9 +65,9 @@ await test('analytics', async (t) => {
   const SNAP_SHOT_INTERVAL = 1000
   let snapShotTimer: ReturnType<typeof setTimeout>
   const makeSnapshots = async () => {
-    const q = []
+    await db.drain()
+    const q: Promise<BasedQueryResponse>[] = []
     for (const eventId in currents) {
-      console.log(Number(eventId))
       const current = q.push(
         db
           .query('current')
@@ -63,7 +78,16 @@ await test('analytics', async (t) => {
       )
     }
     const results = await Promise.all(q)
-    console.log(results)
+    const now = Date.now()
+    results.forEach((v) => {
+      const eventId = readUint16(v.def.filter.conditions.get(0)[0], 8)
+      db.create('snapshot', {
+        ts: now,
+        event: eventId,
+        data: v.result,
+      })
+    })
+    console.log('created snap shots', await db.drain())
     snapShotTimer = setTimeout(makeSnapshots, SNAP_SHOT_INTERVAL)
   }
 
@@ -72,8 +96,86 @@ await test('analytics', async (t) => {
     clearTimeout(snapShotTimer)
   })
 
-  const queryEvents = () => {
-    // current
+  const readAggregate = (
+    q: QueryDef,
+    result: Uint8Array,
+    offset: number,
+    len: number,
+  ) => {
+    const results = {}
+    if (q.aggregate.groupBy) {
+      let i = offset
+      while (i < len) {
+        let key: string = ''
+        if (result[i] == 0) {
+          if (q.aggregate.groupBy.default) {
+            key = q.aggregate.groupBy.default
+          } else {
+            key = `$undefined`
+          }
+        } else {
+          key = DECODER.decode(result.subarray(i, i + 2))
+        }
+        i += 2
+        const resultKey = (results[key] = {})
+        for (const aggregatesArray of q.aggregate.aggregates.values()) {
+          for (const agg of aggregatesArray) {
+            setByPath(
+              resultKey,
+              agg.propDef.path,
+              readUint32(result, agg.resultPos + i),
+            )
+          }
+        }
+        i += q.aggregate.totalResultsPos
+      }
+    }
+    return results
+  }
+
+  const readGroupData = (q: any, result: any) => {
+    if (q.aggregate) {
+      return readAggregate(q, result, 0, result.byteLength - 4)
+    }
+  }
+
+  const querySnapshots = async (p: {
+    start?: number | string
+    end?: number | string
+    events?: string[]
+    //  resolution
+  }) => {
+    const snapshotsQuery = await db.query('snapshot')
+    if (p.start) {
+      snapshotsQuery.filter('ts', '>', p.start)
+    }
+    if (p.end) {
+      snapshotsQuery.filter('ts', '>', p.end)
+    }
+
+    if (p.events) {
+      const mappedEvents: number[] = []
+      for (const ev of p.events) {
+        const eventId = eventTypes[ev]
+        if (eventId !== undefined) {
+          mappedEvents.push(eventId)
+        }
+      }
+      snapshotsQuery.filter('event', '=', mappedEvents)
+    }
+
+    const snapshots = await snapshotsQuery.get()
+
+    const q = db.query('current').groupBy('geo').sum('count')
+    q.register()
+    const results = {}
+    for (const item of snapshots) {
+      item.data = readGroupData(q.def, item.data)
+      item.event = eventTypesInverse[item.event]
+      results[item.event] = item
+    }
+    console.log(results)
+    return results
   }
 
   const trackEvent = (p: {
@@ -87,6 +189,7 @@ await test('analytics', async (t) => {
 
     if (!eventId) {
       eventId = eventTypes[p.event] = Object.keys(eventTypes).length + 1
+      eventTypesInverse[eventId] = p.event
       db.update({
         eventTypes,
       })
@@ -129,17 +232,35 @@ await test('analytics', async (t) => {
     }
   }
 
-  for (let i = 0; i < 1e6; i++) {
-    trackEvent({
-      event: `name-${i % 10}`,
-      geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      // ip: `oid${i}`,
-    })
-  }
+  const interval = setInterval(async () => {
+    const d = performance.now()
+    for (let i = 0; i < 1e6; i++) {
+      trackEvent({
+        event: `name-${i % 100}`,
+        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+        // ip: `oid${i}`,
+      })
+    }
+    const x = performance.now() - d
+    console.log(
+      'store 1M events',
+      await db.drain(),
+      x,
+      'js time (and some drain)',
+    )
+  })
+  t.after(() => {
+    clearInterval(interval)
+  })
 
   await db.query('current').get().inspect()
 
-  console.log('drain', await db.drain())
+  await wait(1100)
+  clearInterval(interval)
+  clearTimeout(snapShotTimer)
 
-  await wait(5e3)
+  await querySnapshots({})
+
+  // timer no time to handle nice...
+  await wait(3e3)
 })
