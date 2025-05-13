@@ -10,6 +10,7 @@ import test from './shared/test.js'
 import { allCountryCodes } from './shared/examples.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
 import {
+  convertToTimestamp,
   DECODER,
   readUint16,
   readUint32,
@@ -62,7 +63,18 @@ await test('analytics', async (t) => {
     // on startup get Currents
   }
 
-  const SNAP_SHOT_INTERVAL = 1000
+  const SNAP_SHOT_INTERVAL = 100
+
+  const roundToSnapShotInterval = (nr: number | string) => {
+    if (typeof nr === 'string') {
+      return (
+        Math.floor(convertToTimestamp(nr) / SNAP_SHOT_INTERVAL) *
+        SNAP_SHOT_INTERVAL
+      )
+    }
+    return Math.floor(nr / SNAP_SHOT_INTERVAL) * SNAP_SHOT_INTERVAL
+  }
+
   let snapShotTimer: ReturnType<typeof setTimeout>
   const makeSnapshots = async () => {
     await db.drain()
@@ -73,12 +85,12 @@ await test('analytics', async (t) => {
           .query('current')
           .filter('event', '=', Number(eventId))
           .groupBy('geo')
-          .sum('count')
+          .sum('count', 'active')
           .get(),
       )
     }
     const results = await Promise.all(q)
-    const now = Date.now()
+    const now = roundToSnapShotInterval(Date.now())
     results.forEach((v) => {
       const eventId = readUint16(v.def.filter.conditions.get(0)[0], 8)
       db.create('snapshot', {
@@ -143,14 +155,14 @@ await test('analytics', async (t) => {
     start?: number | string
     end?: number | string
     events?: string[]
-    //  resolution
+    resolution?: number
   }) => {
-    const snapshotsQuery = await db.query('snapshot')
+    const snapshotsQuery = db.query('snapshot')
     if (p.start) {
-      snapshotsQuery.filter('ts', '>', p.start)
+      snapshotsQuery.filter('ts', '>=', roundToSnapShotInterval(p.start))
     }
     if (p.end) {
-      snapshotsQuery.filter('ts', '>', p.end)
+      snapshotsQuery.filter('ts', '<=', roundToSnapShotInterval(p.end))
     }
 
     if (p.events) {
@@ -166,13 +178,16 @@ await test('analytics', async (t) => {
 
     const snapshots = await snapshotsQuery.get()
 
-    const q = db.query('current').groupBy('geo').sum('count')
+    const q = db.query('current').groupBy('geo').sum('count', 'active')
     q.register()
     const results = {}
     for (const item of snapshots) {
       item.data = readGroupData(q.def, item.data)
       item.event = eventTypesInverse[item.event]
-      results[item.event] = item
+      if (!results[item.event]) {
+        results[item.event] = []
+      }
+      results[item.event].push(item)
     }
 
     return results
@@ -234,10 +249,11 @@ await test('analytics', async (t) => {
 
   const interval = setInterval(async () => {
     const d = performance.now()
-    for (let i = 0; i < 1e6; i++) {
+    for (let i = 0; i < 1e5; i++) {
       trackEvent({
         event: `name-${i % 100}`,
-        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+        active: ~~(Math.random() * 100),
+        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length - 240)],
         // ip: `oid${i}`,
       })
     }
@@ -248,7 +264,7 @@ await test('analytics', async (t) => {
       x,
       'js time (and some drain)',
     )
-  }, 100)
+  }, 10)
 
   t.after(() => {
     clearInterval(interval)
