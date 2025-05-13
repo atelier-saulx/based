@@ -29,11 +29,8 @@ await test('analytics', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const geoEnum = [...allCountryCodes, '00']
-
   await db.setSchema({
     props: {
-      // map { }
       eventTypes: 'json', // 65k {[name]: u16 }
     },
     types: {
@@ -47,23 +44,56 @@ await test('analytics', async (t) => {
       snapshot: {
         event: 'uint16',
         ts: 'timestamp',
+        // would be nice to have agg here for hll then this will just work
         data: 'binary', // [geo format]
       },
     },
   })
+  // ------------------ TEMP to test on start
+  await db.update({ eventTypes: { bla: 1 } })
+  await db.create('current', {
+    event: 1,
+    count: 1,
+    geo: 'NL',
+  })
+  // ----------------------
 
-  const eventTypes: { [event: string]: number } = {}
+  let eventTypes: { [event: string]: number } = {}
   const eventTypesInverse: { [event: number]: string } = {}
 
   const currents: { [eventId: string]: { [geo: string]: number } } = {} // [name geo] - id
 
   const events = []
 
-  const onStart = () => {
+  const onStart = async () => {
+    const eventTypesResult = await db
+      .query()
+      .include('eventTypes')
+      .get()
+      .toObject()
+    const currentEventsResult = await db
+      .query('current')
+      .range(0, 1e6)
+      .include('id', 'geo', 'event')
+      .get()
+
+    eventTypes = eventTypesResult.eventTypes
+    for (const key in eventTypes) {
+      eventTypesInverse[eventTypes[key]] = key
+    }
+
+    for (const c of currentEventsResult) {
+      const currentEvents = (currents[c.event] = {})
+      currentEvents[c.geo] = c.id
+    }
+
+    console.log('start got', eventTypes, eventTypesInverse, currents)
     // on startup get eventTypes
     // Object.keys len is current lastEventType number
     // on startup get Currents
   }
+
+  await onStart()
 
   const SNAP_SHOT_INTERVAL = 100
 
@@ -87,7 +117,7 @@ await test('analytics', async (t) => {
           .query('current')
           .filter('event', '=', Number(eventId))
           .groupBy('geo')
-          .sum('count', 'active')
+          .sum('count', 'active') //  'uniq' need agg support here
           .get(),
       )
     }
@@ -101,7 +131,6 @@ await test('analytics', async (t) => {
         data: v.result,
       })
     })
-    console.log('created snap shots', await db.drain())
     snapShotTimer = setTimeout(makeSnapshots, SNAP_SHOT_INTERVAL)
   }
 
@@ -153,6 +182,10 @@ await test('analytics', async (t) => {
     }
   }
 
+  type SnapShotResult = {
+    [event: string]: any[]
+  }
+
   const querySnapshots = async (p: {
     start?: number | string
     end?: number | string
@@ -182,7 +215,7 @@ await test('analytics', async (t) => {
 
     const q = db.query('current').groupBy('geo').sum('count', 'active')
     q.register()
-    const results = {}
+    const results: SnapShotResult = {}
     for (const item of snapshots) {
       item.data = readGroupData(q.def, item.data)
       item.event = eventTypesInverse[item.event]
@@ -256,12 +289,12 @@ await test('analytics', async (t) => {
         event: `name-${i % 100}`,
         active: ~~(Math.random() * 100),
         geo: allCountryCodes[~~(Math.random() * allCountryCodes.length - 240)],
-        // ip: `oid${i}`,
+        ip: `oid${i}`,
       })
     }
     const x = performance.now() - d
     console.log(
-      'store 1M events',
+      'store 100k events',
       await db.drain(),
       x,
       'js time (and some drain)',
@@ -278,10 +311,8 @@ await test('analytics', async (t) => {
   clearInterval(interval)
   clearTimeout(snapShotTimer)
 
-  console.dir(await querySnapshots({ events: ['name-0'] }), { depth: null })
-
   const results = await querySnapshots({ events: ['name-0'] })
-  equals(results['name-0'].length > 4, true)
+  equal(results['name-0'].length > 4, true)
   // timer no time to handle nice...
   await wait(3e3)
 })
