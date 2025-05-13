@@ -2,7 +2,7 @@ import { BasedDb, crc32, ENCODER, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { allCountryCodes } from './shared/examples.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
-import { writeUint32 } from '@saulx/utils'
+import { wait, writeUint32 } from '@saulx/utils'
 
 await test('analytics', async (t) => {
   const db = new BasedDb({
@@ -12,6 +12,8 @@ await test('analytics', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
+  const geoEnum = [...allCountryCodes, '00']
+
   await db.setSchema({
     props: {
       // map { }
@@ -19,7 +21,7 @@ await test('analytics', async (t) => {
     },
     types: {
       current: {
-        geo: [...allCountryCodes, '00'],
+        geo: { type: 'string', maxBytes: 2 }, // later geoEnum
         event: 'uint16',
         uniq: 'cardinality',
         count: 'uint32',
@@ -33,7 +35,7 @@ await test('analytics', async (t) => {
     },
   })
 
-  const eventTypes: { [name: string]: number } = {}
+  const eventTypes: { [event: string]: number } = {}
 
   const currents: { [eventId: string]: { [geo: string]: number } } = {} // [name geo] - id
 
@@ -45,7 +47,30 @@ await test('analytics', async (t) => {
     // on startup get Currents
   }
 
-  const makeSnapshots = () => {}
+  const SNAP_SHOT_INTERVAL = 1000
+  let snapShotTimer: ReturnType<typeof setTimeout>
+  const makeSnapshots = async () => {
+    const q = []
+    for (const eventId in currents) {
+      console.log(Number(eventId))
+      const current = q.push(
+        db
+          .query('current')
+          .filter('event', '=', Number(eventId))
+          .groupBy('geo')
+          .sum('count')
+          .get(),
+      )
+    }
+    const results = await Promise.all(q)
+    console.log(results)
+    snapShotTimer = setTimeout(makeSnapshots, SNAP_SHOT_INTERVAL)
+  }
+
+  snapShotTimer = setTimeout(makeSnapshots, SNAP_SHOT_INTERVAL)
+  t.after(() => {
+    clearTimeout(snapShotTimer)
+  })
 
   const queryEvents = () => {
     // current
@@ -58,10 +83,10 @@ await test('analytics', async (t) => {
     active?: number
   }) => {
     let geo: string = p.geo || '00'
-    let eventId: number = eventTypes[geo]
+    let eventId: number = eventTypes[p.event]
 
     if (!eventId) {
-      eventId = eventTypes[geo] = Object.keys(eventTypes).length + 1
+      eventId = eventTypes[p.event] = Object.keys(eventTypes).length + 1
       db.update({
         eventTypes,
       })
@@ -78,8 +103,10 @@ await test('analytics', async (t) => {
       count?: number | { increment: number }
       uniq?: string
       active?: number
+      geo: string
     } = {
       event: eventId,
+      geo,
     }
 
     if (p.ip) {
@@ -104,15 +131,15 @@ await test('analytics', async (t) => {
 
   for (let i = 0; i < 1e6; i++) {
     trackEvent({
-      event: `name-${i % 100}`,
+      event: `name-${i % 10}`,
       geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      // @ts-ignore
       // ip: `oid${i}`,
     })
   }
 
   await db.query('current').get().inspect()
 
-  // pretty heavy 346ms per 10k events
   console.log('drain', await db.drain())
+
+  await wait(5e3)
 })
