@@ -1,6 +1,8 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, crc32, ENCODER, xxHash64 } from '../src/index.js'
 import test from './shared/test.js'
 import { allCountryCodes } from './shared/examples.js'
+import { crc32 as nativeCrc32 } from '../src/index.js'
+import { writeUint32 } from '@saulx/utils'
 
 await test('analytics', async (t) => {
   const db = new BasedDb({
@@ -100,13 +102,16 @@ await test('analytics', async (t) => {
     }
   }
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e5; i++) {
     trackEvent({
-      event: `name-${i % 10000}`,
+      event: `name-${i % 100}`,
       geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      ip: `1.000${i}`,
+      // @ts-ignore
+      ip: `oid${i}`,
     })
   }
+
+  await db.query('current').get().inspect()
 
   // pretty heavy 346ms per 10k events
   console.log('drain', await db.drain())
