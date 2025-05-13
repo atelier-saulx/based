@@ -174,7 +174,7 @@ await test('analytics', async (t) => {
       item.event = eventTypesInverse[item.event]
       results[item.event] = item
     }
-    console.log(results)
+
     return results
   }
 
@@ -248,18 +248,19 @@ await test('analytics', async (t) => {
       x,
       'js time (and some drain)',
     )
-  })
+  }, 100)
+
   t.after(() => {
     clearInterval(interval)
   })
 
   await db.query('current').get().inspect()
 
-  await wait(1100)
+  await wait(2000)
   clearInterval(interval)
   clearTimeout(snapShotTimer)
 
-  await querySnapshots({})
+  console.dir(await querySnapshots({ events: ['name-0'] }), { depth: null })
 
   // timer no time to handle nice...
   await wait(3e3)
