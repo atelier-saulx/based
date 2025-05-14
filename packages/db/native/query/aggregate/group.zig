@@ -38,8 +38,16 @@ pub inline fn setGroupResults(
             copy(data[i .. i + keyOffset], key);
             i += keyOffset;
         }
-        copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
-        i += ctx.resultsSize;
+        // KV protocol: | keyLen u16 | valuePropType | keyValue | => | value |
+        // if cardinality, write the hll_count instead of the value
+        if (entry.value_ptr.len > 4) { // MV: if (valuePropType = .CARDINALITY)
+            utils.debugPrint("propType is cardinality\n", .{});
+            copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
+            i += ctx.resultsSize;
+        } else {
+            copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
+            i += ctx.resultsSize;
+        }
     }
 }
 

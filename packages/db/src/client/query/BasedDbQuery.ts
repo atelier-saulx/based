@@ -225,6 +225,23 @@ export class QueryBranch<T> {
     return this
   }
 
+  cardinality(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty cardinality() called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'cardinality',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.CARDINALITY, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
   or(fn: FilterBranchFn): T
   or(
     field: string,
