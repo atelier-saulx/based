@@ -2,6 +2,7 @@
  * Copyright (c) 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -93,11 +94,20 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
     if (hll->is_sparse) {
         if (index > hll->num_registers && hll->num_registers <= (1ULL << precision) ) {
-            selva_string_append(hllss, 0, (index - hll->num_registers) * sizeof(uint32_t));
-            selva_string_append(hllss, nullptr, sizeof(uint32_t));
+            size_t new_num_registers = index + 1;
+
+            new_num_registers--;
+            new_num_registers |= new_num_registers >> 1;
+            new_num_registers |= new_num_registers >> 2;
+            new_num_registers |= new_num_registers >> 4;
+            new_num_registers |= new_num_registers >> 8;
+            new_num_registers |= new_num_registers >> 16;
+            new_num_registers++;
+
+            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(uint32_t));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
-            hll->num_registers = (index + 1);
+            hll->num_registers = new_num_registers;
         }
     }
 
@@ -195,19 +205,18 @@ uint8_t *hll_count(struct selva_string *hllss) {
 
 
 #if __ARM_NEON
-    for (uint32_t i = 0; i < num_registers;) {
-        float32x4_t b;
+    assert(num_registers % 4 == 0);
+    for (uint32_t i = 0; i < num_registers; i += 4) {
+        float32x4_t b = {
+            (float)registers[i],
+            (float)registers[i + 1],
+            (float)registers[i + 2],
+            (float)registers[i + 3],
+        };
         float32x4_t r;
-        uint32x4_t vmask;
 
-        b[0] = (float)registers[i++];
-        b[1] = i < num_registers ? (float)registers[i++] : NAN;
-        b[2] = i < num_registers ? (float)registers[i++] : NAN;
-        b[3] = i < num_registers ? (float)registers[i++] : NAN;
         zero_count += b[0] == 0.0 + b[1] == 0.0 + b[2] == 0.0 + b[3] == 0.0;
         r = exp2_ps(vnegq_f32(b));
-        vmask = vceqq_f32(r, r);
-        r = (float32x4_t)vandq_u32((uint32x4_t)r, vmask);
         raw_estimate += r[0] + r[1] + r[2] + r[3];
     }
 #else
