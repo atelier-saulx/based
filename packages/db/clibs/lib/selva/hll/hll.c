@@ -141,6 +141,33 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
     return result;
 }
 
+size_t hll_union(struct selva_string dest, struct selva_string src) {
+
+    HyperLogLogPlusPlus *dest_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&dest, nullptr);
+    HyperLogLogPlusPlus *src_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&src, nullptr);
+
+    if (!dest_hll || !src_hll) {
+        return -1;
+    }
+
+    if (dest_hll->precision != src_hll->precision) {
+        db_panic("Precision mismatch is unsupported.");
+        return -1;
+    }
+
+    uint32_t num_registers = src_hll->num_registers;
+
+    
+    for (size_t i = 0; i < num_registers; i++) {
+        if (src_hll->registers[i] > dest_hll->registers[i]) {
+            dest_hll->registers[i] = src_hll->registers[i];
+        }
+    }
+
+    return dest.len;
+}
+
+
 // static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
 //     size_t jl = 0;
 //     size_t ju = n;
@@ -257,7 +284,7 @@ int main(void) {
 
     hll_init(&hll, precision, SPARSE);
 
-    int num_elements = 1e6;
+    int num_elements = 1e7;
     char (*elements)[50] = malloc(num_elements * sizeof(*elements));
     if (elements == nullptr) {
         perror("Failed to allocate memory");
@@ -281,4 +308,37 @@ int main(void) {
     free(elements);
 
     return 0;
+
+     /* -------------------------------------------
+    ** Single Union test
+    ** -----------------------------------------*/
+
+    // size_t precision = 14;
+
+    // const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+    // const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
+
+    // int initial_capacity = sizeof(bool) \
+    //                         + sizeof(precision) \
+    //                         + sizeof(uint32_t);
+
+    // struct selva_string dest;
+    // struct selva_string src;
+
+    // selva_string_init(&dest, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+    // selva_string_init(&src, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+
+    // hll_init(&dest, precision, SPARSE);
+    // hll_add(&dest, hash1);
+    // hll_init(&src, precision, SPARSE);
+    // hll_add(&src, hash2);
+
+    // size_t dst_len = 0;
+    // dst_len = hll_union(dest, src);
+
+    // uint32_t estimated_cardinality = 0;
+    // estimated_cardinality = *hll_count(&dest);
+    // printf("Estimated cardinality: %d %zu\n", estimated_cardinality, dst_len);
+
+    // return 0;
 }

@@ -18,6 +18,8 @@ SELVA_EXPORT
 uint8_t *hll_count(struct selva_string *hllss);
 SELVA_EXPORT
 struct selva_string hll_array_union(struct selva_string *hll_array, size_t count);
+SELVA_EXPORT
+size_t hll_union(struct selva_string dest, struct selva_string src);
 
 // size_t actual_cols[13] = { 79, 159, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200 };
 // float raw_estimate_data[13][200] = 
