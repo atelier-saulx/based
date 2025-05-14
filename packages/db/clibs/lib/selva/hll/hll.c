@@ -19,8 +19,10 @@
 #define HLL_MAX_PRECISION 16
 #define HASH_SIZE 64
 
-#define SPARSE true
-#define DENSE false
+enum hll_type {
+    SPARSE = true,
+    DENSE = false,
+};
 
 #define ASC true
 #define DSC false
