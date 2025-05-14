@@ -1719,6 +1719,21 @@ struct selva_string *selva_fields_get_selva_string3(
 {
     return ref->meta ? selva_fields_get_selva_string2(ref->meta, fs) : nullptr;
 }
+struct SelvaFieldInfo *selva_field_get_nfo2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+
+    if (!nfo->in_use) {
+        return nullptr;
+    }
+
+    return nfo;
+}
+
+struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    return selva_field_get_nfo2(&node->fields, fs);
+}
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
