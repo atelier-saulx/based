@@ -118,6 +118,11 @@ void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo
     return nfo2p(fields, nfo);
 }
 
+struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node)
+{
+    return &node->fields;
+}
+
 /**
  * Ensure that a field is allocated properly.
  * @param node Optional node context.
@@ -1719,7 +1724,8 @@ struct selva_string *selva_fields_get_selva_string3(
 {
     return ref->meta ? selva_fields_get_selva_string2(ref->meta, fs) : nullptr;
 }
-struct SelvaFieldInfo *selva_field_get_nfo2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+
+struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
@@ -1728,11 +1734,6 @@ struct SelvaFieldInfo *selva_field_get_nfo2(struct SelvaFields *fields, const st
     }
 
     return nfo;
-}
-
-struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-{
-    return selva_field_get_nfo2(&node->fields, fs);
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)

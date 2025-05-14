@@ -99,10 +99,14 @@ __purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 
+SELVA_EXPORT
 #if __has_c_attribute(reproducible)
 [[reproducible]]
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
+
+SELVA_EXPORT
+struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node);
 
 void selva_fields_ensure_ref_meta(
         struct SelvaDb *db,
