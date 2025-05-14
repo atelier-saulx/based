@@ -41,25 +41,22 @@ static_assert(HLL_INIT_SIZE == sizeof(HyperLogLogPlusPlus));
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
-        printf("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION );
-        exit(EXIT_FAILURE);
+        db_panic("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION);
     }
-    if (hllss == nullptr){
-        printf("Error: Getting NULL selva string during HLL initialization.\n");
-        exit(EXIT_FAILURE);
+    if (hllss == nullptr) {
+        db_panic("selva_string can't be null during HLL initialization");
     }
 
     size_t len;
 
-    if (is_sparse){
+    if (is_sparse) {
 
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = true;
         hll->precision = precision;
         hll->num_registers = 0;
-    }
-    else {
+    } else {
 
         uint32_t num_registers = 1ULL << precision;
         num_registers = 1ULL << precision;
@@ -79,7 +76,7 @@ static int count_leading_zeros(uint64_t x) {
 
 void hll_add(struct selva_string *hllss, const uint64_t hash) {
     if (!hllss || !hash) {
-        db_panic("Error: Unable to read stored value.");
+        db_panic("Unable to read stored value.");
     }
 
     size_t len;
