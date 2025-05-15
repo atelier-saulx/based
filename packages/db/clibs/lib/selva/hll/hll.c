@@ -2,6 +2,7 @@
  * Copyright (c) 2025 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -11,13 +12,18 @@
 #include "selva/hll.h"
 #include "xxhash.h"
 #include "db_panic.h"
+#ifdef __ARM_NEON
+#include "arm64/neon_mathfun.h"
+#endif
 
 #define HLL_MIN_PRECISION 4
 #define HLL_MAX_PRECISION 16
 #define HASH_SIZE 64
 
-#define SPARSE true
-#define DENSE false
+enum hll_type {
+    SPARSE = true,
+    DENSE = false,
+};
 
 #define ASC true
 #define DSC false
@@ -38,28 +44,22 @@ static_assert(HLL_INIT_SIZE == sizeof(HyperLogLogPlusPlus));
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
-        printf("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION );
-        exit(EXIT_FAILURE);
+        db_panic("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION);
     }
-    if (hllss == nullptr){
-        printf("Error: Getting NULL selva string during HLL initialization.\n");
-        exit(EXIT_FAILURE);
+    if (hllss == nullptr) {
+        db_panic("selva_string can't be null during HLL initialization");
     }
 
     size_t len;
 
-    if (is_sparse){
-
+    if (is_sparse) {
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = true;
         hll->precision = precision;
         hll->num_registers = 0;
-    }
-    else {
-
+    } else {
         uint32_t num_registers = 1ULL << precision;
-        num_registers = 1ULL << precision;
 
         (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint32_t));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
@@ -76,7 +76,7 @@ static int count_leading_zeros(uint64_t x) {
 
 void hll_add(struct selva_string *hllss, const uint64_t hash) {
     if (!hllss || !hash) {
-        db_panic("Error: Unable to read stored value.");
+        db_panic("Unable to read stored value.");
     }
 
     size_t len;
@@ -94,11 +94,20 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
     if (hll->is_sparse) {
         if (index > hll->num_registers && hll->num_registers <= (1ULL << precision) ) {
-            selva_string_append(hllss, 0, (index - hll->num_registers) * sizeof(uint32_t));
-            selva_string_append(hllss, nullptr, sizeof(uint32_t));
+            size_t new_num_registers = index + 1;
+
+            new_num_registers--;
+            new_num_registers |= new_num_registers >> 1;
+            new_num_registers |= new_num_registers >> 2;
+            new_num_registers |= new_num_registers >> 4;
+            new_num_registers |= new_num_registers >> 8;
+            new_num_registers |= new_num_registers >> 16;
+            new_num_registers++;
+
+            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(uint32_t));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
-            hll->num_registers = (index + 1);
+            hll->num_registers = new_num_registers;
         }
     }
 
@@ -249,19 +258,38 @@ uint8_t *hll_count(struct selva_string *hllss) {
     }
 
     // uint32_t precision = hll->precision;
-    uint32_t num_registers = hll->num_registers;
-    uint32_t *registers = hll->registers;
+    const uint32_t num_registers = hll->num_registers;
+    const uint32_t *registers = hll->registers;
 
     double raw_estimate = 0.0;
     double zero_count = 0.0;
 
+#if __ARM_NEON
+    assert(num_registers % 4 == 0);
+    for (size_t i = 0; i < num_registers; i += 4) {
+        float32x4_t b = {
+            (float)registers[i],
+            (float)registers[i + 1],
+            (float)registers[i + 2],
+            (float)registers[i + 3],
+        };
+        float32x4_t r;
+        uint32x4_t z;
 
+        z = vceqzq_f32(b);
+        z = z & (uint32x4_t){1, 1, 1, 1};
+        zero_count += (double)(vaddvq_u32(z));
+        r = exp2_ps(vnegq_f32(b));
+        raw_estimate += vaddvq_f32(r);
+    }
+#else
     for (size_t i = 0; i < num_registers; i++) {
         if (registers[i] == 0) {
             zero_count++;
         }
         raw_estimate += 1.0/exp2((double)registers[i]);
     }
+#endif
 
     double m = (double)num_registers;
     double alpha_m = compute_alpha_m(num_registers);
