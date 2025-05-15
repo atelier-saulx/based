@@ -141,18 +141,52 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
     return result;
 }
 
-size_t hll_union(struct selva_string dest, struct selva_string src) {
+static HyperLogLogPlusPlus* buffer_to_hll(const unsigned char* buffer, size_t buffer_len) {
+    if (!buffer) return nullptr;
 
-    HyperLogLogPlusPlus *dest_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&dest, nullptr);
-    HyperLogLogPlusPlus *src_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&src, nullptr);
+    size_t bitfield_size = 1;
+    size_t num_registers_offset = bitfield_size;
+    size_t count_offset = num_registers_offset + sizeof(uint16_t);
+    // size_t registers_offset = count_offset + sizeof(uint32_t);
+
+    uint8_t bitfield = buffer[0];
+    uint16_t num_registers = *(uint16_t*)&buffer[num_registers_offset];
+    uint32_t count = *(uint32_t*)&buffer[count_offset];
+    // size_t num_registers_count = (buffer_len - 1) / sizeof(uint32_t);
+    if ((buffer_len - 1) % sizeof(uint32_t) != 0) {
+       return nullptr;
+    }
+
+    HyperLogLogPlusPlus* hll = (HyperLogLogPlusPlus*)buffer;
+
+    hll->is_sparse = (bitfield & 0x01) != 0;
+    hll->dirty = ((bitfield >> 1) & 0x01) != 0;
+    hll->precision = (bitfield >> 2) & 0x3F;
+    hll->num_registers = num_registers;
+    hll->count = count;
+    // hll->registers = (uint32_t*)&buffer[registers_offset];
+
+    return hll;
+}
+
+void hll_union(char* dest, size_t dest_len, char* src, size_t src_len) {
+
+    HyperLogLogPlusPlus *dest_hll = buffer_to_hll(dest, dest_len);
+    HyperLogLogPlusPlus *src_hll = buffer_to_hll(src, src_len);
 
     if (!dest_hll || !src_hll) {
-        return -1;
+        return;
+    }
+
+    if (src_hll->num_registers > dest_hll->num_registers) {
+        // for now just throw error but is very simple to made the same hll_add aproach
+        db_panic("take care of this num_regsters.");
+        return;
     }
 
     if (dest_hll->precision != src_hll->precision) {
         db_panic("Precision mismatch is unsupported.");
-        return -1;
+        return;
     }
 
     uint32_t num_registers = src_hll->num_registers;
@@ -164,7 +198,7 @@ size_t hll_union(struct selva_string dest, struct selva_string src) {
         }
     }
 
-    return dest.len;
+    return;
 }
 
 
