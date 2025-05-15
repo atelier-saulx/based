@@ -10,7 +10,6 @@
 #include "tree.h"
 #include "mempool.h"
 #include "svector.h"
-#include "trx.h"
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
 #include "expire.h"
@@ -28,7 +27,7 @@ RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 struct SelvaNode {
     node_id_t node_id;
     node_type_t type;
-    struct trx_label trx_label;
+    uint16_t _spare;
     RB_ENTRY(SelvaNode) _index_entry;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
@@ -128,11 +127,6 @@ struct SelvaDbExpireToken {
  * Database instance.
  */
 struct SelvaDb {
-    /**
-     * Global transaction state.
-     */
-    struct trx_state trx_state;
-
     SVector type_list;
 
     /**

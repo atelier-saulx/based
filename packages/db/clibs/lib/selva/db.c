@@ -527,7 +527,6 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    memset(&node->trx_label, 0, sizeof(node->trx_label));
     selva_fields_init(&type->ns.fields_schema, &node->fields);
 
     type->nr_nodes++;

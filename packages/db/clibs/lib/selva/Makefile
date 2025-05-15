@@ -30,7 +30,6 @@ OBJ := \
 	fast_linear_search.o \
 	fields.o \
 	fields_empty_text.o \
-	find.o \
 	history.o \
 	ida.o \
 	hll/hll.o \
@@ -69,8 +68,6 @@ OBJ := \
 	time/backoff_timeout.o \
 	time/ctime.o \
 	time/timestamp.o \
-	traverse.o \
-	trx.o \
 	types.o \
 	vector/vdot.o \
 	vector/vl1.o \
