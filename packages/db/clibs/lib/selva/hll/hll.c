@@ -197,16 +197,15 @@ uint8_t *hll_count(struct selva_string *hllss) {
     }
 
     // uint32_t precision = hll->precision;
-    uint32_t num_registers = hll->num_registers;
-    uint32_t *registers = hll->registers;
+    const uint32_t num_registers = hll->num_registers;
+    const uint32_t *registers = hll->registers;
 
     double raw_estimate = 0.0;
     double zero_count = 0.0;
 
-
 #if __ARM_NEON
     assert(num_registers % 4 == 0);
-    for (uint32_t i = 0; i < num_registers; i += 4) {
+    for (size_t i = 0; i < num_registers; i += 4) {
         float32x4_t b = {
             (float)registers[i],
             (float)registers[i + 1],
@@ -214,10 +213,13 @@ uint8_t *hll_count(struct selva_string *hllss) {
             (float)registers[i + 3],
         };
         float32x4_t r;
+        uint32x4_t z;
 
-        zero_count += b[0] == 0.0 + b[1] == 0.0 + b[2] == 0.0 + b[3] == 0.0;
+        z = vceqzq_f32(b);
+        z = z & (uint32x4_t){1, 1, 1, 1};
+        zero_count += (double)(vaddvq_u32(z));
         r = exp2_ps(vnegq_f32(b));
-        raw_estimate += r[0] + r[1] + r[2] + r[3];
+        raw_estimate += vaddvq_f32(r);
     }
 #else
     for (size_t i = 0; i < num_registers; i++) {
