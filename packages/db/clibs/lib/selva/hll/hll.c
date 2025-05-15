@@ -122,16 +122,15 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     }
 }
 
-struct selva_string hll_array_union(struct selva_string *hll_array, size_t count) {
+void hll_array_union(struct selva_string *result, struct selva_string *hll_array, size_t count) {
 
     HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], nullptr); //&?
 
     uint8_t precision = first_hll->precision;
-    uint32_t num_registers = first_hll->num_registers;
+    size_t num_registers = first_hll->num_registers;
 
-    struct selva_string result;
-    hll_init(&result, precision, DENSE);
-    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&result, nullptr);
+    hll_init(result, precision, DENSE);
+    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
 
     memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint32_t));
 
@@ -141,38 +140,39 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
             db_panic("Precision mismatch is unsupported.");
         }
 
-#if __ARM_NEON && 0
+#if __ARM_NEON
         for (size_t i = 0; i < num_registers; i += 4) {
-            float32x4_t a = {
+            uint32x4_t a = {
                 current_hll->registers[i],
                 current_hll->registers[i + 1],
                 current_hll->registers[i + 2],
                 current_hll->registers[i + 3],
             };
-            float32x4_t b = {
+            uint32x4_t b = {
                 result_hll->registers[i],
                 result_hll->registers[i + 1],
                 result_hll->registers[i + 2],
                 result_hll->registers[i + 3],
             };
-            float32x4_t c;
+            uint32x4_t c;
 
-            c = vmaxq_f32(a, b);
+            c = vmaxq_u32(a, b);
             result_hll->registers[i] = c[0];
-            result_hll->registers[i] = c[1];
-            result_hll->registers[i] = c[2];
-            result_hll->registers[i] = c[3];
+            result_hll->registers[i + 1] = c[1];
+            result_hll->registers[i + 2] = c[2];
+            result_hll->registers[i + 3] = c[3];
         }
 #else
-        for (size_t i = 0; i < num_registers; i++) {
-            if (current_hll->registers[i] > result_hll->registers[i]) {
-                result_hll->registers[i] = current_hll->registers[i];
-            }
+        for (size_t i = 0; i < num_registers; i += 4) {
+            result_hll->registers[i] = max(current_hll->registers[i], result_hll->registers[i]);
+            result_hll->registers[i + 1] = max(current_hll->registers[i + 1], result_hll->registers[i + 1]);
+            result_hll->registers[i + 2] = max(current_hll->registers[i + 2], result_hll->registers[i + 2]);
+            result_hll->registers[i + 3] = max(current_hll->registers[i + 3], result_hll->registers[i + 3]);
         }
 #endif
     }
 
-    return result;
+    result_hll->dirty = true;
 }
 
 static HyperLogLogPlusPlus* buffer_to_hll(const unsigned char* buffer, size_t buffer_len) {
@@ -227,35 +227,36 @@ void hll_union(char* dest, size_t dest_len, const char* src, size_t src_len) {
 
 #if __ARM_NEON
         for (size_t i = 0; i < num_registers; i += 4) {
-            float32x4_t a = {
+            uint32x4_t a = {
                 src_hll->registers[i],
                 src_hll->registers[i + 1],
                 src_hll->registers[i + 2],
                 src_hll->registers[i + 3],
             };
-            float32x4_t b = {
+            uint32x4_t b = {
                 dest_hll->registers[i],
                 dest_hll->registers[i + 1],
                 dest_hll->registers[i + 2],
                 dest_hll->registers[i + 3],
             };
-            float32x4_t c;
+            uint32x4_t c;
 
-            c = vmaxq_f32(a, b);
+            c = vmaxq_u32(a, b);
             dest_hll->registers[i] = c[0];
-            dest_hll->registers[i] = c[1];
-            dest_hll->registers[i] = c[2];
-            dest_hll->registers[i] = c[3];
+            dest_hll->registers[i + 1] = c[1];
+            dest_hll->registers[i + 2] = c[2];
+            dest_hll->registers[i + 3] = c[3];
         }
 #else
     for (size_t i = 0; i < num_registers; i++) {
-        if (src_hll->registers[i] > dest_hll->registers[i]) {
-            dest_hll->registers[i] = src_hll->registers[i];
-        }
+        dest_hll->registers[i] = max(src_hll->registers[i], dest_hll->registers[i]);
+        dest_hll->registers[i + 1] = max(src_hll->registers[i + 1], dest_hll->registers[i + 1]);
+        dest_hll->registers[i + 2] = max(src_hll->registers[i + 2], dest_hll->registers[i + 2]);
+        dest_hll->registers[i + 3] = max(src_hll->registers[i + 3], dest_hll->registers[i + 3]);
     }
 #endif
 
-    return;
+    dest_hll->dirty = true;
 }
 
 
@@ -385,41 +386,47 @@ int main(void) {
     ** Array union test
     ** -----------------------------------------*/
 
-    size_t precision = 14;
-    int initial_capacity = sizeof(bool) \
-                            + sizeof(precision) \
-                            + sizeof(uint32_t);
-    struct selva_string hll;
-    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+    struct selva_string arr[10];
 
-    hll_init(&hll, precision, SPARSE);
+    for (size_t j = 0; j < num_elem(arr); j++) {
+        size_t precision = 14;
+        int initial_capacity = sizeof(bool) \
+                                + sizeof(precision) \
+                                + sizeof(uint32_t);
+        struct selva_string hll;
+        selva_string_init(&hll, nullptr, initial_capacity, SELVA_STRING_MUTABLE);
 
-    int num_elements = 1e7;
-    char (*elements)[50] = malloc(num_elements * sizeof(*elements));
-    if (elements == nullptr) {
-        perror("Failed to allocate memory");
-        exit(EXIT_FAILURE);
+        hll_init(&hll, precision, SPARSE);
+
+        size_t num_elements = 1e7;
+        uint32_t estimated_cardinality = 0;
+
+        for (size_t i = 0; i < num_elements; i++) {
+            char element[50];
+
+            //snprintf(element, 50, "hll1_%zu", i);
+            snprintf(element, 50, "hll1_%zu", i + rand());
+            hll_add(&hll, XXH64(element, strlen(element), 0));
+        }
+
+        estimated_cardinality = *hll_count(&hll);
+
+        printf("Estimated cardinality: %u\n", estimated_cardinality);
+        float expected_cardinality = num_elements;
+        float error = fabs(expected_cardinality - estimated_cardinality);
+        printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
+
+        arr[j] = hll;
     }
+    struct selva_string *res = selva_string_create(nullptr, 0, SELVA_STRING_MUTABLE);
+    hll_array_union(res, arr, num_elem(arr));
+    uint32_t estimated_cardinality_union = *hll_count(res);
 
-    uint32_t estimated_cardinality = 0;
-
-    for (int i = 0; i < num_elements; i++) {
-        snprintf(elements[i], 50, "hll1_%d", i);
-        hll_add(&hll, XXH64(elements[i], strlen(elements[i]), 0));
-    }
-
-    estimated_cardinality = *hll_count(&hll);
-
-    printf("Estimated cardinality: %u\n", estimated_cardinality);
-    float expected_cardinality = num_elements;
-    float error = fabs(expected_cardinality - estimated_cardinality);
-    printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
-
-    free(elements);
+    printf("Estimated cardinality union: %u\n", estimated_cardinality_union);
 
     return 0;
 
-     /* -------------------------------------------
+    /* -------------------------------------------
     ** Single Union test
     ** -----------------------------------------*/
 
