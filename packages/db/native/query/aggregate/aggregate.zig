@@ -28,12 +28,9 @@ pub inline fn execAgg(
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            // dest = the value for that key in hashmap. Must be the hll/selva_string, not the count
-            // src = the current hll value to be unioned
-
-            const newLen = selva.hll_union(&resultsField[0..resultPos], &value[start..]);
-
-            utils.debugPrint("union_agg! hll_union => {d}\n", .{newLen});
+            utils.debugPrint("hll_count: {d}\n", .{value.len});
+            selva.hll_union(@ptrCast(resultsField[0 .. resultsField.len - 4]), resultsField.len - 4, @ptrCast(value.ptr[0 .. value.len - 4]), value.len - 4);
+            // utils.debugPrint("union_agg! hll_union {any}\n", .{value});
             // writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
         } else if (aggType == aggregateTypes.AggType.SUM) {
             if (propType == types.Prop.UINT32) {
@@ -68,7 +65,8 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
             return;
         };
         // value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.CARDINALITY);
-        value = selva.selva_fields_ensure_string(node, fieldSchema, selva.HLL_INIT_SIZE);
+        const fieldValue: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, fieldSchema);
+        value = @as([*]u8, @ptrCast(fieldValue.ptr))[0..fieldValue.len];
 
         if (value.len == 0) {
             i += fieldAggsSize;
