@@ -140,11 +140,36 @@ struct selva_string hll_array_union(struct selva_string *hll_array, size_t count
         if (current_hll->precision != precision) {
             db_panic("Precision mismatch is unsupported.");
         }
+
+#if __ARM_NEON && 0
+        for (size_t i = 0; i < num_registers; i += 4) {
+            float32x4_t a = {
+                current_hll->registers[i],
+                current_hll->registers[i + 1],
+                current_hll->registers[i + 2],
+                current_hll->registers[i + 3],
+            };
+            float32x4_t b = {
+                result_hll->registers[i],
+                result_hll->registers[i + 1],
+                result_hll->registers[i + 2],
+                result_hll->registers[i + 3],
+            };
+            float32x4_t c;
+
+            c = vmaxq_f32(a, b);
+            result_hll->registers[i] = c[0];
+            result_hll->registers[i] = c[1];
+            result_hll->registers[i] = c[2];
+            result_hll->registers[i] = c[3];
+        }
+#else
         for (size_t i = 0; i < num_registers; i++) {
             if (current_hll->registers[i] > result_hll->registers[i]) {
                 result_hll->registers[i] = current_hll->registers[i];
             }
         }
+#endif
     }
 
     return result;
@@ -178,10 +203,10 @@ static HyperLogLogPlusPlus* buffer_to_hll(const unsigned char* buffer, size_t bu
     return hll;
 }
 
-void hll_union(char* dest, size_t dest_len, char* src, size_t src_len) {
+void hll_union(char* dest, size_t dest_len, const char* src, size_t src_len) {
 
     HyperLogLogPlusPlus *dest_hll = buffer_to_hll(dest, dest_len);
-    HyperLogLogPlusPlus *src_hll = buffer_to_hll(src, src_len);
+    const HyperLogLogPlusPlus *src_hll = buffer_to_hll(src, src_len);
 
     if (!dest_hll || !src_hll) {
         return;
@@ -189,7 +214,7 @@ void hll_union(char* dest, size_t dest_len, char* src, size_t src_len) {
 
     if (src_hll->num_registers > dest_hll->num_registers) {
         // for now just throw error but is very simple to made the same hll_add aproach
-        db_panic("take care of this num_regsters.");
+        db_panic("take care of this num_registers.");
         return;
     }
 
@@ -198,14 +223,37 @@ void hll_union(char* dest, size_t dest_len, char* src, size_t src_len) {
         return;
     }
 
-    uint32_t num_registers = src_hll->num_registers;
+    size_t num_registers = src_hll->num_registers;
 
-    
+#if __ARM_NEON
+        for (size_t i = 0; i < num_registers; i += 4) {
+            float32x4_t a = {
+                src_hll->registers[i],
+                src_hll->registers[i + 1],
+                src_hll->registers[i + 2],
+                src_hll->registers[i + 3],
+            };
+            float32x4_t b = {
+                dest_hll->registers[i],
+                dest_hll->registers[i + 1],
+                dest_hll->registers[i + 2],
+                dest_hll->registers[i + 3],
+            };
+            float32x4_t c;
+
+            c = vmaxq_f32(a, b);
+            dest_hll->registers[i] = c[0];
+            dest_hll->registers[i] = c[1];
+            dest_hll->registers[i] = c[2];
+            dest_hll->registers[i] = c[3];
+        }
+#else
     for (size_t i = 0; i < num_registers; i++) {
         if (src_hll->registers[i] > dest_hll->registers[i]) {
             dest_hll->registers[i] = src_hll->registers[i];
         }
     }
+#endif
 
     return;
 }
