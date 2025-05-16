@@ -26,10 +26,16 @@ export const querySnapshots = async (
     events: string[]
     resolution?: number
     current?: boolean
+    range?: { start: number; end: number }
   },
 ) => {
   // optional
   const snapshotsQuery = ctx.db.query('snapshot').sort('ts', 'desc')
+
+  if (p.range) {
+    snapshotsQuery.range(p.range.start || 0, p.range.end || 1e3)
+  }
+
   const individualSnapshotIds: number[] = []
   const currentIds: number[] = []
   const mappedEvents: Set<number> = new Set()

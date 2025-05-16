@@ -1,6 +1,6 @@
 {
   "name": "@based/db-analytics",
-  "version": "0.0.3",
+  "version": "0.0.19",
   "license": "MIT",
   "files": [
     "dist",
@@ -9,6 +9,10 @@
     "!dist/**/*.map"
   ],
   "main": "./dist/index.js",
+  "exports": {
+    "./client": "./dist/trackEventsClient.js",
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",

@@ -1,8 +1,9 @@
 import { toDbPayload } from './protocol.js'
-import { ClientCtx, TrackPayload } from './types.js'
+import type { ClientCtx, TrackPayload } from './types.js'
 
 export const createClientCtx = (
   flush: (dbPayload: ReturnType<typeof toDbPayload>) => Promise<void>,
+  preflush?: () => void,
   flushTime: number = 1000,
 ) => {
   let killed = false
@@ -17,9 +18,13 @@ export const createClientCtx = (
     flushTime,
   }
   const flushTimer = async () => {
+    preflush?.()
     const events = clientCtx.events
     clientCtx.events = {}
-    await flush(toDbPayload(events, clientCtx.activeEvents))
+    const buf = toDbPayload(events, clientCtx.activeEvents)
+    if (buf.byteLength) {
+      await flush(buf)
+    }
     for (const active in clientCtx.activeEvents) {
       const a = clientCtx.activeEvents[active]
       let cnt = 0
@@ -49,6 +54,12 @@ export const trackEvent = (ctx: ClientCtx, p: TrackPayload) => {
   const ev = p.event
   ctx.events[ev] ??= { geos: {} }
   const target = (ctx.events[ev].geos[p.geo] ??= { count: 0 })
+  if (p.uniq) {
+    if (!target.uniq) {
+      target.uniq = new Set()
+    }
+    target.uniq.add(p.uniq)
+  }
   target.count += 1
 }
 

@@ -65,6 +65,9 @@ export const startSnapShots = (ctx: AnalyticsDbCtx) => {
       const currentEvent = ctx.currents[eventId]
       const lastSnapshotId = currentEvent.lastSnapshotId
       if (lastSnapshotId) {
+        if (db.server.stopped) {
+          return
+        }
         const { data: prevData } = await db
           .query('snapshot', lastSnapshotId)
           .include('data')
@@ -73,6 +76,10 @@ export const startSnapShots = (ctx: AnalyticsDbCtx) => {
         if (equals(data, prevData)) {
           continue
         }
+      }
+
+      if (db.server.stopped) {
+        return
       }
 
       const eventIdNR = Number(eventId)

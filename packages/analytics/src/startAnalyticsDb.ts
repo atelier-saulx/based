@@ -2,11 +2,41 @@ import { BasedDb, BasedDbOpts } from '@based/db'
 import { AnalyticsDbCtx } from './types.js'
 import { startSnapShots } from './snapShots.js'
 
+export const unregisterClient = (ctx: AnalyticsDbCtx, clientId: number) => {
+  const clientActiveCurrents = ctx.currentsActivePerClient[clientId]
+  if (!clientActiveCurrents) {
+    ctx.db.server.emit(
+      'info',
+      'trying to remove actives from a client that has no actives',
+    )
+    return
+  }
+  ctx.db.server.emit('info', 'unregistering client')
+  for (const eventId in clientActiveCurrents) {
+    const ev = clientActiveCurrents[eventId]
+    for (const geo in ev.geos) {
+      const currentGeo = ctx.currents[eventId].geos[geo]
+      currentGeo.active -= ev.geos[geo]
+    }
+  }
+  delete ctx.currentsActivePerClient[clientId]
+}
+
 export const startAnalyticsDb = async (
-  opts: BasedDbOpts & { config?: AnalyticsDbCtx['config'] },
+  opts: BasedDbOpts & {
+    config?: AnalyticsDbCtx['config']
+    clean?: boolean
+    db?: BasedDb
+  },
 ) => {
-  const db = new BasedDb(opts)
-  await db.start()
+  const db = opts.db ?? new BasedDb(opts)
+  if (!opts.db) {
+    if (opts.clean) {
+      await db.start({ clean: opts.clean })
+    } else {
+      await db.start()
+    }
+  }
   await db.setSchema({
     types: {
       event: {
@@ -30,7 +60,7 @@ export const startAnalyticsDb = async (
   })
 
   const DEFAULT_CONFIG: AnalyticsDbCtx['config'] = {
-    snapShotInterval: 100,
+    snapShotInterval: 1e3 * 15, // 15 seconds
   }
 
   const ctx: AnalyticsDbCtx = {
@@ -78,7 +108,9 @@ export const startAnalyticsDb = async (
     close: async () => {
       ctx.closers.forEach((close) => close())
       db.server.emit('info', 'Close analytics db')
-      return ctx.db.destroy()
+      if (!opts.db) {
+        return ctx.db.stop()
+      }
     },
   }
 
