@@ -43,6 +43,9 @@ export const createClientCtx = (
 }
 
 export const trackEvent = (ctx: ClientCtx, p: TrackPayload) => {
+  if (!p.geo) {
+    p.geo = '00'
+  }
   const ev = p.event
   ctx.events[ev] ??= { geos: {} }
   const target = (ctx.events[ev].geos[p.geo] ??= { count: 0 })
@@ -51,8 +54,11 @@ export const trackEvent = (ctx: ClientCtx, p: TrackPayload) => {
 
 export const trackActive = (
   ctx: ClientCtx,
-  p: { geo: string; event: string; active: number },
+  p: { geo?: string; event: string; active: number },
 ) => {
+  if (!p.geo) {
+    p.geo = '00'
+  }
   const ev = p.event
   ctx.activeEvents[ev] ??= { geos: {} }
   const target = (ctx.activeEvents[ev].geos[p.geo] ??= {
