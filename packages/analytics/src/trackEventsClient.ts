@@ -3,6 +3,7 @@ import type { ClientCtx, TrackPayload } from './types.js'
 
 export const createClientCtx = (
   flush: (dbPayload: ReturnType<typeof toDbPayload>) => Promise<void>,
+  preflush?: () => void,
   flushTime: number = 1000,
 ) => {
   let killed = false
@@ -17,6 +18,7 @@ export const createClientCtx = (
     flushTime,
   }
   const flushTimer = async () => {
+    preflush?.()
     const events = clientCtx.events
     clientCtx.events = {}
     const buf = toDbPayload(events, clientCtx.activeEvents)

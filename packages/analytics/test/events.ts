@@ -45,9 +45,13 @@ const test = async () => {
 
   await wait(100)
 
-  const clientCtx = createClientCtx(async (dbPayload) => {
-    receivePayload(ctx, 1, dbPayload)
-  }, 10)
+  const clientCtx = createClientCtx(
+    async (dbPayload) => {
+      receivePayload(ctx, 1, dbPayload)
+    },
+    undefined,
+    10,
+  )
 
   const trackMany = async () => {
     const uniq: any = []
