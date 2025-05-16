@@ -26,6 +26,8 @@ export const startSnapShots = (ctx: AnalyticsDbCtx) => {
     if (db.server.stopped) {
       return
     }
+    db.server.emit('info', 'Create snapshot')
+
     await db.drain()
     const currents = await db.query('current').range(0, 1e6).get()
     const results: SnapShotWriteResult = {}
@@ -89,7 +91,7 @@ export const startSnapShots = (ctx: AnalyticsDbCtx) => {
   }
   snapShotTimer = setTimeout(makeSnapshots, ctx.config.snapShotInterval)
   return () => {
-    console.log('Stop snapthotty')
+    db.server.emit('info', 'Stop snapshot')
     clearTimeout(snapShotTimer)
   }
 }

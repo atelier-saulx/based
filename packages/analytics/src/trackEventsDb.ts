@@ -1,6 +1,6 @@
 import { AnalyticsDbCtx, DbTrackPayload } from './types.js'
 
-export const trackEvent = (
+export const trackEventDb = (
   ctx: AnalyticsDbCtx,
   clientId: number,
   { geo, uniq, active, event, count }: DbTrackPayload,
@@ -34,16 +34,6 @@ export const trackEvent = (
   if (uniq != undefined) {
     trackPayload.uniq = uniq
   }
-  if (active != undefined) {
-    console.log('hello ACTIVE', 'myesh', clientId)
-    let clientActiveCurrents = ctx.currentsActivePerClient[clientId]
-    if (!clientActiveCurrents) {
-      clientActiveCurrents = ctx.currentsActivePerClient[clientId] = {}
-    }
-    //
-    // this needs different handling
-    // trackPayload.active = active
-  }
 
   let currentEventsGeo = currentEvents.geos[geo]
   if (!currentEventsGeo) {
@@ -55,5 +45,51 @@ export const trackEvent = (
   } else {
     trackPayload.count = { increment: count }
     ctx.db.update('current', currentEventsGeo.id, trackPayload)
+  }
+
+  if (active != undefined) {
+    let clientActiveCurrents = ctx.currentsActivePerClient[clientId]
+    if (!clientActiveCurrents) {
+      clientActiveCurrents = ctx.currentsActivePerClient[clientId] = {}
+    }
+    let clientActiveCurrentsEvent = clientActiveCurrents[eventId]
+    if (!clientActiveCurrentsEvent) {
+      clientActiveCurrentsEvent = clientActiveCurrents[eventId] = { geos: {} }
+    }
+    clientActiveCurrentsEvent.geos[geo] = active
+    currentEventsGeo.active = 0
+    for (const client in ctx.currentsActivePerClient) {
+      const clientActiveEvent = ctx.currentsActivePerClient[client][eventId]
+      if (clientActiveEvent) {
+        const gevent = clientActiveEvent.geos[geo]
+        if (gevent) {
+          currentEventsGeo.active += gevent
+        }
+      }
+    }
+  }
+}
+
+export const receivePayload = (
+  ctx: AnalyticsDbCtx,
+  clientId: number,
+  things: any,
+) => {
+  if (ctx.db.server.stopped) {
+    return
+  }
+  for (const x of things) {
+    const p: DbTrackPayload = {
+      count: x.count ?? 0,
+      geo: x.geo,
+      event: x.event,
+    }
+    if (x.active) {
+      p.active = x.active
+    }
+    if (x.uniq) {
+      p.uniq = x.uniq
+    }
+    trackEventDb(ctx, clientId, p)
   }
 }

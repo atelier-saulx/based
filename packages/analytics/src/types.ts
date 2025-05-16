@@ -35,7 +35,7 @@ export type AnalyticsDbCtx = {
     [clientId: string]: {
       [eventId: string]: {
         geos: {
-          [geo: string]: { active: number }
+          [geo: string]: number
         }
       }
     }
@@ -56,9 +56,7 @@ export type SnapShotResult = {
 export type TrackPayload = {
   event: string
   geo?: string
-  uniq?: string[]
-  active?: number
-  count: number
+  uniq?: string
 }
 
 export type DbTrackPayload = {
@@ -67,4 +65,29 @@ export type DbTrackPayload = {
   active?: number
   geo: string
   count: number
+}
+
+export type ClientCtx = {
+  close: () => void
+  flushTime: number
+  events: {
+    [eventName: string]: {
+      geos: {
+        [geo: string]: {
+          count: number
+          uniq?: Set<string | number>
+        }
+      }
+    }
+  }
+  activeEvents: {
+    [eventName: string]: {
+      geos: {
+        [geo: string]: {
+          active: number
+          prevActive: number
+        }
+      }
+    }
+  }
 }
