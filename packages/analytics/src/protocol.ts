@@ -1,7 +1,8 @@
-import { ENCODER, xxHash64 } from '@based/db'
+// import { ENCODER, xxHash64 } from '@based/db'
 import { ClientCtx, DbTrackPayload } from './types.js'
 import {
   DECODER,
+  ENCODER,
   readUint16,
   readUint32,
   writeUint16,
@@ -16,10 +17,11 @@ type TempPayload = {
   count?: number
 }
 
-export const toDbPayload = (
+export const toDbPayload = async (
   events: ClientCtx['events'],
   active: ClientCtx['activeEvents'],
 ) => {
+  const { xxHash64 } = await import('@based/db')
   let payload: TempPayload[] = []
   let size = 0
   for (const event in events) {
