@@ -52,7 +52,7 @@ pub inline fn compare(
             return operate(u32, op, query, value);
         }
     } else if (size == 8) {
-        if (prop == Prop.NUMBER) {
+        if (prop == Prop.NUMBER or prop == Prop.TIMESTAMP) {
             return operate(f64, op, query, value);
         } else if (isSigned) {
             return operate(i64, op, query, value);
