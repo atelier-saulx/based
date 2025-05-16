@@ -34,7 +34,7 @@ export const startAnalyticsDb = async (
   })
 
   const DEFAULT_CONFIG: AnalyticsDbCtx['config'] = {
-    snapShotInterval: 100,
+    snapShotInterval: 1e3 * 15, // 15 seconds
   }
 
   const ctx: AnalyticsDbCtx = {

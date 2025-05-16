@@ -19,7 +19,10 @@ export const createClientCtx = (
   const flushTimer = async () => {
     const events = clientCtx.events
     clientCtx.events = {}
-    await flush(toDbPayload(events, clientCtx.activeEvents))
+    const buf = toDbPayload(events, clientCtx.activeEvents)
+    if (buf.byteLength) {
+      await flush(buf)
+    }
     for (const active in clientCtx.activeEvents) {
       const a = clientCtx.activeEvents[active]
       let cnt = 0
