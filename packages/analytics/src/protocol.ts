@@ -8,7 +8,7 @@ import {
   writeUint32,
   writeUint64,
 } from '@saulx/utils'
-import { hash } from '@saulx/hash'
+import { xxHash64 } from './xxHash.js'
 
 type TempPayload = {
   event: Uint8Array
@@ -86,9 +86,9 @@ export const toDbPayload = (
       i += 4
       for (const uniq of p.uniq) {
         if (typeof uniq !== 'string') {
-          writeUint64(buf, hash(String(uniq)), i)
+          const x = xxHash64(String(uniq), buf, i)
         } else {
-          writeUint64(buf, hash(uniq), i)
+          const x = xxHash64(String(uniq), buf, i)
         }
         i += 8
       }
@@ -129,12 +129,9 @@ export const readPayload = (buf: Uint8Array) => {
       const amount = readUint32(buf, i)
       i += 4
       for (let j = 0; j < amount; j++) {
-        // @ts-ignore TEMP FIX
-        uniq.push(DECODER.decode(new Uint8Array(buf.subarray(i, i + 8))))
+        uniq.push(new Uint8Array(buf.subarray(i, i + 8)))
         i += 8
       }
-      // temp rly dirty
-      // console.log('hasUniq', amount, uniq)
     }
     p.push({
       geo,

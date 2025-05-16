@@ -32,7 +32,7 @@ const test = async () => {
   const ctx = await startAnalyticsDb({
     path,
     config: {
-      snapShotInterval: 1000,
+      snapShotInterval: 100,
     },
   })
 
@@ -67,7 +67,7 @@ const test = async () => {
     console.log('totalTime', performance.now() - jsTime, 'ms')
   }
 
-  // await trackMany()
+  await trackMany()
 
   await wait(100)
 
@@ -98,6 +98,14 @@ const test = async () => {
     event: 'homepage',
     geo: 'GG',
     active: 10,
+  })
+
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 0,
   })
 
   await wait(100)
