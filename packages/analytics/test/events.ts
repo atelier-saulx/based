@@ -22,6 +22,7 @@ import {
   trackActive,
   trackEvent,
 } from '../src/trackEventsClient.js'
+import { unregisterClient } from '../src/startAnalyticsDb.js'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = './tmp'
 const path = resolve(join(__dirname, relativePath))
@@ -150,6 +151,18 @@ const test = async () => {
   )
 
   clientCtx.close()
+  unregisterClient(ctx, 1)
+
+  await wait(100)
+
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp', 'homepage'],
+      // current: true,
+    }),
+    { depth: null },
+  )
+
   await ctx.close()
 }
 

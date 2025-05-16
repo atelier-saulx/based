@@ -2,6 +2,26 @@ import { BasedDb, BasedDbOpts } from '@based/db'
 import { AnalyticsDbCtx } from './types.js'
 import { startSnapShots } from './snapShots.js'
 
+export const unregisterClient = (ctx: AnalyticsDbCtx, clientId: number) => {
+  const clientActiveCurrents = ctx.currentsActivePerClient[clientId]
+  if (!clientActiveCurrents) {
+    ctx.db.server.emit(
+      'info',
+      'trying to remove actives from a client that has no actives',
+    )
+    return
+  }
+  ctx.db.server.emit('info', 'unregistering client')
+  for (const eventId in clientActiveCurrents) {
+    const ev = clientActiveCurrents[eventId]
+    for (const geo in ev.geos) {
+      const currentGeo = ctx.currents[eventId].geos[geo]
+      currentGeo.active -= ev.geos[geo]
+    }
+  }
+  delete ctx.currentsActivePerClient[clientId]
+}
+
 export const startAnalyticsDb = async (
   opts: BasedDbOpts & { config?: AnalyticsDbCtx['config']; clean?: boolean },
 ) => {
