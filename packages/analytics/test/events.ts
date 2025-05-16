@@ -1,22 +1,10 @@
 import { startAnalyticsDb } from '../src/index.js'
-// import {
-//   convertToTimestamp,
-//   DECODER,
-//   equals,
-//   readUint16,
-//   readUint32,
-//   setByPath,
-//   wait,
-//   writeUint32,
-// } from '@saulx/utils'
 import { fileURLToPath } from 'node:url'
 import { rm } from 'node:fs/promises'
 import { join, dirname, resolve } from 'node:path'
 import { receivePayload, trackEventDb } from '../src/trackEventsDb.js'
 import { wait } from '@saulx/utils'
 import { querySnapshots } from '../src/query.js'
-import { allCountryCodes } from '@based/db/test/shared/examples.js'
-import { ENCODER, xxHash64 } from '@based/db'
 import {
   createClientCtx,
   trackActive,
@@ -163,6 +151,7 @@ const test = async () => {
     await querySnapshots(ctx, {
       events: ['derp', 'homepage'],
       // current: true,
+      range: { start: 0, end: 100 },
     }),
     { depth: null },
   )

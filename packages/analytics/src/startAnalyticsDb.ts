@@ -108,7 +108,9 @@ export const startAnalyticsDb = async (
     close: async () => {
       ctx.closers.forEach((close) => close())
       db.server.emit('info', 'Close analytics db')
-      return ctx.db.destroy()
+      if (!opts.db) {
+        return ctx.db.stop()
+      }
     },
   }
 
