@@ -33,6 +33,8 @@ pub usingnamespace @cImport({
     @cInclude("selva/strsearch.h");
     @cInclude("selva/vector.h");
 
+    @cInclude("selva/membar.h");
+
     @cInclude("selva/history.h");
 });
 

@@ -38,13 +38,13 @@ OBJ := \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
+	membar.o \
 	mem/auto_free.o \
 	mem/finalizer.o \
 	mem/mempool.o \
 	node_id_set.o \
 	poptop.o \
 	print_ready.o \
-	queue_r.o \
 	ref_save_map.o \
 	schema.o \
 	selva_error.o \

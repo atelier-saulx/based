@@ -1,0 +1,25 @@
+{
+  "name": "@based/db-analytics",
+  "version": "0.0.2",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json",
+    "!dist/**/*.map"
+  ],
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "npx tsx ./test/events.ts"
+  },
+  "prettier": "@saulx/prettier-config",
+  "sideEffects": false,
+  "type": "module",
+  "dependencies": {
+    "@based/schema": "5.0.0-alpha.18",
+    "@saulx/utils": "^6.7.0",
+    "@based/db": "0.0.64"
+  }
+}
