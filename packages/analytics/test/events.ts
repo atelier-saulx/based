@@ -15,6 +15,8 @@ import { join, dirname, resolve } from 'node:path'
 import { trackEvent } from '../src/trackEventsDb.js'
 import { wait } from '@saulx/utils'
 import { querySnapshots } from '../src/query.js'
+import { allCountryCodes } from '@based/db/test/shared/examples.js'
+import { ENCODER, xxHash64 } from '@based/db'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = './tmp'
 const path = resolve(join(__dirname, relativePath))
@@ -37,11 +39,28 @@ const test = async () => {
 
   await wait(100)
 
-  trackEvent(ctx, 0, {
-    event: 'view:homepage',
-    count: 10,
-    geo: 'NL',
-  })
+  const trackMany = () => {
+    const uniq = []
+    const randLen = Math.random() * 10000
+    for (let i = 0; i < randLen; i++) {
+      const encoded = ENCODER.encode((Math.random() * 10000).toString(16))
+      uniq.push(xxHash64(encoded))
+    }
+    for (let i = 0; i < 1e5; i++) {
+      trackEvent(ctx, 0, {
+        event: 'view:homepage',
+        count: ~~(Math.random() * 1000),
+        uniq: uniq.slice(0, ~~(Math.random() * uniq.length)),
+        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+      })
+    }
+  }
+
+  trackMany()
+
+  await wait(100)
+
+  trackMany()
 
   await wait(100)
 

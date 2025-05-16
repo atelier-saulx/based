@@ -69,7 +69,6 @@ export const startSnapShots = (ctx: AnalyticsDbCtx) => {
           .get()
           .toObject()
         if (equals(data, prevData)) {
-          console.log('snapshot is same dont update')
           continue
         }
       }
