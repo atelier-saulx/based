@@ -1,4 +1,3 @@
-// import { ENCODER, xxHash64 } from '@based/db'
 import { ClientCtx, DbTrackPayload } from './types.js'
 import {
   DECODER,
@@ -7,7 +6,9 @@ import {
   readUint32,
   writeUint16,
   writeUint32,
+  writeUint64,
 } from '@saulx/utils'
+import { hash } from '@saulx/hash'
 
 type TempPayload = {
   event: Uint8Array
@@ -17,11 +18,10 @@ type TempPayload = {
   count?: number
 }
 
-export const toDbPayload = async (
+export const toDbPayload = (
   events: ClientCtx['events'],
   active: ClientCtx['activeEvents'],
 ) => {
-  const { xxHash64 } = await import('@based/db')
   let payload: TempPayload[] = []
   let size = 0
   for (const event in events) {
@@ -32,7 +32,7 @@ export const toDbPayload = async (
         geo,
         count: ev.count,
       }
-      // 2 geo , 2 len , 1 hasActive,  4 count, 1 hasUniq (4 len 8bytes tings),
+      // 2 geo , 2 len (event len also) , 1 hasActive,  4 count, 1 hasUniq (4 len 8bytes tings),
       size += 2 + 2 + 4 + 1 + 1 + p.event.byteLength
       if (ev.uniq) {
         p.uniq = ev.uniq
@@ -86,9 +86,9 @@ export const toDbPayload = async (
       i += 4
       for (const uniq of p.uniq) {
         if (typeof uniq !== 'string') {
-          xxHash64(ENCODER.encode(String(uniq)), buf, i)
+          writeUint64(buf, hash(String(uniq)), i)
         } else {
-          xxHash64(ENCODER.encode(uniq), buf, i)
+          writeUint64(buf, hash(uniq), i)
         }
         i += 8
       }

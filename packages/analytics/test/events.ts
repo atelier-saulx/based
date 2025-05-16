@@ -84,44 +84,44 @@ const test = async () => {
 
   await wait(100)
 
-  const r = await querySnapshots(ctx, {
-    events: ['view:homepage'],
-  })
+  // const r = await querySnapshots(ctx, {
+  //   events: ['view:homepage'],
+  // })
 
-  console.dir(r['view:homepage'].reverse(), { depth: 10 })
+  // console.dir(r['view:homepage'].reverse(), { depth: 10 })
 
-  await wait(100)
+  // await wait(100)
 
-  let r2 = await querySnapshots(ctx, {
-    events: ['homepage'],
-  })
+  // let r2 = await querySnapshots(ctx, {
+  //   events: ['homepage'],
+  // })
 
-  console.dir(r2['homepage'].reverse(), { depth: 10 })
+  // console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  await wait(100)
-  await wait(100)
+  // await wait(100)
+  // await wait(100)
 
-  trackActive(clientCtx, {
-    event: 'homepage',
-    geo: 'NL',
-    active: 200,
-  })
-  await wait(100)
+  // trackActive(clientCtx, {
+  //   event: 'homepage',
+  //   geo: 'NL',
+  //   active: 200,
+  // })
+  // await wait(100)
 
-  r2 = await querySnapshots(ctx, {
-    events: ['homepage'],
-    current: true,
-  })
+  // r2 = await querySnapshots(ctx, {
+  //   events: ['homepage'],
+  //   current: true,
+  // })
 
-  console.dir(r2['homepage'].reverse(), { depth: 10 })
+  // console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp'],
-      // current: true,
-    }),
-    { depth: null },
-  )
+  // console.dir(
+  //   await querySnapshots(ctx, {
+  //     events: ['derp'],
+  //     // current: true,
+  //   }),
+  //   { depth: null },
+  // )
 
   clientCtx.close()
   await ctx.close()

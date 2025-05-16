@@ -2,7 +2,7 @@ import { toDbPayload } from './protocol.js'
 import type { ClientCtx, TrackPayload } from './types.js'
 
 export const createClientCtx = (
-  flush: (dbPayload: Awaited<ReturnType<typeof toDbPayload>>) => Promise<void>,
+  flush: (dbPayload: ReturnType<typeof toDbPayload>) => Promise<void>,
   flushTime: number = 1000,
 ) => {
   let killed = false
@@ -19,7 +19,7 @@ export const createClientCtx = (
   const flushTimer = async () => {
     const events = clientCtx.events
     clientCtx.events = {}
-    await flush(await toDbPayload(events, clientCtx.activeEvents))
+    await flush(toDbPayload(events, clientCtx.activeEvents))
     for (const active in clientCtx.activeEvents) {
       const a = clientCtx.activeEvents[active]
       let cnt = 0
