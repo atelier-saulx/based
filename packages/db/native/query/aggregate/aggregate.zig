@@ -17,7 +17,7 @@ pub inline fn execAgg(
     var j: usize = 0;
 
     while (j < fieldAggsSize) {
-        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
         j += 1;
         const propType: types.Prop = @enumFromInt(aggPropDef[j]);
         j += 1;
@@ -27,11 +27,6 @@ pub inline fn execAgg(
         j += 2;
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
-        } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            utils.debugPrint("hll_count: {d}\n", .{value.len});
-            selva.hll_union(@ptrCast(resultsField[0 .. resultsField.len - 4]), resultsField.len - 4, @ptrCast(value.ptr[0 .. value.len - 4]), value.len - 4);
-            // utils.debugPrint("union_agg! hll_union {any}\n", .{value});
-            // writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
         } else if (aggType == aggregateTypes.AggType.SUM) {
             if (propType == types.Prop.UINT32) {
                 writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
@@ -56,23 +51,9 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
     i += 2;
     const aggPropDef = agg[i .. i + fieldAggsSize];
 
-    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
     var value: []u8 = undefined;
 
-    if (aggType == .CARDINALITY) {
-        const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-            std.log.err("Cannot get fieldschema {any} \n", .{field});
-            return;
-        };
-        // value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.CARDINALITY);
-        const fieldValue: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, fieldSchema);
-        value = @as([*]u8, @ptrCast(fieldValue.ptr))[0..fieldValue.len];
-
-        if (value.len == 0) {
-            i += fieldAggsSize;
-            // return;
-        }
-    } else if (field != aggregateTypes.IsId) {
+    if (field != aggregateTypes.IsId) {
         // Later need to add support for HLL
         if (field != types.MAIN_PROP) {
             i += fieldAggsSize;

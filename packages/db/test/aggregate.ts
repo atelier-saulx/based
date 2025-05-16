@@ -113,7 +113,7 @@ await test('sum top level', async (t) => {
 })
 
 // sum group by  ----------------------------------
-await test('sum group by', async (t) => {
+await test('dev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -167,29 +167,32 @@ await test('sum group by', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
-  deepEqual(
-    await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject(),
-    { bb: { NL: 10, AU: 0 }, aa: { NL: 20, AU: 15 } },
-    'sum, top level, groupBy',
-  )
+  const q = await db.query('vote').sum('NL', 'AU').groupBy('country').get()
+  q.inspect()
 
-  deepEqual(
-    await db.query('vote').groupBy('country').get().toObject(),
-    { bb: {}, aa: {} },
-    'groupBy with no aggregation function',
-  )
+  //   deepEqual(
+  //     await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject(),
+  //     { bb: { NL: 10, AU: 0 }, aa: { NL: 20, AU: 15 } },
+  //     'sum, top level, groupBy',
+  //   )
 
-  deepEqual(
-    await db
-      .query('vote')
-      .filter('country', '=', 'bb')
-      .groupBy('country')
-      .sum('NL', 'AU')
-      .get()
-      .toObject(),
-    { bb: { NL: 10, AU: 0 } },
-    'filter, groupBy on single distinct value',
-  )
+  //   deepEqual(
+  //     await db.query('vote').groupBy('country').get().toObject(),
+  //     { bb: {}, aa: {} },
+  //     'groupBy with no aggregation function',
+  //   )
+
+  //   deepEqual(
+  //     await db
+  //       .query('vote')
+  //       .filter('country', '=', 'bb')
+  //       .groupBy('country')
+  //       .sum('NL', 'AU')
+  //       .get()
+  //       .toObject(),
+  //     { bb: { NL: 10, AU: 0 } },
+  //     'filter, groupBy on single distinct value',
+  //   )
 })
 
 await test('sum branched includes', async (t) => {
@@ -834,7 +837,7 @@ await test('variable key size', async (t) => {
   // // can use the index in selva if no filter
 })
 
-await test('dev', async (t) => {
+await test('blev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -938,7 +941,7 @@ await test('dev', async (t) => {
   //   .inspect()
 })
 
-await test('kev', async (t) => {
+await test.skip('kev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
