@@ -1,3 +1,4 @@
+import { readPayload } from './protocol.js'
 import { AnalyticsDbCtx, DbTrackPayload } from './types.js'
 
 export const trackEventDb = (
@@ -74,23 +75,13 @@ export const trackEventDb = (
 export const receivePayload = (
   ctx: AnalyticsDbCtx,
   clientId: number,
-  things: any,
+  buf: Uint8Array,
 ) => {
   if (ctx.db.server.stopped) {
     return
   }
-  for (const x of things) {
-    const p: DbTrackPayload = {
-      count: x.count ?? 0,
-      geo: x.geo,
-      event: x.event,
-    }
-    if (x.active) {
-      p.active = x.active
-    }
-    if (x.uniq) {
-      p.uniq = x.uniq
-    }
+  const events = readPayload(buf)
+  for (const p of events) {
     trackEventDb(ctx, clientId, p)
   }
 }

@@ -137,7 +137,6 @@ const test = async () => {
   })
 
   clientCtx.close()
-  // clientCtx2.close()
   await ctx.close()
 }
 
