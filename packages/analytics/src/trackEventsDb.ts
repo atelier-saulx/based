@@ -56,6 +56,7 @@ export const trackEventDb = (
     if (!clientActiveCurrentsEvent) {
       clientActiveCurrentsEvent = clientActiveCurrents[eventId] = { geos: {} }
     }
+
     clientActiveCurrentsEvent.geos[geo] = active
     currentEventsGeo.active = 0
     for (const client in ctx.currentsActivePerClient) {

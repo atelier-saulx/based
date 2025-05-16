@@ -32,7 +32,7 @@ const test = async () => {
   const ctx = await startAnalyticsDb({
     path,
     config: {
-      snapShotInterval: 10e3,
+      snapShotInterval: 10,
     },
   })
 
@@ -85,13 +85,14 @@ const test = async () => {
     receivePayload(ctx, 1, dbPayload)
   }, 10)
 
-  const clientCtx2 = createClientCtx(async (dbPayload) => {
-    receivePayload(ctx, 2, dbPayload)
-  }, 10)
+  // const clientCtx2 = createClientCtx(async (dbPayload) => {
+  //   receivePayload(ctx, 2, dbPayload)
+  // }, 10)
 
   trackActive(clientCtx, {
     event: 'homepage',
     geo: 'NL',
+    active: 100,
   })
 
   await wait(100)
@@ -104,7 +105,7 @@ const test = async () => {
 
   await wait(100)
 
-  const r2 = await querySnapshots(ctx, {
+  let r2 = await querySnapshots(ctx, {
     events: ['homepage'],
   })
 
@@ -114,8 +115,29 @@ const test = async () => {
     console.log('x', info)
   })
 
+  await wait(100)
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'NL',
+    active: 200,
+  })
+  await wait(100)
+
+  r2 = await querySnapshots(ctx, {
+    events: ['homepage'],
+    current: true,
+  })
+
+  console.dir(r2['homepage'].reverse(), { depth: 10 })
+
+  ctx.db.server.on('info', (info) => {
+    console.log('x', info)
+  })
+
   clientCtx.close()
-  clientCtx2.close()
+  // clientCtx2.close()
   await ctx.close()
 }
 

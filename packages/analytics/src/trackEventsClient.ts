@@ -94,7 +94,7 @@ export const trackEvent = (ctx: ClientCtx, p: TrackPayload) => {
 
 export const trackActive = (
   ctx: ClientCtx,
-  p: { geo: string; event: string },
+  p: { geo: string; event: string; active: number },
 ) => {
   const ev = p.event
   ctx.activeEvents[ev] ??= { geos: {} }
@@ -102,8 +102,5 @@ export const trackActive = (
     active: 0,
     prevActive: -1,
   })
-  target.active += 1
-  return () => {
-    target.active--
-  }
+  target.active = p.active
 }

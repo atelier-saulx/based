@@ -25,6 +25,7 @@ export const querySnapshots = async (
     end?: number | string
     events: string[]
     resolution?: number
+    current?: boolean
   },
 ) => {
   // optional
@@ -92,31 +93,33 @@ export const querySnapshots = async (
     }
   }
 
-  // fix these 2 in a bit...
-  if (mappedEvents.size) {
-    snapshotsQuery.filter('event', '=', Array.from(mappedEvents))
-    const snapshots = await snapshotsQuery.get()
-    for (const item of snapshots) {
-      item.data = readGroupData(item.data)
-      item.event = ctx.eventTypesInverse[item.event]
-      if (!results[item.event]) {
-        results[item.event] = []
+  if (!p.current) {
+    // fix these 2 in a bit...
+    if (mappedEvents.size) {
+      snapshotsQuery.filter('event', '=', Array.from(mappedEvents))
+      const snapshots = await snapshotsQuery.get()
+      for (const item of snapshots) {
+        item.data = readGroupData(item.data)
+        item.event = ctx.eventTypesInverse[item.event]
+        if (!results[item.event]) {
+          results[item.event] = []
+        }
+        results[item.event].push(item)
       }
-      results[item.event].push(item)
     }
-  }
 
-  if (individualSnapshotIds.length) {
-    const snapshots = await ctx.db
-      .query('snapshot', individualSnapshotIds)
-      .get()
-    for (const item of snapshots) {
-      item.data = readGroupData(item.data)
-      item.event = ctx.eventTypesInverse[item.event]
-      if (!results[item.event]) {
-        results[item.event] = []
+    if (individualSnapshotIds.length) {
+      const snapshots = await ctx.db
+        .query('snapshot', individualSnapshotIds)
+        .get()
+      for (const item of snapshots) {
+        item.data = readGroupData(item.data)
+        item.event = ctx.eventTypesInverse[item.event]
+        if (!results[item.event]) {
+          results[item.event] = []
+        }
+        results[item.event].push(item)
       }
-      results[item.event].push(item)
     }
   }
 
