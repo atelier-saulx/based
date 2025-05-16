@@ -23,13 +23,19 @@ export const unregisterClient = (ctx: AnalyticsDbCtx, clientId: number) => {
 }
 
 export const startAnalyticsDb = async (
-  opts: BasedDbOpts & { config?: AnalyticsDbCtx['config']; clean?: boolean },
+  opts: BasedDbOpts & {
+    config?: AnalyticsDbCtx['config']
+    clean?: boolean
+    db?: BasedDb
+  },
 ) => {
-  const db = new BasedDb(opts)
-  if (opts.clean) {
-    await db.start({ clean: opts.clean })
-  } else {
-    await db.start()
+  const db = opts.db ?? new BasedDb(opts)
+  if (!opts.db) {
+    if (opts.clean) {
+      await db.start({ clean: opts.clean })
+    } else {
+      await db.start()
+    }
   }
   await db.setSchema({
     types: {
