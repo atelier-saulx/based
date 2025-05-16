@@ -94,6 +94,12 @@ const test = async () => {
     active: 100,
   })
 
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 10,
+  })
+
   await wait(100)
 
   // const r = await querySnapshots(ctx, {

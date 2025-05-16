@@ -3,10 +3,14 @@ import { AnalyticsDbCtx } from './types.js'
 import { startSnapShots } from './snapShots.js'
 
 export const startAnalyticsDb = async (
-  opts: BasedDbOpts & { config?: AnalyticsDbCtx['config'] },
+  opts: BasedDbOpts & { config?: AnalyticsDbCtx['config']; clean?: boolean },
 ) => {
   const db = new BasedDb(opts)
-  await db.start()
+  if (opts.clean) {
+    await db.start({ clean: opts.clean })
+  } else {
+    await db.start()
+  }
   await db.setSchema({
     types: {
       event: {
