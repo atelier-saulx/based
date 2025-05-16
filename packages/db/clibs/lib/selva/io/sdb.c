@@ -446,6 +446,8 @@ void sdb_init(struct selva_io *io)
 {
     sdb_hash_init(io);
 
+    io->sdb_version = SDB_VERSION; /* this might change later in sdb_read_header(). */
+
     /*
      * Initialize compressor if requested or if reading because we don't know
      * whether the SDB will be compressed.
@@ -516,7 +518,8 @@ int sdb_write_header(struct selva_io *io)
     io->sdb_write(magic_start, sizeof(char), sizeof(magic_start), io);
     io->sdb_write(created_with, sizeof(char), SELVA_DB_VERSION_SIZE, io);
     io->sdb_write(selva_db_version_info.running, sizeof(char), SELVA_DB_VERSION_SIZE, io); /* updated_with */
-    io->sdb_write(&(uint32_t){SDB_VERSION}, sizeof(uint32_t), 1, io);
+    io->sdb_write(&io->sdb_version, sizeof(io->sdb_version), 1, io);
+    static_assert(sizeof(io->sdb_version) == sizeof(uint32_t));
     io->sdb_write(&save_flags, sizeof(uint32_t), 1, io);
     err = io->sdb_error(io);
 
@@ -530,7 +533,6 @@ int sdb_write_header(struct selva_io *io)
 int sdb_read_header(struct selva_io *io)
 {
     char magic[sizeof(magic_start)];
-    uint32_t version;
     uint32_t flags;
     size_t res;
 
@@ -541,14 +543,14 @@ int sdb_read_header(struct selva_io *io)
 
     res = io->sdb_read(selva_db_version_info.created_with, SELVA_DB_VERSION_SIZE, 1, io);
     res += io->sdb_read(selva_db_version_info.updated_with, SELVA_DB_VERSION_SIZE, 1, io);
-    res += io->sdb_read(&version, sizeof(version), 1, io);
+    res += io->sdb_read(&io->sdb_version, sizeof(io->sdb_version), 1, io);
     res += io->sdb_read(&flags, sizeof(flags), 1, io);
     if (res != 4) {
         return SELVA_EINVAL;
     }
 
-    version = letoh(version);
-    if (version != SDB_VERSION) {
+    io->sdb_version = letoh(io->sdb_version);
+    if (io->sdb_version > SDB_VERSION) {
         return SELVA_ENOTSUP;
     }
 
