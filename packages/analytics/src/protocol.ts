@@ -36,7 +36,7 @@ export const toDbPayload = (
       size += 2 + 2 + 4 + 1 + 1 + p.event.byteLength
       if (ev.uniq) {
         p.uniq = ev.uniq
-        size + 4 + p.uniq.size * 8
+        size += 4 + p.uniq.size * 8
       }
       payload.push(p)
     }
@@ -129,9 +129,12 @@ export const readPayload = (buf: Uint8Array) => {
       const amount = readUint32(buf, i)
       i += 4
       for (let j = 0; j < amount; j++) {
-        uniq.push(new Uint8Array(buf.subarray(i, i + 8)))
+        // @ts-ignore TEMP FIX
+        uniq.push(DECODER.decode(new Uint8Array(buf.subarray(i, i + 8))))
         i += 8
       }
+      // temp rly dirty
+      // console.log('hasUniq', amount, uniq)
     }
     p.push({
       geo,

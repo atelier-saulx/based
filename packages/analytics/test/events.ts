@@ -32,15 +32,15 @@ const test = async () => {
   const ctx = await startAnalyticsDb({
     path,
     config: {
-      snapShotInterval: 10,
+      snapShotInterval: 1000,
     },
   })
 
-  trackEventDb(ctx, 0, {
-    event: 'view:homepage',
-    count: 1,
-    geo: 'NL',
-  })
+  // trackEventDb(ctx, 0, {
+  //   event: 'view:homepage',
+  //   count: 1,
+  //   geo: 'NL',
+  // })
 
   await wait(100)
 
@@ -59,26 +59,38 @@ const test = async () => {
     // }
     // console.log({ uniq })
     const jsTime = performance.now()
-    for (let i = 0; i < 1; i++) {
-      trackEvent(clientCtx, { event: 'derp', uniq: 'snurfelpants' })
+    for (let i = 0; i < 1e5; i++) {
+      trackEvent(clientCtx, { event: 'derp', uniq: 'snurfelpants' + i })
     }
 
     console.log('db time', await ctx.db.drain())
     console.log('totalTime', performance.now() - jsTime, 'ms')
   }
 
-  await trackMany()
+  // await trackMany()
 
   await wait(100)
 
-  for (let i = 0; i < 1; i++) {
-    await trackMany()
-    await wait(100)
-  }
+  // for (let i = 0; i < 1; i++) {
+  //   await trackMany()
+  //   await wait(100)
+  // }
 
   trackActive(clientCtx, {
     event: 'homepage',
-    geo: 'NL',
+    geo: 'DE',
+    active: 100,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'EN',
+    active: 100,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
     active: 100,
   })
 
@@ -115,13 +127,13 @@ const test = async () => {
 
   // console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  // console.dir(
-  //   await querySnapshots(ctx, {
-  //     events: ['derp'],
-  //     // current: true,
-  //   }),
-  //   { depth: null },
-  // )
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp', 'homepage'],
+      // current: true,
+    }),
+    { depth: null },
+  )
 
   clientCtx.close()
   await ctx.close()
