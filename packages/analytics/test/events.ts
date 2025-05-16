@@ -44,6 +44,10 @@ const test = async () => {
 
   await wait(100)
 
+  const clientCtx = createClientCtx(async (dbPayload) => {
+    receivePayload(ctx, 1, dbPayload)
+  }, 10)
+
   const trackMany = async () => {
     const uniq: any = []
     // const randLen = 25 //~~(Math.random() * 1000)
@@ -55,17 +59,8 @@ const test = async () => {
     // }
     // console.log({ uniq })
     const jsTime = performance.now()
-    for (let i = 0; i < 1e6; i++) {
-      trackEventDb(ctx, 0, {
-        event: 'view:homepage' + (i % 100),
-        // event: 'view:homepage' + (i % 20),
-        count: 1,
-        // uniq: Array.from({ length: i % 50 }).map(() =>
-        //   xxHash64(ENCODER.encode((~~(Math.random() * 10000000)).toString(16))),
-        // ),
-        // uniq: uniq.slice(0, ~~(Math.random() * uniq.length)),
-        geo: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
-      })
+    for (let i = 0; i < 1; i++) {
+      trackEvent(clientCtx, { event: 'derp', uniq: 'snurfelpants' })
     }
 
     console.log('db time', await ctx.db.drain())
@@ -80,14 +75,6 @@ const test = async () => {
     await trackMany()
     await wait(100)
   }
-
-  const clientCtx = createClientCtx(async (dbPayload) => {
-    receivePayload(ctx, 1, dbPayload)
-  }, 10)
-
-  // const clientCtx2 = createClientCtx(async (dbPayload) => {
-  //   receivePayload(ctx, 2, dbPayload)
-  // }, 10)
 
   trackActive(clientCtx, {
     event: 'homepage',
@@ -111,10 +98,6 @@ const test = async () => {
 
   console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  ctx.db.server.on('info', (info) => {
-    console.log('x', info)
-  })
-
   await wait(100)
   await wait(100)
 
@@ -132,9 +115,13 @@ const test = async () => {
 
   console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  ctx.db.server.on('info', (info) => {
-    console.log('x', info)
-  })
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp'],
+      // current: true,
+    }),
+    { depth: null },
+  )
 
   clientCtx.close()
   await ctx.close()

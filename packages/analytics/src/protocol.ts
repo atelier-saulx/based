@@ -12,7 +12,7 @@ type TempPayload = {
   event: Uint8Array
   geo: string
   active?: number
-  uniq?: string[]
+  uniq?: Set<number | string>
   count?: number
 }
 
@@ -33,15 +33,8 @@ export const toDbPayload = (
       // 2 geo , 2 len , 1 hasActive,  4 count, 1 hasUniq (4 len 8bytes tings),
       size += 2 + 2 + 4 + 1 + 1 + p.event.byteLength
       if (ev.uniq) {
-        p.uniq = []
-        for (const uniq of ev.uniq) {
-          if (typeof uniq === 'number') {
-            p.uniq.push(String(uniq))
-          } else {
-            p.uniq.push(uniq)
-          }
-        }
-        size + 4 + p.uniq.length * 8
+        p.uniq = ev.uniq
+        size + 4 + p.uniq.size * 8
       }
       payload.push(p)
     }
@@ -87,10 +80,14 @@ export const toDbPayload = (
     if (p.uniq) {
       buf[i] = 1
       i += 1
-      writeUint32(buf, p.uniq.length, i)
+      writeUint32(buf, p.uniq.size, i)
       i += 4
       for (const uniq of p.uniq) {
-        xxHash64(ENCODER.encode(uniq), buf, i)
+        if (typeof uniq !== 'string') {
+          xxHash64(ENCODER.encode(String(uniq)), buf, i)
+        } else {
+          xxHash64(ENCODER.encode(uniq), buf, i)
+        }
         i += 8
       }
     } else {
@@ -134,6 +131,7 @@ export const readPayload = (buf: Uint8Array) => {
         i += 8
       }
     }
+    console.log('UNIQ', uniq, count, active, geo)
     p.push({
       geo,
       event,

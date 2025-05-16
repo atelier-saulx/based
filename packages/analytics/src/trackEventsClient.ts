@@ -1,5 +1,5 @@
 import { toDbPayload } from './protocol.js'
-import { ClientCtx, TrackPayload } from './types.js'
+import type { ClientCtx, TrackPayload } from './types.js'
 
 export const createClientCtx = (
   flush: (dbPayload: ReturnType<typeof toDbPayload>) => Promise<void>,
@@ -49,6 +49,12 @@ export const trackEvent = (ctx: ClientCtx, p: TrackPayload) => {
   const ev = p.event
   ctx.events[ev] ??= { geos: {} }
   const target = (ctx.events[ev].geos[p.geo] ??= { count: 0 })
+  if (p.uniq) {
+    if (!target.uniq) {
+      target.uniq = new Set()
+    }
+    target.uniq.add(p.uniq)
+  }
   target.count += 1
 }
 

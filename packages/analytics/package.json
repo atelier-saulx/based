@@ -9,6 +9,9 @@
     "!dist/**/*.map"
   ],
   "main": "./dist/index.js",
+  "exports": {
+    "client": "./dist/trackEventsClient.js"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
