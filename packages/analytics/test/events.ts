@@ -133,15 +133,6 @@ const test = async () => {
 
   console.log('after setting to zero set to 0')
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp', 'homepage'],
-      // current: true,
-      range: { start: 0, end: 100 },
-    }),
-    { depth: null },
-  )
-
   await wait(100)
 
   console.log('after setting to zero set to 1')
@@ -161,14 +152,47 @@ const test = async () => {
 
   await wait(100)
 
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 0,
+    })
+  }
+
+  await wait(100)
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 0,
+    })
+  }
+
+  await wait(100)
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 2,
+    })
+  }
+
+  await wait(100)
+
   console.dir(
     await querySnapshots(ctx, {
       events: ['derp', 'homepage'],
-      // current: true,
+      current: true,
+      // noGeo: true,
       range: { start: 0, end: 100 },
     }),
     { depth: null },
   )
+
+  // c
 
   // const r = await querySnapshots(ctx, {
   //   events: ['view:homepage'],
