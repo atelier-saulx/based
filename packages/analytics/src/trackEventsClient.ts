@@ -1,5 +1,8 @@
 import { toDbPayload } from './protocol.js'
 import type { ClientCtx, TrackPayload } from './types.js'
+import { allCountryCodes } from './allCountryCodes.js'
+
+export { allCountryCodes }
 
 export const createClientCtx = (
   flush: (dbPayload: ReturnType<typeof toDbPayload>) => Promise<void>,
@@ -18,6 +21,7 @@ export const createClientCtx = (
     flushTime,
   }
   const flushTimer = async () => {
+    // is it preflush?
     preflush?.()
     const events = clientCtx.events
     clientCtx.events = {}
