@@ -82,7 +82,7 @@ export const trackActive = (
   // if target is the same
   const target = (ctx.activeEvents[ev].geos[p.geo] ??= {
     active: -1,
-    prevActive: -1,
+    // prevActive: -1,
   })
   // if (p.active === target.active || p.active < 0) {
   //   // console.log('is same ignore')

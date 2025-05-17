@@ -85,7 +85,7 @@ export type ClientCtx = {
       geos: {
         [geo: string]: {
           active: number
-          prevActive: number
+          // prevActive: number
         }
       }
     }
