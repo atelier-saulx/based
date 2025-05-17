@@ -44,10 +44,7 @@ export const toDbPayload = (
   for (const event in active) {
     for (const geo in active[event].geos) {
       const ev = active[event].geos[geo]
-      if (ev.prevActive === ev.active) {
-        continue
-      }
-      ev.prevActive = ev.active
+
       const p: TempPayload = {
         event: ENCODER.encode(event),
         geo,
@@ -133,13 +130,6 @@ export const readPayload = (buf: Uint8Array) => {
         i += 8
       }
     }
-    console.log('EVENT', {
-      geo,
-      event,
-      active,
-      count,
-      uniq,
-    })
     p.push({
       geo,
       event,

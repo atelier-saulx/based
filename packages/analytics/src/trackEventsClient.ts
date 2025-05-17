@@ -30,9 +30,12 @@ export const createClientCtx = (
       let cnt = 0
       for (const geo in a.geos) {
         cnt++
-        if (a.geos[geo].active === 0) {
+        if (a.geos[geo].active === a.geos[geo].prevActive) {
+          console.log('delete geo', geo)
           cnt--
           delete a.geos[geo]
+        } else {
+          a.geos[geo].prevActive = a.geos[geo].active
         }
       }
       if (cnt === 0) {
@@ -72,9 +75,14 @@ export const trackActive = (
   }
   const ev = p.event
   ctx.activeEvents[ev] ??= { geos: {} }
+  // if target is the same
   const target = (ctx.activeEvents[ev].geos[p.geo] ??= {
-    active: 0,
+    active: -1,
     prevActive: -1,
   })
+  if (p.active === target.active || p.active < 0) {
+    // console.log('is same ignore')
+    return
+  }
   target.active = p.active
 }

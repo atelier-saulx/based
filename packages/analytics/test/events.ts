@@ -1,4 +1,4 @@
-import { startAnalyticsDb } from '../src/index.js'
+import { allCountryCodes, startAnalyticsDb } from '../src/index.js'
 import { fileURLToPath } from 'node:url'
 import { rm } from 'node:fs/promises'
 import { join, dirname, resolve } from 'node:path'
@@ -111,6 +111,52 @@ const test = async () => {
     event: 'homepage',
     geo: 'GG',
     active: 666,
+  })
+
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 666,
+  })
+
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 0,
+  })
+
+  await wait(100)
+
+  console.log('after setting to zero set to 0')
+
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp', 'homepage'],
+      // current: true,
+      range: { start: 0, end: 100 },
+    }),
+    { depth: null },
+  )
+
+  await wait(100)
+
+  console.log('after setting to zero set to 1')
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 1,
+    })
+  }
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 1,
   })
 
   await wait(100)
