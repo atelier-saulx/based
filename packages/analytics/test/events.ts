@@ -168,9 +168,10 @@ const test = async () => {
       geo: allCountryCodes[~~(Math.random() * 5)],
       active: 0,
     })
+    await wait(1)
   }
 
-  await wait(100)
+  // await wait(100)
 
   for (let i = 0; i < 1000; i++) {
     trackActive(clientCtx, {

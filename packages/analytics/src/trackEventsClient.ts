@@ -21,27 +21,31 @@ export const createClientCtx = (
     preflush?.()
     const events = clientCtx.events
     clientCtx.events = {}
-    const buf = toDbPayload(events, clientCtx.activeEvents)
+
+    const active = clientCtx.activeEvents
+    clientCtx.activeEvents = {}
+
+    const buf = toDbPayload(events, active)
     if (buf.byteLength) {
       await flush(buf)
     }
-    for (const active in clientCtx.activeEvents) {
-      const a = clientCtx.activeEvents[active]
-      let cnt = 0
-      for (const geo in a.geos) {
-        cnt++
-        if (a.geos[geo].active === a.geos[geo].prevActive) {
-          console.log('delete geo', geo)
-          cnt--
-          delete a.geos[geo]
-        } else {
-          a.geos[geo].prevActive = a.geos[geo].active
-        }
-      }
-      if (cnt === 0) {
-        delete clientCtx.activeEvents[active]
-      }
-    }
+    // for (const active in clientCtx.activeEvents) {
+    //   const a = clientCtx.activeEvents[active]
+    //   let cnt = 0
+    //   for (const geo in a.geos) {
+    //     cnt++
+    //     if (a.geos[geo].active === a.geos[geo].prevActive) {
+    //       console.log('delete geo', geo)
+    //       cnt--
+    //       delete a.geos[geo]
+    //     } else {
+    //       a.geos[geo].prevActive = a.geos[geo].active
+    //     }
+    //   }
+    //   if (cnt === 0) {
+    //     delete clientCtx.activeEvents[active]
+    //   }
+    // }
     if (!killed) {
       timer = setTimeout(flushTimer, clientCtx.flushTime)
     }
@@ -80,9 +84,9 @@ export const trackActive = (
     active: -1,
     prevActive: -1,
   })
-  if (p.active === target.active || p.active < 0) {
-    // console.log('is same ignore')
-    return
-  }
+  // if (p.active === target.active || p.active < 0) {
+  //   // console.log('is same ignore')
+  //   return
+  // }
   target.active = p.active
 }
