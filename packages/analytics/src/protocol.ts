@@ -133,6 +133,13 @@ export const readPayload = (buf: Uint8Array) => {
         i += 8
       }
     }
+    console.log('EVENT', {
+      geo,
+      event,
+      active,
+      count,
+      uniq,
+    })
     p.push({
       geo,
       event,

@@ -38,7 +38,7 @@ const test = async () => {
       receivePayload(ctx, 1, dbPayload)
     },
     undefined,
-    10,
+    100,
   )
 
   const trackMany = async () => {
@@ -60,7 +60,7 @@ const test = async () => {
     console.log('totalTime', performance.now() - jsTime, 'ms')
   }
 
-  await trackMany()
+  // await trackMany()
 
   await wait(100)
 
@@ -90,7 +90,19 @@ const test = async () => {
   trackActive(clientCtx, {
     event: 'homepage',
     geo: 'GG',
-    active: 10,
+    active: 0,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 5,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 3,
   })
 
   await wait(100)
@@ -98,10 +110,19 @@ const test = async () => {
   trackActive(clientCtx, {
     event: 'homepage',
     geo: 'GG',
-    active: 0,
+    active: 666,
   })
 
   await wait(100)
+
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp', 'homepage'],
+      // current: true,
+      range: { start: 0, end: 100 },
+    }),
+    { depth: null },
+  )
 
   // const r = await querySnapshots(ctx, {
   //   events: ['view:homepage'],
@@ -134,27 +155,27 @@ const test = async () => {
 
   // console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp', 'homepage'],
-      // current: true,
-    }),
-    { depth: null },
-  )
+  // console.dir(
+  //   await querySnapshots(ctx, {
+  //     events: ['derp', 'homepage'],
+  //     // current: true,
+  //   }),
+  //   { depth: null },
+  // )
 
   clientCtx.close()
   unregisterClient(ctx, 1)
 
   await wait(100)
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp', 'homepage'],
-      // current: true,
-      range: { start: 0, end: 100 },
-    }),
-    { depth: null },
-  )
+  // console.dir(
+  //   await querySnapshots(ctx, {
+  //     events: ['derp', 'homepage'],
+  //     // current: true,
+  //     range: { start: 0, end: 100 },
+  //   }),
+  //   { depth: null },
+  // )
 
   await ctx.close()
 }
