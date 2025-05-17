@@ -33,14 +33,14 @@ fn cb(_: selva.node_id_t, vec: ?*anyopaque, arg: ?*anyopaque) callconv(.c) void 
 
 fn native_foreach(te: Type, fs: FieldSchema, nodeId: selva.node_id_t, len: u32, res: *f32) void {
     const cv = selva.colvec_get(te, fs);
-    const block_capacity: usize = selva.selva_get_block_capacity(te);
+    const block_capacity = selva.selva_get_block_capacity(te);
     const vec_size = cv.*.vec_size;
-    const end: usize = nodeId + len;
-    var i: usize = 0;
+    const end: u32 = nodeId + len;
+    var i: u32 = 0;
 
     while (i < end) {
         i += 1;
-        const block_i = ((i - 1) - ((i - 1) % block_capacity)) / block_capacity;
+        const block_i = selva.selva_node_id2block_i3(block_capacity, i);
         const off: usize = ((i - 1) % block_capacity) * vec_size;
         const slab: [*c]u8 = @ptrCast(cv.*.v[block_i]);
 

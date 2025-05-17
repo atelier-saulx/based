@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include <assert.h>
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -176,12 +175,6 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
     struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
     __builtin_prefetch(te);
     return te;
-}
-
-static inline block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
-{
-    assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
 }
 
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)

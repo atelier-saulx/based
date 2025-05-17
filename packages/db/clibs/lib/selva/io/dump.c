@@ -476,8 +476,8 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     if (io.sdb_version >= 2) {
         write_dump_magic(&io, DUMP_MAGIC_COLVEC);
 
-        block_id_t block_start = node_id2block_i(te->blocks, start);
-        block_id_t block_end = node_id2block_i(te->blocks, end);
+        block_id_t block_start = selva_node_id2block_i2(te, start);
+        block_id_t block_end = selva_node_id2block_i2(te, end);
         assert(block_start == block_end);
         block_id_t block_i = block_start;
 
