@@ -473,7 +473,6 @@ export const readAllFields = (
   return i - offset
 }
 
-let cnt = 0
 export const resultToObject = (
   q: QueryDef,
   result: Uint8Array,

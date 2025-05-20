@@ -1,6 +1,5 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { BasedQueryResponse } from '../BasedIterable.js'
-import { includeField } from '../query.js'
 import { registerQuery } from '../registerQuery.js'
 import { OnData, OnError, OnClose } from './types.js'
 

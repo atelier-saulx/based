@@ -1,12 +1,9 @@
 import {
   QueryDef,
-  createQueryDef,
-  QueryDefType,
   QueryTarget,
   filter,
   Operator,
   sort,
-  defToBuffer,
   filterOr,
   QueryByAliasObj,
   isAlias,
@@ -24,7 +21,7 @@ import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { subscribe, OnData, OnError, OnClose } from './subscription/index.js'
+import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
@@ -32,7 +29,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { concatUint8Arr, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
