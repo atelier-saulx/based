@@ -47,7 +47,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const propType: types.Prop = if (field == types.MAIN_PROP) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
-    const fieldSchema = try db.getFieldSchema(field, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, field);
     const resultsSize = read(u16, aggInput, 6);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);

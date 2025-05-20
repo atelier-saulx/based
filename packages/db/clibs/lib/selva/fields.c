@@ -43,7 +43,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
-static_assert(sizeof(bool) == sizeof(int8_t));
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 {
@@ -742,33 +741,33 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
  */
 static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
-    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
-    const enum SelvaFieldType type = fs->type;
+    struct SelvaFieldInfo *nfo;
 
-    switch (type) {
+    /*
+     * Note: We mostly don't verify len in this function. We merely expect that
+     * the caller is passing it correctly.
+     */
+    switch (fs->type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
-        /*
-         * Note: We don't verify len in this function. We merely expect that
-         * the caller is passing it correctly.
-         */
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        nfo = ensure_field(fields, fs);
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
+        nfo = ensure_field(fields, fs);
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
+        nfo = ensure_field(fields, fs);
         return selva_fields_set_text(node, fs, value, len);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        nfo = ensure_field(fields, fs);
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        assert(len <= fs->smb.len);
-        memcpy(nfo2p(fields, nfo), value, len);
-        memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
-        break;
+        return selva_fields_set_micro_buffer(fields, fs, value, len);
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
@@ -999,6 +998,30 @@ int selva_fields_get_text(
     }
 
     return SELVA_ENOENT;
+}
+
+int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = ensure_field(fields, fs);
+    if (len > fs->smb.len) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(nfo2p(fields, nfo), value, len);
+    memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
+
+    return 0;
+}
+
+int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    return selva_fields_set_micro_buffer(&node->fields, fs, value, len);
 }
 
 /**
@@ -1652,7 +1675,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     return refs;
 }
 
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
@@ -1670,7 +1693,7 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, 
     return weak_ref;
 }
 
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;
@@ -1951,10 +1974,12 @@ static void destroy_fields(struct SelvaFields *fields)
         db_panic("Can't destroy shared fields");
     }
 
+#if 0
     /*
      * Clear fields map.
      */
     memset(fields->fields_map, 0, fields->nr_fields * sizeof(fields->fields_map[0]));
+#endif
 
     fields->nr_fields = 0;
     fields->data_len = 0;

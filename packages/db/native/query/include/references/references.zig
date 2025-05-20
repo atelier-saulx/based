@@ -61,7 +61,7 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ctx.db, ref.?.reference.?, refField)) |r| {
+        if (db.getEdgeReferences(ref.?.reference.?, refField)) |r| {
             if (ref.?.edgeConstaint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
                 // Is a edge ref cant filter on an edge field!
@@ -78,7 +78,7 @@ pub inline fn getRefsFields(
             return 11;
         }
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             // default empty size - means a bug!
             return 10;
         };

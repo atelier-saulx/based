@@ -42,7 +42,7 @@ pub fn getSingleRefFields(
     const resultIndex: usize = ctx.results.items.len - 1;
 
     // add error handler...
-    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch null else db.getFieldSchema(refField, originalType) catch null;
+    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch null else db.getFieldSchema(originalType, refField) catch null;
 
     if (fieldSchema == null) {
         // this just means broken..
@@ -55,7 +55,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ctx.db, ref.?.reference.?, refField);
+        var selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }

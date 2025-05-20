@@ -59,7 +59,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
             i += fieldAggsSize;
             return;
         }
-        const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+        const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
             std.log.err("Cannot get fieldschema {any} \n", .{field});
             return;
         };

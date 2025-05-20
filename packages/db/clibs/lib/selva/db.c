@@ -77,12 +77,9 @@ int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
 }
 
 __attribute__((nonnull))
-static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
+static int SelvaTypeEntry_cmp(const struct SelvaTypeEntry *a, const struct SelvaTypeEntry *b)
 {
-    uint16_t a_type = 0xFFFF & (uintptr_t)(*a_raw);
-    uint16_t b_type = 0xFFFF & (uintptr_t)(*b_raw);
-
-    return (int)a_type - (int)b_type;
+    return (int)a->type - (int)b->type;
 }
 
 __attribute__((nonnull))
@@ -111,6 +108,7 @@ static void selva_destroy_all_cursors(struct SelvaTypeEntry *type);
 RB_PROTOTYPE_STATIC(SelvaTypeCursorById, SelvaTypeCursor, _entry_by_id, SelvaTypeCursor_cmp)
 RB_PROTOTYPE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id, SelvaTypeCursors_cmp)
 
+RB_GENERATE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_GENERATE_STATIC(SelvaTypeCursorById, SelvaTypeCursor, _entry_by_id, SelvaTypeCursor_cmp)
 RB_GENERATE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id, SelvaTypeCursors_cmp)
@@ -188,8 +186,18 @@ void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, vo
 struct SelvaDb *selva_db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
+    const size_t te_size = sizeof(struct SelvaTypeEntry);
+    uint32_t slab_size = (1'048'576 / te_size) * te_size;
 
-    SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
+    slab_size--;
+    slab_size |= slab_size >> 1;
+    slab_size |= slab_size >> 2;
+    slab_size |= slab_size >> 4;
+    slab_size |= slab_size >> 8;
+    slab_size |= slab_size >> 16;
+    slab_size++;
+
+    mempool_init(&db->types.pool, slab_size, te_size, alignof(struct SelvaTypeEntry));
     ref_save_map_init(&db->schema.ref_save_map);
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
@@ -231,7 +239,7 @@ static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
     /*
      * Remove this type from the type list.
      */
-    (void)SVector_Remove(&db->type_list, SelvaTypeEntry2vecptr(te));
+    RB_REMOVE(SelvaTypeEntryIndex, &db->types.index, te);
 
     mempool_destroy(&te->nodepool);
     selva_free(te->blocks);
@@ -241,22 +249,18 @@ static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 #endif
     selva_free(te->schema_buf);
     ida_destroy(te->cursors.ida);
-    selva_free(te);
+    mempool_return(&db->types.pool, te);
+    db->types.count--;
 }
 
 static void del_all_types(struct SelvaDb *db)
 {
-    SVECTOR_AUTOFREE(types_copy);
-    struct SVectorIterator it;
-    struct SelvaTypeEntry *type;
+    struct SelvaTypeEntry *te;
+    struct SelvaTypeEntry *tmp;
 
-    SVector_Clone(&types_copy, &db->type_list, nullptr);
-    SVector_ForeachBegin(&it, &types_copy);
-    while ((type = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-        destroy_type(db, type);
+    RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
+        destroy_type(db, te);
     }
-
-    SVector_Destroy(&db->type_list);
 }
 
 void selva_db_destroy(struct SelvaDb *db)
@@ -287,9 +291,12 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
 
+#if 0
     for (size_t i = 0; i < nr_blocks; i++) {
         RB_INIT(&blocks->blocks[i].nodes);
     }
+#endif
+    memset(&blocks->blocks, 0, nr_blocks * sizeof(struct SelvaTypeBlock));
 
     return blocks;
 }
@@ -323,7 +330,6 @@ static void clone_schema_buf(struct SelvaTypeEntry *te, const uint8_t *schema_bu
 int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
 {
     struct schema_info nfo;
-    const size_t te_fs_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
     int err;
 
     if (eq_type_exists(db, type, schema_buf, schema_len)) {
@@ -339,16 +345,12 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
         return SELVA_EINVAL;
     }
 
-    /* RFE the actual limit is 249 fields limited by field_t and further the special fields. */
-    if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_fs_max_size) {
+    if (nfo.nr_fields > 249) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
-    struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
-    size_t zero_size = sizeof(*te) - te_fs_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema);
-    assert(zero_size < sizeof(*te));
-    memset(te, 0, zero_size);
+    struct SelvaTypeEntry *te = mempool_get(&db->types.pool);
 
 #if 0
     fprintf(stderr, "schema_buf: [ ");
@@ -358,6 +360,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     fprintf(stderr, "]\n");
 #endif
 
+    memset(te, 0, sizeof(*te));
     te->type = type;
     err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
@@ -380,26 +383,26 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     RB_INIT(&te->cursors.by_node_id);
     te->cursors.nr_cursors = 0;
 
-    void *prev = SVector_Insert(&db->type_list, SelvaTypeEntry2vecptr(te));
-    if (prev) {
+    if (RB_INSERT(SelvaTypeEntryIndex, &db->types.index, te)) {
         db_panic("Schema update not supported");
     }
+    db->types.count++;
     return 0;
 }
 
 struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type)
 {
-    void *find = (void *)(uintptr_t)type;
+    struct SelvaTypeEntryFind find = { type };
 
-    return vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
+    return RB_FIND(SelvaTypeEntryIndex, (typeof_unqual(db->types.index) *)&db->types.index, (struct SelvaTypeEntry *)&find);
 }
 
 struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node)
 {
-    void *find = (void *)(uintptr_t)node->type;
+    struct SelvaTypeEntryFind find = { node->type };
     struct SelvaTypeEntry *te;
 
-    te = vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
+    te = RB_FIND(SelvaTypeEntryIndex, (typeof_unqual(db->types.index) *)&db->types.index, (struct SelvaTypeEntry *)&find);
     assert(te);
     return te;
 }
@@ -440,7 +443,7 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
          * Cache the result.
          * RFE This is not very optimal and nice way to do this but currently
          * it's not very easy to prepare these links in schemabuf_parse_ns()
-         * because the type lookup svector is not built there and it's
+         * because the type lookup index is not built there and it's
          * likely incomplete until all types have been created.
          * The flag can be safely set here even if `schema` is nullptr to
          * speed up future lookups.
@@ -527,7 +530,6 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    memset(&node->trx_label, 0, sizeof(node->trx_label));
     selva_fields_init(&type->ns.fields_schema, &node->fields);
 
     type->nr_nodes++;

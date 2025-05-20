@@ -47,13 +47,17 @@ bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id)
     const size_t old_len = *len;
     const size_t new_len = old_len + 1;
     node_id_t *arr = *set_p;
+    const size_t new_size = new_len * sizeof(arr[0]);
     ssize_t l = 0;
 
     if (old_len == 0) {
-        *set_p = arr = selva_malloc(sizeof(arr[0]));
+        if (!arr) {
+            *set_p = arr = selva_malloc(new_size);
+        } else if (selva_sallocx(arr, 0) < new_size) {
+            *set_p = arr = selva_realloc(arr, new_size);
+        }
     } else {
         ssize_t r = (ssize_t)old_len - 1;
-        const size_t new_size = new_len * sizeof(arr[0]);
 
         while (l <= r) {
             ssize_t m = (l + r) / 2;

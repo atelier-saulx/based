@@ -119,7 +119,7 @@ map[TIMESTAMP] = (ctx, val, def) => {
   ctx.len += 8
   // Todo use new utils and store as uint64
   view.setFloat64(0, parsedValue, true)
-  const ts = view.getFloat64(0)
+  // const ts = view.getFloat64(0)
 }
 
 map[UINT32] = (ctx, val, def) => {

@@ -214,7 +214,7 @@ pub fn createSortIndex(
 
     const typeEntry = try db.getType(dbCtx, typeId);
 
-    const fieldSchema = try db.getFieldSchema(field, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, field);
     var node = db.getFirstNode(typeEntry);
     var first = true;
 

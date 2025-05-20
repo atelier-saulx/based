@@ -309,6 +309,12 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
+int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
+SELVA_EXPORT
+int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
+SELVA_EXPORT
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
@@ -317,11 +323,11 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, stru
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *db, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *db, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
     __attribute__((nonnull));
 
 SELVA_EXPORT

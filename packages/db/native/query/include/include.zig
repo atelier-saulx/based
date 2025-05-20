@@ -130,7 +130,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
             }
         } else {
-            fieldSchema = try db.getFieldSchema(field, typeEntry);
+            fieldSchema = try db.getFieldSchema(typeEntry, field);
             value = db.getField(typeEntry, id, node, fieldSchema, prop);
         }
 

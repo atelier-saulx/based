@@ -6,7 +6,6 @@ import { wait } from '@saulx/utils'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
-import { setLocalClientSchema } from './client/setLocalClientSchema.js'
 import { BasedDbOpts } from './types.js'
 export * from './client/modify/modify.js'
 export { compress, decompress }
@@ -23,7 +22,7 @@ export * from './client/query/BasedIterable.js'
 export * from './server/save.js'
 export * from './hooks.js'
 
-export { getDefaultHooks }
+export { getDefaultHooks, BasedDbOpts }
 
 export class BasedDb extends Emitter {
   client: DbClient
