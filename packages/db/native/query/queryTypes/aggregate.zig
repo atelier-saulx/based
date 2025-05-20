@@ -71,7 +71,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     var index: usize = 1;
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
-    const agg = aggInput[index..aggInput.len];
+    const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -85,7 +85,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
             const crcLen = groupCtx.propType.crcLen();
-            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[groupCtx.start + 2 .. groupCtx.start + groupValue.len - crcLen] else emptyKey;
+            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - crcLen] else emptyKey;
             var resultsField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
@@ -95,7 +95,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             } else {
                 resultsField = groupCtx.hashMap.get(key).?;
             }
-
             aggregate(agg, typeEntry, n, resultsField);
         } else {
             break :checkItem;

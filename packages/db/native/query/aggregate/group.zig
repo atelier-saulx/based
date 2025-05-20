@@ -33,14 +33,12 @@ pub inline fn setGroupResults(
         const keyLen: u16 = @intCast(key.len);
         writeInt(u16, data, i, keyLen);
         i += 2;
-        const keyOffset = if (keyLen == 0) 4 else keyLen;
         if (keyLen > 0) {
-            copy(data[i .. i + keyOffset], key);
-            i += keyOffset;
-        } else {
-            copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
-            i += ctx.resultsSize;
+            copy(data[i .. i + keyLen], key);
+            i += keyLen;
         }
+        copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
+        i += ctx.resultsSize;
     }
 }
 
@@ -62,6 +60,5 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .hashMap = SimpleHashMap.init(ctx.allocator),
         .resultsSize = resultsSize,
     };
-
     return groupCtx;
 }
