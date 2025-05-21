@@ -337,6 +337,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
             zero_count++;
         }
         raw_estimate += 1.0/exp2((double)registers[i]);
+        // raw_estimate += ldexp(1.0, -(double)registers[i]);
     }
 #endif
 
@@ -358,16 +359,19 @@ uint8_t *hll_count(struct selva_string *hllss) {
     return (uint8_t *)(&hll->count);
 }
 
+#if 0
 int main(void) {
 
     /* -------------------------------------------
     ** Single value test
     ** -----------------------------------------*/
 
-#if 0
+
     size_t precision = 14;
 
-    const uint64_t hash = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+    // const uint64_t hash = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+    const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+    const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
 
     int initial_capacity = sizeof(bool) \
                             + sizeof(precision) \
@@ -377,54 +381,56 @@ int main(void) {
 
     selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
     hll_init(&hll, precision, SPARSE);
-    hll_add(&hll, hash);
-    double estimated_cardinality = hll_count(&hll);
+    hll_add(&hll, hash1);
+    hll_add(&hll, hash2);
+    double estimated_cardinality = *hll_count(&hll);
     printf("Estimated cardinality: %f\n", estimated_cardinality);
+}
 #endif
 
-    /* -------------------------------------------
-    ** Array union test
-    ** -----------------------------------------*/
+    // /* -------------------------------------------
+    // ** Array union test
+    // ** -----------------------------------------*/
 
-    struct selva_string arr[10];
+    // struct selva_string arr[10];
 
-    for (size_t j = 0; j < num_elem(arr); j++) {
-        size_t precision = 14;
-        int initial_capacity = sizeof(bool) \
-                                + sizeof(precision) \
-                                + sizeof(uint32_t);
-        struct selva_string hll;
-        selva_string_init(&hll, nullptr, initial_capacity, SELVA_STRING_MUTABLE);
+    // for (size_t j = 0; j < num_elem(arr); j++) {
+    //     size_t precision = 14;
+    //     int initial_capacity = sizeof(bool) \
+    //                             + sizeof(precision) \
+    //                             + sizeof(uint32_t);
+    //     struct selva_string hll;
+    //     selva_string_init(&hll, nullptr, initial_capacity, SELVA_STRING_MUTABLE);
 
-        hll_init(&hll, precision, SPARSE);
+    //     hll_init(&hll, precision, SPARSE);
 
-        size_t num_elements = 1e7;
-        uint32_t estimated_cardinality = 0;
+    //     size_t num_elements = 1e7;
+    //     uint32_t estimated_cardinality = 0;
 
-        for (size_t i = 0; i < num_elements; i++) {
-            char element[50];
+    //     for (size_t i = 0; i < num_elements; i++) {
+    //         char element[50];
 
-            //snprintf(element, 50, "hll1_%zu", i);
-            snprintf(element, 50, "hll1_%zu", i + rand());
-            hll_add(&hll, XXH64(element, strlen(element), 0));
-        }
+    //         //snprintf(element, 50, "hll1_%zu", i);
+    //         snprintf(element, 50, "hll1_%zu", i + rand());
+    //         hll_add(&hll, XXH64(element, strlen(element), 0));
+    //     }
 
-        estimated_cardinality = *hll_count(&hll);
+    //     estimated_cardinality = *hll_count(&hll);
 
-        printf("Estimated cardinality: %u\n", estimated_cardinality);
-        float expected_cardinality = num_elements;
-        float error = fabs(expected_cardinality - estimated_cardinality);
-        printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
+    //     printf("Estimated cardinality: %u\n", estimated_cardinality);
+    //     float expected_cardinality = num_elements;
+    //     float error = fabs(expected_cardinality - estimated_cardinality);
+    //     printf("Error: %0.f (%.2f%%)\n", error, (float)(100.0 * (error / expected_cardinality)));
 
-        arr[j] = hll;
-    }
-    struct selva_string *res = selva_string_create(nullptr, 0, SELVA_STRING_MUTABLE);
-    hll_array_union(res, arr, num_elem(arr));
-    uint32_t estimated_cardinality_union = *hll_count(res);
+    //     arr[j] = hll;
+    // }
+    // struct selva_string *res = selva_string_create(nullptr, 0, SELVA_STRING_MUTABLE);
+    // hll_array_union(res, arr, num_elem(arr));
+    // uint32_t estimated_cardinality_union = *hll_count(res);
 
-    printf("Estimated cardinality union: %u\n", estimated_cardinality_union);
+    // printf("Estimated cardinality union: %u\n", estimated_cardinality_union);
 
-    return 0;
+    // return 0;
 
     /* -------------------------------------------
     ** Single Union test
@@ -458,4 +464,4 @@ int main(void) {
     // printf("Estimated cardinality: %d %zu\n", estimated_cardinality, dst_len);
 
     // return 0;
-}
+// }

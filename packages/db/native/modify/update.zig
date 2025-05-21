@@ -12,8 +12,6 @@ const types = @import("../types.zig");
 const read = utils.read;
 const copy = utils.copy;
 
-var fakeCount = [_]u8{0} ** 4;
-
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.node == null) {
         const len = read(u32, data, 0);
@@ -68,20 +66,18 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 currentData = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
                 selva.hll_init(currentData, 14, true);
             }
-            // const currentCount = selva.hll_count(currentData);
-            // const slice = fakeCount[0..4];
-            // const currentCount = slice.ptr;
             var i: usize = 4;
+            const currentCount = if (ctx.currentSortIndex != null) selva.hll_count(currentData) else undefined;
             while (i < len * 8) {
                 const hash: u64 = read(u64, data, i);
                 selva.hll_add(currentData, hash);
                 i += 8;
             }
-            // if (ctx.currentSortIndex != null) {
-            //     const newCount = selva.hll_count(currentData);
-            //     sort.remove(ctx.db, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
-            //     sort.insert(ctx.db, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
-            // }
+            if (ctx.currentSortIndex != null) {
+                const newCount = selva.hll_count(currentData);
+                sort.remove(ctx.db, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
+                sort.insert(ctx.db, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
+            }
             return len * 8;
         },
         else => {
