@@ -38,7 +38,7 @@ export const VECTOR_FNS = [
   'euclideanDistance',
 ]
 
-export type FilterOpts<Operator> = {
+export type FilterOpts<O = Operator> = {
   lowerCase?: boolean
   fn?:
     | 'dotProduct'
