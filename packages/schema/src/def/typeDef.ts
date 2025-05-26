@@ -12,7 +12,6 @@ import {
   TYPE_INDEX_MAP,
   REFERENCES,
   REFERENCE,
-  SchemaTypesParsedById,
   SchemaTypesParsed,
   NUMBER,
 } from './types.js'
@@ -20,8 +19,7 @@ import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
-import { getPropLen } from './getPropLen.js'
-import { isSeparate, parseMinMaxStep } from './utils.js'
+import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
