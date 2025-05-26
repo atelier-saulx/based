@@ -78,7 +78,7 @@ function _modify(
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === CARDINALITY) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
-        } else if (type === VECTOR || COLVEC) {
+        } else if (type === VECTOR || type === COLVEC) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === JSON) {
           err = writeJson(val, ctx, schema, def, res.tmpId, mod)
