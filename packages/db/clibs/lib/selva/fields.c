@@ -2016,10 +2016,6 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirt
                 db_panic("No field schema found");
             }
 
-            if (fs->type == SELVA_FIELD_TYPE_COLVEC) {
-                continue; /* FIXME ??? */
-            }
-
             err = fields_del(db, node, &node->fields, fs, dirty_cb, dirty_ctx);
             if (unlikely(err)) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
