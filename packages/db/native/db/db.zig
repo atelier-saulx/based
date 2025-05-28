@@ -203,12 +203,18 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 }
 
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
-    try errors.selva(selva.selva_fields_set(
-        node,
-        fieldSchema,
-        data.ptr,
-        data.len,
-    ));
+    try errors.selva(switch (fieldSchema.*.type) {
+        selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer2(node, fieldSchema, data.ptr, data.len),
+        selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
+        selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
+        else => selva.SELVA_EINTYPE,
+        //else => selva.selva_fields_set(
+        //    node,
+        //    fieldSchema,
+        //    data.ptr,
+        //    data.len,
+        //),
+    });
 }
 
 pub fn setText(str: []u8, node: Node, fieldSchema: FieldSchema) !void {
