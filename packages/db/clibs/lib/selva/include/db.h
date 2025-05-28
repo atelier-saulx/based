@@ -192,4 +192,6 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  */
 node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
+struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id) __attribute__((returns_nonnull));
+
 #include "selva/db.h"

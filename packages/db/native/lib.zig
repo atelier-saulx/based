@@ -106,7 +106,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
 
     registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;
-    registerFunction(env, exports, "saveRange", dump.saveRange) catch return null;
+    registerFunction(env, exports, "saveBlock", dump.saveBlock) catch return null;
     registerFunction(env, exports, "loadCommon", dump.loadCommon) catch return null;
     registerFunction(env, exports, "loadRange", dump.loadRange) catch return null;
 

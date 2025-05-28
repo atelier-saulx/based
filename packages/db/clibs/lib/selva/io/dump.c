@@ -407,7 +407,7 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
     return n;
 }
 
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out)
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out)
 {
 #if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
@@ -416,6 +416,11 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     int err;
 
     struct SelvaNode *node = nullptr;
+#if 0
+    struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
+#endif
+    node_id_t end = start + selva_get_block_capacity(te) - 1;
+    /* TODO Add nr_nodes to block FDN-1325 and remove this call. */
     const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
 
     if (nr_nodes == 0) {
@@ -462,8 +467,8 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
 
-            node = selva_next_node(te, node);
-        } while (node && node->node_id <= end);
+            node = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
+        } while (node);
     }
 
     *range_hash_out = selva_hash_digest(hash_state);

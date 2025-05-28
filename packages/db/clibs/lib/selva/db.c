@@ -100,7 +100,6 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 #else
     __attribute__((malloc, malloc(selva_free), returns_nonnull));
 #endif
-static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id) __attribute__((returns_nonnull));
 
 static void selva_cursors_node_going_away(struct SelvaTypeEntry *type, struct SelvaNode *node);
 static void selva_destroy_all_cursors(struct SelvaTypeEntry *type);
@@ -307,7 +306,7 @@ static block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_
     return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
 }
 
-static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
+struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
     const size_t block_i = node_id2block_i(blocks, node_id);
 
@@ -458,7 +457,7 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
-    struct SelvaTypeBlock *block = get_block(type->blocks, node->node_id);
+    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
 
     selva_remove_all_aliases(type, node->node_id);
@@ -481,7 +480,7 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 
 struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    struct SelvaTypeBlock *block = get_block(type->blocks, node_id);
+    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {
         .node_id = node_id,
@@ -492,7 +491,7 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
 
 struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    struct SelvaTypeBlock *block = get_block(type->blocks, node_id);
+    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {
         .node_id = node_id,

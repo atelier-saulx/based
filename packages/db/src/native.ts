@@ -63,16 +63,15 @@ const native = {
     return db.saveCommon(pathBuf, dbCtx)
   },
 
-  saveRange: (
+  saveBlock: (
     path: string,
     typeCode: number,
     start: number,
-    end: number,
     dbCtx: any,
     hashOut: Uint8Array,
   ): number => {
     const pathBuf = ENCODER.encode(path + '\0')
-    return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
+    return db.saveBlock(pathBuf, typeCode, start, dbCtx, hashOut)
   },
 
   loadCommon: (path: string, dbCtx: any): void => {
