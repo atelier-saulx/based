@@ -386,27 +386,6 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
     return 0;
 }
 
-static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start, node_id_t end, struct SelvaNode **start_node)
-{
-    struct SelvaNode *node;
-    sdb_nr_nodes_t n = 0;
-
-    node = selva_nfind_node(te, start);
-    if (!node || node->node_id > end) {
-        *start_node = nullptr;
-        return 0;
-    }
-
-    *start_node = node;
-
-    do {
-        n++;
-        node = selva_next_node(te, node);
-    } while (node && node->node_id <= end);
-
-    return n;
-}
-
 int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out)
 {
 #if PRINT_SAVE_TIME
@@ -415,13 +394,8 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     struct selva_io io;
     int err;
 
-    struct SelvaNode *node = nullptr;
-#if 0
     struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
-#endif
-    node_id_t end = start + selva_get_block_capacity(te) - 1;
-    /* TODO Add nr_nodes to block FDN-1325 and remove this call. */
-    const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
+    const sdb_nr_nodes_t nr_nodes = block->nr_nodes_in_block;
 
     if (nr_nodes == 0) {
         /*
@@ -455,20 +429,20 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
     /*
-     * `node` is definitely set but we just want to make static analyzers
-     * happy.
+     * Note that we just assume that the first node in RB_FOREACH is the same as `start`.
      */
-    if (node && nr_nodes > 0) {
-        do {
+    if (nr_nodes > 0) {
+        struct SelvaNodeIndex *nodes = &block->nodes;
+        struct SelvaNode *node;
+
+        RB_FOREACH(node, SelvaNodeIndex, nodes) {
             selva_hash128_t node_hash;
 
             node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
             selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
-
-            node = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
-        } while (node);
+        }
     }
 
     *range_hash_out = selva_hash_digest(hash_state);
