@@ -290,9 +290,11 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     blocks->block_capacity = block_capacity;
     blocks->len = nr_blocks;
 
+    /* memset() does the same as this. */
 #if 0
     for (size_t i = 0; i < nr_blocks; i++) {
         RB_INIT(&blocks->blocks[i].nodes);
+        blocks->blocks[i].nr_nodes_in_block = 0;
     }
 #endif
     memset(&blocks->blocks, 0, nr_blocks * sizeof(struct SelvaTypeBlock));
@@ -475,6 +477,7 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif
     mempool_return(&type->nodepool, node);
+    block->nr_nodes_in_block--;
     type->nr_nodes--;
 }
 
@@ -507,7 +510,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     }
 
     block_id_t block_i = node_id2block_i(type->blocks, node_id);
-    struct SelvaNodeIndex *nodes = &type->blocks->blocks[block_i].nodes;
+    struct SelvaTypeBlock *block = &type->blocks->blocks[block_i];
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
     node->node_id = node_id;
@@ -518,11 +521,11 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         /*
          * We can assume that node_id almost always grows monotonically.
          */
-        RB_INSERT_NEXT(SelvaNodeIndex, nodes, type->max_node, node);
+        RB_INSERT_NEXT(SelvaNodeIndex, &block->nodes, type->max_node, node);
     } else {
         struct SelvaNode *prev;
 
-        prev = RB_INSERT(SelvaNodeIndex, nodes, node);
+        prev = RB_INSERT(SelvaNodeIndex, &block->nodes, node);
         if (prev) {
             mempool_return(&type->nodepool, node);
             return prev;
@@ -531,6 +534,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
 
     selva_fields_init(&type->ns.fields_schema, &node->fields);
 
+    block->nr_nodes_in_block++;
     type->nr_nodes++;
     if (!type->max_node || type->max_node->node_id < node_id) {
         type->max_node = node;

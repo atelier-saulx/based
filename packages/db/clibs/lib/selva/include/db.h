@@ -62,6 +62,7 @@ struct SelvaAlias {
 
 struct SelvaTypeBlock {
     struct SelvaNodeIndex nodes; /*!< Index of nodes in this block. */
+    size_t nr_nodes_in_block; /*!< Number of nodes in this block. */
 };
 
 /**
