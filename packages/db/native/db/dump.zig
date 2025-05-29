@@ -54,14 +54,14 @@ pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     return res;
 }
 
-pub fn loadRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn loadBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(3, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
     const errlog = napi.get([]u8, napi_env, args[2]) catch return null;
 
     var res: c.napi_value = null;
-    const rc = selva.selva_dump_load_range(ctx.selva, sdb_filename.ptr, errlog.ptr, errlog.len);
+    const rc = selva.selva_dump_load_block(ctx.selva, sdb_filename.ptr, errlog.ptr, errlog.len);
     _ = c.napi_create_int32(napi_env, rc, &res);
     return res;
 }

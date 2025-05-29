@@ -84,9 +84,9 @@ const native = {
     }
   },
 
-  loadRange: (path: string, dbCtx: any): void => {
+  loadBlock: (path: string, dbCtx: any): void => {
     const pathBuf = ENCODER.encode(path + '\0')
-    const err: number = db.loadRange(pathBuf, dbCtx, selvaIoErrlog)
+    const err: number = db.loadBlock(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
         `Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,

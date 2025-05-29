@@ -1056,7 +1056,7 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlo
     return err;
 }
 
-int selva_dump_load_range(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
+int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io;
     int err;
