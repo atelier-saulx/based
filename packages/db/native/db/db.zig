@@ -242,6 +242,7 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
         src,
         fieldSchema,
         value,
+        false,
         @ptrCast(&ref),
         markDirtyCb,
         ctx,

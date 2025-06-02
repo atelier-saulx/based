@@ -763,7 +763,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
 
     dst_node = selva_upsert_node(dst_te, dst_id);
     if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
+        err = selva_fields_reference_set(db, node, fs, dst_node, false, &ref, faux_dirty_cb, nullptr);
     } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
         err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, meta_present ? &ref : nullptr);
     } else {
