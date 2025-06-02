@@ -1,9 +1,6 @@
-import { get } from 'http'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { wait } from '@saulx/utils'
 import { SchemaProp, SchemaType } from '@based/schema'
-import { allCountryCodes } from './shared/examples.js'
 import { deepEqual } from './shared/assert.js'
 import { inspect } from 'util'
 
@@ -48,8 +45,6 @@ const countrySchema: SchemaType = {
     UA: 'uint8',
   },
 }
-
-const countryCodesArray = Object.keys(countrySchema.props)
 
 await test('vote including round', async (t) => {
   const db = new BasedDb({

@@ -42,24 +42,24 @@ SELVA_EXPORT
 int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
 
 /**
- * Save a range of nodes from te.
+ * Save a nodes block starting from start.
  */
 SELVA_EXPORT
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out) __attribute__((nonnull));
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
 /**
  * **Usage:**
  * ```c
  * struct SelvaDb *db = selva_db_create();
  * selva_dump_load_common(db, filename_common);
- * selva_dump_load_range(db, filename_range_n);
+ * selva_dump_load_block(db, filename_range_n);
  *  ```
  */
 SELVA_EXPORT
 int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_range(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 /**
  * Find a type by type id.

@@ -34,7 +34,7 @@ export type Writelog = {
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-function saveRange(
+function saveBlock(
   db: DbServer,
   typeId: number,
   start: number,
@@ -43,11 +43,10 @@ function saveRange(
 ): string | null {
   const file = block_sdb_file(typeId, start, end)
   const path = join(db.fileSystemPath, file)
-  const err = native.saveRange(
+  const err = native.saveBlock(
     path,
     typeId,
     start,
-    end,
     db.dbCtxExternal,
     hashOut,
   )
@@ -115,7 +114,7 @@ export function save(
             const typeId = def.id
             const mtKey = makeCsmtKey(typeId, start)
             const hash = new Uint8Array(16)
-            const file = saveRange(db, typeId, start, end, hash)
+            const file = saveBlock(db, typeId, start, end, hash)
             if (file === null) {
               throw new Error('full dump failed')
             } else {
@@ -133,7 +132,7 @@ export function save(
     } else {
       void foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
         const hash = new Uint8Array(16)
-        const file = saveRange(db, typeId, start, end, hash)
+        const file = saveBlock(db, typeId, start, end, hash)
 
         if (file === null) {
           // The previous state should remain in the merkle tree for

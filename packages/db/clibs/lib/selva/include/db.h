@@ -62,6 +62,7 @@ struct SelvaAlias {
 
 struct SelvaTypeBlock {
     struct SelvaNodeIndex nodes; /*!< Index of nodes in this block. */
+    size_t nr_nodes_in_block; /*!< Number of nodes in this block. */
 };
 
 /**
@@ -198,5 +199,7 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  * `new_alias` must be allocated with selva_jemalloc.
  */
 node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
+
+struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id) __attribute__((returns_nonnull));
 
 #include "selva/db.h"

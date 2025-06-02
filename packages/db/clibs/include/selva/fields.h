@@ -46,7 +46,7 @@ struct SelvaNodeReferences {
 };
 
 struct SelvaNodeWeakReference {
-    /* THe type can be found from the schema. */
+    /* The type can be found from the schema. */
 #if 0
     node_type_t dst_type;
 #endif
@@ -122,19 +122,7 @@ SELVA_EXPORT
 int selva_fields_set(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
-        const void *value, size_t len);
-
-/**
- * Set field value by a `fields` pointer.
- * @param fields can be either `node->fields` or any other `fields` structure
- *               associated with the given node (currently edge).
- */
-SELVA_EXPORT
-int fields_set2(
-        struct SelvaNode *node,
-        const struct SelvaFieldSchema *fs,
-        struct SelvaFields *fields,
-        const void *value, size_t len);
+        const void *value, size_t len) __attribute__((deprecated));
 
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
@@ -271,7 +259,6 @@ SELVA_EXPORT
 int selva_fields_set_string(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
-        struct SelvaFieldInfo *nfo,
         const char *str,
         size_t len);
 
@@ -313,6 +300,18 @@ int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct Selva
 
 SELVA_EXPORT
 int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
+SELVA_EXPORT
+int selva_fields_set_weak_reference(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst);
+
+SELVA_EXPORT
+int selva_fields_set_weak_reference2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst);
+
+SELVA_EXPORT
+int selva_fields_set_weak_references2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts);
+
+SELVA_EXPORT
+int selva_fields_set_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts);
 
 SELVA_EXPORT
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
