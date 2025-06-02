@@ -37,7 +37,7 @@ await test('sum top level', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -60,7 +60,6 @@ await test('sum top level', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
-
   deepEqual(
     await db.query('vote').sum('NL').get().toObject(),
     { NL: 30 },
@@ -77,6 +76,7 @@ await test('sum top level', async (t) => {
     { NL: 20 },
     'sum with filter',
   )
+
   deepEqual(
     await db.query('vote').sum('NL', 'AU').get().toObject(),
     { NL: 30, AU: 15 },
@@ -105,7 +105,8 @@ await test('sum top level', async (t) => {
   )
 })
 
-await test('sum group by', async (t) => {
+// sum group by  ----------------------------------
+await test('dev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -137,7 +138,7 @@ await test('sum group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -216,7 +217,7 @@ await test('sum branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -307,7 +308,7 @@ await test('sum performance', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AL: 'uint8',
           AM: 'uint8',
           AT: 'uint8',
@@ -429,7 +430,7 @@ await test('top level count', async (t) => {
             ref: 'sequence',
             prop: 'votes',
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
           IT: 'uint8',
@@ -457,7 +458,7 @@ await test('top level count', async (t) => {
 
   // top level  ----------------------------------
 
-  ;(await db.query('vote').count().get()).debug()
+  // ;(await db.query('vote').count().get()).debug()
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
@@ -538,7 +539,7 @@ await test('count branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -629,7 +630,7 @@ await test('count group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -677,16 +678,7 @@ await test('count group by', async (t) => {
   )
 })
 
-// test wildcards
-
-// // handle enum
-// // 2 bytes string
-// // var string
-// // can use the index in selva if no filter
-
-// // console.log((await db.query('vote').sum(countries).get()).execTime)
-
-await test.skip('dev', async (t) => {
+await test('variable key size', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -700,7 +692,7 @@ await test.skip('dev', async (t) => {
       user: {
         props: {
           flap: { type: 'uint32' },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           name: { type: 'string' },
           articles: {
             items: {
@@ -763,45 +755,74 @@ await test.skip('dev', async (t) => {
     contributors: [cipolla],
   })
 
-  // TODO: display is tagging "sum" when count with alias
-  // TODO: also there os a misplaced comma in inspect
-  // await db
-  //   .query('article')
-  //   .include((q) => q('contributors').count('votes'), 'name')
-  //   .get()
-  //   .inspect()
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: 80 },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
+  deepEqual(
+    await db.query('user').groupBy('name').sum('flap').get().toObject(),
+    {
+      Flippie: { flap: 20 },
+      'Carlo Cipolla': { flap: 80 },
+      'Mr snurp': { flap: 10 },
+      'Dinkel Doink': { flap: 40 },
+      Derpie: { flap: 30 },
+    },
+    'sum, groupBy, main',
+  )
 
-  // await db
-  //   // dont break line
-  //   .query('user')
-  //   .groupBy('country')
-  //   .sum('flap')
-  //   .get()
-  //   .inspect() // OK
+  deepEqual(
+    await db.query('user').groupBy('country').sum('flap').get().toObject(),
+    {
+      $undefined: { flap: 40 },
+      NL: { flap: 30 },
+      BR: { flap: 30 },
+      IT: { flap: 80 },
+    },
+    'sum, groupBy, main, $undefined',
+  )
 
-  // TODO: string byteSize > 2
-  await db
-    // dont break line
-    .query('user')
-    .groupBy('name')
-    .sum('flap')
-    .get()
-    .inspect()
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => {
+        select('contributors').groupBy('name').sum('flap')
+      })
+      .get(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: 20 },
+          'Mr snurp': { flap: 10 },
+          Derpie: { flap: 30 },
+          'Dinkel Doink': { flap: 40 },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: 80 },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, referenes',
+  )
 })
+
+// test wildcards
+// handle enum
+// can use the index in selva if no filter

@@ -2,9 +2,11 @@ const db = @import("../../db/db.zig");
 const types = @import("../../types.zig");
 const std = @import("std");
 const utils = @import("../../utils.zig");
+const selva = @import("../../selva.zig");
 const read = utils.read;
 const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
+const copy = utils.copy;
 
 pub inline fn execAgg(
     aggPropDef: []u8,
@@ -13,6 +15,7 @@ pub inline fn execAgg(
     fieldAggsSize: u16,
 ) void {
     var j: usize = 0;
+
     while (j < fieldAggsSize) {
         const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
         j += 1;
@@ -30,7 +33,7 @@ pub inline fn execAgg(
             } else if (propType == types.Prop.UINT8) {
                 writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
             } else {
-                // later..
+                //later
             }
         }
     }
@@ -49,13 +52,14 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
     const aggPropDef = agg[i .. i + fieldAggsSize];
 
     var value: []u8 = undefined;
+
     if (field != aggregateTypes.IsId) {
         // Later need to add support for HLL
         if (field != types.MAIN_PROP) {
             i += fieldAggsSize;
             return;
         }
-        const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+        const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
             std.log.err("Cannot get fieldschema {any} \n", .{field});
             return;
         };

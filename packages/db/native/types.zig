@@ -63,6 +63,12 @@ pub const Prop = enum(u8) {
             else => false,
         };
     }
+    pub fn crcLen(self: Prop) usize {
+        return switch (self) {
+            Prop.STRING => 4,
+            else => 0,
+        };
+    }
 };
 
 pub fn Size(p: Prop) u8 {

@@ -56,16 +56,20 @@ const readAggregate = (
     let i = offset
     while (i < len) {
       let key: string = ''
+      let keyLen: number = 0
       if (result[i] == 0) {
         if (q.aggregate.groupBy.default) {
           key = q.aggregate.groupBy.default
         } else {
           key = `$undefined`
         }
+        i += 2
       } else {
-        key = DECODER.decode(result.subarray(i, i + 2))
+        keyLen = readUint16(result, i)
+        i += 2
+        key = DECODER.decode(result.subarray(i, i + keyLen))
+        i += keyLen
       }
-      i += 2
       const resultKey = (results[key] = {})
       for (const aggregatesArray of q.aggregate.aggregates.values()) {
         for (const agg of aggregatesArray) {
@@ -469,7 +473,6 @@ export const readAllFields = (
   return i - offset
 }
 
-let cnt = 0
 export const resultToObject = (
   q: QueryDef,
   result: Uint8Array,

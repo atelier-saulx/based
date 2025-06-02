@@ -4,7 +4,7 @@ const utils = @import("../../utils.zig");
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const types = @import("../../types.zig");
-const SimpleHashMap = std.AutoHashMap([2]u8, []u8);
+const SimpleHashMap = @import("./types.zig").GroupByHashMap;
 const read = utils.read;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -20,7 +20,6 @@ pub const GroupCtx = struct {
     field: u8,
     len: u16,
     propType: types.Prop,
-    empty: [2]u8,
 };
 
 pub inline fn setGroupResults(
@@ -30,8 +29,14 @@ pub inline fn setGroupResults(
     var it = ctx.hashMap.iterator();
     var i: usize = 0;
     while (it.next()) |entry| {
-        copy(data[i .. i + 2], entry.key_ptr);
+        const key = entry.key_ptr.*;
+        const keyLen: u16 = @intCast(key.len);
+        writeInt(u16, data, i, keyLen);
         i += 2;
+        if (keyLen > 0) {
+            copy(data[i .. i + keyLen], key);
+            i += keyLen;
+        }
         copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
         i += ctx.resultsSize;
     }
@@ -42,9 +47,8 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const propType: types.Prop = if (field == types.MAIN_PROP) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
-    const fieldSchema = try db.getFieldSchema(field, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, field);
     const resultsSize = read(u16, aggInput, 6);
-    const emptyKey = [_]u8{0} ** 2;
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
     groupCtx.* = .{
@@ -54,9 +58,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .len = len,
         .fieldSchema = fieldSchema,
         .hashMap = SimpleHashMap.init(ctx.allocator),
-        .empty = emptyKey,
         .resultsSize = resultsSize,
     };
-
     return groupCtx;
 }

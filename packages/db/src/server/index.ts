@@ -392,7 +392,7 @@ export class DbServer extends DbShared {
 
     const view = new DataView(buf.buffer, buf.byteOffset)
     while (i < end) {
-      const key = view.getFloat64(i, true)
+      // const key = view.getFloat64(i, true)
       // These node ranges may not actually exist
       //this.dirtyRanges.add(key)
       i += 8

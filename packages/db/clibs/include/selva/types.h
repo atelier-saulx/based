@@ -82,7 +82,7 @@ struct SelvaFieldsSchema {
         size_t len;
         size_t fixed_data_size;
     } field_map_template;
-    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
+    struct SelvaFieldSchema field_schemas[255];
 };
 
 struct SelvaNodeSchema {

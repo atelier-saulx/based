@@ -23,6 +23,11 @@ struct selva_io {
         } string_io;
     };
 
+    /**
+     * Serialization format version used by this io.
+     */
+    uint32_t sdb_version;
+
     /*
      * Compressed SDB.
      */

@@ -339,7 +339,7 @@ pub fn search(
             const field = ctx.fields[j];
             const prop: Prop = @enumFromInt(ctx.fields[j + 1]);
             const penalty = ctx.fields[j + 2];
-            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+            const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                 return 255;
             };
             var score: u8 = 255;
@@ -405,7 +405,7 @@ pub fn searchVector(
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(true),
 ) f32 {
-    const fieldSchema = db.getFieldSchema(ctx.field, typeEntry) catch {
+    const fieldSchema = db.getFieldSchema(typeEntry, ctx.field) catch {
         return MaxVectorScore;
     };
     const value = db.getField(typeEntry, ctx.field, node, fieldSchema, Prop.VECTOR);

@@ -34,10 +34,11 @@ pub inline fn aggregateRefsGroup(
     var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
+    const emptyKey = &[_]u8{};
     if (isEdge) {
         //later
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 0;
         };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -57,6 +58,7 @@ pub inline fn aggregateRefsGroup(
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
     var i: usize = offset;
     var resultSize: usize = 0;
+
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
             if (hasFilter) {
@@ -66,13 +68,14 @@ pub inline fn aggregateRefsGroup(
                 }
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-            const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
+            const crcLen = groupCtx.propType.crcLen();
+            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[groupCtx.start + 2 .. groupValue.len - crcLen] else emptyKey;
             var resultsField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
                 @memset(resultsField, 0);
                 try groupCtx.hashMap.put(key, resultsField);
-                resultSize += 2 + groupCtx.resultsSize;
+                resultSize += 2 + key.len + groupCtx.resultsSize;
             } else {
                 resultsField = groupCtx.hashMap.get(key).?;
             }
@@ -116,7 +119,7 @@ pub inline fn aggregateRefsDefault(
     if (isEdge) {
         //later
     } else {
-        const fieldSchema = db.getFieldSchema(refField, originalType) catch {
+        const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             // default empty size - means a bug!
             return 10;
         };
@@ -153,6 +156,7 @@ pub inline fn aggregateRefsDefault(
     });
 
     return resultsSize + 2 + 4;
+    // return 0;
 }
 
 pub fn aggregateRefsFields(

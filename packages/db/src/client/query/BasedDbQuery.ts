@@ -1,12 +1,9 @@
 import {
   QueryDef,
-  createQueryDef,
-  QueryDefType,
   QueryTarget,
   filter,
   Operator,
   sort,
-  defToBuffer,
   filterOr,
   QueryByAliasObj,
   isAlias,
@@ -24,7 +21,7 @@ import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { subscribe, OnData, OnError, OnClose } from './subscription/index.js'
+import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { langCodesMap, LangName } from '@based/schema'
@@ -32,7 +29,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { concatUint8Arr, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
@@ -220,6 +217,23 @@ export class QueryBranch<T> {
       })
     } else {
       addAggregate(AggregateType.SUM, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  cardinality(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty cardinality() called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'cardinality',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.CARDINALITY, this.def, fields)
     }
     // @ts-ignore
     return this
@@ -430,7 +444,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       this.reset()
       return this.#getInternal(resolve, reject)
     }
-
     const res = await this.db.hooks.getQueryBuf(buf)
 
     if (res.byteLength === 1) {

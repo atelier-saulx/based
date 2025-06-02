@@ -18,20 +18,34 @@ import {
   JSON,
 } from './types.js'
 
+const selvaFieldType: Readonly<Record<string, number>> = {
+    NULL: 0,
+    MICRO_BUFFER: 1,
+    STRING: 2,
+    TEXT: 3,
+    REFERENCE: 4,
+    REFERENCES: 5,
+    WEAK_REFERENCE: 6,
+    WEAK_REFERENCES: 7,
+    ALIAS: 8,
+    ALIASES: 9,
+    COLVEC: 10,
+};
+
 const selvaTypeMap = new Uint8Array(32) // 1.2x faster than JS array
-selvaTypeMap[MICRO_BUFFER] = 1
-selvaTypeMap[VECTOR] = 1
-selvaTypeMap[BINARY] = 2
-selvaTypeMap[CARDINALITY] = 2
-selvaTypeMap[JSON] = 2
-selvaTypeMap[STRING] = 2
-selvaTypeMap[TEXT] = 3
-selvaTypeMap[REFERENCE] = 4
-selvaTypeMap[REFERENCES] = 5
-selvaTypeMap[WEAK_REFERENCE] = 6
-selvaTypeMap[WEAK_REFERENCES] = 7
-selvaTypeMap[ALIAS] = 8
-selvaTypeMap[ALIASES] = 9
+selvaTypeMap[MICRO_BUFFER] = selvaFieldType.MICRO_BUFFER
+selvaTypeMap[VECTOR] = selvaFieldType.MICRO_BUFFER
+selvaTypeMap[BINARY] = selvaFieldType.STRING
+selvaTypeMap[CARDINALITY] = selvaFieldType.STRING
+selvaTypeMap[JSON] = selvaFieldType.STRING
+selvaTypeMap[STRING] = selvaFieldType.STRING
+selvaTypeMap[TEXT] = selvaFieldType.TEXT
+selvaTypeMap[REFERENCE] = selvaFieldType.REFERENCE
+selvaTypeMap[REFERENCES] = selvaFieldType.REFERENCES
+selvaTypeMap[WEAK_REFERENCE] = selvaFieldType.WEAK_REFERENCE
+selvaTypeMap[WEAK_REFERENCES] = selvaFieldType.WEAK_REFERENCES
+selvaTypeMap[ALIAS] = selvaFieldType.ALIAS
+selvaTypeMap[ALIASES] = selvaFieldType.ALIASES
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80

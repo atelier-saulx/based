@@ -59,7 +59,7 @@ export async function start(db: DbServer, opts: StartOpts) {
         const fname = dump.file
         if (fname?.length > 0) {
           try {
-            native.loadRange(join(path, fname), db.dbCtxExternal)
+            native.loadBlock(join(path, fname), db.dbCtxExternal)
           } catch (e) {
             console.error(e.message)
           }

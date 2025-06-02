@@ -43,7 +43,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
-static_assert(sizeof(bool) == sizeof(int8_t));
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 {
@@ -118,6 +117,11 @@ void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo
     return nfo2p(fields, nfo);
 }
 
+struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node)
+{
+    return &node->fields;
+}
+
 /**
  * Ensure that a field is allocated properly.
  * @param node Optional node context.
@@ -187,9 +191,14 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
     return 0;
 }
 
-int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
+int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const char *str, size_t len)
 {
     struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
+
+    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+        return SELVA_EINTYPE;
+    }
 
     return set_field_string(fields, fs, nfo, str, len);
 }
@@ -699,9 +708,8 @@ static void remove_weak_references(struct SelvaFields *fields, const struct Selv
     selva_free(refs.refs - refs.offset);
 }
 
-static int set_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
+static int set_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, struct SelvaFieldInfo *nfo, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
 {
-    struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
     void *vp = nfo2p(fields, nfo);
     struct SelvaNodeWeakReferences refs;
 
@@ -730,6 +738,46 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
     return 0;
 }
 
+int selva_fields_set_weak_reference2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst)
+{
+    struct SelvaFieldInfo *nfo;
+    struct SelvaNodeWeakReference ref = {
+        .dst_id = dst,
+    };
+
+    if (fs->type != SELVA_FIELD_TYPE_WEAK_REFERENCE) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = ensure_field(fields, fs);
+    memcpy(nfo2p(fields, nfo), &ref, sizeof(ref));
+
+    return 0;
+}
+
+int selva_fields_set_weak_reference(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst)
+{
+    return selva_fields_set_weak_reference2(&node->fields, fs, dst);
+}
+
+int selva_fields_set_weak_references2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts)
+{
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = ensure_field(fields, fs);
+
+    return set_weak_references(fields, fs, nfo, (struct SelvaNodeWeakReference *)dst, nr_dsts);
+}
+
+int selva_fields_set_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts)
+{
+    return selva_fields_set_weak_references2(&node->fields, fs, dst, nr_dsts);
+}
+
 /**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
@@ -737,33 +785,33 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
  */
 static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
-    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
-    const enum SelvaFieldType type = fs->type;
+    struct SelvaFieldInfo *nfo;
 
-    switch (type) {
+    /*
+     * Note: We mostly don't verify len in this function. We merely expect that
+     * the caller is passing it correctly.
+     */
+    switch (fs->type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
-        /*
-         * Note: We don't verify len in this function. We merely expect that
-         * the caller is passing it correctly.
-         */
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        nfo = ensure_field(fields, fs);
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
+        nfo = ensure_field(fields, fs);
         return set_field_string(fields, fs, nfo, value, len);
     case SELVA_FIELD_TYPE_TEXT:
+        nfo = ensure_field(fields, fs);
         return selva_fields_set_text(node, fs, value, len);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        nfo = ensure_field(fields, fs);
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
-        return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
+        return set_weak_references(fields, fs, nfo, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        assert(len <= fs->smb.len);
-        memcpy(nfo2p(fields, nfo), value, len);
-        memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
-        break;
+        return selva_fields_set_micro_buffer(fields, fs, value, len);
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_ALIAS:
@@ -780,11 +828,6 @@ int selva_fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, 
     assert(selva_get_fs_by_node(db, node, fs->field) == fs);
 #endif
     return fields_set(node, fs, &node->fields, value, len);
-}
-
-int fields_set2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
-{
-    return fields_set(node, fs, fields, value, len);
 }
 
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
@@ -994,6 +1037,30 @@ int selva_fields_get_text(
     }
 
     return SELVA_ENOENT;
+}
+
+int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = ensure_field(fields, fs);
+    if (len > fs->smb.len) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(nfo2p(fields, nfo), value, len);
+    memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
+
+    return 0;
+}
+
+int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    return selva_fields_set_micro_buffer(&node->fields, fs, value, len);
 }
 
 /**
@@ -1647,7 +1714,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     return refs;
 }
 
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
@@ -1665,7 +1732,7 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaDb *, 
     return weak_ref;
 }
 
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaDb *, struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;
@@ -1718,6 +1785,17 @@ struct selva_string *selva_fields_get_selva_string3(
         const struct SelvaFieldSchema *fs)
 {
     return ref->meta ? selva_fields_get_selva_string2(ref->meta, fs) : nullptr;
+}
+
+struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+
+    if (!nfo->in_use) {
+        return nullptr;
+    }
+
+    return nfo;
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
@@ -1898,6 +1976,11 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
     memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
 }
 
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+{
+    selva_fields_init(&te->ns.fields_schema, &node->fields);
+}
+
 /**
  * Share fields (refocount = 2).
  * This is used for sharing the fields on an edge.
@@ -1935,10 +2018,12 @@ static void destroy_fields(struct SelvaFields *fields)
         db_panic("Can't destroy shared fields");
     }
 
+#if 0
     /*
      * Clear fields map.
      */
     memset(fields->fields_map, 0, fields->nr_fields * sizeof(fields->fields_map[0]));
+#endif
 
     fields->nr_fields = 0;
     fields->data_len = 0;
