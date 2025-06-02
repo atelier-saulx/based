@@ -83,6 +83,32 @@ inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 ;
 #endif
 
+inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
+{
+    assert(node_id > 0);
+    return ((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity;
+}
+
+SELVA_EXPORT
+inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
+#ifndef __zig
+{
+    return selva_node_id2block_i3(blocks->block_capacity, node_id);
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
+#ifndef __zig
+{
+    return selva_node_id2block_i(te->blocks, node_id);
+}
+#else
+;
+#endif
+
 /**
  * Get the node schema for type.
  */

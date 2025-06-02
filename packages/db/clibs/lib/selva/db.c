@@ -302,15 +302,9 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     return blocks;
 }
 
-static block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
-{
-    assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
-}
-
 struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
-    const size_t block_i = node_id2block_i(blocks, node_id);
+    const size_t block_i = selva_node_id2block_i(blocks, node_id);
 
     /*
      * Buffer overflow is impossible because blocks is always allocated to the
@@ -409,6 +403,10 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
 }
 
 extern inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
+
+extern inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id);
+
+extern inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id);
 
 extern inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 
@@ -509,7 +507,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         return nullptr;
     }
 
-    block_id_t block_i = node_id2block_i(type->blocks, node_id);
+    block_id_t block_i = selva_node_id2block_i2(type, node_id);
     struct SelvaTypeBlock *block = &type->blocks->blocks[block_i];
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
@@ -517,7 +515,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     node->type = type->type;
 
     if (type->max_node &&type->max_node->node_id < node_id &&
-        node_id2block_i(type->blocks, type->max_node->node_id) == block_i) {
+        selva_node_id2block_i2(type, type->max_node->node_id) == block_i) {
         /*
          * We can assume that node_id almost always grows monotonically.
          */
@@ -598,7 +596,7 @@ struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = node_id2block_i(blocks, node->node_id);
+    block_id_t i = selva_node_id2block_i(blocks, node->node_id);
     struct SelvaNode *prev;
 
     prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
@@ -623,7 +621,7 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
         return next;
     }
 
-    block_id_t i_next = node_id2block_i(blocks, node->node_id) + 1;
+    block_id_t i_next = selva_node_id2block_i(blocks, node->node_id) + 1;
     if (i_next < blocks->len) {
         return selva_min_node_from(type, i_next);
     }
