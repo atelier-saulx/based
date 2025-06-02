@@ -305,12 +305,6 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     return blocks;
 }
 
-static block_id_t node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
-{
-    assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % blocks->block_capacity)) / blocks->block_capacity;
-}
-
 struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
     const size_t block_i = selva_node_id2block_i(blocks, node_id);
