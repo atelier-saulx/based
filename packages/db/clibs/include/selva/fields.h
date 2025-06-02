@@ -387,6 +387,9 @@ SELVA_EXPORT
 void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
     __attribute__((nonnull));
 
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+    __attribute__((nonnull));
+
 /**
  * Destroy all fields of a node.
  */

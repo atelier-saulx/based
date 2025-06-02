@@ -530,7 +530,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    selva_fields_init(&type->ns.fields_schema, &node->fields);
+    selva_fields_init_node(type, node);
 
     block->nr_nodes_in_block++;
     type->nr_nodes++;

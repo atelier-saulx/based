@@ -1976,6 +1976,11 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
     memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
 }
 
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+{
+    selva_fields_init(&te->ns.fields_schema, &node->fields);
+}
+
 /**
  * Share fields (refocount = 2).
  * This is used for sharing the fields on an edge.
