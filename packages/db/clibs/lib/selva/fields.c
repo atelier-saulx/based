@@ -1198,7 +1198,8 @@ int selva_fields_reference_set(
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out,
-        node_id_t dirty_nodes[static 2])
+        selva_dirty_node_cb_t dirty_cb,
+        void *dirty_ctx)
 {
     const struct SelvaFieldSchema *fs_dst;
     int err;
@@ -1225,12 +1226,19 @@ int selva_fields_reference_set(
     /*
      * Remove previous refs.
      */
-    dirty_nodes[0] = remove_reference(db, src, fs_src, 0, -1, true);
+    node_id_t old_dst_id;
+
+    old_dst_id = remove_reference(db, src, fs_src, 0, -1, true);
+    if (old_dst_id != 0) {
+        dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, old_dst_id);
+    }
+    dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, dst->node_id);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        /* The destination may have a ref to somewhere. */
-        dirty_nodes[1] = remove_reference(db, dst, fs_dst, 0, -1, false);
-    } else {
-        dirty_nodes[1] = 0;
+        /* The new destination may have a ref to somewhere. */
+        old_dst_id = remove_reference(db, dst, fs_dst, 0, -1, false);
+        if (old_dst_id != 0) {
+            dirty_cb(dirty_ctx, src->type, old_dst_id);
+        }
     }
 
     /*
