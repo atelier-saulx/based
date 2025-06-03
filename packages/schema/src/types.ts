@@ -207,6 +207,7 @@ export type SchemaText = Prop<{
   type: 'text'
   default?: Record<string, string>
   format?: StringFormat
+  compression?: 'none' | 'deflate'
 }>
 
 type NumberType =

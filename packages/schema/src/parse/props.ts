@@ -401,6 +401,10 @@ p.text = propParser<SchemaText>(
     },
   },
   {
+    compression(val) {
+      // return the actualy string!
+      return val
+    },
     format: binaryOpts.format,
     default(val, prop) {
       // console.warn('MAKE DEFAULT VALUE FOR TEXT')

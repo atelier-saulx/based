@@ -9,6 +9,7 @@ const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 
+const rand = std.crypto.random;
 const read = utils.read;
 
 pub const TypeId = u16;
@@ -26,6 +27,7 @@ const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
 pub const DbCtx = struct {
+    id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
@@ -33,7 +35,6 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     decompressor: *selva.libdeflate_decompressor,
     libdeflate_block_state: selva.libdeflate_block_state,
-
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
         backing_allocator.destroy(self.arena);
@@ -54,14 +55,20 @@ pub fn createDbCtx() !*DbCtx {
     }
 
     b.* = .{
+        .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = null,
+        // this has to be special
         .decompressor = selva.libdeflate_alloc_decompressor().?,
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
+
+    // db ctx has to be per thread
+    // ctx: { db, decompressor, lib_deflate }
+    // has to be created in
 
     return b;
 }
@@ -218,21 +225,21 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
 }
 
 pub fn setText(str: []u8, node: Node, fieldSchema: FieldSchema) !void {
-  try errors.selva(selva.selva_fields_set_text(
+    try errors.selva(selva.selva_fields_set_text(
         node,
         fieldSchema,
         str.ptr,
         str.len,
-  ));
+    ));
 }
 
 pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
-  try errors.selva(selva.selva_fields_set_micro_buffer2(
+    try errors.selva(selva.selva_fields_set_micro_buffer2(
         node,
         fieldSchema,
         value.ptr,
         value.len,
-  ));
+    ));
 }
 
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
