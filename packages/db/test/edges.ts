@@ -2,7 +2,6 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
-import { update } from '../src/client/modify/update.js'
 
 await test('multiple references', async (t) => {
   const db = new BasedDb({
@@ -412,4 +411,75 @@ await test('single reference', async (t) => {
       },
     ],
   )
+})
+
+await test('preserve fields', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          bestFriend: {
+            ref: 'user',
+            prop: 'bestFriend',
+            $x: 'uint16',
+          },
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+              $x: 'uint16',
+            }
+          },
+        },
+      },
+    },
+  })
+
+  const user1 = await db.create('user', {})
+  const user2 = await db.create('user', {
+    bestFriend: {
+      id: user1,
+      $x: 42,
+    },
+  })
+  deepEqual(await db.query('user', user2).include('**').get(), {
+    id: user2,
+    bestFriend: {
+      id: user1,
+      $x: 42,
+    },
+    friends: [],
+  })
+
+  const user3 = await db.create('user', {
+    bestFriend: { id: user2 },
+    friends: [ { id: user1, $x: 10 }, { id: user2, $x: 20 } ],
+  })
+  deepEqual(await db.query('user', user1).include('**').get(), {
+    id: user1,
+    bestFriend: null,
+    friends: [ { id: user3, '$x': 10 } ],
+  })
+  deepEqual(await db.query('user', user3).include('**').get(), {
+    id: user3,
+    bestFriend: {
+      id: user2,
+    },
+    friends: [ { id: user1, '$x': 10 }, { id: user2, '$x': 20 } ],
+  })
+
+  await db.update('user', user3, {
+    friends: { update: [ {id: user2, $index: 0 } ] },
+  })
+  deepEqual(await db.query('user', user3).include('**').get(), {
+    id: user3,
+    bestFriend: { id: user2 },
+    friends: [ { id: user2, $x: 20 }, { id: user1, $x: 10 } ],
+  })
 })

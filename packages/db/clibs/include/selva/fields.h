@@ -155,10 +155,6 @@ struct selva_string *selva_fields_ensure_string2(
 
 /**
  * Set reference to fields.
- * @param dirty_nodes returns the nodes that were changed, apart from src and dst.
- *                    [n].id = 0 = nil;
- *                    [0] = the node src was pointing to previously (same type as dst);
- *                    [1] = the node dst was pointing to previously (same type as src).
  */
 SELVA_EXPORT
 int selva_fields_reference_set(
@@ -167,7 +163,8 @@ int selva_fields_reference_set(
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out,
-        node_id_t dirty_nodes[static 2])
+        selva_dirty_node_cb_t dirty_cb,
+        void *dirty_ctx)
     __attribute__((access(write_only, 5), access(write_only, 6)));
 
 /**

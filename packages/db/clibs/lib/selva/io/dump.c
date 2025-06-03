@@ -740,6 +740,10 @@ static int load_reference_meta(
     return err;
 }
 
+static void faux_dirty_cb(void *, node_type_t, node_id_t)
+{
+}
+
 __attribute__((warn_unused_result))
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaTypeEntry *dst_te, ssize_t index)
 {
@@ -759,8 +763,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
 
     dst_node = selva_upsert_node(dst_te, dst_id);
     if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-        node_id_t dirty[2]; /* never really happens in load. */
-        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, dirty);
+        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
     } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
         err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, meta_present ? &ref : nullptr);
     } else {

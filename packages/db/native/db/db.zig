@@ -244,14 +244,14 @@ pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
 
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
-    var dirty: [2]selva.node_id_t = undefined;
     errors.selva(selva.selva_fields_reference_set(
         ctx.db.selva,
         src,
         fieldSchema,
         value,
         @ptrCast(&ref),
-        @ptrCast(&dirty),
+        markDirtyCb,
+        ctx,
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const result = selva.selva_fields_get_reference(ctx.db.selva, src, fieldSchema);
@@ -263,16 +263,6 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
             return err;
         }
     };
-
-    const efc = selva.selva_get_edge_field_constraint(fieldSchema);
-    const dstType = efc.*.dst_node_type;
-    if (dirty[0] != 0) {
-        modifyCtx.markDirtyRange(ctx, dstType, dirty[0]);
-    }
-    if (dirty[1] != 0) {
-        modifyCtx.markDirtyRange(ctx, ctx.typeId, dirty[1]);
-    }
-    modifyCtx.markDirtyRange(ctx, dstType, getNodeId(value));
 
     return ref;
 }
