@@ -87,7 +87,6 @@ pub inline fn decompress(
     var loop: bool = true;
     var hasMatch: c_int = 0;
     while (loop) {
-        std.debug.print("DECOMPRESS -> derpi {any} \n", .{value.len});
         const result = selva.libdeflate_decompress_stream(
             dbCtx.decompressor,
             &dbCtx.libdeflate_block_state,
