@@ -1281,7 +1281,7 @@ int selva_fields_reference_set(
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
     }
 
-    if (preserve_meta) {
+    if (old_meta) {
         share_fields(old_meta);
         (*ref_out)->meta = old_meta;
         dst_ref->meta = old_meta;
