@@ -1150,7 +1150,8 @@ int selva_fields_references_insert(
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
         type_dst != dst->type ||
-        type_dst != fs->edge_constraint.dst_node_type) {
+        type_dst != fs->edge_constraint.dst_node_type ||
+        node == dst) {
         return SELVA_EINVAL;
     }
 
@@ -1229,10 +1230,9 @@ int selva_fields_reference_set(
     const struct SelvaFieldSchema *fs_dst;
     int err;
 
-    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
-    assert(fs_src->edge_constraint.dst_node_type == dst->type);
-
-    if (!dst || src == dst) {
+    if (fs_src->type != SELVA_FIELD_TYPE_REFERENCE ||
+        fs_src->edge_constraint.dst_node_type != dst->type ||
+        !dst || src == dst) {
         return SELVA_EINVAL;
     }
 
@@ -1434,6 +1434,15 @@ int selva_fields_references_insert_tail_wupsert(
 
     if (nr_ids == 0) {
         return 0;
+    }
+
+    /* RFE This check could be in an assert if we'd check this before calling this func. */
+    if (type_dst == node->type) {
+        for (size_t i = 0; i < nr_ids; i++) {
+            if (node->node_id == ids[i]) {
+                return SELVA_EINVAL;
+            }
+        }
     }
 
     fs_dst = selva_get_fs_by_te_field(te_dst, fs->edge_constraint.inverse_field);
