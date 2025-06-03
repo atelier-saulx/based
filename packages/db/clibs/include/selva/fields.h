@@ -162,7 +162,6 @@ int selva_fields_reference_set(
         struct SelvaNode * restrict src,
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
-        bool preserve_meta,
         struct SelvaNodeReference **ref_out,
         selva_dirty_node_cb_t dirty_cb,
         void *dirty_ctx)
