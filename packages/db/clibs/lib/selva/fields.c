@@ -520,11 +520,14 @@ static node_id_t remove_reference(
             struct SelvaNodeReference ref_src;
 
             ref_src = del_single_ref(db, src, &fs_src->edge_constraint, fields_src, nfo_src, ignore_src_dependent);
-            if (preserve_meta && ref_src.meta) {
-                /*
-                 * Reshare it to avoid freeing in the next stage.
-                 */
-                share_fields(ref_src.meta);
+            if (preserve_meta) {
+                if (ref_src.meta) {
+                    /*
+                     * Reshare it to avoid freeing in the next stage.
+                     */
+                    share_fields(ref_src.meta);
+                }
+
                 *preserve_meta = ref_src.meta;
             }
             dst = ref_src.dst;
