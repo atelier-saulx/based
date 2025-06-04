@@ -241,7 +241,7 @@ pub fn createSortIndex(
             fieldSchema,
             prop,
         );
-        insert(dbCtx, sortIndex, data, node.?);
+        insert(sortIndex, data, node.?);
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -301,7 +301,6 @@ pub fn getTypeSortIndexes(
 }
 
 inline fn parseString(
-    dbCtx: *db.DbCtx,
     data: []u8,
 ) [*]u8 {
     if (data.len <= 6) {
@@ -317,7 +316,7 @@ inline fn parseString(
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
-        const slice = decompressFirstBytes(dbCtx, data)[0..SIZE];
+        const slice = decompressFirstBytes(data)[0..SIZE];
         return slice.ptr;
     }
 }
@@ -343,7 +342,6 @@ inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, nod
 }
 
 pub fn remove(
-    dbCtx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -367,7 +365,7 @@ pub fn remove(
                     node,
                 );
             } else {
-                selva.selva_sort_remove_buf(index, parseString(dbCtx, data), SIZE, node);
+                selva.selva_sort_remove_buf(index, parseString(data), SIZE, node);
             }
         },
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
@@ -393,7 +391,6 @@ inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: d
 }
 
 pub fn insert(
-    dbCtx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -417,7 +414,7 @@ pub fn insert(
                     node,
                 );
             } else {
-                const str = parseString(dbCtx, data);
+                const str = parseString(data);
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },

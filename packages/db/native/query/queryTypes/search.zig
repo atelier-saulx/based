@@ -68,7 +68,7 @@ pub fn addToScore(
         }
         ctx.totalSearchResults += 1;
     } else {
-        ctx.score = searchMethods.search(dbCtx, node, typeEntry, searchCtx);
+        ctx.score = searchMethods.search(node, typeEntry, searchCtx);
         if (ctx.score > searchCtx.bad) {
             return;
         }

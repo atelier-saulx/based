@@ -19,14 +19,12 @@ pub fn cb(
 }
 
 pub inline fn decompressFirstBytes(
-    dbCtx: *db.DbCtx,
     value: []u8,
 ) []u8 {
     var ctx: CtxC = .{ .result = &.{} };
     var r: c_int = 0;
-    _ = selva.libdeflate_decompress_stream(
-        dbCtx.decompressor,
-        &dbCtx.libdeflate_block_state,
+    // TODO: make a specific fn for this (with max len)
+    _ = selva.worker_ctx_libdeflate_decompress_stream(
         value[6..value.len].ptr,
         value.len - 10,
         cb,

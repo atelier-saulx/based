@@ -293,7 +293,6 @@ pub fn strSearchCompressed(
 }
 
 inline fn getScore(
-    dbCtx: *db.DbCtx,
     value: []u8,
     query: []u8,
     score: *u8,
@@ -305,7 +304,6 @@ inline fn getScore(
             strSearchCompressed,
             query,
             value,
-            dbCtx,
             score,
         );
         score.* = score.* + penalty;
@@ -319,7 +317,6 @@ inline fn getScore(
 }
 
 pub fn search(
-    dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(false),
@@ -369,7 +366,7 @@ pub fn search(
                     var iter = db.textIterator(value, code);
                     while (iter.next()) |s| {
                         score = 255;
-                        _ = getScore(dbCtx, s, query, &score, penalty);
+                        _ = getScore(s, query, &score, penalty);
                         if (score < bestScore) {
                             bestScore = score;
                             if (score - penalty == 0) {
@@ -379,7 +376,7 @@ pub fn search(
                         }
                     }
                 } else {
-                    if (getScore(dbCtx, value, query, &score, penalty)) {
+                    if (getScore(value, query, &score, penalty)) {
                         continue :fieldLoop;
                     }
                     if (score < bestScore) {

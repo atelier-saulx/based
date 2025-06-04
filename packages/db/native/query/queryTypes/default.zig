@@ -81,7 +81,7 @@ pub fn defaultSimpeFilter(
             break :checkItem;
         }
         const value = db.getField(typeEntry, 0, node.?, fieldSchema, t.Prop.MICRO_BUFFER);
-        if (value.len == 0 or !runConditions(ctx.db, query, value)) {
+        if (value.len == 0 or !runConditions(query, value)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {

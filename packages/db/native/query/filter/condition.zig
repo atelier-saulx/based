@@ -13,7 +13,7 @@ const Prop = @import("../../types.zig").Prop;
 const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
-pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
     const next = i + 11 + valueSize;
@@ -47,13 +47,13 @@ pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResu
             j += size + 2;
         }
         return .{ next, false };
-    } else if (has.has(true, op, prop, value, query, mainLen, dbCtx)) {
+    } else if (has.has(true, op, prop, value, query, mainLen)) {
         return .{ next, true };
     }
     return .{ next, false };
 }
 
-pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
@@ -103,7 +103,6 @@ pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) Condition
         value,
         query,
         mainLen,
-        dbCtx,
     )) {
         pass = false;
     }

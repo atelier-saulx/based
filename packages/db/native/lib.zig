@@ -9,14 +9,16 @@ const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const history = @import("./db/history.zig");
 const schema = @import("./schema/schema.zig");
-const db = @import("./db/db.zig");
 const sort = @import("./db/sort.zig");
 const string = @import("./string.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
+const dbCtx = @import("./db/ctx.zig");
 
 const NapiError = error{NapiError};
+const DbCtx = dbCtx.DbCtx;
+const workerCtxInit = dbCtx.workerCtxInit;
 
 pub fn registerFunction(
     env: c.napi_env,
@@ -38,19 +40,6 @@ pub fn registerFunction(
     }
 }
 
-fn workerCtxDeinit(_: c.napi_env, _: ?*anyopaque, _: ?*anyopaque) callconv(.C) void {
-    selva.worker_ctx_deinit();
-}
-
-fn workerCtxInit(env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
-    var result: c.napi_value = undefined;
-    _ = c.napi_create_external(env, null, workerCtxDeinit, null, &result);
-
-    selva.worker_ctx_init();
-
-    return result;
-}
-
 fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
     return _externalFromInt(napi_env, inf) catch return null;
 }
@@ -61,13 +50,11 @@ fn intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C)
 
 fn _intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, inf);
-    const external = try napi.get(*db.DbCtx, napi_env, args[0]);
+    const external = try napi.get(*DbCtx, napi_env, args[0]);
     var result: c.napi_value = undefined;
-
     if (c.napi_create_bigint_uint64(napi_env, @intFromPtr(external), &result) != c.napi_ok) {
         return null;
     }
-
     return result;
 }
 
@@ -76,15 +63,12 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
     var address: u64 = undefined;
     var result: c.napi_value = undefined;
     var lossless: bool = undefined;
-
     if (c.napi_get_value_bigint_uint64(napi_env, args[0], &address, &lossless) != c.napi_ok) {
         return errors.Napi.CannotGetInt;
     }
-
     if (c.napi_create_external(napi_env, @ptrFromInt(@as(usize, address)), null, null, &result) != c.napi_ok) {
         return null;
     }
-
     return result;
 }
 

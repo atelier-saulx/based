@@ -43,7 +43,6 @@ inline fn hasInner(
     prop: Prop,
     value: []u8,
     query: []u8,
-    dbCtx: *db.DbCtx,
 ) bool {
     var q = query;
     if (prop == Prop.VECTOR) {
@@ -63,7 +62,7 @@ inline fn hasInner(
             v = v[0 .. v.len - 4];
         }
         if (value[1] == @intFromEnum(Compression.compressed)) {
-            if (!decompress(void, orCompare(isOr, compare).func, q, value, dbCtx, undefined)) {
+            if (!decompress(void, orCompare(isOr, compare).func, q, value, undefined)) {
                 return false;
             }
         } else if (!orCompare(isOr, compare).func(value[1..value.len], q)) {
@@ -82,14 +81,13 @@ pub inline fn has(
     value: []u8,
     query: []u8,
     mainLen: u16,
-    dbCtx: *db.DbCtx,
 ) bool {
     if (op == Op.like) {
-        return hasInner(isOr, like.str, mainLen, prop, value, query, dbCtx);
+        return hasInner(isOr, like.str, mainLen, prop, value, query);
     } else if (op == Op.has) {
-        return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
+        return hasInner(isOr, default, mainLen, prop, value, query);
     } else if (op == Op.hasLowerCase) {
-        return hasInner(isOr, loose, mainLen, prop, value, query, dbCtx);
+        return hasInner(isOr, loose, mainLen, prop, value, query);
     }
     return false;
 }
