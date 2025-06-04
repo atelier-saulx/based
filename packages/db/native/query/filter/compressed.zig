@@ -85,23 +85,15 @@ pub inline fn decompress(
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
-
-    // blurf
-
     while (loop) {
-        //  const result
-        _ = selva.worker_ctx_libdeflate_decompress_stream(
+        const result = selva.worker_ctx_libdeflate_decompress_stream(
             value[6..value.len].ptr,
             value.len - 10,
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
-        loop = false;
-
-        // result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.libdeflate_block_state_growbuf(
-        //     &dbCtx.libdeflate_block_state,
-        // );
+        loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.worker_ctx_libdeflate_block_state_growbuf();
     }
     return hasMatch == 1;
 }

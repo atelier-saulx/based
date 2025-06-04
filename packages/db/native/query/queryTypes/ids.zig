@@ -44,7 +44,7 @@ pub fn sort(
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema, sortProp);
-        dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
+        dbSort.insert(&metaSortIndex, value, node.?);
     }
     // ------------------------------
     var it: selva.SelvaSortIterator = undefined;

@@ -209,7 +209,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -223,7 +223,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -244,7 +244,7 @@ pub fn filter(
                     var f: usize = 0;
                     if (lang == LangCode.NONE) {
                         while (iter.next()) |s| {
-                            if (!runCondition(ctx, query, s)) {
+                            if (!runCondition(query, s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -257,7 +257,7 @@ pub fn filter(
                     } else {
                         while (iter.next()) |s| {
                             f += 1;
-                            if (!runCondition(ctx, query, s)) {
+                            if (!runCondition(query, s)) {
                                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                             }
                         }
@@ -296,7 +296,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
-                    if (value.len == 0 or !runCondition(ctx, query, value)) {
+                    if (value.len == 0 or !runCondition(query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }
