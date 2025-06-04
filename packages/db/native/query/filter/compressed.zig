@@ -80,16 +80,16 @@ pub inline fn decompress(
     comptime compare: Compare(DataType),
     query: []u8,
     value: []u8,
-    dbCtx: *db.DbCtx,
     data: DataType,
 ) bool {
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
+
+    // blurf
+
     while (loop) {
-        const result = selva.libdeflate_decompress_stream(
-            dbCtx.decompressor, // gimme from selva
-            &dbCtx.libdeflate_block_state,
+        const result = selva.worker_ctx_libdeflate_decompress_stream(
             value[6..value.len].ptr,
             value.len - 10,
             comptimeCb(DataType, compare).func,
