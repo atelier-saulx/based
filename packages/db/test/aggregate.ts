@@ -823,6 +823,63 @@ await test('variable key size', async (t) => {
   )
 })
 
+await test('stddev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string' },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+})
+
 // test wildcards
 // handle enum
 // can use the index in selva if no filter

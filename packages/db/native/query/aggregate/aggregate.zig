@@ -10,6 +10,7 @@ const copy = utils.copy;
 
 pub inline fn execAgg(
     aggPropDef: []u8,
+    accumulatorField: []u8,
     resultsField: []u8,
     value: []u8,
     fieldAggsSize: u16,
@@ -25,6 +26,8 @@ pub inline fn execAgg(
         j += 2;
         const resultPos = read(u16, aggPropDef, j);
         j += 2;
+        const accumulatorPos = read(u16, aggPropDef, j);
+
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.SUM) {
@@ -35,6 +38,20 @@ pub inline fn execAgg(
             } else {
                 //later
             }
+        } else if (aggType == aggregateTypes.AggType.STDDEV) {
+            const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
+
+            var count = read(u64, accumulatorField, accumulatorPos);
+            var sum = read(f64, accumulatorField, accumulatorPos + 8);
+            var sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
+
+            count += 1;
+            sum += val;
+            sum_sq += val * val;
+
+            writeInt(u64, accumulatorField, accumulatorPos, count);
+            writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+            writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
         }
     }
 }

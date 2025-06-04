@@ -11,7 +11,7 @@ const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const GroupProtocolLen = @import("../aggregate/group.zig").ProtocolLen;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-const setGroupResults = @import("../aggregate/group.zig").setGroupResults;
+const finalizeGroupResults = @import("../aggregate/group.zig").finalizeGroupResults;
 const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
 const c = @import("../../c.zig");
 
@@ -86,16 +86,16 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
             const crcLen = groupCtx.propType.crcLen();
             const key: []u8 = if (groupValue.len > 0) groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - crcLen] else emptyKey;
-            var resultsField: []u8 = undefined;
+            var accumulatorField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
-                resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
-                @memset(resultsField, 0);
-                try groupCtx.hashMap.put(key, resultsField);
+                accumulatorField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
+                @memset(accumulatorField, 0);
+                try groupCtx.hashMap.put(key, accumulatorField);
                 ctx.size += 2 + key.len + groupCtx.resultsSize;
             } else {
-                resultsField = groupCtx.hashMap.get(key).?;
+                accumulatorField = groupCtx.hashMap.get(key).?;
             }
-            aggregate(agg, typeEntry, n, resultsField);
+            aggregate(agg, typeEntry, n, accumulatorField);
         } else {
             break :checkItem;
         }
@@ -106,7 +106,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    try setGroupResults(data, groupCtx);
+    try finalizeGroupResults(data, groupCtx, agg);
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
     return result;
 }

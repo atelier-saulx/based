@@ -239,6 +239,23 @@ export class QueryBranch<T> {
     return this
   }
 
+  stddev(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty standard deviation function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'stddev',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.STDDEV, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
   or(fn: FilterBranchFn): T
   or(
     field: string,
