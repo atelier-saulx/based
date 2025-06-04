@@ -25,6 +25,11 @@ pub fn writeEdges(
         const t: p = @enumFromInt(data[i + 2]);
         i += 3;
 
+        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch {
+            std.log.err("Edge field schema cannot be found \n", .{});
+            return;
+        };
+
         var len: u32 = undefined;
         var offset: u32 = 0;
 
@@ -34,10 +39,6 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch {
-                std.log.err("Edge field schema cannot be found \n", .{});
-                return;
-            };
             const val = db.getEdgeProp(ref, edgeFieldSchema);
 
             if (val.len > 0) {
@@ -61,7 +62,7 @@ pub fn writeEdges(
                     ctx.node.?,
                     edgeConstraint,
                     ref,
-                    prop,
+                    edgeFieldSchema,
                 );
             }
         } else if (t == p.REFERENCE) {
@@ -74,12 +75,11 @@ pub fn writeEdges(
                 ctx.node.?,
                 edgeConstraint,
                 ref,
-                prop,
+                edgeFieldSchema,
             );
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
-            const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch null;
             const hll = selva.selva_fields_ensure_string2(
                 ctx.db.selva.?,
                 ctx.node.?,
@@ -105,7 +105,7 @@ pub fn writeEdges(
                 ctx.node.?,
                 edgeConstraint,
                 ref,
-                prop,
+                edgeFieldSchema,
             );
         }
 

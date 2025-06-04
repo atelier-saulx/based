@@ -1629,25 +1629,13 @@ int selva_fields_set_reference_meta(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         const void *value, size_t len)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema;
-    const struct SelvaFieldSchema *fs;
-
     if (!ref->dst) {
         return SELVA_ENOENT;
     }
 
-    efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    if (!efc_fields_schema) {
-        return SELVA_EINVAL;
-    }
-
-    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
-    if (!fs) {
-        return SELVA_EINVAL;
-    }
 #if 0
     assert(fs->field == field);
 #endif
@@ -1656,13 +1644,13 @@ int selva_fields_set_reference_meta(
      * Edge metadata can't contain these types because it would be almost
      * impossible to keep track of the pointers.
      */
-    if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
-        fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+    if (efs->type == SELVA_FIELD_TYPE_REFERENCE ||
+        efs->type == SELVA_FIELD_TYPE_REFERENCES) {
         return SELVA_ENOTSUP;
     }
 
     selva_fields_ensure_ref_meta(db, node, ref, efc);
-    return fields_set(nullptr, fs, ref->meta, value, len);
+    return fields_set(nullptr, efs, ref->meta, value, len);
 }
 
 int selva_fields_get_reference_meta_mutable_string(

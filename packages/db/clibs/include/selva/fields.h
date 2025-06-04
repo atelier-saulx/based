@@ -230,7 +230,7 @@ int selva_fields_set_reference_meta(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         const void *value, size_t len);
 
 SELVA_EXPORT

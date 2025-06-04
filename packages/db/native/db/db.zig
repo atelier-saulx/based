@@ -402,14 +402,14 @@ pub fn writeEdgeProp(
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
-    prop: u8,
+    fieldSchema: FieldSchema,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
         ctx.db.selva,
         node,
         ref,
         efc,
-        prop,
+        fieldSchema,
         data.ptr,
         data.len,
     ));
