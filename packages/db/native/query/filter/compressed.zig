@@ -88,7 +88,7 @@ pub inline fn decompress(
     var hasMatch: c_int = 0;
     while (loop) {
         const result = selva.libdeflate_decompress_stream(
-            dbCtx.decompressor,
+            dbCtx.decompressor, // gimme from selva
             &dbCtx.libdeflate_block_state,
             value[6..value.len].ptr,
             value.len - 10,

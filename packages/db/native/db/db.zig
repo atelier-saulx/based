@@ -8,8 +8,8 @@ const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
+pub const DbCtx = @import("./ctx.zig").DbCtx;
 
-const rand = std.crypto.random;
 const read = utils.read;
 
 pub const TypeId = u16;
@@ -19,68 +19,8 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-const base_allocator = std.heap.raw_c_allocator;
-var db_backing_allocator: std.mem.Allocator = undefined;
-var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
-
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
-
-pub const DbCtx = struct {
-    id: u32,
-    initialized: bool,
-    allocator: std.mem.Allocator,
-    arena: *std.heap.ArenaAllocator,
-    sortIndexes: sort.TypeSortIndexes,
-    selva: ?*selva.SelvaDb,
-    decompressor: *selva.libdeflate_decompressor,
-    libdeflate_block_state: selva.libdeflate_block_state,
-    pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
-        self.arena.deinit();
-        backing_allocator.destroy(self.arena);
-    }
-};
-
-pub fn createDbCtx() !*DbCtx {
-    // If you want any var to persist out of the stack you have to do this (including an allocator)
-    var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
-    errdefer db_backing_allocator.destroy(arena);
-    arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
-    const allocator = arena.allocator();
-
-    const b = try allocator.create(DbCtx);
-    errdefer {
-        arena.deinit();
-        db_backing_allocator.destroy(arena);
-    }
-
-    b.* = .{
-        .id = rand.int(u32),
-        .arena = arena,
-        .allocator = allocator,
-        .sortIndexes = sort.TypeSortIndexes.init(allocator),
-        .initialized = false,
-        .selva = null,
-        // this has to be special
-        .decompressor = selva.libdeflate_alloc_decompressor().?,
-        .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
-    };
-
-    // db ctx has to be per thread
-    // ctx: { db, decompressor, lib_deflate }
-    // has to be created in
-
-    return b;
-}
-
-pub fn init() void {
-    if (config.enable_debug) {
-        valgrind_wrapper_instance = valgrind.ValgrindAllocator.init(base_allocator);
-        db_backing_allocator = valgrind_wrapper_instance.allocator();
-    } else {
-        db_backing_allocator = base_allocator;
-    }
-}
 
 var lastQueryId: u32 = 0;
 pub fn getQueryId() u32 {
@@ -563,11 +503,8 @@ pub inline fn getText(
     while (iter.next()) |s| {
         return s;
     }
+    // fallback for lang as well
     return @as([*]u8, undefined)[0..0];
-    //var len: usize = 0;
-    //var str: [*c]const u8 = undefined;
-    //errors.selva(selva.selva_fields_get_text(node, fieldSchema, @intFromEnum(langCode), &str, &len)) catch return @as([*]u8, undefined)[0..0];
-    //return @constCast(str[0..len]);
 }
 
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {

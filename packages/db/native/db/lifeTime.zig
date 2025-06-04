@@ -2,9 +2,9 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
-const db = @import("./db.zig");
 const dump = @import("./dump.zig");
 const selva = @import("../selva.zig");
+const dbCtx = @import("./ctx.zig");
 
 pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return startInternal(napi_env, info) catch |e| {
@@ -27,8 +27,9 @@ fn getOptPath(
 }
 
 fn startInternal(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
-    db.init();
-    const ctx = try db.createDbCtx();
+    // does this make double things with valgrind? Ask marco
+    dbCtx.init();
+    const ctx = try dbCtx.createDbCtx();
     ctx.selva = selva.selva_db_create();
     var externalNapi: c.napi_value = undefined;
     ctx.initialized = true;
@@ -36,9 +37,26 @@ fn startInternal(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     return externalNapi;
 }
 
+fn createThreadCtx(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+    const ctx = try dbCtx.createDbCtx();
+    ctx.selva = selva.selva_db_create();
+    var externalNapi: c.napi_value = undefined;
+    ctx.initialized = true;
+    _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
+    return externalNapi;
+}
+
+fn removeThreadCtx(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(1, napi_env, info);
+    const thread = try napi.get(*dbCtx.ThreadCtx, napi_env, args[0]);
+    thread.deinit();
+    return null;
+}
+
 fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
-    const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
+    const ctx = try napi.get(*dbCtx.DbCtx, napi_env, args[0]);
+    // threadCtx
 
     if (!ctx.initialized) {
         std.log.err("Db already de-initialized \n", .{});
@@ -59,8 +77,8 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
         }
     }
 
-    selva.libdeflate_block_state_deinit(&ctx.libdeflate_block_state);
-    selva.libdeflate_free_decompressor(ctx.decompressor);
+    // clear thread specific as well
+
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
     ctx.arena.deinit();
