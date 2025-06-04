@@ -50,3 +50,8 @@ enum libdeflate_result worker_ctx_libdeflate_decompress_stream(
 {
     return libdeflate_decompress_stream(libdeflate_decompressor, &libdeflate_block_state, in_buf, in_len, cb, ctx, result);
 }
+
+bool worker_ctx_libdeflate_block_state_growbuf(void)
+{
+    return libdeflate_block_state_growbuf(&libdeflate_block_state);
+}
