@@ -350,6 +350,7 @@ await test('multi references update', async (t) => {
     'age 66',
   )
 
+  console.log('\n------------------')
   await db.update('article', strudel, {
     contributors: [
       {
