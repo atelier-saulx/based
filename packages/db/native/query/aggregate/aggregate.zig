@@ -52,11 +52,15 @@ pub inline fn execAgg(
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
+        } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            // const hll = read from or point to value
+            // const hllAcc = read hll from accumulator as selva string []u8
+            // hll_union(hllAcc, hll) union and write to the hllAcc
         }
     }
 }
 
-pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsField: []u8) void {
+pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8) void {
     if (agg.len == 0) {
         return;
     }
@@ -67,11 +71,11 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
     const fieldAggsSize = read(u16, agg, i);
     i += 2;
     const aggPropDef = agg[i .. i + fieldAggsSize];
+    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
 
     var value: []u8 = undefined;
 
     if (field != aggregateTypes.IsId) {
-        // Later need to add support for HLL
         if (field != types.MAIN_PROP) {
             i += fieldAggsSize;
             return;
@@ -80,13 +84,18 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, resultsFie
             std.log.err("Cannot get fieldschema {any} \n", .{field});
             return;
         };
-        value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+        if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            value = db.getCardinalityFieldAsSelvaString(node, fieldSchema); //@ptrCast para ?[]u8 ver como vai
+        } else {
+            value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+        }
+
         if (value.len == 0) {
             i += fieldAggsSize;
             return;
         }
     }
-    execAgg(aggPropDef, resultsField, value, fieldAggsSize);
+    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize);
     i += fieldAggsSize;
     return;
 }
