@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.56",
+  "version": "8.0.0-alpha.57",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
@@ -40,7 +40,7 @@
   "dependencies": {
     "@based/bundle": "0.4.15",
     "@based/client": "^8.0.2",
-    "@based/db": "0.0.64",
+    "@based/db": "0.0.66",
     "@based/db-analytics": "0.0.18",
     "@based/functions": "3.2.3",
     "@based/i18n": "0.3.1",
