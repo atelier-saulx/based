@@ -283,9 +283,8 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     }
 
     nfo = ensure_field(fields, fs);
-
-    struct SelvaNodeReferences refs;
     void *vp = nfo2p(fields, nfo);
+    struct SelvaNodeReferences refs;
 
     memcpy(&refs, vp, sizeof(refs));
 
