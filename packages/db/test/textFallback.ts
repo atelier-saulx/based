@@ -68,5 +68,7 @@ await test('textFallback', async (t) => {
     { locale: 'en' },
   )
 
+  // local second argument
+  // false (block all fallbacks) or lang fallback
   await db.query('project').locale('nl').get().inspect(10)
 })
