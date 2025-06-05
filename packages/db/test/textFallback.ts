@@ -58,29 +58,15 @@ await test('textFallback', async (t) => {
     { locale: 'nl' },
   )
 
-  let searchTerms = ['a', 'ab', 'abc', 'abcd']
+  await db.create(
+    'project',
+    {
+      title: 'English house!',
+      abstract:
+        'Tiny Houses Crabbehof is begonnen in 2021 en bestaat uit tien zelfbouwkavels in Dordrecht. De tiny houses mogen hier voor een periode van tien jaar staan en zijn aangesloten op water, elektra en riolering. Verder vind je hier een fietsenstalling, een gemeenschapp',
+    },
+    { locale: 'en' },
+  )
 
-  for (const term of searchTerms) {
-    await db.query('project').search(term, 'title', 'abstract').get().inspect()
-  }
-
-  searchTerms = ['kr', 'kra', 'krak', 'krake', 'krakee']
-
-  for (let i = 0; i < 1000; i++) {
-    searchTerms.push('F')
-  }
-
-  const q = []
-  for (const term of searchTerms) {
-    q.push(
-      (async () => {
-        await db
-          .query('project')
-          .search(term, 'title', 'abstract')
-          .get()
-          .inspect()
-      })(),
-    )
-  }
-  await Promise.all(q)
+  await db.query('project').locale('nl').get().inspect(10)
 })
