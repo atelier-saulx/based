@@ -239,7 +239,7 @@ int selva_fields_get_reference_meta_mutable_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         size_t len,
         struct selva_string **s);
 

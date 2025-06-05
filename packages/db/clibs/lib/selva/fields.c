@@ -1657,26 +1657,20 @@ int selva_fields_get_reference_meta_mutable_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         size_t len,
         struct selva_string **s)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    const struct SelvaFieldSchema *fs;
-
-    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
-    if (!fs) {
-        return SELVA_EINTYPE;
-    } else if (fs->type != SELVA_FIELD_TYPE_STRING) {
+    if (efs->type != SELVA_FIELD_TYPE_STRING) {
         return SELVA_EINTYPE;
     }
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (efs->string.fixed_len && len > efs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 
     selva_fields_ensure_ref_meta(db, node, ref, efc);
-    *s = get_mutable_string(ref->meta, fs, ensure_field(ref->meta, fs), len);
+    *s = get_mutable_string(ref->meta, efs, ensure_field(ref->meta, efs), len);
 
     return 0;
 }
