@@ -70,13 +70,17 @@ export class SchemaParser {
     expectObject(locales)
     for (const locale in locales) {
       const opts = locales[locale]
+      if (opts === true) {
+        console.log(locale, opts)
+        continue
+      }
       expectObject(opts)
       for (const key in opts) {
         const val = opts[key]
         if (key === 'required') {
           expectBoolean(val)
         } else if (key === 'fallback') {
-          if (!Array.isArray(val) || !val.every((v) => typeof v === 'string')) {
+          if (Array.isArray(val) || typeof val !== 'string') {
             throw Error(INVALID_VALUE)
           }
         } else {

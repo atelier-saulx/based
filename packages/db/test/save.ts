@@ -260,7 +260,7 @@ await test('text', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      fi: { fallback: ['en'] },
+      fi: { fallback: 'en' },
     },
     types: {
       article: {
@@ -759,7 +759,7 @@ await test('edge val', async (t) => {
       {
         id: scenario1,
         $sequence: sequence1,
-      }
+      },
     ],
   })
   await db.save()
@@ -778,10 +778,8 @@ await test('edge val', async (t) => {
 
   db.update('phase', phase, {
     scenarios: {
-      delete: [
-        scenario1,
-      ]
-    }
+      delete: [scenario1],
+    },
   })
   //await db.query('phase').include('scenarios.$sequence').get().inspect()
 })
