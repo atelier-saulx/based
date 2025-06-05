@@ -83,7 +83,7 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
     if (!def.include.langTextFields.has(prop.prop)) {
       def.include.langTextFields.set(prop.prop, { def: prop, codes: new Set() })
     }
-    def.include.langTextFields.get(prop.prop).codes.add(def.lang ?? 0)
+    def.include.langTextFields.get(prop.prop).codes.add(def.lang.lang ?? 0)
   } else {
     if (prop.separate) {
       def.include.props.set(prop.prop, prop)

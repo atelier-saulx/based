@@ -1,7 +1,7 @@
 import { createSortBuffer } from '../sort.js'
 import { QueryDef, QueryDefType, QueryType, includeOp } from '../types.js'
 import { includeToBuffer } from '../include/toBuffer.js'
-import { filterToBuffer, isSimpleMainFilter } from '../query.js'
+import { filterToBuffer } from '../query.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
 import { ENCODER, writeUint64 } from '@saulx/utils'
@@ -59,7 +59,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       buf[0] = includeOp.REFERENCES_AGGREGATION
       buf[1] = sz
       buf[2] = sz >>> 8
-      // ---
       buf[3] = filterSize
       buf[4] = filterSize >>> 8
       buf[5] = def.range.offset

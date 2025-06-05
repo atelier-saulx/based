@@ -11,6 +11,7 @@ import {
   includeFields,
   addAggregate,
   groupBy,
+  LangFallback,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -483,15 +484,27 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  locale(locale: LangName) {
+  locale(locale: LangName, fallBack?: LangFallback) {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'locale',
         args: [locale],
       })
     } else {
+      if (fallBack === undefined) {
+        // Uses fallback from schema if available
+        const localeDescriptor = this.def.schema.locales[locale]
+        fallBack =
+          typeof localeDescriptor === 'object'
+            ? localeDescriptor.fallback || false
+            : false
+      }
       validateLocale(this.def, locale)
-      this.def.lang = langCodesMap.get(locale) ?? 0
+      const fallBackCode = fallBack === false ? 0 : langCodesMap.get(fallBack)
+      this.def.lang = {
+        lang: langCodesMap.get(locale) ?? 0,
+        fallback: fallBackCode,
+      }
     }
     return this
   }
@@ -503,7 +516,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         try {
           onData(res)
         } catch (err) {
-          // const t = displayTarget(this.def)
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
           name += `  Error executing onData handler in subscription\n`

@@ -26,8 +26,7 @@ export const defaultQuery = (
   buf[index++] = filterSize
   buf[index++] = filterSize >>> 8
   buf[index++] = filterSize && isSimpleMainFilter(def.filter) ? 1 : 0
-  // if (filterSize && isSimpleMainFilter(def.filter)) {
-  // console.log('SIMPLE FILTER!')
+
   if (filterSize) {
     buf.set(filterToBuffer(def.filter), index)
     index += filterSize

@@ -42,7 +42,8 @@ const referencesFilter = (
           if (edgeDef) {
             conditions.edges ??= new Map()
             size +=
-              3 + primitiveFilter(def, edgeDef, filter, conditions, def.lang)
+              3 +
+              primitiveFilter(def, edgeDef, filter, conditions, def.lang.lang)
           }
         }
       } else {
@@ -108,11 +109,11 @@ export const filterRaw = (
     }
     if (field === 'id') {
       fieldDef = ID_FIELD_DEF
-      return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
+      return primitiveFilter(def, fieldDef, filter, conditions, def.lang.lang)
     }
     return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
+  return primitiveFilter(def, fieldDef, filter, conditions, def.lang.lang)
 }
 
 export const filter = (
