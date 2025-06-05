@@ -104,8 +104,7 @@ await test('sum top level', async (t) => {
   )
 })
 
-// sum group by  ----------------------------------
-await test('dev', async (t) => {
+await test('sum group by', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
