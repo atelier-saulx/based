@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { update } from '../src/client/modify/update.js'
 
 await test('multiple', async (t) => {
   const db = new BasedDb({
@@ -350,15 +351,16 @@ await test('multi references update', async (t) => {
     'age 66',
   )
 
-  console.log('\n------------------')
   await db.update('article', strudel, {
-    contributors: [
-      {
-        id: mrSnurp,
-        $derp: 1,
-        $age: 2,
-      },
-    ],
+    contributors: {
+      update: [
+        {
+          id: mrSnurp,
+          $derp: 1,
+          $age: 2,
+        },
+      ],
+    },
   })
 
   deepEqual(

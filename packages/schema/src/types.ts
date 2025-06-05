@@ -432,10 +432,11 @@ export type Schema = GenericSchema<false> | StrictSchema
 
 export type SchemaLocales = Record<
   LangName,
-  {
-    required?: boolean
-    fallback?: LangName[]
-  }
+  | true
+  | {
+      required?: boolean
+      fallback?: LangName // not multiple - 1 is enough else it becomes too complex
+    }
 >
 
 export type SchemaPropTypeMap = {
