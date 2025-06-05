@@ -32,7 +32,7 @@
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
     "testSubs": "cd packages/subs && npm run test",
-    "clean": "(cd packages/db && npm run clean) && rimraf ./node_modules",
+    "clean": "(cd packages/db && npm run clean) && rimraf packages/analytics/dist && rimfaf packages/analytics/node_modules && rimraf ./node_modules",
     "knip": "knip"
   },
   "publishConfig": {
