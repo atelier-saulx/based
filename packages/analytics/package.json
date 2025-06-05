@@ -24,6 +24,6 @@
   "dependencies": {
     "@based/schema": "5.0.0-alpha.20",
     "@saulx/utils": "^6.7.0",
-    "@based/db": "0.0.65"
+    "@based/db": "0.0.66"
   }
 }

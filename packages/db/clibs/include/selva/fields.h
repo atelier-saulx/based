@@ -164,8 +164,8 @@ int selva_fields_reference_set(
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out,
         selva_dirty_node_cb_t dirty_cb,
-        void *dirty_ctx)
-    __attribute__((access(write_only, 5), access(write_only, 6)));
+        void *dirty_ctx);
+    // __attribute__((access(write_only, 5), access(write_only, 6)));
 
 /**
  * @param index 0 = first; -1 = last.
