@@ -562,14 +562,14 @@ static int load_reference_meta_field_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field)
+        const struct SelvaFieldSchema *efs)
 {
     struct sdb_string_meta meta;
     struct selva_string *s;
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, field, meta.len - sizeof(uint32_t), &s);
+    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, efs, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }
@@ -698,7 +698,7 @@ static int load_reference_meta(
             err = load_field_micro_buffer(io, ref->meta, fs);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_reference_meta_field_string(db, io, node, ref, efc, rd.field);
+            err = load_reference_meta_field_string(db, io, node, ref, efc, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
