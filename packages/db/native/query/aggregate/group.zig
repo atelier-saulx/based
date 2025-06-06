@@ -92,9 +92,9 @@ pub inline fn finalizeGroupResults(
                     const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                     const stddev = @sqrt(variance);
                     utils.debugPrint("stddev: {d}\n", .{stddev});
-                    writeInt(f32, resultsField, resultPos, @floatCast(stddev)); // using f32 just to accomodate the 32bytes in result
+                    writeInt(f64, resultsField, resultPos, @floatCast(stddev)); // using f32 just to accomodate the 32bytes in result
                 } else {
-                    writeInt(f32, resultsField, resultPos, 0.0);
+                    writeInt(f64, resultsField, resultPos, 0.0);
                 }
             } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
                 // const hll = read hll "buffer" from accumulatorField and convert it to selvastring

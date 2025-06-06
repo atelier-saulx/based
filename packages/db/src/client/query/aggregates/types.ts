@@ -5,6 +5,15 @@ export const enum AggregateType {
   STDDEV = 4,
 }
 
+// export type AggregateTypeKey = keyof typeof AggregateType
+
+export const enum AccumulatorSize { // comptime
+  SUM = 4,
+  COUNT = 4,
+  CARDINALITY = 254, // TBD accordinly to sparse or dense modes
+  STDDEV = 24,
+}
+
 export const enum GroupBy {
   NONE = 0,
   HAS_GROUP = 255,

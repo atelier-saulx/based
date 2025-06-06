@@ -1002,7 +1002,6 @@ await test('stddev', async (t) => {
           country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
-          Brazil: 'uint8',
         },
       },
     },
@@ -1025,12 +1024,14 @@ await test('stddev', async (t) => {
     NL: 20,
   })
   const br1 = db.create('vote', {
-    country: 'BR', // variable length has an issue here
+    country: 'Brazil',
     NL: 50,
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+
+  // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
 })
 
 // test wildcards
