@@ -83,7 +83,9 @@ pub fn getCardinalityField(node: Node, fieldSchema: FieldSchema) ?[]u8 {
 
 pub fn getCardinalityFieldAsSelvaString(node: Node, fieldSchema: FieldSchema) ?[]u8 {
     if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
-        return @ptrCast(stored);
+        // return @ptrCast(stored);
+        _ = stored;
+        return null; // temp
     } else {
         return null;
     }

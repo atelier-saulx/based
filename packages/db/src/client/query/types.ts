@@ -88,6 +88,7 @@ export type Aggregation = {
   type: AggregateType
   propDef: PropDef // PropDefEdge |
   resultPos: number
+  accumulatorPos: number
   // add result field
 }
 
@@ -97,6 +98,7 @@ export type QueryDefAggregation = {
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   totalResultsPos: number
+  totalAccumulatorPos: number
 }
 
 export type QueryDefShared = {

@@ -10,17 +10,17 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 8;
+pub const ProtocolLen = 10;
 
 pub const GroupCtx = struct {
-    hashMap: SimpleHashMap,
-    resultsSize: u16,
-    accumulatorSize: u16,
-    fieldSchema: db.FieldSchema,
-    start: u16,
-    field: u8,
-    len: u16,
-    propType: types.Prop,
+    hashMap: SimpleHashMap, // -
+    resultsSize: u16, // 2
+    accumulatorSize: u16, // 2
+    fieldSchema: db.FieldSchema, // -
+    start: u16, // 2
+    field: u8, // 1
+    len: u16, // 2
+    propType: types.Prop, // 1
 };
 
 // pub inline fn setGroupResults(
@@ -60,7 +60,7 @@ pub inline fn finalizeGroupResults(
         writeInt(u16, data, i, keyLen);
         i += 2;
         if (keyLen > 0) {
-            copy(data[i .. i + keyLen].ptr, key.ptr);
+            copy(data[i .. i + keyLen], key);
             i += keyLen;
         }
 
@@ -82,7 +82,7 @@ pub inline fn finalizeGroupResults(
             j += 2;
 
             if (aggType == aggregateTypes.AggType.COUNT or aggType == aggregateTypes.AggType.SUM) {
-                copy(resultsField[resultPos..].ptr, accumulatorField[accumulatorPos .. accumulatorPos + 4].ptr);
+                copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
             } else if (aggType == aggregateTypes.AggType.STDDEV) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 if (count > 1) {
@@ -91,9 +91,10 @@ pub inline fn finalizeGroupResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                     const stddev = @sqrt(variance);
-                    writeInt(f64, resultsField, resultPos, stddev);
+                    utils.debugPrint("stddev: {d}\n", .{stddev});
+                    writeInt(f32, resultsField, resultPos, @floatCast(stddev)); // using f32 just to accomodate the 32bytes in result
                 } else {
-                    writeInt(f64, resultsField, resultPos, 0.0);
+                    writeInt(f32, resultsField, resultPos, 0.0);
                 }
             } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
                 // const hll = read hll "buffer" from accumulatorField and convert it to selvastring

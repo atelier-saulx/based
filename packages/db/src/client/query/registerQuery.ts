@@ -30,6 +30,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
 
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
+    console.log('buf:', buf)
     let id = native.crc32(buf)
     q.id = id
     q.buffer = buf

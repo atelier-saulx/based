@@ -14,7 +14,7 @@ const aggregateTypes = @import("./types.zig");
 const aggregate = @import("./aggregate.zig").aggregate;
 const createGroupCtx = @import("./group.zig").createGroupCtx;
 const GroupProtocolLen = @import("./group.zig").ProtocolLen;
-const setGroupResults = @import("./group.zig").setGroupResults;
+// const setGroupResults = @import("./group.zig").setGroupResults;
 
 const incTypes = @import("../include/types.zig");
 const filter = @import("../filter/filter.zig").filter;
@@ -84,7 +84,7 @@ pub inline fn aggregateRefsGroup(
     }
 
     const val = try ctx.allocator.alloc(u8, resultSize);
-    try setGroupResults(val, groupCtx);
+    // try setGroupResults(val, groupCtx);
 
     try ctx.results.append(.{
         .id = null,

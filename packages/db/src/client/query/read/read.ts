@@ -76,7 +76,7 @@ const readAggregate = (
           setByPath(
             resultKey,
             agg.propDef.path,
-            readUint32(result, agg.resultPos + i),
+            readFloatLE(result, agg.resultPos + i), //readUint32(result, agg.resultPos + i),
           )
         }
       }

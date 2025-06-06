@@ -11,7 +11,6 @@ const copy = utils.copy;
 pub inline fn execAgg(
     aggPropDef: []u8,
     accumulatorField: []u8,
-    resultsField: []u8,
     value: []u8,
     fieldAggsSize: u16,
 ) void {
@@ -27,14 +26,15 @@ pub inline fn execAgg(
         const resultPos = read(u16, aggPropDef, j);
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
+        j += 2;
 
         if (aggType == aggregateTypes.AggType.COUNT) {
-            writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + 1);
+            writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.SUM) {
             if (propType == types.Prop.UINT32) {
-                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + read(u32, value, start));
+                writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + read(u32, value, start));
             } else if (propType == types.Prop.UINT8) {
-                writeInt(u32, resultsField, resultPos, read(u32, resultsField, resultPos) + value[start]);
+                writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + value[start]);
             } else {
                 //later
             }
@@ -85,7 +85,8 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             return;
         };
         if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            value = db.getCardinalityFieldAsSelvaString(node, fieldSchema); //@ptrCast para ?[]u8 ver como vai
+            // value = db.getCardinalityFieldAsSelvaString(node, fieldSchema); //@ptrCast para ?[]u8 ver como vai
+            value = &[_]u8{}; // temp
         } else {
             value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
         }

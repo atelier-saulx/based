@@ -974,7 +974,7 @@ await test('stddev', async (t) => {
   })
 
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -1002,6 +1002,7 @@ await test('stddev', async (t) => {
           country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
+          Brazil: 'uint8',
         },
       },
     },
@@ -1012,14 +1013,22 @@ await test('stddev', async (t) => {
     NL: 10,
   })
   const nl2 = db.create('vote', {
-    country: 'aa',
-    NL: 20,
+    country: 'bb',
+    NL: 23,
   })
   const au1 = db.create('vote', {
     country: 'aa',
-    AU: 15,
+    NL: 15,
   })
-  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+  const au2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const br1 = db.create('vote', {
+    country: 'BR', // variable length has an issue here
+    NL: 50,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   await db.query('vote').stddev('NL').groupBy('country').get().inspect()
 })

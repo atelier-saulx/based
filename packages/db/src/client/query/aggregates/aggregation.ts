@@ -26,6 +26,8 @@ export const aggregateToBuffer = (
   }
   writeUint16(aggBuffer, aggregates.totalResultsPos, i)
   i += 2
+  writeUint16(aggBuffer, 24, i) // to put the accumulatorSize accordinly to the aggFn. For stddev = count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  i += 2
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
     i += 1
@@ -42,6 +44,8 @@ export const aggregateToBuffer = (
       i += 2
       writeUint16(aggBuffer, agg.resultPos, i)
       i += 2
+      writeUint16(aggBuffer, agg.accumulatorPos, i)
+      i += 2
       size += i - startI
     }
     writeUint16(aggBuffer, size, sizeIndex)
@@ -56,6 +60,7 @@ const ensureAggregate = (def: QueryDef) => {
       size: 3,
       aggregates: new Map(),
       totalResultsPos: 0,
+      totalAccumulatorPos: 0,
     }
   }
 }
@@ -68,7 +73,7 @@ export const groupBy = (def: QueryDef, field: string) => {
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 6
+    def.aggregate.size += 8
   }
   def.aggregate.groupBy = fieldDef
 }
@@ -114,12 +119,14 @@ export const addAggregate = (
         propDef: fieldDef,
         type,
         resultPos: def.aggregate.totalResultsPos,
+        accumulatorPos: def.aggregate.totalAccumulatorPos,
       })
       // IF FLOAT // NUMBER ETC USE 8!
       // do this better
-      def.aggregate.totalResultsPos += 4
+      def.aggregate.totalResultsPos += 4 // TBC
+      def.aggregate.totalAccumulatorPos += 24 // TBC: only for stddev
       // needs to add an extra field WRITE TO
-      def.aggregate.size += 6
+      def.aggregate.size += 8
     }
   }
 }
