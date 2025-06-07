@@ -40,6 +40,7 @@ import {
   READ_REFERENCES,
   READ_AGGREGATION,
 } from '../types.js'
+import { AggregateType } from '../aggregates/types.js'
 
 export type Item = {
   id: number
@@ -73,11 +74,29 @@ const readAggregate = (
       const resultKey = (results[key] = {})
       for (const aggregatesArray of q.aggregate.aggregates.values()) {
         for (const agg of aggregatesArray) {
-          setByPath(
-            resultKey,
-            agg.propDef.path,
-            readDoubleLE(result, agg.resultPos + i), //readUint32(result, agg.resultPos + i),
-          )
+          var val = undefined
+          if (
+            agg.type === AggregateType.CARDINALITY ||
+            agg.type === AggregateType.COUNT
+          ) {
+            val = readUint32(result, agg.resultPos + i)
+          } else if (agg.type == AggregateType.STDDEV) {
+            val = readDoubleLE(result, agg.resultPos + i)
+          } else if (
+            agg.propDef.typeIndex === TIMESTAMP ||
+            agg.propDef.typeIndex === NUMBER
+          ) {
+            val = readDoubleLE(result, agg.resultPos + i)
+          } else if (
+            agg.propDef.typeIndex === UINT32 ||
+            agg.propDef.typeIndex === UINT16 ||
+            agg.propDef.typeIndex === UINT8
+          ) {
+            val = readUint32(result, agg.resultPos + i)
+          } else {
+            val = readDoubleLE(result, agg.resultPos + i)
+          }
+          setByPath(resultKey, agg.propDef.path, val)
         }
       }
       i += q.aggregate.totalResultsPos

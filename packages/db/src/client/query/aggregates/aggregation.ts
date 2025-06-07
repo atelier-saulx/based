@@ -1,7 +1,7 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
-import { PropDef, UINT32, SIZE_MAP } from '@based/schema/def'
+import { PropDef, UINT32, REVERSE_SIZE_MAP, SIZE_MAP } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
 import { AccumulatorSize } from '../aggregates/types.js'
 
@@ -129,7 +129,8 @@ export const addAggregate = (
         def.aggregate.totalResultsPos += 8
         def.aggregate.totalAccumulatorPos += AccumulatorSize.STDDEV
       } else {
-        def.aggregate.totalResultsPos += SIZE_MAP[fieldDef.prop]
+        def.aggregate.totalResultsPos +=
+          REVERSE_SIZE_MAP[fieldDef.typeIndex] > 4 ? 8 : 4
       }
       // needs to add an extra field WRITE TO
       def.aggregate.size += 8
