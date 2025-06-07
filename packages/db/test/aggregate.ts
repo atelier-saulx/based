@@ -1030,6 +1030,7 @@ await test('stddev', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+  await db.query('vote').sum('NL').groupBy('country').get().inspect()
 
   // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
 })

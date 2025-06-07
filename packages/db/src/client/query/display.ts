@@ -15,6 +15,7 @@ import {
 } from '@based/schema/def'
 import { BasedQueryResponse } from './BasedIterable.js'
 import { ENCODER } from '@saulx/utils'
+import { AggregateType } from './aggregates/types.js'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -192,9 +193,20 @@ const inspectObject = (
       if (typeof v === 'number') {
         if (q.aggregate) {
           str += printNumber(v)
-          str += picocolors.italic(
-            picocolors.dim(` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`), // MV: better with AggregateType later
-          )
+          // TBD: replace comptime const enum and reverse map it
+          const aggType = q.aggregate.aggregates.get(0)[0].type
+          var label = ' '
+          if (aggType == AggregateType.SUM) {
+            label += 'sum'
+          } else if (
+            aggType == AggregateType.COUNT ||
+            aggType == AggregateType.CARDINALITY
+          ) {
+            label += 'count'
+          } else if (aggType == AggregateType.STDDEV) {
+            label += 'stddev'
+          }
+          str += picocolors.italic(picocolors.dim(label))
           str += ',\n'
         } else {
           str += printNumber(v) + '\n'
@@ -258,11 +270,19 @@ const inspectObject = (
         if (typeof v === 'number') {
           if (q.aggregate) {
             str += printNumber(v)
-            str += picocolors.italic(
-              picocolors.dim(
-                ` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`,
-              ), // MV: better with AggregateType later
-            )
+            const aggType = q.aggregate.aggregates.get(0)[0].type
+            var label = ' '
+            if (aggType == AggregateType.SUM) {
+              label += 'sum'
+            } else if (
+              aggType == AggregateType.COUNT ||
+              aggType == AggregateType.CARDINALITY
+            ) {
+              label += 'count'
+            } else if (aggType == AggregateType.STDDEV) {
+              label += 'stddev'
+            }
+            str += picocolors.italic(picocolors.dim(label))
           } else {
             str += printNumber(v)
           }
