@@ -91,7 +91,6 @@ pub inline fn finalizeGroupResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                     const stddev = @sqrt(variance);
-                    utils.debugPrint("stddev: {d}\n", .{stddev});
                     writeInt(f64, resultsField, resultPos, @floatCast(stddev)); // using f32 just to accomodate the 32bytes in result
                 } else {
                     writeInt(f64, resultsField, resultPos, 0.0);
