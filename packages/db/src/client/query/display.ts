@@ -195,18 +195,9 @@ const inspectObject = (
           str += printNumber(v)
           // TBD: replace comptime const enum and reverse map it
           const aggType = q.aggregate.aggregates.get(0)[0].type
-          var label = ' '
-          if (aggType == AggregateType.SUM) {
-            label += 'sum'
-          } else if (
-            aggType == AggregateType.COUNT ||
-            aggType == AggregateType.CARDINALITY
-          ) {
-            label += 'count'
-          } else if (aggType == AggregateType.STDDEV) {
-            label += 'stddev'
-          }
-          str += picocolors.italic(picocolors.dim(label))
+          str += picocolors.italic(
+            picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
+          )
           str += ',\n'
         } else {
           str += printNumber(v) + '\n'
@@ -271,18 +262,9 @@ const inspectObject = (
           if (q.aggregate) {
             str += printNumber(v)
             const aggType = q.aggregate.aggregates.get(0)[0].type
-            var label = ' '
-            if (aggType == AggregateType.SUM) {
-              label += 'sum'
-            } else if (
-              aggType == AggregateType.COUNT ||
-              aggType == AggregateType.CARDINALITY
-            ) {
-              label += 'count'
-            } else if (aggType == AggregateType.STDDEV) {
-              label += 'stddev'
-            }
-            str += picocolors.italic(picocolors.dim(label))
+            str += picocolors.italic(
+              picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
+            )
           } else {
             str += printNumber(v)
           }

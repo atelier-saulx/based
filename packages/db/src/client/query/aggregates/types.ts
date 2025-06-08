@@ -1,4 +1,4 @@
-export const enum AggregateType {
+export enum AggregateType {
   SUM = 1,
   COUNT = 2,
   CARDINALITY = 3,
