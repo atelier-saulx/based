@@ -125,13 +125,14 @@ export const addAggregate = (
 
       if (type === AggregateType.CARDINALITY || type === AggregateType.COUNT) {
         def.aggregate.totalResultsSize += 4
+        def.aggregate.totalAccumulatorSize += 4
       } else if (type === AggregateType.STDDEV) {
         def.aggregate.totalResultsSize += 8
         def.aggregate.totalAccumulatorSize += AccumulatorSize.STDDEV
       } else {
         def.aggregate.totalResultsSize +=
           REVERSE_SIZE_MAP[fieldDef.typeIndex] > 4 ? 8 : 4
-        def.aggregate.totalAccumulatorSize += 4
+        def.aggregate.totalAccumulatorSize += 4 // TBD
       }
       // needs to add an extra field WRITE TO
       def.aggregate.size += 8
