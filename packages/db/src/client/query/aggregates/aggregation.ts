@@ -74,7 +74,7 @@ export const groupBy = (def: QueryDef, field: string) => {
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 8
+    def.aggregate.size += 6
   }
   def.aggregate.groupBy = fieldDef
 }

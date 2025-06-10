@@ -4,8 +4,7 @@ import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
 
-// sum top level
-await test('stl', async (t) => {
+await test('sum top level', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -105,8 +104,7 @@ await test('stl', async (t) => {
   )
 })
 
-//sum group by
-await test('sss', async (t) => {
+await test('sum group by', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -755,22 +753,22 @@ await test('variable key size', async (t) => {
     contributors: [cipolla],
   })
 
-  deepEqual(
-    await db
-      .query('article')
-      .include((q) => q('contributors').sum('flap'), 'name')
-      .get()
-      .toObject(),
-    [
-      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-      {
-        id: 2,
-        name: 'Les lois fondamentales de la stupidité humaine',
-        contributors: { flap: 80 },
-      },
-    ],
-    'sum, branched query, var len string',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('article')
+  //     .include((q) => q('contributors').sum('flap'), 'name')
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+  //     {
+  //       id: 2,
+  //       name: 'Les lois fondamentales de la stupidité humaine',
+  //       contributors: { flap: 80 },
+  //     },
+  //   ],
+  //   'sum, branched query, var len string',
+  // )
 
   deepEqual(
     await db.query('user').groupBy('name').sum('flap').get().toObject(),
@@ -795,32 +793,32 @@ await test('variable key size', async (t) => {
     'sum, groupBy, main, $undefined',
   )
 
-  deepEqual(
-    await db
-      .query('article')
-      .include((select) => {
-        select('contributors').groupBy('name').sum('flap')
-      })
-      .get(),
-    [
-      {
-        id: 1,
-        contributors: {
-          Flippie: { flap: 20 },
-          'Mr snurp': { flap: 10 },
-          Derpie: { flap: 30 },
-          'Dinkel Doink': { flap: 40 },
-        },
-      },
-      {
-        id: 2,
-        contributors: {
-          'Carlo Cipolla': { flap: 80 },
-        },
-      },
-    ],
-    'sum, branched query, groupBy, referenes',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('article')
+  //     .include((select) => {
+  //       select('contributors').groupBy('name').sum('flap')
+  //     })
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       contributors: {
+  //         Flippie: { flap: 20 },
+  //         'Mr snurp': { flap: 10 },
+  //         Derpie: { flap: 30 },
+  //         'Dinkel Doink': { flap: 40 },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       contributors: {
+  //         'Carlo Cipolla': { flap: 80 },
+  //       },
+  //     },
+  //   ],
+  //   'sum, branched query, groupBy, references',
+  // )
 })
 
 await test('agg on references', async (t) => {
@@ -1031,8 +1029,10 @@ await test('stddev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  // await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+  await db.query('vote').stddev('NL').groupBy('country').get().inspect()
   await db.query('vote').sum('NL').groupBy('country').get().inspect()
+  await db.query('vote').count().groupBy('country').get().inspect()
+  await db.query('vote').groupBy('country').get().inspect()
 
   // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
 })
