@@ -82,7 +82,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
         result.push(b)
       } else {
         for (const code of codes) {
-          const fallBackSize = fallBacks.size
+          const fallBackSize = fallBacks.length
           const b = new Uint8Array(4 + fallBackSize)
           b[0] = prop
           b[1] = propDef.typeIndex

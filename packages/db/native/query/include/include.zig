@@ -148,7 +148,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             includeIterator += 2 + fallbackSize;
 
             if (code != t.LangCode.NONE) {
-                const s = db.getTextFromValue(value, code);
+                const s = if (fallbackSize > 0) db.getTextFromValueFallback(value, code, operation[3 .. 3 + fallbackSize]) else db.getTextFromValue(value, code);
                 if (s.len > 0) {
                     if (isEdge) {
                         size += (s.len + 6 - 4);
@@ -168,7 +168,7 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                     try ctx.results.append(result);
                 }
             } else {
-                var iter = db.textIterator(value, code);
+                var iter = db.textIterator(value);
                 while (iter.next()) |s| {
                     if (isEdge) {
                         size += (s.len + 6 - 4);

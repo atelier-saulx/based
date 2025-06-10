@@ -449,7 +449,48 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
     return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
 }
 
-// fallbacks: ?[]u8,
+pub inline fn getTextFromValueFallback(
+    value: []u8,
+    code: types.LangCode,
+    fallbacks: []u8,
+) []u8 {
+    if (value.len == 0) {
+        return value;
+    }
+    var lastFallbackValue: []u8 = undefined;
+    var lastFallbackIndex: usize = fallbacks.len;
+    var index: usize = 0;
+    const langInt = @intFromEnum(code);
+    const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    while (index < text.len) {
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&text[index]), &len);
+        const s = @as([*]u8, @constCast(str));
+        const langCode = s[0];
+        if (langCode == langInt) {
+            return s[0..len];
+        }
+        if (lastFallbackIndex != 0) {
+            var i: usize = 0;
+            while (i < lastFallbackIndex) {
+                if (langCode == fallbacks[i]) {
+                    lastFallbackValue = s[0..len];
+                    lastFallbackIndex = i;
+                    break;
+                }
+                i += 1;
+            }
+        }
+        index += 1;
+    }
+    if (lastFallbackIndex != fallbacks.len) {
+        return lastFallbackValue;
+    }
+    return @as([*]u8, undefined)[0..0];
+}
+
+// (3% faster then iterator)
 pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
     if (value.len == 0) {
         return value;
@@ -474,8 +515,6 @@ pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
 pub const TextIterator = struct {
     value: []const [selva.SELVA_STRING_STRUCT_SIZE]u8,
     index: usize = 0,
-    code: types.LangCode,
-    // lastFallback: ?FallBack,
     fn _next(self: *TextIterator) ?[]u8 {
         if (self.index == self.value.len) {
             return null;
@@ -486,34 +525,20 @@ pub const TextIterator = struct {
         self.index += 1;
         return s[0..len];
     }
-    fn _lang(self: *TextIterator) ?[]u8 {
-        while (self._next()) |s| {
-            if (s[0] == @intFromEnum(self.code)) {
-                return s;
-            }
-        }
-        return null;
-    }
     pub fn next(self: *TextIterator) ?[]u8 {
-        // TODO fix with comptime...
-        if (self.code == types.LangCode.NONE) {
-            return self._next();
-        } else {
-            return self._lang();
-        }
+        return self._next();
     }
 };
 
 pub inline fn textIterator(
     value: []u8,
-    code: types.LangCode,
 ) TextIterator {
     if (value.len == 0) {
-        return TextIterator{ .value = emptyArray, .code = code };
+        return TextIterator{ .value = emptyArray };
     }
     const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
     const text = textTmp.*[0..value[8]];
-    return TextIterator{ .value = text, .code = code };
+    return TextIterator{ .value = text };
 }
 
 pub inline fn getText(
@@ -524,6 +549,7 @@ pub inline fn getText(
     fieldType: types.Prop,
     langCode: types.LangCode,
 ) []u8 {
+    // fallbacks
     const data = getField(typeEntry, id, node, fieldSchema, fieldType);
     return getTextFromValue(data, langCode);
 }

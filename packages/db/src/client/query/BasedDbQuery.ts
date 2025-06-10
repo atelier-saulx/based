@@ -500,8 +500,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
             : false
       }
       validateLocale(this.def, locale)
-      const fallBackCode: Set<LangCode> =
-        fallBack === false ? new Set() : new Set([langCodesMap.get(fallBack)])
+      const fallBackCode: LangCode[] =
+        fallBack === false ? [] : [langCodesMap.get(fallBack)]
       this.def.lang = {
         lang: langCodesMap.get(locale) ?? 0,
         fallback: fallBackCode,

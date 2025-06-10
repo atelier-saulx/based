@@ -1,3 +1,4 @@
+import { LangCode } from '@based/schema'
 import { QueryDef } from '../types.js'
 import { filterOperatorDoesNotExist } from '../validation.js'
 import { FilterBranch } from './FilterBranch.js'
@@ -14,6 +15,8 @@ export const IsFilter = (f: FilterAst): f is Filter => {
   }
   return false
 }
+
+export type FilterLang = { lang: LangCode; fallbacks: LangCode[] }
 
 export type Operator =
   | '='

@@ -26,7 +26,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     range: { offset: 0, limit: 0 },
     lang: {
       lang: langCodesMap.get('none'),
-      fallback: new Set(),
+      fallback: [],
     },
     include: {
       langTextFields: new Map(),

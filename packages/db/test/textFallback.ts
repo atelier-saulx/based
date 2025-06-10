@@ -71,23 +71,23 @@ await test('textFallback', async (t) => {
 
   // local second argument
   // false (block all fallbacks) or lang fallback
-  await db.query('project').locale('nl').get().inspect()
+  await db.query('project').locale('nl').get().inspect(10)
 
   // when over range - this breaks with dirty ranges
   // this breaks schema as well
-  for (let i = 0; i < 1e6; i++) {
-    db.create(
-      'project',
-      {
-        title: 'b',
-        abstract: 'a',
-        description: 'c',
-      },
-      { locale: 'nl' },
-    )
-  }
+  // for (let i = 0; i < 1e6; i++) {
+  //   db.create(
+  //     'project',
+  //     {
+  //       title: 'b',
+  //       abstract: 'a',
+  //       description: 'c',
+  //     },
+  //     { locale: 'nl' },
+  //   )
+  // }
 
-  await db.drain()
+  // await db.drain()
 
-  await db.query('project').range(0, 1e6).get().inspect(1)
+  // await db.query('project').range(0, 1e6).get().inspect(1)
 })

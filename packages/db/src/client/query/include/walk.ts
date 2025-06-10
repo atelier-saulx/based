@@ -76,7 +76,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           def.include.langTextFields.set(t.prop, {
             def: t,
             codes: new Set(),
-            fallBacks: new Set(),
+            fallBacks: [],
           })
         }
         def.include.langTextFields.get(t.prop).codes.add(langCode)

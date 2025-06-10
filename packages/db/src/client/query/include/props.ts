@@ -84,19 +84,21 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
       def.include.langTextFields.set(prop.prop, {
         def: prop,
         codes: new Set(),
-        fallBacks: new Set(),
+        fallBacks: [],
       })
     }
     const langs = def.include.langTextFields.get(prop.prop)
-    if (def.lang.fallback.size > 0) {
-      for (const fallback of def.lang.fallback.values()) {
-        langs.fallBacks.add(fallback)
+    if (def.lang.fallback.length > 0) {
+      for (const fallback of def.lang.fallback) {
+        if (!langs.fallBacks.includes(fallback)) {
+          langs.fallBacks.push(fallback)
+        }
       }
     }
     const langCode = def.lang.lang ?? 0
     langs.codes.add(langCode)
     if (langCode === 0 || langs.codes.size > 1) {
-      langs.fallBacks = new Set()
+      langs.fallBacks = []
     }
   } else {
     if (prop.separate) {
