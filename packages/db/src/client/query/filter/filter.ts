@@ -124,6 +124,7 @@ export const filterRaw = (
   }
   return primitiveFilter(def, fieldDef, filter, conditions, {
     lang: def.lang.lang,
+    // def
     fallbacks: [], // only fallbacks for this are we sure :/ ? can be pretty confusing
   })
 }

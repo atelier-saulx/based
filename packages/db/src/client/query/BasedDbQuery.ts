@@ -486,7 +486,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
   locale(locale: LangName, fallBack?: LangFallback) {
     if (this.queryCommands) {
-      this.queryCommands.push({
+      this.queryCommands.unshift({
         method: 'locale',
         args: [locale],
       })
