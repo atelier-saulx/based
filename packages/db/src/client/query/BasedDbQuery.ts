@@ -25,7 +25,7 @@ import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { langCodesMap, LangName } from '@based/schema'
+import { LangCode, langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
@@ -500,7 +500,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
             : false
       }
       validateLocale(this.def, locale)
-      const fallBackCode = fallBack === false ? 0 : langCodesMap.get(fallBack)
+      const fallBackCode: Set<LangCode> =
+        fallBack === false ? new Set() : new Set([langCodesMap.get(fallBack)])
       this.def.lang = {
         lang: langCodesMap.get(locale) ?? 0,
         fallback: fallBackCode,

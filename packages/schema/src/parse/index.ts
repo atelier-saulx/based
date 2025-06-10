@@ -71,7 +71,6 @@ export class SchemaParser {
     for (const locale in locales) {
       const opts = locales[locale]
       if (opts === true) {
-        console.log(locale, opts)
         continue
       }
       expectObject(opts)

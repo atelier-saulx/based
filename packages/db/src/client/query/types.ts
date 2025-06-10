@@ -104,7 +104,7 @@ export type LangFallback = LangName | false
 export type QueryDefShared = {
   schemaChecksum?: number
   errors: QueryError[]
-  lang: { lang: LangCode; fallback: LangCode }
+  lang: { lang: LangCode; fallback: Set<LangCode> }
   filter: QueryDefFilter
   aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch
@@ -116,8 +116,12 @@ export type QueryDefShared = {
   }
   include: {
     langTextFields: Map<
-      number,
-      { def: PropDef | PropDefEdge; codes: Set<LangCode> }
+      number, // prop name
+      {
+        def: PropDef | PropDefEdge
+        codes: Set<LangCode>
+        fallBacks: Set<LangCode>
+      }
     >
     stringFields: Set<string>
     props: Map<number, PropDef | PropDefEdge>

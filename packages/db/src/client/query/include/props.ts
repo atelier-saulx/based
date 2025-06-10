@@ -81,9 +81,23 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
   }
   if (prop.typeIndex === TEXT) {
     if (!def.include.langTextFields.has(prop.prop)) {
-      def.include.langTextFields.set(prop.prop, { def: prop, codes: new Set() })
+      def.include.langTextFields.set(prop.prop, {
+        def: prop,
+        codes: new Set(),
+        fallBacks: new Set(),
+      })
     }
-    def.include.langTextFields.get(prop.prop).codes.add(def.lang.lang ?? 0)
+    const langs = def.include.langTextFields.get(prop.prop)
+    if (def.lang.fallback.size > 0) {
+      for (const fallback of def.lang.fallback.values()) {
+        langs.fallBacks.add(fallback)
+      }
+    }
+    const langCode = def.lang.lang ?? 0
+    langs.codes.add(langCode)
+    if (langCode === 0 || langs.codes.size > 1) {
+      langs.fallBacks = new Set()
+    }
   } else {
     if (prop.separate) {
       def.include.props.set(prop.prop, prop)
