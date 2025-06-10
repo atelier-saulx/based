@@ -35,7 +35,9 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     var index: usize = 1;
     const resultsSize = read(u16, aggInput, index);
     index += 2;
-    ctx.size = resultsSize;
+    const accumulatorSize = read(u16, aggInput, index);
+    index += 2;
+    ctx.size = resultsSize + accumulatorSize;
     const agg = aggInput[index..aggInput.len];
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
@@ -108,5 +110,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     try finalizeGroupResults(data, groupCtx, agg);
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+    // utils.debugPrint("buf: {any}", .{data}); // MV
     return result;
 }

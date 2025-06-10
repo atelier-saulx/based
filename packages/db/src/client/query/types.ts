@@ -97,8 +97,8 @@ export type QueryDefAggregation = {
   groupBy?: PropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
-  totalResultsPos: number
-  totalAccumulatorPos: number
+  totalResultsSize: number
+  totalAccumulatorSize: number
 }
 
 export type QueryDefShared = {

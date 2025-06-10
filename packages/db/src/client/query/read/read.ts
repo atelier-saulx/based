@@ -99,7 +99,7 @@ const readAggregate = (
           setByPath(resultKey, agg.propDef.path, val)
         }
       }
-      i += q.aggregate.totalResultsPos
+      i += q.aggregate.totalResultsSize
     }
   } else {
     for (const aggregatesArray of q.aggregate.aggregates.values()) {

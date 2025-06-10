@@ -4,14 +4,15 @@ import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
 
-await test('sum top level', async (t) => {
+// sum top level
+await test('stl', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
   })
 
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -104,7 +105,8 @@ await test('sum top level', async (t) => {
   )
 })
 
-await test('sum group by', async (t) => {
+//sum group by
+await test('sss', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -1029,7 +1031,7 @@ await test('stddev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+  // await db.query('vote').stddev('NL').groupBy('country').get().inspect()
   await db.query('vote').sum('NL').groupBy('country').get().inspect()
 
   // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()

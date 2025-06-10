@@ -25,9 +25,9 @@ export const aggregateToBuffer = (
     aggBuffer[i] = GroupBy.NONE
     i += 1
   }
-  writeUint16(aggBuffer, aggregates.totalResultsPos, i)
+  writeUint16(aggBuffer, aggregates.totalResultsSize, i)
   i += 2
-  writeUint16(aggBuffer, 24, i) // to put the accumulatorSize accordinly to the aggFn. For stddev = count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
@@ -58,10 +58,10 @@ export const aggregateToBuffer = (
 const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 3,
+      size: 5,
       aggregates: new Map(),
-      totalResultsPos: 0,
-      totalAccumulatorPos: 0,
+      totalResultsSize: 0,
+      totalAccumulatorSize: 0,
     }
   }
 }
@@ -119,18 +119,19 @@ export const addAggregate = (
       aggregateField.push({
         propDef: fieldDef,
         type,
-        resultPos: def.aggregate.totalResultsPos,
-        accumulatorPos: def.aggregate.totalAccumulatorPos,
+        resultPos: def.aggregate.totalResultsSize,
+        accumulatorPos: def.aggregate.totalAccumulatorSize,
       })
 
       if (type === AggregateType.CARDINALITY || type === AggregateType.COUNT) {
-        def.aggregate.totalResultsPos += 4
+        def.aggregate.totalResultsSize += 4
       } else if (type === AggregateType.STDDEV) {
-        def.aggregate.totalResultsPos += 8
-        def.aggregate.totalAccumulatorPos += AccumulatorSize.STDDEV
+        def.aggregate.totalResultsSize += 8
+        def.aggregate.totalAccumulatorSize += AccumulatorSize.STDDEV
       } else {
-        def.aggregate.totalResultsPos +=
+        def.aggregate.totalResultsSize +=
           REVERSE_SIZE_MAP[fieldDef.typeIndex] > 4 ? 8 : 4
+        def.aggregate.totalAccumulatorSize += 4
       }
       // needs to add an extra field WRITE TO
       def.aggregate.size += 8
