@@ -194,7 +194,8 @@ const inspectObject = (
         if (q.aggregate) {
           str += printNumber(v)
           // TBD: replace comptime const enum and reverse map it
-          const aggType = q.aggregate.aggregates.get(0)[0].type
+          const [[__, akv], _] = q.aggregate.aggregates
+          const aggType = akv[0].type
           str += picocolors.italic(
             picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
           )
@@ -261,7 +262,8 @@ const inspectObject = (
         if (typeof v === 'number') {
           if (q.aggregate) {
             str += printNumber(v)
-            const aggType = q.aggregate.aggregates.get(0)[0].type
+            const [[__, akv], _] = q.aggregate.aggregates
+            const aggType = akv[0].type
             str += picocolors.italic(
               picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
             )
