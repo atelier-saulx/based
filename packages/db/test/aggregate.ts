@@ -3,7 +3,6 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import { wait } from '@saulx/utils'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -105,8 +104,7 @@ await test('sum top level', async (t) => {
   )
 })
 
-// sum group by  ----------------------------------
-await test('dev', async (t) => {
+await test('sum group by', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -820,6 +818,152 @@ await test('variable key size', async (t) => {
       },
     ],
     'sum, branched query, groupBy, referenes',
+  )
+})
+
+await test('agg on references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      team: {
+        props: {
+          teamName: { type: 'string' },
+          city: { type: 'string' },
+          players: {
+            items: {
+              ref: 'player',
+              prop: 'team',
+            },
+          },
+        },
+      },
+      player: {
+        props: {
+          playerName: { type: 'string' },
+          position: { type: 'string' },
+          goalsScored: 'uint16',
+          gamesPlayed: 'uint16',
+          team: {
+            ref: 'team',
+            prop: 'players',
+          },
+        },
+      },
+    },
+  })
+
+  const p1 = db.create('player', {
+    playerName: 'Martin',
+    position: 'Forward',
+    goalsScored: 10,
+    gamesPlayed: 5,
+  })
+  const p2 = db.create('player', {
+    playerName: 'Jemerson',
+    position: 'Defender',
+    goalsScored: 1,
+    gamesPlayed: 10,
+  })
+  const p3 = db.create('player', {
+    playerName: 'Pavon',
+    position: 'Forward',
+    goalsScored: 12,
+    gamesPlayed: 6,
+  })
+  const p4 = db.create('player', {
+    playerName: 'Wout',
+    position: 'Forward',
+    goalsScored: 8,
+    gamesPlayed: 7,
+  })
+  const p5 = db.create('player', {
+    playerName: 'Jorrel',
+    position: 'Defender',
+    goalsScored: 2,
+    gamesPlayed: 9,
+  })
+
+  const t1 = db.create('team', {
+    teamName: 'Grêmio',
+    city: 'Porto Alegre',
+    players: [p1, p2, p3],
+  })
+  const t2 = db.create('team', {
+    teamName: 'Ajax',
+    city: 'Amsterdam',
+    players: [p4, p5],
+  })
+  const t3 = db.create('team', {
+    teamName: 'Boca Juniors',
+    city: 'Buenos Aires',
+    players: [],
+  })
+  const t4 = db.create('team', {
+    teamName: 'Barcelona',
+    city: 'Barcelona',
+    players: [
+      db.create('player', {
+        playerName: 'Lewandowski',
+        position: 'Forward',
+        goalsScored: 5,
+        gamesPlayed: 5,
+      }),
+    ],
+  })
+
+  const result = await db
+    .query('team')
+    .include('teamName', 'city', (select) => {
+      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
+    })
+    .get()
+
+  result.inspect(100)
+
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        teamName: 'Grêmio',
+        city: 'Porto Alegre',
+        players: {
+          Forward: { goalsScored: 22, gamesPlayed: 11 }, // Martin (10,5) + Pavon (12,6)
+          Defender: { goalsScored: 1, gamesPlayed: 10 }, // Jemerson (1,10)
+        },
+      },
+      {
+        id: 2,
+        teamName: 'Ajax',
+        city: 'Amsterdam',
+        players: {
+          Forward: { goalsScored: 8, gamesPlayed: 7 }, // Wout (8,7)
+          Defender: { goalsScored: 2, gamesPlayed: 9 }, // Jorrel (2,9)
+        },
+      },
+      {
+        id: 3,
+        teamName: 'Boca Juniors',
+        city: 'Buenos Aires',
+        players: {}, // does anybody wants to play for Boca?
+      },
+      {
+        id: 4,
+        teamName: 'Barcelona',
+        city: 'Barcelona',
+        players: {
+          Forward: { goalsScored: 5, gamesPlayed: 5 }, // Lewandowski
+        },
+      },
+    ],
+    'Include parent props, with referenced items grouped by their own prop, and aggregations',
   )
 })
 

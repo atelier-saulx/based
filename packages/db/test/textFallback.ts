@@ -1,0 +1,93 @@
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+
+await test('textFallback', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: true, // do not know what required means
+      nl: { fallback: 'en' },
+    },
+    types: {
+      project: {
+        props: {
+          createdAt: {
+            type: 'timestamp',
+            on: 'create',
+          },
+          title: { type: 'text' },
+          description: { type: 'text' },
+          abstract: { type: 'text' },
+        },
+      },
+    },
+  })
+
+  await db.create(
+    'project',
+    {
+      title: 'Het Krakeel',
+      abstract:
+        'Wij, Jeroen, Sonja, Dionne, Michiel en Ad willen met gelijkgestemde huishoudens een kleinschalig woonproject ontwikkelen en bouwen in een landelijke omgeving waar ruimte is voor een moestuin, fruitbomen, een bijenvolk, kippen, konijnen, wormen- en insectenhotel, ruimte om te spelen en om samen te zijn.',
+    },
+    { locale: 'nl' },
+  )
+
+  await db.create(
+    'project',
+    {
+      title: 'Buurzaam',
+      abstract:
+        'Wij, Jeroen, Sonja, Dionne, Michiel en Ad willen met gelijkgestemde huishoudens een kleinschalig woonproject ontwikkelen en bouwen in een landelijke omgeving waar ruimte is voor een moestuin, fruitbomen, een bijenvolk, kippen, konijnen, wormen- en insectenhotel, ruimte om te spelen en om samen te zijn.',
+    },
+    { locale: 'nl' },
+  )
+
+  await db.create(
+    'project',
+    {
+      title: 'Minitopia Poeldonk',
+      abstract:
+        'Tiny Houses Crabbehof is begonnen in 2021 en bestaat uit tien zelfbouwkavels in Dordrecht. De tiny houses mogen hier voor een periode van tien jaar staan en zijn aangesloten op water, elektra en riolering. Verder vind je hier een fietsenstalling, een gemeenschapp',
+    },
+    { locale: 'nl' },
+  )
+
+  await db.create(
+    'project',
+    {
+      title: 'English house!',
+      abstract:
+        'Tiny Houses Crabbehof is begonnen in 2021 en bestaat uit tien zelfbouwkavels in Dordrecht. De tiny houses mogen hier voor een periode van tien jaar staan en zijn aangesloten op water, elektra en riolering. Verder vind je hier een fietsenstalling, een gemeenschapp',
+    },
+    { locale: 'en' },
+  )
+
+  // local second argument
+  // false (block all fallbacks) or lang fallback
+  await db.query('project').locale('nl').get().inspect(10)
+
+  // when over range - this breaks with dirty ranges
+  // this breaks schema as well
+  // for (let i = 0; i < 1e6; i++) {
+  //   db.create(
+  //     'project',
+  //     {
+  //       title: 'b',
+  //       abstract: 'a',
+  //       description: 'c',
+  //     },
+  //     { locale: 'nl' },
+  //   )
+  // }
+
+  // await db.drain()
+
+  // await db.query('project').range(0, 1e6).get().inspect(1)
+})

@@ -8,6 +8,7 @@ const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
+pub const DbCtx = @import("./ctx.zig").DbCtx;
 
 const read = utils.read;
 
@@ -18,62 +19,8 @@ pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-const base_allocator = std.heap.raw_c_allocator;
-var db_backing_allocator: std.mem.Allocator = undefined;
-var valgrind_wrapper_instance: valgrind.ValgrindAllocator = undefined; // this exists in the final program memory :(
-
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
-
-pub const DbCtx = struct {
-    initialized: bool,
-    allocator: std.mem.Allocator,
-    arena: *std.heap.ArenaAllocator,
-    sortIndexes: sort.TypeSortIndexes,
-    selva: ?*selva.SelvaDb,
-    decompressor: *selva.libdeflate_decompressor,
-    libdeflate_block_state: selva.libdeflate_block_state,
-
-    pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
-        self.arena.deinit();
-        backing_allocator.destroy(self.arena);
-    }
-};
-
-pub fn createDbCtx() !*DbCtx {
-    // If you want any var to persist out of the stack you have to do this (including an allocator)
-    var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
-    errdefer db_backing_allocator.destroy(arena);
-    arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
-    const allocator = arena.allocator();
-
-    const b = try allocator.create(DbCtx);
-    errdefer {
-        arena.deinit();
-        db_backing_allocator.destroy(arena);
-    }
-
-    b.* = .{
-        .arena = arena,
-        .allocator = allocator,
-        .sortIndexes = sort.TypeSortIndexes.init(allocator),
-        .initialized = false,
-        .selva = null,
-        .decompressor = selva.libdeflate_alloc_decompressor().?,
-        .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
-    };
-
-    return b;
-}
-
-pub fn init() void {
-    if (config.enable_debug) {
-        valgrind_wrapper_instance = valgrind.ValgrindAllocator.init(base_allocator);
-        db_backing_allocator = valgrind_wrapper_instance.allocator();
-    } else {
-        db_backing_allocator = base_allocator;
-    }
-}
 
 var lastQueryId: u32 = 0;
 pub fn getQueryId() u32 {
@@ -218,21 +165,21 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
 }
 
 pub fn setText(str: []u8, node: Node, fieldSchema: FieldSchema) !void {
-  try errors.selva(selva.selva_fields_set_text(
+    try errors.selva(selva.selva_fields_set_text(
         node,
         fieldSchema,
         str.ptr,
         str.len,
-  ));
+    ));
 }
 
 pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
-  try errors.selva(selva.selva_fields_set_micro_buffer2(
+    try errors.selva(selva.selva_fields_set_micro_buffer2(
         node,
         fieldSchema,
         value.ptr,
         value.len,
-  ));
+    ));
 }
 
 pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, vec: []u8) void {
@@ -246,14 +193,14 @@ pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, ve
 
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
-    var dirty: [2]selva.node_id_t = undefined;
     errors.selva(selva.selva_fields_reference_set(
         ctx.db.selva,
         src,
         fieldSchema,
         value,
         @ptrCast(&ref),
-        @ptrCast(&dirty),
+        markDirtyCb,
+        ctx,
     )) catch |err| {
         if (err == errors.SelvaError.SELVA_EEXIST) {
             const result = selva.selva_fields_get_reference(ctx.db.selva, src, fieldSchema);
@@ -265,16 +212,6 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
             return err;
         }
     };
-
-    const efc = selva.selva_get_edge_field_constraint(fieldSchema);
-    const dstType = efc.*.dst_node_type;
-    if (dirty[0] != 0) {
-        modifyCtx.markDirtyRange(ctx, dstType, dirty[0]);
-    }
-    if (dirty[1] != 0) {
-        modifyCtx.markDirtyRange(ctx, ctx.typeId, dirty[1]);
-    }
-    modifyCtx.markDirtyRange(ctx, dstType, getNodeId(value));
 
     return ref;
 }
@@ -414,14 +351,14 @@ pub fn writeEdgeProp(
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
-    prop: u8,
+    fieldSchema: FieldSchema,
 ) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(
         ctx.db.selva,
         node,
         ref,
         efc,
-        prop,
+        fieldSchema,
         data.ptr,
         data.len,
     ));
@@ -521,10 +458,72 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
     return selva.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
 }
 
+pub inline fn getTextFromValueFallback(
+    value: []u8,
+    code: types.LangCode,
+    fallbacks: []u8,
+) []u8 {
+    if (value.len == 0) {
+        return value;
+    }
+    var lastFallbackValue: []u8 = undefined;
+    var lastFallbackIndex: usize = fallbacks.len;
+    var index: usize = 0;
+    const langInt = @intFromEnum(code);
+    const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    while (index < text.len) {
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&text[index]), &len);
+        const s = @as([*]u8, @constCast(str));
+        const langCode = s[0];
+        if (langCode == langInt) {
+            return s[0..len];
+        }
+        if (lastFallbackIndex != 0) {
+            var i: usize = 0;
+            while (i < lastFallbackIndex) {
+                if (langCode == fallbacks[i]) {
+                    lastFallbackValue = s[0..len];
+                    lastFallbackIndex = i;
+                    break;
+                }
+                i += 1;
+            }
+        }
+        index += 1;
+    }
+    if (lastFallbackIndex != fallbacks.len) {
+        return lastFallbackValue;
+    }
+    return @as([*]u8, undefined)[0..0];
+}
+
+// (3% faster then iterator)
+pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
+    if (value.len == 0) {
+        return value;
+    }
+    var index: usize = 0;
+    const langInt = @intFromEnum(code);
+    const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    while (index < text.len) {
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.selva_string_to_buf(@ptrCast(&text[index]), &len);
+        const s = @as([*]u8, @constCast(str));
+        const langCode = s[0];
+        if (langCode == langInt) {
+            return s[0..len];
+        }
+        index += 1;
+    }
+    return @as([*]u8, undefined)[0..0];
+}
+
 pub const TextIterator = struct {
     value: []const [selva.SELVA_STRING_STRUCT_SIZE]u8,
     index: usize = 0,
-    code: types.LangCode,
     fn _next(self: *TextIterator) ?[]u8 {
         if (self.index == self.value.len) {
             return null;
@@ -535,31 +534,20 @@ pub const TextIterator = struct {
         self.index += 1;
         return s[0..len];
     }
-    fn _lang(self: *TextIterator) ?[]u8 {
-        while (self._next()) |s| {
-            if (s[0] == @intFromEnum(self.code)) {
-                return s;
-            }
-        }
-        return null;
-    }
     pub fn next(self: *TextIterator) ?[]u8 {
-        // TODO fix with comptime...
-        if (self.code == types.LangCode.NONE) {
-            return self._next();
-        } else {
-            return self._lang();
-        }
+        return self._next();
     }
 };
 
-pub inline fn textIterator(value: []u8, code: types.LangCode) TextIterator {
+pub inline fn textIterator(
+    value: []u8,
+) TextIterator {
     if (value.len == 0) {
-        return TextIterator{ .value = emptyArray, .code = code };
+        return TextIterator{ .value = emptyArray };
     }
     const textTmp: *[*]const [selva.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
     const text = textTmp.*[0..value[8]];
-    return TextIterator{ .value = text, .code = code };
+    return TextIterator{ .value = text };
 }
 
 pub inline fn getText(
@@ -570,16 +558,9 @@ pub inline fn getText(
     fieldType: types.Prop,
     langCode: types.LangCode,
 ) []u8 {
+    // fallbacks
     const data = getField(typeEntry, id, node, fieldSchema, fieldType);
-    var iter = textIterator(data, langCode);
-    while (iter.next()) |s| {
-        return s;
-    }
-    return @as([*]u8, undefined)[0..0];
-    //var len: usize = 0;
-    //var str: [*c]const u8 = undefined;
-    //errors.selva(selva.selva_fields_get_text(node, fieldSchema, @intFromEnum(langCode), &str, &len)) catch return @as([*]u8, undefined)[0..0];
-    //return @constCast(str[0..len]);
+    return getTextFromValue(data, langCode);
 }
 
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {

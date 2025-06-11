@@ -594,14 +594,14 @@ static int load_reference_meta_field_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field)
+        const struct SelvaFieldSchema *efs)
 {
     struct sdb_string_meta meta;
     struct selva_string *s;
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, field, meta.len - sizeof(uint32_t), &s);
+    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, efs, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }
@@ -730,7 +730,7 @@ static int load_reference_meta(
             err = load_field_micro_buffer(io, ref->meta, fs);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_reference_meta_field_string(db, io, node, ref, efc, rd.field);
+            err = load_reference_meta_field_string(db, io, node, ref, efc, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
@@ -776,6 +776,10 @@ static int load_reference_meta(
     return err;
 }
 
+static void faux_dirty_cb(void *, node_type_t, node_id_t)
+{
+}
+
 __attribute__((warn_unused_result))
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaTypeEntry *dst_te, ssize_t index)
 {
@@ -795,8 +799,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
 
     dst_node = selva_upsert_node(dst_te, dst_id);
     if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-        node_id_t dirty[2]; /* never really happens in load. */
-        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, dirty);
+        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
     } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
         err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, meta_present ? &ref : nullptr);
     } else {

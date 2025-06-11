@@ -22,11 +22,13 @@ if (isMainThread) {
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
 
+  // worker ctx init - maybe instead of this just add it on native
+  // instead of here just do this in native.js
   native.workerCtxInit()
 
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
-  const cp = (obj) => {
+  const cp = (obj: any) => {
     let copy: object
 
     for (const key in obj) {

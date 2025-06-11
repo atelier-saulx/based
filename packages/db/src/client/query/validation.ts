@@ -371,7 +371,7 @@ export const validateSort = (
       return {
         prop: EMPTY_ALIAS_PROP_DEF,
         order,
-        lang: def.lang,
+        lang: def.lang?.lang,
       }
     }
   }
@@ -383,7 +383,7 @@ export const validateSort = (
     })
   } else if (type === TEXT) {
     if (lang === 0) {
-      lang = def.lang ?? 0
+      lang = def.lang?.lang ?? 0
       if (lang === 0) {
         def.errors.push({
           code: ERR_SORT_LANG,

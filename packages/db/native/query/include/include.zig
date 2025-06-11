@@ -121,7 +121,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 // Is a edge ref cant filter on an edge field!
                 return 11;
             }
-
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint.?, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             if (prop == t.Prop.CARDINALITY) {
@@ -138,32 +137,56 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
 
         if (valueLen == 0) {
             if (prop == t.Prop.TEXT) {
-                includeIterator += 1;
+                includeIterator += 2 + operation[2];
             }
             continue :includeField;
         }
 
         if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);
-            includeIterator += 1;
-            var iter = db.textIterator(value, code);
-            while (iter.next()) |s| {
-                if (isEdge) {
-                    size += (s.len + 6 - 4);
-                } else {
-                    size += (s.len + 5 - 4);
-                }
-                var result = addResult(field, s[0 .. s.len - 4], edgeType);
-                if (!idIsSet) {
-                    size += 5;
-                    result.id = id;
-                    idIsSet = true;
-                    if (score != null) {
-                        result.score = score;
-                        size += 4;
+            const fallbackSize = operation[2];
+            includeIterator += 2 + fallbackSize;
+
+            if (code != t.LangCode.NONE) {
+                const s = if (fallbackSize > 0) db.getTextFromValueFallback(value, code, operation[3 .. 3 + fallbackSize]) else db.getTextFromValue(value, code);
+                if (s.len > 0) {
+                    if (isEdge) {
+                        size += (s.len + 6 - 4);
+                    } else {
+                        size += (s.len + 5 - 4);
                     }
+                    var result = addResult(field, s[0 .. s.len - 4], edgeType);
+                    if (!idIsSet) {
+                        size += 5;
+                        result.id = id;
+                        idIsSet = true;
+                        if (score != null) {
+                            result.score = score;
+                            size += 4;
+                        }
+                    }
+                    try ctx.results.append(result);
                 }
-                try ctx.results.append(result);
+            } else {
+                var iter = db.textIterator(value);
+                while (iter.next()) |s| {
+                    if (isEdge) {
+                        size += (s.len + 6 - 4);
+                    } else {
+                        size += (s.len + 5 - 4);
+                    }
+                    var result = addResult(field, s[0 .. s.len - 4], edgeType);
+                    if (!idIsSet) {
+                        size += 5;
+                        result.id = id;
+                        idIsSet = true;
+                        if (score != null) {
+                            result.score = score;
+                            size += 4;
+                        }
+                    }
+                    try ctx.results.append(result);
+                }
             }
         } else {
             if (prop == t.Prop.STRING or prop == t.Prop.JSON or prop == t.Prop.BINARY) {

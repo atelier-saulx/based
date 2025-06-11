@@ -97,7 +97,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   }
   for (const key in s) {
     let prop = def.props[key]
-    let lang = def.lang
+    let lang = def.lang.lang
     if (!prop) {
       if (key.includes('.')) {
         const k = key.split('.')
@@ -119,7 +119,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     def.search.fields.push({
       typeIndex: prop.typeIndex,
       weight: s[key],
-      lang,
+      lang: lang,
       field: prop.prop,
       start: prop.start ?? 0, // also need lang ofc if you have start
     })

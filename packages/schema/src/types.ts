@@ -207,6 +207,7 @@ export type SchemaText = Prop<{
   type: 'text'
   default?: Record<string, string>
   format?: StringFormat
+  compression?: 'none' | 'deflate'
 }>
 
 type NumberType =
@@ -439,10 +440,11 @@ export type Schema = GenericSchema<false> | StrictSchema
 
 export type SchemaLocales = Record<
   LangName,
-  {
-    required?: boolean
-    fallback?: LangName[]
-  }
+  | true
+  | {
+      required?: boolean
+      fallback?: LangName // not multiple - 1 is enough else it becomes too complex
+    }
 >
 
 export type SchemaPropTypeMap = {

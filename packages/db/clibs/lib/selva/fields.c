@@ -25,6 +25,8 @@
 #define selva_sallocx(p, v)     0
 #endif
 
+static void share_fields(struct SelvaFields *fields);
+static void unshare_fields(struct SelvaFields *fields);
 static void destroy_fields(struct SelvaFields *fields);
 static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fields);
 static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReference *ref);
@@ -283,9 +285,8 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     }
 
     nfo = ensure_field(fields, fs);
-
-    struct SelvaNodeReferences refs;
     void *vp = nfo2p(fields, nfo);
+    struct SelvaNodeReferences refs;
 
     memcpy(&refs, vp, sizeof(refs));
 
@@ -387,6 +388,7 @@ static void write_ref_2way(
 
 /**
  * Clear single ref value.
+ * A helper for remove_reference().
  * @returns the original value.
  */
 static struct SelvaNode *del_single_ref(struct SelvaDb *db, struct SelvaNode *src_node, const struct EdgeFieldConstraint *efc, struct SelvaFields *fields, struct SelvaFieldInfo *nfo, bool ignore_dependent)
@@ -1130,7 +1132,8 @@ int selva_fields_references_insert(
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
         type_dst != dst->type ||
-        type_dst != fs->edge_constraint.dst_node_type) {
+        type_dst != fs->edge_constraint.dst_node_type ||
+        node == dst) {
         return SELVA_EINVAL;
     }
 
@@ -1202,15 +1205,15 @@ int selva_fields_reference_set(
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out,
-        node_id_t dirty_nodes[static 2])
+        selva_dirty_node_cb_t dirty_cb,
+        void *dirty_ctx)
 {
     const struct SelvaFieldSchema *fs_dst;
     int err;
 
-    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
-    assert(fs_src->edge_constraint.dst_node_type == dst->type);
-
-    if (!dst || src == dst) {
+    if (fs_src->type != SELVA_FIELD_TYPE_REFERENCE ||
+        fs_src->edge_constraint.dst_node_type != dst->type ||
+        !dst || src == dst) {
         return SELVA_EINVAL;
     }
 
@@ -1229,12 +1232,19 @@ int selva_fields_reference_set(
     /*
      * Remove previous refs.
      */
-    dirty_nodes[0] = remove_reference(db, src, fs_src, 0, -1, true);
+    node_id_t old_dst_id;
+
+    old_dst_id = remove_reference(db, src, fs_src, 0, -1, true);
+    if (old_dst_id != 0) {
+        dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, old_dst_id);
+    }
+    dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, dst->node_id);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        /* The destination may have a ref to somewhere. */
-        dirty_nodes[1] = remove_reference(db, dst, fs_dst, 0, -1, false);
-    } else {
-        dirty_nodes[1] = 0;
+        /* The new destination may have a ref to somewhere. */
+        old_dst_id = remove_reference(db, dst, fs_dst, 0, -1, false);
+        if (old_dst_id != 0) {
+            dirty_cb(dirty_ctx, src->type, old_dst_id);
+        }
     }
 
     /*
@@ -1396,6 +1406,15 @@ int selva_fields_references_insert_tail_wupsert(
 
     if (nr_ids == 0) {
         return 0;
+    }
+
+    /* RFE This check could be in an assert if we'd check this before calling this func. */
+    if (type_dst == node->type) {
+        for (size_t i = 0; i < nr_ids; i++) {
+            if (node->node_id == ids[i]) {
+                return SELVA_EINVAL;
+            }
+        }
     }
 
     fs_dst = selva_get_fs_by_te_field(te_dst, fs->edge_constraint.inverse_field);
@@ -1613,25 +1632,13 @@ int selva_fields_set_reference_meta(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         const void *value, size_t len)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema;
-    const struct SelvaFieldSchema *fs;
-
     if (!ref->dst) {
         return SELVA_ENOENT;
     }
 
-    efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    if (!efc_fields_schema) {
-        return SELVA_EINVAL;
-    }
-
-    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
-    if (!fs) {
-        return SELVA_EINVAL;
-    }
 #if 0
     assert(fs->field == field);
 #endif
@@ -1640,13 +1647,13 @@ int selva_fields_set_reference_meta(
      * Edge metadata can't contain these types because it would be almost
      * impossible to keep track of the pointers.
      */
-    if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
-        fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+    if (efs->type == SELVA_FIELD_TYPE_REFERENCE ||
+        efs->type == SELVA_FIELD_TYPE_REFERENCES) {
         return SELVA_ENOTSUP;
     }
 
     selva_fields_ensure_ref_meta(db, node, ref, efc);
-    return fields_set(nullptr, fs, ref->meta, value, len);
+    return fields_set(nullptr, efs, ref->meta, value, len);
 }
 
 int selva_fields_get_reference_meta_mutable_string(
@@ -1654,26 +1661,20 @@ int selva_fields_get_reference_meta_mutable_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
         const struct EdgeFieldConstraint *efc,
-        field_t field,
+        const struct SelvaFieldSchema *efs,
         size_t len,
         struct selva_string **s)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    const struct SelvaFieldSchema *fs;
-
-    fs = get_fs_by_fields_schema_field(efc_fields_schema, field);
-    if (!fs) {
-        return SELVA_EINTYPE;
-    } else if (fs->type != SELVA_FIELD_TYPE_STRING) {
+    if (efs->type != SELVA_FIELD_TYPE_STRING) {
         return SELVA_EINTYPE;
     }
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (efs->string.fixed_len && len > efs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 
     selva_fields_ensure_ref_meta(db, node, ref, efc);
-    *s = get_mutable_string(ref->meta, fs, ensure_field(ref->meta, fs), len);
+    *s = get_mutable_string(ref->meta, efs, ensure_field(ref->meta, efs), len);
 
     return 0;
 }

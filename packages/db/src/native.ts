@@ -6,7 +6,7 @@ const DECODER = new TextDecoder('utf-8')
 const ENCODER = new TextEncoder()
 
 const selvaIoErrlog = new Uint8Array(256)
-var compressor = db.createCompressor()
+var compressor = db.createCompressor() // put on threadCtx
 var decompressor = db.createDecompressor()
 
 function SelvaIoErrlogToString(buf: Uint8Array) {
@@ -15,7 +15,13 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
+// add worker CTX HERE
+// then add it to every function
+// worker should allways be here
+// then add ThreadCtx to modify ctx and query ctx
+
 const native = {
+  threadCtx: null, // add compressors here as well!
   historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
     return db.historyAppend(history, typeId, nodeId, dbCtx)
   },
@@ -146,11 +152,11 @@ const native = {
   },
 
   membarSyncRead: () => {
-    db.membarSyncRead();
+    db.membarSyncRead()
   },
 
   membarSyncWrite: () => {
-    db.membarSyncWrite();
+    db.membarSyncWrite()
   },
 
   colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {

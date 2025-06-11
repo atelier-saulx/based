@@ -11,6 +11,7 @@ import {
   includeFields,
   addAggregate,
   groupBy,
+  LangFallback,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -24,7 +25,7 @@ import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { langCodesMap, LangName } from '@based/schema'
+import { LangCode, langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
@@ -483,15 +484,28 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  locale(locale: LangName) {
+  locale(locale: LangName, fallBack?: LangFallback) {
     if (this.queryCommands) {
-      this.queryCommands.push({
+      this.queryCommands.unshift({
         method: 'locale',
         args: [locale],
       })
     } else {
+      if (fallBack === undefined) {
+        // Uses fallback from schema if available
+        const localeDescriptor = this.def.schema.locales[locale]
+        fallBack =
+          typeof localeDescriptor === 'object'
+            ? localeDescriptor.fallback || false
+            : false
+      }
       validateLocale(this.def, locale)
-      this.def.lang = langCodesMap.get(locale) ?? 0
+      const fallBackCode: LangCode[] =
+        fallBack === false ? [] : [langCodesMap.get(fallBack)]
+      this.def.lang = {
+        lang: langCodesMap.get(locale) ?? 0,
+        fallback: fallBackCode,
+      }
     }
     return this
   }
@@ -503,7 +517,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         try {
           onData(res)
         } catch (err) {
-          // const t = displayTarget(this.def)
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
           name += `  Error executing onData handler in subscription\n`

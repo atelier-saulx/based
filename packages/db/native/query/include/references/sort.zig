@@ -52,7 +52,7 @@ pub fn sortedReferences(
                 return result;
             };
             const value = db.getField(typeEntry, 0, refNode, fs, sortProp);
-            dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
+            dbSort.insert(&metaSortIndex, value, refNode);
         }
     }
     i = 0;

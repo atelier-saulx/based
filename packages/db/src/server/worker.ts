@@ -7,7 +7,7 @@ if (isMainThread) {
   let { address, channel } = workerData
   let dbCtx = native.externalFromInt(address)
   native.workerCtxInit()
-  const handleMsg = (msg) => {
+  const handleMsg = (msg: any) => {
     try {
       if (typeof msg === 'bigint') {
         // it's a ctx address

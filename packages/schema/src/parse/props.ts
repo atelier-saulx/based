@@ -1,10 +1,5 @@
 import { convertToTimestamp } from '@saulx/utils'
-import {
-  NUMBER,
-  PropDef,
-  REVERSE_TYPE_INDEX_MAP,
-  TYPE_INDEX_MAP,
-} from '../def/types.js'
+import { NUMBER, PropDef, TYPE_INDEX_MAP } from '../def/types.js'
 import { VALIDATION_MAP } from '../def/validation.js'
 import {
   SchemaAnyProp,
@@ -31,7 +26,6 @@ import {
 } from '../types.js'
 import {
   expectBoolean,
-  expectFloat32Array,
   expectFunction,
   expectNumber,
   expectObject,
@@ -39,14 +33,11 @@ import {
 } from './assert.js'
 import {
   EXPECTED_ARR,
-  EXPECTED_DATE,
   EXPECTED_OBJ,
   EXPECTED_PRIMITIVE,
-  EXPECTED_VALUE_IN_ENUM,
   INVALID_VALUE,
   MIN_MAX,
   MISSING_TYPE,
-  OUT_OF_RANGE,
   TEXT_REQUIRES_LOCALES,
   TYPE_MISMATCH,
   UNKNOWN_PROP,
@@ -55,14 +46,14 @@ import {
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
 import { DEFAULT_MAP } from '../def/defaultMap.js'
-import { getPropLen, parseMinMaxStep } from '../def/utils.js'
+import { parseMinMaxStep } from '../def/utils.js'
 let stringFormatsSet: Set<string>
 let numberDisplaysSet: Set<string>
 let dateDisplaysSet: Set<string>
 
 type PropsFns<PropType> = Record<
   string,
-  (val, prop: PropType, ctx: SchemaParser, key?: string) => void
+  (val: any, prop: PropType, ctx: SchemaParser, key?: string) => void
 >
 const STUB = {}
 const shared: PropsFns<SchemaAnyProp> = {
@@ -147,7 +138,7 @@ function propParser<PropType extends SchemaAnyProp>(
     for (const key in prop) {
       ctx.path[ctx.lvl] = key
       const val = prop[key]
-      let changed
+      let changed: any
       if (key in optional) {
         changed = optional[key](val, prop, ctx)
       } else if (key in shared) {
@@ -268,26 +259,26 @@ p.enum = propParser<SchemaEnum>(
 )
 
 const numberOpts = {
-  display(val) {
+  display(val: any) {
     expectString(val)
     numberDisplaysSet ??= new Set(numberDisplays)
     numberDisplaysSet.has(val)
   },
-  min(val) {
+  min(val: any) {
     expectNumber(val)
   },
-  max(val, prop) {
+  max(val: any, prop: any) {
     expectNumber(val)
     if (prop.min > val) {
       throw Error(MIN_MAX)
     }
   },
-  step(val) {
+  step(val: any) {
     if (typeof val !== 'number' && val !== 'any') {
       throw Error(INVALID_VALUE)
     }
   },
-  default(val, prop, ctx) {
+  default(val: any, prop: any, ctx: any) {
     return isDefault(val, prop, ctx)
   },
 }
@@ -302,7 +293,7 @@ p.uint32 = propParser<SchemaNumber>(STUB, numberOpts, 0)
 
 p.object = propParser<SchemaObject | SchemaObjectOneWay>(
   {
-    props(val, prop, ctx) {
+    props(val, _prop, ctx) {
       ctx.parseProps(val, ctx.type)
     },
   },
@@ -416,8 +407,12 @@ p.text = propParser<SchemaText>(
     },
   },
   {
+    compression(val) {
+      // return the actualy string!
+      return val
+    },
     format: binaryOpts.format,
-    default(val, prop) {
+    default(_val, _prop) {
       // console.warn('MAKE DEFAULT VALUE FOR TEXT')
       return true
     },

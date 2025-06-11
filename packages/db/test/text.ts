@@ -14,8 +14,8 @@ await test('simple', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: ['en'] },
-      fi: { fallback: ['en'] },
+      it: { fallback: 'en' },
+      fi: { fallback: 'en' },
     },
     types: {
       dialog: {
@@ -307,7 +307,7 @@ await test('search', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      fi: { fallback: ['en'] },
+      fi: { fallback: 'en' },
     },
     types: {
       dialog: {
@@ -533,8 +533,8 @@ await test('sort', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: ['en'] },
-      fi: { fallback: ['en'] },
+      it: { fallback: 'en' },
+      fi: { fallback: 'en' },
     },
     types: {
       dialog: {

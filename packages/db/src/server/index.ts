@@ -39,6 +39,7 @@ class SortIndex {
 export class DbServer extends DbShared {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
+  threadCtxExternal: any // pointer to zig dbCtx
 
   migrating: number = null
   saveInProgress: boolean = false

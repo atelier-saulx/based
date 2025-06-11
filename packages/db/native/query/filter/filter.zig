@@ -209,7 +209,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -223,7 +223,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -240,11 +240,15 @@ pub fn filter(
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                     const lang: LangCode = @enumFromInt(query[query.len - 1]);
-                    var iter = db.textIterator(value, lang);
-                    var f: usize = 0;
+                    // fallback size query[query.len - 1]
+                    // langcode [len - 2]
+                    // fallbacks [len - (2 + fallbck size)]
+                    // handle query
                     if (lang == LangCode.NONE) {
+                        var f: usize = 0;
+                        var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            if (!runCondition(ctx, query, s)) {
+                            if (!runCondition(query, s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -255,13 +259,9 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        while (iter.next()) |s| {
-                            f += 1;
-                            if (!runCondition(ctx, query, s)) {
-                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                            }
-                        }
-                        if (f == 0) {
+                        // TODO: fallback as well!
+                        const s = db.getTextFromValue(value, lang);
+                        if (s.len == 0 or !runCondition(query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }
@@ -296,7 +296,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
-                    if (value.len == 0 or !runCondition(ctx, query, value)) {
+                    if (value.len == 0 or !runCondition(query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }
