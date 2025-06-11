@@ -793,32 +793,32 @@ await test('variable key size', async (t) => {
     'sum, groupBy, main, $undefined',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((select) => {
-  //       select('contributors').groupBy('name').sum('flap')
-  //     })
-  //     .get(),
-  //   [
-  //     {
-  //       id: 1,
-  //       contributors: {
-  //         Flippie: { flap: 20 },
-  //         'Mr snurp': { flap: 10 },
-  //         Derpie: { flap: 30 },
-  //         'Dinkel Doink': { flap: 40 },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       contributors: {
-  //         'Carlo Cipolla': { flap: 80 },
-  //       },
-  //     },
-  //   ],
-  //   'sum, branched query, groupBy, references',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => {
+        select('contributors').groupBy('name').sum('flap')
+      })
+      .get(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: 20 },
+          'Mr snurp': { flap: 10 },
+          Derpie: { flap: 30 },
+          'Dinkel Doink': { flap: 40 },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: 80 },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, references',
+  )
 })
 
 await test('agg on references', async (t) => {
@@ -1029,7 +1029,22 @@ await test('stddev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  // await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+  deepEqual(
+    await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
+    {
+      Brazil: {
+        NL: 0,
+      },
+      bb: {
+        NL: 6.5,
+      },
+      aa: {
+        NL: 2.5,
+      },
+    },
+    'stddev, top level, groupBy',
+  )
+
   // await db.query('vote').sum('NL').groupBy('country').get().inspect()
   // await db.query('vote').count().groupBy('country').get().inspect()
   // await db.query('vote').groupBy('country').get().inspect()
@@ -1038,11 +1053,21 @@ await test('stddev', async (t) => {
   //   .include((q) => q('votes').sum('NL'))
   //   .get()
   //   .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('country').sum('NL'))
-    .get()
-    .inspect()
+  // await db
+  //   .query('sequence')
+  //   .include((q) => q('votes').groupBy('country').sum('NL'))
+  //   .get()
+  //   .inspect()
+  // await db
+  // .query('sequence')
+  // .include((q) => q('votes').groupBy('country').count())
+  // .get()
+  // .inspect()
+  // await db
+  //   .query('sequence')
+  //   .include((q) => q('votes').groupBy('country').stddev('NL'))
+  //   .get()
+  //   .inspect()
 
   // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
 })
