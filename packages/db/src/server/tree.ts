@@ -39,7 +39,7 @@ export function initCsmt(db: DbServer) {
       return obj
     }, {})
 
-  db.merkleTree = createTree(db.createCsmtHashFun)
+  db.verifTree = createTree(db.createCsmtHashFun)
 
   // Insert specialBlocks for types.
   // This should ensure that the insertion order of the actual node ranges is
@@ -53,9 +53,9 @@ export function initCsmt(db: DbServer) {
       end: 0,
     }
     try {
-      db.merkleTree.insert(
+      db.verifTree.insert(
         makeCsmtKey(typeId, specialBlock),
-        db.merkleTree.emptyHash,
+        db.verifTree.emptyHash,
         data,
       )
     } catch (_) {}

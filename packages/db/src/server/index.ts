@@ -44,7 +44,7 @@ export class DbServer extends DbShared {
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
-  merkleTree: ReturnType<typeof createTree<CsmtNodeRange>>
+  verifTree: ReturnType<typeof createTree<CsmtNodeRange>>
   dirtyRanges = new Set<number>()
   csmtHashFun = createDbHash()
   workers: DbWorker[] = []
