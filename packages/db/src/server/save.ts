@@ -124,7 +124,7 @@ export function save(
                 start,
                 end,
               }
-              db.merkleTree.insert(mtKey, hash, data)
+              db.verifTree.insert(mtKey, hash, data)
             }
           },
         )
@@ -139,13 +139,13 @@ export function save(
           // load and sync purposes.
           return
         } else {
-          const oldLeaf = db.merkleTree.search(mtKey)
+          const oldLeaf = db.verifTree.search(mtKey)
 
           // If (file.length === 0) then the range is empty but that's fine,
           // we'll keep them around for now to maintain the order of the tree.
           if (oldLeaf) {
             oldLeaf.data.file = file
-            db.merkleTree.update(mtKey, hash)
+            db.verifTree.update(mtKey, hash)
           } else {
             const data: CsmtNodeRange = {
               file,
@@ -153,7 +153,7 @@ export function save(
               start,
               end,
             }
-            db.merkleTree.insert(mtKey, hash, data)
+            db.verifTree.insert(mtKey, hash, data)
           }
         }
       })
@@ -170,7 +170,7 @@ export function save(
       rangeDumps[id] = []
     }
 
-    db.merkleTree.visitLeafNodes((leaf) => {
+    db.verifTree.visitLeafNodes((leaf) => {
       const [typeId, start] = destructureCsmtKey(leaf.key)
       if (start == specialBlock) return // skip the type specialBlock
       const data: CsmtNodeRange = leaf.data
@@ -187,7 +187,7 @@ export function save(
       types,
       commonDump: COMMON_SDB_FILE,
       rangeDumps,
-      hash: bufToHex(db.merkleTree.getRoot()?.hash ?? new Uint8Array(0)),
+      hash: bufToHex(db.verifTree.getRoot()?.hash ?? new Uint8Array(0)),
     }
 
     const filePath = join(db.fileSystemPath, WRITELOG_FILE)

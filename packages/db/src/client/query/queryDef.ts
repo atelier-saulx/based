@@ -24,7 +24,10 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     skipValidation,
     filter: { conditions: new Map(), size: 0 },
     range: { offset: 0, limit: 0 },
-    lang: langCodesMap.get('none'),
+    lang: {
+      lang: langCodesMap.get('none'),
+      fallback: [],
+    },
     include: {
       langTextFields: new Map(),
       stringFields: new Set(),

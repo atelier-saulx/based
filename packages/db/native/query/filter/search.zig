@@ -363,15 +363,29 @@ pub fn search(
                 }
                 if (prop == Prop.TEXT) {
                     const code: LangCode = @enumFromInt(ctx.fields[j + 5]);
-                    var iter = db.textIterator(value, code);
-                    while (iter.next()) |s| {
-                        score = 255;
-                        _ = getScore(s, query, &score, penalty);
-                        if (score < bestScore) {
-                            bestScore = score;
-                            if (score - penalty == 0) {
-                                totalScore += bestScore;
-                                continue :wordLoop;
+                    score = 255;
+                    if (code == LangCode.NONE) {
+                        var iter = db.textIterator(value);
+                        while (iter.next()) |s| {
+                            _ = getScore(s, query, &score, penalty);
+                            if (score < bestScore) {
+                                bestScore = score;
+                                if (score - penalty == 0) {
+                                    totalScore += bestScore;
+                                    continue :wordLoop;
+                                }
+                            }
+                        }
+                    } else {
+                        const s = db.getTextFromValue(value, code);
+                        if (s.len > 0) {
+                            _ = getScore(s, query, &score, penalty);
+                            if (score < bestScore) {
+                                bestScore = score;
+                                if (score - penalty == 0) {
+                                    totalScore += bestScore;
+                                    continue :wordLoop;
+                                }
                             }
                         }
                     }

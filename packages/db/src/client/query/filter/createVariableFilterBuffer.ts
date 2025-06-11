@@ -10,6 +10,7 @@ import {
   MODE_OR_VAR,
   FilterCtx,
   getVectorFn,
+  FilterLang,
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { LangCode } from '@based/schema'
@@ -23,7 +24,7 @@ const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
-  lang: LangCode,
+  lang: FilterLang,
 ): Uint8Array => {
   let val = value
 
@@ -62,7 +63,13 @@ const parseValue = (
     if (prop.typeIndex === TEXT) {
       const tmp = new Uint8Array(val.byteLength + 1)
       tmp.set(val)
-      tmp[tmp.byteLength - 1] = lang
+
+      // fallback size query[query.len - 1]
+      // langcode [len - 2]
+      // fallbacks [len - (2 + fallbck size)]
+      // handle query
+      // if (ctx.)
+      tmp[tmp.byteLength - 1] = lang.lang
       val = tmp
     }
   }
@@ -85,7 +92,7 @@ export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
-  lang: LangCode,
+  lang: FilterLang,
 ): FilterCondition => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
@@ -145,7 +152,11 @@ export const createVariableFilterBuffer = (
           parsedCondition = createFixedFilterBuffer(
             prop,
             8,
-            { operation: EQUAL_CRC32, type: ctx.type, opts: ctx.opts },
+            {
+              operation: EQUAL_CRC32,
+              type: ctx.type,
+              opts: ctx.opts,
+            },
             val,
             false,
           )

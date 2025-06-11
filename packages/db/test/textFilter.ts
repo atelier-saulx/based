@@ -62,7 +62,8 @@ await test('textFilter', async (t) => {
   let searchTerms = ['a', 'ab', 'abc', 'abcd']
 
   for (const term of searchTerms) {
-    await db.query('project').search(term, 'title', 'abstract').get().inspect()
+    await db.query('project').search(term, 'title', 'abstract').get()
+    // .inspect()
   }
 
   searchTerms = ['kr', 'kra', 'krak', 'krake', 'krakee']
@@ -75,11 +76,8 @@ await test('textFilter', async (t) => {
   for (const term of searchTerms) {
     q.push(
       (async () => {
-        await db
-          .query('project')
-          .search(term, 'title', 'abstract')
-          .get()
-          .inspect()
+        await db.query('project').search(term, 'title', 'abstract').get()
+        // .inspect()
       })(),
     )
   }

@@ -1,4 +1,4 @@
-import { LangCode } from '@based/schema'
+import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
@@ -101,10 +101,12 @@ export type QueryDefAggregation = {
   totalAccumulatorSize: number
 }
 
+export type LangFallback = LangName | false
+
 export type QueryDefShared = {
   schemaChecksum?: number
   errors: QueryError[]
-  lang: LangCode
+  lang: { lang: LangCode; fallback: LangCode[] }
   filter: QueryDefFilter
   aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch
@@ -116,8 +118,12 @@ export type QueryDefShared = {
   }
   include: {
     langTextFields: Map<
-      number,
-      { def: PropDef | PropDefEdge; codes: Set<LangCode> }
+      number, // prop name
+      {
+        def: PropDef | PropDefEdge
+        codes: Set<LangCode>
+        fallBacks: LangCode[]
+      }
     >
     stringFields: Set<string>
     props: Map<number, PropDef | PropDefEdge>

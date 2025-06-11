@@ -251,7 +251,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
         addField(prop, 0, item)
-      } else if (prop.typeIndex === TEXT && q.lang == 0) {
+      } else if (prop.typeIndex === TEXT && q.lang.lang == 0) {
         const lan = getEmptyField(prop, item)
         const lang = q.include.langTextFields.get(prop.prop).codes
 
@@ -451,7 +451,7 @@ export const readAllFields = (
         if (size === 0) {
           // do nothing
         } else {
-          if (q.lang != 0) {
+          if (q.lang.lang != 0) {
             q.include.propsRead[index] = id
             addField(prop, read(result, i + 4, size, true), item)
           } else {

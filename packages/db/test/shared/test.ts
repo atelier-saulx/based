@@ -4,7 +4,11 @@ import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@saulx/utils'
-import { CsmtNodeRange, destructureCsmtKey, specialBlock } from '../../src/server/tree.js'
+import {
+  CsmtNodeRange,
+  destructureCsmtKey,
+  specialBlock,
+} from '../../src/server/tree.js'
 import fs from 'node:fs/promises'
 import assert from 'node:assert'
 
@@ -96,7 +100,7 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
       }
 
-      const oldCsmt = db.server.merkleTree
+      const oldCsmt = db.server.verifTree
 
       await db.stop()
 
@@ -145,7 +149,7 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
-      const newCsmt = newDb.server.merkleTree
+      const newCsmt = newDb.server.verifTree
       const prettier = (key: any, value: any) => {
         if (key === 'hash') {
           return bufToHex(value)
@@ -167,7 +171,8 @@ const test = async (
         if (start == specialBlock) return // skip the type specialBlock
         hashSet.add(bufToHex(hash))
       }
-      const setEq = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value))
+      const setEq = <T>(a: Set<T>, b: Set<T>) =>
+        a.size === b.size && [...a].every((value) => b.has(value))
       oldCsmt.visitLeafNodes((leaf) => putHash(oldHashSet, leaf))
       newCsmt.visitLeafNodes((leaf) => putHash(newHashSet, leaf))
 

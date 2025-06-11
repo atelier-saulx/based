@@ -42,7 +42,11 @@ const referencesFilter = (
           if (edgeDef) {
             conditions.edges ??= new Map()
             size +=
-              3 + primitiveFilter(def, edgeDef, filter, conditions, def.lang)
+              3 +
+              primitiveFilter(def, edgeDef, filter, conditions, {
+                lang: def.lang.lang,
+                fallbacks: [],
+              })
           }
         }
       } else {
@@ -103,16 +107,26 @@ export const filterRaw = (
           filterInvalidLang(def, field)
           return 0
         }
-        return primitiveFilter(def, fieldDef, filter, conditions, code)
+        return primitiveFilter(def, fieldDef, filter, conditions, {
+          lang: code,
+          fallbacks: [],
+        })
       }
     }
     if (field === 'id') {
       fieldDef = ID_FIELD_DEF
-      return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
+      return primitiveFilter(def, fieldDef, filter, conditions, {
+        lang: def.lang.lang,
+        fallbacks: [], // only fallbacks for this
+      })
     }
     return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
+  return primitiveFilter(def, fieldDef, filter, conditions, {
+    lang: def.lang.lang,
+    // def
+    fallbacks: [], // only fallbacks for this are we sure :/ ? can be pretty confusing
+  })
 }
 
 export const filter = (
