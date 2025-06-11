@@ -753,22 +753,22 @@ await test('variable key size', async (t) => {
     contributors: [cipolla],
   })
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: 80 },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
 
   deepEqual(
     await db.query('user').groupBy('name').sum('flap').get().toObject(),
@@ -1029,10 +1029,20 @@ await test('stddev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  await db.query('vote').stddev('NL').groupBy('country').get().inspect()
-  await db.query('vote').sum('NL').groupBy('country').get().inspect()
-  await db.query('vote').count().groupBy('country').get().inspect()
-  await db.query('vote').groupBy('country').get().inspect()
+  // await db.query('vote').stddev('NL').groupBy('country').get().inspect()
+  // await db.query('vote').sum('NL').groupBy('country').get().inspect()
+  // await db.query('vote').count().groupBy('country').get().inspect()
+  // await db.query('vote').groupBy('country').get().inspect()
+  // await db
+  //   .query('sequence')
+  //   .include((q) => q('votes').sum('NL'))
+  //   .get()
+  //   .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('country').sum('NL'))
+    .get()
+    .inspect()
 
   // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
 })

@@ -185,6 +185,8 @@ pub fn aggregateRefsFields(
     } else {
         const resultsSize = read(u16, include, index);
         index += 2;
+        // const accumulatorSize = read(u16, include, index);
+        index += 2;
         const agg = include[index..include.len];
         return try aggregateRefsDefault(isEdge, ctx, typeId, originalType, node, refField, agg, offset, filterArr, resultsSize);
     }
