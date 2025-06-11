@@ -45,7 +45,7 @@ const referencesFilter = (
               3 +
               primitiveFilter(def, edgeDef, filter, conditions, {
                 lang: def.lang.lang,
-                fallbacks: [],
+                fallback: [],
               })
           }
         }
@@ -109,7 +109,7 @@ export const filterRaw = (
         }
         return primitiveFilter(def, fieldDef, filter, conditions, {
           lang: code,
-          fallbacks: [],
+          fallback: [],
         })
       }
     }
@@ -117,16 +117,13 @@ export const filterRaw = (
       fieldDef = ID_FIELD_DEF
       return primitiveFilter(def, fieldDef, filter, conditions, {
         lang: def.lang.lang,
-        fallbacks: [], // only fallbacks for this
+        fallback: [], // only fallbacks for this
       })
     }
     return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(def, fieldDef, filter, conditions, {
-    lang: def.lang.lang,
-    // def
-    fallbacks: [], // only fallbacks for this are we sure :/ ? can be pretty confusing
-  })
+
+  return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
 }
 
 export const filter = (

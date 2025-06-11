@@ -73,6 +73,13 @@ await test('textFallback', async (t) => {
   // false (block all fallbacks) or lang fallback
   await db.query('project').locale('nl').get().inspect(10)
 
+  await db
+    .query('project')
+    .locale('nl')
+    .filter('title', 'has', 'English')
+    .get()
+    .inspect(10)
+
   // when over range - this breaks with dirty ranges
   // this breaks schema as well
   // for (let i = 0; i < 1e6; i++) {

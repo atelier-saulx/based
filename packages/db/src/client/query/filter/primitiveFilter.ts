@@ -7,7 +7,7 @@ import {
   REVERSE_SIZE_MAP,
 } from '@based/schema/def'
 import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
-import { EQUAL, EXISTS, FilterLang, isNumerical, TYPE_NEGATE } from './types.js'
+import { EQUAL, EXISTS, isNumerical, TYPE_NEGATE } from './types.js'
 import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
@@ -19,7 +19,7 @@ export const primitiveFilter = (
   prop: PropDef | PropDefEdge,
   filter: Filter,
   conditions: QueryDefFilter,
-  lang: FilterLang,
+  lang: QueryDef['lang'],
 ) => {
   if (validateFilter(def, prop, filter)) {
     return 0

@@ -239,7 +239,10 @@ pub fn filter(
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
-                    const lang: LangCode = @enumFromInt(query[query.len - 1]);
+                    const fallBackSize: u8 = query[query.len - 1];
+                    const lang: LangCode = @enumFromInt(query[query.len - 2]);
+
+                    std.debug.print("\nTEXT {any} {any} \n", .{ fallBackSize, lang });
                     // fallback size query[query.len - 1]
                     // langcode [len - 2]
                     // fallbacks [len - (2 + fallbck size)]
@@ -248,7 +251,7 @@ pub fn filter(
                         var f: usize = 0;
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            if (!runCondition(query, s)) {
+                            if (!runCondition(query[0 .. query.len - 2], s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -258,10 +261,24 @@ pub fn filter(
                         if (f == iter.value.len) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
+                    } else if (fallBackSize > 0) {
+                        const s = db.getTextFromValueFallback(
+                            value,
+                            lang,
+                            query[query.len - 2 - fallBackSize .. query.len - 2],
+                        );
+                        std.debug.print("yo fallback --> {any} q {any} \n", .{
+                            query[query.len - 2 - fallBackSize .. query.len - 2],
+                            query[0..(query.len - 2 - fallBackSize)],
+                        });
+
+                        if (s.len == 0 or !runCondition(query[0..(query.len - 2 - fallBackSize)], s)) {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        }
                     } else {
                         // TODO: fallback as well!
                         const s = db.getTextFromValue(value, lang);
-                        if (s.len == 0 or !runCondition(query, s)) {
+                        if (s.len == 0 or !runCondition(query[0..(query.len - 2 - fallBackSize)], s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }

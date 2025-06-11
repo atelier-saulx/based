@@ -10,13 +10,11 @@ import {
   MODE_OR_VAR,
   FilterCtx,
   getVectorFn,
-  FilterLang,
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
-import { LangCode } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr } from '@saulx/utils'
-import { FilterCondition } from '../types.js'
+import { FilterCondition, QueryDef } from '../types.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
@@ -24,7 +22,7 @@ const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
-  lang: FilterLang,
+  lang: QueryDef['lang'],
 ): Uint8Array => {
   let val = value
 
@@ -61,7 +59,9 @@ const parseValue = (
       val = ENCODER.encode(val.normalize('NFKD'))
     }
     if (prop.typeIndex === TEXT) {
-      const tmp = new Uint8Array(val.byteLength + 1)
+      // 1 + size
+      const fallbacksSize = lang.lang === 0 ? 0 : lang.fallback.length
+      const tmp = new Uint8Array(val.byteLength + 2 + fallbacksSize)
       tmp.set(val)
 
       // fallback size query[query.len - 1]
@@ -69,7 +69,13 @@ const parseValue = (
       // fallbacks [len - (2 + fallbck size)]
       // handle query
       // if (ctx.)
-      tmp[tmp.byteLength - 1] = lang.lang
+      tmp[tmp.byteLength - 1] = fallbacksSize
+      tmp[tmp.byteLength - 2] = lang.lang
+      for (let i = 0; i < fallbacksSize; i++) {
+        tmp[tmp.byteLength - 2 - fallbacksSize + i] = lang.fallback[i]
+      }
+      console.log('flap', { tmp, fallbacksSize })
+
       val = tmp
     }
   }
@@ -92,7 +98,7 @@ export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
   ctx: FilterCtx,
-  lang: FilterLang,
+  lang: QueryDef['lang'],
 ): FilterCondition => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any

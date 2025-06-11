@@ -16,8 +16,6 @@ export const IsFilter = (f: FilterAst): f is Filter => {
   return false
 }
 
-export type FilterLang = { lang: LangCode; fallbacks: LangCode[] }
-
 export type Operator =
   | '='
   | 'has'

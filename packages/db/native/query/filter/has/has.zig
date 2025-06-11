@@ -44,31 +44,20 @@ inline fn hasInner(
     value: []u8,
     query: []u8,
 ) bool {
-    var q = query;
     if (prop == Prop.VECTOR) {
         const vecAligned = read([]f32, value, 0);
-
-        // read([]f32, value, 0)
-        return like.vector(vecAligned, q);
+        return like.vector(vecAligned, query);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
-        var v = value;
-        // faster check
-        if (prop == Prop.TEXT) {
-            // last byte is lang
-            // [string, lang]
-            q = query[0 .. query.len - 1];
-            v = v[0 .. v.len - 4];
-        } else {
-            v = v[0 .. v.len - 4];
-        }
+        std.debug.print("flaxxxo v {any} q {any}\n", .{ value, query });
+
         if (value[1] == @intFromEnum(Compression.compressed)) {
-            if (!decompress(void, orCompare(isOr, compare).func, q, value, undefined)) {
+            if (!decompress(void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
             }
-        } else if (!orCompare(isOr, compare).func(value[1..value.len], q)) {
+        } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
             return false;
         }
-    } else if (!orCompare(isOr, compare).func(value, q)) {
+    } else if (!orCompare(isOr, compare).func(value, query)) {
         return false;
     }
     return true;
