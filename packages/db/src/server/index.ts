@@ -1,11 +1,9 @@
 import native from '../native.js'
-import createDbHash from './dbHash.js'
 import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
-import { createTree } from './csmt/index.js'
 import { start, StartOpts } from './start.js'
-import { CsmtNodeRange, makeCsmtKeyFromNodeId } from './tree.js'
+import { VerifTree, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
@@ -44,9 +42,8 @@ export class DbServer extends DbShared {
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
-  verifTree: ReturnType<typeof createTree<CsmtNodeRange>>
+  verifTree: VerifTree
   dirtyRanges = new Set<number>()
-  csmtHashFun = createDbHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
@@ -84,12 +81,6 @@ export class DbServer extends DbShared {
 
   save(opts?: { forceFullDump?: boolean }) {
     return save(this, false, opts?.forceFullDump ?? false)
-  }
-
-  createCsmtHashFun = () => {
-    // We can just reuse it as long as we only have one tree.
-    this.csmtHashFun.reset()
-    return this.csmtHashFun
   }
 
   sortIndexes: {
@@ -386,7 +377,7 @@ export class DbServer extends DbShared {
     while (typesSize--) {
       const typeId = readUint16(buf, i)
       const def = this.schemaTypesParsedById[typeId]
-      const key = makeCsmtKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
+      const key = makeTreeKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
       this.dirtyRanges.add(key)
       i += 10
     }

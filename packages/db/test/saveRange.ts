@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { hashEq } from '../src/server/csmt/tree.js'
+import {equals} from '@saulx/utils'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -54,7 +54,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  const firstHash = db.server.verifTree.getRoot().hash
+  const firstHash = db.server.verifTree.hash()
 
   db.update('user', 1, {
     age: 1337,
@@ -73,10 +73,10 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  const secondHash = db.server.verifTree.getRoot().hash
+  const secondHash = db.server.verifTree.hash()
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
-  equal(hashEq(firstHash, secondHash), false)
+  equal(equals(firstHash, secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 3)
@@ -99,10 +99,10 @@ await test('save simple range', async (t) => {
   t.after(() => newDb.destroy())
 
   const load_end = performance.now()
-  const thirdHash = db.server.verifTree.getRoot().hash
+  const thirdHash = db.server.verifTree.hash()
 
-  equal(hashEq(firstHash, secondHash), false)
-  equal(hashEq(secondHash, thirdHash), true)
+  equal(equals(firstHash, secondHash), false)
+  equal(equals(secondHash, thirdHash), true)
 
   deepEqual(
     (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
@@ -162,62 +162,6 @@ await test('save simple range', async (t) => {
       },
     ],
   )
-})
-
-// TODO This test needs a little bit more fixing
-await test.skip('delete a range', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
-    types: {
-      user: {
-        props: {
-          name: { type: 'string' },
-        },
-      },
-    },
-  })
-
-  const N = 100_001
-  for (let i = 1; i <= N; i++) {
-    db.create('user', {
-      name: 'mr flop ' + i,
-    })
-  }
-
-  const fun = () => {
-    const { hash, left, right } = db.server.verifTree.getRoot()
-    return { hash, left, right }
-  }
-
-  await db.drain()
-  await db.save()
-  const first = fun()
-  db.delete('user', 100_001)
-  await db.drain()
-  await db.save()
-  const second = fun()
-
-  equal(hashEq(first.hash, second.hash), false, 'delete changes the root hash')
-  equal(
-    hashEq(first.left.left.hash, second.left.left.hash),
-    true,
-    "the first block hash wasn't change",
-  )
-  equal(
-    hashEq(first.left.right.hash, second.left.right.hash),
-    false,
-    'the second block hash a new hash of the deletion',
-  )
-  equal(hashEq(second.right.hash, new Uint8Array(16)), true)
-  equal(hashEq(second.left.right.hash, new Uint8Array(16)), true)
-
-  await db.save()
 })
 
 await test('reference changes', async (t) => {

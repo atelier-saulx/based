@@ -5,9 +5,7 @@ import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@saulx/utils'
 import {
-  CsmtNodeRange,
-  destructureCsmtKey,
-  specialBlock,
+  destructureTreeKey,
 } from '../../src/server/tree.js'
 import fs from 'node:fs/promises'
 import assert from 'node:assert'
@@ -100,7 +98,7 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
       }
 
-      const oldCsmt = db.server.verifTree
+      const oldVerifTree = db.server.verifTree
 
       await db.stop()
 
@@ -149,37 +147,20 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
-      const newCsmt = newDb.server.verifTree
-      const prettier = (key: any, value: any) => {
-        if (key === 'hash') {
-          return bufToHex(value)
-        } else {
-          return value
-        }
-      }
-      const fmtNodeData = (data: CsmtNodeRange) =>
-        `type: ${data?.typeId}\nstart: ${data?.start} end: ${data?.end}`
-      //console.log(JSON.stringify(oldCsmt, prettier, 2), JSON.stringify(newCsmt.getRoot(), prettier, 2), 'csmt')
-      //console.log('old', drawDot(oldCsmt, fmtNodeData))
-      //console.log('new', drawDot(newCsmt, fmtNodeData))
-      //deepEqual(oldCsmt.getRoot(), newCsmt.getRoot(), 'csmt trees')
-
+      const newVerifTree = newDb.server.verifTree
       const oldHashSet = new Set<string>()
       const newHashSet = new Set<string>()
       const putHash = (hashSet: Set<string>, { key, hash }) => {
-        const [_typeId, start] = destructureCsmtKey(key)
-        if (start == specialBlock) return // skip the type specialBlock
+        const [_typeId, start] = destructureTreeKey(key)
         hashSet.add(bufToHex(hash))
       }
       const setEq = <T>(a: Set<T>, b: Set<T>) =>
         a.size === b.size && [...a].every((value) => b.has(value))
-      oldCsmt.visitLeafNodes((leaf) => putHash(oldHashSet, leaf))
-      newCsmt.visitLeafNodes((leaf) => putHash(newHashSet, leaf))
+      oldVerifTree.foreach((block) => putHash(oldHashSet, block))
+      newVerifTree.foreach((block) => putHash(newHashSet, block))
 
       assert(setEq(oldHashSet, newHashSet), 'range hash')
-
-      // deepEqual(oldCsmt, newCsmt)
-      deepEqual(oldHashSet, newHashSet, 'csmt hash')
+      deepEqual(oldHashSet, newHashSet, 'db hash')
 
       await wait(10)
     },

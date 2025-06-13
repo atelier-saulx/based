@@ -5,13 +5,12 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
-import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { isTypedArray } from 'node:util/types'
-import { CsmtNodeRange } from '../tree.js'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
+import {MigrateRange} from './index.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -98,7 +97,7 @@ if (isMainThread) {
   while (true) {
     let msg: any
     while ((msg = receiveMessageOnPort(channel))) {
-      const leafData: TreeNode<CsmtNodeRange>['data'] = msg.message
+      const leafData: MigrateRange = msg.message
       const { type, include } = map[leafData.typeId]
       const typeTransformFn = transformFns[type]
 
