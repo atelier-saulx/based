@@ -24,7 +24,7 @@ block-beta
     t2b2["b2"]
     t2b3["b3"]
   end
-  t3["type3<br/>hash: h(h(b1))"]
+  t3["type3<br/>hash: h(h(b1)+h(b3))"]
   r-->t3
   block:T3:1
     t3-->t3b1["b1"] 
