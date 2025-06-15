@@ -99,7 +99,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           start,
           end,
         }
-        db.merkleTree.insert(mtKey, hash, data)
+        db.verifTree.insert(mtKey, hash, data)
       },
       true,
     )
@@ -108,7 +108,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   if (writelog?.hash) {
     // FIXME FDN-1301
     //const oldHash = hexToBuf(writelog.hash)
-    //const newHash = db.merkleTree.getRoot()?.hash
+    //const newHash = db.verifTree.getRoot()?.hash
     //if (!hashEq(oldHash, newHash)) {
     //  console.error(
     //    `WARN: CSMT hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
@@ -120,7 +120,7 @@ export async function start(db: DbServer, opts: StartOpts) {
 
     for (let k in writelog.rangeDumps)
       writelog.rangeDumps[k].forEach(({ hash }) => oldHashSet.add(hash))
-    db.merkleTree.visitLeafNodes(({ key, hash }) => {
+    db.verifTree.visitLeafNodes(({ key, hash }) => {
       const [_typeId, start] = destructureCsmtKey(key)
       if (start == specialBlock) return // skip the type specialBlock
       newHashSet.add(bufToHex(hash))

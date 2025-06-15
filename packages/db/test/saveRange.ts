@@ -54,7 +54,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  const firstHash = db.server.merkleTree.getRoot().hash
+  const firstHash = db.server.verifTree.getRoot().hash
 
   db.update('user', 1, {
     age: 1337,
@@ -73,7 +73,7 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  const secondHash = db.server.merkleTree.getRoot().hash
+  const secondHash = db.server.verifTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(hashEq(firstHash, secondHash), false)
@@ -99,7 +99,7 @@ await test('save simple range', async (t) => {
   t.after(() => newDb.destroy())
 
   const load_end = performance.now()
-  const thirdHash = db.server.merkleTree.getRoot().hash
+  const thirdHash = db.server.verifTree.getRoot().hash
 
   equal(hashEq(firstHash, secondHash), false)
   equal(hashEq(secondHash, thirdHash), true)
@@ -191,7 +191,7 @@ await test.skip('delete a range', async (t) => {
   }
 
   const fun = () => {
-    const { hash, left, right } = db.server.merkleTree.getRoot()
+    const { hash, left, right } = db.server.verifTree.getRoot()
     return { hash, left, right }
   }
 

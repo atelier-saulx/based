@@ -133,7 +133,7 @@ export const migrate = async (
   let rangesToMigrate = []
 
   await save(server, false, false, true)
-  server.merkleTree.visitLeafNodes((leaf) => {
+  server.verifTree.visitLeafNodes((leaf) => {
     const [_typeId, start] = destructureCsmtKey(leaf.key)
     if (start == specialBlock) return // skip the type specialBlock
     rangesToMigrate.push(leaf.data)
