@@ -22,6 +22,40 @@ const GroupCtx = groupFunctions.GroupCtx;
 const incTypes = @import("../include/types.zig");
 const filter = @import("../filter/filter.zig").filter;
 
+pub fn aggregateRefsFields(
+    ctx: *QueryCtx,
+    include: []u8,
+    node: db.Node,
+    originalType: db.Type,
+    comptime isEdge: bool,
+) !usize {
+    var index: usize = 0;
+    const filterSize: u16 = read(u16, include, index);
+    index += 2;
+    const offset: u32 = read(u32, include, index);
+    index += 4;
+    const filterArr: ?[]u8 = if (filterSize > 0) include[index .. index + filterSize] else null;
+    index += filterSize;
+    const typeId: db.TypeId = read(u16, include, index);
+    index += 2;
+    const refField = include[index];
+    index += 1;
+    const groupBy: aggregateTypes.GroupedBy = @enumFromInt(include[index]);
+    index += 1;
+    if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+        const agg = include[index..include.len];
+        return try aggregateRefsGroup(isEdge, ctx, typeId, originalType, node, refField, agg, offset, filterArr);
+    } else {
+        const resultsSize = read(u16, include, index);
+        index += 2;
+        const accumulatorSize = read(u16, include, index);
+        index += 2;
+        const agg = include[index..include.len];
+        return try aggregateRefsDefault(isEdge, ctx, typeId, originalType, node, refField, agg, offset, filterArr, resultsSize, accumulatorSize);
+    }
+    return 0;
+}
+
 pub inline fn aggregateRefsGroup(
     comptime isEdge: bool,
     ctx: *QueryCtx,
@@ -166,41 +200,7 @@ pub inline fn aggregateRefsDefault(
     return resultsSize + 2 + 4;
 }
 
-pub fn aggregateRefsFields(
-    ctx: *QueryCtx,
-    include: []u8,
-    node: db.Node,
-    originalType: db.Type,
-    comptime isEdge: bool,
-) !usize {
-    var index: usize = 0;
-    const filterSize: u16 = read(u16, include, index);
-    index += 2;
-    const offset: u32 = read(u32, include, index);
-    index += 4;
-    const filterArr: ?[]u8 = if (filterSize > 0) include[index .. index + filterSize] else null;
-    index += filterSize;
-    const typeId: db.TypeId = read(u16, include, index);
-    index += 2;
-    const refField = include[index];
-    index += 1;
-    const groupBy: aggregateTypes.GroupedBy = @enumFromInt(include[index]);
-    index += 1;
-    if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
-        const agg = include[index..include.len];
-        return try aggregateRefsGroup(isEdge, ctx, typeId, originalType, node, refField, agg, offset, filterArr);
-    } else {
-        const resultsSize = read(u16, include, index);
-        index += 2;
-        const accumulatorSize = read(u16, include, index);
-        index += 2;
-        const agg = include[index..include.len];
-        return try aggregateRefsDefault(isEdge, ctx, typeId, originalType, node, refField, agg, offset, filterArr, resultsSize, accumulatorSize);
-    }
-    return 0;
-}
-
-pub fn finalizeDefaultResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
+pub inline fn finalizeDefaultResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
     var j: usize = 0;
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
@@ -251,9 +251,6 @@ pub inline fn finalizeGroupResults(
     } else {
         var it = ctx.hashMap.iterator();
         var i: usize = 0;
-        var j: usize = 0;
-        const fieldAggsSize = read(u16, agg, 1);
-        const aggPropDef = agg[3 .. 3 + fieldAggsSize];
 
         while (it.next()) |entry| {
             const key = entry.key_ptr.*;
@@ -269,37 +266,7 @@ pub inline fn finalizeGroupResults(
             const resultsField = data[i .. i + ctx.resultsSize];
             @memset(resultsField, 0);
 
-            j = 0;
-            while (j < fieldAggsSize) {
-                const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
-                j += 1;
-                // propType
-                j += 1;
-                // start
-                j += 2;
-                const resultPos = read(u16, aggPropDef, j);
-                j += 2;
-                const accumulatorPos = read(u16, aggPropDef, j);
-                j += 2;
-
-                if (aggType == aggregateTypes.AggType.COUNT or aggType == aggregateTypes.AggType.SUM) {
-                    copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
-                } else if (aggType == aggregateTypes.AggType.STDDEV) {
-                    const count = read(u64, accumulatorField, accumulatorPos);
-                    if (count > 1) {
-                        const sum = read(f64, accumulatorField, accumulatorPos + 8);
-                        const sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
-                        const mean = sum / @as(f64, @floatFromInt(count));
-                        const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
-                        const stddev = @sqrt(variance);
-                        writeInt(f64, resultsField, resultPos, @floatCast(stddev));
-                    } else {
-                        writeInt(f64, resultsField, resultPos, 0.0);
-                    }
-                } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-                    // TODO
-                }
-            }
+            try finalizeDefaultResults(resultsField, accumulatorField, agg);
             i += ctx.resultsSize;
         }
     }
