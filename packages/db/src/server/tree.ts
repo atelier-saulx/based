@@ -47,11 +47,11 @@ export class VerifTree {
   #h = createDbHash()
 
   constructor(schemaTypesParsed: Record<string, SchemaTypeDef>) {
-    this.#types = this.#makeTypes(schemaTypesParsed)
+    this.#types = VerifTree.#makeTypes(schemaTypesParsed)
 
   }
 
-  #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
+  static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
     return Object.preventExtensions(Object.keys(schemaTypesParsed)
       .sort((a, b) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
       .reduce((obj, key) => {
@@ -113,7 +113,7 @@ export class VerifTree {
 
   updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {
     const oldTypes = this.#types
-    this.#types = this.#makeTypes(schemaTypesParsed)
+    this.#types = VerifTree.#makeTypes(schemaTypesParsed)
 
     for (const k of Object.keys(oldTypes)) {
       const oldType = oldTypes[k]
