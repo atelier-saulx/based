@@ -4,7 +4,7 @@ import { ModifyState } from './modify/ModifyRes.js'
 import { writeUint64 } from '@saulx/utils'
 
 // TODO This definitely shouldn't be copy-pasted here from server/tree.ts
-const makeCsmtKeyFromNodeId = (
+const makeTreeKeyFromNodeId = (
   typeId: number,
   blockCapacity: number,
   nodeId: number,
@@ -49,7 +49,7 @@ export class ModifyCtx {
   dirtyRanges = new Set<number>()
   dirtyTypes = new Map<number, number>()
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    const key = makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
+    const key = makeTreeKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
     if (this.dirtyRanges.has(key)) {
       return
     }

@@ -227,7 +227,7 @@ await test('rapid modifies during schema update', async (t) => {
   deepEqual(all.length, youzies + jamesies)
 })
 
-await test('csmt after schema update', async (t) => {
+await test('tree after schema update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

@@ -3,18 +3,23 @@ import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
-  CsmtNodeRange,
-  destructureCsmtKey,
+  VerifTree,
+  destructureTreeKey,
   foreachBlock,
   foreachDirtyBlock,
-  initCsmt,
-  makeCsmtKey,
-  specialBlock,
+  makeTreeKey,
 } from './tree.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
+
+type RangeDump = {
+    file: string
+    hash: string
+    start: number
+    end: number
+}
 
 export type Writelog = {
   ts: number
@@ -22,16 +27,11 @@ export type Writelog = {
   hash: string
   commonDump: string
   rangeDumps: {
-    [t: number]: {
-      file: string
-      hash: string
-      start: number
-      end: number
-    }[]
+    [t: number]: RangeDump[]
   }
 }
 
-const block_sdb_file = (typeId: number, start: number, end: number) =>
+const blockSdbFile = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
 function saveBlock(
@@ -39,26 +39,27 @@ function saveBlock(
   typeId: number,
   start: number,
   end: number,
-  hashOut: Uint8Array,
-): string | null {
-  const file = block_sdb_file(typeId, start, end)
+): void {
+  const hash = new Uint8Array(16)
+  const mtKey = makeTreeKey(typeId, start)
+  const file = blockSdbFile(typeId, start, end)
   const path = join(db.fileSystemPath, file)
   const err = native.saveBlock(
     path,
     typeId,
     start,
     db.dbCtxExternal,
-    hashOut,
+    hash,
   )
   if (err == -8) {
     // TODO ENOENT
-    return '' // empty range
+    db.verifTree.remove(mtKey)
   } else if (err) {
     // TODO print the error string
     console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
-    return null
+  } else {
+    db.verifTree.update(mtKey, hash)
   }
-  return file
 }
 
 export function save<T extends boolean>(
@@ -102,61 +103,21 @@ export function save(
     }
 
     if (forceFullDump) {
-      // We just rebuild the whole tree
-      initCsmt(db)
+      // reset the state just in case
+      db.verifTree = new VerifTree(db.schemaTypesParsed)
 
-      for (const key in db.schemaTypesParsed) {
-        const def = db.schemaTypesParsed[key]
+      // We use db.verifTree.types instead of db.schemaTypesParsed because it's
+      // ordered.
+      for (const key in db.verifTree.types) {
+        const { def } = db.verifTree.types[key]
         foreachBlock(
           db,
           def,
-          (start: number, end: number, _hash: Uint8Array) => {
-            const typeId = def.id
-            const mtKey = makeCsmtKey(typeId, start)
-            const hash = new Uint8Array(16)
-            const file = saveBlock(db, typeId, start, end, hash)
-            if (file === null) {
-              throw new Error('full dump failed')
-            } else {
-              const data: CsmtNodeRange = {
-                file,
-                typeId,
-                start,
-                end,
-              }
-              db.verifTree.insert(mtKey, hash, data)
-            }
-          },
+          (start: number, end: number, _hash: Uint8Array) => saveBlock(db, def.id, start, end),
         )
       }
     } else {
-      void foreachDirtyBlock(db, (mtKey, typeId, start, end) => {
-        const hash = new Uint8Array(16)
-        const file = saveBlock(db, typeId, start, end, hash)
-
-        if (file === null) {
-          // The previous state should remain in the merkle tree for
-          // load and sync purposes.
-          return
-        } else {
-          const oldLeaf = db.verifTree.search(mtKey)
-
-          // If (file.length === 0) then the range is empty but that's fine,
-          // we'll keep them around for now to maintain the order of the tree.
-          if (oldLeaf) {
-            oldLeaf.data.file = file
-            db.verifTree.update(mtKey, hash)
-          } else {
-            const data: CsmtNodeRange = {
-              file,
-              typeId,
-              start,
-              end,
-            }
-            db.verifTree.insert(mtKey, hash, data)
-          }
-        }
-      })
+      void foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
     }
 
     db.dirtyRanges.clear()
@@ -170,16 +131,17 @@ export function save(
       rangeDumps[id] = []
     }
 
-    db.verifTree.visitLeafNodes((leaf) => {
-      const [typeId, start] = destructureCsmtKey(leaf.key)
-      if (start == specialBlock) return // skip the type specialBlock
-      const data: CsmtNodeRange = leaf.data
-      if (start != data.start) {
-        console.error(
-          `csmtKey start and range start mismatch: ${start} != ${data.start}`,
-        )
+    db.verifTree.foreach((block, def) => {
+      const [typeId, start] = destructureTreeKey(block.key)
+      const end = start + def.blockCapacity - 1
+      const data: RangeDump = {
+        file: blockSdbFile(typeId, start, end),
+        hash: bufToHex(block.hash),
+        start,
+        end,
       }
-      rangeDumps[typeId].push({ ...data, hash: bufToHex(leaf.hash) })
+
+      rangeDumps[typeId].push(data)
     })
 
     const data: Writelog = {
@@ -187,7 +149,7 @@ export function save(
       types,
       commonDump: COMMON_SDB_FILE,
       rangeDumps,
-      hash: bufToHex(db.verifTree.getRoot()?.hash ?? new Uint8Array(0)),
+      hash: bufToHex(db.verifTree.hash), // TODO `hash('hex')`
     }
 
     const filePath = join(db.fileSystemPath, WRITELOG_FILE)
