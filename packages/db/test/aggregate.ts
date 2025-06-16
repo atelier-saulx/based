@@ -925,7 +925,7 @@ await test('agg on references', async (t) => {
     })
     .get()
 
-  result.inspect(100)
+  // result.inspect(100)
 
   deepEqual(
     result.toObject(),
@@ -1044,6 +1044,22 @@ await test('stddev', async (t) => {
     },
     'stddev, top level, groupBy',
   )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 13.922643427165687,
+        },
+      },
+    ],
+    'stddev, branched References, no groupBy',
+  )
 
   // await db.query('vote').sum('NL').groupBy('country').get().inspect()
   // await db.query('vote').count().groupBy('country').get().inspect()
@@ -1063,15 +1079,14 @@ await test('stddev', async (t) => {
   // .include((q) => q('votes').groupBy('country').count())
   // .get()
   // .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('country').stddev('NL'))
-  //   .get()
-  //   .inspect()
-
-  // TODO: when adding BR to props it messes up if country Brazil. Problably in .contains()
+  //   await db
+  //     .query('sequence')
+  //     .include((q) => q('votes').groupBy('country').stddev('NL'))
+  //     .get()
+  //     .inspect()
 })
 
+// test: when adding BR to props it messes up if country Brazil. Problably in .contains()
 // test wildcards
 // handle enum
 // can use the index in selva if no filter
