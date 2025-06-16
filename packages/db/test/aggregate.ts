@@ -1060,6 +1060,30 @@ await test('stddev', async (t) => {
     ],
     'stddev, branched References, no groupBy',
   )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL').groupBy('country'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          Brazil: {
+            NL: 0,
+          },
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 2.5,
+          },
+        },
+      },
+    ],
+    'stddev, branched References, groupBy',
+  )
 
   // await db.query('vote').sum('NL').groupBy('country').get().inspect()
   // await db.query('vote').count().groupBy('country').get().inspect()

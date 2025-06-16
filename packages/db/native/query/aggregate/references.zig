@@ -119,15 +119,14 @@ pub inline fn aggregateRefsGroup(
         }
     }
 
-    const val = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
-    // try setGroupResults(val, groupCtx);
-    // finalizar sem retornar, fazendo o append
-    try finalizeGroupResults(val, groupCtx, agg);
+    const data = try ctx.allocator.alloc(u8, ctx.size);
+
+    try finalizeGroupResults(data, groupCtx, agg);
 
     try ctx.results.append(.{
         .id = null,
         .field = refField,
-        .val = val,
+        .val = data,
         .score = null,
         .type = types.ResultType.aggregate,
     });
