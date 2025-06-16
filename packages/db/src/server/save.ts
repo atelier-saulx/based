@@ -3,7 +3,7 @@ import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
-  createVerifTree,
+  VerifTree,
   destructureTreeKey,
   foreachBlock,
   foreachDirtyBlock,
@@ -104,7 +104,7 @@ export function save(
 
     if (forceFullDump) {
       // reset the state just in case
-      db.verifTree = createVerifTree(db.schemaTypesParsed)
+      db.verifTree = new VerifTree(db.schemaTypesParsed)
 
       // We use db.verifTree.types instead of db.schemaTypesParsed because it's
       // ordered.
@@ -149,7 +149,7 @@ export function save(
       types,
       commonDump: COMMON_SDB_FILE,
       rangeDumps,
-      hash: bufToHex(db.verifTree.hash()), // TODO `hash('hex')`
+      hash: bufToHex(db.verifTree.hash), // TODO `hash('hex')`
     }
 
     const filePath = join(db.fileSystemPath, WRITELOG_FILE)

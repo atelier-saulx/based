@@ -4,7 +4,7 @@ import { DbSchema } from '../schema.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native from '../native.js'
-import { createVerifTree, makeTreeKey } from './tree.js'
+import { VerifTree, makeTreeKey } from './tree.js'
 import { deepCopy, writeUint64 } from '@saulx/utils'
 import { SCHEMA_FILE } from '../types.js'
 import { hash } from '@saulx/hash'
@@ -61,7 +61,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     // add dataLen
     view.setUint32(buf.length - 4, data.length, true)
     server.modify(buf)
-    //server.verifTree = createVerifTree(server.schemaTypesParsed)
+    //server.verifTree = new VerifTree(server.schemaTypesParsed)
   }
   server.verifTree.updateTypes(server.schemaTypesParsed)
 }

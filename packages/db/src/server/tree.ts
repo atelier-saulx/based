@@ -42,88 +42,89 @@ type VerifType = {
   blocks: VerifBlock[],
 }
 
-export type VerifTree = {
-  types: { [key: number]: VerifType },
-  foreach: (cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void) => void,
-  hash: () => Hash,
-  update: (key: number, hash: Hash) => void,
-  remove: (key: number) => void,
-  updateTypes: (schemaTypesParsed: Record<string, SchemaTypeDef>) => void,
-}
+export class VerifTree {
+  #types: { [key: number]: VerifType }
+  #h = createDbHash()
 
-function makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): VerifTree['types'] {
-  return Object.preventExtensions(Object.keys(schemaTypesParsed)
-    .sort((a, b) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
-    .reduce((obj, key) => {
-      const def = schemaTypesParsed[key]
-      const typeId = def.id
-      obj[typeId] = {
-        typeId,
-        blockCapacity: def.blockCapacity,
-        def,
-        hash: new Uint8Array(HASH_SIZE),
-        blocks: [],
-      }
-      return obj
-    }, {}))
-}
+  constructor(schemaTypesParsed: Record<string, SchemaTypeDef>) {
+    this.#types = this.#makeTypes(schemaTypesParsed)
 
-export function createVerifTree(schemaTypesParsed: Record<string, SchemaTypeDef>): VerifTree {
-  const h = createDbHash()
-  let types = makeTypes(schemaTypesParsed)
+  }
 
-  const foreach = (cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void) => {
-    for (const k of Object.keys(types)) {
-      const { blocks, def } = types[k]
-        for (let block of blocks) {
-          if (block) cb(block, def)
+  #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
+    return Object.preventExtensions(Object.keys(schemaTypesParsed)
+      .sort((a, b) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
+      .reduce((obj, key) => {
+        const def = schemaTypesParsed[key]
+        const typeId = def.id
+        obj[typeId] = {
+          typeId,
+          blockCapacity: def.blockCapacity,
+          def,
+          hash: new Uint8Array(HASH_SIZE),
+          blocks: [],
         }
+        return obj
+      }, {}))
+  }
+
+  *types() {
+    for (const k of Object.keys(this.#types)) {
+      yield this.#types[k]
     }
   }
 
-  return Object.preventExtensions({
-    types,
-    foreach,
-    hash: () => {
-      h.reset()
-      foreach((block) => h.update(block.hash))
-
-      return h.digest() as Uint8Array
-    },
-    update: (key: number, hash: Hash) => {
-      const [typeId, start] = destructureTreeKey(key)
-      const type = types[typeId]
-      if (!type) {
-        throw new Error(`type ${typeId} not found`)
-      }
-      const blockI = nodeId2BlockI(start, type.blockCapacity)
-      const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash }))
-      block.hash = hash
-    },
-    remove: (key: number) => {
-      const [typeId, start] = destructureTreeKey(key)
-      const type = types[typeId]
-      if (!type) {
-        throw new Error(`type ${typeId} not found`)
-      }
-      const blockI = nodeId2BlockI(start, type.blockCapacity)
-      delete type.blocks[blockI]
-    },
-    updateTypes: (schemaTypesParsed: Parameters<typeof createVerifTree>[0]) => {
-      const oldTypes = types
-      types = makeTypes(schemaTypesParsed)
-
-      for (const k of Object.keys(oldTypes)) {
-        const oldType = oldTypes[k]
-        const newType = types[k]
-
-        if (newType) {
-          newType.hash = oldType.hash
-          newType.blocks = oldType.blocks
-        }
+  foreach(cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void): void {
+    for (const k of Object.keys(this.#types)) {
+      const { blocks, def } = this.#types[k]
+      for (let block of blocks) {
+        if (block) cb(block, def)
       }
     }
-  })
+  }
+
+  get hash() {
+    this.#h.reset()
+    this.foreach((block) => this.#h.update(block.hash))
+
+    return this.#h.digest() as Uint8Array
+  }
+
+  update(key: number, hash: Hash) {
+    const [typeId, start] = destructureTreeKey(key)
+    const type = this.#types[typeId]
+    if (!type) {
+      throw new Error(`type ${typeId} not found`)
+    }
+    const blockI = nodeId2BlockI(start, type.blockCapacity)
+    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash }))
+    block.hash = hash
+  }
+
+  remove(key: number) {
+    const [typeId, start] = destructureTreeKey(key)
+    const type = this.#types[typeId]
+    if (!type) {
+      throw new Error(`type ${typeId} not found`)
+    }
+    const blockI = nodeId2BlockI(start, type.blockCapacity)
+    delete type.blocks[blockI]
+  }
+
+  updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {
+    const oldTypes = this.#types
+    this.#types = this.#makeTypes(schemaTypesParsed)
+
+    for (const k of Object.keys(oldTypes)) {
+      const oldType = oldTypes[k]
+      const newType = this.#types[k]
+
+      if (newType) {
+        newType.hash = oldType.hash
+        newType.blocks = oldType.blocks
+      }
+    }
+  }
 }
 
 export function foreachBlock(

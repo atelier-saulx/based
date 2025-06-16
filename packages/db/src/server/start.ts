@@ -4,7 +4,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
-  createVerifTree,
+  VerifTree,
   foreachBlock,
   makeTreeKey,
 } from './tree.js'
@@ -73,10 +73,9 @@ export async function start(db: DbServer, opts: StartOpts) {
     // TODO In some cases we really should give up!
   }
 
-  db.verifTree = createVerifTree(db.schemaTypesParsed)
+  db.verifTree = new VerifTree(db.schemaTypesParsed)
 
-  for (const k of Object.keys(db.verifTree.types)) {
-    const { key, def } = db.verifTree.types[k]
+  for (const { key, def } of db.verifTree.types()) {
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
@@ -94,7 +93,7 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   if (writelog?.hash) {
     const oldHash = hexToBuf(writelog.hash)
-    const newHash = db.verifTree.hash()
+    const newHash = db.verifTree.hash
 
     if (!equals(oldHash, newHash)) {
       console.error(

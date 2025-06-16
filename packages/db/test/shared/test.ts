@@ -98,7 +98,10 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
       }
 
-      const oldVerifTree = db.server.verifTree
+      const oldHashSet = new Set<string>()
+      const newHashSet = new Set<string>()
+      const putHash = (hashSet: Set<string>, { hash }) => hashSet.add(bufToHex(hash))
+      db.server.verifTree.foreach((block) => putHash(oldHashSet, block))
 
       await db.stop()
 
@@ -143,24 +146,13 @@ const test = async (
         }
       }
 
-      // console.dir({ a, b }, { depth: null })
-
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
-      const newVerifTree = newDb.server.verifTree
-      const oldHashSet = new Set<string>()
-      const newHashSet = new Set<string>()
-      const putHash = (hashSet: Set<string>, { key, hash }) => {
-        const [_typeId, start] = destructureTreeKey(key)
-        hashSet.add(bufToHex(hash))
-      }
       const setEq = <T>(a: Set<T>, b: Set<T>) =>
         a.size === b.size && [...a].every((value) => b.has(value))
-      oldVerifTree.foreach((block) => putHash(oldHashSet, block))
-      newVerifTree.foreach((block) => putHash(newHashSet, block))
+      newDb.server.verifTree.foreach((block) => putHash(newHashSet, block))
 
       assert(setEq(oldHashSet, newHashSet), 'range hash')
-      deepEqual(oldHashSet, newHashSet, 'db hash')
 
       await wait(10)
     },

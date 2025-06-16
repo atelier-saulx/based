@@ -54,7 +54,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  const firstHash = db.server.verifTree.hash()
+  const firstHash = db.server.verifTree.hash
 
   db.update('user', 1, {
     age: 1337,
@@ -73,7 +73,7 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  const secondHash = db.server.verifTree.hash()
+  const secondHash = db.server.verifTree.hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(equals(firstHash, secondHash), false)
@@ -99,7 +99,7 @@ await test('save simple range', async (t) => {
   t.after(() => newDb.destroy())
 
   const load_end = performance.now()
-  const thirdHash = db.server.verifTree.hash()
+  const thirdHash = db.server.verifTree.hash
 
   equal(equals(firstHash, secondHash), false)
   equal(equals(secondHash, thirdHash), true)
