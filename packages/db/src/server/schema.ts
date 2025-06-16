@@ -4,7 +4,7 @@ import { DbSchema } from '../schema.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native from '../native.js'
-import { initCsmt, makeCsmtKey } from './tree.js'
+import { VerifTree, makeTreeKey } from './tree.js'
 import { deepCopy, writeUint64 } from '@saulx/utils'
 import { SCHEMA_FILE } from '../types.js'
 import { hash } from '@saulx/hash'
@@ -47,7 +47,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   if (schema.types._root) {
     // TODO fix server add it in schema at least
     const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
-    const blockKey = makeCsmtKey(1, 1)
+    const blockKey = makeTreeKey(1, 1)
     const buf = new Uint8Array(8 + data.length + 2 + 8 + 4)
     const view = new DataView(buf.buffer, 0, buf.byteLength)
     // set schema hash
@@ -61,8 +61,9 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     // add dataLen
     view.setUint32(buf.length - 4, data.length, true)
     server.modify(buf)
-    initCsmt(server)
+    //server.verifTree = new VerifTree(server.schemaTypesParsed)
   }
+  server.verifTree.updateTypes(server.schemaTypesParsed)
 }
 
 export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {

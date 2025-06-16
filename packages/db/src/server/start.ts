@@ -4,18 +4,15 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
-  CsmtNodeRange,
-  destructureCsmtKey,
+  VerifTree,
   foreachBlock,
-  initCsmt,
-  makeCsmtKey,
-  specialBlock,
+  makeTreeKey,
 } from './tree.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
-import { bufToHex, wait } from '@saulx/utils'
+import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 
@@ -76,10 +73,9 @@ export async function start(db: DbServer, opts: StartOpts) {
     // TODO In some cases we really should give up!
   }
 
-  const csmtTypes = initCsmt(db)
+  db.verifTree = new VerifTree(db.schemaTypesParsed)
 
-  for (const key in csmtTypes) {
-    const def = csmtTypes[key]
+  for (const { key, def } of db.verifTree.types()) {
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
@@ -88,47 +84,21 @@ export async function start(db: DbServer, opts: StartOpts) {
     foreachBlock(
       db,
       def,
-      (start, end, hash) => {
-        const mtKey = makeCsmtKey(def.id, start)
-        const file: string =
-          writelog.rangeDumps[def.id]?.find((v) => v.start === start)?.file ||
-          ''
-        const data: CsmtNodeRange = {
-          file,
-          typeId: def.id,
-          start,
-          end,
-        }
-        db.merkleTree.insert(mtKey, hash, data)
+      (start, _end, hash) => {
+        const mtKey = makeTreeKey(def.id, start)
+        db.verifTree.update(mtKey, hash)
       },
-      true,
     )
   }
 
   if (writelog?.hash) {
-    // FIXME FDN-1301
-    //const oldHash = hexToBuf(writelog.hash)
-    //const newHash = db.merkleTree.getRoot()?.hash
-    //if (!hashEq(oldHash, newHash)) {
-    //  console.error(
-    //    `WARN: CSMT hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
-    //  )
-    //}
+    const oldHash = hexToBuf(writelog.hash)
+    const newHash = db.verifTree.hash
 
-    const oldHashSet = new Set<string>()
-    const newHashSet = new Set<string>()
-
-    for (let k in writelog.rangeDumps)
-      writelog.rangeDumps[k].forEach(({ hash }) => oldHashSet.add(hash))
-    db.merkleTree.visitLeafNodes(({ key, hash }) => {
-      const [_typeId, start] = destructureCsmtKey(key)
-      if (start == specialBlock) return // skip the type specialBlock
-      newHashSet.add(bufToHex(hash))
-    })
-    const setEq = <T>(a: Set<T>, b: Set<T>) =>
-      a.size === b.size && [...a].every((value) => b.has(value))
-    if (!setEq(oldHashSet, newHashSet)) {
-      console.error(`WARN: CSMT hash mismatch.`)
+    if (!equals(oldHash, newHash)) {
+      console.error(
+        `WARN: DB hash mismatch. expected: ${writelog.hash} actual: ${bufToHex(newHash)}`,
+      )
     }
   }
 

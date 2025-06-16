@@ -95,7 +95,7 @@ const native = {
     const err: number = db.loadBlock(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
-        `Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
+        `Failed to load a range "${path}". selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
       )
     }
   },

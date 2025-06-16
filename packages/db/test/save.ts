@@ -825,7 +825,7 @@ await test('no mismatch', async (t) => {
   await db2.save()
 })
 
-await test('csmt after save', async (t) => {
+await test('tree after save', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
