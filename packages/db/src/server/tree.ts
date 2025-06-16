@@ -160,22 +160,7 @@ export async function foreachDirtyBlock(
     typeIdMap[typeId] = type
   }
 
-  // FDN-791 CSMT is unstable (not history independent)
-  // For now we just sort the dirty data by type and start
-  // to make the insertion order more deterministic.
-  // This doesn't solve the issue completely because
-  // we might mess the order later with updates.
-  const dirty = [...db.dirtyRanges].sort((a, b) => {
-    const [aTypeId, aStart] = destructureTreeKey(a)
-    const [bTypeId, bStart] = destructureTreeKey(b)
-    const aId = typeIdMap[aTypeId].id
-    const bId = typeIdMap[bTypeId].id
-    const td = aId - bId
-    if (td != 0) return td
-    return aStart - bStart
-  })
-
-  for (const mtKey of dirty) {
+  for (const mtKey of db.dirtyRanges) {
     const [typeId, start] = destructureTreeKey(mtKey)
     const end = start + typeIdMap[typeId].blockCapacity - 1
     cb(mtKey, typeId, start, end)
