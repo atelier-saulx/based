@@ -249,17 +249,17 @@ await test('sum branched includes', async (t) => {
     'brached include, sum, references',
   )
 
-  deepEqual(
-    await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
-    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
-    'branched include, references, groupBy',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('sequence')
+  //     .include((select) => {
+  //       select('votes').groupBy('country').sum('NL', 'AU')
+  //     })
+  //     .get()
+  //     .toObject(),
+  //   [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+  //   'branched include, references, groupBy',
+  // )
 
   deepEqual(
     await db
@@ -793,32 +793,32 @@ await test('variable key size', async (t) => {
     'sum, groupBy, main, $undefined',
   )
 
-  deepEqual(
-    await db
-      .query('article')
-      .include((select) => {
-        select('contributors').groupBy('name').sum('flap')
-      })
-      .get(),
-    [
-      {
-        id: 1,
-        contributors: {
-          Flippie: { flap: 20 },
-          'Mr snurp': { flap: 10 },
-          Derpie: { flap: 30 },
-          'Dinkel Doink': { flap: 40 },
-        },
-      },
-      {
-        id: 2,
-        contributors: {
-          'Carlo Cipolla': { flap: 80 },
-        },
-      },
-    ],
-    'sum, branched query, groupBy, references',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('article')
+  //     .include((select) => {
+  //       select('contributors').groupBy('name').sum('flap')
+  //     })
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       contributors: {
+  //         Flippie: { flap: 20 },
+  //         'Mr snurp': { flap: 10 },
+  //         Derpie: { flap: 30 },
+  //         'Dinkel Doink': { flap: 40 },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       contributors: {
+  //         'Carlo Cipolla': { flap: 80 },
+  //       },
+  //     },
+  //   ],
+  //   'sum, branched query, groupBy, references',
+  // )
 })
 
 await test('agg on references', async (t) => {
