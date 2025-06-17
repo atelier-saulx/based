@@ -81,6 +81,16 @@ pub fn getCardinalityField(node: Node, fieldSchema: FieldSchema) ?[]u8 {
     }
 }
 
+pub fn getCardinalityFieldAsSelvaString(node: Node, fieldSchema: FieldSchema) ?[]u8 {
+    if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
+        // return @ptrCast(stored);
+        _ = stored;
+        return null; // temp
+    } else {
+        return null;
+    }
+}
+
 pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, fieldSchema: FieldSchema) []u8 {
     if (selva.selva_fields_get_selva_string3(ref, fieldSchema) orelse null) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
