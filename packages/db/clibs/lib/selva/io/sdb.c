@@ -58,9 +58,18 @@
  * hexdump -s 8 -n 40 -e '40/1 "%c"' common.sdb
  * hexdump -s 48 -n 40 -e '40/1 "%c"' common.sdb
  * ```
+ *
+ * SDB Version History
+ * -------------------
+ *
+ * **1**
+ * - First stable version
+ *
+ * **2**
+ * - Adds colvec serialization at the end of each range file
  */
 
-#define SDB_VERSION 1
+#define SDB_VERSION 2 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)

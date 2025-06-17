@@ -92,6 +92,13 @@ struct SelvaTypeEntry {
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
 
     /**
+     * Columnar fields.
+     */
+    struct {
+        struct SelvaColvec *colvec __pcounted_by(ns.nr_colvecs);
+    } col_fields;
+
+    /**
      * Max node inserted so far.
      * Initially NULL but also NULLed if the node is deleted.
      * This is used to optimize new insertions because it's possible to use

@@ -31,6 +31,7 @@ struct schemabuf_parser_ctx {
     const uint8_t *buf; /*!< Current position in the schema buf. */
     size_t len;
     size_t alias_index;
+    size_t colvec_index;
 };
 
 /**
@@ -240,6 +241,35 @@ static int type2fs_aliases(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsS
     return 1;
 }
 
+static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    struct {
+        enum SelvaFieldType type;
+        uint16_t vec_len; /*!< Length of a single vector. */
+        uint16_t comp_size; /*!< Component size in the vector. */
+    } __packed spec;
+
+    if (ctx->len < sizeof(spec)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&spec, ctx->buf, sizeof(spec));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_COLVEC,
+        .colvec = {
+            .vec_len = spec.vec_len,
+            .comp_size = spec.comp_size,
+            .index = ctx->colvec_index++,
+        },
+    };
+
+    return 1 + sizeof(spec);
+}
+
 static struct schemabuf_parser {
     enum SelvaFieldType type;
     int (*type2fs)(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field_idx);
@@ -283,6 +313,10 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_ALIASES] = {
         .type = SELVA_FIELD_TYPE_ALIASES,
         .type2fs = type2fs_aliases,
+    },
+    [SELVA_FIELD_TYPE_COLVEC] = {
+        .type = SELVA_FIELD_TYPE_COLVEC,
+        .type2fs = type2fs_colvec,
     },
 };
 
@@ -393,8 +427,8 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
 
         /*
          * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_WEAK_REFERENCES,
-         * SELVA_FIELD_TYPE_ALIAS, and SELVA_FIELD_TYPE_ALIASES are not
-         * supported here.
+         * SELVA_FIELD_TYPE_ALIAS, SELVA_FIELD_TYPE_ALIASES, and
+         * SELVA_FIELD_TYPE_COLVEC are not supported here.
          * len < SCHEMA_MIN_SIZE was already checked inschemabuf_get_info().
          * TODO Should we fail on unsupported types?
          */
@@ -431,6 +465,7 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const uin
 
     int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
     ns->nr_aliases = ctx.alias_index;
+    ns->nr_colvecs = ctx.colvec_index;
 
     return err;
 }
@@ -457,7 +492,7 @@ void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
 
 __constructor static void schemabuf_parsers_init(void)
 {
-    for (size_t i = 0; i<  num_elem(schemabuf_parsers); i++) {
+    for (size_t i = 0; i < num_elem(schemabuf_parsers); i++) {
         if (!schemabuf_parsers[i].type2fs) {
             schemabuf_parsers[i] = (struct schemabuf_parser){
                 .type = i,

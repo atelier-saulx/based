@@ -59,6 +59,13 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
+        types.Prop.COLVEC => {
+            const len = read(u32, data, 0);
+            const padding = data[4];
+            const slice = data[8 - padding .. len + 4];
+            db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
+            return len;
+        },
         types.Prop.CARDINALITY => {
             const len = read(u32, data, 0);
             var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);

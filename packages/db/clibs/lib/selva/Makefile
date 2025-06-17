@@ -24,6 +24,7 @@ endif
 OBJ := \
 	alias.o \
 	bitmap.o \
+	colvec.o \
 	db.o \
 	db_panic.o \
 	expire.o \

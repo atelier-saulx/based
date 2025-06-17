@@ -16,6 +16,7 @@ import {
   WEAK_REFERENCE,
   WEAK_REFERENCES,
   JSON,
+  COLVEC,
 } from './types.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
@@ -46,6 +47,7 @@ selvaTypeMap[WEAK_REFERENCE] = selvaFieldType.WEAK_REFERENCE
 selvaTypeMap[WEAK_REFERENCES] = selvaFieldType.WEAK_REFERENCES
 selvaTypeMap[ALIAS] = selvaFieldType.ALIAS
 selvaTypeMap[ALIASES] = selvaFieldType.ALIASES
+selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
@@ -84,6 +86,14 @@ const propDefBuffer = (
 
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
+    return [...buf]
+  } else if (prop.len && (type === COLVEC)) {
+    const buf = new Uint8Array(5)
+    const view = new DataView(buf.buffer)
+
+    buf[0] = selvaType
+    view.setUint16(1, prop.len, true)
+    view.setUint16(3, 4, true) // TODO Other types than f32
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
     const buf = new Uint8Array(9)

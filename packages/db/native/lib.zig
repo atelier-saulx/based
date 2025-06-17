@@ -14,6 +14,7 @@ const string = @import("./string.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
+const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
 
 const NapiError = error{NapiError};
@@ -122,6 +123,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "membarSyncRead", membarSyncRead) catch return null;
     registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
+
+    registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
 
     return exports;
 }

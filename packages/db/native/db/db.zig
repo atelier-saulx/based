@@ -192,6 +192,15 @@ pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
     ));
 }
 
+pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, vec: []u8) void {
+    selva.colvec_set_vec(
+        te,
+        nodeId,
+        fieldSchema,
+        vec.ptr,
+    );
+}
+
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
     var ref: *selva.SelvaNodeReference = undefined;
     errors.selva(selva.selva_fields_reference_set(
