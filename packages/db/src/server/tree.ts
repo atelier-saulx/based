@@ -112,17 +112,19 @@ export class VerifTree {
 
   updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {
     const oldTypes = this.#types
-    this.#types = VerifTree.#makeTypes(schemaTypesParsed)
+    const newTypes = VerifTree.#makeTypes(schemaTypesParsed)
 
     for (const k of Object.keys(oldTypes)) {
       const oldType = oldTypes[k]
-      const newType = this.#types[k]
+      const newType = newTypes[k]
 
       if (newType) {
         newType.hash = oldType.hash
         newType.blocks = oldType.blocks
       }
     }
+
+    this.#types = newTypes
   }
 }
 
