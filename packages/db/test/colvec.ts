@@ -74,15 +74,15 @@ await test('colvec', async (t) => {
   const tr1 = performance.now()
   console.log(`QUERY row: ${tr1 - tr0} ms`)
 
-  //await db
-  //  .query('col')
-  //  .include('*')
-  //  .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
-  //  .get()
-  //  .inspect()
-
   const tc0 = performance.now()
   console.log(global.__basedDb__native__.colvecTest(db.server.dbCtxExternal, 3, 1, 1, N + 1))
   const tc1 = performance.now()
   console.log(`QUERY col: ${tc1 - tc0} ms`)
+
+  //await db
+  //  .query('col')
+  //  .include('vec')
+  //  .range(0, 2)
+  //  .get()
+  //  .inspect()
 })
