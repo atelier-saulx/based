@@ -63,6 +63,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     server.modify(buf)
     //server.verifTree = new VerifTree(server.schemaTypesParsed)
   }
+
   server.verifTree.updateTypes(server.schemaTypesParsed)
 }
 

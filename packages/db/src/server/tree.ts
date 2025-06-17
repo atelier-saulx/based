@@ -48,7 +48,6 @@ export class VerifTree {
 
   constructor(schemaTypesParsed: Record<string, SchemaTypeDef>) {
     this.#types = VerifTree.#makeTypes(schemaTypesParsed)
-
   }
 
   static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
