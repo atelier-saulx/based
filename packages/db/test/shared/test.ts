@@ -101,7 +101,7 @@ const test = async (
       const oldHashSet = new Set<string>()
       const newHashSet = new Set<string>()
       const putHash = (hashSet: Set<string>, { hash }) => hashSet.add(bufToHex(hash))
-      db.server.verifTree.foreach((block) => putHash(oldHashSet, block))
+      db.server.verifTree.foreachBlock((block) => putHash(oldHashSet, block))
 
       await db.stop()
 
@@ -150,7 +150,7 @@ const test = async (
 
       const setEq = <T>(a: Set<T>, b: Set<T>) =>
         a.size === b.size && [...a].every((value) => b.has(value))
-      newDb.server.verifTree.foreach((block) => putHash(newHashSet, block))
+      newDb.server.verifTree.foreachBlock((block) => putHash(newHashSet, block))
 
       assert(setEq(oldHashSet, newHashSet), 'range hash')
 

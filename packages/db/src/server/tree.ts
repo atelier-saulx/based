@@ -73,7 +73,7 @@ export class VerifTree {
     }
   }
 
-  foreach(cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void): void {
+  foreachBlock(cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void): void {
     for (const k of Object.keys(this.#types)) {
       const { blocks, def } = this.#types[k]
       for (let block of blocks) {
@@ -84,7 +84,7 @@ export class VerifTree {
 
   get hash() {
     this.#h.reset()
-    this.foreach((block) => this.#h.update(block.hash))
+    this.foreachBlock((block) => this.#h.update(block.hash))
 
     return this.#h.digest() as Uint8Array
   }

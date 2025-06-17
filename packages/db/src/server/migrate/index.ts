@@ -135,7 +135,7 @@ export const migrate = async (
   let rangesToMigrate: MigrateRange[] = []
 
   await save(server, false, false, true)
-  server.verifTree.foreach((block, def) => {
+  server.verifTree.foreachBlock((block, def) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const end = start + def.blockCapacity - 1
 

@@ -131,7 +131,7 @@ export function save(
       rangeDumps[id] = []
     }
 
-    db.verifTree.foreach((block, def) => {
+    db.verifTree.foreachBlock((block, def) => {
       const [typeId, start] = destructureTreeKey(block.key)
       const end = start + def.blockCapacity - 1
       const data: RangeDump = {
