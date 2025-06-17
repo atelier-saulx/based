@@ -54,12 +54,16 @@ await test('colvec', async (t) => {
   await db.drain()
   const tcol1 = performance.now()
 
-  console.log('create:', trow1 - trow0, tcol1 - tcol0)
+  console.log(`CREATE row: ${trow1 - trow0} ms col: ${tcol1 - tcol0} ms`)
 
-  reset()
-  genVec()
-  vec[7] += 1.0
-  console.log(vec)
+  vec[0] = 2311.0
+  vec[1] = 5054.0
+  vec[2] = 2713.0
+  vec[3] = 8280.0
+  vec[4] = 8651.0
+  vec[5] = 7474.0
+  vec[6] = 4173.0
+  vec[7] = 7261.0
   const tr0 = performance.now()
   await db
     .query('row')
@@ -68,7 +72,7 @@ await test('colvec', async (t) => {
     .get()
     .inspect()
   const tr1 = performance.now()
-  console.log(tr1 - tr0)
+  console.log(`QUERY row: ${tr1 - tr0} ms`)
 
   //await db
   //  .query('col')
@@ -80,5 +84,5 @@ await test('colvec', async (t) => {
   const tc0 = performance.now()
   console.log(global.__basedDb__native__.colvecTest(db.server.dbCtxExternal, 3, 1, 1, N + 1))
   const tc1 = performance.now()
-  console.log(tc1 - tc0)
+  console.log(`QUERY col: ${tc1 - tc0} ms`)
 })
