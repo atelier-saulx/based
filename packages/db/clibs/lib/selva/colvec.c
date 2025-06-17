@@ -86,6 +86,9 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     block_id_t block_i = selva_node_id2block_i2(te, node->node_id);
 
+    /*
+     * Initialize each col field of this node.
+     */
     for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         uint8_t *slab = colvec_init_slab(colvec, block_i);
@@ -95,24 +98,24 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
     }
 }
 
-struct SelvaColvec *colvec_get(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs)
-{
-    return &te->col_fields.colvec[fs->colvec.index];
-}
-
-void *colvec_get_single(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs)
-{
-    struct SelvaColvec *colvec = colvec_get(te, fs);
-    uint8_t *slab = (uint8_t *)colvec->v[selva_node_id2block_i2(te, node_id)];
-
-    return slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id);
-}
-
 void colvec_hash_update(struct SelvaTypeEntry *te, node_id_t node_id, struct SelvaColvec *colvec, selva_hash_state_t *hash_state)
 {
     uint8_t *slab = (uint8_t *)colvec->v[selva_node_id2block_i2(te, node_id)];
 
     selva_hash_update(hash_state, slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id), colvec->vec_size);
+}
+
+struct SelvaColvec *colvec_get(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs)
+{
+    return &te->col_fields.colvec[fs->colvec.index];
+}
+
+void *colvec_get_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaColvec *colvec = colvec_get(te, fs);
+    uint8_t *slab = (uint8_t *)colvec->v[selva_node_id2block_i2(te, node_id)];
+
+    return slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id);
 }
 
 void colvec_set_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs, const void *vec)
@@ -133,6 +136,10 @@ int colvec_foreach(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs,
     size_t block_capacity = selva_get_block_capacity(te);
     size_t vec_size = colvec->vec_size;
 
+    /*
+     * This function is provided more as an example rather than an efficient
+     * implementation.
+     */
     for (uint32_t i = start; i < end; i++) {
         block_id_t block_i = selva_node_id2block_i2(te, i);
         uint8_t *slab = (uint8_t *)colvec->v[block_i];
