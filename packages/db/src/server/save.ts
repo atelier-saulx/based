@@ -108,8 +108,8 @@ export function save(
 
       // We use db.verifTree.types instead of db.schemaTypesParsed because it's
       // ordered.
-      for (const key in db.verifTree.types) {
-        const { def } = db.verifTree.types[key]
+      for (const { typeId } of db.verifTree.types()) {
+        const def = db.schemaTypesParsedById[typeId]
         foreachBlock(
           db,
           def,
@@ -131,8 +131,9 @@ export function save(
       rangeDumps[id] = []
     }
 
-    db.verifTree.foreachBlock((block, def) => {
+    db.verifTree.foreachBlock((block) => {
       const [typeId, start] = destructureTreeKey(block.key)
+      const def = db.schemaTypesParsedById[typeId]
       const end = start + def.blockCapacity - 1
       const data: RangeDump = {
         file: blockSdbFile(typeId, start, end),

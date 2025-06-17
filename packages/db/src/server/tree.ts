@@ -37,7 +37,6 @@ type VerifBlock = {
 type VerifType = {
   typeId: number,
   blockCapacity: number,
-  def: SchemaTypeDef,
   hash: Hash,
   blocks: VerifBlock[],
 }
@@ -59,7 +58,6 @@ export class VerifTree {
         obj[typeId] = {
           typeId,
           blockCapacity: def.blockCapacity,
-          def,
           hash: new Uint8Array(HASH_SIZE),
           blocks: [],
         }
@@ -73,11 +71,11 @@ export class VerifTree {
     }
   }
 
-  foreachBlock(cb: (block: VerifBlock, typeDef?: SchemaTypeDef) => void): void {
+  foreachBlock(cb: (block: VerifBlock) => void): void {
     for (const k of Object.keys(this.#types)) {
-      const { blocks, def } = this.#types[k]
+      const { blocks } = this.#types[k]
       for (let block of blocks) {
-        if (block) cb(block, def)
+        if (block) cb(block)
       }
     }
   }
