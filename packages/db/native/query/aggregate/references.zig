@@ -130,6 +130,7 @@ pub inline fn aggregateRefsGroup(
         .score = null,
         .type = types.ResultType.aggregate,
     });
+    utils.debugPrint("grp => {any}\n", .{ctx.results.getLast()});
 
     return groupCtx.resultsSize + 6;
 }
@@ -185,8 +186,9 @@ pub inline fn aggregateRefsDefault(
         }
     }
 
+    utils.debugPrint("---> {d}\n", .{resultsSize});
     const val = try ctx.allocator.alloc(u8, resultsSize);
-    try finalizeDefaultResults(val, accumulatorField, agg);
+    try finalizeResults(val, accumulatorField, agg);
 
     try ctx.results.append(.{
         .id = null,
@@ -199,7 +201,7 @@ pub inline fn aggregateRefsDefault(
     return resultsSize + 2 + 4;
 }
 
-pub inline fn finalizeDefaultResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
+pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
     var j: usize = 0;
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
@@ -264,8 +266,7 @@ pub inline fn finalizeGroupResults(
             const accumulatorField = entry.value_ptr.*;
             const resultsField = data[i .. i + ctx.resultsSize];
             @memset(resultsField, 0);
-
-            try finalizeDefaultResults(resultsField, accumulatorField, agg);
+            try finalizeResults(resultsField, accumulatorField, agg);
             i += ctx.resultsSize;
         }
     }

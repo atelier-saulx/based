@@ -55,7 +55,7 @@ pub fn default(
     }
 }
 
-pub fn defaultSimpeFilter(
+pub fn defaultSimpleFilter(
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,

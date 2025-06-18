@@ -64,7 +64,7 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
             }
         } else {
             if (isSimpeFilter) {
-                try QueryDefault.defaultSimpeFilter(ctx, offset, limit, typeId, filterBuf, include);
+                try QueryDefault.defaultSimpleFilter(ctx, offset, limit, typeId, filterBuf, include);
             } else if (filterBuf.len > 0) {
                 try QueryDefault.default(t.FilterType.default, ctx, offset, limit, typeId, filterBuf, include);
             } else {
