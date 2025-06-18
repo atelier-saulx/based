@@ -119,6 +119,11 @@ pub fn getField(
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == types.Prop.CARDINALITY) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
+    } else if (fieldType == types.Prop.COLVEC) {
+        const nodeId = if (id == 0) getNodeId(node) else id;
+        const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
+        const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
+        return @as([*]u8, @ptrCast(vec))[0..len];
     }
 
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, fieldSchema);
