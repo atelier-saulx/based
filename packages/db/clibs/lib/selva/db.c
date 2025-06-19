@@ -284,6 +284,9 @@ static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *
     return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
 }
 
+/**
+ * Alloc .blocks in a type entry.
+ */
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 {
     assert(block_capacity >= 2);

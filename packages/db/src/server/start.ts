@@ -11,7 +11,7 @@ import {
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
-import { DEFAULT_BLOCK_CAPACITY } from '@based/schema/def'
+import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
@@ -80,7 +80,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
-      writelog?.types[def.id]?.blockCapacity || DEFAULT_BLOCK_CAPACITY
+      writelog?.types[def.id]?.blockCapacity || BLOCK_CAPACITY_DEFAULT
 
     foreachBlock(
       db,

@@ -25,33 +25,36 @@ import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
-export const DEFAULT_BLOCK_CAPACITY = 100_000
+export const BLOCK_CAPACITY_MIN = 1025
+export const BLOCK_CAPACITY_MAX = 2147483647
+export const BLOCK_CAPACITY_DEFAULT = 100_000
+
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
-  for (const field in schemaTypesParsed) {
-    if (field in schema.types) {
+  for (const typeName in schemaTypesParsed) {
+    if (typeName in schema.types) {
       continue
     }
-    const id = schemaTypesParsed[field].id
-    delete schemaTypesParsed[field]
+    const id = schemaTypesParsed[typeName].id
+    delete schemaTypesParsed[typeName]
     delete schemaTypesParsedById[id]
   }
-  for (const field in schema.types) {
-    const type = schema.types[field]
+  for (const typeName in schema.types) {
+    const type = schema.types[typeName]
     if (!type.id) {
       throw new Error('NEED ID ON TYPE')
     }
     const def = createSchemaTypeDef(
-      field,
+      typeName,
       type,
       schemaTypesParsed,
       schema.locales ?? {
         en: {},
       },
     )
-    def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
-    schemaTypesParsed[field] = def
+    def.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
+    schemaTypesParsed[typeName] = def
     schemaTypesParsedById[type.id] = def
   }
   return { schemaTypesParsed, schemaTypesParsedById }
