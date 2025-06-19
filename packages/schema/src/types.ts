@@ -407,6 +407,7 @@ type GenericSchemaType<isStrict = false> = {
     delete?: SchemaHook
   }
   id?: number
+  blockCapacity?: number
   props: SchemaProps<isStrict>
 }
 

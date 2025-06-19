@@ -18,12 +18,15 @@ await test('colvec', async (t) => {
         },
       },
       col: {
+        blockCapacity: 10_000,
         props: {
           vec: { type: 'colvec', size: 8 },
         },
       },
     },
   })
+
+  deepEqual(db.server.schemaTypesParsed['col'].blockCapacity, 10_000)
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)

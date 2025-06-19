@@ -14,6 +14,9 @@ import {
   REFERENCE,
   SchemaTypesParsed,
   NUMBER,
+  BLOCK_CAPACITY_MAX,
+  BLOCK_CAPACITY_DEFAULT,
+  BLOCK_CAPACITY_MIN,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -24,10 +27,6 @@ import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
-
-export const BLOCK_CAPACITY_MIN = 1025
-export const BLOCK_CAPACITY_MAX = 2147483647
-export const BLOCK_CAPACITY_DEFAULT = 100_000
 
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -53,7 +52,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
         en: {},
       },
     )
-    def.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
     schemaTypesParsed[typeName] = def
     schemaTypesParsedById[type.id] = def
   }
@@ -69,11 +67,23 @@ export const createSchemaTypeDef = (
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
-  if (result.id == 0 && top) {
-    if ('id' in type) {
-      result.id = type.id
-    } else {
-      throw new Error(`Invalid schema type id ${result.type}`)
+  if (top) {
+    if (result.id == 0) {
+      if ('id' in type) {
+        result.id = type.id
+      } else {
+        throw new Error(`Invalid schema type id ${result.type}`)
+      }
+    }
+    if (result.blockCapacity == 0) {
+      if ('blockCapacity' in type) {
+        if (typeof type.blockCapacity !== 'number' || type.blockCapacity < BLOCK_CAPACITY_MIN || type.blockCapacity > BLOCK_CAPACITY_MAX) {
+          throw new Error('Invalid blockCapacity')
+        }
+        result.blockCapacity = type.blockCapacity
+      } else {
+        result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
+      }
     }
   }
   result.locales = locales

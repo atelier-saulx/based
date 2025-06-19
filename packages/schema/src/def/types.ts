@@ -154,6 +154,10 @@ export type SchemaSortUndefinedHandler = {
   props: PropDef[]
 }
 
+export const BLOCK_CAPACITY_MIN = 1025
+export const BLOCK_CAPACITY_MAX = 2147483647
+export const BLOCK_CAPACITY_DEFAULT = 100_000
+
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
