@@ -85,6 +85,11 @@ export const createSchemaTypeDef = (
         result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
+    if (result.insertOnly == false) {
+      if ('insertOnly' in type) {
+        result.insertOnly = !!type.insertOnly
+      }
+    }
   }
   result.locales = locales
   result.localeSize = Object.keys(locales).length

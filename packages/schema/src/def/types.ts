@@ -165,6 +165,7 @@ export type SchemaTypeDef = {
   lastId: number
   blockCapacity: number
   mainLen: number
+  insertOnly: boolean // delete not allowed
   buf: Uint8Array
   propNames: Uint8Array
   props: {
