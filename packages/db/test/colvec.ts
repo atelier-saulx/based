@@ -73,19 +73,48 @@ await test('colvec', async (t) => {
     .include('*')
     .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
     .get()
-    .inspect()
   const tr1 = performance.now()
   console.log(`QUERY row: ${tr1 - tr0} ms`)
 
   const tc0 = performance.now()
-  console.log(global.__basedDb__native__.colvecTest(db.server.dbCtxExternal, 3, 1, 1, N + 1))
+  global.__basedDb__native__.colvecTest(db.server.dbCtxExternal, 3, 1, 1, N + 1)
   const tc1 = performance.now()
   console.log(`QUERY col: ${tc1 - tc0} ms`)
 
-  //await db
-  //  .query('col')
-  //  .include('vec')
-  //  .range(0, 2)
-  //  .get()
-  //  .inspect()
+  const res = await db
+    .query('col')
+    .include('vec')
+    .range(0, 2)
+    .get()
+    .toObject()
+  deepEqual(
+    res,
+    [
+      {
+        id: 1,
+        vec: new Float32Array([
+          2311,
+          5054,
+          1.5612034346858506e-39,
+          1.007378107771942e-37,
+          3.76158192263132e-37,
+          1.6815581571897805e-44,
+          0,
+          5391
+        ])
+      },
+      {
+        id: 2,
+        vec: new Float32Array([
+          5391,
+          5094,
+          1.5612034346858506e-39,
+          4.029512431087768e-37,
+          3.76158192263132e-37,
+          1.6815581571897805e-44,
+          0,
+          6071
+        ])
+      }
+    ])
 })
