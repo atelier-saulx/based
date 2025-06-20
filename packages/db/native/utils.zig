@@ -57,7 +57,6 @@ pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     }
 }
 
-// Faster to use the c memcpy function then ZIG's built-in
 pub inline fn copy(dest: []u8, source: []const u8) void {
     if (builtin.link_libc) {
         _ = memcpy(dest.ptr, source.ptr, source.len);

@@ -19,7 +19,7 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
 
     const filterSize = read(u16, q, index);
     index += 2;
-    const isSimpeFilter = q[index] == 1;
+    const isSimpleFilter = q[index] == 1;
     index += 1;
     const filterBuf = q[index .. index + filterSize];
     index += filterSize;
@@ -63,7 +63,7 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
                 );
             }
         } else {
-            if (isSimpeFilter) {
+            if (isSimpleFilter) {
                 try QueryDefault.defaultSimpleFilter(ctx, offset, limit, typeId, filterBuf, include);
             } else if (filterBuf.len > 0) {
                 try QueryDefault.default(t.FilterType.default, ctx, offset, limit, typeId, filterBuf, include);

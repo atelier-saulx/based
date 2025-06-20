@@ -191,7 +191,7 @@ pub fn getString(env: c.napi_env, value: c.napi_value) ![]u8 {
 
     var buffer: [*]u8 = undefined;
 
-    // wtf utf16...
+    // utf16...
     if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size, null) != c.napi_ok) {
         jsThrow(env, "Cannot get fixed length string for variable");
         return errors.Napi.CannotGetString;

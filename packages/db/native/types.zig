@@ -181,7 +181,7 @@ pub const ReadOp = enum(u8) {
 };
 
 pub const IncludeOp = enum(u8) {
-    referencesAggregation = 251, // use this
+    referencesAggregation = 251,
     edge = 252,
     references = 254,
     reference = 255,
@@ -202,7 +202,6 @@ pub const ResultType = enum(u8) {
     referencesEdge = 4,
     referenceEdge = 5,
     aggregate = 6,
-    // here we get agg
 };
 
 pub const AggFn = enum(u8) {

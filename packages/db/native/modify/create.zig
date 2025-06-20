@@ -20,11 +20,9 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
-                // overwrite, add
                 types.RefOp.OVERWRITE, types.RefOp.ADD => {
                     return references.updateReferences(ctx, data);
                 },
-                // put
                 types.RefOp.PUT_OVERWRITE, types.RefOp.PUT_ADD => {
                     return references.putReferences(ctx, data);
                 },

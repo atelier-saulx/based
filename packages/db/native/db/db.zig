@@ -514,7 +514,6 @@ pub inline fn getTextFromValueFallback(
     return @as([*]u8, undefined)[0..0];
 }
 
-// (3% faster then iterator)
 pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
     if (value.len == 0) {
         return value;
