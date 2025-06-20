@@ -1,6 +1,16 @@
 /*
  * Copyright (c) 2024-2025 SAULX
  * SPDX-License-Identifier: MIT
+ *
+ * A colvec is a columnar vector field in Selva. Specifically a colvec structure
+ * represents a single column of a field. Colvecs are allocated in slabs of size
+ * `block_capacity * vec_size`.
+ *
+ * ```
+ * +-slab1--------------------+  +-slab2---------------------+
+ * | [node1_f1],[node2_f1],.. |->| [noden_f1],[noden+1_f1],..|
+ * +--------------------------+  +---------------------------+
+ * ```
  */
 #include <stddef.h>
 #include <stdint.h>
