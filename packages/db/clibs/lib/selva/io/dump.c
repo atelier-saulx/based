@@ -1081,7 +1081,7 @@ static int load_type(struct selva_io *io, struct SelvaDb *db)
                  */
                 struct SelvaColvec *colvec = &te->col_fields.colvec[i];
                 void *slab = colvec_init_slab(colvec, block_i);
-                if (io->sdb_read(&slab, colvec->slab_size, 1, io) != 1) {
+                if (io->sdb_read(slab, colvec->slab_size, 1, io) != 1) {
                     selva_io_errlog(io, "colvec slab");
                     return SELVA_EINVAL;
                 }

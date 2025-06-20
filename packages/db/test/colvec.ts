@@ -7,8 +7,7 @@ await test('colvec', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  //t.after(() => t.backup(db)) TODO
-  t.after(() => db.destroy())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     types: {
