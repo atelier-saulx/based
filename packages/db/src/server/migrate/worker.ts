@@ -5,13 +5,12 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
-import { TreeNode } from '../csmt/types.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { isTypedArray } from 'node:util/types'
-import { CsmtNodeRange } from '../tree.js'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
+import {MigrateRange} from './index.js'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -22,11 +21,13 @@ if (isMainThread) {
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
 
+  // worker ctx init - maybe instead of this just add it on native
+  // instead of here just do this in native.js
   native.workerCtxInit()
 
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
-  const cp = (obj) => {
+  const cp = (obj: any) => {
     let copy: object
 
     for (const key in obj) {
@@ -96,7 +97,7 @@ if (isMainThread) {
   while (true) {
     let msg: any
     while ((msg = receiveMessageOnPort(channel))) {
-      const leafData: TreeNode<CsmtNodeRange>['data'] = msg.message
+      const leafData: MigrateRange = msg.message
       const { type, include } = map[leafData.typeId]
       const typeTransformFn = transformFns[type]
 

@@ -926,7 +926,7 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     return res;
 }
 
-__constructor void selva_string_init_tls(void)
+void selva_string_init_tls(void)
 {
     assert(!compressor && !decompressor);
 
@@ -945,7 +945,7 @@ __constructor void selva_string_init_tls(void)
     }
 }
 
-__destructor void selva_string_deinit_tls(void)
+void selva_string_deinit_tls(void)
 {
     libdeflate_free_compressor(compressor);
     compressor = nullptr;

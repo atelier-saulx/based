@@ -1,5 +1,5 @@
 import native from '../../native.js'
-import { concatUint8Arr, writeUint64 } from '@saulx/utils'
+import { concatUint8Arr } from '@saulx/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toByteCode/toBuffer.js'
 import { handleErrors } from './validation.js'
@@ -23,6 +23,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     for (const command of commands) {
       q[command.method](...command.args)
     }
+    // locale first...
     if (!q.def.include.stringFields.size && !q.def.references.size) {
       includeField(q.def, '*')
     }

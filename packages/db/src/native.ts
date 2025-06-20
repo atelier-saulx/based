@@ -6,7 +6,7 @@ const DECODER = new TextDecoder('utf-8')
 const ENCODER = new TextEncoder()
 
 const selvaIoErrlog = new Uint8Array(256)
-var compressor = db.createCompressor()
+var compressor = db.createCompressor() // put on threadCtx
 var decompressor = db.createDecompressor()
 
 function SelvaIoErrlogToString(buf: Uint8Array) {
@@ -15,7 +15,13 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
+// add worker CTX HERE
+// then add it to every function
+// worker should allways be here
+// then add ThreadCtx to modify ctx and query ctx
+
 const native = {
+  threadCtx: null, // add compressors here as well!
   historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
     return db.historyAppend(history, typeId, nodeId, dbCtx)
   },
@@ -63,16 +69,15 @@ const native = {
     return db.saveCommon(pathBuf, dbCtx)
   },
 
-  saveRange: (
+  saveBlock: (
     path: string,
     typeCode: number,
     start: number,
-    end: number,
     dbCtx: any,
     hashOut: Uint8Array,
   ): number => {
     const pathBuf = ENCODER.encode(path + '\0')
-    return db.saveRange(pathBuf, typeCode, start, end, dbCtx, hashOut)
+    return db.saveBlock(pathBuf, typeCode, start, dbCtx, hashOut)
   },
 
   loadCommon: (path: string, dbCtx: any): void => {
@@ -85,12 +90,12 @@ const native = {
     }
   },
 
-  loadRange: (path: string, dbCtx: any): void => {
+  loadBlock: (path: string, dbCtx: any): void => {
     const pathBuf = ENCODER.encode(path + '\0')
-    const err: number = db.loadRange(pathBuf, dbCtx, selvaIoErrlog)
+    const err: number = db.loadBlock(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
-        `Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
+        `Failed to load a range "${path}". selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
       )
     }
   },
@@ -147,12 +152,16 @@ const native = {
   },
 
   membarSyncRead: () => {
-    db.membarSyncRead();
+    db.membarSyncRead()
   },
 
   membarSyncWrite: () => {
-    db.membarSyncWrite();
+    db.membarSyncWrite()
   },
+
+  colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {
+    return db.colvecTest(dbCtx, typeId, field, nodeId, len);
+  }
 }
 
 global.__basedDb__native__ = native

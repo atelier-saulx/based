@@ -1,12 +1,9 @@
 import {
   QueryDef,
-  createQueryDef,
-  QueryDefType,
   QueryTarget,
   filter,
   Operator,
   sort,
-  defToBuffer,
   filterOr,
   QueryByAliasObj,
   isAlias,
@@ -14,6 +11,7 @@ import {
   includeFields,
   addAggregate,
   groupBy,
+  LangFallback,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -24,15 +22,15 @@ import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { subscribe, OnData, OnError, OnClose } from './subscription/index.js'
+import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { langCodesMap, LangName } from '@based/schema'
+import { LangCode, langCodesMap, LangName } from '@based/schema'
 import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { concatUint8Arr, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { AggregateType } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
@@ -220,6 +218,40 @@ export class QueryBranch<T> {
       })
     } else {
       addAggregate(AggregateType.SUM, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  cardinality(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty cardinality() called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'cardinality',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.CARDINALITY, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  stddev(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty standard deviation function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'stddev',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.STDDEV, this.def, fields)
     }
     // @ts-ignore
     return this
@@ -430,7 +462,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       this.reset()
       return this.#getInternal(resolve, reject)
     }
-
     const res = await this.db.hooks.getQueryBuf(buf)
 
     if (res.byteLength === 1) {
@@ -478,15 +509,28 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  locale(locale: LangName) {
+  locale(locale: LangName, fallBack?: LangFallback) {
     if (this.queryCommands) {
-      this.queryCommands.push({
+      this.queryCommands.unshift({
         method: 'locale',
         args: [locale],
       })
     } else {
+      if (fallBack === undefined) {
+        // Uses fallback from schema if available
+        const localeDescriptor = this.def.schema.locales[locale]
+        fallBack =
+          typeof localeDescriptor === 'object'
+            ? localeDescriptor.fallback || false
+            : false
+      }
       validateLocale(this.def, locale)
-      this.def.lang = langCodesMap.get(locale) ?? 0
+      const fallBackCode: LangCode[] =
+        fallBack === false ? [] : [langCodesMap.get(fallBack)]
+      this.def.lang = {
+        lang: langCodesMap.get(locale) ?? 0,
+        fallback: fallBackCode,
+      }
     }
     return this
   }
@@ -498,7 +542,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         try {
           onData(res)
         } catch (err) {
-          // const t = displayTarget(this.def)
           const def = this.def
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
           name += `  Error executing onData handler in subscription\n`

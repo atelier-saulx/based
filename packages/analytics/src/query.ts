@@ -2,20 +2,32 @@ import { DECODER, readUint32 } from '@saulx/utils'
 import { roundToSnapShotInterval } from './snapShots.js'
 import { AnalyticsDbCtx, SnapShotResult } from './types.js'
 
-const readGroupData = (result: Uint8Array) => {
-  const grouped = {}
+const readGroupData = (result: Uint8Array, noGeo: boolean) => {
+  const geos = {}
+  let total = {
+    active: 0,
+    count: 0,
+  }
   let i = 0
   while (i < result.byteLength) {
-    const geo = DECODER.decode(result.subarray(i, i + 2))
-    i += 2
-    grouped[geo] = {
-      active: readUint32(result, i),
-      uniq: readUint32(result, i + 4),
-      count: readUint32(result, i + 8),
+    if (!noGeo) {
+      const geo = DECODER.decode(result.subarray(i, i + 2))
+      i += 2
+      geos[geo] = {
+        active: readUint32(result, i),
+        uniq: readUint32(result, i + 4),
+        count: readUint32(result, i + 8),
+      }
+      i += 12
+      total.active += geos[geo].active
+      total.count += geos[geo].count
+    } else {
+      total.active += readUint32(result, i)
+      total.count += readUint32(result, i + 8)
+      i += 2
     }
-    i += 12
   }
-  return grouped
+  return { geos, total }
 }
 
 export const querySnapshots = async (
@@ -27,6 +39,7 @@ export const querySnapshots = async (
     resolution?: number
     current?: boolean
     range?: { start: number; end: number }
+    noGeo?: boolean
   },
 ) => {
   // optional
@@ -86,16 +99,27 @@ export const querySnapshots = async (
             id: 0,
             ts: now,
             event: eventName,
-            data: {},
+            data: {
+              total: {
+                active: 0,
+                count: 0,
+              },
+              geos: {},
+            },
           },
         ]
       }
       const grouped = results[eventName][0].data
-      grouped[item.geo] = {
-        active: ctx.currents[item.event].geos[item.geo].active,
-        uniq: item.uniq,
-        count: item.count,
+      const active = ctx.currents[item.event].geos[item.geo].active
+      if (!p.noGeo) {
+        grouped.geos[item.geo] = {
+          active,
+          uniq: item.uniq,
+          count: item.count,
+        }
       }
+      grouped.total.active += active
+      grouped.total.count += item.count
     }
   }
 
@@ -105,7 +129,7 @@ export const querySnapshots = async (
       snapshotsQuery.filter('event', '=', Array.from(mappedEvents))
       const snapshots = await snapshotsQuery.get()
       for (const item of snapshots) {
-        item.data = readGroupData(item.data)
+        item.data = readGroupData(item.data, p.noGeo)
         item.event = ctx.eventTypesInverse[item.event]
         if (!results[item.event]) {
           results[item.event] = []
@@ -119,7 +143,7 @@ export const querySnapshots = async (
         .query('snapshot', individualSnapshotIds)
         .get()
       for (const item of snapshots) {
-        item.data = readGroupData(item.data)
+        item.data = readGroupData(item.data, p.noGeo)
         item.event = ctx.eventTypesInverse[item.event]
         if (!results[item.event]) {
           results[item.event] = []

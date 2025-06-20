@@ -32,6 +32,7 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 7,
     SELVA_FIELD_TYPE_ALIAS = 8,
     SELVA_FIELD_TYPE_ALIASES = 9,
+    SELVA_FIELD_TYPE_COLVEC = 10,
 } __packed;
 
 struct EdgeFieldConstraint {
@@ -71,6 +72,11 @@ struct SelvaFieldSchema {
             uint16_t len;
         } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
         size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
+        struct {
+            uint16_t vec_len; /*!< Length of a single vector. */
+            uint16_t comp_size; /*!< Component size in the vector. */
+            field_t index; /*!< Index in te->col_fields.colvec.v. */
+        } colvec;
     };
 } __designated_init;
 
@@ -82,11 +88,12 @@ struct SelvaFieldsSchema {
         size_t len;
         size_t fixed_data_size;
     } field_map_template;
-    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
+    struct SelvaFieldSchema field_schemas[255];
 };
 
 struct SelvaNodeSchema {
     size_t nr_aliases; /*!< Number of alias fields in this type. */
+    size_t nr_colvecs; /*!< Number of columnar vector fields. */
     struct SelvaFieldsSchema fields_schema;
     /* Nothing must be put after this line. */
 };

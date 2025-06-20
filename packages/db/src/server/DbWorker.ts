@@ -23,7 +23,7 @@ export class DbWorker {
     })
 
     this.readyPromise = new Promise((resolve) => {
-      const onReady = (msg) => {
+      const onReady = (msg: string) => {
         if (msg === 'READY') {
           this.worker.off('message', onReady)
           resolve(true)
@@ -60,10 +60,10 @@ export class DbWorker {
   db: DbServer
   channel: MessagePort
   worker: Worker
-  resolvers: any[] = []
+  resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
 
-  callback = (resolve) => {
+  callback = (resolve: (x: any) => any) => {
     this.db.processingQueries++
     this.resolvers.push(resolve)
   }

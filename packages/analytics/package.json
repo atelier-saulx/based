@@ -1,6 +1,6 @@
 {
   "name": "@based/db-analytics",
-  "version": "0.0.19",
+  "version": "0.0.21",
   "license": "MIT",
   "files": [
     "dist",
@@ -22,8 +22,8 @@
   "sideEffects": false,
   "type": "module",
   "dependencies": {
-    "@based/schema": "5.0.0-alpha.18",
+    "@based/schema": "5.0.0-alpha.20",
     "@saulx/utils": "^6.7.0",
-    "@based/db": "0.0.64"
+    "@based/db": "0.0.66"
   }
 }

@@ -12,48 +12,47 @@ import {
   TYPE_INDEX_MAP,
   REFERENCES,
   REFERENCE,
-  SchemaTypesParsedById,
   SchemaTypesParsed,
   NUMBER,
+  BLOCK_CAPACITY_MAX,
+  BLOCK_CAPACITY_DEFAULT,
+  BLOCK_CAPACITY_MIN,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
-import { getPropLen } from './getPropLen.js'
-import { isSeparate, parseMinMaxStep } from './utils.js'
+import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
-export const DEFAULT_BLOCK_CAPACITY = 100_000
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
-  for (const field in schemaTypesParsed) {
-    if (field in schema.types) {
+  for (const typeName in schemaTypesParsed) {
+    if (typeName in schema.types) {
       continue
     }
-    const id = schemaTypesParsed[field].id
-    delete schemaTypesParsed[field]
+    const id = schemaTypesParsed[typeName].id
+    delete schemaTypesParsed[typeName]
     delete schemaTypesParsedById[id]
   }
-  for (const field in schema.types) {
-    const type = schema.types[field]
+  for (const typeName in schema.types) {
+    const type = schema.types[typeName]
     if (!type.id) {
       throw new Error('NEED ID ON TYPE')
     }
     const def = createSchemaTypeDef(
-      field,
+      typeName,
       type,
       schemaTypesParsed,
       schema.locales ?? {
         en: {},
       },
     )
-    def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
-    schemaTypesParsed[field] = def
+    schemaTypesParsed[typeName] = def
     schemaTypesParsedById[type.id] = def
   }
   return { schemaTypesParsed, schemaTypesParsedById }
@@ -68,11 +67,28 @@ export const createSchemaTypeDef = (
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
-  if (result.id == 0 && top) {
-    if ('id' in type) {
-      result.id = type.id
-    } else {
-      throw new Error(`Invalid schema type id ${result.type}`)
+  if (top) {
+    if (result.id == 0) {
+      if ('id' in type) {
+        result.id = type.id
+      } else {
+        throw new Error(`Invalid schema type id ${result.type}`)
+      }
+    }
+    if (result.blockCapacity == 0) {
+      if ('blockCapacity' in type) {
+        if (typeof type.blockCapacity !== 'number' || type.blockCapacity < BLOCK_CAPACITY_MIN || type.blockCapacity > BLOCK_CAPACITY_MAX) {
+          throw new Error('Invalid blockCapacity')
+        }
+        result.blockCapacity = type.blockCapacity
+      } else {
+        result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
+      }
+    }
+    if (result.insertOnly == false) {
+      if ('insertOnly' in type) {
+        result.insertOnly = !!type.insertOnly
+      }
     }
   }
   result.locales = locales

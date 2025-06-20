@@ -130,11 +130,10 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     } else if (queryType == QueryType.aggregates) {
         const limit = read(u32, q, 7);
         const filterSize = read(u16, q, 11);
-        const filterBuf = q[13 .. 13 + filterSize];
+        const filterBuf = q[13 .. 13 + filterSize]; // lost 1 byte when no filter
 
         const aggSize = read(u16, q, 14 + filterSize);
         const agg: []u8 = q[16 + filterSize .. 16 + filterSize + aggSize];
-        // const include = q[16 + filterSize .. len];
         const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
         if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
             return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);

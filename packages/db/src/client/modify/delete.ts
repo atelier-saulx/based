@@ -25,6 +25,10 @@ export const deleteFn = (
     )
   }
 
+  if (def.insertOnly) {
+    throw new Error(`This type is insertOnly`)
+  }
+
   const ctx = db.modifyCtx
   const res = new ModifyState(def.id, id, db, opts)
 

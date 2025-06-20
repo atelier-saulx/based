@@ -11,7 +11,7 @@ const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const GroupProtocolLen = @import("../aggregate/group.zig").ProtocolLen;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-const setGroupResults = @import("../aggregate/group.zig").setGroupResults;
+const finalizeGroupResults = @import("../aggregate/group.zig").finalizeGroupResults;
 const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
 const c = @import("../../c.zig");
 
@@ -35,7 +35,9 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     var index: usize = 1;
     const resultsSize = read(u16, aggInput, index);
     index += 2;
-    ctx.size = resultsSize;
+    const accumulatorSize = read(u16, aggInput, index);
+    index += 2;
+    ctx.size = resultsSize + accumulatorSize;
     const agg = aggInput[index..aggInput.len];
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
@@ -71,7 +73,8 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     var index: usize = 1;
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
-    const agg = aggInput[index..aggInput.len];
+    const agg = aggInput[index..];
+    const emptyKey = &[_]u8{};
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -83,31 +86,30 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-            // key needs to be variable
-            const key: [2]u8 = if (groupValue.len > 0) groupValue[groupCtx.start + 1 .. groupCtx.start + 1 + groupCtx.len][0..2].* else groupCtx.empty;
-            var resultsField: []u8 = undefined;
+            const crcLen = groupCtx.propType.crcLen();
+            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - crcLen] else emptyKey;
+            var accumulatorField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
-                resultsField = try ctx.allocator.alloc(u8, groupCtx.resultsSize);
-                @memset(resultsField, 0);
-                try groupCtx.hashMap.put(key, resultsField);
-                ctx.size += 2 + groupCtx.resultsSize;
+                accumulatorField = try ctx.allocator.alloc(u8, groupCtx.accumulatorSize);
+                @memset(accumulatorField, 0);
+                try groupCtx.hashMap.put(key, accumulatorField);
+                ctx.size += 2 + key.len + groupCtx.resultsSize;
             } else {
-                resultsField = groupCtx.hashMap.get(key).?;
+                accumulatorField = groupCtx.hashMap.get(key).?;
             }
-
-            aggregate(agg, typeEntry, n, resultsField);
+            aggregate(agg, typeEntry, n, accumulatorField);
         } else {
             break :checkItem;
         }
     }
-    // Create result for node.js
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    try setGroupResults(data, groupCtx);
+    try finalizeGroupResults(data, groupCtx, agg);
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+    // utils.debugPrint("buf: {any}", .{data}); // MV
     return result;
 }

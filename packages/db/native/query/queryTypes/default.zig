@@ -55,7 +55,7 @@ pub fn default(
     }
 }
 
-pub fn defaultSimpeFilter(
+pub fn defaultSimpleFilter(
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
@@ -67,7 +67,8 @@ pub fn defaultSimpeFilter(
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
-    const fieldSchema = try db.getFieldSchema(t.MAIN_PROP, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, t.MAIN_PROP);
+
     const querySize: u16 = utils.read(u16, conditions, 1);
     const query = conditions[3 .. querySize + 3];
     checkItem: while (ctx.totalResults < limit) {
@@ -80,7 +81,7 @@ pub fn defaultSimpeFilter(
             break :checkItem;
         }
         const value = db.getField(typeEntry, 0, node.?, fieldSchema, t.Prop.MICRO_BUFFER);
-        if (value.len == 0 or !runConditions(ctx.db, query, value)) {
+        if (value.len == 0 or !runConditions(query, value)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {

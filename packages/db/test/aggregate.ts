@@ -3,7 +3,6 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import { wait } from '@saulx/utils'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -12,7 +11,7 @@ await test('sum top level', async (t) => {
   })
 
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -37,7 +36,7 @@ await test('sum top level', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -60,7 +59,6 @@ await test('sum top level', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
-
   deepEqual(
     await db.query('vote').sum('NL').get().toObject(),
     { NL: 30 },
@@ -77,6 +75,7 @@ await test('sum top level', async (t) => {
     { NL: 20 },
     'sum with filter',
   )
+
   deepEqual(
     await db.query('vote').sum('NL', 'AU').get().toObject(),
     { NL: 30, AU: 15 },
@@ -137,7 +136,7 @@ await test('sum group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -216,7 +215,7 @@ await test('sum branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -250,17 +249,17 @@ await test('sum branched includes', async (t) => {
     'brached include, sum, references',
   )
 
-  deepEqual(
-    await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
-    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
-    'branched include, references, groupBy',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('sequence')
+  //     .include((select) => {
+  //       select('votes').groupBy('country').sum('NL', 'AU')
+  //     })
+  //     .get()
+  //     .toObject(),
+  //   [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+  //   'branched include, references, groupBy',
+  // )
 
   deepEqual(
     await db
@@ -307,7 +306,7 @@ await test('sum performance', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AL: 'uint8',
           AM: 'uint8',
           AT: 'uint8',
@@ -429,7 +428,7 @@ await test('top level count', async (t) => {
             ref: 'sequence',
             prop: 'votes',
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
           IT: 'uint8',
@@ -457,7 +456,7 @@ await test('top level count', async (t) => {
 
   // top level  ----------------------------------
 
-  ;(await db.query('vote').count().get()).debug()
+  // ;(await db.query('vote').count().get()).debug()
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
@@ -538,7 +537,7 @@ await test('count branched includes', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -629,7 +628,7 @@ await test('count group by', async (t) => {
               hello: 'uint32',
             },
           },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           AU: 'uint8',
           NL: 'uint8',
         },
@@ -677,16 +676,7 @@ await test('count group by', async (t) => {
   )
 })
 
-// test wildcards
-
-// // handle enum
-// // 2 bytes string
-// // var string
-// // can use the index in selva if no filter
-
-// // console.log((await db.query('vote').sum(countries).get()).execTime)
-
-await test.skip('dev', async (t) => {
+await test('variable key sum', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -700,7 +690,7 @@ await test.skip('dev', async (t) => {
       user: {
         props: {
           flap: { type: 'uint32' },
-          country: { type: 'string', maxBytes: 2 },
+          country: { type: 'string' },
           name: { type: 'string' },
           articles: {
             items: {
@@ -763,45 +753,365 @@ await test.skip('dev', async (t) => {
     contributors: [cipolla],
   })
 
-  // TODO: display is tagging "sum" when count with alias
-  // TODO: also there os a misplaced comma in inspect
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
+
+  deepEqual(
+    await db.query('user').groupBy('name').sum('flap').get().toObject(),
+    {
+      Flippie: { flap: 20 },
+      'Carlo Cipolla': { flap: 80 },
+      'Mr snurp': { flap: 10 },
+      'Dinkel Doink': { flap: 40 },
+      Derpie: { flap: 30 },
+    },
+    'sum, groupBy, main',
+  )
+
+  deepEqual(
+    await db.query('user').groupBy('country').sum('flap').get().toObject(),
+    {
+      $undefined: { flap: 40 },
+      NL: { flap: 30 },
+      BR: { flap: 30 },
+      IT: { flap: 80 },
+    },
+    'sum, groupBy, main, $undefined',
+  )
+
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => {
+        select('contributors').groupBy('name').sum('flap')
+      })
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: 20 },
+          'Mr snurp': { flap: 10 },
+          Derpie: { flap: 30 },
+          'Dinkel Doink': { flap: 40 },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: 80 },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, references',
+  )
+})
+
+await test('agg on references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      team: {
+        props: {
+          teamName: { type: 'string' },
+          city: { type: 'string' },
+          players: {
+            items: {
+              ref: 'player',
+              prop: 'team',
+            },
+          },
+        },
+      },
+      player: {
+        props: {
+          playerName: { type: 'string' },
+          position: { type: 'string' },
+          goalsScored: 'uint16',
+          gamesPlayed: 'uint16',
+          team: {
+            ref: 'team',
+            prop: 'players',
+          },
+        },
+      },
+    },
+  })
+
+  const p1 = db.create('player', {
+    playerName: 'Martin',
+    position: 'Forward',
+    goalsScored: 10,
+    gamesPlayed: 5,
+  })
+  const p2 = db.create('player', {
+    playerName: 'Jemerson',
+    position: 'Defender',
+    goalsScored: 1,
+    gamesPlayed: 10,
+  })
+  const p3 = db.create('player', {
+    playerName: 'Pavon',
+    position: 'Forward',
+    goalsScored: 12,
+    gamesPlayed: 6,
+  })
+  const p4 = db.create('player', {
+    playerName: 'Wout',
+    position: 'Forward',
+    goalsScored: 8,
+    gamesPlayed: 7,
+  })
+  const p5 = db.create('player', {
+    playerName: 'Jorrel',
+    position: 'Defender',
+    goalsScored: 2,
+    gamesPlayed: 9,
+  })
+
+  const t1 = db.create('team', {
+    teamName: 'Grêmio',
+    city: 'Porto Alegre',
+    players: [p1, p2, p3],
+  })
+  const t2 = db.create('team', {
+    teamName: 'Ajax',
+    city: 'Amsterdam',
+    players: [p4, p5],
+  })
+  const t3 = db.create('team', {
+    teamName: 'Boca Juniors',
+    city: 'Buenos Aires',
+    players: [],
+  })
+  const t4 = db.create('team', {
+    teamName: 'Barcelona',
+    city: 'Barcelona',
+    players: [
+      db.create('player', {
+        playerName: 'Lewandowski',
+        position: 'Forward',
+        goalsScored: 5,
+        gamesPlayed: 5,
+      }),
+    ],
+  })
+
+  const result = await db
+    .query('team')
+    .include('teamName', 'city', (select) => {
+      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
+    })
+    .get()
+
+  // result.inspect(100)
+
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        teamName: 'Grêmio',
+        city: 'Porto Alegre',
+        players: {
+          Forward: { goalsScored: 22, gamesPlayed: 11 }, // Martin (10,5) + Pavon (12,6)
+          Defender: { goalsScored: 1, gamesPlayed: 10 }, // Jemerson (1,10)
+        },
+      },
+      {
+        id: 2,
+        teamName: 'Ajax',
+        city: 'Amsterdam',
+        players: {
+          Forward: { goalsScored: 8, gamesPlayed: 7 }, // Wout (8,7)
+          Defender: { goalsScored: 2, gamesPlayed: 9 }, // Jorrel (2,9)
+        },
+      },
+      {
+        id: 3,
+        teamName: 'Boca Juniors',
+        city: 'Buenos Aires',
+        players: {}, // does anybody wants to play for Boca?
+      },
+      {
+        id: 4,
+        teamName: 'Barcelona',
+        city: 'Barcelona',
+        players: {
+          Forward: { goalsScored: 5, gamesPlayed: 5 }, // Lewandowski
+        },
+      },
+    ],
+    'Include parent props, with referenced items grouped by their own prop, and aggregations',
+  )
+})
+
+await test('stddev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string' },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'bb',
+    NL: 23,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    NL: 15,
+  })
+  const au2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const br1 = db.create('vote', {
+    country: 'Brazil',
+    NL: 50,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
+
+  deepEqual(
+    await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
+    {
+      Brazil: {
+        NL: 0,
+      },
+      bb: {
+        NL: 6.5,
+      },
+      aa: {
+        NL: 2.5,
+      },
+    },
+    'stddev, top level, groupBy',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 13.922643427165687,
+        },
+      },
+    ],
+    'stddev, branched References, no groupBy',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL').groupBy('country'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          Brazil: {
+            NL: 0,
+          },
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 2.5,
+          },
+        },
+      },
+    ],
+    'stddev, branched References, groupBy',
+  )
+
+  // await db.query('vote').sum('NL').groupBy('country').get().inspect()
+  // await db.query('vote').count().groupBy('country').get().inspect()
+  // await db.query('vote').groupBy('country').get().inspect()
   // await db
-  //   .query('article')
-  //   .include((q) => q('contributors').count('votes'), 'name')
+  //   .query('sequence')
+  //   .include((q) => q('votes').sum('NL'))
   //   .get()
   //   .inspect()
-
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: 80 },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
-
   // await db
-  //   // dont break line
-  //   .query('user')
-  //   .groupBy('country')
-  //   .sum('flap')
+  //   .query('sequence')
+  //   .include((q) => q('votes').groupBy('country').sum('NL'))
   //   .get()
-  //   .inspect() // OK
-
-  // TODO: string byteSize > 2
-  await db
-    // dont break line
-    .query('user')
-    .groupBy('name')
-    .sum('flap')
-    .get()
-    .inspect()
+  //   .inspect()
+  // await db
+  // .query('sequence')
+  // .include((q) => q('votes').groupBy('country').count())
+  // .get()
+  // .inspect()
+  //   await db
+  //     .query('sequence')
+  //     .include((q) => q('votes').groupBy('country').stddev('NL'))
+  //     .get()
+  //     .inspect()
 })
+
+// test: when adding BR to props it messes up if country Brazil. Problably in .contains()
+// test wildcards
+// handle enum
+// can use the index in selva if no filter

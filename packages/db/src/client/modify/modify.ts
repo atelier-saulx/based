@@ -12,6 +12,7 @@ import {
   VECTOR,
   MICRO_BUFFER,
   JSON,
+  COLVEC,
 } from '@based/schema/def'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
@@ -77,7 +78,7 @@ function _modify(
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === CARDINALITY) {
           err = writeHll(val, ctx, schema, def, res.tmpId, mod)
-        } else if (type === VECTOR) {
+        } else if (type === VECTOR || type === COLVEC) {
           err = writeVector(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === JSON) {
           err = writeJson(val, ctx, schema, def, res.tmpId, mod)

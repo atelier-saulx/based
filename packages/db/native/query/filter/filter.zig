@@ -113,7 +113,7 @@ pub fn filter(
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
-            const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
+            const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
@@ -149,12 +149,12 @@ pub fn filter(
             if (isEdge) {
                 if (ref) |r| {
                     if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(ctx, r.reference.?, field);
+                        const refs = db.getEdgeReferences(r.reference.?, field);
                         if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(ctx, r.reference.?, field);
+                        const checkRef = db.getEdgeReference(r.reference.?, field);
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
@@ -192,7 +192,7 @@ pub fn filter(
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else {
-                    const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                    const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
                     const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
@@ -209,7 +209,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -223,14 +223,14 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.reference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(ctx, query, value)) {
+                if (value.len == 0 or !runCondition(query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
                 if (i + 5 > end) {
                     break;
                 }
-                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(conditions[i + 5]);
@@ -240,11 +240,15 @@ pub fn filter(
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                     const lang: LangCode = @enumFromInt(query[query.len - 1]);
-                    var iter = db.textIterator(value, lang);
-                    var f: usize = 0;
+                    // fallback size query[query.len - 1]
+                    // langcode [len - 2]
+                    // fallbacks [len - (2 + fallbck size)]
+                    // handle query
                     if (lang == LangCode.NONE) {
+                        var f: usize = 0;
+                        var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            if (!runCondition(ctx, query, s)) {
+                            if (!runCondition(query, s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -255,13 +259,9 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        while (iter.next()) |s| {
-                            f += 1;
-                            if (!runCondition(ctx, query, s)) {
-                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                            }
-                        }
-                        if (f == 0) {
+                        // TODO: fallback as well!
+                        const s = db.getTextFromValue(value, lang);
+                        if (s.len == 0 or !runCondition(query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }
@@ -296,7 +296,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
-                    if (value.len == 0 or !runCondition(ctx, query, value)) {
+                    if (value.len == 0 or !runCondition(query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }

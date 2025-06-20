@@ -1,4 +1,4 @@
-import { startAnalyticsDb } from '../src/index.js'
+import { allCountryCodes, startAnalyticsDb } from '../src/index.js'
 import { fileURLToPath } from 'node:url'
 import { rm } from 'node:fs/promises'
 import { join, dirname, resolve } from 'node:path'
@@ -38,7 +38,7 @@ const test = async () => {
       receivePayload(ctx, 1, dbPayload)
     },
     undefined,
-    10,
+    100,
   )
 
   const trackMany = async () => {
@@ -60,7 +60,7 @@ const test = async () => {
     console.log('totalTime', performance.now() - jsTime, 'ms')
   }
 
-  await trackMany()
+  // await trackMany()
 
   await wait(100)
 
@@ -90,7 +90,35 @@ const test = async () => {
   trackActive(clientCtx, {
     event: 'homepage',
     geo: 'GG',
-    active: 10,
+    active: 0,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 5,
+  })
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 3,
+  })
+
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 666,
+  })
+
+  await wait(100)
+
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 666,
   })
 
   await wait(100)
@@ -102,6 +130,70 @@ const test = async () => {
   })
 
   await wait(100)
+
+  console.log('after setting to zero set to 0')
+
+  await wait(100)
+
+  console.log('after setting to zero set to 1')
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 1,
+    })
+  }
+  trackActive(clientCtx, {
+    event: 'homepage',
+    geo: 'GG',
+    active: 1,
+  })
+
+  await wait(100)
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 0,
+    })
+  }
+
+  await wait(100)
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 0,
+    })
+    await wait(1)
+  }
+
+  // await wait(100)
+
+  for (let i = 0; i < 1000; i++) {
+    trackActive(clientCtx, {
+      event: 'homepage',
+      geo: allCountryCodes[~~(Math.random() * 5)],
+      active: 2,
+    })
+  }
+
+  await wait(100)
+
+  console.dir(
+    await querySnapshots(ctx, {
+      events: ['derp', 'homepage'],
+      current: true,
+      // noGeo: true,
+      range: { start: 0, end: 100 },
+    }),
+    { depth: null },
+  )
+
+  // c
 
   // const r = await querySnapshots(ctx, {
   //   events: ['view:homepage'],
@@ -134,27 +226,27 @@ const test = async () => {
 
   // console.dir(r2['homepage'].reverse(), { depth: 10 })
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp', 'homepage'],
-      // current: true,
-    }),
-    { depth: null },
-  )
+  // console.dir(
+  //   await querySnapshots(ctx, {
+  //     events: ['derp', 'homepage'],
+  //     // current: true,
+  //   }),
+  //   { depth: null },
+  // )
 
   clientCtx.close()
   unregisterClient(ctx, 1)
 
   await wait(100)
 
-  console.dir(
-    await querySnapshots(ctx, {
-      events: ['derp', 'homepage'],
-      // current: true,
-      range: { start: 0, end: 100 },
-    }),
-    { depth: null },
-  )
+  // console.dir(
+  //   await querySnapshots(ctx, {
+  //     events: ['derp', 'homepage'],
+  //     // current: true,
+  //     range: { start: 0, end: 100 },
+  //   }),
+  //   { depth: null },
+  // )
 
   await ctx.close()
 }

@@ -8,7 +8,7 @@ import {
 import { ModifyCtx } from '../../index.js'
 import { DbClient } from '../index.js'
 import { ModifyOpts } from './types.js'
-import { isValidId, LangCode, langCodesMap, MAX_ID } from '@based/schema'
+import { isValidId, LangCode, langCodesMap } from '@based/schema'
 
 export type ModifyRes = {
   tmpId: number

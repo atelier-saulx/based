@@ -4,7 +4,7 @@ import { ModifyState } from './modify/ModifyRes.js'
 import { writeUint64 } from '@saulx/utils'
 
 // TODO This definitely shouldn't be copy-pasted here from server/tree.ts
-const makeCsmtKeyFromNodeId = (
+const makeTreeKeyFromNodeId = (
   typeId: number,
   blockCapacity: number,
   nodeId: number,
@@ -49,7 +49,7 @@ export class ModifyCtx {
   dirtyRanges = new Set<number>()
   dirtyTypes = new Map<number, number>()
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    const key = makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
+    const key = makeTreeKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
     if (this.dirtyRanges.has(key)) {
       return
     }
@@ -99,9 +99,20 @@ export class ModifyCtx {
       data[i++] = lastId >>> 24
     }
     const view = new DataView(data.buffer, data.byteOffset)
+    // this is a problem need to remove these dirtyRanges in general...
     for (let key of this.dirtyRanges) {
-      view.setFloat64(i, key, true)
-      i += 8
+      if (i < view.byteLength - 8) {
+        view.setFloat64(i, key, true)
+        i += 8
+      } else {
+        console.warn(
+          'Dirty range does not fit - will remove this',
+          this.dirtyRanges.size,
+          i,
+        )
+
+        break
+      }
     }
     const lenMinusSchemaHash = this.len - 8
     data[i++] = lenMinusSchemaHash

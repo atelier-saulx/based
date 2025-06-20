@@ -19,6 +19,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
+
     const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 

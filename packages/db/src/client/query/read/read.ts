@@ -19,6 +19,7 @@ import {
   VECTOR,
   JSON,
   CARDINALITY,
+  COLVEC,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -40,6 +41,7 @@ import {
   READ_REFERENCES,
   READ_AGGREGATION,
 } from '../types.js'
+import { AggregateType } from '../aggregates/types.js'
 
 export type Item = {
   id: number
@@ -56,36 +58,76 @@ const readAggregate = (
     let i = offset
     while (i < len) {
       let key: string = ''
+      let keyLen: number = 0
       if (result[i] == 0) {
         if (q.aggregate.groupBy.default) {
           key = q.aggregate.groupBy.default
         } else {
           key = `$undefined`
         }
+        i += 2
       } else {
-        key = DECODER.decode(result.subarray(i, i + 2))
+        keyLen = readUint16(result, i)
+        i += 2
+        key = DECODER.decode(result.subarray(i, i + keyLen))
+        i += keyLen
       }
-      i += 2
       const resultKey = (results[key] = {})
       for (const aggregatesArray of q.aggregate.aggregates.values()) {
         for (const agg of aggregatesArray) {
-          setByPath(
-            resultKey,
-            agg.propDef.path,
-            readUint32(result, agg.resultPos + i),
-          )
+          var val = undefined
+          if (
+            agg.type === AggregateType.CARDINALITY ||
+            agg.type === AggregateType.COUNT
+          ) {
+            val = readUint32(result, agg.resultPos + i)
+          } else if (agg.type == AggregateType.STDDEV) {
+            val = readDoubleLE(result, agg.resultPos + i)
+          } else if (
+            agg.propDef.typeIndex === TIMESTAMP ||
+            agg.propDef.typeIndex === NUMBER
+          ) {
+            val = readDoubleLE(result, agg.resultPos + i)
+          } else if (
+            agg.propDef.typeIndex === UINT32 ||
+            agg.propDef.typeIndex === UINT16 ||
+            agg.propDef.typeIndex === UINT8
+          ) {
+            val = readUint32(result, agg.resultPos + i)
+          } else {
+            val = readDoubleLE(result, agg.resultPos + i)
+          }
+          setByPath(resultKey, agg.propDef.path, val)
         }
       }
-      i += q.aggregate.totalResultsPos
+      i += q.aggregate.totalResultsSize
     }
   } else {
     for (const aggregatesArray of q.aggregate.aggregates.values()) {
       for (const agg of aggregatesArray) {
-        setByPath(
-          results,
-          agg.propDef.path,
-          readUint32(result, agg.resultPos + offset),
-        )
+        var val = undefined
+        if (
+          agg.type === AggregateType.CARDINALITY ||
+          agg.type === AggregateType.COUNT
+        ) {
+          val = readUint32(result, agg.resultPos + offset)
+        } else if (agg.type == AggregateType.STDDEV) {
+          val = readDoubleLE(result, agg.resultPos + offset)
+        } else if (
+          agg.propDef.typeIndex === TIMESTAMP ||
+          agg.propDef.typeIndex === NUMBER
+        ) {
+          val = readDoubleLE(result, agg.resultPos + offset)
+        } else if (
+          agg.propDef.typeIndex === UINT32 ||
+          agg.propDef.typeIndex === UINT16 ||
+          agg.propDef.typeIndex === UINT8
+        ) {
+          val = readUint32(result, agg.resultPos + offset)
+        } else {
+          val = readDoubleLE(result, agg.resultPos + offset)
+        }
+        setByPath(results, agg.propDef.path, val)
       }
     }
   }
@@ -228,7 +270,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
         addField(prop, 0, item)
-      } else if (prop.typeIndex === TEXT && q.lang == 0) {
+      } else if (prop.typeIndex === TEXT && q.lang.lang == 0) {
         const lan = getEmptyField(prop, item)
         const lang = q.include.langTextFields.get(prop.prop).codes
 
@@ -428,7 +470,7 @@ export const readAllFields = (
         if (size === 0) {
           // do nothing
         } else {
-          if (q.lang != 0) {
+          if (q.lang.lang != 0) {
             q.include.propsRead[index] = id
             addField(prop, read(result, i + 4, size, true), item)
           } else {
@@ -453,7 +495,7 @@ export const readAllFields = (
           i += size
           addField(prop, string, item)
         }
-      } else if (prop.typeIndex == VECTOR) {
+      } else if (prop.typeIndex == VECTOR || prop.typeIndex == COLVEC) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
         const arr = new Float32Array(size / 4)
@@ -469,7 +511,6 @@ export const readAllFields = (
   return i - offset
 }
 
-let cnt = 0
 export const resultToObject = (
   q: QueryDef,
   result: Uint8Array,

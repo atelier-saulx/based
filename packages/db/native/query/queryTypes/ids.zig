@@ -33,7 +33,7 @@ pub fn sort(
     len = read(u16, sortBuffer, 4);
     // --------------------------------
     var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc, lang, sortField);
-    const fieldSchema = try db.getFieldSchema(sortField, typeEntry);
+    const fieldSchema = try db.getFieldSchema(typeEntry, sortField);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
         const node = db.getNode(id, typeEntry);
@@ -44,7 +44,7 @@ pub fn sort(
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema, sortProp);
-        dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
+        dbSort.insert(&metaSortIndex, value, node.?);
     }
     // ------------------------------
     var it: selva.SelvaSortIterator = undefined;

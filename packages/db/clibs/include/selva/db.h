@@ -42,24 +42,24 @@ SELVA_EXPORT
 int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
 
 /**
- * Save a range of nodes from te.
+ * Save a nodes block starting from start.
  */
 SELVA_EXPORT
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out) __attribute__((nonnull));
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
 /**
  * **Usage:**
  * ```c
  * struct SelvaDb *db = selva_db_create();
  * selva_dump_load_common(db, filename_common);
- * selva_dump_load_range(db, filename_range_n);
+ * selva_dump_load_block(db, filename_range_n);
  *  ```
  */
 SELVA_EXPORT
 int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_range(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 /**
  * Find a type by type id.
@@ -78,6 +78,32 @@ inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
     return te->blocks->block_capacity;
+}
+#else
+;
+#endif
+
+inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
+{
+    assert(node_id > 0);
+    return ((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity;
+}
+
+SELVA_EXPORT
+inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
+#ifndef __zig
+{
+    return selva_node_id2block_i3(blocks->block_capacity, node_id);
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
+#ifndef __zig
+{
+    return selva_node_id2block_i(te->blocks, node_id);
 }
 #else
 ;

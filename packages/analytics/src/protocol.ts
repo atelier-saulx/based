@@ -6,7 +6,6 @@ import {
   readUint32,
   writeUint16,
   writeUint32,
-  writeUint64,
 } from '@saulx/utils'
 import { xxHash64 } from './xxHash.js'
 
@@ -44,10 +43,6 @@ export const toDbPayload = (
   for (const event in active) {
     for (const geo in active[event].geos) {
       const ev = active[event].geos[geo]
-      if (ev.prevActive === ev.active) {
-        continue
-      }
-      ev.prevActive = ev.active
       const p: TempPayload = {
         event: ENCODER.encode(event),
         geo,
