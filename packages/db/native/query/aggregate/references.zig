@@ -158,20 +158,17 @@ pub inline fn aggregateRefsDefault(
         //later
     } else {
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {
-            // default empty size - means a bug!
             return 10;
         };
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
-        if (refs == null) { // default empty size - this should never happen
+        if (refs == null) {
             return 10;
         }
     }
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
 
-    // .totalRefs = refsCnt,
-    // if only 1 agg and field 255 and COUNT just return refsCnt
     var i: usize = offset;
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {

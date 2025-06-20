@@ -13,14 +13,14 @@ const aggregateTypes = @import("../aggregate/types.zig");
 pub const ProtocolLen = 10;
 
 pub const GroupCtx = struct {
-    hashMap: SimpleHashMap, // -
-    resultsSize: u16, // 2
-    accumulatorSize: u16, // 2
-    fieldSchema: db.FieldSchema, // -
-    start: u16, // 2
-    field: u8, // 1
-    len: u16, // 2
-    propType: types.Prop, // 1
+    hashMap: SimpleHashMap,
+    resultsSize: u16,
+    accumulatorSize: u16,
+    fieldSchema: db.FieldSchema,
+    start: u16,
+    field: u8,
+    len: u16,
+    propType: types.Prop,
 };
 
 pub inline fn setGroupResults(
@@ -94,14 +94,14 @@ pub inline fn finalizeGroupResults(
                         const mean = sum / @as(f64, @floatFromInt(count));
                         const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                         const stddev = @sqrt(variance);
-                        writeInt(f64, resultsField, resultPos, @floatCast(stddev)); // using f32 just to accomodate the 32bytes in result
+                        writeInt(f64, resultsField, resultPos, @floatCast(stddev));
                     } else {
                         writeInt(f64, resultsField, resultPos, 0.0);
                     }
                 } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
                     // const hll = read hll "buffer" from accumulatorField and convert it to selvastring
                     // const cardinality = hll_count(hll)
-                    // writeInt(f64, resultsField, resultPos, cardinality); // u16
+                    // writeInt(f64, resultsField, resultPos, cardinality);
                 }
             }
             i += ctx.resultsSize;
