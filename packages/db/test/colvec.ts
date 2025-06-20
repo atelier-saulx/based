@@ -19,6 +19,7 @@ await test('colvec', async (t) => {
       },
       col: {
         blockCapacity: 10_000,
+        insertOnly: true,
         props: {
           vec: { type: 'colvec', size: 8 },
         },
