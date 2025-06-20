@@ -80,6 +80,8 @@ await test('textFallback', async (t) => {
     .get()
     .inspect(10)
 
+  // Filter fun with text italy
+
   // when over range - this breaks with dirty ranges
   // this breaks schema as well
   // for (let i = 0; i < 1e6; i++) {

@@ -59,11 +59,11 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const mainLen = read(u16, q, i + 4);
     var valueSize = read(u32, q, i + 6);
 
-    // refactor this a bit...
-    // prob dont need the query size at all here
-    // remove I
-    if (valueSize > q.len - 11 + i) {
-        std.debug.print("flap!!! \n", .{});
+    const isText: bool = prop == Prop.TEXT;
+
+    if (isText and valueSize > q.len - 11 + i) {
+        std.debug.print("hello\n", .{});
+
         valueSize = @as(u32, @intCast(q.len)) - 11 - @as(u32, @intCast(i));
     }
 
@@ -79,7 +79,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     }
 
     if (op == Op.equal) {
-        if (prop == Prop.TEXT) {
+        if (isText) {
             // this is here and not in fixed check because it has the lang code at then end
             valueSize = read(u32, query, 4);
             // - a lot more things...
@@ -114,6 +114,8 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         query,
         mainLen,
     )) {
+        std.debug.print("hello??? {any} '{s}'\n", .{ value[0], query });
+
         pass = false;
     }
     return .{ next, pass };

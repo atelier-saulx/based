@@ -48,8 +48,6 @@ inline fn hasInner(
         const vecAligned = read([]f32, value, 0);
         return like.vector(vecAligned, query);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
-        std.debug.print("flaxxxo v {any} q {any}\n", .{ value, query });
-
         if (value[1] == @intFromEnum(Compression.compressed)) {
             if (!decompress(void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;

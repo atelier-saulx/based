@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual } from './shared/assert.js'
-import { equal, notEqual } from 'node:assert'
+import { notEqual } from 'node:assert'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -81,11 +81,13 @@ await test('simple', async (t) => {
     .get()
   deepEqual(result.toObject(), [], 'Filter fun with non-existent text')
 
+  console.log('search each lang!')
   result = await db
     .query('dialog')
     .include('id', 'fun')
     .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
+
   deepEqual(
     result.toObject(),
     [
