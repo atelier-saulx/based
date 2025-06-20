@@ -676,7 +676,7 @@ await test('count group by', async (t) => {
   )
 })
 
-await test('vks', async (t) => {
+await test('variable key sum', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -753,81 +753,73 @@ await test('vks', async (t) => {
     contributors: [cipolla],
   })
 
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((q) => q('contributors').sum('flap'), 'name')
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
-  //     {
-  //       id: 2,
-  //       name: 'Les lois fondamentales de la stupidité humaine',
-  //       contributors: { flap: 80 },
-  //     },
-  //   ],
-  //   'sum, branched query, var len string',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((q) => q('contributors').sum('flap'), 'name')
+      .get()
+      .toObject(),
+    [
+      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 2,
+        name: 'Les lois fondamentales de la stupidité humaine',
+        contributors: { flap: 80 },
+      },
+    ],
+    'sum, branched query, var len string',
+  )
 
-  // deepEqual(
-  //   await db.query('user').groupBy('name').sum('flap').get().toObject(),
-  //   {
-  //     Flippie: { flap: 20 },
-  //     'Carlo Cipolla': { flap: 80 },
-  //     'Mr snurp': { flap: 10 },
-  //     'Dinkel Doink': { flap: 40 },
-  //     Derpie: { flap: 30 },
-  //   },
-  //   'sum, groupBy, main',
-  // )
+  deepEqual(
+    await db.query('user').groupBy('name').sum('flap').get().toObject(),
+    {
+      Flippie: { flap: 20 },
+      'Carlo Cipolla': { flap: 80 },
+      'Mr snurp': { flap: 10 },
+      'Dinkel Doink': { flap: 40 },
+      Derpie: { flap: 30 },
+    },
+    'sum, groupBy, main',
+  )
 
-  // deepEqual(
-  //   await db.query('user').groupBy('country').sum('flap').get().toObject(),
-  //   {
-  //     $undefined: { flap: 40 },
-  //     NL: { flap: 30 },
-  //     BR: { flap: 30 },
-  //     IT: { flap: 80 },
-  //   },
-  //   'sum, groupBy, main, $undefined',
-  // )
+  deepEqual(
+    await db.query('user').groupBy('country').sum('flap').get().toObject(),
+    {
+      $undefined: { flap: 40 },
+      NL: { flap: 30 },
+      BR: { flap: 30 },
+      IT: { flap: 80 },
+    },
+    'sum, groupBy, main, $undefined',
+  )
 
-  await db
-    .query('article')
-    .include((select) => {
-      select('contributors').groupBy('name').sum('flap')
-    }) //, 'name')
-    .get()
-    .inspect()
-
-  // deepEqual(
-  //   await db
-  //     .query('article')
-  //     .include((select) => {
-  //       select('contributors').groupBy('name').sum('flap')
-  //     })
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       contributors: {
-  //         Flippie: { flap: 20 },
-  //         'Mr snurp': { flap: 10 },
-  //         Derpie: { flap: 30 },
-  //         'Dinkel Doink': { flap: 40 },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       contributors: {
-  //         'Carlo Cipolla': { flap: 80 },
-  //       },
-  //     },
-  //   ],
-  //   'sum, branched query, groupBy, references',
-  // )
+  deepEqual(
+    await db
+      .query('article')
+      .include((select) => {
+        select('contributors').groupBy('name').sum('flap')
+      })
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: {
+          Flippie: { flap: 20 },
+          'Mr snurp': { flap: 10 },
+          Derpie: { flap: 30 },
+          'Dinkel Doink': { flap: 40 },
+        },
+      },
+      {
+        id: 2,
+        contributors: {
+          'Carlo Cipolla': { flap: 80 },
+        },
+      },
+    ],
+    'sum, branched query, groupBy, references',
+  )
 })
 
 await test('agg on references', async (t) => {

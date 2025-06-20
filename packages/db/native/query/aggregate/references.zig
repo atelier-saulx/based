@@ -86,6 +86,7 @@ pub inline fn aggregateRefsGroup(
     }
 
     var index: usize = 0;
+    var resultsSize: usize = 0;
 
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
@@ -111,7 +112,7 @@ pub inline fn aggregateRefsGroup(
                 accumulatorField = try ctx.allocator.alloc(u8, groupCtx.accumulatorSize);
                 @memset(accumulatorField, 0);
                 try groupCtx.hashMap.put(key, accumulatorField);
-                ctx.size += 2 + key.len + groupCtx.resultsSize;
+                resultsSize += 2 + key.len + groupCtx.resultsSize;
             } else {
                 accumulatorField = groupCtx.hashMap.get(key).?;
             }
@@ -119,7 +120,7 @@ pub inline fn aggregateRefsGroup(
         }
     }
 
-    const data = try ctx.allocator.alloc(u8, ctx.size);
+    const data = try ctx.allocator.alloc(u8, resultsSize);
 
     try finalizeGroupResults(data, groupCtx, agg);
 
@@ -130,9 +131,7 @@ pub inline fn aggregateRefsGroup(
         .score = null,
         .type = types.ResultType.aggregate,
     });
-    utils.debugPrint("grp => {any}\n", .{ctx.results.getLast()});
-
-    return groupCtx.resultsSize + 6;
+    return resultsSize + 6;
 }
 
 pub inline fn aggregateRefsDefault(
@@ -186,7 +185,6 @@ pub inline fn aggregateRefsDefault(
         }
     }
 
-    utils.debugPrint("---> {d}\n", .{resultsSize});
     const val = try ctx.allocator.alloc(u8, resultsSize);
     try finalizeResults(val, accumulatorField, agg);
 
