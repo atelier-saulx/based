@@ -1110,8 +1110,3 @@ await test('stddev', async (t) => {
   //     .get()
   //     .inspect()
 })
-
-// test: when adding BR to props it messes up if country Brazil. Problably in .contains()
-// test wildcards
-// handle enum
-// can use the index in selva if no filter

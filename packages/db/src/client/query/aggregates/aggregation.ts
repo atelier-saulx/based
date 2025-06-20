@@ -66,7 +66,6 @@ const ensureAggregate = (def: QueryDef) => {
   }
 }
 
-// Group by is great for normal stuff as well (do later)
 export const groupBy = (def: QueryDef, field: string) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {

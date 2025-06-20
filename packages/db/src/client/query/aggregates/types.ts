@@ -5,8 +5,6 @@ export enum AggregateType {
   STDDEV = 4,
 }
 
-// export type AggregateTypeKey = keyof typeof AggregateType
-
 export const enum AccumulatorSize { // comptime
   SUM = 4,
   COUNT = 4,
