@@ -34,7 +34,9 @@ pub inline fn execAgg(
             if (propType == types.Prop.UINT32) {
                 writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + read(u32, value, start));
             } else if (propType == types.Prop.UINT8) {
-                writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + value[start]);
+                writeInt(u8, accumulatorField, resultPos, read(u8, accumulatorField, resultPos) + value[start]);
+            } else if (propType == types.Prop.UINT16) {
+                writeInt(u16, accumulatorField, resultPos, read(u16, accumulatorField, resultPos) + value[start]);
             } else {
                 //later
             }

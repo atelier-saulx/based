@@ -926,8 +926,6 @@ await test('agg on references', async (t) => {
     })
     .get()
 
-  // result.inspect(100)
-
   deepEqual(
     result.toObject(),
     [
