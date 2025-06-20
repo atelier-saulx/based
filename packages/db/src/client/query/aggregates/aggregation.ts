@@ -3,7 +3,7 @@ import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
 import { PropDef, UINT32, REVERSE_SIZE_MAP, SIZE_MAP } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
-import { AccumulatorSize } from '../aggregates/types.js'
+import { aggregateTypeMap } from '../aggregates/types.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -122,17 +122,16 @@ export const addAggregate = (
         accumulatorPos: def.aggregate.totalAccumulatorSize,
       })
 
-      if (type === AggregateType.CARDINALITY || type === AggregateType.COUNT) {
-        def.aggregate.totalResultsSize += 4
-        def.aggregate.totalAccumulatorSize += 4
-      } else if (type === AggregateType.STDDEV) {
-        def.aggregate.totalResultsSize += 8
-        def.aggregate.totalAccumulatorSize += AccumulatorSize.STDDEV
+      const specificSizes = aggregateTypeMap.get(type)
+      if (specificSizes) {
+        def.aggregate.totalResultsSize += specificSizes.resultsSize
+        def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
       } else {
         def.aggregate.totalResultsSize +=
           REVERSE_SIZE_MAP[fieldDef.typeIndex] > 4 ? 8 : 4
         def.aggregate.totalAccumulatorSize += 4 // TBD
       }
+
       // needs to add an extra field WRITE TO
       def.aggregate.size += 8
     }

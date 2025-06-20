@@ -5,7 +5,7 @@ pub const GroupedBy = enum(u8) {
     none = 0,
 };
 
-pub const AggType = enum(u8) { SUM = 1, COUNT = 2, CARDINALITY = 3, STDDEV = 4 };
+pub const AggType = enum(u8) { SUM = 1, COUNT = 2, CARDINALITY = 3, STDDEV = 4, AVERAGE = 5, VARIANCE = 6, MAX = 7, MIN = 8 };
 
 pub const IsId = 255;
 
