@@ -257,6 +257,74 @@ export class QueryBranch<T> {
     return this
   }
 
+  var(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty variance function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'var',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.VARIANCE, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  avg(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty average function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'avg',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.AVERAGE, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  max(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty maximum function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'max',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.MAX, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  min(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty minimum function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'min',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.MIN, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
   or(fn: FilterBranchFn): T
   or(
     field: string,

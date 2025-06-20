@@ -28,8 +28,33 @@ pub inline fn execAgg(
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
 
+        // BUG: SUM, MIN, MAX are wrong. Must read the size of type but write 32 or 64 bits, sign or unsigned, accordinly
+        // BUG: MIN are wrong. unsignet int is unitialized with 0 so must know if is first iteration beforehand
+        // TODO: populational or sample statistics switch or aliases
+        // TODO: too much branching, will branch for every numeric type?
+
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
+        } else if (aggType == aggregateTypes.AggType.MAX) {
+            if (propType == types.Prop.UINT32) {
+                writeInt(u32, accumulatorField, resultPos, @max(read(u32, accumulatorField, resultPos), read(u32, value, start)));
+            } else if (propType == types.Prop.UINT16) {
+                writeInt(u16, accumulatorField, resultPos, @max(read(u16, accumulatorField, resultPos), read(u16, value, start)));
+            } else if (propType == types.Prop.UINT8) {
+                writeInt(u8, accumulatorField, resultPos, @max(read(u8, accumulatorField, resultPos), value[start]));
+            } else {
+                //later
+            }
+        } else if (aggType == aggregateTypes.AggType.MIN) {
+            if (propType == types.Prop.UINT32) {
+                writeInt(u32, accumulatorField, resultPos, @min(read(u32, accumulatorField, resultPos), read(u32, value, start)));
+            } else if (propType == types.Prop.UINT16) {
+                writeInt(u16, accumulatorField, resultPos, @min(read(u16, accumulatorField, resultPos), read(u16, value, start)));
+            } else if (propType == types.Prop.UINT8) {
+                writeInt(u8, accumulatorField, resultPos, @min(read(u8, accumulatorField, resultPos), value[start]));
+            } else {
+                //later
+            }
         } else if (aggType == aggregateTypes.AggType.SUM) {
             if (propType == types.Prop.UINT32) {
                 writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + read(u32, value, start));
@@ -40,7 +65,20 @@ pub inline fn execAgg(
             } else {
                 //later
             }
-        } else if (aggType == aggregateTypes.AggType.STDDEV) {
+        } else if (aggType == aggregateTypes.AggType.AVERAGE) {
+            const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
+
+            var count = read(u64, accumulatorField, accumulatorPos);
+            var sum = read(f64, accumulatorField, accumulatorPos + 8);
+
+            count += 1;
+            sum += val;
+
+            writeInt(u64, accumulatorField, accumulatorPos, count);
+            writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+        } else if (aggType == aggregateTypes.AggType.STDDEV or
+            aggType == aggregateTypes.AggType.VARIANCE)
+        {
             const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
 
             var count = read(u64, accumulatorField, accumulatorPos);

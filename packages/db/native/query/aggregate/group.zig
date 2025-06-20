@@ -84,8 +84,36 @@ pub inline fn finalizeGroupResults(
                 const accumulatorPos = read(u16, aggPropDef, j);
                 j += 2;
 
-                if (aggType == aggregateTypes.AggType.COUNT or aggType == aggregateTypes.AggType.SUM) {
+                if (aggType == aggregateTypes.AggType.COUNT or
+                    aggType == aggregateTypes.AggType.SUM or
+                    aggType == aggregateTypes.AggType.MAX or
+                    aggType == aggregateTypes.AggType.MIN)
+                {
                     copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
+                } else if (aggType == aggregateTypes.AggType.AVERAGE) {
+                    const count = read(u64, accumulatorField, accumulatorPos);
+                    if (count > 1) {
+                        const sum = read(f64, accumulatorField, accumulatorPos + 8);
+                        const mean = sum / @as(f64, @floatFromInt(count));
+                        writeInt(f64, resultsField, resultPos, @floatCast(mean));
+                    } else {
+                        writeInt(f64, resultsField, resultPos, 0.0);
+                    }
+                } else if (aggType == aggregateTypes.AggType.VARIANCE) {
+                    const count = read(u64, accumulatorField, accumulatorPos);
+                    if (count > 1) {
+                        const sum = read(f64, accumulatorField, accumulatorPos + 8);
+                        const sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
+                        const mean = sum / @as(f64, @floatFromInt(count));
+                        const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                        if (variance < 0.0 and variance > -1e-12) {
+                            writeInt(f64, resultsField, resultPos, 0.0);
+                        } else {
+                            writeInt(f64, resultsField, resultPos, @floatCast(variance));
+                        }
+                    } else {
+                        writeInt(f64, resultsField, resultPos, 0.0);
+                    }
                 } else if (aggType == aggregateTypes.AggType.STDDEV) {
                     const count = read(u64, accumulatorField, accumulatorPos);
                     if (count > 1) {
