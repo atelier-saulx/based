@@ -131,6 +131,10 @@ export const createSchemaTypeDef = (
         }
       } else if (isPropType('text', schemaProp)) {
         result.separateSortText++
+      } else if (isPropType('colvec', schemaProp)) {
+        if (!result.insertOnly) {
+          throw new Error('colvec requires insertOnly')
+        }
       }
       const isseparate = isSeparate(schemaProp, len)
       const typeIndex = TYPE_INDEX_MAP[propType]
