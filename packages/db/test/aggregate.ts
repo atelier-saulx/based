@@ -1091,6 +1091,7 @@ await test('stddev', async (t) => {
   await db.query('vote').stddev('NL').groupBy('country').get().inspect()
   await db.query('vote').var('NL').groupBy('country').get().inspect()
   await db.query('vote').max('NL').groupBy('country').get().inspect()
+  await db.query('vote').min('NL').groupBy('country').get().inspect()
   // await db
   //   .query('sequence')
   //   .include((q) => q('votes').sum('NL'))

@@ -46,6 +46,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     }
     const hasFilter = conditions.len > 0;
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    var hadAccumulated: bool = false;
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -57,7 +58,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, n, resultsField);
+            aggregate(agg, typeEntry, n, resultsField, &hadAccumulated);
         } else {
             break :checkItem;
         }
@@ -75,6 +76,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += GroupProtocolLen;
     const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
+    var hadAccumulated = false;
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -94,10 +96,11 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 @memset(accumulatorField, 0);
                 try groupCtx.hashMap.put(key, accumulatorField);
                 ctx.size += 2 + key.len + groupCtx.resultsSize;
+                hadAccumulated = false;
             } else {
                 accumulatorField = groupCtx.hashMap.get(key).?;
             }
-            aggregate(agg, typeEntry, n, accumulatorField);
+            aggregate(agg, typeEntry, n, accumulatorField, &hadAccumulated);
         } else {
             break :checkItem;
         }

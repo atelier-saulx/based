@@ -10,14 +10,14 @@ export enum AggregateType {
 }
 
 export const enum AccumulatorSize { // comptime
-  SUM = 4,
+  SUM = 8,
   COUNT = 4,
   CARDINALITY = 254, // TODO: accordinly to sparse or dense modes
   STDDEV = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
   AVERAGE = 16, // count (u64) + sum (f64) = 16
   VARIANCE = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
-  MAX = 4,
-  MIN = 4,
+  MAX = 8,
+  MIN = 8,
 }
 
 export const aggregateTypeMap = new Map<
@@ -44,7 +44,7 @@ export const aggregateTypeMap = new Map<
     AggregateType.VARIANCE,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.VARIANCE },
   ],
-  // Othe types like MAX, MIN, SUM should fall in the else case, respecting the prop.typeIndex size
+  // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8
 ])
 
 export const enum GroupBy {

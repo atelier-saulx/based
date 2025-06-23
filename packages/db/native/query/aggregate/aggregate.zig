@@ -13,9 +13,9 @@ pub inline fn execAgg(
     accumulatorField: []u8,
     value: []u8,
     fieldAggsSize: u16,
+    hadAccumulated: *bool,
 ) void {
     var j: usize = 0;
-
     while (j < fieldAggsSize) {
         const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
         j += 1;
@@ -28,43 +28,16 @@ pub inline fn execAgg(
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
 
-        // BUG: SUM, MIN, MAX are wrong. Must read the size of type but write 32 or 64 bits, sign or unsigned, accordinly
-        // BUG: MIN are wrong. unsignet int is unitialized with 0 so must know if is first iteration beforehand
         // TODO: populational or sample statistics switch or aliases
-        // TODO: too much branching, will branch for every numeric type?
 
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
-            if (propType == types.Prop.UINT32) {
-                writeInt(u32, accumulatorField, resultPos, @max(read(u32, accumulatorField, resultPos), read(u32, value, start)));
-            } else if (propType == types.Prop.UINT16) {
-                writeInt(u16, accumulatorField, resultPos, @max(read(u16, accumulatorField, resultPos), read(u16, value, start)));
-            } else if (propType == types.Prop.UINT8) {
-                writeInt(u8, accumulatorField, resultPos, @max(read(u8, accumulatorField, resultPos), value[start]));
-            } else {
-                //later
-            }
+            writeInt(i64, accumulatorField, resultPos, @max(if (hadAccumulated.*) read(i64, accumulatorField, resultPos) else std.math.minInt(i64), value[start]));
         } else if (aggType == aggregateTypes.AggType.MIN) {
-            if (propType == types.Prop.UINT32) {
-                writeInt(u32, accumulatorField, resultPos, @min(read(u32, accumulatorField, resultPos), read(u32, value, start)));
-            } else if (propType == types.Prop.UINT16) {
-                writeInt(u16, accumulatorField, resultPos, @min(read(u16, accumulatorField, resultPos), read(u16, value, start)));
-            } else if (propType == types.Prop.UINT8) {
-                writeInt(u8, accumulatorField, resultPos, @min(read(u8, accumulatorField, resultPos), value[start]));
-            } else {
-                //later
-            }
+            writeInt(i64, accumulatorField, resultPos, @min(if (hadAccumulated.*) read(i64, accumulatorField, resultPos) else std.math.maxInt(i64), value[start]));
         } else if (aggType == aggregateTypes.AggType.SUM) {
-            if (propType == types.Prop.UINT32) {
-                writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + read(u32, value, start));
-            } else if (propType == types.Prop.UINT8) {
-                writeInt(u8, accumulatorField, resultPos, read(u8, accumulatorField, resultPos) + value[start]);
-            } else if (propType == types.Prop.UINT16) {
-                writeInt(u16, accumulatorField, resultPos, read(u16, accumulatorField, resultPos) + value[start]);
-            } else {
-                //later
-            }
+            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + @as(f64, @floatFromInt(value[start])));
         } else if (aggType == aggregateTypes.AggType.AVERAGE) {
             const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
 
@@ -97,10 +70,11 @@ pub inline fn execAgg(
             // const hllAcc = read hll from accumulator as selva string []u8
             // hll_union(hllAcc, hll) union and write to the hllAcc
         }
+        hadAccumulated.* = true;
     }
 }
 
-pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8) void {
+pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hadAccumulated: *bool) void {
     if (agg.len == 0) {
         return;
     }
@@ -136,7 +110,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             return;
         }
     }
-    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize);
+    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
     i += fieldAggsSize;
     return;
 }

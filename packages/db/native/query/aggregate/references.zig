@@ -95,6 +95,7 @@ pub inline fn aggregateRefsGroup(
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
     var i: usize = offset;
+    var hadAccumulated = false;
 
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
@@ -116,7 +117,7 @@ pub inline fn aggregateRefsGroup(
             } else {
                 accumulatorField = groupCtx.hashMap.get(key).?;
             }
-            aggregate(agg, typeEntry, n, accumulatorField);
+            aggregate(agg, typeEntry, n, accumulatorField, &hadAccumulated);
         }
     }
 
@@ -153,6 +154,7 @@ pub inline fn aggregateRefsDefault(
     var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
+    var hadAccumulated: bool = false;
 
     if (isEdge) {
         //later
@@ -178,7 +180,7 @@ pub inline fn aggregateRefsDefault(
                     continue :checkItem;
                 }
             }
-            aggregate(agg, typeEntry, refNode, accumulatorField);
+            aggregate(agg, typeEntry, refNode, accumulatorField, &hadAccumulated);
         }
     }
 
