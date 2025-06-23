@@ -22,13 +22,6 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
 
 const native = {
   threadCtx: null, // add compressors here as well!
-  historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
-    return db.historyAppend(history, typeId, nodeId, dbCtx)
-  },
-  historyCreate(pathname: string, mainLen: number): any {
-    const pathBuf = ENCODER.encode(pathname + '\0')
-    return db.historyCreate(pathBuf, mainLen + 16 - (mainLen % 16))
-  },
 
   workerCtxInit: (): void => {
     return db.workerCtxInit()

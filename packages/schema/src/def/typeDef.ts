@@ -85,10 +85,11 @@ export const createSchemaTypeDef = (
         result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
-    if (result.insertOnly == false) {
-      if ('insertOnly' in type) {
-        result.insertOnly = !!type.insertOnly
-      }
+    if (result.insertOnly == false && 'insertOnly' in type) {
+      result.insertOnly = !!type.insertOnly
+    }
+    if (result.partial == false && 'partial' in type) {
+      result.partial = !!type.partial
     }
   }
   result.locales = locales
@@ -176,11 +177,19 @@ export const createSchemaTypeDef = (
           prop.reverseEnum[prop.enum[i]] = i
         }
       } else if (isPropType('references', schemaProp)) {
+        if (result.partial) {
+          throw new Error('references is not supported with partial')
+        }
+
         prop.inversePropName = schemaProp.items.prop
         prop.inverseTypeName = schemaProp.items.ref
         prop.dependent = schemaProp.items.dependent
         addEdges(prop, schemaProp.items)
       } else if (isPropType('reference', schemaProp)) {
+        if (result.partial) {
+          throw new Error('reference is not supported with partial')
+        }
+
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
         prop.dependent = schemaProp.dependent

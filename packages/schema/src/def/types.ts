@@ -166,6 +166,7 @@ export type SchemaTypeDef = {
   blockCapacity: number
   mainLen: number
   insertOnly: boolean // delete not allowed
+  partial: boolean // only active block(s) should be loaded in-mem
   buf: Uint8Array
   propNames: Uint8Array
   props: {
