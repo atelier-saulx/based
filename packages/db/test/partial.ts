@@ -43,7 +43,7 @@ await test('partial', async (t) => {
   const events1 = await db2.query('event').include('extId').range(0, 10).get().toObject()
   deepEqual(events1, [])
 
-  db2.server.loadBlock('event', 0)
+  db2.server.loadBlock('event', 1)
   const events2 = await db2.query('event').include('extId').range(0, 10).get().toObject()
   deepEqual(events2, [
     { id: 1, extId: 100 },
@@ -57,6 +57,10 @@ await test('partial', async (t) => {
     { id: 9, extId: 100 },
     { id: 10, extId: 100 }
   ])
+
+  db2.server.unloadBlock('event', 1)
+  const events3 = await db2.query('event').include('extId').range(0, 10).get().toObject()
+  deepEqual(events3, [])
 })
 
 await test('invalid partial type', async (t) => {

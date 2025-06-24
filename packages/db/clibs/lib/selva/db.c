@@ -207,6 +207,33 @@ struct SelvaDb *selva_db_create(void)
 }
 
 /**
+ * Delete all nodes of a block.
+ * Pretty safe as long as block_i is within the range.
+ */
+static void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
+{
+    struct SelvaNodeIndex *nodes = &te->blocks->blocks[block_i].nodes;
+    struct SelvaNode *node;
+    struct SelvaNode *tmp;
+
+    RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
+        /* Presumably dirty_cb is not needed here. */
+        selva_del_node(db, te, node, nullptr, nullptr);
+    }
+}
+
+int selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
+{
+    if (block_i >= te->blocks->len) {
+        return SELVA_EINVAL;
+    }
+
+    selva_del_block_unsafe(db, te, block_i);
+
+    return 0;
+}
+
+/**
  * Delete all nodes under this type.
  */
 static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
@@ -215,14 +242,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
     block_id_t blocks_len = blocks->len;
 
     for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
-        struct SelvaNodeIndex *nodes = &blocks->blocks[block_i].nodes;
-        struct SelvaNode *node;
-        struct SelvaNode *tmp;
-
-        RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
-            /* Presumably dirty_cb is not needed here. */
-            selva_del_node(db, te, node, nullptr, nullptr);
-        }
+        selva_del_block_unsafe(db, te, block_i);
     }
 }
 

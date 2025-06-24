@@ -21,7 +21,7 @@ import {
   writeSchemaFile,
 } from './schema.js'
 import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
-import {loadBlock} from './blocks.js'
+import { loadBlock, unloadBlock } from './blocks.js'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -99,7 +99,25 @@ export class DbServer extends DbShared {
       throw new Error('Block not found')
     }
 
-    loadBlock(this, this.schemaTypesParsedById[typeId], start)
+    loadBlock(this, def, start)
+  }
+
+  unloadBlock(typeName: string, nodeId: number) {
+    const def = this.schemaTypesParsed[typeName]
+    if (!def) {
+      throw new Error('Type not found')
+    }
+
+    const typeId = def.id
+    const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
+    const [, start] = destructureTreeKey(key)
+
+    const block = this.verifTree.getBlock(key)
+    if (!block) {
+      throw new Error('Block not found')
+    }
+
+    unloadBlock(this, def, start)
   }
 
   sortIndexes: {
