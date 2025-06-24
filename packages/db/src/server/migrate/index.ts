@@ -6,7 +6,7 @@ import {
   receiveMessageOnPort,
 } from 'node:worker_threads'
 import native from '../../native.js'
-import { destructureCsmtKey, foreachDirtyBlock, specialBlock } from '../tree.js'
+import { destructureTreeKey, foreachDirtyBlock } from '../tree.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
 import { DbSchema } from '../../schema.js'
@@ -16,6 +16,8 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
+
+export type MigrateRange = { typeId: number, start: number, end: number }
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -130,13 +132,15 @@ export const migrate = async (
 
   // Block handling
   let i = 0
-  let rangesToMigrate = []
+  let rangesToMigrate: MigrateRange[] = []
 
   await save(server, false, false, true)
-  server.verifTree.visitLeafNodes((leaf) => {
-    const [_typeId, start] = destructureCsmtKey(leaf.key)
-    if (start == specialBlock) return // skip the type specialBlock
-    rangesToMigrate.push(leaf.data)
+  server.verifTree.foreachBlock((block) => {
+    const [typeId, start] = destructureTreeKey(block.key)
+    const def = server.schemaTypesParsedById[typeId]
+    const end = start + def.blockCapacity - 1
+
+    rangesToMigrate.push({ typeId, start, end })
   })
 
   await waitUntilSleeping(workerState)

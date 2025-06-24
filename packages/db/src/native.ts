@@ -22,13 +22,6 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
 
 const native = {
   threadCtx: null, // add compressors here as well!
-  historyAppend(history: any, typeId: number, nodeId: number, dbCtx: any) {
-    return db.historyAppend(history, typeId, nodeId, dbCtx)
-  },
-  historyCreate(pathname: string, mainLen: number): any {
-    const pathBuf = ENCODER.encode(pathname + '\0')
-    return db.historyCreate(pathBuf, mainLen + 16 - (mainLen % 16))
-  },
 
   workerCtxInit: (): void => {
     return db.workerCtxInit()
@@ -95,7 +88,7 @@ const native = {
     const err: number = db.loadBlock(pathBuf, dbCtx, selvaIoErrlog)
     if (err) {
       throw new Error(
-        `Failed to load a range. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
+        `Failed to load a range "${path}". selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
       )
     }
   },
@@ -158,6 +151,10 @@ const native = {
   membarSyncWrite: () => {
     db.membarSyncWrite()
   },
+
+  colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {
+    return db.colvecTest(dbCtx, typeId, field, nodeId, len);
+  }
 }
 
 global.__basedDb__native__ = native

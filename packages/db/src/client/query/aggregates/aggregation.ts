@@ -1,8 +1,9 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
-import { PropDef, UINT32 } from '@based/schema/def'
+import { PropDef, UINT32, REVERSE_SIZE_MAP } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
+import { aggregateTypeMap } from '../aggregates/types.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -24,7 +25,9 @@ export const aggregateToBuffer = (
     aggBuffer[i] = GroupBy.NONE
     i += 1
   }
-  writeUint16(aggBuffer, aggregates.totalResultsPos, i)
+  writeUint16(aggBuffer, aggregates.totalResultsSize, i)
+  i += 2
+  writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
@@ -42,6 +45,8 @@ export const aggregateToBuffer = (
       i += 2
       writeUint16(aggBuffer, agg.resultPos, i)
       i += 2
+      writeUint16(aggBuffer, agg.accumulatorPos, i)
+      i += 2
       size += i - startI
     }
     writeUint16(aggBuffer, size, sizeIndex)
@@ -53,14 +58,14 @@ export const aggregateToBuffer = (
 const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 3,
+      size: 5,
       aggregates: new Map(),
-      totalResultsPos: 0,
+      totalResultsSize: 0,
+      totalAccumulatorSize: 0,
     }
   }
 }
 
-// Group by is great for normal stuff as well (do later)
 export const groupBy = (def: QueryDef, field: string) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
@@ -113,13 +118,21 @@ export const addAggregate = (
       aggregateField.push({
         propDef: fieldDef,
         type,
-        resultPos: def.aggregate.totalResultsPos,
+        resultPos: def.aggregate.totalResultsSize,
+        accumulatorPos: def.aggregate.totalAccumulatorSize,
       })
-      // IF FLOAT // NUMBER ETC USE 8!
-      // do this better
-      def.aggregate.totalResultsPos += 4
+
+      const specificSizes = aggregateTypeMap.get(type)
+      if (specificSizes) {
+        def.aggregate.totalResultsSize += specificSizes.resultsSize
+        def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
+      } else {
+        def.aggregate.totalResultsSize += 8
+        def.aggregate.totalAccumulatorSize += 8
+      }
+
       // needs to add an extra field WRITE TO
-      def.aggregate.size += 6
+      def.aggregate.size += 8
     }
   }
 }

@@ -5,14 +5,11 @@ pub const GroupedBy = enum(u8) {
     none = 0,
 };
 
-pub const AggType = enum(u8) { SUM = 1, COUNT = 2, CARDINALITY = 3, _ };
+pub const AggType = enum(u8) { SUM = 1, COUNT = 2, CARDINALITY = 3, STDDEV = 4, AVERAGE = 5, VARIANCE = 6, MAX = 7, MIN = 8 };
 
 pub const IsId = 255;
 
 pub const GroupByHashMap = struct {
-    // AutoHashMap do not allow slicing (required to variable key sizes), this wrapper addresses that.
-    // Main reason is just to extend the hashmap put() with dupe + free but this wrapper also would be able to
-    // help making values a generic number type in future.
     inner: std.StringHashMap([]u8),
     allocator: std.mem.Allocator,
 

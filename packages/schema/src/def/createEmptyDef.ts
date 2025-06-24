@@ -9,6 +9,8 @@ export const createEmptyDef = (
   return {
     cnt: 0,
     blockCapacity: 0,
+    insertOnly: false,
+    partial: false,
     checksum: hashObjectIgnoreKeyOrder(type),
     type: typeName,
     props: {},

@@ -240,6 +240,91 @@ export class QueryBranch<T> {
     return this
   }
 
+  stddev(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty standard deviation function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'stddev',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.STDDEV, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  var(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty variance function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'var',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.VARIANCE, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  avg(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty average function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'avg',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.AVERAGE, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  max(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty maximum function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'max',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.MAX, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  min(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty minimum function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'min',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.MIN, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
   or(fn: FilterBranchFn): T
   or(
     field: string,
@@ -449,16 +534,24 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     if (res.byteLength === 1) {
       if (res[0] === 0) {
-        this.reset()
-        this.db.emit(
-          'info',
-          'query get schema mismatch - awaiting new schema (max 15s)',
-        )
-        const ok = await Promise.race([wait(15e3), this.db.once('schema')])
-        if (!ok) {
-          reject(new Error('schema mismath'))
+        if (this.def && this.def.schemaChecksum === this.db.schema?.hash) {
+          // my schema did not change since last time, wait for the schema to change
+          this.reset()
+          this.db.emit(
+            'info',
+            'query get schema mismatch - awaiting new schema',
+          )
+          await this.db.once('schema')
+          return this.#getInternal(resolve, reject)
+        } else {
+          // its changed so lets send again
+          this.db.emit(
+            'info',
+            'query get schema mismatch - got the same already',
+          )
+          this.reset()
+          return this.#getInternal(resolve, reject)
         }
-        return this.#getInternal(resolve, reject)
       } else {
         reject(new Error('unexpected error'))
       }

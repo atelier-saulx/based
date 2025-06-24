@@ -1,3 +1,4 @@
+import { BLOCK_CAPACITY_MAX } from '@based/schema/def'
 import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
@@ -29,6 +30,8 @@ await test('rootProps', async (t) => {
       },
     },
   })
+
+  deepEqual(db.server.schemaTypesParsed['_root'].blockCapacity, BLOCK_CAPACITY_MAX)
 
   const rootData = {
     myString: 'im the root',

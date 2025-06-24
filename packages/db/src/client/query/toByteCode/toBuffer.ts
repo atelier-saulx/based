@@ -21,7 +21,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   const result: Uint8Array[] = []
   const include = includeToBuffer(db, def)
 
-  // ---------------------------------------
   def.references.forEach((ref) => {
     include.push(...defToBuffer(db, ref))
     if (ref.errors) {
@@ -77,9 +76,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       const aggregateBuffer = aggregateToBuffer(def.aggregate)
       buf.set(aggregateBuffer, 9 + 3 + filterSize)
 
-      // buf[12 + filterSize] = aggregateSize
-      // buf[12 + 1 + filterSize] = aggregateSize >>> 8
-
       result.push(buf)
     } else {
       const buf = new Uint8Array(16 + filterSize + aggregateSize)
@@ -107,9 +103,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       buf.set(aggregateBuffer, 16 + filterSize)
       result.push(buf)
     }
-
-    // ignore this for now...
-    // result.push(...include)
 
     if (def.type === QueryDefType.Root) {
       const checksum = new Uint8Array(8)
@@ -202,7 +195,6 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         buf[idsSize + 13] = def.range.limit >>> 16
         buf[idsSize + 14] = def.range.limit >>> 24
         // if (filterSize && isSimpleMainFilter(def.filter)) {
-        // console.log('SIMPLE FILTER!')
         buf[idsSize + 15] = filterSize
         buf[idsSize + 16] = filterSize >>> 8
         if (filterSize) {

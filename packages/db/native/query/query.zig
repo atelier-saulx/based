@@ -51,7 +51,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
         .db = dbCtx,
-        // pass the real Qeury ID when we have it
         .id = db.getQueryId(),
         .size = 0,
         .totalResults = 0,
@@ -146,6 +145,5 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
 
-    // result for js
     return results.createResultsBuffer(&ctx, env);
 }

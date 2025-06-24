@@ -14,6 +14,9 @@ import {
   REFERENCE,
   SchemaTypesParsed,
   NUMBER,
+  BLOCK_CAPACITY_MAX,
+  BLOCK_CAPACITY_DEFAULT,
+  BLOCK_CAPACITY_MIN,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -25,33 +28,31 @@ import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
-export const DEFAULT_BLOCK_CAPACITY = 100_000
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
-  for (const field in schemaTypesParsed) {
-    if (field in schema.types) {
+  for (const typeName in schemaTypesParsed) {
+    if (typeName in schema.types) {
       continue
     }
-    const id = schemaTypesParsed[field].id
-    delete schemaTypesParsed[field]
+    const id = schemaTypesParsed[typeName].id
+    delete schemaTypesParsed[typeName]
     delete schemaTypesParsedById[id]
   }
-  for (const field in schema.types) {
-    const type = schema.types[field]
+  for (const typeName in schema.types) {
+    const type = schema.types[typeName]
     if (!type.id) {
       throw new Error('NEED ID ON TYPE')
     }
     const def = createSchemaTypeDef(
-      field,
+      typeName,
       type,
       schemaTypesParsed,
       schema.locales ?? {
         en: {},
       },
     )
-    def.blockCapacity = field === '_root' ? 2147483647 : DEFAULT_BLOCK_CAPACITY
-    schemaTypesParsed[field] = def
+    schemaTypesParsed[typeName] = def
     schemaTypesParsedById[type.id] = def
   }
   return { schemaTypesParsed, schemaTypesParsedById }
@@ -66,11 +67,29 @@ export const createSchemaTypeDef = (
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
-  if (result.id == 0 && top) {
-    if ('id' in type) {
-      result.id = type.id
-    } else {
-      throw new Error(`Invalid schema type id ${result.type}`)
+  if (top) {
+    if (result.id == 0) {
+      if ('id' in type) {
+        result.id = type.id
+      } else {
+        throw new Error(`Invalid schema type id ${result.type}`)
+      }
+    }
+    if (result.blockCapacity == 0) {
+      if ('blockCapacity' in type) {
+        if (typeof type.blockCapacity !== 'number' || type.blockCapacity < BLOCK_CAPACITY_MIN || type.blockCapacity > BLOCK_CAPACITY_MAX) {
+          throw new Error('Invalid blockCapacity')
+        }
+        result.blockCapacity = type.blockCapacity
+      } else {
+        result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
+      }
+    }
+    if (result.insertOnly == false && 'insertOnly' in type) {
+      result.insertOnly = !!type.insertOnly
+    }
+    if (result.partial == false && 'partial' in type) {
+      result.partial = !!type.partial
     }
   }
   result.locales = locales
@@ -113,6 +132,10 @@ export const createSchemaTypeDef = (
         }
       } else if (isPropType('text', schemaProp)) {
         result.separateSortText++
+      } else if (isPropType('colvec', schemaProp)) {
+        if (!result.insertOnly) {
+          throw new Error('colvec requires insertOnly')
+        }
       }
       const isseparate = isSeparate(schemaProp, len)
       const typeIndex = TYPE_INDEX_MAP[propType]
@@ -154,11 +177,19 @@ export const createSchemaTypeDef = (
           prop.reverseEnum[prop.enum[i]] = i
         }
       } else if (isPropType('references', schemaProp)) {
+        if (result.partial) {
+          throw new Error('references is not supported with partial')
+        }
+
         prop.inversePropName = schemaProp.items.prop
         prop.inverseTypeName = schemaProp.items.ref
         prop.dependent = schemaProp.items.dependent
         addEdges(prop, schemaProp.items)
       } else if (isPropType('reference', schemaProp)) {
+        if (result.partial) {
+          throw new Error('reference is not supported with partial')
+        }
+
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
         prop.dependent = schemaProp.dependent

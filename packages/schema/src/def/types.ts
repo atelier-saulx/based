@@ -28,6 +28,7 @@ export const ID = 26
 export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
+export const COLVEC = 30
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -53,6 +54,7 @@ export const TYPE_INDEX_MAP = {
   cardinality: CARDINALITY,
   json: JSON,
   object: OBJECT,
+  colvec: COLVEC,
 }
 
 export const enum numberTypes {
@@ -152,6 +154,10 @@ export type SchemaSortUndefinedHandler = {
   props: PropDef[]
 }
 
+export const BLOCK_CAPACITY_MIN = 1025
+export const BLOCK_CAPACITY_MAX = 2147483647
+export const BLOCK_CAPACITY_DEFAULT = 100_000
+
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
@@ -159,6 +165,8 @@ export type SchemaTypeDef = {
   lastId: number
   blockCapacity: number
   mainLen: number
+  insertOnly: boolean // delete not allowed
+  partial: boolean // only active block(s) should be loaded in-mem
   buf: Uint8Array
   propNames: Uint8Array
   props: {
@@ -217,6 +225,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   vector: 0, // separate
   json: 0,
   object: 0,
+  colvec: 0, // separate
 }
 
 const reverseMap: any = {}

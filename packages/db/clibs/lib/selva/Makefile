@@ -24,13 +24,13 @@ endif
 OBJ := \
 	alias.o \
 	bitmap.o \
+	colvec.o \
 	db.o \
 	db_panic.o \
 	expire.o \
 	fast_linear_search.o \
 	fields.o \
 	fields_empty_text.o \
-	history.o \
 	ida.o \
 	hll/hll.o \
 	idz.o \

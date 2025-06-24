@@ -81,6 +81,16 @@ pub fn getCardinalityField(node: Node, fieldSchema: FieldSchema) ?[]u8 {
     }
 }
 
+pub fn getCardinalityFieldAsSelvaString(node: Node, fieldSchema: FieldSchema) ?[]u8 {
+    if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
+        // return @ptrCast(stored);
+        _ = stored;
+        return null; // temp
+    } else {
+        return null;
+    }
+}
+
 pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, fieldSchema: FieldSchema) []u8 {
     if (selva.selva_fields_get_selva_string3(ref, fieldSchema) orelse null) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
@@ -109,6 +119,11 @@ pub fn getField(
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == types.Prop.CARDINALITY) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
+    } else if (fieldType == types.Prop.COLVEC) {
+        const nodeId = if (id == 0) getNodeId(node) else id;
+        const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
+        const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
+        return @as([*]u8, @ptrCast(vec))[0..len];
     }
 
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, fieldSchema);
@@ -180,6 +195,15 @@ pub fn setMicroBuffer(node: Node, fieldSchema: FieldSchema, value: []u8) !void {
         value.ptr,
         value.len,
     ));
+}
+
+pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, vec: []u8) void {
+    selva.colvec_set_vec(
+        te,
+        nodeId,
+        fieldSchema,
+        vec.ptr,
+    );
 }
 
 pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
@@ -490,7 +514,6 @@ pub inline fn getTextFromValueFallback(
     return @as([*]u8, undefined)[0..0];
 }
 
-// (3% faster then iterator)
 pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
     if (value.len == 0) {
         return value;

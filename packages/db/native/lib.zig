@@ -7,13 +7,13 @@ const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
-const history = @import("./db/history.zig");
 const schema = @import("./schema/schema.zig");
 const sort = @import("./db/sort.zig");
 const string = @import("./string.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
+const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
 
 const NapiError = error{NapiError};
@@ -117,11 +117,10 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
     registerFunction(env, exports, "destroySortIndex", sort.destroySortIndexNode) catch return null;
 
-    registerFunction(env, exports, "historyCreate", history.historyCreate) catch return null;
-    registerFunction(env, exports, "historyAppend", history.historyAppend) catch return null;
-
     registerFunction(env, exports, "membarSyncRead", membarSyncRead) catch return null;
     registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
+
+    registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
 
     return exports;
 }

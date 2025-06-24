@@ -15,6 +15,7 @@ import {
 } from '@based/schema/def'
 import { BasedQueryResponse } from './BasedIterable.js'
 import { ENCODER } from '@saulx/utils'
+import { AggregateType } from './aggregates/types.js'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -192,8 +193,11 @@ const inspectObject = (
       if (typeof v === 'number') {
         if (q.aggregate) {
           str += printNumber(v)
+          // TBD: replace comptime const enum and reverse map it
+          const [[__, akv], _] = q.aggregate.aggregates
+          const aggType = akv[0].type
           str += picocolors.italic(
-            picocolors.dim(` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`), // MV: better with AggregateType later
+            picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
           )
           str += ',\n'
         } else {
@@ -258,10 +262,10 @@ const inspectObject = (
         if (typeof v === 'number') {
           if (q.aggregate) {
             str += printNumber(v)
+            const [[__, akv], _] = q.aggregate.aggregates
+            const aggType = akv[0].type
             str += picocolors.italic(
-              picocolors.dim(
-                ` ${key.indexOf('count') >= 0 ? ' count' : ' sum'}`,
-              ), // MV: better with AggregateType later
+              picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
             )
           } else {
             str += printNumber(v)
