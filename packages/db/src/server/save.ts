@@ -7,8 +7,8 @@ import {
   destructureTreeKey,
   foreachBlock,
   foreachDirtyBlock,
-  makeTreeKey,
 } from './tree.js'
+import { saveBlock } from './blocks.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
@@ -28,37 +28,6 @@ export type Writelog = {
   commonDump: string
   rangeDumps: {
     [t: number]: RangeDump[]
-  }
-}
-
-const blockSdbFile = (typeId: number, start: number, end: number) =>
-  `${typeId}_${start}_${end}.sdb`
-
-function saveBlock(
-  db: DbServer,
-  typeId: number,
-  start: number,
-  end: number,
-): void {
-  const hash = new Uint8Array(16)
-  const mtKey = makeTreeKey(typeId, start)
-  const file = blockSdbFile(typeId, start, end)
-  const path = join(db.fileSystemPath, file)
-  const err = native.saveBlock(
-    path,
-    typeId,
-    start,
-    db.dbCtxExternal,
-    hash,
-  )
-  if (err == -8) {
-    // TODO ENOENT
-    db.verifTree.remove(mtKey)
-  } else if (err) {
-    // TODO print the error string
-    console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
-  } else {
-    db.verifTree.update(mtKey, hash)
   }
 }
 
@@ -136,7 +105,7 @@ export function save(
       const def = db.schemaTypesParsedById[typeId]
       const end = start + def.blockCapacity - 1
       const data: RangeDump = {
-        file: blockSdbFile(typeId, start, end),
+        file: db.verifTree.getBlockFile(block),
         hash: bufToHex(block.hash),
         start,
         end,

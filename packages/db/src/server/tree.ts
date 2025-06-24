@@ -28,10 +28,10 @@ export const makeTreeKeyFromNodeId = (
 type Hash = Uint8Array
 const HASH_SIZE = 16
 
-type VerifBlock = {
+export type VerifBlock = {
   key: number,
   hash: Hash,
-  //file: string,
+  inmem: boolean,
 }
 
 type VerifType = {
@@ -87,15 +87,16 @@ export class VerifTree {
     return this.#h.digest() as Uint8Array
   }
 
-  update(key: number, hash: Hash) {
+  update(key: number, hash: Hash, inmem: boolean = true) {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
       throw new Error(`type ${typeId} not found`)
     }
     const blockI = nodeId2BlockI(start, type.blockCapacity)
-    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash }))
+    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash, inmem }))
     block.hash = hash
+    block.inmem = inmem
   }
 
   remove(key: number) {
@@ -106,6 +107,30 @@ export class VerifTree {
     }
     const blockI = nodeId2BlockI(start, type.blockCapacity)
     delete type.blocks[blockI]
+  }
+
+  static blockSdbFile(typeId: number, start: number, end: number) {
+    return `${typeId}_${start}_${end}.sdb`
+  }
+
+  getBlock(key: number) {
+    const [typeId, start] = destructureTreeKey(key)
+    const type = this.#types[typeId]
+    if (!type) {
+      throw new Error(`type ${typeId} not found`)
+    }
+    const blockI = nodeId2BlockI(start, type.blockCapacity)
+    return type.blocks[blockI]
+  }
+
+  getBlockFile(block: VerifBlock) {
+    const [typeId, start] = destructureTreeKey(block.key)
+    const type = this.#types[typeId]
+    if (!type) {
+      throw new Error(`type ${typeId} not found`)
+    }
+    const end = start + type.blockCapacity - 1
+    return VerifTree.blockSdbFile(typeId, start, end)
   }
 
   updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {

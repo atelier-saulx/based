@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
-import { VerifTree, makeTreeKeyFromNodeId } from './tree.js'
+import { VerifBlock, VerifTree, destructureTreeKey, makeTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
@@ -21,6 +21,7 @@ import {
   writeSchemaFile,
 } from './schema.js'
 import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
+import {loadBlock} from './blocks.js'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -81,6 +82,24 @@ export class DbServer extends DbShared {
 
   save(opts?: { forceFullDump?: boolean }) {
     return save(this, false, opts?.forceFullDump ?? false)
+  }
+
+  loadBlock(typeName: string, nodeId: number) {
+    const def = this.schemaTypesParsed[typeName]
+    if (!def) {
+      throw new Error('Type not found')
+    }
+
+    const typeId = def.id
+    const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
+    const [, start] = destructureTreeKey(key)
+
+    const block = this.verifTree.getBlock(key)
+    if (!block) {
+      throw new Error('Block not found')
+    }
+
+    loadBlock(this, this.schemaTypesParsedById[typeId], start)
   }
 
   sortIndexes: {
