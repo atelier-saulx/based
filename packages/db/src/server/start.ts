@@ -15,6 +15,7 @@ import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
+import {loadBlock} from './blocks.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -36,6 +37,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   db.dbCtxExternal = native.start()
 
   let writelog: Writelog = null
+  let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
   try {
     writelog = JSON.parse(
       (await readFile(join(path, WRITELOG_FILE))).toString(),
@@ -49,25 +51,31 @@ export async function start(db: DbServer, opts: StartOpts) {
       throw e
     }
 
-    // Load all range dumps
-    for (const typeId in writelog.rangeDumps) {
-      const dumps = writelog.rangeDumps[typeId]
-      for (const dump of dumps) {
-        const fname = dump.file
-        if (fname?.length > 0) {
-          try {
-            native.loadBlock(join(path, fname), db.dbCtxExternal)
-          } catch (e) {
-            console.error(e.message)
-          }
-        }
-      }
-    }
-
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
       const s = JSON.parse(schema.toString())
       setSchemaOnServer(db, s)
+    }
+
+    // Load all range dumps
+    for (const typeId in writelog.rangeDumps) {
+      const dumps = writelog.rangeDumps[typeId]
+      const def = db.schemaTypesParsedById[typeId]
+      for (const dump of dumps) {
+        const fname = dump.file
+        if (fname?.length > 0) {
+          if (!def.partial) {
+            try {
+              // Can't use loadBlock() yet because verifTree is not avail
+              native.loadBlock(join(path, fname), db.dbCtxExternal)
+            } catch (e) {
+              console.error(e.message)
+            }
+          } else {
+            partials.push([makeTreeKey(def.id, dump.start), hexToBuf(dump.hash)])
+          }
+        }
+      }
     }
   } catch (err) {
     // TODO In some cases we really should give up!
@@ -80,7 +88,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
-      writelog?.types[def.id]?.blockCapacity || BLOCK_CAPACITY_DEFAULT
+      writelog?.types[def.id]?.blockCapacity || def.blockCapacity || BLOCK_CAPACITY_DEFAULT
 
     foreachBlock(
       db,
@@ -90,6 +98,11 @@ export async function start(db: DbServer, opts: StartOpts) {
         db.verifTree.update(mtKey, hash)
       },
     )
+  }
+
+  // Insert partials to make the hash match
+  for (const [key, hash] of partials) {
+    db.verifTree.update(key, hash, false)
   }
 
   if (writelog?.hash) {
