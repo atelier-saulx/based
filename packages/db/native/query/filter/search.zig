@@ -68,6 +68,7 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         // | 2      | weight    | 1           | Field weight value                   |
         // | 3      | start     | 2           | Start position in the query (u16)    |
         // | 5      | lang      | 1           | Language identifier                  |
+        // | 6      | fallback  | 4           | Language fallback                    |
 
         const sLen = read(u16, searchBuf, 1);
         const words = read(u8, searchBuf, 3);
@@ -78,7 +79,7 @@ pub fn createSearchCtx(comptime isVector: bool, searchBuf: []u8) SearchCtx(isVec
         while (j < fields.len) {
             const weight = fields[j + 2];
             totalWeights += weight;
-            j += 6;
+            j += 10;
             totalfields += 1;
         }
         return .{
@@ -197,7 +198,7 @@ fn resultMatcher(
             d = nd;
         }
     }
-    if (@reduce(.Xor, matches) == false) {
+    if (simd.countElementsWithValue(matches, true) != 1) {
         var p: usize = index - i + 1;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
@@ -219,16 +220,17 @@ pub fn strSearch(
     value: []u8,
     query: []u8,
 ) u8 {
-    var i: usize = 1;
+    var i: usize = 0;
     const l = value.len;
     const ql = query.len;
     const q1 = query[0];
     const q2 = query[0] - 32;
     var d: u8 = 10;
     if (l < vectorLen) {
-        while (i < l - 1) : (i += 1) {
-            if ((value[i] == q1 or value[i] == q2) and (i == 1 or isSeparator(value[i - 1]))) {
-                if (i + ql - 1 > l) {
+        while (i < l) : (i += 1) {
+            // needs to start at 0...
+            if ((value[i] == q1 or value[i] == q2) and (i == 0 or isSeparator(value[i - 1]))) {
+                if (i + ql > l) {
                     return d;
                 }
                 const nd = hamming(value, i, query);
@@ -261,6 +263,7 @@ pub fn strSearch(
             }
         }
     }
+
     while (i < l - 1) : (i += 1) {
         if ((value[i + 1] == q1 or value[i + 1] == q2) and isSeparator(value[i])) {
             if (i + ql - 1 > l) {
@@ -274,6 +277,7 @@ pub fn strSearch(
             }
         }
     }
+
     return d;
 }
 
@@ -282,6 +286,7 @@ pub fn strSearchCompressed(
     query: []u8,
     d: *u8,
 ) bool {
+    // this nessecary :/ ?
     const score = strSearch(value, query);
     if (score < d.*) {
         d.* = score;
@@ -332,7 +337,7 @@ pub fn search(
         p += qLen + 2;
         j = 0;
         bestScore = 255;
-        fieldLoop: while (j < fl) : (j += 6) {
+        fieldLoop: while (j < fl) : (j += 10) {
             const field = ctx.fields[j];
             const prop: Prop = @enumFromInt(ctx.fields[j + 1]);
             const penalty = ctx.fields[j + 2];
@@ -377,7 +382,8 @@ pub fn search(
                             }
                         }
                     } else {
-                        const s = db.getTextFromValue(value, code);
+                        const fallbacks = ctx.fields[j + 6];
+                        const s = if (fallbacks > 0) db.getTextFromValueFallback(value, code, ctx.fields[j + 7 .. j + 7 + fallbacks]) else db.getTextFromValue(value, code);
                         if (s.len > 0) {
                             _ = getScore(s, query, &score, penalty);
                             if (score < bestScore) {

@@ -104,7 +104,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             op,
             prop,
             value,
-            query[0..query.len - 2 -  query[query.len - 1]],
+            query[0 .. query.len - 2 - query[query.len - 1]],
             mainLen,
         )) {
             pass = false;

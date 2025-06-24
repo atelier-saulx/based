@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/index.js'
 import test from './shared/test.js'
 
 await test('textFallback', async (t) => {
@@ -73,30 +74,36 @@ await test('textFallback', async (t) => {
   // false (block all fallbacks) or lang fallback
   await db.query('project').locale('nl').get().inspect(10)
 
-  await db
-    .query('project')
-    .locale('nl')
-    .filter('title', 'has', 'English')
-    .get()
-    .inspect(10)
+  deepEqual(
+    await db
+      .query('project')
+      .locale('nl')
+      .include('title')
+      .filter('title', 'has', 'English')
+      .get(),
+    [
+      {
+        id: 4,
+        title: 'English house!',
+      },
+    ],
+    'Filter /w fallback',
+  )
 
-  // Filter fun with text italy
-
-  // when over range - this breaks with dirty ranges
-  // this breaks schema as well
-  // for (let i = 0; i < 1e6; i++) {
-  //   db.create(
-  //     'project',
-  //     {
-  //       title: 'b',
-  //       abstract: 'a',
-  //       description: 'c',
-  //     },
-  //     { locale: 'nl' },
-  //   )
-  // }
-
-  // await db.drain()
-
-  // await db.query('project').range(0, 1e6).get().inspect(1)
+  deepEqual(
+    await db
+      .query('project')
+      .locale('nl')
+      .include('title')
+      .search('English', 'title')
+      .get(),
+    [
+      {
+        id: 4,
+        title: 'English house!',
+        $searchScore: 0,
+      },
+    ],
+    'Search',
+  )
 })

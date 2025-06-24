@@ -31,7 +31,7 @@ pub inline fn restVectorMatch(
     }
     if (j == ql) {
         return 2;
-    } else if (@reduce(.Xor, matches) == false) {
+    } else if (simd.countElementsWithValue(matches, true) != 1) {
         var p: usize = index - i;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {

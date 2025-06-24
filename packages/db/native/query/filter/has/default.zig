@@ -50,7 +50,7 @@ pub fn default(value: []const u8, query: []const u8) bool {
             }
             if (j == ql) {
                 return true;
-            } else if (@reduce(.Xor, matches) == false) {
+            } else if (simd.countElementsWithValue(matches, true) != 1) {
                 var p: usize = index - i;
                 while (p < vectorLen) : (p += 1) {
                     if (matches[p]) {

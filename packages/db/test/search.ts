@@ -213,6 +213,18 @@ await test('compressed', async (t) => {
   equal(
     await db
       .query('article')
+      .search('giraffe first', { body: 0, title: 1 })
+      .include('id', 'date', 'title', 'body')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search "giraffe first"',
+  )
+
+  equal(
+    await db
+      .query('article')
       .search('first', { body: 0, title: 1 })
       .include('id', 'date', 'title', 'body')
       .sort('date')
@@ -452,5 +464,42 @@ await test('like filter mbs', async (t) => {
         .get()
     ).length,
     1,
+  )
+})
+
+await test('giraffe first', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      article: {
+        props: {
+          date: { type: 'uint32' },
+          title: { type: 'string' },
+          body: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  await db.create('article', {
+    title: 'Derp derp ',
+    body: 'Mr giraffe first',
+  })
+
+  equal(
+    await db
+      .query('article')
+      .search('giraffe first', { body: 0, title: 1 })
+      .include('id', 'date', 'title', 'body')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.length),
+    1,
+    'Search "giraffe first"',
   )
 })

@@ -51,6 +51,7 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     searchIncorrecQueryValue(def, q)
     q = ''
   }
+
   const x = q.toLowerCase().normalize('NFKD').trim().split(' ')
   for (const s of x) {
     if (s) {
@@ -76,9 +77,11 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     fields: [],
     isVector: false,
   }
+
   if (typeof s === 'string') {
     s = [s]
   }
+
   if (!s) {
     s = {}
     for (const k in def.props) {
@@ -95,16 +98,19 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     }
     s = x
   }
+
   for (const key in s) {
     let prop = def.props[key]
     let lang = def.lang.lang
+    let fallback = def.lang.fallback
     if (!prop) {
       if (key.includes('.')) {
         const k = key.split('.')
         prop = def.props[k.slice(0, -1).join('.')]
         if (prop && prop.typeIndex === TEXT) {
           lang = langCodesMap.get(k[k.length - 1])
-          // incorrect LANG
+          fallback = []
+          // handle incorrect LANG
         } else {
           prop = searchDoesNotExist(def, key, false)
         }
@@ -115,11 +121,19 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
       searchIncorrectType(def, prop)
     }
-    def.search.size += 6
+
+    def.search.size += 10
+
+    if (fallback.length > 3) {
+      // Max 4 lang fallback size (tmp)
+      console.warn('Search has a max of 4 lang fallbacks!')
+      fallback = fallback.slice(0, 3)
+    }
+
     def.search.fields.push({
       typeIndex: prop.typeIndex,
       weight: s[key],
-      lang: lang,
+      lang: { lang, fallback },
       field: prop.prop,
       start: prop.start ?? 0, // also need lang ofc if you have start
     })
@@ -172,6 +186,8 @@ export const searchToBuffer = (search: QueryDefSearch) => {
     | 2      | weight    | 1           | Field weight value                   |
     | 3      | start     | 2           | Start position in the query (u16)    |
     | 5      | lang      | 1           | Language identifier                  |
+    | 6      | fallbackL | 1           | Language fallback size               |
+    | 7      | fallback  | 3           | Language fallback                    |
 
     ### Notes:
     - The number of field entries is inferred from the total packet size.
@@ -188,15 +204,20 @@ export const searchToBuffer = (search: QueryDefSearch) => {
       return a.weight - b.weight
     })
     // @ts-ignore
-    for (let i = 0; i < search.fields.length * 6; i += 6) {
+    for (let i = 0; i < search.fields.length * 10; i += 10) {
       // @ts-ignore
-      const f = search.fields[Math.floor(i / 6)]
+      const f = search.fields[Math.floor(i / 10)]
       result[i + offset] = f.field
       result[i + offset + 1] = f.typeIndex
       result[i + offset + 2] = f.weight
       result[i + offset + 3] = f.start
       result[i + offset + 4] = f.start >>> 8
-      result[i + offset + 5] = f.lang
+      // fallback
+      result[i + offset + 5] = f.lang.lang
+      result[i + offset + 6] = f.lang.fallback.length
+      for (let j = 0; j < f.lang.fallback.length; j++) {
+        result[i + j + offset + 7] = f.lang.fallback[j]
+      }
     }
     return result
   }

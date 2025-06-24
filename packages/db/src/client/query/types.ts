@@ -66,7 +66,7 @@ export type QueryDefSearch =
         weight: number
         field: number
         start: number
-        lang: LangCode
+        lang: { lang: LangCode; fallback: LangCode[] }
         typeIndex: number
       }[]
     }
