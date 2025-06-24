@@ -49,6 +49,7 @@ inline fn hasInner(
         return like.vector(vecAligned, query);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         if (value[1] == @intFromEnum(Compression.compressed)) {
+            std.debug.print("yo \n", .{});
             if (!decompress(void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
             }

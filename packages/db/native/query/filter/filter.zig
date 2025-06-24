@@ -245,7 +245,7 @@ pub fn filter(
                         var f: usize = 0;
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            std.debug.print("yo?  {any} {any} \n", .{ query[0 .. query.len - 2], fallBackSize });
+                            std.debug.print("yo?  {any} {any} {any} \n", .{ query[0 .. query.len - 2], fallBackSize, s[0..10] });
                             if (!runCondition(query[0 .. query.len - 2], s)) {
                                 f += 1;
                             } else {

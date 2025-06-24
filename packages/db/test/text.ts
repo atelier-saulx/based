@@ -87,6 +87,7 @@ await test('simple', async (t) => {
     .include('id', 'fun')
     .filter('fun', 'has', 'italy', { lowerCase: true })
     .get()
+    .inspect()
 
   deepEqual(
     result.toObject(),
