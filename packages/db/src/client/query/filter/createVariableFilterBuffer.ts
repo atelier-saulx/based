@@ -63,19 +63,11 @@ const parseValue = (
       const fallbacksSize = lang.lang === 0 ? 0 : lang.fallback.length
       const tmp = new Uint8Array(val.byteLength + 2 + fallbacksSize)
       tmp.set(val)
-
-      // fallback size query[query.len - 1]
-      // langcode [len - 2]
-      // fallbacks [len - (2 + fallbck size)]
-      // handle query
-      // if (ctx.)
       tmp[tmp.byteLength - 1] = fallbacksSize
       tmp[tmp.byteLength - 2] = lang.lang
       for (let i = 0; i < fallbacksSize; i++) {
         tmp[tmp.byteLength - 2 - fallbacksSize + i] = lang.fallback[i]
       }
-      console.log('flap', { tmp, fallbacksSize })
-
       val = tmp
     }
   }
@@ -139,10 +131,10 @@ export const createVariableFilterBuffer = (
         prop.typeIndex !== VECTOR
       ) {
         if (prop.typeIndex === TEXT) {
-          const crc = crc32(val.slice(0, -1))
-          const len = val.byteLength - 1
-          const v = new Uint8Array(9)
-
+          const fbLen = 2 + val[val.byteLength - 1]
+          const crc = crc32(val.slice(0, -fbLen))
+          const len = val.byteLength - fbLen
+          const v = new Uint8Array(8 + fbLen)
           v[0] = crc
           v[1] = crc >>> 8
           v[2] = crc >>> 16
@@ -151,8 +143,9 @@ export const createVariableFilterBuffer = (
           v[5] = len >>> 8
           v[6] = len >>> 16
           v[7] = len >>> 24
-          v[8] = val[val.length - 1]
-
+          for (let i = 0; i < fbLen; i++) {
+            v[v.byteLength - (i + 1)] = val[val.byteLength - (i + 1)]
+          }
           parsedCondition = writeVarFilter(mode, v, ctx, prop, 0, 0)
         } else {
           parsedCondition = createFixedFilterBuffer(

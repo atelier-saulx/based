@@ -30,8 +30,6 @@
     "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
     "build-release": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release)",
     "publish": "sh scripts/publish.sh",
-    "test": "cd packages/client && npm run test",
-    "testSubs": "cd packages/subs && npm run test",
     "clean": "(cd packages/db && npm run clean) && rimraf packages/analytics/dist && rimraf packages/analytics/node_modules && rimraf ./node_modules",
     "knip": "knip"
   },

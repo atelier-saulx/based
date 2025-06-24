@@ -245,8 +245,7 @@ pub fn filter(
                         var f: usize = 0;
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            std.debug.print("yo?  {any} {any} {any} \n", .{ query[0 .. query.len - 2], fallBackSize, s[0..10] });
-                            if (!runCondition(query[0 .. query.len - 2], s)) {
+                            if (!runCondition(query, s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -262,12 +261,12 @@ pub fn filter(
                             lang,
                             query[query.len - 2 - fallBackSize .. query.len - 2],
                         );
-                        if (s.len == 0 or !runCondition(query[0..(query.len - 2 - fallBackSize)], s)) {
+                        if (s.len == 0 or !runCondition(query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
                         const s = db.getTextFromValue(value, lang);
-                        if (s.len == 0 or !runCondition(query[0..(query.len - 2 - fallBackSize)], s)) {
+                        if (s.len == 0 or !runCondition(query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }

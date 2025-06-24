@@ -81,7 +81,6 @@ await test('simple', async (t) => {
     .get()
   deepEqual(result.toObject(), [], 'Filter fun with non-existent text')
 
-  console.log('search each lang!')
   result = await db
     .query('dialog')
     .include('id', 'fun')

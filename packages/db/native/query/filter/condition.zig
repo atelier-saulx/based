@@ -61,15 +61,9 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
 
     const isText: bool = prop == Prop.TEXT;
 
-    if (isText and valueSize > q.len - 11 + i) {
-        std.debug.print("hello\n", .{});
-
-        valueSize = @as(u32, @intCast(q.len)) - 11 - @as(u32, @intCast(i));
-    }
-
     const op: Op = @enumFromInt(q[i + 10]);
     const next = i + 11 + valueSize;
-    const query = q[i + 11 .. next];
+    var query = q[i + 11 .. next];
     var value: []u8 = undefined;
     var pass = true;
     if (mainLen != 0) {
@@ -80,9 +74,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
 
     if (op == Op.equal) {
         if (isText) {
-            // this is here and not in fixed check because it has the lang code at then end
             valueSize = read(u32, query, 4);
-            // - a lot more things...
             if (value.len - 6 != valueSize) {
                 pass = false;
             }
@@ -106,6 +98,17 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
                 }
             }
         }
+    } else if (isText) {
+        if (!has.has(
+            false,
+            op,
+            prop,
+            value,
+            query[0..query.len - 2 -  query[query.len - 1]],
+            mainLen,
+        )) {
+            pass = false;
+        }
     } else if (!has.has(
         false,
         op,
@@ -114,10 +117,9 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         query,
         mainLen,
     )) {
-        std.debug.print("hello??? {any} '{s}'\n", .{ value[0], query });
-
         pass = false;
     }
+
     return .{ next, pass };
 }
 

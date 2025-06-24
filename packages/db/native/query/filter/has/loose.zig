@@ -42,7 +42,8 @@ pub inline fn restVectorMatch(
                 while (j < ql) : (j += 1) {
                     const v = value[p + i + j];
                     const q = query[j];
-                    if ((v != q)) {
+                    // and v != (q - 32) ?
+                    if (v != q and v != (q - 32)) {
                         break;
                     }
                 }
@@ -61,6 +62,7 @@ pub fn loose(value: []const u8, query: []const u8) bool {
     const ql = query.len;
     const q1 = query[0];
     const q2 = q1 - 32;
+
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
             if (value[i] == q1 or value[i] == q2) {
@@ -80,9 +82,9 @@ pub fn loose(value: []const u8, query: []const u8) bool {
         }
         return false;
     }
+
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
     const queryVectorCaptial: @Vector(vectorLen, u8) = @splat(q2);
-
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;

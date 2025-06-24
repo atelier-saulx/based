@@ -29,6 +29,7 @@ inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
             }
         };
     }
+
     return struct {
         pub fn func(value: []u8, query: []u8) bool {
             return compare(value, query);
@@ -49,11 +50,10 @@ inline fn hasInner(
         return like.vector(vecAligned, query);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         if (value[1] == @intFromEnum(Compression.compressed)) {
-            std.debug.print("yo \n", .{});
             if (!decompress(void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
             }
-        } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
+        } else if (!orCompare(isOr, compare).func(value[2..value.len - 4], query)) {
             return false;
         }
     } else if (!orCompare(isOr, compare).func(value, query)) {
