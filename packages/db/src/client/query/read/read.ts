@@ -81,23 +81,6 @@ const readAggregate = (
             agg.type === AggregateType.COUNT
           ) {
             val = readUint32(result, agg.resultPos + i)
-          } else if (
-            agg.type == AggregateType.STDDEV ||
-            agg.type == AggregateType.VARIANCE ||
-            agg.type == AggregateType.AVERAGE
-          ) {
-            val = readDoubleLE(result, agg.resultPos + i)
-          } else if (
-            agg.propDef.typeIndex === TIMESTAMP ||
-            agg.propDef.typeIndex === NUMBER
-          ) {
-            val = readDoubleLE(result, agg.resultPos + i)
-          } else if (
-            agg.propDef.typeIndex === UINT32 ||
-            agg.propDef.typeIndex === UINT16 ||
-            agg.propDef.typeIndex === UINT8
-          ) {
-            val = readUint32(result, agg.resultPos + i)
           } else {
             val = readDoubleLE(result, agg.resultPos + i)
           }

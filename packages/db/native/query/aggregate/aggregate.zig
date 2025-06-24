@@ -8,6 +8,19 @@ const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
 
+fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
+    return switch (propType) {
+        types.Prop.UINT8 => @as(f64, @floatFromInt(buffer[offset])),
+        types.Prop.INT8 => @as(f64, @floatFromInt(buffer[offset])),
+        types.Prop.UINT16 => @as(f64, @floatFromInt(read(u16, buffer, offset))),
+        types.Prop.INT16 => @as(f64, @floatFromInt(read(i16, buffer, offset))),
+        types.Prop.UINT32 => @as(f64, @floatFromInt(read(u32, buffer, offset))),
+        types.Prop.INT32 => @as(f64, @floatFromInt(read(i32, buffer, offset))),
+        types.Prop.NUMBER => read(f64, buffer, offset),
+        else => undefined,
+    };
+}
+
 pub inline fn execAgg(
     aggPropDef: []u8,
     accumulatorField: []u8,
@@ -33,13 +46,13 @@ pub inline fn execAgg(
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
-            writeInt(i64, accumulatorField, resultPos, @max(if (hadAccumulated.*) read(i64, accumulatorField, resultPos) else std.math.minInt(i64), value[start]));
+            writeInt(f64, accumulatorField, resultPos, @max(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else std.math.minInt(i64), microbufferToF64(propType, value, start)));
         } else if (aggType == aggregateTypes.AggType.MIN) {
-            writeInt(i64, accumulatorField, resultPos, @min(if (hadAccumulated.*) read(i64, accumulatorField, resultPos) else std.math.maxInt(i64), value[start]));
+            writeInt(f64, accumulatorField, resultPos, @min(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else std.math.maxInt(i64), microbufferToF64(propType, value, start)));
         } else if (aggType == aggregateTypes.AggType.SUM) {
-            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + @as(f64, @floatFromInt(value[start])));
+            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + microbufferToF64(propType, value, start));
         } else if (aggType == aggregateTypes.AggType.AVERAGE) {
-            const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
+            const val = microbufferToF64(propType, value, start);
 
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -52,7 +65,7 @@ pub inline fn execAgg(
         } else if (aggType == aggregateTypes.AggType.STDDEV or
             aggType == aggregateTypes.AggType.VARIANCE)
         {
-            const val: f64 = if (propType == types.Prop.UINT32) @floatFromInt(read(u32, value, start)) else if (propType == types.Prop.UINT8) @floatFromInt(value[start]) else 0;
+            const val = microbufferToF64(propType, value, start);
 
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
