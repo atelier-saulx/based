@@ -96,19 +96,6 @@ pub fn Size(p: Prop) u8 {
     }
 }
 
-pub fn nativeNumberType(p: Prop) type {
-    return switch (p) {
-        Prop.NUMBER => f64,
-        Prop.INT8 => i8,
-        Prop.UINT8 => u8,
-        Prop.UINT32 => u32,
-        Prop.INT32 => i32,
-        Prop.INT16 => i16,
-        Prop.UINT16 => u16,
-        else => noreturn,
-    };
-}
-
 pub const RefOp = enum(u8) {
     OVERWRITE = 0,
     ADD = 1,
