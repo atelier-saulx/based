@@ -84,12 +84,13 @@ pub inline fn finalizeGroupResults(
                 const accumulatorPos = read(u16, aggPropDef, j);
                 j += 2;
 
-                if (aggType == aggregateTypes.AggType.COUNT or
-                    aggType == aggregateTypes.AggType.SUM or
+                if (aggType == aggregateTypes.AggType.COUNT) {
+                    copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
+                } else if (aggType == aggregateTypes.AggType.SUM or
                     aggType == aggregateTypes.AggType.MAX or
                     aggType == aggregateTypes.AggType.MIN)
                 {
-                    copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
+                    copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
                 } else if (aggType == aggregateTypes.AggType.AVERAGE) {
                     const count = read(u64, accumulatorField, accumulatorPos);
                     if (count > 1) {
