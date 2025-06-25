@@ -183,9 +183,9 @@ void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, vo
     selva_expire_tick(&db->expiring, &ctx, now);
 }
 
-struct SelvaDb *selva_db_create(void)
+
+static uint32_t te_slab_size(void)
 {
-    struct SelvaDb *db = selva_calloc(1, sizeof(*db));
     const size_t te_size = sizeof(struct SelvaTypeEntry);
     uint32_t slab_size = (1'048'576 / te_size) * te_size;
 
@@ -197,7 +197,14 @@ struct SelvaDb *selva_db_create(void)
     slab_size |= slab_size >> 16;
     slab_size++;
 
-    mempool_init(&db->types.pool, slab_size, te_size, alignof(struct SelvaTypeEntry));
+    return slab_size;
+}
+
+struct SelvaDb *selva_db_create(void)
+{
+    struct SelvaDb *db = selva_calloc(1, sizeof(*db));
+
+    mempool_init(&db->types.pool, te_slab_size(), sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
     ref_save_map_init(&db->schema.ref_save_map);
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
