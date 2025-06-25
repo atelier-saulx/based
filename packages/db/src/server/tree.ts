@@ -174,7 +174,7 @@ export function foreachBlock(
   }
 }
 
-export async function foreachDirtyBlock(
+export function foreachDirtyBlock(
   db: DbServer,
   cb: (mtKey: number, typeId: number, start: number, end: number) => void,
 ) {

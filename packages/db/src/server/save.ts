@@ -86,7 +86,7 @@ export function save(
         )
       }
     } else {
-      void foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
+      foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
     }
 
     db.dirtyRanges.clear()

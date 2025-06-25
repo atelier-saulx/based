@@ -161,7 +161,7 @@ export const migrate = async (
       if (server.dirtyRanges.size) {
         rangesToMigrate = []
         i = 0
-        void foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
+        foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
           rangesToMigrate.push({
             typeId,
             start,
