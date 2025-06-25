@@ -5,9 +5,11 @@ import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   VerifTree,
-  foreachBlock,
   makeTreeKey,
 } from './tree.js'
+import {
+  foreachBlock,
+} from './blocks.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
@@ -15,7 +17,6 @@ import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
-import {loadBlock} from './blocks.js'
 
 export type StartOpts = {
   clean?: boolean

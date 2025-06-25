@@ -6,7 +6,8 @@ import {
   receiveMessageOnPort,
 } from 'node:worker_threads'
 import native from '../../native.js'
-import { destructureTreeKey, foreachDirtyBlock } from '../tree.js'
+import { destructureTreeKey } from '../tree.js'
+import { foreachDirtyBlock } from '../blocks.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
 import { DbSchema } from '../../schema.js'

@@ -5,10 +5,12 @@ import { join } from 'node:path'
 import {
   VerifTree,
   destructureTreeKey,
+} from './tree.js'
+import {
+  saveBlock,
   foreachBlock,
   foreachDirtyBlock,
-} from './tree.js'
-import { saveBlock } from './blocks.js'
+} from './blocks.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
