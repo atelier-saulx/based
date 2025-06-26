@@ -1,5 +1,5 @@
 import { DbServer } from './index.js'
-import { DbWorker } from './DbWorker.js'
+import { QueryWorker } from './QueryWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -123,7 +123,7 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   db.workers = []
   for (let i = 0; i < queryThreads; i++) {
-    db.workers.push(new DbWorker(address, db, i))
+    db.workers.push(new QueryWorker(address, db, i))
   }
 
   if (!opts?.hosted) {

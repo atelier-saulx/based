@@ -13,7 +13,7 @@ import { readUint16, readUint32, readUint64 } from '@saulx/utils'
 import { QueryType } from '../client/query/types.js'
 import { strictSchemaToDbSchema } from './schema.js'
 import { SchemaChecksum } from '../schema.js'
-import { DbWorker } from './DbWorker.js'
+import { QueryWorker } from './QueryWorker.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -45,7 +45,7 @@ export class DbServer extends DbShared {
   fileSystemPath: string
   verifTree: VerifTree
   dirtyRanges = new Set<number>()
-  workers: DbWorker[] = []
+  workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
   modifyQueue: Uint8Array[] = []
