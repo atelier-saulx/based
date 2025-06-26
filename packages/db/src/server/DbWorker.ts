@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-export class DbWorker {
+export abstract class DbWorker {
   constructor(address: BigInt, db: DbServer, workerName: string) {
     const { port1, port2 } = new MessageChannel()
 
