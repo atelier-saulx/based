@@ -4,7 +4,7 @@ import { readUint64 } from '@saulx/utils'
 
 export class QueryWorker extends DbWorker {
   constructor(address: BigInt, db: DbServer, workerIndex: number) {
-    super(address, db, 'worker.js')
+    super(address, db, 'query_worker.js')
 
     this.worker.on('exit', (code) => {
       if (!this.db.stopped) {
