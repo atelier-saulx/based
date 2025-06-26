@@ -63,7 +63,6 @@ export abstract class DbWorker {
   readyPromise: Promise<true>
 
   callback = (resolve: (x: any) => any) => {
-    this.db.processingQueries++
     this.resolvers.push(resolve)
   }
 
