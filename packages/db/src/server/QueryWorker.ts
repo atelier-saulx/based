@@ -4,19 +4,10 @@ import { readUint64 } from '@saulx/utils'
 
 export class QueryWorker extends DbWorker {
   constructor(address: BigInt, db: DbServer, workerIndex: number) {
-    super(address, db, 'query_worker.js')
-
-    this.worker.on('exit', (code) => {
-      if (!this.db.stopped) {
-        console.info('unexpected exit query worker with code:', code)
-        const err = new Error('Worker could not process query')
-        for (const resolve of this.resolvers) {
-          resolve(err)
-        }
-        this.resolvers = []
-        this.db.workers[workerIndex] = new QueryWorker(address, db, workerIndex)
-      }
-    })
+    const onExit = (_code: number) => {
+      this.db.workers[workerIndex] = new QueryWorker(address, db, workerIndex)
+    }
+    super(address, db, onExit, 'query_worker.js')
 
     this.channel.on('message', (buf) => {
       this.resolvers.shift()(new Uint8Array(buf))
@@ -29,6 +20,7 @@ export class QueryWorker extends DbWorker {
     if (schemaChecksum !== this.db.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
     }
+
     this.channel.postMessage(buf)
     return new Promise(this.callback)
   }

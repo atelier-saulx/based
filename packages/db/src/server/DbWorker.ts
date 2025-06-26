@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export abstract class DbWorker {
-  constructor(address: BigInt, db: DbServer, workerName: string) {
+  constructor(address: BigInt, db: DbServer, onExit: (code: number) => void, workerName: string) {
     const { port1, port2 } = new MessageChannel()
 
     this.db = db
@@ -37,6 +37,23 @@ export abstract class DbWorker {
         console.error('error terminating query worker:', err)
       })
     })
+
+    this.worker.on('exit', (code) => {
+      if (!this.db.stopped) {
+        console.info('unexpected exit query worker with code:', code)
+        const err = new Error('Worker could not process query')
+        for (const resolve of this.resolvers) {
+          resolve(err)
+        }
+        this.resolvers = []
+        onExit(code)
+      }
+    })
+
+    // The subclass must do at least this:
+    //this.channel.on('message', (buf) => {
+    //  this.resolvers.shift()(new Uint8Array(buf))
+    //})
   }
 
   db: DbServer
