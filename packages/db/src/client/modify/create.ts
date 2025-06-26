@@ -73,6 +73,7 @@ const appendCreate = (
       ctx.buf.set(def.mainEmpty, ctx.len)
       ctx.len += def.mainLen
     }
+    // add text & string here
   }
 
   if (def.hasSeperateSort) {

@@ -8,6 +8,46 @@ const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
 
+await test('default seperate', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: {
+      en: {},
+    },
+    types: {
+      user: {
+        props: {
+          avatar: {
+            type: 'binary',
+            default: defaultBinary,
+          },
+          name: {
+            type: 'string',
+            default: 'Default Name',
+          },
+        },
+      },
+    },
+  })
+
+  const userId = await db.create('user', {})
+
+  deepEqual(
+    await db.query('user', userId).include('*', '**').get(),
+    {
+      id: userId,
+      name: 'Default Name',
+      avatar: defaultBinary,
+    },
+    'Default name',
+  )
+})
+
 await test('default values for all props in user type', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -46,10 +86,10 @@ await test('default values for all props in user type', async (t) => {
             type: 'json',
             default: defaultJson,
           },
-          // avatar: {
-          //   type: 'binary',
-          //   default: defaultBinary,
-          // },
+          avatar: {
+            type: 'binary',
+            default: defaultBinary,
+          },
           slug: {
             type: 'alias',
             default: 'default-slug',

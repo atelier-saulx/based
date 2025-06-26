@@ -6,34 +6,51 @@ await test('serialize', async (t) => {
   const schema: StrictSchema = {
     types: {
       a: {
-        id: 1,
+        // id: 1,
         props: {
-          derp: {
-            type: 'string',
-          },
-          flap: {
-            type: 'uint32',
-            // validation: (derp: boolean) => {
-            //   return true
-            // },
-          },
+          // x: {
+          //   type: 'number',
+          //   default: 12.123,
+          // },
+          // bla: {
+          //   type: 'binary',
+          //   default: new Uint8Array([1, 2, 3, 4]),
+          // },
           snurp: {
-            type: 'object',
-            props: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-              bla: { type: 'string' },
+            items: {
+              ref: 'a',
+              prop: 'snurp',
             },
-          },
-          gur: { type: 'uint8' },
-          hallo: { type: 'text' },
-          x: {
-            type: 'object',
-            props: {
-              snurf: { type: 'boolean' },
-            },
+            default: [1, 2, 3],
           },
         },
+        //   props: {
+        //     derp: {
+        //       type: 'string',
+        //     },
+        //     flap: {
+        //       type: 'uint32',
+        //       // validation: (derp: boolean) => {
+        //       //   return true
+        //       // },
+        //     },
+        //     snurp: {
+        //       type: 'object',
+        //       props: {
+        //         long: { type: 'number' },
+        //         lat: { type: 'number' },
+        //         bla: { type: 'string' },
+        //       },
+        //     },
+        //     gur: { type: 'uint8' },
+        //     hallo: { type: 'text' },
+        //     x: {
+        //       type: 'object',
+        //       props: {
+        //         snurf: { type: 'boolean' },
+        //       },
+        //     },
+        //   },
       },
     },
   }
@@ -50,7 +67,11 @@ await test('serialize', async (t) => {
 
   const serializedSchema = serialize(schema, true)
 
-  console.log(serializedSchema)
+  console.log(
+    serializedSchema,
+    // @ts-ignore
+    [...serializedSchema].map((v) => [v, String.fromCharCode(v)]),
+  )
   console.dir(deSerialize(serializedSchema), { depth: 10 })
 
   // console.log(serialize(schema, false))

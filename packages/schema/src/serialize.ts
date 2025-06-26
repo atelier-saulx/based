@@ -1,6 +1,12 @@
 import * as deflate from 'fflate'
-import { StrictSchema } from './types.js'
+import { MAX_ID, MIN_ID, StrictSchema } from './types.js'
 import { REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
+import {
+  readDoubleLE,
+  readUint32,
+  writeDoubleLE,
+  writeUint32,
+} from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
 
@@ -12,12 +18,71 @@ type SchemaBuffer = {
 
 let schemaBuffer: SchemaBuffer
 
+// encoding map
+
+const handleSingleValue = (
+  val: any,
+  obj: any,
+  prev: any,
+  fromObject: boolean,
+  key?: string | number,
+) => {
+  const type = typeof val
+  // typed Array - single PROP
+  if (val instanceof Uint8Array) {
+    schemaBuffer.buf[schemaBuffer.len] = 251
+    schemaBuffer.len += 1
+    schemaBuffer.buf[schemaBuffer.len] = val.byteLength
+    schemaBuffer.len += 1
+    schemaBuffer.buf[schemaBuffer.len] = val.byteLength >>> 8
+    schemaBuffer.len += 1
+    schemaBuffer.buf.set(val, schemaBuffer.len)
+    schemaBuffer.len += val.byteLength
+  } else if (type === 'function') {
+    // derp
+  } else if (type === 'object') {
+    // fromObject
+    if (val === null) {
+    } else {
+      if (!fromObject && key === 'props' && obj.type === 'object') {
+        walk(val, obj, prev, true, schemaBuffer)
+      } else {
+        walk(val, obj, prev, fromObject, schemaBuffer)
+      }
+    }
+  } else if (type === 'string') {
+    schemaBuffer.buf[schemaBuffer.len] = 249
+    schemaBuffer.len += 1
+    const sizeIndex = schemaBuffer.len
+    schemaBuffer.len += 2
+    const r = ENCODER.encodeInto(
+      val,
+      schemaBuffer.buf.subarray(schemaBuffer.len),
+    )
+    schemaBuffer.len += r.written
+    schemaBuffer.buf[sizeIndex] = r.written
+    schemaBuffer.buf[sizeIndex + 1] = r.written >>> 8
+  } else if (type === 'number') {
+    if ((val < 4294967295 || val > 0) && val % 1 === 0) {
+      schemaBuffer.buf[schemaBuffer.len] = 252
+      schemaBuffer.len += 1
+      writeUint32(schemaBuffer.buf, val, schemaBuffer.len)
+      schemaBuffer.len += 4
+    } else {
+      schemaBuffer.buf[schemaBuffer.len] = 253
+      schemaBuffer.len += 1
+      writeDoubleLE(schemaBuffer.buf, val, schemaBuffer.len)
+      schemaBuffer.len += 8
+    }
+  }
+}
+
 // 3 level
 // 0 for queries (min)
 // 1 for modify
 // 2 fulls schema
 const walk = (
-  obj,
+  obj: any,
   prev: any,
   prev2: any,
   fromObject: boolean,
@@ -25,6 +90,7 @@ const walk = (
 ) => {
   let start = schemaBuffer.len
 
+  const isArray = Array.isArray(obj)
   // HANDLE ENUM
   const isSchemaProp =
     'type' in obj && (prev2?.type === 'object' || fromObject === false)
@@ -33,59 +99,47 @@ const walk = (
     const typeIndex = TYPE_INDEX_MAP[obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
-    schemaBuffer.buf[schemaBuffer.len++] = 255
+    schemaBuffer.buf[schemaBuffer.len++] = isArray ? 250 : 255
   }
   let sizeIndex = schemaBuffer.len
   schemaBuffer.len += 2
 
-  for (const key in obj) {
-    if (key === 'type' && isSchemaProp) {
-      continue
-    } else {
-      let address = schemaBuffer.dictMap[key]
-      // if len == 1 never from address
-      if (!address) {
-        address = schemaBuffer.len
-        schemaBuffer.len += 1
-        const r = ENCODER.encodeInto(
-          key,
-          schemaBuffer.buf.subarray(schemaBuffer.len),
-        )
-        schemaBuffer.buf[address] = r.written
-        schemaBuffer.len += r.written
-        schemaBuffer.dictMap[key] = address
+  if (isArray) {
+    const len = obj.length
+    for (let j = 0; j < len; j++) {
+      writeUint32(schemaBuffer.buf, j, schemaBuffer.len)
+      schemaBuffer.len += 4
+      handleSingleValue(obj[j], obj, prev, fromObject, j)
+    }
+  } else {
+    for (const key in obj) {
+      if (key === 'type' && isSchemaProp) {
+        continue
       } else {
-        schemaBuffer.buf[schemaBuffer.len] = 0
-        schemaBuffer.len += 1
-        schemaBuffer.buf[schemaBuffer.len] = address
-        schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
-        schemaBuffer.len += 2
-      }
-
-      const val = obj[key]
-      const type = typeof val
-      // typed Array
-      if (Array.isArray(val)) {
-        // derp
-      } else if (type === 'function') {
-        // derp
-      } else if (type === 'object') {
-        // fromObject
-        if (val === null) {
+        let address = schemaBuffer.dictMap[key]
+        // if len == 1 never from address
+        if (!address) {
+          address = schemaBuffer.len
+          schemaBuffer.len += 1
+          const r = ENCODER.encodeInto(
+            key,
+            schemaBuffer.buf.subarray(schemaBuffer.len),
+          )
+          schemaBuffer.buf[address] = r.written
+          schemaBuffer.len += r.written
+          schemaBuffer.dictMap[key] = address
         } else {
-          if (!fromObject && key === 'props' && obj.type === 'object') {
-            walk(val, obj, prev, true, schemaBuffer)
-          } else {
-            walk(val, obj, prev, fromObject, schemaBuffer)
-          }
+          schemaBuffer.buf[schemaBuffer.len] = 0
+          schemaBuffer.len += 1
+          schemaBuffer.buf[schemaBuffer.len] = address
+          schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
+          schemaBuffer.len += 2
         }
-      } else if (type === 'string') {
-        // derp
-      } else if (type === 'number') {
-        // do stuff
+        handleSingleValue(obj[key], obj, prev, fromObject, key)
       }
     }
   }
+
   const size = schemaBuffer.len - start
 
   schemaBuffer.buf[sizeIndex] = size
@@ -119,10 +173,12 @@ export const serialize = (
 
 const decoder = new TextDecoder()
 
+// can just make it non schema specific
 export const deSerializeInner = (
   buf: Uint8Array,
   obj: any,
   start: number,
+  fromArray: boolean,
 ): number => {
   let i = start
   const isSchemaProp = buf[i] === 254
@@ -137,24 +193,59 @@ export const deSerializeInner = (
   i += 2
   const end = size + start
   while (i < end) {
-    let keySize = buf[i]
-    i += 1
-    let key: string
-    if (keySize === 0) {
-      const dictAddress = buf[i] | ((buf[i + 1] << 8) >>> 0)
-      i += 2
-      keySize = buf[dictAddress]
-      key = decoder.decode(
-        buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
-      )
+    let key: string | number
+    if (fromArray) {
+      key = readUint32(buf, i)
+      i += 4
     } else {
-      key = decoder.decode(buf.subarray(i, keySize + i))
-      i += keySize
+      let keySize = buf[i]
+      i += 1
+      if (keySize === 0) {
+        const dictAddress = buf[i] | ((buf[i + 1] << 8) >>> 0)
+        i += 2
+        keySize = buf[dictAddress]
+        key = decoder.decode(
+          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
+        )
+      } else {
+        key = decoder.decode(buf.subarray(i, keySize + i))
+        i += keySize
+      }
     }
 
-    const nest = (obj[key] = {})
-    const fieldSize = deSerializeInner(buf, nest, i)
-    i += fieldSize
+    if (buf[i] == 249) {
+      i += 1
+      const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
+      i += 2
+      obj[key] = decoder.decode(buf.subarray(i, i + size))
+      i += size
+    } else if (buf[i] === 251) {
+      i += 1
+      const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
+      i += 2
+      obj[key] = buf.subarray(i, size + i)
+      i += size
+    } else if (buf[i] === 252) {
+      obj[key] = readUint32(buf, i + 1)
+      i += 5
+    } else if (buf[i] === 253) {
+      obj[key] = readDoubleLE(buf, i + 1)
+      i += 9
+    } else if (buf[i] === 255) {
+      const nest = (obj[key] = {})
+      const fieldSize = deSerializeInner(buf, nest, i, false)
+      i += fieldSize
+    } else if (buf[i] === 250) {
+      const nest = (obj[key] = [])
+      const fieldSize = deSerializeInner(buf, nest, i, true)
+      i += fieldSize
+    } else {
+      console.warn('Invalid value', buf[i], 'skip')
+      // invaid value
+      i += 1
+      const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
+      i += size
+    }
   }
   return i - start
 }
@@ -162,6 +253,6 @@ export const deSerializeInner = (
 export const deSerialize = (buf: Uint8Array): StrictSchema => {
   // if first byte is deflate
   const schema: any = {}
-  deSerializeInner(buf, schema, 0)
+  deSerializeInner(buf, schema, 0, false)
   return schema as StrictSchema
 }
