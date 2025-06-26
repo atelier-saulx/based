@@ -5,10 +5,12 @@ import { join } from 'node:path'
 import {
   VerifTree,
   destructureTreeKey,
+} from './tree.js'
+import {
+  saveBlock,
   foreachBlock,
   foreachDirtyBlock,
-} from './tree.js'
-import { saveBlock } from './blocks.js'
+} from './blocks.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@saulx/utils'
@@ -31,6 +33,16 @@ export type Writelog = {
   }
 }
 
+function hasPartialTypes(db: DbServer): boolean {
+  let res = false
+
+  for (let id in db.schemaTypesParsedById) {
+    res = res || db.schemaTypesParsedById[id].partial
+  }
+
+  return res
+}
+
 export function save<T extends boolean>(
   db: DbServer,
   sync?: T,
@@ -44,6 +56,11 @@ export function save(
   skipMigrationCheck = false,
 ): void | Promise<void> {
   if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
+    return
+  }
+
+  if (forceFullDump && hasPartialTypes(db)) {
+    db.emit('error', 'forceFullDump is not allowed with partial types')
     return
   }
 
@@ -67,7 +84,7 @@ export function save(
       db.dbCtxExternal,
     )
     if (err) {
-      console.error(`Save common failed: ${err}`)
+      db.emit('error', `Save common failed: ${err}`)
       // Return ?
     }
 
@@ -86,7 +103,7 @@ export function save(
         )
       }
     } else {
-      void foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
+      foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
     }
 
     db.dirtyRanges.clear()
@@ -137,15 +154,14 @@ export function save(
             resolve(v)
           })
           .catch((err) => {
-            console.error('Save: writing writeLog failed')
-            db.emit('info', `Save: writing writeLog failed ${err.message}`)
+            db.emit('error', `Save: writing writeLog failed ${err.message}`)
             db.saveInProgress = false
             reject(err)
           })
       })
     }
   } catch (err) {
-    db.emit('info', `Save failed ${err.message}`)
+    db.emit('error', `Save failed ${err.message}`)
     db.saveInProgress = false
     throw err
   }

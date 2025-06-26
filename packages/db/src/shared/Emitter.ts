@@ -3,6 +3,7 @@ import { DbSchema } from '../schema.js'
 export type EventMap = {
   schema: DbSchema
   info: string
+  error: string
 }
 
 export type Event = keyof EventMap
