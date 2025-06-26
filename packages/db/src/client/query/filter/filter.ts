@@ -7,6 +7,7 @@ import {
   ID_FIELD_DEF,
   TEXT,
   REFERENCE,
+  REFERENCES,
 } from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
@@ -95,6 +96,7 @@ export const filterRaw = (
 ): number => {
   const field = filter[0]
   let fieldDef = schema.props[field]
+
   if (!fieldDef) {
     const s = field.split('.')
     if (s.length > 1) {

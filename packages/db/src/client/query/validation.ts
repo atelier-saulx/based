@@ -215,6 +215,29 @@ export const validateFilter = (
       })
       return true
     }
+
+    // map { id: } format for filter
+    const values = f[2]
+    if (Array.isArray(values)) {
+      let hasObject = false
+      for (const v of values) {
+        if (typeof v === 'object' && 'id' in v) {
+          hasObject = true
+          break
+        }
+      }
+      if (hasObject) {
+        f[2] = values.map((v) => {
+          if (typeof v === 'object' && 'id' in v) {
+            return v.id
+          }
+          return v
+        })
+      }
+    } else if (typeof values === 'object' && 'id' in values) {
+      f[2] = values.id
+    }
+
     if (validateVal(def, f, prop.validation)) {
       return true
     }
