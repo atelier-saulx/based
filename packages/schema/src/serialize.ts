@@ -192,9 +192,9 @@ const walk = (
     }
   } else {
     for (const key in obj) {
-      if (isTypes) {
-        schemaBuffer.dictMap[key] = schemaBuffer.len
-      }
+      // if (isTypes) {
+      //   schemaBuffer.dictMap[key] = schemaBuffer.len
+      // }
 
       if (
         opts.readOnly &&
@@ -224,7 +224,7 @@ const walk = (
         schemaBuffer.len += 1
         continue
       }
-      // add this later
+      // Add this later
       // else if (key == 'ref' && typeof obj[key] === 'string' && isFromObj) {
       //   // do something...
       //   console.log('YO ----->', obj)
