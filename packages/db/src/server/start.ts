@@ -25,6 +25,16 @@ export type StartOpts = {
   queryThreads?: number
 }
 
+function startWorkers(db: DbServer, opts: StartOpts) {
+  const queryThreads = opts?.queryThreads ?? availableParallelism()
+  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
+
+  db.workers = []
+  for (let i = 0; i < queryThreads; i++) {
+    db.workers.push(new QueryWorker(address, db, i))
+  }
+}
+
 export async function start(db: DbServer, opts: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
@@ -117,14 +127,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  // start workers
-  const queryThreads = opts?.queryThreads ?? availableParallelism()
-  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
-
-  db.workers = []
-  for (let i = 0; i < queryThreads; i++) {
-    db.workers.push(new QueryWorker(address, db, i))
-  }
+  startWorkers(db, opts)
 
   if (!opts?.hosted) {
     db.unlistenExit = exitHook((signal) => {
@@ -141,9 +144,8 @@ export async function start(db: DbServer, opts: StartOpts) {
     })
   }
 
-  const d = performance.now()
   await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
-  db.emit('info', `Starting workers took ${d}ms`)
+  db.emit('info', 'All workers ready')
 
   // use timeout
   if (db.saveIntervalInSeconds > 0) {
