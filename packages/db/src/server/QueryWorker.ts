@@ -11,6 +11,7 @@ export class QueryWorker extends DbWorker {
   }
 
   override handleMsg(_buf: any): void {
+    this.db.processingQueries--
     this.db.onQueryEnd()
   }
 
