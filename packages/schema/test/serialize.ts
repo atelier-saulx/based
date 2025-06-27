@@ -79,6 +79,7 @@ await test('serialize', async (t) => {
   //   true,
   // )
 
+  // 3 styles => full with meta (title, examples, description), with validation and defaults, readOnly
   const serializedSchema = serialize(schema, true)
 
   console.log(

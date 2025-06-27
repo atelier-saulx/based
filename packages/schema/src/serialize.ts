@@ -1,5 +1,5 @@
 import * as deflate from 'fflate'
-import { MAX_ID, MIN_ID, StrictSchema } from './types.js'
+import { StrictSchema } from './types.js'
 import { REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
@@ -10,10 +10,34 @@ import {
 
 const ENCODER = new TextEncoder()
 
+const UINT8 = 245
+const FALSE = 246
+const TRUE = 247
+const FUNCTION = 248
+const STRING = 249
+const ARRAY = 250
+const BINARY = 251
+const UINT32 = 252
+const FLOAT64 = 253
+const SCHEMA_PROP = 254
+const OBJECT = 255
+
 type SchemaBuffer = {
   buf: Uint8Array
   len: number
   dictMap: Record<string, number>
+}
+
+// Helper to grow the buffer if needed. This is a performance trade-off,
+// happening only when the initial 1MB is insufficient, to prevent overflow.
+const ensureCapacity = (required: number) => {
+  if (schemaBuffer.len + required > schemaBuffer.buf.length) {
+    const newBuf = new Uint8Array(
+      Math.max(schemaBuffer.buf.length * 2, schemaBuffer.len + required),
+    )
+    newBuf.set(schemaBuffer.buf)
+    schemaBuffer.buf = newBuf
+  }
 }
 
 let schemaBuffer: SchemaBuffer
@@ -30,7 +54,8 @@ const handleSingleValue = (
   const type = typeof val
   // typed Array - single PROP
   if (val instanceof Uint8Array) {
-    schemaBuffer.buf[schemaBuffer.len] = 251
+    ensureCapacity(1 + 2 + val.byteLength)
+    schemaBuffer.buf[schemaBuffer.len] = BINARY
     schemaBuffer.len += 1
     schemaBuffer.buf[schemaBuffer.len] = val.byteLength
     schemaBuffer.len += 1
@@ -40,10 +65,13 @@ const handleSingleValue = (
     schemaBuffer.len += val.byteLength
   } else if (type === 'function') {
     const str = val.toString()
-    schemaBuffer.buf[schemaBuffer.len] = 248
+    // Pessimistically assume 4 bytes per char for UTF-8 to be safe.
+    ensureCapacity(1 + 2 + str.length * 4)
+    schemaBuffer.buf[schemaBuffer.len] = FUNCTION
     schemaBuffer.len += 1
     const sizeIndex = schemaBuffer.len
     schemaBuffer.len += 2
+    // encodeInto is much faster as it avoids intermediate allocation.
     const r = ENCODER.encodeInto(
       str,
       schemaBuffer.buf.subarray(schemaBuffer.len),
@@ -62,14 +90,18 @@ const handleSingleValue = (
       }
     }
   } else if (type === 'boolean') {
-    schemaBuffer.buf[schemaBuffer.len] = val ? 247 : 246
+    ensureCapacity(1)
+    schemaBuffer.buf[schemaBuffer.len] = val ? TRUE : FALSE
     schemaBuffer.len += 1
   } else if (type === 'string') {
     // compress if large! (for descriptions etc)
-    schemaBuffer.buf[schemaBuffer.len] = 249
+    // Pessimistically assume 4 bytes per char for UTF-8 to be safe.
+    ensureCapacity(1 + 2 + val.length * 4)
+    schemaBuffer.buf[schemaBuffer.len] = STRING
     schemaBuffer.len += 1
     const sizeIndex = schemaBuffer.len
     schemaBuffer.len += 2
+    // encodeInto is much faster as it avoids intermediate allocation.
     const r = ENCODER.encodeInto(
       val,
       schemaBuffer.buf.subarray(schemaBuffer.len),
@@ -78,13 +110,23 @@ const handleSingleValue = (
     schemaBuffer.buf[sizeIndex] = r.written
     schemaBuffer.buf[sizeIndex + 1] = r.written >>> 8
   } else if (type === 'number') {
-    if ((val < 4294967295 || val > 0) && val % 1 === 0) {
-      schemaBuffer.buf[schemaBuffer.len] = 252
+    const isInt = val % 1 === 0
+
+    if (val < 256 && val > 0 && isInt) {
+      ensureCapacity(2)
+      schemaBuffer.buf[schemaBuffer.len] = UINT8
+      schemaBuffer.len += 1
+      schemaBuffer.buf[schemaBuffer.len] = val
+      schemaBuffer.len += 1
+    } else if ((val < 4294967295 || val > 0) && isInt) {
+      ensureCapacity(5)
+      schemaBuffer.buf[schemaBuffer.len] = UINT32
       schemaBuffer.len += 1
       writeUint32(schemaBuffer.buf, val, schemaBuffer.len)
       schemaBuffer.len += 4
     } else {
-      schemaBuffer.buf[schemaBuffer.len] = 253
+      ensureCapacity(9)
+      schemaBuffer.buf[schemaBuffer.len] = FLOAT64
       schemaBuffer.len += 1
       writeDoubleLE(schemaBuffer.buf, val, schemaBuffer.len)
       schemaBuffer.len += 8
@@ -110,12 +152,13 @@ const walk = (
   const isSchemaProp =
     'type' in obj && (prev2?.type === 'object' || fromObject === false)
 
+  ensureCapacity(1 + 2) // Type byte + size
   if (isSchemaProp) {
-    schemaBuffer.buf[schemaBuffer.len++] = 254
+    schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
     const typeIndex = TYPE_INDEX_MAP[obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
-    schemaBuffer.buf[schemaBuffer.len++] = isArray ? 250 : 255
+    schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
   }
   let sizeIndex = schemaBuffer.len
   schemaBuffer.len += 2
@@ -124,6 +167,7 @@ const walk = (
     const len = obj.length
     // TODO add len makes it faster
     for (let j = 0; j < len; j++) {
+      ensureCapacity(4) // For array index
       writeUint32(schemaBuffer.buf, j, schemaBuffer.len)
       schemaBuffer.len += 4
       handleSingleValue(obj[j], obj, prev, fromObject, j)
@@ -136,6 +180,8 @@ const walk = (
         let address = schemaBuffer.dictMap[key]
         // if len == 1 never from address
         if (!address) {
+          // Pessimistically assume 4 bytes per char for UTF-8 to be safe.
+          ensureCapacity(1 + key.length * 4)
           address = schemaBuffer.len
           schemaBuffer.len += 1
           const r = ENCODER.encodeInto(
@@ -146,11 +192,13 @@ const walk = (
           schemaBuffer.len += r.written
           schemaBuffer.dictMap[key] = address
         } else {
+          ensureCapacity(4) // 0-byte marker + 3-byte address
           schemaBuffer.buf[schemaBuffer.len] = 0
           schemaBuffer.len += 1
           schemaBuffer.buf[schemaBuffer.len] = address
           schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
-          schemaBuffer.len += 2
+          schemaBuffer.buf[schemaBuffer.len + 2] = address >>> 16
+          schemaBuffer.len += 3
         }
         handleSingleValue(obj[key], obj, prev, fromObject, key)
       }
@@ -169,9 +217,8 @@ export const serialize = (
   noCompression: boolean = false,
 ): Uint8Array => {
   if (!schemaBuffer) {
-    // 1mb buffer add check if its large enough else increase
     schemaBuffer = {
-      buf: new Uint8Array(1e6),
+      buf: new Uint8Array(10e3), // 10kb default
       len: 0,
       dictMap: {},
     }
@@ -198,11 +245,10 @@ export const deSerializeInner = (
   fromArray: boolean,
 ): number => {
   let i = start
-  const isSchemaProp = buf[i] === 254
+  const isSchemaProp = buf[i] === SCHEMA_PROP
   i += 1
   if (isSchemaProp) {
     const type = buf[i]
-
     const parsedType = REVERSE_TYPE_INDEX_MAP[type]
     obj.type = parsedType
     i += 1
@@ -219,8 +265,9 @@ export const deSerializeInner = (
       let keySize = buf[i]
       i += 1
       if (keySize === 0) {
-        const dictAddress = buf[i] | ((buf[i + 1] << 8) >>> 0)
-        i += 2
+        const dictAddress =
+          (buf[i] | (buf[i + 1] << 8) | (buf[i + 2] << 16)) >>> 0
+        i += 3
         keySize = buf[dictAddress]
         key = decoder.decode(
           buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
@@ -231,13 +278,17 @@ export const deSerializeInner = (
       }
     }
 
-    if (buf[i] == 246) {
+    if (buf[i] === UINT8) {
+      i += 1
+      obj[key] = buf[i]
+      i += 1
+    } else if (buf[i] === FALSE) {
       i += 1
       obj[key] = false
-    } else if (buf[i] == 247) {
+    } else if (buf[i] === TRUE) {
       i += 1
       obj[key] = true
-    } else if (buf[i] == 248) {
+    } else if (buf[i] === FUNCTION) {
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += 2
@@ -245,35 +296,35 @@ export const deSerializeInner = (
       console.log(fn)
       obj[key] = new Function('payload', 'prop', fn)
       i += size
-    } else if (buf[i] == 249) {
+    } else if (buf[i] === STRING) {
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += 2
       obj[key] = decoder.decode(buf.subarray(i, i + size))
       i += size
-    } else if (buf[i] === 251) {
+    } else if (buf[i] === BINARY) {
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += 2
       obj[key] = buf.subarray(i, size + i)
       i += size
-    } else if (buf[i] === 252) {
+    } else if (buf[i] === UINT32) {
       obj[key] = readUint32(buf, i + 1)
       i += 5
-    } else if (buf[i] === 253) {
+    } else if (buf[i] === FLOAT64) {
       obj[key] = readDoubleLE(buf, i + 1)
       i += 9
-    } else if (buf[i] === 255 || buf[i] === 254) {
+    } else if (buf[i] === OBJECT || buf[i] === SCHEMA_PROP) {
       const nest = (obj[key] = {})
       const fieldSize = deSerializeInner(buf, nest, i, false)
       i += fieldSize
-    } else if (buf[i] === 250) {
+    } else if (buf[i] === ARRAY) {
       const nest = (obj[key] = [])
       const fieldSize = deSerializeInner(buf, nest, i, true)
       i += fieldSize
     } else {
       console.warn('Invalid value type', buf[i], 'skip')
-      // invaid value
+      // Invalid value type
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += size
