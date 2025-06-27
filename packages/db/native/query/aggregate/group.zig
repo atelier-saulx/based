@@ -93,13 +93,9 @@ pub inline fn finalizeGroupResults(
                     copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
                 } else if (aggType == aggregateTypes.AggType.AVERAGE) {
                     const count = read(u64, accumulatorField, accumulatorPos);
-                    if (count > 1) {
-                        const sum = read(f64, accumulatorField, accumulatorPos + 8);
-                        const mean = sum / @as(f64, @floatFromInt(count));
-                        writeInt(f64, resultsField, resultPos, @floatCast(mean));
-                    } else {
-                        writeInt(f64, resultsField, resultPos, 0.0);
-                    }
+                    const sum = read(f64, accumulatorField, accumulatorPos + 8);
+                    const mean = sum / @as(f64, @floatFromInt(count));
+                    writeInt(f64, resultsField, resultPos, @floatCast(mean));
                 } else if (aggType == aggregateTypes.AggType.VARIANCE) {
                     const count = read(u64, accumulatorField, accumulatorPos);
                     if (count > 1) {
