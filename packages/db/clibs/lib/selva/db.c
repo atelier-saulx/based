@@ -229,15 +229,11 @@ static void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te
     }
 }
 
-int selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
+void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start)
 {
-    if (block_i >= te->blocks->len) {
-        return SELVA_EINVAL;
-    }
+    const size_t block_i = selva_node_id2block_i(te->blocks, start);
 
     selva_del_block_unsafe(db, te, block_i);
-
-    return 0;
 }
 
 /**

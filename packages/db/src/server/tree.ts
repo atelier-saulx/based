@@ -1,6 +1,4 @@
-import native from '../native.js'
 import createDbHash from './dbHash.js'
-import { DbServer } from './index.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
@@ -14,7 +12,7 @@ export const makeTreeKey = (typeId: number, start: number) =>
 export const nodeId2Start = (blockCapacity: number, nodeId: number) =>
   ((nodeId - +!(nodeId % blockCapacity)) / blockCapacity) | 0
 
-export const nodeId2BlockI = (nodeId: number, blockCapacity: number) => ((nodeId - 1) - ((nodeId - 1) % blockCapacity)) / blockCapacity
+const nodeId2BlockI = (nodeId: number, blockCapacity: number) => ((nodeId - 1) - ((nodeId - 1) % blockCapacity)) / blockCapacity
 
 export const makeTreeKeyFromNodeId = (
   typeId: number,
@@ -148,46 +146,5 @@ export class VerifTree {
     }
 
     this.#types = newTypes
-  }
-}
-
-export function foreachBlock(
-  db: DbServer,
-  def: SchemaTypeDef,
-  cb: (start: number, end: number, hash: Uint8Array) => void,
-  includeEmptyBlocks: boolean = false
-) {
-  const step = def.blockCapacity
-  for (let start = 1; start <= def.lastId; start += step) {
-    const end = start + step - 1
-    const hash = new Uint8Array(16)
-    const res = native.getNodeRangeHash(
-      def.id,
-      start,
-      end,
-      hash,
-      db.dbCtxExternal,
-    )
-    if (res || includeEmptyBlocks) {
-      cb(start, end, hash)
-    }
-  }
-}
-
-export function foreachDirtyBlock(
-  db: DbServer,
-  cb: (mtKey: number, typeId: number, start: number, end: number) => void,
-) {
-  const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-  for (const typeName in db.schemaTypesParsed) {
-    const type = db.schemaTypesParsed[typeName]
-    const typeId = type.id
-    typeIdMap[typeId] = type
-  }
-
-  for (const mtKey of db.dirtyRanges) {
-    const [typeId, start] = destructureTreeKey(mtKey)
-    const end = start + typeIdMap[typeId].blockCapacity - 1
-    cb(mtKey, typeId, start, end)
   }
 }

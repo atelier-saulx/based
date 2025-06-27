@@ -1,13 +1,16 @@
 import { DbServer } from './index.js'
-import { DbWorker } from './DbWorker.js'
+import { IoWorker } from './IoWorker.js'
+import { QueryWorker } from './QueryWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   VerifTree,
-  foreachBlock,
   makeTreeKey,
 } from './tree.js'
+import {
+  foreachBlock,
+} from './blocks.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
@@ -15,13 +18,24 @@ import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
-import {loadBlock} from './blocks.js'
 
 export type StartOpts = {
   clean?: boolean
   hosted?: boolean
   delayInMs?: number
   queryThreads?: number
+}
+
+function startWorkers(db: DbServer, opts: StartOpts) {
+  const queryThreads = opts?.queryThreads ?? availableParallelism()
+  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
+
+  db.workers = []
+  for (let i = 0; i < queryThreads; i++) {
+    db.workers.push(new QueryWorker(address, db, i))
+  }
+
+  //db.ioWorker = new IoWorker(address, db)
 }
 
 export async function start(db: DbServer, opts: StartOpts) {
@@ -116,14 +130,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  // start workers
-  const queryThreads = opts?.queryThreads ?? availableParallelism()
-  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
-
-  db.workers = []
-  for (let i = 0; i < queryThreads; i++) {
-    db.workers.push(new DbWorker(address, db, i))
-  }
+  startWorkers(db, opts)
 
   if (!opts?.hosted) {
     db.unlistenExit = exitHook((signal) => {
@@ -140,9 +147,8 @@ export async function start(db: DbServer, opts: StartOpts) {
     })
   }
 
-  const d = performance.now()
   await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
-  db.emit('info', `Starting workers took ${d}ms`)
+  db.emit('info', 'All workers ready')
 
   // use timeout
   if (db.saveIntervalInSeconds > 0) {

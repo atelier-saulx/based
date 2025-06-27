@@ -1,33 +1,64 @@
 import test from 'node:test'
 import { StrictSchema, deSerialize, serialize } from '@based/schema'
 import { deepEqual } from 'node:assert'
+import exampleSchema from './schema/based.schema.js'
 
 await test('serialize', async (t) => {
   const schema: StrictSchema = {
+    locales: {
+      en: { required: true },
+      fr: { required: true },
+      nl: { required: true },
+      el: { required: true },
+      he: { required: true },
+      it: { required: true },
+      lv: { required: true },
+      lb: { required: true },
+      ro: { required: true },
+      sl: { required: true },
+      es: { required: true },
+      de: { required: true },
+      cs: { required: true },
+      et: { required: true },
+    },
     types: {
       a: {
         id: 1,
         props: {
+          x: {
+            type: 'number',
+            default: 12.123,
+          },
+          bla: {
+            type: 'binary',
+            default: new Uint8Array([1, 2, 3, 4]),
+          },
+          snurp: {
+            items: {
+              ref: 'a',
+              prop: 'snurp',
+            },
+            default: [1, 2, 3],
+            validation: (payload, prop) => {
+              if (Array.isArray(payload) && payload.includes((v) => v > 10)) {
+                return false
+              }
+              return true
+            },
+          },
+
           derp: {
             type: 'string',
           },
           flap: {
             type: 'uint32',
-            // validation: (derp: boolean) => {
-            //   return true
-            // },
-          },
-          snurp: {
-            type: 'object',
-            props: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-              bla: { type: 'string' },
+            validation: () => {
+              return true
             },
           },
           gur: { type: 'uint8' },
           hallo: { type: 'text' },
-          x: {
+          y: {
             type: 'object',
             props: {
               snurf: { type: 'boolean' },
@@ -48,12 +79,23 @@ await test('serialize', async (t) => {
   //   true,
   // )
 
-  const serializedSchema = serialize(schema, true)
+  // 3 styles => full with meta (title, examples, description), with validation and defaults, readOnly
+  const serializedSchema = serialize(schema, {
+    deflate: false,
+    readOnly: true,
+  })
 
-  console.log(serializedSchema)
+  console.log(
+    serializedSchema,
+    // @ts-ignore
+    // [...serializedSchema].map((v, i) => [v, String.fromCharCode(v), i]),
+  )
   console.dir(deSerialize(serializedSchema), { depth: 10 })
 
-  // console.log(serialize(schema, false))
+  const euroVision = serialize(exampleSchema, { deflate: false })
+  console.log(euroVision)
+
+  // console.log(deSerialize(euroVision))
 
   // let d = Date.now()
 
