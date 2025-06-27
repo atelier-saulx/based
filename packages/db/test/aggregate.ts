@@ -1310,36 +1310,41 @@ await test('numeric types', async (t) => {
     },
     'min, main, group by',
   )
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').sum('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').avg('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('region').sum('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('region').count())
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('region').stddev('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('region').avg('NL'))
-  //   .get()
-  //   .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').sum('NL'))
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').avg('NL'))
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('region').sum('NL'))
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('region').count())
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('region').stddev('NL'))
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('region').var('NL'))
+    .get()
+    .inspect()
+  await db
+    .query('sequence')
+    .include((q) => q('votes').groupBy('region').avg('NL'))
+    .get()
+    .inspect()
 })
 
 await test('undefined numbers', async (t) => {
