@@ -56,13 +56,17 @@ export abstract class DbWorker {
     //})
   }
 
-  db: DbServer
-  channel: MessagePort
-  worker: Worker
-  resolvers: ((x: any) => any)[] = []
+  protected db: DbServer
+  protected channel: MessagePort
+  private worker: Worker
+  protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
 
-  callback = (resolve: (x: any) => any) => {
+  terminate() {
+    this.worker.terminate()
+  }
+
+  protected callback = (resolve: (x: any) => any) => {
     this.resolvers.push(resolve)
   }
 

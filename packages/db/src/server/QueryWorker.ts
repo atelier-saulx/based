@@ -15,7 +15,7 @@ export class QueryWorker extends DbWorker {
     })
   }
 
-  override callback = (resolve: (x: any) => any) => {
+  protected override callback = (resolve: (x: any) => any) => {
     this.db.processingQueries++
     this.resolvers.push(resolve)
   }
