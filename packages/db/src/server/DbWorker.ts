@@ -50,14 +50,14 @@ export abstract class DbWorker {
       }
     })
 
-    // The subclass must do at least this:
-    //this.channel.on('message', (buf) => {
-    //  this.resolvers.shift()(new Uint8Array(buf))
-    //})
+    this.channel.on('message', (buf) => {
+      this.resolvers.shift()(new Uint8Array(buf))
+      this.handleMsg(buf)
+    })
   }
 
   protected db: DbServer
-  protected channel: MessagePort
+  private channel: MessagePort
   private worker: Worker
   protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
@@ -65,6 +65,8 @@ export abstract class DbWorker {
   terminate() {
     this.worker.terminate()
   }
+
+  abstract handleMsg(buf: any): void
 
   protected callback = (resolve: (x: any) => any) => {
     this.resolvers.push(resolve)

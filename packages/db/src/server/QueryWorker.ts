@@ -8,11 +8,10 @@ export class QueryWorker extends DbWorker {
       this.db.workers[workerIndex] = new QueryWorker(address, db, workerIndex)
     }
     super(address, db, onExit, 'query_worker.js')
+  }
 
-    this.channel.on('message', (buf) => {
-      this.resolvers.shift()(new Uint8Array(buf))
-      this.db.onQueryEnd()
-    })
+  override handleMsg(_buf: any): void {
+    this.db.onQueryEnd()
   }
 
   protected override callback = (resolve: (x: any) => any) => {

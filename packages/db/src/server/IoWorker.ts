@@ -1,6 +1,5 @@
 import { DbWorker } from './DbWorker.js'
 import { DbServer } from './index.js'
-import { readUint64 } from '@saulx/utils'
 
 
 export class IoWorker extends DbWorker {
@@ -9,12 +8,11 @@ export class IoWorker extends DbWorker {
       this.db.ioWorker = new IoWorker(address, db)
     }
     super(address, db, onExit, 'io_worker.js')
+  }
 
-    this.channel.on('message', (buf) => {
-      this.resolvers.shift()(new Uint8Array(buf))
-      // TODO
-      //this.db.onQueryEnd()
-    })
+  override handleMsg(buf: any): void {
+    // TODO
+    console.log(buf)
   }
 
   // TODO
