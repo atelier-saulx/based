@@ -28,8 +28,6 @@ type SchemaBuffer = {
   dictMap: Record<string, number>
 }
 
-// Helper to grow the buffer if needed. This is a performance trade-off,
-// happening only when the initial 1MB is insufficient, to prevent overflow.
 const ensureCapacity = (required: number) => {
   if (schemaBuffer.len + required > schemaBuffer.buf.length) {
     const newBuf = new Uint8Array(
@@ -41,8 +39,6 @@ const ensureCapacity = (required: number) => {
 }
 
 let schemaBuffer: SchemaBuffer
-
-// encoding map
 
 const handleSingleValue = (
   val: any,
@@ -152,7 +148,7 @@ const walk = (
   const isSchemaProp =
     'type' in obj && (prev2?.type === 'object' || fromObject === false)
 
-  ensureCapacity(1 + 2) // Type byte + size
+  ensureCapacity(1 + 4) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
     const typeIndex = TYPE_INDEX_MAP[obj.type]
@@ -165,9 +161,10 @@ const walk = (
 
   if (isArray) {
     const len = obj.length
-    // TODO add len makes it faster
+    schemaBuffer.buf[schemaBuffer.len++] = len
+    schemaBuffer.buf[schemaBuffer.len++] = len >>> 8
+    ensureCapacity(4 * len)
     for (let j = 0; j < len; j++) {
-      ensureCapacity(4) // For array index
       writeUint32(schemaBuffer.buf, j, schemaBuffer.len)
       schemaBuffer.len += 4
       handleSingleValue(obj[j], obj, prev, fromObject, j)
@@ -237,7 +234,6 @@ export const serialize = (
 
 const decoder = new TextDecoder()
 
-// can just make it non schema specific
 export const deSerializeInner = (
   buf: Uint8Array,
   obj: any,
@@ -253,9 +249,15 @@ export const deSerializeInner = (
     obj.type = parsedType
     i += 1
   }
+
   const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
   i += 2
+
   const end = size + start
+
+  if (fromArray) {
+    i += 2
+  }
   while (i < end) {
     let key: string | number
     if (fromArray) {
@@ -293,7 +295,6 @@ export const deSerializeInner = (
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += 2
       const fn = `return (${decoder.decode(buf.subarray(i, i + size))})(payload, prop)`
-      console.log(fn)
       obj[key] = new Function('payload', 'prop', fn)
       i += size
     } else if (buf[i] === STRING) {
@@ -319,7 +320,8 @@ export const deSerializeInner = (
       const fieldSize = deSerializeInner(buf, nest, i, false)
       i += fieldSize
     } else if (buf[i] === ARRAY) {
-      const nest = (obj[key] = [])
+      const len = buf[i + 3] | ((buf[i + 4] << 8) >>> 0)
+      const nest = (obj[key] = new Array(len))
       const fieldSize = deSerializeInner(buf, nest, i, true)
       i += fieldSize
     } else {
