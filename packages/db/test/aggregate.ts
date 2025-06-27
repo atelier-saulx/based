@@ -1310,41 +1310,151 @@ await test('numeric types', async (t) => {
     },
     'min, main, group by',
   )
-  await db
-    .query('sequence')
-    .include((q) => q('votes').sum('NL'))
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').avg('NL'))
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('region').sum('NL'))
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('region').count())
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('region').stddev('NL'))
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('region').var('NL'))
-    .get()
-    .inspect()
-  await db
-    .query('sequence')
-    .include((q) => q('votes').groupBy('region').avg('NL'))
-    .get()
-    .inspect()
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').sum('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 176,
+        },
+      },
+    ],
+    'references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').avg('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 35.2,
+        },
+      },
+    ],
+    'avg, references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').sum('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 33,
+          },
+          aa: {
+            NL: 93,
+          },
+          Great: {
+            NL: 50,
+          },
+        },
+      },
+    ],
+    'sum, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').count())
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            $count: 2,
+          },
+          aa: {
+            $count: 2,
+          },
+          Great: {
+            $count: 1,
+          },
+        },
+      },
+    ],
+    'count, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 3.5,
+          },
+          Great: {
+            NL: 0,
+          },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 42.25,
+          },
+          aa: {
+            NL: 12.25,
+          },
+          Great: {
+            NL: 0,
+          },
+        },
+      },
+    ],
+    'variance, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').avg('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 16.5,
+          },
+          aa: {
+            NL: 46.5,
+          },
+          Great: {
+            NL: 50,
+          },
+        },
+      },
+    ],
+    'average, references, group by',
+  )
 })
 
 await test('undefined numbers', async (t) => {
