@@ -94,10 +94,7 @@ const native = {
   },
 
   delBlock: (dbCtx: any, typeId: number, block: number) => {
-    const err: number = db.delBlock(dbCtx, typeId, block)
-    if (err) {
-      throw new Error(`Delete block failed: ${err}`)
-    }
+    db.delBlock(dbCtx, typeId, block)
   },
 
   updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {

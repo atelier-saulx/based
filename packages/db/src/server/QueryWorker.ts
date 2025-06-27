@@ -1,4 +1,4 @@
-import { DbWorker } from './DbWorker.js'
+import { DbWorker } from './workers/DbWorker.js'
 import { DbServer } from './index.js'
 import { readUint64 } from '@saulx/utils'
 
