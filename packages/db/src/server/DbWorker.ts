@@ -70,8 +70,15 @@ export abstract class DbWorker {
     this.resolvers.push(resolve)
   }
 
-  updateCtx(address: BigInt): Promise<void> {
-    this.channel.postMessage(address)
+  /**
+   * Send msg to the worker thread and return a promise to the response.
+   */
+  protected call<T>(msg: any): Promise<T> {
+    this.channel.postMessage(msg)
     return new Promise(this.callback)
+  }
+
+  updateCtx(address: BigInt): Promise<void> {
+    return this.call<void>(address)
   }
 }

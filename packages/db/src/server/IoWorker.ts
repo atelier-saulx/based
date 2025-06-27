@@ -24,7 +24,6 @@ export class IoWorker extends DbWorker {
   //    return Promise.resolve(new Uint8Array(1))
   //  }
 
-  //  this.channel.postMessage(buf)
-  //  return new Promise(this.callback)
+  //this.call(buf)
   //}
 }
