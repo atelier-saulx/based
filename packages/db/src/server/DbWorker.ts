@@ -2,18 +2,17 @@ import { MessageChannel, Worker, MessagePort } from 'node:worker_threads'
 import { DbServer } from './index.js'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { readUint64 } from '@saulx/utils'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const workerPath = join(__dirname, 'worker.js')
 
-export class DbWorker {
-  constructor(address: BigInt, db: DbServer, workerIndex: number) {
+export abstract class DbWorker {
+  constructor(address: BigInt, db: DbServer, onExit: (code: number) => void, workerName: string) {
     const { port1, port2 } = new MessageChannel()
+
     this.db = db
     this.channel = port1
-    this.worker = new Worker(workerPath, {
+    this.worker = new Worker(join(__dirname, workerName), {
       workerData: {
         isDbWorker: true,
         channel: port2,
@@ -47,38 +46,41 @@ export class DbWorker {
           resolve(err)
         }
         this.resolvers = []
-        this.db.workers[workerIndex] = new DbWorker(address, db, workerIndex)
+        onExit(code)
       }
     })
 
-    port1.on('message', (buf) => {
+    this.channel.on('message', (buf) => {
       this.resolvers.shift()(new Uint8Array(buf))
-      this.db.onQueryEnd()
+      this.handleMsg(buf)
     })
   }
 
-  db: DbServer
-  channel: MessagePort
-  worker: Worker
-  resolvers: ((x: any) => any)[] = []
+  protected db: DbServer
+  private channel: MessagePort
+  private worker: Worker
+  protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
 
-  callback = (resolve: (x: any) => any) => {
-    this.db.processingQueries++
+  terminate() {
+    this.worker.terminate()
+  }
+
+  abstract handleMsg(buf: any): void
+
+  protected callback = (resolve: (x: any) => any) => {
     this.resolvers.push(resolve)
   }
 
-  updateCtx(address: BigInt): Promise<void> {
-    this.channel.postMessage(address)
+  /**
+   * Send msg to the worker thread and return a promise to the response.
+   */
+  protected call<T>(msg: any): Promise<T> {
+    this.channel.postMessage(msg)
     return new Promise(this.callback)
   }
 
-  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
-    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
-    if (schemaChecksum !== this.db.schema?.hash) {
-      return Promise.resolve(new Uint8Array(1))
-    }
-    this.channel.postMessage(buf)
-    return new Promise(this.callback)
+  updateCtx(address: BigInt): Promise<void> {
+    return this.call<void>(address)
   }
 }
