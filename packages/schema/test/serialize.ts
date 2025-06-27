@@ -80,19 +80,22 @@ await test('serialize', async (t) => {
   // )
 
   // 3 styles => full with meta (title, examples, description), with validation and defaults, readOnly
-  const serializedSchema = serialize(schema, true)
+  const serializedSchema = serialize(schema, {
+    deflate: false,
+    readOnly: true,
+  })
 
   console.log(
     serializedSchema,
     // @ts-ignore
-    [...serializedSchema].map((v) => [v, String.fromCharCode(v)]),
+    // [...serializedSchema].map((v, i) => [v, String.fromCharCode(v), i]),
   )
   console.dir(deSerialize(serializedSchema), { depth: 10 })
 
-  const euroVision = serialize(exampleSchema, true)
+  const euroVision = serialize(exampleSchema, { deflate: false })
   console.log(euroVision)
 
-  console.log(deSerialize(euroVision))
+  // console.log(deSerialize(euroVision))
 
   // let d = Date.now()
 

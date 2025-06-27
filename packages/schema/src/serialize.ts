@@ -41,6 +41,7 @@ const ensureCapacity = (required: number) => {
 let schemaBuffer: SchemaBuffer
 
 const handleSingleValue = (
+  ops: Opts,
   val: any,
   obj: any,
   prev: any,
@@ -80,9 +81,9 @@ const handleSingleValue = (
     if (val === null) {
     } else {
       if (!fromObject && key === 'props' && obj.type === 'object') {
-        walk(val, obj, prev, true, schemaBuffer)
+        walk(ops, val, obj, prev, true, schemaBuffer)
       } else {
-        walk(val, obj, prev, fromObject, schemaBuffer)
+        walk(ops, val, obj, prev, fromObject, schemaBuffer)
       }
     }
   } else if (type === 'boolean') {
@@ -130,11 +131,18 @@ const handleSingleValue = (
   }
 }
 
+type Opts = {
+  deflate?: boolean
+  readOnly?: boolean
+  stripMetaInformation?: boolean
+}
+
 // 3 level
 // 0 for queries (min)
 // 1 for modify
 // 2 fulls schema
 const walk = (
+  opts: Opts,
   obj: any,
   prev: any,
   prev2: any,
@@ -144,9 +152,9 @@ const walk = (
   let start = schemaBuffer.len
 
   const isArray = Array.isArray(obj)
+  const isFromObj = prev2?.type === 'object' || fromObject === false
   // HANDLE ENUM
-  const isSchemaProp =
-    'type' in obj && (prev2?.type === 'object' || fromObject === false)
+  const isSchemaProp = 'type' in obj && isFromObj
 
   ensureCapacity(1 + 4) // Type byte + size
   if (isSchemaProp) {
@@ -167,11 +175,28 @@ const walk = (
     for (let j = 0; j < len; j++) {
       writeUint32(schemaBuffer.buf, j, schemaBuffer.len)
       schemaBuffer.len += 4
-      handleSingleValue(obj[j], obj, prev, fromObject, j)
+      handleSingleValue(opts, obj[j], obj, prev, fromObject, j)
     }
   } else {
     for (const key in obj) {
-      if (key === 'type' && isSchemaProp) {
+      if (
+        opts.readOnly &&
+        isFromObj &&
+        (key === 'validation' || key === 'default')
+      ) {
+        if (key === 'validation' && typeof obj[key] === 'function') {
+          continue
+        } else if (key === 'default') {
+          continue
+        }
+      } else if (
+        isFromObj &&
+        (opts.stripMetaInformation || opts.readOnly) &&
+        (key === 'title' || key === 'description') &&
+        typeof obj[key] === 'string'
+      ) {
+        continue
+      } else if (key === 'type' && isSchemaProp) {
         continue
       } else {
         let address = schemaBuffer.dictMap[key]
@@ -185,19 +210,34 @@ const walk = (
             key,
             schemaBuffer.buf.subarray(schemaBuffer.len),
           )
-          schemaBuffer.buf[address] = r.written
+          // 0, 1, 2
+          schemaBuffer.buf[address] = r.written + 2
           schemaBuffer.len += r.written
           schemaBuffer.dictMap[key] = address
         } else {
           ensureCapacity(4) // 0-byte marker + 3-byte address
-          schemaBuffer.buf[schemaBuffer.len] = 0
-          schemaBuffer.len += 1
-          schemaBuffer.buf[schemaBuffer.len] = address
-          schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
-          schemaBuffer.buf[schemaBuffer.len + 2] = address >>> 16
-          schemaBuffer.len += 3
+          // 0, 1, 2
+          if (address > 65025) {
+            schemaBuffer.buf[schemaBuffer.len] = 2
+            schemaBuffer.len += 1
+            schemaBuffer.buf[schemaBuffer.len] = address
+            schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
+            schemaBuffer.buf[schemaBuffer.len + 2] = address >>> 16
+            schemaBuffer.len += 3
+          } else if (address > 255) {
+            schemaBuffer.buf[schemaBuffer.len] = 1
+            schemaBuffer.len += 1
+            schemaBuffer.buf[schemaBuffer.len] = address
+            schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
+            schemaBuffer.len += 2
+          } else {
+            schemaBuffer.buf[schemaBuffer.len] = 0
+            schemaBuffer.len += 1
+            schemaBuffer.buf[schemaBuffer.len] = address
+            schemaBuffer.len += 1
+          }
         }
-        handleSingleValue(obj[key], obj, prev, fromObject, key)
+        handleSingleValue(opts, obj[key], obj, prev, fromObject, key)
       }
     }
   }
@@ -208,11 +248,7 @@ const walk = (
   schemaBuffer.buf[sizeIndex + 1] = size >>> 8
 }
 
-export const serialize = (
-  schema: any,
-  // schema: StrictSchema,
-  noCompression: boolean = false,
-): Uint8Array => {
+export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   if (!schemaBuffer) {
     schemaBuffer = {
       buf: new Uint8Array(10e3), // 10kb default
@@ -222,8 +258,8 @@ export const serialize = (
   }
   schemaBuffer.dictMap = {}
   schemaBuffer.len = 0
-  const isDeflate = noCompression ? 0 : 1
-  walk(schema, undefined, undefined, false, schemaBuffer)
+  const isDeflate = opts.deflate ? 1 : 0
+  walk(opts, schema, undefined, undefined, false, schemaBuffer)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
   if (isDeflate) {
     return deflate.deflateSync(packed)
@@ -266,15 +302,30 @@ export const deSerializeInner = (
     } else {
       let keySize = buf[i]
       i += 1
-      if (keySize === 0) {
+      if (keySize === 2) {
         const dictAddress =
           (buf[i] | (buf[i + 1] << 8) | (buf[i + 2] << 16)) >>> 0
         i += 3
-        keySize = buf[dictAddress]
+        keySize = buf[dictAddress] - 2
+        key = decoder.decode(
+          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
+        )
+      } else if (keySize === 1) {
+        const dictAddress = (buf[i] | (buf[i + 1] << 8)) >>> 0
+        i += 2
+        keySize = buf[dictAddress] - 2
+        key = decoder.decode(
+          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
+        )
+      } else if (keySize === 0) {
+        const dictAddress = buf[i]
+        i += 1
+        keySize = buf[dictAddress] - 2
         key = decoder.decode(
           buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
         )
       } else {
+        keySize = keySize - 2
         key = decoder.decode(buf.subarray(i, keySize + i))
         i += keySize
       }
