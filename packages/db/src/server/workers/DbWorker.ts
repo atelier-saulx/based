@@ -1,7 +1,7 @@
 import { MessageChannel, Worker, MessagePort } from 'node:worker_threads'
-import { DbServer } from './index.js'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { DbServer } from '../index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

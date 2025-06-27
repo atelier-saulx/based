@@ -1028,98 +1028,483 @@ await test('stddev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  // deepEqual(
-  //   await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
-  //   {
-  //     Brazil: {
-  //       NL: 0,
-  //     },
-  //     bb: {
-  //       NL: 6.5,
-  //     },
-  //     aa: {
-  //       NL: 2.5,
-  //     },
-  //   },
-  //   'stddev, top level, groupBy',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').stddev('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: 13.922643427165687,
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, no groupBy',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').stddev('NL').groupBy('country'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         Brazil: {
-  //           NL: 0,
-  //         },
-  //         bb: {
-  //           NL: 6.5,
-  //         },
-  //         aa: {
-  //           NL: 2.5,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, groupBy',
-  // )
+  deepEqual(
+    await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
+    {
+      Brazil: {
+        NL: 0,
+      },
+      bb: {
+        NL: 6.5,
+      },
+      aa: {
+        NL: 2.5,
+      },
+    },
+    'stddev, top level, groupBy',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 13.922643427165687,
+        },
+      },
+    ],
+    'stddev, branched References, no groupBy',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL').groupBy('country'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          Brazil: {
+            NL: 0,
+          },
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 2.5,
+          },
+        },
+      },
+    ],
+    'stddev, branched References, groupBy',
+  )
+})
 
-  // await db.query('vote').groupBy('country').get().inspect()
-  await db.query('vote').sum('NL').groupBy('country').get().inspect()
-  await db.query('vote').count().groupBy('country').get().inspect()
-  await db.query('vote').avg('NL').groupBy('country').get().inspect()
-  await db.query('vote').stddev('NL').groupBy('country').get().inspect()
-  await db.query('vote').var('NL').groupBy('country').get().inspect()
-  await db.query('vote').max('NL').groupBy('country').get().inspect()
-  await db.query('vote').min('NL').groupBy('country').get().inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').sum('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').avg('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('country').sum('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('country').count())
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('country').stddev('NL'))
-  //   .get()
-  //   .inspect()
-  // await db
-  //   .query('sequence')
-  //   .include((q) => q('votes').groupBy('country').avg('NL'))
-  //   .get()
-  //   .inspect()
+await test('numeric types', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          region: { type: 'string' },
+          AU: 'uint8',
+          AT: 'int8',
+          NL: 'uint16',
+          NO: 'int16',
+          PT: 'uint32',
+          PL: 'int32',
+          FI: 'number',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    region: 'bb',
+    NL: 10,
+    NO: -10,
+    PT: 10,
+    PL: -10,
+    FI: -1_000_000.3,
+  })
+  const nl2 = db.create('vote', {
+    region: 'bb',
+    NL: 23,
+    NO: -23,
+    PT: 33,
+    PL: -33,
+  })
+  const au1 = db.create('vote', {
+    region: 'aa',
+    NL: 43,
+    NO: -43,
+    PT: 43,
+    PL: -43,
+  })
+  const au2 = db.create('vote', {
+    region: 'aa',
+    NL: 50,
+    NO: -50,
+    PT: 50,
+    PL: -20,
+  })
+  const br1 = db.create('vote', {
+    region: 'Great',
+    NL: 50,
+    NO: -50,
+    PT: 50,
+    PL: -50,
+    FI: -50.999,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
+
+  deepEqual(
+    await db.query('vote').groupBy('region').get(),
+    {
+      bb: {},
+      aa: {},
+      Great: {},
+    },
+    'empty aggregation function, group by',
+  )
+  deepEqual(
+    await db.query('vote').sum('NL', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: 33,
+        FI: -1000000.3,
+      },
+      aa: {
+        NL: 93,
+        FI: 0,
+      },
+      Great: {
+        NL: 50,
+        FI: -50.999,
+      },
+    },
+    'sum, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').count().groupBy('region').get(),
+    {
+      bb: {
+        $count: 2,
+      },
+      aa: {
+        $count: 2,
+      },
+      Great: {
+        $count: 1,
+      },
+    },
+    'count, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: 16.5,
+        PT: 21.5,
+        FI: -500000.15,
+      },
+      aa: {
+        NL: 46.5,
+        PT: 46.5,
+        FI: 0,
+      },
+      Great: {
+        NL: 50,
+        PT: 50,
+        FI: -50.999,
+      },
+    },
+    'average, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: 6.5,
+        PL: 11.5,
+      },
+      aa: {
+        NL: 3.5,
+        PL: 11.5,
+      },
+      Great: {
+        NL: 0,
+        PL: 0,
+      },
+    },
+    'stddev, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: 42.25,
+        PL: 132.25,
+      },
+      aa: {
+        NL: 12.25,
+        PL: 132.25,
+      },
+      Great: {
+        NL: 0,
+        PL: 0,
+      },
+    },
+    'variance, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: 23,
+        NO: -10,
+        PT: 33,
+        FI: 0,
+      },
+      aa: {
+        NL: 50,
+        NO: -43,
+        PT: 50,
+        FI: 0,
+      },
+      Great: {
+        NL: 50,
+        NO: -50,
+        PT: 50,
+        FI: -50.999,
+      },
+    },
+    'max, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: 10,
+        NO: -23,
+        PT: 10,
+        FI: -1000000.3,
+      },
+      aa: {
+        NL: 43,
+        NO: -50,
+        PT: 43,
+        FI: 0,
+      },
+      Great: {
+        NL: 50,
+        NO: -50,
+        PT: 50,
+        FI: -50.999,
+      },
+    },
+    'min, main, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').sum('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 176,
+        },
+      },
+    ],
+    'references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').avg('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 35.2,
+        },
+      },
+    ],
+    'avg, references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').sum('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 33,
+          },
+          aa: {
+            NL: 93,
+          },
+          Great: {
+            NL: 50,
+          },
+        },
+      },
+    ],
+    'sum, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').count())
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            $count: 2,
+          },
+          aa: {
+            $count: 2,
+          },
+          Great: {
+            $count: 1,
+          },
+        },
+      },
+    ],
+    'count, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 3.5,
+          },
+          Great: {
+            NL: 0,
+          },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 42.25,
+          },
+          aa: {
+            NL: 12.25,
+          },
+          Great: {
+            NL: 0,
+          },
+        },
+      },
+    ],
+    'variance, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').avg('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 16.5,
+          },
+          aa: {
+            NL: 46.5,
+          },
+          Great: {
+            NL: 50,
+          },
+        },
+      },
+    ],
+    'average, references, group by',
+  )
+})
+
+await test('undefined numbers', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      vote: {
+        props: {
+          region: { type: 'string' },
+          AU: 'uint8',
+          FI: 'number',
+        },
+      },
+    },
+  })
+  const eu1 = db.create('vote', {
+    region: 'EU',
+    AU: 10,
+    FI: -1_000_000.3,
+  })
+  const eu2 = db.create('vote', {
+    region: 'EU',
+    AU: 23,
+  })
+
+  deepEqual(
+    await db.query('vote').max('AU', 'FI').groupBy('region').get().toObject(),
+    {
+      EU: {
+        AU: 23,
+        FI: 0,
+      },
+    },
+    'number is initialized with zero',
+  )
+  deepEqual(
+    await db.query('vote').avg('AU', 'FI').groupBy('region').get().toObject(),
+    {
+      EU: {
+        AU: 16.5,
+        FI: -500_000.15,
+      },
+    },
+    'avg affected by count because number is initialized with zero',
+  )
 })

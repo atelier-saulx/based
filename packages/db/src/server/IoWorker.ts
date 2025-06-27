@@ -1,5 +1,6 @@
-import { DbWorker } from './DbWorker.js'
+import { DbWorker } from './workers/DbWorker.js'
 import { DbServer } from './index.js'
+import { IoJob} from './workers/io_worker_types.js'
 
 
 export class IoWorker extends DbWorker {
@@ -10,18 +11,24 @@ export class IoWorker extends DbWorker {
     super(address, db, onExit, 'io_worker.js')
   }
 
-  override handleMsg(buf: any): void {
-    // TODO
-    console.log(buf)
+  override handleMsg(_buf: any): void {
   }
 
-  // TODO
-  //getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
-  //  const schemaChecksum = readUint64(buf, buf.byteLength - 8)
-  //  if (schemaChecksum !== this.db.schema?.hash) {
-  //    return Promise.resolve(new Uint8Array(1))
-  //  }
+  loadBlock(filepath: string): Promise<void> {
+    const job: IoJob = {
+      type: 'load',
+      filepath
+    }
+    return this.call(job)
+  }
 
-  //this.call(buf)
-  //}
+  unloadBlock(filepath: string, typeId: number, start: number): Promise<void> {
+    const job: IoJob = {
+      type: 'unload',
+      filepath,
+      typeId,
+      start
+    }
+    return this.call(job)
+  }
 }

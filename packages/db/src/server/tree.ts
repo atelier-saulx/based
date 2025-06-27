@@ -1,6 +1,4 @@
-import native from '../native.js'
 import createDbHash from './dbHash.js'
-import { DbServer } from './index.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
@@ -14,7 +12,7 @@ export const makeTreeKey = (typeId: number, start: number) =>
 export const nodeId2Start = (blockCapacity: number, nodeId: number) =>
   ((nodeId - +!(nodeId % blockCapacity)) / blockCapacity) | 0
 
-export const nodeId2BlockI = (nodeId: number, blockCapacity: number) => ((nodeId - 1) - ((nodeId - 1) % blockCapacity)) / blockCapacity
+const nodeId2BlockI = (nodeId: number, blockCapacity: number) => ((nodeId - 1) - ((nodeId - 1) % blockCapacity)) / blockCapacity
 
 export const makeTreeKeyFromNodeId = (
   typeId: number,

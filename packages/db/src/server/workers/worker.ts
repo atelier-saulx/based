@@ -1,5 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads'
-import native from '../native.js'
+import native from '../../native.js'
 
 let dbCtx: any
 let wCtx: any // This must be held until the worker exits otherwise the ctx will be autofreed instantly

@@ -6,7 +6,6 @@ import {
   VerifTree,
   destructureTreeKey,
   makeTreeKey,
-  nodeId2BlockI,
 } from './tree.js'
 import { DbServer } from './index.js'
 
@@ -93,7 +92,7 @@ export function unloadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
     // TODO print the error string
     console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
   } else {
-    native.delBlock(db.dbCtxExternal, typeId, nodeId2BlockI(start, def.blockCapacity))
+    native.delBlock(db.dbCtxExternal, typeId, start)
     db.verifTree.update(key, hash, false)
   }
 }
