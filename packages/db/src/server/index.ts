@@ -524,7 +524,6 @@ export class DbServer extends DbShared {
   }
 
   onQueryEnd() {
-    this.processingQueries--
     if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
