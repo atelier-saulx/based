@@ -1,4 +1,5 @@
 import { DbServer } from './index.js'
+import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
@@ -33,6 +34,8 @@ function startWorkers(db: DbServer, opts: StartOpts) {
   for (let i = 0; i < queryThreads; i++) {
     db.workers.push(new QueryWorker(address, db, i))
   }
+
+  //db.ioWorker = new IoWorker(address, db)
 }
 
 export async function start(db: DbServer, opts: StartOpts) {

@@ -13,6 +13,7 @@ import { readUint16, readUint32, readUint64 } from '@saulx/utils'
 import { QueryType } from '../client/query/types.js'
 import { strictSchemaToDbSchema } from './schema.js'
 import { SchemaChecksum } from '../schema.js'
+import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
@@ -45,6 +46,7 @@ export class DbServer extends DbShared {
   fileSystemPath: string
   verifTree: VerifTree
   dirtyRanges = new Set<number>()
+  ioWorker: IoWorker
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
   processingQueries = 0
@@ -571,6 +573,7 @@ export class DbServer extends DbShared {
         await this.save()
       }
 
+      //this.ioWorker.terminate()
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
