@@ -39,7 +39,18 @@ const handleSingleValue = (
     schemaBuffer.buf.set(val, schemaBuffer.len)
     schemaBuffer.len += val.byteLength
   } else if (type === 'function') {
-    // derp
+    const str = val.toString()
+    schemaBuffer.buf[schemaBuffer.len] = 248
+    schemaBuffer.len += 1
+    const sizeIndex = schemaBuffer.len
+    schemaBuffer.len += 2
+    const r = ENCODER.encodeInto(
+      str,
+      schemaBuffer.buf.subarray(schemaBuffer.len),
+    )
+    schemaBuffer.len += r.written
+    schemaBuffer.buf[sizeIndex] = r.written
+    schemaBuffer.buf[sizeIndex + 1] = r.written >>> 8
   } else if (type === 'object') {
     // fromObject
     if (val === null) {
@@ -50,7 +61,11 @@ const handleSingleValue = (
         walk(val, obj, prev, fromObject, schemaBuffer)
       }
     }
+  } else if (type === 'boolean') {
+    schemaBuffer.buf[schemaBuffer.len] = val ? 247 : 246
+    schemaBuffer.len += 1
   } else if (type === 'string') {
+    // compress if large! (for descriptions etc)
     schemaBuffer.buf[schemaBuffer.len] = 249
     schemaBuffer.len += 1
     const sizeIndex = schemaBuffer.len
@@ -94,6 +109,7 @@ const walk = (
   // HANDLE ENUM
   const isSchemaProp =
     'type' in obj && (prev2?.type === 'object' || fromObject === false)
+
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = 254
     const typeIndex = TYPE_INDEX_MAP[obj.type]
@@ -106,6 +122,7 @@ const walk = (
 
   if (isArray) {
     const len = obj.length
+    // TODO add len makes it faster
     for (let j = 0; j < len; j++) {
       writeUint32(schemaBuffer.buf, j, schemaBuffer.len)
       schemaBuffer.len += 4
@@ -185,6 +202,7 @@ export const deSerializeInner = (
   i += 1
   if (isSchemaProp) {
     const type = buf[i]
+
     const parsedType = REVERSE_TYPE_INDEX_MAP[type]
     obj.type = parsedType
     i += 1
@@ -213,7 +231,21 @@ export const deSerializeInner = (
       }
     }
 
-    if (buf[i] == 249) {
+    if (buf[i] == 246) {
+      i += 1
+      obj[key] = false
+    } else if (buf[i] == 247) {
+      i += 1
+      obj[key] = true
+    } else if (buf[i] == 248) {
+      i += 1
+      const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
+      i += 2
+      const fn = `return (${decoder.decode(buf.subarray(i, i + size))})(payload, prop)`
+      console.log(fn)
+      obj[key] = new Function('payload', 'prop', fn)
+      i += size
+    } else if (buf[i] == 249) {
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
       i += 2
@@ -231,7 +263,7 @@ export const deSerializeInner = (
     } else if (buf[i] === 253) {
       obj[key] = readDoubleLE(buf, i + 1)
       i += 9
-    } else if (buf[i] === 255) {
+    } else if (buf[i] === 255 || buf[i] === 254) {
       const nest = (obj[key] = {})
       const fieldSize = deSerializeInner(buf, nest, i, false)
       i += fieldSize
@@ -240,7 +272,7 @@ export const deSerializeInner = (
       const fieldSize = deSerializeInner(buf, nest, i, true)
       i += fieldSize
     } else {
-      console.warn('Invalid value', buf[i], 'skip')
+      console.warn('Invalid value type', buf[i], 'skip')
       // invaid value
       i += 1
       const size = buf[i] | ((buf[i + 1] << 8) >>> 0)
