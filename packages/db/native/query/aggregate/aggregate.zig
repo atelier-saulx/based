@@ -8,7 +8,7 @@ const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
 
-fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
+pub fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
     return switch (propType) {
         types.Prop.UINT8 => @as(f64, @floatFromInt(buffer[offset])),
         types.Prop.INT8 => @as(f64, @floatFromInt(buffer[offset])),
@@ -40,24 +40,22 @@ pub inline fn execAgg(
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
-
         // TODO: populational or sample statistics switch or aliases
 
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
-            writeInt(f64, accumulatorField, resultPos, @max(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else std.math.minInt(i64), microbufferToF64(propType, value, start)));
+            writeInt(f64, accumulatorField, resultPos, @max(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else -std.math.inf(f64), microbufferToF64(propType, value, start)));
         } else if (aggType == aggregateTypes.AggType.MIN) {
-            writeInt(f64, accumulatorField, resultPos, @min(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else std.math.maxInt(i64), microbufferToF64(propType, value, start)));
+            writeInt(f64, accumulatorField, resultPos, @min(if (hadAccumulated.*) read(f64, accumulatorField, resultPos) else std.math.inf(f64), microbufferToF64(propType, value, start)));
         } else if (aggType == aggregateTypes.AggType.SUM) {
             writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + microbufferToF64(propType, value, start));
         } else if (aggType == aggregateTypes.AggType.AVERAGE) {
             const val = microbufferToF64(propType, value, start);
-
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
 
-            count += 1;
+            count += 1; // WARNING: if prop is undefined, it still is initialized with 0, so count increments and average and other stats ARE affected
             sum += val;
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
@@ -83,7 +81,6 @@ pub inline fn execAgg(
             // const hllAcc = read hll from accumulator as selva string []u8
             // hll_union(hllAcc, hll) union and write to the hllAcc
         }
-        hadAccumulated.* = true;
     }
 }
 
@@ -124,6 +121,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         }
     }
     execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
+    hadAccumulated.* = true;
     i += fieldAggsSize;
     return;
 }
