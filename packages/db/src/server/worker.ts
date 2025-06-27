@@ -2,13 +2,14 @@ import { isMainThread, parentPort, workerData } from 'node:worker_threads'
 import native from '../native.js'
 
 let dbCtx: any
+let wCtx: any // This must be held until the worker exits otherwise the ctx will be autofreed instantly
 
 if (isMainThread) {
   console.warn(`running a worker in the mainthread - incorrect`)
 } else if (workerData?.isDbWorker) {
   let { address } = workerData
   dbCtx = native.externalFromInt(address)
-  native.workerCtxInit()
+  wCtx = native.workerCtxInit()
 } else {
   console.info('incorrect worker db query')
 }
