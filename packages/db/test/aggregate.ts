@@ -966,7 +966,7 @@ await test('agg on references', async (t) => {
   )
 })
 
-await test('stddev', async (t) => {
+await test('two phase accumulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
