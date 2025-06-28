@@ -67,10 +67,16 @@ const readAggregate = (
         }
         i += 2
       } else {
-        keyLen = readUint16(result, i)
-        i += 2
-        key = DECODER.decode(result.subarray(i, i + keyLen))
-        i += keyLen
+        if (q.aggregate.groupBy.typeIndex == ENUM) {
+          i += 2
+          key = q.aggregate.groupBy.enum[result[i] - 1]
+          i++
+        } else {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = DECODER.decode(result.subarray(i, i + keyLen))
+          i += keyLen
+        }
       }
       const resultKey = (results[key] = {})
       for (const aggregatesArray of q.aggregate.aggregates.values()) {

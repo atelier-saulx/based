@@ -1515,7 +1515,7 @@ await test('enums', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
   await db.setSchema({
@@ -1555,7 +1555,7 @@ await test('enums', async (t) => {
     type: 'Tripel',
     price: 11.5,
     alchol: 11.0,
-    year: 1950,
+    year: 1986,
   })
 
   const b3 = await db.create('beer', {
@@ -1566,7 +1566,7 @@ await test('enums', async (t) => {
     year: 1795,
   })
 
-  // await db.query('beer').include('*').get().inspect(10)
+  await db.query('beer').include('*').get().inspect(10)
   // await db.query('beer').include('type').get().inspect()
 
   await db.query('beer').avg('price').groupBy('type').get().inspect()
