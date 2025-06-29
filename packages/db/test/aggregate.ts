@@ -1571,3 +1571,51 @@ await test('enums', async (t) => {
 
   await db.query('beer').avg('price').groupBy('type').get().inspect()
 })
+
+await test('refs with enums ', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actor',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movie',
+          },
+        },
+      },
+    },
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    genre: 'Crime',
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    genre: 'Crime',
+  })
+  const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
+  const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
+
+  db.query('actor')
+    .include((q) => q('movies').groupBy('genre').count())
+    .get()
+    .inspect(10)
+})
