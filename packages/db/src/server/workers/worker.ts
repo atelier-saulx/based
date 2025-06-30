@@ -14,7 +14,12 @@ if (isMainThread) {
   console.info('incorrect worker db query')
 }
 
-export function registerMsgHandler(onMsg: (dbCtx: any, msg: any) => ArrayBuffer | null) {
+export function registerMsgHandler(
+  onMsg: (
+    dbCtx: any,
+    msg: any,
+  ) => Uint8Array<ArrayBufferLike> | ArrayBuffer | null,
+) {
   if (!workerData?.isDbWorker) {
     throw new Error('Not a DbWorker')
   }
