@@ -8,6 +8,7 @@ import {
   readUint32,
   writeDoubleLE,
   writeUint16,
+  writeUint24,
   writeUint32,
 } from '@saulx/utils'
 
@@ -25,7 +26,21 @@ const FLOAT64 = 253
 const SCHEMA_PROP = 254
 const OBJECT = 255
 
-const KEY_OPTS = 9
+// Key Address encoding types
+const KEY_ADDRESS_1_BYTE = 0
+const KEY_ADDRESS_2_BYTES = 1
+const KEY_ADDRESS_3_BYTES = 2
+
+// Key types
+const PROPS = 3
+const TYPES = 4
+const READONLY = 5
+const FORMAT = 6
+const REQUIRED = 7
+const REF = 8
+const PROP = 9
+
+const KEY_OPTS = PROP
 
 type SchemaBuffer = {
   buf: Uint8Array
@@ -145,6 +160,42 @@ type Opts = {
   stripMetaInformation?: boolean
 }
 
+const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
+  let address = schemaBuffer.dictMap[key]
+  // if len == 1 never from address
+  if (!address) {
+    // pessimistically assume 4 bytes per char for UTF-8 to be safe.
+    ensureCapacity(1 + key.length * 4)
+    address = schemaBuffer.len
+    schemaBuffer.len += 1
+    const r = ENCODER.encodeInto(
+      key,
+      schemaBuffer.buf.subarray(schemaBuffer.len),
+    )
+    schemaBuffer.buf[address] = r.written + KEY_OPTS
+    schemaBuffer.len += r.written
+    schemaBuffer.dictMap[key] = address
+  } else {
+    ensureCapacity(4)
+    if (address > 65025) {
+      schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_3_BYTES
+      schemaBuffer.len += 1
+      writeUint24(schemaBuffer.buf, address, schemaBuffer.len)
+      schemaBuffer.len += 3
+    } else if (address > 255) {
+      schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_2_BYTES
+      schemaBuffer.len += 1
+      writeUint16(schemaBuffer.buf, address, schemaBuffer.len)
+      schemaBuffer.len += 2
+    } else {
+      schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_1_BYTE
+      schemaBuffer.len += 1
+      schemaBuffer.buf[schemaBuffer.len] = address
+      schemaBuffer.len += 1
+    }
+  }
+}
+
 // 3 level
 // 0 for queries (min)
 // 1 for modify
@@ -192,9 +243,9 @@ const walk = (
     }
   } else {
     for (const key in obj) {
-      // if (isTypes) {
-      //   schemaBuffer.dictMap[key] = schemaBuffer.len
-      // }
+      if (isTypes) {
+        schemaBuffer.refMap[key] = schemaBuffer.len
+      }
 
       if (
         opts.readOnly &&
@@ -220,26 +271,31 @@ const walk = (
         continue
       } else if (key === 'required' && obj[key] === true) {
         ensureCapacity(1)
-        schemaBuffer.buf[schemaBuffer.len] = 7
+        schemaBuffer.buf[schemaBuffer.len] = REQUIRED
         schemaBuffer.len += 1
         continue
       }
       // Add this later
-      // else if (key == 'ref' && typeof obj[key] === 'string' && isFromObj) {
-      //   // do something...
-      //   console.log('YO ----->', obj)
-      //   schemaBuffer.buf[schemaBuffer.len] = 8
-      //   // address
-      //   continue
-      // }
-      else if (key === 'readOnly' && obj[key] === true) {
+      else if (key == 'ref' && isFromObj && typeof obj.ref === 'string') {
         ensureCapacity(1)
-        schemaBuffer.buf[schemaBuffer.len] = 5
+        schemaBuffer.buf[schemaBuffer.len] = REF
+        schemaBuffer.len += 1
+        encodeKey(obj[key], schemaBuffer)
+        continue
+      } else if (key === 'prop' && isFromObj && typeof obj.prop === 'string') {
+        ensureCapacity(1)
+        schemaBuffer.buf[schemaBuffer.len] = PROP
+        schemaBuffer.len += 1
+        encodeKey(obj[key], schemaBuffer)
+        continue
+      } else if (key === 'readOnly' && obj[key] === true) {
+        ensureCapacity(1)
+        schemaBuffer.buf[schemaBuffer.len] = READONLY
         schemaBuffer.len += 1
         continue
       } else if (key === 'format' && isFromObj) {
         ensureCapacity(2)
-        schemaBuffer.buf[schemaBuffer.len] = 6
+        schemaBuffer.buf[schemaBuffer.len] = FORMAT
         schemaBuffer.len += 1
         schemaBuffer.buf[schemaBuffer.len] = stringFormats.indexOf(obj.format)
         schemaBuffer.len += 1
@@ -252,53 +308,14 @@ const walk = (
             isTypes = true
           }
           ensureCapacity(1)
-          schemaBuffer.buf[schemaBuffer.len] = 4
+          schemaBuffer.buf[schemaBuffer.len] = TYPES
           schemaBuffer.len += 1
         } else if (key === 'props') {
           ensureCapacity(1)
-          schemaBuffer.buf[schemaBuffer.len] = 3
-          schemaBuffer.len += 1
-        } else if (key === 'prop') {
-          ensureCapacity(1)
-          schemaBuffer.buf[schemaBuffer.len] = 9
+          schemaBuffer.buf[schemaBuffer.len] = PROPS
           schemaBuffer.len += 1
         } else {
-          let address = schemaBuffer.dictMap[key]
-          // if len == 1 never from address
-          if (!address) {
-            // pessimistically assume 4 bytes per char for UTF-8 to be safe.
-            ensureCapacity(1 + key.length * 4)
-            address = schemaBuffer.len
-            schemaBuffer.len += 1
-            const r = ENCODER.encodeInto(
-              key,
-              schemaBuffer.buf.subarray(schemaBuffer.len),
-            )
-            schemaBuffer.buf[address] = r.written + KEY_OPTS
-            schemaBuffer.len += r.written
-            schemaBuffer.dictMap[key] = address
-          } else {
-            ensureCapacity(4)
-            if (address > 65025) {
-              schemaBuffer.buf[schemaBuffer.len] = 2
-              schemaBuffer.len += 1
-              schemaBuffer.buf[schemaBuffer.len] = address
-              schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
-              schemaBuffer.buf[schemaBuffer.len + 2] = address >>> 16
-              schemaBuffer.len += 3
-            } else if (address > 255) {
-              schemaBuffer.buf[schemaBuffer.len] = 1
-              schemaBuffer.len += 1
-              schemaBuffer.buf[schemaBuffer.len] = address
-              schemaBuffer.buf[schemaBuffer.len + 1] = address >>> 8
-              schemaBuffer.len += 2
-            } else {
-              schemaBuffer.buf[schemaBuffer.len] = 0
-              schemaBuffer.len += 1
-              schemaBuffer.buf[schemaBuffer.len] = address
-              schemaBuffer.len += 1
-            }
-          }
+          encodeKey(key, schemaBuffer)
         }
         handleSingleValue(opts, obj[key], obj, prev, fromObject, key, isTypes)
       }
@@ -336,6 +353,38 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
 }
 
 const decoder = new TextDecoder()
+
+export const deSerializeKey = (buf: Uint8Array, keySize: number, i: number) => {
+  let size = 0
+  let value: string
+  if (keySize === KEY_ADDRESS_3_BYTES) {
+    const dictAddress = readUint24(buf, i)
+    size += 3
+    const actualKeySize = buf[dictAddress] - KEY_OPTS
+    value = decoder.decode(
+      buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
+    )
+  } else if (keySize === KEY_ADDRESS_2_BYTES) {
+    const dictAddress = readUint16(buf, i)
+    size += 2
+    const actualKeySize = buf[dictAddress] - KEY_OPTS
+    value = decoder.decode(
+      buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
+    )
+  } else if (keySize === KEY_ADDRESS_1_BYTE) {
+    const dictAddress = buf[i]
+    size += 1
+    const actualKeySize = buf[dictAddress] - KEY_OPTS
+    value = decoder.decode(
+      buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
+    )
+  } else {
+    const actualKeySize = keySize - KEY_OPTS
+    value = decoder.decode(buf.subarray(i, actualKeySize + i))
+    size += actualKeySize
+  }
+  return { size, value }
+}
 
 export const deSerializeInner = (
   buf: Uint8Array,
@@ -377,47 +426,36 @@ export const deSerializeInner = (
       let keySize = buf[i]
       i += 1
       // format!
-      if (keySize === 7) {
+      if (keySize === REQUIRED) {
         obj.required = true
         continue
-      } else if (keySize === 6) {
+      } else if (keySize === FORMAT) {
         obj.format = stringFormats[buf[i]]
         i += 1
         continue
-      } else if (keySize === 5) {
+      } else if (keySize === READONLY) {
         obj.readOnly = true
         continue
-      } else if (keySize === 4) {
+      } else if (keySize === TYPES) {
         key = 'types'
-      } else if (keySize === 3) {
+      } else if (keySize === PROPS) {
         key = 'props'
-      } else if (keySize === 9) {
-        key = 'prop'
-      } else if (keySize === 2) {
-        const dictAddress = readUint24(buf, i)
-        i += 3
-        keySize = buf[dictAddress] - KEY_OPTS
-        key = decoder.decode(
-          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
-        )
-      } else if (keySize === 1) {
-        const dictAddress = readUint16(buf, i)
-        i += 2
-        keySize = buf[dictAddress] - KEY_OPTS
-        key = decoder.decode(
-          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
-        )
-      } else if (keySize === 0) {
-        const dictAddress = buf[i]
+      } else if (keySize === REF) {
         i += 1
-        keySize = buf[dictAddress] - KEY_OPTS
-        key = decoder.decode(
-          buf.subarray(dictAddress + 1, keySize + dictAddress + 1),
-        )
+        const { size, value } = deSerializeKey(buf, keySize, i)
+        i += size
+        obj.ref = value
+        continue
+      } else if (keySize === PROP) {
+        i += 1
+        const { size, value } = deSerializeKey(buf, keySize, i)
+        i += size
+        obj.prop = value
+        continue
       } else {
-        keySize = keySize - KEY_OPTS
-        key = decoder.decode(buf.subarray(i, keySize + i))
-        i += keySize
+        const { size, value } = deSerializeKey(buf, keySize, i)
+        i += size
+        key = value
       }
     }
 
