@@ -114,7 +114,6 @@ const handleSingleValue = (
     schemaBuffer.buf[schemaBuffer.len] = val ? TRUE : FALSE
     schemaBuffer.len += 1
   } else if (type === 'string') {
-    // compress if large! (for descriptions etc)
     // Pessimistically assume 4 bytes per char for UTF-8 to be safe.
     ensureCapacity(1 + 2 + val.length * 4)
     schemaBuffer.buf[schemaBuffer.len] = STRING
@@ -441,14 +440,16 @@ export const deSerializeInner = (
       } else if (keySize === PROPS) {
         key = 'props'
       } else if (keySize === REF) {
+        const valueKeySize = buf[i]
         i += 1
-        const { size, value } = deSerializeKey(buf, keySize, i)
+        const { size, value } = deSerializeKey(buf, valueKeySize, i)
         i += size
         obj.ref = value
         continue
       } else if (keySize === PROP) {
+        const valueKeySize = buf[i]
         i += 1
-        const { size, value } = deSerializeKey(buf, keySize, i)
+        const { size, value } = deSerializeKey(buf, valueKeySize, i)
         i += size
         obj.prop = value
         continue
