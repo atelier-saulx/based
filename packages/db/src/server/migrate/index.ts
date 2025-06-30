@@ -18,7 +18,7 @@ import {
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
 
-export type MigrateRange = { typeId: number, start: number, end: number }
+export type MigrateRange = { typeId: number; start: number; end: number }
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -196,6 +196,7 @@ export const migrate = async (
   setSchemaOnServer(server, toSchema)
 
   for (const key in schemaTypesParsed) {
+    // maybe only send the lastId
     const def = server.schemaTypesParsed[key]
     def.lastId = schemaTypesParsed[key].lastId
   }

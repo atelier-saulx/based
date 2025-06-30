@@ -32,7 +32,6 @@ export const debugMode = (target, getInfo = null) => {
     const fn = target[key]
     if (typeof fn === 'function') {
       let cnt = 0
-
       const color = colors[colorKey++ % colors.length]
       target[key] = function () {
         const arr = [picocolors[color](`[${key}:${++cnt}]`)]
