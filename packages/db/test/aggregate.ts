@@ -368,7 +368,8 @@ await test('sum performance', async (t) => {
     db.create('vote', x)
   }
 
-  console.log(await db.drain())
+  const drainElapsedTime = await db.drain()
+  equal(drainElapsedTime < 10, true, 'Acceptable modify performance')
 })
 
 // ***********************
@@ -1533,16 +1534,6 @@ await test('enums', async (t) => {
     },
   })
 
-  // const years = [1940, 1990, 2013, 2006]
-  // for (let i = 0; i < 10; i++) {
-  //   const beer = await db.create('beer', {
-  //     name: 'Beer' + i,
-  //     type: types[(types.length * Math.random()) | 0],
-  //     price: Math.random() * 100,
-  //     year: years[(years.length * Math.random()) | 0],
-  //   })
-  // }
-
   const b1 = await db.create('beer', {
     name: "Brouwerij 't IJwit",
     type: 'Wit',
@@ -1566,10 +1557,53 @@ await test('enums', async (t) => {
     year: 1795,
   })
 
-  await db.query('beer').include('*').get().inspect(10)
-  // await db.query('beer').include('type').get().inspect()
+  deepEqual(
+    await db.query('beer').avg('price').groupBy('type').get(),
+    {
+      Tripel: {
+        price: 11.85,
+      },
+      Wit: {
+        price: 7.2,
+      },
+    },
+    'group by enum in main',
+  )
 
-  await db.query('beer').avg('price').groupBy('type').get().inspect()
+  const beers = 1e5
+  const years = [1940, 1990, 2013, 2006]
+  for (let i = 0; i < beers; i++) {
+    const beer = await db.create('beer', {
+      name: 'Beer' + i,
+      type: types[(types.length * Math.random()) | 0],
+      price: Math.random() * 100,
+      year: years[(years.length * Math.random()) | 0],
+    })
+  }
+
+  const startTime1 = performance.now()
+  await db.query('beer').avg('price').get()
+  const elapsedTime1 = performance.now() - startTime1
+  equal(elapsedTime1 < 10, true, 'Acceptable main agg performance')
+
+  const startTime2 = performance.now()
+  await db.query('beer').groupBy('year').get()
+  const elapsedTime2 = performance.now() - startTime2
+  equal(elapsedTime2 < 20, true, 'Acceptable group by main prop performance')
+
+  const startTime3 = performance.now()
+  await db.query('beer').groupBy('type').get()
+  const elapsedTime3 = performance.now() - startTime3
+  equal(elapsedTime3 < 20, true, 'Acceptable group by enum main performance')
+
+  const startTime4 = performance.now()
+  await db.query('beer').max('price').groupBy('type').get()
+  const elapsedTime4 = performance.now() - startTime4
+  equal(
+    elapsedTime4 < 30,
+    true,
+    'Acceptable agg + enum main group by performance',
+  )
 })
 
 await test('refs with enums ', async (t) => {
@@ -1614,8 +1648,103 @@ await test('refs with enums ', async (t) => {
   const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
   const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
 
-  db.query('actor')
-    .include((q) => q('movies').groupBy('genre').count())
-    .get()
-    .inspect(10)
+  deepEqual(
+    await db
+      .query('actor')
+      .include((q) => q('movies').groupBy('genre').count())
+      .get(),
+    [
+      {
+        id: 1,
+        movies: {
+          Crime: {
+            $count: 2,
+          },
+        },
+      },
+      {
+        id: 2,
+        movies: {
+          Crime: {
+            $count: 1,
+          },
+        },
+      },
+    ],
+    'count group by enum in refs',
+  )
+})
+
+await test.skip('edges agregation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  // await db
+  //   .query('movie')
+  //   .include('name')
+  //   .include('actors.$rating')
+  //   .include('actors.name')
+  //   .get()
+  //   .inspect(10)
+
+  // edges unreacheable
+  db.query('movie').max('actors.$rating').get().inspect(10)
 })
