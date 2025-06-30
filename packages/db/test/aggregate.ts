@@ -1569,6 +1569,29 @@ await test('enums', async (t) => {
     },
     'group by enum in main',
   )
+})
+await test('overall performance', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
+  await db.setSchema({
+    types: {
+      beer: {
+        props: {
+          name: 'string',
+          type: types,
+          price: 'number',
+          bitterness: 'number',
+          alchol: 'number',
+          year: 'uint16',
+        },
+      },
+    },
+  })
 
   const beers = 1e5
   const years = [1940, 1990, 2013, 2006]
