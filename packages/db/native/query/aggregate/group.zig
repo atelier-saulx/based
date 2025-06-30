@@ -144,7 +144,7 @@ pub inline fn finalizeGroupResults(
 
 pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {
     const field = aggInput[0];
-    const propType: types.Prop = if (field == types.MAIN_PROP) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
+    const propType: types.Prop = if (field == types.MAIN_PROP and @as(types.Prop, @enumFromInt(aggInput[1])) != types.Prop.ENUM) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
     const resultsSize = read(u16, aggInput, 6);

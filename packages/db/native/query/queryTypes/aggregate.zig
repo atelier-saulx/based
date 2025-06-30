@@ -88,8 +88,13 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 continue :checkItem;
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
-            const crcLen = groupCtx.propType.crcLen();
-            const key: []u8 = if (groupValue.len > 0) groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - crcLen] else emptyKey;
+            const key: []u8 = if (groupValue.len > 0)
+                if (groupCtx.propType == types.Prop.STRING)
+                    groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
+                else
+                    groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
+            else
+                emptyKey;
             var accumulatorField: []u8 = undefined;
             if (!groupCtx.hashMap.contains(key)) {
                 accumulatorField = try ctx.allocator.alloc(u8, groupCtx.accumulatorSize);

@@ -3,6 +3,7 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
+import { numberDisplays } from '@based/schema'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -966,7 +967,7 @@ await test('agg on references', async (t) => {
   )
 })
 
-await test('stddev', async (t) => {
+await test('two phase accumulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -1507,4 +1508,114 @@ await test('undefined numbers', async (t) => {
     },
     'avg affected by count because number is initialized with zero',
   )
+})
+
+await test('enums', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
+  await db.setSchema({
+    types: {
+      beer: {
+        props: {
+          name: 'string',
+          type: types,
+          price: 'number',
+          bitterness: 'number',
+          alchol: 'number',
+          year: 'uint16',
+        },
+      },
+    },
+  })
+
+  // const years = [1940, 1990, 2013, 2006]
+  // for (let i = 0; i < 10; i++) {
+  //   const beer = await db.create('beer', {
+  //     name: 'Beer' + i,
+  //     type: types[(types.length * Math.random()) | 0],
+  //     price: Math.random() * 100,
+  //     year: years[(years.length * Math.random()) | 0],
+  //   })
+  // }
+
+  const b1 = await db.create('beer', {
+    name: "Brouwerij 't IJwit",
+    type: 'Wit',
+    price: 7.2,
+    alchol: 6.5,
+    year: 1985,
+  })
+  const b2 = await db.create('beer', {
+    name: 'De Garre Triple Ale',
+    type: 'Tripel',
+    price: 11.5,
+    alchol: 11.0,
+    year: 1986,
+  })
+
+  const b3 = await db.create('beer', {
+    name: 'Gulden Draak',
+    type: 'Tripel',
+    price: 12.2,
+    alchol: 10.0,
+    year: 1795,
+  })
+
+  await db.query('beer').include('*').get().inspect(10)
+  // await db.query('beer').include('type').get().inspect()
+
+  await db.query('beer').avg('price').groupBy('type').get().inspect()
+})
+
+await test('refs with enums ', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actor',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movie',
+          },
+        },
+      },
+    },
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    genre: 'Crime',
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    genre: 'Crime',
+  })
+  const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
+  const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
+
+  db.query('actor')
+    .include((q) => q('movies').groupBy('genre').count())
+    .get()
+    .inspect(10)
 })

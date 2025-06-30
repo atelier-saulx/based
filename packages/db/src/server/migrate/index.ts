@@ -157,6 +157,7 @@ export const migrate = async (
     setToAwake(workerState, true)
     await waitUntilSleeping(workerState)
     // exec queued modifies
+    server.processingQueries--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
       if (server.dirtyRanges.size) {
