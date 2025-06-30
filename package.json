@@ -25,7 +25,11 @@
     "watch": "turbo run watch --parallel --no-cache",
     "build": "turbo run build",
     "test": "turbo run test",
-    "clean": "turbo run clean && rimraf node_modules"
+    "clean": "turbo run clean && rimraf node_modules",
+    "build-podman": "cd podman && ./build.sh",
+    "build-locale": "cd packages/locale && ./build.sh",
+    "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
+    "build-release": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release)"
   },
   "packageManager": "npm@8.1.0",
   "publishConfig": {
