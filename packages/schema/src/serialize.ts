@@ -1,4 +1,4 @@
-import * as deflate from 'fflate'
+// import * as deflate from 'fflate'
 import { StrictSchema, stringFormats } from './types.js'
 import { REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
@@ -334,12 +334,12 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   const isDeflate = 0 // opts.deflate ? 1 : 0
   walk(opts, schema, undefined, undefined, false, schemaBuffer, false)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
-  if (isDeflate) {
-    // add extra byte! see if nessecary
-    return deflate.deflateSync(packed)
-  } else {
-    return packed
-  }
+  // if (isDeflate) {
+  //   // add extra byte! see if nessecary
+  //   return deflate.deflateSync(packed)
+  // } else {
+  return packed
+  // }
 }
 
 const decoder = new TextDecoder()

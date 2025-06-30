@@ -29,7 +29,6 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "fflate": "0.8.1",
     "@saulx/utils": "^6.7.0",
     "picocolors": "^1.1.0"
   }
