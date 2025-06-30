@@ -1,11 +1,12 @@
+import { availableParallelism } from 'node:os'
 import { DbServer } from './index.js'
 import { QueryWorker } from './QueryWorker.js'
+import { IoWorker } from './IoWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { VerifTree, makeTreeKey } from './tree.js'
 import { foreachBlock } from './blocks.js'
-import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
 import { deSerialize } from '@based/schema'
@@ -29,7 +30,7 @@ function startWorkers(db: DbServer, opts: StartOpts) {
   for (let i = 0; i < queryThreads; i++) {
     db.workers.push(new QueryWorker(address, db, i))
   }
-  //db.ioWorker = new IoWorker(address, db)
+  db.ioWorker = new IoWorker(address, db)
 }
 
 export async function start(db: DbServer, opts: StartOpts) {
