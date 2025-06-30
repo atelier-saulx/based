@@ -4,7 +4,7 @@ const utils = @import("../../utils.zig");
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const types = @import("../../types.zig");
-const SimpleHashMap = @import("./types.zig").GroupByHashMap;
+const GroupByHashMap = @import("./types.zig").GroupByHashMap;
 const read = utils.read;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -13,7 +13,7 @@ const aggregateTypes = @import("../aggregate/types.zig");
 pub const ProtocolLen = 10;
 
 pub const GroupCtx = struct {
-    hashMap: SimpleHashMap,
+    hashMap: GroupByHashMap,
     resultsSize: u16,
     accumulatorSize: u16,
     fieldSchema: db.FieldSchema,
@@ -158,7 +158,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .start = start,
         .len = len,
         .fieldSchema = fieldSchema,
-        .hashMap = SimpleHashMap.init(ctx.allocator),
+        .hashMap = GroupByHashMap.init(ctx.allocator),
         .resultsSize = resultsSize,
         .accumulatorSize = accumulatorSize,
     };

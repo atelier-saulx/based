@@ -76,7 +76,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += GroupProtocolLen;
     const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
-    var hadAccumulated = false;
+    // var hadAccumulated = false;
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -95,16 +95,14 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            var accumulatorField: []u8 = undefined;
-            if (!groupCtx.hashMap.contains(key)) {
-                accumulatorField = try ctx.allocator.alloc(u8, groupCtx.accumulatorSize);
-                @memset(accumulatorField, 0);
-                try groupCtx.hashMap.put(key, accumulatorField);
+            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
+            const accumulatorField = hash_map_entry.value;
+            var hadAccumulated = !hash_map_entry.is_new;
+
+            if (hash_map_entry.is_new) {
                 ctx.size += 2 + key.len + groupCtx.resultsSize;
-                hadAccumulated = false;
-            } else {
-                accumulatorField = groupCtx.hashMap.get(key).?;
             }
+
             aggregate(agg, typeEntry, n, accumulatorField, &hadAccumulated);
         } else {
             break :checkItem;

@@ -43,6 +43,23 @@ pub const GroupByHashMap = struct {
         }
     }
 
+    pub fn getOrInsert(self: *GroupByHashMap, key: []const u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
+        if (self.inner.getEntry(key)) |entry| {
+            return .{ .value = entry.value_ptr.*, .is_new = false };
+        } else {
+            const owned_key = try self.allocator.dupe(u8, key);
+            errdefer self.allocator.free(owned_key);
+            const result = try self.inner.getOrPut(owned_key);
+
+            const new_accumulator = try self.allocator.alloc(u8, accumulator_size);
+            @memset(new_accumulator, 0);
+
+            result.key_ptr.* = owned_key;
+            result.value_ptr.* = new_accumulator;
+            return .{ .value = new_accumulator, .is_new = true };
+        }
+    }
+
     pub fn get(self: *GroupByHashMap, key: []const u8) ?[]u8 {
         return self.inner.get(key);
     }
