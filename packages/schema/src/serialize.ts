@@ -1,6 +1,6 @@
 // import * as deflate from 'fflate'
 import { StrictSchema, stringFormats } from './types.js'
-import { REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
+import { ENUM, REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
   readUint16,
@@ -67,7 +67,6 @@ const handleSingleValue = (
   prev: any,
   fromObject: boolean,
   key?: string | number,
-  isTypes?: boolean,
 ) => {
   const type = typeof val
   // typed Array - single PROP
@@ -102,9 +101,9 @@ const handleSingleValue = (
     if (val === null) {
     } else {
       if (!fromObject && key === 'props' && obj.type === 'object') {
-        walk(ops, val, obj, prev, true, schemaBuffer, false)
+        walk(ops, val, obj, prev, true, schemaBuffer)
       } else {
-        walk(ops, val, obj, prev, fromObject, schemaBuffer, isTypes)
+        walk(ops, val, obj, prev, fromObject, schemaBuffer)
       }
     }
   } else if (type === 'boolean') {
@@ -204,18 +203,19 @@ const walk = (
   prev2: any,
   fromObject: boolean,
   schemaBuffer: SchemaBuffer,
-  isTypes: boolean,
 ) => {
   let start = schemaBuffer.len
 
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
-  const isSchemaProp = 'type' in obj && isFromObj
+  const isSchemaProp =
+    ('enum' in obj || ('type' in obj && TYPE_INDEX_MAP[obj.type])) && isFromObj
 
   ensureCapacity(1 + 4) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = TYPE_INDEX_MAP[obj.type]
+    console.log(obj)
+    const typeIndex = TYPE_INDEX_MAP['enum' in obj ? 'enum' : obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
@@ -294,12 +294,7 @@ const walk = (
         schemaBuffer.len += 1
         continue
       } else {
-        let isTypes = false
         if (key === 'types') {
-          //  undefined undefined false
-          if (!prev && !prev2 && !fromObject) {
-            isTypes = true
-          }
           ensureCapacity(1)
           schemaBuffer.buf[schemaBuffer.len] = TYPES
           schemaBuffer.len += 1
@@ -310,7 +305,7 @@ const walk = (
         } else {
           encodeKey(key, schemaBuffer)
         }
-        handleSingleValue(opts, obj[key], obj, prev, fromObject, key, isTypes)
+        handleSingleValue(opts, obj[key], obj, prev, fromObject, key)
       }
     }
   }
@@ -334,7 +329,7 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   schemaBuffer.dictMap = {}
   // defalte not supported in unpacking yet
   const isDeflate = 0 // opts.deflate ? 1 : 0
-  walk(opts, schema, undefined, undefined, false, schemaBuffer, false)
+  walk(opts, schema, undefined, undefined, false, schemaBuffer)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
   // if (isDeflate) {
   //   // add extra byte! see if nessecary
@@ -391,7 +386,9 @@ export const deSerializeInner = (
   if (isSchemaProp) {
     const type = buf[i]
     const parsedType = REVERSE_TYPE_INDEX_MAP[type]
-    obj.type = parsedType
+    if (type !== ENUM) {
+      obj.type = parsedType
+    }
     i += 1
   }
 
