@@ -152,7 +152,7 @@ const handleSingleValue = (
 }
 
 type Opts = {
-  deflate?: boolean
+  // deflate?: boolean
   readOnly?: boolean
   stripMetaInformation?: boolean
 }
