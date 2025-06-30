@@ -1,6 +1,13 @@
-export type IoJob = {
-  type: 'load' | 'unload'
+type IoJobLoad = {
+  type: 'load'
   filepath: string
-  typeId?: number
-  start?: number
 }
+
+type IoJobUnload = {
+  type: 'unload'
+  filepath: string
+  typeId: number
+  start: number
+}
+
+export type IoJob = IoJobLoad | IoJobUnload
