@@ -1,9 +1,0 @@
-[submodule "packages/cpp-client/lib/zlib"]
-	path = packages/cpp-client/lib/zlib
-	url = https://github.com/madler/zlib.git
-[submodule "packages/cpp-client/lib/websocketpp"]
-	path = packages/cpp-client/lib/websocketpp
-	url = https://github.com/atelier-saulx/websocketpp.git
-[submodule "packages/cpp-client/lib/asio"]
-	path = packages/cpp-client/lib/asio
-	url = git@github.com:chriskohlhoff/asio.git
