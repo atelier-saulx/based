@@ -2,6 +2,7 @@ import test from 'node:test'
 import { ok } from 'node:assert'
 import { serialize, deSerialize, StrictSchema } from '../src/index.js'
 import eurovisionSchema from './schema/based.schema.js'
+import { deflateSync } from 'node:zlib'
 
 // deepEqual that ignore functions (ai generated)
 function deepEqual(a: any, b: any): boolean {
@@ -125,4 +126,33 @@ test('serialize with readOnly option strips validation and defaults', () => {
     deepEqual(deserialized, expected),
     'readOnly option did not strip fields correctly',
   )
+})
+
+test.only('big schema', () => {
+  const makeALot = (n: number) => {
+    const props: any = {}
+    for (let i = 0; i < n; i++) {
+      props[`f${i}`] = { type: 'int32' }
+    }
+    return props
+  }
+
+  const basicSchema: StrictSchema = {
+    locales: {
+      en: { required: true },
+      nl: {},
+    },
+    types: {
+      thing: {
+        props: {
+          ...makeALot(16000),
+        },
+      },
+    },
+  }
+
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+
+  ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
 })

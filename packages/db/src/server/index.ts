@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
-import { VerifBlock, VerifTree, destructureTreeKey, makeTreeKey, makeTreeKeyFromNodeId } from './tree.js'
+import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
@@ -425,7 +425,7 @@ export class DbServer extends DbShared {
     while (i < end) {
       // const key = view.getFloat64(i, true)
       // These node ranges may not actually exist
-      //this.dirtyRanges.add(key)
+      // this.dirtyRanges.add(key)
       i += 8
     }
 

@@ -13,7 +13,6 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [TYPE_INDEX_MAP.binary]: (value) => {
-    console.log('DERP ', value, typeof value)
     if (value instanceof Uint8Array) {
       return true
     }
