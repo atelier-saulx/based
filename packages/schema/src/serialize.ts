@@ -328,6 +328,7 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
       dictMap: {},
     }
   }
+  schemaBuffer.len = 0
   schemaBuffer.dictMap = {}
   const isDeflate = opts.deflate ? 1 : 0
   walk(opts, schema, undefined, undefined, false, schemaBuffer, false)

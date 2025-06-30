@@ -83,19 +83,18 @@ test('serialize and deserialize basic schema', () => {
   const serialized = serialize(basicSchema)
   const deserialized = deSerialize(serialized)
 
-  console.dir({ deserialized, basicSchema }, { depth: 10 })
-
   ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
 })
 
-// test('serialize and deserialize complex (Eurovision) schema', () => {
-//   const serialized = serialize(eurovisionSchema)
-//   const deserialized = deSerialize(serialized)
-//   ok(
-//     deepEqual(eurovisionSchema, deserialized),
-//     'Eurovision schema did not match after roundtrip',
-//   )
-// })
+test('serialize and deserialize complex (Eurovision) schema', () => {
+  const serialized = serialize(eurovisionSchema)
+  const deserialized = deSerialize(serialized)
+
+  ok(
+    deepEqual(eurovisionSchema, deserialized),
+    'Eurovision schema did not match after roundtrip',
+  )
+})
 
 // test('serialize with readOnly option strips validation and defaults', () => {
 //   const schema: StrictSchema = {
