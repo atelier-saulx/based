@@ -86,7 +86,7 @@ export class DbServer extends DbShared {
     return save(this, false, opts?.forceFullDump ?? false)
   }
 
-  loadBlock(typeName: string, nodeId: number) {
+  async loadBlock(typeName: string, nodeId: number) {
     const def = this.schemaTypesParsed[typeName]
     if (!def) {
       throw new Error('Type not found')
@@ -101,10 +101,10 @@ export class DbServer extends DbShared {
       throw new Error('Block not found')
     }
 
-    loadBlock(this, def, start)
+    await loadBlock(this, def, start)
   }
 
-  unloadBlock(typeName: string, nodeId: number) {
+  async unloadBlock(typeName: string, nodeId: number) {
     const def = this.schemaTypesParsed[typeName]
     if (!def) {
       throw new Error('Type not found')
@@ -119,7 +119,7 @@ export class DbServer extends DbShared {
       throw new Error('Block not found')
     }
 
-    unloadBlock(this, def, start)
+    await unloadBlock(this, def, start)
   }
 
   sortIndexes: {
@@ -572,7 +572,7 @@ export class DbServer extends DbShared {
         await this.save()
       }
 
-      //this.ioWorker.terminate()
+      this.ioWorker.terminate()
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
