@@ -10,7 +10,7 @@ await test('text', () => {
       },
       de: {},
       nl: {
-        fallback: ['en'],
+        fallback: 'en',
       },
     },
     props: {

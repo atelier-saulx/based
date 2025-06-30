@@ -330,6 +330,7 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   }
   schemaBuffer.len = 0
   schemaBuffer.dictMap = {}
+  // defalte not supported in unpacking yet
   const isDeflate = 0 // opts.deflate ? 1 : 0
   walk(opts, schema, undefined, undefined, false, schemaBuffer, false)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
