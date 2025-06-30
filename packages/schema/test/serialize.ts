@@ -157,7 +157,7 @@ test('big schema', () => {
   ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
 })
 
-test.only('Simple + enum', () => {
+test('Simple + enum', () => {
   const makeALot = (n: number) => {
     const props: any = {}
     for (let i = 0; i < n; i++) {
