@@ -1,3 +1,6 @@
+# Copyright (c) 2023 SAULX
+# SPDX-License-Identifier: MIT
+
 # Ops
 .service
 
@@ -134,3 +137,22 @@ local-cloud/
 
 .turbo
 .vercel
+
+.ccls-cache
+
+# selvad dump
+*.sdb
+
+# heap dumps
+jeprof.out.*
+
+packages/server/selvad
+
+/.zigmod
+/deps.zig
+zig-cache
+zig-out
+deps/node-*
+packages/db/*.o
+.zigversion
+aggregationNotes.md

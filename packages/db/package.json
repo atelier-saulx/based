@@ -1,0 +1,60 @@
+{
+  "name": "@based/db",
+  "version": "0.0.66",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "scripts": {
+    "build": "make -C clibs && npm run build-zig && tsc",
+    "build-ts": "tsc",
+    "build-zig": "npx tsx scripts/zig_cross_compile.ts",
+    "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
+    "build-release-debug": "(cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
+    "build-release": "(cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
+    "watch": "npx tsc --watch",
+    "clean-selva": "make -C clibs clean",
+    "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
+    "playground-nodebug": "npm run build && node ./dist/test/shared/playground.js",
+    "playground": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./dist/test/shared/playground.js",
+    "playground-fast": "node ./dist/test/shared/playground.js",
+    "test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.js",
+    "test-gdb": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js",
+    "test-fast": "LOCPATH=../locale/locale-x86_64-gnu/locale node ./scripts/test.js",
+    "test-fast-linux_aarch64": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast'",
+    "test-fast-linux_aarch64-gdb": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js'",
+    "test-fast-linux_aarch64-valgrind": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.js references:update2'",
+    "test-zig": "npm run build-zig && tsc && npm run test-fast",
+    "test-zig-debug": "npm run build-zig -- debug && tsc && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.js",
+    "test-ts": "tsc && node ./scripts/test.js",
+    "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/src",
+    "dist/lib",
+    "!*.map",
+    "README.md",
+    "package.json",
+    "basedDbNative.cjs"
+  ],
+  "dependencies": {
+    "@based/schema": "5.0.0-alpha.20",
+    "@saulx/hash": "^3.0.0",
+    "@saulx/utils": "^6.7.0",
+    "exit-hook": "^4.0.0",
+    "picocolors": "^1.1.0",
+    "@based/crc32c": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "@based/locale-x86-64-gnu": "*"
+  },
+  "devDependencies": {
+    "jsondiffpatch": "^0.7.3",
+    "@based/crc32c": "^1.0.0",
+    "@types/node": "^22.5.3",
+    "axios": "^1.7.9",
+    "rimraf": "^3.0.2",
+    "tar": "^7.4.3",
+    "typescript": "^5.6.3"
+  }
+}

@@ -18,8 +18,6 @@ export default (ctx: Context<HttpSession>, route: BasedRouteComplete) => {
 
   const payload = pathExtractor(route.tokens, Buffer.from(url))
 
-  // console.log('extracted a payload', payload, route)
-
   if (payload && 'token' in payload) {
     ctx.session.authState = parseAuthState(payload.token)
 

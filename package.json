@@ -3,6 +3,7 @@
   "version": "2.6.0",
   "author": "Based",
   "license": "MIT",
+  "private": true,
   "homepage": "https://github.com/atelier-saulx/based#readme",
   "bugs": {
     "url": "https://github.com/atelier-saulx/based/issues"
@@ -33,10 +34,13 @@
   "devDependencies": {
     "http-proxy": "^1.18.1",
     "turbo": "1.6.3",
-    "@saulx/prettier-config": "2.0.0",
-    "@saulx/tsconfig": "^1.1.0",
     "lint-staged": "12.1.2",
+    "@saulx/prettier-config": "^2.0.0",
+    "@saulx/tsconfig": "^1.1.0",
+    "@types/node": "^22.9.0",
+    "knip": "^5.36.3",
+    "prettier": "^3.2.5",
     "rimraf": "^3.0.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.6.3"
   }
 }

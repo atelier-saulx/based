@@ -1,0 +1,4 @@
+# Copyright (c) 2022-2025 SAULX
+# SPDX-License-Identifier: MIT
+/xxhash.h
+/jemalloc_selva.h

@@ -1,7 +1,14 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
+<<<<<<< HEAD
     "outDir": "dist"
   },
   "include": ["src", "test"]
+=======
+    "outDir": "dist",
+    "noEmit": true
+  },
+  "include": ["packages/*/src", "packages/*/test"]
+>>>>>>> based-db/secret-mega-project
 }
