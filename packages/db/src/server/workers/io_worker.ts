@@ -3,11 +3,11 @@ import { IoJob } from './io_worker_types.js'
 import { ENCODER, writeInt32 } from '@saulx/utils'
 import native from '../../native.js'
 
-function loadBlock(dbCtx: any, filepath: string): null | Uint8Array {
+function loadBlock(dbCtx: any, filepath: string): null | ArrayBuffer {
   try {
     native.loadBlock(filepath, dbCtx)
   } catch (e) {
-    return ENCODER.encode(e.toString())
+    return new Uint8Array(ENCODER.encode(e.toString())).buffer
   }
   return null
 }
@@ -17,17 +17,18 @@ function unloadBlock(
   filepath: string,
   typeId: number,
   start: number,
-): Uint8Array {
-  const hash = new Uint8Array(16)
+): ArrayBuffer {
+  const buf = new ArrayBuffer(20) // [[4 bytes err], [16 bytes hash]]
+  const hash = new Uint8Array(buf, 4)
   const err = native.saveBlock(filepath, typeId, start, dbCtx, hash)
   if (err) {
-    const buf = new Uint8Array(4)
-    writeInt32(buf, err, 0)
-    return buf
+    const errCodeBuf = new Uint8Array(buf, 0, 4)
+    writeInt32(errCodeBuf, err, 0)
+  } else {
+    native.delBlock(dbCtx, typeId, start)
   }
 
-  native.delBlock(dbCtx, typeId, start)
-  return hash
+  return buf
 }
 
 registerMsgHandler((dbCtx: any, msg: any) => {
