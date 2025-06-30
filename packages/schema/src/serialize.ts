@@ -45,9 +45,7 @@ const KEY_OPTS = PROP
 type SchemaBuffer = {
   buf: Uint8Array
   len: number
-  refMap: Record<string, number>
   dictMap: Record<string, number>
-  inverseRefMap: Record<string, number[]>
 }
 
 const ensureCapacity = (required: number) => {
@@ -242,10 +240,6 @@ const walk = (
     }
   } else {
     for (const key in obj) {
-      if (isTypes) {
-        schemaBuffer.refMap[key] = schemaBuffer.len
-      }
-
       if (
         opts.readOnly &&
         isFromObj &&
@@ -332,14 +326,9 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
       buf: new Uint8Array(10e3), // 10kb default
       len: 0,
       dictMap: {},
-      refMap: {},
-      inverseRefMap: {},
     }
   }
-  schemaBuffer.refMap = {}
   schemaBuffer.dictMap = {}
-  schemaBuffer.inverseRefMap = {}
-  schemaBuffer.len = 0
   const isDeflate = opts.deflate ? 1 : 0
   walk(opts, schema, undefined, undefined, false, schemaBuffer, false)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
