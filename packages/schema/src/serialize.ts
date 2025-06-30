@@ -214,7 +214,6 @@ const walk = (
   ensureCapacity(1 + 4) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    console.log(obj)
     const typeIndex = TYPE_INDEX_MAP['enum' in obj ? 'enum' : obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
