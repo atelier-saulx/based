@@ -7,6 +7,7 @@ function loadBlock(dbCtx: any, filepath: string): null | ArrayBuffer {
   try {
     native.loadBlock(filepath, dbCtx)
   } catch (e) {
+    // need to get rid of the shared buffer
     return new Uint8Array(ENCODER.encode(e.toString())).buffer
   }
   return null
