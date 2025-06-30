@@ -1,7 +1,8 @@
 import test from 'node:test'
 import { ok } from 'node:assert'
-import { serialize, deSerialize, StrictSchema } from '../src/index.js'
+import { serialize, deSerialize, StrictSchema, parse } from '../src/index.js'
 import eurovisionSchema from './schema/based.schema.js'
+import { deflateSync } from 'node:zlib'
 
 // deepEqual that ignore functions (ai generated)
 function deepEqual(a: any, b: any): boolean {
@@ -125,4 +126,75 @@ test('serialize with readOnly option strips validation and defaults', () => {
     deepEqual(deserialized, expected),
     'readOnly option did not strip fields correctly',
   )
+})
+
+test('big schema', () => {
+  const makeALot = (n: number) => {
+    const props: any = {}
+    for (let i = 0; i < n; i++) {
+      props[`f${i}`] = { type: 'int32' }
+    }
+    return props
+  }
+
+  const basicSchema: StrictSchema = {
+    locales: {
+      en: { required: true },
+      nl: {},
+    },
+    types: {
+      thing: {
+        props: {
+          ...makeALot(16000),
+        },
+      },
+    },
+  }
+
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+
+  ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
+})
+
+test.only('Simple + enum', () => {
+  const makeALot = (n: number) => {
+    const props: any = {}
+    for (let i = 0; i < n; i++) {
+      props[`f${i}`] = { type: 'int32' }
+    }
+    return props
+  }
+
+  const basicSchema: StrictSchema = parse({
+    locales: {
+      en: { required: true },
+      nl: {},
+    },
+    types: {
+      article: {
+        props: {
+          type: ['opinion', 'politcis', 'gossip'],
+          code: { type: 'string', maxBytes: 2 },
+          age: { type: 'uint32' },
+          name: { type: 'string' },
+          body: { type: 'string' }, // big compressed string...
+          stuff: 'binary',
+          derp: 'binary',
+        },
+      },
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
+    },
+  }).schema
+
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+
+  console.dir({ basicSchema, deserialized }, { depth: 10 })
+
+  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
