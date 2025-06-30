@@ -1,23 +1,19 @@
 import { DbServer } from './index.js'
-import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import {
-  VerifTree,
-  makeTreeKey,
-} from './tree.js'
-import {
-  foreachBlock,
-} from './blocks.js'
+import { VerifTree, makeTreeKey } from './tree.js'
+import { foreachBlock } from './blocks.js'
 import { availableParallelism } from 'node:os'
 import exitHook from 'exit-hook'
 import { save, Writelog } from './save.js'
+import { deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
 import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
+import { DbSchema } from '../schema.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -29,12 +25,10 @@ export type StartOpts = {
 function startWorkers(db: DbServer, opts: StartOpts) {
   const queryThreads = opts?.queryThreads ?? availableParallelism()
   const address: BigInt = native.intFromExternal(db.dbCtxExternal)
-
   db.workers = []
   for (let i = 0; i < queryThreads; i++) {
     db.workers.push(new QueryWorker(address, db, i))
   }
-
   //db.ioWorker = new IoWorker(address, db)
 }
 
@@ -67,7 +61,7 @@ export async function start(db: DbServer, opts: StartOpts) {
 
     const schema = await readFile(join(path, SCHEMA_FILE))
     if (schema) {
-      const s = JSON.parse(schema.toString())
+      const s = deSerialize(schema) as DbSchema
       setSchemaOnServer(db, s)
     }
 
@@ -86,7 +80,10 @@ export async function start(db: DbServer, opts: StartOpts) {
               console.error(e.message)
             }
           } else {
-            partials.push([makeTreeKey(def.id, dump.start), hexToBuf(dump.hash)])
+            partials.push([
+              makeTreeKey(def.id, dump.start),
+              hexToBuf(dump.hash),
+            ])
           }
         }
       }
@@ -102,16 +99,14 @@ export async function start(db: DbServer, opts: StartOpts) {
     const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
     def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
-      writelog?.types[def.id]?.blockCapacity || def.blockCapacity || BLOCK_CAPACITY_DEFAULT
+      writelog?.types[def.id]?.blockCapacity ||
+      def.blockCapacity ||
+      BLOCK_CAPACITY_DEFAULT
 
-    foreachBlock(
-      db,
-      def,
-      (start, _end, hash) => {
-        const mtKey = makeTreeKey(def.id, start)
-        db.verifTree.update(mtKey, hash)
-      },
-    )
+    foreachBlock(db, def, (start, _end, hash) => {
+      const mtKey = makeTreeKey(def.id, start)
+      db.verifTree.update(mtKey, hash)
+    })
   }
 
   // Insert partials to make the hash match

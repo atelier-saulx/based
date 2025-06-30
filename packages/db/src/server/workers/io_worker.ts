@@ -3,8 +3,7 @@ import { IoJob } from './io_worker_types.js'
 import { ENCODER, writeInt32 } from '@saulx/utils'
 import native from '../../native.js'
 
-function loadBlock(dbCtx: any, filepath: string): null | Uint8Array
-{
+function loadBlock(dbCtx: any, filepath: string): null | Uint8Array {
   try {
     native.loadBlock(filepath, dbCtx)
   } catch (e) {
@@ -13,15 +12,14 @@ function loadBlock(dbCtx: any, filepath: string): null | Uint8Array
   return null
 }
 
-function unloadBlock(dbCtx: any, filepath: string, typeId: number, start: number): Uint8Array {
+function unloadBlock(
+  dbCtx: any,
+  filepath: string,
+  typeId: number,
+  start: number,
+): Uint8Array {
   const hash = new Uint8Array(16)
-  const err = native.saveBlock(
-    filepath,
-    typeId,
-    start,
-    dbCtx,
-    hash,
-  )
+  const err = native.saveBlock(filepath, typeId, start, dbCtx, hash)
   if (err) {
     const buf = new Uint8Array(4)
     writeInt32(buf, err, 0)

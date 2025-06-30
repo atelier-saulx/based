@@ -221,7 +221,7 @@ const walk = (
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
   }
   let sizeIndex = schemaBuffer.len
-  schemaBuffer.len += 2
+  schemaBuffer.len += 4
 
   if (isArray) {
     const len = obj.length
@@ -316,8 +316,10 @@ const walk = (
   }
 
   let size = schemaBuffer.len - start
-  schemaBuffer.buf[sizeIndex] = size
-  schemaBuffer.buf[sizeIndex + 1] = size >>> 8
+
+  writeUint32(schemaBuffer.buf, size, sizeIndex)
+  // schemaBuffer.buf[sizeIndex] = size
+  // schemaBuffer.buf[sizeIndex + 1] = size >>> 8
 }
 
 export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
@@ -393,8 +395,8 @@ export const deSerializeInner = (
     i += 1
   }
 
-  const size = readUint16(buf, i)
-  i += 2
+  const size = readUint32(buf, i)
+  i += 4
 
   const end = size + start
 
