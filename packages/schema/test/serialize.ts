@@ -96,33 +96,33 @@ test('serialize and deserialize complex (Eurovision) schema', () => {
   )
 })
 
-// test('serialize with readOnly option strips validation and defaults', () => {
-//   const schema: StrictSchema = {
-//     types: {
-//       thing: {
-//         props: {
-//           name: { type: 'string', default: 'thingy' },
-//           age: { type: 'number', validation: (v) => v > 18 },
-//         },
-//       },
-//     },
-//   }
+test('serialize with readOnly option strips validation and defaults', () => {
+  const schema: StrictSchema = {
+    types: {
+      thing: {
+        props: {
+          name: { type: 'string', default: 'thingy' },
+          age: { type: 'number', validation: (v) => v > 18 },
+        },
+      },
+    },
+  }
 
-//   const serialized = serialize(schema, { readOnly: true })
-//   const deserialized = deSerialize(serialized)
+  const serialized = serialize(schema, { readOnly: true })
+  const deserialized = deSerialize(serialized)
 
-//   const expected: StrictSchema = {
-//     types: {
-//       thing: {
-//         props: {
-//           name: { type: 'string' }, // default removed
-//           age: { type: 'number' }, // validation removed
-//         },
-//       },
-//     },
-//   }
-//   ok(
-//     deepEqual(deserialized, expected),
-//     'readOnly option did not strip fields correctly',
-//   )
-// })
+  const expected: StrictSchema = {
+    types: {
+      thing: {
+        props: {
+          name: { type: 'string' }, // default removed
+          age: { type: 'number' }, // validation removed
+        },
+      },
+    },
+  }
+  ok(
+    deepEqual(deserialized, expected),
+    'readOnly option did not strip fields correctly',
+  )
+})
