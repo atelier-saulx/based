@@ -151,13 +151,13 @@ export const migrate = async (
       break
     }
     // block modifies
-    server.processingQueries++
+    server.activeReaders++
     const leafData = rangesToMigrate[i++]
     port1.postMessage(leafData)
     setToAwake(workerState, true)
     await waitUntilSleeping(workerState)
     // exec queued modifies
-    server.processingQueries--
+    server.activeReaders--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
       if (server.dirtyRanges.size) {
