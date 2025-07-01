@@ -31,7 +31,6 @@
     "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
     "build-release": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release)"
   },
-  "packageManager": "npm@8.1.0",
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
@@ -41,9 +40,8 @@
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.9.0",
-    "knip": "^5.36.3",
     "prettier": "^3.2.5",
     "rimraf": "^3.0.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.8.3"
   }
 }
