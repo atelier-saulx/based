@@ -17,9 +17,9 @@ BasedDb is a powerful database solution that supports various data types, refere
 **Prerequisites:**
 
 - recent GNU make
-- gcc with recent enough C23 support
+- gcc 14.2 on Linux or clang 17.0.0 on macOS
 - zig 0.14.0
-- npm & node.js, v20.11.1 or newer
+- npm & node.js v22.14.0 or newer
 
 ```bash
 npm i
