@@ -524,7 +524,6 @@ export class DbServer extends DbShared {
   }
 
   onQueryEnd() {
-    console.log('qend', this.activeReaders)
     if (this.activeReaders === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
