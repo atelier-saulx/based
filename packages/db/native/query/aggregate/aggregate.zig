@@ -71,13 +71,14 @@ pub inline fn execAgg(
         } else if (aggType == aggregateTypes.AggType.STDDEV or
             aggType == aggregateTypes.AggType.VARIANCE)
         {
+            const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
             var sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
 
             count += 1;
-            sum += microbufferToF64(propType, value, start);
-            sum_sq += microbufferToF64(propType, value, start) * microbufferToF64(propType, value, start);
+            sum += val;
+            sum_sq += val * val;
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
