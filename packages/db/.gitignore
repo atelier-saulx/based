@@ -1,0 +1,5 @@
+/build
+*.trace
+/.zig-cache
+/.cache
+/deps/node-*

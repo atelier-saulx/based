@@ -1,0 +1,131 @@
+comment_char %
+escape_char /
+
+% This file is part of the GNU C Library and contains locale data.
+% The Free Software Foundation does not claim any copyright interest
+% in the locale data contained in this file.  The foregoing does not
+% affect the license of the GNU C Library as a whole.  It does not
+% exempt you from the conditions of the license if your use would
+% otherwise be governed by that license.
+
+LC_IDENTIFICATION
+title      "Latin locale for Vatican"
+source     ""
+address    ""
+contact    ""
+email      ""
+tel        ""
+fax        ""
+language   "Latin"
+territory  "Vatican City State"
+revision   "1.0"
+date       "2024-01-18"
+
+category "i18n:2012";LC_IDENTIFICATION
+category "i18n:2012";LC_CTYPE
+category "i18n:2012";LC_COLLATE
+category "i18n:2012";LC_TIME
+category "i18n:2012";LC_NUMERIC
+category "i18n:2012";LC_MONETARY
+category "i18n:2012";LC_MESSAGES
+category "i18n:2012";LC_PAPER
+category "i18n:2012";LC_NAME
+category "i18n:2012";LC_ADDRESS
+category "i18n:2012";LC_TELEPHONE
+category "i18n:2012";LC_MEASUREMENT
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "it_IT"
+END LC_CTYPE
+
+LC_MESSAGES
+yesexpr "^[+1sSyY]"
+noexpr  "^[-0nN]"
+yesstr  "sic"
+nostr   "no"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "it_IT"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "it_IT"
+END LC_NUMERIC
+
+LC_TIME
+abday   "sol";"lun";/
+	"mar";"mer";/
+	"iov";"ven";/
+	"sat"
+day     "dies solis";/
+	"dies lunae";/
+	"dies martis";/
+	"dies mercurii";/
+	"dies iovis";/
+	"dies veneris";/
+	"dies saturni"
+abmon   "ian";"feb";/
+	"mar";"apr";/
+	"mai";"iun";/
+	"iul";"aug";/
+	"sep";"oct";/
+	"nov";"dec"
+mon     "iaunuaris";/
+	"februaris";/
+	"martius";/
+	"aprilis";/
+	"maius";/
+	"iunius";/
+	"iulius";/
+	"augustus";/
+	"september";/
+	"october";/
+	"november";/
+	"december"
+d_t_fmt "%a %-d %b %Y, %T"
+d_fmt   "%d//%m//%Y"
+t_fmt   "%T"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt   "%a %-d %b %Y, %T, %Z"
+week 7;19971130;4
+first_weekday 2
+END LC_TIME
+
+LC_PAPER
+copy "i18n"
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "+%c %a %l"
+int_prefix     "379"
+int_select     "00"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "i18n"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "it_IT"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N"
+country_name "Vatican City"
+country_ab2 "IT"
+country_ab3 "ITA"
+country_num 380
+country_isbn "978-88,979-12"
+country_car  "V"
+lang_name    "latin"
+lang_ab      "la"
+lang_term    "lat"
+lang_lib    "lat"
+END LC_ADDRESS

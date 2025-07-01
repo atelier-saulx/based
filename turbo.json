@@ -1,5 +1,4 @@
 {
-  "baseBranch": "origin/master",
   "pipeline": {
     "build": {
       "outputs": ["dist/**"],
@@ -9,6 +8,10 @@
       "outputs": []
     },
     "watch": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test": {
       "dependsOn": ["^build"],
       "cache": false
     },

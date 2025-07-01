@@ -1,0 +1,35 @@
+{
+  "name": "@based/schema",
+  "version": "5.0.0-alpha.21",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json",
+    "!dist/**/*.map"
+  ],
+  "main": "./dist/index.js",
+  "exports": {
+    "./def": "./dist/def/index.js",
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
+  },
+  "prettier": "@saulx/prettier-config",
+  "sideEffects": false,
+  "type": "module",
+  "devDependencies": {
+    "@saulx/prettier-config": "2.0.0",
+    "@saulx/tsconfig": "^1.1.0",
+    "@types/node": "22.5.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@saulx/utils": "^6.7.0",
+    "picocolors": "^1.1.0"
+  }
+}
