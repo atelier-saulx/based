@@ -1,4 +1,4 @@
-import { BasedDb, serialize } from '../src/index.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
@@ -50,7 +50,5 @@ await test('serialize', async (t) => {
     { id: 3, isNice: false },
   ])
 
-  const def = db.query('user').filter('isNice', false).def
-
-  const str = serialize(def)
+  // const def = db.query('user').filter('isNice', false).def
 })

@@ -26,6 +26,6 @@ export class QueryWorker extends DbWorker {
       return Promise.resolve(new Uint8Array(1))
     }
 
-    return this.call<Uint8Array>(buf)
+    return this.call(buf)
   }
 }

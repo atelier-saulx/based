@@ -211,7 +211,7 @@ const walk = (
   const isSchemaProp =
     ('enum' in obj || ('type' in obj && TYPE_INDEX_MAP[obj.type])) && isFromObj
 
-  ensureCapacity(1 + 4) // Type byte + size
+  ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
     const typeIndex = TYPE_INDEX_MAP['enum' in obj ? 'enum' : obj.type]
@@ -220,7 +220,7 @@ const walk = (
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
   }
   let sizeIndex = schemaBuffer.len
-  schemaBuffer.len += 4
+  schemaBuffer.len += 5
 
   if (isArray) {
     const len = obj.length
@@ -304,6 +304,7 @@ const walk = (
         } else {
           encodeKey(key, schemaBuffer)
         }
+        // important to handle the size here...
         handleSingleValue(opts, obj[key], obj, prev, fromObject, key)
       }
     }
@@ -311,9 +312,19 @@ const walk = (
 
   let size = schemaBuffer.len - start
 
-  writeUint32(schemaBuffer.buf, size, sizeIndex)
-  // schemaBuffer.buf[sizeIndex] = size
-  // schemaBuffer.buf[sizeIndex + 1] = size >>> 8
+  // 3
+  // if (size < 252) {
+  //   console.log('FLAP>', size)
+  //   schemaBuffer.buf[sizeIndex] = size + 3
+  //   schemaBuffer.buf.set(
+  //     schemaBuffer.buf.subarray(sizeIndex + 4, sizeIndex + size),
+  //     sizeIndex + 1,
+  //   )
+  //   schemaBuffer.len -= 4
+  // } else {
+  schemaBuffer.buf[sizeIndex] = 0 // means 4
+  writeUint32(schemaBuffer.buf, size, sizeIndex + 1)
+  // }
 }
 
 export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
@@ -391,8 +402,15 @@ export const deSerializeInner = (
     i += 1
   }
 
-  const size = readUint32(buf, i)
-  i += 4
+  let size: number
+  if (buf[i] === 0) {
+    size = readUint32(buf, i + 1)
+    i += 5
+  } else {
+    size = buf[i] - 3
+    console.log('yo', size)
+    i += 1
+  }
 
   const end = size + start
 

@@ -41,123 +41,123 @@ function deepEqual(a: any, b: any): boolean {
   return false
 }
 
-test('serialize and deserialize basic schema', () => {
-  const basicSchema: StrictSchema = {
-    locales: {
-      en: { required: true },
-      nl: {},
-    },
-    types: {
-      thing: {
-        props: {
-          name: { type: 'string', default: 'thingy' },
-          nested: {
-            type: 'object',
-            props: {
-              field: { type: 'number' },
-            },
-          },
-          ref: {
-            ref: 'other',
-            prop: 'backref',
-          },
-          validationFn: {
-            type: 'string',
-            validation: (v) => v.startsWith('valid'),
-          },
-        },
-      },
-      other: {
-        props: {
-          backref: {
-            readOnly: true,
-            items: {
-              ref: 'thing',
-              prop: 'ref',
-            },
-          },
-        },
-      },
-    },
-  }
+// test('serialize and deserialize basic schema', () => {
+//   const basicSchema: StrictSchema = {
+//     locales: {
+//       en: { required: true },
+//       nl: {},
+//     },
+//     types: {
+//       thing: {
+//         props: {
+//           name: { type: 'string', default: 'thingy' },
+//           nested: {
+//             type: 'object',
+//             props: {
+//               field: { type: 'number' },
+//             },
+//           },
+//           ref: {
+//             ref: 'other',
+//             prop: 'backref',
+//           },
+//           validationFn: {
+//             type: 'string',
+//             validation: (v) => v.startsWith('valid'),
+//           },
+//         },
+//       },
+//       other: {
+//         props: {
+//           backref: {
+//             readOnly: true,
+//             items: {
+//               ref: 'thing',
+//               prop: 'ref',
+//             },
+//           },
+//         },
+//       },
+//     },
+//   }
 
-  const serialized = serialize(basicSchema)
-  const deserialized = deSerialize(serialized)
+//   const serialized = serialize(basicSchema)
+//   const deserialized = deSerialize(serialized)
 
-  ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
-})
+//   ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
+// })
 
-test('serialize and deserialize complex (Eurovision) schema', () => {
-  const serialized = serialize(eurovisionSchema)
-  const deserialized = deSerialize(serialized)
+// test('serialize and deserialize complex (Eurovision) schema', () => {
+//   const serialized = serialize(eurovisionSchema)
+//   const deserialized = deSerialize(serialized)
 
-  ok(
-    deepEqual(eurovisionSchema, deserialized),
-    'Eurovision schema did not match after roundtrip',
-  )
-})
+//   ok(
+//     deepEqual(eurovisionSchema, deserialized),
+//     'Eurovision schema did not match after roundtrip',
+//   )
+// })
 
-test('serialize with readOnly option strips validation and defaults', () => {
-  const schema: StrictSchema = {
-    types: {
-      thing: {
-        props: {
-          name: { type: 'string', default: 'thingy' },
-          age: { type: 'number', validation: (v) => v > 18 },
-        },
-      },
-    },
-  }
+// test('serialize with readOnly option strips validation and defaults', () => {
+//   const schema: StrictSchema = {
+//     types: {
+//       thing: {
+//         props: {
+//           name: { type: 'string', default: 'thingy' },
+//           age: { type: 'number', validation: (v) => v > 18 },
+//         },
+//       },
+//     },
+//   }
 
-  const serialized = serialize(schema, { readOnly: true })
-  const deserialized = deSerialize(serialized)
+//   const serialized = serialize(schema, { readOnly: true })
+//   const deserialized = deSerialize(serialized)
 
-  const expected: StrictSchema = {
-    types: {
-      thing: {
-        props: {
-          name: { type: 'string' }, // default removed
-          age: { type: 'number' }, // validation removed
-        },
-      },
-    },
-  }
-  ok(
-    deepEqual(deserialized, expected),
-    'readOnly option did not strip fields correctly',
-  )
-})
+//   const expected: StrictSchema = {
+//     types: {
+//       thing: {
+//         props: {
+//           name: { type: 'string' }, // default removed
+//           age: { type: 'number' }, // validation removed
+//         },
+//       },
+//     },
+//   }
+//   ok(
+//     deepEqual(deserialized, expected),
+//     'readOnly option did not strip fields correctly',
+//   )
+// })
 
-test('big schema', () => {
-  const makeALot = (n: number) => {
-    const props: any = {}
-    for (let i = 0; i < n; i++) {
-      props[`f${i}`] = { type: 'int32' }
-    }
-    return props
-  }
+// test('big schema', () => {
+//   const makeALot = (n: number) => {
+//     const props: any = {}
+//     for (let i = 0; i < n; i++) {
+//       props[`f${i}`] = { type: 'int32' }
+//     }
+//     return props
+//   }
 
-  const basicSchema: StrictSchema = {
-    locales: {
-      en: { required: true },
-      nl: {},
-    },
-    types: {
-      thing: {
-        props: {
-          ...makeALot(16000),
-        },
-      },
-    },
-  }
+//   const basicSchema: StrictSchema = {
+//     locales: {
+//       en: { required: true },
+//       nl: {},
+//     },
+//     types: {
+//       thing: {
+//         props: {
+//           ...makeALot(16000),
+//         },
+//       },
+//     },
+//   }
 
-  const serialized = serialize(basicSchema)
-  const deserialized = deSerialize(serialized)
+//   const serialized = serialize(basicSchema)
+//   const deserialized = deSerialize(serialized)
 
-  ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
-})
+//   ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
+// })
 
-test.only('Simple + enum', () => {
+test('Simple + enum', () => {
   const makeALot = (n: number) => {
     const props: any = {}
     for (let i = 0; i < n; i++) {

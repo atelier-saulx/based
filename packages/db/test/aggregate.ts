@@ -1587,13 +1587,13 @@ await test('overall performance', async (t) => {
           price: 'number',
           bitterness: 'number',
           alchol: 'number',
-          year: 'uint16',
+          year: 'number',
         },
       },
     },
   })
 
-  const beers = 1e5
+  const beers = 1e6
   const years = [1940, 1990, 2013, 2006]
   for (let i = 0; i < beers; i++) {
     const beer = await db.create('beer', {
@@ -1604,26 +1604,42 @@ await test('overall performance', async (t) => {
     })
   }
 
+  const scriptName = process.env.npm_lifecycle_event || ''
+  const isDebugMode = scriptName.includes('debug')
+  const acceptableDuration = isDebugMode ? 200 : 20
+
   const startTime1 = performance.now()
-  await db.query('beer').avg('price').get()
+  await db.query('beer').sum('price').get()
   const elapsedTime1 = performance.now() - startTime1
-  equal(elapsedTime1 < 10, true, 'Acceptable main agg performance')
+  equal(
+    elapsedTime1 < acceptableDuration,
+    true,
+    'Acceptable main agg performance',
+  )
 
   const startTime2 = performance.now()
   await db.query('beer').groupBy('year').get()
   const elapsedTime2 = performance.now() - startTime2
-  equal(elapsedTime2 < 20, true, 'Acceptable group by main prop performance')
+  equal(
+    elapsedTime2 < acceptableDuration,
+    true,
+    'Acceptable group by main prop performance',
+  )
 
   const startTime3 = performance.now()
   await db.query('beer').groupBy('type').get()
   const elapsedTime3 = performance.now() - startTime3
-  equal(elapsedTime3 < 20, true, 'Acceptable group by enum main performance')
+  equal(
+    elapsedTime3 < acceptableDuration,
+    true,
+    'Acceptable group by enum main performance',
+  )
 
   const startTime4 = performance.now()
   await db.query('beer').max('price').groupBy('type').get()
   const elapsedTime4 = performance.now() - startTime4
   equal(
-    elapsedTime4 < 30,
+    elapsedTime4 < acceptableDuration,
     true,
     'Acceptable agg + enum main group by performance',
   )
