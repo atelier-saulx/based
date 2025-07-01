@@ -50,10 +50,17 @@ export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number)
     throw new Error(`No such block: ${key}`)
   }
 
+  if (block.loadPromise) {
+    return block.loadPromise
+  }
+
   const prevHash = block.hash
   const filename = db.verifTree.getBlockFile(block)
 
-  await db.ioWorker.loadBlock(join(db.fileSystemPath, filename))
+  const p = db.ioWorker.loadBlock(join(db.fileSystemPath, filename))
+  block.loadPromise = p
+  await p
+  delete block.loadPromise
 
   // Update and verify the hash
   const hash = new Uint8Array(16)

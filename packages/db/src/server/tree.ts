@@ -30,6 +30,7 @@ export type VerifBlock = {
   key: number,
   hash: Hash,
   inmem: boolean,
+  loadPromise: null | Promise<void>,
 }
 
 type VerifType = {
@@ -92,7 +93,7 @@ export class VerifTree {
       throw new Error(`type ${typeId} not found`)
     }
     const blockI = nodeId2BlockI(start, type.blockCapacity)
-    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash, inmem }))
+    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash, inmem, loadPromise: null }))
     block.hash = hash
     block.inmem = inmem
   }
