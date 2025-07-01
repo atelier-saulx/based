@@ -42,26 +42,24 @@ pub inline fn execAgg(
         j += 2;
         // TODO: populational or sample statistics switch or aliases
 
-        const current_value_f64 = microbufferToF64(propType, value, start);
-
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, resultPos, current_value_f64);
+                writeInt(f64, accumulatorField, resultPos, microbufferToF64(propType, value, start));
             } else {
-                writeInt(f64, accumulatorField, resultPos, @max(read(f64, accumulatorField, resultPos), current_value_f64));
+                writeInt(f64, accumulatorField, resultPos, @max(read(f64, accumulatorField, resultPos), microbufferToF64(propType, value, start)));
             }
         } else if (aggType == aggregateTypes.AggType.MIN) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, resultPos, current_value_f64);
+                writeInt(f64, accumulatorField, resultPos, microbufferToF64(propType, value, start));
             } else {
-                writeInt(f64, accumulatorField, resultPos, @min(read(f64, accumulatorField, resultPos), current_value_f64));
+                writeInt(f64, accumulatorField, resultPos, @min(read(f64, accumulatorField, resultPos), microbufferToF64(propType, value, start)));
             }
         } else if (aggType == aggregateTypes.AggType.SUM) {
-            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + current_value_f64);
+            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + microbufferToF64(propType, value, start));
         } else if (aggType == aggregateTypes.AggType.AVERAGE) {
-            const val = current_value_f64;
+            const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
 
@@ -78,8 +76,8 @@ pub inline fn execAgg(
             var sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
 
             count += 1;
-            sum += current_value_f64;
-            sum_sq += current_value_f64 * current_value_f64;
+            sum += microbufferToF64(propType, value, start);
+            sum_sq += microbufferToF64(propType, value, start) * microbufferToF64(propType, value, start);
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
