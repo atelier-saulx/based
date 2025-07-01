@@ -37,7 +37,24 @@ function unloadBlock(dbCtx: any, filepath: string, typeId: number, start: number
 registerMsgHandler((dbCtx: any, msg: any) => {
   if (typeof msg?.type === 'string') {
     const job: IoJob = msg
-    if (job.type === 'load') {
+    if (job.type === 'save') {
+      const LEN = 20
+      return job.blocks.reduce(
+        (buf, block, index) => {
+          const errCodeBuf = new Uint8Array(buf, index * LEN, 4)
+          const hash = new Uint8Array(buf, index * LEN + 4)
+          const err = native.saveBlock(
+            block.filepath,
+            block.typeId,
+            block.start,
+            dbCtx,
+            hash,
+          )
+          writeInt32(errCodeBuf, err, 0)
+          return buf
+        },
+        new ArrayBuffer(job.blocks.length * LEN))
+    } else if (job.type === 'load') {
       return loadBlock(dbCtx, job.filepath)
     } else if (job.type === 'unload') {
       return unloadBlock(dbCtx, job.filepath, job.typeId, job.start)

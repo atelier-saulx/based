@@ -15,10 +15,31 @@ export class IoWorker extends DbWorker {
   override handleMsg(_buf: any): void {
   }
 
+  private cb = (resolve: (x: any) => any) => {
+    this.db.activeReaders++
+    this.resolvers.push((r) => {
+      this.db.activeReaders--
+      resolve(r)
+      //this.db.onQueryEnd()
+    })
+  }
+
+  async saveBlocks(blocks: { filepath: string, typeId: number, start: number }[]): Promise<Uint8Array> {
+    const job: IoJob = {
+      type: 'save',
+      blocks,
+    }
+
+    this.channel.postMessage(job)
+    const resBufP = new Promise(this.cb)
+    resBufP.then(() => this.db.onQueryEnd())
+    return resBufP
+  }
+
   async loadBlock(filepath: string): Promise<void> {
     const job: IoJob = {
       type: 'load',
-      filepath
+      filepath,
     }
 
     const resBuf = await this.call(job)
@@ -32,7 +53,7 @@ export class IoWorker extends DbWorker {
       type: 'unload',
       filepath,
       typeId,
-      start
+      start,
     }
 
     const resBuf = await this.call(job)

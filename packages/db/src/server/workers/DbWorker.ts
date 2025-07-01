@@ -57,7 +57,7 @@ export abstract class DbWorker {
   }
 
   protected db: DbServer
-  private channel: MessagePort
+  protected channel: MessagePort
   private worker: Worker
   protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>

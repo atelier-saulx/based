@@ -135,7 +135,7 @@ export const migrate = async (
   let i = 0
   let rangesToMigrate: MigrateRange[] = []
 
-  await save(server, false, false, true)
+  await save(server, false, true)
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
@@ -218,7 +218,7 @@ export const migrate = async (
   }
 
   native.membarSyncRead()
-  await save(server, false, true, true)
+  await save(server, true, true)
   await writeSchemaFile(server, toSchema)
 
   server.migrating = 0

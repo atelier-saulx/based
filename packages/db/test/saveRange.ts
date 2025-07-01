@@ -87,7 +87,7 @@ await test('save simple range', async (t) => {
     '2_200001_300000.sdb',
     '2_300001_400000.sdb',
     'common.sdb',
-    'schema.json',
+    'schema.bin',
     'writelog.json',
   ])
 
