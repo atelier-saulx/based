@@ -76,7 +76,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += GroupProtocolLen;
     const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
-    // var hadAccumulated = false;
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
@@ -116,6 +115,5 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     try finalizeGroupResults(data, groupCtx, agg);
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
-    // utils.debugPrint("buf: {any}", .{data}); // MV
     return result;
 }
