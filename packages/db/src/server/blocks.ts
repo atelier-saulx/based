@@ -9,6 +9,9 @@ import {
 } from './tree.js'
 import { DbServer } from './index.js'
 
+/**
+ * Save a block.
+ */
 export function saveBlock(
   db: DbServer,
   typeId: number,
@@ -37,6 +40,9 @@ export function saveBlock(
   }
 }
 
+/**
+ * Load a block (typically of a partial type) back to memory.
+ */
 export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
   const key = makeTreeKey(def.id, start)
   const block = db.verifTree.getBlock(key)
@@ -68,6 +74,9 @@ export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number)
   }
 }
 
+/**
+ * Save a block and remove it from memory.
+ */
 export async function unloadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
   const typeId = def.id
   const end = start + def.blockCapacity - 1
@@ -90,6 +99,9 @@ export async function unloadBlock(db: DbServer, def: SchemaTypeDef, start: numbe
   }
 }
 
+/**
+ * Execute cb() for each block in memory.
+ */
 export function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
@@ -113,6 +125,11 @@ export function foreachBlock(
   }
 }
 
+/**
+ * Execute cb() for each dirty block.
+ * A dirty block is one that is changed in memory but not yet persisted in the
+ * file system.
+ */
 export function foreachDirtyBlock(
   db: DbServer,
   cb: (mtKey: number, typeId: number, start: number, end: number) => void,
