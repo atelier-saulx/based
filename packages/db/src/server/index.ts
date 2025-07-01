@@ -49,7 +49,7 @@ export class DbServer extends DbShared {
   ioWorker: IoWorker
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
-  processingQueries = 0
+  processingQueries = 0 // semaphore for locking writes
   modifyQueue: Uint8Array[] = []
   queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
