@@ -272,7 +272,11 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
       // else if (prop.typeIndex === BINARY) {
       //   addField(prop, prop.default, item)
       // }
-      else if (prop.typeIndex === TEXT || prop.typeIndex === STRING) {
+      else if (
+        prop.typeIndex === TEXT ||
+        prop.typeIndex === STRING ||
+        prop.typeIndex === ALIAS
+      ) {
         addField(prop, '', item)
       }
       // else if (prop.typeIndex === JSON) {

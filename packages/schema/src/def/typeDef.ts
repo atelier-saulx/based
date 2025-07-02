@@ -252,9 +252,9 @@ export const createSchemaTypeDef = (
         if (f.default !== undefined) {
           result.hasSeperateDefaults = true
           if (!result.seperateDefaults) {
-            result.seperateDefaults = []
+            // result.seperateDefaults = []
           }
-          result.seperateDefaults.push(f)
+          // result.seperateDefaults.push(f)
         }
       } else {
         if (!result.mainLen) {
