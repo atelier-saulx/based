@@ -62,8 +62,8 @@ export abstract class DbWorker {
   protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
 
-  terminate() {
-    this.worker.terminate()
+  async terminate() {
+    return this.worker.terminate()
   }
 
   abstract handleMsg(buf: any): void
