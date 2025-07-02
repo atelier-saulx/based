@@ -256,26 +256,32 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
         if (lang.has(0)) {
           for (const locale in q.schema.locales) {
             if (lan[locale] == undefined) {
-              lan[locale] = prop.default[locale] || ''
+              lan[locale] = ''
             }
           }
         } else {
           for (const code of lang) {
             const locale = inverseLangMap.get(code)
             if (!lan[locale]) {
-              lan[locale] = prop.default[locale] || ''
+              lan[locale] = ''
             }
           }
         }
-      } else if (prop.typeIndex === BINARY) {
-        addField(prop, prop.default, item)
-      } else if (prop.typeIndex === TEXT) {
-        addField(prop, '', item)
-      } else {
-        if (prop.default !== undefined) {
-          addField(prop, prop.default, item)
-        }
       }
+
+      // else if (prop.typeIndex === BINARY) {
+      //   addField(prop, prop.default, item)
+      // }
+      else if (prop.typeIndex === TEXT || prop.typeIndex === STRING) {
+        addField(prop, '', item)
+      }
+      // else if (prop.typeIndex === JSON) {
+      //   // addField(prop, null, item)
+      // } else {
+      //   // if (prop.default !== undefined) {
+      //   //   addField(prop, '', item)
+      //   // }
+      // }
     }
   }
 }

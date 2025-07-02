@@ -26,6 +26,8 @@ export class ModifyCtx {
   hasSortField = -1
   hasSortText = -1
 
+  hasDefaults = -1
+
   ctx: {
     queue?: Map<(payload: any) => void, ModifyState>
     offsets?: Record<number, number>
