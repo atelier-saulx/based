@@ -127,6 +127,9 @@ struct SelvaTypeEntryFind {
     node_type_t type;
 };
 
+static_assert(offsetof(struct SelvaTypeEntryFind, type) == offsetof(struct SelvaTypeEntry, type));
+static_assert(sizeof_field(struct SelvaTypeEntryFind, type) == sizeof_field(struct SelvaTypeEntry, type));
+
 /**
  * Node expire token.
  */
