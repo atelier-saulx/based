@@ -41,7 +41,7 @@ registerMsgHandler((dbCtx: any, msg: any) => {
     return job.blocks.reduce(
       (buf, block, index) => {
         const errCodeBuf = new Uint8Array(buf, index * LEN, 4)
-        const hash = new Uint8Array(buf, index * LEN + 4)
+        const hash = new Uint8Array(buf, index * LEN + 4, 16)
         const err = native.saveBlock(
           block.filepath,
           block.typeId,
