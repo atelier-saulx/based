@@ -80,7 +80,7 @@ int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
 __attribute__((nonnull))
 static int SelvaTypeEntry_cmp(const struct SelvaTypeEntry *a, const struct SelvaTypeEntry *b)
 {
-    return (int)a->type - (int)b->type;
+    return (int)((struct SelvaTypeEntryFind *)a)->type - (int)((struct SelvaTypeEntryFind *)b)->type;
 }
 
 __attribute__((nonnull))
