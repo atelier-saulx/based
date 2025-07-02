@@ -573,6 +573,7 @@ export class DbServer extends DbShared {
       }
 
       await this.ioWorker.terminate()
+      this.ioWorker = null
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
