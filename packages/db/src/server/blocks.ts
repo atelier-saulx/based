@@ -46,11 +46,12 @@ export async function saveBlocks(
   blocks: IoJobSave['blocks']
 ): Promise<void> {
   const res = await db.ioWorker.saveBlocks(blocks)
+  if (res.byteOffset !== 0) throw new Error('Unexpected offset')
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
     const key = makeTreeKey(block.typeId, block.start)
     const err = readInt32(res, i * 20)
-    const hash = new Uint8Array(res.buffer, res.byteOffset + i * 20 + 4, 16)
+    const hash = new Uint8Array(res.buffer, i * 20 + 4, 16)
 
     if (err === -8) {
       // TODO ENOENT
