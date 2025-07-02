@@ -36,26 +36,18 @@ await test('saveInterval', async (t) => {
 
   await setTimeout(1e3)
 
-  console.log('1')
   const res1 = await db.query('user').get().toObject()
-  console.log('2')
 
   await db.stop(true)
-  console.log('3')
 
   const db2 = new BasedDb({
     path: t.tmp,
   })
-  console.log('4')
   await db2.start()
-  console.log('5')
   t.after(() => db2.destroy())
-  console.log('5b')
 
   await db2.schemaIsSet()
-  console.log('6')
   const res2 = await db2.query('user').get().toObject()
-  console.log('7')
 
   deepEqual(res1, res2)
 })
