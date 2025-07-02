@@ -205,7 +205,6 @@ export async function save(
               typeId,
               start,
             })
-            saveBlock(db, def.id, start, end)
           },
         )
       }
