@@ -147,12 +147,11 @@ export function saveSync(
     db.dirtyRanges.clear()
 
     const data = makeWritelog(db, ts)
-    const filePath = join(db.fileSystemPath, WRITELOG_FILE)
     const content = JSON.stringify(data)
     db.emit('info', `Save took ${Date.now() - ts}ms`)
 
     db.saveInProgress = false
-    return writeFileSync(filePath, content)
+    return writeFileSync(join(db.fileSystemPath, WRITELOG_FILE), content)
   } catch (err) {
     db.emit('error', `Save failed ${err.message}`)
     db.saveInProgress = false
@@ -224,16 +223,14 @@ export async function save(
     await saveBlocks(db, blocks)
     db.dirtyRanges.clear()
 
-    const data = makeWritelog(db, ts)
-    const filePath = join(db.fileSystemPath, WRITELOG_FILE)
-    const content = JSON.stringify(data)
-    db.emit('info', `Save took ${Date.now() - ts}ms`)
-
     try {
-      await writeFile(filePath, content)
+      const data = makeWritelog(db, ts)
+      await writeFile(join(db.fileSystemPath, WRITELOG_FILE), JSON.stringify(data))
     } catch(err) {
       db.emit('error', `Save: writing writeLog failed ${err.message}`)
     }
+
+    db.emit('info', `Save took ${Date.now() - ts}ms`)
   } catch (err) {
     db.emit('error', `Save failed ${err.message}`)
     throw err
