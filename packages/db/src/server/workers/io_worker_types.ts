@@ -19,4 +19,8 @@ type IoJobUnload = {
   start: number
 }
 
-export type IoJob = IoJobSave | IoJobLoad | IoJobUnload
+type IoJobTerminate = {
+  type: 'terminate'
+}
+
+export type IoJob = IoJobSave | IoJobLoad | IoJobUnload | IoJobTerminate

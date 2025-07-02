@@ -15,6 +15,14 @@ export class IoWorker extends DbWorker {
   override handleMsg(_buf: any): void {
   }
 
+  override async terminate(): Promise<number> {
+    const job: IoJob = {
+      type: 'terminate',
+    }
+    this.call(job)
+    return new Promise((resolve) => resolve(0))
+  }
+
   private cb = (resolve: (x: any) => any) => {
     this.db.activeReaders++
     this.resolvers.push((r) => {
