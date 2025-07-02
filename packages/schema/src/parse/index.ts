@@ -10,6 +10,7 @@ export { getPropType }
 
 export class SchemaParser {
   constructor(schema: Schema) {
+    // uint8Array is not working
     this.schema = deepCopy(schema)
   }
 
@@ -104,7 +105,6 @@ export class SchemaParser {
         throw Error(UNKNOWN_PROP)
       }
     }
-
     return this.schema as StrictSchema
   }
 }

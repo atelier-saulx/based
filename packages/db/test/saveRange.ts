@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual, equal } from './shared/assert.js'
-import {equals} from '@saulx/utils'
+import { equals } from '@saulx/utils'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -87,7 +87,7 @@ await test('save simple range', async (t) => {
     '2_200001_300000.sdb',
     '2_300001_400000.sdb',
     'common.sdb',
-    'schema.json',
+    'schema.bin',
     'writelog.json',
   ])
 
@@ -352,6 +352,4 @@ await test('refs removal with delete', async (t) => {
   }
   await db.save()
   db.delete('a', a)
-
-  // t.backup will continue the test from here
 })
