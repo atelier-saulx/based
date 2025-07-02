@@ -83,7 +83,7 @@ export class DbServer extends DbShared {
   }
 
   save(opts?: { forceFullDump?: boolean }) {
-    return save(this, false, opts?.forceFullDump ?? false)
+    return save(this, opts?.forceFullDump ?? false)
   }
 
   async loadBlock(typeName: string, nodeId: number) {
