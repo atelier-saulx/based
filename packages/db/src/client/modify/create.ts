@@ -104,6 +104,8 @@ const appendCreate = (
     ctx.hasSortField = -1
   }
 
+  console.log(def)
+
   if (def.hasSeperateTextSort) {
     const buf = def.seperateTextSort.bufferTmp
     if (ctx.hasSortText !== def.seperateTextSort.size - 1) {

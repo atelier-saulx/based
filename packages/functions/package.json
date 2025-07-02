@@ -17,7 +17,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@saulx/utils": "^6.7.0",
+    "@saulx/utils": "^6.7.2",
     "utility-types": "^3.10.0"
   },
   "devDependencies": {

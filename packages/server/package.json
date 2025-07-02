@@ -19,7 +19,7 @@
     "@based/uws": "^6.0.0",
     "@saulx/diff": "^2.0.3",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^6.7.0",
+    "@saulx/utils": "^6.7.2",
     "picocolors": "^1.0.0",
     "jsonexport": "^3.2.0",
     "jsonwebtoken": "^8.5.1",

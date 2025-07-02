@@ -97,7 +97,6 @@ pub inline fn aggregateRefsGroup(
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
     var i: usize = offset;
-    var hadAccumulated = false;
 
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
@@ -115,15 +114,14 @@ pub inline fn aggregateRefsGroup(
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            var accumulatorField: []u8 = undefined;
-            if (!groupCtx.hashMap.contains(key)) {
-                accumulatorField = try ctx.allocator.alloc(u8, groupCtx.accumulatorSize);
-                @memset(accumulatorField, 0);
-                try groupCtx.hashMap.put(key, accumulatorField);
+            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
+            const accumulatorField = hash_map_entry.value;
+            var hadAccumulated = !hash_map_entry.is_new;
+
+            if (hash_map_entry.is_new) {
                 resultsSize += 2 + key.len + groupCtx.resultsSize;
-            } else {
-                accumulatorField = groupCtx.hashMap.get(key).?;
             }
+
             aggregate(agg, typeEntry, n, accumulatorField, &hadAccumulated);
         }
     }

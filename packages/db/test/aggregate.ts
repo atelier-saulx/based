@@ -250,17 +250,17 @@ await test('sum branched includes', async (t) => {
     'brached include, sum, references',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((select) => {
-  //       select('votes').groupBy('country').sum('NL', 'AU')
-  //     })
-  //     .get()
-  //     .toObject(),
-  //   [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
-  //   'branched include, references, groupBy',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').groupBy('country').sum('NL', 'AU')
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+    'branched include, references, groupBy',
+  )
 
   deepEqual(
     await db
@@ -457,8 +457,6 @@ await test('top level count', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
-
-  // ;(await db.query('vote').count().get()).debug()
 
   deepEqual(
     await db.query('vote').count().get().toObject(),

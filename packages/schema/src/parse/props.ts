@@ -180,7 +180,7 @@ export const isDefault = (val, prop, ctx) => {
     enum: prop.enum,
     validation,
     default: DEFAULT_MAP[typeIndex],
-    step: parseMinMaxStep(prop.step ?? typeIndex === NUMBER ? 0 : 1),
+    step: parseMinMaxStep((prop.step ?? typeIndex === NUMBER) ? 0 : 1),
     max: parseMinMaxStep(prop.max),
     min: parseMinMaxStep(prop.min),
   }

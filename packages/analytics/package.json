@@ -23,7 +23,7 @@
   "type": "module",
   "dependencies": {
     "@based/schema": "5.0.0-alpha.20",
-    "@saulx/utils": "^6.7.0",
+    "@saulx/utils": "^6.7.2",
     "@based/db": "0.0.66"
   }
 }
