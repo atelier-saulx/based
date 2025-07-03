@@ -44,7 +44,7 @@ export class DbServer extends DbShared {
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
-  verifTree: VerifTree
+  verifTree: VerifTree // should be updated only when saving/loading
   dirtyRanges = new Set<number>()
   ioWorker: IoWorker
   workers: QueryWorker[] = []

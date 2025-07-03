@@ -223,6 +223,9 @@ export async function save(
     await saveBlocks(db, blocks)
 
     try {
+      // Note that we assume here that verifTree didn't change before we call
+      // makeWritelog(). This is true as long as db.saveInProgress protects
+      // the verifTree from changes.
       const data = makeWritelog(db, ts)
       await writeFile(join(db.fileSystemPath, WRITELOG_FILE), JSON.stringify(data))
     } catch(err) {
