@@ -1,16 +1,12 @@
 import { registerMsgHandler } from './worker.js'
+import { nextTick } from 'process'
 import { IoJob } from './io_worker_types.js'
 import { ENCODER, writeInt32 } from '@saulx/utils'
 import native from '../../native.js'
 
 function loadBlock(dbCtx: any, filepath: string): null | ArrayBuffer
 {
-  try {
-    native.loadBlock(filepath, dbCtx)
-  } catch (e) {
-    // need to get rid of the shared buffer
-    return new Uint8Array(ENCODER.encode(e.toString())).buffer
-  }
+  native.loadBlock(filepath, dbCtx)
   return null
 }
 
@@ -35,13 +31,37 @@ function unloadBlock(dbCtx: any, filepath: string, typeId: number, start: number
 }
 
 registerMsgHandler((dbCtx: any, msg: any) => {
-  if (typeof msg?.type === 'string') {
-    const job: IoJob = msg
-    if (job.type === 'load') {
-      return loadBlock(dbCtx, job.filepath)
-    } else if (job.type === 'unload') {
-      return unloadBlock(dbCtx, job.filepath, job.typeId, job.start)
-    }
+  if (typeof msg?.type !== 'string') {
+    throw new Error('Invalid message')
   }
-  return null
+
+  const job: IoJob = msg
+  if (job.type === 'save') {
+    console.log('saving')
+    const LEN = 20
+    return job.blocks.reduce(
+      (buf, block, index) => {
+        const errCodeBuf = new Uint8Array(buf, index * LEN, 4)
+        const hash = new Uint8Array(buf, index * LEN + 4, 16)
+        const err = native.saveBlock(
+          block.filepath,
+          block.typeId,
+          block.start,
+          dbCtx,
+          hash,
+        )
+        writeInt32(errCodeBuf, err, 0)
+        return buf
+      },
+      new ArrayBuffer(job.blocks.length * LEN))
+  } else if (job.type === 'load') {
+    return loadBlock(dbCtx, job.filepath)
+  } else if (job.type === 'unload') {
+    return unloadBlock(dbCtx, job.filepath, job.typeId, job.start)
+  } else if (job.type === 'terminate') {
+    nextTick(() => typeof self === 'undefined' ? process.exit() : self.close())
+    return null
+  }
+
+  throw new Error(`Unsupported type: "${msg.type}"`)
 })

@@ -1,3 +1,12 @@
+export type IoJobSave = {
+  type: 'save'
+  blocks: {
+    filepath: string
+    typeId: number
+    start: number
+  }[]
+}
+
 type IoJobLoad = {
   type: 'load'
   filepath: string
@@ -10,4 +19,8 @@ type IoJobUnload = {
   start: number
 }
 
-export type IoJob = IoJobLoad | IoJobUnload
+type IoJobTerminate = {
+  type: 'terminate'
+}
+
+export type IoJob = IoJobSave | IoJobLoad | IoJobUnload | IoJobTerminate
