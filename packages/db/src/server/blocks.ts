@@ -46,7 +46,10 @@ export async function saveBlocks(
   blocks: IoJobSave['blocks']
 ): Promise<void> {
   const res = await db.ioWorker.saveBlocks(blocks)
+
   if (res.byteOffset !== 0) throw new Error('Unexpected offset')
+  // if (res.byteLength / 20 !== blocks.length) throw new Error('Invalid res size')
+
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
     const key = makeTreeKey(block.typeId, block.start)
@@ -65,7 +68,6 @@ export async function saveBlocks(
       db.verifTree.update(key, hash)
     }
   }
-  console.log('yo', bufToHex(db.verifTree.hash))
 }
 
 /**

@@ -219,8 +219,8 @@ export async function save(
         })
       })
     }
-    await saveBlocks(db, blocks)
     db.dirtyRanges.clear()
+    await saveBlocks(db, blocks)
 
     try {
       const data = makeWritelog(db, ts)
