@@ -115,7 +115,7 @@ const appendCreate = (
                 if (lang !== 0) {
                   const val = propDef.default[inverseLangMap.get(lang)]
                   if (val !== undefined) {
-                    const err = writeString(
+                    writeString(
                       lang,
                       val,
                       ctx,
@@ -140,6 +140,7 @@ const appendCreate = (
   }
 
   if (schema.hasSeperateSort) {
+    // just do it here!
     if (ctx.hasSortField !== schema.seperateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
