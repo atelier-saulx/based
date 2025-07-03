@@ -70,7 +70,7 @@ export async function saveBlocks(
 }
 
 /**
- * Load a block (typically of a partial type) back to memory.
+ * Load an existing block (typically of a partial type) back to memory.
  */
 export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
   const key = makeTreeKey(def.id, start)
