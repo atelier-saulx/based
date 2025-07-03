@@ -58,8 +58,6 @@ export async function saveBlocks(
 
     if (err === -8) {
       // TODO ENOENT
-      // RFE should we actually remove these already before?
-      // console.error(`Block ${block.typeId}:${block.start} not found`)
       db.verifTree.remove(key)
     } else if (err) {
       // TODO print the error string
@@ -72,7 +70,7 @@ export async function saveBlocks(
 }
 
 /**
- * Load a block (typically of a partial type) back to memory.
+ * Load an existing block (typically of a partial type) back to memory.
  */
 export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
   const key = makeTreeKey(def.id, start)
