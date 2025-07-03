@@ -1,5 +1,14 @@
 import { ModifyCtx } from '../../index.js'
-import { MICRO_BUFFER, SchemaTypeDef } from '@based/schema/def'
+import {
+  BINARY,
+  MICRO_BUFFER,
+  SchemaTypeDef,
+  STRING,
+  JSON,
+  TEXT,
+  ALIAS,
+} from '@based/schema/def'
+import { inverseLangMap, LangCode } from '@based/schema'
 import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -15,77 +24,140 @@ import {
 } from './types.js'
 import { writeFixedValue } from './fixed.js'
 import { DbClient } from '../index.js'
+import { writeBinary } from './binary.js'
+import { writeString } from './string.js'
+import { writeText } from './text.js'
+import { writeJson } from './json.js'
+import { writeAlias } from './alias.js'
 
 export type CreateObj = Record<string, any>
 
 const appendCreate = (
   ctx: ModifyCtx,
-  def: SchemaTypeDef,
+  schema: SchemaTypeDef,
   obj: CreateObj,
   res: ModifyState,
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
 
-  let err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
+  let err = modify(ctx, res, obj, schema, CREATE, schema.tree, true, unsafe)
   if (err) {
     return err
   }
 
-  if (ctx.len === len || def.mainLen === 0) {
+  if (ctx.len === len || schema.mainLen === 0) {
     if (ctx.len + SIZE.DEFAULT_CURSOR > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, CREATE)
+    setCursor(ctx, schema, 0, MICRO_BUFFER, res.tmpId, CREATE)
   }
 
-  if (def.createTs) {
+  if (schema.createTs) {
     const createTs = Date.now()
-    for (const prop of def.createTs) {
+    for (const prop of schema.createTs) {
       if (ctx.lastMain === -1) {
-        let mainLenU32 = def.mainLen
-        setCursor(ctx, def, prop.prop, MICRO_BUFFER, res.tmpId, CREATE)
+        let mainLenU32 = schema.mainLen
+        setCursor(ctx, schema, prop.prop, MICRO_BUFFER, res.tmpId, CREATE)
         ctx.buf[ctx.len++] = CREATE
         ctx.buf[ctx.len++] = mainLenU32
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
         ctx.buf[ctx.len++] = mainLenU32 >>>= 8
         ctx.lastMain = ctx.len
-        ctx.buf.set(def.mainEmpty, ctx.len)
-        ctx.len += def.mainLen
+        ctx.buf.set(schema.mainEmpty, ctx.len)
+        ctx.len += schema.mainLen
       }
       err = writeFixedValue(ctx, createTs, prop, ctx.lastMain + prop.start)
       if (err) {
         return err
       }
     }
-  } else if (ctx.lastMain === -1 && !def.mainEmptyAllZeroes) {
+  } else if (ctx.lastMain === -1 && !schema.mainEmptyAllZeroes) {
     // this is there to handle different defaults
     if (ctx.lastMain === -1) {
-      let mainLenU32 = def.mainLen
-      setCursor(ctx, def, 0, MICRO_BUFFER, res.tmpId, CREATE)
+      let mainLenU32 = schema.mainLen
+      setCursor(ctx, schema, 0, MICRO_BUFFER, res.tmpId, CREATE)
       ctx.buf[ctx.len++] = CREATE
       ctx.buf[ctx.len++] = mainLenU32
       ctx.buf[ctx.len++] = mainLenU32 >>>= 8
       ctx.buf[ctx.len++] = mainLenU32 >>>= 8
       ctx.buf[ctx.len++] = mainLenU32 >>>= 8
       ctx.lastMain = ctx.len
-      ctx.buf.set(def.mainEmpty, ctx.len)
-      ctx.len += def.mainLen
+      ctx.buf.set(schema.mainEmpty, ctx.len)
+      ctx.len += schema.mainLen
     }
     // add text & string here
   }
 
-  if (def.hasSeperateSort) {
-    if (ctx.hasSortField !== def.seperateSort.size - 1) {
+  if (schema.hasSeperateDefaults) {
+    const buf = schema.seperateDefaults.bufferTmp
+    // if ctx.hasDefault === -1 means it needs defaults
+
+    if (ctx.hasDefaults !== schema.seperateDefaults.props.size - 1) {
+      const id = res.tmpId
+      for (const propDef of schema.seperateDefaults.props.values()) {
+        const prop = propDef.prop
+        const type = propDef.typeIndex
+        if (schema.seperateDefaults.bufferTmp[prop] === 0) {
+          if (type === BINARY) {
+            writeBinary(propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === STRING) {
+            writeString(0, propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === TEXT) {
+            writeText(propDef.default, ctx, schema, propDef, res, id, CREATE)
+          } else if (type === JSON) {
+            writeJson(propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === ALIAS) {
+            writeAlias(propDef.default, ctx, schema, propDef, id, CREATE)
+          }
+        } else if (type === TEXT) {
+          const buf = schema.seperateTextSort.bufferTmp
+          const amount = schema.localeSize + 1
+          const len = amount * schema.seperateTextSort.props.length
+          for (const { prop } of schema.seperateTextSort.props) {
+            const index = prop * amount
+            if (buf[index] !== 0) {
+              for (let i = index + 1; i < len + index; i++) {
+                const lang = buf[i] as LangCode
+                if (lang !== 0) {
+                  const val = propDef.default[inverseLangMap.get(lang)]
+                  if (val !== undefined) {
+                    writeString(
+                      lang,
+                      val,
+                      ctx,
+                      schema,
+                      propDef,
+                      res.tmpId,
+                      CREATE,
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (ctx.hasDefaults !== -1) {
+      buf.fill(0)
+    }
+    ctx.hasDefaults = -1
+  }
+
+  if (schema.hasSeperateSort) {
+    // just do it here!
+    if (ctx.hasSortField !== schema.seperateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
       ctx.buf[ctx.len++] = ADD_EMPTY_SORT
       let sizepos = ctx.len
       ctx.len += 2
-      for (const { prop } of def.seperateSort.props) {
-        if (def.seperateSort.bufferTmp[prop] === 0) {
+      for (const { prop } of schema.seperateSort.props) {
+        if (schema.seperateSort.bufferTmp[prop] === 0) {
           if (ctx.len + 1 > ctx.max) {
             return RANGE_ERR
           }
@@ -98,37 +170,24 @@ const appendCreate = (
     }
 
     if (ctx.hasSortField !== -1) {
-      def.seperateSort.bufferTmp.set(def.seperateSort.buffer, 0)
+      schema.seperateSort.bufferTmp.set(schema.seperateSort.buffer, 0)
     }
     // add test for this
     ctx.hasSortField = -1
   }
 
-  // if (def.hasSeperateDefaults) {
-  //   const buf = def.seperateDefaults.bufferTmp
-
-  //   if (ctx.hasDefaults !== def.seperateDefaults.props.size - 1) {
-  //     //
-  //   }
-
-  //   if (ctx.hasDefaults !== -1) {
-  //     buf.set(def.seperateTextSort.buffer, 0)
-  //   }
-  //   ctx.hasDefaults = -1
-  // }
-
-  if (def.hasSeperateTextSort) {
-    const buf = def.seperateTextSort.bufferTmp
-    if (ctx.hasSortText !== def.seperateTextSort.size - 1) {
+  if (schema.hasSeperateTextSort) {
+    const buf = schema.seperateTextSort.bufferTmp
+    if (ctx.hasSortText !== schema.seperateTextSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
       ctx.buf[ctx.len++] = ADD_EMPTY_SORT_TEXT
       let sizepos = ctx.len
       ctx.len += 2
-      const amount = def.localeSize + 1
-      const len = amount * def.seperateTextSort.props.length
-      for (const { prop } of def.seperateTextSort.props) {
+      const amount = schema.localeSize + 1
+      const len = amount * schema.seperateTextSort.props.length
+      for (const { prop } of schema.seperateTextSort.props) {
         const index = prop * amount
         if (buf[index] !== 0) {
           ctx.buf[ctx.len++] = prop
@@ -148,7 +207,7 @@ const appendCreate = (
     }
 
     if (ctx.hasSortText !== -1) {
-      buf.set(def.seperateTextSort.buffer, 0)
+      buf.set(schema.seperateTextSort.buffer, 0)
     }
     ctx.hasSortText = -1
   }

@@ -22,7 +22,7 @@ export function writeString(
   lang: LangCode,
   value: string | null | Uint8Array,
   ctx: ModifyCtx,
-  def: SchemaTypeDef,
+  schema: SchemaTypeDef,
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -34,7 +34,7 @@ export function writeString(
       if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       if (lang === 0) {
         ctx.buf[ctx.len++] = DELETE
       } else {
@@ -53,10 +53,14 @@ export function writeString(
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {
-      def.seperateSort.bufferTmp[t.prop] = 2
+      schema.seperateSort.bufferTmp[t.prop] = 2
       ctx.hasSortField++
+      if (schema.hasSeperateDefaults) {
+        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        ctx.hasDefaults++
+      }
     }
-    setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
     // TODO if buffer check if second byte is zero or one
     // modOp | size u32 | stringprotocol | string
     ctx.buf[ctx.len] = modifyOp

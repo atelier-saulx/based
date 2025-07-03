@@ -22,10 +22,10 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "turbo run watch --parallel --no-cache",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "clean": "turbo run clean && rimraf node_modules",
+    "watch": "npm run watch --prefix packages/db",
+    "build": "npm run build --prefix packages/crc32c && npm run build --prefix packages/schema && npm run build --prefix packages/db",
+    "test": "npm run test --prefix packages/db",
+    "clean": "(cd packages/crc32c && rimraf -- node_modules dist) && (cd packages/schema && rimraf -- node_modules dist) && (cd packages/db  && rimraf -- node_modules dist)",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
     "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
@@ -36,7 +36,6 @@
   },
   "devDependencies": {
     "http-proxy": "^1.18.1",
-    "turbo": "1.6.3",
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.9.0",

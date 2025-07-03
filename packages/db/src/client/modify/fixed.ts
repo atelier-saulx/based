@@ -67,12 +67,13 @@ map[BOOLEAN] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (val === null) {
-    ctx.buf[ctx.len++] = 0
-  } else if (typeof val === 'boolean') {
+  if (typeof val === 'boolean') {
     ctx.buf[ctx.len++] = val ? 1 : 0
   } else {
     return new ModifyError(def, val)
@@ -99,6 +100,10 @@ map[NUMBER] = (ctx, val, def) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
+
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
@@ -111,6 +116,9 @@ map[TIMESTAMP] = (ctx, val, def) => {
   const parsedValue = convertToTimestamp(val)
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
+  }
+  if (val === null) {
+    val = def.default
   }
   if (!def.validation(parsedValue, def)) {
     return new ModifyError(def, val)
@@ -126,6 +134,9 @@ map[UINT32] = (ctx, val, def) => {
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
@@ -139,6 +150,9 @@ map[UINT16] = (ctx, val, def) => {
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
@@ -150,6 +164,9 @@ map[UINT8] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
@@ -159,6 +176,9 @@ map[UINT8] = (ctx, val, def) => {
 map[INT32] = (ctx, val, def) => {
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
+  }
+  if (val === null) {
+    val = def.default
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
@@ -173,6 +193,9 @@ map[INT16] = (ctx, val, def) => {
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
+  if (val === null) {
+    val = def.default
+  }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
@@ -183,6 +206,9 @@ map[INT16] = (ctx, val, def) => {
 map[INT8] = (ctx, val, def) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
+  }
+  if (val === null) {
+    val = def.default
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)

@@ -168,6 +168,7 @@ export const isDefault = (val, prop, ctx) => {
   if (prop.type === 'timestamp') {
     val = convertToTimestamp(val)
   }
+
   const validation = prop.validation || VALIDATION_MAP[typeIndex]
   const propDef: PropDef = {
     typeIndex,
@@ -184,6 +185,30 @@ export const isDefault = (val, prop, ctx) => {
     max: parseMinMaxStep(prop.max),
     min: parseMinMaxStep(prop.min),
   }
+
+  if (prop.type === 'text') {
+    if (typeof val === 'object') {
+      for (const key in val) {
+        if (!ctx.schema.locales || !(key in ctx.schema.locales)) {
+          throw new Error(`Incorrect default for type "text" lang "${key}"`)
+        }
+
+        if (!validation(val[key], propDef)) {
+          throw new Error(`Incorrect default for type "text" lang "${key}"`)
+        }
+      }
+    } else {
+      if (!validation(val, propDef)) {
+        throw new Error(`Incorrect default for type "text"`)
+      }
+      val = {}
+      for (const key in ctx.schema.locales) {
+        val[key] = ctx.schema.locales[key]
+      }
+    }
+    return val
+  }
+
   if (!validation(val, propDef)) {
     throw new Error(`Incorrect default for type "${prop.type ?? 'enum'}"`)
   }
@@ -408,13 +433,11 @@ p.text = propParser<SchemaText>(
   },
   {
     compression(val) {
-      // return the actualy string!
       return val
     },
     format: binaryOpts.format,
-    default(_val, _prop) {
-      // console.warn('MAKE DEFAULT VALUE FOR TEXT')
-      return true
+    default(val, prop, ctx) {
+      return isDefault(val, prop, ctx)
     },
   },
   0,

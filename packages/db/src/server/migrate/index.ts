@@ -135,7 +135,7 @@ export const migrate = async (
   let i = 0
   let rangesToMigrate: MigrateRange[] = []
 
-  await save(server, false, false, true)
+  await save(server, false, true)
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
@@ -151,13 +151,13 @@ export const migrate = async (
       break
     }
     // block modifies
-    server.processingQueries++
+    server.activeReaders++
     const leafData = rangesToMigrate[i++]
     port1.postMessage(leafData)
     setToAwake(workerState, true)
     await waitUntilSleeping(workerState)
     // exec queued modifies
-    server.processingQueries--
+    server.activeReaders--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
       if (server.dirtyRanges.size) {
@@ -205,7 +205,7 @@ export const migrate = async (
   tmpDb.server.dbCtxExternal = fromCtx
 
   // TODO makes this SYNC
-  const promises: Promise<any>[] = server.workers.map((worker) =>
+  const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map((worker) =>
     worker.updateCtx(toAddress),
   )
 
@@ -218,7 +218,7 @@ export const migrate = async (
   }
 
   native.membarSyncRead()
-  await save(server, false, true, true)
+  await save(server, true, true)
   await writeSchemaFile(server, toSchema)
 
   server.migrating = 0

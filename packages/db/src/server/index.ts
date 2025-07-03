@@ -44,12 +44,12 @@ export class DbServer extends DbShared {
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
-  verifTree: VerifTree
+  verifTree: VerifTree // should be updated only when saving/loading
   dirtyRanges = new Set<number>()
   ioWorker: IoWorker
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
-  processingQueries = 0 // semaphore for locking writes
+  activeReaders = 0 // processing queries or other DB reads
   modifyQueue: Uint8Array[] = []
   queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
@@ -83,7 +83,7 @@ export class DbServer extends DbShared {
   }
 
   save(opts?: { forceFullDump?: boolean }) {
-    return save(this, false, opts?.forceFullDump ?? false)
+    return save(this, opts?.forceFullDump ?? false)
   }
 
   async loadBlock(typeName: string, nodeId: number) {
@@ -95,11 +95,6 @@ export class DbServer extends DbShared {
     const typeId = def.id
     const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
     const [, start] = destructureTreeKey(key)
-
-    const block = this.verifTree.getBlock(key)
-    if (!block) {
-      throw new Error('Block not found')
-    }
 
     await loadBlock(this, def, start)
   }
@@ -148,7 +143,7 @@ export class DbServer extends DbShared {
               for (const lang in this.sortIndexes[type][field][start]) {
                 const sortIndex = this.sortIndexes[type][field][start][lang]
                 sortIndex.cnt /= 2
-                if (sortIndex.cnt < 1 && !this.processingQueries) {
+                if (sortIndex.cnt < 1 && !this.activeReaders) {
                   native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
                   delete this.sortIndexes[type][field][start][lang]
                 } else {
@@ -389,7 +384,7 @@ export class DbServer extends DbShared {
       offsets[typeId] = offset
     }
 
-    if (this.processingQueries) {
+    if (this.activeReaders) {
       this.modifyQueue.push(new Uint8Array(bufWithHash))
     } else {
       this.#modify(buf)
@@ -493,7 +488,7 @@ export class DbServer extends DbShared {
           const start = readUint16(sort, 3)
           let sortIndex = this.getSortIndex(typeId, field, start, 0)
           if (!sortIndex) {
-            if (this.processingQueries) {
+            if (this.activeReaders) {
               return new Promise((resolve) => {
                 this.addToQueryQueue(resolve, buf)
               })
@@ -524,7 +519,7 @@ export class DbServer extends DbShared {
   }
 
   onQueryEnd() {
-    if (this.processingQueries === 0) {
+    if (this.activeReaders === 0) {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
         this.modifyQueue = []
@@ -573,6 +568,7 @@ export class DbServer extends DbShared {
       }
 
       await this.ioWorker.terminate()
+      this.ioWorker = null
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)

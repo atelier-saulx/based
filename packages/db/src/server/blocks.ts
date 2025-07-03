@@ -1,13 +1,14 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { equals } from '@saulx/utils'
+import { bufToHex, equals, readInt32 } from '@saulx/utils'
 import {
   VerifTree,
   destructureTreeKey,
   makeTreeKey,
 } from './tree.js'
 import { DbServer } from './index.js'
+import { IoJobSave } from './workers/io_worker_types.js'
 
 /**
  * Save a block.
@@ -40,8 +41,36 @@ export function saveBlock(
   }
 }
 
+export async function saveBlocks(
+  db: DbServer,
+  blocks: IoJobSave['blocks']
+): Promise<void> {
+  const res = await db.ioWorker.saveBlocks(blocks)
+
+  if (res.byteOffset !== 0) throw new Error('Unexpected offset')
+  // if (res.byteLength / 20 !== blocks.length) throw new Error('Invalid res size')
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]
+    const key = makeTreeKey(block.typeId, block.start)
+    const err = readInt32(res, i * 20)
+    const hash = new Uint8Array(res.buffer, i * 20 + 4, 16)
+
+    if (err === -8) {
+      // TODO ENOENT
+      db.verifTree.remove(key)
+    } else if (err) {
+      // TODO print the error string
+      // TODO use the proper logger
+      console.error(`Save ${block.typeId}:${block.start} failed: ${err}`)
+    } else {
+      db.verifTree.update(key, hash)
+    }
+  }
+}
+
 /**
- * Load a block (typically of a partial type) back to memory.
+ * Load an existing block (typically of a partial type) back to memory.
  */
 export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
   const key = makeTreeKey(def.id, start)

@@ -183,8 +183,8 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-
   [TYPE_INDEX_MAP.json]: (value) => {
+    // mep
     return true
   },
   [TYPE_INDEX_MAP.microbuffer]: (value) => {

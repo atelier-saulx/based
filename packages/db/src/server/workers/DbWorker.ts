@@ -57,13 +57,14 @@ export abstract class DbWorker {
   }
 
   protected db: DbServer
-  private channel: MessagePort
+  protected channel: MessagePort
   private worker: Worker
   protected resolvers: ((x: any) => any)[] = []
   readyPromise: Promise<true>
 
-  async terminate() {
-    return this.worker.terminate()
+  async terminate(): Promise<void> {
+    // TODO do we want to force this.worker.terminate() after a timeout?
+    await this.call(0n)
   }
 
   abstract handleMsg(buf: any): void

@@ -8,6 +8,7 @@ import {
   RANGE_ERR,
   DELETE,
   SIZE,
+  CREATE,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -49,7 +50,7 @@ export function writeBinary(
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
   t: PropDef,
-  parentId: number,
+  id: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   let size: number
@@ -67,14 +68,20 @@ export function writeBinary(
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, id, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
     if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
+    if (modifyOp === CREATE) {
+      if (schema.hasSeperateDefaults) {
+        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        ctx.hasDefaults++
+      }
+    }
+    setCursor(ctx, schema, t.prop, t.typeIndex, id, modifyOp)
     ctx.buf[ctx.len++] = modifyOp
     writeBinaryRaw(value, ctx)
   }
