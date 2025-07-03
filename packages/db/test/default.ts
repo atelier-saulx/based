@@ -18,6 +18,8 @@ await test('separate', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
+      fi: {},
+      fr: {},
     },
     types: {
       user: {
@@ -30,6 +32,14 @@ await test('separate', async (t) => {
             type: 'string',
             default: 'Default Name',
           },
+          flap: {
+            type: 'text',
+            default: {
+              en: 'Untitled',
+              fi: 'Nimeton',
+              fr: 'Sans nom',
+            },
+          },
         },
       },
     },
@@ -41,6 +51,32 @@ await test('separate', async (t) => {
     await db.query('user', userId).include('*', '**').get(),
     {
       id: userId,
+      flap: {
+        en: 'Untitled',
+        fi: 'Nimeton',
+        fr: 'Sans nom',
+      },
+      name: 'Default Name',
+      avatar: defaultBinary,
+    },
+    'Default name',
+  )
+
+  const userId2 = await db.create('user', {
+    flap: {
+      en: 'Flap',
+    },
+  })
+
+  deepEqual(
+    await db.query('user', userId2).include('*', '**').get(),
+    {
+      id: userId2,
+      flap: {
+        en: 'Flap',
+        fi: 'Nimeton',
+        fr: 'Sans nom',
+      },
       name: 'Default Name',
       avatar: defaultBinary,
     },

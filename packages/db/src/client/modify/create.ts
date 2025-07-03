@@ -1,5 +1,11 @@
 import { ModifyCtx } from '../../index.js'
-import { BINARY, MICRO_BUFFER, SchemaTypeDef, STRING } from '@based/schema/def'
+import {
+  BINARY,
+  MICRO_BUFFER,
+  SchemaTypeDef,
+  STRING,
+  TEXT,
+} from '@based/schema/def'
 import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -17,6 +23,8 @@ import { writeFixedValue } from './fixed.js'
 import { DbClient } from '../index.js'
 import { writeBinary } from './binary.js'
 import { writeString } from './string.js'
+import { writeText } from './text.js'
+import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 
 export type CreateObj = Record<string, any>
 
@@ -78,6 +86,59 @@ const appendCreate = (
     // add text & string here
   }
 
+  if (schema.hasSeperateDefaults) {
+    const buf = schema.seperateDefaults.bufferTmp
+    // if ctx.hasDefault === -1 means it needs defaults
+
+    if (ctx.hasDefaults !== schema.seperateDefaults.props.size - 1) {
+      const id = res.tmpId
+      for (const propDef of schema.seperateDefaults.props.values()) {
+        const prop = propDef.prop
+        const type = propDef.typeIndex
+        if (schema.seperateDefaults.bufferTmp[prop] === 0) {
+          if (type === BINARY) {
+            writeBinary(propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === STRING) {
+            writeString(0, propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === TEXT) {
+            writeText(propDef.default, ctx, schema, propDef, res, id, CREATE)
+          }
+        } else if (type === TEXT) {
+          const buf = schema.seperateTextSort.bufferTmp
+          const amount = schema.localeSize + 1
+          const len = amount * schema.seperateTextSort.props.length
+          for (const { prop } of schema.seperateTextSort.props) {
+            const index = prop * amount
+            if (buf[index] !== 0) {
+              for (let i = index + 1; i < len + index; i++) {
+                const lang = buf[i] as LangCode
+                if (lang !== 0) {
+                  const val = propDef.default[inverseLangMap.get(lang)]
+                  if (val !== undefined) {
+                    const err = writeString(
+                      lang,
+                      val,
+                      ctx,
+                      schema,
+                      propDef,
+                      res.tmpId,
+                      CREATE,
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (ctx.hasDefaults !== -1) {
+      buf.fill(0)
+    }
+    ctx.hasDefaults = -1
+  }
+
   if (schema.hasSeperateSort) {
     if (ctx.hasSortField !== schema.seperateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
@@ -104,34 +165,6 @@ const appendCreate = (
     }
     // add test for this
     ctx.hasSortField = -1
-  }
-
-  if (schema.hasSeperateDefaults) {
-    const buf = schema.seperateDefaults.bufferTmp
-    // if ctx.hasDefault === -1 means it needs defaults
-    if (ctx.hasDefaults !== schema.seperateDefaults.props.size - 1) {
-      // console.log('yo!', ctx.hasDefaults, schema.seperateDefaults.props.size)
-      //    let err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
-      const id = res.tmpId
-
-      for (const propDef of schema.seperateDefaults.props.values()) {
-        const prop = propDef.prop
-        if (!schema.seperateDefaults.bufferTmp[prop]) {
-          const type = propDef.typeIndex
-          if (type === BINARY) {
-            writeBinary(propDef.default, ctx, schema, propDef, id, CREATE)
-          } else if (type === STRING) {
-            writeString(0, propDef.default, ctx, schema, propDef, id, CREATE)
-          }
-        }
-      }
-    }
-
-    if (ctx.hasDefaults !== -1) {
-      // reset it to 0
-      buf.set(schema.seperateDefaults.bufferTmp, 0)
-    }
-    ctx.hasDefaults = -1
   }
 
   if (schema.hasSeperateTextSort) {

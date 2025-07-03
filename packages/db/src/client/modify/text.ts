@@ -19,10 +19,10 @@ export function writeText(
     | { [k: string]: Parameters<typeof writeString>[1] }
     | Parameters<typeof writeString>[1],
   ctx: ModifyCtx,
-  def: SchemaTypeDef,
+  schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
-  parentId: number,
+  id: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   if (value === null && !res.locale) {
@@ -30,7 +30,7 @@ export function writeText(
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, id, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
     return
@@ -40,13 +40,13 @@ export function writeText(
     let locale = res.locale
     if (!locale) {
       // TODO: Add def lang option...
-      for (const localeCode of def.seperateTextSort.localeToIndex.keys()) {
+      for (const localeCode of schema.seperateTextSort.localeToIndex.keys()) {
         locale = localeCode
         break
       }
     }
 
-    if (!def.seperateTextSort.localeToIndex.has(locale)) {
+    if (!schema.seperateTextSort.localeToIndex.has(locale)) {
       return new ModifyError(t, locale, 'Invalid locale')
     }
 
@@ -54,25 +54,34 @@ export function writeText(
       locale,
       value as string,
       ctx,
-      def,
+      schema,
       t,
       res.tmpId,
       modifyOp,
     )
 
     if (modifyOp === CREATE) {
-      const index = t.prop * (def.localeSize + 1)
-      const langIndex = def.seperateTextSort.localeToIndex.get(locale)
-      def.seperateTextSort.bufferTmp[index] -= 1
-      def.seperateTextSort.bufferTmp[index + langIndex] = 0
+      const index = t.prop * (schema.localeSize + 1)
+      const langIndex = schema.seperateTextSort.localeToIndex.get(locale)
+      schema.seperateTextSort.bufferTmp[index] -= 1
+      schema.seperateTextSort.bufferTmp[index + langIndex] = 0
       ctx.hasSortText += 1
+      if (schema.hasSeperateDefaults) {
+        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        ctx.hasDefaults++
+      }
     }
+
     return err
   } else {
+    if (modifyOp === CREATE && schema.hasSeperateDefaults) {
+      ctx.hasDefaults++
+    }
+
     // @ts-ignore
     for (const lang in value) {
       const langC: Uint8Array =
-        def.seperateTextSort.localeStringToIndex.get(lang)
+        schema.seperateTextSort.localeStringToIndex.get(lang)
       if (!langC) {
         return new ModifyError(t, lang, 'Invalid locale')
       }
@@ -82,7 +91,7 @@ export function writeText(
         langC[1] as LangCode,
         s,
         ctx,
-        def,
+        schema,
         t,
         res.tmpId,
         modifyOp,
@@ -90,10 +99,16 @@ export function writeText(
       if (err) {
         return err
       }
-      const index = t.prop * (1 + def.localeSize)
-      def.seperateTextSort.bufferTmp[index] -= 1
-      def.seperateTextSort.bufferTmp[index + langC[0]] = 0
-      ctx.hasSortText += 1
+
+      if (modifyOp === CREATE) {
+        const index = t.prop * (1 + schema.localeSize)
+        schema.seperateTextSort.bufferTmp[index] -= 1
+        schema.seperateTextSort.bufferTmp[index + langC[0]] = 0
+        ctx.hasSortText += 1
+        if (schema.hasSeperateDefaults) {
+          schema.seperateDefaults.bufferTmp[t.prop]++
+        }
+      }
     }
   }
 }

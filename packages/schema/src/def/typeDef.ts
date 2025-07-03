@@ -144,6 +144,7 @@ export const createSchemaTypeDef = (
       }
       const isseparate = isSeparate(schemaProp, len)
       const typeIndex = TYPE_INDEX_MAP[propType]
+
       const prop: PropDef = {
         typeIndex,
         __isPropDef: true,
