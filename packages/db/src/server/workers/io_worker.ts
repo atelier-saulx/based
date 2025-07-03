@@ -1,5 +1,4 @@
 import { registerMsgHandler } from './worker.js'
-import { nextTick } from 'process'
 import { IoJob } from './io_worker_types.js'
 import { ENCODER, writeInt32 } from '@saulx/utils'
 import native from '../../native.js'
@@ -58,9 +57,6 @@ registerMsgHandler((dbCtx: any, msg: any) => {
     return loadBlock(dbCtx, job.filepath)
   } else if (job.type === 'unload') {
     return unloadBlock(dbCtx, job.filepath, job.typeId, job.start)
-  } else if (job.type === 'terminate') {
-    nextTick(() => typeof self === 'undefined' ? process.exit() : self.close())
-    return null
   }
 
   throw new Error(`Unsupported type: "${msg.type}"`)
