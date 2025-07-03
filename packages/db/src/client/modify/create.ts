@@ -4,8 +4,10 @@ import {
   MICRO_BUFFER,
   SchemaTypeDef,
   STRING,
+  JSON,
   TEXT,
 } from '@based/schema/def'
+import { inverseLangMap, LangCode } from '@based/schema'
 import { startDrain, flushBuffer } from '../flushModify.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
@@ -24,7 +26,7 @@ import { DbClient } from '../index.js'
 import { writeBinary } from './binary.js'
 import { writeString } from './string.js'
 import { writeText } from './text.js'
-import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
+import { writeJson } from './json.js'
 
 export type CreateObj = Record<string, any>
 
@@ -102,6 +104,8 @@ const appendCreate = (
             writeString(0, propDef.default, ctx, schema, propDef, id, CREATE)
           } else if (type === TEXT) {
             writeText(propDef.default, ctx, schema, propDef, res, id, CREATE)
+          } else if (type === JSON) {
+            writeJson(propDef.default, ctx, schema, propDef, id, CREATE)
           }
         } else if (type === TEXT) {
           const buf = schema.seperateTextSort.bufferTmp
