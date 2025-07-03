@@ -6,6 +6,7 @@ import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@saulx/utils'
 import {
   destructureTreeKey,
+  VerifTree,
 } from '../../src/server/tree.js'
 import fs from 'node:fs/promises'
 import assert from 'node:assert'
@@ -98,10 +99,11 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
       }
 
-      const oldHashSet = new Set<string>()
-      const newHashSet = new Set<string>()
-      const putHash = (hashSet: Set<string>, { hash }) => hashSet.add(bufToHex(hash))
-      db.server.verifTree.foreachBlock((block) => putHash(oldHashSet, block))
+      type MyBlockMap = {[key: number]: {key: number, hash: string} }
+      const oldBlocks: MyBlockMap = {}
+      const newBlocks: MyBlockMap = {}
+      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) => verifTree.foreachBlock((block) => m[block.key] = { key: block.key, hash: bufToHex(block.hash) })
+      putBlocks(db.server.verifTree, oldBlocks)
 
       await db.stop()
 
@@ -148,11 +150,8 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
-      const setEq = <T>(a: Set<T>, b: Set<T>) =>
-        a.size === b.size && [...a].every((value) => b.has(value))
-      newDb.server.verifTree.foreachBlock((block) => putHash(newHashSet, block))
-
-      assert(setEq(oldHashSet, newHashSet), 'range hash')
+      putBlocks(newDb.server.verifTree, newBlocks)
+      deepEqual(oldBlocks, newBlocks)
 
       await wait(10)
     },
