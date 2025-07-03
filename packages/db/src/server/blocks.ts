@@ -58,7 +58,8 @@ export async function saveBlocks(
 
     if (err === -8) {
       // TODO ENOENT
-      console.error(`Block ${block.typeId}:${block.start} not found`)
+      // RFE should we actually remove these already before?
+      // console.error(`Block ${block.typeId}:${block.start} not found`)
       db.verifTree.remove(key)
     } else if (err) {
       // TODO print the error string
