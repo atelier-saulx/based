@@ -59,7 +59,6 @@ registerMsgHandler((dbCtx: any, msg: any) => {
   } else if (job.type === 'unload') {
     return unloadBlock(dbCtx, job.filepath, job.typeId, job.start)
   } else if (job.type === 'terminate') {
-    console.log('terminating')
     nextTick(() => typeof self === 'undefined' ? process.exit() : self.close())
     return null
   }

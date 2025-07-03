@@ -569,9 +569,7 @@ export class DbServer extends DbShared {
 
     try {
       if (!noSave) {
-        console.log('gonna save')
         await this.save()
-        console.log('saved')
       }
 
       await this.ioWorker.terminate()
