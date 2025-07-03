@@ -19,8 +19,8 @@ export class IoWorker extends DbWorker {
     const job: IoJob = {
       type: 'terminate',
     }
-    this.call(job)
-    return new Promise((resolve) => resolve(0))
+    await this.call(job)
+    return 0
   }
 
   private cb = (resolve: (x: any) => any) => {
