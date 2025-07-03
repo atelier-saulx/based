@@ -155,6 +155,7 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
+<<<<<<< HEAD
 
       putBlocks(newDb.server.verifTree, newBlocks)
       for (const k in oldBlocks) {
@@ -163,6 +164,10 @@ const test = async (
       for (const k in newBlocks) {
         deepEqual(newBlocks[k], oldBlocks[k])
       }
+=======
+      putBlocks(newDb.server.verifTree, newBlocks)
+      deepEqual(oldBlocks, newBlocks)
+>>>>>>> main
 
       await wait(10)
     },

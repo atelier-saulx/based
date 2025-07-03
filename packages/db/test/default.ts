@@ -15,29 +15,6 @@ await test('separate', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  console.dir(
-    {
-      locales: {
-        en: {},
-      },
-      types: {
-        user: {
-          props: {
-            avatar: {
-              type: 'binary',
-              default: defaultBinary,
-            },
-            name: {
-              type: 'string',
-              default: 'Default Name',
-            },
-          },
-        },
-      },
-    },
-    { depth: 10 },
-  )
-
   await db.setSchema({
     locales: {
       en: {},
@@ -58,7 +35,6 @@ await test('separate', async (t) => {
     },
   })
 
-  console.log('flap?')
   const userId = await db.create('user', {})
 
   deepEqual(

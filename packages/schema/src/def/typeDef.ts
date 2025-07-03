@@ -77,12 +77,17 @@ export const createSchemaTypeDef = (
     }
     if (result.blockCapacity == 0) {
       if ('blockCapacity' in type) {
-        if (typeof type.blockCapacity !== 'number' || type.blockCapacity < BLOCK_CAPACITY_MIN || type.blockCapacity > BLOCK_CAPACITY_MAX) {
+        if (
+          typeof type.blockCapacity !== 'number' ||
+          type.blockCapacity < BLOCK_CAPACITY_MIN ||
+          type.blockCapacity > BLOCK_CAPACITY_MAX
+        ) {
           throw new Error('Invalid blockCapacity')
         }
         result.blockCapacity = type.blockCapacity
       } else {
-        result.blockCapacity = typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
+        result.blockCapacity =
+          typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
     if (result.insertOnly == false && 'insertOnly' in type) {
@@ -244,6 +249,13 @@ export const createSchemaTypeDef = (
       if (f.separate) {
         len += 2
         setByPath(result.tree, f.path, f)
+        if (f.default !== undefined) {
+          result.hasSeperateDefaults = true
+          if (!result.seperateDefaults) {
+            // result.seperateDefaults = []
+          }
+          // result.seperateDefaults.push(f)
+        }
       } else {
         if (!result.mainLen) {
           len += 2
@@ -254,6 +266,7 @@ export const createSchemaTypeDef = (
         setByPath(result.tree, f.path, f)
       }
     }
+
     result.mainEmpty = fillEmptyMain(vals, result.mainLen)
     result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
 
