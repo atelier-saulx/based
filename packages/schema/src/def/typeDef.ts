@@ -245,6 +245,7 @@ export const createSchemaTypeDef = (
       }
     }
     let len = 2
+    let biggestSeperatePropDefault = 0
     for (const f of vals) {
       if (f.separate) {
         len += 2
@@ -252,9 +253,15 @@ export const createSchemaTypeDef = (
         if (f.default !== undefined) {
           result.hasSeperateDefaults = true
           if (!result.seperateDefaults) {
-            // result.seperateDefaults = []
+            result.seperateDefaults = {
+              props: new Map(),
+              bufferTmp: new Uint8Array(),
+            }
           }
-          // result.seperateDefaults.push(f)
+          result.seperateDefaults.props.set(f.prop, f)
+          if (f.prop > biggestSeperatePropDefault) {
+            biggestSeperatePropDefault = f.prop
+          }
         }
       } else {
         if (!result.mainLen) {
@@ -265,6 +272,12 @@ export const createSchemaTypeDef = (
         result.mainLen += f.len
         setByPath(result.tree, f.path, f)
       }
+    }
+
+    if (result.hasSeperateDefaults) {
+      result.seperateDefaults.bufferTmp = new Uint8Array(
+        biggestSeperatePropDefault + 1,
+      )
     }
 
     result.mainEmpty = fillEmptyMain(vals, result.mainLen)
