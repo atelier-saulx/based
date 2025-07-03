@@ -1,0 +1,21 @@
+{
+  "name": "@based/cli",
+  "version": "9.0.0-alpha.1",
+  "description": "Based command line tool.",
+  "bin": "bin/cmd.js",
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "source": "src/index.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "commander": "14.0.0"
+  },
+  "devDependencies": {}
+}
