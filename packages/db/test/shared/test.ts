@@ -99,10 +99,15 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1024)}mb`))
       }
 
-      type MyBlockMap = {[key: number]: {key: number, hash: string} }
+      type MyBlockMap = {[key: number]: {key: number, typeId: number, start: number, hash: string} }
       const oldBlocks: MyBlockMap = {}
       const newBlocks: MyBlockMap = {}
-      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) => verifTree.foreachBlock((block) => m[block.key] = { key: block.key, hash: bufToHex(block.hash) })
+      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) => verifTree.foreachBlock((block) => m[block.key] = {
+        key: block.key,
+        typeId: destructureTreeKey(block.key)[0],
+        start: destructureTreeKey(block.key)[1],
+        hash: bufToHex(block.hash)
+      })
       putBlocks(db.server.verifTree, oldBlocks)
 
       await db.stop()
@@ -150,8 +155,14 @@ const test = async (
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
 
+
       putBlocks(newDb.server.verifTree, newBlocks)
-      deepEqual(oldBlocks, newBlocks)
+      for (const k in oldBlocks) {
+        deepEqual(oldBlocks[k], newBlocks[k])
+      }
+      for (const k in newBlocks) {
+        deepEqual(newBlocks[k], oldBlocks[k])
+      }
 
       await wait(10)
     },
