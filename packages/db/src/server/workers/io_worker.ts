@@ -36,7 +36,6 @@ registerMsgHandler((dbCtx: any, msg: any) => {
 
   const job: IoJob = msg
   if (job.type === 'save') {
-    console.log('saving')
     const LEN = 20
     return job.blocks.reduce(
       (buf, block, index) => {
