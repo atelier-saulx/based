@@ -20,6 +20,7 @@
     "test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.js",
     "test-gdb": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js",
     "test-fast": "LOCPATH=../locale/locale-x86_64-gnu/locale node ./scripts/test.js",
+    "test-fast-linux_aarch64-schema": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast schemadebug'",
     "test-fast-linux_aarch64": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast'",
     "test-fast-linux_aarch64-gdb": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js'",
     "test-fast-linux_aarch64-valgrind": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.js references:update2'",
