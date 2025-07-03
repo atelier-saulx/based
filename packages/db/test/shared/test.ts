@@ -92,11 +92,11 @@ const test = async (
 
       const size = await dirSize(t.tmp)
 
-      const kbs = ~~(size / 1000)
+      const kbs = ~~(size / 1024)
       if (kbs < 5000) {
         console.log(picocolors.gray(`backup size ${kbs}kb`))
       } else {
-        console.log(picocolors.gray(`backup size ${~~(kbs / 1000)}mb`))
+        console.log(picocolors.gray(`backup size ${~~(kbs / 1024)}mb`))
       }
 
       type MyBlockMap = {[key: number]: {key: number, hash: string} }
