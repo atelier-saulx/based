@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { VerifTree, makeTreeKey } from './tree.js'
 import { foreachBlock } from './blocks.js'
 import exitHook from 'exit-hook'
-import { save, Writelog } from './save.js'
+import { save, saveSync, Writelog } from './save.js'
 import { deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
@@ -137,7 +137,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       // in Node.js.
       signals.forEach((sig) => process.on(sig, blockSig))
       db.emit('info', `Exiting with signal: ${signal}`)
-      save(db, true)
+      saveSync(db)
       db.emit('info', 'Successfully saved.')
       signals.forEach((sig) => process.off(sig, blockSig))
     })
@@ -149,7 +149,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   // use timeout
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
-      void save(db)
+      save(db)
     }, db.saveIntervalInSeconds * 1e3)
   }
 

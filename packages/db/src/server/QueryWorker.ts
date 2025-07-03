@@ -11,12 +11,12 @@ export class QueryWorker extends DbWorker {
   }
 
   override handleMsg(_buf: any): void {
-    this.db.processingQueries--
+    this.db.activeReaders--
     this.db.onQueryEnd()
   }
 
   protected override callback = (resolve: (x: any) => any) => {
-    this.db.processingQueries++
+    this.db.activeReaders++
     this.resolvers.push(resolve)
   }
 

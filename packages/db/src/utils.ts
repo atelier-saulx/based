@@ -49,5 +49,5 @@ export const debugServer = (server: DbServer) =>
   debugMode(
     server,
     () =>
-      `p: ${server.processingQueries} m: ${server.modifyQueue.length} q: ${server.queryQueue.size}`,
+      `p: ${server.activeReaders} m: ${server.modifyQueue.length} q: ${server.queryQueue.size}`,
   )
