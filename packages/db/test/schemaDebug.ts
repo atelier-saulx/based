@@ -47,7 +47,6 @@ const cleanSchema = (schema: DbServer['schema']) => {
       delete schemaCopy.types[type]
     }
   }
-  console.dir(schemaCopy, { depth: null })
   return schemaCopy
 }
 
@@ -67,7 +66,6 @@ await test('schema debug', async (t) => {
       return () => {}
     },
     subscribeSchema: (setSchema) => {
-      console.log('subscribe')
       if (server.schema) {
         setSchema(server.schema)
       }
