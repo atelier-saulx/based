@@ -6,6 +6,7 @@ import {
   STRING,
   JSON,
   TEXT,
+  ALIAS,
 } from '@based/schema/def'
 import { inverseLangMap, LangCode } from '@based/schema'
 import { startDrain, flushBuffer } from '../flushModify.js'
@@ -27,6 +28,7 @@ import { writeBinary } from './binary.js'
 import { writeString } from './string.js'
 import { writeText } from './text.js'
 import { writeJson } from './json.js'
+import { writeAlias } from './alias.js'
 
 export type CreateObj = Record<string, any>
 
@@ -106,6 +108,8 @@ const appendCreate = (
             writeText(propDef.default, ctx, schema, propDef, res, id, CREATE)
           } else if (type === JSON) {
             writeJson(propDef.default, ctx, schema, propDef, id, CREATE)
+          } else if (type === ALIAS) {
+            writeAlias(propDef.default, ctx, schema, propDef, id, CREATE)
           }
         } else if (type === TEXT) {
           const buf = schema.seperateTextSort.bufferTmp
