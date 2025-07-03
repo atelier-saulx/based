@@ -25,7 +25,7 @@
     "watch": "npm run watch --prefix packages/db",
     "build": "npm run build --prefix packages/crc32c && npm run build --prefix packages/schema && npm run build --prefix packages/db",
     "test": "npm run test --prefix packages/db",
-    "clean": "(cd packages/crc32c && rimraf node_modules) && (cd packages/schema && rimraf node_modules) && (cd packages/db  && rimraf node_modules)",
+    "clean": "(cd packages/crc32c && rimraf -- node_modules dist) && (cd packages/schema && rimraf -- node_modules dist) && (cd packages/db  && rimraf -- node_modules dist)",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
     "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
