@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { equals, readInt32 } from '@saulx/utils'
+import { bufToHex, equals, readInt32 } from '@saulx/utils'
 import {
   VerifTree,
   destructureTreeKey,
@@ -65,6 +65,7 @@ export async function saveBlocks(
       db.verifTree.update(key, hash)
     }
   }
+  console.log('yo', bufToHex(db.verifTree.hash))
 }
 
 /**
