@@ -10,6 +10,8 @@ import {
 import { DbServer } from './index.js'
 import { IoJobSave } from './workers/io_worker_types.js'
 
+const SELVA_ENOENT = -8
+
 /**
  * Save a block.
  */
@@ -30,12 +32,12 @@ export function saveBlock(
     db.dbCtxExternal,
     hash,
   )
-  if (err == -8) {
-    // TODO ENOENT
+  if (err == SELVA_ENOENT) {
+    // Generally we don't nor can't remove blocks from verifTree before we
+    // attempt to access them.
     db.verifTree.remove(mtKey)
   } else if (err) {
-    // TODO print the error string
-    console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
+    db.emit('error', `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`)
   } else {
     db.verifTree.update(mtKey, hash)
   }
@@ -56,13 +58,12 @@ export async function saveBlocks(
     const err = readInt32(res, i * 20)
     const hash = new Uint8Array(res.buffer, i * 20 + 4, 16)
 
-    if (err === -8) {
-      // TODO ENOENT
+    if (err === SELVA_ENOENT) {
+      // Generally we don't nor can't remove blocks from verifTree before we
+      // attempt to access them.
       db.verifTree.remove(key)
     } else if (err) {
-      // TODO print the error string
-      // TODO use the proper logger
-      console.error(`Save ${block.typeId}:${block.start} failed: ${err}`)
+      db.emit('error', `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`)
     } else {
       db.verifTree.update(key, hash)
     }
@@ -129,7 +130,7 @@ export async function unloadBlock(db: DbServer, def: SchemaTypeDef, start: numbe
     db.verifTree.update(key, hash, false)
   } catch (e) {
     // TODO Proper logging
-    // TODO err == -8 == SELVA_ENOENT => db.verifTree.remove(key) ??
+    // TODO SELVA_ENOENT => db.verifTree.remove(key) ??
     console.error(`Save ${typeId}:${start}-${end} failed`)
     console.error(e)
   }

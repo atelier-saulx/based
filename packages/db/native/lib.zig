@@ -82,6 +82,28 @@ fn membarSyncWrite(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_v
     return null;
 }
 
+fn _selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(1, napi_env, nfo);
+    const err = try napi.get(i32, napi_env, args[0]);
+
+    var result: c.napi_value = undefined;
+    var copied: selva.bool = undefined;
+    const str = selva.strerror_zig(err);
+    _ = c.node_api_create_external_string_latin1(
+        napi_env,
+        @constCast(str.ptr),
+        str.len,
+        null,
+        null,
+        &result,
+        &copied);
+    return result;
+}
+
+fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c.napi_value {
+    return _selvaStrerror(napi_env, nfo) catch return null;
+}
+
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
@@ -120,6 +142,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "membarSyncRead", membarSyncRead) catch return null;
     registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
+
+    registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
 
     registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
 

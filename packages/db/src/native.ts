@@ -156,6 +156,10 @@ const native = {
     db.membarSyncWrite()
   },
 
+  selvaStrerror: (err: number) => {
+    return db.selvaStrerror(err)
+  },
+
   colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {
     return db.colvecTest(dbCtx, typeId, field, nodeId, len);
   }

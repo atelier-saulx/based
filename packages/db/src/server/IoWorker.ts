@@ -2,7 +2,7 @@ import { DbWorker } from './workers/DbWorker.js'
 import { DbServer } from './index.js'
 import { IoJob} from './workers/io_worker_types.js'
 import { DECODER, readInt32 } from '@saulx/utils'
-
+import native from '../native.js'
 
 export class IoWorker extends DbWorker {
   constructor(address: BigInt, db: DbServer) {
@@ -69,7 +69,7 @@ export class IoWorker extends DbWorker {
     const resBuf = await this.call(job)
     const err = readInt32(resBuf, 0)
     if (err) {
-      throw new Error(`selva error: ${err}`)
+      throw new Error(native.selvaStrerror(err))
     }
 
     // Note that this shares the original buffer which may not be 100% optimal,
