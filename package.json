@@ -1,12 +1,19 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.58",
+  "version": "8.0.0-alpha.59",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": ["bin", "dist"],
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "prettier": {
+    "singleQuote": true,
+    "semi": false
+  },
   "scripts": {
     "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
@@ -18,7 +25,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "prettier": "^3.5.3",
     "@saulx/tsconfig": "^1.1.3",
     "@types/adm-zip": "^0.5.6",
     "@types/arr-diff": "^4.0.3",
@@ -35,12 +42,11 @@
     "vitest": "^2.1.1"
   },
   "dependencies": {
-    "@based/bundle": "0.4.15",
+    "@based/bundle": "^0.4.15",
     "@based/client": "^8.0.2",
     "@based/db": "0.0.68",
-    "@based/db-analytics": "0.0.18",
-    "@based/functions": "3.2.3",
-    "@based/i18n": "0.3.1",
+    "@based/functions": "^3.2.3",
+    "@based/i18n": "^0.3.1",
     "@based/server": "^10.0.6",
     "@clack/prompts": "^0.10.1",
     "@inquirer/prompts": "^6.0.1",

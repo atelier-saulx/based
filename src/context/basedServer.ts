@@ -17,11 +17,6 @@ import {
 } from "../shared/index.js";
 import type { AppContext } from "./AppContext.js";
 import { deepMerge } from "@saulx/utils";
-import {
-  startAnalyticsDb,
-  receivePayload,
-  querySnapshots,
-} from "@based/db-analytics";
 
 const remoteServerConfig: BasedFunctionConfigs = {
   db: {
@@ -313,60 +308,6 @@ export const contextBasedServer =
         });
 
         await basedDb.start({});
-        const analytics = await startAnalyticsDb({
-          path: join(process.cwd(), "tmp/analytics"),
-          clean: true,
-          config: {
-            snapShotInterval: 1e3,
-          },
-        });
-
-        const analyticsServerClient = {
-          channel(name: string) {
-            if (name === "analytics") {
-              return {
-                publish(payload: any) {
-                  receivePayload(analytics, 1, payload);
-                },
-              };
-            }
-            console.warn("analyticsServerClient channel not implemented", name);
-          },
-          call(...args) {
-            console.warn("analyticsServerClient call not implemented", ...args);
-          },
-          query(name: string, payload: any) {
-            if (name === "data") {
-              return {
-                get() {
-                  return querySnapshots(analytics, payload);
-                },
-                subscribe(cb) {
-                  let timer: NodeJS.Timeout;
-                  let killed: boolean;
-                  const poll = async () => {
-                    const res = await querySnapshots(analytics, payload);
-                    if (!killed) {
-                      cb(res);
-                      timer = setTimeout(poll, 200);
-                    }
-                  };
-                  poll();
-                  return () => {
-                    killed = true;
-                    clearTimeout(timer);
-                  };
-                },
-              };
-            }
-            console.warn(
-              "analyticsServerClient query not implemented",
-              name,
-              payload,
-            );
-          },
-        };
-
         const dbServerClient = {
           channel(...args) {
             console.warn("dbServerClient channel not implemented", ...args);
@@ -382,12 +323,6 @@ export const contextBasedServer =
         server.client.db ??= {};
         server.client.db.v2 = basedDb.client;
         server.client.db.getDbClient = (name: string) => {
-          if (name === "analytics") {
-            return {
-              dbClient: analytics.db.client,
-              dbServerClient: analyticsServerClient,
-            };
-          }
           return { dbClient: basedDb.client, dbServerClient };
         };
 
