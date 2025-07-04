@@ -28,8 +28,19 @@ const HASH_SIZE = 16
 
 export type VerifBlock = {
   key: number,
+  /**
+   * Last acquired hash of the block.
+   * This is normally updated at load and save time but never during read/modify ops.
+   */
   hash: Hash,
+  /**
+   * If false the block is offloaded to fs;
+   * true doesn't necessarily mean that the block still exists because it could have been deleted.
+   */
   inmem: boolean,
+  /**
+   * If set, the block is being loaded and it can be awaited with this promise.
+   */
   loadPromise: null | Promise<void>,
 }
 
