@@ -414,7 +414,7 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   //   return deflate.deflateSync(packed)
   // } else {
 
-  // console.log(schemaBuffer.dictMap)
+  // console.log('USED', schemaBuffer.dictMapUsed.length)
   return packed
   // }
 }
