@@ -48,7 +48,7 @@ const std = @import("std");
 
 pub const SelvaHash128 = u128;
 
-pub fn strerror(err: i32) [:0]const u8 {
+pub fn strerror_zig(err: i32) [:0]const u8 {
     const s = selvaError.selva_strerror(err);
     return s[0..std.mem.len(s) :0];
 }

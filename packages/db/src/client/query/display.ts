@@ -276,7 +276,7 @@ const inspectObject = (
           str += v
         }
       }
-      if (def?.typeIndex !== REFERENCE) {
+      if (def?.typeIndex !== REFERENCE && def?.typeIndex !== REFERENCES) {
         str += ',\n'
       }
     } else {

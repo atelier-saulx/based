@@ -28,15 +28,25 @@ const HASH_SIZE = 16
 
 export type VerifBlock = {
   key: number,
+  /**
+   * Last acquired hash of the block.
+   * This is normally updated at load and save time but never during read/modify ops.
+   */
   hash: Hash,
+  /**
+   * If false the block is offloaded to fs;
+   * true doesn't necessarily mean that the block still exists because it could have been deleted.
+   */
   inmem: boolean,
+  /**
+   * If set, the block is being loaded and it can be awaited with this promise.
+   */
   loadPromise: null | Promise<void>,
 }
 
 type VerifType = {
   typeId: number,
   blockCapacity: number,
-  hash: Hash,
   blocks: VerifBlock[],
 }
 
@@ -50,14 +60,13 @@ export class VerifTree {
 
   static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
     return Object.preventExtensions(Object.keys(schemaTypesParsed)
-      .sort((a, b) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
-      .reduce((obj, key) => {
+      .sort((a: string, b: string) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
+      .reduce((obj: { [key: number]: VerifType }, key: string): { [key: number]: VerifType } => {
         const def = schemaTypesParsed[key]
         const typeId = def.id
         obj[typeId] = {
           typeId,
           blockCapacity: def.blockCapacity,
-          hash: new Uint8Array(HASH_SIZE),
           blocks: [],
         }
         return obj

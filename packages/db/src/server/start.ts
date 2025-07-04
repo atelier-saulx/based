@@ -12,7 +12,7 @@ import { save, saveSync, Writelog } from './save.js'
 import { deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@saulx/utils'
-import { SCHEMA_FILE, WRITELOG_FILE } from '../types.js'
+import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 import { DbSchema } from '../schema.js'
 
@@ -60,10 +60,15 @@ export async function start(db: DbServer, opts: StartOpts) {
       throw e
     }
 
-    const schema = await readFile(join(path, SCHEMA_FILE))
+    const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
     if (schema) {
       const s = deSerialize(schema) as DbSchema
       setSchemaOnServer(db, s)
+    } else {
+      const schemaJson = await readFile(join(path, SCHEMA_FILE_DEPRECATED))
+      if (schemaJson) {
+        setSchemaOnServer(db, JSON.parse(schemaJson.toString()))
+      }
     }
 
     // Load all range dumps

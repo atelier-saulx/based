@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2022-2024 SAULX
+ * Copyright (c) 2022-2025 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+
+#include "selva/_export.h"
 
 /*
  * Error codes.
@@ -134,4 +136,5 @@
  * Selva error code to string.
  * Implemented in libutil.
  */
+SELVA_EXPORT
 const char *selva_strerror(int err);
