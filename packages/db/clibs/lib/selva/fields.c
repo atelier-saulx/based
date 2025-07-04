@@ -828,14 +828,6 @@ static int fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs,
     return 0;
 }
 
-int selva_fields_set(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
-{
-#if 0
-    assert(selva_get_fs_by_node(db, node, fs->field) == fs);
-#endif
-    return fields_set(node, fs, &node->fields, value, len);
-}
-
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
 {
     struct SelvaFields *fields = &node->fields;

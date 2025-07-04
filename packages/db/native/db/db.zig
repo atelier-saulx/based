@@ -170,12 +170,6 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
         selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
         else => selva.SELVA_EINTYPE,
-        //else => selva.selva_fields_set(
-        //    node,
-        //    fieldSchema,
-        //    data.ptr,
-        //    data.len,
-        //),
     });
 }
 
