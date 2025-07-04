@@ -47,7 +47,6 @@ export type VerifBlock = {
 type VerifType = {
   typeId: number,
   blockCapacity: number,
-  hash: Hash,
   blocks: VerifBlock[],
 }
 
@@ -61,14 +60,13 @@ export class VerifTree {
 
   static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
     return Object.preventExtensions(Object.keys(schemaTypesParsed)
-      .sort((a, b) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
-      .reduce((obj, key) => {
+      .sort((a: string, b: string) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
+      .reduce((obj: { [key: number]: VerifType }, key: string): { [key: number]: VerifType } => {
         const def = schemaTypesParsed[key]
         const typeId = def.id
         obj[typeId] = {
           typeId,
           blockCapacity: def.blockCapacity,
-          hash: new Uint8Array(HASH_SIZE),
           blocks: [],
         }
         return obj
