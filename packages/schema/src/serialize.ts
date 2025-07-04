@@ -45,7 +45,7 @@ const KEY_OPTS = PROP
 type DictMapUsed = { key: DictMapKey; address: number }
 
 // used: DictMapUsed[]
-type DictMapKey = { address: number }
+type DictMapKey = { address: number; changed: number }
 
 type DictMap = Record<string, DictMapKey>
 
@@ -55,6 +55,7 @@ type SchemaBuffer = {
   dictMap: DictMap
   dictMapArr: DictMapKey[]
   dictMapUsed: DictMapUsed[]
+  keyChangeIndex: number
 }
 
 const ensureCapacity = (required: number) => {
@@ -170,6 +171,7 @@ const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
   // if len == 1 never from address
   if (!dictKey) {
     dictKey = {
+      changed: 0,
       address: 0,
       // used: [],
     }
@@ -337,13 +339,14 @@ const walk = (
 
   // 3 different sizes? 3, 2, 1 ?
   if (size < 252) {
+    schemaBuffer.keyChangeIndex++
     schemaBuffer.buf[sizeIndex] = size // + 3 - 3
-
     for (let i = schemaBuffer.dictMapArr.length - 1; i > -1; i--) {
       const keyDict = schemaBuffer.dictMapArr[i]
       if (keyDict.address < start) {
         break
       } else {
+        keyDict.changed = schemaBuffer.keyChangeIndex
         keyDict.address -= 3
       }
     }
@@ -354,25 +357,25 @@ const walk = (
         break
       } else {
         const keyDict = keyDictUsed.key
-
-        const addressSize = schemaBuffer.buf[keyDictUsed.address]
-        //  aslo correct if its smaller...  :|
-        if (addressSize === KEY_ADDRESS_3_BYTES) {
-          writeUint24(
-            schemaBuffer.buf,
-            keyDict.address,
-            keyDictUsed.address + 1,
-          )
-        } else if (addressSize === KEY_ADDRESS_2_BYTES) {
-          writeUint16(
-            schemaBuffer.buf,
-            keyDict.address,
-            keyDictUsed.address + 1,
-          )
-        } else if (addressSize === KEY_ADDRESS_1_BYTE) {
-          schemaBuffer.buf[keyDictUsed.address + 1] = keyDict.address
+        if (keyDict.changed === schemaBuffer.keyChangeIndex) {
+          const addressSize = schemaBuffer.buf[keyDictUsed.address]
+          //  aslo correct if its smaller...  :|
+          if (addressSize === KEY_ADDRESS_3_BYTES) {
+            writeUint24(
+              schemaBuffer.buf,
+              keyDict.address,
+              keyDictUsed.address + 1,
+            )
+          } else if (addressSize === KEY_ADDRESS_2_BYTES) {
+            writeUint16(
+              schemaBuffer.buf,
+              keyDict.address,
+              keyDictUsed.address + 1,
+            )
+          } else if (addressSize === KEY_ADDRESS_1_BYTE) {
+            schemaBuffer.buf[keyDictUsed.address + 1] = keyDict.address
+          }
         }
-
         keyDictUsed.address -= 3
       }
     }
@@ -392,8 +395,10 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
       dictMap: {},
       dictMapArr: [],
       dictMapUsed: [],
+      keyChangeIndex: 0,
     }
   }
+  schemaBuffer.keyChangeIndex = 0
   schemaBuffer.len = 0
   schemaBuffer.dictMap = {}
   schemaBuffer.dictMapArr = []
