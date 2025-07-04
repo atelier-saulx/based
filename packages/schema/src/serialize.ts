@@ -337,7 +337,7 @@ const walk = (
 
   // 3 different sizes? 3, 2, 1 ?
   if (size < 252) {
-    schemaBuffer.buf[sizeIndex] = size + 3 - 3
+    schemaBuffer.buf[sizeIndex] = size // + 3 - 3
 
     for (let i = schemaBuffer.dictMapArr.length - 1; i > -1; i--) {
       const keyDict = schemaBuffer.dictMapArr[i]
@@ -355,32 +355,28 @@ const walk = (
       } else {
         const keyDict = keyDictUsed.key
 
-        const t = schemaBuffer.buf[keyDictUsed.address]
+        const addressSize = schemaBuffer.buf[keyDictUsed.address]
         //  aslo correct if its smaller...  :|
-        if (t === KEY_ADDRESS_3_BYTES) {
+        if (addressSize === KEY_ADDRESS_3_BYTES) {
           writeUint24(
             schemaBuffer.buf,
             keyDict.address,
             keyDictUsed.address + 1,
           )
-        } else if (t === KEY_ADDRESS_2_BYTES) {
+        } else if (addressSize === KEY_ADDRESS_2_BYTES) {
           writeUint16(
             schemaBuffer.buf,
             keyDict.address,
             keyDictUsed.address + 1,
           )
-        } else if (t === KEY_ADDRESS_1_BYTE) {
+        } else if (addressSize === KEY_ADDRESS_1_BYTE) {
           schemaBuffer.buf[keyDictUsed.address + 1] = keyDict.address
         }
 
         keyDictUsed.address -= 3
       }
     }
-
-    schemaBuffer.buf.set(
-      schemaBuffer.buf.subarray(sizeIndex + 4, sizeIndex + size),
-      sizeIndex + 1,
-    )
+    schemaBuffer.buf.copyWithin(sizeIndex + 1, sizeIndex + 4, sizeIndex + size)
     schemaBuffer.len -= 3
   } else {
     schemaBuffer.buf[sizeIndex] = 0 // means 4
