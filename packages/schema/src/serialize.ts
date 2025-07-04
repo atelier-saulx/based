@@ -42,10 +42,19 @@ const PROP = 9
 
 const KEY_OPTS = PROP
 
+type DictMapUsed = { key: DictMapKey; address: number }
+
+// used: DictMapUsed[]
+type DictMapKey = { address: number }
+
+type DictMap = Record<string, DictMapKey>
+
 type SchemaBuffer = {
   buf: Uint8Array
   len: number
-  dictMap: Record<string, number>
+  dictMap: DictMap
+  dictMapArr: DictMapKey[]
+  dictMapUsed: DictMapUsed[]
 }
 
 const ensureCapacity = (required: number) => {
@@ -157,36 +166,50 @@ type Opts = {
 }
 
 const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
-  let address = schemaBuffer.dictMap[key]
+  let dictKey = schemaBuffer.dictMap[key]
   // if len == 1 never from address
-  if (!address) {
+  if (!dictKey) {
+    dictKey = {
+      address: 0,
+      // used: [],
+    }
     // pessimistically assume 4 bytes per char for UTF-8 to be safe.
     ensureCapacity(1 + key.length * 4)
-    address = schemaBuffer.len
+    dictKey.address = schemaBuffer.len
     schemaBuffer.len += 1
     const r = ENCODER.encodeInto(
       key,
       schemaBuffer.buf.subarray(schemaBuffer.len),
     )
-    schemaBuffer.buf[address] = r.written + KEY_OPTS
+    schemaBuffer.buf[dictKey.address] = r.written + KEY_OPTS
     schemaBuffer.len += r.written
-    schemaBuffer.dictMap[key] = address
+    // USED is the problem now
+    schemaBuffer.dictMapArr.push(dictKey)
+    schemaBuffer.dictMap[key] = dictKey
   } else {
     ensureCapacity(4)
-    if (address > 65025) {
+
+    // updated address? maybe
+    const dictMapUsed: DictMapUsed = { address: schemaBuffer.len, key: dictKey }
+    schemaBuffer.dictMapUsed.push(dictMapUsed)
+    // used can be handled differently - also pass to
+    // dictKey.used.push(dictMapUsed)
+    // console.log('USE KEY!', key)
+    // have to check this to correct - correctly
+    if (dictKey.address > 65025) {
       schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_3_BYTES
       schemaBuffer.len += 1
-      writeUint24(schemaBuffer.buf, address, schemaBuffer.len)
+      writeUint24(schemaBuffer.buf, dictKey.address, schemaBuffer.len)
       schemaBuffer.len += 3
-    } else if (address > 255) {
+    } else if (dictKey.address > 255) {
       schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_2_BYTES
       schemaBuffer.len += 1
-      writeUint16(schemaBuffer.buf, address, schemaBuffer.len)
+      writeUint16(schemaBuffer.buf, dictKey.address, schemaBuffer.len)
       schemaBuffer.len += 2
     } else {
       schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_1_BYTE
       schemaBuffer.len += 1
-      schemaBuffer.buf[schemaBuffer.len] = address
+      schemaBuffer.buf[schemaBuffer.len] = dictKey.address
       schemaBuffer.len += 1
     }
   }
@@ -220,7 +243,7 @@ const walk = (
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
   }
   let sizeIndex = schemaBuffer.len
-  schemaBuffer.len += 5
+  schemaBuffer.len += 4
 
   if (isArray) {
     const len = obj.length
@@ -312,39 +335,85 @@ const walk = (
 
   let size = schemaBuffer.len - start
 
-  // 3
-  // if (size < 252) {
-  //   console.log('FLAP>', size)
-  //   schemaBuffer.buf[sizeIndex] = size + 3
-  //   schemaBuffer.buf.set(
-  //     schemaBuffer.buf.subarray(sizeIndex + 4, sizeIndex + size),
-  //     sizeIndex + 1,
-  //   )
-  //   schemaBuffer.len -= 4
-  // } else {
-  schemaBuffer.buf[sizeIndex] = 0 // means 4
-  writeUint32(schemaBuffer.buf, size, sizeIndex + 1)
-  // }
+  // 3 different sizes? 3, 2, 1 ?
+  if (size < 252) {
+    schemaBuffer.buf[sizeIndex] = size + 3 - 3
+
+    for (let i = schemaBuffer.dictMapArr.length - 1; i > -1; i--) {
+      const keyDict = schemaBuffer.dictMapArr[i]
+      if (keyDict.address < start) {
+        break
+      } else {
+        keyDict.address -= 3
+      }
+    }
+
+    for (let i = schemaBuffer.dictMapUsed.length - 1; i > -1; i--) {
+      const keyDictUsed = schemaBuffer.dictMapUsed[i]
+      if (keyDictUsed.address < start) {
+        break
+      } else {
+        const keyDict = keyDictUsed.key
+
+        const t = schemaBuffer.buf[keyDictUsed.address]
+        //  aslo correct if its smaller...  :|
+        if (t === KEY_ADDRESS_3_BYTES) {
+          writeUint24(
+            schemaBuffer.buf,
+            keyDict.address,
+            keyDictUsed.address + 1,
+          )
+        } else if (t === KEY_ADDRESS_2_BYTES) {
+          writeUint16(
+            schemaBuffer.buf,
+            keyDict.address,
+            keyDictUsed.address + 1,
+          )
+        } else if (t === KEY_ADDRESS_1_BYTE) {
+          schemaBuffer.buf[keyDictUsed.address + 1] = keyDict.address
+        }
+
+        keyDictUsed.address -= 3
+      }
+    }
+
+    schemaBuffer.buf.set(
+      schemaBuffer.buf.subarray(sizeIndex + 4, sizeIndex + size),
+      sizeIndex + 1,
+    )
+    schemaBuffer.len -= 3
+  } else {
+    schemaBuffer.buf[sizeIndex] = 0 // means 4
+    writeUint24(schemaBuffer.buf, size, sizeIndex + 1)
+  }
 }
 
 export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   if (!schemaBuffer) {
     schemaBuffer = {
-      buf: new Uint8Array(10e3), // 10kb default
+      buf: new Uint8Array(5e3), // 5kb default
       len: 0,
       dictMap: {},
+      dictMapArr: [],
+      dictMapUsed: [],
     }
   }
   schemaBuffer.len = 0
   schemaBuffer.dictMap = {}
+  schemaBuffer.dictMapArr = []
+  schemaBuffer.dictMapUsed = []
+
   // defalte not supported in unpacking yet
   const isDeflate = 0 // opts.deflate ? 1 : 0
   walk(opts, schema, undefined, undefined, false, schemaBuffer)
   const packed = new Uint8Array(schemaBuffer.buf.subarray(0, schemaBuffer.len))
+
   // if (isDeflate) {
   //   // add extra byte! see if nessecary
   //   return deflate.deflateSync(packed)
   // } else {
+
+  // console.log(schemaBuffer.dictMap)
   return packed
   // }
 }
@@ -404,11 +473,10 @@ export const deSerializeInner = (
 
   let size: number
   if (buf[i] === 0) {
-    size = readUint32(buf, i + 1)
-    i += 5
+    size = readUint24(buf, i + 1)
+    i += 4
   } else {
     size = buf[i] - 3
-    console.log('yo', size)
     i += 1
   }
 

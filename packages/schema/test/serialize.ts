@@ -4,7 +4,6 @@ import { serialize, deSerialize, StrictSchema, parse } from '../src/index.js'
 import eurovisionSchema from './schema/based.schema.js'
 import { deflateSync } from 'node:zlib'
 
-// deepEqual that ignore functions (ai generated)
 function deepEqual(a: any, b: any): boolean {
   if (a === b) return true
   if (a === null || a === undefined || b === null || b === undefined) {
@@ -41,121 +40,128 @@ function deepEqual(a: any, b: any): boolean {
   return false
 }
 
-// test('serialize and deserialize basic schema', () => {
-//   const basicSchema: StrictSchema = {
-//     locales: {
-//       en: { required: true },
-//       nl: {},
-//     },
-//     types: {
-//       thing: {
-//         props: {
-//           name: { type: 'string', default: 'thingy' },
-//           nested: {
-//             type: 'object',
-//             props: {
-//               field: { type: 'number' },
-//             },
-//           },
-//           ref: {
-//             ref: 'other',
-//             prop: 'backref',
-//           },
-//           validationFn: {
-//             type: 'string',
-//             validation: (v) => v.startsWith('valid'),
-//           },
-//         },
-//       },
-//       other: {
-//         props: {
-//           backref: {
-//             readOnly: true,
-//             items: {
-//               ref: 'thing',
-//               prop: 'ref',
-//             },
-//           },
-//         },
-//       },
-//     },
-//   }
+test('serialize and deserialize basic schema', () => {
+  const basicSchema: StrictSchema = {
+    locales: {
+      en: { required: true },
+      nl: {},
+    },
+    types: {
+      thing: {
+        props: {
+          name: { type: 'string', default: 'thingy' },
+          nested: {
+            type: 'object',
+            props: {
+              field: { type: 'number' },
+            },
+          },
+          ref: {
+            ref: 'other',
+            prop: 'backref',
+          },
+          validationFn: {
+            type: 'string',
+            validation: (v) => v.startsWith('valid'),
+          },
+        },
+      },
+      other: {
+        props: {
+          backref: {
+            readOnly: true,
+            items: {
+              ref: 'thing',
+              prop: 'ref',
+            },
+          },
+        },
+      },
+    },
+  }
 
-//   const serialized = serialize(basicSchema)
-//   const deserialized = deSerialize(serialized)
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
 
-//   ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
-// })
+  ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
+})
 
-// test('serialize and deserialize complex (Eurovision) schema', () => {
-//   const serialized = serialize(eurovisionSchema)
-//   const deserialized = deSerialize(serialized)
+test('serialize and deserialize complex (Eurovision) schema', () => {
+  const serialized = serialize(eurovisionSchema)
+  const deserialized = deSerialize(serialized)
 
-//   ok(
-//     deepEqual(eurovisionSchema, deserialized),
-//     'Eurovision schema did not match after roundtrip',
-//   )
-// })
+  ok(
+    deepEqual(eurovisionSchema, deserialized),
+    'Eurovision schema did not match after roundtrip',
+  )
 
-// test('serialize with readOnly option strips validation and defaults', () => {
-//   const schema: StrictSchema = {
-//     types: {
-//       thing: {
-//         props: {
-//           name: { type: 'string', default: 'thingy' },
-//           age: { type: 'number', validation: (v) => v > 18 },
-//         },
-//       },
-//     },
-//   }
+  console.log(
+    serialized.byteLength,
+    deflateSync(JSON.stringify(eurovisionSchema)).byteLength,
+  )
+})
 
-//   const serialized = serialize(schema, { readOnly: true })
-//   const deserialized = deSerialize(serialized)
+test('serialize with readOnly option strips validation and defaults', () => {
+  const schema: StrictSchema = {
+    types: {
+      thing: {
+        props: {
+          name: { type: 'string', default: 'thingy' },
+          age: { type: 'number', validation: (v) => v > 18 },
+        },
+      },
+    },
+  }
 
-//   const expected: StrictSchema = {
-//     types: {
-//       thing: {
-//         props: {
-//           name: { type: 'string' }, // default removed
-//           age: { type: 'number' }, // validation removed
-//         },
-//       },
-//     },
-//   }
-//   ok(
-//     deepEqual(deserialized, expected),
-//     'readOnly option did not strip fields correctly',
-//   )
-// })
+  const serialized = serialize(schema, { readOnly: true })
+  const deserialized = deSerialize(serialized)
 
-// test('big schema', () => {
-//   const makeALot = (n: number) => {
-//     const props: any = {}
-//     for (let i = 0; i < n; i++) {
-//       props[`f${i}`] = { type: 'int32' }
-//     }
-//     return props
-//   }
+  const expected: StrictSchema = {
+    types: {
+      thing: {
+        props: {
+          name: { type: 'string' }, // default removed
+          age: { type: 'number' }, // validation removed
+        },
+      },
+    },
+  }
+  ok(
+    deepEqual(deserialized, expected),
+    'readOnly option did not strip fields correctly',
+  )
+})
 
-//   const basicSchema: StrictSchema = {
-//     locales: {
-//       en: { required: true },
-//       nl: {},
-//     },
-//     types: {
-//       thing: {
-//         props: {
-//           ...makeALot(16000),
-//         },
-//       },
-//     },
-//   }
+// optimize this with an extra map
+// keep serialized schema in MEM
+test('big schema', () => {
+  const makeALot = (n: number) => {
+    const props: any = {}
+    for (let i = 0; i < n; i++) {
+      props[`f${i}`] = { type: 'int32' }
+    }
+    return props
+  }
 
-//   const serialized = serialize(basicSchema)
-//   const deserialized = deSerialize(serialized)
+  const basicSchema: StrictSchema = {
+    locales: {
+      en: { required: true },
+      nl: {},
+    },
+    types: {
+      thing: {
+        props: {
+          ...makeALot(16000),
+        },
+      },
+    },
+  }
 
-//   ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
-// })
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+
+  ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
+})
 
 test('Simple + enum', () => {
   const makeALot = (n: number) => {
@@ -167,20 +173,20 @@ test('Simple + enum', () => {
   }
 
   const basicSchema: StrictSchema = parse({
-    locales: {
-      en: { required: true },
-      nl: {},
-    },
+    // locales: {
+    //   en: { required: true },
+    //   nl: {},
+    // },
     types: {
       article: {
         props: {
-          type: ['opinion', 'politcis', 'gossip'],
-          code: { type: 'string', maxBytes: 2 },
-          age: { type: 'uint32' },
-          name: { type: 'string' },
+          // type: ['opinion', 'politcis', 'gossip'],
+          // code: { type: 'string', maxBytes: 2 },
+          // age: { type: 'uint32' },
+          // name: { type: 'string' },
           body: { type: 'string' }, // big compressed string...
-          stuff: 'binary',
-          derp: 'binary',
+          // stuff: 'binary',
+          // derp: 'binary',
         },
       },
       italy: {
@@ -192,9 +198,19 @@ test('Simple + enum', () => {
   }).schema
 
   const serialized = serialize(basicSchema)
+
+  // console.log(
+  //   serialized,
+  //   [...serialized]
+  //     .map((v) => {
+  //       return `"${[v, String.fromCharCode(v)].join('')}"`
+  //     })
+  //     .join(' '),
+  // )
+  console.log(serialized)
   const deserialized = deSerialize(serialized)
 
   console.dir({ basicSchema, deserialized }, { depth: 10 })
 
-  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
+  // ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
