@@ -24,6 +24,10 @@ export class IoWorker extends DbWorker {
     })
   }
 
+  /**
+   * Save given blocks and return errors and hashes in an array.
+   * @returns [[4 bytes err], [16 bytes hash]][] with the same length as blocks.
+   */
   async saveBlocks(blocks: { filepath: string, typeId: number, start: number }[]): Promise<Uint8Array> {
     const job: IoJob = {
       type: 'save',
@@ -48,6 +52,12 @@ export class IoWorker extends DbWorker {
     }
   }
 
+  /**
+   * Save a block and discard it from memory "atomically".
+   * Note that this worker doesn't give any protection from other threads
+   * accessing the block concurrently, and it must be coordinated in the
+   * main thread.
+   */
   async unloadBlock(filepath: string, typeId: number, start: number): Promise<Uint8Array> {
     const job: IoJob = {
       type: 'unload',
