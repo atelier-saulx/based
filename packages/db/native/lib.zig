@@ -88,8 +88,8 @@ fn _selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value
     const result: c.napi_value = undefined;
     const copied: selva.bool = undefined;
     const str = selva.strerror_zig(err);
-    std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
-    // _ = c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
+    // std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
+    _ = c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
     return result;
 }
 
