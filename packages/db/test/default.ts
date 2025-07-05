@@ -8,6 +8,42 @@ const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
 
+await test('edges', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+              $nice: { type: 'boolean', default: true },
+              $role: { enum: ['admin', 'derp'], default: 'admin' },
+              // string
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const userId = await db.create('user', {
+    friends: [db.create('user')],
+  })
+
+  await db
+    .query('user', userId)
+    .include('friends.$role', 'friends.$nice')
+    .get()
+    .inspect()
+})
+
 await test('separate', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
