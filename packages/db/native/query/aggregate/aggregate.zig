@@ -23,8 +23,8 @@ pub fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
 
 pub inline fn execAgg(
     aggPropDef: []u8,
-    accumulatorField: []u8,
-    value: []u8,
+    accumulatorField: anytype,
+    value: anytype,
     fieldAggsSize: u16,
     hadAccumulated: *bool,
 ) void {
@@ -40,7 +40,12 @@ pub inline fn execAgg(
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
-        // TODO: populational or sample statistics switch or aliases
+
+        if (@TypeOf(accumulatorField) != []u8 and @TypeOf(accumulatorField) != selva.selva_string) {
+            @compileError("Unsupported type " ++ @typeName(@TypeOf(accumulatorField)));
+        } else if (@TypeOf(value) != []u8 and @TypeOf(value) != selva.selva_string) {
+            @compileError("Unsupported type " ++ @typeName(@TypeOf(value)));
+        }
 
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
@@ -103,11 +108,17 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
     i += 2;
     const aggPropDef = agg[i .. i + fieldAggsSize];
     const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+    utils.debugPrint("aggType: {any}, field: {d}, buf: {any}\n", .{ aggType, field, agg });
 
     var value: []u8 = undefined;
 
+    const hllAccumulator = selva.selva_string_create(null, 0, selva.SELVA_STRING_MUTABLE);
+    defer selva.selva_free(hllAccumulator);
+    utils.debugPrint("selva_string alocada com sucesso: {any}\n", .{hllAccumulator});
+
     if (field != aggregateTypes.IsId) {
-        if (field != types.MAIN_PROP) {
+        // this condition is very bag, have to find where type cardinality is not assigned as main
+        if (field != types.MAIN_PROP and aggType != aggregateTypes.AggType.CARDINALITY) {
             i += fieldAggsSize;
             return;
         }
@@ -116,8 +127,10 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             return;
         };
         if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            // value = db.getCardinalityFieldAsSelvaString(node, fieldSchema); //@ptrCast para ?[]u8 ver como vai
-            value = &[_]u8{}; // temp
+            const hllValue = selva.selva_fields_get_selva_string(node, fieldSchema) orelse null;
+            utils.debugPrint("hllValue: {any}\n", .{hllValue});
+            selva.hll_union(hllAccumulator, hllValue);
+            utils.debugPrint("HLL count update: {d}\n", .{selva.hll_count(hllAccumulator)[0..4]});
         } else {
             value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
         }
@@ -128,7 +141,6 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         }
     }
     execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
-    // hadAccumulated.* = true;
     i += fieldAggsSize;
     return;
 }

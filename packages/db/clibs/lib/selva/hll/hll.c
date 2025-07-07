@@ -175,90 +175,51 @@ void hll_array_union(struct selva_string *result, struct selva_string *hll_array
     result_hll->dirty = true;
 }
 
-static HyperLogLogPlusPlus* buffer_to_hll(const unsigned char* buffer, size_t buffer_len) {
-    if (!buffer) return nullptr;
+void hll_union(struct selva_string *result, struct selva_string *hll_new) {
 
-    size_t bitfield_size = 1;
-    size_t num_registers_offset = bitfield_size;
-    size_t count_offset = num_registers_offset + sizeof(uint16_t);
-    // size_t registers_offset = count_offset + sizeof(uint32_t);
+    HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hll_new, nullptr);
 
-    uint8_t bitfield = buffer[0];
-    uint16_t num_registers = *(uint16_t*)&buffer[num_registers_offset];
-    uint32_t count = *(uint32_t*)&buffer[count_offset];
-    // size_t num_registers_count = (buffer_len - 1) / sizeof(uint32_t);
-    if ((buffer_len - 1) % sizeof(uint32_t) != 0) {
-       return nullptr;
-    }
+    uint8_t precision = current_hll->precision;
+    size_t num_registers = current_hll->num_registers;
 
-    HyperLogLogPlusPlus* hll = (HyperLogLogPlusPlus*)buffer;
+    hll_init(result, precision, DENSE);
+    HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
 
-    hll->is_sparse = (bitfield & 0x01) != 0;
-    hll->dirty = ((bitfield >> 1) & 0x01) != 0;
-    hll->precision = (bitfield >> 2) & 0x3F;
-    hll->num_registers = num_registers;
-    hll->count = count;
-    // hll->registers = (uint32_t*)&buffer[registers_offset];
+    memcpy(result_hll->registers, current_hll->registers, num_registers * sizeof(uint32_t));
 
-    return hll;
+    #if __ARM_NEON
+            for (size_t i = 0; i < num_registers; i += 4) {
+                uint32x4_t a = {
+                    current_hll->registers[i],
+                    current_hll->registers[i + 1],
+                    current_hll->registers[i + 2],
+                    current_hll->registers[i + 3],
+                };
+                uint32x4_t b = {
+                    result_hll->registers[i],
+                    result_hll->registers[i + 1],
+                    result_hll->registers[i + 2],
+                    result_hll->registers[i + 3],
+                };
+                uint32x4_t c;
+
+                c = vmaxq_u32(a, b);
+                result_hll->registers[i] = c[0];
+                result_hll->registers[i + 1] = c[1];
+                result_hll->registers[i + 2] = c[2];
+                result_hll->registers[i + 3] = c[3];
+            }
+    #else
+            for (size_t i = 0; i < num_registers; i += 4) {
+                result_hll->registers[i] = max(current_hll->registers[i], result_hll->registers[i]);
+                result_hll->registers[i + 1] = max(current_hll->registers[i + 1], result_hll->registers[i + 1]);
+                result_hll->registers[i + 2] = max(current_hll->registers[i + 2], result_hll->registers[i + 2]);
+                result_hll->registers[i + 3] = max(current_hll->registers[i + 3], result_hll->registers[i + 3]);
+            }
+    #endif
+
+    result_hll->dirty = true;
 }
-
-void hll_union(char* dest, size_t dest_len, const char* src, size_t src_len) {
-
-    HyperLogLogPlusPlus *dest_hll = buffer_to_hll(dest, dest_len);
-    const HyperLogLogPlusPlus *src_hll = buffer_to_hll(src, src_len);
-
-    if (!dest_hll || !src_hll) {
-        return;
-    }
-
-    if (src_hll->num_registers > dest_hll->num_registers) {
-        // for now just throw error but is very simple to made the same hll_add aproach
-        db_panic("take care of this num_registers.");
-        return;
-    }
-
-    if (dest_hll->precision != src_hll->precision) {
-        db_panic("Precision mismatch is unsupported.");
-        return;
-    }
-
-    size_t num_registers = src_hll->num_registers;
-
-#if __ARM_NEON
-        for (size_t i = 0; i < num_registers; i += 4) {
-            uint32x4_t a = {
-                src_hll->registers[i],
-                src_hll->registers[i + 1],
-                src_hll->registers[i + 2],
-                src_hll->registers[i + 3],
-            };
-            uint32x4_t b = {
-                dest_hll->registers[i],
-                dest_hll->registers[i + 1],
-                dest_hll->registers[i + 2],
-                dest_hll->registers[i + 3],
-            };
-            uint32x4_t c;
-
-            c = vmaxq_u32(a, b);
-            dest_hll->registers[i] = c[0];
-            dest_hll->registers[i + 1] = c[1];
-            dest_hll->registers[i + 2] = c[2];
-            dest_hll->registers[i + 3] = c[3];
-        }
-#else
-    for (size_t i = 0; i < num_registers; i++) {
-        dest_hll->registers[i] = max(src_hll->registers[i], dest_hll->registers[i]);
-        dest_hll->registers[i + 1] = max(src_hll->registers[i + 1], dest_hll->registers[i + 1]);
-        dest_hll->registers[i + 2] = max(src_hll->registers[i + 2], dest_hll->registers[i + 2]);
-        dest_hll->registers[i + 3] = max(src_hll->registers[i + 3], dest_hll->registers[i + 3]);
-    }
-#endif
-
-    dest_hll->dirty = true;
-}
-
 
 // static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
 //     size_t jl = 0;

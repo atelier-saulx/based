@@ -1797,6 +1797,7 @@ await test('dev', async (t) => {
     types: {
       lunch: {
         week: 'uint8',
+        lala: 'number',
         Mon: 'cardinality',
         Tue: 'cardinality',
         Wed: 'cardinality',
@@ -1808,6 +1809,7 @@ await test('dev', async (t) => {
 
   const week27 = {
     week: 27,
+    lala: 250,
     Mon: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
     Tue: ['Nuno', 'Tom', 'Alex', 'Niels', 'jimdebeer', 'Francesco', 'Victor'],
     Wed: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
@@ -1859,4 +1861,7 @@ await test('dev', async (t) => {
       .filter(([key]) => days.includes(key))
       .reduce((sum, el: [string, number]) => sum + el[1], 0),
   )
+
+  await db.query('lunch').cardinality('Mon').get()
+  // await db.query('lunch').sum('lala').get().inspect()
 })
