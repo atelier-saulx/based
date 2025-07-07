@@ -68,7 +68,13 @@ const appendCreate = (
         ctx.buf.set(schema.mainEmpty, ctx.len)
         ctx.len += schema.mainLen
       }
-      err = writeFixedValue(ctx, createTs, prop, ctx.lastMain + prop.start)
+      err = writeFixedValue(
+        ctx,
+        createTs,
+        prop,
+        ctx.lastMain + prop.start,
+        CREATE,
+      )
       if (err) {
         return err
       }

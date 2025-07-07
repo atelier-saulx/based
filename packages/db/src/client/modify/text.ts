@@ -8,6 +8,7 @@ import {
   RANGE_ERR,
   DELETE,
   SIZE,
+  MOD_OPS_TO_STRING,
 } from './types.js'
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import { writeString } from './string.js'
