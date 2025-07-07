@@ -66,7 +66,9 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   }
 
   server.verifTree.updateTypes(server.schemaTypesParsed)
-  saveSync(server, { skipDirtyCheck: true })
+  if (server.fileSystemPath) {
+    saveSync(server, { skipDirtyCheck: true })
+  }
 }
 
 export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
