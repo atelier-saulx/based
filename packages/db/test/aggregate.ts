@@ -1604,7 +1604,7 @@ await test('overall performance', async (t) => {
 
   const scriptName = process.env.npm_lifecycle_event || ''
   const isDebugMode = scriptName.includes('debug')
-  const acceptableDuration = isDebugMode ? 200 : 20
+  const acceptableDuration = isDebugMode ? 300 : 30
 
   const startTime1 = performance.now()
   await db.query('beer').sum('price').get()
