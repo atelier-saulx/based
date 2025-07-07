@@ -10,6 +10,7 @@ import {
   DELETE,
   SIZE,
   DELETE_TEXT_FIELD,
+  MOD_OPS_TO_STRING,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -29,9 +30,6 @@ export function writeString(
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
 
-  if (t.transform) {
-  }
-
   if (value === null || value === '') {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
@@ -49,9 +47,14 @@ export function writeString(
     if (!t.validation(value, t)) {
       return new ModifyError(t, value)
     }
+    if (t.transform) {
+      value = t.transform(MOD_OPS_TO_STRING[modifyOp], value)
+    }
     let size = isBuffer
-      ? value.byteLength
-      : ENCODER.encode(value).byteLength + 6
+      ? // @ts-ignore
+        value.byteLength
+      : // @ts-ignore
+        ENCODER.encode(value).byteLength + 6
     if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
       return RANGE_ERR
     }
@@ -69,6 +72,7 @@ export function writeString(
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {
+      // @ts-ignore
       ctx.buf.set(value, ctx.len)
     } else {
       const isNoCompression = t.compression === 0

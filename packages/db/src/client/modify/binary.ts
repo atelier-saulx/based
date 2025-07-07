@@ -9,6 +9,7 @@ import {
   DELETE,
   SIZE,
   CREATE,
+  MOD_OPS_TO_STRING,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -57,12 +58,21 @@ export function writeBinary(
   if (value === null) {
     size = 0
   } else {
-    value = getBuffer(value)
-    if (!value || !t.validation(value, t)) {
-      return new ModifyError(t, value)
+    if (t.transform) {
+      // validation happens before
+      if (!value || !t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
+      value = getBuffer(t.transform(MOD_OPS_TO_STRING[modifyOp], value))
+    } else {
+      value = getBuffer(value)
+      if (!value || !t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
     }
     size = value.byteLength + 6
   }
+
   if (size === 0) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {

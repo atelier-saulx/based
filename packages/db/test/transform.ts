@@ -10,6 +10,7 @@ await test('transform', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
+  // something like this has to happen on schema stuff in the server auto by builder
   global.createHmac = crypto.createHmac
 
   await db.setSchema({
@@ -17,15 +18,19 @@ await test('transform', async (t) => {
       user: {
         props: {
           password: {
-            type: 'string',
+            type: 'binary',
             format: 'password',
-            transform: (type, value) => {
-              if (type === 'read') {
+            validation: (val: string | Uint8Array) => {
+              console.log('derp ->', val)
+              return true
+            },
+            // So you need to read the transform type to determine the TS value for this
+            transform: (type, value: string | Uint8Array | Buffer) => {
+              console.log(' ', type, value)
+              if (type === 'read' || typeof value !== 'string') {
                 return value
               }
-              // binary is nice so you can check
-              // might need a skip transform option for things like migrate
-              return global.createHmac('sha256', value).digest().toString()
+              return global.createHmac('sha256', value).digest()
             },
           },
         },
@@ -35,8 +40,12 @@ await test('transform', async (t) => {
 
   // if buffer convert it
 
-  await db.create('user', {
+  const user = await db.create('user', {
     password: 'mygreatpassword',
+  })
+
+  await db.update('user', user, {
+    password: 'mygreatpassword!',
   })
 
   await db.query('user').get().inspect()
