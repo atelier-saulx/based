@@ -221,7 +221,7 @@ export function writeEdges(
         ctx.buf[ctx.len++] = sizeU32 >>>= 8
         ctx.buf[ctx.len++] = sizeU32 >>>= 8
         ctx.buf[ctx.len++] = sizeU32 >>>= 8
-        const err = appendFixedValue(ctx, value, edge)
+        const err = appendFixedValue(ctx, value, edge, UPDATE)
         if (err) {
           return err
         }
@@ -273,7 +273,7 @@ export function writeEdges(
       ctx.buf[ctx.len++] = sizeU32 >>>= 8
       for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
-        const err = appendFixedValue(ctx, mainFields[i + 1], edge)
+        const err = appendFixedValue(ctx, mainFields[i + 1], edge, UPDATE)
         if (err) {
           return err
         }
@@ -343,7 +343,7 @@ export function writeEdges(
         ctx.len = startMain + edge.start
 
         // Add null support (defaults)
-        const err = appendFixedValue(ctx, value, edge)
+        const err = appendFixedValue(ctx, value, edge, op)
 
         if (err) {
           return err
