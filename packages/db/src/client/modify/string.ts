@@ -29,6 +29,9 @@ export function writeString(
 ): ModifyErr {
   const isBuffer = value instanceof Uint8Array
 
+  if (t.transform) {
+  }
+
   if (value === null || value === '') {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {

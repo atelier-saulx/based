@@ -163,54 +163,48 @@ test('big schema', () => {
   ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
 })
 
-test('Simple + enum', () => {
-  const makeALot = (n: number) => {
-    const props: any = {}
-    for (let i = 0; i < n; i++) {
-      props[`f${i}`] = { type: 'int32' }
-    }
-    return props
-  }
-
+test('Simple shared prop', () => {
   const basicSchema: StrictSchema = parse({
-    // locales: {
-    //   en: { required: true },
-    //   nl: {},
-    // },
     types: {
       article: {
         props: {
-          // type: ['opinion', 'politcis', 'gossip'],
-          // code: { type: 'string', maxBytes: 2 },
-          // age: { type: 'uint32' },
-          // name: { type: 'string' },
-          body: { type: 'string' }, // big compressed string...
-          // stuff: 'binary',
-          // derp: 'binary',
+          body: { type: 'string' },
         },
       },
       italy: {
         props: {
-          body: { type: 'string' }, // big compressed string...
+          body: { type: 'string' },
         },
       },
     },
   }).schema
 
   const serialized = serialize(basicSchema)
-
-  // console.log(
-  //   serialized,
-  //   [...serialized]
-  //     .map((v) => {
-  //       return `"${[v, String.fromCharCode(v)].join('')}"`
-  //     })
-  //     .join(' '),
-  // )
-  console.log(serialized)
   const deserialized = deSerialize(serialized)
+  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
+})
 
-  console.dir({ basicSchema, deserialized }, { depth: 10 })
+test('transform', () => {
+  const basicSchema: StrictSchema = parse({
+    types: {
+      article: {
+        props: {
+          body: {
+            type: 'string',
+            transform: (type, value) => {
+              if (type !== 'read') {
+                return 'derp!'
+              }
+              return value
+            },
+          },
+        },
+      },
+    },
+  }).schema
 
-  // ok(deepEqual(basicSchema, deserialized), 'Mismatch')
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+  console.dir(deserialized, { depth: 10 })
+  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
