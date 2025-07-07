@@ -74,7 +74,7 @@ const test = async (
         const data = []
         const counts = []
 
-        for (const type in db.server.schema.types) {
+        for (const type in db.server.schema?.types) {
           let x = await db.query(type).include(fields).get()
           checksums.push(x.checksum)
           data.push(x.toObject())
