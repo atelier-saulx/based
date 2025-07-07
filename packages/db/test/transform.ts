@@ -26,7 +26,6 @@ await test('transform', async (t) => {
               if (type === 'read') {
                 return value
               }
-
               if (value === 66) {
                 return 99
               }
@@ -83,7 +82,7 @@ await test('transform', async (t) => {
     password: 'mygreatpassword!',
   })
 
-  deepEqual(await db.query('user').get().inspect(10, true), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       bla: 'bla',
