@@ -63,7 +63,7 @@ const appendUpdate = (
       ctx.buf[ctx.len++] = start >>>= 8
       ctx.buf[ctx.len++] = len
       ctx.buf[ctx.len++] = len >>>= 8
-      const err = appendFixedValue(ctx, v, t)
+      const err = appendFixedValue(ctx, v, t, UPDATE)
       if (err) {
         return err
       }

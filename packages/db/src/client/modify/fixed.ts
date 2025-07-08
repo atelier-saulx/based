@@ -18,20 +18,28 @@ import {
 import { convertToTimestamp } from '@saulx/utils'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
-import { ModifyErr, RANGE_ERR } from './types.js'
+import { MOD_OPS_TO_STRING, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'
 
 const map: Record<
   number,
-  (ctx: ModifyCtx, val: any, def: PropDef | PropDefEdge) => ModifyErr
+  (
+    ctx: ModifyCtx,
+    val: any,
+    def: PropDef | PropDefEdge,
+    modOp: ModifyOp,
+  ) => ModifyErr
 > = {}
 
-map[BINARY] = (ctx, val, def) => {
+map[BINARY] = (ctx, val, def, mod) => {
   const buf = getBuffer(val)
   if (buf === undefined) {
     return new ModifyError(def, val)
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
+  }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   const size = buf.byteLength
   if (ctx.len + size + 1 > ctx.max) {
@@ -42,7 +50,7 @@ map[BINARY] = (ctx, val, def) => {
   ctx.len += buf.byteLength
 }
 
-map[STRING] = (ctx, val, def) => {
+map[STRING] = (ctx, val, def, mod) => {
   const valBuf = ENCODER.encode(val)
   const size = valBuf.byteLength
   if (size + 1 > def.len) {
@@ -50,6 +58,9 @@ map[STRING] = (ctx, val, def) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
+  }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   if (ctx.len + size + 1 > ctx.max) {
     return RANGE_ERR
@@ -63,7 +74,7 @@ map[STRING] = (ctx, val, def) => {
   }
 }
 
-map[BOOLEAN] = (ctx, val, def) => {
+map[BOOLEAN] = (ctx, val, def, mod) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
@@ -73,6 +84,9 @@ map[BOOLEAN] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   if (typeof val === 'boolean') {
     ctx.buf[ctx.len++] = val ? 1 : 0
   } else {
@@ -80,12 +94,15 @@ map[BOOLEAN] = (ctx, val, def) => {
   }
 }
 
-map[ENUM] = (ctx, val, def) => {
+map[ENUM] = (ctx, val, def, mod) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
+  }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   if (val === null) {
     ctx.buf[ctx.len++] = 0
@@ -96,23 +113,25 @@ map[ENUM] = (ctx, val, def) => {
   }
 }
 
-map[NUMBER] = (ctx, val, def) => {
+map[NUMBER] = (ctx, val, def, mod) => {
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
   if (val === null) {
     val = def.default
   }
-
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
+  }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   view.setFloat64(0, val, true)
 }
 
-map[TIMESTAMP] = (ctx, val, def) => {
+map[TIMESTAMP] = (ctx, val, def, mod) => {
   const parsedValue = convertToTimestamp(val)
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
@@ -123,6 +142,9 @@ map[TIMESTAMP] = (ctx, val, def) => {
   if (!def.validation(parsedValue, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   // Todo use new utils and store as uint64
@@ -130,7 +152,7 @@ map[TIMESTAMP] = (ctx, val, def) => {
   // const ts = view.getFloat64(0)
 }
 
-map[UINT32] = (ctx, val, def) => {
+map[UINT32] = (ctx, val, def, mod) => {
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
@@ -140,13 +162,16 @@ map[UINT32] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
 }
 
-map[UINT16] = (ctx, val, def) => {
+map[UINT16] = (ctx, val, def, mod) => {
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
@@ -156,11 +181,14 @@ map[UINT16] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
 
-map[UINT8] = (ctx, val, def) => {
+map[UINT8] = (ctx, val, def, mod) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
@@ -170,10 +198,13 @@ map[UINT8] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   ctx.buf[ctx.len++] = val
 }
 
-map[INT32] = (ctx, val, def) => {
+map[INT32] = (ctx, val, def, mod) => {
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
@@ -183,13 +214,16 @@ map[INT32] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
 }
 
-map[INT16] = (ctx, val, def) => {
+map[INT16] = (ctx, val, def, mod) => {
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
@@ -199,11 +233,14 @@ map[INT16] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
+  }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
 
-map[INT8] = (ctx, val, def) => {
+map[INT8] = (ctx, val, def, mod) => {
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
@@ -212,19 +249,23 @@ map[INT8] = (ctx, val, def) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
+  }
+  if (def.transform) {
+    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   ctx.buf[ctx.len++] = val
 }
 
 export const writeFixedValue = (
   ctx: ModifyCtx,
-  val: any,
+  value: any,
   def: PropDef | PropDefEdge,
   pos: number,
+  mod: ModifyOp,
 ): ModifyErr => {
   const len = ctx.len
   ctx.len = pos
-  const res = map[def.typeIndex](ctx, val, def)
+  const res = map[def.typeIndex](ctx, value, def, mod)
   ctx.len = len
   return res
 }
@@ -233,6 +274,7 @@ export const appendFixedValue = (
   ctx: ModifyCtx,
   val: any,
   def: PropDef | PropDefEdge,
+  mod: ModifyOp,
 ): ModifyErr => {
-  return map[def.typeIndex](ctx, val, def)
+  return map[def.typeIndex](ctx, val, def, mod)
 }

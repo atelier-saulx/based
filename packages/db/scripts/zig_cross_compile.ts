@@ -32,7 +32,7 @@ async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
   for (const release of data) {
     const [_, major, minor, patch] =
       release.version.match(/^v(\d+)\.(\d+)\.(\d+)/) || []
-    if (major && !versions.has(major) && major >= 20) {
+    if (major && !versions.has(major) && major >= 22) {
       versions.set(major, `v${major}.${minor}.${patch}`)
     }
   }

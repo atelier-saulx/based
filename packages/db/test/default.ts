@@ -25,7 +25,6 @@ await test('edges', async (t) => {
               prop: 'friends',
               $nice: { type: 'boolean', default: true },
               $role: { enum: ['admin', 'derp'], default: 'admin' },
-              // string
             },
           },
         },
@@ -34,7 +33,7 @@ await test('edges', async (t) => {
   })
 
   const userId = await db.create('user', {
-    friends: [db.create('user')],
+    friends: [{ id: db.create('user'), $role: 'derp' }, db.create('user')],
   })
 
   await db

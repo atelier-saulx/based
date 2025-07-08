@@ -24,17 +24,19 @@ const parseValue = (
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
-  let val = value
+  if (prop.transform) {
+    value = prop.transform('filter', value)
+  }
 
-  if (ctx.operation === HAS_TO_LOWER_CASE && typeof val === 'string') {
-    val = val.toLowerCase()
+  if (ctx.operation === HAS_TO_LOWER_CASE && typeof value === 'string') {
+    value = value.toLowerCase()
   }
 
   if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
-    if (!(val instanceof ArrayBuffer)) {
+    if (!(value instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
     }
-    const vector = new Uint8Array(val)
+    const vector = new Uint8Array(value)
     let fn = new Uint8Array([getVectorFn(ctx.opts.fn)])
     const score: Uint8Array = ctx.opts.score
       ? new Uint8Array(new Float32Array([ctx.opts.score]).buffer)
@@ -46,44 +48,44 @@ const parseValue = (
     off += (buf.set(new Uint8Array(vector), off), vector.byteLength)
     off += (buf.set(fn, off), fn.byteLength)
     buf.set(score, off)
-    val = buf
+    value = buf
   }
 
   if (
-    val instanceof Uint8Array ||
+    value instanceof Uint8Array ||
     typeof value === 'string' ||
     !prop.separate ||
     ctx.operation !== EQUAL
   ) {
-    if (typeof val === 'string') {
-      val = ENCODER.encode(val.normalize('NFKD'))
+    if (typeof value === 'string') {
+      value = ENCODER.encode(value.normalize('NFKD'))
     }
     if (prop.typeIndex === TEXT) {
       // 1 + size
       const fallbacksSize = lang.lang === 0 ? 0 : lang.fallback.length
-      const tmp = new Uint8Array(val.byteLength + 2 + fallbacksSize)
-      tmp.set(val)
+      const tmp = new Uint8Array(value.byteLength + 2 + fallbacksSize)
+      tmp.set(value)
       tmp[tmp.byteLength - 1] = fallbacksSize
       tmp[tmp.byteLength - 2] = lang.lang
       for (let i = 0; i < fallbacksSize; i++) {
         tmp[tmp.byteLength - 2 - fallbacksSize + i] = lang.fallback[i]
       }
-      val = tmp
+      value = tmp
     }
   }
-  if (val?.BYTES_PER_ELEMENT > 1) {
-    val = val.buffer
+  if (value?.BYTES_PER_ELEMENT > 1) {
+    value = value.buffer
   }
-  if (!(val instanceof Uint8Array || val instanceof ArrayBuffer)) {
+  if (!(value instanceof Uint8Array || value instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
   if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
-    const tmp = new Uint8Array(val.byteLength + 1)
-    tmp.set(val instanceof ArrayBuffer ? new Uint8Array(val) : val)
+    const tmp = new Uint8Array(value.byteLength + 1)
+    tmp.set(value instanceof ArrayBuffer ? new Uint8Array(value) : value)
     tmp[tmp.byteLength - 1] = ctx.opts.score ?? 2
-    val = tmp
+    value = tmp
   }
-  return val
+  return value
 }
 
 export const createVariableFilterBuffer = (

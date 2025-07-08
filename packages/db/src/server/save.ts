@@ -45,13 +45,18 @@ function hasPartialTypes(db: DbServer): boolean {
   return res
 }
 
+type SaveOpts = {
+  forceFullDump?: boolean,
+  skipDirtyCheck?: boolean,
+  skipMigrationCheck?: boolean,
+}
+
 function inhibitSave(
   db: DbServer,
-  forceFullDump: boolean,
-  skipMigrationCheck: boolean,
+  { skipDirtyCheck, forceFullDump, skipMigrationCheck }: SaveOpts
 ): boolean {
   // RFE isMainThread needed??
-  if (!(isMainThread && (db.dirtyRanges.size || forceFullDump))) {
+  if (!(isMainThread && (skipDirtyCheck || db.dirtyRanges.size || forceFullDump))) {
     return true
   }
 
@@ -105,12 +110,8 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
     }
 }
 
-export function saveSync(
-  db: DbServer,
-  forceFullDump?: boolean,
-  skipMigrationCheck?: boolean,
-): void {
-  if (inhibitSave(db, forceFullDump, skipMigrationCheck)) return
+export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
+  if (inhibitSave(db, opts)) return
 
   let ts = Date.now()
   db.saveInProgress = true
@@ -126,7 +127,7 @@ export function saveSync(
       // Return ?
     }
 
-    if (forceFullDump) {
+    if (opts.forceFullDump) {
       // reset the state just in case
       db.verifTree = new VerifTree(db.schemaTypesParsed)
 
@@ -159,12 +160,8 @@ export function saveSync(
   }
 }
 
-export async function save(
-  db: DbServer,
-  forceFullDump?: boolean,
-  skipMigrationCheck?: boolean,
-): Promise<void> {
-  if (inhibitSave(db, forceFullDump, skipMigrationCheck)) return
+export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
+  if (inhibitSave(db, opts)) return
 
   let ts = Date.now()
   db.saveInProgress = true
@@ -185,7 +182,7 @@ export async function save(
       typeId: number
       start: number
     }[] = []
-    if (forceFullDump) {
+    if (opts.forceFullDump) {
       // reset the state just in case
       db.verifTree = new VerifTree(db.schemaTypesParsed)
 
