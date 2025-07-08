@@ -1,7 +1,9 @@
 import getPort from 'get-port'
 import { networkInterfaces } from 'node:os'
+import { getBasedFiles } from './getBasedFiles.js'
+import { bundle } from '@based/bundle'
 
-export const dev = async ({}) => {
+export const dev = async () => {
   devServer()
 }
 
@@ -17,7 +19,11 @@ const devServer = async ({ port = 1234 } = {}) => {
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
 
-  const { entryPoints, mapping } = await getBasedFiles(context)
+  // TODO: mapping does not need to come from getBasedFiles()
+  const { entryPoints, mapping } = await getBasedFiles()
+
+  const bundled = await bundle({ entryPoints })
+  console.log({ bundled }, bundled.result.metafile)
 }
 
 export const getMyIp = () => {

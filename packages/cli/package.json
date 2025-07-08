@@ -15,7 +15,8 @@
   "source": "src/index.ts",
   "sideEffects": false,
   "dependencies": {
-    "commander": "14.0.0"
-  },
-  "devDependencies": {}
+    "@based/bundle": "^0.4.15",
+    "commander": "14.0.0",
+    "yoctocolors": "^2.1.1"
+  }
 }

@@ -35,7 +35,7 @@ type Configs = {
 export const getBasedFiles = async (options?: {
   schemaOnly?: boolean
   functionsOnly?: boolean
-}): Promise<unknown> => {
+}) => {
   const { ignore, ignoreDir } = await gitIgnore()
 
   const multipleSchemas: string[] = []
