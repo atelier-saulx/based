@@ -19,11 +19,11 @@ const devServer = async ({ port = 1234 } = {}) => {
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
 
-  // TODO: mapping does not need to come from getBasedFiles()
-  const { entryPoints, mapping } = await getBasedFiles()
-
-  const bundled = await bundle({ entryPoints })
-  console.log({ bundled }, bundled.result.metafile)
+  // // TODO: mapping does not need to come from getBasedFiles()
+  // const { entryPoints, mapping } = await getBasedFiles()
+  //
+  // const bundled = await bundle({ entryPoints })
+  // console.log({ bundled }, bundled.result.metafile)
 }
 
 export const getMyIp = () => {
