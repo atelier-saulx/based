@@ -24,6 +24,9 @@ export const writeFixed = (
   size: number,
   offset: number,
 ) => {
+  if (prop.transform) {
+    value = prop.transform('filter', value)
+  }
   if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
     if (typeof value === 'string') {
       const { written } = ENCODER.encodeInto(value, buf.subarray(offset + 1))
@@ -80,7 +83,6 @@ export const createFixedFilterBuffer = (
     buf[8] = len
     buf[9] = len >>> 8
     buf[10] = ALIGNMENT_NOT_SET
-
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()

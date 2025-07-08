@@ -106,9 +106,10 @@ function _modify(
             val.increment,
             def,
             ctx.lastMain + def.start,
+            mod,
           )
         } else {
-          err = writeFixedValue(ctx, val, def, ctx.lastMain + def.start)
+          err = writeFixedValue(ctx, val, def, ctx.lastMain + def.start, mod)
         }
       } else if (typeof val === 'object' && val !== null) {
         if ('increment' in val) {
@@ -130,8 +131,7 @@ function _modify(
           ctx.buf[ctx.len++] = def.typeIndex
           ctx.buf[ctx.len++] = start
           ctx.buf[ctx.len++] = start >>>= 8
-
-          appendFixedValue(ctx, increment, def)
+          appendFixedValue(ctx, increment, def, mod)
         } else {
           return new ModifyError(def, val)
         }

@@ -7,6 +7,10 @@ export const createReferenceFilter = (
   ctx: FilterCtx,
   value: any,
 ): FilterCondition => {
+  if (prop.transform) {
+    value = prop.transform('filter', value)
+  }
+
   const isArray = Array.isArray(value)
   const len = isArray ? value.length : 1
   const buf = new Uint8Array(11 + (isArray ? 8 : 0) + len * 4)
