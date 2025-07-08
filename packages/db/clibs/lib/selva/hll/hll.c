@@ -178,14 +178,9 @@ void hll_array_union(struct selva_string *result, struct selva_string *hll_array
 void hll_union(struct selva_string *result, struct selva_string *hll_new) {
 
     HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hll_new, nullptr);
-
-    uint8_t precision = current_hll->precision;
-    size_t num_registers = current_hll->num_registers;
-
-    hll_init(result, precision, DENSE);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
-
-    memcpy(result_hll->registers, current_hll->registers, num_registers * sizeof(uint32_t));
+    
+    size_t num_registers = current_hll->num_registers;
 
     #if __ARM_NEON
             for (size_t i = 0; i < num_registers; i += 4) {
@@ -320,34 +315,34 @@ uint8_t *hll_count(struct selva_string *hllss) {
     return (uint8_t *)(&hll->count);
 }
 
-#if 0
-int main(void) {
+// #if 0
+// int main(void) {
 
-    /* -------------------------------------------
-    ** Single value test
-    ** -----------------------------------------*/
+//     /* -------------------------------------------
+//     ** Single value test
+//     ** -----------------------------------------*/
 
 
-    size_t precision = 14;
+//     size_t precision = 14;
 
-    // const uint64_t hash = XXH64("myCoolValue", strlen("myCoolValue"), 0);
-    const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
-    const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
+//     // const uint64_t hash = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+//     const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+//     const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
 
-    int initial_capacity = sizeof(bool) \
-                            + sizeof(precision) \
-                            + sizeof(uint32_t);
+//     int initial_capacity = sizeof(bool) \
+//                             + sizeof(precision) \
+//                             + sizeof(uint32_t);
 
-    struct selva_string hll;
+//     struct selva_string hll;
 
-    selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
-    hll_init(&hll, precision, SPARSE);
-    hll_add(&hll, hash1);
-    hll_add(&hll, hash2);
-    double estimated_cardinality = *hll_count(&hll);
-    printf("Estimated cardinality: %f\n", estimated_cardinality);
-}
-#endif
+//     selva_string_init(&hll, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+//     hll_init(&hll, precision, SPARSE);
+//     hll_add(&hll, hash1);
+//     hll_add(&hll, hash2);
+//     double estimated_cardinality = *hll_count(&hll);
+//     printf("Estimated cardinality: %f\n", estimated_cardinality);
+// }
+// #endif
 
     // /* -------------------------------------------
     // ** Array union test
@@ -397,32 +392,31 @@ int main(void) {
     ** Single Union test
     ** -----------------------------------------*/
 
-    // size_t precision = 14;
+//     size_t precision = 14;
 
-    // const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
-    // const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
+//     const uint64_t hash1 = XXH64("myCoolValue", strlen("myCoolValue"), 0);
+//     const uint64_t hash2 = XXH64("myCoolValue2", strlen("myCoolValue2"), 0);
 
-    // int initial_capacity = sizeof(bool) \
-    //                         + sizeof(precision) \
-    //                         + sizeof(uint32_t);
+//     int initial_capacity = sizeof(bool) \
+//                             + sizeof(precision) \
+//                             + sizeof(uint32_t);
 
-    // struct selva_string dest;
-    // struct selva_string src;
+//     struct selva_string dest;
+//     struct selva_string src;
 
-    // selva_string_init(&dest, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
-    // selva_string_init(&src, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+//     selva_string_init(&dest, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
+//     selva_string_init(&src, nullptr, initial_capacity , SELVA_STRING_MUTABLE);
 
-    // hll_init(&dest, precision, SPARSE);
-    // hll_add(&dest, hash1);
-    // hll_init(&src, precision, SPARSE);
-    // hll_add(&src, hash2);
+//     hll_init(&dest, precision, SPARSE);
+//     hll_add(&dest, hash1);
+//     hll_init(&src, precision, SPARSE);
+//     hll_add(&src, hash2);
 
-    // size_t dst_len = 0;
-    // dst_len = hll_union(dest, src);
+//     hll_union(&dest, &src);
 
-    // uint32_t estimated_cardinality = 0;
-    // estimated_cardinality = *hll_count(&dest);
-    // printf("Estimated cardinality: %d %zu\n", estimated_cardinality, dst_len);
+//     uint32_t estimated_cardinality = 0;
+//     estimated_cardinality = *hll_count(&dest);
+//     printf("Estimated cardinality: %d\n", estimated_cardinality);
 
-    // return 0;
+//     return 0;
 // }

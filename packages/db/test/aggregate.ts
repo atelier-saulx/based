@@ -1862,6 +1862,9 @@ await test('dev', async (t) => {
       .reduce((sum, el: [string, number]) => sum + el[1], 0),
   )
 
-  await db.query('lunch').cardinality('Mon').get()
-  // await db.query('lunch').sum('lala').get().inspect()
+  await db.create('lunch', {
+    week: 27,
+    Mon: ['youzi', 'Marco', 'Luigui'],
+  })
+  await db.query('lunch').cardinality('Mon').get().inspect()
 })

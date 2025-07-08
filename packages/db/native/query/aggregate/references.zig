@@ -122,7 +122,7 @@ pub inline fn aggregateRefsGroup(
                 resultsSize += 2 + key.len + groupCtx.resultsSize;
             }
 
-            aggregate(agg, typeEntry, n, accumulatorField, &hadAccumulated);
+            aggregate(agg, typeEntry, n, accumulatorField, null, &hadAccumulated);
         }
     }
 
@@ -185,7 +185,7 @@ pub inline fn aggregateRefsDefault(
                     continue :checkItem;
                 }
             }
-            aggregate(agg, typeEntry, refNode, accumulatorField, &hadAccumulated);
+            aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
         }
     }
 

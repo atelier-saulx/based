@@ -12,7 +12,7 @@ export enum AggregateType {
 export const enum AccumulatorSize { // comptime
   SUM = 8,
   COUNT = 4,
-  CARDINALITY = 254, // TODO: accordinly to sparse or dense modes
+  CARDINALITY = 4,
   STDDEV = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
   AVERAGE = 16, // count (u64) + sum (f64) = 16
   VARIANCE = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
