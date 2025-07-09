@@ -117,6 +117,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             if (!hadAccumulated.*) selva.hll_init(hllAccumulator, 14, false);
             selva.hll_union(hllAccumulator, hllValue);
             hadAccumulated.* = true;
+            writeInt(u32, accumulatorField, 0, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
         } else {
             value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
             if (value.len == 0) {

@@ -62,7 +62,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 continue :checkItem;
             }
             aggregate(agg, typeEntry, n, resultsField, hllAccumulator, &hadAccumulated);
-            // writeInt(u32, resultsField, 0, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
         } else {
             break :checkItem;
         }
@@ -110,7 +109,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 ctx.size += 2 + key.len + groupCtx.resultsSize;
             }
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
-            // writeInt(u32, accumulatorField, 0, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
         } else {
             break :checkItem;
         }
