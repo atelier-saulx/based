@@ -19,10 +19,14 @@ export const { version } = JSON.parse(
 program.version(version)
 program.configureHelp({ showGlobalOptions: true })
 
-program.option('-c, --cluster <cluster>', 'Cluster name.')
-program.option('-o, --org <org>', 'Organization name.')
-program.option('-p, --project <project>', 'Organization name.')
-program.option('-e, --env <env>', 'Environment name.')
+program.option('-c, --cluster <cluster>', 'cluster name.')
+program.option('-o, --org <org>', 'organization name.')
+program.option('-p, --project <project>', 'organization name.')
+program.option('-e, --env <env>', 'environment name.')
+program.option(
+  '--envDiscoveryUrl <envDiscoveryUrl >',
+  'url for the env dicovery service',
+)
 program.option(
   '--non-interactive',
   'Run non interactively. Defaults will be used where possible.',

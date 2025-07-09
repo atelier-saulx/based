@@ -1,3 +1,46 @@
+import { getBasedClient } from '../../getBasedClient.js'
+import { bundleFunctions } from './bundle.js'
+
 export const deploy = async () => {
   console.log('this is deploy')
+
+  const client = getBasedClient()
+  const remoteFunctions = (await client
+    .query('db', {
+      $db: 'config',
+      functions: {
+        id: true,
+        current: {
+          id: true,
+          config: true,
+          checksum: true,
+        },
+        $list: {
+          $find: {
+            $traverse: 'children',
+            $filter: {
+              $field: 'type',
+              $operator: '=',
+              $value: ['job', 'function'],
+            },
+          },
+        },
+      },
+    })
+    .get()) as {
+    functions: {
+      id?: string
+      current?: {
+        id: string
+        config: any
+        checksum: number
+      }
+    }[]
+  }
+
+  console.log({ remoteFunctions })
+
+  await bundleFunctions()
+
+  client.destroy()
 }

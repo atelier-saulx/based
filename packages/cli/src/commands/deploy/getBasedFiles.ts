@@ -32,10 +32,11 @@ type Configs = {
   serverFunction?: string
 }
 
-export const getBasedFiles = async (options?: {
-  schemaOnly?: boolean
-  functionsOnly?: boolean
-}) => {
+export const getEntryPoints = async ({
+  includeSchema = true,
+  includeFunctions = true,
+  includeInfra = true,
+} = {}) => {
   const { ignore, ignoreDir } = await gitIgnore()
 
   const multipleSchemas: string[] = []
@@ -62,14 +63,14 @@ export const getBasedFiles = async (options?: {
           return walk(path)
         }
 
-        if (!options?.schemaOnly && isConfigFile(file)) {
+        if (includeFunctions && isConfigFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Configs
-        } else if (!options?.functionsOnly && isSchemaFile(file)) {
+        } else if (includeSchema && isSchemaFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Configs
           multipleSchemas.push(file)
-        } else if (isInfraFile(file)) {
+        } else if (includeInfra && isInfraFile(file)) {
           entryPoints.push(path)
           mapping[path] = {} as Configs
           multipleInfras.push(file)
@@ -108,7 +109,7 @@ export const getBasedFiles = async (options?: {
 
   await walk()
 
-  return { entryPoints, mapping }
+  return entryPoints
 }
 
 const gitIgnore = async () => {

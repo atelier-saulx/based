@@ -1,6 +1,6 @@
 import getPort from 'get-port'
 import { networkInterfaces } from 'node:os'
-import { getBasedFiles } from './getBasedFiles.js'
+// import { getBasedFiles } from '../deploy/getBasedFiles.js'
 import { bundle } from '@based/bundle'
 
 export const dev = async () => {
