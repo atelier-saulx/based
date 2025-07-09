@@ -43,8 +43,6 @@ pub inline fn setGroupResults(
     }
 }
 
-pub inline fn finazelizeResults() !void {}
-
 pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
     var j: usize = 0;
     const fieldAggsSize = read(u16, agg, 1);
