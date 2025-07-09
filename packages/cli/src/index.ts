@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { devCmd } from './commands/dev/cmd.js'
+import { deployCmd } from './commands/deploy/cmd.js'
 import { getBasedConfig } from './basedConfig.js'
 import { printError } from './tui.js'
 import type { BasedOpts } from '@based/client'
@@ -29,13 +30,11 @@ program.option(
 )
 
 devCmd(program)
-
-program.parse()
+deployCmd(program)
 
 let basedConfig: BasedOpts
 try {
   basedConfig = await getBasedConfig()
-  console.log({ basedConfig })
 } catch (error) {
   printError('Error parsing based config.', error)
   process.exit(1)
@@ -54,3 +53,5 @@ if (basedConfig) {
     program.setOptionValue('env', basedConfig.env)
   }
 }
+
+program.parse()

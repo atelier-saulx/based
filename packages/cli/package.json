@@ -16,7 +16,6 @@
   "sideEffects": false,
   "dependencies": {
     "@based/bundle": "^0.4.15",
-    "commander": "14.0.0",
-    "yoctocolors": "^2.1.1"
+    "commander": "14.0.0"
   }
 }
