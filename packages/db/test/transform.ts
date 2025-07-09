@@ -3,6 +3,8 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
 import { createRequire } from 'module'
+import { Schema } from '@based/schema'
+import { deepCopy, deepMerge } from '@saulx/utils'
 global.require = createRequire(import.meta.url)
 
 await test('transform', async (t) => {
@@ -12,7 +14,7 @@ await test('transform', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const schema: Schema = {
     locales: {
       en: true,
       nl: true,
@@ -66,7 +68,9 @@ await test('transform', async (t) => {
         },
       },
     },
-  })
+  }
+
+  await db.setSchema(schema)
 
   const user = await db.create('user', {
     password: 'mygreatpassword',
@@ -122,4 +126,32 @@ await test('transform', async (t) => {
       .get(),
     [{ id: 1 }],
   )
+
+  await db.setSchema(
+    deepMerge(deepCopy(schema), {
+      types: {
+        user: {
+          props: {
+            newThing: 'boolean',
+            x: {
+              type: 'uint8',
+              transform: () => 2,
+            },
+          },
+        },
+      },
+    }),
+  )
+
+  deepEqual(await db.query('user', user).get().toObject(), {
+    id: 1,
+    text: { en: '1!', nl: '1!' },
+    x: 2,
+    newThing: false,
+    bla: 'bla',
+    password: new Uint8Array([
+      253, 18, 16, 127, 90, 5, 15, 250, 95, 190, 48, 60, 71, 196, 119, 28, 161,
+      183, 21, 155, 193, 162, 130, 132, 43, 40, 160, 239, 38, 80, 122, 149,
+    ]),
+  })
 })
