@@ -122,9 +122,9 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             if (value.len == 0) {
                 return;
             }
-            execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
         }
     }
+    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
     return;
 }
 
