@@ -1,13 +1,15 @@
 import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('timestamp', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
   await db.start({ clean: true })
+
   t.after(() => t.backup(db))
 
   await db.setSchema({
@@ -55,7 +57,6 @@ await test('timestamp', async (t) => {
 
   res = (await db.query('user').get()).toObject()
 
-  console.log(res)
   if (!(res[0].updatedAt > res[0].createdAt)) {
     throw 'updatedAt should be updated after update'
   }
@@ -87,4 +88,25 @@ await test('timestamp', async (t) => {
   })
 
   await measure(new Date('01/02/2020').valueOf())
+
+  const overwriteCreatedAt = Date.now()
+  const overwriteUpdatedAt = Date.now() + 10
+
+  const jamex = await db.create('user', {
+    createdAt: overwriteCreatedAt,
+    updatedAt: overwriteUpdatedAt,
+  })
+
+  await db.update('user', youzi, {
+    createdAt: overwriteCreatedAt,
+    updatedAt: overwriteUpdatedAt,
+  })
+
+  const newUser = await db.query('user', jamex).get().toObject()
+  const updatedUser = await db.query('user', youzi).get().toObject()
+
+  equal(newUser.createdAt, overwriteCreatedAt)
+  equal(newUser.updatedAt, overwriteUpdatedAt)
+  equal(updatedUser.createdAt, overwriteCreatedAt)
+  equal(updatedUser.updatedAt, overwriteUpdatedAt)
 })

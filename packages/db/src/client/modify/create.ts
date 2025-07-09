@@ -29,6 +29,7 @@ import { writeString } from './string.js'
 import { writeText } from './text.js'
 import { writeJson } from './json.js'
 import { writeAlias } from './alias.js'
+import { getByPath } from '@saulx/utils'
 
 export type CreateObj = Record<string, any>
 
@@ -56,6 +57,9 @@ const appendCreate = (
   if (schema.createTs) {
     const createTs = Date.now()
     for (const prop of schema.createTs) {
+      if (getByPath(obj, prop.path) !== undefined) {
+        continue
+      }
       if (ctx.lastMain === -1) {
         let mainLenU32 = schema.mainLen
         setCursor(ctx, schema, prop.prop, MICRO_BUFFER, res.tmpId, CREATE)
