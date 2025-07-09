@@ -1798,6 +1798,7 @@ await test('dev', async (t) => {
       lunch: {
         week: 'uint8',
         lala: 'number',
+        lele: 'number',
         Mon: 'cardinality',
         Tue: 'cardinality',
         Wed: 'cardinality',
@@ -1844,27 +1845,37 @@ await test('dev', async (t) => {
   }
   await db.create('lunch', week27)
 
-  const eaters = await db.query('lunch').get()
-  eaters.inspect()
+  // const eaters = await db.query('lunch').get()
+  // eaters.inspect()
 
-  // knwon from raw data:
-  const days = Object.keys(week27).filter((k) => k !== 'week')
-  const meals = days.map((k) => week27[k]).flat()
-  const totalEaters = new Set(meals)
-  console.log(
-    `From raw data. Total eaters: ${totalEaters.size}, Total meals: ${meals.length}`,
-  )
+  // // knwon from raw data:
+  // const days = Object.keys(week27).filter((k) => k !== 'week')
+  // const meals = days.map((k) => week27[k]).flat()
+  // const totalEaters = new Set(meals)
+  // console.log(
+  //   `From raw data. Total eaters: ${totalEaters.size}, Total meals: ${meals.length}`,
+  // )
 
-  console.log(
-    'Total meals from query: ',
-    Object.entries(eaters.toObject()[0])
-      .filter(([key]) => days.includes(key))
-      .reduce((sum, el: [string, number]) => sum + el[1], 0),
-  )
+  // console.log(
+  //   'Total meals from query: ',
+  //   Object.entries(eaters.toObject()[0])
+  //     .filter(([key]) => days.includes(key))
+  //     .reduce((sum, el: [string, number]) => sum + el[1], 0),
+  // )
 
   await db.create('lunch', {
-    week: 27,
+    week: 28,
     Mon: ['youzi', 'Marco', 'Luigui'],
+    lala: 10,
   })
-  await db.query('lunch').cardinality('Mon').get().inspect()
+  // await db.query('lunch').cardinality('Mon').get().inspect()
+  // await db.query('lunch').cardinality('Mon').groupBy('week').get().inspect()
+  await db.query('lunch').sum('lala').groupBy('week').get().inspect()
+
+  // await db.create('lunch', {
+  //   week: 0,
+  //   lala: 10,
+  //   lele: 11,
+  // })
+  // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })

@@ -104,9 +104,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 writeInt(f64, resultsField, resultPos, 0.0);
             }
         } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            // const hll = read hll "buffer" from accumulatorField and convert it to selvastring
-            // const cardinality = hll_count(hll)
-            // writeInt(f64, resultsField, resultPos, cardinality); // u16
+            writeInt(u32, resultsField, resultPos, read(u32, accumulatorField, accumulatorPos));
         }
     }
 }
