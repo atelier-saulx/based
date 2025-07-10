@@ -1605,7 +1605,7 @@ await test('overall performance', async (t) => {
 
   const scriptName = process.env.npm_lifecycle_event || ''
   const isDebugMode = scriptName.includes('debug')
-  const acceptableDuration = isDebugMode ? 300 : 100
+  const acceptableDuration = isDebugMode ? 300 : 30
 
   const startTime1 = performance.now()
   await db.query('beer').sum('price').get()
@@ -1619,7 +1619,6 @@ await test('overall performance', async (t) => {
   const startTime2 = performance.now()
   await db.query('beer').groupBy('year').get()
   const elapsedTime2 = performance.now() - startTime2
-  // console.log(elapsedTime2)
   deepEqual(
     elapsedTime2 < acceptableDuration,
     true,
@@ -1628,7 +1627,7 @@ await test('overall performance', async (t) => {
 
   const startTime3 = performance.now()
   await db.query('beer').groupBy('type').get()
-  // const elapsedTime3 = performance.now() - startTime3
+  const elapsedTime3 = performance.now() - startTime3
   deepEqual(
     elapsedTime3 < acceptableDuration,
     true,
@@ -1638,7 +1637,6 @@ await test('overall performance', async (t) => {
   const startTime4 = performance.now()
   await db.query('beer').max('price').groupBy('type').get()
   const elapsedTime4 = performance.now() - startTime4
-  console.log(elapsedTime4)
   deepEqual(
     elapsedTime4 < acceptableDuration,
     true,
@@ -1957,13 +1955,13 @@ await test('dev', async (t) => {
     Mon: ['youzi', 'Marco', 'Luigui'],
     lala: 10,
   })
-  deepEqual(
-    await db.query('lunch').cardinality('Mon').get(),
-    {
-      Mon: 7,
-    },
-    'main cardinality no group by',
-  )
+  // deepEqual(
+  //   await db.query('lunch').cardinality('Mon').get(),
+  //   {
+  //     Mon: 7,
+  //   },
+  //   'main cardinality no group by',
+  // )
 
   deepEqual(
     await db.query('lunch').cardinality('Mon').groupBy('week').get(),

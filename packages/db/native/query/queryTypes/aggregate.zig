@@ -62,6 +62,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 continue :checkItem;
             }
             aggregate(agg, typeEntry, n, resultsField, hllAccumulator, &hadAccumulated);
+            hadAccumulated = true;
         } else {
             break :checkItem;
         }
@@ -80,10 +81,10 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     index += GroupProtocolLen;
     const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
-    checkItem: while (ctx.totalResults < limit) {
-        const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
-        defer selva.selva_free(hllAccumulator);
+    const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
+    defer selva.selva_free(hllAccumulator);
 
+    checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
         } else {

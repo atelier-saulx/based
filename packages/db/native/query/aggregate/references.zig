@@ -98,6 +98,9 @@ pub inline fn aggregateRefsGroup(
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
     var i: usize = offset;
 
+    const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
+    defer selva.selva_free(hllAccumulator);
+
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
             if (hasFilter) {
@@ -122,7 +125,7 @@ pub inline fn aggregateRefsGroup(
                 resultsSize += 2 + key.len + groupCtx.resultsSize;
             }
 
-            aggregate(agg, typeEntry, n, accumulatorField, null, &hadAccumulated);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         }
     }
 
