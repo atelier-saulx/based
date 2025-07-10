@@ -1628,7 +1628,7 @@ await test('overall performance', async (t) => {
 
   const startTime3 = performance.now()
   await db.query('beer').groupBy('type').get()
-  // const elapsedTime3 = performance.now() - startTime3
+  const elapsedTime3 = performance.now() - startTime3
   deepEqual(
     elapsedTime3 < acceptableDuration,
     true,
