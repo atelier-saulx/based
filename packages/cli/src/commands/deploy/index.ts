@@ -4,8 +4,8 @@ import { bundleFunctions } from './bundle.js'
 export const deploy = async () => {
   console.log('this is deploy')
 
-  const client = getBasedClient()
-  const remoteFunctions = (await client
+  const basedClient = await getBasedClient()
+  const remoteFunctions = (await basedClient
     .query('db', {
       $db: 'config',
       functions: {
@@ -42,5 +42,5 @@ export const deploy = async () => {
 
   await bundleFunctions()
 
-  client.destroy()
+  basedClient.destroy()
 }

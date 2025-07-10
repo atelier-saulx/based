@@ -1,13 +1,15 @@
 import { Command } from 'commander'
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { devCmd } from './commands/dev/cmd.js'
 import { deployCmd } from './commands/deploy/cmd.js'
 import { getBasedConfig } from './basedConfig.js'
 import { printError } from './tui.js'
 import type { BasedOpts } from '@based/client'
+import { homedir } from 'node:os'
 
+export const PERSISTENT_STORAGE = resolve(join(homedir(), '.based/cli'))
 export const program = new Command()
 
 export const { version } = JSON.parse(
@@ -26,6 +28,10 @@ program.option('-e, --env <env>', 'environment name.')
 program.option(
   '--envDiscoveryUrl <envDiscoveryUrl >',
   'url for the env dicovery service',
+)
+program.option(
+  '--platformDiscoveryUrl <platformDiscoveryUrl>',
+  'url for the platform dicovery service',
 )
 program.option(
   '--non-interactive',

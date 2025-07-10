@@ -16,6 +16,8 @@
   "sideEffects": false,
   "dependencies": {
     "@based/bundle": "^0.4.15",
-    "commander": "14.0.0"
+    "@saulx/validators": "^1.2.1",
+    "commander": "14.0.0",
+    "unique-names-generator": "^4.7.1"
   }
 }

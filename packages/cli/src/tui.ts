@@ -40,10 +40,14 @@ export const bold = formatter('\u001B[1m', '\u001B[22m')
 export const red = formatter('\u001B[31m', '\u001B[39m')
 export const bgPrimary = formatter('\x1b[48;2;75;65;255m', '\x1b[49m')
 
-export const printError = (message: string, error?: Error) => {
+export const printError = (message: string, error?: Error | string) => {
   console.error(red('! Error: ' + message))
   if (error) {
-    console.error(red(error.message))
+    if (error instanceof Error) {
+      console.error(red(error.message))
+    } else {
+      console.error(red(error))
+    }
   }
 }
 
