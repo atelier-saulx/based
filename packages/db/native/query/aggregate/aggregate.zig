@@ -114,10 +114,13 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             if (hllValue == null) {
                 return;
             }
-            if (!hadAccumulated.*) selva.hll_init(hllAccumulator, 14, false);
+            if (!hadAccumulated.*) {
+                _ = selva.selva_string_replace(hllAccumulator, null, 0);
+                selva.hll_init(hllAccumulator, 14, false);
+            }
             selva.hll_union(hllAccumulator, hllValue);
-            hadAccumulated.* = true;
             writeInt(u32, accumulatorField, 0, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
+            return;
         } else {
             value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
             if (value.len == 0) {
