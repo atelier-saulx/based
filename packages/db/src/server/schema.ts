@@ -19,11 +19,13 @@ export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
-  const schemaFilePath = join(server.fileSystemPath, SCHEMA_FILE)
-  try {
-    await writeFile(schemaFilePath, serialize(schema))
-  } catch (err) {
-    throw new Error(`Error writing schema to a file path ${schemaFilePath}}`)
+  if (server.fileSystemPath) {
+    const schemaFilePath = join(server.fileSystemPath, SCHEMA_FILE)
+    try {
+      await writeFile(schemaFilePath, serialize(schema))
+    } catch (err) {
+      throw new Error(`Error writing schema to a file path ${schemaFilePath}}`)
+    }
   }
 }
 
