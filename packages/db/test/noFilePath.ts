@@ -2,10 +2,11 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('noFilePath ', async (t) => {
+await test('allow path:null for in mem only', async (t) => {
   const db = new BasedDb({
     path: null,
   })
+
   t.after(() => db.destroy())
   await db.start({
     clean: true,
@@ -30,19 +31,15 @@ await test('noFilePath ', async (t) => {
 
   db.create('user', { nr: 3 })
 
-  deepEqual(
-    await db.query('user').include([]).range(0, 5).get(),
-    [
-      {
-        id: 1,
-      },
-      {
-        id: 2,
-      },
-      {
-        id: 3,
-      },
-    ],
-    'empty array should return nothing',
-  )
+  deepEqual(await db.query('user').include([]).range(0, 5).get(), [
+    {
+      id: 1,
+    },
+    {
+      id: 2,
+    },
+    {
+      id: 3,
+    },
+  ])
 })
