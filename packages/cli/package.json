@@ -1,6 +1,7 @@
 {
   "name": "@based/cli",
   "scripts": {
+    "build": "npx tsc",
     "watch": "npx tsc --watch"
   },
   "dependencies": {
