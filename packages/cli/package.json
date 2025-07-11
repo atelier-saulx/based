@@ -18,6 +18,7 @@
     "@saulx/tsconfig": "^1.1.0"
   },
   "dependencies": {
+    "@based/client": "^8.0.2",
     "@based/functions": "^3.2.3",
     "@based/schema": "^5.0.0-alpha.26",
     "@parcel/watcher": "^2.5.1",
