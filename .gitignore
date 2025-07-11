@@ -156,3 +156,4 @@ deps/node-*
 packages/db/*.o
 .zigversion
 aggregationNotes.md
+.vscode
