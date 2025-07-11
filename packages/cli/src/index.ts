@@ -1,244 +1,69 @@
-import { readdir } from 'fs/promises'
-import { basename, join } from 'path'
-import { BuildContext, BuildOptions, BuildResult, context } from 'esbuild'
-import { BasedFunctionConfig } from '@based/functions'
-import watcher, { type SubscribeCallback } from '@parcel/watcher'
-import { Schema } from '@based/schema'
+import { Command } from 'commander'
+import { readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { devCmd } from './commands/dev/cmd.js'
+import { deployCmd } from './commands/deploy/cmd.js'
+import { logoutCmd } from './commands/logout/cmd.js'
+import { getBasedConfig } from './basedConfig.js'
+import { printError } from './tui.js'
+import type { BasedOpts } from '@based/client'
+import { homedir } from 'node:os'
 
-const cwd = process.cwd()
-type FindResult = {
-  path: string
-  file: string
-  dir: string
-  ext: string
+export const PERSISTENT_STORAGE = resolve(join(homedir(), '.based/cli'))
+export const program = new Command()
+
+export const { version } = JSON.parse(
+  readFileSync(
+    join(fileURLToPath(dirname(import.meta.url)), '../package.json'),
+    'utf8',
+  ),
+)
+program.version(version)
+program.configureHelp({ showGlobalOptions: true })
+
+program.option('-c, --cluster <cluster>', 'cluster name.')
+program.option('-o, --org <org>', 'organization name.')
+program.option('-p, --project <project>', 'organization name.')
+program.option('-e, --env <env>', 'environment name.')
+program.option(
+  '--envDiscoveryUrl <envDiscoveryUrl >',
+  'url for the env dicovery service',
+)
+program.option(
+  '--platformDiscoveryUrl <platformDiscoveryUrl>',
+  'url for the platform dicovery service',
+)
+program.option(
+  '--non-interactive',
+  'Run non interactively. Defaults will be used where possible.',
+  !process.stdout.isTTY,
+)
+
+devCmd(program)
+deployCmd(program)
+logoutCmd(program)
+
+let basedConfig: BasedOpts
+try {
+  basedConfig = await getBasedConfig()
+} catch (error) {
+  printError('Error parsing based config.', error as Error)
+  process.exit(1)
 }
-
-const find = async (
-  targets: Set<string>,
-  cb: (res: FindResult) => Promise<any>,
-) => {
-  const noop = () => {}
-  const walk = async (dir: string): Promise<any> => {
-    const files = await readdir(dir)
-    const results = await Promise.all(
-      files.map(async (file) => {
-        if (targets.has(file)) {
-          const path = join(dir, file)
-          return cb({
-            file,
-            dir,
-            path,
-            ext: file.substring(file.lastIndexOf('.') + 1),
-          })
-        }
-        return walk(join(dir, file)).catch(noop)
-      }),
-    )
-    return results.flat().filter(Boolean)
+if (basedConfig) {
+  if (!program.getOptionValue('cluster') && basedConfig.cluster) {
+    program.setOptionValue('cluster', basedConfig.cluster)
   }
-
-  return walk(cwd)
-}
-
-type BuildCtx = {
-  ctx: BuildContext
-  build: BuildResult
-}
-
-const rebuild = async (ctx: BuildContext): Promise<BuildCtx> => {
-  const build = await ctx.rebuild()
-  return { ctx, build }
-}
-
-type ParseResult = {
-  fnConfig: BasedFunctionConfig
-  configCtx: BuildCtx
-  indexCtx: BuildCtx
-  mainCtx?: BuildCtx
-}
-
-type ParseResults = {
-  configs: ParseResult[]
-  schema: {
-    schema: Schema
-    schemaCtx: BuildCtx
+  if (!program.getOptionValue('org') && basedConfig.org) {
+    program.setOptionValue('org', basedConfig.org)
+  }
+  if (!program.getOptionValue('project') && basedConfig.project) {
+    program.setOptionValue('project', basedConfig.project)
+  }
+  if (!program.getOptionValue('env') && basedConfig.env) {
+    program.setOptionValue('env', basedConfig.env)
   }
 }
 
-const evalBuild = (build: BuildResult) =>
-  eval(build.outputFiles[0].text).default
-
-const configsFiles = new Set([
-  'based.config.json',
-  'based.config.ts',
-  'based.config.js',
-])
-
-const parse = async (): Promise<ParseResults> => {
-  const schemaFiles = new Set([
-    'based.schema.json',
-    'based.schema.ts',
-    'based.schema.js',
-  ])
-  let schema: {
-    schema: Schema
-    schemaCtx: BuildCtx
-  }
-  const configs = await find(
-    new Set([...configsFiles, ...schemaFiles]),
-    async (result: FindResult) => {
-      if (configsFiles.has(result.file)) {
-        const [configCtx, indexCtx] = await Promise.all([
-          context({
-            entryPoints: [result.path],
-            bundle: true,
-            write: false,
-            platform: 'node',
-            metafile: true,
-          }).then(rebuild),
-          context({
-            entryPoints: [join(result.dir, 'index.ts')],
-            bundle: true,
-            write: false,
-            platform: 'node',
-            metafile: true,
-          }).then(rebuild),
-        ])
-
-        const fnConfig: BasedFunctionConfig = evalBuild(configCtx.build)
-
-        if (fnConfig.type === 'app') {
-          const mainCtx = await context({
-            entryPoints: [join(result.dir, fnConfig.main)],
-            bundle: true,
-            write: false,
-            outdir: '.',
-            loader: {
-              '.ico': 'file',
-              '.eot': 'file',
-              '.gif': 'file',
-              '.jpeg': 'file',
-              '.jpg': 'file',
-              '.png': 'file',
-              '.svg': 'file',
-              '.ttf': 'file',
-              '.woff': 'file',
-              '.woff2': 'file',
-              '.wasm': 'file',
-            },
-            plugins: fnConfig.plugins,
-            metafile: true,
-          }).then(rebuild)
-
-          return { fnConfig, configCtx, indexCtx, mainCtx }
-        }
-
-        return { fnConfig, configCtx, indexCtx }
-      }
-
-      if (schemaFiles.has(result.file)) {
-        const schemaCtx = await context({
-          entryPoints: [result.path],
-          bundle: true,
-          write: false,
-          platform: 'node',
-          metafile: true,
-        }).then(rebuild)
-        schema = {
-          schema: evalBuild(schemaCtx.build),
-          schemaCtx,
-        }
-      }
-    },
-  )
-
-  return { configs, schema }
-}
-
-const watch = async ({ configs, schema }: ParseResults) => {
-  // const outputs = new Map<string, Map<BuildCtx, ParseResult>>()
-  const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
-  const buildInputs = (result: ParseResult, buildCtx: BuildCtx) => {
-    for (const file in buildCtx.build.metafile.inputs) {
-      const path = join(cwd, file)
-      let map = inputs.get(path)
-      if (!map) {
-        map = new Map()
-        inputs.set(path, map)
-      }
-      map.set(buildCtx, result)
-    }
-  }
-
-  const buildSchemaInputs = (schemaBuild: BuildResult) =>
-    schema
-      ? new Set<string>(
-          Object.keys(schemaBuild.metafile.inputs).map((file) =>
-            join(cwd, file),
-          ),
-        )
-      : new Set()
-
-  for (const result of configs) {
-    const { indexCtx, configCtx, mainCtx } = result
-    buildInputs(result, configCtx)
-    buildInputs(result, indexCtx)
-    if (mainCtx) {
-      buildInputs(result, mainCtx)
-    }
-  }
-
-  let schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
-
-  const sub = await watcher.subscribe(cwd, async (err, events) => {
-    // A) rebuild relevant stuff √
-    // B) check for new functions
-    // C) check for removed functions
-
-    // TODO: Put in Promise.all()
-    for (const event of events) {
-      if (configsFiles.has(basename(event.path))) {
-        if (event.type === 'delete') {
-          // remove fn
-        } else if (event.type === 'create') {
-          // add fn
-        }
-      }
-
-      const fnInputs = inputs.get(event.path)
-      if (fnInputs) {
-        for (const [buildCtx, result] of fnInputs) {
-          const prevInputs = buildCtx.build.metafile.inputs
-          buildCtx.build = await buildCtx.ctx.rebuild()
-          const currInputs = buildCtx.build.metafile.inputs
-          for (const file in currInputs) {
-            if (!(file in prevInputs)) {
-              fnInputs.set(buildCtx, result)
-            }
-          }
-          for (const file in prevInputs) {
-            if (!(file in currInputs)) {
-              fnInputs.delete(buildCtx)
-            }
-          }
-          if (buildCtx === result.configCtx) {
-            result.fnConfig = evalBuild(buildCtx.build)
-          }
-        }
-      }
-
-      if (schemaInputs.has(event.path)) {
-        schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
-        schema.schema = evalBuild(schema.schemaCtx.build)
-        schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
-      }
-    }
-  })
-}
-
-const init = async () => {
-  const results = await parse()
-  watch(results)
-}
-
-init()
+program.parse()
