@@ -6,7 +6,7 @@
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}",
+    "clean": "rimraf {dist,node_modules}",
     "test": "npx ava",
     "browser": "npx vite ./test/browser",
     "browser-server": "node ./test/browser/server.js"

@@ -1,7 +1,7 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
-import { PropDef, UINT32, REVERSE_SIZE_MAP } from '@based/schema/def'
+import { PropDef, UINT32 } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
 import { aggregateTypeMap } from '../aggregates/types.js'
 
@@ -51,7 +51,6 @@ export const aggregateToBuffer = (
     }
     writeUint16(aggBuffer, size, sizeIndex)
   }
-
   return aggBuffer
 }
 
@@ -84,7 +83,6 @@ export const addAggregate = (
   fields: (string | string[])[],
 ) => {
   ensureAggregate(def)
-
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
@@ -130,7 +128,6 @@ export const addAggregate = (
         def.aggregate.totalResultsSize += 8
         def.aggregate.totalAccumulatorSize += 8
       }
-
       // needs to add an extra field WRITE TO
       def.aggregate.size += 8
     }

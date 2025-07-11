@@ -1,5 +1,5 @@
 import { findUp } from 'find-up'
-import { bundle } from '@based/bundle'
+import { context } from 'esbuild'
 import { readJSON } from 'fs-extra/esm'
 
 export const getBasedConfig = async () => {
@@ -7,11 +7,19 @@ export const getBasedConfig = async () => {
 
   if (basedFile) {
     if (/\.(?:ts|js)$/.test(basedFile)) {
-      const bundled = await bundle({
+      const basedConfigCtx = await context({
         entryPoints: [basedFile],
+        bundle: true,
+        write: false,
+        platform: 'node',
+        metafile: true,
+      }).then(async (ctx) => {
+        const build = await ctx.rebuild()
+        return { ctx, build }
       })
-      const compiled = bundled.require()
-      return compiled.default
+      console.dir(basedConfigCtx)
+      const config = eval(basedConfigCtx.build.outputFiles[0].text)
+      return config
     } else {
       return readJSON(basedFile)
     }

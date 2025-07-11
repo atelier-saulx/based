@@ -1,7 +1,7 @@
 import getPort from 'get-port'
 import { networkInterfaces } from 'node:os'
 // import { getBasedFiles } from '../deploy/getBasedFiles.js'
-import { bundle } from '@based/bundle'
+// import { bundle } from '@based/bundle'
 
 export const dev = async () => {
   devServer()
@@ -31,10 +31,12 @@ export const getMyIp = () => {
   const results: Record<string, string[]> = {}
 
   for (const name in nets) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        results[name] ??= []
-        results[name].push(net.address)
+    if (nets[name]) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) {
+          results[name] ??= []
+          results[name].push(net.address)
+        }
       }
     }
   }

@@ -115,15 +115,6 @@ void selva_fields_ensure_ref_meta(
         const struct EdgeFieldConstraint *efc)
     __attribute__((nonnull));
 
-/**
- * Set field value.
- */
-SELVA_EXPORT
-int selva_fields_set(
-        struct SelvaNode *node,
-        const struct SelvaFieldSchema *fs,
-        const void *value, size_t len) __attribute__((deprecated));
-
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
         struct SelvaNode *node,

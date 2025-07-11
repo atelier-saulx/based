@@ -8,6 +8,41 @@ const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
 
+await test('edges', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+              $nice: { type: 'boolean', default: true },
+              $role: { enum: ['admin', 'derp'], default: 'admin' },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const userId = await db.create('user', {
+    friends: [{ id: db.create('user'), $role: 'derp' }, db.create('user')],
+  })
+
+  await db
+    .query('user', userId)
+    .include('friends.$role', 'friends.$nice')
+    .get()
+    .inspect()
+})
+
 await test('separate', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -18,6 +53,8 @@ await test('separate', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
+      fi: {},
+      fr: {},
     },
     types: {
       user: {
@@ -30,6 +67,14 @@ await test('separate', async (t) => {
             type: 'string',
             default: 'Default Name',
           },
+          flap: {
+            type: 'text',
+            default: {
+              en: 'Untitled',
+              fi: 'Nimeton',
+              fr: 'Sans nom',
+            },
+          },
         },
       },
     },
@@ -41,6 +86,32 @@ await test('separate', async (t) => {
     await db.query('user', userId).include('*', '**').get(),
     {
       id: userId,
+      flap: {
+        en: 'Untitled',
+        fi: 'Nimeton',
+        fr: 'Sans nom',
+      },
+      name: 'Default Name',
+      avatar: defaultBinary,
+    },
+    'Default name',
+  )
+
+  const userId2 = await db.create('user', {
+    flap: {
+      en: 'Flap',
+    },
+  })
+
+  deepEqual(
+    await db.query('user', userId2).include('*', '**').get(),
+    {
+      id: userId2,
+      flap: {
+        en: 'Flap',
+        fi: 'Nimeton',
+        fr: 'Sans nom',
+      },
       name: 'Default Name',
       avatar: defaultBinary,
     },
@@ -135,7 +206,7 @@ await test('default values for all props in user type', async (t) => {
       eventTime: convertToTimestamp(defaultTimestamp),
       level: 'medium',
       config: defaultJson,
-      // avatar: defaultBinary,
+      avatar: defaultBinary,
       slug: 'default-slug',
       label: defaultText,
       friends: [],
@@ -158,18 +229,17 @@ await test('default values for all props in user type', async (t) => {
   deepEqual(
     await db.query('user', userNullId).get(),
     {
-      id: userNullId,
-      isNice: false,
-      name: '',
-      count: 0,
-      eventTime: convertToTimestamp(defaultTimestamp),
+      id: 2,
+      label: { en: 'Default Label' },
+      isNice: true,
+      count: 42,
+      eventTime: 1678881600000,
       level: undefined,
-      config: null,
-      avatar: null,
+      meta: { rating: 5, notes: 'Default Note' },
+      name: 'Default Name',
+      config: { enabled: true, value: 10 },
+      avatar: new Uint8Array([1, 2, 3]),
       slug: 'default-slug',
-      label: {},
-      friends: [],
-      meta: { rating: 0, notes: 'Default Note' },
     },
     'User created with explicit null overrides',
   )

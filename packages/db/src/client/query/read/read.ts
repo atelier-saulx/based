@@ -121,6 +121,10 @@ const addField = (
   defaultOnly: boolean = false,
   lang: number = 0,
 ) => {
+  if (p.transform) {
+    value = p.transform('read', value)
+  }
+
   let i = p.__isEdge === true ? 1 : 0
   // TODO OPTMIZE
   const path = lang ? [...p.path, inverseLangMap.get(lang)] : p.path
@@ -267,25 +271,17 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
             }
           }
         }
-      }
-
-      // else if (prop.typeIndex === BINARY) {
-      //   addField(prop, prop.default, item)
-      // }
-      else if (
+      } else if (
         prop.typeIndex === TEXT ||
         prop.typeIndex === STRING ||
         prop.typeIndex === ALIAS
       ) {
         addField(prop, '', item)
+      } else if (prop.typeIndex === JSON) {
+        addField(prop, null, item)
+      } else if (prop.typeIndex === BINARY) {
+        addField(prop, new Uint8Array(), item)
       }
-      // else if (prop.typeIndex === JSON) {
-      //   // addField(prop, null, item)
-      // } else {
-      //   // if (prop.default !== undefined) {
-      //   //   addField(prop, '', item)
-      //   // }
-      // }
     }
   }
 }

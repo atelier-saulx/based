@@ -12,6 +12,7 @@ import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { ModifyOpts, RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { DbClient } from '../index.js'
+import { getByPath } from '@saulx/utils'
 
 type Payload = Record<string, any>
 
@@ -30,6 +31,9 @@ const appendUpdate = (
   if (def.updateTs) {
     const updateTs = Date.now()
     for (const prop of def.updateTs) {
+      if (getByPath(obj, prop.path) !== undefined) {
+        continue
+      }
       if (ctx.mergeMain) {
         ctx.mergeMain.push(prop, updateTs)
         ctx.mergeMainSize += prop.len + 4
@@ -63,7 +67,7 @@ const appendUpdate = (
       ctx.buf[ctx.len++] = start >>>= 8
       ctx.buf[ctx.len++] = len
       ctx.buf[ctx.len++] = len >>>= 8
-      const err = appendFixedValue(ctx, v, t)
+      const err = appendFixedValue(ctx, v, t, UPDATE)
       if (err) {
         return err
       }

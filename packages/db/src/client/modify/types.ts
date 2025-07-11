@@ -20,16 +20,24 @@ export const SWITCH_FIELD = 0
 export const SWITCH_ID_CREATE = 9
 export const SWITCH_ID_UPDATE = 1
 
-export const enum SIZE {
-  DEFAULT_CURSOR = 11,
-}
-
-export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 export type ModifyOp =
   | typeof CREATE
   | typeof UPDATE
   | typeof INCREMENT
   | typeof EXPIRE
+
+export const MOD_OPS_TO_STRING: Record<ModifyOp, 'create' | 'update'> = {
+  [CREATE]: 'create',
+  [UPDATE]: 'update',
+  [INCREMENT]: 'update',
+  [EXPIRE]: 'update',
+}
+
+export const enum SIZE {
+  DEFAULT_CURSOR = 11,
+}
+
+export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 
 export type ModifyOpts = {
   unsafe?: boolean

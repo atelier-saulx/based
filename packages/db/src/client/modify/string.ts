@@ -10,6 +10,7 @@ import {
   DELETE,
   SIZE,
   DELETE_TEXT_FIELD,
+  MOD_OPS_TO_STRING,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -22,7 +23,7 @@ export function writeString(
   lang: LangCode,
   value: string | null | Uint8Array,
   ctx: ModifyCtx,
-  def: SchemaTypeDef,
+  schema: SchemaTypeDef,
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -34,7 +35,7 @@ export function writeString(
       if (ctx.len + SIZE.DEFAULT_CURSOR + 2 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
       if (lang === 0) {
         ctx.buf[ctx.len++] = DELETE
       } else {
@@ -46,22 +47,32 @@ export function writeString(
     if (!t.validation(value, t)) {
       return new ModifyError(t, value)
     }
+    if (t.transform) {
+      value = t.transform(MOD_OPS_TO_STRING[modifyOp], value)
+    }
     let size = isBuffer
-      ? value.byteLength
-      : ENCODER.encode(value).byteLength + 6
+      ? // @ts-ignore
+        value.byteLength
+      : // @ts-ignore
+        ENCODER.encode(value).byteLength + 6
     if (ctx.len + SIZE.DEFAULT_CURSOR + 11 + size > ctx.max) {
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {
-      def.seperateSort.bufferTmp[t.prop] = 2
+      schema.seperateSort.bufferTmp[t.prop] = 2
       ctx.hasSortField++
+      if (schema.hasSeperateDefaults) {
+        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        ctx.hasDefaults++
+      }
     }
-    setCursor(ctx, def, t.prop, t.typeIndex, parentId, modifyOp)
+    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
     // TODO if buffer check if second byte is zero or one
     // modOp | size u32 | stringprotocol | string
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {
+      // @ts-ignore
       ctx.buf.set(value, ctx.len)
     } else {
       const isNoCompression = t.compression === 0

@@ -619,6 +619,11 @@ await clientDb.setSchema({
     /* ... new or modified schema ... */
   },
 })
+```
 
 // Server processes and notifies clients.
-```
+
+### Aggregations
+
+BasedDb support aggregate functions such as `sum('prop1','prop2')`, `count()`, etc and operations such as `groupBY('prop')`.
+See the specific doc [Aggregations](./README_Aggregate.md) for a detailed guide on its usage and features.

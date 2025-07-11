@@ -8,6 +8,8 @@ import {
   RANGE_ERR,
   DELETE,
   SIZE,
+  CREATE,
+  MOD_OPS_TO_STRING,
 } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -49,32 +51,47 @@ export function writeBinary(
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
   t: PropDef,
-  parentId: number,
+  id: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   let size: number
   if (value === null) {
     size = 0
   } else {
-    value = getBuffer(value)
-    if (!value || !t.validation(value, t)) {
-      return new ModifyError(t, value)
+    if (t.transform) {
+      // validation happens before
+      if (!value || !t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
+      value = getBuffer(t.transform(MOD_OPS_TO_STRING[modifyOp], value))
+    } else {
+      value = getBuffer(value)
+      if (!value || !t.validation(value, t)) {
+        return new ModifyError(t, value)
+      }
     }
     size = value.byteLength + 6
   }
+
   if (size === 0) {
     if (modifyOp === UPDATE) {
       if (ctx.len + SIZE.DEFAULT_CURSOR + 1 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, t.typeIndex, id, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
     if (ctx.len + SIZE.DEFAULT_CURSOR + 5 + size > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, t.prop, t.typeIndex, parentId, modifyOp)
+    if (modifyOp === CREATE) {
+      if (schema.hasSeperateDefaults) {
+        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        ctx.hasDefaults++
+      }
+    }
+    setCursor(ctx, schema, t.prop, t.typeIndex, id, modifyOp)
     ctx.buf[ctx.len++] = modifyOp
     writeBinaryRaw(value, ctx)
   }

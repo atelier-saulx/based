@@ -1,4 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads'
+import { nextTick } from 'node:process'
 import native from '../../native.js'
 
 let dbCtx: any
@@ -28,9 +29,15 @@ export function registerMsgHandler(
   const handleMsg = (msg: any) => {
     try {
       if (typeof msg === 'bigint') {
-        // it's a ctx address
-        dbCtx = native.externalFromInt(msg)
-        channel.postMessage(null)
+        if (msg === 0n) {
+          // terminate
+          nextTick(() => typeof self === 'undefined' ? process.exit() : self.close())
+          channel.postMessage(null)
+        } else {
+          // it's a ctx address
+          dbCtx = native.externalFromInt(msg)
+          channel.postMessage(null)
+        }
       } else {
         // a message to the worker handler
         const arrayBuf = onMsg(dbCtx, msg)

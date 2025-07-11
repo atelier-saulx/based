@@ -17,6 +17,7 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
+import { serialize } from '@based/schema'
 
 export type MigrateRange = { typeId: number; start: number; end: number }
 
@@ -115,8 +116,14 @@ export const migrate = async (
       isDbMigrateWorker: true,
       from: fromAddress,
       to: toAddress,
-      fromSchema,
-      toSchema,
+      fromSchema: serialize(fromSchema, {
+        stripMetaInformation: true,
+        stripTransform: true,
+      }),
+      toSchema: serialize(toSchema, {
+        stripMetaInformation: true,
+        stripTransform: true,
+      }),
       channel: port2,
       workerState,
       transformFns,
@@ -125,17 +132,19 @@ export const migrate = async (
   })
 
   // handle?
-
-  worker.on('error', (err) => {
-    killed = true
-    console.error(`Error in migration ${err.message}`)
+  const errorPromise = new Promise<void>((resolve) => {
+    worker.once('error', (err) => {
+      killed = true
+      console.error(`Error in migration ${err.message}, aborting migration`)
+      resolve()
+    })
   })
 
   // Block handling
   let i = 0
   let rangesToMigrate: MigrateRange[] = []
 
-  await save(server, false, false, true)
+  await save(server, { skipMigrationCheck: true })
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
@@ -151,13 +160,13 @@ export const migrate = async (
       break
     }
     // block modifies
-    server.processingQueries++
+    server.activeReaders++
     const leafData = rangesToMigrate[i++]
     port1.postMessage(leafData)
     setToAwake(workerState, true)
-    await waitUntilSleeping(workerState)
+    await Promise.race([errorPromise, waitUntilSleeping(workerState)])
     // exec queued modifies
-    server.processingQueries--
+    server.activeReaders--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
       if (server.dirtyRanges.size) {
@@ -205,8 +214,8 @@ export const migrate = async (
   tmpDb.server.dbCtxExternal = fromCtx
 
   // TODO makes this SYNC
-  const promises: Promise<any>[] = server.workers.map((worker) =>
-    worker.updateCtx(toAddress),
+  const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
+    (worker) => worker.updateCtx(toAddress),
   )
 
   promises.push(tmpDb.destroy(), worker.terminate())
@@ -218,7 +227,11 @@ export const migrate = async (
   }
 
   native.membarSyncRead()
-  await save(server, false, true, true)
+  await save(server, {
+    forceFullDump: true,
+    skipDirtyCheck: true,
+    skipMigrationCheck: true,
+  })
   await writeSchemaFile(server, toSchema)
 
   server.migrating = 0

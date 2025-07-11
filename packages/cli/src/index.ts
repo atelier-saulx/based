@@ -48,7 +48,7 @@ let basedConfig: BasedOpts
 try {
   basedConfig = await getBasedConfig()
 } catch (error) {
-  printError('Error parsing based config.', error)
+  printError('Error parsing based config.', error as Error)
   process.exit(1)
 }
 if (basedConfig) {

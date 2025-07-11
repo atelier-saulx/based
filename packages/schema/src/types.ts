@@ -1,6 +1,7 @@
 import { getPropType } from './parse/utils.js'
 import { LangName } from './lang.js'
 import { Validation } from './def/validation.js'
+import { Transform } from './def/types.js'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -76,6 +77,7 @@ export const stringFormats = [
   'mobilePhone',
   'mobilePhoneLocales',
   'octal',
+  'password',
   'passportNumber',
   'port',
   'postalCode',
@@ -86,7 +88,6 @@ export const stringFormats = [
   'rust',
   'semVer',
   'slug',
-  'strongPassword',
   'surrogatePair',
   'taxID',
   'typescript',
@@ -175,7 +176,12 @@ type Letter =
 
 type AllowedKey = `${Letter}${string}`
 type QueryFn = Function
-type PropValues = { type?: string; default?: any; validation?: Validation }
+type PropValues = {
+  type?: string
+  default?: any
+  validation?: Validation
+  transform?: Transform
+}
 type Prop<V extends PropValues> = {
   required?: boolean
   title?: string | Record<string, string>
@@ -186,6 +192,7 @@ type Prop<V extends PropValues> = {
   readOnly?: boolean
   examples?: string[]
   validation?: Validation
+  transform?: Transform
 } & V
 
 type EnumItem = string | number | boolean
@@ -262,7 +269,6 @@ export type SchemaBoolean = Prop<{
 
 export type SchemaCardinality = Prop<{
   type: 'cardinality'
-  // default?: string[]
   maxBytes?: number // should be fixed
   mime?: Mime // TODO: check if this is correct
   format?: NumberDisplay // when queried should return the count
