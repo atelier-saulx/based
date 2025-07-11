@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { devCmd } from './commands/dev/cmd.js'
 import { deployCmd } from './commands/deploy/cmd.js'
+import { logoutCmd } from './commands/logout/cmd.js'
 import { getBasedConfig } from './basedConfig.js'
 import { printError } from './tui.js'
 import type { BasedOpts } from '@based/client'
@@ -41,6 +42,7 @@ program.option(
 
 devCmd(program)
 deployCmd(program)
+logoutCmd(program)
 
 let basedConfig: BasedOpts
 try {
