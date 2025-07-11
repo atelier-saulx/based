@@ -22,8 +22,8 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "for pkg in crc32c schema db functions errors server client cli; do npm run watch --prefix packages/$pkg & done; wait",
-    "build": "npm run build --prefix packages/crc32c && npm run build --prefix packages/schema && npm run build --prefix packages/db && npm run build --prefix packages/functions && npm run build --prefix packages/errors && npm run build --prefix packages/server && npm run build --prefix packages/client && npm run build --prefix packages/cli",
+    "watch": "for pkg in $(ls packages); do if [[ \"$pkg\" != \"fetch\" && \"$pkg\" != \"hub\" && \"$pkg\" != \"react-native-compat\" && \"$pkg\" != \"locale\" && \"$pkg\" != \"uws\" ]]; then npm run watch --workspace=packages/$pkg & fi done; wait",
+    "build": "npm run build --prefix packages/crc32c && npm run build --prefix packages/schema && npm run build --prefix packages/db && npm run build --prefix packages/functions && npm run build --prefix packages/errors && npm run build --prefix packages/server && npm run build --prefix packages/client && npm run build --prefix packages/data-record && npm run build --prefix packages/schema-diagram && npm run build --prefix packages/type-gen && npm run build --prefix packages/react",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",
