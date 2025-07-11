@@ -22,7 +22,6 @@ export const getBasedConfig = async () => {
       const config = await import(
         `data:text/javascript;base64,${Buffer.from(basedConfigCtx.outputFiles[0].contents).toString('base64')}`
       )
-      console.log(config.default)
       return config.default
     } catch (error) {
       console.error(error)
