@@ -41,6 +41,7 @@ export const deploy = async () => {
   // console.log({ remoteFunctions })
 
   const results = await parse()
+  console.log({ results })
   watch(results)
 
   // basedClient.destroy()

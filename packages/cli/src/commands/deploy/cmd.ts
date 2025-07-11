@@ -13,8 +13,8 @@ export const deployCmd = (program: Command) => {
     // .option('--force', 'deploy force deploying the functions even if they don\' appear to have changed')
     .action(async (_options, cmd) => {
       printHeader()
-      const basedClient = await getBasedClient()
-      basedClient.destroy()
-      // await deploy()
+      // const basedClient = await getBasedClient()
+      // basedClient.destroy()
+      await deploy()
     })
 }
