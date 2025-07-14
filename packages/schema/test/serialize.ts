@@ -226,7 +226,7 @@ test('transform with method', () => {
           x: {
             type: 'string',
             // @ts-ignore
-            transform     (type, value) {
+            transform(type, value) {
               if (type !== 'read') {
                 return 'derp!'
               }
@@ -240,6 +240,5 @@ test('transform with method', () => {
 
   const serialized = serialize(basicSchema)
   const deserialized = deSerialize(serialized)
-  console.dir(deserialized, { depth: 10 })
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
