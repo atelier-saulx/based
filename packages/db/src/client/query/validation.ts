@@ -534,7 +534,7 @@ export const handleErrors = (def: QueryDef) => {
     }
     const err = new Error(`Query\n`)
     err.message = name
-    err.stack = ''
+    err.stack = name
     throw err
   }
 }
