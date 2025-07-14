@@ -1,0 +1,29 @@
+{
+  "name": "@based/cli",
+  "version": "9.0.0-alpha.1",
+  "description": "Based command line tool.",
+  "bin": "bin/cmd.js",
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "source": "src/index.ts",
+  "sideEffects": false,
+  "devDependencies": {
+    "@saulx/tsconfig": "^1.1.0"
+  },
+  "dependencies": {
+    "@based/client": "^8.0.2",
+    "@based/functions": "^3.2.3",
+    "@based/schema": "^5.0.0-alpha.26",
+    "@parcel/watcher": "^2.5.1",
+    "@saulx/validators": "^1.2.1",
+    "commander": "14.0.0",
+    "unique-names-generator": "^4.7.1"
+  }
+}

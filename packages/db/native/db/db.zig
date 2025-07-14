@@ -22,6 +22,8 @@ pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
+extern "c" const selva_string: opaque {};
+
 var lastQueryId: u32 = 0;
 pub fn getQueryId() u32 {
     lastQueryId += 1;
@@ -81,14 +83,8 @@ pub fn getCardinalityField(node: Node, fieldSchema: FieldSchema) ?[]u8 {
     }
 }
 
-pub fn getCardinalityFieldAsSelvaString(node: Node, fieldSchema: FieldSchema) ?[]u8 {
-    if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
-        // return @ptrCast(stored);
-        _ = stored;
-        return null; // temp
-    } else {
-        return null;
-    }
+pub fn selvaStringDestroy(str: ?selva.selva_string) void {
+    try selva.selva_string_free(str);
 }
 
 pub fn getCardinalityReference(ref: *selva.SelvaNodeReference, fieldSchema: FieldSchema) []u8 {

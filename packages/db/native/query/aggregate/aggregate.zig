@@ -40,7 +40,6 @@ pub inline fn execAgg(
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
-        // TODO: populational or sample statistics switch or aliases
 
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
@@ -63,7 +62,7 @@ pub inline fn execAgg(
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
 
-            count += 1; // WARNING: if prop is undefined, it still is initialized with 0, so count increments and average and other stats ARE affected
+            count += 1;
             sum += val;
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
@@ -83,15 +82,11 @@ pub inline fn execAgg(
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
-        } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            // const hll = read from or point to value
-            // const hllAcc = read hll from accumulator as selva string []u8
-            // hll_union(hllAcc, hll) union and write to the hllAcc
         }
     }
 }
 
-pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hadAccumulated: *bool) void {
+pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool) void {
     if (agg.len == 0) {
         return;
     }
@@ -107,8 +102,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
     var value: []u8 = undefined;
 
     if (field != aggregateTypes.IsId) {
-        if (field != types.MAIN_PROP) {
-            i += fieldAggsSize;
+        if (field != types.MAIN_PROP and aggType != aggregateTypes.AggType.CARDINALITY) {
             return;
         }
         const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
@@ -116,19 +110,48 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             return;
         };
         if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            // value = db.getCardinalityFieldAsSelvaString(node, fieldSchema); //@ptrCast para ?[]u8 ver como vai
-            value = &[_]u8{}; // temp
+            const hllValue = selva.selva_fields_get_selva_string(node, fieldSchema) orelse null;
+            if (hllValue == null) {
+                return;
+            }
+            if (!hadAccumulated.*) {
+                _ = selva.selva_string_replace(hllAccumulator, null, 0);
+                selva.hll_init(hllAccumulator, 14, false);
+            }
+            selva.hll_union(hllAccumulator, hllValue);
+            writeInt(u32, accumulatorField, 0, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
+            return;
         } else {
             value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
-        }
-
-        if (value.len == 0) {
-            i += fieldAggsSize;
-            return;
+            if (value.len == 0) {
+                return;
+            }
         }
     }
     execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
-    // hadAccumulated.* = true;
-    i += fieldAggsSize;
     return;
 }
+
+// pub inline fn execHllAgg(
+//     aggPropDef: []u8,
+//     accumulatorField: anytype,
+//     value: anytype,
+//     fieldAggsSize: u16,
+// ) void {
+//     var j: usize = 0;
+//     while (j < fieldAggsSize) {
+//         _ = aggPropDef;
+//         // const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
+//         j += 1;
+//         // const propType: types.Prop = @enumFromInt(aggPropDef[j]);
+//         j += 1;
+//         // const start = read(u16, aggPropDef, j);
+//         j += 2;
+//         // const resultPos = read(u16, aggPropDef, j);
+//         j += 2;
+//         // const accumulatorPos = read(u16, aggPropDef, j);
+//         j += 2;
+
+//         selva.hll_union(accumulatorField, value);
+//     }
+// }

@@ -91,8 +91,11 @@ const handleSingleValue = (
     schemaBuffer.buf.set(val, schemaBuffer.len)
     schemaBuffer.len += val.byteLength
   } else if (type === 'function') {
-    const str = val.toString()
-    // Pessimistically assume 4 bytes per char for UTF-8 to be safe.
+    // Support both arrow functions and methods (including shorthand method syntax)
+    let str = val.toString()
+    if (typeof val === 'function' && /^[a-zA-Z0-9_$]+\s*\(/.test(str)) {
+      str = 'function ' + str
+    }
     ensureCapacity(1 + 2 + str.length * 4)
     schemaBuffer.buf[schemaBuffer.len] = FUNCTION
     schemaBuffer.len += 1
@@ -164,6 +167,7 @@ type Opts = {
   // deflate?: boolean
   readOnly?: boolean
   stripMetaInformation?: boolean
+  stripTransform?: boolean
 }
 
 const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
@@ -265,6 +269,13 @@ const walk = (
   } else {
     for (const key in obj) {
       if (
+        opts.stripTransform &&
+        isFromObj &&
+        key === 'transform' &&
+        typeof obj[key] === 'function'
+      ) {
+        continue
+      } else if (
         opts.readOnly &&
         isFromObj &&
         (key === 'validation' || key === 'default')

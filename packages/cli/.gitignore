@@ -1,27 +1,19 @@
-# Copyright (c) 2023 SAULX
-# SPDX-License-Identifier: MIT
-
-# Ops
-.service
-
-# Mac
+# Mac OS
 .DS_Store
 
-# Dump
-dump.rdb
-
-.cluster.json
+# Typescript
+tsconfig.tsbuildinfo
 
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+.pnpm-debug.log*
 
-.vscode
-.idea
+# database files
+*.rdb
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
@@ -58,8 +50,8 @@ build/Release
 node_modules/
 jspm_packages/
 
-# TypeScript v1 declaration files
-typings/
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
 
 # TypeScript cache
 *.tsbuildinfo
@@ -69,6 +61,9 @@ typings/
 
 # Optional eslint cache
 .eslintcache
+
+# Optional stylelint cache
+.stylelintcache
 
 # Microbundle cache
 .rpt2_cache/
@@ -82,24 +77,23 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn
+# Yarn Integrity file
 .yarn-integrity
-.yarn/*
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
-.pnp.*
 
-# dotenv environment variables file
+# dotenv environment variable files
 .env
-.env.test
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
+.parcel-cache
 
 # Next.js build output
 .next
+out
 
 # Nuxt.js build / generate output
 .nuxt
@@ -107,12 +101,18 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and *not* Next.js
+# Comment in the public line in if your project uses Gatsby and not Next.js
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
 # vuepress build output
 .vuepress/dist
+
+# vuepress v2.x temp and cache directory
+.temp
+
+# Docusaurus cache and generated files
+.docusaurus
 
 # Serverless directories
 .serverless/
@@ -126,34 +126,18 @@ dist
 # TernJS port file
 .tern-port
 
-# Secrets
-.service/
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
 
-.cache/
+# Webstorm
+.idea
 
-tmp/
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 
-local-cloud/
-
-.turbo
-.vercel
-
-.ccls-cache
-
-# selvad dump
-*.sdb
-
-# heap dumps
-jeprof.out.*
-
-packages/server/selvad
-
-/.zigmod
-/deps.zig
-zig-cache
-zig-out
-deps/node-*
-packages/db/*.o
-.zigversion
-aggregationNotes.md
-.vscode
+test
+examples
