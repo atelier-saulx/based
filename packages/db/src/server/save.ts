@@ -2,11 +2,7 @@ import native from '../native.js'
 import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import {
-  VerifTree,
-  destructureTreeKey,
-  makeTreeKey,
-} from './tree.js'
+import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.js'
 import {
   saveBlock,
   foreachBlock,
@@ -19,10 +15,10 @@ import { bufToHex } from '@saulx/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 
 type RangeDump = {
-    file: string
-    hash: string
-    start: number
-    end: number
+  file: string
+  hash: string
+  start: number
+  end: number
 }
 
 export type Writelog = {
@@ -36,27 +32,28 @@ export type Writelog = {
 }
 
 function hasPartialTypes(db: DbServer): boolean {
-  let res = false
-
-  for (let id in db.schemaTypesParsedById) {
-    res = res || db.schemaTypesParsedById[id].partial
+  for (const id in db.schemaTypesParsedById) {
+    if (db.schemaTypesParsedById[id].partial) {
+      return true
+    }
   }
-
-  return res
+  return false
 }
 
 type SaveOpts = {
-  forceFullDump?: boolean,
-  skipDirtyCheck?: boolean,
-  skipMigrationCheck?: boolean,
+  forceFullDump?: boolean
+  skipDirtyCheck?: boolean
+  skipMigrationCheck?: boolean
 }
 
 function inhibitSave(
   db: DbServer,
-  { skipDirtyCheck, forceFullDump, skipMigrationCheck }: SaveOpts
+  { skipDirtyCheck, forceFullDump, skipMigrationCheck }: SaveOpts,
 ): boolean {
   // RFE isMainThread needed??
-  if (!(isMainThread && (skipDirtyCheck || db.dirtyRanges.size || forceFullDump))) {
+  if (
+    !(isMainThread && (skipDirtyCheck || db.dirtyRanges.size || forceFullDump))
+  ) {
     return true
   }
 
@@ -78,36 +75,36 @@ function inhibitSave(
 }
 
 function makeWritelog(db: DbServer, ts: number): Writelog {
-    const types: Writelog['types'] = {}
-    const rangeDumps: Writelog['rangeDumps'] = {}
+  const types: Writelog['types'] = {}
+  const rangeDumps: Writelog['rangeDumps'] = {}
 
-    for (const key in db.schemaTypesParsed) {
-      const { id, lastId, blockCapacity } = db.schemaTypesParsed[key]
-      types[id] = { lastId, blockCapacity }
-      rangeDumps[id] = []
+  for (const key in db.schemaTypesParsed) {
+    const { id, lastId, blockCapacity } = db.schemaTypesParsed[key]
+    types[id] = { lastId, blockCapacity }
+    rangeDumps[id] = []
+  }
+
+  db.verifTree.foreachBlock((block) => {
+    const [typeId, start] = destructureTreeKey(block.key)
+    const def = db.schemaTypesParsedById[typeId]
+    const end = start + def.blockCapacity - 1
+    const data: RangeDump = {
+      file: db.verifTree.getBlockFile(block),
+      hash: bufToHex(block.hash),
+      start,
+      end,
     }
 
-    db.verifTree.foreachBlock((block) => {
-      const [typeId, start] = destructureTreeKey(block.key)
-      const def = db.schemaTypesParsedById[typeId]
-      const end = start + def.blockCapacity - 1
-      const data: RangeDump = {
-        file: db.verifTree.getBlockFile(block),
-        hash: bufToHex(block.hash),
-        start,
-        end,
-      }
+    rangeDumps[typeId].push(data)
+  })
 
-      rangeDumps[typeId].push(data)
-    })
-
-    return {
-      ts,
-      types,
-      commonDump: COMMON_SDB_FILE,
-      rangeDumps,
-      hash: bufToHex(db.verifTree.hash), // TODO `hash('hex')`
-    }
+  return {
+    ts,
+    types,
+    commonDump: COMMON_SDB_FILE,
+    rangeDumps,
+    hash: bufToHex(db.verifTree.hash), // TODO `hash('hex')`
+  }
 }
 
 export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
@@ -135,14 +132,14 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
       // ordered.
       for (const { typeId } of db.verifTree.types()) {
         const def = db.schemaTypesParsedById[typeId]
-        foreachBlock(
-          db,
-          def,
-          (start: number, end: number, _hash: Uint8Array) => saveBlock(db, def.id, start, end),
+        foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) =>
+          saveBlock(db, def.id, start, end),
         )
       }
     } else {
-      foreachDirtyBlock(db, (_mtKey, typeId, start, end) => saveBlock(db, typeId, start, end))
+      foreachDirtyBlock(db, (_mtKey, typeId, start, end) =>
+        saveBlock(db, typeId, start, end),
+      )
     }
 
     db.dirtyRanges.clear()
@@ -212,7 +209,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
         blocks.push({
           filepath,
           typeId,
-          start
+          start,
         })
       })
     }
@@ -224,8 +221,11 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       // makeWritelog(). This is true as long as db.saveInProgress protects
       // the verifTree from changes.
       const data = makeWritelog(db, ts)
-      await writeFile(join(db.fileSystemPath, WRITELOG_FILE), JSON.stringify(data))
-    } catch(err) {
+      await writeFile(
+        join(db.fileSystemPath, WRITELOG_FILE),
+        JSON.stringify(data),
+      )
+    } catch (err) {
       db.emit('error', `Save: writing writeLog failed ${err.message}`)
     }
 
