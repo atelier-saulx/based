@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
 import { createRequire } from 'module'
+import { wait } from '@saulx/utils'
 global.require = createRequire(import.meta.url)
 
 await test('transform', async (t) => {
@@ -20,6 +21,7 @@ await test('transform', async (t) => {
     types: {
       user: {
         props: {
+          email: 'alias',
           x: {
             type: 'uint8',
             transform: (type, value) => {
@@ -71,6 +73,7 @@ await test('transform', async (t) => {
   const user = await db.create('user', {
     password: 'mygreatpassword',
     bla: '?',
+    email: 'derp@derp.com',
     x: 66,
     text: {
       en: '1',
@@ -87,6 +90,7 @@ await test('transform', async (t) => {
       id: 1,
       bla: 'bla',
       x: 99,
+      email: 'derp@derp.com',
       text: {
         en: '1!',
         nl: '1!',
@@ -121,5 +125,16 @@ await test('transform', async (t) => {
       // .test() // 'every' , '>', '<', 10, 'none'
       .get(),
     [{ id: 1 }],
+  )
+
+  deepEqual(
+    await db
+      .query('user', { email: 'derp@derp.com' })
+      .filter('password', '=', 'mygreatpassword!')
+      .include('id')
+      .get()
+      .inspect(),
+    { id: 1 },
+    'alias filter',
   )
 })

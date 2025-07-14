@@ -15,6 +15,7 @@ await test('edges', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
+  // Add all supported data types as edge properties (no date/text)
   await db.setSchema({
     types: {
       user: {
@@ -25,6 +26,18 @@ await test('edges', async (t) => {
               prop: 'friends',
               $nice: { type: 'boolean', default: true },
               $role: { enum: ['admin', 'derp'], default: 'admin' },
+              $count: { type: 'number', default: 0 },
+              $score: { type: 'uint8', default: 42 },
+              $flag: { type: 'int8', default: -1 },
+              $amount: { type: 'int16', default: 1234 },
+              $big: { type: 'uint16', default: 4321 },
+              $huge: { type: 'int32', default: 123456 },
+              $max: { type: 'uint32', default: 654321 },
+              $label: { type: 'string', default: 'default label' },
+              $bin: { type: 'binary', default: new Uint8Array([1, 2, 3]) },
+              $json: { type: 'json', default: { foo: 'bar', num: 1 } },
+              $timestamp: { type: 'timestamp', default: 1680000000000 },
+              $enum: { enum: ['a', 'b', 'c'], default: 'a' },
             },
           },
         },
@@ -32,15 +45,244 @@ await test('edges', async (t) => {
     },
   })
 
+  // Create a user with two friends, one with custom edge values
   const userId = await db.create('user', {
-    friends: [{ id: db.create('user'), $role: 'derp' }, db.create('user')],
+    friends: [
+      {
+        id: db.create('user'),
+        $role: 'derp',
+        $nice: false,
+        $count: 7,
+        $score: 99,
+        $flag: 2,
+        $amount: 5678,
+        $big: 8765,
+        $huge: 654321,
+        $max: 123456,
+        $label: 'custom label',
+        $bin: new Uint8Array([9, 8, 7]),
+        $json: { foo: 'baz', num: 2 },
+        $timestamp: 1700000000000,
+        $enum: 'b',
+      },
+      db.create('user'),
+    ],
   })
 
+  // Query and check all edge properties
   await db
     .query('user', userId)
-    .include('friends.$role', 'friends.$nice')
+    .include(
+      'friends.$role',
+      'friends.$nice',
+      'friends.$count',
+      'friends.$score',
+      'friends.$flag',
+      'friends.$amount',
+      'friends.$big',
+      'friends.$huge',
+      'friends.$max',
+      'friends.$label',
+      'friends.$bin',
+      'friends.$json',
+      'friends.$timestamp',
+      'friends.$enum',
+    )
     .get()
     .inspect()
+
+  deepEqual(
+    await db
+      .query('user', userId)
+      .include(
+        'friends.$role',
+        'friends.$nice',
+        'friends.$count',
+        'friends.$score',
+        'friends.$flag',
+        'friends.$amount',
+        'friends.$big',
+        'friends.$huge',
+        'friends.$max',
+        'friends.$label',
+        'friends.$bin',
+        'friends.$json',
+        'friends.$timestamp',
+        'friends.$enum',
+      )
+      .get(),
+    {
+      friends: [
+        {
+          id: 1,
+          role: 'derp',
+          nice: false,
+          count: 7,
+          score: 99,
+          flag: 2,
+          amount: 5678,
+          big: 8765,
+          huge: 654321,
+          max: 123456,
+          label: 'custom label',
+          bin: new Uint8Array([9, 8, 7]),
+          json: { foo: 'baz', num: 2 },
+          timestamp: 1700000000000,
+          enum: 'b',
+        },
+        {
+          id: 2,
+          role: 'admin',
+          nice: true,
+          count: 0,
+          score: 42,
+          flag: -1,
+          amount: 1234,
+          big: 4321,
+          huge: 123456,
+          max: 654321,
+          label: 'default label',
+          bin: new Uint8Array([1, 2, 3]),
+          json: { foo: 'bar', num: 1 },
+          timestamp: 1680000000000,
+          enum: 'a',
+        },
+      ],
+    },
+    'Default values and custom edge values',
+  )
+
+  // Create another user with two friends, all default edge values
+  const userId2 = await db.create('user', {
+    friends: [{ id: db.create('user') }, db.create('user')],
+  })
+
+  deepEqual(
+    await db
+      .query('user', userId2)
+      .include(
+        'friends.$role',
+        'friends.$nice',
+        'friends.$count',
+        'friends.$score',
+        'friends.$flag',
+        'friends.$amount',
+        'friends.$big',
+        'friends.$huge',
+        'friends.$max',
+        'friends.$label',
+        'friends.$bin',
+        'friends.$json',
+        'friends.$timestamp',
+        'friends.$enum',
+      )
+      .get(),
+    {
+      friends: [
+        {
+          id: 3,
+          role: 'admin',
+          nice: true,
+          count: 0,
+          score: 42,
+          flag: -1,
+          amount: 1234,
+          big: 4321,
+          huge: 123456,
+          max: 654321,
+          label: 'default label',
+          bin: new Uint8Array([1, 2, 3]),
+          json: { foo: 'bar', num: 1 },
+          timestamp: 1680000000000,
+          enum: 'a',
+        },
+        {
+          id: 4,
+          role: 'admin',
+          nice: true,
+          count: 0,
+          score: 42,
+          flag: -1,
+          amount: 1234,
+          big: 4321,
+          huge: 123456,
+          max: 654321,
+          label: 'default label',
+          bin: new Uint8Array([1, 2, 3]),
+          json: { foo: 'bar', num: 1 },
+          timestamp: 1680000000000,
+          enum: 'a',
+        },
+      ],
+    },
+    'Default values empty users',
+  )
+
+  // Update an edge property for one friend
+  await db.update('user', userId2, {
+    friends: { update: [{ id: 3, $role: 'derp', $nice: false, $count: 5 }] },
+  })
+
+  deepEqual(
+    await db
+      .query('user', userId2)
+      .include(
+        'friends.$role',
+        'friends.$nice',
+        'friends.$count',
+        'friends.$score',
+        'friends.$flag',
+        'friends.$amount',
+        'friends.$big',
+        'friends.$huge',
+        'friends.$max',
+        'friends.$label',
+        'friends.$bin',
+        'friends.$json',
+        'friends.$timestamp',
+        'friends.$enum',
+      )
+      .get(),
+    {
+      friends: [
+        {
+          id: 3,
+          role: 'derp',
+          nice: false,
+          count: 5,
+          score: 42,
+          flag: -1,
+          amount: 1234,
+          big: 4321,
+          huge: 123456,
+          max: 654321,
+          label: 'default label',
+          bin: new Uint8Array([1, 2, 3]),
+          json: { foo: 'bar', num: 1 },
+          timestamp: 1680000000000,
+          enum: 'a',
+        },
+        {
+          id: 4,
+          role: 'admin',
+          nice: true,
+          count: 0,
+          score: 42,
+          flag: -1,
+          amount: 1234,
+          big: 4321,
+          huge: 123456,
+          max: 654321,
+          label: 'default label',
+          bin: new Uint8Array([1, 2, 3]),
+          json: { foo: 'bar', num: 1 },
+          timestamp: 1680000000000,
+          enum: 'a',
+        },
+      ],
+    },
+    'Default values after update',
+  )
 })
 
 await test('separate', async (t) => {
