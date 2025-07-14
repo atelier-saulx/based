@@ -65,8 +65,14 @@ type ParseResults = {
   }
 }
 
-const evalBuild = (build: BuildResult) =>
-  eval(build.outputFiles[0].text).default
+// const evalBuild = (build: BuildResult) =>
+//   eval(build.outputFiles[0].text).default
+const evalBuild = async (build: BuildResult) =>
+  (
+    await import(
+      `data:text/javascript;base64,${Buffer.from(build.outputFiles[0].text).toString('base64')}`
+    )
+  ).default
 
 const configsFiles = new Set([
   'based.config.json',
@@ -88,12 +94,14 @@ export const parse = async (): Promise<ParseResults> => {
     new Set([...configsFiles, ...schemaFiles]),
     async (result: FindResult) => {
       if (configsFiles.has(result.file)) {
+        console.log('wawa')
         const [configCtx, indexCtx] = await Promise.all([
           context({
             entryPoints: [result.path],
             bundle: true,
             write: false,
             platform: 'node',
+            format: 'esm',
             metafile: true,
           }).then(rebuild),
           context({
@@ -101,11 +109,12 @@ export const parse = async (): Promise<ParseResults> => {
             bundle: true,
             write: false,
             platform: 'node',
+            format: 'esm',
             metafile: true,
           }).then(rebuild),
         ])
 
-        const fnConfig: BasedFunctionConfig = evalBuild(configCtx.build)
+        const fnConfig: BasedFunctionConfig = await evalBuild(configCtx.build)
 
         if (fnConfig.type === 'app') {
           const mainCtx = await context({
@@ -145,9 +154,10 @@ export const parse = async (): Promise<ParseResults> => {
           metafile: true,
         }).then(rebuild)
         schema = {
-          schema: evalBuild(schemaCtx.build),
+          schema: await evalBuild(schemaCtx.build),
           schemaCtx,
         }
+        console.log({ schema })
       }
     },
   )
@@ -188,7 +198,10 @@ export const watch = async ({ configs, schema }: ParseResults) => {
     }
   }
 
-  let schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
+  let schemaInputs
+  if (schema) {
+    schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
+  }
 
   const sub = await watcher.subscribe(cwd, async (err, events) => {
     // A) rebuild relevant stuff √
@@ -222,14 +235,14 @@ export const watch = async ({ configs, schema }: ParseResults) => {
             }
           }
           if (buildCtx === result.configCtx) {
-            result.fnConfig = evalBuild(buildCtx.build)
+            result.fnConfig = await evalBuild(buildCtx.build)
           }
         }
       }
 
-      if (schemaInputs.has(event.path)) {
+      if (schema && schemaInputs.has(event.path)) {
         schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
-        schema.schema = evalBuild(schema.schemaCtx.build)
+        schema.schema = await evalBuild(schema.schemaCtx.build)
         schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
       }
     }
