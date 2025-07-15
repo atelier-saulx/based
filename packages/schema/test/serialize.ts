@@ -95,10 +95,10 @@ test('serialize and deserialize complex (Eurovision) schema', () => {
     'Eurovision schema did not match after roundtrip',
   )
 
-  console.log(
-    serialized.byteLength,
-    deflateSync(JSON.stringify(eurovisionSchema)).byteLength,
-  )
+  // console.log(
+  //   serialized.byteLength,
+  //   deflateSync(JSON.stringify(eurovisionSchema)).byteLength,
+  // )
 })
 
 test('serialize with readOnly option strips validation and defaults', () => {
@@ -205,7 +205,6 @@ test('transform', () => {
 
   const serialized = serialize(basicSchema)
   const deserialized = deSerialize(serialized)
-  console.dir(deserialized, { depth: 10 })
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
 
@@ -241,4 +240,31 @@ test('transform with method', () => {
   const serialized = serialize(basicSchema)
   const deserialized = deSerialize(serialized)
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
+})
+
+test('empty schema', () => {
+  const serialized = serialize({})
+  const deserialized = deSerialize(serialized)
+  ok(deepEqual({}, deserialized), 'Mismatch')
+})
+
+test('schema with 1 unit8array', () => {
+  const x = { x: new Uint8Array([1, 2, 3]) }
+  const serialized = serialize(x)
+  const deserialized = deSerialize(serialized)
+  ok(deepEqual(x, deserialized), 'Mismatch')
+})
+
+test('schema with 1 unit8array array', () => {
+  const x = {
+    x: [{ x: new Uint8Array([1, 2, 3]) }, { x: new Uint8Array([1, 2, 3]) }],
+  }
+  const serialized = serialize(x)
+  const deserialized = deSerialize(serialized)
+  ok(deepEqual(x, deserialized), 'Mismatch')
+})
+
+test('empty uint8Array', () => {
+  const deserialized = deSerialize(new Uint8Array())
+  ok(deepEqual({}, deserialized), 'Mismatch')
 })
