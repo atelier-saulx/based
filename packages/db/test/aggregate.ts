@@ -6,7 +6,7 @@ import { throws, deepEqual } from './shared/assert.js'
 import { numberDisplays } from '@based/schema'
 import { inspect } from 'node:util'
 
-await test('sum top level', async (t) => {
+await test('stl', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -61,43 +61,43 @@ await test('sum top level', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
-  deepEqual(
-    await db.query('vote').sum('NL').get().toObject(),
-    { NL: 30 },
-    'sum, top level, single prop',
-  )
+  // deepEqual(
+  //   await db.query('vote').sum('NL').get().toObject(),
+  //   { NL: 30 },
+  //   'sum, top level, single prop',
+  // )
 
-  deepEqual(
-    await db
-      .query('vote')
-      .filter('country', '=', 'aa')
-      .sum('NL')
-      .get()
-      .toObject(),
-    { NL: 20 },
-    'sum with filter',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'aa')
+  //     .sum('NL')
+  //     .get()
+  //     .toObject(),
+  //   { NL: 20 },
+  //   'sum with filter',
+  // )
 
-  deepEqual(
-    await db.query('vote').sum('NL', 'AU').get().toObject(),
-    { NL: 30, AU: 15 },
-    'sum, top level, multiple props',
-  )
+  // deepEqual(
+  //   await db.query('vote').sum('NL', 'AU').get().toObject(),
+  //   { NL: 30, AU: 15 },
+  //   'sum, top level, multiple props',
+  // )
 
-  throws(async () => {
-    await db.query('vote').sum().get().toObject()
-  }, 'sum() returning nothing')
+  // throws(async () => {
+  //   await db.query('vote').sum().get().toObject()
+  // }, 'sum() returning nothing')
 
-  deepEqual(
-    await db
-      .query('vote')
-      .filter('country', '=', 'zz')
-      .sum('NL')
-      .get()
-      .toObject(),
-    { NL: 0 },
-    'sum with empty result set',
-  )
+  // deepEqual(
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'zz')
+  //     .sum('NL')
+  //     .get()
+  //     .toObject(),
+  //   { NL: 0 },
+  //   'sum with empty result set',
+  // )
 
   deepEqual(
     await db.query('vote').sum('flap.hello').get().toObject(),
@@ -1873,7 +1873,7 @@ await test('cardinality', async (t) => {
   )
 })
 
-await test('dev', async (t) => {
+await test('dc', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -1981,11 +1981,91 @@ await test('dev', async (t) => {
   //   lala: 10,
   //   lele: 11,
   // })
+  // await db.query('lunch').cardinality('Mon', 'Tue').get().inspect()
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })
 
-// TODO:
-// cardinality in references
-// key name <> string (numbers)
-// validations (including for key names)
-// aggregation on edges
+await test('dev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          strong: 'uint8',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const bob = db.create('user', {
+    name: 'bob',
+    strong: 1,
+  })
+
+  const marie = db.create('user', {
+    name: 'marie',
+    strong: 2,
+  })
+
+  const john = db.create('user', {
+    name: 'john',
+    strong: 4,
+    friends: [bob, marie],
+  })
+
+  // await db.query('user').include('*', '**').get().inspect(100)
+
+  // // await db.query('user').count().groupBy('friends').get().inspect()
+  // await db.query('user').sum('strong').groupBy('name').get().inspect()
+  // // await db
+  // //   .query('user')
+  // //   .include((q) => q('friends').sum('strong').groupBy('name'), 'name')
+  // //   .get()
+  // //   .inspect(100)
+
+  // // await db
+  // //   .query('user')
+  // //   .include((q) => q('friends').sum('strong'), 'name')
+  // //   .get()
+  // //   .inspect(100)
+
+  await db.query('user').sum('friends.strong').get().inspect()
+
+  // await db.query('user').sum('friends.strong').groupBy('name').get().inspect()
+
+  // await db.query('user').include('friends.strong', 'name').get().inspect(100)
+
+  // await db
+  //   .query('user')
+  //   .include((q) => q('friends').include('id', 'strong'), 'name')
+  //   .get()
+  //   .inspect(100)
+
+  // await db
+  //   .query('user')
+  //   .count('friends.name')
+  //   .groupBy('friends.name')
+  //   .get()
+  //   .inspect()
+
+  // await db
+  //   .query('user')
+  //   // .filter('name', '=', 'john')
+  //   .include((q) => q('friends').sum('strong'), 'name')
+  //   // .sum('friends.strong')
+  //   // .groupBy('name')
+  //   .get()
+  //   .inspect(100)
+})

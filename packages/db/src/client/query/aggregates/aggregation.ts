@@ -1,7 +1,15 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
-import { PropDef, UINT32 } from '@based/schema/def'
+import {
+  PropDef,
+  UINT32,
+  REFERENCE,
+  REFERENCES,
+  SchemaPropTree,
+  isPropDef,
+} from '@based/schema/def'
+import { createOrGetRefQueryDef } from '../include/utils.js'
 import { aggregationFieldDoesNotExist } from '../validation.js'
 import { aggregateTypeMap } from '../aggregates/types.js'
 
@@ -104,7 +112,24 @@ export const addAggregate = (
           : def.schema.props[field]
 
       if (!fieldDef) {
-        aggregationFieldDoesNotExist(def, field)
+        const path = field.split('.')
+        let t: PropDef | SchemaPropTree = def.schema.tree
+        for (let i = 0; i < path.length; i++) {
+          const p = path[i]
+          t = t[p]
+          if (!t) {
+            return
+          }
+          if (
+            isPropDef(t) &&
+            (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+          ) {
+            const f = path.slice(i + 1)
+            addAggregate(type, def, [f])
+          } else {
+            aggregationFieldDoesNotExist(def, field)
+          }
+        }
       }
 
       if (!aggregates.get(fieldDef.prop)) {
@@ -128,7 +153,6 @@ export const addAggregate = (
         def.aggregate.totalResultsSize += 8
         def.aggregate.totalAccumulatorSize += 8
       }
-      // needs to add an extra field WRITE TO
       def.aggregate.size += 8
     }
   }
