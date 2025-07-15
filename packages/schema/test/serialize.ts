@@ -263,3 +263,8 @@ test('schema with 1 unit8array array', () => {
   const deserialized = deSerialize(serialized)
   ok(deepEqual(x, deserialized), 'Mismatch')
 })
+
+test('empty uint8Array', () => {
+  const deserialized = deSerialize(new Uint8Array())
+  ok(deepEqual({}, deserialized), 'Mismatch')
+})

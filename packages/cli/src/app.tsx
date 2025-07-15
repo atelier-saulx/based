@@ -11,15 +11,22 @@ import { PERSISTENT_STORAGE } from './constants.js'
 import { join } from 'path'
 import { mkdir } from 'node:fs/promises'
 import { Status } from './status.js'
+import { Logout } from './logout.js'
 
-type Props = {
+export type Props = {
   opts: Opts
-  command: 'dev' | 'deploy' | 'secrets' | 'init' | 'status'
+  command: 'dev' | 'deploy' | 'secrets' | 'init' | 'status' | 'logout'
 }
 
-const Env = (props: { command: 'dev' | 'deploy' | 'secrets' | 'status' }) => {
+const Env = (props: {
+  command: 'dev' | 'deploy' | 'secrets' | 'status' | 'logout'
+}) => {
   const { connected } = useConnected()
   const { userId, error } = useAuthState()
+
+  if (props.command === 'logout') {
+    return <Logout />
+  }
 
   if (connected) {
     if (!userId) {
@@ -40,7 +47,7 @@ const EnvWrapper = ({
   command,
   opts,
 }: {
-  command: 'dev' | 'deploy' | 'secrets' | 'status'
+  command: 'dev' | 'deploy' | 'secrets' | 'status' | 'logout'
   opts: Opts
 }) => {
   const [loadingState, setLoadingState] = useState('loading')

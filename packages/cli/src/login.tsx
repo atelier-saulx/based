@@ -53,8 +53,18 @@ export const Login = () => {
                 setState('start')
               }, 1500)
             } else {
-              setState('success')
-              client.setAuthState(authState)
+              // weird bug where the authstate is not saved to storage
+              // so we need to wait a bit
+              setTimeout(() => {
+                client.setAuthState(authState).then(() => {
+                  Promise.all([
+                    client.saveStorage().catch(() => {}),
+                    adminClient.saveStorage().catch(() => {}),
+                  ]).then(() => {
+                    setState('success')
+                  })
+                })
+              }, 500)
             }
           })
         }}

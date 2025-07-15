@@ -2,7 +2,7 @@
 import React from 'react'
 import { render } from 'ink'
 import meow from 'meow'
-import App from './app.js'
+import App, { Props } from './app.js'
 import { Opts } from './types.js'
 
 const cli = meow(
@@ -10,14 +10,17 @@ const cli = meow(
 	Usage
 	  $ @based/cli [options]
 
-	Options
-		--dev       Run in development mode
-		--no-cloud  Do not use cloud
-		--init      Initialize a new project
-		--status    Show status of the project
+  Commands
+    dev       Run in development mode
+    init      Initialize a new project
+    status    Show status of the project
+    logout    Logout from the project
 
-	Examples
-	  $ @based/cli --no-cloud
+  Options
+    --no-cloud  Do not use cloud
+
+  Examples
+    $ @based/cli --no-cloud
 `,
   {
     importMeta: import.meta,
@@ -31,13 +34,17 @@ const cli = meow(
       init: {
         type: 'boolean',
       },
+      logout: {
+        type: 'boolean',
+      },
     },
   },
 )
 
-const command = cli.flags.dev ? 'dev' : cli.flags.init ? 'init' : 'status'
+const command: Props['command'] = cli.input[0] as Props['command']
 
 const opts: Opts = {
   noCloud: cli.flags.noCloud,
 }
-render(<App opts={opts} command={command} />)
+
+render(<App opts={opts} command={command ?? 'status'} />)
