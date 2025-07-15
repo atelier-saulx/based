@@ -38,7 +38,7 @@ export function handleSchemaUpdates(configDb: DbClient, path: string) {
 
       for (const name in clients) {
         if (!names.has(name)) {
-          await clients[name].destroy()
+          clients[name].destroy()
           delete clients[name]
         }
       }
