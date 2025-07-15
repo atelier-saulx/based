@@ -3,6 +3,7 @@ import { PropDef, REFERENCES, SchemaTypeDef } from '@based/schema/def'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import {
+  CREATE,
   DELETE,
   EDGE_INDEX_REALID,
   EDGE_INDEX_TMPID,
@@ -212,10 +213,19 @@ function appendRefs(
   ctx.buf[ctx.len++] = remaining >>>= 8
 
   for (; i < refs.length; i++) {
-    const ref = refs[i]
+    let ref = refs[i]
     let id: number
     let index: number
     let isTmpId: boolean
+
+    if (def.hasDefaultEdges) {
+      if (typeof ref !== 'object') {
+        ref = { id: ref }
+      } else if (ref instanceof ModifyState) {
+        ref = { id: ref }
+      }
+    }
+
     if (typeof ref === 'object') {
       if (ref instanceof ModifyState) {
         if (ref.error) {

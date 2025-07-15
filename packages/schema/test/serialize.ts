@@ -208,3 +208,37 @@ test('transform', () => {
   console.dir(deserialized, { depth: 10 })
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
+
+test('transform with method', () => {
+  const basicSchema: StrictSchema = parse({
+    types: {
+      article: {
+        props: {
+          body: {
+            type: 'string',
+            transform(type, value) {
+              if (type !== 'read') {
+                return 'derp!'
+              }
+              return value
+            },
+          },
+          x: {
+            type: 'string',
+            // @ts-ignore
+            transform(type, value) {
+              if (type !== 'read') {
+                return 'derp!'
+              }
+              return value
+            },
+          },
+        },
+      },
+    },
+  }).schema
+
+  const serialized = serialize(basicSchema)
+  const deserialized = deSerialize(serialized)
+  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
+})

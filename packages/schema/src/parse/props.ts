@@ -209,6 +209,7 @@ export const isDefault = (val, prop, ctx) => {
         val[key] = ctx.schema.locales[key]
       }
     }
+
     return val
   }
 

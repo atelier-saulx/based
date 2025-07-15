@@ -1,5 +1,7 @@
+import { sep } from 'path'
 import { getPropType, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
+import { fillEmptyMain } from './fillEmptyMain.js'
 import {
   PropDef,
   TYPE_INDEX_MAP,
@@ -13,6 +15,7 @@ import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
+  const mainEdges: PropDefEdge[] = []
   for (const key in refProp) {
     if (key[0] === '$') {
       if (!prop.edges) {
@@ -31,6 +34,10 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       }
       const typeIndex = TYPE_INDEX_MAP[edgeType]
 
+      if (edgeProp.default !== undefined) {
+        prop.hasDefaultEdges = true
+      }
+
       // add default
       const edge: PropDefEdge = {
         __isPropDef: true,
@@ -45,6 +52,10 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         path: [...prop.path, key],
         default: edgeProp.default ?? DEFAULT_MAP[typeIndex],
         start: prop.edgeMainLen,
+      }
+
+      if (!separate) {
+        mainEdges.push(edge)
       }
 
       if (edgeProp.max !== undefined) {
@@ -85,4 +96,6 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       }
     }
   }
+
+  prop.edgeMainEmpty = fillEmptyMain(mainEdges, prop.edgeMainLen)
 }

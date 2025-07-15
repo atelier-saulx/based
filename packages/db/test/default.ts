@@ -3,6 +3,22 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { convertToTimestamp } from '@saulx/utils'
 
+const derp = new Set([
+  '$nice',
+  '$role',
+  '$count',
+  '$score',
+  '$flag',
+  '$amount',
+  '$big',
+  '$huge',
+  '$max',
+  '$label',
+  '$bin',
+  '$timestamp',
+  '$enum',
+])
+
 const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
@@ -15,6 +31,7 @@ await test('edges', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
+  // Add all supported data types as edge properties (no date/text)
   await db.setSchema({
     types: {
       user: {
@@ -25,6 +42,18 @@ await test('edges', async (t) => {
               prop: 'friends',
               $nice: { type: 'boolean', default: true },
               $role: { enum: ['admin', 'derp'], default: 'admin' },
+              $count: { type: 'number', default: 0 },
+              $score: { type: 'uint8', default: 42 },
+              $flag: { type: 'int8', default: -1 },
+              $amount: { type: 'int16', default: 1234 },
+              $big: { type: 'uint16', default: 4321 },
+              $huge: { type: 'int32', default: 123456 },
+              $max: { type: 'uint32', default: 654321 },
+              $label: { type: 'string', default: 'default label' },
+              $bin: { type: 'binary', default: new Uint8Array([1, 2, 3]) },
+              // $json: { type: 'json', default: { foo: 'bar', num: 1 } },
+              $timestamp: { type: 'timestamp', default: 1680000000000 },
+              $enum: { enum: ['a', 'b', 'c'], default: 'a' },
             },
           },
         },
@@ -33,14 +62,101 @@ await test('edges', async (t) => {
   })
 
   const userId = await db.create('user', {
-    friends: [{ id: db.create('user'), $role: 'derp' }, db.create('user')],
+    friends: [db.create('user')],
   })
 
-  await db
-    .query('user', userId)
-    .include('friends.$role', 'friends.$nice')
-    .get()
-    .inspect()
+  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+    id: 2,
+    friends: [
+      {
+        id: 1,
+        friends: [
+          {
+            id: 2,
+            $nice: true,
+            $role: 'admin',
+            $count: 0,
+            $score: 42,
+            $flag: -1,
+            $amount: 1234,
+            $big: 4321,
+            $huge: 123456,
+            $max: 654321,
+            $timestamp: 1680000000000,
+            $enum: 'a',
+            $label: 'default label',
+            $bin: new Uint8Array([1, 2, 3]),
+          },
+        ],
+      },
+    ],
+  })
+
+  await db.update('user', userId, {
+    friends: {
+      update: [{ id: 1, $role: 'derp' }],
+    },
+  })
+
+  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+    id: 2,
+    friends: [
+      {
+        id: 1,
+        friends: [
+          {
+            id: 2,
+            $nice: true,
+            $role: 'derp',
+            $count: 0,
+            $score: 42,
+            $flag: -1,
+            $amount: 1234,
+            $big: 4321,
+            $huge: 123456,
+            $max: 654321,
+            $timestamp: 1680000000000,
+            $enum: 'a',
+            $label: 'default label',
+            $bin: new Uint8Array([1, 2, 3]),
+          },
+        ],
+      },
+    ],
+  })
+
+  await db.update('user', userId, {
+    friends: {
+      update: [{ id: 1, $nice: false }],
+    },
+  })
+
+  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+    id: 2,
+    friends: [
+      {
+        id: 1,
+        friends: [
+          {
+            id: 2,
+            $nice: false,
+            $role: 'derp',
+            $count: 0,
+            $score: 42,
+            $flag: -1,
+            $amount: 1234,
+            $big: 4321,
+            $huge: 123456,
+            $max: 654321,
+            $timestamp: 1680000000000,
+            $enum: 'a',
+            $label: 'default label',
+            $bin: new Uint8Array([1, 2, 3]),
+          },
+        ],
+      },
+    ],
+  })
 })
 
 await test('separate', async (t) => {

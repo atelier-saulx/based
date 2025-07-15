@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-
 import { createRequire } from 'module'
 import { Schema } from '@based/schema'
 import { deepCopy, deepMerge } from '@saulx/utils'
@@ -22,6 +21,7 @@ await test('transform', async (t) => {
     types: {
       user: {
         props: {
+          email: 'alias',
           x: {
             type: 'uint8',
             transform: (type, value) => {
@@ -75,6 +75,7 @@ await test('transform', async (t) => {
   const user = await db.create('user', {
     password: 'mygreatpassword',
     bla: '?',
+    email: 'derp@derp.com',
     x: 66,
     text: {
       en: '1',
@@ -91,6 +92,7 @@ await test('transform', async (t) => {
       id: 1,
       bla: 'bla',
       x: 99,
+      email: 'derp@derp.com',
       text: {
         en: '1!',
         nl: '1!',
@@ -143,10 +145,11 @@ await test('transform', async (t) => {
     }),
   )
 
-  deepEqual(await db.query('user', user).get().toObject(), {
+  deepEqual(await db.query('user', user).get(), {
     id: 1,
     text: { en: '1!', nl: '1!' },
     x: 2,
+    email: 'derp@derp.com',
     newThing: false,
     bla: 'bla',
     password: new Uint8Array([

@@ -11,6 +11,7 @@ import {
   NOEDGE_NOINDEX_TMPID,
   EDGE_NOINDEX_REALID,
   NOEDGE_INDEX_REALID,
+  CREATE,
 } from '../types.js'
 import { writeEdges } from './edge.js'
 import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
@@ -53,6 +54,7 @@ function singleReferenceEdges(
   def: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
+  processDefaultEdges: boolean,
 ): ModifyErr {
   let id = ref.id
   let isTmpId: boolean
@@ -132,29 +134,64 @@ export function writeReference(
     }
     setCursor(ctx, schema, def.prop, def.typeIndex, res.tmpId, modifyOp)
     ctx.buf[ctx.len++] = DELETE
-  } else if (typeof value === 'number') {
-    return writeRef(value, ctx, schema, def, res.tmpId, modifyOp, false, false)
-  } else if (value instanceof ModifyState) {
+    return
+  }
+
+  const processDefaultEdges = def.hasDefaultEdges
+
+  if (typeof value === 'number') {
+    if (processDefaultEdges) {
+      value = { id: value }
+    } else {
+      return writeRef(
+        value,
+        ctx,
+        schema,
+        def,
+        res.tmpId,
+        modifyOp,
+        false,
+        false,
+      )
+    }
+  }
+
+  if (value instanceof ModifyState) {
     if (value.error) {
       return value.error
     }
     const id = value.getId()
-    if (id) {
-      return writeRef(id, ctx, schema, def, res.tmpId, modifyOp, false, false)
+
+    if (processDefaultEdges) {
+      value = { id: id || value.tmpId }
+    } else {
+      if (id) {
+        return writeRef(id, ctx, schema, def, res.tmpId, modifyOp, false, false)
+      }
+      return writeRef(
+        value.tmpId,
+        ctx,
+        schema,
+        def,
+        res.tmpId,
+        modifyOp,
+        false,
+        true,
+      )
     }
-    return writeRef(
-      value.tmpId,
-      ctx,
-      schema,
-      def,
-      res.tmpId,
-      modifyOp,
-      false,
-      true,
-    )
-  } else if (typeof value === 'object' && value !== null) {
+  }
+
+  if (typeof value === 'object') {
     if (def.edges) {
-      return singleReferenceEdges(value, ctx, schema, def, res.tmpId, modifyOp)
+      return singleReferenceEdges(
+        value,
+        ctx,
+        schema,
+        def,
+        res.tmpId,
+        modifyOp,
+        processDefaultEdges,
+      )
     } else if (typeof value.id === 'number') {
       return writeRef(
         value.id,
