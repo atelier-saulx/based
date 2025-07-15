@@ -1,5 +1,6 @@
 import { DbClient } from '@based/db'
 import { BasedFunctionConfigs } from '@based/functions'
+import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 
 export function setupFunctionHandlers(server, configDb: DbClient) {
@@ -18,40 +19,41 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
     },
     'db:set-schema': {
       type: 'function',
-      async fn(_based, schemas = []) {
-        await Promise.all(
-          schemas.map((schema) =>
-            configDb.upsert('schema', {
-              name: schema.db,
-              schema: schema.schema,
-              status: 'pending',
-            }),
-          ),
-        )
-        await new Promise<void>((resolve) =>
-          configDb.query('schema').subscribe((res) => {
-            for (const schema of res) {
-              if (schema.status === 'pending') {
-                return
+      async fn(_based, serializedObject) {
+        const { db, schema } = deSerialize(serializedObject) as any
+        const id = await configDb.upsert('schema', {
+          name: db,
+          schema: serialize(schema),
+          status: 'pending',
+        })
+
+        return new Promise<void>((resolve, reject) => {
+          const unsubscribe = configDb
+            .query('schema', id)
+            .include('status')
+            .subscribe((res) => {
+              console.log('schema status', id, res.toObject())
+              const { status } = res.toObject()
+              if (status === 'error') {
+                reject(new Error('Schema error'))
+                unsubscribe()
+              } else if (status === 'ready') {
+                resolve()
+                unsubscribe()
               }
-            }
-            resolve()
-          }),
-        )
+            })
+        })
       },
     },
     'db:schema': {
       type: 'query',
       async fn(_based, name = 'default', update) {
         return configDb.query('schema', { name }).subscribe((res) => {
-          update(res.toObject())
+          const obj = res.toObject()
+          obj.schema = deSerialize(obj.schema)
+          console.log('obj', obj)
+          update(obj)
         })
-      },
-    },
-    'based:login': {
-      type: 'function',
-      async fn(_based, { email, code }) {
-        return configDb.upsert('login', { email, code, status: 'pending' })
       },
     },
   })

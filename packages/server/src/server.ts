@@ -238,7 +238,7 @@ export class BasedServer {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
-  public workerRequest: (type: string, payload?: any) => void | Promise<any>;
+  public workerRequest: (type: string, payload?: any) => void | Promise<any>
 
   private http: ServerOptions['http'] = {};
 
@@ -300,7 +300,7 @@ export class BasedServer {
     if (opts.http?.open) {
       this.http.open = opts.http.open
     }
-    
+
     if (opts.http?.close) {
       this.http.close = opts.http.close
     }
@@ -388,6 +388,10 @@ export class BasedServer {
   }
 
   async destroy() {
+    for (const name in this.functions.specs) {
+      this.functions.remove(name)
+    }
+
     if (!this.silent) {
       console.info(picocolors.gray(`    Destroy Based-server ${this.port} \n`))
     }
