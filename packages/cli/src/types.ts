@@ -7,4 +7,5 @@ export type Opts = {
   url: string
   force: boolean
   watch: boolean
+  cwd: string
 }

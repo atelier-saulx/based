@@ -26,6 +26,7 @@ const cli = meow(
     --project   Set the project
     --token     User api token
     --url       Use a custom discovery url
+    --cwd       Override the cwd of the project
 
   Examples
     $ @based/cli deploy --watch --force
@@ -66,6 +67,10 @@ const cli = meow(
       url: {
         type: 'string',
       },
+      cwd: {
+        type: 'string',
+        default: process.cwd(),
+      },
     },
   },
 )
@@ -81,6 +86,7 @@ const opts: Opts = {
   url: cli.flags.url,
   force: cli.flags.force,
   watch: cli.flags.watch,
+  cwd: cli.flags.cwd,
 }
 
 render(<App opts={opts} command={command ?? 'status'} />)

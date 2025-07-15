@@ -214,43 +214,44 @@ export const watch = async ({ configs, schema }: ParseResults) => {
     // B) check for new functions
     // C) check for removed functions
 
-    // TODO: Put in Promise.all()
-    for (const event of events) {
-      if (configsFiles.has(basename(event.path))) {
-        if (event.type === 'delete') {
-          // remove fn
-        } else if (event.type === 'create') {
-          // add fn
-        }
-      }
-
-      const fnInputs = inputs.get(event.path)
-      if (fnInputs) {
-        for (const [buildCtx, result] of fnInputs) {
-          const prevInputs = buildCtx.build.metafile.inputs
-          buildCtx.build = await buildCtx.ctx.rebuild()
-          const currInputs = buildCtx.build.metafile.inputs
-          for (const file in currInputs) {
-            if (!(file in prevInputs)) {
-              fnInputs.set(buildCtx, result)
-            }
-          }
-          for (const file in prevInputs) {
-            if (!(file in currInputs)) {
-              fnInputs.delete(buildCtx)
-            }
-          }
-          if (buildCtx === result.configCtx) {
-            result.fnConfig = await evalBuild(buildCtx.build)
+    await Promise.all(
+      events.map(async (event) => {
+        if (configsFiles.has(basename(event.path))) {
+          if (event.type === 'delete') {
+            // remove fn
+          } else if (event.type === 'create') {
+            // add fn
           }
         }
-      }
 
-      if (schema && schemaInputs.has(event.path)) {
-        schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
-        schema.schema = await evalBuild(schema.schemaCtx.build)
-        schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
-      }
-    }
+        const fnInputs = inputs.get(event.path)
+        if (fnInputs) {
+          for (const [buildCtx, result] of fnInputs) {
+            const prevInputs = buildCtx.build.metafile.inputs
+            buildCtx.build = await buildCtx.ctx.rebuild()
+            const currInputs = buildCtx.build.metafile.inputs
+            for (const file in currInputs) {
+              if (!(file in prevInputs)) {
+                fnInputs.set(buildCtx, result)
+              }
+            }
+            for (const file in prevInputs) {
+              if (!(file in currInputs)) {
+                fnInputs.delete(buildCtx)
+              }
+            }
+            if (buildCtx === result.configCtx) {
+              result.fnConfig = await evalBuild(buildCtx.build)
+            }
+          }
+        }
+
+        if (schema && schemaInputs.has(event.path)) {
+          schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
+          schema.schema = await evalBuild(schema.schemaCtx.build)
+          schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
+        }
+      }),
+    )
   })
 }
