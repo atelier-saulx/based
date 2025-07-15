@@ -1,8 +1,8 @@
 {
   "name": "@based/cli",
   "version": "9.0.0-alpha.1",
-  "description": "Based command line tool.",
-  "bin": "bin/cmd.js",
+  "description": "Based command line tool",
+  "bin": "dist/cli.js",
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b --watch"
@@ -15,15 +15,20 @@
   "source": "src/index.ts",
   "sideEffects": false,
   "devDependencies": {
-    "@saulx/tsconfig": "^1.1.0"
+    "@saulx/tsconfig": "^1.1.0",
+    "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
+    "@inkjs/ui": "^2.0.0",
+    "@based/react": "^5.2.1",
     "@based/client": "^8.0.2",
     "@based/functions": "^3.2.3",
     "@based/schema": "^5.0.0-alpha.26",
     "@parcel/watcher": "^2.5.1",
     "@saulx/validators": "^1.2.1",
-    "commander": "14.0.0",
-    "unique-names-generator": "^4.7.1"
+    "unique-names-generator": "^4.7.1",
+    "ink": "^5.0.0",
+    "meow": "^11.0.0",
+    "react": "^18.2.0"
   }
 }

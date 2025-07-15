@@ -8,7 +8,8 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+    "jsx": "react"
   },
-  "include": ["src/**/*.ts", "src/**/*.json"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.json"]
 }

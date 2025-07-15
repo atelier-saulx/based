@@ -1,12 +1,13 @@
 import { findUp } from 'find-up'
 import { build } from 'esbuild'
-import { readJSON } from 'fs-extra/esm'
+import { readFile } from 'node:fs/promises'
+import { BasedOpts } from '@based/client'
 
-export const getBasedConfig = async () => {
+export const getBasedConfig = async (): Promise<BasedOpts> => {
   const basedFile = await findUp(['based.ts', 'based.js', 'based.json'])
 
   if (!basedFile) {
-    console.info('no based file')
+    console.info('No based file found')
     process.exit()
   }
 
@@ -27,6 +28,6 @@ export const getBasedConfig = async () => {
       console.error(error)
     }
   } else {
-    return readJSON(basedFile)
+    return JSON.parse(await readFile(basedFile, 'utf-8'))
   }
 }
