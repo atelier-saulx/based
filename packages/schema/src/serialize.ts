@@ -147,7 +147,7 @@ const handleSingleValue = (
       schemaBuffer.len += 1
       schemaBuffer.buf[schemaBuffer.len] = val
       schemaBuffer.len += 1
-    } else if ((val < 4294967295 || val > 0) && isInt) {
+    } else if (val < 4294967295 && val > 0 && isInt) {
       ensureCapacity(5)
       schemaBuffer.buf[schemaBuffer.len] = UINT32
       schemaBuffer.len += 1

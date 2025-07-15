@@ -272,6 +272,5 @@ test('empty uint8Array', () => {
 test('schema with hash', () => {
   const serialized = serialize({ hash: 14986952164472 })
   const deserialized = deSerialize(serialized)
-  console.log(serialized, deserialized)
-  ok(deepEqual({ hash: 123 }, deserialized), 'Mismatch')
+  ok(deepEqual({ hash: 14986952164472 }, deserialized), 'Mismatch')
 })
