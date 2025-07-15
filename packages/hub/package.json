@@ -1,3 +1,9 @@
 {
-  "name": "@based/hub"
+  "name": "@based/hub",
+  "dependencies": {
+    "@based/client": "^8.0.2",
+    "@based/db": "^0.0.70",
+    "@based/server": "^10.0.6",
+    "@saulx/utils": "^6.7.2"
+  }
 }
