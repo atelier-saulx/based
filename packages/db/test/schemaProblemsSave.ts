@@ -10,6 +10,8 @@ await test('schema problems save', async (t) => {
 
   await db.start({ clean: true })
 
+  await db.save()
+
   const types: Schema['types'] = {}
 
   for (let i = 0; i < 50; i++) {
