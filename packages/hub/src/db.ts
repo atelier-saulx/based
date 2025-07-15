@@ -18,12 +18,12 @@ export async function createConfigDb(path: string) {
         },
         updatedAt: {
           type: 'timestamp',
-          on: 'create',
+          on: 'update',
         },
       },
       function: {
         name: 'alias',
-        type: ['app', 'function', 'job', 'query', 'stream'],
+        type: ['authorize', 'app', 'function', 'job', 'query', 'stream'],
         contents: 'string',
         config: 'json',
         createdAt: {
@@ -32,7 +32,7 @@ export async function createConfigDb(path: string) {
         },
         updatedAt: {
           type: 'timestamp',
-          on: 'create',
+          on: 'update',
         },
       },
     },
@@ -79,7 +79,7 @@ export function handleSchemaUpdates(configDb: DbClient, path: string) {
 
     for (const name in servers) {
       if (!names.has(name)) {
-        await servers[name].destroy()
+        await servers[name].destroy().catch((e) => console.error(name, e))
         delete servers[name]
       }
     }

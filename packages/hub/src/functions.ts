@@ -19,7 +19,6 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
     'db:set-schema': {
       type: 'function',
       async fn(_based, schemas = []) {
-        console.log('setting schema', schemas)
         await Promise.all(
           schemas.map((schema) =>
             configDb.upsert('schema', {
@@ -29,7 +28,6 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
             }),
           ),
         )
-        console.log('schema set!')
         await new Promise<void>((resolve) =>
           configDb.query('schema').subscribe((res) => {
             for (const schema of res) {
@@ -40,7 +38,6 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
             resolve()
           }),
         )
-        console.log('schema set! - done')
       },
     },
     'db:schema': {
@@ -49,6 +46,12 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
         return configDb.query('schema', { name }).subscribe((res) => {
           update(res.toObject())
         })
+      },
+    },
+    'based:login': {
+      type: 'function',
+      async fn(_based, { email, code }) {
+        return configDb.upsert('login', { email, code, status: 'pending' })
       },
     },
   })
@@ -60,9 +63,10 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
         const { contents, name, config } = item
         const fn = await import(`data:text/javascript,${contents}`)
         specs[name] = {
-          ...config,
           type: 'function',
           fn: fn.default,
+          ...fn,
+          ...config,
         }
       }),
     )

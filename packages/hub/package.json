@@ -1,5 +1,6 @@
 {
   "name": "@based/hub",
+  "type": "module",
   "scripts": {
     "test": "node --import=tsx --test test/index.ts"
   },
