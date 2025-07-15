@@ -24,6 +24,7 @@ import {
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
 import { appendEdgeRefs } from './appendEdgeRefs.js'
+import { writeUint32 } from '@saulx/utils'
 
 type FieldOp = typeof INCREMENT | typeof DECREMENT | typeof UPDATE
 
@@ -49,6 +50,18 @@ export function writeEdges(
   let mainFields: (PropDefEdge | any | FieldOp)[]
   let mainSize = 0
   let hasIncr = false
+
+  if (t.hasDefaultEdges) {
+    for (const key in t.edges) {
+      if (
+        t.edges[key].separate === true &&
+        (!(key in ref) || ref[key] === undefined)
+      ) {
+        const edge = t.edges[key]
+        ref[key] = edge.default
+      }
+    }
+  }
 
   for (const key in ref) {
     if (key === 'id' || key === '$index') {
@@ -245,7 +258,10 @@ export function writeEdges(
     }
   }
 
-  if (mainFields) {
+  // double check if has default edges has mainfields - add extra thing
+  if (mainFields || t.hasDefaultEdges) {
+    // add all
+
     // Single field in main buffer can immediately setup the main buffer
     if (!hasIncr && mainSize === t.edgeMainLen) {
       /*
@@ -267,10 +283,8 @@ export function writeEdges(
       ctx.buf[ctx.len++] = 0
       ctx.buf[ctx.len++] = MICRO_BUFFER
       let sizeU32 = mainSize
-      ctx.buf[ctx.len++] = sizeU32
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
-      ctx.buf[ctx.len++] = sizeU32 >>>= 8
+      writeUint32(ctx.buf, sizeU32, ctx.len)
+      ctx.len += 4
       for (let i = 0; i < mainFields.length; i += 3) {
         const edge: PropDefEdge = mainFields[i]
         const err = appendFixedValue(ctx, mainFields[i + 1], edge, UPDATE)
@@ -279,6 +293,10 @@ export function writeEdges(
         }
       }
     } else {
+      if (!mainFields) {
+        mainFields = []
+      }
+
       /*
       Partial main update:
 
@@ -320,7 +338,8 @@ export function writeEdges(
       ctx.len += mainFieldsStartSize
 
       // Add zeroes
-      ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
+      ctx.buf.set(t.edgeMainEmpty, ctx.len)
+      // ctx.buf.fill(0, ctx.len, ctx.len + t.edgeMainLen)
 
       // Keep track of written bytes from append fixed
 

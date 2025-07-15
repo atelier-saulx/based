@@ -212,15 +212,20 @@ function appendRefs(
   ctx.buf[ctx.len++] = remaining >>>= 8
   ctx.buf[ctx.len++] = remaining >>>= 8
 
-  const hasDefaultEdges = modifyOp === CREATE && def.hasDefaultEdges
-
-  console.log('hasDefaultEdges', hasDefaultEdges)
-
   for (; i < refs.length; i++) {
-    const ref = refs[i]
+    let ref = refs[i]
     let id: number
     let index: number
     let isTmpId: boolean
+
+    if (def.hasDefaultEdges) {
+      if (typeof ref !== 'object') {
+        ref = { id: ref }
+      } else if (ref instanceof ModifyState) {
+        ref = { id: ref }
+      }
+    }
+
     if (typeof ref === 'object') {
       if (ref instanceof ModifyState) {
         if (ref.error) {

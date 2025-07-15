@@ -8,6 +8,7 @@ import {
   INT8,
   NUMBER,
   PropDef,
+  PropDefEdge,
   STRING,
   TIMESTAMP,
   UINT16,
@@ -15,10 +16,12 @@ import {
   UINT8,
 } from './types.js'
 
-// Lets add validation of values in here - need to validate DEFAULT!
 export const ENCODER = new TextEncoder()
 
-export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
+export const fillEmptyMain = (
+  vals: (PropDef | PropDefEdge)[],
+  mainLen: number,
+) => {
   const mainEmpty = new Uint8Array(mainLen)
   for (const f of vals) {
     if (f.separate) {
@@ -29,12 +32,11 @@ export const fillEmptyMain = (vals: PropDef[], mainLen: number) => {
     let val = f.default
 
     if (t === ENUM) {
-      mainEmpty[s] =
-        typeof f.default === 'number' ? f.default : f.reverseEnum[val]
+      mainEmpty[s] = f.default ?? 0
     } else if (t === INT8 || t === UINT8) {
       mainEmpty[s] = val
     } else if (t === BOOLEAN) {
-      mainEmpty[s] = val === true ? 1 : 0
+      mainEmpty[s] = val ? 1 : 0
     } else if (t === UINT32 || t === INT32) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
