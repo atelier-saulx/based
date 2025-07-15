@@ -31,6 +31,10 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       }
       const typeIndex = TYPE_INDEX_MAP[edgeType]
 
+      if (edgeProp.default !== undefined) {
+        prop.hasDefaultEdges = true
+      }
+
       // add default
       const edge: PropDefEdge = {
         __isPropDef: true,

@@ -65,3 +65,7 @@ const a = (ctx) => {
 ### Code organisation
 
 For front end code (react especialy) aim for 250 lines max of code for files - except if it makes things more difficult (principle #1)
+
+### Types
+
+Never use `interface` only use `type`

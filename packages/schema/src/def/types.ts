@@ -114,6 +114,7 @@ export type PropDef = {
   default: any
   // edge stuff
   edgeMainLen?: 0
+  hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }
   edgesSeperateCnt?: number
   edges?: {
