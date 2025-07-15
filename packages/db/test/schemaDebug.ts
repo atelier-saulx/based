@@ -3,6 +3,7 @@ import { DbClient, DbClientHooks, DbServer } from '../src/index.js'
 import test from './shared/test.js'
 import { deepCopy, deepMerge, wait } from '@saulx/utils'
 import { copy, emptyDir } from 'fs-extra/esm'
+import { deepEqual, equal } from './shared/assert.js'
 
 const cleanProps = (props) => {
   for (const i in props) {
@@ -135,6 +136,23 @@ await test('schema debug', async (t) => {
     const clone = deepMerge(schema)
     delete clone.types.contestant.props.extraField
     await client.setSchema(clone)
+
+    await wait(500)
+
+    await client.setSchema(
+      deepMerge(schema, {
+        types: {
+          contestant: {
+            props: {
+              extraField: 'string',
+              anotherField: {
+                transform: (value) => value * 2,
+              },
+            },
+          },
+        },
+      }),
+    )
 
     await wait(500)
   }
