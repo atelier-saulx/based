@@ -150,6 +150,7 @@ await test('transform', async (t) => {
     id: 1,
     text: { en: '1!', nl: '1!' },
     x: 2,
+    email: 'derp@derp.com',
     newThing: false,
     bla: 'bla',
     password: new Uint8Array([
