@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.0.70",
+  "version": "0.0.71",
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",
@@ -39,7 +39,7 @@
     "basedDbNative.cjs"
   ],
   "dependencies": {
-    "@based/schema": "5.0.0-alpha.26",
+    "@based/schema": "5.0.0-alpha.27",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^6.7.2",
     "exit-hook": "^4.0.0",
