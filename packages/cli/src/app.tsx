@@ -15,12 +15,17 @@ import { Logout } from './logout.js'
 
 export type Props = {
   opts: Opts
-  command: 'dev' | 'deploy' | 'secrets' | 'init' | 'status' | 'logout'
+  command:
+    | 'dev'
+    | 'deploy'
+    | 'secrets'
+    | 'init'
+    | 'status'
+    | 'logout'
+    | 'deploy'
 }
 
-const Env = (props: {
-  command: 'dev' | 'deploy' | 'secrets' | 'status' | 'logout'
-}) => {
+const Env = (props: { command: Props['command'] }) => {
   const { connected } = useConnected()
   const { userId, error } = useAuthState()
 
@@ -47,7 +52,7 @@ const EnvWrapper = ({
   command,
   opts,
 }: {
-  command: 'dev' | 'deploy' | 'secrets' | 'status' | 'logout'
+  command: Props['command']
   opts: Opts
 }) => {
   const [loadingState, setLoadingState] = useState('loading')
