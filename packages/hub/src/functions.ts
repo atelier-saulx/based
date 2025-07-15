@@ -4,7 +4,7 @@ import { readStream } from '@saulx/utils'
 
 export function setupFunctionHandlers(server, configDb: DbClient) {
   server.functions.add({
-    '_set-function': {
+    'based:set-function': {
       type: 'stream',
       async fn(_based, { stream, payload }) {
         const contents = await readStream(stream)
@@ -14,10 +14,9 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
           contents: contents.toString(),
           config: payload.config,
         })
-        console.log('function done!')
       },
     },
-    '_set-schema': {
+    'db:set-schema': {
       type: 'function',
       async fn(_based, schemas = []) {
         console.log('setting schema', schemas)
@@ -44,7 +43,7 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
         console.log('schema set! - done')
       },
     },
-    _schema: {
+    'db:schema': {
       type: 'query',
       async fn(_based, name = 'default', update) {
         return configDb.query('schema', { name }).subscribe((res) => {

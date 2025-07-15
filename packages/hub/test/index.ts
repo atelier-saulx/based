@@ -17,7 +17,7 @@ test('based hub integration', async (t) => {
   t.after(() => {
     return client.destroy()
   })
-  const res = await client.stream('_set-function', {
+  const res = await client.stream('based:set-function', {
     contents: `console.log('hello world!!');export default async () => {console.log('hello function!!!!');return 'x'}`,
     payload: {
       checksum: 1,
@@ -29,7 +29,7 @@ test('based hub integration', async (t) => {
   })
   console.log(res)
   await client.call('test')
-  const res3 = await client.call('_set-schema', [
+  const res3 = await client.call('db:set-schema', [
     {
       db: 'default',
       schema: {
@@ -42,7 +42,7 @@ test('based hub integration', async (t) => {
     },
   ])
 
-  const res4 = await client.stream('_set-function', {
+  const res4 = await client.stream('based:set-function', {
     contents: `export default async (based) => {
     try {
     based.db.query('test').get().toObject()
@@ -60,7 +60,7 @@ test('based hub integration', async (t) => {
 
   await wait(1000)
   await client.call('test2')
-  const schema = await client.query('_schema').get()
+  const schema = await client.query('db:schema').get()
 
   console.log(schema)
 })
