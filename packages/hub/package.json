@@ -1,5 +1,8 @@
 {
   "name": "@based/hub",
+  "scripts": {
+    "test": "node --import=tsx --test test/index.ts"
+  },
   "dependencies": {
     "@based/client": "^8.0.2",
     "@based/db": "^0.0.70",
