@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-
 import { createRequire } from 'module'
 import { Schema } from '@based/schema'
 import { deepCopy, deepMerge } from '@saulx/utils'
