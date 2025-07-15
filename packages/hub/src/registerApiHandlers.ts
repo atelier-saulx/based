@@ -1,9 +1,8 @@
 import { DbClient } from '@based/db'
-import { BasedFunctionConfigs } from '@based/functions'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 
-export function setupFunctionHandlers(server, configDb: DbClient) {
+export function registerApiHandlers(server, configDb: DbClient) {
   server.functions.add({
     'based:set-function': {
       type: 'stream',
@@ -32,7 +31,6 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
             .query('schema', id)
             .include('status')
             .subscribe((res) => {
-              console.log('schema status', id, res.toObject())
               const { status } = res.toObject()
               if (status === 'error') {
                 reject(new Error('Schema error'))
@@ -56,22 +54,5 @@ export function setupFunctionHandlers(server, configDb: DbClient) {
         })
       },
     },
-  })
-
-  configDb.query('function').subscribe(async (data) => {
-    const specs: BasedFunctionConfigs = {}
-    await Promise.all(
-      data.map(async (item) => {
-        const { contents, name, config } = item
-        const fn = await import(`data:text/javascript,${contents}`)
-        specs[name] = {
-          type: 'function',
-          fn: fn.default,
-          ...fn,
-          ...config,
-        }
-      }),
-    )
-    server.functions.add(specs)
   })
 }

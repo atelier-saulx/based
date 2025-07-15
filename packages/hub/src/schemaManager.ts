@@ -1,46 +1,7 @@
-import { BasedDb, DbClient, DbServer } from '@based/db'
+import { DbClient, DbServer, BasedDb } from '@based/db'
 import { deSerialize } from '@based/schema'
 import { wait } from '@saulx/utils'
 import { join } from 'path'
-
-export async function createConfigDb(path: string) {
-  const configDb = new BasedDb({
-    path: join(path, 'config'),
-  })
-  await configDb.start()
-  await configDb.setSchema({
-    types: {
-      schema: {
-        name: 'alias',
-        schema: 'binary',
-        status: ['ready', 'error', 'pending'],
-        createdAt: {
-          type: 'timestamp',
-          on: 'create',
-        },
-        updatedAt: {
-          type: 'timestamp',
-          on: 'update',
-        },
-      },
-      function: {
-        name: 'alias',
-        type: ['authorize', 'app', 'function', 'job', 'query', 'stream'],
-        contents: 'string',
-        config: 'json',
-        createdAt: {
-          type: 'timestamp',
-          on: 'create',
-        },
-        updatedAt: {
-          type: 'timestamp',
-          on: 'update',
-        },
-      },
-    },
-  })
-  return configDb
-}
 
 export function handleSchemaUpdates(configDb: DbClient, path: string) {
   const clients: Record<string, DbClient> = {}
