@@ -1,5 +1,5 @@
 import { getBasedClient } from '../../getBasedClient.js'
-import { parse, watch } from './bundle.js'
+import { parseFolder, watch } from './bundle.js'
 
 export const deploy = async () => {
   console.log('this is deploy')
@@ -40,9 +40,9 @@ export const deploy = async () => {
   //
   // console.log({ remoteFunctions })
 
-  const results = await parse()
+  const results = await parseFolder()
   console.log({ results })
-  watch(results)
+  // watch(results)
 
   // basedClient.destroy()
 }
