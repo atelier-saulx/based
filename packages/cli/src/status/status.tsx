@@ -7,6 +7,7 @@ import { SourceMapConsumer } from 'source-map'
 import { getSourcemap } from './getSourcemap.js'
 import { BasedClient } from '@based/client'
 import { useClient } from '@based/react'
+import { FullScreenBox } from 'fullscreen-ink'
 
 export type LogType = {
   msg: string
@@ -62,6 +63,7 @@ const Log = ({ log }: { log: LogType }) => {
     <Box
       gap={1}
       // width={'100%'}
+      minHeight={2 + log.msg.split('\n').length}
       // borderColor="gray"
       // borderStyle="single"
     >
@@ -88,27 +90,24 @@ export const Status = () => {
   }
 
   return (
-    <Box flexDirection="column" height={'100%'} width={'100%'}>
+    <Box flexDirection="column" width={'100%'} height={'100%'}>
       <Box
         flexDirection="column"
-        gap={1}
+        // gap={1}
         borderColor={'gray'}
-        // width={'100%'}
-        borderStyle="single"
-        // flexGrow={0}
+        // borderStyle="single"
         overflowY="hidden"
       >
         {data.slice(data.length - 100, data.length).map((log, i) => (
-          <Text>{log.msg}</Text>
+          <Log key={i + ' ' + log.cs} log={log} />
         ))}
       </Box>
       <Box
         borderStyle="single"
         borderColor={'gray'}
-        // marginTop={1}
         paddingLeft={1}
         paddingRight={1}
-        height={1}
+        paddingBottom={1}
       >
         <Text color={'whiteBright'}>{client.opts.org}/</Text>
         <Text color={'whiteBright'}>{client.opts.project}/</Text>

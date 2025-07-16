@@ -108,4 +108,6 @@ if (cli.flags.token) {
   }
 }
 
+// render(<App opts={opts} command={command ?? 'status'} />)
+
 withFullScreen(<App opts={opts} command={command ?? 'status'} />).start()
