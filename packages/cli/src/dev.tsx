@@ -4,7 +4,7 @@ import { parseFolder, watch } from './bundle/index.js'
 import { initS3 } from '@based/s3'
 import start from '@based/hub'
 import connect from '@based/client'
-import { basename } from 'path'
+import { basename, join } from 'path'
 import handler from 'serve-handler'
 import http from 'http'
 
@@ -36,9 +36,13 @@ const startFileServer = (port: number, path: string) => {
 export const Dev = () => {
   useEffect(() => {
     const run = async () => {
-      const results = await parseFolder()
+      const filePort = 8082
+      const filePath = './tmp/files'
+      const results = await parseFolder({
+        publicPath: join(`http://localhost:${filePort}`, filePath),
+      })
 
-      startFileServer(8082, './tmp/files')
+      startFileServer(filePort, filePath)
 
       await start({
         port: 8080,
@@ -93,18 +97,6 @@ export const Dev = () => {
     }
     run()
   }, [])
-
-  // const logs = useQuery('based:logs', {})
-
-  // console.log(logs)
-  /*
-    before,
-      after,
-      fn,
-      cs,
-      lvl,
-
-    */
 
   return (
     <Box>
