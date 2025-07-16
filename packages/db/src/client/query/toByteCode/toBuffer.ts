@@ -5,10 +5,9 @@ import { filterToBuffer } from '../query.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
 import { ENCODER, writeUint64 } from '@saulx/utils'
-import {
-  aggregateToBuffer,
-  isRootCountOnly,
-} from '../aggregates/aggregation.js'
+import { isRootCountOnly } from '../aggregates/aggregation.js'
+import { aggregateToBuffer } from '../aggregates/toBuffer.js'
+
 import { defaultQuery } from './default.js'
 
 const byteSize = (arr: Uint8Array[]) => {
