@@ -25,10 +25,6 @@ export const initDynamicFunctions = (
 ) => {
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
-    console.log(
-      'initDynamicFunctions',
-      data.toObject().map((item) => item.name),
-    )
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
@@ -37,53 +33,44 @@ export const initDynamicFunctions = (
             `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
           )
           const { default: fnDefault, js, css, ...rest } = fn
-          // console.log({ name })
           if (config.type === 'authorize') {
             console.warn('skipping authorize', name, config)
             return
           }
 
           if (config.type === 'app') {
-            specs[name] = addStats(
-              {
-                fn: {
-                  fn: (based, _payload, ctx) => {
-                    return fnDefault(
-                      based,
-                      {
-                        css: {
-                          url: config.css,
-                        },
-                        js: {
-                          url: config.js,
-                        },
-                        favicon: {
-                          get url() {
-                            console.log('TODO FAVICON')
-                            return ''
-                          },
-                        },
+            specs[name] = {
+              fn: (based, _payload, ctx) => {
+                return fnDefault(
+                  based,
+                  {
+                    css: {
+                      url: config.css,
+                    },
+                    js: {
+                      url: config.js,
+                    },
+                    favicon: {
+                      get url() {
+                        console.log('TODO FAVICON')
+                        return ''
                       },
-                      ctx,
-                    )
+                    },
                   },
-                },
-                ...rest,
-                ...config,
-                type: 'function',
+                  ctx,
+                )
               },
-              statsDb,
-            )
+              ...rest,
+              ...config,
+              type: 'function',
+            }
           } else {
-            specs[name] = addStats(
-              {
-                type: 'function',
-                fn: fnDefault,
-                ...rest,
-                ...config,
-              },
-              statsDb,
-            )
+            specs[name] = {
+              type: 'function',
+              fn: fnDefault,
+              ...rest,
+              ...config,
+            }
           }
         } catch (err) {
           console.log('err', name, err.message)

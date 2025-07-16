@@ -1,16 +1,17 @@
-import { basename, join } from 'path'
+import { basename, dirname, extname, join } from 'path'
 import watcher from '@parcel/watcher'
 import { configsFiles } from './constants.js'
 import { BuildCtx, evalBuild } from './buildUtils.js'
-import { ParseResult, ParseResults } from './parse.js'
+import { parseConfig, parseFolder, ParseResult, ParseResults } from './parse.js'
+import { Schema } from '@based/schema'
 
 export const watch = async (
-  { configs, schema }: ParseResults,
+  { configs, schema, publicPath }: ParseResults,
   cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
   const cwd = process.cwd()
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
-  const buildInputs = (result: ParseResult, buildCtx: BuildCtx) => {
+  const addResult = (result: ParseResult, buildCtx: BuildCtx) => {
     for (const file in buildCtx.build.metafile.inputs) {
       const path = join(cwd, file)
       let map = inputs.get(path)
@@ -21,6 +22,19 @@ export const watch = async (
       map.set(buildCtx, result)
     }
   }
+  // TODO: remove results when deleting files
+  // const removeResult = (buildCtx: BuildCtx) => {
+  //   for (const file in buildCtx.build.metafile.inputs) {
+  //     const path = join(cwd, file)
+  //     const map = inputs.get(path)
+  //     if (map) {
+  //       map.delete(buildCtx)
+  //       if (map.size === 0) {
+  //         inputs.delete(path)
+  //       }
+  //     }
+  //   }
+  // }
 
   const buildSchemaInputs = (schemaBuild: any) =>
     schema
@@ -31,13 +45,17 @@ export const watch = async (
         )
       : new Set()
 
-  for (const result of configs) {
+  const addConfig = (result: ParseResult) => {
     const { indexCtx, configCtx, mainCtx } = result
-    buildInputs(result, configCtx)
-    buildInputs(result, indexCtx)
+    addResult(result, configCtx)
+    addResult(result, indexCtx)
     if (mainCtx) {
-      buildInputs(result, mainCtx)
+      addResult(result, mainCtx)
     }
+  }
+
+  for (const result of configs) {
+    addConfig(result)
   }
 
   let schemaInputs
@@ -45,29 +63,41 @@ export const watch = async (
     schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
   }
 
-  const sub = await watcher.subscribe(cwd, async (err, events) => {
-    // A) rebuild relevant stuff √
-    // B) check for new functions
-    // C) check for removed functions
-
-    let changedSchema
+  await watcher.subscribe(cwd, async (err, events) => {
+    let changedSchema: {
+      schema: Schema
+      schemaCtx: BuildCtx
+    }
     let changedConfigs = new Set<ParseResult>()
 
     await Promise.all(
       events.map(async (event) => {
-        if (configsFiles.has(basename(event.path))) {
-          if (event.type === 'delete') {
-            // remove fn
-            console.log('delete config', event.path)
-          } else if (event.type === 'create') {
-            // add fn
-            console.log('create config', event.path)
+        if (event.type === 'create') {
+          if (configsFiles.has(basename(event.path))) {
+            const result = await parseConfig(
+              {
+                path: event.path,
+                file: basename(event.path),
+                dir: dirname(event.path),
+                ext: extname(event.path),
+              },
+              publicPath,
+            )
+            addConfig(result)
+            changedConfigs.add(result)
+            return
           }
         }
 
         const fnInputs = inputs.get(event.path)
         if (fnInputs) {
-          // console.log('fn change!', event.type, event.path, fnInputs)
+          // if (event.type === 'delete') {
+          //   for (const [buildCtx] of fnInputs) {
+          //     removeResult(buildCtx)
+          //   }
+          //   return
+          // }
+
           for (const [buildCtx, result] of fnInputs) {
             const prevInputs = buildCtx.build.metafile.inputs
             buildCtx.build = await buildCtx.ctx.rebuild()
@@ -102,6 +132,7 @@ export const watch = async (
       cb(null, {
         schema: changedSchema,
         configs: Array.from(changedConfigs),
+        publicPath,
       })
     }
   })
