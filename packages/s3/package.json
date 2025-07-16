@@ -1,0 +1,27 @@
+{
+  "name": "@based/s3",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "source": "src/index.ts",
+  "sideEffects": false,
+  "ava": {
+    "workerThreads": false,
+    "timeout": "2m",
+    "files": [
+      "./dist/test/**/*.js"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch",
+    "test": "c8 ava --verbose"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.299.0",
+    "@aws-sdk/lib-storage": "3.299.0",
+    "fs-extra": "^11.1.1",
+    "mock-aws-s3": "^4.0.2"
+  }
+}

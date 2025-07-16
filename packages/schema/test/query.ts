@@ -10,7 +10,7 @@ await test('query', () => {
             items: {
               ref: 'article',
             },
-            query: (query) =>
+            query: (query: any) =>
               query('articles').sort('views', 'desc').range(0, 10),
           },
           articles: {
@@ -29,7 +29,8 @@ await test('query', () => {
           },
           published: {
             type: 'boolean',
-            query: (query) => query().filter('status', 'published').boolean(),
+            query: (query: any) =>
+              query().filter('status', 'published').boolean(),
           },
           status: {
             enum: ['published', 'draft', 'archived'],

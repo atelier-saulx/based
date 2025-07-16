@@ -10,12 +10,14 @@ import {
 import { serialize } from '@based/schema'
 import assert from 'node:assert'
 import { rm } from 'node:fs/promises'
+import { initS3 } from '@based/s3'
 
 const testit = async () => {
   await rm('./tmp', { recursive: true, force: true })
   const close = await start({
     port: 8080,
     path: './tmp',
+    s3: initS3('local', 'local', 'local', './tmp'),
   })
 
   const client = connect({

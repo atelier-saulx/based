@@ -13,7 +13,6 @@ import {
 } from '@saulx/utils'
 
 const ENCODER = new TextEncoder()
-
 const UINT8 = 245
 const FALSE = 246
 const TRUE = 247
