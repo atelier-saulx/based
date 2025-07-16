@@ -7,6 +7,7 @@ import connect from '@based/client'
 import { basename, dirname, join } from 'path'
 import handler from 'serve-handler'
 import http from 'http'
+import { serialize } from '@based/schema'
 
 const startFileServer = (port: number, path: string) => {
   const headers = [
@@ -62,6 +63,29 @@ export const Dev = () => {
         url: 'ws://localhost:8080',
       })
 
+      // set schemas
+      if (results.schema) {
+        const schemas = Array.isArray(results.schema.schema)
+          ? results.schema.schema
+          : [{ db: 'default', schema: results.schema.schema }]
+        await Promise.all(
+          schemas.map((schema) => {
+            return client.call('db:set-schema', serialize(schema))
+          }),
+        )
+      }
+      // console.log('schemas', results.schema.schema)
+      // await Promise.all(
+      // results.schema.map((schema) => {
+      // )
+      // await client.call(
+      //   'db:set-schema',
+      //   serialize({
+      //     db: 'default',
+      //     schema: defaultSchema,
+      //   }),
+      // )
+
       // upload assets
       await Promise.all(
         results.configs.map((config) => {
@@ -78,6 +102,7 @@ export const Dev = () => {
           )
         }),
       )
+
       // deploy functions
       await Promise.all(
         results.configs.map((config) => {
