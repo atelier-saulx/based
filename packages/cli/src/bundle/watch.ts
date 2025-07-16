@@ -31,13 +31,17 @@ export const watch = async (
         )
       : new Set()
 
-  for (const result of configs) {
+  const addConfig = (result: ParseResult) => {
     const { indexCtx, configCtx, mainCtx } = result
     buildInputs(result, configCtx)
     buildInputs(result, indexCtx)
     if (mainCtx) {
       buildInputs(result, mainCtx)
     }
+  }
+
+  for (const result of configs) {
+    addConfig(result)
   }
 
   let schemaInputs
@@ -58,9 +62,8 @@ export const watch = async (
         if (event.type === 'delete') {
           console.log('delete', event.path)
         } else if (event.type === 'create') {
-          console.log('create', event.path)
           if (configsFiles.has(basename(event.path))) {
-            const config = await parseConfig(
+            const result = await parseConfig(
               {
                 path: event.path,
                 file: basename(event.path),
@@ -69,6 +72,9 @@ export const watch = async (
               },
               publicPath,
             )
+            addConfig(result)
+            changedConfigs.add(result)
+            return
           }
         }
 
