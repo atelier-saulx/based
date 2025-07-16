@@ -27,28 +27,39 @@ const parse = async (result: FindResult, publicPath: string) => {
     schemaCtx: BuildCtx
   }
   if (configsFiles.has(result.file)) {
-    const [configCtx, indexCtx] = await Promise.all([
-      context({
-        entryPoints: [result.path],
-        bundle: true,
-        write: false,
-        platform: 'node',
-        format: 'esm',
-        metafile: true,
-      }).then(rebuild),
-      context({
-        banner: {
-          js: 'import { createRequire } from "module";const require = createRequire(process.cwd());',
-        },
-        entryPoints: [join(result.dir, 'index.ts')],
-        bundle: true,
-        write: false,
-        platform: 'node',
-        format: 'esm',
-        metafile: true,
-      }).then(rebuild),
-    ])
+    // config first
+    // checksum later
+
+    const configCtx = await context({
+      entryPoints: [result.path],
+      bundle: true,
+      write: false,
+      platform: 'node',
+      format: 'esm',
+      metafile: true,
+    }).then(rebuild)
     const fnConfig: BasedFunctionConfig = await evalBuild(configCtx.build)
+
+    // this has to change...
+    // need to hash the file before if we wan this
+    const checksum = 1 // fnConfig.checksum
+
+    const banner = `import { createRequire } from "module";const require = createRequire(process.cwd());
+const { setInterval, setTimeout, clearInterval, clearTimeout, console } = new _FnGlobals('${fnConfig.name}','${checksum}');
+    `
+
+    const indexCtx = await context({
+      banner: {
+        js: banner,
+      },
+      entryPoints: [join(result.dir, 'index.ts')],
+      bundle: true,
+      write: false,
+      platform: 'node',
+      format: 'esm',
+      metafile: true,
+    }).then(rebuild)
+
     if (fnConfig.type === 'app') {
       const mainCtx = await context({
         entryPoints: [join(result.dir, fnConfig.main)],
