@@ -7,6 +7,8 @@ import connect from '@based/client'
 import { basename } from 'path'
 import handler from 'serve-handler'
 import http from 'http'
+import { serialize } from '@based/schema'
+import { ParseResults } from './bundle/parse.js'
 
 const startFileServer = (port: number, path: string) => {
   const headers = [
@@ -36,9 +38,13 @@ const startFileServer = (port: number, path: string) => {
 export const Dev = () => {
   useEffect(() => {
     const run = async () => {
-      const results = await parseFolder()
+      const filePort = 8082
+      const publicPath = `http://localhost:${filePort}/`
+      const results = await parseFolder({
+        publicPath,
+      })
 
-      startFileServer(8082, './tmp/files')
+      startFileServer(filePort, './tmp/files')
 
       await start({
         port: 8080,
@@ -58,53 +64,81 @@ export const Dev = () => {
         url: 'ws://localhost:8080',
       })
 
-      // upload assets
-      await Promise.all(
-        results.configs.map((config) => {
-          if (!config.mainCtx) return
-          return Promise.all(
-            config.mainCtx?.build.outputFiles.map((file) => {
-              return client.stream('db:file-upload', {
-                contents: file.contents,
-                payload: {
-                  Key: basename(file.path),
-                },
-              })
+      const deployChanges = async (changes: ParseResults) => {
+        // set schemas
+        if (changes.schema) {
+          const schemas = Array.isArray(changes.schema.schema)
+            ? changes.schema.schema
+            : [{ db: 'default', schema: changes.schema.schema }]
+          await Promise.all(
+            schemas.map((schema) => {
+              return client.call('db:set-schema', serialize(schema))
             }),
           )
-        }),
-      )
+        }
 
-      // deploy functions
-      await Promise.all(
-        results.configs.map((config) => {
-          return client.stream('based:set-function', {
-            contents: config.indexCtx.build.outputFiles[0].contents,
-            payload: {
+        // upload assets
+        await Promise.all(
+          changes.configs.map((config) => {
+            if (!config.mainCtx) return
+            return Promise.all(
+              config.mainCtx?.build.outputFiles.map((file) => {
+                return client.stream('db:file-upload', {
+                  contents: file.contents,
+                  payload: {
+                    Key: basename(file.path),
+                  },
+                })
+              }),
+            )
+          }),
+        )
+
+        // deploy functions
+        await Promise.all(
+          changes.configs.map((config) => {
+            const payload: any = {
               config: config.fnConfig,
-            },
-          })
-        }),
-      )
+            }
 
-      await watch(results, (err, path, type) => {
-        console.log('change!', err, path, type)
+            if (config.fnConfig.type === 'app') {
+              payload.config.js =
+                publicPath +
+                basename(
+                  config.mainCtx.build.outputFiles.find((file) =>
+                    file.path.endsWith('.js'),
+                  ).path,
+                )
+              payload.config.css =
+                publicPath +
+                basename(
+                  config.mainCtx.build.outputFiles.find((file) =>
+                    file.path.endsWith('.css'),
+                  ).path,
+                )
+            }
+
+            return client.stream('based:set-function', {
+              contents: config.indexCtx.build.outputFiles[0].contents,
+              payload,
+            })
+          }),
+        )
+      }
+
+      await deployChanges(results)
+      await watch(results, (err, changes) => {
+        if (err) {
+          console.error('error watching', err)
+        }
+        if (changes) {
+          console.log('changed stuff', changes)
+          deployChanges(changes)
+        }
       })
     }
     run()
   }, [])
-
-  // const logs = useQuery('based:logs', {})
-
-  // console.log(logs)
-  /*
-    before,
-      after,
-      fn,
-      cs,
-      lvl,
-
-    */
 
   return (
     <Box>

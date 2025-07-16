@@ -21,7 +21,7 @@ export type ParseResults = {
   }
 }
 
-const parse = async (result: FindResult) => {
+const parse = async (result: FindResult, publicPath: string) => {
   let schema: {
     schema: Schema
     schemaCtx: BuildCtx
@@ -52,7 +52,8 @@ const parse = async (result: FindResult) => {
     if (fnConfig.type === 'app') {
       const mainCtx = await context({
         entryPoints: [join(result.dir, fnConfig.main)],
-        publicPath: '/',
+        entryNames: '[name]-[hash]',
+        publicPath,
         bundle: true,
         write: false,
         outdir: '.',
@@ -95,13 +96,17 @@ const parse = async (result: FindResult) => {
   }
 }
 
-export const parseFolder = async (): Promise<ParseResults> => {
+export const parseFolder = async ({
+  publicPath,
+}: {
+  publicPath: string
+}): Promise<ParseResults> => {
   const configs = []
   let schema = null
   await find(
     new Set([...configsFiles, ...schemaFiles]),
     async (result: FindResult) => {
-      const res = await parse(result)
+      const res = await parse(result, publicPath)
       if (res.schema) {
         schema = res.schema
       }
