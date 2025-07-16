@@ -8,10 +8,10 @@
     "watch": "tsc -b --watch"
   },
   "files": [
-    "dist/src"
+    "dist"
   ],
   "type": "module",
-  "main": "./dist/src/index.js",
+  "main": "./dist/index.js",
   "source": "src/index.ts",
   "sideEffects": false,
   "devDependencies": {
@@ -29,6 +29,8 @@
     "unique-names-generator": "^4.7.1",
     "ink": "^5.0.0",
     "meow": "^11.0.0",
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "@based/s3": "*",
+    "@based/hub": "*"
   }
 }

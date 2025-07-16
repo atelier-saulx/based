@@ -12,6 +12,7 @@ import { join } from 'path'
 import { mkdir } from 'node:fs/promises'
 import { Status } from './status.js'
 import { Logout } from './logout.js'
+import { Dev } from './dev.js'
 
 export type Props = {
   opts: Opts
@@ -136,6 +137,10 @@ const Init = () => {
 export default function App({ opts, command }: Props) {
   if (command === 'init') {
     return <Init />
+  }
+
+  if (command === 'dev') {
+    return <Dev />
   }
 
   return <EnvWrapper command={command} opts={opts} />
