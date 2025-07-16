@@ -1,23 +1,23 @@
-import { useClient, useQuery } from '@based/react'
+import { useQuery } from '@based/react'
+import { Spinner } from '@inkjs/ui'
 import { Box, Text } from 'ink'
 import React from 'react'
 
 export const Status = () => {
-  const logs = useQuery('based:logs', {})
+  const { data, error, loading } = useQuery('based:logs', {})
 
-  console.log(logs)
-  /*
-    before,
-      after,
-      fn,
-      cs,
-      lvl,
+  if (error) {
+    return <Text color="red">{error.message}</Text>
+  }
 
-    */
+  if (loading) {
+    return <Spinner label="Loading logs..." />
+  }
 
   return (
-    <Box>
+    <Box flexDirection="column">
       <Text>Status</Text>
+      <Text>{data.map((log) => log.msg).join('\n')}</Text>
     </Box>
   )
 }

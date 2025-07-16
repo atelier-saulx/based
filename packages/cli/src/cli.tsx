@@ -2,8 +2,8 @@
 import React from 'react'
 import { render } from 'ink'
 import meow from 'meow'
-import App, { Props } from './app.js'
-import { Opts } from './types.js'
+import App from './app.js'
+import { Opts, Props } from './types.js'
 
 const cli = meow(
   `
@@ -61,6 +61,9 @@ const cli = meow(
       project: {
         type: 'string',
       },
+      org: {
+        type: 'string',
+      },
       token: {
         type: 'string',
       },
@@ -87,6 +90,12 @@ const opts: Opts = {
   force: cli.flags.force,
   watch: cli.flags.watch,
   cwd: cli.flags.cwd,
+  org: cli.flags.org,
 }
+
+// never cloud for dev
+// if (command === 'dev') {
+//   opts.noCloud = true
+// }
 
 render(<App opts={opts} command={command ?? 'status'} />)
