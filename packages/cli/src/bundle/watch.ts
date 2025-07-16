@@ -3,6 +3,7 @@ import watcher from '@parcel/watcher'
 import { configsFiles } from './constants.js'
 import { BuildCtx, evalBuild } from './buildUtils.js'
 import { parseConfig, parseFolder, ParseResult, ParseResults } from './parse.js'
+import { Schema } from '@based/schema'
 
 export const watch = async (
   { configs, schema, publicPath }: ParseResults,
@@ -10,7 +11,7 @@ export const watch = async (
 ) => {
   const cwd = process.cwd()
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
-  const buildInputs = (result: ParseResult, buildCtx: BuildCtx) => {
+  const addResult = (result: ParseResult, buildCtx: BuildCtx) => {
     for (const file in buildCtx.build.metafile.inputs) {
       const path = join(cwd, file)
       let map = inputs.get(path)
@@ -21,6 +22,19 @@ export const watch = async (
       map.set(buildCtx, result)
     }
   }
+  // TODO: remove results when deleting files
+  // const removeResult = (buildCtx: BuildCtx) => {
+  //   for (const file in buildCtx.build.metafile.inputs) {
+  //     const path = join(cwd, file)
+  //     const map = inputs.get(path)
+  //     if (map) {
+  //       map.delete(buildCtx)
+  //       if (map.size === 0) {
+  //         inputs.delete(path)
+  //       }
+  //     }
+  //   }
+  // }
 
   const buildSchemaInputs = (schemaBuild: any) =>
     schema
@@ -33,10 +47,10 @@ export const watch = async (
 
   const addConfig = (result: ParseResult) => {
     const { indexCtx, configCtx, mainCtx } = result
-    buildInputs(result, configCtx)
-    buildInputs(result, indexCtx)
+    addResult(result, configCtx)
+    addResult(result, indexCtx)
     if (mainCtx) {
-      buildInputs(result, mainCtx)
+      addResult(result, mainCtx)
     }
   }
 
@@ -49,19 +63,16 @@ export const watch = async (
     schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
   }
 
-  const sub = await watcher.subscribe(cwd, async (err, events) => {
-    // A) rebuild relevant stuff √
-    // B) check for new functions
-    // C) check for removed functions
-
-    let changedSchema
+  await watcher.subscribe(cwd, async (err, events) => {
+    let changedSchema: {
+      schema: Schema
+      schemaCtx: BuildCtx
+    }
     let changedConfigs = new Set<ParseResult>()
 
     await Promise.all(
       events.map(async (event) => {
-        if (event.type === 'delete') {
-          console.log('delete', event.path)
-        } else if (event.type === 'create') {
+        if (event.type === 'create') {
           if (configsFiles.has(basename(event.path))) {
             const result = await parseConfig(
               {
@@ -80,6 +91,13 @@ export const watch = async (
 
         const fnInputs = inputs.get(event.path)
         if (fnInputs) {
+          // if (event.type === 'delete') {
+          //   for (const [buildCtx] of fnInputs) {
+          //     removeResult(buildCtx)
+          //   }
+          //   return
+          // }
+
           for (const [buildCtx, result] of fnInputs) {
             const prevInputs = buildCtx.build.metafile.inputs
             buildCtx.build = await buildCtx.ctx.rebuild()
