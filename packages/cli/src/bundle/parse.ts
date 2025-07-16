@@ -14,6 +14,7 @@ export type ParseResult = {
 }
 
 export type ParseResults = {
+  cwd: string
   publicPath: string
   configs: ParseResult[]
   schema: {
@@ -131,5 +132,5 @@ export const parseFolder = async ({
       }
     },
   )
-  return { configs, schema, publicPath }
+  return { configs, schema, publicPath, cwd }
 }
