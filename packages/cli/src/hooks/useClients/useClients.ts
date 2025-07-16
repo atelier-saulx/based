@@ -39,6 +39,12 @@ export function useClients(opts: any) {
           },
         )
 
+        if (opts.token) {
+          await client.current.setAuthState(opts.token).catch((err) => {
+            // console.error(err)
+          })
+        }
+
         if (!opts.noCloud) {
           adminClient.current = new BasedClient(
             {
@@ -57,6 +63,20 @@ export function useClients(opts: any) {
               ),
             },
           )
+
+          // adminClient.current
+          //   .query('user-envs', {
+          //     userId: adminClient.current.authState.userId,
+          //   })
+          //   .subscribe((res) => {
+          //     console.log(res)
+          //   })
+
+          if (opts.token) {
+            await adminClient.current.setAuthState(opts.token).catch((err) => {
+              // console.error(err)
+            })
+          }
         }
 
         setLoadingState('ready')

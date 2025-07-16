@@ -1,14 +1,16 @@
+import { AuthState } from '@based/client'
+
 export type Opts = {
-  noCloud: boolean
-  env: string
-  cluster: string
-  project: string
-  token: string
-  org: string
-  url: string
-  force: boolean
-  watch: boolean
-  cwd: string
+  noCloud?: boolean
+  env?: string
+  cluster?: string
+  project?: string
+  token?: AuthState
+  org?: string
+  url?: string
+  force?: boolean
+  watch?: boolean
+  cwd?: string
 }
 
 export type Props = {
