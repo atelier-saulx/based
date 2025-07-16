@@ -50,37 +50,34 @@ const Log = ({ log }: { log: LogType }) => {
   const color =
     log.lvl === 'error' ? 'red' : log.lvl === 'warning' ? 'yellow' : 'white'
 
-  const [parsedLog, setParsedLog] = useState<LogType | null>(null)
+  // const [parsedLog, setParsedLog] = useState<LogType | null>(null)
 
   const client = useClient()
 
-  useEffect(() => {
-    parseLog(log, client).then(setParsedLog)
-  }, [log.msg])
-
-  if (!parsedLog) {
-    return null
-  }
+  // useEffect(() => {
+  //   parseLog(log, client).then(setParsedLog)
+  // }, [log.msg])
 
   return (
     <Box
-      flexDirection="column"
-      gap={0}
-      borderTop
-      borderColor="gray"
-      borderStyle="single"
+      gap={1}
+      // width={'100%'}
+      // borderColor="gray"
+      // borderStyle="single"
     >
-      <Box gap={1}>
-        <Text color={color}>[{parsedLog.fn}]</Text>
-        <Text color={color}>{new Date(parsedLog.ts).toLocaleString()}</Text>
+      <Box flexDirection="column" minWidth={25} flexGrow={0}>
+        <Text color={'whiteBright'}>[{log.fn}]</Text>
+        <Text color={'gray'}>{new Date(log.ts).toLocaleString()}</Text>
       </Box>
-      <Text color={color}>{parsedLog.msg}</Text>
+      <Text color={color}>{log.msg}</Text>
     </Box>
   )
 }
 
 export const Status = () => {
   const { data, error, loading } = useQuery('based:logs', {})
+
+  const client = useClient()
 
   if (error) {
     return <Text color="red">{error.message}</Text>
@@ -91,11 +88,31 @@ export const Status = () => {
   }
 
   return (
-    <Box flexDirection="column">
-      <Box flexDirection="column" gap={0}>
-        {data.map((log, i) => (
-          <Log key={i + ' ' + log.cs} log={log} />
+    <Box flexDirection="column" height={'100%'} width={'100%'}>
+      <Box
+        flexDirection="column"
+        gap={1}
+        borderColor={'gray'}
+        // width={'100%'}
+        borderStyle="single"
+        // flexGrow={0}
+        overflowY="hidden"
+      >
+        {data.slice(data.length - 100, data.length).map((log, i) => (
+          <Text>{log.msg}</Text>
         ))}
+      </Box>
+      <Box
+        borderStyle="single"
+        borderColor={'gray'}
+        // marginTop={1}
+        paddingLeft={1}
+        paddingRight={1}
+        height={1}
+      >
+        <Text color={'whiteBright'}>{client.opts.org}/</Text>
+        <Text color={'whiteBright'}>{client.opts.project}/</Text>
+        <Text color={'whiteBright'}>{client.opts.env}</Text>
       </Box>
     </Box>
   )

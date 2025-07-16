@@ -19,6 +19,7 @@
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
+    "fullscreen-ink": "^0.1.0",
     "@inkjs/ui": "^2.0.0",
     "@based/react": "^5.2.1",
     "@based/client": "^8.0.2",
