@@ -41,6 +41,7 @@ export const Dev = () => {
       const filePort = 8082
       const publicPath = `http://localhost:${filePort}/`
       const results = await parseFolder({
+        cwd: process.cwd(),
         publicPath,
       })
 

@@ -1,11 +1,11 @@
-import { basename, join } from 'path'
+import { basename, dirname, extname, join } from 'path'
 import watcher from '@parcel/watcher'
 import { configsFiles } from './constants.js'
 import { BuildCtx, evalBuild } from './buildUtils.js'
-import { ParseResult, ParseResults } from './parse.js'
+import { parseConfig, parseFolder, ParseResult, ParseResults } from './parse.js'
 
 export const watch = async (
-  { configs, schema }: ParseResults,
+  { configs, schema, publicPath }: ParseResults,
   cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
   const cwd = process.cwd()
@@ -55,19 +55,25 @@ export const watch = async (
 
     await Promise.all(
       events.map(async (event) => {
-        if (configsFiles.has(basename(event.path))) {
-          if (event.type === 'delete') {
-            // remove fn
-            console.log('delete config', event.path)
-          } else if (event.type === 'create') {
-            // add fn
-            console.log('create config', event.path)
+        if (event.type === 'delete') {
+          console.log('delete', event.path)
+        } else if (event.type === 'create') {
+          console.log('create', event.path)
+          if (configsFiles.has(basename(event.path))) {
+            const config = await parseConfig(
+              {
+                path: event.path,
+                file: basename(event.path),
+                dir: dirname(event.path),
+                ext: extname(event.path),
+              },
+              publicPath,
+            )
           }
         }
 
         const fnInputs = inputs.get(event.path)
         if (fnInputs) {
-          // console.log('fn change!', event.type, event.path, fnInputs)
           for (const [buildCtx, result] of fnInputs) {
             const prevInputs = buildCtx.build.metafile.inputs
             buildCtx.build = await buildCtx.ctx.rebuild()
@@ -102,6 +108,7 @@ export const watch = async (
       cb(null, {
         schema: changedSchema,
         configs: Array.from(changedConfigs),
+        publicPath,
       })
     }
   })
