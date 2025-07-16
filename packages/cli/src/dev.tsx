@@ -5,23 +5,52 @@ import { initS3 } from '@based/s3'
 import start from '@based/hub'
 import connect from '@based/client'
 import { basename } from 'path'
+import handler from 'serve-handler'
+import http from 'http'
+
+const startFileServer = (port: number, path: string) => {
+  const headers = [
+    {
+      source: '*',
+      headers: [
+        {
+          key: 'Access-Control-Allow-Origin',
+          value: '*',
+        },
+      ],
+    },
+  ]
+
+  return http
+    .createServer((request, response) => {
+      return handler(request, response, {
+        public: path,
+        headers,
+      })
+    })
+    .listen(port, () => {
+      console.info('File server: http://localhost:' + port)
+    })
+}
 
 export const Dev = () => {
   useEffect(() => {
     const run = async () => {
       const results = await parseFolder()
 
+      startFileServer(8082, './tmp/files')
+
       await start({
         port: 8080,
         path: './tmp',
         s3: initS3({
           provider: 'local',
-          localS3Dir: './tmp/s3',
+          localS3Dir: './tmp',
         }),
         buckets: {
           files: 'files',
           backups: 'backups',
-          dists: 'dists',
+          dists: 'dists', // not used?
         },
       })
 

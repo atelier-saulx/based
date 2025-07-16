@@ -19,20 +19,21 @@
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
-    "fullscreen-ink": "^0.1.0",
-    "@inkjs/ui": "^2.0.0",
-    "@based/react": "^5.2.1",
     "@based/client": "^8.0.2",
     "@based/functions": "^3.2.3",
+    "@based/hub": "*",
+    "@based/react": "^5.2.1",
+    "@based/s3": "*",
     "@based/schema": "^5.0.0-alpha.26",
+    "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
     "@saulx/validators": "^1.2.1",
-    "source-map": "0.7.4",
-    "unique-names-generator": "^4.7.1",
+    "fullscreen-ink": "^0.1.0",
     "ink": "^5.0.0",
     "meow": "^11.0.0",
     "react": "^18.2.0",
-    "@based/s3": "*",
-    "@based/hub": "*"
+    "serve-handler": "^6.1.6",
+    "source-map": "0.7.4",
+    "unique-names-generator": "^4.7.1"
   }
 }

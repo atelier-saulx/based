@@ -52,6 +52,7 @@ const parse = async (result: FindResult) => {
     if (fnConfig.type === 'app') {
       const mainCtx = await context({
         entryPoints: [join(result.dir, fnConfig.main)],
+        publicPath: '/',
         bundle: true,
         write: false,
         outdir: '.',
