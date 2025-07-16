@@ -13,6 +13,7 @@ export const createStatsDb = async (basePath: string) => {
         name: 'alias',
         uniqueVisitors: 'cardinality',
         totalRequests: 'uint32',
+        checksum: 'uint32',
         totalErrors: 'uint32',
         logs: {
           items: {
@@ -23,9 +24,13 @@ export const createStatsDb = async (basePath: string) => {
         },
       },
       log: {
-        msg: 'string',
+        msg: { type: 'string', compression: 'none' },
+        function: {
+          ref: 'function',
+          prop: 'logs',
+        },
         createdAt: { type: 'timestamp', on: 'create' },
-        type: ['info', 'error', 'warn', 'debug'],
+        type: ['info', 'error', 'warn', 'debug', 'log', 'trace'],
       },
       // meausement (avarage measurement)
     },

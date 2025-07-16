@@ -15,15 +15,34 @@ export function registerApiHandlers(
   server.functions.add({
     'based:logs': {
       type: 'query',
-      async fn(_based, payload, update) {
-        // if filter by fn
-        return statsDb
+      async fn(
+        _based,
+        { search, page }: { search?: string; page: number },
+        update,
+      ) {
+        // TODO: add pagination
+        const q = statsDb
           .query('log')
-          .include('function.name')
-          .subscribe((res) => {
-            const obj = res.toObject()
-            update(obj)
-          })
+          .sort('createdAt', 'desc')
+          .include(
+            'function.name',
+            'function.checksum',
+            'createdAt',
+            'type',
+            'msg',
+          )
+
+        if (search) {
+          q.filter('function.name', 'has', search).or('msg', 'has', search)
+        }
+
+        console.log('page', page)
+        q.range(page * 100, (page + 1) * 100)
+
+        return q.subscribe((res) => {
+          const obj = res.toObject()
+          update(obj)
+        })
       },
     },
     'db:file-upload': {

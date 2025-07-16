@@ -41,7 +41,7 @@ export const parseConfig = async (
   const checksum = 1 // fnConfig.checksum
 
   const banner = `import { createRequire } from "module";const require = createRequire(process.cwd());
-    const { setInterval, setTimeout, clearInterval, clearTimeout, console } = new _FnGlobals('${fnConfig.name}','${checksum}');
+    const { setInterval, setTimeout, clearInterval, clearTimeout, console } = new _FnGlobals('${fnConfig.name}',${checksum});
         `
 
   const indexCtx = await context({

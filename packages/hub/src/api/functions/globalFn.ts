@@ -1,36 +1,9 @@
 import { Writable } from 'node:stream'
 import console, { Console } from 'node:console'
 import { DbClient } from '@based/db'
+import { sendToFunctionLogs } from './log.js'
 
 export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
-  const sendToFunctionLogs = (
-    name: string,
-    checksum: number,
-    msg: string,
-    type: 'info' | 'error' | 'warn' | 'debug' = 'info',
-  ) => {
-    if (msg && msg.length > 30e3) {
-      msg = '-- log too long --'
-    }
-
-    statsDb
-      .upsert('function', {
-        name,
-      })
-      .then((id) => {
-        statsDb
-          .create('log', {
-            function: id,
-            cs: checksum,
-            msg,
-            type,
-          })
-          .catch((e) => {
-            console.error('failed writing to log', e)
-          })
-      })
-  }
-
   class FnGlobals {
     constructor(name: string, checksum: number) {
       this.name = name
@@ -41,13 +14,25 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
           : new Console({
               stdout: new Writable({
                 write(chunk, _encoding, callback) {
-                  sendToFunctionLogs(name, checksum, chunk.toString(), 'info')
+                  sendToFunctionLogs(
+                    statsDb,
+                    name,
+                    checksum,
+                    chunk.toString(),
+                    'info',
+                  )
                   callback()
                 },
               }),
               stderr: new Writable({
                 write(chunk, _encoding, callback) {
-                  sendToFunctionLogs(name, checksum, chunk.toString(), 'error')
+                  sendToFunctionLogs(
+                    statsDb,
+                    name,
+                    checksum,
+                    chunk.toString(),
+                    'error',
+                  )
                   callback()
                 },
               }),
@@ -74,7 +59,13 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
       try {
         await fn(p)
       } catch (e) {
-        sendToFunctionLogs(this.name, Number(this.checksum), e, 'error')
+        sendToFunctionLogs(
+          statsDb,
+          this.name,
+          Number(this.checksum),
+          e,
+          'error',
+        )
       }
     }
     private timers = new Set()

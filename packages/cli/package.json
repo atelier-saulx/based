@@ -19,6 +19,7 @@
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
+    "@saulx/utils": "*",
     "@based/client": "^8.0.2",
     "@based/functions": "^3.2.3",
     "@based/hub": "*",
