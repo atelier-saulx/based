@@ -1,5 +1,5 @@
-import { Box, Text } from 'ink'
 import React, { useEffect } from 'react'
+import { Box, Text } from 'ink'
 import { parseFolder, watch } from './bundle/index.js'
 import { initS3 } from '@based/s3'
 import start from '@based/hub'
@@ -9,6 +9,11 @@ import handler from 'serve-handler'
 import http from 'http'
 import { serialize } from '@based/schema'
 import { ParseResults } from './bundle/parse.js'
+
+const FILE_PORT = 8082
+const HUB_PORT = 8080
+const TMP_PATH = './tmp'
+const FILES_PATH = `${TMP_PATH}/files`
 
 const startFileServer = (port: number, path: string) => {
   const headers = [
@@ -31,110 +36,112 @@ const startFileServer = (port: number, path: string) => {
       })
     })
     .listen(port, () => {
-      console.info('File server: http://localhost:' + port)
+      console.info(`File server: http://localhost:${port}`)
     })
+}
+
+const deployChanges = async (
+  client: ReturnType<typeof connect>,
+  publicPath: string,
+  changes: ParseResults,
+) => {
+  // Set schemas
+  if (changes.schema) {
+    const schemas = Array.isArray(changes.schema.schema)
+      ? changes.schema.schema
+      : [{ db: 'default', schema: changes.schema.schema }]
+    await Promise.all(
+      schemas.map((schema) => client.call('db:set-schema', serialize(schema))),
+    )
+  }
+
+  // Upload assets
+  await Promise.all(
+    changes.configs.map((config) => {
+      if (!config.mainCtx) return
+      return Promise.all(
+        config.mainCtx.build.outputFiles.map((file) =>
+          client.stream('db:file-upload', {
+            contents: file.contents,
+            payload: {
+              Key: basename(file.path),
+            },
+          }),
+        ),
+      )
+    }),
+  )
+
+  // Deploy functions
+  await Promise.all(
+    changes.configs.map((config) => {
+      const payload: any = {
+        config: config.fnConfig,
+      }
+
+      if (config.fnConfig.type === 'app' && config.mainCtx) {
+        const jsFile = config.mainCtx.build.outputFiles.find((file) =>
+          file.path.endsWith('.js'),
+        )
+        const cssFile = config.mainCtx.build.outputFiles.find((file) =>
+          file.path.endsWith('.css'),
+        )
+        if (jsFile) {
+          payload.config.js = publicPath + basename(jsFile.path)
+        }
+        if (cssFile) {
+          payload.config.css = publicPath + basename(cssFile.path)
+        }
+      }
+
+      return client.stream('based:set-function', {
+        contents: config.indexCtx.build.outputFiles[0].contents,
+        payload,
+      })
+    }),
+  )
 }
 
 export const Dev = () => {
   useEffect(() => {
     const run = async () => {
-      const filePort = 8082
-      const publicPath = `http://localhost:${filePort}/`
+      const publicPath = `http://localhost:${FILE_PORT}/`
+      const cwd = process.cwd()
       const results = await parseFolder({
-        cwd: process.cwd(),
+        cwd,
         publicPath,
       })
 
-      startFileServer(filePort, './tmp/files')
+      startFileServer(FILE_PORT, FILES_PATH)
 
       await start({
-        port: 8080,
-        path: './tmp',
+        port: HUB_PORT,
+        path: TMP_PATH,
         s3: initS3({
           provider: 'local',
-          localS3Dir: './tmp',
+          localS3Dir: TMP_PATH,
         }),
         buckets: {
           files: 'files',
           backups: 'backups',
-          dists: 'dists', // not used?
+          dists: 'dists',
         },
       })
 
       const client = connect({
-        url: 'ws://localhost:8080',
+        url: `ws://localhost:${HUB_PORT}`,
       })
 
-      const deployChanges = async (changes: ParseResults) => {
-        // set schemas
-        if (changes.schema) {
-          const schemas = Array.isArray(changes.schema.schema)
-            ? changes.schema.schema
-            : [{ db: 'default', schema: changes.schema.schema }]
-          await Promise.all(
-            schemas.map((schema) => {
-              return client.call('db:set-schema', serialize(schema))
-            }),
-          )
-        }
+      await deployChanges(client, publicPath, results)
 
-        // upload assets
-        await Promise.all(
-          changes.configs.map((config) => {
-            if (!config.mainCtx) return
-            return Promise.all(
-              config.mainCtx?.build.outputFiles.map((file) => {
-                return client.stream('db:file-upload', {
-                  contents: file.contents,
-                  payload: {
-                    Key: basename(file.path),
-                  },
-                })
-              }),
-            )
-          }),
-        )
-
-        // deploy functions
-        await Promise.all(
-          changes.configs.map((config) => {
-            const payload: any = {
-              config: config.fnConfig,
-            }
-
-            if (config.fnConfig.type === 'app') {
-              payload.config.js =
-                publicPath +
-                basename(
-                  config.mainCtx.build.outputFiles.find((file) =>
-                    file.path.endsWith('.js'),
-                  ).path,
-                )
-              payload.config.css =
-                publicPath +
-                basename(
-                  config.mainCtx.build.outputFiles.find((file) =>
-                    file.path.endsWith('.css'),
-                  ).path,
-                )
-            }
-
-            return client.stream('based:set-function', {
-              contents: config.indexCtx.build.outputFiles[0].contents,
-              payload,
-            })
-          }),
-        )
-      }
-
-      await deployChanges(results)
-      await watch(results, (err, changes) => {
+      await watch(results, async (err, changes) => {
         if (err) {
-          console.error('error watching', err)
+          console.error('Error watching:', err)
+          return
         }
         if (changes) {
-          console.log('changed stuff', changes)
-          deployChanges(changes)
+          console.log('Detected changes, deploying...')
+          await deployChanges(client, publicPath, changes)
         }
       })
     }

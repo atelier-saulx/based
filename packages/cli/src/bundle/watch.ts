@@ -2,14 +2,13 @@ import { basename, dirname, extname, join } from 'path'
 import watcher from '@parcel/watcher'
 import { configsFiles } from './constants.js'
 import { BuildCtx, evalBuild } from './buildUtils.js'
-import { parseConfig, parseFolder, ParseResult, ParseResults } from './parse.js'
+import { parseConfig, ParseResult, ParseResults } from './parse.js'
 import { Schema } from '@based/schema'
 
 export const watch = async (
-  { configs, schema, publicPath }: ParseResults,
+  { configs, schema, publicPath, cwd }: ParseResults,
   cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
-  const cwd = process.cwd()
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
   const addResult = (result: ParseResult, buildCtx: BuildCtx) => {
     for (const file in buildCtx.build.metafile.inputs) {
@@ -22,6 +21,7 @@ export const watch = async (
       map.set(buildCtx, result)
     }
   }
+
   // TODO: remove results when deleting files
   // const removeResult = (buildCtx: BuildCtx) => {
   //   for (const file in buildCtx.build.metafile.inputs) {
@@ -133,6 +133,7 @@ export const watch = async (
         schema: changedSchema,
         configs: Array.from(changedConfigs),
         publicPath,
+        cwd,
       })
     }
   })
