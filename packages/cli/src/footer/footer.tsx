@@ -5,6 +5,7 @@ import { Spinner } from '@inkjs/ui'
 
 export const Footer = (p: { children?: React.ReactNode }) => {
   const client = useClient()
+  const opts = client.opts
   const { connected } = useConnected()
   return (
     <Box
@@ -22,15 +23,20 @@ export const Footer = (p: { children?: React.ReactNode }) => {
               •
             </Text>
           ) : (
-            <Spinner />
+            <Text bold color={'grey'}>
+              Connecting...
+            </Text>
           )}
           <Text bold color={'blueBright'}>
-            {client.opts.cluster}
+            {opts.cluster ||
+              (typeof opts.url === 'string' ? opts.url : 'local')}
           </Text>
         </Box>
-        <Text color={'whiteBright'}>{client.opts.org}/</Text>
-        <Text color={'whiteBright'}>{client.opts.project}/</Text>
-        <Text color={'whiteBright'}>{client.opts.env}</Text>
+        <Text color={'whiteBright'}>{opts.org ? `${opts.org}/` : ''}</Text>
+        <Text color={'whiteBright'}>
+          {opts.project ? `${opts.project}/` : ''}
+        </Text>
+        <Text color={'whiteBright'}>{opts.env ? `${opts.env}` : ''}</Text>
       </Box>
       {p.children}
     </Box>
