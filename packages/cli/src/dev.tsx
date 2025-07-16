@@ -4,7 +4,7 @@ import { parseFolder, watch } from './bundle/index.js'
 import { initS3 } from '@based/s3'
 import start from '@based/hub'
 import connect from '@based/client'
-import { basename, join } from 'path'
+import { basename, dirname, join } from 'path'
 import handler from 'serve-handler'
 import http from 'http'
 
@@ -37,12 +37,12 @@ export const Dev = () => {
   useEffect(() => {
     const run = async () => {
       const filePort = 8082
-      const filePath = './tmp/files'
+      const publicPath = `http://localhost:${filePort}/`
       const results = await parseFolder({
-        publicPath: join(`http://localhost:${filePort}`, filePath),
+        publicPath,
       })
 
-      startFileServer(filePort, filePath)
+      startFileServer(filePort, './tmp/files')
 
       await start({
         port: 8080,
@@ -78,15 +78,33 @@ export const Dev = () => {
           )
         }),
       )
-
       // deploy functions
       await Promise.all(
         results.configs.map((config) => {
+          const payload: any = {
+            config: config.fnConfig,
+          }
+
+          if (config.fnConfig.type === 'app') {
+            payload.config.js =
+              publicPath +
+              basename(
+                config.mainCtx.build.outputFiles.find((file) =>
+                  file.path.endsWith('.js'),
+                ).path,
+              )
+            payload.config.css =
+              publicPath +
+              basename(
+                config.mainCtx.build.outputFiles.find((file) =>
+                  file.path.endsWith('.css'),
+                ).path,
+              )
+          }
+
           return client.stream('based:set-function', {
             contents: config.indexCtx.build.outputFiles[0].contents,
-            payload: {
-              config: config.fnConfig,
-            },
+            payload,
           })
         }),
       )

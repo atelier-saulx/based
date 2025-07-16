@@ -52,6 +52,7 @@ const parse = async (result: FindResult, publicPath: string) => {
     if (fnConfig.type === 'app') {
       const mainCtx = await context({
         entryPoints: [join(result.dir, fnConfig.main)],
+        entryNames: '[name]-[hash]',
         publicPath,
         bundle: true,
         write: false,
