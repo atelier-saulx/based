@@ -8,6 +8,10 @@ export const initDynamicFunctions = (
 ) => {
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
+    console.log(
+      'initDynamicFunctions',
+      data.toObject().map((item) => item.name),
+    )
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
@@ -16,8 +20,9 @@ export const initDynamicFunctions = (
             `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
           )
           const { default: fnDefault, js, css, ...rest } = fn
+          // console.log({ name })
           if (config.type === 'authorize') {
-            console.warn('authorize', name)
+            console.warn('skipping authorize', name, config)
             return
           }
 
@@ -60,7 +65,6 @@ export const initDynamicFunctions = (
         }
       }),
     )
-    console.dir(specs, { depth: null })
     server.functions.add(specs)
   })
 }

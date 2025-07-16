@@ -6,7 +6,7 @@ import { ParseResult, ParseResults } from './parse.js'
 
 export const watch = async (
   { configs, schema }: ParseResults,
-  cb: (err: Error | null, path: string, type: string) => void,
+  cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
   const cwd = process.cwd()
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
@@ -49,7 +49,10 @@ export const watch = async (
     // A) rebuild relevant stuff √
     // B) check for new functions
     // C) check for removed functions
-    console.log('change!', events)
+
+    let changedSchema
+    let changedConfigs = new Set<ParseResult>()
+
     await Promise.all(
       events.map(async (event) => {
         if (configsFiles.has(basename(event.path))) {
@@ -82,16 +85,24 @@ export const watch = async (
             if (buildCtx === result.configCtx) {
               result.fnConfig = await evalBuild(buildCtx.build)
             }
+            changedConfigs.add(result)
           }
         }
 
         if (schema && schemaInputs.has(event.path)) {
-          console.log('schema change!', event.type, event.path)
           schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
           schema.schema = await evalBuild(schema.schemaCtx.build)
           schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
+          changedSchema = schema
         }
       }),
     )
+
+    if (changedSchema || changedConfigs.size > 0) {
+      cb(null, {
+        schema: changedSchema,
+        configs: Array.from(changedConfigs),
+      })
+    }
   })
 }
