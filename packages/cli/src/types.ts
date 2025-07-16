@@ -11,6 +11,7 @@ export type Opts = {
   force?: boolean
   watch?: boolean
   cwd?: string
+  hub?: string
 }
 
 export type Props = {

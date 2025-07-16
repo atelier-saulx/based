@@ -29,7 +29,8 @@ const cli = meow(
     --token     User api token
     --url       Use a custom discovery url
     --cwd       Override the cwd of the project
-
+    --hub       Use hub url
+    
   Examples
     $ @based/cli deploy --watch --force
 `,
@@ -42,17 +43,11 @@ const cli = meow(
       watch: {
         type: 'boolean',
       },
-      dev: {
-        type: 'boolean',
-      },
-      init: {
-        type: 'boolean',
-      },
-      logout: {
-        type: 'boolean',
-      },
       force: {
         type: 'boolean',
+      },
+      hub: {
+        type: 'string',
       },
       env: {
         type: 'string',
@@ -93,12 +88,8 @@ const opts: Opts = {
   watch: cli.flags.watch,
   cwd: cli.flags.cwd,
   org: cli.flags.org,
+  hub: cli.flags.hub,
 }
-
-// never cloud for dev
-// if (command === 'dev') {
-//   opts.noCloud = true
-// }
 
 if (cli.flags.token) {
   try {
