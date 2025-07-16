@@ -2,13 +2,21 @@ import { findUp } from 'find-up'
 import { build } from 'esbuild'
 import { readFile } from 'node:fs/promises'
 import { BasedOpts } from '@based/client'
+import { Opts } from '../../types.js'
 
-export const getBasedConfig = async (): Promise<BasedOpts> => {
+export const getBasedConfig = async (opts: Opts): Promise<BasedOpts> => {
   const basedFile = await findUp(['based.ts', 'based.js', 'based.json'])
 
   if (!basedFile) {
-    console.info('No based file found')
-    process.exit()
+    if (opts.org && opts.project && opts.env) {
+      return {
+        org: opts.org,
+        project: opts.project,
+        env: opts.env,
+        cluster: opts.cluster,
+      }
+    }
+    throw new Error('Based file not found')
   }
 
   if (/\.(?:ts|js)$/.test(basedFile)) {
@@ -20,12 +28,28 @@ export const getBasedConfig = async (): Promise<BasedOpts> => {
         platform: 'node',
         format: 'esm',
       })
-      const config = await import(
+      const { default: config } = await import(
         `data:text/javascript;base64,${Buffer.from(basedConfigCtx.outputFiles[0].contents).toString('base64')}`
       )
-      return config.default
+
+      if (opts.org) {
+        config.org = opts.org
+      }
+
+      if (opts.project) {
+        config.project = opts.project
+      }
+      if (opts.env) {
+        config.env = opts.env
+      }
+
+      if (opts.cluster) {
+        config.cluster = opts.cluster
+      }
+
+      return config
     } catch (error) {
-      console.error(error)
+      throw error
     }
   } else {
     return JSON.parse(await readFile(basedFile, 'utf-8'))

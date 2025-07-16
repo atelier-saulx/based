@@ -286,3 +286,47 @@ await test('edges', () => {
     })
   }, 'Only allow edge definition on one side')
 })
+
+await test('references no auto on same prop', (t) => {
+  parse({
+    types: {
+      contributor: {
+        name: 'string',
+      },
+      vote: {
+        props: {
+          choice: {
+            ref: 'contributor',
+            prop: 'votes',
+          },
+        },
+      },
+    },
+  })
+
+  throws(() => {
+    parse({
+      types: {
+        contributor: {
+          name: 'string',
+        },
+        vote: {
+          props: {
+            choice: {
+              ref: 'contributor',
+              prop: 'votes',
+            },
+          },
+        },
+        test: {
+          props: {
+            test: {
+              ref: 'contributor',
+              prop: 'votes',
+            },
+          },
+        },
+      },
+    })
+  }, 'Disallow auto on same prop')
+})
