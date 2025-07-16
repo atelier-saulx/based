@@ -6,6 +6,7 @@ import { Login } from './login.js'
 import { AdminCtx } from './adminCtx.js'
 import { Status } from './status/status.js'
 import { Logout } from './logout.js'
+import { Dev } from './dev.js'
 import { Init } from './init.js'
 import { useClients } from './hooks/useClients/useClients.js'
 import { Props } from './types.js'
@@ -52,5 +53,10 @@ export default function App(p: Props) {
     // get user orgs
     return <Init />
   }
+
+  if (p.command === 'dev') {
+    return <Dev />
+  }
+
   return <EnvWrapper {...p} />
 }

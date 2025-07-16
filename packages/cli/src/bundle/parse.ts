@@ -1,0 +1,114 @@
+import { context, BuildContext, BuildResult } from 'esbuild'
+import { join } from 'path'
+import { BasedFunctionConfig } from '@based/functions'
+import { Schema } from '@based/schema'
+import { find, FindResult } from './fsUtils.js'
+import { configsFiles, schemaFiles } from './constants.js'
+import { BuildCtx, rebuild, evalBuild } from './buildUtils.js'
+
+export type ParseResult = {
+  fnConfig: BasedFunctionConfig
+  configCtx: BuildCtx
+  indexCtx: BuildCtx
+  mainCtx?: BuildCtx
+}
+
+export type ParseResults = {
+  configs: ParseResult[]
+  schema: {
+    schema: Schema
+    schemaCtx: BuildCtx
+  }
+}
+
+const parse = async (result: FindResult) => {
+  let schema: {
+    schema: Schema
+    schemaCtx: BuildCtx
+  }
+  if (configsFiles.has(result.file)) {
+    const [configCtx, indexCtx] = await Promise.all([
+      context({
+        entryPoints: [result.path],
+        bundle: true,
+        write: false,
+        platform: 'node',
+        format: 'esm',
+        metafile: true,
+      }).then(rebuild),
+      context({
+        banner: {
+          js: 'import { createRequire } from "module";const require = createRequire(process.cwd());',
+        },
+        entryPoints: [join(result.dir, 'index.ts')],
+        bundle: true,
+        write: false,
+        platform: 'node',
+        format: 'esm',
+        metafile: true,
+      }).then(rebuild),
+    ])
+    const fnConfig: BasedFunctionConfig = await evalBuild(configCtx.build)
+    if (fnConfig.type === 'app') {
+      const mainCtx = await context({
+        entryPoints: [join(result.dir, fnConfig.main)],
+        publicPath: '/',
+        bundle: true,
+        write: false,
+        outdir: '.',
+        loader: {
+          '.ico': 'file',
+          '.eot': 'file',
+          '.gif': 'file',
+          '.jpeg': 'file',
+          '.jpg': 'file',
+          '.png': 'file',
+          '.svg': 'file',
+          '.ttf': 'file',
+          '.woff': 'file',
+          '.woff2': 'file',
+          '.wasm': 'file',
+        },
+        // plugins: fnConfig.plugins,
+        metafile: true,
+      }).then(rebuild)
+      return { config: { fnConfig, configCtx, indexCtx, mainCtx } }
+    }
+
+    return { config: { fnConfig, configCtx, indexCtx } }
+  }
+
+  if (schemaFiles.has(result.file)) {
+    const schemaCtx = await context({
+      entryPoints: [result.path],
+      bundle: true,
+      write: false,
+      platform: 'node',
+      metafile: true,
+      format: 'esm',
+    }).then(rebuild)
+    schema = {
+      schema: await evalBuild(schemaCtx.build),
+      schemaCtx,
+    }
+    return { schema }
+  }
+}
+
+export const parseFolder = async (): Promise<ParseResults> => {
+  const configs = []
+  let schema = null
+  await find(
+    new Set([...configsFiles, ...schemaFiles]),
+    async (result: FindResult) => {
+      const res = await parse(result)
+      if (res.schema) {
+        schema = res.schema
+      }
+      if (res.config) {
+        configs.push(res.config)
+      }
+    },
+  )
+  return { configs, schema }
+}
