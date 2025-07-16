@@ -27,17 +27,36 @@ export function useClients(opts: any) {
 
         const discoveryUrls = opts.url ? [opts.url] : undefined
 
-        client.current = new BasedClient(
-          {
-            ...config,
-            key: 'cms',
-            optionalKey: true,
-            discoveryUrls,
-          },
-          {
-            persistentStorage: join(PERSISTENT_STORAGE, config.cluster, 'env'),
-          },
-        )
+        if (opts.hub) {
+          client.current = new BasedClient(
+            {
+              url: opts.hub,
+            },
+            {
+              persistentStorage: join(
+                PERSISTENT_STORAGE,
+                config.cluster,
+                'env',
+              ),
+            },
+          )
+        } else {
+          client.current = new BasedClient(
+            {
+              ...config,
+              key: 'cms',
+              optionalKey: true,
+              discoveryUrls,
+            },
+            {
+              persistentStorage: join(
+                PERSISTENT_STORAGE,
+                config.cluster,
+                'env',
+              ),
+            },
+          )
+        }
 
         if (opts.token) {
           await client.current.setAuthState(opts.token).catch((err) => {
