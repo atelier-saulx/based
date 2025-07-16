@@ -1,10 +1,27 @@
 import { DbClient } from '@based/db'
-import { BasedFunctionConfigs } from '@based/functions'
+import { BasedFunctionConfigs, BasedFunctionConfig } from '@based/functions'
 import { BasedServer } from '@based/server'
+
+const addStats = (fn: BasedFunctionConfig, statsDb: DbClient) => {
+  console.log('yo lets go', fn.type)
+
+  if (fn.type === 'function') {
+    return {
+      ...fn,
+      fn: (based, _payload, ctx) => {
+        console.log('yo lets go CALL', fn.type)
+        return fn.fn(based, _payload, ctx)
+      },
+    }
+  }
+
+  return fn
+}
 
 export const initDynamicFunctions = (
   server: BasedServer,
   configDb: DbClient,
+  statsDb: DbClient,
 ) => {
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}

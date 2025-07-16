@@ -3,14 +3,29 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 import { v4 as uuid } from 'uuid'
+import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 
 export function registerApiHandlers(
   server,
   configDb: DbClient,
+  statsDb: DbClient,
   s3: S3Client,
   buckets: Record<'files' | 'backups' | 'dists', string>,
 ) {
   server.functions.add({
+    'based:logs': {
+      type: 'query',
+      async fn(_based, payload, update) {
+        // if filter by fn
+        return statsDb
+          .query('log')
+          .include('function.name')
+          .subscribe((res) => {
+            const obj = res.toObject()
+            update(obj)
+          })
+      },
+    },
     'db:file-upload': {
       type: 'stream',
       async fn(

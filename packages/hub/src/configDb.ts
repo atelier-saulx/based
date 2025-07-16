@@ -1,8 +1,9 @@
 import { BasedDb } from '@based/db'
 import { join } from 'path'
 
-export async function createConfigDb(basePath: string) {
+export const createConfigDb = async (basePath: string) => {
   const configDb = new BasedDb({
+    maxModifySize: 1e3 * 1e3,
     path: join(basePath, 'config'),
   })
   await configDb.start()
