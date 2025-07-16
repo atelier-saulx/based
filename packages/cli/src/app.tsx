@@ -41,9 +41,7 @@ const EnvWrapper = (p: Props) => {
   return (
     <AdminCtx.Provider value={adminClient.current}>
       <Provider client={client.current}>
-        <Box padding={1}>
-          <Env {...p} />
-        </Box>
+        <Env {...p} />
       </Provider>
     </AdminCtx.Provider>
   )

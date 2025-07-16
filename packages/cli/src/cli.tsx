@@ -5,6 +5,7 @@ import meow from 'meow'
 import App from './app.js'
 import { Opts, Props } from './types.js'
 import { decodeAuthState } from '@based/client'
+import { withFullScreen } from 'fullscreen-ink'
 
 const cli = meow(
   `
@@ -107,4 +108,4 @@ if (cli.flags.token) {
   }
 }
 
-render(<App opts={opts} command={command ?? 'status'} />)
+withFullScreen(<App opts={opts} command={command ?? 'status'} />).start()
