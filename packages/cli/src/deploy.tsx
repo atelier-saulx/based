@@ -62,10 +62,19 @@ export const deployChanges = async (
         }
       }
 
-      return client.stream('based:set-function', {
-        contents: config.indexCtx.build.outputFiles[0].contents,
-        payload,
-      })
+      return client
+        .stream('based:set-function', {
+          contents: config.indexCtx.build.outputFiles[0].contents,
+          payload,
+        })
+        .catch((err) => {
+          console.error(
+            'Error deploying function:',
+            config.fnConfig,
+            err.message,
+            config.indexCtx.build.outputFiles[0].contents.byteLength,
+          )
+        })
     }),
   )
 }

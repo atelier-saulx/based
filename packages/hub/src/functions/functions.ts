@@ -61,6 +61,7 @@ export const initDynamicFunctions = (
             }
           }
         } catch (err) {
+          console.error('Error importing function:', name, err.message)
           sendToFunctionLogs(
             statsDb,
             name,
