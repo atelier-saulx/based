@@ -13,8 +13,9 @@ export const createStatsDb = async (basePath: string) => {
         name: 'alias',
         uniqueVisitors: 'cardinality',
         totalRequests: 'uint32',
-        checksum: 'uint32',
         totalErrors: 'uint32',
+        checksum: 'uint32',
+        connections: 'uint32',
         logs: {
           items: {
             ref: 'log',
@@ -22,6 +23,39 @@ export const createStatsDb = async (basePath: string) => {
             dependent: true,
           },
         },
+        measurements: {
+          props: {
+            current: {
+              ref: 'measurement',
+              prop: 'function',
+              dependent: true,
+            },
+            history: {
+              items: {
+                ref: 'measurement',
+                prop: 'function',
+                dependent: true,
+              },
+            },
+          },
+        },
+      },
+      measurement: {
+        execTime: 'uint32',
+        calls: 'uint32',
+        errors: 'uint32',
+        uniqueVisitors: 'cardinality',
+        maxConcurrentConnections: 'uint32',
+        current: {
+          ref: 'function',
+          prop: 'measurements.current',
+        },
+        function: {
+          ref: 'function',
+          prop: 'measurements.history',
+        },
+        createdAt: { type: 'timestamp', on: 'create' },
+        lastUpdated: { type: 'timestamp', on: 'update' },
       },
       log: {
         msg: { type: 'string', compression: 'none' },

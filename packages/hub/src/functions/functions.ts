@@ -1,22 +1,9 @@
 import { DbClient } from '@based/db'
 import { BasedFunctionConfigs, BasedFunctionConfig } from '@based/functions'
 import { BasedServer } from '@based/server'
+import { sendToFunctionLogs } from './log.js'
 
-const addStats = (fn: BasedFunctionConfig, statsDb: DbClient) => {
-  console.log('yo lets go', fn.type)
-
-  if (fn.type === 'function') {
-    return {
-      ...fn,
-      fn: (based, _payload, ctx) => {
-        console.log('yo lets go CALL', fn.type)
-        return fn.fn(based, _payload, ctx)
-      },
-    }
-  }
-
-  return fn
-}
+// stat wrapper
 
 export const initDynamicFunctions = (
   server: BasedServer,
@@ -32,6 +19,7 @@ export const initDynamicFunctions = (
           const fn = await import(
             `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
           )
+          // get the globalFn things and attach to function store
           const { default: fnDefault, js, css, ...rest } = fn
           if (config.type === 'authorize') {
             console.warn('skipping authorize', name, config)
@@ -73,7 +61,13 @@ export const initDynamicFunctions = (
             }
           }
         } catch (err) {
-          console.log('err', name, err.message)
+          sendToFunctionLogs(
+            statsDb,
+            name,
+            config.checksum,
+            err.message,
+            'error',
+          )
         }
       }),
     )

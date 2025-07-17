@@ -3,11 +3,11 @@ import { createConfigDb } from './configDb.js'
 import { handleSchemaUpdates } from './schemaManager.js'
 import { BasedDb } from '@based/db'
 import { join } from 'path'
-import { initDynamicFunctions } from './api/functions/functions.js'
+import { initDynamicFunctions } from './functions/functions.js'
 import { registerApiHandlers } from './api/api.js'
 import type { S3Client } from '@based/s3'
 import { createStatsDb } from './statsDb.js'
-import { initDynamicFunctionsGlobals } from './api/functions/globalFn.js'
+import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 
 type Opts = {
   port: number

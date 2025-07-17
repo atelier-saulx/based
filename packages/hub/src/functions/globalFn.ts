@@ -1,5 +1,5 @@
 import { Writable } from 'node:stream'
-import console, { Console } from 'node:console'
+import { Console } from 'node:console'
 import { DbClient } from '@based/db'
 import { sendToFunctionLogs } from './log.js'
 
@@ -8,48 +8,32 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
     constructor(name: string, checksum: number) {
       this.name = name
       this.checksum = checksum
-      this.console =
-        process.env.NODE_ENV === 'test'
-          ? console
-          : new Console({
-              stdout: new Writable({
-                write(chunk, _encoding, callback) {
-                  sendToFunctionLogs(
-                    statsDb,
-                    name,
-                    checksum,
-                    chunk.toString(),
-                    'info',
-                  )
-                  callback()
-                },
-              }),
-              stderr: new Writable({
-                write(chunk, _encoding, callback) {
-                  sendToFunctionLogs(
-                    statsDb,
-                    name,
-                    checksum,
-                    chunk.toString(),
-                    'error',
-                  )
-                  callback()
-                },
-              }),
-            })
-    }
-
-    private async initId() {
-      const name = this.name
-      const fnNode = await statsDb
-        .query('function', { name })
-        .include('id')
-        .get()
-        .toObject()
-      if (fnNode) {
-        return fnNode.id
-      }
-      return statsDb.create('function', { name })
+      this.console = new Console({
+        stdout: new Writable({
+          write(chunk, _encoding, callback) {
+            sendToFunctionLogs(
+              statsDb,
+              name,
+              checksum,
+              chunk.toString(),
+              'info',
+            )
+            callback()
+          },
+        }),
+        stderr: new Writable({
+          write(chunk, _encoding, callback) {
+            sendToFunctionLogs(
+              statsDb,
+              name,
+              checksum,
+              chunk.toString(),
+              'error',
+            )
+            callback()
+          },
+        }),
+      })
     }
 
     private removed: true
@@ -128,6 +112,8 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
       this.removed = true
     }
   }
+
+  // add activer functions handlers use this with id etc for fns
 
   global._FnGlobals = FnGlobals
 }

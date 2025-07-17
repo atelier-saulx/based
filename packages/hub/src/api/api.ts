@@ -3,7 +3,7 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 import { v4 as uuid } from 'uuid'
-import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
+import { initDynamicFunctionsGlobals } from '../functions/globalFn.js'
 
 export function registerApiHandlers(
   server,
@@ -20,7 +20,6 @@ export function registerApiHandlers(
         { search, page }: { search?: string; page: number },
         update,
       ) {
-        // TODO: add pagination
         const q = statsDb
           .query('log')
           .sort('createdAt', 'desc')
@@ -31,14 +30,11 @@ export function registerApiHandlers(
             'type',
             'msg',
           )
-
         if (search) {
           q.filter('function.name', 'has', search).or('msg', 'has', search)
         }
-
         console.log('page', page)
         q.range(page * 100, (page + 1) * 100)
-
         return q.subscribe((res) => {
           const obj = res.toObject()
           update(obj)

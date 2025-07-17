@@ -6,6 +6,8 @@ import {
   uniqueNamesGenerator,
 } from 'unique-names-generator'
 
+wiohfwepofhew
+
 const hello: BasedFunction = async (based) => {
   let x = ''
   // Generate a text of 400 characters
@@ -43,7 +45,8 @@ const hello: BasedFunction = async (based) => {
     name: 'derp',
   })
 
-  console.log(await based.db.query('thing').get())
+  await based.db.query('thing').get().inspect()
+
   // console.warn('derp')
   // console.debug('derp')
   // console.log('derp')
