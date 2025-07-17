@@ -37,7 +37,7 @@ const hello: BasedFunction = async (based) => {
     },
   })
 
-  console.log(' ???  ????')
+  console.log(' ???  ???xxx?')
 
   await based.db.create('thing', {
     name: 'derp',
@@ -48,7 +48,7 @@ const hello: BasedFunction = async (based) => {
   // console.debug('derp')
   // console.log('derp')
   // console.trace('derp')
-  return 'FLAP DROOL'
+  return 'FLAP DROOLxx'
 }
 
 export default hello
