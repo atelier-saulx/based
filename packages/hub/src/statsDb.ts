@@ -27,7 +27,7 @@ export const createStatsDb = async (basePath: string) => {
           props: {
             current: {
               ref: 'measurement',
-              prop: 'function',
+              prop: 'current',
               dependent: true,
             },
             history: {
