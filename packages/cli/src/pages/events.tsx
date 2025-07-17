@@ -4,13 +4,14 @@ import { ScrollArea } from '../components/scrollArea/scrollArea.js'
 import { Footer } from '../components/footer/footer.js'
 import { Box, Text } from 'ink'
 import { useScrollInput } from '../components/scrollArea/useScroll.js'
+import { useQuery } from '@based/react'
+
+import { italy } from '../../../db/test/shared/examples.js'
 
 export const Events = () => {
   const { height, width } = useScreenSize()
-
   const [selected, setSelected] = useState(0)
   useScrollInput(selected, setSelected)
-
   return (
     <Box flexDirection="column" width={'100%'} height={'100%'}>
       <ScrollArea
@@ -18,6 +19,7 @@ export const Events = () => {
         height={height - 3}
         setSelected={setSelected}
         selected={selected}
+        data={italy}
       />
       <Footer>
         <Box gap={1}>

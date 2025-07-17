@@ -1,14 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { deepCopy } from '@saulx/utils'
+import { hash } from '@saulx/hash'
 import { EventType } from '../../types.js'
 import { useQuery } from '@based/react'
+
+export type UseDataFn = (
+  page: number,
+  active: boolean,
+  len: number,
+) => ReturnType<typeof useQuery>
 
 export const usePaginatedData = (
   maxChars: number,
   maxLines: number,
-  fn: string,
   setSelected: (selected: number) => void,
   selected: number,
+  staticData?: EventType[],
+  useData?: UseDataFn,
   len: number = 100,
   minRowLines: number = 2,
 ) => {
@@ -38,11 +46,20 @@ export const usePaginatedData = (
     page: 0,
     selected: 0,
   })
-
-  const { data, error, loading, checksum } = useQuery(
-    selected === 0 || dataRef.current.page !== page ? fn : null,
-    { page },
-  )
+  let data: EventType[] | null = null
+  let checksum: number = 0
+  if (staticData) {
+    data = staticData
+    checksum = hash(data)
+  } else {
+    const d = useData(
+      page,
+      selected === 0 || dataRef.current.page !== page,
+      len,
+    )
+    data = d.data
+    checksum = d.checksum
+  }
 
   if (selected === 0 && data) {
     dataRef.current.data = data
@@ -147,11 +164,11 @@ export const usePaginatedData = (
               level: log.level,
               meta:
                 j === 0 && n === 0
-                  ? {
+                  ? log.function && {
                       name: log.function.name,
                     }
                   : lineAdded === totalLines - 1
-                    ? {
+                    ? log.createdAt && {
                         createdAt: log.createdAt,
                       }
                     : undefined,

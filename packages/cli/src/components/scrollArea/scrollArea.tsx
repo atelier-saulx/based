@@ -1,26 +1,37 @@
 import { Box, Text } from 'ink'
 import React from 'react'
-
-import { usePaginatedData } from './usePaginatedData.js'
+import { EventType } from '../../types.js'
+import { UseDataFn, usePaginatedData } from './usePaginatedData.js'
 import { formatMetaDateTime } from './formatMetaData.js'
 
 export const ScrollArea = (p: {
   width: number
   height: number
+  data?: EventType[] | string
+  useData?: UseDataFn
   indentWidth?: number
   setSelected: (selected: number) => void
   selected: number
 }) => {
-  const indentWidth = p.indentWidth || 20
+  const indentWidth = p.indentWidth || (typeof p.data === 'string' ? 1 : 20)
   const maxCols = p.width - indentWidth - 3
   const maxRows = p.height - 1
 
   const { lines } = usePaginatedData(
     maxCols,
     maxRows,
-    'based:events',
     p.setSelected,
     p.selected,
+    typeof p.data === 'string'
+      ? [
+          {
+            type: 'runtime',
+            level: 'info',
+            msg: p.data,
+          },
+        ]
+      : p.data,
+    p.useData,
   )
 
   return (
