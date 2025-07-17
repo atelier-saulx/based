@@ -40,11 +40,7 @@ export const parseConfig = async (
   // this has to change...
   // need to hash the file before if we wan this
   const checksum = 1 // fnConfig.checksum
-
-  const banner = `import { createRequire } from "module";const require = createRequire(process.cwd());
-    const { setInterval, setTimeout, clearInterval, clearTimeout, console } = new _FnGlobals('${fnConfig.name}',${checksum});
-        `
-
+  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${fnConfig.name}',${checksum});`
   const indexCtx = await context({
     banner: {
       js: banner,
@@ -55,6 +51,7 @@ export const parseConfig = async (
     platform: 'node',
     format: 'esm',
     metafile: true,
+    treeShaking: true,
   }).then(rebuild)
 
   if (fnConfig.type === 'app') {
@@ -65,6 +62,7 @@ export const parseConfig = async (
       bundle: true,
       write: false,
       outdir: '.',
+
       loader: {
         '.ico': 'file',
         '.eot': 'file',

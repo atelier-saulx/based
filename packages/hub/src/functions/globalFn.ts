@@ -2,10 +2,12 @@ import { Writable } from 'node:stream'
 import { Console } from 'node:console'
 import { DbClient } from '@based/db'
 import { sendToFunctionLogs } from './log.js'
+import { createRequire } from 'node:module'
 
 export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
   class FnGlobals {
     constructor(name: string, checksum: number) {
+      this.require = createRequire(import.meta.url)
       this.name = name
       this.checksum = checksum
       this.console = new Console({
@@ -54,9 +56,8 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
     }
     private timers = new Set()
     private intervals = new Set()
-
     public console: Console
-
+    public require: NodeRequire
     public setImmediate = <T extends Function, A>(fn: T, arg?: A) => {
       if (this.removed) {
         return

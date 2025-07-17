@@ -9,6 +9,7 @@ import { Dev } from './dev.js'
 import { Init } from './init.js'
 import { useClients } from './hooks/useClients/useClients.js'
 import { Props } from './types.js'
+import { Deploy } from './deploy.js'
 
 const Env = (p: Props) => {
   const { userId } = useAuthState()
@@ -51,6 +52,10 @@ export default function App(p: Props) {
 
   if (p.command === 'dev') {
     return <Dev />
+  }
+
+  if (p.command === 'deploy') {
+    return <Deploy />
   }
 
   return <EnvWrapper {...p} />
