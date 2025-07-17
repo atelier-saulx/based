@@ -1,5 +1,5 @@
 import { DbClient } from '@based/db'
-import { BasedFunctionConfigs, BasedFunctionConfig } from '@based/functions'
+import { BasedFunctionConfigs } from '@based/functions'
 import { BasedServer } from '@based/server'
 import { createEvent } from './event.js'
 import { addStats } from './addStats.js'
@@ -10,16 +10,31 @@ export const initDynamicFunctions = (
   server: BasedServer,
   configDb: DbClient,
   statsDb: DbClient,
+  fnIds: Record<string, { statsId: number }>,
 ) => {
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
+
+        if (!fnIds[name]) {
+          fnIds[name] = { statsId: 0 }
+        }
+
+        const statsId = (fnIds[name].statsId = await statsDb.upsert(
+          'function',
+          {
+            name,
+            checksum: config.checksum,
+          },
+        ))
+
         try {
           const fn = await import(
             `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
           )
+
           // get the globalFn things and attach to function store
           const { default: fnDefault, js, css, ...rest } = fn
           if (config.type === 'authorize') {
@@ -51,6 +66,7 @@ export const initDynamicFunctions = (
               },
               ...rest,
               ...config,
+              statsId,
               type: 'function',
             }
           } else {
@@ -60,19 +76,13 @@ export const initDynamicFunctions = (
                 fn: fnDefault,
                 ...rest,
                 ...config,
+                statsId,
               },
               statsDb,
             )
           }
         } catch (err) {
-          createEvent(
-            statsDb,
-            name,
-            config.checksum,
-            err.message,
-            'init',
-            'error',
-          )
+          createEvent(statsDb, statsId, err.message, 'init', 'error')
         }
       }),
     )

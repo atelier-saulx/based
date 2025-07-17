@@ -22,8 +22,8 @@ const start = async ({ port, path, s3, buckets }: Opts) => {
   const server = new BasedServer({ port })
 
   // Initialize dynamic functions and API handlers
-  initDynamicFunctions(server, configDb.client, statsDb.client)
-  initDynamicFunctionsGlobals(statsDb.client)
+  const { fnIds } = initDynamicFunctionsGlobals(statsDb.client)
+  initDynamicFunctions(server, configDb.client, statsDb.client, fnIds)
   registerApiHandlers(server, configDb.client, statsDb.client, s3, buckets)
 
   // Handle schema updates and prepare client/server maps

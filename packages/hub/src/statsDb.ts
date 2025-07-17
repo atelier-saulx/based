@@ -17,6 +17,10 @@ export const createStatsDb = async (basePath: string) => {
         checksum: 'uint32',
         connections: 'uint32',
         errorOnInitialization: 'boolean',
+
+        // temp
+        execTime: 'uint32',
+
         events: {
           items: {
             ref: 'event',

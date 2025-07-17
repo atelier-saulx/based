@@ -6,7 +6,7 @@ import {
   uniqueNamesGenerator,
 } from 'unique-names-generator'
 
-wiohfwepofhew
+// wiohfwepofhew
 
 const hello: BasedFunction = async (based) => {
   let x = ''
@@ -51,6 +51,7 @@ const hello: BasedFunction = async (based) => {
   // console.debug('derp')
   // console.log('derp')
   // console.trace('derp')
+  throw new Error('COOKIE PANTS')
   return 'FLAP DROOLxx'
 }
 

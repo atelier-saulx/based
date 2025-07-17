@@ -5,35 +5,27 @@ import { createEvent } from './event.js'
 import { createRequire } from 'node:module'
 
 export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
+  const fnIds: Record<string, { statsId: number }> = {}
+
+  global._fnIds = fnIds
+
   class FnGlobals {
     constructor(name: string, checksum: number) {
       this.require = createRequire(import.meta.url)
+      const statsId = fnIds[name].statsId
+      this.statsId = statsId
       this.name = name
       this.checksum = checksum
       this.console = new Console({
         stdout: new Writable({
           write(chunk, _encoding, callback) {
-            createEvent(
-              statsDb,
-              name,
-              checksum,
-              chunk.toString(),
-              'runtime',
-              'info',
-            )
+            createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'info')
             callback()
           },
         }),
         stderr: new Writable({
           write(chunk, _encoding, callback) {
-            createEvent(
-              statsDb,
-              name,
-              checksum,
-              chunk.toString(),
-              'runtime',
-              'error',
-            )
+            createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'error')
             callback()
           },
         }),
@@ -43,18 +35,12 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
     private removed: true
     private name: string
     private checksum: number
+    public statsId: number
     private async catcher(p: any, fn: Function) {
       try {
         await fn(p)
       } catch (e) {
-        createEvent(
-          statsDb,
-          this.name,
-          Number(this.checksum),
-          e.message,
-          'runtime',
-          'error',
-        )
+        createEvent(statsDb, this.statsId, e.message, 'runtime', 'error')
       }
     }
     private timers = new Set()
@@ -120,4 +106,6 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
   // add activer functions handlers use this with id etc for fns
 
   global._FnGlobals = FnGlobals
+
+  return { fnIds }
 }
