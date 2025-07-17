@@ -3,7 +3,7 @@ import { join } from 'path'
 
 export const createConfigDb = async (basePath: string) => {
   const configDb = new BasedDb({
-    maxModifySize: 1e3 * 1e3,
+    maxModifySize: 5 * 1e3 * 1e3,
     path: join(basePath, 'config'),
   })
   await configDb.start()
@@ -27,14 +27,14 @@ export const createConfigDb = async (basePath: string) => {
           'stream',
           'channel',
         ],
-        code: 'string',
+        code: { type: 'string' },
         config: 'json',
         createdAt: { type: 'timestamp', on: 'create' },
         updatedAt: { type: 'timestamp', on: 'update' },
       },
       secret: {
         name: 'alias',
-        value: 'string',
+        value: { type: 'string' },
         createdAt: { type: 'timestamp', on: 'create' },
         updatedAt: { type: 'timestamp', on: 'update' },
       },
