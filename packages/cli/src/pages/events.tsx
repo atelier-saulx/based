@@ -3,11 +3,13 @@ import { useScreenSize } from 'fullscreen-ink'
 import { ScrollArea } from '../components/scrollArea/scrollArea.js'
 import { Footer } from '../components/footer/footer.js'
 import { Box, Text } from 'ink'
+import { useScrollInput } from '../components/scrollArea/useScroll.js'
 
 export const Events = () => {
   const { height, width } = useScreenSize()
 
   const [selected, setSelected] = useState(0)
+  useScrollInput(selected, setSelected)
 
   return (
     <Box flexDirection="column" width={'100%'} height={'100%'}>

@@ -1,31 +1,8 @@
-import { Box, Text, useInput } from 'ink'
+import { Box, Text } from 'ink'
 import React from 'react'
 
 import { usePaginatedData } from './usePaginatedData.js'
 import { formatMetaDateTime } from './formatMetaData.js'
-
-export const useScrollInput = (
-  selected: number,
-  setSelected: (selected: number) => void,
-) => {
-  useInput((input, key) => {
-    let newSelected = selected
-    const speed = key.meta ? 100 : key.shift ? 10 : 1
-    if (key.upArrow) {
-      newSelected = selected + speed
-    }
-    if (key.downArrow) {
-      newSelected = selected - speed
-    }
-    if (newSelected < 0) {
-      newSelected = 0
-    }
-    if (input === 'f') {
-      newSelected = 0
-    }
-    setSelected(newSelected)
-  })
-}
 
 export const ScrollArea = (p: {
   width: number

@@ -5,7 +5,8 @@
   "bin": "dist/cli.js",
   "scripts": {
     "build": "tsc -b",
-    "watch": "tsc -b --watch"
+    "watch": "tsc -b --watch",
+    "dev": "nodemon"
   },
   "files": [
     "dist"
@@ -16,7 +17,8 @@
   "sideEffects": false,
   "devDependencies": {
     "@saulx/tsconfig": "^1.1.0",
-    "ink-testing-library": "^3.0.0"
+    "ink-testing-library": "^3.0.0",
+    "nodemon": "^3.1.9"
   },
   "dependencies": {
     "@based/client": "^8.0.2",
