@@ -74,6 +74,7 @@ export const initDynamicFunctions = (
           }
         } catch (err) {
           console.log('err', name, err.message)
+          // process.exit()
         }
       }),
     )
