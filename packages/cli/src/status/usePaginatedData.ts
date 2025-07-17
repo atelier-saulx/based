@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { deepCopy } from '@saulx/utils'
-import { LogType } from '../types.js'
+import { EventType } from '../types.js'
 import { useQuery } from '@based/react'
 
 export const usePaginatedData = (
@@ -16,7 +16,8 @@ export const usePaginatedData = (
     {
       line: string
       border?: boolean
-      type: 'info' | 'error' | 'warn' | 'debug' | 'log' | 'trace' // this will be events ?
+      type: EventType['type']
+      level: EventType['level']
       meta?: {
         name?: string
         createdAt?: number
@@ -25,7 +26,7 @@ export const usePaginatedData = (
   >([])
 
   const dataRef = useRef<{
-    data: LogType[]
+    data: EventType[]
     isCopy: boolean
     page: number
     selected: number
@@ -142,6 +143,7 @@ export const usePaginatedData = (
             tempLines[index] = {
               line,
               type: log.type,
+              level: log.level,
               meta:
                 j === 0 && n === 0
                   ? {

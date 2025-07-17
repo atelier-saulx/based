@@ -16,9 +16,10 @@ export const createStatsDb = async (basePath: string) => {
         totalErrors: 'uint32',
         checksum: 'uint32',
         connections: 'uint32',
-        logs: {
+        errorOnInitialization: 'boolean',
+        events: {
           items: {
-            ref: 'log',
+            ref: 'event',
             prop: 'function',
             dependent: true,
           },
@@ -57,16 +58,20 @@ export const createStatsDb = async (basePath: string) => {
         createdAt: { type: 'timestamp', on: 'create' },
         lastUpdated: { type: 'timestamp', on: 'update' },
       },
-      log: {
+      event: {
         msg: { type: 'string', compression: 'none' },
         function: {
           ref: 'function',
-          prop: 'logs',
+          prop: 'events',
         },
         createdAt: { type: 'timestamp', on: 'create' },
-        type: ['info', 'error', 'warn', 'debug', 'log', 'trace'],
+        meta: {
+          type: 'string',
+          compression: 'none',
+        },
+        type: ['init', 'deploy', 'runtime', 'security'],
+        level: ['info', 'error', 'warn', 'debug'],
       },
-      // meausement (avarage measurement)
     },
   })
   return configDb

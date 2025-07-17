@@ -1,7 +1,7 @@
 import { Writable } from 'node:stream'
 import { Console } from 'node:console'
 import { DbClient } from '@based/db'
-import { sendToFunctionLogs } from './log.js'
+import { createEvent } from './event.js'
 
 export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
   class FnGlobals {
@@ -11,11 +11,12 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
       this.console = new Console({
         stdout: new Writable({
           write(chunk, _encoding, callback) {
-            sendToFunctionLogs(
+            createEvent(
               statsDb,
               name,
               checksum,
               chunk.toString(),
+              'runtime',
               'info',
             )
             callback()
@@ -23,11 +24,12 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
         }),
         stderr: new Writable({
           write(chunk, _encoding, callback) {
-            sendToFunctionLogs(
+            createEvent(
               statsDb,
               name,
               checksum,
               chunk.toString(),
+              'runtime',
               'error',
             )
             callback()
@@ -43,11 +45,12 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
       try {
         await fn(p)
       } catch (e) {
-        sendToFunctionLogs(
+        createEvent(
           statsDb,
           this.name,
           Number(this.checksum),
-          e,
+          e.message,
+          'runtime',
           'error',
         )
       }

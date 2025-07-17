@@ -12,7 +12,7 @@ export function registerApiHandlers(
   buckets: Record<'files' | 'backups' | 'dists', string>,
 ) {
   server.functions.add({
-    'based:logs': {
+    'based:events': {
       type: 'query',
       async fn(
         _based,
@@ -20,7 +20,7 @@ export function registerApiHandlers(
         update,
       ) {
         const q = statsDb
-          .query('log')
+          .query('event')
           .sort('createdAt', 'desc')
           .include(
             'function.name',
@@ -28,9 +28,13 @@ export function registerApiHandlers(
             'createdAt',
             'type',
             'msg',
+            'level',
+            'meta',
           )
         if (search) {
-          q.filter('function.name', 'has', search).or('msg', 'has', search)
+          q.filter('function.name', 'has', search)
+            .or('msg', 'has', search)
+            .or('meta', 'has', search)
         }
         console.log('page', page)
         q.range(page * 100, (page + 1) * 100)

@@ -19,10 +19,12 @@ export type Props = {
   command: 'dev' | 'deploy' | 'secrets' | 'init' | 'status' | 'logout'
 }
 
-export type LogType = {
+export type EventType = {
   id: number
   msg: string
-  type: 'info' | 'error' | 'warn' | 'debug' | 'log' | 'trace'
+  type: 'init' | 'deploy' | 'runtime' | 'security'
+  level: 'info' | 'error' | 'warn' | 'debug'
+  meta: string
   function: {
     name: string
     checksum: number

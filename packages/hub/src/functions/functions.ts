@@ -1,7 +1,8 @@
 import { DbClient } from '@based/db'
 import { BasedFunctionConfigs, BasedFunctionConfig } from '@based/functions'
 import { BasedServer } from '@based/server'
-import { sendToFunctionLogs } from './log.js'
+import { createEvent } from './event.js'
+import { addStats } from './addStats.js'
 
 // stat wrapper
 
@@ -53,19 +54,23 @@ export const initDynamicFunctions = (
               type: 'function',
             }
           } else {
-            specs[name] = {
-              type: 'function',
-              fn: fnDefault,
-              ...rest,
-              ...config,
-            }
+            specs[name] = addStats(
+              {
+                type: 'function',
+                fn: fnDefault,
+                ...rest,
+                ...config,
+              },
+              statsDb,
+            )
           }
         } catch (err) {
-          sendToFunctionLogs(
+          createEvent(
             statsDb,
             name,
             config.checksum,
             err.message,
+            'init',
             'error',
           )
         }

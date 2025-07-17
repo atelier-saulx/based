@@ -7,18 +7,18 @@ import { getSourcemap } from './getSourcemap.js'
 import { BasedClient } from '@based/client'
 import { Footer } from '../footer/footer.js'
 import { useScreenSize } from 'fullscreen-ink'
-import { LogType } from '../types.js'
+import { EventType } from '../types.js'
 import { usePaginatedData } from './usePaginatedData.js'
 
 let envIdCached: string | undefined
 
-const parseLog = async (log: LogType, client: BasedClient) => {
+const parseLog = async (log: EventType, client: BasedClient) => {
   if (!envIdCached) {
     const { envId } = await client.call('based:env-info')
     envIdCached = envId
   }
 
-  if (log.type === 'error') {
+  if (log.level === 'error') {
     const sourcemap = await getSourcemap(
       client,
       String(log.function.checksum),
@@ -60,7 +60,7 @@ export const Status = () => {
   const { lines, setSelected, selected } = usePaginatedData(
     maxCols,
     maxRows,
-    'based:logs',
+    'based:events',
   )
 
   useInput((input, key) => {
@@ -116,9 +116,9 @@ export const Status = () => {
                 </Box>
                 <Text
                   color={
-                    v.type === 'error'
+                    v.level === 'error'
                       ? 'red'
-                      : v.type === 'warn'
+                      : v.level === 'warn'
                         ? 'yellow'
                         : 'white'
                   }

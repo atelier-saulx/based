@@ -1,11 +1,13 @@
 import { DbClient } from '@based/db'
 
-export const sendToFunctionLogs = (
+export const createEvent = (
   statsDb: DbClient,
   name: string,
   checksum: number,
   msg: string,
-  type: 'info' | 'error' | 'warn' | 'debug' | 'log' | 'trace' = 'info',
+  type: 'init' | 'deploy' | 'runtime' | 'security',
+  level: 'info' | 'error' | 'warn' | 'debug',
+  meta?: string,
 ) => {
   if (msg && msg.length > 3e3) {
     msg = msg.slice(0, 3e3) + `...(${msg.length - 3e3} more characters)`
@@ -27,10 +29,12 @@ export const sendToFunctionLogs = (
     })
     .then((id) => {
       statsDb
-        .create('log', {
+        .create('event', {
           function: id,
           msg,
           type,
+          level,
+          meta,
         })
         .catch((e) => {
           console.error('failed writing to log', e)
