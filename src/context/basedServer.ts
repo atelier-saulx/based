@@ -17,6 +17,9 @@ import {
 } from "../shared/index.js";
 import type { AppContext } from "./AppContext.js";
 import { deepMerge } from "@saulx/utils";
+import { createRequire } from 'module'
+global.require = createRequire(import.meta.url)
+
 
 const remoteServerConfig: BasedFunctionConfigs = {
   db: {

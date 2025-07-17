@@ -177,7 +177,6 @@ export const deploy = async (program: Command) => {
                       .warning(context.i18n("methods.schema.setSchema"))
                       .line();
                   }
-                  console.log("=====", found);
                   await schemaDeploy(context, found);
 
                   continue;
