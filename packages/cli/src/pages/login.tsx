@@ -1,8 +1,8 @@
 import React, { useContext, useState } from 'react'
-import { Box, Newline, Text } from 'ink'
+import { Box, Text } from 'ink'
 import { EmailInput, Spinner } from '@inkjs/ui'
 import { useClient } from '@based/react'
-import { AdminCtx } from './adminCtx.js'
+import { AdminCtx } from '../adminCtx.js'
 import {
   adjectives,
   animals,

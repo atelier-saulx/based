@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { deepCopy } from '@saulx/utils'
-import { EventType } from '../types.js'
+import { EventType } from '../../types.js'
 import { useQuery } from '@based/react'
 
 export const usePaginatedData = (
   maxChars: number,
   maxLines: number,
   fn: string,
+  setSelected: (selected: number) => void,
+  selected: number,
   len: number = 100,
   minRowLines: number = 2,
 ) => {
@@ -37,7 +39,6 @@ export const usePaginatedData = (
     selected: 0,
   })
 
-  const [selected, setSelected] = useState<number>(0)
   const { data, error, loading, checksum } = useQuery(
     selected === 0 || dataRef.current.page !== page ? fn : null,
     { page },

@@ -1,7 +1,7 @@
 import { useClient } from '@based/react'
-import { Box, Text, useApp } from 'ink'
-import React, { useContext, useEffect, useState } from 'react'
-import { AdminCtx } from './adminCtx.js'
+import { useApp } from 'ink'
+import React, { useContext, useEffect } from 'react'
+import { AdminCtx } from '../adminCtx.js'
 import { Spinner } from '@inkjs/ui'
 
 export const Logout = () => {

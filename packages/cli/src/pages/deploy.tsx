@@ -1,7 +1,7 @@
 import { BasedClient } from '@based/client'
 import { Box, Text } from 'ink'
 import React, { useEffect } from 'react'
-import { parseFolder, ParseResults } from './bundle/parse.js'
+import { parseFolder, ParseResults } from '../bundle/parse.js'
 import { serialize } from '@based/schema'
 import { basename } from 'path'
 

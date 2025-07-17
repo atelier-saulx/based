@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Box, Text } from 'ink'
-import { parseFolder, watch } from './bundle/index.js'
+import { parseFolder, watch } from '../bundle/index.js'
 import { initS3 } from '@based/s3'
 import startHub from '@based/hub'
 import connect from '@based/client'
