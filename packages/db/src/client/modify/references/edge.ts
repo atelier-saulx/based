@@ -134,6 +134,9 @@ export function writeEdges(
           }
           ctx.buf[ctx.len++] = STRING
           size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
+          if (size === null) {
+            return RANGE_ERR
+          }
         }
         let sizeU32 = size
         ctx.buf[ctx.len++] = sizeU32
