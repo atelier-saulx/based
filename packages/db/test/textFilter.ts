@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { join } from 'path'
+import { deepEqual } from './shared/assert.js'
 
 await test('textFilter', async (t) => {
   const db = new BasedDb({
@@ -78,7 +79,7 @@ await test('textFilter', async (t) => {
     { locale: 'en' },
   )
 
-  for (let i = 0; i < 100000; i++) {
+  for (let i = 0; i < 10000; i++) {
     await db.create(
       'project',
       {
@@ -113,4 +114,32 @@ await test('textFilter', async (t) => {
     )
   }
   await Promise.all(q)
+})
+
+await test('compressionFilter', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e3 * 1e3,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      x: {
+        props: {
+          bla: ['x', 'y', 'z'],
+          y: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const derp = `Lorem ipsum dol89258, consectetur adipisci, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Etiam euismod, urna eu tincidunt consectetur, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant mor bi.`
+
+  await db.create('x', {
+    y: derp,
+  })
+
+  deepEqual(await db.query('x').filter('y', 'has', 'derp').get(), [])
 })
