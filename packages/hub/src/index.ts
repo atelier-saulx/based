@@ -40,14 +40,21 @@ const start = async ({ port, path, s3, buckets }: Opts) => {
   server.client.db = defaultDb.client
 
   // Return cleanup function
-  return async () => {
-    await Promise.all([
-      server.destroy(),
-      configDb.destroy(),
-      statsDb.destroy(),
-      ...Object.values(clients).map((c) => c.destroy()),
-      ...Object.values(servers).map((s) => s.destroy()),
-    ])
+  return {
+    configDb,
+    statsDb,
+    server,
+    servers,
+    clients,
+    close: async () => {
+      await Promise.all([
+        server.destroy(),
+        configDb.destroy(),
+        statsDb.destroy(),
+        ...Object.values(clients).map((c) => c.destroy()),
+        ...Object.values(servers).map((s) => s.destroy()),
+      ])
+    },
   }
 }
 

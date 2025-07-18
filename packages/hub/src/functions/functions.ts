@@ -70,6 +70,7 @@ export const initDynamicFunctions = (
               type: 'function',
             }
           } else {
+            console.log({ statsId })
             specs[name] = addStats(
               {
                 type: 'function',
@@ -82,6 +83,7 @@ export const initDynamicFunctions = (
             )
           }
         } catch (err) {
+          console.log('error', err)
           createEvent(statsDb, statsId, err.message, 'init', 'error')
         }
       }),
