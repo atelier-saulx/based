@@ -63,15 +63,13 @@ export const createStatsDb = async (basePath: string) => {
         lastUpdated: { type: 'timestamp', on: 'update' },
       },
       event: {
-        msg: { type: 'string' },
+        msg: 'string',
         function: {
           ref: 'function',
           prop: 'events',
         },
         createdAt: { type: 'timestamp', on: 'create' },
-        meta: {
-          type: 'string',
-        },
+        meta: 'string',
         type: ['init', 'deploy', 'runtime', 'security'],
         level: ['info', 'error', 'warn', 'debug'],
       },
