@@ -550,10 +550,6 @@ await test('string compression - max buf size', async (t) => {
   const items = await db.query('file').get().toObject()
 
   for (const item of items) {
-    if (item.contents !== contents) {
-      console.log('a', contents)
-      console.log('b', item.contents)
-    }
     equal(item.contents, contents, 'contents are the same')
   }
 })
