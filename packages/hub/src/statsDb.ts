@@ -69,13 +69,9 @@ export const createStatsDb = async (basePath: string) => {
           prop: 'events',
         },
         createdAt: { type: 'timestamp', on: 'create' },
-<<<<<<< HEAD
-        meta: 'string',
-=======
         meta: {
           type: 'string',
         },
->>>>>>> e0816c6b6f51fec557b9d41eb671e1da91d9d091
         type: ['init', 'deploy', 'runtime', 'security'],
         level: ['info', 'error', 'warn', 'debug'],
       },
