@@ -3,14 +3,48 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 import { v4 as uuid } from 'uuid'
+import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 
 export function registerApiHandlers(
   server,
   configDb: DbClient,
+  statsDb: DbClient,
   s3: S3Client,
   buckets: Record<'files' | 'backups' | 'dists', string>,
 ) {
   server.functions.add({
+    'based:logs': {
+      type: 'query',
+      async fn(
+        _based,
+        { search, page }: { search?: string; page: number },
+        update,
+      ) {
+        // TODO: add pagination
+        const q = statsDb
+          .query('log')
+          .sort('createdAt', 'desc')
+          .include(
+            'function.name',
+            'function.checksum',
+            'createdAt',
+            'type',
+            'msg',
+          )
+
+        if (search) {
+          q.filter('function.name', 'has', search).or('msg', 'has', search)
+        }
+
+        console.log('page', page)
+        q.range(page * 100, (page + 1) * 100)
+
+        return q.subscribe((res) => {
+          const obj = res.toObject()
+          update(obj)
+        })
+      },
+    },
     'db:file-upload': {
       type: 'stream',
       async fn(

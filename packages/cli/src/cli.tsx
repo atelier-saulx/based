@@ -99,7 +99,7 @@ if (cli.flags.token) {
   }
 }
 
-if (command === 'dev') {
+if (command === 'dev' || command === 'deploy') {
   render(<App opts={opts} command={command ?? 'status'} />)
 } else {
   withFullScreen(<App opts={opts} command={command ?? 'status'} />).start()

@@ -1,8 +1,6 @@
 import { readdir } from 'fs/promises'
 import { join } from 'path'
 
-const cwd = process.cwd()
-
 export type FindResult = {
   path: string
   file: string
@@ -11,6 +9,7 @@ export type FindResult = {
 }
 
 export const find = async (
+  cwd: string,
   targets: Set<string>,
   cb: (res: FindResult) => Promise<any>,
 ): Promise<void> => {
