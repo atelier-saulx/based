@@ -2,13 +2,12 @@ import { BasedDb } from '@based/db'
 import { join } from 'path'
 
 export const createStatsDb = async (basePath: string) => {
-  const configDb = new BasedDb({
+  const statsDb = new BasedDb({
     maxModifySize: 1e3 * 1e3,
     path: join(basePath, 'stats'),
   })
-
-  await configDb.start()
-  await configDb.setSchema({
+  await statsDb.start()
+  await statsDb.setSchema({
     types: {
       function: {
         name: 'alias',
@@ -64,17 +63,23 @@ export const createStatsDb = async (basePath: string) => {
         lastUpdated: { type: 'timestamp', on: 'update' },
       },
       event: {
-        msg: 'string',
+        msg: { type: 'string' },
         function: {
           ref: 'function',
           prop: 'events',
         },
         createdAt: { type: 'timestamp', on: 'create' },
+<<<<<<< HEAD
         meta: 'string',
+=======
+        meta: {
+          type: 'string',
+        },
+>>>>>>> e0816c6b6f51fec557b9d41eb671e1da91d9d091
         type: ['init', 'deploy', 'runtime', 'security'],
         level: ['info', 'error', 'warn', 'debug'],
       },
     },
   })
-  return configDb
+  return statsDb
 }

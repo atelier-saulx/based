@@ -32,11 +32,10 @@ export function registerApiHandlers(
             'meta',
           )
         if (search) {
-          q.filter('function.name', 'has', search)
-            .or('msg', 'has', search)
-            .or('meta', 'has', search)
+          q.filter('msg', 'has', search)
+          // .or('msg', 'has', search)/
+          // .or('meta', 'has', search)
         }
-        console.log('page', page)
         q.range(page * 100, (page + 1) * 100)
         return q.subscribe((res) => {
           const obj = res.toObject()
