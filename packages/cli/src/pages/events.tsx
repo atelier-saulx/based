@@ -6,7 +6,8 @@ import { Box, Text } from 'ink'
 import { useScrollInput } from '../components/scrollArea/useScroll.js'
 import { useQuery } from '@based/react'
 
-import { italy } from '../../../db/test/shared/examples.js'
+const useEvents = (page: number, active: boolean) =>
+  useQuery(active && 'based:events', { page })
 
 export const Events = () => {
   const { height, width } = useScreenSize()
@@ -19,7 +20,7 @@ export const Events = () => {
         height={height - 3}
         setSelected={setSelected}
         selected={selected}
-        data={italy}
+        useData={useEvents}
       />
       <Footer>
         <Box gap={1}>

@@ -31,28 +31,31 @@ const hello: BasedFunction = async (based) => {
 
   bla()
 
-  await based.db.setSchema({
-    types: {
-      thing: {
-        name: 'string',
-      },
-    },
-  })
+  // await based.db.setSchema({
+  //   types: {
+  //     thing: {
+  //       name: 'string',
+  //       x: 'string',
+  //     },
+  //   },
+  // })
 
   console.log(' ???  ???xxx?')
 
-  await based.db.create('thing', {
-    name: 'derp',
-  })
+  // await based.db.create('thing', {
+  //   name: 'derp',
+  // })
 
-  await based.db.query('thing').get().inspect()
+  // await based.db.query('thing').get().inspect()
 
   // console.warn('derp')
   // console.debug('derp')
   // console.log('derp')
   // console.trace('derp')
-  throw new Error('COOKIE PANTS')
-  return 'FLAP DROOLxx'
+  // throw new Error('COOKIE PANTS')
+  // return 'FLAP DROOLxx'
+
+  return based.db.schema
 }
 
 export default hello

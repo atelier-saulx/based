@@ -16,7 +16,8 @@
   "sideEffects": false,
   "devDependencies": {
     "@saulx/tsconfig": "^1.1.0",
-    "ink-testing-library": "^3.0.0"
+    "ink-testing-library": "^3.0.0",
+    "@based/ui": "8.2.0-alpha.4"
   },
   "dependencies": {
     "@based/client": "^8.0.2",
