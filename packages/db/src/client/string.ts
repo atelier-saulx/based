@@ -1,7 +1,6 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@saulx/utils'
-import { RANGE_ERR } from './modify/types.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 

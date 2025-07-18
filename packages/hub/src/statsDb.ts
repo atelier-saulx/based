@@ -6,6 +6,7 @@ export const createStatsDb = async (basePath: string) => {
     maxModifySize: 1e3 * 1e3,
     path: join(basePath, 'stats'),
   })
+
   await configDb.start()
   await configDb.setSchema({
     types: {
@@ -63,16 +64,13 @@ export const createStatsDb = async (basePath: string) => {
         lastUpdated: { type: 'timestamp', on: 'update' },
       },
       event: {
-        msg: { type: 'string', compression: 'none' },
+        msg: 'string',
         function: {
           ref: 'function',
           prop: 'events',
         },
         createdAt: { type: 'timestamp', on: 'create' },
-        meta: {
-          type: 'string',
-          compression: 'none',
-        },
+        meta: 'string',
         type: ['init', 'deploy', 'runtime', 'security'],
         level: ['info', 'error', 'warn', 'debug'],
       },
