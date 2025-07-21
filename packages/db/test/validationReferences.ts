@@ -333,4 +333,10 @@ await test('update', async (t) => {
   await throws(async () => {
     db.update('user', userWithFriends, { friends: { delete: 123 } })
   }, 'Expected array for field delete in friends')
+
+  await throws(async () =>
+    db.update('user', userWithConn, {
+      connections: { add: [userWithConn] },
+    })
+  )
 })
