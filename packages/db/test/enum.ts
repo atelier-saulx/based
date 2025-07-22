@@ -37,13 +37,11 @@ await test('enum', async (t) => {
 
   db.create('user', {})
 
-  await db.drain() // will become async
-
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'mid' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 
   deepEqual(
@@ -54,20 +52,18 @@ await test('enum', async (t) => {
         .filter('fancyness', '=', 'fire')
         .get()
     ).toObject(),
-    [{ id: 2, fancyness: 'fire' }],
+    [{ id: 2, fancyness: 'fire' }, { id: 4, fancyness: 'fire' }],
   )
 
   db.update('user', user1, {
     fancyness: 'beta',
   })
 
-  await db.drain()
-
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'beta' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 
   await db.update('user', user1, {
@@ -78,6 +74,6 @@ await test('enum', async (t) => {
     { id: 1, fancyness: undefined },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 })
