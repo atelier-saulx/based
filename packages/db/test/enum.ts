@@ -13,7 +13,11 @@ await test('enum', async (t) => {
     types: {
       user: {
         props: {
-          fancyness: ['mid', 'fire', 'beta'],
+          fancyness: {
+            type: 'enum',
+            enum: ['mid', 'fire', 'beta'],
+            default: 'fire',
+          },
         },
       },
     },
