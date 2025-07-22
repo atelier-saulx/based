@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 
 await test('enum', async (t) => {
   const db = new BasedDb({
@@ -27,7 +27,7 @@ await test('enum', async (t) => {
     fancyness: 'mid',
   })
 
-  db.create('user', {
+  const user2 = db.create('user', {
     fancyness: 'fire',
   })
 
@@ -70,8 +70,18 @@ await test('enum', async (t) => {
     fancyness: null,
   })
 
+  throws(() => db.update('user', user2, {
+    fancyness: 3,
+  }))
+  throws(() => db.update('user', user2, {
+    fancyness: 'fond',
+  }))
+  throws(() => db.update('user', user2, {
+    fancyness: undefined,
+  }))
+
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
-    { id: 1, fancyness: undefined },
+    { id: 1, fancyness: 'fire' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
     { id: 4, fancyness: 'fire' },
