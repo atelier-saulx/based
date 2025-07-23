@@ -20,10 +20,12 @@
 #include "ref_save_map.h"
 #include "schema.h"
 
-#define SCHEMA_MIN_SIZE             6
-#define SCHEMA_OFF_BLOCK_CAPACITY   0
-#define SCHEMA_OFF_NR_FIELDS        4
-#define SCHEMA_OFF_NR_FIXED_FIELDS  5
+#define SCHEMA_MIN_SIZE                 8
+#define SCHEMA_OFF_BLOCK_CAPACITY       0 /*!< u32 */
+#define SCHEMA_OFF_NR_FIELDS            4 /*!< u8 */
+#define SCHEMA_OFF_NR_FIXED_FIELDS      5 /*!< u8 */
+#define SCHEMA_OFF_NR_VIRTUAL_FIELDS    6 /*!< u8 */
+#define SCHEMA_OFF_SPARE                7 /*!< u8 */
 
 struct schemabuf_parser_ctx {
     struct ref_save_map *ref_save_map;
@@ -334,6 +336,7 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
         .block_capacity = block_capacity,
         .nr_fields = buf[SCHEMA_OFF_NR_FIELDS],
         .nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS],
+        .nr_virtual_fields = buf[SCHEMA_OFF_NR_VIRTUAL_FIELDS],
     };
 
     if (nfo->nr_fixed_fields > nfo->nr_fields) {

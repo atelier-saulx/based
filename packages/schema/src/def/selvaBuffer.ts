@@ -129,7 +129,7 @@ const propDefBuffer = (
           eschema = p
             .map((prop) => propDefBuffer(schema, prop as PropDef, true))
             .flat(1)
-          eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0)
+          eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0, 0, 0)
           view.setUint32(5, eschema.length, true)
         }
       }
@@ -174,9 +174,11 @@ export function schemaToSelvaBuffer(schema: {
 
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([
-      ...blockCapacity(t.blockCapacity),
-      nrFields,
-      1 + refFields,
+      ...blockCapacity(t.blockCapacity), // u32 blockCapacity
+      nrFields, // u8 nrFields
+      1 + refFields, // u8 nrFixedFields
+      0, // u8 nrVirtualFields
+      0, // u8 spare
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,

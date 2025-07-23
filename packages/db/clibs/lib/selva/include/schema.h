@@ -13,6 +13,7 @@ struct ref_save_map_item;
 struct schema_info {
     size_t block_capacity;
     size_t nr_fixed_fields;
+    size_t nr_virtual_fields;
     size_t nr_fields;
 };
 
