@@ -14,6 +14,12 @@ await test('filter edges', async (t) => {
       team: {
         props: {
           name: 'string',
+          files: {
+            items: {
+              ref: 'libraryFile',
+              prop: 'team'
+            },
+          },
         },
       },
       libraryFile: {
@@ -52,8 +58,10 @@ await test('filter edges', async (t) => {
   deepEqual(
     await db
       .query('team')
-      .include('files')
-      .filter('$files.fileType', '=', 'document')
+      .filter('files', 'exists')
+      .include((s) =>
+        s('files').filter('fileType', '=', 'document').include('fileType'),
+      )
       .get(),
     [
       {
@@ -65,7 +73,7 @@ await test('filter edges', async (t) => {
         ],
       },
     ],
-    'filtering edges with nested sintax',
+    'filtering edges with nested syntax',
   )
 
   deepEqual(
