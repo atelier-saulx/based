@@ -1,16 +1,19 @@
 # BasedDb
 
-BasedDb is a powerful database solution that supports various data types, references, edges, and operations. It also offers concurrency handling, client-server architecture support, and more.
+BasedDb is a powerful node graph based database solution that supports various
+data types, references, edges, and operations. It also offers concurrency
+handling, client-server architecture support, and more.
 
 ## Features
 
 - Schema definition and management
 - Data creation, querying, updating, and deletion
-- Support for strings, numbers, booleans, binaries, aliases, enums, and cardinality
-- Edges and references for advanced data modeling
+- Support for strings, locale aware text, numbers, booleans, binaries, aliases, enums, row and columnar vectors, and cardinality
+- References and edge properties for advanced data modeling
 - Concurrency support for high-load scenarios
 - Client-server design for distributed systems
 - Checksum, analytics, and expiration features
+- Async block based backups, i.e. only dirty blocks needs to be written on save
 
 ## Install
 
