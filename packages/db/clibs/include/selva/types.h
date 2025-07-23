@@ -8,6 +8,17 @@
 #include <stdint.h>
 #include "selva/_export.h"
 
+#define SELVA_FIELDS_MAX 249
+
+/**
+ * Reserved (N/A) field id.
+ * Can be used to mark that a field doesn't exist.
+ * E.g. if created and updated fields don't exist their ids can be set to this
+ * value.
+ * Technically fields 251..255 are all reserved.
+ */
+#define SELVA_FIELDS_RESERVED 255
+
 typedef uint32_t block_id_t;
 typedef uint8_t field_t;
 typedef uint32_t node_id_t;
@@ -88,7 +99,7 @@ struct SelvaFieldsSchema {
         size_t len;
         size_t fixed_data_size;
     } field_map_template;
-    struct SelvaFieldSchema field_schemas[255];
+    struct SelvaFieldSchema field_schemas[SELVA_FIELDS_MAX];
 };
 
 struct SelvaNodeSchema {
