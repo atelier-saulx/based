@@ -2089,7 +2089,7 @@ static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, 
 
 void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
-    const field_t nr_fields = schema->nr_fields; /* same as node->fields.nr_fields */
+    const field_t nr_fields = fields->nr_fields;
 
     for (field_t field = 0; field < nr_fields; field++) {
         const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
