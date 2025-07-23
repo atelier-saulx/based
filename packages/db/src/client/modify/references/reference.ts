@@ -26,7 +26,7 @@ function writeRef(
   hasEdges: boolean,
   isTmpId: boolean,
 ): ModifyErr {
-  if (!def.validation(id, def)) {
+  if (!def.validation(id, def) || ((schema.idUint8[1] << 8 | schema.idUint8[0]) === def.inverseTypeId && parentId === id)) {
     return new ModifyError(def, id)
   }
 

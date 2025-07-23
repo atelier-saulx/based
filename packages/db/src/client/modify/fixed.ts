@@ -105,7 +105,7 @@ map[ENUM] = (ctx, val, def, mod) => {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   if (val === null) {
-    ctx.buf[ctx.len++] = 0
+    ctx.buf[ctx.len++] = def.default
   } else if (val in def.reverseEnum) {
     ctx.buf[ctx.len++] = def.reverseEnum[val] + 1
   } else {

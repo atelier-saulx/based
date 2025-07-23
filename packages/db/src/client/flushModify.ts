@@ -193,6 +193,9 @@ export const flushBuffer = (db: DbClient) => {
         }
 
         db.flushReady()
+      }).catch((e) => {
+        console.error('Modify Failed', e)
+        execCtxQueue(resCtx, true)
       })
 
     ctx.reset()

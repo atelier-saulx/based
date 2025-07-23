@@ -86,7 +86,6 @@ await test('references', async (t) => {
   })
 
   const ids: number[] = []
-  // above 10k make lmdb?
   for (let i = 0; i < 1e4; i++) {
     ids.push(
       db.create('user', {

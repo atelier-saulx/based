@@ -350,7 +350,7 @@ await test('default values for all props in user type', async (t) => {
       isNice: true,
       count: 42,
       eventTime: 1678881600000,
-      level: undefined,
+      level: 'medium',
       meta: { rating: 5, notes: 'Default Note' },
       name: 'Default Name',
       config: { enabled: true, value: 10 },

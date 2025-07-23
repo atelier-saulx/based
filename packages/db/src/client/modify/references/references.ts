@@ -188,6 +188,10 @@ function updateRefs(
   }
 }
 
+function isSameDest(def: PropDef, srcTypeId: number, src: number, dst: number): boolean {
+  return srcTypeId === def.inverseTypeId && dst === src
+}
+
 function appendRefs(
   def: PropDef,
   ctx: ModifyCtx,
@@ -262,7 +266,7 @@ function appendRefs(
       return new ModifyError(def, refs)
     }
 
-    if (!def.validation(id, def)) {
+    if (!def.validation(id, def) || isSameDest(def, ctx.prefix1 << 8 | ctx.prefix0, ctx.id, id)) {
       return new ModifyError(def, refs)
     }
 
@@ -365,7 +369,7 @@ function putRefs(
   for (; i < refs.length; i++) {
     let ref = refs[i]
     if (typeof ref === 'number') {
-      if (!def.validation(ref, def)) {
+      if (!def.validation(ref, def) || isSameDest(def, ctx.prefix1 << 8 | ctx.prefix0, ctx.id, ref)) {
         return new ModifyError(def, ref)
       } else {
         ctx.buf[ctx.len++] = ref
@@ -381,7 +385,7 @@ function putRefs(
       if (!ref) {
         break
       }
-      if (!def.validation(ref, def)) {
+      if (!def.validation(ref, def) || isSameDest(def, ctx.prefix1 << 8 | ctx.prefix0, ctx.id, ref)) {
         return new ModifyError(def, ref)
       }
       ctx.buf[ctx.len++] = ref

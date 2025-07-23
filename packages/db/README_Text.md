@@ -21,7 +21,7 @@ await db.setSchema({
 
 ## Storage Format
 
-String and text fields use NFKD normalization [https://en.wikipedia.org/wiki/Unicode_equivalence],
+String and text fields use [NFKD normalization](https://unicode.org/reports/tr15/),
 which helps the database to implement extremely fast text search.
 However, the normalization may cause some loss of information in certain cases
 due to its irreversible nature and in rare cases the meaning of the string may
@@ -54,3 +54,9 @@ Currently this can be achieved by storing the string(s) in a `binary` field.
 
 - TODO Describe how the search works at high level
 - TODO Query examples
+
+## External Links
+
+- [Unicode Normalization Forms, Unicode® Standard Annex #15](https://unicode.org/reports/tr15/)
+- [DerivedNormalizationProps-16.0.0.txt, Unicode®](https://www.unicode.org/Public/UCD/latest/ucd/DerivedNormalizationProps.txt)
+- [Unicode equivalence, Wikipedia](https://en.wikipedia.org/wiki/Unicode_equivalence)

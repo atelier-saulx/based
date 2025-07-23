@@ -1,4 +1,4 @@
-import { BasedDb, ENCODER } from '../src/index.js'
+import { BasedDb } from '../src/index.js'
 import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'
 
@@ -333,4 +333,10 @@ await test('update', async (t) => {
   await throws(async () => {
     db.update('user', userWithFriends, { friends: { delete: 123 } })
   }, 'Expected array for field delete in friends')
+
+  await throws(async () =>
+    db.update('user', userWithConn, {
+      connections: { add: [userWithConn] },
+    })
+  )
 })
