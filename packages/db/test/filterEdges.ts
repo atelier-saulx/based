@@ -154,6 +154,4 @@ await test('filter references', async (t) => {
     .filter('files.fileType', '=', 'document')
     .get()
     .inspect(100)
-
-  db.stop()
 })
