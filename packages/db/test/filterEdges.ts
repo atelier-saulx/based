@@ -7,6 +7,7 @@ await test('filter edges', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -74,6 +75,10 @@ await test('filter edges', async (t) => {
   deepEqual(
     await db
       .query('team')
+      .filter('files', 'exists')
+      .include((s) =>
+        s('files').filter('fileType', '=', 'document').include('id'),
+      )
       .filter('files', 'exists')
       .include((s) =>
         s('files').filter('fileType', '=', 'document').include('id'),

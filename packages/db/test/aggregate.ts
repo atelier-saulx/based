@@ -3,8 +3,6 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import { numberDisplays } from '@based/schema'
-import { inspect } from 'node:util'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({

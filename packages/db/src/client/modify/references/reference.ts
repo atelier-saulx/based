@@ -26,7 +26,7 @@ function writeRef(
   hasEdges: boolean,
   isTmpId: boolean,
 ): ModifyErr {
-  if (!def.validation(id, def) || (def.typeIndex === def.inverseTypeId && parentId === id)) {
+  if (!def.validation(id, def) || ((ctx.prefix1 << 8 | ctx.prefix0) === def.inverseTypeId && parentId === id)) {
     return new ModifyError(def, id)
   }
 
