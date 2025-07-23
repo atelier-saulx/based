@@ -14,12 +14,6 @@ await test('filter edges', async (t) => {
       team: {
         props: {
           name: 'string',
-          files: {
-            items: {
-              ref: 'libraryFile',
-              prop: 'team'
-            },
-          },
         },
       },
       libraryFile: {
@@ -34,23 +28,26 @@ await test('filter edges', async (t) => {
     },
   })
 
-  let t1 = await db.create('team', {
+  const t1 = await db.create('team', {
     name: 'my team',
   })
-
   await db.create('libraryFile', {
     fileType: 'document',
     team: t1,
   })
-
   await db.create('libraryFile', {
     fileType: 'media',
     team: t1,
   })
 
-  await db.create('team', {
+  const t2 = await db.create('team', {
     name: 'team 2',
   })
+  await db.create('libraryFile', {
+    fileType: 'media',
+    team: t2,
+  })
+
   await db.create('team', {
     name: 'team 3',
   })
@@ -58,9 +55,10 @@ await test('filter edges', async (t) => {
   deepEqual(
     await db
       .query('team')
+      //.filter('$files.fileType', '=', 'document')
       .filter('files', 'exists')
       .include((s) =>
-        s('files').filter('fileType', '=', 'document').include('fileType'),
+        s('files').filter('fileType', '=', 'document').include('id'),
       )
       .get(),
     [
