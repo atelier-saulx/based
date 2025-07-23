@@ -97,6 +97,7 @@ await test('filter references', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
