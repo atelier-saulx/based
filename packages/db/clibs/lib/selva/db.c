@@ -369,7 +369,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
         return SELVA_EINVAL;
     }
 
-    if (nfo.nr_fields > 249) {
+    if (nfo.nr_fields > SELVA_FIELDS_MAX) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }

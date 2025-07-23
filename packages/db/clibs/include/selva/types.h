@@ -92,8 +92,8 @@ struct SelvaFieldSchema {
 } __designated_init;
 
 struct SelvaFieldsSchema {
-    field_t nr_fields; /*!< The total number of fields for this node type. */
-    field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
+    field_t nr_fields; /*!< The total number of fields in this schema. */
+    field_t nr_fixed_fields; /*!< The number of fixed fields that are always allocated. */
     struct {
         void *buf;
         size_t len;
