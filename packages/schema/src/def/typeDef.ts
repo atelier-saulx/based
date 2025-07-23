@@ -17,6 +17,10 @@ import {
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
   BLOCK_CAPACITY_MIN,
+  ALIAS,
+  ALIASES,
+  COLVEC,
+  TypeIndex,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -56,6 +60,32 @@ export const updateTypeDefs = (schema: StrictSchema) => {
     schemaTypesParsedById[type.id] = def
   }
   return { schemaTypesParsed, schemaTypesParsedById }
+}
+
+function propIndexOffset(typeIndex: TypeIndex) {
+  switch (typeIndex) {
+    case REFERENCES:
+    case REFERENCE:
+      return -300
+    case ALIAS:
+    case ALIASES:
+    case COLVEC:
+      return 300
+    default:
+      return 0
+  }
+}
+
+function reorderProps(props: PropDef[]) {
+  props.sort((a, b) => (a.prop + propIndexOffset(a.typeIndex)) - (b.prop + propIndexOffset(b.typeIndex)))
+
+  // Reassign prop indices
+  let lastProp = 0
+  for (const p of props) {
+    if (p.separate) {
+      p.prop = ++lastProp
+    }
+  }
 }
 
 export const createSchemaTypeDef = (
@@ -234,21 +264,7 @@ export const createSchemaTypeDef = (
   if (top) {
     // Put top level together
     const vals = Object.values(result.props)
-    vals.sort((a, b) => {
-      if (
-        b.separate &&
-        (a.typeIndex === REFERENCES || a.typeIndex === REFERENCE)
-      ) {
-        return -1
-      }
-      return a.prop - b.prop
-    })
-    let lastProp = 0
-    for (const p of vals) {
-      if (p.separate) {
-        p.prop = ++lastProp
-      }
-    }
+    reorderProps(vals)
     let len = 2
     let biggestSeperatePropDefault = 0
     for (const f of vals) {
