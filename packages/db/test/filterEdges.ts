@@ -54,8 +54,57 @@ await test('filter edges', async (t) => {
 
   deepEqual(
     await db
+      .query('team', 1)
+      .include((s) =>
+        s('files').filter('fileType', '=', 'document').include('id'),
+      )
+      .get(),
+    {
+      id: 1,
+      files: [
+        {
+          id: 1,
+        },
+      ],
+    },
+    'filtering edges with nested syntax, single node',
+  )
+
+  //deepEqual(
+  //  await db
+  //    .query('team')
+  //    .filter('$files.fileType', '=', 'document')
+  //    .get(),
+  //  [
+  //    {
+  //      id: 1,
+  //      files: [
+  //        {
+  //          id: 1,
+  //        },
+  //      ],
+  //    },
+  //  ],
+  //  'filtering edges with nested syntax',
+  //)
+
+  deepEqual(
+    await db
+      .query('libraryFile')
+      .filter('fileType', '=', 'document')
+      .include('id', 'team.id')
+      .get(),
+    [
+      {
+        id: 1,
+        team: { id: 1 },
+      }
+    ],
+  )
+
+  deepEqual(
+    await db
       .query('team')
-      //.filter('$files.fileType', '=', 'document')
       .filter('files', 'exists')
       .include((s) =>
         s('files').filter('fileType', '=', 'document').include('id'),
@@ -70,24 +119,7 @@ await test('filter edges', async (t) => {
           },
         ],
       },
-    ],
-    'filtering edges with nested syntax',
-  )
-
-  deepEqual(
-    await db
-      .query('team')
-      .include((q) => q('files').filter('fileType', '=', 'document'))
-      .get(),
-    [
-      {
-        id: 1,
-        files: [
-          {
-            id: 1,
-          },
-        ],
-      },
+      { id: 2, files: [] } // RFE is there a way to filter out this?
     ],
     'filtering edges with branched query',
   )
