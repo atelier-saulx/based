@@ -158,6 +158,7 @@ export function schemaToSelvaBuffer(schema: {
     const rest: PropDef[] = []
     const nrFields = 1 + sepPropCount(props)
     let refFields = 0
+    let virtualFields = 0
 
     if (nrFields >= 250) {
         throw new Error('Too many fields')
@@ -167,6 +168,9 @@ export function schemaToSelvaBuffer(schema: {
       if (f.separate) {
         if (f.typeIndex === REFERENCE || f.typeIndex === REFERENCES) {
           refFields++
+        } else if (f.typeIndex === ALIAS || f.typeIndex === ALIASES || f.typeIndex === COLVEC) {
+          // We assume that these are always the last props!
+          virtualFields++
         }
         rest.push(f)
       }
@@ -177,7 +181,7 @@ export function schemaToSelvaBuffer(schema: {
       ...blockCapacity(t.blockCapacity), // u32 blockCapacity
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
-      0, // u8 nrVirtualFields
+      virtualFields, // u8 nrVirtualFields
       0, // u8 spare
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,

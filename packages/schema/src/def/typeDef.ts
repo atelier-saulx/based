@@ -62,8 +62,12 @@ export const updateTypeDefs = (schema: StrictSchema) => {
   return { schemaTypesParsed, schemaTypesParsedById }
 }
 
-function propIndexOffset(typeIndex: TypeIndex) {
-  switch (typeIndex) {
+function propIndexOffset(prop: PropDef) {
+  if (!prop.separate) {
+    return 0
+  }
+
+  switch (prop.typeIndex) {
     case REFERENCES:
     case REFERENCE:
       return -300
@@ -77,7 +81,7 @@ function propIndexOffset(typeIndex: TypeIndex) {
 }
 
 function reorderProps(props: PropDef[]) {
-  props.sort((a, b) => (a.prop + propIndexOffset(a.typeIndex)) - (b.prop + propIndexOffset(b.typeIndex)))
+  props.sort((a, b) => (a.prop + propIndexOffset(a)) - (b.prop + propIndexOffset(b)))
 
   // Reassign prop indices
   let lastProp = 0
