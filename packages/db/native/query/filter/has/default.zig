@@ -13,7 +13,7 @@ pub fn default(value: []const u8, query: []const u8) bool {
     const ql = query.len;
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
-            if (value[i] == query[0]) {
+            if (std.ascii.toLower(value[i]) == std.ascii.toLower(query[0])) {
                 if (i + ql > l) {
                     return false;
                 }
