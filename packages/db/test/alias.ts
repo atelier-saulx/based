@@ -758,3 +758,115 @@ await test('same-name-alias', async (t) => {
     { id: 3, name: 'final' },
   ])
 })
+
+await test('alias and ref', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'alias',
+          role: {
+            type: 'reference',
+            ref: 'role',
+            prop: 'users',
+          },
+        },
+      },
+      role: {
+        props: {
+          name: 'string',
+          alias: 'alias',
+        },
+      },
+    },
+  })
+
+  const adminRole = await db.create('role', { name: 'Admin Role', alias: 'admin' })
+
+  const user1 = await db.create('user', { name: 'Mario' })
+  //await db.update('user', user, { role: { alias: 'admin' }})
+  await db.upsert('role', { alias: 'admin', users: { add: [user1]}})
+
+  const user2 = await db.create('user', { name: 'Luigi' })
+  await db.upsert('role', { alias: 'admin', users: { add: [user2]}})
+
+  deepEqual(
+    await db.query('role', adminRole).include('name', 'users').get(),
+    {
+      id: 1,
+      name: "Admin Role",
+      users: [
+        {
+          id: 1,
+          name: 'Mario',
+        },
+        {
+          id: 2,
+          name: 'Luigi',
+        }
+      ]
+    }
+  )
+})
+
+await test.skip('alias and edge ref', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'alias',
+          role: {
+            type: 'reference',
+            ref: 'role',
+            prop: 'users',
+          },
+        },
+      },
+      project: {
+        props: {
+          name: 'string',
+          users: {
+            items: {
+              ref: 'user',
+              prop: 'projects',
+              $role: {
+                type: 'reference',
+                ref: 'role',
+              },
+            },
+          }
+        },
+      },
+      role: {
+        props: {
+          name: 'string',
+          alias: 'alias',
+        },
+      },
+    },
+  })
+
+  const adminRole = await db.create('role', { name: 'Admin Role', alias: 'admin' })
+  const prj = await db.create('project', { name: 'Best' })
+  const user1 = await db.create('user', { name: 'Mario' })
+  const user2 = await db.create('user', { name: 'Luigi' })
+
+  //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
+  await db.update('project', prj, { users: { add: [ { id: user1, $role: 'admin' }] }})
+
+  db.query('project', prj).include('name', 'users', 'users.$role').get().inspect()
+})
