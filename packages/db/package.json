@@ -27,6 +27,7 @@
     "test-zig": "npm run build-zig && tsc && npm run test-fast",
     "test-zig-debug": "npm run build-zig -- debug && tsc && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.js",
     "test-ts": "tsc && node ./scripts/test.js",
+    "test-ts-watch": "tsc --watch & node --watch ./scripts/test.js",
     "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js"
   },
   "sideEffects": false,
