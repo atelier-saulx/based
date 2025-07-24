@@ -816,7 +816,7 @@ await test('alias and ref', async (t) => {
   )
 })
 
-await test.skip('alias and edge ref', async (t) => {
+await test('alias and edge ref', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -860,13 +860,31 @@ await test.skip('alias and edge ref', async (t) => {
     },
   })
 
-  const adminRole = await db.create('role', { name: 'Admin Role', alias: 'admin' })
+  await db.create('role', { name: 'Admin Role', alias: 'admin' })
   const prj = await db.create('project', { name: 'Best' })
   const user1 = await db.create('user', { name: 'Mario' })
   const user2 = await db.create('user', { name: 'Luigi' })
 
   //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
-  await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
+  //await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
 
-  db.query('project', prj).include('name', 'users', 'users.$role').get().inspect()
+  const adminRole = await db.query('role', { alias: 'admin' }).include('id').get().toObject()
+  await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
+
+  deepEqual(
+    await db.query('project', prj).include('name', 'users', 'users.$role').get(),
+    {
+      id: 1,
+      name: 'Best',
+      users: [{
+        id: 1,
+        name: 'Mario',
+        $role: {
+          id: 1,
+          name: 'Admin Role',
+          alias: 'admin',
+        },
+      }]
+    }
+  )
 })
