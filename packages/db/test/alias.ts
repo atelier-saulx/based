@@ -866,7 +866,7 @@ await test.skip('alias and edge ref', async (t) => {
   const user2 = await db.create('user', { name: 'Luigi' })
 
   //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
-  await db.update('project', prj, { users: { add: [ { id: user1, $role: 'admin' }] }})
+  await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
 
   db.query('project', prj).include('name', 'users', 'users.$role').get().inspect()
 })
