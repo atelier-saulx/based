@@ -405,17 +405,16 @@ await test('taxi', async (t) => {
   // @ts-ignore
   const sanitize = (x: unknown) => Math.round(isNaN(x) ? 0 : x)
 
-  const N = 1
+  const N = Infinity
   const taxiDumps = (await readdir(join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''))).slice(0, N)
   for (const filename of taxiDumps) {
     const trips = parseTripDump(filename)
     for (const trip of trips) {
-      const vendor = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get()
-      const rate = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get()
-      const pickupLoc = await db.query('zone', { locationId: trip.PULocationID }).include('id').get()
-      const dropoffLoc = await db.query('zone', { locationId: trip.DOLocationID }).include('id').get()
-
-      console.log(vendor, rate, pickupLoc, dropoffLoc)
+      // TODO toObject() shouldn't be needed
+      const vendor = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get().toObject()
+      const rate = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get().toObject()
+      const pickupLoc = await db.query('zone', { locationId: trip.PULocationID }).include('id').get().toObject()
+      const dropoffLoc = await db.query('zone', { locationId: trip.DOLocationID }).include('id').get().toObject()
 
       db.create('trip', {
         vendor,
@@ -442,12 +441,13 @@ await test('taxi', async (t) => {
         },
       })
       //process.stderr.write('.')
-      break
     }
   }
 
   console.log(await db.query('zone').include('*').get())
   //await db.query('vendor').include('trips').get().inspect()
   await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
+  console.log(await db.query('trip').include('*', '**').get().toObject())
   //console.log(await db.query('vendor').include('trips').sum('trips').get())
+  console.log(process.memoryUsage())
 })
