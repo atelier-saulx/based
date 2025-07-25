@@ -3,13 +3,13 @@ import { join } from 'path'
 
 const NORMALIZATION = 'NFKD'
 
-export const bible = fs
+export const readBible = () => fs
   .readFileSync(join(import.meta.dirname, 'bible.txt').replace('/dist', ''), {
     encoding: 'utf8',
     flag: 'r',
   })
   .normalize(NORMALIZATION)
-export const christmasCarol = fs
+export const readChristmasCarol = () => fs
   .readFileSync(join(import.meta.dirname, 'pg46.txt').replace('/dist', ''), {
     encoding: 'utf8',
     flag: 'r',
