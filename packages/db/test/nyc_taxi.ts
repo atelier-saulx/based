@@ -306,7 +306,9 @@ await test('taxi', async (t) => {
   })
 
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  // FIXME
+  //t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -402,19 +404,15 @@ await test('taxi', async (t) => {
 
   await db.drain()
 
-  // @ts-ignore
-  const sanitize = (x: unknown) => Math.round(isNaN(x) ? 0 : x)
+  const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max)
+  const sanitize = (x: any) => clamp(Math.round(isNaN(x) ? 0 : x), -2147483648, 2147483647)
 
-  const N = Infinity
-  const taxiDumps = (await readdir(join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''))).slice(0, N)
-  for (const filename of taxiDumps) {
-    const trips = parseTripDump(filename)
-    for (const trip of trips) {
+  const createTrip = async (trip: any) => {
       // TODO toObject() shouldn't be needed
-      const vendor = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get().toObject()
-      const rate = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get().toObject()
-      const pickupLoc = await db.query('zone', { locationId: trip.PULocationID }).include('id').get().toObject()
-      const dropoffLoc = await db.query('zone', { locationId: trip.DOLocationID }).include('id').get().toObject()
+      const { id: vendor = null } = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get().toObject()
+      const { id: rate = null } = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get().toObject()
+      const { id: pickupLoc = null } = await db.query('zone', { locationId: trip.PULocationID ?? '264' }).include('id').get().toObject()
+      const { id: dropoffLoc = null } = await db.query('zone', { locationId: trip.DOLocationID ?? '264' }).include('id').get().toObject()
 
       db.create('trip', {
         vendor,
@@ -440,14 +438,32 @@ await test('taxi', async (t) => {
           cbdCongestionFee: sanitize(100 * trip.cbd_congestion_fee),
         },
       })
-      //process.stderr.write('.')
-    }
   }
 
-  console.log(await db.query('zone').include('*').get())
+  const writeLogLine = (i: number, n: number) => {
+    process.stdout.cursorTo(9)
+    process.stdout.clearLine(1)
+    process.stderr.write(`${i}/${n}`)
+  }
+
+  const N = 2
+  let i = 1
+  process.stderr.write(`Loading: 0/${N}`)
+  const taxiDumps = (await readdir(join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''))).slice(0, N)
+  for (const filename of taxiDumps) {
+    const trips = parseTripDump(filename)
+    for (const trip of trips) {
+      await createTrip(trip)
+    }
+    writeLogLine(i++, N)
+  }
+  process.stderr.write('\n')
+  await db.drain()
+
+  await db.query('zone').include('borough').get().inspect()
   //await db.query('vendor').include('trips').get().inspect()
   await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
-  console.log(await db.query('trip').include('*', '**').get().toObject())
+  console.log(await db.query('trip').include('tripDistance', 'pickupLoc', 'dropoffLoc').get().toObject())
   //console.log(await db.query('vendor').include('trips').sum('trips').get())
   console.log(process.memoryUsage())
 })
