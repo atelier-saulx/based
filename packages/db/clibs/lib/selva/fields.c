@@ -135,6 +135,8 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaFields *fields, const str
 {
     struct SelvaFieldInfo *nfo;
 
+    assert(fs->field < fields->nr_fields);
+
     nfo = &fields->fields_map[fs->field];
     if (!nfo->in_use) {
         *nfo = alloc_block(fields, fs);
@@ -210,6 +212,8 @@ int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchem
 #if 0
 static void print_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
+    assert(fs->field < fields->nr_fields);
+
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
@@ -491,6 +495,7 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
 static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst, ssize_t idx, bool ignore_src_dependent)
 {
     struct SelvaFields *fields_src = &src->fields;
+    assert(fs_src->field < fields_src->nr_fields);
     struct SelvaFieldInfo *nfo_src = &fields_src->fields_map[fs_src->field];
     struct SelvaNode *dst = nullptr;
     node_id_t dst_node_id = 0;
@@ -550,6 +555,7 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
         assert(fs_dst->edge_constraint.inverse_field == fs_src->field);
         assert(fs_dst->field < fields_dst->nr_fields);
 #endif
+        assert(fs_dst->field < fields_dst->nr_fields);
 
         nfo_dst = &fields_dst->fields_map[fs_dst->field];
         if (nfo_dst->in_use) {
@@ -581,6 +587,8 @@ out:
 
 static void remove_weak_reference(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
 {
+    assert(fs_src->field < fields->nr_fields);
+
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
     void *vp = nfo2p(fields, nfo);
 
@@ -637,6 +645,7 @@ static void remove_weak_reference(struct SelvaFields *fields, const struct Selva
 static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     struct SelvaFields *fields = &node->fields;
+    assert(fs->field < fields->nr_fields);
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
@@ -695,6 +704,8 @@ static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const 
 
 static void remove_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
+    assert(fs->field < fields->nr_fields);
+
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeWeakReferences refs;
 
@@ -922,6 +933,7 @@ static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, co
                  selva_str_field_type(fs->type), fs->type);
     }
 
+    assert(fs->field < fields->nr_fields);
     nfo = &fields->fields_map[fs->field];
     if (!nfo->in_use) {
         *nfo = alloc_block(fields, fs);
@@ -1144,6 +1156,7 @@ int selva_fields_references_insert(
         return 0;
     } else if (reorder) {
         struct SelvaFields *fields = &node->fields;
+        assert(fs->field < fields->nr_fields);
         struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
         struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
         ssize_t index_old;
@@ -1166,6 +1179,7 @@ done:
     } else {
         if (ref_out) {
             struct SelvaFields *fields = &node->fields;
+            assert(fs->field < fields->nr_fields);
             struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
             struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
@@ -1300,6 +1314,7 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
         void (*fn)(struct SelvaDb *db, struct SelvaNode *restrict src, struct SelvaNode *restrict dst, const struct SelvaFieldSchema *fs_src, const struct SelvaFieldSchema *fs_dst))
 {
     const struct SelvaFields *fields = &src->fields;
+    assert(fs_src->field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
     typeof_field(struct SelvaNodeReferences, nr_refs) *index_len = (typeof(index_len))((char *)nfo2p(fields, nfo) + offsetof(struct SelvaNodeReferences, nr_refs));
     typeof_field(struct SelvaNodeReferences, index) *index = (typeof(index))((char *)nfo2p(fields, nfo) + offsetof(struct SelvaNodeReferences, index));
@@ -1420,6 +1435,7 @@ static int clone_refs(struct SelvaNodeReferences *refs, struct SelvaFields *fiel
         return SELVA_EINTYPE;
     }
 
+    assert(fs->field < fields->nr_fields);
     nfo = &fields->fields_map[fs->field];
     memcpy(refs, nfo2p(fields, nfo), sizeof(*refs));
 
@@ -1565,6 +1581,7 @@ void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, st
         struct SelvaTypeEntry *type_dst = selva_get_type_by_index(db, efc->dst_node_type);
         const struct SelvaFieldSchema *fs_dst = selva_get_fs_by_te_field(type_dst, efc->inverse_field);
         struct SelvaFields *dst_fields = &ref->dst->fields;
+        assert(efc->inverse_field < dst_fields->nr_fields);
         const struct SelvaFieldInfo *dst_nfo = &dst_fields->fields_map[efc->inverse_field];
 
         if (unlikely(!dst_nfo->in_use)) {
@@ -1611,10 +1628,6 @@ int selva_fields_set_reference_meta(
         return SELVA_ENOENT;
     }
 
-#if 0
-    assert(fs->field == field);
-#endif
-
     /*
      * Edge metadata can't contain these types because it would be almost
      * impossible to keep track of the pointers.
@@ -1654,6 +1667,7 @@ int selva_fields_get_reference_meta_mutable_string(
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
+    assert(fs->field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReference *ref;
 
@@ -1674,6 +1688,7 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *, struct S
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
+    assert(fs->field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeReferences *refs;
 
@@ -1693,6 +1708,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
 
 struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
+    assert(field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReference weak_ref;
 
@@ -1711,6 +1727,7 @@ struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields
 
 struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
+    assert(field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
     struct SelvaNodeWeakReferences weak_refs;
 
@@ -1747,6 +1764,7 @@ struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, 
 
     assert(fs->type == SELVA_FIELD_TYPE_STRING);
 
+    assert(fs->field < fields->nr_fields);
     nfo = &fields->fields_map[fs->field];
 
     return !nfo->in_use ? nullptr : nfo2p(fields, nfo);
@@ -1766,6 +1784,7 @@ struct selva_string *selva_fields_get_selva_string3(
 
 struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
+    assert(fs->field < fields->nr_fields);
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
     if (!nfo->in_use) {
@@ -1780,6 +1799,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     const struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
+    assert(fs->field < fields->nr_fields);
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
@@ -1853,6 +1873,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
+    assert(fs->field < fields->nr_fields);
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
