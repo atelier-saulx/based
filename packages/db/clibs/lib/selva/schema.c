@@ -339,7 +339,8 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
         .nr_virtual_fields = buf[SCHEMA_OFF_NR_VIRTUAL_FIELDS],
     };
 
-    if (nfo->nr_fixed_fields > nfo->nr_fields) {
+    if (nfo->nr_fixed_fields > nfo->nr_fields ||
+        nfo->nr_virtual_fields > nfo->nr_fields) {
         return SELVA_EINVAL;
     }
 
@@ -348,10 +349,10 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
 
 static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
 {
-    const size_t nr_fields = fields_schema->nr_fields;
+    const size_t nr_fields = fields_schema->nr_fields - fields_schema->nr_virtual_fields;
     const size_t nr_fixed_fields = fields_schema->nr_fixed_fields;
-    size_t fixed_field_off = 0;
     struct SelvaFieldInfo *nfo = selva_malloc(nr_fields * sizeof(struct SelvaFieldInfo));
+    size_t fixed_field_off = 0;
 
     for (size_t i = 0; i < nr_fields; i++) {
         if (i < nr_fixed_fields) {

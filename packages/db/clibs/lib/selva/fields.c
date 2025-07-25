@@ -1557,7 +1557,7 @@ int selva_fields_references_swap(
 void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
     const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields : 0;
+    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields - efc_fields_schema->nr_virtual_fields : 0;
 
     if (nr_fields > 0 && !ref->meta) {
         reference_meta_create(ref, nr_fields);
@@ -1949,7 +1949,7 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 
 void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
-    fields->nr_fields = schema->nr_fields;
+    fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
     fields->data_len = schema->field_map_template.fixed_data_size;
     fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : nullptr; /* No need to tag yet for edge sharing. */
     memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
