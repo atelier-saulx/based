@@ -238,7 +238,7 @@ Operators:
 - \`<\`: Less than (numbers, timestamps).
 - \`>=\`: Greater than or equal to.
 - \`<=\`: Less than or equal to.
-- \`has\`: Contains substring (case-insensitive by default for \`string\`, \`text\`).
+- \`has\`: Contains substring (case sensitive by default for \`string\`, \`text\`, could be case insentive passing option argument).
 - \`like\`: Fuzzy search / similarity (for \`string\`, \`text\`, \`vector\`).
 
 **Filter Examples:**
@@ -629,4 +629,4 @@ await clientDb.setSchema({
 ### Aggregations
 
 BasedDb support aggregate functions such as `sum('prop1','prop2')`, `count()`, etc and operations such as `groupBY('prop')`.
-See the specific doc [Aggregations](./README_Aggregate.md) for a detailed guide on its usage and features.
+See the specific README [Aggregations](./README_Aggregate.md) for a detailed information on its usage and features.
