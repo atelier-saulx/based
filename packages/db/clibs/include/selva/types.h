@@ -95,6 +95,9 @@ struct SelvaFieldsSchema {
     field_t nr_fields; /*!< The total number of fields in this schema. */
     field_t nr_fixed_fields; /*!< The number of fixed fields that are always allocated. */
     field_t nr_virtual_fields; /*!< The number of fields that are not included in fields.fields_map. These must be the last field ids used. */
+    /**
+     * Template for fields->fields_map.
+     */
     struct {
         void *buf;
         size_t len;

@@ -11,10 +11,11 @@ struct SelvaNodeSchema;
 struct ref_save_map_item;
 
 struct schema_info {
-    size_t block_capacity;
-    size_t nr_fixed_fields;
-    size_t nr_virtual_fields;
-    size_t nr_fields;
+    size_t block_capacity; /*!< Max number of consecutive nodes stored per block. */
+    size_t cursors_max; /*!< Max number of read cursors for the type. */
+    size_t nr_fixed_fields; /*!< Number of fixed fields in the beginning of fields data. */
+    size_t nr_virtual_fields; /*!< Number of virtual fields at the end and excluded from the data. */
+    size_t nr_fields; /*!< Total number of fields in the schema. */
 };
 
 /**

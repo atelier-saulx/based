@@ -403,10 +403,10 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     /*
      * Init cursors.
      */
-    te->cursors.ida = ida_init(10); /* FIXME */
+    te->cursors.ida = ida_init(nfo.cursors_max);
     RB_INIT(&te->cursors.by_cursor_id);
     RB_INIT(&te->cursors.by_node_id);
-    te->cursors.nr_cursors = 0;
+    te->cursors.nr_cursors = 0; /* cur */
 
     if (RB_INSERT(SelvaTypeEntryIndex, &db->types.index, te)) {
         db_panic("Schema update not supported");
