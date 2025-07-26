@@ -360,6 +360,7 @@ await test('taxi', async (t) => {
       trip: {
         props: {
           vendor: { ref: 'vendor', prop: 'trips' },
+          pickupDay: 'timestamp', // TODO a hack to group by day
           pickup: 'timestamp',
           dropoff: 'timestamp',
           pickupLoc: { ref: 'zone', prop: 'pickups' },
@@ -441,6 +442,7 @@ await test('taxi', async (t) => {
 
     db.create('trip', {
       vendor,
+      pickupDay: new Date(trip.tpep_pickup_datetime).setUTCHours(0, 0, 0, 0),
       pickup: new Date(trip.tpep_pickup_datetime),
       dropoff: new Date(trip.tpep_dropoff_datetime),
       passengerCount: sanitize(Number(trip.passenger_count)),
@@ -495,25 +497,31 @@ await test('taxi', async (t) => {
   await db.query('trip').count().get().inspect()
   //await db.query('vendor').sum('trips').get().inspect()
 
-  const makeDays = (startYear: number, endYear: number) => {
-    const days: Date[] = []
-    const d = new Date(`${startYear}`)
-    while (d.getFullYear() <= endYear) {
-      d.setDate(d.getDate() + 1)
-      days.push(new Date(d))
-    }
-    return days
-  }
-  const days = makeDays(2022, 2024)
-  const res = await Promise.all(days.map((day) =>
-    db.query('trip')
-      .filter('pickup', '>=', day)
-      .filter('dropoff', '<=', new Date(day).setUTCHours(23, 59, 59, 0))
-      .count()
+  //const makeDays = (startYear: number, endYear: number) => {
+  //  const days: Date[] = []
+  //  const d = new Date(`${startYear}`)
+  //  while (d.getFullYear() <= endYear) {
+  //    d.setDate(d.getDate() + 1)
+  //    days.push(new Date(d))
+  //  }
+  //  return days
+  //}
+  //const days = makeDays(2022, 2024)
+  //const res = await Promise.all(days.map((day) =>
+  //  db.query('trip')
+  //    .filter('pickup', '>=', day)
+  //    .filter('dropoff', '<=', new Date(day).setUTCHours(23, 59, 59, 0))
+  //    //.count()
+  //    .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+  //    .groupBy('pickupDay')
+  //    .get()
+  //))
+  //res.map((r) => r.inspect())
+
+  await db.query('trip')
       .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
-      .get()
-  ))
-  res.map((r) => r.inspect())
+      .groupBy('pickupDay')
+      .get().inspect()
 
   console.log(process.memoryUsage())
 })
