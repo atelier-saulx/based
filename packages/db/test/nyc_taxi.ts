@@ -4,16 +4,13 @@ import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
+import { Sema } from 'async-sema'
 import { deepEqual } from './shared/assert.js'
 import { notEqual } from 'node:assert'
 
 const gunzip = promisify(_gunzip)
 
-async function parseTripDump(filename: string) {
-  const compressedData = await readFile(join(import.meta.dirname, 'shared', 'nyc_taxi', filename).replace('/dist', ''))
-  const data = await gunzip(compressedData)
-  return data.toString('utf-8').split('\n').filter((line) => line.length).map((line) => JSON.parse(line))
-}
+// Data source https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 // "LocationID", "Borough", "Zone", "service_zone"
 const taxiZoneLookup = [
@@ -302,6 +299,32 @@ const pmt2enum = {
     '6': 'voided trip',
 }
 
+async function parseTripDump(filename: string) {
+  const compressedData = await readFile(join(import.meta.dirname, 'shared', 'nyc_taxi', filename).replace('/dist', ''))
+  const data = await gunzip(compressedData)
+  return data.toString('utf-8').split('\n').filter((line) => line.length).map((line) => JSON.parse(line))
+}
+
+class Loading {
+  n: number
+  i = 0
+
+  constructor(n: number) {
+    this.n = n
+  }
+
+  start() {
+    process.stderr.write(`Loaded: 0/${this.n}`)
+  }
+
+  tick() {
+    this.i++
+    process.stdout.cursorTo(8)
+    process.stdout.clearLine(1)
+    process.stderr.write(`${this.i}/${this.n}`)
+  }
+}
+
 await test('taxi', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -442,39 +465,33 @@ await test('taxi', async (t) => {
       })
   }
 
-  const N = 2
-  let loaded = 0
-  const writeLogLine = () => {
-    process.stdout.cursorTo(8)
-    process.stdout.clearLine(1)
-    process.stderr.write(`${loaded}/${N}`)
-  }
-
+  const N = 4
+  const loading = new Loading(N)
+  const s = new Sema(4)
   const makeTrip = async (filename: string) => {
     const trips = await parseTripDump(filename)
     await Promise.all(trips.map((trip) => createTrip(trip)))
-    loaded++
-    writeLogLine()
+    loading.tick()
   }
 
-  process.stderr.write(`Loaded: 0/${N}`)
+  loading.start()
   const taxiDumps = (await readdir(join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''))).slice(0, N)
-  for (let i = 0; i < taxiDumps.length; i += 2) {
-    const p = []
-
-    p.push(makeTrip(taxiDumps[i]))
-    if (taxiDumps[i + 1]) p.push(makeTrip(taxiDumps[i + 1]))
-    await Promise.all(p)
-
-  }
+  await Promise.all(taxiDumps.map(async (trip) => {
+    await s.acquire()
+    makeTrip(trip).then(() => s.release())
+  }))
+  await s.drain()
   process.stderr.write('\n')
   await db.drain()
 
   await db.query('zone').include('borough').get().inspect()
-  await db.query('zone').include('*').get().inspect()
+  //await db.query('zone').include('*').get().inspect()
   //await db.query('vendor').include('trips').get().inspect()
-  await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
-  console.log(await db.query('trip').include('tripDistance', 'pickupLoc', 'dropoffLoc').get().toObject())
-  //console.log(await db.query('vendor').include('trips').sum('trips').get())
+  //await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
+  await db.query('trip').include('tripDistance', 'pickupLoc.borough', 'dropoffLoc.borough').get().inspect()
+  //await db.query('trip').count().groupBy('dropoffLoc.borough').get().inspect()
+  await db.query('trip').count().groupBy('dropoffLoc').get().inspect()
+  await db.query('trip').count().groupBy('paymentType').get().inspect()
+  //await db.query('vendor').sum('trips').get().inspect()
   console.log(process.memoryUsage())
 })
