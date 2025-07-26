@@ -433,36 +433,36 @@ await test('taxi', async (t) => {
   const sanitize = (x: any) => clamp(Math.round(isNaN(x) ? 0 : x), -2147483648, 2147483647)
 
   const createTrip = async (trip: any) => {
-      // TODO toObject() shouldn't be needed
-      const { id: vendor = null } = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get().toObject()
-      const { id: rate = null } = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get().toObject()
-      const { id: pickupLoc = null } = await db.query('zone', { locationId: trip.PULocationID ?? '264' }).include('id').get().toObject()
-      const { id: dropoffLoc = null } = await db.query('zone', { locationId: trip.DOLocationID ?? '264' }).include('id').get().toObject()
+    // TODO toObject() shouldn't be needed
+    const { id: vendor = null } = await db.query('vendor', { vendorId: trip.VendorID }).include('id').get().toObject()
+    const { id: rate = null } = await db.query('rate', { rateCodeId: trip.RatecodeID ?? '99' }).include('id').get().toObject()
+    const { id: pickupLoc = null } = await db.query('zone', { locationId: trip.PULocationID ?? '264' }).include('id').get().toObject()
+    const { id: dropoffLoc = null } = await db.query('zone', { locationId: trip.DOLocationID ?? '264' }).include('id').get().toObject()
 
-      db.create('trip', {
-        vendor,
-        pickup: new Date(trip.tpep_pickup_datetime),
-        dropoff: new Date(trip.tpep_dropoff_datetime),
-        passengerCount: sanitize(Number(trip.passenger_count)),
-        tripDistance: trip.trip_distance,
-        rate,
-        storeAndFwd: trip.store_and_fwd_flag === 'Y',
-        pickupLoc,
-        dropoffLoc,
-        paymentType: pmt2enum[trip.payment_type] ?? 'unknown',
-        fees: {
-          fareAmount: sanitize(100 * trip.fare_amount),
-          extra: sanitize(100 * trip.extra),
-          mtaTax: sanitize(100 * trip.mta_tax),
-          tipAmount: sanitize(100 * trip.tip_amount),
-          tollsAmount: sanitize(100 * trip.tolls_amount),
-          imporvementSurcharge: sanitize(100 * trip.improvement_surcharge),
-          totalAmount: sanitize(100 * trip.total_amount),
-          congestionSurcharge: sanitize(100 * trip.congestion_surcharge),
-          airportFee: sanitize(100 * trip.Airport_fee),
-          cbdCongestionFee: sanitize(100 * trip.cbd_congestion_fee),
-        },
-      })
+    db.create('trip', {
+      vendor,
+      pickup: new Date(trip.tpep_pickup_datetime),
+      dropoff: new Date(trip.tpep_dropoff_datetime),
+      passengerCount: sanitize(Number(trip.passenger_count)),
+      tripDistance: trip.trip_distance,
+      rate,
+      storeAndFwd: trip.store_and_fwd_flag === 'Y',
+      pickupLoc,
+      dropoffLoc,
+      paymentType: pmt2enum[trip.payment_type] ?? 'unknown',
+      fees: {
+        fareAmount: sanitize(100 * trip.fare_amount),
+        extra: sanitize(100 * trip.extra),
+        mtaTax: sanitize(100 * trip.mta_tax),
+        tipAmount: sanitize(100 * trip.tip_amount),
+        tollsAmount: sanitize(100 * trip.tolls_amount),
+        imporvementSurcharge: sanitize(100 * trip.improvement_surcharge),
+        totalAmount: sanitize(100 * trip.total_amount),
+        congestionSurcharge: sanitize(100 * trip.congestion_surcharge),
+        airportFee: sanitize(100 * trip.Airport_fee),
+        cbdCongestionFee: sanitize(100 * trip.cbd_congestion_fee),
+      },
+    })
   }
 
   const N = 4
@@ -488,10 +488,32 @@ await test('taxi', async (t) => {
   //await db.query('zone').include('*').get().inspect()
   //await db.query('vendor').include('trips').get().inspect()
   //await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
-  await db.query('trip').include('tripDistance', 'pickupLoc.borough', 'dropoffLoc.borough').get().inspect()
+  await db.query('trip').include('pickup', 'tripDistance', 'pickupLoc.borough', 'dropoffLoc.borough').get().inspect()
   //await db.query('trip').count().groupBy('dropoffLoc.borough').get().inspect()
   await db.query('trip').count().groupBy('dropoffLoc').get().inspect()
   await db.query('trip').count().groupBy('paymentType').get().inspect()
+  await db.query('trip').count().get().inspect()
   //await db.query('vendor').sum('trips').get().inspect()
+
+  const makeDays = (startYear: number, endYear: number) => {
+    const days: Date[] = []
+    const d = new Date(`${startYear}`)
+    while (d.getFullYear() <= endYear) {
+      d.setDate(d.getDate() + 1)
+      days.push(new Date(d))
+    }
+    return days
+  }
+  const days = makeDays(2022, 2024)
+  const res = await Promise.all(days.map((day) =>
+    db.query('trip')
+      .filter('pickup', '>=', day)
+      .filter('dropoff', '<=', new Date(day).setHours(25, 0, -1))
+      .count()
+      .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+      .get()
+  ))
+  res.map((r) => r.inspect())
+
   console.log(process.memoryUsage())
 })
