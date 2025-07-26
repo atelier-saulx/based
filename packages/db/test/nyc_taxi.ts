@@ -508,7 +508,7 @@ await test('taxi', async (t) => {
   const res = await Promise.all(days.map((day) =>
     db.query('trip')
       .filter('pickup', '>=', day)
-      .filter('dropoff', '<=', new Date(day).setHours(25, 0, -1))
+      .filter('dropoff', '<=', new Date(day).setUTCHours(23, 59, 59, 0))
       .count()
       .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
       .get()
