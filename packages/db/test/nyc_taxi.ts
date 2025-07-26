@@ -1,16 +1,18 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { join } from 'path'
+import { readdir, readFile } from 'node:fs/promises'
+import { promisify } from 'node:util'
+import { gunzip as _gunzip } from 'zlib'
 import { deepEqual } from './shared/assert.js'
 import { notEqual } from 'node:assert'
 
-import { join } from 'path'
-import { readFileSync } from 'fs'
-import { readdir } from 'node:fs/promises'
-import { gunzipSync } from 'zlib'
+const gunzip = promisify(_gunzip)
 
-function parseTripDump(filename: string) {
-  const compressedData = readFileSync(join(import.meta.dirname, 'shared', 'nyc_taxi', filename).replace('/dist', ''))
-  return gunzipSync(compressedData).toString('utf-8').split('\n').filter((line) => line.length).map((line) => JSON.parse(line))
+async function parseTripDump(filename: string) {
+  const compressedData = await readFile(join(import.meta.dirname, 'shared', 'nyc_taxi', filename).replace('/dist', ''))
+  const data = await gunzip(compressedData)
+  return data.toString('utf-8').split('\n').filter((line) => line.length).map((line) => JSON.parse(line))
 }
 
 // "LocationID", "Borough", "Zone", "service_zone"
@@ -440,27 +442,36 @@ await test('taxi', async (t) => {
       })
   }
 
-  const writeLogLine = (i: number, n: number) => {
-    process.stdout.cursorTo(9)
+  const N = 2
+  let loaded = 0
+  const writeLogLine = () => {
+    process.stdout.cursorTo(8)
     process.stdout.clearLine(1)
-    process.stderr.write(`${i}/${n}`)
+    process.stderr.write(`${loaded}/${N}`)
   }
 
-  const N = 2
-  let i = 1
-  process.stderr.write(`Loading: 0/${N}`)
+  const makeTrip = async (filename: string) => {
+    const trips = await parseTripDump(filename)
+    await Promise.all(trips.map((trip) => createTrip(trip)))
+    loaded++
+    writeLogLine()
+  }
+
+  process.stderr.write(`Loaded: 0/${N}`)
   const taxiDumps = (await readdir(join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''))).slice(0, N)
-  for (const filename of taxiDumps) {
-    const trips = parseTripDump(filename)
-    for (const trip of trips) {
-      await createTrip(trip)
-    }
-    writeLogLine(i++, N)
+  for (let i = 0; i < taxiDumps.length; i += 2) {
+    const p = []
+
+    p.push(makeTrip(taxiDumps[i]))
+    if (taxiDumps[i + 1]) p.push(makeTrip(taxiDumps[i + 1]))
+    await Promise.all(p)
+
   }
   process.stderr.write('\n')
   await db.drain()
 
   await db.query('zone').include('borough').get().inspect()
+  await db.query('zone').include('*').get().inspect()
   //await db.query('vendor').include('trips').get().inspect()
   await db.query('trip').include('pickupLoc', 'dropoffLoc', 'paymentType').get().inspect()
   console.log(await db.query('trip').include('tripDistance', 'pickupLoc', 'dropoffLoc').get().toObject())
