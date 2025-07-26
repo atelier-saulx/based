@@ -67,6 +67,21 @@ pub inline fn execAgg(
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+        } else if (aggType == aggregateTypes.AggType.HMEAN) {
+            const val = microbufferToF64(propType, value, start);
+            if (val != 0) {
+                var count = read(u64, accumulatorField, accumulatorPos);
+                var sum = read(f64, accumulatorField, accumulatorPos + 8);
+
+                count += 1;
+                sum += 1 / val;
+
+                writeInt(u64, accumulatorField, accumulatorPos, count);
+                writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+            } else {
+                writeInt(u64, accumulatorField, accumulatorPos, 0.0);
+                writeInt(f64, accumulatorField, accumulatorPos + 8, 0.0);
+            }
         } else if (aggType == aggregateTypes.AggType.STDDEV or
             aggType == aggregateTypes.AggType.VARIANCE)
         {

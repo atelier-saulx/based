@@ -7,6 +7,7 @@ export enum AggregateType {
   VARIANCE = 6,
   MAX = 7,
   MIN = 8,
+  HMEAN = 9,
 }
 
 export const enum AccumulatorSize { // comptime
@@ -18,6 +19,7 @@ export const enum AccumulatorSize { // comptime
   VARIANCE = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
   MAX = 8,
   MIN = 8,
+  HMEAN = 16,
 }
 
 export const aggregateTypeMap = new Map<
@@ -39,6 +41,10 @@ export const aggregateTypeMap = new Map<
   [
     AggregateType.AVERAGE,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.AVERAGE },
+  ],
+  [
+    AggregateType.HMEAN,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.HMEAN },
   ],
   [
     AggregateType.VARIANCE,
