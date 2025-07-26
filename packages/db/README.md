@@ -8,7 +8,17 @@ handling, client-server architecture support, and more.
 
 - Schema definition and management
 - Data creation, querying, updating, and deletion
-- Support for strings, locale aware text, numbers, booleans, binaries, aliases, enums, row and columnar vectors, and cardinality
+- Supported field types
+  - `string`
+  - `text`, locale aware multi-language [text](./README_Text.md)
+  - `binary` strings
+  - `timestamp`
+  - numeric types: `number` (double-precision floating-point), `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint64`
+  - `boolean`
+  - `alias`
+  - `enum`
+  - row and columnar vectors: `vector` and `colvec`
+  - `cardinality` set
 - References and edge properties for advanced data modeling
 - Concurrency support for high-load scenarios
 - Client-server design for distributed systems
@@ -181,7 +191,77 @@ const userWithFriendId = await db.create('user', {
 const dialogFi = await db.create('dialog', { fun: 'hauskaa' }, { locale: 'fi' })
 ```
 
-### Read (Query)
+### Update
+
+```typescript
+// Update specific fields
+await db.update('user', userId, { age: 31, isActive: false })
+
+// Update using payload.id
+await db.update('user', { id: userId, age: 32 })
+
+// Atomic increment/decrement (number/timestamp)
+await db.update('user', userId, {
+  age: { increment: 1 },
+  score: { decrement: 0.5 },
+})
+
+// Update references (single)
+await db.update('user', userWithFriendId, { bestFriend: userId })
+
+// Update references (list) - add, delete, update edge props
+await db.update('user', userWithFriendId, {
+  friends: {
+    add: [userId],
+    delete: [friendId],
+    update: [{ id: userId, $friendshipLevel: 10 }],
+  },
+})
+
+// Replace references (list)
+await db.update('user', userWithFriendId, { friends: [userId] }) // Replaces entire list
+
+// Clear references
+await db.update('user', userWithFriendId, { friends: null, bestFriend: null })
+
+// Update cardinality field
+await db.update('user', userId, { visits: 'newSession' }) // Adds 'newSession' if unique
+
+// Update root properties
+await db.update({ siteName: 'My Awesome Site V2' })
+
+// Update text with specific locale
+await db.update(
+  'dialog',
+  dialogFi,
+  { fun: 'vielä hauskempaa' },
+  { locale: 'fi' },
+)
+
+// Update timestamp with string parsing
+await db.update('user', userId, { updatedAt: 'now + 1h' }) // Relative time
+```
+
+### Upsert
+
+Update if alias exists, otherwise create.
+
+```typescript
+await db.upsert('user', {
+  alias: 'alice@example.com', // The alias to match
+  name: 'Alice Smith', // Field to update or set on create
+  age: 33, // Another field
+})
+```
+
+### Delete
+
+```typescript
+// Delete a node by ID
+await db.delete('user', userId)
+```
+
+### Query
 
 The \`query\` method starts building a request to retrieve data.
 
@@ -485,76 +565,6 @@ const specificUsers = await db
   .locale('en') // Optional: set locale context
   .get()
   .then((res) => res.toObject()) // Get plain objects
-```
-
-### Update
-
-```typescript
-// Update specific fields
-await db.update('user', userId, { age: 31, isActive: false })
-
-// Update using payload.id
-await db.update('user', { id: userId, age: 32 })
-
-// Atomic increment/decrement (number/timestamp)
-await db.update('user', userId, {
-  age: { increment: 1 },
-  score: { decrement: 0.5 },
-})
-
-// Update references (single)
-await db.update('user', userWithFriendId, { bestFriend: userId })
-
-// Update references (list) - add, delete, update edge props
-await db.update('user', userWithFriendId, {
-  friends: {
-    add: [userId],
-    delete: [friendId],
-    update: [{ id: userId, $friendshipLevel: 10 }],
-  },
-})
-
-// Replace references (list)
-await db.update('user', userWithFriendId, { friends: [userId] }) // Replaces entire list
-
-// Clear references
-await db.update('user', userWithFriendId, { friends: null, bestFriend: null })
-
-// Update cardinality field
-await db.update('user', userId, { visits: 'newSession' }) // Adds 'newSession' if unique
-
-// Update root properties
-await db.update({ siteName: 'My Awesome Site V2' })
-
-// Update text with specific locale
-await db.update(
-  'dialog',
-  dialogFi,
-  { fun: 'vielä hauskempaa' },
-  { locale: 'fi' },
-)
-
-// Update timestamp with string parsing
-await db.update('user', userId, { updatedAt: 'now + 1h' }) // Relative time
-```
-
-### Upsert
-
-Update if alias exists, otherwise create.
-
-```typescript
-await db.upsert('user', {
-  alias: 'alice@example.com', // The alias to match
-  name: 'Alice Smith', // Field to update or set on create
-  age: 33, // Another field
-})
-```
-
-### Delete
-
-```typescript
-// Delete a node by ID
-await db.delete('user', userId)
 ```
 
 ### Persistence & Control
