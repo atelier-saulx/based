@@ -519,6 +519,8 @@ await test('taxi', async (t) => {
   //res.map((r) => r.inspect())
 
   await db.query('trip')
+      .filter('pickupDay', '>=', new Date('2023-01-01'))
+      .filter('pickupDay', '<=', new Date('2023-02-01'))
       .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
       .groupBy('pickupDay')
       .get().inspect()
