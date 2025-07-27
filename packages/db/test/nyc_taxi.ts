@@ -523,12 +523,31 @@ await test('taxi', async (t) => {
   //))
   //res.map((r) => r.inspect())
 
+  // Yearly/Monthly/Daily revenue
   await db.query('trip')
-      .filter('pickupYear', '>=', new Date('2022-01-01'))
-      .filter('pickupYear', '<=', new Date('2024-05-31'))
-      .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
-      .groupBy('pickupMonth')
-      .get().inspect()
+    .filter('pickupYear', '>=', new Date('2022-01-01'))
+    .filter('pickupYear', '<=', new Date('2024-05-31'))
+    .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+    .groupBy('pickupMonth')
+    .get().inspect()
+
+  // Revenue Breakdown by Vendor
+  await db
+    .query('vendor')
+    .include('name', (select) => {
+      select('trips').groupBy('pickupYear').sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+    })
+    .get().inspect()
+
+  // Top Tippers
+  // Find the top 10 trips per day with the highest tip per mile.
+  await db
+    .query('trip')
+    .include('pickup', 'fees.tipAmount', 'tripDistance')
+    .groupBy('pickupDay')
+    .sort('fees.tipAmount', 'desc')
+    .range(0, 10)
+    .get().inspect()
 
   console.log(process.memoryUsage())
 })
