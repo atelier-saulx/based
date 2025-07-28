@@ -291,6 +291,23 @@ export class QueryBranch<T> {
     return this
   }
 
+  harmonic_mean(...fields: (string | string[])[]): T {
+    if (fields.length === 0) {
+      throw new Error('Empty harmonic mean function called')
+    }
+
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'harmonic_mean',
+        args: fields,
+      })
+    } else {
+      addAggregate(AggregateType.HMEAN, this.def, fields)
+    }
+    // @ts-ignore
+    return this
+  }
+
   max(...fields: (string | string[])[]): T {
     if (fields.length === 0) {
       throw new Error('Empty maximum function called')

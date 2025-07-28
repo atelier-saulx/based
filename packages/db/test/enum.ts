@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 
 await test('enum', async (t) => {
   const db = new BasedDb({
@@ -13,7 +13,11 @@ await test('enum', async (t) => {
     types: {
       user: {
         props: {
-          fancyness: ['mid', 'fire', 'beta'],
+          fancyness: {
+            type: 'enum',
+            enum: ['mid', 'fire', 'beta'],
+            default: 'fire',
+          },
         },
       },
     },
@@ -23,7 +27,7 @@ await test('enum', async (t) => {
     fancyness: 'mid',
   })
 
-  db.create('user', {
+  const user2 = db.create('user', {
     fancyness: 'fire',
   })
 
@@ -33,13 +37,11 @@ await test('enum', async (t) => {
 
   db.create('user', {})
 
-  await db.drain() // will become async
-
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'mid' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 
   deepEqual(
@@ -50,30 +52,38 @@ await test('enum', async (t) => {
         .filter('fancyness', '=', 'fire')
         .get()
     ).toObject(),
-    [{ id: 2, fancyness: 'fire' }],
+    [{ id: 2, fancyness: 'fire' }, { id: 4, fancyness: 'fire' }],
   )
 
   db.update('user', user1, {
     fancyness: 'beta',
   })
 
-  await db.drain()
-
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'beta' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 
   await db.update('user', user1, {
     fancyness: null,
   })
 
+  throws(() => db.update('user', user2, {
+    fancyness: 3,
+  }))
+  throws(() => db.update('user', user2, {
+    fancyness: 'fond',
+  }))
+  throws(() => db.update('user', user2, {
+    fancyness: undefined,
+  }))
+
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
-    { id: 1, fancyness: undefined },
+    { id: 1, fancyness: 'fire' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
-    { id: 4, fancyness: undefined },
+    { id: 4, fancyness: 'fire' },
   ])
 })
