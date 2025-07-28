@@ -370,8 +370,6 @@ export const validateSort = (
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
 
-  // IF ! FIX
-
   let lang: LangCode = 0
 
   if (!propDef) {
