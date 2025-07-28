@@ -382,6 +382,7 @@ await test('taxi', async (t) => {
           pickupLoc: { ref: 'zone', prop: 'pickups' },
           dropoffLoc: { ref: 'zone', prop: 'dropoffs' },
           pickupDropoffLocs: 'string', // TODO Would be better if we could combine fields in groupBy()
+          avgSpeed: 'number',
           passengerCount: 'uint8',
           tripDistance: 'number',
           storeAndFwd: 'boolean',
@@ -458,6 +459,7 @@ await test('taxi', async (t) => {
     const { id: dropoffLoc = null } = await db.query('zone', { locationId: trip.DOLocationID ?? '264' }).include('id').get().toObject()
 
     const pickup = new Date(trip.tpep_pickup_datetime)
+    const dropoff = new Date(trip.tpep_dropoff_datetime)
     db.create('trip', {
       vendor,
       pickupYear: new Date(`${pickup.getUTCFullYear()}`),
@@ -466,7 +468,8 @@ await test('taxi', async (t) => {
       pickupHour: pickup.getUTCHours(),
       pickupWeekday: day2enum[pickup.getUTCDay()],
       pickup,
-      dropoff: new Date(trip.tpep_dropoff_datetime),
+      dropoff,
+      avgSpeed: trip.trip_distance / ((dropoff.getTime() - pickup.getTime()) / 3.6e6),
       passengerCount: sanitize(Number(trip.passenger_count)),
       tripDistance: trip.trip_distance,
       rate,
@@ -592,6 +595,16 @@ await test('taxi', async (t) => {
   //  .sort('pickupDropoffLocs')
   //  .range(0, 10)
   //  .get().inspect()
+
+  // Avg rush hour speed between points
+  await db
+    .query('trip')
+    .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
+    .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
+    .groupBy('pickupWeekday')
+    //.groupBy('pickupDropoffLocs')
+    .harmonic_mean('avgSpeed')
+    .get().inspect()
 
   console.log(process.memoryUsage())
 })
