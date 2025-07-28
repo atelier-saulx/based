@@ -36,32 +36,50 @@ const test = async () => {
 
   await wait(100)
 
-  let i = 1000
+  let i = 1
   while (i--) {
     await statsDb.create('event', {
       function: 1,
-      msg: 'xxx'.repeat(1000),
+      msg: `Lorem ipsum dol62118, consectetur adipisci, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesquehabitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Etiam euismod, urna eu tincidunt consectetur, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant mor │ bi.`,
       type: 'init',
       level: 'info',
-      meta: 'yyy'.repeat(1000),
+      // meta: 'yyy'.repeat(1000),
     })
   }
 
-  await new Promise<void>((resolve) =>
-    client
-      .query('based:events', {
-        search: 'derp',
-        page: 0,
-      })
-      .subscribe((res) => {
-        console.log(res)
-        resolve()
-      }),
-  )
+  console.log('created')
+
+  const q = []
+  for (let i = 0; i < 1; i++) {
+    q.push(
+      new Promise<void>((resolve) =>
+        client
+          .query('based:events', {
+            search: 'dol' + i,
+            page: 0,
+          })
+          .subscribe(
+            (res) => {
+              console.log(res)
+              resolve()
+            },
+            (err) => {
+              console.error(err)
+            },
+          ),
+      ),
+    )
+  }
+  await Promise.all(q).catch((err) => {
+    console.error(err)
+  })
+  console.log('done')
+
+  await wait(2e3)
 
   await client.destroy()
   await close()
-  process.exit(1)
+  // process.exit(1)
 }
 
-test()
+await test()

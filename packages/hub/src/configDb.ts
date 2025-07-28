@@ -35,6 +35,7 @@ export const createConfigDb = async (basePath: string) => {
       secret: {
         name: 'alias',
         value: { type: 'string' },
+        // by whom?
         createdAt: { type: 'timestamp', on: 'create' },
         updatedAt: { type: 'timestamp', on: 'update' },
       },
