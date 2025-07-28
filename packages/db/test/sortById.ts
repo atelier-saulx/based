@@ -2,12 +2,23 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
+const schema = {
+  types: {
+    user: {
+      name: 'string',
+      derp: 'number',
+    },
+  },
+} as const
+
+// import { Schema} f
+
+// type Schema = typeof schema
+
 await test('sort by id', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
-  // only special pathway is DESC
 
   await db.start({ clean: true })
 
@@ -15,17 +26,12 @@ await test('sort by id', async (t) => {
     return t.backup(db)
   })
 
-  await db.setSchema({
-    types: {
-      user: {
-        name: 'string',
-      },
-    },
-  })
+  await db.setSchema(schema)
 
   for (let i = 0; i < 1e6; i++) {
     db.create('user', {
       name: `user ${i}`,
+      derp: i,
     })
   }
 
@@ -33,5 +39,7 @@ await test('sort by id', async (t) => {
 
   console.log('dbTime', dbTime)
 
-  await db.query('user').sort('id', 'desc').get().inspect(1000)
+  const result = await db.query('user').include('name').sort('id', 'desc').get()
+  // []User
+  const users = result.toObject()
 })

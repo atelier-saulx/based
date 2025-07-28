@@ -1,3 +1,5 @@
+// import { schema } from '@based/schema'
+
 export default {
   types: {
     x: {
@@ -9,3 +11,6 @@ export default {
     },
   },
 }
+
+// .infer, .schema
+// type Flap = typeof schema.infer['flap']
