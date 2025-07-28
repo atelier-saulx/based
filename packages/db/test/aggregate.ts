@@ -2080,3 +2080,106 @@ await test('dev', async (t) => {
 // key name <> string (numbers)
 // validations (including for key names)
 // aggregation on edges
+
+// group by numbers
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorIduint8: 'uint8',
+        vendorIdint8: 'int8',
+        vendorIduint16: 'uint16',
+        vendorIdint16: 'int16',
+        vendorIduint32: 'int32',
+        vendorIdint32: 'int32',
+        vendorIdnumber: 'number',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorIduint8: 13,
+    vendorIdint8: 13,
+    vendorIduint16: 813,
+    vendorIdint16: 813,
+    vendorIduint32: 813,
+    vendorIdint32: 813,
+    vendorIdnumber: 813.813,
+    pickup: new Date('11/12/2024 11:00'),
+    dropoff: new Date('11/12/2024 11:10'),
+    distance: 513.44,
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint8').get(),
+    {
+      13: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint8').get(),
+    {
+      13: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint16').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint16').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint32').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint32').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdnumber').get(),
+    {
+      813.813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+})
