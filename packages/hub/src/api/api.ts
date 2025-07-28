@@ -74,6 +74,16 @@ export function registerApiHandlers(
         })
       },
     },
+    'based:set-secret': {
+      type: 'function',
+      async fn(_based, payload) {
+        const { name, value } = payload
+        if (typeof name !== 'string' || name === '') {
+          throw new Error('name must be passed in the payload')
+        }
+        return configDb.upsert('secret', { name, value })
+      },
+    },
     'based:set-function': {
       type: 'stream',
       async fn(_based, { stream, payload }) {
