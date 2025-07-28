@@ -60,6 +60,103 @@ static const int64_t year_lengths[2] = {
 };
 
 /**
+ * Populate only tm_hour, tm_min, tm_sec in struct tm.
+ * @param clock in sec
+ * @param offset in sec.
+ */
+static int64_t offtime_clock(struct selva_tm *tm, int64_t clock, int64_t offset)
+{
+    int64_t days, rem;
+
+    days = clock / SECS_PER_DAY;
+    rem = clock % SECS_PER_DAY;
+    rem += offset;
+    while (rem < 0) {
+        rem += SECS_PER_DAY;
+        --days;
+    }
+    while (rem >= SECS_PER_DAY) {
+        rem -= SECS_PER_DAY;
+        ++days;
+    }
+    tm->tm_hour = (int32_t)(rem / SECS_PER_HOUR);
+    rem = rem % SECS_PER_HOUR;
+    tm->tm_min = (int32_t)(rem / SECS_PER_MIN);
+    tm->tm_sec = (int32_t)(rem % SECS_PER_MIN);
+
+    return days;
+}
+
+/**
+ * Populate tm_wday in struct tm.
+ * Call offtime_clock() first.
+ * @param days as returned by offtime_clock().
+ * @return days.
+ */
+static uint64_t offtime_wday(struct selva_tm *tm, int64_t days)
+{
+    tm->tm_wday = (int32_t)((EPOCH_WDAY + days) % DAYS_PER_WEEK);
+    if (tm->tm_wday < 0) {
+        tm->tm_wday += DAYS_PER_WEEK;
+    }
+
+    return days;
+}
+
+/**
+ * Populate tm_year, tm_yday, and tm_yleap in struct tm.
+ * Call offtime_clock() first.
+ * @param days as returned by offtime_clock() or offtime_wday().
+ * @return new days.
+ */
+static int64_t offtime_year(struct selva_tm *tm, int64_t days)
+{
+    int32_t y;
+    bool yleap;
+
+    y = EPOCH_YEAR;
+    if (days >= 0) {
+        for (;;) {
+            yleap = isleap(y);
+            if (days < year_lengths[yleap]) {
+                break;
+            }
+            ++y;
+            days = days - year_lengths[yleap];
+        }
+    } else do {
+        --y;
+        yleap = isleap(y);
+        days = days + year_lengths[yleap];
+    } while (days < 0);
+    tm->tm_year = y;
+    tm->tm_yday = (int32_t)days;
+    tm->tm_yleap = yleap;
+
+    return days;
+}
+
+/**
+ * Populate full struct tm.
+ * @param clock in sec
+ * @param offset in sec.
+ */
+static void offtime(struct selva_tm *tm, int64_t clock, int64_t offset)
+{
+    int64_t days;
+    const int64_t *ip;
+
+    days = offtime_clock(tm, clock, offset);
+    days = offtime_wday(tm, days);
+    days = offtime_year(tm, days);
+    ip = mon_lengths[tm->tm_yleap];
+    for (tm->tm_mon = 0; days >= ip[tm->tm_mon]; ++(tm->tm_mon)) {
+        days = days - ip[tm->tm_mon];
+    }
+    tm->tm_mday = (int32_t)(days + 1);
+}
+
+/**
  * Returns the day of the week of 31 December.
  */
 static int32_t p(int32_t year)
@@ -82,53 +179,6 @@ static int32_t iso_wyear(int32_t year, int32_t yday, int32_t wday)
     return woy - 1;
 }
 
-static void offtime(struct selva_tm *tm, int64_t clock, int64_t offset)
-{
-    int64_t days, rem;
-    int y, yleap;
-    const int64_t *ip;
-
-    days = clock / SECS_PER_DAY;
-    rem = clock % SECS_PER_DAY;
-    rem += offset;
-    while (rem < 0) {
-        rem += SECS_PER_DAY;
-        --days;
-    }
-    while (rem >= SECS_PER_DAY) {
-        rem -= SECS_PER_DAY;
-        ++days;
-    }
-    tm->tm_hour = (int32_t)(rem / SECS_PER_HOUR);
-    rem = rem % SECS_PER_HOUR;
-    tm->tm_min = (int32_t)(rem / SECS_PER_MIN);
-    tm->tm_sec = (int32_t)(rem % SECS_PER_MIN);
-    tm->tm_wday = (int32_t)((EPOCH_WDAY + days) % DAYS_PER_WEEK);
-    if (tm->tm_wday < 0)
-        tm->tm_wday += DAYS_PER_WEEK;
-    y = EPOCH_YEAR;
-    if (days >= 0)
-        for ( ; ; ) {
-            yleap = isleap(y);
-            if (days < year_lengths[yleap])
-                break;
-            ++y;
-            days = days - year_lengths[yleap];
-        }
-    else do {
-        --y;
-        yleap = isleap(y);
-        days = days + year_lengths[yleap];
-    } while (days < 0);
-    tm->tm_year = y;
-    tm->tm_yday = (int32_t)days;
-    ip = mon_lengths[yleap];
-    for (tm->tm_mon = 0; days >= ip[tm->tm_mon]; ++(tm->tm_mon)) {
-        days = days - ip[tm->tm_mon];
-    }
-    tm->tm_mday = (int32_t)(days + 1);
-}
-
 void selva_gmtime(struct selva_tm *result, int64_t ts, int64_t tmz)
 {
     offtime(result, ts / 1000, 60 * tmz);
@@ -141,7 +191,16 @@ void selva_gmtime(struct selva_tm *result, int64_t ts, int64_t tmz)
 
 int32_t selva_gmtime_year(int64_t ts, int64_t tmz)
 {
-    return GET_TM().tm_year;
+    struct selva_tm tm;
+    int64_t days;
+
+    days = offtime_clock(&tm, ts / 1000, 60 * tmz);
+#if 0
+    days = offtime_wday(&tm, days);
+#endif
+    (void)offtime_year(&tm, days);
+
+    return tm.tm_year;
 }
 
 int32_t selva_gmtime_mon(int64_t ts, int64_t tmz)
@@ -151,12 +210,25 @@ int32_t selva_gmtime_mon(int64_t ts, int64_t tmz)
 
 int32_t selva_gmtime_yday(int64_t ts, int64_t tmz)
 {
-    return GET_TM().tm_yday;
+    struct selva_tm tm;
+    int64_t days;
+
+    days = offtime_clock(&tm, ts / 1000, 60 * tmz);
+#if 0
+    days = offtime_wday(&tm, days);
+#endif
+    (void)offtime_year(&tm, days);
+
+    return tm.tm_yday;
 }
 
 int32_t selva_gmtime_wday(int64_t ts, int64_t tmz)
 {
-    return GET_TM().tm_wday;
+    struct selva_tm tm;
+
+    offtime_wday(&tm, offtime_clock(&tm, ts / 1000, 60 * tmz));
+
+    return tm.tm_wday;
 }
 
 int32_t selva_gmtime_mday(int64_t ts, int64_t tmz)
@@ -166,12 +238,21 @@ int32_t selva_gmtime_mday(int64_t ts, int64_t tmz)
 
 int32_t selva_gmtime_hour(int64_t ts, int64_t tmz)
 {
-    return GET_TM().tm_hour;
+    struct selva_tm tm;
+
+    offtime_clock(&tm, ts / 1000, 60 * tmz);
+
+    return tm.tm_hour;
 }
 
 int32_t selva_gmtime_iso_wyear(int64_t ts, int64_t tmz)
 {
     struct selva_tm tm;
-    offtime(&tm, ts / 1000, 60 * tmz);
+    int64_t days;
+
+    days = offtime_clock(&tm, ts / 1000, 60 * tmz);
+    days = offtime_wday(&tm, days);
+    (void)offtime_year(&tm, days);
+
     return iso_wyear(tm.tm_year, tm.tm_yday, tm.tm_wday);
 }

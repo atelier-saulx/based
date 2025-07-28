@@ -24,6 +24,7 @@ struct selva_tm {
     int32_t tm_year;    /*!< Year. */
     int32_t tm_wday;    /*!< Day of week [0,6] (Sunday =0). */
     int32_t tm_yday;    /*!< Day of year [0,365]. */
+    bool tm_yleap;      /*!< Is leap year. */
 };
 
 /**
