@@ -70,7 +70,6 @@ export const initDynamicFunctions = (
               type: 'function',
             }
           } else {
-            console.log({ statsId })
             specs[name] = addStats(
               {
                 type: 'function',
