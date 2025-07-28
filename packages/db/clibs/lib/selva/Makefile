@@ -67,6 +67,7 @@ OBJ := \
 	svector.o \
 	time/backoff_timeout.o \
 	time/ctime.o \
+	time/gmtime.o \
 	time/timestamp.o \
 	types.o \
 	vector/vdot.o \
