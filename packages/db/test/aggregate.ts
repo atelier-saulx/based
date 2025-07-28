@@ -1228,7 +1228,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('vote')
-      .harmonic_mean('NL', 'PT', 'FI')
+      .harmonicMean('NL', 'PT', 'FI')
       .groupBy('region')
       .get(),
     {
@@ -1368,7 +1368,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').harmonic_mean('NL'))
+      .include((q) => q('votes').harmonicMean('NL'))
       .get(),
     [
       {
@@ -1499,7 +1499,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').harmonic_mean('NL'))
+      .include((q) => q('votes').groupBy('region').harmonicMean('NL'))
       .get(),
     [
       {
@@ -1574,7 +1574,7 @@ await test('undefined numbers', async (t) => {
   deepEqual(
     await db
       .query('vote')
-      .harmonic_mean('AU', 'FI')
+      .harmonicMean('AU', 'FI')
       .groupBy('region')
       .get()
       .toObject(),
@@ -1648,7 +1648,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db.query('beer').harmonic_mean('price').groupBy('type').get(),
+    await db.query('beer').harmonicMean('price').groupBy('type').get(),
     {
       Tripel: {
         price: 11.839662447257384,

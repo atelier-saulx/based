@@ -291,14 +291,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  harmonic_mean(...fields: (string | string[])[]): T {
+  harmonicMean(...fields: (string | string[])[]): T {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
-        method: 'harmonic_mean',
+        method: 'harmonicMean',
         args: fields,
       })
     } else {
