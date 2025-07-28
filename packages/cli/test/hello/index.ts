@@ -1,20 +1,20 @@
 import type { BasedFunction } from '@based/functions'
-import {
-  adjectives,
-  animals,
-  colors,
-  uniqueNamesGenerator,
-} from 'unique-names-generator'
+// import {
+//   adjectives,
+//   animals,
+//   colors,
+//   uniqueNamesGenerator,
+// } from 'unique-names-generator'
 
 // wiohfwepofhew
 
 const hello: BasedFunction = async (based) => {
-  let x = ''
-  // Generate a text of 400 characters
-  x = `Lorem ipsum dol${~~(Math.random() * 100000)}, consectetur adipisci, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Etiam euismod, urna eu tincidunt consectetur, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi.`
+  // let x = ''
+  // // Generate a text of 400 characters
+  // x = `Lorem ipsum dol${~~(Math.random() * 100000)}, consectetur adipisci, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Etiam euismod, urna eu tincidunt consectetur, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi.`
   // const y = []
-  // for (let i = 0; i < 10; i++) {
-  //   await new Promise((resolve) => setTimeout(resolve, 1))
+  // for (let i = 0; i < 2; i++) {
+  //   await new Promise((resolve) => setTimeout(resolve, 18))
   //   console.info(
   //     i,
   //     uniqueNamesGenerator({
@@ -24,36 +24,42 @@ const hello: BasedFunction = async (based) => {
   //     }),
   //   )
   // }
-  console.info(x)
+  // console.info(x)
   // const bla = () => {
   //   console.error(new Error('derp'))
   // }
 
   // bla()
 
-  // await based.db.setSchema({
-  //   types: {
-  //     thing: {
-  //       name: 'string',
-  //       x: 'string',
-  //     },
-  //   },
-  // })
+  // // await based.db.setSchema({
+  // //   types: {
+  // //     thing: {
+  // //       name: 'string',
+  // //       x: 'string',
+  // //     },
+  // //   },
+  // // })
 
-  // console.log(' ???  ???xxx?')
+  // // console.log(' ???  ???xxx?')
 
   // await based.db.create('thing', {
-  //   name: 'derp',
+  //   name: 'derp1',
   // })
 
-  // await based.db.query('thing').get().inspect()
+  // await based.db.create('thing', {
+  //   name: 'derp2',
+  // })
 
-  // console.warn('derp')
-  // console.debug('derp')
-  // console.log('derp')
-  // console.trace('derp')
-  // throw new Error('COOKIE PANTS')
-  // return 'FLAP DROOLxx'
+  // // await based.db.query('thing').get().inspect()
+
+  // // console.warn('derp')
+  // // console.debug('derp')
+  // // console.log('derp')
+  // // console.trace('derp')
+  // // throw new Error('COOKIE PANTS')
+  // // return 'FLAP DROOLxx'
+
+  console.log('call this')
 
   return based.db.schema
 }

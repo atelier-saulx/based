@@ -27,7 +27,6 @@ export const addStats = (
       totalRequests: { increment: 1 },
       execTime: Math.round(performance.now() - d),
     })
-
     const fn = await statsDb.query('function', config.statsId).get().toObject()
     createEvent(
       statsDb,

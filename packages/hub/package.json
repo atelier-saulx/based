@@ -3,7 +3,7 @@
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b --watch",
-    "test": "node --import=tsx --test test/index.ts"
+    "test": "node --import=tsx --test test/logFilter.ts"
   },
   "files": [
     "dist"
