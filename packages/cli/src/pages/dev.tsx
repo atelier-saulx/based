@@ -55,7 +55,7 @@ export const Dev = () => {
           buckets: {
             files: 'files',
             backups: 'backups',
-            dists: 'dists',
+            dists: 'dists', // deprecated
           },
         })
         const client = connect({

@@ -3,8 +3,6 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import { numberDisplays } from '@based/schema'
-import { inspect } from 'node:util'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -1228,6 +1226,31 @@ await test('numeric types', async (t) => {
     'average, main, group by',
   )
   deepEqual(
+    await db
+      .query('vote')
+      .harmonic_mean('NL', 'PT', 'FI')
+      .groupBy('region')
+      .get(),
+    {
+      bb: {
+        NL: 13.93939393939394,
+        PT: 15.348837209302324,
+        FI: 0, // harmonic mean when any of the values is 0 is 0 by definition
+      },
+      aa: {
+        NL: 46.236559139784944,
+        PT: 46.236559139784944,
+        FI: 0, // harmonic mean when any of the values is 0 is 0 by definition
+      },
+      Great: {
+        NL: 50,
+        PT: 50,
+        FI: -50.99900000000001, // harmonic mean is not designed for negative numbers but possible
+      },
+    },
+    'harmonic_mean, main, group by',
+  )
+  deepEqual(
     await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
     {
       bb: {
@@ -1340,6 +1363,22 @@ await test('numeric types', async (t) => {
       },
     ],
     'avg, references, not grouped',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').harmonic_mean('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 24.18565978675536,
+        },
+      },
+    ],
+    'harmonic_mean, references, not grouped',
   )
   deepEqual(
     await db
@@ -1456,8 +1495,31 @@ await test('numeric types', async (t) => {
     ],
     'average, references, group by',
   )
-})
 
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').harmonic_mean('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: 13.93939393939394,
+          },
+          aa: {
+            NL: 46.236559139784944,
+          },
+          Great: {
+            NL: 50,
+          },
+        },
+      },
+    ],
+    'harmonic_mean, references, group by',
+  )
+})
 await test('undefined numbers', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -1507,6 +1569,22 @@ await test('undefined numbers', async (t) => {
       },
     },
     'avg affected by count because number is initialized with zero',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .harmonic_mean('AU', 'FI')
+      .groupBy('region')
+      .get()
+      .toObject(),
+    {
+      EU: {
+        AU: 13.93939393939394,
+        FI: 0,
+      },
+    },
+    'harmonic_mean affected by count because number is initialized with zero',
   )
 })
 
@@ -1567,6 +1645,19 @@ await test('enums', async (t) => {
       },
     },
     'group by enum in main',
+  )
+
+  deepEqual(
+    await db.query('beer').harmonic_mean('price').groupBy('type').get(),
+    {
+      Tripel: {
+        price: 11.839662447257384,
+      },
+      Wit: {
+        price: 7.199999999999999, // 7.2 should be approximated
+      },
+    },
+    'harmonic_mean by enum in main',
   )
 })
 await test('overall performance', async (t) => {

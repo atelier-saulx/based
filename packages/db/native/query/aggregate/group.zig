@@ -74,6 +74,15 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             const sum = read(f64, accumulatorField, accumulatorPos + 8);
             const mean = sum / @as(f64, @floatFromInt(count));
             writeInt(f64, resultsField, resultPos, @floatCast(mean));
+        } else if (aggType == aggregateTypes.AggType.HMEAN) {
+            const count = read(u64, accumulatorField, accumulatorPos);
+            if (count != 0) {
+                const isum = read(f64, accumulatorField, accumulatorPos + 8);
+                const mean = @as(f64, @floatFromInt(count)) / isum;
+                writeInt(f64, resultsField, resultPos, @floatCast(mean));
+            } else {
+                writeInt(f64, resultsField, resultPos, 0.0);
+            }
         } else if (aggType == aggregateTypes.AggType.VARIANCE) {
             const count = read(u64, accumulatorField, accumulatorPos);
             if (count > 1) {

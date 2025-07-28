@@ -14,7 +14,7 @@ export const Events = () => {
   const [selected, setSelected] = useState(0)
   useScrollInput(selected, setSelected)
   return (
-    <Box flexDirection="column" width={'100%'} height={'100%'}>
+    <Box flexDirection="column" width="100%" height="100%">
       <ScrollArea
         width={width}
         height={height - 3}
@@ -24,17 +24,17 @@ export const Events = () => {
       />
       <Footer>
         <Box gap={1}>
-          <Text color={'gray'}>
-            <Text color={'white'}>[s]</Text>earch
+          <Text color="gray">
+            <Text color="white">[s]</Text>earch
           </Text>
           {selected > 0 && (
-            <Text color={'gray'}>
-              <Text color={'white'}>[f]</Text>ollow
+            <Text color="gray">
+              <Text color="white">[f]</Text>ollow
             </Text>
           )}
-          <Text color={'gray'}>↑</Text>
-          <Text color={'gray'}>↓</Text>
-          <Text color={'gray'}>{selected}</Text>
+          <Text color="gray">↑</Text>
+          <Text color="gray">↓</Text>
+          <Text color="gray">{selected}</Text>
         </Box>
       </Footer>
     </Box>

@@ -78,13 +78,17 @@ export const getDefaultHooks = (
       })
     },
     flushModify(buf: Uint8Array) {
-      const d = performance.now()
-      const offsets = server.modify(buf)
-      const dbWriteTime = performance.now() - d
-      return Promise.resolve({
-        offsets,
-        dbWriteTime,
-      })
+      try {
+        const d = performance.now()
+        const offsets = server.modify(buf)
+        const dbWriteTime = performance.now() - d
+        return Promise.resolve({
+          offsets,
+          dbWriteTime,
+        })
+      } catch (e) {
+        return Promise.reject(e)
+      }
     },
     getQueryBuf(buf: Uint8Array) {
       return Promise.resolve(server.getQueryBuf(buf))

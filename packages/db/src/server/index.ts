@@ -72,6 +72,11 @@ export class DbServer extends DbShared {
     this.sortIndexes = {}
     this.saveIntervalInSeconds = saveIntervalInSeconds
 
+    if (process.stderr.isTTY) {
+      //this.on('info', (v) => console.error('Info:', v))
+      this.on('error', (v) => console.error('Error:', v))
+    }
+
     if (debug) {
       debugServer(this)
     }
