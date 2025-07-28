@@ -290,13 +290,22 @@ const rates = [
   99, 'Null/unknown' //
 ]
 const pmt2enum = {
-    '0': 'flex',
-    '1': 'credit card',
-    '2': 'cash',
-    '3': 'no charge',
-    '4': 'dispute',
-    '5': 'unknown',
-    '6': 'voided trip',
+  '0': 'flex',
+  '1': 'credit card',
+  '2': 'cash',
+  '3': 'no charge',
+  '4': 'dispute',
+  '5': 'unknown',
+  '6': 'voided trip',
+}
+const day2enum = {
+ '0': 'Sun',
+ '1': 'Mon',
+ '2': 'Tue',
+ '3': 'Wed',
+ '4': 'Thu',
+ '5': 'Fri',
+ '6': 'Sat',
 }
 
 async function parseTripDump(filename: string) {
@@ -363,10 +372,16 @@ await test('taxi', async (t) => {
           pickupYear: 'timestamp', // TODO a hack to group by day
           pickupMonth: 'timestamp', // TODO a hack to group by day
           pickupDay: 'timestamp', // TODO a hack to group by day
+          pickupHour: 'uint8', // TODO a hack to filter by hour
+          pickupWeekday: {
+            type: 'enum',
+            enum: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+          }, // TODO Could we do this in the query?
           pickup: 'timestamp',
           dropoff: 'timestamp',
           pickupLoc: { ref: 'zone', prop: 'pickups' },
           dropoffLoc: { ref: 'zone', prop: 'dropoffs' },
+          pickupDropoffLocs: 'string', // TODO Would be better if we could combine fields in groupBy()
           passengerCount: 'uint8',
           tripDistance: 'number',
           storeAndFwd: 'boolean',
@@ -448,6 +463,8 @@ await test('taxi', async (t) => {
       pickupYear: new Date(`${pickup.getUTCFullYear()}`),
       pickupMonth: new Date(`${pickup.getUTCFullYear()}-${String(pickup.getUTCMonth() + 1).padStart(2, '0')}`),
       pickupDay: new Date(pickup).setUTCHours(0, 0, 0, 0),
+      pickupHour: pickup.getUTCHours(),
+      pickupWeekday: day2enum[pickup.getUTCDay()],
       pickup,
       dropoff: new Date(trip.tpep_dropoff_datetime),
       passengerCount: sanitize(Number(trip.passenger_count)),
@@ -456,6 +473,7 @@ await test('taxi', async (t) => {
       storeAndFwd: trip.store_and_fwd_flag === 'Y',
       pickupLoc,
       dropoffLoc,
+      pickupDropoffLocs: `${trip.PULocationID ?? '264'}-${trip.DOLocationID ?? '264'}`,
       paymentType: pmt2enum[trip.payment_type] ?? 'unknown',
       fees: {
         fareAmount: sanitize(100 * trip.fare_amount),
@@ -548,6 +566,32 @@ await test('taxi', async (t) => {
     .sort('fees.tipAmount', 'desc')
     .range(0, 10)
     .get().inspect()
+
+  // Rush hour utilization
+  const rh1 = await db
+    .query('trip')
+    .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
+    .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
+    .groupBy('pickupWeekday')
+    .count()
+    .get().toObject()
+  const rh2 = await db
+    .query('trip')
+    .groupBy('pickupWeekday')
+    .count()
+    .get().toObject()
+  console.log(Object.values(day2enum).reduce((prev, key) =>
+    (prev[key] = rh1[key].$count / rh2[key].$count, prev)
+  , {}))
+
+  // Most popular routes
+  //await db
+  //  .query('zone')
+  //  .groupBy('pickupDropoffLocs')
+  //  .count()
+  //  .sort('pickupDropoffLocs')
+  //  .range(0, 10)
+  //  .get().inspect()
 
   console.log(process.memoryUsage())
 })
