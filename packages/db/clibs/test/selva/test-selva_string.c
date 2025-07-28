@@ -7,6 +7,16 @@
 #include <stdio.h>
 #include "selva/selva_string.h"
 
+void setup(void)
+{
+    selva_string_init_tls();
+}
+
+void teardown(void)
+{
+    selva_string_deinit_tls();
+}
+
 PU_TEST(test_create)
 {
     struct selva_string *s;
