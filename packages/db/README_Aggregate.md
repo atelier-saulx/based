@@ -11,7 +11,7 @@ Full query examples can be found in the [tests](./test/aggregate.ts)
 
 - **`sum()`**: Calculates the sum of numeric properties.
 - **`count()`**: Counts the number of records.
-- **`avg()`**: Computes the average of numeric properties.
+- **`avg()`**: Computes the arithmetic mean of numeric properties.
 - **`max()`**: Finds the maximum value of numeric properties.
 - **`min()`**: Finds the minimum value of numeric properties.
 

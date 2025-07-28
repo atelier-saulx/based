@@ -15,15 +15,6 @@ struct selva_string;
 #include "selva/types.h"
 #include "selva_lang_code.h"
 
-/**
- * Reserved (N/A) field id.
- * Can be used to mark that a field doesn't exist.
- * E.g. if created and updated fields don't exist their ids can be set to this
- * value.
- * Technically fields 251..255 are all reserved.
- */
-#define SELVA_FIELDS_RESERVED 255
-
 struct XXH3_state_s; /* RFE Not good? */
 
 #ifndef __zig
