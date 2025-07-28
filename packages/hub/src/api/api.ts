@@ -83,6 +83,7 @@ export function registerApiHandlers(
         let { type, name } = config
         if (type === 'authorize') {
           name = 'based:authorize'
+          config.name = name
         }
         await configDb.upsert('function', {
           name,

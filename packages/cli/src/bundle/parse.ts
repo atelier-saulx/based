@@ -1,6 +1,9 @@
 import { context } from 'esbuild'
 import { join } from 'path'
-import { BasedFunctionConfig } from '@based/functions'
+import {
+  BasedAuthorizeFunctionConfig,
+  BasedFunctionConfig,
+} from '@based/functions'
 import { Schema } from '@based/schema'
 import { find, FindResult } from './fsUtils.js'
 import { configsFiles, schemaFiles } from './constants.js'
@@ -35,12 +38,15 @@ export const parseConfig = async (
     format: 'esm',
     metafile: true,
   }).then(rebuild)
-  const fnConfig: BasedFunctionConfig = await evalBuild(configCtx.build)
+
+  const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
+    await evalBuild(configCtx.build)
 
   // this has to change...
   // need to hash the file before if we wan this
   const checksum = 1 // fnConfig.checksum
-  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${fnConfig.name}',${checksum});`
+  const name = fnConfig.type === 'authorize' ? 'based:authorize' : fnConfig.name
+  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${name}',${checksum});`
   const indexCtx = await context({
     banner: {
       js: banner,

@@ -11,25 +11,36 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
 
   class FnGlobals {
     constructor(name: string, checksum: number) {
-      this.require = createRequire(import.meta.url)
-      const statsId = fnIds[name].statsId
-      this.statsId = statsId
-      this.name = name
-      this.checksum = checksum
-      this.console = new Console({
-        stdout: new Writable({
-          write(chunk, _encoding, callback) {
-            createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'info')
-            callback()
-          },
-        }),
-        stderr: new Writable({
-          write(chunk, _encoding, callback) {
-            createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'error')
-            callback()
-          },
-        }),
-      })
+      try {
+        const statsId = fnIds[name].statsId
+        this.require = createRequire(import.meta.url)
+        this.statsId = statsId
+        this.name = name
+        this.checksum = checksum
+        this.console = new Console({
+          stdout: new Writable({
+            write(chunk, _encoding, callback) {
+              createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'info')
+              callback()
+            },
+          }),
+          stderr: new Writable({
+            write(chunk, _encoding, callback) {
+              createEvent(
+                statsDb,
+                statsId,
+                chunk.toString(),
+                'runtime',
+                'error',
+              )
+              callback()
+            },
+          }),
+        })
+      } catch (e) {
+        console.error(name, fnIds)
+        throw e
+      }
     }
 
     private removed: true
