@@ -242,6 +242,9 @@ static int32_t weeks(int32_t year)
     return 52 + (p(year) <= 4);
 }
 
+#define ISO_DOW 1
+#define ISO_DOY 4
+
 struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int64_t ts, int64_t tmz)
 {
     struct selva_tm tm0, tm1;
@@ -254,16 +257,18 @@ struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int6
     days = offtime_wday(&tm1, days);
     (void)offtime_year(&tm1, days);
 
-    int32_t dow = 1;
-    int32_t doy = 4;
-    int32_t fwd = 7 + dow - doy;
+    int32_t fwd = 7 + ISO_DOW - ISO_DOY;
     int64_t fwd_off = SECS_PER_DAY;
     do {
         offtime(&tm0, (tm1.tm_year - 1970) * 31'556'926 + fwd_off, 0);
         fwd_off += SECS_PER_DAY;
     } while (tm0.tm_mday < fwd);
-    int32_t wday = (tm0.tm_wday + 6) % 7;
-    int32_t fwdlw = (7 + wday + 1 - dow) % 7;
+
+    /* Same as (tm0.tm_wday + 6) % 7 but fewer instructions. */
+    int32_t wday = tm0.tm_wday;
+    wday = wday ? wday - 1 : 6;
+
+    int32_t fwdlw = (7 + wday + 1 - ISO_DOW) % 7;
     int32_t week_off = -fwdlw + fwd - 1;
     int32_t week = (int32_t)floor((((double)tm1.tm_yday + 1.0) - (double)week_off - 1.0) / 7) + 1;
 
