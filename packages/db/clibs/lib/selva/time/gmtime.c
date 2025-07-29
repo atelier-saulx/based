@@ -20,6 +20,7 @@
 #define SECS_PER_HOUR   (SECS_PER_MIN * MINS_PER_HOUR)
 #define SECS_PER_DAY    ((long) SECS_PER_HOUR * HOURS_PER_DAY)
 #define MONS_PER_YEAR   12
+#define SECS_PER_YEAR   31'556'926 /* avg accounting leap year. */
 
 #define EPOCH_WDAY      SELVA_TM_THURSDAY
 
@@ -240,7 +241,7 @@ struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int6
     int32_t fwd = 7 + ISO_DOW - ISO_DOY;
     int64_t fwd_off = SECS_PER_DAY;
     do {
-        offtime(&tm0, (tm1.tm_year - 1970) * 31'556'926 + fwd_off, 0);
+        offtime(&tm0, (tm1.tm_year - SELVA_EPOCH_YEAR) * SECS_PER_YEAR + fwd_off, 0);
         fwd_off += SECS_PER_DAY;
     } while (tm0.tm_mday < fwd);
 
