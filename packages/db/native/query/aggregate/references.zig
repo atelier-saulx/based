@@ -179,19 +179,26 @@ pub inline fn aggregateRefsDefault(
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
 
-    var i: usize = offset;
-    checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
-            if (hasFilter) {
-                const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
-                if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
-                    continue :checkItem;
+    const fieldAggsSize = read(u16, agg, 1);
+    const aggPropDef = agg[3 .. 3 + fieldAggsSize];
+    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter) {
+        const resultPos = read(u16, aggPropDef, 4);
+        writeInt(u32, accumulatorField, resultPos, refsCnt);
+    } else {
+        var i: usize = offset;
+        checkItem: while (i < refsCnt) : (i += 1) {
+            if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
+                if (hasFilter) {
+                    const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
+                    if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
+                        continue :checkItem;
+                    }
                 }
+                aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
             }
-            aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
         }
     }
-
     const val = try ctx.allocator.alloc(u8, resultsSize);
     try finalizeResults(val, accumulatorField, agg);
 
