@@ -251,7 +251,7 @@ struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int6
 
     int32_t fwdlw = (7 + wday + 1 - ISO_DOW) % 7;
     int32_t week_off = -fwdlw + fwd - 1;
-    int32_t week = (int32_t)floor((((double)tm1.tm_yday + 1.0) - (double)week_off - 1.0) / 7) + 1;
+    int32_t week = (int32_t)floor((((double)tm1.tm_yday + 1.0) - (double)week_off - 1.0) / 7.0) + 1;
 
     int32_t iso_year;
     int32_t iso_week;
