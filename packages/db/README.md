@@ -488,6 +488,21 @@ await db.query('article').sort('email', 'desc').get()
 await db.query('event').sort('startTime').get()
 ```
 
+The following data types doesnt support sort:
+
+- Reference / References (you can if you use branched queries / nested include sintax) like
+
+  ```js await db
+  .query('actor')
+  .include('*')
+  .include((q) => q('movies').include('*').sort('name', 'desc'), '*')
+  .sort('name', 'asc')
+  .get()
+  ```
+
+- Vector
+- Binary
+
 #### \`.range(offset, limit)\`
 
 Paginates the results.
