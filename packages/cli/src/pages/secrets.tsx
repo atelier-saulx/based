@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Text } from 'ink'
+import { Box, Text } from 'ink'
 import { useClient } from '@based/react'
+import { Spinner } from '@inkjs/ui'
 
 export const GetSecret = ({ name }) => {
   const client = useClient()
@@ -14,9 +15,12 @@ export const GetSecret = ({ name }) => {
       })
   }, [])
   return (
-    <Text color="cyan">
-      Get secrets {name}: {value}
-    </Text>
+    <Box flexDirection="column" margin={0}>
+      <Text color="white">
+        Secret <Text color="cyan">{name}</Text>:
+      </Text>
+      {value ? <Text color="red">{value}</Text> : <Spinner />}
+    </Box>
   )
 }
 
@@ -28,5 +32,11 @@ export const SetSecret = ({ name, value }) => {
       setSucess(true)
     })
   }, [client])
-  return <Text color="cyan">Setting secrets {String(success)}</Text>
+  return success ? (
+    <Text color="white">
+      Successfuly saved secret <Text color="cyan">{name}</Text>.
+    </Text>
+  ) : (
+    <Spinner label="Saving secret..." />
+  )
 }

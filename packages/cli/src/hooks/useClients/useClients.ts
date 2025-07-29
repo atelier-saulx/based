@@ -28,7 +28,6 @@ export function useClients(opts: any) {
         const discoveryUrls = opts.url ? [opts.url] : undefined
 
         if (opts.hub) {
-          console.log('1')
           client.current = new BasedClient(
             {
               url: opts.hub,
