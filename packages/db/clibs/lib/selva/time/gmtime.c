@@ -76,9 +76,9 @@ static uint64_t offtime_wday(struct selva_tm *tm, int64_t days)
 {
     /*
      * This yields a week day in [0,6] (Sunday=0).
-     * Something like `((ts / 86400) + 3) mod 7` would give Monday=0 but this is method
-     * yields a simpler full calculation. Moreover, remapping the week only requires a
-     * few instructions if done like this `wday ? wday - 1 : 6`.
+     * Something like `(EPOCH_WDAY + days - 1) % 7` should give Monday=0 but we
+     * follow the Unix/Linux/JS tradition. Moreover, remapping the week only
+     * requires a few instructions if done like this `wday ? wday - 1 : 6`.
      */
     tm->tm_wday = (int32_t)((EPOCH_WDAY + days) % DAYS_PER_WEEK);
     if (tm->tm_wday < 0) {
