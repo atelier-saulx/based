@@ -81,3 +81,47 @@ pub const GroupByHashMap = struct {
         return self.inner.iterator();
     }
 };
+
+fn addStep(key: []u8, step: u16) @TypeOf(key) {
+    const result = key[0..];
+
+    var carry: u16 = step;
+    for (result) |*byte| {
+        if (carry == 0) break;
+
+        const sum: u16 = @as(u16, byte.*) + @as(u8, @truncate(carry));
+        byte.* = @as(u8, @truncate(sum));
+        carry = (carry >> 8) + (sum >> 8);
+    }
+
+    return result;
+}
+
+fn isInRange(x: []const u8, keyA: []const u8, keyB: []const u8) bool {
+    const gte_keyA = switch (compareLittleEndian(x, keyA)) {
+        .lt => false,
+        .eq, .gt => true,
+    };
+
+    const lt_keyB = switch (compareLittleEndian(x, keyB)) {
+        .lt => true,
+        .eq, .gt => false,
+    };
+    return gte_keyA and lt_keyB;
+}
+
+fn compareLittleEndian(a: []const u8, b: []const u8) std.math.Ordering {
+    if (a.len > b.len) return .gt;
+    if (a.len < b.len) return .lt;
+
+    var i: usize = a.len;
+    while (i > 0) {
+        i -= 1;
+        const byte_a = a[i];
+        const byte_b = b[i];
+
+        if (byte_a > byte_b) return .gt;
+        if (byte_a < byte_b) return .lt;
+    }
+    return .eq;
+}

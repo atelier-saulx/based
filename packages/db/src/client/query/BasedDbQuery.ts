@@ -178,14 +178,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string): T {
+  groupBy(field: string, step?: number | 0): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'groupBy',
-        args: [field],
+        args: [field, step],
       })
     } else {
-      groupBy(this.def, field)
+      groupBy(this.def, field, step)
     }
     // only works with aggregates for now
     // @ts-ignore
