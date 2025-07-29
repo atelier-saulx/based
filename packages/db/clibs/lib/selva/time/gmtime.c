@@ -21,33 +21,7 @@
 #define SECS_PER_DAY    ((long) SECS_PER_HOUR * HOURS_PER_DAY)
 #define MONS_PER_YEAR   12
 
-#define TM_SUNDAY       0
-#define TM_MONDAY       1
-#define TM_TUESDAY      2
-#define TM_WEDNESDAY    3
-#define TM_THURSDAY     4
-#define TM_FRIDAY       5
-#define TM_SATURDAY     6
-
-#define TM_JANUARY      0
-#define TM_FEBRUARY     1
-#define TM_MARCH        2
-#define TM_APRIL        3
-#define TM_MAY          4
-#define TM_JUNE         5
-#define TM_JULY         6
-#define TM_AUGUST       7
-#define TM_SEPTEMBER    8
-#define TM_OCTOBER      9
-#define TM_NOVEMBER     10
-#define TM_DECEMBER     11
-#define TM_SUNDAY       0
-
-#define EPOCH_YEAR      1970
-#define EPOCH_WDAY      TM_THURSDAY
-
-#define ISO_THURSDAY 4
-#define MINS_PER_DAY 1440
+#define EPOCH_WDAY      SELVA_TM_THURSDAY
 
 /*
  * Accurate only for the past couple of centuries;
@@ -100,6 +74,12 @@ static int64_t offtime_clock(struct selva_tm *tm, int64_t clock, int64_t offset)
  */
 static uint64_t offtime_wday(struct selva_tm *tm, int64_t days)
 {
+    /*
+     * This yields a week day in [0,6] (Sunday=0).
+     * Something like `((ts / 86400) + 3) mod 7` would give Monday=0 but this is method
+     * yields a simpler full calculation. Moreover, remapping the week only requires a
+     * few instructions if done like this `wday ? wday - 1 : 6`.
+     */
     tm->tm_wday = (int32_t)((EPOCH_WDAY + days) % DAYS_PER_WEEK);
     if (tm->tm_wday < 0) {
         tm->tm_wday += DAYS_PER_WEEK;
@@ -119,7 +99,7 @@ static int64_t offtime_year(struct selva_tm *tm, int64_t days)
     int32_t y;
     bool yleap;
 
-    y = EPOCH_YEAR;
+    y = SELVA_EPOCH_YEAR;
     if (days >= 0) {
         for (;;) {
             yleap = isleap(y);

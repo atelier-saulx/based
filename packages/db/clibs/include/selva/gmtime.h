@@ -12,6 +12,29 @@
 #pragma once
 #include "selva/_export.h"
 
+#define SELVA_TM_SUNDAY       0
+#define SELVA_TM_MONDAY       1
+#define SELVA_TM_TUESDAY      2
+#define SELVA_TM_WEDNESDAY    3
+#define SELVA_TM_THURSDAY     4
+#define SELVA_TM_FRIDAY       5
+#define SELVA_TM_SATURDAY     6
+
+#define SELVA_TM_JANUARY      0
+#define SELVA_TM_FEBRUARY     1
+#define SELVA_TM_MARCH        2
+#define SELVA_TM_APRIL        3
+#define SELVA_TM_MAY          4
+#define SELVA_TM_JUNE         5
+#define SELVA_TM_JULY         6
+#define SELVA_TM_AUGUST       7
+#define SELVA_TM_SEPTEMBER    8
+#define SELVA_TM_OCTOBER      9
+#define SELVA_TM_NOVEMBER     10
+#define SELVA_TM_DECEMBER     11
+
+#define SELVA_EPOCH_YEAR      1970
+
 /**
  * Gregorian Calendar.
  */
