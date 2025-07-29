@@ -6,6 +6,8 @@
  * notice remains attached.
  */
 
+#include <tgmath.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include "selva/gmtime.h"
 
@@ -43,6 +45,9 @@
 
 #define EPOCH_YEAR      1970
 #define EPOCH_WDAY      TM_THURSDAY
+
+#define ISO_THURSDAY 4
+#define MINS_PER_DAY 1440
 
 /*
  * Accurate only for the past couple of centuries;
@@ -156,29 +161,6 @@ static void offtime(struct selva_tm *tm, int64_t clock, int64_t offset)
     tm->tm_mday = (int32_t)(days + 1);
 }
 
-/**
- * Returns the day of the week of 31 December.
- */
-static int32_t p(int32_t year)
-{
-    return (year + year / 4 - year / 100 + year / 400) % 7;
-}
-
-static int32_t weeks(int32_t year)
-{
-    return 52 + ((p(year) == 4) || p(year - 1) == 2 ? 1 : 0);
-}
-
-static int32_t iso_wyear(int32_t year, int32_t yday, int32_t wday)
-{
-    int32_t doy = yday + 1;
-    int32_t dow = wday + 1;
-    int32_t w = (10 + doy - dow) / 7;
-    int32_t woy = (w < 1) ? weeks(year - 1) : (w > weeks(year)) ? 1 : w;
-
-    return woy - 1;
-}
-
 void selva_gmtime(struct selva_tm *result, int64_t ts, int64_t tmz)
 {
     offtime(result, ts / 1000, 60 * tmz);
@@ -245,14 +227,62 @@ int32_t selva_gmtime_hour(int64_t ts, int64_t tmz)
     return tm.tm_hour;
 }
 
-int32_t selva_gmtime_iso_wyear(int64_t ts, int64_t tmz)
+/**
+ * Returns the day of the week of 31 December.
+ */
+static int32_t p(int32_t y)
 {
-    struct selva_tm tm;
+    return (5 * y + 12 - 4 * ((y / 100) - (y / 400)) +
+            ((y - 100) / 400) - ((y - 102) / 400) +
+            ((y - 200) / 400) - ((y - 199) / 400)) % 28;
+}
+
+static int32_t weeks(int32_t year)
+{
+    return 52 + (p(year) <= 4);
+}
+
+struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int64_t ts, int64_t tmz)
+{
+    struct selva_tm tm0, tm1;
     int64_t days;
 
-    days = offtime_clock(&tm, ts / 1000, 60 * tmz);
-    days = offtime_wday(&tm, days);
-    (void)offtime_year(&tm, days);
+    ts /= 1000;
+    tmz *= 60;
 
-    return iso_wyear(tm.tm_year, tm.tm_yday, tm.tm_wday);
+    days = offtime_clock(&tm1, ts, tmz);
+    days = offtime_wday(&tm1, days);
+    (void)offtime_year(&tm1, days);
+
+    int32_t dow = 1;
+    int32_t doy = 4;
+    int32_t fwd = 7 + dow - doy;
+    int64_t fwd_off = SECS_PER_DAY;
+    do {
+        offtime(&tm0, (tm1.tm_year - 1970) * 31'556'926 + fwd_off, 0);
+        fwd_off += SECS_PER_DAY;
+    } while (tm0.tm_mday < fwd);
+    int32_t wday = (tm0.tm_wday + 6) % 7;
+    int32_t fwdlw = (7 + wday + 1 - dow) % 7;
+    int32_t week_off = -fwdlw + fwd - 1;
+    int32_t week = (int32_t)floor((((double)tm1.tm_yday + 1.0) - (double)week_off - 1.0) / 7) + 1;
+
+    int32_t iso_year;
+    int32_t iso_week;
+
+    if (week < 1) {
+        iso_year = tm1.tm_year - 1;
+        iso_week = week + weeks(iso_year);
+    } else if (week > weeks(tm1.tm_year)) {
+        iso_year = tm1.tm_year + 1;
+        iso_week = week - weeks(tm1.tm_year);
+    } else {
+        iso_week = week;
+        iso_year = tm1.tm_year;
+    }
+
+    wyear->iso_year = iso_year;
+    wyear->iso_week = iso_week;
+
+    return wyear;
 }

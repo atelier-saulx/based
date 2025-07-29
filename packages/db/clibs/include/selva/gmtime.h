@@ -28,6 +28,14 @@ struct selva_tm {
 };
 
 /**
+ * ISO-8601 Week Date.
+ */
+struct selva_iso_week {
+    int32_t iso_year; /*!< ISO year. */
+    int32_t iso_week; /*!< ISO week [1,54]. */
+};
+
+/**
  * Calculate struct selva_tm from ts and tmz in Gregorian calendar.
  * @param ts in ms.
  * @param tmz in minutes.
@@ -90,10 +98,10 @@ SELVA_EXPORT
 int32_t selva_gmtime_hour(int64_t ts, int64_t tmz);
 
 /**
- * Calculate the ISO-8601 week from ts and tmz.
+ * Calculate the ISO-8601 week date from ts and tmz.
  * @param ts in ms.
  * @param tmz in minutes.
- * @returns Week [0,52].
+ * @returns wyear.
  */
 SELVA_EXPORT
-int32_t selva_gmtime_iso_wyear(int64_t ts, int64_t tmz);
+struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int64_t ts, int64_t tmz);

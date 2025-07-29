@@ -171,13 +171,37 @@ PU_TEST(test_gmtime_hour)
 
 PU_TEST(test_week_numbers)
 {
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'753'711'927'000, 0), 30);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'735'772'400'000, 0), 0);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'704'063'600'000, 0), 0);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'608'678'000'000, 0), 51);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'609'628'400'000, 0), 52);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'577'660'400'000, 0), 0);
-    pu_assert_equal("week", selva_gmtime_iso_wyear(1'514'674'800'000, 0), 51);
+    struct selva_iso_week iso;
+
+    pu_assert_equal("2025-07-28 week", selva_gmtime_iso_wyear(&iso, 1'753'711'927'000, 0)->iso_week, 31);
+    pu_assert_equal("2025-01-01 week", selva_gmtime_iso_wyear(&iso, 1'735'772'400'000, 0)->iso_week, 1);
+    pu_assert_equal("2023-12-31 week", selva_gmtime_iso_wyear(&iso, 1'704'063'600'000, 0)->iso_week, 52);
+    pu_assert_equal("2020-12-22 week", selva_gmtime_iso_wyear(&iso, 1'608'678'000'000, 0)->iso_week, 52);
+    pu_assert_equal("2021-01-02 week", selva_gmtime_iso_wyear(&iso, 1'609'628'400'000, 0)->iso_week, 53);
+    pu_assert_equal("2019-12-29 week", selva_gmtime_iso_wyear(&iso, 1'577'660'400'000, 0)->iso_week, 52);
+    pu_assert_equal("2017-12-30 week", selva_gmtime_iso_wyear(&iso, 1'514'674'800'000, 0)->iso_week, 52);
+    pu_assert_equal("2004-12-27 week", selva_gmtime_iso_wyear(&iso, 1'104'105'600'000, 0)->iso_week, 53);
+    pu_assert_equal("2005-12-31 week", selva_gmtime_iso_wyear(&iso, 1'135'987'200'000, 0)->iso_week, 52);
+    pu_assert_equal("2005-01-01 week", selva_gmtime_iso_wyear(&iso, 1'104'537'600'000, 0)->iso_week, 53);
+    pu_assert_equal("2005-01-02 week", selva_gmtime_iso_wyear(&iso, 1'104'624'000'000, 0)->iso_week, 53);
+    pu_assert_equal("2007-12-31 week", selva_gmtime_iso_wyear(&iso, 1'199'059'200'000, 0)->iso_week, 1);
+    pu_assert_equal("2009-12-31 week", selva_gmtime_iso_wyear(&iso, 1'262'217'600'000, 0)->iso_week, 53);
+    pu_assert_equal("2010-01-02 week", selva_gmtime_iso_wyear(&iso, 1'262'390'400'000, 0)->iso_week, 53);
+    pu_assert_equal("1995-01-02 week", selva_gmtime_iso_wyear(&iso, 789'004'800'000, 0)->iso_week, 1);
+    pu_assert_equal("1921-01-02 week", selva_gmtime_iso_wyear(&iso, -1546214400'000, 0)->iso_week, 53);
+
+    pu_assert_equal("2025-07-28 year", selva_gmtime_iso_wyear(&iso, 1'753'711'927'000, 0)->iso_year, 2025);
+    pu_assert_equal("2025-01-01 year", selva_gmtime_iso_wyear(&iso, 1'735'772'400'000, 0)->iso_year, 2025);
+    pu_assert_equal("2023-12-31 year", selva_gmtime_iso_wyear(&iso, 1'704'063'600'000, 0)->iso_year, 2023);
+    pu_assert_equal("2020-12-22 year", selva_gmtime_iso_wyear(&iso, 1'608'678'000'000, 0)->iso_year, 2020);
+    pu_assert_equal("2021-01-02 year", selva_gmtime_iso_wyear(&iso, 1'609'628'400'000, 0)->iso_year, 2020);
+    pu_assert_equal("2019-12-29 year", selva_gmtime_iso_wyear(&iso, 1'577'660'400'000, 0)->iso_year, 2019);
+    pu_assert_equal("2017-12-30 year", selva_gmtime_iso_wyear(&iso, 1'514'674'800'000, 0)->iso_year, 2017);
+    pu_assert_equal("2005-01-01 year", selva_gmtime_iso_wyear(&iso, 1'104'537'600'000, 0)->iso_year, 2004);
+    pu_assert_equal("2005-01-02 year", selva_gmtime_iso_wyear(&iso, 1'104'624'000'000, 0)->iso_year, 2004);
+    pu_assert_equal("2007-12-31 year", selva_gmtime_iso_wyear(&iso, 1'199'059'200'000, 0)->iso_year, 2008);
+    pu_assert_equal("2009-12-31 year", selva_gmtime_iso_wyear(&iso, 1'262'217'600'000, 0)->iso_year, 2009);
+    pu_assert_equal("2010-01-02 year", selva_gmtime_iso_wyear(&iso, 1'262'390'400'000, 0)->iso_year, 2009);
 
     return nullptr;
 }
