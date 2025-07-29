@@ -25,6 +25,17 @@ const Env = (p: Props) => {
     return <Events />
   }
 
+  if (p.command === 'secrets') {
+    const subCommand = p.opts.args?.[0]
+
+    if (subCommand === 'get') {
+      return <GetSecret name={p.opts.name} />
+    } else if (subCommand === 'set') {
+      return <SetSecret name={p.opts.name} value={p.opts.value} />
+    }
+    return <Text>Need to use a subcommand, this should be a help doc</Text>
+  }
+
   return <Text color="yellow">Command not implemented! {p.command}</Text>
 }
 
@@ -57,17 +68,6 @@ export default function App(p: Props) {
 
   if (p.command === 'deploy') {
     return <Deploy />
-  }
-
-  if (p.command === 'secrets') {
-    const subCommand = p.opts.args?.[0]
-
-    if (subCommand === 'get') {
-      return <GetSecret name={p.opts.name} />
-    } else if (subCommand === 'set') {
-      return <SetSecret name={p.opts.name} value={p.opts.value} />
-    }
-    return <Text>Need to use a subcommand, this should be a help doc</Text>
   }
 
   return <EnvWrapper {...p} />
