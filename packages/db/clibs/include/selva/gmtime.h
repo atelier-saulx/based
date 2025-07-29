@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#include <stdint.h>
 #include "selva/_export.h"
 
 #define SELVA_TM_SUNDAY       0
@@ -57,6 +58,12 @@ struct selva_iso_week {
     int32_t iso_year; /*!< ISO year. */
     int32_t iso_week; /*!< ISO week [1,54]. */
 };
+
+static inline int32_t selva_gmtime_wday2iso_wday(int32_t wday)
+{
+    /* Same as (tm.tm_wday + 6) % 7 but fewer instructions. */
+    return wday ? wday - 1 : 6;
+}
 
 /**
  * Calculate struct selva_tm from ts and tmz in Gregorian calendar.
