@@ -218,7 +218,7 @@ pub const AggFn = enum(u8) {
     stddev = 10, // population or sample should be optional parameters, default = sample
     sum = 11,
     variance = 12,
-    harmonic_mean = 13,
+    harmonicMean = 13,
 };
 
 pub const Compression = enum(u8) {

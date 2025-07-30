@@ -1,3 +1,4 @@
+import { readFloatLE } from '@saulx/utils'
 import type { LangCode, SchemaLocales } from '../index.js'
 import { Validation } from './validation.js'
 

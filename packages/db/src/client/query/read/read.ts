@@ -20,6 +20,8 @@ import {
   JSON,
   CARDINALITY,
   COLVEC,
+  isNumberType,
+  TypeIndex,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -71,6 +73,11 @@ const readAggregate = (
           i += 2
           key = q.aggregate.groupBy.enum[result[i] - 1]
           i++
+        } else if (isNumberType(q.aggregate.groupBy.typeIndex)) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, q.aggregate.groupBy.typeIndex)
+          i += keyLen
         } else {
           keyLen = readUint16(result, i)
           i += 2
@@ -542,4 +549,27 @@ export const resultToObject = (
   }
 
   return items
+}
+
+export function readNumber(
+  value: Uint8Array,
+  offset: number,
+  type: TypeIndex,
+): any {
+  switch (type) {
+    case NUMBER:
+      return readDoubleLE(value, offset)
+    case UINT16:
+      return readUint16(value, offset)
+    case UINT32:
+      return readUint32(value, offset)
+    case INT16:
+      return readInt16(value, offset)
+    case INT32:
+      return readInt32(value, offset)
+    case UINT8:
+      return value[offset]
+    case INT8:
+      return value[offset]
+  }
 }
