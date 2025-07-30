@@ -234,3 +234,26 @@ pub const QueryType = enum(u8) {
     aggregates = 4,
     aggregatesCountType = 5,
 };
+
+pub const Interval: type = enum(u8) {
+    hour = 0,
+    minute = 1,
+    second = 2,
+    microseconds = 3,
+    nanoseconds = 4,
+    day = 5,
+    dow = 6,
+    isoDOW = 7,
+    week = 8,
+    isoWeek = 9,
+    month = 10,
+    quarter = 11,
+    year = 12,
+    isoYear = 13,
+    decade = 14,
+    century = 15,
+    millennium = 16,
+    timeZone = 17,
+    timeZoneHour = 18,
+    timeZoneMinute = 19,
+};
