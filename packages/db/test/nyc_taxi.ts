@@ -603,7 +603,7 @@ await test('taxi', async (t) => {
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
     .groupBy('pickupWeekday')
     //.groupBy('pickupDropoffLocs')
-    .harmonic_mean('avgSpeed')
+    .harmonicMean('avgSpeed')
     .get().inspect()
 
   console.log(process.memoryUsage())
