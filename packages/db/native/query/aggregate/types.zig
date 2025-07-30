@@ -1,4 +1,8 @@
 const std = @import("std");
+const addStep = @import("./utils.zig").addStep;
+const datePart = @import("./utils.zig").datePart;
+const utils = @import("../../utils.zig");
+const read = utils.read;
 
 pub const GroupedBy = enum(u8) {
     hasGroup = 255,
@@ -43,7 +47,7 @@ pub const GroupByHashMap = struct {
         }
     }
 
-    pub fn getOrInsert(self: *GroupByHashMap, key: []const u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
+    pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
         if (self.inner.getEntry(key)) |entry| {
             return .{ .value = entry.value_ptr.*, .is_new = false };
         } else {
