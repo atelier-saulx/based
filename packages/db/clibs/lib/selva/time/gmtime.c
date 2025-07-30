@@ -6,9 +6,10 @@
  * notice remains attached.
  */
 
-#include <tgmath.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <tgmath.h>
 #include "selva/gmtime.h"
 
 #define SECS_PER_MIN    60
@@ -246,6 +247,18 @@ static int32_t weeks(int32_t year)
 #define ISO_DOW 1
 #define ISO_DOY 4
 
+#define TM0_ARR_BEGIN 2021
+#define TM0_ARR_END   2027
+static const struct selva_tm tm0_arr[] = {
+    { .tm_sec = 42, .tm_min = 19, .tm_hour = 19, .tm_mday = 4, .tm_mon = 0, .tm_year = 2027, .tm_wday = 1, .tm_yday = 3, .tm_yleap = 0, }, /* 2027 */
+    { .tm_sec = 56, .tm_min = 30, .tm_hour = 13, .tm_mday = 4, .tm_mon = 0, .tm_year = 2026, .tm_wday = 0, .tm_yday = 3, .tm_yleap = 0, }, /* 2026 */
+    { .tm_sec = 10, .tm_min = 42, .tm_hour = 7,  .tm_mday = 4, .tm_mon = 0, .tm_year = 2025, .tm_wday = 6, .tm_yday = 3, .tm_yleap = 0, }, /* 2025 */
+    { .tm_sec = 24, .tm_min = 53, .tm_hour = 1,  .tm_mday = 4, .tm_mon = 0, .tm_year = 2024, .tm_wday = 4, .tm_yday = 3, .tm_yleap = 1, }, /* 2024 */
+    { .tm_sec = 38, .tm_min = 4,  .tm_hour = 20, .tm_mday = 4, .tm_mon = 0, .tm_year = 2023, .tm_wday = 3, .tm_yday = 3, .tm_yleap = 0, }, /* 2023 */
+    { .tm_sec = 52, .tm_min = 15, .tm_hour = 14, .tm_mday = 4, .tm_mon = 0, .tm_year = 2022, .tm_wday = 2, .tm_yday = 3, .tm_yleap = 0, }, /* 2022 */
+    { .tm_sec = 6,  .tm_min = 27, .tm_hour = 8,  .tm_mday = 4, .tm_mon = 0, .tm_year = 2021, .tm_wday = 1, .tm_yday = 3, .tm_yleap = 0, }, /* 2021 */
+};
+
 struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int64_t ts, int64_t tmz)
 {
     struct selva_tm tm0, tm1;
@@ -259,11 +272,33 @@ struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int6
     (void)offtime_year(&tm1, days);
 
     int32_t fwd = 7 + ISO_DOW - ISO_DOY;
-    int64_t fwd_off = SECS_PER_DAY;
-    do {
-        offtime(&tm0, (tm1.tm_year - SELVA_EPOCH_YEAR) * SECS_PER_YEAR + fwd_off, 0);
-        fwd_off += SECS_PER_DAY;
-    } while (tm0.tm_mday < fwd);
+    switch (tm1.tm_year) {
+    case TM0_ARR_BEGIN ... TM0_ARR_END:
+        memcpy(&tm0, &tm0_arr[TM0_ARR_END - tm1.tm_year], sizeof(tm0));
+        break;
+    default:
+        {
+            int64_t fwd_off = SECS_PER_DAY;
+            do {
+                offtime(&tm0, (tm1.tm_year - SELVA_EPOCH_YEAR) * SECS_PER_YEAR + fwd_off, 0);
+                fwd_off += SECS_PER_DAY;
+            } while (tm0.tm_mday < fwd);
+        }
+    }
+    /* Helper for finding the values for tm0_arr. */
+#if 0
+    fprintf(stderr, "%d: %d %d %d %d %d %d %d %d %d\n", tm1.tm_year,
+        tm0.tm_sec,
+        tm0.tm_min,
+        tm0.tm_hour,
+        tm0.tm_mday,
+        tm0.tm_mon,
+        tm0.tm_year,
+        tm0.tm_wday,
+        tm0.tm_yday,
+        tm0.tm_yleap
+    );
+#endif
 
     int32_t wday = selva_gmtime_wday2iso_wday(tm0.tm_wday);
     int32_t fwdlw = (7 + wday + 1 - ISO_DOW) % 7;
