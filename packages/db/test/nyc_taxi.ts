@@ -369,7 +369,7 @@ await test('taxi', async (t) => {
       trip: {
         props: {
           vendor: { ref: 'vendor', prop: 'trips' },
-          pickupYear: 'timestamp', // TODO a hack to group by day
+          pickupYear: 'int16', // TODO a hack to group by day
           pickupMonth: 'timestamp', // TODO a hack to group by day
           pickupDay: 'timestamp', // TODO a hack to group by day
           pickupHour: 'uint8', // TODO a hack to filter by hour
@@ -462,7 +462,7 @@ await test('taxi', async (t) => {
     const dropoff = new Date(trip.tpep_dropoff_datetime)
     db.create('trip', {
       vendor,
-      pickupYear: new Date(`${pickup.getUTCFullYear()}`),
+      pickupYear: new Date(`${pickup.getUTCFullYear()}`).getUTCFullYear(),
       pickupMonth: new Date(`${pickup.getUTCFullYear()}-${String(pickup.getUTCMonth() + 1).padStart(2, '0')}`),
       pickupDay: new Date(pickup).setUTCHours(0, 0, 0, 0),
       pickupHour: pickup.getUTCHours(),
@@ -546,8 +546,10 @@ await test('taxi', async (t) => {
 
   // Yearly/Monthly/Daily revenue
   await db.query('trip')
-    .filter('pickupYear', '>=', new Date('2022-01-01'))
-    .filter('pickupYear', '<=', new Date('2024-05-31'))
+    //.filter('pickupYear', '>=', new Date('2022-01-01'))
+    //.filter('pickupYear', '<=', new Date('2024-05-31'))
+    .filter('pickupYear', '>=', 2022)
+    .filter('pickupYear', '<=', 2024)
     .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
     .groupBy('pickupMonth')
     .get().inspect()
