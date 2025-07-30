@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "selva/ctime.h"
+#include "selva/timestamp.h"
+#include "print_ready.h"
 #include "selva/gmtime.h"
 
 PU_TEST(test_gmtime_tm)
@@ -208,6 +211,31 @@ PU_TEST(test_week_numbers)
     pu_assert_equal("2010-01-02 year", selva_gmtime_iso_wyear(&iso, 1'262'390'400'000, 0)->iso_year, 2009);
     pu_assert_equal("1995-01-02 week", selva_gmtime_iso_wyear(&iso, 789'004'800'000, 0)->iso_year, 1995);
     pu_assert_equal("1921-01-02 week", selva_gmtime_iso_wyear(&iso, -1546214400'000, 0)->iso_year, 1920);
+
+    return nullptr;
+}
+
+PU_TEST(test_week_numbers_perf)
+{
+    struct timespec start, end;
+    struct selva_iso_week iso;
+    int64_t ts, off;
+
+    ts = 1'736'467'200;
+    ts_monotime(&start);
+    for (int64_t t = 0; t < 15'778'463; t++) {
+        selva_gmtime_iso_wyear(&iso, ts + t, 0);
+    }
+    ts_monotime(&end);
+    print_ready("2025 (opt)", &start, &end, "");
+
+    ts = -1'577'145'600;
+    ts_monotime(&start);
+    for (int64_t t = 0; t < 15'778'463; t++) {
+        selva_gmtime_iso_wyear(&iso, ts + t, 0);
+    }
+    ts_monotime(&end);
+    print_ready("1920", &start, &end, "");
 
     return nullptr;
 }
