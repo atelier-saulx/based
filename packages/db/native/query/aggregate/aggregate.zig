@@ -7,7 +7,7 @@ const read = utils.read;
 const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
-const microbufferToF64 = @import("./utils.zig");
+const microbufferToF64 = @import("./utils.zig").microbufferToF64;
 
 pub inline fn execAgg(
     aggPropDef: []u8,

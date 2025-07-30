@@ -2,7 +2,7 @@ const types = @import("../../types.zig");
 const utils = @import("../../utils.zig");
 const read = utils.read;
 
-pub fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
+pub inline fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
     return switch (propType) {
         types.Prop.UINT8 => @as(f64, @floatFromInt(buffer[offset])),
         types.Prop.INT8 => @as(f64, @floatFromInt(buffer[offset])),
@@ -13,4 +13,10 @@ pub fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
         types.Prop.NUMBER => read(f64, buffer, offset),
         else => undefined,
     };
+}
+
+pub inline fn formatProp(value: []u8, format: []u8) []u8 {
+    _ = value;
+    _ = format;
+    return &[_]u8{ 44, 3 };
 }
