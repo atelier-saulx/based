@@ -3,6 +3,7 @@ import { BasedFunctionConfigs } from '@based/functions'
 import { BasedServer } from '@based/server'
 import { createEvent } from './event.js'
 import { addStats } from './addStats.js'
+import { Worker } from 'node:worker_threads'
 
 // stat wrapper
 
@@ -69,6 +70,11 @@ export const initDynamicFunctions = (
               statsId,
               type: 'function',
             }
+          } else if (config.type === 'job') {
+            // TODO: This should be turned into a worker with eval.
+            // Problem is having globals._FnGlobals in it
+            // also passing based into it
+            fnDefault()
           } else {
             specs[name] = addStats(
               {
