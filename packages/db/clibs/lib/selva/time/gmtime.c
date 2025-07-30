@@ -220,7 +220,27 @@ static int32_t p(int32_t y)
 
 static int32_t weeks(int32_t year)
 {
-    return 52 + (p(year) <= 4);
+#define WEEKSY(y) \
+    case y: return 52 + (p(y) <= 4)
+
+    /*
+     * This will be optimized either into a simple range if (gcc) or a lookup
+     * table (clang), i.e. the compiled precalculates the result of p(year) for
+     * the hard-coded years.
+     */
+    switch (year) {
+        /* 2020 not included because it would double the code len on gcc. */
+        WEEKSY(2021);
+        WEEKSY(2022);
+        WEEKSY(2023);
+        WEEKSY(2024);
+        WEEKSY(2025);
+        WEEKSY(2026);
+        WEEKSY(2027);
+        /* 2028 not included to keep the lookup compact on gcc. */
+        default: return 52 + (p(year) <= 4);
+    }
+#undef WEEKSY
 }
 
 #define ISO_DOW 1
