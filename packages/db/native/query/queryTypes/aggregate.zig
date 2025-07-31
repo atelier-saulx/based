@@ -106,8 +106,9 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 
+            const resultKeyLen = if (1 == 1) 4 else key.len;
             if (hash_map_entry.is_new) {
-                ctx.size += 2 + key.len + groupCtx.resultsSize;
+                ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
             }
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         } else {
