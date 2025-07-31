@@ -6,6 +6,7 @@ import { AdminCtx } from './adminCtx.js'
 import { Events } from './pages/events.js'
 import { Logout } from './pages/logout.js'
 import { Dev } from './pages/dev.js'
+import { GetSecret, SetSecret } from './pages/secrets.js'
 import { Init } from './pages/init.js'
 import { useClients } from './hooks/useClients/useClients.js'
 import { Props } from './types.js'
@@ -22,6 +23,17 @@ const Env = (p: Props) => {
 
   if (p.command === 'status') {
     return <Events />
+  }
+
+  if (p.command === 'secrets') {
+    const subCommand = p.opts.args?.[0]
+
+    if (subCommand === 'get') {
+      return <GetSecret name={p.opts.name} />
+    } else if (subCommand === 'set') {
+      return <SetSecret name={p.opts.name} value={p.opts.value} />
+    }
+    return <Text>Need to use a subcommand, this should be a help doc</Text>
   }
 
   return <Text color="yellow">Command not implemented! {p.command}</Text>

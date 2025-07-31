@@ -10,7 +10,7 @@ import { configsFiles, schemaFiles } from './constants.js'
 import { BuildCtx, rebuild, evalBuild } from './buildUtils.js'
 
 export type ParseResult = {
-  fnConfig: BasedFunctionConfig
+  fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig
   configCtx: BuildCtx
   indexCtx: BuildCtx
   mainCtx?: BuildCtx

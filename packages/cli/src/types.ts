@@ -12,6 +12,9 @@ export type Opts = {
   watch?: boolean
   cwd?: string
   hub?: string
+  args: string[] | undefined
+  name?: string
+  value?: string
 }
 
 export type Props = {
