@@ -99,6 +99,7 @@ export type QueryDefAggregation = {
   aggregates: Map<number, Aggregation[]>
   totalResultsSize: number
   totalAccumulatorSize: number
+  step: number
 }
 
 export type LangFallback = LangName | false

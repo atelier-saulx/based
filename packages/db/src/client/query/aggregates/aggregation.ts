@@ -21,6 +21,8 @@ export const aggregateToBuffer = (
     i += 2
     writeUint16(aggBuffer, aggregates.groupBy.len, i)
     i += 2
+    writeUint16(aggBuffer, aggregates.groupBy.step, i)
+    i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
     i += 1
@@ -61,20 +63,22 @@ const ensureAggregate = (def: QueryDef) => {
       aggregates: new Map(),
       totalResultsSize: 0,
       totalAccumulatorSize: 0,
+      step: 0,
     }
   }
 }
 
-export const groupBy = (def: QueryDef, field: string) => {
+export const groupBy = (def: QueryDef, field: string, step) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 6
+    def.aggregate.size += 8
   }
   def.aggregate.groupBy = fieldDef
+  def.aggregate.groupBy.step = step
 }
 
 export const addAggregate = (

@@ -10,7 +10,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 10;
+pub const ProtocolLen = 12;
 
 pub const GroupCtx = struct {
     hashMap: GroupByHashMap,
@@ -21,6 +21,7 @@ pub const GroupCtx = struct {
     field: u8,
     len: u16,
     propType: types.Prop,
+    step: u16,
 };
 
 pub inline fn setGroupResults(
@@ -32,6 +33,7 @@ pub inline fn setGroupResults(
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
+        utils.debugPrint("step: {any}\n", .{ctx.step});
         writeInt(u16, data, i, keyLen);
         i += 2;
         if (keyLen > 0) {
@@ -152,8 +154,9 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const propType: types.Prop = if (field == types.MAIN_PROP and @as(types.Prop, @enumFromInt(aggInput[1])) != types.Prop.ENUM) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
-    const resultsSize = read(u16, aggInput, 6);
-    const accumulatorSize = read(u16, aggInput, 8);
+    const step: u16 = read(u16, aggInput, 6);
+    const resultsSize = read(u16, aggInput, 8);
+    const accumulatorSize = read(u16, aggInput, 10);
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
@@ -166,6 +169,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .hashMap = GroupByHashMap.init(ctx.allocator),
         .resultsSize = resultsSize,
         .accumulatorSize = accumulatorSize,
+        .step = step,
     };
     return groupCtx;
 }
