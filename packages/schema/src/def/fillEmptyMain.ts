@@ -1,4 +1,4 @@
-import { convertToTimestamp } from '@based/utils'
+import { convertToTimestamp, writeInt64 } from '@based/utils'
 import {
   BINARY,
   BOOLEAN,
@@ -45,9 +45,11 @@ export const fillEmptyMain = (
     } else if (t === UINT16 || t === INT16) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
-    } else if (t === NUMBER || t === TIMESTAMP) {
+    } else if (t === TIMESTAMP) {
+      writeInt64(mainEmpty, convertToTimestamp(val), s)
+    } else if (t === NUMBER) {
       const view = new DataView(mainEmpty.buffer, s, 8)
-      view.setFloat64(0, convertToTimestamp(val), true)
+      view.setFloat64(0, val, true)
     } else if (t === STRING) {
       val = ENCODER.encode(val)
       mainEmpty[s] = val.byteLength

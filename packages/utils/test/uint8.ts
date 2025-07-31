@@ -456,6 +456,16 @@ test('writeInt64() with negative numbers', (t) => {
   writeInt64(buf, smallNegative, 0)
   const readSmallNegative = readInt64(buf, 0)
   t.is(readSmallNegative, smallNegative, 'Small negative number round-trip')
+
+  // Test with the specific value 1678881600000
+  const specificValue = 1678881600000
+  writeInt64(buf, specificValue, 0)
+  const readSpecificValue = readInt64(buf, 0)
+  t.is(
+    readSpecificValue,
+    specificValue,
+    'Specific value 1678881600000 round-trip',
+  )
 })
 
 test('writeInt64() and readInt64() with JavaScript timestamps', (t) => {
