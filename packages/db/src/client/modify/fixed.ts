@@ -15,7 +15,7 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { convertToTimestamp } from '@based/utils'
+import { convertToTimestamp, writeInt64 } from '@based/utils'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { MOD_OPS_TO_STRING, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'
@@ -145,11 +145,8 @@ map[TIMESTAMP] = (ctx, val, def, mod) => {
   if (def.transform) {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
-  const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
+  writeInt64(ctx.buf, parsedValue, ctx.len)
   ctx.len += 8
-  // Todo use new utils and store as uint64
-  view.setFloat64(0, parsedValue, true)
-  // const ts = view.getFloat64(0)
 }
 
 map[UINT32] = (ctx, val, def, mod) => {

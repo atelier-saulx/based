@@ -29,6 +29,7 @@ import {
   readFloatLE,
   readInt16,
   readInt32,
+  readInt64,
   readUint16,
   readUint32,
   setByPath,
@@ -179,7 +180,9 @@ const readMainValue = (
   index: number,
   item: Item,
 ) => {
-  if (prop.typeIndex === TIMESTAMP || prop.typeIndex === NUMBER) {
+  if (prop.typeIndex === TIMESTAMP) {
+    addField(prop, readInt64(result, index), item)
+  } else if (prop.typeIndex === NUMBER) {
     addField(prop, readDoubleLE(result, index), item)
   } else if (prop.typeIndex === UINT32) {
     addField(prop, readUint32(result, index), item)

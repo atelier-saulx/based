@@ -53,7 +53,7 @@ pub inline fn compare(
         }
     } else if (size == 8) {
         // todo update if changing how its written
-        if (prop == Prop.NUMBER or prop == Prop.TIMESTAMP) {
+        if (prop == Prop.NUMBER) {
             return operate(f64, op, query, value);
         } else if (isSigned) {
             return operate(i64, op, query, value);
