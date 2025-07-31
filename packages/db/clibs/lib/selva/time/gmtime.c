@@ -25,10 +25,6 @@
 
 #define EPOCH_WDAY      SELVA_TM_THURSDAY
 
-/*
- * Accurate only for the past couple of centuries;
- * that will probably do.
- */
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
 static const int64_t mon_lengths[2][MONS_PER_YEAR] = {
@@ -280,9 +276,9 @@ struct selva_iso_week *selva_gmtime_iso_wyear(struct selva_iso_week *wyear, int6
         {
             int64_t fwd_off = SECS_PER_DAY;
             do {
-                offtime(&tm0, (tm1.tm_year - SELVA_EPOCH_YEAR) * SECS_PER_YEAR + fwd_off, 0);
+                offtime(&tm0, ((int64_t)tm1.tm_year - SELVA_EPOCH_YEAR) * SECS_PER_YEAR + fwd_off, 0);
                 fwd_off += SECS_PER_DAY;
-            } while (tm0.tm_mday < fwd);
+            } while (tm0.tm_year < tm1.tm_year || tm0.tm_mday < fwd);
         }
     }
     /* Helper for finding the values for tm0_arr. */
