@@ -1,6 +1,6 @@
 {
   "name": "@based/crc32c",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "main": "dist/crc32c.js",
