@@ -219,7 +219,7 @@ PU_TEST(test_week_numbers_perf)
 {
     struct timespec start, end;
     struct selva_iso_week iso;
-    int64_t ts, off;
+    int64_t ts;
 
     ts = 1'736'467'200;
     ts_monotime(&start);
