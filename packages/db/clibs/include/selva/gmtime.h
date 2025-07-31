@@ -62,7 +62,7 @@ struct selva_iso_week {
 static inline int32_t selva_gmtime_wday2iso_wday(int32_t wday)
 {
     /* Same as (tm.tm_wday + 6) % 7 but fewer instructions. */
-    return wday ? wday - 1 : 6;
+    return wday ? wday + 1 : 6;
 }
 
 /**
