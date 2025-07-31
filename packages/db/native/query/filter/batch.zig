@@ -153,7 +153,6 @@ pub fn simdReferencesHasSingle(
     }
     const l = values.len / 4;
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
-    // incorrect usage here
     return selva.node_id_set_bsearch(tmp, l, value) != -1;
 }
 
