@@ -1,6 +1,7 @@
 const std = @import("std");
 const addStep = @import("./utils.zig").addStep;
 const datePart = @import("./utils.zig").datePart;
+const types = @import("../../types.zig");
 const utils = @import("../../utils.zig");
 const read = utils.read;
 
@@ -48,10 +49,16 @@ pub const GroupByHashMap = struct {
     }
 
     pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
-        if (self.inner.getEntry(key)) |entry| {
+        //------temp
+        const lala: i64 = if (key.len == 8) @intFromFloat(@trunc(read(f64, key, 0))) else 0;
+        std.debug.print("key: {}\n", .{lala});
+        const fkey = if (key.len == 8) datePart(key, types.Interval.day) else key;
+        //------temp
+
+        if (self.inner.getEntry(fkey)) |entry| {
             return .{ .value = entry.value_ptr.*, .is_new = false };
         } else {
-            const owned_key = try self.allocator.dupe(u8, key);
+            const owned_key = try self.allocator.dupe(u8, fkey);
             errdefer self.allocator.free(owned_key);
             const result = try self.inner.getOrPut(owned_key);
 

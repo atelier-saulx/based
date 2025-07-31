@@ -2081,8 +2081,7 @@ await test('dev', async (t) => {
 // validations (including for key names)
 // aggregation on edges
 
-// group by numbers
-await test('kev', async (t) => {
+await test('group by unique numbers', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2182,4 +2181,63 @@ await test('kev', async (t) => {
     },
     'group by number',
   )
+})
+
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorIduint8: 'uint8',
+        vendorIdint8: 'int8',
+        vendorIduint16: 'uint16',
+        vendorIdint16: 'int16',
+        vendorIduint32: 'int32',
+        vendorIdint32: 'int32',
+        vendorIdnumber: 'number',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorIduint16: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 513.44,
+  })
+  db.create('trip', {
+    vendorIduint16: 814,
+    pickup: new Date('12/11/2024 12:00+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  // await db
+  //   .query('trip')
+  //   .sum('distance')
+  //   .groupBy('vendorIduint16')
+  //   .get()
+  //   .inspect()
+
+  let d = new Date('12/11/2024 11:00+00')
+  console.log('js: ', (d.getTime() - d.getMilliseconds()) / 1000)
+  console.log(
+    await db.query('trip').sum('distance').groupBy('pickup').get().toObject(),
+  )
+
+  // step as adding
+  // await db
+  //   .query('trip')
+  //   .sum('distance')
+  //   .groupBy('vendorIduint16', 1)
+  //   .get()
+  //   .inspect()
 })
