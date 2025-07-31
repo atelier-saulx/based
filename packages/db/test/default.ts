@@ -360,3 +360,64 @@ await test('default values for all props in user type', async (t) => {
     'User created with explicit null overrides',
   )
 })
+
+await test('negative default values for numeric types', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          negativeNumber: {
+            type: 'number',
+            default: -42,
+          },
+          negativeInt16: {
+            type: 'int16',
+            default: -1234,
+          },
+          negativeInt32: {
+            type: 'int32',
+            default: -123456,
+          },
+          // int8 already tested with negative value in edges test
+          // uint types shouldn't have negative defaults
+        },
+      },
+    },
+  })
+
+  const userId = await db.create('user', {})
+
+  deepEqual(
+    await db.query('user', userId).get(),
+    {
+      id: userId,
+      negativeNumber: -42,
+      negativeInt16: -1234,
+      negativeInt32: -123456,
+    },
+    'User created with negative default values',
+  )
+
+  const userOverrideId = await db.create('user', {
+    negativeNumber: -100,
+    negativeInt16: -2000,
+    negativeInt32: -500000,
+  })
+
+  deepEqual(
+    await db.query('user', userOverrideId).get(),
+    {
+      id: 2,
+      negativeNumber: -100,
+      negativeInt16: -2000,
+      negativeInt32: -500000,
+    },
+    'User created with overridden negative values',
+  )
+})

@@ -78,4 +78,4 @@ export { testSchema, createUser, createPost }
 
 const x = createUser(user)
 
-console.log(x.friends[0].name)
+console.log(x, user.status === 'inactive')
