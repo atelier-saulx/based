@@ -29,7 +29,7 @@
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^6.7.2",
+    "@based/utils": "^1.0.0",
     "@saulx/validators": "^1.2.1",
     "fullscreen-ink": "^0.1.0",
     "get-port": "^7.1.0",

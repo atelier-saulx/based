@@ -19,7 +19,7 @@
     "@based/uws": "^6.0.0",
     "@saulx/diff": "^2.0.3",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^6.7.2",
+    "@based/utils": "^1.0.0",
     "picocolors": "^1.0.0",
     "mime-types": "^2.1.31",
     "@based/functions": "^3.2.1",

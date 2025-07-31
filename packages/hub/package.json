@@ -16,7 +16,7 @@
     "@based/db": "0.0.71",
     "@based/schema": "5.0.0-alpha.27",
     "@based/server": "^10.0.6",
-    "@saulx/utils": "^6.7.2",
+    "@based/utils": "^1.0.0",
     "@based/s3": "*"
   }
 }
