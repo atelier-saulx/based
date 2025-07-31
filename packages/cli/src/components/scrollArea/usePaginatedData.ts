@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { deepCopy } from '@saulx/utils'
+import { deepCopy } from '@based/utils'
 import { hash } from '@saulx/hash'
 import { EventType } from '../../types.js'
 import { useQuery } from '@based/react'

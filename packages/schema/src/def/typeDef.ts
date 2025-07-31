@@ -5,7 +5,7 @@ import {
   getPropType,
   SchemaLocales,
 } from '../index.js'
-import { setByPath } from '@saulx/utils'
+import { setByPath } from '@based/utils'
 import {
   PropDef,
   SchemaTypeDef,
@@ -81,7 +81,9 @@ function propIndexOffset(prop: PropDef) {
 }
 
 function reorderProps(props: PropDef[]) {
-  props.sort((a, b) => (a.prop + propIndexOffset(a)) - (b.prop + propIndexOffset(b)))
+  props.sort(
+    (a, b) => a.prop + propIndexOffset(a) - (b.prop + propIndexOffset(b)),
+  )
 
   // Reassign prop indices
   let lastProp = 0

@@ -1,5 +1,5 @@
 import { Authorize, VerifyAuthState } from '@based/functions'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual } from '@based/utils'
 
 export const defaultAuthorize: Authorize = async () => {
   return true

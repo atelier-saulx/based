@@ -2,7 +2,7 @@ import { initS3 } from '@based/s3'
 import connect from '@based/client'
 import start from '../src/index.js'
 import { rm } from 'fs/promises'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 const test = async () => {
   await rm('./tmp', { recursive: true, force: true })

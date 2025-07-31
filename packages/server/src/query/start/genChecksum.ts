@@ -1,4 +1,4 @@
-import { ENCODER } from '@saulx/utils'
+import { ENCODER } from '@based/utils'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 
 const calculateHash32 = (uint8Array: Uint8Array, seed = 0) => {

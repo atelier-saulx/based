@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { equals } from '@saulx/utils'
+import { equals } from '@based/utils'
 
 const data = {
   cat: [1.5, -0.4, 7.2, 19.6, 20.2],

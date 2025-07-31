@@ -13,8 +13,8 @@ import { verifyRoute } from '../../verifyRoute.js'
 import { authorize, IsAuthorizedHandler } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { Duplex, Readable } from 'stream'
-import { readStream } from '@saulx/utils'
-import { readUint24 } from '@saulx/utils'
+import { readStream } from '@based/utils'
+import { readUint24 } from '@based/utils'
 
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,

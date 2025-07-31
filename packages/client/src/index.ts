@@ -41,7 +41,7 @@ import {
 } from './persistentStorage/index.js'
 import { BasedChannel } from './channel/index.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual } from '@based/utils'
 import parseOpts from '@based/opts'
 import { freeCacheMemory } from './cache.js'
 import { cacheId } from './incoming/forceReload.js'

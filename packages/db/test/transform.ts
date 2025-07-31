@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { createRequire } from 'module'
 import { Schema } from '@based/schema'
-import { deepCopy, deepMerge } from '@saulx/utils'
+import { deepCopy, deepMerge } from '@based/utils'
 global.require = createRequire(import.meta.url)
 
 await test('transform', async (t) => {

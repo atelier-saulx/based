@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { encodeAuthState } from '../src/index.js'
 import getPort from 'get-port'
 

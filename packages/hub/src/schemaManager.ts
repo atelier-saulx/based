@@ -1,6 +1,6 @@
 import { DbClient, DbServer, BasedDb } from '@based/db'
 import { deSerialize } from '@based/schema'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { join } from 'path'
 
 export function handleSchemaUpdates(configDb: DbClient, path: string) {

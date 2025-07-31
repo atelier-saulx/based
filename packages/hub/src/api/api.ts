@@ -1,7 +1,7 @@
 import { DbClient } from '@based/db'
 import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
-import { readStream } from '@saulx/utils'
+import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
 
 export function registerApiHandlers(

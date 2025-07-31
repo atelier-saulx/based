@@ -32,7 +32,7 @@ import {
   readUint16,
   readUint32,
   setByPath,
-} from '@saulx/utils'
+} from '@based/utils'
 import { inverseLangMap } from '@based/schema'
 import {
   READ_EDGE,

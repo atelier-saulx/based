@@ -1,4 +1,4 @@
-// import { wait } from '@saulx/utils'
+// import { wait } from '@based/utils'
 // import { homedir } from 'os'
 // import { fileURLToPath } from 'url'
 // import { BasedDb, compress } from '../../src/index.js'

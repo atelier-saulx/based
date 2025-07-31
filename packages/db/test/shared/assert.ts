@@ -1,4 +1,4 @@
-import { deepEqual as uDeepEqual } from '@saulx/utils'
+import { deepEqual as uDeepEqual } from '@based/utils'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
 import color from 'picocolors'

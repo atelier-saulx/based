@@ -1,4 +1,4 @@
-import { convertToTimestamp } from '@saulx/utils'
+import { convertToTimestamp } from '@based/utils'
 import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
 import { MAX_ID, MIN_ID } from '../types.js'
 

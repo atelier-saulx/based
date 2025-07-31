@@ -1,5 +1,5 @@
 import { schemaToSelvaBuffer, updateTypeDefs } from '@based/schema/def'
-import { deepCopy, writeUint64 } from '@saulx/utils'
+import { deepCopy, writeUint64 } from '@based/utils'
 import { getPropType, serialize, StrictSchema } from '@based/schema'
 import { DbServer } from './index.js'
 import { DbSchema } from '../schema.js'

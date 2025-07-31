@@ -15,7 +15,7 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { convertToTimestamp } from '@saulx/utils'
+import { convertToTimestamp } from '@based/utils'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { MOD_OPS_TO_STRING, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'

@@ -17,7 +17,7 @@ import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
 import zlib from 'node:zlib'
 import { BasedServer } from '../../server.js'
-import { readUint64, readUint24, readUint32 } from '@saulx/utils'
+import { readUint64, readUint24, readUint32 } from '@based/utils'
 
 const startStreamFunction: IsAuthorizedHandler<
   WebSocketSession,

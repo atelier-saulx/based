@@ -1,4 +1,4 @@
-import { writeUint16 } from '@saulx/utils'
+import { writeUint16 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'

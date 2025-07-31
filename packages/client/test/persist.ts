@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'

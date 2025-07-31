@@ -14,10 +14,14 @@ import {
 
 import { SchemaProp, isPropType } from '../types.js'
 import { getPropType } from '../parse/utils.js'
-import { convertToTimestamp } from '@saulx/utils'
+import { convertToTimestamp } from '@based/utils'
 
 export function isSeparate(schemaProp: SchemaProp, len: number) {
-  return len === 0 || isPropType('vector', schemaProp) || isPropType('colvec', schemaProp)
+  return (
+    len === 0 ||
+    isPropType('vector', schemaProp) ||
+    isPropType('colvec', schemaProp)
+  )
 }
 
 export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
