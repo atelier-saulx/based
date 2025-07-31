@@ -115,15 +115,15 @@ await test('votesEdges', async (t) => {
     const artist = contestants[j % 20]
     const randId = ~~(Math.random() * amount) + 1
     a = randId
-    if (!has.has(randId)) {
-      // from 200 to 4000
-      has.add(randId)
-      db.update('vote', randId, {
-        contestant: artist,
-      })
-    } else {
-      a++
-    }
+    // if (!has.has(randId)) {
+    // from 200 to 4000
+    // has.add(randId)
+    db.update('vote', randId, {
+      contestant: artist,
+    })
+    // } else {
+    //   a++
+    // }
   }
 
   await db.drain()

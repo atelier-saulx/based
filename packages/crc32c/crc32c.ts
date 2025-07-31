@@ -8,25 +8,22 @@ import { kCRCTable } from './crc32c_table.js'
  * Adapted to use in Based.db  2025-02-17
  */
 
-export function crc32c(val: String | Uint8Array | Buffer): number {
-  let buf: Buffer
+export function crc32c(val: string | Uint8Array): number {
+  let data: Uint8Array
   let initial = 0
 
   if (typeof val === 'string') {
-    buf = Buffer.allocUnsafe(Buffer.byteLength(val))
-    buf.write(val)
-  } else if (val instanceof Uint8Array) {
-    buf = Buffer.from(val)
-  } else if (Buffer.isBuffer(val)) {
-    buf = val
+    // Convert string to Uint8Array using TextEncoder
+    const encoder = new TextEncoder()
+    data = encoder.encode(val)
   } else {
-    buf = Buffer.from(val)
+    data = val
   }
 
   let crc = (initial | 0) ^ -1
 
-  for (let i = 0; i < buf.length; i++) {
-    crc = kCRCTable[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8)
+  for (let i = 0; i < data.length; i++) {
+    crc = kCRCTable[(crc ^ data[i]) & 0xff] ^ (crc >>> 8)
   }
   return (crc ^ -1) >>> 0
 }
