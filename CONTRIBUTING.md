@@ -69,3 +69,7 @@ For front end code (react especialy) aim for 250 lines max of code for files - e
 ### Types
 
 Never use `interface` only use `type`
+
+### Binary
+
+Prefer using `Uint8Array` over `Buffer` in node.js `Uint8Array` is the standard

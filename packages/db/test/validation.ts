@@ -922,7 +922,6 @@ await test('range validation', async (t) => {
   })
 
   await db.start({ clean: true })
-
   t.after(() => db.destroy())
 
   await db.setSchema({
@@ -936,7 +935,6 @@ await test('range validation', async (t) => {
     },
   })
 
-  // Create some test data
   for (let i = 0; i < 10; i++) {
     await db.create('user', {
       name: `user ${i}`,
@@ -944,195 +942,177 @@ await test('range validation', async (t) => {
     })
   }
 
-  // Test valid u32 range values
   await db.query('user').range(0, 5).get()
   await db.query('user').range(1, 10).get()
-  await db.query('user').range(0, 1).get() // valid: start < end
-  await db.query('user').range(100, 101).get() // valid: start < end
-  await db.query('user').range(1000, 1001).get() // valid: start < end
-  await db.query('user').range(0, undefined).get() // valid defaults to 1000
+  await db.query('user').range(0, 1).get()
+  await db.query('user').range(100, 101).get()
+  await db.query('user').range(1000, 1001).get()
+  await db.query('user').range(0, undefined).get()
 
-  // Test invalid ranges where start >= end
-  await throws(
-    async () => {
-      await db.query('user').range(0, 0).get()
-    },
-    false,
-    'range should reject when start is greater or equal to end',
-  )
+  await throws(async () => {
+    await db.query('user').range(0, 0).get()
+  }, false)
 
-  await throws(
-    async () => {
-      await db.query('user').range(5, 5).get()
-    },
-    false,
-    'range should reject when start equals end',
-  )
+  await throws(async () => {
+    await db.query('user').range(5, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      await db.query('user').range(4294967295, 4294967295).get()
-    },
-    false,
-    'range should reject when start equals end (max u32)',
-  )
+  await throws(async () => {
+    await db.query('user').range(4294967295, 4294967295).get()
+  }, false)
 
-  // Test invalid start parameter types
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range('invalid', 5).get()
-    },
-    false,
-    'range start should reject string',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range('invalid', 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(-1, 5).get()
-    },
-    false,
-    'range start should reject negative values',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(-1, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(1.5, 5).get()
-    },
-    false,
-    'range start should reject float values',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(1.5, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(null, 5).get()
-    },
-    false,
-    'range start should reject null',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(null, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(undefined, 5).get()
-    },
-    false,
-    'range start should reject undefined',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(undefined, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range({}, 5).get()
-    },
-    false,
-    'range start should reject object',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range({}, 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range([], 5).get()
-    },
-    false,
-    'range start should reject array',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range([], 5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(4294967296, 5).get() // u32 max + 1
-    },
-    false,
-    'range start should reject values exceeding u32 max',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(4294967296, 5).get()
+  }, false)
 
-  // Test invalid end parameter types
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, 'invalid').get()
-    },
-    false,
-    'range end should reject string',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, 'invalid').get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, -1).get()
-    },
-    false,
-    'range end should reject negative values',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, -1).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, 1.5).get()
-    },
-    false,
-    'range end should reject float values',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, 1.5).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, null).get()
-    },
-    false,
-    'range end should reject null',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, null).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, {}).get()
-    },
-    false,
-    'range end should reject object',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, {}).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, []).get()
-    },
-    false,
-    'range end should reject array',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, []).get()
+  }, false)
 
-  await throws(
-    async () => {
-      // @ts-ignore
-      await db.query('user').range(0, 4294967296).get() // u32 max + 1
-    },
-    false,
-    'range end should reject values exceeding u32 max',
-  )
+  await throws(async () => {
+    // @ts-ignore
+    await db.query('user').range(0, 4294967296).get()
+  }, false)
 
-  // Test edge cases
-  await throws(
-    async () => {
-      await db.query('user').range(5, 3).get() // start > end
-    },
-    false,
-    'range should reject when start is greater than end',
-  )
+  await throws(async () => {
+    await db.query('user').range(5, 3).get()
+  }, false)
 
-  // Test with other query methods
   await db.query('user').filter('rating', '>', 0).range(0, 5).get()
   await db.query('user').sort('rating').range(0, 5).get()
   await db.query('user').include('name').range(0, 5).get()
 
-  // Test that range works with valid u32 values in combination with other methods
   const result = await db
     .query('user')
     .range(0, 5)
     .include('name', 'rating')
     .get()
-  deepEqual(result.length, 5, 'range should return correct number of results')
+  deepEqual(result.length, 5)
+})
+
+await test('binary validation', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          binaryData: 'binary',
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'test',
+    binaryData: Buffer.from([1, 2, 3, 4]),
+  })
+  await db.create('user', { name: 'test2', binaryData: 'binary string' })
+  await db.create('user', {
+    name: 'test3',
+    binaryData: new Uint8Array([5, 6, 7, 8]),
+  })
+
+  await throws(async () => {
+    await db.create('user', { name: 'test4', binaryData: 123 })
+  })
+
+  await throws(async () => {
+    await db.create('user', { name: 'test5', binaryData: { some: 'object' } })
+  })
+
+  await throws(async () => {
+    await db.create('user', { name: 'test6', binaryData: [1, 2, 3] })
+  })
+
+  await db
+    .query('user')
+    .filter('binaryData', '=', Buffer.from([1, 2, 3, 4]))
+    .get()
+  await db.query('user').filter('binaryData', '=', 'binary string').get()
+  await db
+    .query('user')
+    .filter('binaryData', '=', new Uint8Array([5, 6, 7, 8]))
+    .get()
+
+  await throws(async () => {
+    await db.query('user').filter('binaryData', '=', 123).get()
+  })
+
+  await throws(async () => {
+    await db.query('user').filter('binaryData', '=', {}).get()
+  })
+
+  await throws(async () => {
+    await db.query('user').filter('binaryData', '=', { some: 'object' }).get()
+  })
+
+  await throws(async () => {
+    await db.query('user').filter('binaryData', '=', [1, 2, 3]).get()
+  })
 })
