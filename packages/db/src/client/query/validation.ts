@@ -16,6 +16,7 @@ import {
   propIsNumerical,
   createEmptyDef,
   DEFAULT_MAP,
+  ID_FIELD_DEF,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -373,7 +374,7 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  let propDef = def.props[field]
+  let propDef = field === 'id' ? ID_FIELD_DEF : def.props[field]
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
