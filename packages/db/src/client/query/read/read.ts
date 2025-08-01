@@ -122,6 +122,7 @@ const addField = (
   p: PropDef | PropDefEdge,
   value: any,
   item: Item,
+  merge: boolean,
   defaultOnly: boolean = false,
   lang: number = 0,
   lastField: string | false = false,
@@ -141,7 +142,11 @@ const addField = (
   if (len - i === 1) {
     const field = path[i]
     if (!defaultOnly || !(field in item)) {
-      item[field] = value
+      if (item[field] && merge) {
+        item[field] = { ...item[field], ...value }
+      } else {
+        item[field] = value
+      }
     }
   } else {
     let select: any = item
@@ -149,7 +154,11 @@ const addField = (
       const field = path[i]
       if (i === len - 1) {
         if (!defaultOnly || !(field in select)) {
-          select[field] = value
+          if (select[field] && merge) {
+            select[field] = { ...select[field], ...value }
+          } else {
+            select[field] = value
+          }
         }
       } else {
         select = select[field] ?? (select[field] = {})
@@ -190,18 +199,18 @@ const readMainValue = (
   item: Item,
 ) => {
   if (prop.typeIndex === TIMESTAMP) {
-    addField(prop, readInt64(result, index), item)
+    addField(prop, readInt64(result, index), item, false)
   } else if (prop.typeIndex === NUMBER) {
-    addField(prop, readDoubleLE(result, index), item)
+    addField(prop, readDoubleLE(result, index), item, false)
   } else if (prop.typeIndex === UINT32) {
-    addField(prop, readUint32(result, index), item)
+    addField(prop, readUint32(result, index), item, false)
   } else if (prop.typeIndex === BOOLEAN) {
-    addField(prop, Boolean(result[index]), item)
+    addField(prop, Boolean(result[index]), item, false)
   } else if (prop.typeIndex === ENUM) {
     if (result[index] === 0) {
-      addField(prop, undefined, item)
+      addField(prop, undefined, item, false)
     } else {
-      addField(prop, prop.enum[result[index] - 1], item)
+      addField(prop, prop.enum[result[index] - 1], item, false)
     }
   } else if (
     prop.typeIndex === STRING ||
@@ -211,15 +220,15 @@ const readMainValue = (
     readMainStringType(q, prop, result, index, item)
   } else if (prop.typeIndex === INT8) {
     const signedVal = (result[index] << 24) >> 24
-    addField(prop, signedVal, item)
+    addField(prop, signedVal, item, false)
   } else if (prop.typeIndex === UINT8) {
-    addField(prop, result[index], item)
+    addField(prop, result[index], item, false)
   } else if (prop.typeIndex === INT16) {
-    addField(prop, readInt16(result, index), item)
+    addField(prop, readInt16(result, index), item, false)
   } else if (prop.typeIndex === UINT16) {
-    addField(prop, readUint16(result, index), item)
+    addField(prop, readUint16(result, index), item, false)
   } else if (prop.typeIndex === INT32) {
-    addField(prop, readInt32(result, index), item)
+    addField(prop, readInt32(result, index), item, false)
   }
 }
 
@@ -237,6 +246,42 @@ const getDefaultSelvaStringValue = (prop: PropDef | PropDefEdge) => {
   if (prop.typeIndex === BINARY) {
     return new Uint8Array()
   }
+}
+
+type MetaSelvaString = {
+  checksum: number
+  size: number
+  crc32: number
+  compressed: boolean
+  value?: any
+}
+
+const EMPTY_META: MetaSelvaString = {
+  checksum: 0,
+  size: 0,
+  crc32: 0,
+  compressed: false,
+}
+
+const readMetaSelvaString = (
+  result: Uint8Array,
+  i: number,
+): MetaSelvaString => {
+  const crc32 = readUint32(result, i + 1)
+  const size = readUint32(result, i + 5) - 6
+  const checksum = combineToNumber(crc32, size)
+  const compressed = result[i] === 1
+  return { checksum, size, crc32, compressed }
+}
+
+const readMetaMainString = (
+  result: Uint8Array,
+  i: number,
+  len: number,
+): MetaSelvaString => {
+  const crc32 = crc32c(result.subarray(i, i + len))
+  const checksum = combineToNumber(crc32, len)
+  return { checksum, size: len, crc32, compressed: false }
 }
 
 const readMainStringType = (
@@ -260,12 +305,12 @@ const readMainStringType = (
     }
     if (hasChecksum) {
       if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
-        addField(prop, { checksum: 0 }, item)
+        addField(prop, { ...EMPTY_META }, item, false)
       } else {
-        addField(prop, { checksum: 0, value }, item)
+        addField(prop, { ...EMPTY_META, value }, item, false)
       }
     } else {
-      addField(prop, value, item)
+      addField(prop, value, item, false)
     }
   } else {
     if (prop.typeIndex === STRING) {
@@ -276,17 +321,15 @@ const readMainStringType = (
       value = result.subarray(index, index + len)
     }
     if (hasChecksum) {
-      const checksum = combineToNumber(
-        crc32c(result.subarray(index, index + len)),
-        len,
-      )
+      const meta = readMetaMainString(result, index, len)
       if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
-        addField(prop, { checksum }, item)
+        addField(prop, meta, item, false)
       } else {
-        addField(prop, { value, checksum }, item)
+        meta.value = value
+        addField(prop, meta, item, false)
       }
     } else {
-      addField(prop, value, item)
+      addField(prop, value, item, false)
     }
   }
 }
@@ -326,12 +369,12 @@ const selvaStringProp = (
     : readSelvaStringValue(prop, buf, offset, size)
   const checksum = q.include.meta?.has(prop.prop)
   if (checksum) {
-    addField(prop, value, item, false, 0, 'value')
+    addField(prop, value, item, false, false, 0, 'value')
     if (useDefault) {
-      addField(prop, 0, item, false, 0, 'checksum')
+      addField(prop, EMPTY_META, item, true)
     }
   } else {
-    addField(prop, value, item)
+    addField(prop, value, item, false)
   }
 }
 
@@ -371,7 +414,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
         q.include.propsRead[k] !== id &&
         getByPath(item, prop.path) === undefined
       ) {
-        addField(prop, 0, item, false, 0, 'checksum')
+        addField(prop, { ...EMPTY_META }, item, true)
       }
     }
   }
@@ -381,7 +424,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
       // Only relevant for seperate props
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
-        addField(prop, 0, item)
+        addField(prop, 0, item, false)
       } else if (prop.typeIndex === TEXT && q.lang.lang == 0) {
         const lan = getEmptyField(prop, item)
         const lang = q.include.langTextFields.get(prop.prop).codes
@@ -427,19 +470,9 @@ export const readAllFields = (
     if (index === READ_META) {
       const field = result[i]
       i++
-      const checksum = combineToNumber(
-        readUint32(result, i + 1),
-        readUint32(result, i + 5),
-      )
-      addField(
-        q.schema.reverseProps[field],
-        checksum,
-        item,
-        false,
-        0,
-        'checksum',
-      )
-      i += 8
+      const prop = q.schema.reverseProps[field]
+      addField(prop, readMetaSelvaString(result, i), item, true)
+      i += 9
     } else if (index === READ_AGGREGATION) {
       // also for edges at some point!
       let field = result[i]
@@ -452,6 +485,7 @@ export const readAllFields = (
         ref.target.propDef,
         readAggregate(ref, result, i, i + size),
         item,
+        false,
       )
       i += size
     } else if (index === READ_EDGE) {
@@ -461,19 +495,9 @@ export const readAllFields = (
         const target = 'ref' in q.edges.target && q.edges.target.ref
         prop = result[i]
         i++
-        const checksum = combineToNumber(
-          readUint32(result, i + 1),
-          readUint32(result, i + 5),
-        )
-        addField(
-          target.reverseSeperateEdges[prop],
-          checksum,
-          item,
-          false,
-          0,
-          'checksum',
-        )
-        i += 8
+        const propDef = target.reverseSeperateEdges[prop]
+        addField(propDef, readMetaSelvaString(result, i), item, true)
+        i += 9
       } else if (prop === READ_REFERENCE) {
         i++
         const field = result[i]
@@ -532,7 +556,7 @@ export const readAllFields = (
             i += size + 4
           } else if (t === CARDINALITY) {
             const size = readUint32(result, i)
-            addField(edgeDef, readUint32(result, i + 4), item)
+            addField(edgeDef, readUint32(result, i + 4), item, false)
             i += size + 4
           }
         }
@@ -576,7 +600,7 @@ export const readAllFields = (
       if (prop.typeIndex === CARDINALITY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        addField(prop, readUint32(result, i + 4), item)
+        addField(prop, readUint32(result, i + 4), item, false)
         i += size + 4
       } else if (prop.typeIndex === JSON) {
         q.include.propsRead[index] = id
@@ -600,12 +624,13 @@ export const readAllFields = (
         } else {
           if (q.lang.lang != 0) {
             q.include.propsRead[index] = id
-            addField(prop, read(result, i + 4, size, true), item)
+            addField(prop, read(result, i + 4, size, true), item, false)
           } else {
             addField(
               prop,
               read(result, i + 4, size, true),
               item,
+              false,
               false,
               result[i + 4],
             )
@@ -617,11 +642,11 @@ export const readAllFields = (
         const size = readUint32(result, i)
         i += 4
         if (size === 0) {
-          addField(prop, '', item)
+          addField(prop, '', item, false)
         } else {
           const string = readUtf8(result, i, size)
           i += size
-          addField(prop, string, item)
+          addField(prop, string, item, false)
         }
       } else if (prop.typeIndex == VECTOR || prop.typeIndex == COLVEC) {
         q.include.propsRead[index] = id
@@ -630,7 +655,7 @@ export const readAllFields = (
         for (let j = 0; j < size; j += 4) {
           arr[j / 4] = readFloatLE(result, i + 4 + j)
         }
-        addField(prop, arr, item)
+        addField(prop, arr, item, false)
         i += size + 4
       }
     }

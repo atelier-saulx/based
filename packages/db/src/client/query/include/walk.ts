@@ -61,7 +61,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           }
         } else {
           if (
-            path[i + 1] === 'checksum' &&
+            path[i + 1] === 'meta' &&
             (edgeProp.typeIndex === STRING ||
               edgeProp.typeIndex === BINARY ||
               edgeProp.typeIndex === JSON ||
@@ -100,7 +100,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       t = t[p]
       if (!t) {
         if (f != 'id') {
-          if (f.endsWith('.checksum')) {
+          if (f.endsWith('.meta')) {
             const propPath = f.split('.').slice(0, -1).join('.')
             const prop = def.props[propPath]
             if (
