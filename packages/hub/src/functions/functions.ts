@@ -6,10 +6,10 @@ import { addStats } from './addStats.js'
 import { Module } from 'node:module'
 import { crc32c } from '@based/hash'
 
-const requireFn = (code, filename) => {
-  const m = new Module(filename)
+const requireFn = (code: string, id: string) => {
+  const m = new Module(id)
   // @ts-ignore
-  m._compile(code, filename)
+  m._compile(code, id)
   return m.exports
 }
 
@@ -44,7 +44,7 @@ export const initDynamicFunctions = (
         ))
 
         try {
-          const fn = requireFn(code, name)
+          const fn = requireFn(code, `${name}-${checksum}`)
           // get the globalFn things and attach to function store
           const { default: fnDefault, js, css, ...rest } = fn
           if (config.type === 'authorize') {

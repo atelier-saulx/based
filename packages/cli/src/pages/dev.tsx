@@ -72,6 +72,8 @@ export const Dev = ({ opts }) => {
           if (changes) {
             console.log('Detected changes, deploying...')
             await deployChanges(client, publicPath, changes)
+            console.log('DONE')
+            hub.server.forceReload()
           }
         })
       } catch (err) {

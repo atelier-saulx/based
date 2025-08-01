@@ -22,8 +22,8 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "for pkg in $(ls packages); do if [[ \"$pkg\" != \"fetch\" && \"$pkg\" != \"react-native-compat\" && \"$pkg\" != \"locale\" && \"$pkg\" != \"uws\" ]]; then npm run watch --workspace=packages/$pkg & fi done; wait",
-    "build": "npm run build --prefix packages/hash && npm run build --prefix packages/utils && npm run build --prefix packages/schema && npm run build --prefix packages/db && npm run build --prefix packages/functions && npm run build --prefix packages/errors && npm run build --prefix packages/server && npm run build --prefix packages/client",
+    "watch": "(cd packages && for pkg in *; do if [[ -d \"$pkg\" ]]; then npm run watch --workspace=\"$pkg\" --if-present & fi; done); wait",
+    "build": "set -e; for pkg in utils hash errors schema schema-diagram functions client react db server s3 hub type-gen cli; do npm run build -w \"@based/$pkg\"; done",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",

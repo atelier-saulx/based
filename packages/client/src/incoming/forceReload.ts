@@ -27,7 +27,12 @@ export const forceReload = (
   if (typeof window !== 'undefined') {
     if (type === 1 || type === 0) {
       // seqId is the bust part
-      window.location.href = window.location.href + cacheId + seqId
+      const r = cacheId + seqId
+      let p = location.pathname
+      while (p.endsWith('/')) {
+        p = p.slice(0, -1)
+      }
+      location.pathname = p + r
     }
   } else {
     if (type === 2 || type === 0) {
