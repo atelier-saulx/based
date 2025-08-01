@@ -250,7 +250,5 @@ pub const Interval: type = enum(u8) {
     isoMonth = 11, // The number of the month within the year (1–12);
     quarter = 12, // The quarter of the year (1–4) that the date is in
     year = 13,
-    timeZone = 14, // ? seconds? or string?
-    timeZoneHour = 15, // The hour component of the time zone offset
-    timeZoneMinute = 16, // The minute component of the time zone offset
+    // timeZone = 14, // ? seconds? or string?
 };
