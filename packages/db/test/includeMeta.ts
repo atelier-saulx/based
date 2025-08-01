@@ -97,9 +97,15 @@ await test('meta for selva string', async (t) => {
     'Edge checksums',
   )
 
-  const x = await db.query('item').include('email').get()
+  const x = await db.query('item').include('email.checksum').get()
 
   // add checksumIncludesMain (this just adds it)
 
-  x.inspect()
+  x.inspect(3, true)
+
+  const xx = await db.query('item').include('email.checksum', 'email').get()
+
+  // add checksumIncludesMain (this just adds it)
+
+  xx.inspect(3, true)
 })

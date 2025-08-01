@@ -21,7 +21,7 @@ import {
   CARDINALITY,
   COLVEC,
 } from '@based/schema/def'
-import { QueryDef, QueryDefType, READ_META } from '../types.js'
+import { MainMetaInclude, QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   combineToNumber,
@@ -45,6 +45,7 @@ import {
   READ_AGGREGATION,
 } from '../types.js'
 import { AggregateType } from '../aggregates/types.js'
+import { crc32c } from '@based/hash'
 
 export type Item = {
   id: number
@@ -182,6 +183,7 @@ const getEmptyField = (p: PropDef | PropDefEdge, item: Item) => {
 export type AggItem = Partial<Item>
 
 const readMainValue = (
+  q: QueryDef,
   prop: PropDef | PropDefEdge,
   result: Uint8Array,
   index: number,
@@ -201,22 +203,12 @@ const readMainValue = (
     } else {
       addField(prop, prop.enum[result[index] - 1], item)
     }
-  } else if (prop.typeIndex === STRING) {
-    const len = result[index]
-    if (len !== 0) {
-      const str = readUtf8(result, index + 1, len)
-      addField(prop, str, item)
-    } else {
-      addField(prop, '', item)
-    }
-  } else if (prop.typeIndex === JSON) {
-    addField(
-      prop,
-      global.JSON.parse(readUtf8(result, index + 1, index + 1 + result[index])),
-      item,
-    )
-  } else if (prop.typeIndex === BINARY) {
-    addField(prop, result.subarray(index + 1, index + 1 + result[index]), item)
+  } else if (
+    prop.typeIndex === STRING ||
+    prop.typeIndex === JSON ||
+    prop.typeIndex === BINARY
+  ) {
+    readMainStringType(q, prop, result, index, item)
   } else if (prop.typeIndex === INT8) {
     const signedVal = (result[index] << 24) >> 24
     addField(prop, signedVal, item)
@@ -231,7 +223,7 @@ const readMainValue = (
   }
 }
 
-const getDefaultCecksumPropValue = (prop: PropDef | PropDefEdge) => {
+const getDefaultSelvaStringValue = (prop: PropDef | PropDefEdge) => {
   if (
     prop.typeIndex === TEXT ||
     prop.typeIndex === STRING ||
@@ -239,13 +231,63 @@ const getDefaultCecksumPropValue = (prop: PropDef | PropDefEdge) => {
   ) {
     return ''
   }
-
   if (prop.typeIndex === JSON) {
     return null
   }
-
   if (prop.typeIndex === BINARY) {
     return new Uint8Array()
+  }
+}
+
+const readMainStringType = (
+  q: QueryDef,
+  prop: PropDef | PropDefEdge,
+  result: Uint8Array,
+  index: number,
+  item: Item,
+) => {
+  const len = result[index]
+  const hasChecksum = q.include.metaMain?.has(prop.start)
+  index = index + 1
+  let value: any
+  if (len === 0) {
+    if (prop.typeIndex === STRING) {
+      value = ''
+    } else if (prop.typeIndex === JSON) {
+      value = null
+    } else if (prop.typeIndex === BINARY) {
+      value = new Uint8Array()
+    }
+    if (hasChecksum) {
+      if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
+        addField(prop, { checksum: 0 }, item)
+      } else {
+        addField(prop, { checksum: 0, value }, item)
+      }
+    } else {
+      addField(prop, value, item)
+    }
+  } else {
+    if (prop.typeIndex === STRING) {
+      value = readUtf8(result, index, len)
+    } else if (prop.typeIndex === JSON) {
+      value = global.JSON.parse(readUtf8(result, index, len))
+    } else if (prop.typeIndex === BINARY) {
+      value = result.subarray(index, index + len)
+    }
+    if (hasChecksum) {
+      const checksum = combineToNumber(
+        crc32c(result.subarray(index, index + len)),
+        len,
+      )
+      if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
+        addField(prop, { checksum }, item)
+      } else {
+        addField(prop, { value, checksum }, item)
+      }
+    } else {
+      addField(prop, value, item)
+    }
   }
 }
 
@@ -280,9 +322,9 @@ const selvaStringProp = (
 ) => {
   const useDefault = !buf || size === 0
   const value = useDefault
-    ? getDefaultCecksumPropValue(prop)
+    ? getDefaultSelvaStringValue(prop)
     : readSelvaStringValue(prop, buf, offset, size)
-  const checksum = q.include.checksums?.has(prop.prop)
+  const checksum = q.include.meta?.has(prop.prop)
   if (checksum) {
     addField(prop, value, item, false, 0, 'value')
     if (useDefault) {
@@ -306,13 +348,14 @@ const readMain = (
   const len = isEdge ? q.target.ref.edgeMainLen : q.schema.mainLen
   if (mainInclude.len === len) {
     for (const start in main) {
-      readMainValue(main[start], result, Number(start) + i, item)
+      const prop = main[start]
+      readMainValue(q, prop, result, prop.start + i, item)
     }
     i += len
   } else {
     for (const k in mainInclude.include) {
       const [index, prop] = mainInclude.include[k]
-      readMainValue(prop, result, index + i, item)
+      readMainValue(q, prop, result, index + i, item)
     }
     i += mainInclude.len
   }
@@ -321,8 +364,8 @@ const readMain = (
 
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   // can be optmized a lot... shit meta info in the propsRead objectmeta is just a shift of 8
-  if (q.include.checksums) {
-    for (const k of q.include.checksums) {
+  if (q.include.meta) {
+    for (const k of q.include.meta) {
       const prop = q.schema.reverseProps[k]
       if (
         q.include.propsRead[k] !== id &&
