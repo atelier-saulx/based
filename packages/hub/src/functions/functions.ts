@@ -3,16 +3,25 @@ import { BasedFunctionConfigs } from '@based/functions'
 import { BasedServer } from '@based/server'
 import { createEvent } from './event.js'
 import { addStats } from './addStats.js'
-import { Worker } from 'node:worker_threads'
+import { Module } from 'node:module'
+
+function requireFn(code, filename) {
+  const m = new Module(filename)
+  // @ts-ignore
+  m._compile(code, filename)
+  return m.exports
+}
 
 // stat wrapper
-
 export const initDynamicFunctions = (
   server: BasedServer,
   configDb: DbClient,
   statsDb: DbClient,
   fnIds: Record<string, { statsId: number }>,
 ) => {
+  let newJobs = {}
+  let jobs = {}
+
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
     await Promise.all(
@@ -32,10 +41,7 @@ export const initDynamicFunctions = (
         ))
 
         try {
-          const fn = await import(
-            `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-          )
-
+          const fn = requireFn(code, name)
           // get the globalFn things and attach to function store
           const { default: fnDefault, js, css, ...rest } = fn
           if (config.type === 'authorize') {
@@ -44,37 +50,40 @@ export const initDynamicFunctions = (
           }
 
           if (config.type === 'app') {
-            specs[name] = {
-              fn: (based, _payload, ctx) => {
-                return fnDefault(
-                  based,
-                  {
-                    css: {
-                      url: config.css,
-                    },
-                    js: {
-                      url: config.js,
-                    },
-                    favicon: {
-                      get url() {
-                        console.log('TODO FAVICON')
-                        return ''
+            specs[name] = addStats(
+              {
+                fn: (based, _payload, ctx) => {
+                  return fnDefault(
+                    based,
+                    {
+                      css: {
+                        url: config.css,
+                      },
+                      js: {
+                        url: config.js,
+                      },
+                      favicon: {
+                        get url() {
+                          console.log('TODO FAVICON')
+                          return ''
+                        },
                       },
                     },
-                  },
-                  ctx,
-                )
+                    ctx,
+                  )
+                },
+                ...rest,
+                ...config,
+                statsId,
+                type: 'function',
               },
-              ...rest,
-              ...config,
-              statsId,
-              type: 'function',
-            }
+              statsDb,
+            )
           } else if (config.type === 'job') {
             // TODO: This should be turned into a worker with eval.
             // Problem is having globals._FnGlobals in it
             // also passing based into it
-            fnDefault()
+            newJobs[name] = fnDefault(server.client)
           } else {
             specs[name] = addStats(
               {
@@ -94,5 +103,10 @@ export const initDynamicFunctions = (
       }),
     )
     server.functions.add(specs)
+    // for (const name in jobs) {
+    //   if (name in newJobs) {
+    //     jobs[name] = newJobs[]
+    //   }
+    // }
   })
 }
