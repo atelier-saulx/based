@@ -6,7 +6,7 @@ import { addStats } from './addStats.js'
 import { Module } from 'node:module'
 import { crc32c } from '@based/hash'
 
-function requireFn(code, filename) {
+const requireFn = (code, filename) => {
   const m = new Module(filename)
   // @ts-ignore
   m._compile(code, filename)
@@ -20,15 +20,17 @@ export const initDynamicFunctions = (
   statsDb: DbClient,
   fnIds: Record<string, { statsId: number }>,
 ) => {
-  let updatedJobs = {}
   let jobs = {}
 
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
+    const updatedJobs = {}
+
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
         const checksum = crc32c(code)
+
         if (!fnIds[name]) {
           fnIds[name] = { statsId: 0 }
         }
@@ -77,6 +79,7 @@ export const initDynamicFunctions = (
                 ...config,
                 statsId,
                 type: 'function',
+                checksum,
               },
               statsDb,
             )
@@ -100,6 +103,7 @@ export const initDynamicFunctions = (
                 ...rest,
                 ...config,
                 statsId,
+                checksum,
               },
               statsDb,
             )
@@ -110,6 +114,7 @@ export const initDynamicFunctions = (
         }
       }),
     )
+
     server.functions.add(specs)
     jobs = updatedJobs
   })
