@@ -75,7 +75,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     } else if (queryType == QueryType.ids) {
         const idsSize = read(u32, q, 3);
         const ids: []u8 = q[7 .. idsSize + 7];
-
         const offset = read(u32, q, idsSize + 7);
         const limit = read(u32, q, idsSize + 11);
         // add 1 extra byte for is single condition

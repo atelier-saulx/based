@@ -16,6 +16,7 @@ import {
   propIsNumerical,
   createEmptyDef,
   DEFAULT_MAP,
+  ID_FIELD_DEF,
 } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
@@ -105,9 +106,9 @@ const messages = {
   [ERR_SORT_TYPE]: (p) =>
     `Sort: cannot sort on type "${REVERSE_TYPE_INDEX_MAP[p.typeIndex]}" on field "${p.path.join('.')}"`,
   [ERR_RANGE_INVALID_OFFSET]: (p) =>
-    `Range: incorrect offset "${safeStringify(p)}"`,
+    `Range: incorrect start "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
-    `Range: incorrect limit "${safeStringify(p)}"`,
+    `Range: incorrect end "${safeStringify(p)}"`,
   [ERR_INVALID_LANG]: (p) => `Invalid locale "${p}"`,
   [ERR_SEARCH_ENOENT]: (p) => `Search: field does not exist "${p}"`,
   [ERR_SEARCH_TYPE]: (p) => `Search: incorrect type "${p.path.join('.')}"`,
@@ -154,7 +155,15 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
     def.errors.push({ code: ERR_RANGE_INVALID_LIMIT, payload: limit })
     r = true
   }
-  if (offset > limit) {
+  if (limit === 0) {
+    def.errors.push({ code: ERR_RANGE_INVALID_OFFSET, payload: offset })
+    r = true
+  }
+  if (limit % 1 !== 0) {
+    def.errors.push({ code: ERR_RANGE_INVALID_LIMIT, payload: limit })
+    r = true
+  }
+  if (offset % 1 !== 0) {
     def.errors.push({ code: ERR_RANGE_INVALID_OFFSET, payload: offset })
     r = true
   }
@@ -365,7 +374,7 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  let propDef = def.props[field]
+  let propDef = field === 'id' ? ID_FIELD_DEF : def.props[field]
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
