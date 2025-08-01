@@ -48,7 +48,7 @@ export const Dev = ({ opts }) => {
         opts.url = `ws://localhost:${hubPort}`
 
         const results = await parseFolder({ opts, cwd, publicPath })
-        await startHub({
+        const hub = await startHub({
           port: hubPort,
           path: TMP_PATH,
           s3: initS3({

@@ -107,18 +107,20 @@ export function registerApiHandlers(
       type: 'function',
       async fn(_based, serializedObject) {
         const { db, schema } = deSerialize(serializedObject) as any
+        console.log('DO IT')
         const id = await configDb.upsert('schema', {
           name: db,
           schema: serialize(schema),
           status: 'pending',
         })
-
+        console.log('DO IT!!!')
         return new Promise<void>((resolve, reject) => {
           const unsubscribe = configDb
             .query('schema', id)
             .include('status')
             .subscribe((res) => {
               const { status } = res.toObject()
+              console.log({ status })
               if (status === 'error') {
                 reject(new Error('Schema error'))
                 unsubscribe()

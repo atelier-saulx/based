@@ -15,7 +15,7 @@ export const deployChanges = async (
     const schemas = Array.isArray(changes.schema.schema)
       ? changes.schema.schema
       : [{ db: 'default', schema: changes.schema.schema }]
-    await Promise.all(
+    await Promise.allSettled(
       schemas.map((schema) => client.call('db:set-schema', serialize(schema))),
     )
   }

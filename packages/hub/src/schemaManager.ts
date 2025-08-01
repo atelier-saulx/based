@@ -10,11 +10,11 @@ export async function handleSchemaUpdates(configDb: DbClient, path: string) {
   await new Promise<void>((resolve) =>
     configDb
       .query('schema')
-      .include('name', 'schema')
+      .include('name', 'schema', 'status')
       .subscribe(async (data) => {
         const names = new Set(['default'])
         await Promise.allSettled(
-          data.map(async ({ id, name, schema }) => {
+          data.map(async ({ id, name, schema, status }) => {
             names.add(name)
 
             if (!clients[name]) {
@@ -26,13 +26,15 @@ export async function handleSchemaUpdates(configDb: DbClient, path: string) {
               await db.start()
             }
 
-            try {
-              await clients[name].setSchema(deSerialize(schema))
-              // TODO why do we need this?
-              await wait(100)
-              await configDb.update('schema', id, { status: 'ready' })
-            } catch (e) {
-              await configDb.update('schema', id, { status: 'error' })
+            if (status === 'pending') {
+              try {
+                await clients[name].setSchema(deSerialize(schema))
+                // TODO why do we need this?
+                await wait(100)
+                await configDb.update('schema', id, { status: 'ready' })
+              } catch (e) {
+                await configDb.update('schema', id, { status: 'error' })
+              }
             }
           }),
         )
