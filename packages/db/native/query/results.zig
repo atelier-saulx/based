@@ -22,6 +22,20 @@ pub const Result = struct {
 
 const HEADER_SIZE = 8;
 
+fn addChecksum(item: *const *Result, data: []u8) usize {
+    var offset: usize = 0;
+    data[offset] = @intFromEnum(t.ReadOp.CHECKSUM);
+    offset += 1;
+    data[offset] = item.*.field;
+    offset += 1;
+    if (item.*.val) |v| {
+        utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
+        writeInt(u32, data, offset + 4, v.len);
+    }
+    offset += 8;
+    return offset;
+}
+
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
     env: c.napi_env,
@@ -39,44 +53,25 @@ pub fn createResultsBuffer(
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
+
+        // Always start with id
+        if (item.id) |id| {
+            data[i] = @intFromEnum(t.ReadOp.ID);
+            i += 1;
+            writeInt(u32, data, i, id);
+            i += 4;
+            if (item.score) |s| {
+                copy(data[i .. i + 4], &s);
+                i += 4;
+            }
+        }
+
         switch (item.type) {
             t.ResultType.aggregate => {
-                if (item.id != null) {
-                    data[i] = @intFromEnum(t.ReadOp.ID);
-                    i += 1;
-                    writeInt(u32, data, i, item.id.?);
-                    i += 4;
-                    if (item.score != null) {
-                        copy(data[i .. i + 4], &item.score.?);
-                        i += 4;
-                    }
-                }
                 data[i] = @intFromEnum((t.ReadOp.REFERENCES_AGGREGATION));
                 i += 1;
             },
-            t.ResultType.none => {
-                if (item.id != null) {
-                    data[i] = @intFromEnum(t.ReadOp.ID);
-                    i += 1;
-                    writeInt(u32, data, i, item.id.?);
-                    i += 4;
-                    if (item.score != null) {
-                        copy(data[i .. i + 4], &item.score.?);
-                        i += 4;
-                    }
-                }
-            },
             t.ResultType.edge => {
-                if (item.id != null) {
-                    data[i] = @intFromEnum(t.ReadOp.ID);
-                    i += 1;
-                    writeInt(u32, data, i, item.id.?);
-                    i += 4;
-                    if (item.score != null) {
-                        copy(data[i .. i + 4], &item.score.?);
-                        i += 4;
-                    }
-                }
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
             },
@@ -134,50 +129,17 @@ pub fn createResultsBuffer(
                 continue;
             },
             t.ResultType.checksumEdge => {
-                if (item.id != null) {
-                    data[i] = @intFromEnum(t.ReadOp.ID);
-                    i += 1;
-                    writeInt(u32, data, i, item.id.?);
-                    i += 4;
-                    if (item.score != null) {
-                        copy(data[i .. i + 4], &item.score.?);
-                        i += 4;
-                    }
-                }
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
-                data[i] = @intFromEnum(t.ReadOp.CHECKSUM);
-                i += 1;
-                data[i] = item.field;
-                i += 1;
-                if (item.val) |v| {
-                    utils.copy(data[i .. i + 4], v[v.len - 4 .. v.len]);
-                    writeInt(u32, data, i + 4, v.len);
-                }
-                i += 8;
+                i += addChecksum(&item, data[i..]);
                 continue;
             },
             t.ResultType.checksum => {
-                if (item.id != null) {
-                    data[i] = @intFromEnum(t.ReadOp.ID);
-                    i += 1;
-                    writeInt(u32, data, i, item.id.?);
-                    i += 4;
-                    if (item.score != null) {
-                        copy(data[i .. i + 4], &item.score.?);
-                        i += 4;
-                    }
-                }
-                data[i] = @intFromEnum(t.ReadOp.CHECKSUM);
-                i += 1;
-                data[i] = item.field;
-                i += 1;
-                if (item.val) |v| {
-                    utils.copy(data[i .. i + 4], v[v.len - 4 .. v.len]);
-                    writeInt(u32, data, i + 4, v.len);
-                }
-                i += 8;
+                i += addChecksum(&item, data[i..]);
                 continue;
+            },
+            t.ResultType.none => {
+                // Do nothing
             },
         }
 

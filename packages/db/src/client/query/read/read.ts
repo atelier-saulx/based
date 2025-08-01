@@ -267,7 +267,7 @@ const readSelvaStringValue = (
     return global.JSON.parse(read(buf, offset, size, true))
   }
   if (prop.typeIndex === BINARY) {
-    return buf.subarray(offset + 6, size + offset + 4)
+    return buf.subarray(offset + 2, size + offset)
   }
 }
 
