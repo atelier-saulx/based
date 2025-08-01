@@ -4,6 +4,7 @@ import { BasedServer } from '@based/server'
 import { createEvent } from './event.js'
 import { addStats } from './addStats.js'
 import { Module } from 'node:module'
+import { crc32c } from '@based/hash'
 
 function requireFn(code, filename) {
   const m = new Module(filename)
@@ -19,7 +20,7 @@ export const initDynamicFunctions = (
   statsDb: DbClient,
   fnIds: Record<string, { statsId: number }>,
 ) => {
-  let newJobs = {}
+  let updatedJobs = {}
   let jobs = {}
 
   configDb.query('function').subscribe(async (data) => {
@@ -27,7 +28,7 @@ export const initDynamicFunctions = (
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
-
+        const checksum = crc32c(code)
         if (!fnIds[name]) {
           fnIds[name] = { statsId: 0 }
         }
@@ -36,7 +37,7 @@ export const initDynamicFunctions = (
           'function',
           {
             name,
-            checksum: config.checksum,
+            checksum,
           },
         ))
 
@@ -80,10 +81,17 @@ export const initDynamicFunctions = (
               statsDb,
             )
           } else if (config.type === 'job') {
-            // TODO: This should be turned into a worker with eval.
-            // Problem is having globals._FnGlobals in it
-            // also passing based into it
-            newJobs[name] = fnDefault(server.client)
+            const currentJob = jobs[name]
+            if (!currentJob) {
+              updatedJobs[name] = fnDefault(server.client)
+              // updatedJobs[name].checksum = checksum
+            } else if (currentJob.checksum === checksum) {
+              updatedJobs[name] = fnDefault(server.client)
+              // updatedJobs[name].checksum = checksum
+              currentJob()
+            } else {
+              updatedJobs[name] = currentJob
+            }
           } else {
             specs[name] = addStats(
               {
@@ -103,10 +111,6 @@ export const initDynamicFunctions = (
       }),
     )
     server.functions.add(specs)
-    // for (const name in jobs) {
-    //   if (name in newJobs) {
-    //     jobs[name] = newJobs[]
-    //   }
-    // }
+    jobs = updatedJobs
   })
 }
