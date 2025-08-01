@@ -2290,11 +2290,38 @@ await test('group by date/time intervals', async (t) => {
     },
     'group timestamp by hour',
   )
+})
+
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 513.44,
+  })
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
   // step as adding
-  // await db
-  //   .query('trip')
-  //   .sum('distance')
-  //   .groupBy('vendorIduint16', 1)
-  //   .get()
-  //   .inspect()
+  await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
 })
