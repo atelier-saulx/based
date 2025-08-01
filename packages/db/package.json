@@ -41,7 +41,7 @@
   ],
   "dependencies": {
     "@based/schema": "5.0.0-alpha.27",
-    "@saulx/hash": "^3.0.0",
+    "@based/hash": "1.0.0",
     "@based/utils": "^1.0.0",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0",

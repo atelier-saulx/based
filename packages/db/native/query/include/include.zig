@@ -20,13 +20,22 @@ inline fn addResult(
     return .{
         .type = if (edgeType != t.Prop.NULL) t.ResultType.edge else t.ResultType.none,
         .id = null,
-        .score = null,
+        .score = null, // rly want to get rid of this with a comptime result (extra 4 bytes for no reason)
         .field = field,
         .val = value,
     };
 }
 
-pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, include: []u8, edgeRef: ?types.RefStruct, score: ?[4]u8, comptime isEdge: bool) !usize {
+pub fn getFields(
+    node: db.Node,
+    ctx: *QueryCtx,
+    id: u32,
+    typeEntry: db.Type,
+    include: []u8,
+    edgeRef: ?types.RefStruct,
+    score: ?[4]u8,
+    comptime isEdge: bool,
+) !usize {
     var includeMain: ?[]u8 = null;
     var size: usize = 0;
     var includeIterator: u16 = 0;
@@ -142,7 +151,26 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             continue :includeField;
         }
 
-        if (prop == t.Prop.TEXT) {
+        if (prop == t.Prop.META_SELVA_STRING) {
+            var result = addResult(field, value, edgeType);
+            if (!idIsSet) {
+                size += 5;
+                result.id = id;
+                idIsSet = true;
+                if (score != null) {
+                    result.score = score;
+                    size += 4;
+                }
+            }
+            if (isEdge) {
+                size += 1;
+                result.type = t.ResultType.metaEdge;
+            } else {
+                result.type = t.ResultType.meta;
+            }
+            try ctx.results.append(result);
+            size += 10; // 8 for checksum + len, 1 for field, 1 for checksum indicator
+        } else if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);
             const fallbackSize = operation[2];
             includeIterator += 2 + fallbackSize;
@@ -190,7 +218,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
             }
         } else {
             if (prop == t.Prop.STRING or prop == t.Prop.JSON or prop == t.Prop.BINARY) {
-                // strip crc32
                 valueLen = valueLen - 4;
                 value = value[0..valueLen];
             }
@@ -233,7 +260,6 @@ pub fn getFields(node: db.Node, ctx: *QueryCtx, id: u32, typeEntry: db.Type, inc
                 // 4 for len 1 for field
                 size += (valueLen + 5);
             }
-
             var result = addResult(field, value, edgeType);
             if (!idIsSet) {
                 size += 5;

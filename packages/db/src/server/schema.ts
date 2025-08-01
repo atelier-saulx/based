@@ -9,7 +9,7 @@ import native from '../native.js'
 import { makeTreeKey } from './tree.js'
 import { SCHEMA_FILE } from '../types.js'
 import { saveSync } from './save.js'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)

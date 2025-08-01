@@ -35,7 +35,7 @@ const startFileServer = (port: number, path: string) => {
     })
 }
 
-export const Dev = () => {
+export const Dev = ({ opts }) => {
   useEffect(() => {
     const run = async () => {
       try {
@@ -43,9 +43,12 @@ export const Dev = () => {
         const server = startFileServer(filePort, FILES_PATH)
         const publicPath = `http://localhost:${filePort}/`
         const cwd = process.cwd()
-        const results = await parseFolder({ cwd, publicPath })
         const hubPort = await getPort({ port: 1234 })
-        await startHub({
+
+        opts.url = `ws://localhost:${hubPort}`
+
+        const results = await parseFolder({ opts, cwd, publicPath })
+        const hub = await startHub({
           port: hubPort,
           path: TMP_PATH,
           s3: initS3({
@@ -58,9 +61,8 @@ export const Dev = () => {
             dists: 'dists', // deprecated
           },
         })
-        const client = connect({
-          url: `ws://localhost:${hubPort}`,
-        })
+
+        const client = connect({ url: opts.url })
         await deployChanges(client, publicPath, results)
         await watch(results, async (err, changes) => {
           if (err) {

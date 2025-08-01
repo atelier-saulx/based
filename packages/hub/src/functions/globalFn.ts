@@ -20,19 +20,17 @@ export const initDynamicFunctionsGlobals = (statsDb: DbClient) => {
         this.console = new Console({
           stdout: new Writable({
             write(chunk, _encoding, callback) {
-              createEvent(statsDb, statsId, chunk.toString(), 'runtime', 'info')
+              const msg = chunk.toString()
+              console.log(msg)
+              createEvent(statsDb, statsId, msg, 'runtime', 'info')
               callback()
             },
           }),
           stderr: new Writable({
             write(chunk, _encoding, callback) {
-              createEvent(
-                statsDb,
-                statsId,
-                chunk.toString(),
-                'runtime',
-                'error',
-              )
+              const msg = chunk.toString()
+              console.error(msg)
+              createEvent(statsDb, statsId, msg, 'runtime', 'error')
               callback()
             },
           }),

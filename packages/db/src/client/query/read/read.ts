@@ -21,10 +21,12 @@ import {
   CARDINALITY,
   COLVEC,
 } from '@based/schema/def'
-import { QueryDef, QueryDefType } from '../types.js'
+import { QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
+  combineToNumber,
   DECODER,
+  getByPath,
   readDoubleLE,
   readFloatLE,
   readInt16,
@@ -121,6 +123,7 @@ const addField = (
   item: Item,
   defaultOnly: boolean = false,
   lang: number = 0,
+  lastField: string | false = false,
 ) => {
   if (p.transform) {
     value = p.transform('read', value)
@@ -128,7 +131,11 @@ const addField = (
 
   let i = p.__isEdge === true ? 1 : 0
   // TODO OPTMIZE
-  const path = lang ? [...p.path, inverseLangMap.get(lang)] : p.path
+  const path = lastField
+    ? [...p.path, lastField]
+    : lang
+      ? [...p.path, inverseLangMap.get(lang)]
+      : p.path
   const len = path.length
   if (len - i === 1) {
     const field = path[i]
@@ -224,6 +231,68 @@ const readMainValue = (
   }
 }
 
+const getDefaultCecksumPropValue = (prop: PropDef | PropDefEdge) => {
+  if (
+    prop.typeIndex === TEXT ||
+    prop.typeIndex === STRING ||
+    prop.typeIndex === ALIAS
+  ) {
+    return ''
+  }
+
+  if (prop.typeIndex === JSON) {
+    return null
+  }
+
+  if (prop.typeIndex === BINARY) {
+    return new Uint8Array()
+  }
+}
+
+const readSelvaStringValue = (
+  prop: PropDef | PropDefEdge,
+  buf: Uint8Array,
+  offset: number,
+  size: number,
+) => {
+  if (
+    prop.typeIndex === TEXT ||
+    prop.typeIndex === STRING ||
+    prop.typeIndex === ALIAS
+  ) {
+    return read(buf, offset, size, true)
+  }
+  if (prop.typeIndex === JSON) {
+    return global.JSON.parse(read(buf, offset, size, true))
+  }
+  if (prop.typeIndex === BINARY) {
+    return buf.subarray(offset + 2, size + offset)
+  }
+}
+
+const selvaStringProp = (
+  q: QueryDef,
+  prop: PropDef | PropDefEdge,
+  item: Item,
+  buf?: Uint8Array,
+  offset: number = 0,
+  size: number = 0,
+) => {
+  const useDefault = !buf || size === 0
+  const value = useDefault
+    ? getDefaultCecksumPropValue(prop)
+    : readSelvaStringValue(prop, buf, offset, size)
+  const checksum = q.include.checksums?.has(prop.prop)
+  if (checksum) {
+    addField(prop, value, item, false, 0, 'value')
+    if (useDefault) {
+      addField(prop, 0, item, false, 0, 'checksum')
+    }
+  } else {
+    addField(prop, value, item)
+  }
+}
+
 const readMain = (
   q: QueryDef,
   result: Uint8Array,
@@ -251,6 +320,19 @@ const readMain = (
 }
 
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
+  // can be optmized a lot... shit meta info in the propsRead objectmeta is just a shift of 8
+  if (q.include.checksums) {
+    for (const k of q.include.checksums) {
+      const prop = q.schema.reverseProps[k]
+      if (
+        q.include.propsRead[k] !== id &&
+        getByPath(item, prop.path) === undefined
+      ) {
+        addField(prop, 0, item, false, 0, 'checksum')
+      }
+    }
+  }
+
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
       // Only relevant for seperate props
@@ -274,16 +356,8 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
             }
           }
         }
-      } else if (
-        prop.typeIndex === TEXT ||
-        prop.typeIndex === STRING ||
-        prop.typeIndex === ALIAS
-      ) {
-        addField(prop, '', item)
-      } else if (prop.typeIndex === JSON) {
-        addField(prop, null, item)
-      } else if (prop.typeIndex === BINARY) {
-        addField(prop, new Uint8Array(), item)
+      } else {
+        selvaStringProp(q, prop, item)
       }
     }
   }
@@ -301,11 +375,29 @@ export const readAllFields = (
   while (i < end) {
     const index = result[i]
     i++
+
     if (index === READ_ID) {
       handleUndefinedProps(id, q, item)
       return i - offset
     }
-    if (index === READ_AGGREGATION) {
+
+    if (index === READ_META) {
+      const field = result[i]
+      i++
+      const checksum = combineToNumber(
+        readUint32(result, i + 1),
+        readUint32(result, i + 5),
+      )
+      addField(
+        q.schema.reverseProps[field],
+        checksum,
+        item,
+        false,
+        0,
+        'checksum',
+      )
+      i += 8
+    } else if (index === READ_AGGREGATION) {
       // also for edges at some point!
       let field = result[i]
       i++
@@ -321,7 +413,25 @@ export const readAllFields = (
       i += size
     } else if (index === READ_EDGE) {
       let prop = result[i]
-      if (prop === READ_REFERENCE) {
+      if (prop === READ_META) {
+        i++
+        const target = 'ref' in q.edges.target && q.edges.target.ref
+        prop = result[i]
+        i++
+        const checksum = combineToNumber(
+          readUint32(result, i + 1),
+          readUint32(result, i + 5),
+        )
+        addField(
+          target.reverseSeperateEdges[prop],
+          checksum,
+          item,
+          false,
+          0,
+          'checksum',
+        )
+        i += 8
+      } else if (prop === READ_REFERENCE) {
         i++
         const field = result[i]
         i++
@@ -367,23 +477,15 @@ export const readAllFields = (
           const t = edgeDef.typeIndex
           if (t === JSON) {
             const size = readUint32(result, i)
-            addField(
-              edgeDef,
-              global.JSON.parse(read(result, i + 4, size, true)),
-              item,
-            )
+            selvaStringProp(q, edgeDef, item, result, i + 4, size)
             i += size + 4
           } else if (t === BINARY) {
             const size = readUint32(result, i)
-            addField(edgeDef, result.subarray(i + 6, size + i + 4), item)
+            selvaStringProp(q, edgeDef, item, result, i + 4, size)
             i += size + 4
           } else if (t === STRING || t === ALIAS || t === ALIASES) {
             const size = readUint32(result, i)
-            if (size === 0) {
-              addField(edgeDef, '', item)
-            } else {
-              addField(edgeDef, read(result, i + 4, size, true), item)
-            }
+            selvaStringProp(q, edgeDef, item, result, i + 4, size)
             i += size + 4
           } else if (t === CARDINALITY) {
             const size = readUint32(result, i)
@@ -436,21 +538,17 @@ export const readAllFields = (
       } else if (prop.typeIndex === JSON) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        addField(prop, global.JSON.parse(read(result, i + 4, size, true)), item)
+        selvaStringProp(q, prop, item, result, i + 4, size)
         i += size + 4
       } else if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        addField(prop, result.subarray(i + 6, i + size + 4), item)
+        selvaStringProp(q, prop, item, result, i + 4, size)
         i += size + 4
       } else if (prop.typeIndex === STRING) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        if (size === 0) {
-          addField(prop, '', item)
-        } else {
-          addField(prop, read(result, i + 4, size, true), item)
-        }
+        selvaStringProp(q, prop, item, result, i + 4, size)
         i += size + 4
       } else if (prop.typeIndex == TEXT) {
         const size = readUint32(result, i)

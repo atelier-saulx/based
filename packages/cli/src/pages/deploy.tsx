@@ -15,7 +15,7 @@ export const deployChanges = async (
     const schemas = Array.isArray(changes.schema.schema)
       ? changes.schema.schema
       : [{ db: 'default', schema: changes.schema.schema }]
-    await Promise.all(
+    await Promise.allSettled(
       schemas.map((schema) => client.call('db:set-schema', serialize(schema))),
     )
   }
@@ -79,11 +79,12 @@ export const deployChanges = async (
   )
 }
 
-export const Deploy = () => {
+export const Deploy = ({ opts }) => {
   useEffect(() => {
     const run = async () => {
       const cwd = process.cwd()
       const results = await parseFolder({
+        opts,
         cwd,
         publicPath: 'xxx',
       })

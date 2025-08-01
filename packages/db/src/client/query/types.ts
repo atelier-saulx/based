@@ -125,6 +125,9 @@ export type QueryDefShared = {
         fallBacks: LangCode[]
       }
     >
+    // checksum fields
+    // 1 = checksum in read only, 2 = only include checksum
+    checksums?: Set<number>
     stringFields: Set<string>
     props: Map<number, PropDef | PropDefEdge>
     propsRead: { [propName: number]: number }
@@ -181,6 +184,7 @@ export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
 export const READ_AGGREGATION = 250
+export const READ_META = 249
 
 export const enum includeOp {
   REFERENCES_AGGREGATION = 251,

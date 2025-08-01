@@ -421,3 +421,62 @@ await test('negative default values for numeric types', async (t) => {
     'User created with overridden negative values',
   )
 })
+
+await test('object', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      snurp: {
+        preferences: {
+          type: 'object',
+          props: {
+            units: ['metric', 'imperial'],
+            theme: ['light', 'dark'],
+            toursEnabled: { type: 'boolean', default: true },
+            analyticsEnabled: { type: 'boolean', default: false },
+          },
+        },
+      },
+    },
+  })
+
+  const snurpId = await db.create('snurp', {})
+
+  deepEqual(
+    await db.query('snurp', snurpId).get(),
+    {
+      id: snurpId,
+      preferences: {
+        units: undefined,
+        theme: undefined,
+        toursEnabled: true,
+        analyticsEnabled: false,
+      },
+    },
+    'empty object has default values',
+  )
+
+  const snurpCustomId = await db.create('snurp', {
+    preferences: {
+      units: 'imperial',
+      theme: 'dark',
+      toursEnabled: false,
+      analyticsEnabled: true,
+    },
+  })
+
+  deepEqual(await db.query('snurp', snurpCustomId).get(), {
+    id: 2,
+    preferences: {
+      units: 'imperial',
+      theme: 'dark',
+      toursEnabled: false,
+      analyticsEnabled: true,
+    },
+  })
+})

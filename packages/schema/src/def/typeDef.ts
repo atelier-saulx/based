@@ -20,7 +20,6 @@ import {
   ALIAS,
   ALIASES,
   COLVEC,
-  TypeIndex,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'

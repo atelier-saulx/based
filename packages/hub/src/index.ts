@@ -20,25 +20,20 @@ const start = async ({ port, path, s3, buckets }: Opts) => {
   const configDb = await createConfigDb(path)
   const statsDb = await createStatsDb(path)
   const server = new BasedServer({ port })
-
-  // Initialize dynamic functions and API handlers
-  const { fnIds } = initDynamicFunctionsGlobals(statsDb.client)
-  initDynamicFunctions(server, configDb.client, statsDb.client, fnIds)
-  registerApiHandlers(server, configDb.client, statsDb.client, s3, buckets)
-
   // Handle schema updates and prepare client/server maps
-  const { clients, servers } = handleSchemaUpdates(configDb.client, path)
-
-  // Set up the default database
+  const { clients, servers } = await handleSchemaUpdates(configDb.client, path)
   const defaultDb = new BasedDb({ path: join(path, 'default') })
-  await defaultDb.start()
-  await server.start()
-
   // Register default db client/server
   clients.default = defaultDb.client
   servers.default = defaultDb.server
   server.client.db = defaultDb.client
-
+  server.client.dbs = clients
+  // Initialize dynamic functions and API handlers
+  const { fnIds } = initDynamicFunctionsGlobals(statsDb.client)
+  initDynamicFunctions(server, configDb.client, statsDb.client, fnIds)
+  registerApiHandlers(server, configDb.client, statsDb.client, s3, buckets)
+  await defaultDb.start()
+  await server.start()
   // Return cleanup function
   return {
     configDb,

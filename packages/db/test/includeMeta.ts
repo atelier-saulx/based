@@ -1,0 +1,105 @@
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
+
+await test('meta for selva string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      item: {
+        props: {
+          email: { type: 'string', maxBytes: 20 },
+          name: 'string',
+          items: {
+            items: {
+              ref: 'item',
+              prop: 'items',
+              $edgeName: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('item', {
+    name: 'a',
+    email: 'a@b.com',
+  })
+
+  deepEqual(await db.query('item').include('name.checksum', 'name').get(), [
+    {
+      id: 1,
+      name: { checksum: 272928132300800, value: 'a' },
+    },
+  ])
+
+  await db.create('item', {})
+
+  deepEqual(await db.query('item').include('name.checksum', 'name').get(), [
+    {
+      id: 1,
+      name: { checksum: 272928132300800, value: 'a' },
+    },
+    {
+      id: 2,
+      name: { checksum: 0, value: '' },
+    },
+  ])
+
+  deepEqual(await db.query('item').include('name.checksum').get(), [
+    {
+      id: 1,
+      name: { checksum: 272928132300800 },
+    },
+    {
+      id: 2,
+      name: { checksum: 0 },
+    },
+  ])
+
+  db.update('item', 1, {
+    items: [
+      {
+        id: 2,
+        $edgeName: 'a',
+      },
+    ],
+  })
+
+  deepEqual(
+    await db.query('item').include('items.$edgeName.checksum').get(),
+    [
+      {
+        id: 1,
+        items: [
+          {
+            id: 2,
+            $edgeName: { checksum: 272928132300800 },
+          },
+        ],
+      },
+      {
+        id: 2,
+        items: [
+          {
+            id: 1,
+            $edgeName: { checksum: 272928132300800 },
+          },
+        ],
+      },
+    ],
+    'Edge checksums',
+  )
+
+  const x = await db.query('item').include('email').get()
+
+  // add checksumIncludesMain (this just adds it)
+
+  x.inspect()
+})

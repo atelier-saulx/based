@@ -332,3 +332,14 @@ export const makeTmpBuffer = (initialSize: number) => {
     },
   }
 }
+
+const BITS_FOR_B = 21
+const FACTOR = 2 ** BITS_FOR_B
+const MASK_B = FACTOR - 1
+
+export const combineToNumber = (a: number, b: number): number => {
+  const val1_unsigned = a >>> 0
+  const truncated_b = b & MASK_B
+  const shifted_a = val1_unsigned * FACTOR
+  return shifted_a + truncated_b
+}
