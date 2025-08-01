@@ -287,10 +287,13 @@ static void write_refs(struct SelvaNode * restrict node, const struct SelvaField
     memcpy(&refs, vp, sizeof(refs));
 
     if (refs.order == SELVA_NODE_REFERENCES_ORDER_ID) {
-        index = node_id_set_bsearch(refs.index, refs.nr_refs + 1, dst->node_id);
-        assert(index != -1); /* This means that it wasn't inserted before calling write_refs(). */
+        //refs.order = SELVA_NODE_REFERENCES_ORDER_USER;
+        //index = -1;
+        if (index == -1) {
+            index = node_id_set_bsearch(refs.index, refs.nr_refs + 1, dst->node_id);
+            assert(index != -1); /* This means that it wasn't inserted before calling write_refs(). */
+        }
     } else {
-        refs.order = SELVA_NODE_REFERENCES_ORDER_USER;
         assert(index >= -1);
     }
 
@@ -524,7 +527,12 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
                 struct SelvaNode *orig_dst_node = selva_find_node(dst_type, orig_dst);
                 assert(orig_dst_node);
 
-                ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, orig_dst_node);
+                ssize_t i;
+                if (refs->order == SELVA_NODE_REFERENCES_ORDER_USER) {
+                    i = fast_linear_search_references(refs->refs, refs->nr_refs, orig_dst_node);
+                } else {
+                    i = node_id_set_bsearch(refs->index, refs->nr_refs, orig_dst_node->node_id);
+                }
                 if (i >= 0) {
                     dst = refs->refs[i].dst;
                     del_multi_ref(db, src, &fs_src->edge_constraint, refs, i);
@@ -578,7 +586,12 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
                     goto out;
                 }
 
-                ssize_t i = fast_linear_search_references(refs->refs, refs->nr_refs, src);
+                ssize_t i;
+                if (refs->order == SELVA_NODE_REFERENCES_ORDER_USER) {
+                    i = fast_linear_search_references(refs->refs, refs->nr_refs, src);
+                } else {
+                    i = node_id_set_bsearch(refs->index, refs->nr_refs, src->node_id);
+                }
                 assert(i >= 0);
                 del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i);
             }
@@ -1187,7 +1200,14 @@ int selva_fields_references_add(
             struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
             struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
-            *ref_out = &refs->refs[fast_linear_search_references(refs->refs, refs->nr_refs, dst)];
+            ssize_t i;
+            if (refs->order == SELVA_NODE_REFERENCES_ORDER_USER) {
+                i = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+            } else {
+                i = node_id_set_bsearch(refs->index, refs->nr_refs, dst->node_id);
+            }
+
+            *ref_out = &refs->refs[i];
         }
         return SELVA_EEXIST;
     }
@@ -1247,7 +1267,12 @@ int selva_fields_references_insert(
         ssize_t index_old;
         int err = 0;
 
-        index_old = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+        if (refs->order == SELVA_NODE_REFERENCES_ORDER_USER) {
+            index_old = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+        } else {
+            index_old = node_id_set_bsearch(refs->index, refs->nr_refs, dst->node_id);
+        }
+
         if (index_old < 0) {
             return SELVA_EGENERAL;
         } else if (index_old == index) {
@@ -1268,7 +1293,14 @@ done:
             struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
             struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
-            *ref_out = &refs->refs[fast_linear_search_references(refs->refs, refs->nr_refs, dst)];
+            ssize_t i;
+            if (refs->order == SELVA_NODE_REFERENCES_ORDER_USER) {
+                i = fast_linear_search_references(refs->refs, refs->nr_refs, dst);
+            } else {
+                i = node_id_set_bsearch(refs->index, refs->nr_refs, dst->node_id);
+            }
+
+            *ref_out = &refs->refs[i];
         }
         return SELVA_EEXIST;
     }
