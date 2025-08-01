@@ -34,7 +34,6 @@ pub inline fn setGroupResults(
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
-        utils.debugPrint("step: {any}{any}\n", .{ ctx.stepType, ctx.stepRange });
         writeInt(u16, data, i, keyLen);
         i += 2;
         if (keyLen > 0) {
@@ -152,7 +151,11 @@ pub inline fn finalizeGroupResults(
 
 pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {
     const field = aggInput[0];
-    const propType: types.Prop = if (field == types.MAIN_PROP and @as(types.Prop, @enumFromInt(aggInput[1])) != types.Prop.ENUM) types.Prop.MICRO_BUFFER else @enumFromInt(aggInput[1]);
+    const srcPropType: types.Prop = @enumFromInt(aggInput[1]);
+    const propType: types.Prop = if (field == types.MAIN_PROP and srcPropType != types.Prop.ENUM and srcPropType != types.Prop.TIMESTAMP)
+        types.Prop.MICRO_BUFFER
+    else
+        srcPropType;
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
     const stepType: u8 = aggInput[6];

@@ -2183,7 +2183,7 @@ await test('group by unique numbers', async (t) => {
   )
 })
 
-await test('kev', async (t) => {
+await test('group by date/time intervals', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2196,51 +2196,100 @@ await test('kev', async (t) => {
         pickup: 'timestamp',
         dropoff: 'timestamp',
         distance: 'number',
-        vendorIduint8: 'uint8',
-        vendorIdint8: 'int8',
-        vendorIduint16: 'uint16',
-        vendorIdint16: 'int16',
-        vendorIduint32: 'int32',
-        vendorIdint32: 'int32',
-        vendorIdnumber: 'number',
+        vendorId: 'uint16',
       },
     },
   })
 
   db.create('trip', {
-    vendorIduint16: 813,
+    vendorId: 813,
     pickup: new Date('12/11/2024 11:00+00'),
     dropoff: new Date('12/11/2024 11:10+00'),
     distance: 513.44,
   })
   db.create('trip', {
-    vendorIduint16: 814,
-    pickup: new Date('12/11/2024 12:00+00'),
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
     dropoff: new Date('12/12/2024 12:10+00'),
     distance: 513.44,
   })
 
-  // await db
-  //   .query('trip')
-  //   .sum('distance')
-  //   .groupBy('vendorIduint16')
-  //   .get()
-  //   .inspect()
-
-  let d = new Date('12/11/2024 11:00+00')
-  console.log('js: ', (d.getTime() - d.getMilliseconds()) / 1000)
-  console.log(
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'day').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'shorthand for step type',
+  )
+  deepEqual(
     await db
       .query('trip')
       .sum('distance')
-      // .groupBy('pickup', { step: 1 })
-      // .groupBy('pickup', { step: 'day' })
-      // .groupBy('pickup', 1)
-      .groupBy('pickup', 'day')
-      .get()
-      .toObject(),
+      .groupBy('pickup', { step: 'day' })
+      .get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by day, without shorthand',
   )
-
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
+    {
+      3: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by day of week',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
+    {
+      3: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
+    {
+      345: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by month[0-11]',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
+    {
+      2024: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
   // step as adding
   // await db
   //   .query('trip')

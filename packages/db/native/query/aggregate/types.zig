@@ -1,9 +1,9 @@
 const std = @import("std");
 const addStep = @import("./utils.zig").addStep;
-const datePart = @import("./utils.zig").datePart;
 const types = @import("../../types.zig");
 const utils = @import("../../utils.zig");
 const read = utils.read;
+const datePart = @import("../aggregate/utils.zig").datePart;
 
 pub const GroupedBy = enum(u8) {
     hasGroup = 255,
@@ -48,13 +48,11 @@ pub const GroupByHashMap = struct {
         }
     }
 
-    pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
-        //------temp
-        const lala: i64 = if (key.len == 8) @intFromFloat(@trunc(read(f64, key, 0))) else 0;
-        std.debug.print("key: {}\n", .{lala});
-        const fkey = if (key.len == 8) datePart(key, types.Interval.day) else key;
-        //------temp
-
+    pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize, groupPropType: types.Prop, stepType: u8) !struct { value: []u8, is_new: bool } {
+        const fkey = if (groupPropType == types.Prop.TIMESTAMP) // MV: move it later
+            datePart(key, @enumFromInt(stepType))
+        else
+            key;
         if (self.inner.getEntry(fkey)) |entry| {
             return .{ .value = entry.value_ptr.*, .is_new = false };
         } else {

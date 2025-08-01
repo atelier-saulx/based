@@ -18,23 +18,20 @@ pub inline fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize
 }
 
 pub inline fn datePart(timestamp: []u8, part: types.Interval) []const u8 {
-    if (timestamp.len >= 8) { // temp
-        const ts = @as(i64, @intFromFloat(@trunc(read(f64, timestamp, 0)))); // temp
-        const tz = 0; // temp
-        return switch (part) {
-            .hour => std.mem.asBytes(&selva.selva_gmtime_hour(ts, tz)),
-            .day => std.mem.asBytes(&selva.selva_gmtime_mday(ts, tz)),
-            .month => std.mem.asBytes(&selva.selva_gmtime_mon(ts, tz)),
-            .year => std.mem.asBytes(&selva.selva_gmtime_year(ts, tz)),
-            .dow => std.mem.asBytes(&selva.selva_gmtime_wday(ts, tz)),
-            .doy => std.mem.asBytes(&selva.selva_gmtime_yday(ts, tz)),
-            .isoDOW => std.mem.asBytes(&selva.selva_gmtime_wday2iso_wday(selva.selva_gmtime_wday(ts, tz))),
-            // .week => std.mem.asBytes(&(selva.selva_gmtime_iso_wyear(ts, tz).iso_week)),
-            // .quarter
-            else => unreachable,
-        };
-    }
-    return &[_]u8{};
+    const ts = @as(i64, @intFromFloat(@trunc(read(f64, timestamp, 0))));
+    const tz = 0; // temp
+    return switch (part) {
+        .hour => std.mem.asBytes(&selva.selva_gmtime_hour(ts, tz)),
+        .day => std.mem.asBytes(&selva.selva_gmtime_mday(ts, tz)),
+        .month => std.mem.asBytes(&selva.selva_gmtime_mon(ts, tz)),
+        .year => std.mem.asBytes(&selva.selva_gmtime_year(ts, tz)),
+        .dow => std.mem.asBytes(&selva.selva_gmtime_wday(ts, tz)),
+        .doy => std.mem.asBytes(&selva.selva_gmtime_yday(ts, tz)),
+        .isoDOW => std.mem.asBytes(&selva.selva_gmtime_wday2iso_wday(selva.selva_gmtime_wday(ts, tz))),
+        // .week => std.mem.asBytes(&(selva.selva_gmtime_iso_wyear(ts, tz).iso_week)),
+        // .quarter
+        else => unreachable,
+    };
 }
 
 pub fn addStep(key: []u8, step: u16) @TypeOf(key) {

@@ -102,11 +102,11 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
+            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize, groupCtx.propType, groupCtx.stepType);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 
-            const resultKeyLen = if (1 == 1) 4 else key.len;
+            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
             }
