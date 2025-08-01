@@ -15,7 +15,14 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { convertToTimestamp, writeInt64 } from '@based/utils'
+import {
+  convertToTimestamp,
+  writeInt64,
+  writeUint32,
+  writeUint16,
+  writeInt32,
+  writeInt16,
+} from '@based/utils'
 import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { MOD_OPS_TO_STRING, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'
@@ -162,10 +169,8 @@ map[UINT32] = (ctx, val, def, mod) => {
   if (def.transform) {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
-  ctx.buf[ctx.len++] = val
-  ctx.buf[ctx.len++] = val >>>= 8
-  ctx.buf[ctx.len++] = val >>>= 8
-  ctx.buf[ctx.len++] = val >>>= 8
+  writeUint32(ctx.buf, val, ctx.len)
+  ctx.len += 4
 }
 
 map[UINT16] = (ctx, val, def, mod) => {
@@ -181,8 +186,8 @@ map[UINT16] = (ctx, val, def, mod) => {
   if (def.transform) {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
-  ctx.buf[ctx.len++] = val
-  ctx.buf[ctx.len++] = val >>>= 8
+  writeUint16(ctx.buf, val, ctx.len)
+  ctx.len += 2
 }
 
 map[UINT8] = (ctx, val, def, mod) => {
@@ -214,10 +219,8 @@ map[INT32] = (ctx, val, def, mod) => {
   if (def.transform) {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
-  ctx.buf[ctx.len++] = val
-  ctx.buf[ctx.len++] = val >>>= 8
-  ctx.buf[ctx.len++] = val >>>= 8
-  ctx.buf[ctx.len++] = val >>>= 8
+  writeInt32(ctx.buf, val, ctx.len)
+  ctx.len += 4
 }
 
 map[INT16] = (ctx, val, def, mod) => {
@@ -233,8 +236,8 @@ map[INT16] = (ctx, val, def, mod) => {
   if (def.transform) {
     val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
-  ctx.buf[ctx.len++] = val
-  ctx.buf[ctx.len++] = val >>>= 8
+  writeInt16(ctx.buf, val, ctx.len)
+  ctx.len += 2
 }
 
 map[INT8] = (ctx, val, def, mod) => {

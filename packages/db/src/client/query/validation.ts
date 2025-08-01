@@ -154,6 +154,10 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
     def.errors.push({ code: ERR_RANGE_INVALID_LIMIT, payload: limit })
     r = true
   }
+  if (offset > limit) {
+    def.errors.push({ code: ERR_RANGE_INVALID_OFFSET, payload: offset })
+    r = true
+  }
   return r
 }
 
