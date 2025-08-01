@@ -20,9 +20,8 @@ import {
   JSON,
   CARDINALITY,
   COLVEC,
-  CHECKSUM,
 } from '@based/schema/def'
-import { QueryDef, QueryDefType, READ_CHECKSUM } from '../types.js'
+import { QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   combineToNumber,
@@ -382,7 +381,7 @@ export const readAllFields = (
       return i - offset
     }
 
-    if (index === READ_CHECKSUM) {
+    if (index === READ_META) {
       const field = result[i]
       i++
       const checksum = combineToNumber(
@@ -414,7 +413,7 @@ export const readAllFields = (
       i += size
     } else if (index === READ_EDGE) {
       let prop = result[i]
-      if (prop === READ_CHECKSUM) {
+      if (prop === READ_META) {
         i++
         const target = 'ref' in q.edges.target && q.edges.target.ref
         prop = result[i]

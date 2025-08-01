@@ -184,7 +184,7 @@ export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
 export const READ_AGGREGATION = 250
-export const READ_CHECKSUM = 249
+export const READ_META = 249
 
 export const enum includeOp {
   REFERENCES_AGGREGATION = 251,

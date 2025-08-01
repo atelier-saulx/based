@@ -1,4 +1,4 @@
-import { CHECKSUM } from '@based/schema/def'
+import { META_SELVA_STRING } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
@@ -141,7 +141,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     for (const prop of def.include.checksums) {
       const b = new Uint8Array(2)
       b[0] = prop
-      b[1] = CHECKSUM
+      b[1] = META_SELVA_STRING // prob want to add more here...
       result.push(b)
     }
   }

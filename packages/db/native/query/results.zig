@@ -24,7 +24,7 @@ const HEADER_SIZE = 8;
 
 fn addChecksum(item: *const *Result, data: []u8) usize {
     var offset: usize = 0;
-    data[offset] = @intFromEnum(t.ReadOp.CHECKSUM);
+    data[offset] = @intFromEnum(t.ReadOp.META);
     offset += 1;
     data[offset] = item.*.field;
     offset += 1;
@@ -128,13 +128,13 @@ pub fn createResultsBuffer(
                 i += 10;
                 continue;
             },
-            t.ResultType.checksumEdge => {
+            t.ResultType.metaEdge => {
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
-            t.ResultType.checksum => {
+            t.ResultType.meta => {
                 i += addChecksum(&item, data[i..]);
                 continue;
             },

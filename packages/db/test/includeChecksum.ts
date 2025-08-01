@@ -13,6 +13,7 @@ await test('includeChecksum', async (t) => {
     types: {
       item: {
         props: {
+          email: { type: 'string', maxBytes: 20 },
           name: 'string',
           items: {
             items: {
@@ -28,6 +29,7 @@ await test('includeChecksum', async (t) => {
 
   const id1 = await db.create('item', {
     name: 'a',
+    email: 'a@b.com',
   })
 
   deepEqual(await db.query('item').include('name.checksum', 'name').get(), [
@@ -70,9 +72,30 @@ await test('includeChecksum', async (t) => {
     ],
   })
 
-  const x = await db.query('item').include('items.$edgeName.checksum').get()
+  deepEqual(
+    await db.query('item').include('items.$edgeName.checksum').get(),
+    [
+      {
+        id: 1,
+        items: {
+          id: 2,
+          $edgeName: { checksum: 272928132300800 },
+        },
+      },
+      {
+        id: 2,
+        items: {
+          id: 1,
+          $edgeName: { checksum: 272928132300800 },
+        },
+      },
+    ],
+    'Edge checksums',
+  )
 
-  x.debug()
+  const x = await db.query('item').include('email').get()
 
-  x.inspect(20, true)
+  // add checksumIncludesMain (this just adds it)
+
+  x.inspect()
 })

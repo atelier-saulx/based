@@ -151,8 +151,7 @@ pub fn getFields(
             continue :includeField;
         }
 
-        // will call this selvaString meta
-        if (prop == t.Prop.CHECKSUM) {
+        if (prop == t.Prop.META_SELVA_STRING) {
             var result = addResult(field, value, edgeType);
             if (!idIsSet) {
                 size += 5;
@@ -165,9 +164,9 @@ pub fn getFields(
             }
             if (isEdge) {
                 size += 1;
-                result.type = t.ResultType.checksumEdge;
+                result.type = t.ResultType.metaEdge;
             } else {
-                result.type = t.ResultType.checksum;
+                result.type = t.ResultType.meta;
             }
             try ctx.results.append(result);
             size += 10; // 8 for checksum + len, 1 for field, 1 for checksum indicator
