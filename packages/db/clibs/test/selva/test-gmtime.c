@@ -194,6 +194,8 @@ PU_TEST(test_week_numbers)
     pu_assert_equal("2010-01-02 week", selva_gmtime_iso_wyear(&iso, 1'262'390'400'000, 0)->iso_week, 53);
     pu_assert_equal("1995-01-02 week", selva_gmtime_iso_wyear(&iso, 789'004'800'000, 0)->iso_week, 1);
     pu_assert_equal("1921-01-02 week", selva_gmtime_iso_wyear(&iso, -1546214400'000, 0)->iso_week, 53);
+    pu_assert_equal("1755-01-01 week", selva_gmtime_iso_wyear(&iso, -6784732196'000, 0)->iso_week, 1);
+    pu_assert_equal("1697-01-01 week", selva_gmtime_iso_wyear(&iso, -8614943396'000, 0)->iso_week, 1);
 
     pu_assert_equal("2027-12-31 week", selva_gmtime_iso_wyear(&iso, 1'830'211'200'000, 0)->iso_year, 2027);
     pu_assert_equal("2026-01-02 week", selva_gmtime_iso_wyear(&iso, 1'767'225'600'000, 0)->iso_year, 2026);
@@ -219,7 +221,7 @@ PU_TEST(test_week_numbers_perf)
 {
     struct timespec start, end;
     struct selva_iso_week iso;
-    int64_t ts, off;
+    int64_t ts;
 
     ts = 1'736'467'200;
     ts_monotime(&start);
