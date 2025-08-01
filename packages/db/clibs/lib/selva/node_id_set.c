@@ -42,7 +42,8 @@ out:
     return -1;
 }
 
-bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id)
+__attribute__((always_inline))
+static bool node_id_set_add_l(node_id_t **set_p, size_t *len, node_id_t id, ssize_t *pos)
 {
     const size_t old_len = *len;
     const size_t new_len = old_len + 1;
@@ -69,6 +70,7 @@ bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id)
                 r = m - 1;
             } else {
                 /* Already inserted. */
+                *pos = l;
                 return false;
             }
         }
@@ -84,8 +86,20 @@ bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id)
 
     arr[l] = id;
     *len = new_len;
+    *pos = l;
 
     return true;
+}
+
+bool node_id_set_add(node_id_t **set_p, size_t *len, node_id_t id)
+{
+    ssize_t pos;
+    return node_id_set_add_l(set_p, len, id, &pos);
+}
+
+bool node_id_set_add_pos(node_id_t **set_p, size_t *len, node_id_t id, ssize_t *pos)
+{
+    return node_id_set_add_l(set_p, len, id, pos);
 }
 
 bool node_id_set_remove(node_id_t **set_p, size_t *len, node_id_t id)

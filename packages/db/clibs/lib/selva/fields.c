@@ -276,6 +276,7 @@ static void write_ref(struct SelvaNode * restrict node, const struct SelvaFieldS
 /**
  * Write a ref to the fields data.
  * Note that this function doesn't touch the destination node.
+ * .index must be updated before this function is called but .nr_refs mustn't updated.
  */
 static void write_refs(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, ssize_t index, struct SelvaNode * restrict dst, struct SelvaNodeReference **ref_out)
 {
@@ -284,7 +285,14 @@ static void write_refs(struct SelvaNode * restrict node, const struct SelvaField
     struct SelvaNodeReferences refs;
 
     memcpy(&refs, vp, sizeof(refs));
-    assert(index >= -1);
+
+    if (refs.order == SELVA_NODE_REFERENCES_ORDER_ID) {
+        index = node_id_set_bsearch(refs.index, refs.nr_refs + 1, dst->node_id);
+        assert(index != -1); /* This means that it wasn't inserted before calling write_refs(). */
+    } else {
+        refs.order = SELVA_NODE_REFERENCES_ORDER_USER;
+        assert(index >= -1);
+    }
 
     if (refs.offset > 0) {
         if (index == 0) {
@@ -681,6 +689,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 
     selva_free(refs->index);
     refs->index = nullptr;
+    refs->order = SELVA_NODE_REFERENCES_ORDER_ID;
 
     return refs;
 }
@@ -1067,7 +1076,8 @@ static bool add_to_refs_index_(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         struct SelvaFieldInfo *nfo,
-        node_id_t dst)
+        node_id_t dst,
+        ssize_t *pos)
 {
     bool res = true;
 
@@ -1078,7 +1088,8 @@ static bool add_to_refs_index_(
         size_t nr_refs = 0;
 
         nr_refs = refs->nr_refs;
-        res = node_id_set_add(&refs->index, &nr_refs, dst);
+        res = node_id_set_add_pos(&refs->index, &nr_refs, dst,
+                                  pos && refs->order == SELVA_NODE_REFERENCES_ORDER_ID ? pos : &(ssize_t){});
         if (res) {
             assert(nr_refs > refs->nr_refs);
             /* These will be equal again once the actual reference is created. */
@@ -1088,16 +1099,22 @@ static bool add_to_refs_index_(
     return res;
 }
 
+/**
+ * Add to refs.index.
+ * @param pos_src updated if src.order == id
+ * @param pos_dst updated if dst.order == id
+ */
 static bool add_to_refs_index(
         struct SelvaNode * restrict src,
         struct SelvaNode * restrict dst,
         const struct SelvaFieldSchema * restrict fs_src,
-        const struct SelvaFieldSchema * restrict fs_dst)
+        const struct SelvaFieldSchema * restrict fs_dst,
+        ssize_t *pos_src, ssize_t *pos_dst)
 {
     struct SelvaFieldInfo *nfo_src = ensure_field(&src->fields, fs_src);
     struct SelvaFieldInfo *nfo_dst = ensure_field(&dst->fields, fs_dst);
-    const bool added_src = add_to_refs_index_(src, fs_src, nfo_src, dst->node_id);
-    const bool added_dst = add_to_refs_index_(dst, fs_dst, nfo_dst, src->node_id);
+    const bool added_src = add_to_refs_index_(src, fs_src, nfo_src, dst->node_id, pos_src);
+    const bool added_dst = add_to_refs_index_(dst, fs_dst, nfo_dst, src->node_id, pos_dst);
 
     /*
      * If both are refs then:
@@ -1106,6 +1123,75 @@ static bool add_to_refs_index(
      */
 
     return added_src && added_dst;
+}
+
+static void set_refs_order(struct SelvaNode *node, const struct SelvaFieldSchema *fs, enum SelvaNodeReferencesOrder order)
+{
+    assert(fs->type == SELVA_FIELD_TYPE_REFERENCES);
+
+    struct SelvaFieldInfo *nfo = &node->fields.fields_map[fs->field];
+    struct SelvaNodeReferences *refs = nfo2p(&node->fields, nfo);
+
+    refs->order = order;
+}
+
+int selva_fields_references_add(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaTypeEntry *te_dst,
+        struct SelvaNode * restrict dst,
+        struct SelvaNodeReference **ref_out)
+{
+    const struct SelvaFieldSchema *fs_dst;
+    node_type_t type_dst = te_dst->type;
+
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
+        type_dst != dst->type ||
+        type_dst != fs->edge_constraint.dst_node_type ||
+        node == dst) {
+        return SELVA_EINVAL;
+    }
+
+    fs_dst = selva_get_fs_by_te_field(te_dst, fs->edge_constraint.inverse_field);
+    if (!fs_dst) {
+        return SELVA_EINTYPE;
+    }
+
+    /*
+     * Add by id order if .order==id; Otherwise as the last.
+     */
+    ssize_t index_src = -1;
+    ssize_t index_dst = -1;
+    if (add_to_refs_index(node, dst, fs, fs_dst, &index_src, &index_dst)) {
+        if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+            remove_reference(db, dst, fs_dst, 0, -1, false);
+        }
+
+        /*
+         * Two-way write.
+         * See: write_ref_2way()
+         */
+        write_refs(node, fs, index_src, dst, ref_out);
+        if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+            write_ref(dst, fs_dst, node, nullptr);
+        } else {
+            write_refs(dst, fs_dst, index_dst, node, nullptr);
+        }
+
+        return 0;
+    } else {
+        if (ref_out) {
+            struct SelvaFields *fields = &node->fields;
+            assert(fs->field < fields->nr_fields);
+            struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+            struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
+
+            *ref_out = &refs->refs[fast_linear_search_references(refs->refs, refs->nr_refs, dst)];
+        }
+        return SELVA_EEXIST;
+    }
+    __builtin_unreachable();
 }
 
 int selva_fields_references_insert(
@@ -1133,10 +1219,13 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-    if (add_to_refs_index(node, dst, fs, fs_dst)) {
+    ssize_t index_dst = -1; /* only updated by add_to_refs_index() if .order==id */
+    if (add_to_refs_index(node, dst, fs, fs_dst, nullptr, &index_dst)) {
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0, -1, false);
         }
+
+        set_refs_order(node, fs, SELVA_NODE_REFERENCES_ORDER_USER);
 
         /*
          * Two-way write.
@@ -1146,7 +1235,7 @@ int selva_fields_references_insert(
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             write_ref(dst, fs_dst, node, nullptr);
         } else {
-            write_refs(dst, fs_dst, -1, node, nullptr);
+            write_refs(dst, fs_dst, index_dst, node, nullptr);
         }
 
         return 0;
@@ -1211,7 +1300,8 @@ int selva_fields_reference_set(
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
 
-    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(src, dst, fs_src, fs_dst)) {
+    ssize_t index_dst = -1; /* only updated by add_to_refs_index() if .order==id */
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(src, dst, fs_src, fs_dst, nullptr, &index_dst)) {
         return SELVA_EEXIST;
     }
 
@@ -1241,7 +1331,7 @@ int selva_fields_reference_set(
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         write_ref(dst, fs_dst, src, nullptr);
     } else {
-        write_refs(dst, fs_dst, -1, src, nullptr);
+        write_refs(dst, fs_dst, index_dst, src, nullptr);
     }
 
     return 0;
@@ -1291,7 +1381,7 @@ static void selva_fields_references_insert_tail_wupsert_empty_src_field(
             continue;
         }
 
-        if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
+        if (!add_to_refs_index(src, dst, fs_src, fs_dst, nullptr, nullptr)) {
             continue; /* ignore. */
         }
 
@@ -1335,7 +1425,7 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
             continue;
         }
 
-        if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
+        if (!add_to_refs_index(src, dst, fs_src, fs_dst, nullptr, nullptr)) {
             continue; /* already inserted. */
         }
 
@@ -1406,6 +1496,7 @@ int selva_fields_references_insert_tail_wupsert(
     }
 
     const size_t old_nr_refs = selva_fields_prealloc_refs(node, fs, nr_ids);
+    set_refs_order(node, fs, SELVA_NODE_REFERENCES_ORDER_USER);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
         if (old_nr_refs == 0) { /* field is empty. */
             selva_fields_references_insert_tail_wupsert_empty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_refs);
@@ -1470,6 +1561,8 @@ int selva_fields_references_move(
         index_new < 0 || index_new >= refs.nr_refs) {
         return SELVA_EINVAL;
     }
+
+    set_refs_order(node, fs, SELVA_NODE_REFERENCES_ORDER_USER);
 
     if (index_old < index_new) {
         struct SelvaNodeReference tmp = refs.refs[index_old];
@@ -1544,6 +1637,8 @@ int selva_fields_references_swap(
         index2 >= refs.nr_refs) {
         return SELVA_EINVAL;
     }
+
+    set_refs_order(node, fs, SELVA_NODE_REFERENCES_ORDER_USER);
 
     /*
      * No matter how clever you try to be here with temp variables or whatever,

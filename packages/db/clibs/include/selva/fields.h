@@ -32,6 +32,11 @@ struct SelvaNodeReference {
 struct SelvaNodeReferences {
     uint32_t nr_refs;
     uint16_t offset;
+    enum SelvaNodeReferencesOrder {
+        SELVA_NODE_REFERENCES_ORDER_ID = 0,
+        SELVA_NODE_REFERENCES_ORDER_USER = 1,
+    } __packed order;
+    uint8_t spare;
     struct SelvaNodeReference *refs __pcounted_by(nr_refs);
     node_id_t *index __pcounted_by(nr_refs); /*!< Sorted index of all nodes in `.refs`. */
 };
@@ -148,6 +153,18 @@ int selva_fields_reference_set(
         selva_dirty_node_cb_t dirty_cb,
         void *dirty_ctx);
     // __attribute__((access(write_only, 5), access(write_only, 6)));
+
+/**
+ */
+SELVA_EXPORT
+int selva_fields_references_add(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaTypeEntry *te_dst,
+        struct SelvaNode * restrict dst,
+        struct SelvaNodeReference **ref_out)
+    __attribute__((access(write_only, 6)));
 
 /**
  * @param index 0 = first; -1 = last.
