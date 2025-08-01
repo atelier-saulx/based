@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('includeChecksum', async (t) => {
+await test('meta for selva string', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -77,17 +77,21 @@ await test('includeChecksum', async (t) => {
     [
       {
         id: 1,
-        items: {
-          id: 2,
-          $edgeName: { checksum: 272928132300800 },
-        },
+        items: [
+          {
+            id: 2,
+            $edgeName: { checksum: 272928132300800 },
+          },
+        ],
       },
       {
         id: 2,
-        items: {
-          id: 1,
-          $edgeName: { checksum: 272928132300800 },
-        },
+        items: [
+          {
+            id: 1,
+            $edgeName: { checksum: 272928132300800 },
+          },
+        ],
       },
     ],
     'Edge checksums',
