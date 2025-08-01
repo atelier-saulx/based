@@ -332,34 +332,6 @@ export const makeTmpBuffer = (initialSize: number) => {
     },
   }
 }
-<<<<<<< HEAD
-
-const calculateHash32 = (uint8Array: Uint8Array, seed = 0) => {
-  let hash = seed
-  const prime1 = 31
-  const prime2 = 17
-  for (let i = 0; i < uint8Array.length; i++) {
-    hash = (hash * prime1) ^ uint8Array[i]
-    hash = (hash * prime2) & 0xffffffff
-  }
-  hash ^= hash >>> 16
-  hash = Math.imul(hash, 0x85ebca6b)
-  hash ^= hash >>> 13
-  hash = Math.imul(hash, 0xc2b2ae35)
-  hash ^= hash >>> 16
-  return hash >>> 0
-}
-
-export const hashUint8Array = (uint8Array: Uint8Array) => {
-  const seed1 = 0xabcdef01
-  const seed2 = 0x10fedcba
-  const hashPart1 = calculateHash32(uint8Array, seed1)
-  const hashPart2 = calculateHash32(uint8Array, seed2)
-  const highBitsContribution = Number(hashPart1) * 2097152
-  const lowBitsContribution = hashPart2 >>> 11
-  const result = highBitsContribution + lowBitsContribution
-  return result
-}
 
 const BITS_FOR_B = 21
 const FACTOR = 2 ** BITS_FOR_B
@@ -371,5 +343,3 @@ export const combineToNumber = (a: number, b: number): number => {
   const shifted_a = val1_unsigned * FACTOR
   return shifted_a + truncated_b
 }
-=======
->>>>>>> 459b3ea59a2640a38c86e3f08c482a4a8f75fad3
