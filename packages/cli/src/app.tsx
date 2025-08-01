@@ -63,11 +63,11 @@ export default function App(p: Props) {
   }
 
   if (p.command === 'dev') {
-    return <Dev />
+    return <Dev {...p} />
   }
 
   if (p.command === 'deploy') {
-    return <Deploy />
+    return <Deploy {...p} />
   }
 
   return <EnvWrapper {...p} />

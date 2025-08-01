@@ -1,6 +1,5 @@
-import { ENCODER } from '@based/utils'
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
-import { hashUint8Array } from '@based/utils'
+import { hashObjectIgnoreKeyOrder, hash } from '@based/hash'
+import { hashUint8Array } from '@based/hash'
 
 export const genChecksum = (data: any): number => {
   if (data instanceof Uint8Array) {

@@ -79,11 +79,12 @@ export const deployChanges = async (
   )
 }
 
-export const Deploy = () => {
+export const Deploy = ({ opts }) => {
   useEffect(() => {
     const run = async () => {
       const cwd = process.cwd()
       const results = await parseFolder({
+        opts,
         cwd,
         publicPath: 'xxx',
       })

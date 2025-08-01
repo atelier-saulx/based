@@ -3,21 +3,33 @@ import { BasedFunctionConfigs } from '@based/functions'
 import { BasedServer } from '@based/server'
 import { createEvent } from './event.js'
 import { addStats } from './addStats.js'
-import { Worker } from 'node:worker_threads'
+import { Module } from 'node:module'
+import { crc32c } from '@based/hash'
+
+const requireFn = (code, filename) => {
+  const m = new Module(filename)
+  // @ts-ignore
+  m._compile(code, filename)
+  return m.exports
+}
 
 // stat wrapper
-
 export const initDynamicFunctions = (
   server: BasedServer,
   configDb: DbClient,
   statsDb: DbClient,
   fnIds: Record<string, { statsId: number }>,
 ) => {
+  let jobs = {}
+
   configDb.query('function').subscribe(async (data) => {
     const specs: BasedFunctionConfigs = {}
+    const updatedJobs = {}
+
     await Promise.all(
       data.map(async (item) => {
         const { code, name, config } = item
+        const checksum = crc32c(code)
 
         if (!fnIds[name]) {
           fnIds[name] = { statsId: 0 }
@@ -27,15 +39,12 @@ export const initDynamicFunctions = (
           'function',
           {
             name,
-            checksum: config.checksum,
+            checksum,
           },
         ))
 
         try {
-          const fn = await import(
-            `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-          )
-
+          const fn = requireFn(code, name)
           // get the globalFn things and attach to function store
           const { default: fnDefault, js, css, ...rest } = fn
           if (config.type === 'authorize') {
@@ -44,37 +53,48 @@ export const initDynamicFunctions = (
           }
 
           if (config.type === 'app') {
-            specs[name] = {
-              fn: (based, _payload, ctx) => {
-                return fnDefault(
-                  based,
-                  {
-                    css: {
-                      url: config.css,
-                    },
-                    js: {
-                      url: config.js,
-                    },
-                    favicon: {
-                      get url() {
-                        console.log('TODO FAVICON')
-                        return ''
+            specs[name] = addStats(
+              {
+                fn: (based, _payload, ctx) => {
+                  return fnDefault(
+                    based,
+                    {
+                      css: {
+                        url: config.css,
+                      },
+                      js: {
+                        url: config.js,
+                      },
+                      favicon: {
+                        get url() {
+                          console.log('TODO FAVICON')
+                          return ''
+                        },
                       },
                     },
-                  },
-                  ctx,
-                )
+                    ctx,
+                  )
+                },
+                ...rest,
+                ...config,
+                statsId,
+                type: 'function',
+                checksum,
               },
-              ...rest,
-              ...config,
-              statsId,
-              type: 'function',
-            }
+              statsDb,
+            )
           } else if (config.type === 'job') {
-            // TODO: This should be turned into a worker with eval.
-            // Problem is having globals._FnGlobals in it
-            // also passing based into it
-            fnDefault()
+            const currentJob = jobs[name]
+            if (!currentJob) {
+              updatedJobs[name] = fnDefault(server.client)
+              updatedJobs[name].checksum = checksum
+            } else if (currentJob.checksum === checksum) {
+              updatedJobs[name] = fnDefault(server.client)
+              updatedJobs[name].checksum = checksum
+              currentJob()
+            } else {
+              updatedJobs[name] = currentJob
+            }
           } else {
             specs[name] = addStats(
               {
@@ -83,6 +103,7 @@ export const initDynamicFunctions = (
                 ...rest,
                 ...config,
                 statsId,
+                checksum,
               },
               statsDb,
             )
@@ -93,6 +114,8 @@ export const initDynamicFunctions = (
         }
       }),
     )
+
     server.functions.add(specs)
+    jobs = updatedJobs
   })
 }

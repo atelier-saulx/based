@@ -6,7 +6,7 @@ import { parseConfig, ParseResult, ParseResults } from './parse.js'
 import { Schema } from '@based/schema'
 
 export const watch = async (
-  { configs, schema, publicPath, cwd }: ParseResults,
+  { configs, schema, publicPath, cwd, opts }: ParseResults,
   cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
@@ -82,6 +82,7 @@ export const watch = async (
                 ext: extname(event.path),
               },
               publicPath,
+              opts,
             )
             addConfig(result)
             changedConfigs.add(result)
@@ -134,6 +135,7 @@ export const watch = async (
         configs: Array.from(changedConfigs),
         publicPath,
         cwd,
+        opts,
       })
     }
   })

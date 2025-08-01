@@ -332,6 +332,7 @@ export const makeTmpBuffer = (initialSize: number) => {
     },
   }
 }
+<<<<<<< HEAD
 
 const calculateHash32 = (uint8Array: Uint8Array, seed = 0) => {
   let hash = seed
@@ -370,3 +371,5 @@ export const combineToNumber = (a: number, b: number): number => {
   const shifted_a = val1_unsigned * FACTOR
   return shifted_a + truncated_b
 }
+=======
+>>>>>>> 459b3ea59a2640a38c86e3f08c482a4a8f75fad3

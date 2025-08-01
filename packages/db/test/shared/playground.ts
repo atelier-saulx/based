@@ -7,7 +7,7 @@
 // import oldFs from 'node:fs'
 // import { italy } from './examples.js'
 // import { pipeline } from 'node:stream/promises'
-// import { hash } from '@saulx/hash'
+// import { hash } from '@based/hash'
 // const italyWikipedia = compress(italy)
 
 // const db = new BasedDb({ path:  })

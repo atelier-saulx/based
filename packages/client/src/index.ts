@@ -40,7 +40,7 @@ import {
   updateStorage,
 } from './persistentStorage/index.js'
 import { BasedChannel } from './channel/index.js'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder } from '@based/hash'
 import { deepEqual } from '@based/utils'
 import parseOpts from '@based/opts'
 import { freeCacheMemory } from './cache.js'
@@ -75,14 +75,6 @@ const getEnv = async (): Promise<string> => {
     env = global.BASED?.opts?.env
     if (!env && typeof process === 'object') {
       env = process.env.ENV
-      // if (!env) {
-      //   const { exec } = await import('node:child_process')
-      //   env = await new Promise((resolve) => {
-      //     return exec('git branch --show-current', (err, stdout) =>
-      //       resolve(err ? '' : stdout.trim()),
-      //     )
-      //   })
-      // }
     }
     env ||= ''
   }
@@ -534,9 +526,15 @@ export { BasedOpts }
   ```
 */
 export default function based(
-  opts: BasedOpts,
+  opts: BasedOpts = {},
   settings?: Settings,
 ): BasedClient {
+  if (globalThis.basedOpts && !opts.env && !opts.org && !opts.project) {
+    opts = {
+      ...globalThis.basedOpts,
+      ...opts,
+    }
+  }
   return new BasedClient(opts, settings)
 }
 

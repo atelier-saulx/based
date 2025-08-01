@@ -1,4 +1,4 @@
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash } from '@based/hash'
 import { ENCODER } from '@based/utils'
 
 const calculateHash32 = (name: string, uint8Array: Uint8Array, seed = 0) => {
