@@ -1,10 +1,14 @@
 import {
+  BINARY,
+  STRING,
   isPropDef,
   PropDef,
   REFERENCE,
   REFERENCES,
   SchemaPropTree,
   TEXT,
+  JSON,
+  ALIAS,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
@@ -21,7 +25,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
-      const p = path[i]
+      let p = path[i]
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(
@@ -35,6 +39,11 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           def.edges.lang = def.lang
         }
         const edgeProp = def.edges.props[p]
+
+        if (!edgeProp) {
+          includeDoesNotExist(def, f)
+          return
+        }
 
         if (
           edgeProp.typeIndex === REFERENCE ||
@@ -51,8 +60,20 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
             return
           }
         } else {
-          // use include here
-          includeProp(def.edges, edgeProp)
+          if (
+            path[i + 1] === 'checksum' &&
+            (edgeProp.typeIndex === STRING ||
+              edgeProp.typeIndex === BINARY ||
+              edgeProp.typeIndex === JSON ||
+              edgeProp.typeIndex === ALIAS)
+          ) {
+            if (!def.edges.include.checksums) {
+              def.edges.include.checksums = new Set()
+            }
+            def.edges.include.checksums.add(edgeProp.prop)
+          } else {
+            includeProp(def.edges, edgeProp)
+          }
         }
         return
       }
@@ -60,7 +81,27 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
 
       if (!t) {
         if (f != 'id') {
-          includeDoesNotExist(def, f)
+          if (f.endsWith('.checksum')) {
+            const propPath = f.split('.').slice(0, -1).join('.')
+            const prop = def.props[propPath]
+            if (
+              prop &&
+              (prop.typeIndex === STRING ||
+                prop.typeIndex === BINARY ||
+                prop.typeIndex === JSON ||
+                prop.typeIndex === ALIAS) // later add text
+            ) {
+              if (!def.include.checksums) {
+                def.include.checksums = new Set()
+              }
+              def.include.checksums.add(prop.prop)
+            } else {
+              includeDoesNotExist(def, f)
+              return
+            }
+          } else {
+            includeDoesNotExist(def, f)
+          }
         }
         return
       }

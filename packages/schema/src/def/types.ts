@@ -34,6 +34,7 @@ export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
 export const COLVEC = 30
+export const CHECKSUM = 31
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -60,6 +61,7 @@ export const TYPE_INDEX_MAP = {
   json: JSON,
   object: OBJECT,
   colvec: COLVEC,
+  checksum: CHECKSUM,
 }
 
 export const enum numberTypes {
@@ -235,6 +237,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   json: 0,
   object: 0,
   colvec: 0, // separate
+  checksum: 8,
 }
 
 const reverseMap: any = {}

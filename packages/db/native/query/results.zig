@@ -133,6 +133,52 @@ pub fn createResultsBuffer(
                 i += 10;
                 continue;
             },
+            t.ResultType.checksumEdge => {
+                if (item.id != null) {
+                    data[i] = @intFromEnum(t.ReadOp.ID);
+                    i += 1;
+                    writeInt(u32, data, i, item.id.?);
+                    i += 4;
+                    if (item.score != null) {
+                        copy(data[i .. i + 4], &item.score.?);
+                        i += 4;
+                    }
+                }
+                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                i += 1;
+                data[i] = @intFromEnum(t.ReadOp.CHECKSUM);
+                i += 1;
+                data[i] = item.field;
+                i += 1;
+                if (item.val) |v| {
+                    utils.copy(data[i .. i + 4], v[v.len - 4 .. v.len]);
+                    writeInt(u32, data, i + 4, v.len);
+                }
+                i += 8;
+                continue;
+            },
+            t.ResultType.checksum => {
+                if (item.id != null) {
+                    data[i] = @intFromEnum(t.ReadOp.ID);
+                    i += 1;
+                    writeInt(u32, data, i, item.id.?);
+                    i += 4;
+                    if (item.score != null) {
+                        copy(data[i .. i + 4], &item.score.?);
+                        i += 4;
+                    }
+                }
+                data[i] = @intFromEnum(t.ReadOp.CHECKSUM);
+                i += 1;
+                data[i] = item.field;
+                i += 1;
+                if (item.val) |v| {
+                    utils.copy(data[i .. i + 4], v[v.len - 4 .. v.len]);
+                    writeInt(u32, data, i + 4, v.len);
+                }
+                i += 8;
+                continue;
+            },
         }
 
         if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
