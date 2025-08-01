@@ -1,7 +1,7 @@
 import { basename, dirname, extname, join } from 'path'
 import watcher from '@parcel/watcher'
 import { configsFiles } from './constants.js'
-import { BuildCtx, evalBuild } from './buildUtils.js'
+import { BuildCtx, evalBuild, importFromBuild } from './buildUtils.js'
 import { parseConfig, ParseResult, ParseResults } from './parse.js'
 import { Schema } from '@based/schema'
 
@@ -114,7 +114,8 @@ export const watch = async (
               }
             }
             if (buildCtx === result.configCtx) {
-              result.fnConfig = await evalBuild(buildCtx.build)
+              // result.fnConfig = await evalBuild(buildCtx.build, event.path)
+              result.fnConfig = importFromBuild(buildCtx.build, event.path)
             }
             changedConfigs.add(result)
           }
@@ -122,7 +123,8 @@ export const watch = async (
 
         if (schema && schemaInputs.has(event.path)) {
           schema.schemaCtx.build = await schema.schemaCtx.ctx.rebuild()
-          schema.schema = await evalBuild(schema.schemaCtx.build)
+          // schema.schema = await evalBuild(schema.schemaCtx.build, event.path)
+          schema.schema = importFromBuild(schema.schemaCtx.build, event.path)
           schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
           changedSchema = schema
         }

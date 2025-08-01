@@ -7,7 +7,7 @@ import {
 import { Schema } from '@based/schema'
 import { find, FindResult } from './fsUtils.js'
 import { configsFiles, schemaFiles } from './constants.js'
-import { BuildCtx, rebuild, evalBuild } from './buildUtils.js'
+import { BuildCtx, rebuild, evalBuild, importFromBuild } from './buildUtils.js'
 import { BasedOpts } from '@based/client'
 
 export type ParseResult = {
@@ -43,7 +43,8 @@ export const parseConfig = async (
   }).then(rebuild)
 
   const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
-    await evalBuild(configCtx.build)
+    // await evalBuild(configCtx.build, result.path)
+    importFromBuild(configCtx.build, result.path)
 
   // this has to change...
   // need to hash the file before if we wan this
@@ -74,7 +75,7 @@ export const parseConfig = async (
       bundle: true,
       write: false,
       outdir: '.',
-
+      plugins: fnConfig.plugins,
       loader: {
         '.ico': 'file',
         '.eot': 'file',
@@ -108,7 +109,8 @@ export const parseSchema = async (result: FindResult) => {
     format: 'esm',
   }).then(rebuild)
   const schema = {
-    schema: await evalBuild(schemaCtx.build),
+    // schema: await evalBuild(schemaCtx.build, result.path),
+    schema: importFromBuild(schemaCtx.build, result.path),
     schemaCtx,
   }
   return schema
