@@ -1,6 +1,12 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
-import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@based/utils'
+import {
+  readUint32,
+  makeTmpBuffer,
+  DECODER,
+  ENCODER,
+  combineToNumber,
+} from '@based/utils'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
@@ -82,7 +88,7 @@ export const read = (
   val: Uint8Array,
   offset: number,
   len: number,
-  stripCrc32: boolean,
+  strippedCrc32: boolean,
 ): string => {
   const type = val[offset + 1]
   if (type == COMPRESSED) {
@@ -93,11 +99,11 @@ export const read = (
       val,
       newBuffer,
       offset + 6,
-      stripCrc32 ? len - 2 : len - 6,
+      strippedCrc32 ? len - 2 : len - 6,
     )
     return DECODER.decode(newBuffer)
   } else if (type == NOT_COMPRESSED) {
-    if (stripCrc32) {
+    if (strippedCrc32) {
       return DECODER.decode(val.subarray(offset + 2, len + offset))
     } else {
       return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
