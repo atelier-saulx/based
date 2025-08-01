@@ -28,7 +28,7 @@
     "@based/schema": "5.0.0-alpha.27",
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
-    "@saulx/hash": "^3.0.0",
+    "@based/hash": "1.0.0",
     "@based/utils": "^1.0.0",
     "@saulx/validators": "^1.2.1",
     "fullscreen-ink": "^0.1.0",

@@ -3,7 +3,7 @@ import { createWriteStream } from 'node:fs'
 import { stat, mkdir, readFile } from 'node:fs/promises'
 import { pipeline } from 'node:stream/promises'
 import { BasedClient, encodeAuthState } from '@based/client'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import { SOURCEMAPS_DIR } from '../constants.js'
 import { getHostAndPortFromUrl } from '../utils/index.js'
 
