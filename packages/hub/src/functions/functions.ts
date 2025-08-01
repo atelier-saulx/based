@@ -87,10 +87,10 @@ export const initDynamicFunctions = (
             const currentJob = jobs[name]
             if (!currentJob) {
               updatedJobs[name] = fnDefault(server.client)
-              // updatedJobs[name].checksum = checksum
+              updatedJobs[name].checksum = checksum
             } else if (currentJob.checksum === checksum) {
               updatedJobs[name] = fnDefault(server.client)
-              // updatedJobs[name].checksum = checksum
+              updatedJobs[name].checksum = checksum
               currentJob()
             } else {
               updatedJobs[name] = currentJob

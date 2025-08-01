@@ -17,6 +17,7 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@based/db": "0.0.71",
     "@based/utils": "^1.0.0",
     "utility-types": "^3.10.0"
   },
