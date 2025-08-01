@@ -2230,7 +2230,15 @@ await test('kev', async (t) => {
   let d = new Date('12/11/2024 11:00+00')
   console.log('js: ', (d.getTime() - d.getMilliseconds()) / 1000)
   console.log(
-    await db.query('trip').sum('distance').groupBy('pickup').get().toObject(),
+    await db
+      .query('trip')
+      .sum('distance')
+      // .groupBy('pickup', { step: 1 })
+      // .groupBy('pickup', { step: 'day' })
+      // .groupBy('pickup', 1)
+      .groupBy('pickup', 'day')
+      .get()
+      .toObject(),
   )
 
   // step as adding

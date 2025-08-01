@@ -31,7 +31,7 @@ import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { wait } from '@saulx/utils'
-import { AggregateType } from './aggregates/types.js'
+import { AggregateType, StepInput } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 
@@ -178,7 +178,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string, step?: number | 0): T {
+  groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'groupBy',
