@@ -369,14 +369,8 @@ await test('taxi', async (t) => {
       trip: {
         props: {
           vendor: { ref: 'vendor', prop: 'trips' },
-          pickupYear: 'int16', // TODO a hack to group by day
-          pickupMonth: 'timestamp', // TODO a hack to group by day
-          pickupDay: 'timestamp', // TODO a hack to group by day
+          pickupYear: 'int16', // TODO a hack to filter by year
           pickupHour: 'uint8', // TODO a hack to filter by hour
-          pickupWeekday: {
-            type: 'enum',
-            enum: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-          }, // TODO Could we do this in the query?
           pickup: 'timestamp',
           dropoff: 'timestamp',
           pickupLoc: { ref: 'zone', prop: 'pickups' },
@@ -463,10 +457,7 @@ await test('taxi', async (t) => {
     db.create('trip', {
       vendor,
       pickupYear: new Date(`${pickup.getUTCFullYear()}`).getUTCFullYear(),
-      pickupMonth: new Date(`${pickup.getUTCFullYear()}-${String(pickup.getUTCMonth() + 1).padStart(2, '0')}`),
-      pickupDay: new Date(pickup).setUTCHours(0, 0, 0, 0),
       pickupHour: pickup.getUTCHours(),
-      pickupWeekday: day2enum[pickup.getUTCDay()],
       pickup,
       dropoff,
       avgSpeed: trip.trip_distance / ((dropoff.getTime() - pickup.getTime()) / 3.6e6),
@@ -520,6 +511,7 @@ await test('taxi', async (t) => {
   //await db.query('trip').count().groupBy('dropoffLoc.borough').get().inspect()
   await db.query('trip').count().groupBy('dropoffLoc').get().inspect()
   await db.query('trip').count().groupBy('paymentType').get().inspect()
+  console.log('trip count')
   await db.query('trip').count().get().inspect()
   //await db.query('vendor').sum('trips').get().inspect()
 
@@ -539,54 +531,58 @@ await test('taxi', async (t) => {
   //    .filter('dropoff', '<=', new Date(day).setUTCHours(23, 59, 59, 0))
   //    //.count()
   //    .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
-  //    .groupBy('pickupDay')
+  //    .groupBy('pickup', { step: 'day' })
   //    .get()
   //))
   //res.map((r) => r.inspect())
 
   // Yearly/Monthly/Daily revenue
+  console.log('Yearly/Monthly/Daily revenue')
   await db.query('trip')
     //.filter('pickupYear', '>=', new Date('2022-01-01'))
     //.filter('pickupYear', '<=', new Date('2024-05-31'))
     .filter('pickupYear', '>=', 2022)
     .filter('pickupYear', '<=', 2024)
     .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
-    .groupBy('pickupMonth')
+    .groupBy('pickup', { step: 'month' })
     .get().inspect()
 
   // Revenue Breakdown by Vendor
+  console.log('Revenue Breakdown by Vendor')
   await db
     .query('vendor')
     .include('name', (select) => {
-      select('trips').groupBy('pickupYear').sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+      select('trips').groupBy('pickup', { step: 'year' }).sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
     })
     .get().inspect()
 
-  // Top Tippers
+  // Top tippers
   // Find the top 10 trips per day with the highest tip per mile.
-  await db
-    .query('trip')
-    .include('pickup', 'fees.tipAmount', 'tripDistance')
-    .groupBy('pickupDay')
-    .sort('fees.tipAmount', 'desc')
-    .range(0, 10)
-    .get().inspect()
+  console.log('Top tippers')
+  //await db
+  //  .query('trip')
+  //  .include('pickup', 'fees.tipAmount', 'tripDistance')
+  //  .groupBy('pickup', { step: 'day' })
+  //  .sort('fees.tipAmount', 'desc')
+  //  .range(0, 10)
+  //  .get().inspect()
 
   // Rush hour utilization
+  console.log('Rush hour utilization')
   const rh1 = await db
     .query('trip')
     .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
-    .groupBy('pickupWeekday')
+    .groupBy('pickup', { step: 'dow' })
     .count()
     .get().toObject()
   const rh2 = await db
     .query('trip')
-    .groupBy('pickupWeekday')
+    .groupBy('pickup', { step: 'dow' })
     .count()
     .get().toObject()
-  console.log(Object.values(day2enum).reduce((prev, key) =>
-    (prev[key] = rh1[key].$count / rh2[key].$count, prev)
+  console.log(Object.keys(day2enum).reduce((prev, key) =>
+    (prev[day2enum[key]] = rh1[key].$count / rh2[key].$count, prev)
   , {}))
 
   // Most popular routes
@@ -598,12 +594,13 @@ await test('taxi', async (t) => {
   //  .range(0, 10)
   //  .get().inspect()
 
-  // Avg rush hour speed between points
+  // Avg rush hour speed between zones
+  console.log('Avg rush hour speed between zones')
   await db
     .query('trip')
     .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
-    .groupBy('pickupWeekday')
+    .groupBy('pickup', { step: 'dow' })
     //.groupBy('pickupDropoffLocs')
     .harmonicMean('avgSpeed')
     .get().inspect()
