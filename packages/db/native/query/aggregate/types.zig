@@ -1,4 +1,9 @@
 const std = @import("std");
+const addStep = @import("./utils.zig").addStep;
+const types = @import("../../types.zig");
+const utils = @import("../../utils.zig");
+const read = utils.read;
+const datePart = @import("../aggregate/utils.zig").datePart;
 
 pub const GroupedBy = enum(u8) {
     hasGroup = 255,
@@ -43,11 +48,15 @@ pub const GroupByHashMap = struct {
         }
     }
 
-    pub fn getOrInsert(self: *GroupByHashMap, key: []const u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
-        if (self.inner.getEntry(key)) |entry| {
+    pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize, groupPropType: types.Prop, stepType: u8) !struct { value: []u8, is_new: bool } {
+        const fkey = if (groupPropType == types.Prop.TIMESTAMP) // MV: move it later
+            datePart(key, @enumFromInt(stepType))
+        else
+            key;
+        if (self.inner.getEntry(fkey)) |entry| {
             return .{ .value = entry.value_ptr.*, .is_new = false };
         } else {
-            const owned_key = try self.allocator.dupe(u8, key);
+            const owned_key = try self.allocator.dupe(u8, fkey);
             errdefer self.allocator.free(owned_key);
             const result = try self.inner.getOrPut(owned_key);
 

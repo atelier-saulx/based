@@ -280,15 +280,11 @@ static void write_ref(struct SelvaNode * restrict node, const struct SelvaFieldS
 static void write_refs(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, ssize_t index, struct SelvaNode * restrict dst, struct SelvaNodeReference **ref_out)
 {
     struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo;
-
-    assert(index >= -1);
-
-    nfo = ensure_field(fields, fs);
-    void *vp = nfo2p(fields, nfo);
+    void *vp = nfo2p(fields, &fields->fields_map[fs->field]);
     struct SelvaNodeReferences refs;
 
     memcpy(&refs, vp, sizeof(refs));
+    assert(index >= -1);
 
     if (refs.offset > 0) {
         if (index == 0) {

@@ -78,6 +78,11 @@ const readAggregate = (
           i += 2
           key = readNumber(result, i, q.aggregate.groupBy.typeIndex)
           i += keyLen
+        } else if (q.aggregate.groupBy.typeIndex == TIMESTAMP) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, INT32)
+          i += keyLen
         } else {
           keyLen = readUint16(result, i)
           i += 2

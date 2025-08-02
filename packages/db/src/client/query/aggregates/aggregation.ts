@@ -1,9 +1,13 @@
 import { writeUint16 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
-import { AggregateType, GroupBy } from './types.js'
+import { AggregateType, GroupBy, StepInput } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
 import { aggregationFieldDoesNotExist } from '../validation.js'
-import { aggregateTypeMap } from '../aggregates/types.js'
+import {
+  aggregateTypeMap,
+  Interval,
+  IntervalString,
+} from '../aggregates/types.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -20,6 +24,10 @@ export const aggregateToBuffer = (
     writeUint16(aggBuffer, aggregates.groupBy.start, i)
     i += 2
     writeUint16(aggBuffer, aggregates.groupBy.len, i)
+    i += 2
+    writeUint16(aggBuffer, aggregates.groupBy.stepType, i)
+    i += 1
+    writeUint16(aggBuffer, aggregates.groupBy.stepRange, i)
     i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
@@ -65,16 +73,34 @@ const ensureAggregate = (def: QueryDef) => {
   }
 }
 
-export const groupBy = (def: QueryDef, field: string) => {
+export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 6
+    def.aggregate.size += 9
   }
   def.aggregate.groupBy = fieldDef
+
+  if (
+    typeof StepInput === 'object' &&
+    StepInput !== null &&
+    'step' in StepInput
+  ) {
+    if (typeof StepInput.step == 'string') {
+      const intervalEnumKey = StepInput.step as IntervalString
+      def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+    } else {
+      def.aggregate.groupBy.stepRange = StepInput.step
+    }
+  } else if (typeof StepInput == 'number') {
+    def.aggregate.groupBy.stepRange = StepInput
+  } else {
+    const intervalEnumKey = StepInput as IntervalString
+    def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+  }
 }
 
 export const addAggregate = (

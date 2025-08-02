@@ -55,20 +55,24 @@ await test('votesEdges', async (t) => {
           prop: 'votes',
           required: true,
         },
-        contestants: {
-          items: {
-            ref: 'contestant',
-            prop: 'votes',
-            $votes: 'uint8',
-          },
+        contestant: {
+          ref: 'contestant',
+          prop: 'votes',
         },
+        // contestants: {
+        //   items: {
+        //     ref: 'contestant',
+        //     prop: 'votes',
+        //     // $votes: 'uint8',
+        //   },
+        // },
       },
     },
   })
 
   const final = await db.create('round')
 
-  const amount = 1e4
+  const amount = 1e6
   console.info('--------------------------------')
 
   const contestants = []
@@ -91,20 +95,45 @@ await test('votesEdges', async (t) => {
     voteData.payment = payment
     voteData.fingerprint = `f${j}-${final}`
     const artist = contestants[j % 20]
-    voteData.contestants = [
-      {
-        id: artist,
-        $votes: 8,
-      },
-    ]
+    // voteData.contestants = [
+    // {
+    // id: artist,
+    // $votes: 8,
+    // },
+    // ]
+    // voteData.contestant = artist
     db.create('vote', voteData)
-    //await db.drain()
   }
 
   await db.drain()
   console.log(`Create ${amount} votes`, performance.now() - d, 'ms')
 
-  //   await db.query('vote').get().inspect(1)
+  let a = 0
+  const has = new Set()
+  d = performance.now()
+  for (let j = amount - 1; j > 0; j--) {
+    const artist = contestants[j % 20]
+    const randId = ~~(Math.random() * amount) + 1
+    a = randId
+    if (!has.has(randId)) {
+      // from 200 to 4000
+      has.add(randId)
+      db.update('vote', randId, {
+        contestant: artist,
+      })
+    } else {
+      a++
+    }
+  }
 
-  //   await db.query('round', final).include('*', '**').get().inspect(1)
+  await db.drain()
+  console.log(
+    `Update random order id ${amount} votes`,
+    performance.now() - d,
+    'ms',
+    a,
+  )
+
+  await db.query('vote').get().inspect(1)
+  await db.query('round', final).include('*', '**').get().inspect(1)
 })
