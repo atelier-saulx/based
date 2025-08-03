@@ -20,6 +20,7 @@ const setGroupResults = groupFunctions.setGroupResults;
 const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const GroupCtx = groupFunctions.GroupCtx;
+const aux = @import("./utils.zig");
 
 const incTypes = @import("../include/types.zig");
 const filter = @import("../filter/filter.zig").filter;
@@ -113,11 +114,17 @@ pub inline fn aggregateRefsGroup(
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
                     groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
+                else if (groupCtx.propType == types.Prop.TIMESTAMP)
+                    @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize, groupCtx.propType, groupCtx.stepType);
+
+            const hash_map_entry = if (groupCtx.propType == types.Prop.TIMESTAMP and groupCtx.stepRange != 0)
+                try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
+            else
+                try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 

@@ -10,7 +10,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 13;
+pub const ProtocolLen = 15;
 
 pub const GroupCtx = struct {
     hashMap: GroupByHashMap,
@@ -22,7 +22,7 @@ pub const GroupCtx = struct {
     len: u16,
     propType: types.Prop,
     stepType: u8,
-    stepRange: u16,
+    stepRange: u32,
 };
 
 pub inline fn setGroupResults(
@@ -159,9 +159,9 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
     const stepType: u8 = aggInput[6];
-    const stepRange: u16 = read(u16, aggInput, 7);
-    const resultsSize = read(u16, aggInput, 9);
-    const accumulatorSize = read(u16, aggInput, 11);
+    const stepRange: u32 = read(u32, aggInput, 7);
+    const resultsSize = read(u16, aggInput, 11);
+    const accumulatorSize = read(u16, aggInput, 13);
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);

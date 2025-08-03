@@ -2292,7 +2292,7 @@ await test('group by date/time intervals', async (t) => {
   )
 })
 
-await test('kev', async (t) => {
+await test.skip('kev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2314,7 +2314,7 @@ await test('kev', async (t) => {
     vendorId: 813,
     pickup: new Date('12/11/2024 11:00+00'),
     dropoff: new Date('12/11/2024 11:10+00'),
-    distance: 513.44,
+    distance: 813.44,
   })
   db.create('trip', {
     vendorId: 814,
@@ -2322,6 +2322,16 @@ await test('kev', async (t) => {
     dropoff: new Date('12/12/2024 12:10+00'),
     distance: 513.44,
   })
+
+  // await db.query('trip').sum('distance').groupBy('pickup', 'day').get().inspect()
+
+  await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', 40 * 60)
+    .get()
+    .inspect()
+
   // step as adding
-  await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
+  // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
 })

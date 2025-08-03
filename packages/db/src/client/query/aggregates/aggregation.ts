@@ -1,4 +1,4 @@
-import { writeUint16 } from '@saulx/utils'
+import { writeUint16, writeUint32 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy, StepInput } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
@@ -25,10 +25,10 @@ export const aggregateToBuffer = (
     i += 2
     writeUint16(aggBuffer, aggregates.groupBy.len, i)
     i += 2
-    writeUint16(aggBuffer, aggregates.groupBy.stepType, i)
+    aggBuffer[i] = aggregates.groupBy.stepType || 0
     i += 1
-    writeUint16(aggBuffer, aggregates.groupBy.stepRange, i)
-    i += 2
+    writeUint32(aggBuffer, aggregates.groupBy.stepRange || 0, i)
+    i += 4
   } else {
     aggBuffer[i] = GroupBy.NONE
     i += 1
@@ -65,7 +65,7 @@ export const aggregateToBuffer = (
 const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 5,
+      size: 7,
       aggregates: new Map(),
       totalResultsSize: 0,
       totalAccumulatorSize: 0,

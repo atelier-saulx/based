@@ -33,6 +33,7 @@ import {
   readInt32,
   readUint16,
   readUint32,
+  readUint64,
   setByPath,
 } from '@saulx/utils'
 import { inverseLangMap } from '@based/schema'
@@ -78,10 +79,24 @@ const readAggregate = (
           i += 2
           key = readNumber(result, i, q.aggregate.groupBy.typeIndex)
           i += keyLen
-        } else if (q.aggregate.groupBy.typeIndex == TIMESTAMP) {
+        } else if (
+          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          !q.aggregate.groupBy.stepRange
+        ) {
           keyLen = readUint16(result, i)
           i += 2
           key = readNumber(result, i, INT32)
+          i += keyLen
+        } else if (
+          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          q.aggregate.groupBy.stepRange !== 0
+        ) {
+          keyLen = readUint16(result, i)
+          console.log(keyLen)
+          i += 2
+          console.log(result.subarray(i, i + keyLen))
+          console.log(readUint64(result, i))
+          key = readFloatLE(result, i).toString()
           i += keyLen
         } else {
           keyLen = readUint16(result, i)
