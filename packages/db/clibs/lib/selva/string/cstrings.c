@@ -78,20 +78,6 @@ char *selva_strdup(const char *s)
     return copy;
 }
 
-/* int is probably large enough for Selva users. */
-int strrnchr(const char *str, size_t len, char c)
-{
-    int i = len;
-
-    while (i > 0) {
-        if (str[--i] == c) {
-            break;
-        }
-    }
-
-    return i;
-}
-
 int str_endswith(const char *str, const char *suffix)
 {
     const size_t lenstr = strlen(str);

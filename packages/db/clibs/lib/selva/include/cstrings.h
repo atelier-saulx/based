@@ -16,12 +16,6 @@ char *selva_strndup(const char *s, size_t n)
 char *selva_strdup(const char *s)
     __attribute__((access(read_only, 1), returns_nonnull));
 
-/**
- * Locate last occurrence of character in string.
- */
-int strrnchr(const char *str, size_t len, char c)
-    __attribute__((pure, access(read_only, 1, 2)));
-
 int str_endswith(const char *str, const char *suffix)
     __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 
@@ -52,6 +46,9 @@ char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
     __attribute__((access(read_write, 1, 2)));
 
 #ifndef HAS_MEMRCHR
+/**
+ * Locate last occurrence of the byte c the in s.
+ */
 void *memrchr(const void *s, int c, size_t n)
     __attribute__((pure, access(read_only, 1, 3)));
 #endif
