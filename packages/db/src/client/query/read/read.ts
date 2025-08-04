@@ -92,11 +92,8 @@ const readAggregate = (
           q.aggregate.groupBy.stepRange !== 0
         ) {
           keyLen = readUint16(result, i)
-          console.log(keyLen)
           i += 2
-          console.log(result.subarray(i, i + keyLen))
-          console.log(readUint64(result, i))
-          key = readFloatLE(result, i).toString()
+          key = readDoubleLE(result, i).toString()
           i += keyLen
         } else {
           keyLen = readUint16(result, i)

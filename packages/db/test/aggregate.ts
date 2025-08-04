@@ -2292,7 +2292,7 @@ await test('group by date/time intervals', async (t) => {
   )
 })
 
-await test.skip('kev', async (t) => {
+await test('kev', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2328,7 +2328,7 @@ await test.skip('kev', async (t) => {
   await db
     .query('trip')
     .sum('distance')
-    .groupBy('pickup', 40 * 60)
+    .groupBy('pickup', 40 * 60) // 40 min
     .get()
     .inspect()
 
