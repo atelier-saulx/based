@@ -2292,7 +2292,7 @@ await test('group by date/time intervals', async (t) => {
   )
 })
 
-await test('kev', async (t) => {
+await test('group by date/time ranges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2316,22 +2316,58 @@ await test('kev', async (t) => {
     dropoff: new Date('12/11/2024 11:10+00'),
     distance: 813.44,
   })
+
   db.create('trip', {
     vendorId: 814,
     pickup: new Date('12/11/2024 11:30+00'),
     dropoff: new Date('12/12/2024 12:10+00'),
     distance: 513.44,
   })
+  // await db
+  //   .query('trip')
+  //   .sum('distance')
+  //   .groupBy('pickup', 'day')
+  //   .get()
+  //   .inspect()
 
-  // await db.query('trip').sum('distance').groupBy('pickup', 'day').get().inspect()
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
 
-  await db
+  let interval = 40 * 60 // 40 minutes
+  let r = await db
     .query('trip')
     .sum('distance')
-    .groupBy('pickup', 40 * 60) // 40 min
+    .groupBy('pickup', interval)
     .get()
-    .inspect()
+    .toObject()
 
-  // step as adding
-  // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
+  let epoch = Number(Object.keys(r)[0])
+  let startDate = dtFormat.format(epoch)
+  let endDate = epoch + interval * 1000
+
+  console.log(r) // epoch as index
+  console.log({ [startDate]: Object.values(r)[0] }) // startDate as index
+  console.log({ [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0] }) // range as index
+
+  let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
+  let r2 = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval2)
+    .get()
+    .toObject()
+
+  let epoch2 = Number(Object.keys(r2)[0])
+  let startDate2 = dtFormat.format(epoch2)
+  let endDate2 = epoch2 + interval2 * 1000
+  console.log({
+    [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
+  })
 })
+// ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+
+// numeric ranges
+// await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
