@@ -31,7 +31,7 @@ import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { wait } from '@saulx/utils'
-import { AggregateType } from './aggregates/types.js'
+import { AggregateType, StepInput } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 
@@ -178,14 +178,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string): T {
+  groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'groupBy',
-        args: [field],
+        args: [field, step],
       })
     } else {
-      groupBy(this.def, field)
+      groupBy(this.def, field, step)
     }
     // only works with aggregates for now
     // @ts-ignore
@@ -291,14 +291,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  harmonic_mean(...fields: (string | string[])[]): T {
+  harmonicMean(...fields: (string | string[])[]): T {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
-        method: 'harmonic_mean',
+        method: 'harmonicMean',
         args: fields,
       })
     } else {

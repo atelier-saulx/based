@@ -2,7 +2,7 @@ import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
-import { AggregateType } from './aggregates/types.js'
+import { AggregateType, Interval } from './aggregates/types.js'
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 
@@ -94,11 +94,16 @@ export type Aggregation = {
 
 export type QueryDefAggregation = {
   size: number
-  groupBy?: PropDef
+  groupBy?: aggPropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   totalResultsSize: number
   totalAccumulatorSize: number
+}
+
+export interface aggPropDef extends PropDef {
+  stepType?: Interval
+  stepRange?: number
 }
 
 export type LangFallback = LangName | false

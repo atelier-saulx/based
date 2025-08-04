@@ -232,7 +232,7 @@ await test('simple', async (t) => {
 
   const res = await Promise.all(
     Array.from({ length: amount }).map(() => {
-      const rand = ~~(Math.random() * lastId)
+      const rand = ~~(Math.random() * lastId) || 1
       const derp = [make(), make(), make(), rand]
       return db.query('env').include('*').filter('machines', 'has', derp).get()
     }),
@@ -256,7 +256,7 @@ await test('simple', async (t) => {
 
   await Promise.all(
     Array.from({ length: amount }).map(async () => {
-      const rand = ~~(Math.random() * lastId)
+      const rand = ~~(Math.random() * lastId) || 1
       const envs = await db
         .query('env')
         .include('*')

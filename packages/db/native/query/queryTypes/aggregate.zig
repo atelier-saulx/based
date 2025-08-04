@@ -14,6 +14,7 @@ const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 const finalizeGroupResults = @import("../aggregate/group.zig").finalizeGroupResults;
 const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
 const c = @import("../../c.zig");
+const aux = @import("../aggregate/utils.zig");
 
 pub fn countType(env: c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -98,16 +99,23 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
                     groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
+                else if (groupCtx.propType == types.Prop.TIMESTAMP)
+                    @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
+
+            const hash_map_entry = if (groupCtx.propType == types.Prop.TIMESTAMP and groupCtx.stepRange != 0)
+                try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
+            else
+                try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 
+            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
-                ctx.size += 2 + key.len + groupCtx.resultsSize;
+                ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
             }
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         } else {
