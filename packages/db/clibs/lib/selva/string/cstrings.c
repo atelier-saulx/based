@@ -78,20 +78,6 @@ char *selva_strdup(const char *s)
     return copy;
 }
 
-/* int is probably large enough for Selva users. */
-int strrnchr(const char *str, size_t len, char c)
-{
-    int i = len;
-
-    while (i > 0) {
-        if (str[--i] == c) {
-            break;
-        }
-    }
-
-    return i;
-}
-
 int str_endswith(const char *str, const char *suffix)
 {
     const size_t lenstr = strlen(str);
@@ -100,22 +86,6 @@ int str_endswith(const char *str, const char *suffix)
     return (lensuffix > lenstr)
         ? 0
         : !strcmp(str + lenstr - lensuffix, suffix);
-}
-
-const char *sztok(const char *s, size_t size, size_t * restrict i)
-{
-	const char *r;
-    size_t j = *i;
-
-	if (size == 0 || j >= size - 1) {
-		return nullptr;
-	}
-
-    r = s + j;
-    j = j + strnlen(r, size - (uintptr_t)(r - s)) + 1;
-
-    *i = j;
-	return r;
 }
 
 int stringlist_search(const char *list, const char *str, size_t n, char wildcard)
@@ -235,35 +205,6 @@ void stringlist_remove_prefix(char *dst, const char *src, int len, const char *p
     if (dst != dst_start) {
         *(--dst) = '\0';
     }
-}
-
-size_t substring_count(const char *string, const char *substring, size_t n)
-{
-    size_t l1, l2;
-    size_t count = 0;
-
-    l1 = n;
-    l2 = strlen(substring);
-
-    for (size_t i = 0; i < l1 - l2; i++) {
-        if (strstr(string + i, substring) == string + i) {
-            count++;
-            i = i + l2 - 1;
-        }
-    }
-
-    return count;
-}
-
-int ch_count(const char *s, char ch)
-{
-    size_t i = 0;
-
-    while (*s) {
-        i = *s++ == ch ? i + 1 : i;
-    }
-
-    return i;
 }
 
 char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
