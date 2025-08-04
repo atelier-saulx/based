@@ -14,7 +14,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     !def.references.size &&
     !def.include.main.len &&
     !def.include.langTextFields.size &&
-    !def.include.checksums
+    !def.include.meta
   ) {
     return result
   }
@@ -137,8 +137,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     result.push(includeBuffer)
   }
 
-  if (def.include.checksums) {
-    for (const prop of def.include.checksums) {
+  if (def.include.meta) {
+    for (const prop of def.include.meta) {
       const b = new Uint8Array(2)
       b[0] = prop
       b[1] = META_SELVA_STRING // prob want to add more here...

@@ -11,7 +11,7 @@ import {
   ALIAS,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
-import { isRefDef, QueryDef, QueryDefType } from '../types.js'
+import { isRefDef, MainMetaInclude, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
@@ -61,27 +61,46 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           }
         } else {
           if (
-            path[i + 1] === 'checksum' &&
+            path[i + 1] === 'meta' &&
             (edgeProp.typeIndex === STRING ||
               edgeProp.typeIndex === BINARY ||
               edgeProp.typeIndex === JSON ||
               edgeProp.typeIndex === ALIAS)
           ) {
-            if (!def.edges.include.checksums) {
-              def.edges.include.checksums = new Set()
+            if (edgeProp.separate) {
+              if (!def.edges.include.meta) {
+                def.edges.include.meta = new Set()
+              }
+              def.edges.include.meta.add(edgeProp.prop)
+            } else {
+              includeProp(def.edges, edgeProp)
+              if (!def.edges.include.metaMain) {
+                def.edges.include.metaMain = new Map()
+              }
+              if (!def.edges.include.main.include[edgeProp.start]) {
+                includeProp(def.edges, edgeProp)
+                def.edges.include.metaMain.set(
+                  edgeProp.start,
+                  MainMetaInclude.MetaOnly,
+                )
+              } else {
+                def.edges.include.metaMain.set(
+                  edgeProp.start,
+                  MainMetaInclude.All,
+                )
+              }
             }
-            def.edges.include.checksums.add(edgeProp.prop)
           } else {
             includeProp(def.edges, edgeProp)
           }
         }
         return
       }
-      t = t[p]
 
+      t = t[p]
       if (!t) {
         if (f != 'id') {
-          if (f.endsWith('.checksum')) {
+          if (f.endsWith('.meta')) {
             const propPath = f.split('.').slice(0, -1).join('.')
             const prop = def.props[propPath]
             if (
@@ -91,10 +110,22 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
                 prop.typeIndex === JSON ||
                 prop.typeIndex === ALIAS) // later add text
             ) {
-              if (!def.include.checksums) {
-                def.include.checksums = new Set()
+              if (prop.separate) {
+                if (!def.include.meta) {
+                  def.include.meta = new Set()
+                }
+                def.include.meta.add(prop.prop)
+              } else {
+                if (!def.include.metaMain) {
+                  def.include.metaMain = new Map()
+                }
+                if (!def.include.main.include[prop.start]) {
+                  includeProp(def, prop)
+                  def.include.metaMain.set(prop.start, MainMetaInclude.MetaOnly)
+                } else {
+                  def.include.metaMain.set(prop.start, MainMetaInclude.All)
+                }
               }
-              def.include.checksums.add(prop.prop)
             } else {
               includeDoesNotExist(def, f)
               return

@@ -28,6 +28,11 @@ export type EdgeTarget = {
   ref: PropDef | PropDefEdge | null
 }
 
+export enum MainMetaInclude {
+  All = 1,
+  MetaOnly = 2,
+}
+
 export type Target = {
   type: string
   id?: number | void
@@ -125,9 +130,8 @@ export type QueryDefShared = {
         fallBacks: LangCode[]
       }
     >
-    // checksum fields
-    // 1 = checksum in read only, 2 = only include checksum
-    checksums?: Set<number>
+    metaMain?: Map<number, MainMetaInclude> // start
+    meta?: Set<number>
     stringFields: Set<string>
     props: Map<number, PropDef | PropDefEdge>
     propsRead: { [propName: number]: number }

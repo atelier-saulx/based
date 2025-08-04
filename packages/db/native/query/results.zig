@@ -28,7 +28,10 @@ fn addChecksum(item: *const *Result, data: []u8) usize {
     offset += 1;
     data[offset] = item.*.field;
     offset += 1;
+
     if (item.*.val) |v| {
+        data[offset] = v[1];
+        offset += 1;
         utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
         writeInt(u32, data, offset + 4, v.len);
     }

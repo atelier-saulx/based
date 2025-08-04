@@ -169,7 +169,7 @@ pub fn getFields(
                 result.type = t.ResultType.meta;
             }
             try ctx.results.append(result);
-            size += 10; // 8 for checksum + len, 1 for field, 1 for checksum indicator
+            size += 10 + 1; // 8 for checksum + len, 1 for field, 1 for checksum indicator
         } else if (prop == t.Prop.TEXT) {
             const code: t.LangCode = @enumFromInt(include[includeIterator]);
             const fallbackSize = operation[2];

@@ -9,7 +9,7 @@ import {
   STRING,
   TEXT,
 } from '@based/schema/def'
-import { QueryDef, QueryDefType } from '../types.js'
+import { MainMetaInclude, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {
   const fields: string[] = []
@@ -109,6 +109,9 @@ export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
     if (prop.separate) {
       def.include.props.set(prop.prop, prop)
     } else {
+      if (def.include.metaMain?.has(prop.start)) {
+        def.include.metaMain.set(prop.start, MainMetaInclude.All)
+      }
       def.include.main.len += prop.len
       def.include.main.include[prop.start] = [0, prop as PropDef]
       return true
