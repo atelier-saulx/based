@@ -2376,7 +2376,7 @@ await test('group by datetime ranges', async (t) => {
   )
 })
 
-await test('kev', async (t) => {
+await test('formating timestamp', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2408,11 +2408,51 @@ await test('kev', async (t) => {
     distance: 513.44,
   })
 
-  // const dtFormat = new Intl.DateTimeFormat('pt-BR', {
-  //   dateStyle: 'short',
-  //   timeStyle: 'short',
-  //   timeZone: 'America/Sao_Paulo',
-  // })
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup').get(),
+    {
+      1733916600000: {
+        distance: 513.44,
+      },
+      1733914800000: {
+        distance: 813.44,
+      },
+    },
+    'no format => epoch ',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 40 * 60, display: dtFormat })
+      .get(),
+    {
+      '11/12/2024 08:00 – 08:40': {
+        distance: 1326.88,
+      },
+    },
+    'formated range interval as range',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { display: dtFormat })
+      .get(),
+    {
+      '11/12/2024, 08:30': { distance: 513.44 },
+      '11/12/2024, 08:00': { distance: 813.44 },
+    },
+    'formated timestamp without range',
+  )
 })
 
 // numeric ranges

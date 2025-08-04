@@ -86,17 +86,20 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
     def.aggregate.size += 9
   }
   def.aggregate.groupBy = fieldDef
+  def.aggregate.groupBy.stepRange = undefined
+  def.aggregate.groupBy.stepType = undefined
+  def.aggregate.groupBy.display = undefined
 
   if (
     typeof StepInput === 'object' &&
     StepInput !== null &&
     'step' in StepInput
   ) {
-    if (typeof StepInput.step == 'string') {
+    if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString
       def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
     } else {
-      validateStepRange(def, StepInput.step)
+      validateStepRange(def, StepInput?.step)
       def.aggregate.groupBy.stepRange = StepInput.step
     }
   } else if (typeof StepInput == 'number') {
@@ -105,6 +108,9 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   } else {
     const intervalEnumKey = StepInput as IntervalString
     def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+  }
+  if (typeof StepInput === 'object' && StepInput?.display) {
+    def.aggregate.groupBy.display = StepInput?.display
   }
 }
 

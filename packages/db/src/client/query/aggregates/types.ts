@@ -80,7 +80,8 @@ export enum Interval {
 export type IntervalString = keyof typeof Interval
 
 export type StepObject = {
-  step: number | IntervalString
+  step?: number | IntervalString
+  display?: Intl.DateTimeFormat
 }
 
 export type StepShorthand = number | IntervalString
