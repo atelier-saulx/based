@@ -20,6 +20,7 @@ const setGroupResults = groupFunctions.setGroupResults;
 const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const GroupCtx = groupFunctions.GroupCtx;
+const aux = @import("./utils.zig");
 
 const incTypes = @import("../include/types.zig");
 const filter = @import("../filter/filter.zig").filter;
@@ -113,16 +114,23 @@ pub inline fn aggregateRefsGroup(
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
                     groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
+                else if (groupCtx.propType == types.Prop.TIMESTAMP)
+                    @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
-            const hash_map_entry = try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
+
+            const hash_map_entry = if (groupCtx.propType == types.Prop.TIMESTAMP and groupCtx.stepRange != 0)
+                try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
+            else
+                try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 
+            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
-                resultsSize += 2 + key.len + groupCtx.resultsSize;
+                resultsSize += 2 + resultKeyLen + groupCtx.resultsSize;
             }
 
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
@@ -179,19 +187,26 @@ pub inline fn aggregateRefsDefault(
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
 
-    var i: usize = offset;
-    checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
-            if (hasFilter) {
-                const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
-                if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
-                    continue :checkItem;
+    const fieldAggsSize = read(u16, agg, 1);
+    const aggPropDef = agg[3 .. 3 + fieldAggsSize];
+    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter) {
+        const resultPos = read(u16, aggPropDef, 4);
+        writeInt(u32, accumulatorField, resultPos, refsCnt);
+    } else {
+        var i: usize = offset;
+        checkItem: while (i < refsCnt) : (i += 1) {
+            if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
+                if (hasFilter) {
+                    const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
+                    if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
+                        continue :checkItem;
+                    }
                 }
+                aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
             }
-            aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
         }
     }
-
     const val = try ctx.allocator.alloc(u8, resultsSize);
     try finalizeResults(val, accumulatorField, agg);
 

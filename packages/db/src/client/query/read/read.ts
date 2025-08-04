@@ -20,6 +20,8 @@ import {
   JSON,
   CARDINALITY,
   COLVEC,
+  isNumberType,
+  TypeIndex,
 } from '@based/schema/def'
 import { MainMetaInclude, QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -34,6 +36,7 @@ import {
   readInt64,
   readUint16,
   readUint32,
+  readUint64,
   setByPath,
 } from '@based/utils'
 import { inverseLangMap } from '@based/schema'
@@ -75,6 +78,30 @@ const readAggregate = (
           i += 2
           key = q.aggregate.groupBy.enum[result[i] - 1]
           i++
+        } else if (isNumberType(q.aggregate.groupBy.typeIndex)) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, q.aggregate.groupBy.typeIndex)
+          i += keyLen
+        } else if (
+          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          !q.aggregate.groupBy.stepRange
+        ) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, INT32)
+          i += keyLen
+        } else if (
+          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          q.aggregate.groupBy.stepRange !== 0
+        ) {
+          keyLen = readUint16(result, i)
+          console.log(keyLen)
+          i += 2
+          console.log(result.subarray(i, i + keyLen))
+          console.log(readUint64(result, i))
+          key = readFloatLE(result, i).toString()
+          i += keyLen
         } else {
           keyLen = readUint16(result, i)
           i += 2
@@ -711,4 +738,27 @@ export const resultToObject = (
   }
 
   return items
+}
+
+export function readNumber(
+  value: Uint8Array,
+  offset: number,
+  type: TypeIndex,
+): any {
+  switch (type) {
+    case NUMBER:
+      return readDoubleLE(value, offset)
+    case UINT16:
+      return readUint16(value, offset)
+    case UINT32:
+      return readUint32(value, offset)
+    case INT16:
+      return readInt16(value, offset)
+    case INT32:
+      return readInt32(value, offset)
+    case UINT8:
+      return value[offset]
+    case INT8:
+      return value[offset]
+  }
 }
