@@ -207,24 +207,6 @@ void stringlist_remove_prefix(char *dst, const char *src, int len, const char *p
     }
 }
 
-size_t substring_count(const char *string, const char *substring, size_t n)
-{
-    size_t l1, l2;
-    size_t count = 0;
-
-    l1 = n;
-    l2 = strlen(substring);
-
-    for (size_t i = 0; i < l1 - l2; i++) {
-        if (strstr(string + i, substring) == string + i) {
-            count++;
-            i = i + l2 - 1;
-        }
-    }
-
-    return count;
-}
-
 char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
 {
     char * const e = s + n;

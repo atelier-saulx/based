@@ -30,9 +30,6 @@ int stringlist_search(const char *list, const char *str, size_t n, char wildcard
 void stringlist_remove_prefix(char *dst, const char *src, int len, const char *prefix_str, size_t prefix_len)
     __attribute__((access(write_only, 1), access(read_only, 2, 3)));
 
-size_t substring_count(const char *string, const char *substring, size_t n)
-    __attribute__((pure, access(read_only, 1), access(read_only, 2, 3)));
-
 /**
  * Replace all occurrences of orig_ch in s with new_ch.
  */
