@@ -225,17 +225,6 @@ size_t substring_count(const char *string, const char *substring, size_t n)
     return count;
 }
 
-int ch_count(const char *s, char ch)
-{
-    size_t i = 0;
-
-    while (*s) {
-        i = *s++ == ch ? i + 1 : i;
-    }
-
-    return i;
-}
-
 char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
 {
     char * const e = s + n;

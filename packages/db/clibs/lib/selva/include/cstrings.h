@@ -34,12 +34,6 @@ size_t substring_count(const char *string, const char *substring, size_t n)
     __attribute__((pure, access(read_only, 1), access(read_only, 2, 3)));
 
 /**
- * Calculate the number of instances of ch in s.
- */
-int ch_count(const char *s, char ch)
-    __attribute__((pure, access(read_only, 1)));
-
-/**
  * Replace all occurrences of orig_ch in s with new_ch.
  */
 char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
