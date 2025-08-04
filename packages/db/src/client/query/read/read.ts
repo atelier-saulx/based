@@ -93,7 +93,31 @@ const readAggregate = (
         ) {
           keyLen = readUint16(result, i)
           i += 2
-          key = readDoubleLE(result, i).toString()
+          // display: {type: 'datetime' \ 'range', format: Intl.DateTimeFormat}
+          if (true) {
+            // !display
+            //MV: temp
+            //@ts-ignore
+            key = readDoubleLE(result, i).toString()
+            //@ts-ignore
+          } else if (false) {
+            // display?.type = 'range'
+            const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+              timeZone: 'America/Sao_Paulo',
+            })
+            key = dtFormat.format(readDoubleLE(result, i))
+          } else {
+            // display?.type = 'datetime' or null
+            const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+              timeZone: 'America/Sao_Paulo',
+            })
+            key = dtFormat.format(readDoubleLE(result, i))
+          }
+
           i += keyLen
         } else {
           keyLen = readUint16(result, i)

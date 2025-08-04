@@ -2183,7 +2183,7 @@ await test('group by unique numbers', async (t) => {
   )
 })
 
-await test('group by date/time intervals', async (t) => {
+await test('group by datetime intervals', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2292,7 +2292,7 @@ await test('group by date/time intervals', async (t) => {
   )
 })
 
-await test('group by date/time ranges', async (t) => {
+await test('group by datetime ranges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2323,12 +2323,6 @@ await test('group by date/time ranges', async (t) => {
     dropoff: new Date('12/12/2024 12:10+00'),
     distance: 513.44,
   })
-  // await db
-  //   .query('trip')
-  //   .sum('distance')
-  //   .groupBy('pickup', 'day')
-  //   .get()
-  //   .inspect()
 
   const dtFormat = new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
@@ -2366,8 +2360,60 @@ await test('group by date/time ranges', async (t) => {
   console.log({
     [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
   })
+
+  // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+  await throws(
+    async () => {
+      await db
+        .query('trip')
+        .sum('distance')
+        .groupBy('pickup', 2 ** 32 + 1)
+        .get()
+        .inspect()
+    },
+    false,
+    `throw invalid step range error on validation`,
+  )
 })
-// ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  // const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+  //   dateStyle: 'short',
+  //   timeStyle: 'short',
+  //   timeZone: 'America/Sao_Paulo',
+  // })
+})
 
 // numeric ranges
 // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
