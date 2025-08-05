@@ -1,0 +1,13 @@
+- [← Back to main docs](/)
+- [🏠 BasedDB Overview](/db/)
+- Install
+  - [npm](/db/install#npm)
+  - [Docker](/db/install#docker)
+  - [Build from source](/db/install#from-source)
+- [Getting started](/db/getting-started)
+- Schema
+  - [Types & validations](/db/schema)
+  - [References & edges](/db/schema?id=references)
+- [Queries](/db/queries)
+- [Examples](/db/examples)
+- [API reference](/db/api)

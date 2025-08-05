@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Based Platform Docs</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css"
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      window.$docsify = {
+        name: 'Based',
+        repo: 'atelier-saulx/based',
+        loadSidebar: true, // load sidebar from _sidebar.md found in same folder
+        subMaxLevel: 3,
+
+        // OPTIONAL: only rewrite if you truly want to share ONE sidebar everywhere
+        // alias: { '/.*/_sidebar.md': '/_sidebar.md' }   <-- DELETE THIS
+      }
+    </script>
+    <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+  </body>
+</html>

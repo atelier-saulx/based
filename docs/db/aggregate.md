@@ -1,7 +1,7 @@
 # Aggregations
 
 This document provides a guide to creating aggregation queries. Aggregation queries allow you to perform calculations on your data and return summarized results.
-Full query examples can be found in the [tests](./test/aggregate.ts)
+Full query examples can be found in the [tests](../../packages/db//test/aggregate.ts)
 
 ---
 
