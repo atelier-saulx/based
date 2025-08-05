@@ -16,8 +16,6 @@
 
 RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
-RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
-RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
@@ -105,13 +103,6 @@ struct SelvaTypeEntry {
      * RB_INSERT_NEXT() almost always as node_id normally grows monotonically.
      */
     struct SelvaNode *max_node;
-
-    struct {
-        struct ida *ida; /*! Id allocator for cursors. */
-        struct SelvaTypeCursorById by_cursor_id; /*!< Cursors indexed by cursor_id. */
-        struct SelvaTypeCursorsByNodeId by_node_id; /*!< Lists of cursors indexed by node_id. i.e. find all cursors pointing to a certain node. */
-        size_t nr_cursors; /*!< Total count of active cursors allocated. */
-    } cursors;
 
     /**
      * Copy of the original selvaBuffer tha was used to initialize this type.
