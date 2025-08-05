@@ -22,7 +22,7 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "(cd packages && for pkg in *; do if [[ -d \"$pkg\" ]]; then npm run watch --workspace=\"$pkg\" --if-present & fi; done); wait",
+    "watch": "(cd packages && for pkg in *; do if [[ -d \"$pkg\" ]]; then npm run watch --workspace=\"$pkg\" --if-present & fi done); wait",
     "build": "set -e; for pkg in utils hash errors schema schema-diagram functions client react db server s3 hub type-gen cli; do npm run build -w \"@based/$pkg\"; done",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
