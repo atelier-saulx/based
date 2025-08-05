@@ -25,7 +25,7 @@
 #define SCHEMA_OFF_NR_FIELDS            4 /*!< u8 */
 #define SCHEMA_OFF_NR_FIXED_FIELDS      5 /*!< u8 */
 #define SCHEMA_OFF_NR_VIRTUAL_FIELDS    6 /*!< u8 */
-#define SCHEMA_OFF_CURSORS_MAX          7 /*!< u8 */
+#define SCHEMA_OFF_SPARE1               7 /*!< u8 */
 
 struct schemabuf_parser_ctx {
     struct ref_save_map *ref_save_map;
@@ -335,7 +335,6 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
     *nfo = (struct schema_info){
         .block_capacity = block_capacity,
         .nr_fields = buf[SCHEMA_OFF_NR_FIELDS],
-        .cursors_max = buf[SCHEMA_OFF_CURSORS_MAX],
         .nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS],
         .nr_virtual_fields = buf[SCHEMA_OFF_NR_VIRTUAL_FIELDS],
     };

@@ -2183,7 +2183,7 @@ await test('group by unique numbers', async (t) => {
   )
 })
 
-await test('group by date/time intervals', async (t) => {
+await test('group by datetime intervals', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2292,7 +2292,7 @@ await test('group by date/time intervals', async (t) => {
   )
 })
 
-await test.skip('kev', async (t) => {
+await test('group by datetime ranges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2316,6 +2316,7 @@ await test.skip('kev', async (t) => {
     dropoff: new Date('12/11/2024 11:10+00'),
     distance: 813.44,
   })
+
   db.create('trip', {
     vendorId: 814,
     pickup: new Date('12/11/2024 11:30+00'),
@@ -2323,15 +2324,136 @@ await test.skip('kev', async (t) => {
     distance: 513.44,
   })
 
-  // await db.query('trip').sum('distance').groupBy('pickup', 'day').get().inspect()
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
 
-  await db
+  let interval = 40 * 60 // 40 minutes
+  let r = await db
     .query('trip')
     .sum('distance')
-    .groupBy('pickup', 40 * 60)
+    .groupBy('pickup', interval)
     .get()
-    .inspect()
+    .toObject()
 
-  // step as adding
-  // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
+  let epoch = Number(Object.keys(r)[0])
+  let startDate = dtFormat.format(epoch)
+  let endDate = epoch + interval * 1000
+
+  console.log(r) // epoch as index
+  console.log({ [startDate]: Object.values(r)[0] }) // startDate as index
+  console.log({ [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0] }) // range as index
+
+  let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
+  let r2 = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval2)
+    .get()
+    .toObject()
+
+  let epoch2 = Number(Object.keys(r2)[0])
+  let startDate2 = dtFormat.format(epoch2)
+  let endDate2 = epoch2 + interval2 * 1000
+  console.log({
+    [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
+  })
+
+  // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+  await throws(
+    async () => {
+      await db
+        .query('trip')
+        .sum('distance')
+        .groupBy('pickup', 2 ** 32 + 1)
+        .get()
+        .inspect()
+    },
+    false,
+    `throw invalid step range error on validation`,
+  )
 })
+
+await test('formating timestamp', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup').get(),
+    {
+      1733916600000: {
+        distance: 513.44,
+      },
+      1733914800000: {
+        distance: 813.44,
+      },
+    },
+    'no format => epoch ',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 40 * 60, display: dtFormat })
+      .get(),
+    {
+      '11/12/2024 08:00 – 08:40': {
+        distance: 1326.88,
+      },
+    },
+    'formated range interval as range',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { display: dtFormat })
+      .get(),
+    {
+      '11/12/2024, 08:30': { distance: 513.44 },
+      '11/12/2024, 08:00': { distance: 813.44 },
+    },
+    'formated timestamp without range',
+  )
+})
+
+// numeric ranges
+// await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()

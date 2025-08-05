@@ -132,6 +132,7 @@ export type PropDef = {
   // Schema stuff
   max?: any
   min?: any
+  step?: any
 }
 
 export type PropDefEdge = Partial<PropDef> & {

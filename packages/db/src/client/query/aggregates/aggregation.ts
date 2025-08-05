@@ -2,7 +2,10 @@ import { writeUint16, writeUint32 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy, StepInput } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
-import { aggregationFieldDoesNotExist } from '../validation.js'
+import {
+  aggregationFieldDoesNotExist,
+  validateStepRange,
+} from '../validation.js'
 import {
   aggregateTypeMap,
   Interval,
@@ -83,23 +86,31 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
     def.aggregate.size += 9
   }
   def.aggregate.groupBy = fieldDef
+  def.aggregate.groupBy.stepRange = undefined
+  def.aggregate.groupBy.stepType = undefined
+  def.aggregate.groupBy.display = undefined
 
   if (
     typeof StepInput === 'object' &&
     StepInput !== null &&
     'step' in StepInput
   ) {
-    if (typeof StepInput.step == 'string') {
+    if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString
       def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
     } else {
+      validateStepRange(def, StepInput?.step)
       def.aggregate.groupBy.stepRange = StepInput.step
     }
   } else if (typeof StepInput == 'number') {
+    validateStepRange(def, StepInput)
     def.aggregate.groupBy.stepRange = StepInput
   } else {
     const intervalEnumKey = StepInput as IntervalString
     def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+  }
+  if (typeof StepInput === 'object' && StepInput?.display) {
+    def.aggregate.groupBy.display = StepInput?.display
   }
 }
 
