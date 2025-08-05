@@ -1,7 +1,7 @@
 # Aggregations
 
 This document provides a guide to creating aggregation queries. Aggregation queries allow you to perform calculations on your data and return summarized results.
-Full query examples can be found in the [tests](../../packages/db//test/aggregate.ts)
+Full query examples can be found in the [tests](https://github.com/atelier-saulx/based/blob/main/packages/db/test/aggregate.ts)
 
 ---
 
@@ -12,8 +12,10 @@ Full query examples can be found in the [tests](../../packages/db//test/aggregat
 - **`sum()`**: Calculates the sum of numeric properties.
 - **`count()`**: Counts the number of records.
 - **`avg()`**: Computes the arithmetic mean of numeric properties.
+- **`hmean()`**: Computes the harmonic mean of numeric properties.
 - **`max()`**: Finds the maximum value of numeric properties.
 - **`min()`**: Finds the minimum value of numeric properties.
+- **`cardinality()`**: Estimate the count of distinct records.
 
 ### Statistical Aggregate Functions
 
@@ -31,6 +33,8 @@ Full query examples can be found in the [tests](../../packages/db//test/aggregat
 - **Branched Queries / Nested object notation** for properties.
 - **Aggregations on references (relationships)**.
 - **Grouping by enum types**.
+- **Grouping by timestamp types**.
+- **Grouping by with custom intervals**.
 
 ---
 

@@ -45,6 +45,7 @@ console.log(ada) // { id: 1, name: 'Ada', age: 36 }
 
 ## 4. Explore further
 
-- [Schema reference](https://www.kimi.com/db/schema)
-- [Filtering & sorting](https://www.kimi.com/db/queries)
-- [Real-time subscriptions](https://www.kimi.com/db/examples?id=subscriptions)
+- [Schema reference](db/schema)
+- [Filtering & sorting](db/filtering)
+- [Real-time subscriptions](db/examples)
+- [Aggregations](db/aggregate)

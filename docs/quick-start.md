@@ -8,7 +8,7 @@ Spin up a minimal backend in less than 5 minutes.
 git clone https://github.com/atelier-saulx/based
 cd based
 npm i
-npm run dev     # starts the sample stack on http://localhost:3000
+npm run dev
 ```
 
 ## 2. Open the playground
@@ -17,5 +17,5 @@ Browse to http://localhost:3000/playground – a minimal React UI is pre-wired t
 
 ## 3. Next
 
-- [Install BasedDB for production](https://www.kimi.com/db/install)
-- [Read the architecture overview](https://www.kimi.com/architecture)
+- [Install BasedDB for production](/db/install)
+- [Read the architecture overview](/architecture)

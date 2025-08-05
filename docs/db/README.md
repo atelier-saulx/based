@@ -8,7 +8,7 @@ handling, client-server architecture support, and more.
 - Data creation, querying, updating, and deletion
 - Supported field types
   - `string`
-  - `text`, locale aware multi-language [text](./README_Text.md)
+  - `text`, locale aware multi-language [text](/db/text)
   - `binary` strings
   - `timestamp`
   - numeric types: `number` (double-precision floating-point), `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint64`
@@ -27,5 +27,5 @@ Pick your next step:
 
 - [Install](/db/install) – npm, Docker or build from source
 - [Getting started](/db/getting-started) – define a schema and query nodes
-- [API](/db.api.md) - Database API
-- [Applied tutorials]()
+- [API](/db/api) - Database API
+- [Examples](/db/examples)
