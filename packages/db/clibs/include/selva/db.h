@@ -293,47 +293,6 @@ SELVA_EXPORT
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
- * \addtogroup db_cursor
- * @{
- */
-
-/**
- * Create a new cursor pointing to node.
- * If the node is deleted later then the cursor is updated to point to the next
- * node using selva_next_node().
- */
-SELVA_EXPORT
-cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
-
-/**
- * Get a pointer to the node from a cursor.
- */
-SELVA_EXPORT
-struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id) __attribute__((nonnull));
-
-/**
- * Update a cursor to point to a new node.
- */
-SELVA_EXPORT
-int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node) __attribute__((nonnull));
-
-/**
- * Delete a cursor.
- */
-SELVA_EXPORT
-void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id) __attribute__((nonnull));
-
-/**
- * Total count of cursors of type.
- */
-SELVA_EXPORT
-size_t selva_cursor_count(const struct SelvaTypeEntry *type) __attribute__((nonnull));
-
-/**
- * @}
- */
-
-/**
  * Total count of nodes of type.
  */
 SELVA_EXPORT

@@ -8,10 +8,7 @@ CFLAGS := -std=gnu23 -g -O1 \
 		  -Wno-unknown-attributes \
 		  -fsanitize=fuzzer,signed-integer-overflow,address
 
-all: strrnchr stringlist_search strsearch_hamming_mbs fast_linear_search
-
-strrnchr: strrnchr.c ../string/cstrings.c
-	clang $(CFLAGS) $^ -o $@
+all: stringlist_search strsearch_hamming_mbs fast_linear_search
 
 stringlist_search: stringlist_search.c ../string/cstrings.c
 	clang $(CFLAGS) $^ -o $@

@@ -1,4 +1,3 @@
-import { readFloatLE } from '@saulx/utils'
 import type { LangCode, SchemaLocales } from '../index.js'
 import { Validation } from './validation.js'
 
@@ -134,6 +133,7 @@ export type PropDef = {
   // Schema stuff
   max?: any
   min?: any
+  step?: any
 }
 
 export type PropDefEdge = Partial<PropDef> & {

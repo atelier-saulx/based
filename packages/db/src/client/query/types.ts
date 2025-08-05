@@ -109,6 +109,7 @@ export type QueryDefAggregation = {
 export interface aggPropDef extends PropDef {
   stepType?: Interval
   stepRange?: number
+  display?: Intl.DateTimeFormat
 }
 
 export type LangFallback = LangName | false
