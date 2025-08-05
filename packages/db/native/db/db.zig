@@ -24,15 +24,6 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-var lastQueryId: u32 = 0;
-pub fn getQueryId() u32 {
-    lastQueryId += 1;
-    if (lastQueryId > 4_000_000_000) {
-        lastQueryId = 0;
-    }
-    return lastQueryId;
-}
-
 pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,

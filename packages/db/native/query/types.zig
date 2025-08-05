@@ -5,7 +5,6 @@ const types = @import("../types.zig");
 
 pub const QueryCtx = struct {
     results: std.ArrayList(results.Result),
-    id: u32,
     size: usize,
     totalResults: usize,
     aggResult: ?u32,
