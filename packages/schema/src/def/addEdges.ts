@@ -1,4 +1,3 @@
-import { sep } from 'path'
 import { getPropType, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
