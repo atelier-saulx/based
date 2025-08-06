@@ -21,6 +21,8 @@ await db.setSchema({
 
 ## Storage Format
 
+### Normalization
+
 String and text fields use [NFKD normalization](https://unicode.org/reports/tr15/),
 which helps the database to implement extremely fast text search.
 However, the normalization may cause some loss of information in certain cases
@@ -50,16 +52,34 @@ ÅffiIX
 In some cases the user might want to store string in a non-lossy manner.
 Currently this can be achieved by storing the string(s) in a `binary` field.
 
+### In-Memory
 
 Internally every string in the database is stored as follows:
+                             
+```mermaid
+packet-beta
+title String/Text
+0-7: "Lang (none=0)"
+8-15: "Comp"
+16-59: "Data (variable length)"
+60-63: "CRC32C"
+```
+            
+| Comp | Description    |
+|------|----------------|
+|    0 | No compression |
+|    1 | Raw deflate    |
+
+### Comp=1
 
 ```mermaid
 packet-beta
 title String/Text
 0-7: "Lang (none=0)"
-8-15: "Flags (compressed=0x1)"
-16-59: "Data (variable length)"
-60-63: "CRC32C"
+8-15: "1"
+16-47: "Uncompressed size"
+48-123: "Data (variable length)"
+124-127
 ```
 
 ## String Search
