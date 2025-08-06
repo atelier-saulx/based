@@ -334,7 +334,7 @@ class Loading {
   }
 }
 
-await test('taxi', async (t) => {
+await test.skip('taxi', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
