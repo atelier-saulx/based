@@ -1,8 +1,10 @@
-#### \`.filter(field, operator, value, options?)\`
+# Filter
+
+## `.filter(field, operator, value, options?)`
 
 Filters the results based on field values.
 
-Operators:
+### Operators:
 
 - \`=\`: Equal to (works for most types, including exact string match).
 - \`!=\`: Not equal to.
@@ -156,7 +158,7 @@ Operators:
   await db.query('user').filter('bestFriend.status', '=', 'active').get()
   ```
 
-#### \`.sort(field, direction?)\`
+## \`.sort(field, direction?)\`
 
 Sorts the results by a specific field. \`direction\` can be \`'asc'\` (default) or \`'desc'\`.
 
@@ -180,7 +182,7 @@ await db.query('article').sort('email', 'desc').get()
 await db.query('event').sort('startTime').get()
 ```
 
-The following data types doesnt support sort:
+The following data types doesn't support sort:
 
 - Reference / References (you can if you use branched queries / nested include sintax) like
 
