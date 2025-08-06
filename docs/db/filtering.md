@@ -158,7 +158,7 @@ Filters the results based on field values.
   await db.query('user').filter('bestFriend.status', '=', 'active').get()
   ```
 
-## \`.sort(field, direction?)\`
+## `.sort(field, direction?)`
 
 Sorts the results by a specific field. \`direction\` can be \`'asc'\` (default) or \`'desc'\`.
 
