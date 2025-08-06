@@ -2342,9 +2342,25 @@ await test('group by datetime ranges', async (t) => {
   let startDate = dtFormat.format(epoch)
   let endDate = epoch + interval * 1000
 
-  console.log(r) // epoch as index
-  console.log({ [startDate]: Object.values(r)[0] }) // startDate as index
-  console.log({ [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0] }) // range as index
+  // console.log(r) // epoch as index
+  deepEqual(r, { '1733914800000': { distance: 1326.88 } }, 'epoch as index')
+
+  const startDateAsIndex = { [startDate]: Object.values(r)[0] }
+  // console.log(startDateAsIndex) // startDate as index
+  deepEqual(
+    startDateAsIndex,
+    { '11/12/2024, 08:00': { distance: 1326.88 } },
+    'startDate as index',
+  )
+  const rangeAsIndex = {
+    [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0],
+  }
+  // console.log(rangeAsIndex) // range as index
+  deepEqual(
+    rangeAsIndex,
+    { '11/12/2024 08:00 – 08:40': { distance: 1326.88 } },
+    'range as index',
+  )
 
   let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
   let r2 = await db
@@ -2357,9 +2373,15 @@ await test('group by datetime ranges', async (t) => {
   let epoch2 = Number(Object.keys(r2)[0])
   let startDate2 = dtFormat.format(epoch2)
   let endDate2 = epoch2 + interval2 * 1000
-  console.log({
+  const rangeByIndex2 = {
     [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
-  })
+  }
+  // console.log(rangeByIndex2)
+  deepEqual(
+    rangeByIndex2,
+    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: 1326.88 } },
+    'another range interval as index',
+  )
 
   // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
   await throws(
@@ -2374,6 +2396,110 @@ await test('group by datetime ranges', async (t) => {
     false,
     `throw invalid step range error on validation`,
   )
+})
+
+await test('cardinality with dates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lunch: {
+        day: 'timestamp',
+        eaters: 'cardinality',
+      },
+    },
+  })
+
+  db.create('lunch', {
+    day: '6/30/25', // mon
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/1/25', // tue
+    eaters: [
+      'Nuno',
+      'Tom',
+      'Alex',
+      'Niels',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+    ],
+  })
+  db.create('lunch', {
+    day: '7/2/25', // wed
+    eaters: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/3/25', // thu
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/4/25', // fri
+    eaters: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  })
+
+  const total = await db.query('lunch').cardinality('eaters').get().toObject()
+
+  // console.log('Total Eaters: ', total.eaters)
+  deepEqual(total.eaters, 11, 'Total Eaters')
+
+  const groupByDay = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day')
+    .get()
+    .toObject()
+
+  const meals = Object.entries(groupByDay) //@ts-ignore
+    .map((m) => m[1].eaters)
+    .reduce((e, acc) => (acc += e))
+
+  // console.log('Total Meals: ', meals)
+  deepEqual(meals, 31, 'Total Meals')
+
+  enum months {
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  }
+
+  const groupByMonth = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day', 'month')
+    .get()
+    .toObject()
+
+  const eatersByMonth = Object.entries(groupByMonth).map((e) => {
+    //@ts-ignore
+    return { [months[e[0]]]: e[1].eaters }
+  })
+  // console.log('Total Eaters by Month: ', eatersByMonth)
+  deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
 })
 
 await test('formating timestamp', async (t) => {
