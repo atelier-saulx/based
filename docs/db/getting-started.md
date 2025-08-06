@@ -34,11 +34,7 @@ const id = await db.create('user', {
   age: 36,
 })
 
-const ada = await db
-  .query('user', id)
-  .include('name', 'age')
-  .get()
-  .then((r) => r.node())
+const ada = await db.query('user', id).include('name', 'age').get().toObject()
 
 console.log(ada) // { id: 1, name: 'Ada', age: 36 }
 ```
