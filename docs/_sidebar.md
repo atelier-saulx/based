@@ -3,9 +3,12 @@
 - Deep dive
   - [Architecture](/architecture)
   - [Auth & Progressive Security](/auth-security)
-- Based DB
-  - [Overview](/db/)
-  - [Installation](/db/install)
+- [Based DB](/db/)
+  - [Install](/db/install)
   - [Getting started](/db/getting-started)
+  - [Schema](/db/schema)
+  - [Queries](/db/api?id=query)
+  - [Examples](/db/examples)
+  - [API reference](/db/api)
 - [FAQ](/faq)
 - [GitHub ↗](https://github.com/atelier-saulx/based)

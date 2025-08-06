@@ -1,14 +1,30 @@
 # API reference
 
-## [Simple query and include](db/simple.md)
+## [Basic `.db` operations](db/db.md)
 
-## [Single and Multiple References](db/references.md)
+### [Start/Stop](db/create.md)
 
-## [Edges](db/edges.md)
+### [Create](db/create.md)
 
-## [Search](db/search.md)
+### [Modify (update/delete/drain)](db/modify.md)
 
-## [Range](db/range.md)
+### [Save, Back-up and Dump](db/save.md)
+
+## Query
+
+### [Simple query and include](db/simple.md)
+
+### [Single and Multiple References](db/references.md)
+
+### [Edges](db/edges.md)
+
+### [Search](db/search.md)
+
+### [Range](db/range.md)
+
+## [Filter](db/filtering.md)
+
+## [Sort](db/sort.md)
 
 ## Property Types
 
@@ -18,13 +34,12 @@
 - [Cardinality](db/cardinality.md)
 - [Colunar vector](db/colvec.md)
 - [Enumerations](db/enum.md)
-
-## [Filter](db/filtering.md)
-
-## [Sort](db/sort.md)
+- [JSON](db/json.md)
 
 ## [Aggregation](db/aggregate.md)
 
 ## [Display & Formatting](db/display.md)
 
 ## [Realtime subscriptions](db/subscription.md)
+
+## [Testing](db/test.md)
