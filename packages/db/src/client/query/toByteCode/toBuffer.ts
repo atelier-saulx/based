@@ -4,7 +4,7 @@ import { includeToBuffer } from '../include/toBuffer.js'
 import { filterToBuffer } from '../query.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { ENCODER, writeUint64 } from '@saulx/utils'
+import { ENCODER, writeUint64 } from '@based/utils'
 import {
   aggregateToBuffer,
   isRootCountOnly,

@@ -13,7 +13,7 @@ import {
 import { channelPublishMessage } from './channelPublish.js'
 import { receiveChunkStream, registerStream } from './stream.js'
 import { BasedErrorCode } from '@based/errors'
-import { readUint32 } from '@saulx/utils'
+import { readUint32 } from '@based/utils'
 
 const reader = (
   server: BasedServer,

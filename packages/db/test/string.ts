@@ -515,3 +515,41 @@ await test('schema compression prop', async (t) => {
     'sizes of uncompressed and compressed are not equal',
   )
 })
+
+await test('string compression - max buf size', async (t) => {
+  const contents = 'a'.repeat(201) // min size for compression
+  const db = new BasedDb({
+    maxModifySize: Buffer.byteLength(contents) * 2 + 100,
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      file: {
+        props: {
+          contents: 'string',
+        },
+      },
+    },
+  })
+
+  let i = 100
+
+  while (i--) {
+    db.create('file', {
+      contents,
+    })
+  }
+
+  await db.drain()
+
+  const items = await db.query('file').get().toObject()
+
+  for (const item of items) {
+    equal(item.contents, contents, 'contents are the same')
+  }
+})

@@ -1,7 +1,7 @@
 import { SchemaType, SchemaProp, Schema, StrictSchema } from '@based/schema'
 import { SchemaDiagram } from './SchemaDiagram.js'
 import { FilterOps } from './types.js'
-import { getByPath, setByPath } from '@saulx/utils'
+import { getByPath, setByPath } from '@based/utils'
 
 export const walkProps = (
   type: SchemaType,

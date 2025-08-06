@@ -1,5 +1,5 @@
 import { schemaToSelvaBuffer, updateTypeDefs } from '@based/schema/def'
-import { deepCopy, writeUint64 } from '@saulx/utils'
+import { deepCopy, writeUint64 } from '@based/utils'
 import { getPropType, serialize, StrictSchema } from '@based/schema'
 import { DbServer } from './index.js'
 import { DbSchema } from '../schema.js'
@@ -9,7 +9,7 @@ import native from '../native.js'
 import { makeTreeKey } from './tree.js'
 import { SCHEMA_FILE } from '../types.js'
 import { saveSync } from './save.js'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)

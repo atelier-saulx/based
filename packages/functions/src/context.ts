@@ -1,4 +1,4 @@
-import { parseQuery } from '@saulx/utils'
+import { parseQuery } from '@based/utils'
 import { AuthState } from './auth.js'
 import { WebSocket, HttpRequest, HttpResponse } from './uws.js'
 import { BasedFunctionClient } from './client.js'

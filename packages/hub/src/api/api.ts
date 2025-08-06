@@ -1,9 +1,8 @@
 import { DbClient } from '@based/db'
 import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
-import { readStream } from '@saulx/utils'
+import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
-import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 
 export function registerApiHandlers(
   server,
@@ -13,16 +12,15 @@ export function registerApiHandlers(
   buckets: Record<'files' | 'backups' | 'dists', string>,
 ) {
   server.functions.add({
-    'based:logs': {
+    'based:events': {
       type: 'query',
       async fn(
         _based,
         { search, page }: { search?: string; page: number },
         update,
       ) {
-        // TODO: add pagination
         const q = statsDb
-          .query('log')
+          .query('event')
           .sort('createdAt', 'desc')
           .include(
             'function.name',
@@ -30,15 +28,15 @@ export function registerApiHandlers(
             'createdAt',
             'type',
             'msg',
+            'level',
+            'meta',
           )
-
         if (search) {
-          q.filter('function.name', 'has', search).or('msg', 'has', search)
+          q.filter('msg', 'has', search)
+            .or('msg', 'has', search)
+            .or('meta', 'has', search)
         }
-
-        console.log('page', page)
         q.range(page * 100, (page + 1) * 100)
-
         return q.subscribe((res) => {
           const obj = res.toObject()
           update(obj)
@@ -58,7 +56,6 @@ export function registerApiHandlers(
         } = payload
 
         // put stuff in db
-
         await s3.upload({
           Bucket,
           Key,
@@ -76,6 +73,16 @@ export function registerApiHandlers(
         })
       },
     },
+    'based:set-secret': {
+      type: 'function',
+      async fn(_based, payload) {
+        const { name, value } = payload
+        if (typeof name !== 'string' || name === '') {
+          throw new Error('name must be passed in the payload')
+        }
+        return configDb.upsert('secret', { name, value })
+      },
+    },
     'based:set-function': {
       type: 'stream',
       async fn(_based, { stream, payload }) {
@@ -85,12 +92,29 @@ export function registerApiHandlers(
         let { type, name } = config
         if (type === 'authorize') {
           name = 'based:authorize'
+          config.name = name
         }
-        await configDb.upsert('function', {
+
+        const updatedAt = Date.now()
+        const id = await configDb.upsert('function', {
           name,
           type,
           code,
           config,
+          updatedAt,
+        })
+
+        return new Promise<void>(async (resolve) => {
+          const unsubscribe = configDb
+            .query('function', id)
+            .include('updatedAt')
+            .subscribe((res) => {
+              if (res.toObject().updatedAt >= updatedAt) {
+                console.log('READY')
+                resolve()
+                unsubscribe()
+              }
+            })
         })
       },
     },
@@ -103,7 +127,6 @@ export function registerApiHandlers(
           schema: serialize(schema),
           status: 'pending',
         })
-
         return new Promise<void>((resolve, reject) => {
           const unsubscribe = configDb
             .query('schema', id)

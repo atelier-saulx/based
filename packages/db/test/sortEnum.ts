@@ -32,8 +32,6 @@ await test('sort Enum', async (t) => {
 
   const dbTime = await db.drain()
 
-  console.log('derp', dbTime)
-
   const randoIds = []
   for (let i = 0; i < 100; i++) {
     randoIds.push(~~(Math.random() * 3e6) + 1)

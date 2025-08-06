@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
 import { langCodesMap, LangName, StrictSchema } from '@based/schema'
-import { PropDef, SchemaTypeDef } from '@based/schema/def'
+import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
@@ -9,7 +9,7 @@ import { setTimeout } from 'node:timers/promises'
 import { migrate, TransformFns } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { readUint16, readUint32, readUint64 } from '@saulx/utils'
+import { readUint16, readUint32, readUint64 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
 import { strictSchemaToDbSchema } from './schema.js'
 import { SchemaChecksum } from '../schema.js'
@@ -274,25 +274,29 @@ export class DbServer extends DbShared {
     buf[4] = start >>> 8
     let typeDef: SchemaTypeDef
     let prop: PropDef
-    for (const t in this.schemaTypesParsed) {
-      typeDef = this.schemaTypesParsed[t]
-      if (typeDef.id == typeId) {
-        for (const p in typeDef.props) {
-          const propDef = typeDef.props[p]
-          if (propDef.prop == field && propDef.start == start) {
-            prop = propDef
-            break
-          }
+
+    if (field === 255) {
+      prop = ID_FIELD_DEF
+      typeDef = this.schemaTypesParsedById[typeId]
+    } else {
+      typeDef = this.schemaTypesParsedById[typeId]
+      for (const p in typeDef.props) {
+        const propDef = typeDef.props[p]
+        if (propDef.prop == field && propDef.start == start) {
+          prop = propDef
+          break
         }
-        break
       }
     }
+
     if (!typeDef) {
       throw new Error(`Cannot find type id on db from query for sort ${typeId}`)
     }
+
     if (!prop) {
       throw new Error(`Cannot find prop on db from query for sort ${field}`)
     }
+
     buf[5] = prop.len
     buf[6] = prop.len >>> 8
     buf[7] = prop.typeIndex

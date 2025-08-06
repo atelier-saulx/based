@@ -3,11 +3,8 @@ import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
-import { wait, bufToHex } from '@saulx/utils'
-import {
-  destructureTreeKey,
-  VerifTree,
-} from '../../src/server/tree.js'
+import { wait, bufToHex } from '@based/utils'
+import { destructureTreeKey, VerifTree } from '../../src/server/tree.js'
 import fs from 'node:fs/promises'
 import assert from 'node:assert'
 
@@ -99,15 +96,26 @@ const test = async (
         console.log(picocolors.gray(`backup size ${~~(kbs / 1024)}mb`))
       }
 
-      type MyBlockMap = {[key: number]: {key: number, typeId: number, start: number, hash: string} }
+      type MyBlockMap = {
+        [key: number]: {
+          key: number
+          typeId: number
+          start: number
+          hash: string
+        }
+      }
       const oldBlocks: MyBlockMap = {}
       const newBlocks: MyBlockMap = {}
-      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) => verifTree.foreachBlock((block) => m[block.key] = {
-        key: block.key,
-        typeId: destructureTreeKey(block.key)[0],
-        start: destructureTreeKey(block.key)[1],
-        hash: bufToHex(block.hash)
-      })
+      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) =>
+        verifTree.foreachBlock(
+          (block) =>
+            (m[block.key] = {
+              key: block.key,
+              typeId: destructureTreeKey(block.key)[0],
+              start: destructureTreeKey(block.key)[1],
+              hash: bufToHex(block.hash),
+            }),
+        )
       putBlocks(db.server.verifTree, oldBlocks)
 
       await db.stop()

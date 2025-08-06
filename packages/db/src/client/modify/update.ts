@@ -12,7 +12,7 @@ import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { ModifyOpts, RANGE_ERR, UPDATE } from './types.js'
 import { appendFixedValue } from './fixed.js'
 import { DbClient } from '../index.js'
-import { getByPath } from '@saulx/utils'
+import { getByPath } from '@based/utils'
 
 type Payload = Record<string, any>
 

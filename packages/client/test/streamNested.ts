@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { readStream, wait } from '@saulx/utils'
+import { readStream, wait } from '@based/utils'
 import { stat, createReadStream, readFileSync } from 'fs'
 import { promisify } from 'util'
 

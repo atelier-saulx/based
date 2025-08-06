@@ -10,7 +10,7 @@ import {
   writeUint16,
   writeUint24,
   writeUint32,
-} from '@saulx/utils'
+} from '@based/utils'
 
 const ENCODER = new TextEncoder()
 const UINT8 = 245

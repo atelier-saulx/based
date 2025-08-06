@@ -1,13 +1,17 @@
 import {
+  BINARY,
+  STRING,
   isPropDef,
   PropDef,
   REFERENCE,
   REFERENCES,
   SchemaPropTree,
   TEXT,
+  JSON,
+  ALIAS,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
-import { isRefDef, QueryDef, QueryDefType } from '../types.js'
+import { isRefDef, MainMetaInclude, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
@@ -21,7 +25,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
-      const p = path[i]
+      let p = path[i]
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(
@@ -35,6 +39,11 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
           def.edges.lang = def.lang
         }
         const edgeProp = def.edges.props[p]
+
+        if (!edgeProp) {
+          includeDoesNotExist(def, f)
+          return
+        }
 
         if (
           edgeProp.typeIndex === REFERENCE ||
@@ -51,16 +60,79 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
             return
           }
         } else {
-          // use include here
-          includeProp(def.edges, edgeProp)
+          if (
+            path[i + 1] === 'meta' &&
+            (edgeProp.typeIndex === STRING ||
+              edgeProp.typeIndex === BINARY ||
+              edgeProp.typeIndex === JSON ||
+              edgeProp.typeIndex === ALIAS)
+          ) {
+            if (edgeProp.separate) {
+              if (!def.edges.include.meta) {
+                def.edges.include.meta = new Set()
+              }
+              def.edges.include.meta.add(edgeProp.prop)
+            } else {
+              includeProp(def.edges, edgeProp)
+              if (!def.edges.include.metaMain) {
+                def.edges.include.metaMain = new Map()
+              }
+              if (!def.edges.include.main.include[edgeProp.start]) {
+                includeProp(def.edges, edgeProp)
+                def.edges.include.metaMain.set(
+                  edgeProp.start,
+                  MainMetaInclude.MetaOnly,
+                )
+              } else {
+                def.edges.include.metaMain.set(
+                  edgeProp.start,
+                  MainMetaInclude.All,
+                )
+              }
+            }
+          } else {
+            includeProp(def.edges, edgeProp)
+          }
         }
         return
       }
-      t = t[p]
 
+      t = t[p]
       if (!t) {
         if (f != 'id') {
-          includeDoesNotExist(def, f)
+          if (f.endsWith('.meta')) {
+            const propPath = f.split('.').slice(0, -1).join('.')
+            const prop = def.props[propPath]
+            if (
+              prop &&
+              (prop.typeIndex === STRING ||
+                prop.typeIndex === BINARY ||
+                prop.typeIndex === JSON ||
+                prop.typeIndex === ALIAS) // later add text
+            ) {
+              if (prop.separate) {
+                if (!def.include.meta) {
+                  def.include.meta = new Set()
+                }
+                def.include.meta.add(prop.prop)
+              } else {
+                if (!def.include.metaMain) {
+                  def.include.metaMain = new Map()
+                }
+                if (!def.include.main.include[prop.start]) {
+                  includeProp(def, prop)
+                  def.include.metaMain.set(prop.start, MainMetaInclude.MetaOnly)
+                } else {
+                  def.include.metaMain.set(prop.start, MainMetaInclude.All)
+                }
+              }
+            } else {
+              includeDoesNotExist(def, f)
+              return
+            }
+          } else {
+            includeDoesNotExist(def, f)
+          }
         }
         return
       }

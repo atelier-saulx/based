@@ -11,7 +11,7 @@ import {
 } from './blocks.js'
 import { DbServer } from './index.js'
 import { writeFileSync } from 'node:fs'
-import { bufToHex } from '@saulx/utils'
+import { bufToHex } from '@based/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 
 type RangeDump = {

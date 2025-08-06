@@ -1,7 +1,7 @@
 import { BasedClient } from '../index.js'
 import { inflateSync } from 'fflate'
 import { applyPatch } from '@saulx/diff'
-import { deepEqual, readUint32, readUint24, readUint64 } from '@saulx/utils'
+import { deepEqual, readUint32, readUint24, readUint64 } from '@based/utils'
 import { updateAuthState } from '../authState/updateAuthState.js'
 import { setStorage } from '../persistentStorage/index.js'
 import { CACHE_PREFIX } from '../persistentStorage/constants.js'

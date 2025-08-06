@@ -11,7 +11,7 @@ import {
 import { BasedErrorCode } from '@based/errors'
 import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 import mimeTypes from 'mime-types'
-import { parseQuery } from '@saulx/utils'
+import { parseQuery } from '@based/utils'
 import { installFn } from '../../../../installFn.js'
 import { authorize } from '../../../../authorize.js'
 
@@ -20,7 +20,7 @@ export const singleStream = (
   ctx: Context<HttpSession>,
   route: BasedRoute<'stream'>,
   type: string,
-  size: number
+  size: number,
 ) => {
   const extension = ctx.session.req.getHeader('content-extension')
   const fileName = ctx.session.req.getHeader('content-name') || ''
@@ -38,7 +38,7 @@ export const singleStream = (
   if ('query' in ctx.session) {
     try {
       payload = parseQuery(decodeURIComponent(ctx.session.query))
-    } catch (err) { }
+    } catch (err) {}
   }
 
   const streamPayload: StreamPayload = {
@@ -85,6 +85,6 @@ export const singleStream = (
     false,
     () => {
       stream.destroy()
-    }
+    },
   )
 }

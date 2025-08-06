@@ -1,6 +1,6 @@
 import { PropDef, STRING, REFERENCE, REFERENCES } from '@based/schema/def'
 import { RefModifyOpts } from './references.js'
-import { ENCODER } from '@saulx/utils'
+import { ENCODER } from '@based/utils'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   let size = 0

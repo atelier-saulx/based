@@ -1,4 +1,4 @@
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { dirname, join } from 'path'

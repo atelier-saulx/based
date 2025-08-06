@@ -7,7 +7,7 @@ import { IsAuthorizedHandler, authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
-import { readUint64 } from '@saulx/utils'
+import { readUint64 } from '@based/utils'
 
 const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   route,

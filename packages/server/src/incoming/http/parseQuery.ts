@@ -1,10 +1,10 @@
 import { BasedRoute, Context, HttpSession } from '@based/functions'
-import { parseQuery } from '@saulx/utils'
+import { parseQuery } from '@based/utils'
 import { parseAuthState } from '../../auth/index.js'
 
 export default (
   ctx: Context<HttpSession>,
-  route: BasedRoute
+  route: BasedRoute,
 ): ReturnType<typeof parseQuery> => {
   if (!('query' in ctx.session)) {
     return

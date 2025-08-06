@@ -1,4 +1,4 @@
-// import { deepCopy, wait } from '@saulx/utils'
+// import { deepCopy, wait } from '@based/utils'
 // import { BasedDb } from '../src/index.js'
 // import { deepEqual } from './shared/assert.js'
 // import test from './shared/test.js'

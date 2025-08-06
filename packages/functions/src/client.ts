@@ -4,11 +4,13 @@ import { Context } from './context.js'
 import { BasedQuery } from './query.js'
 import { StreamFunctionOpts } from './stream.js'
 import { Geo } from './geo.js'
+import type { DbClient } from '@based/db'
 
 export abstract class BasedFunctionClient {
   server: any
 
-  db: any
+  db: DbClient
+  dbs: Record<string, DbClient>
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>
 
@@ -19,7 +21,7 @@ export abstract class BasedFunctionClient {
   abstract stream(
     name: string,
     payload: StreamFunctionOpts,
-    ctx?: Context
+    ctx?: Context,
   ): Promise<any>
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
@@ -28,7 +30,7 @@ export abstract class BasedFunctionClient {
 
   abstract renewAuthState(
     ctx: Context,
-    authState?: AuthState
+    authState?: AuthState,
   ): Promise<AuthState>
 }
 

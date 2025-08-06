@@ -9,7 +9,7 @@ import {
   BasedFunctionConfigComplete,
   BasedRouteComplete,
 } from '@based/functions'
-import { deepMerge, deepEqual } from '@saulx/utils'
+import { deepMerge, deepEqual } from '@based/utils'
 import { FunctionConfig } from './types.js'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout.js'
 import { destroyObs, start } from '../query/index.js'

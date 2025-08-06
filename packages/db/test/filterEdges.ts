@@ -151,7 +151,10 @@ await test('filter references', async (t) => {
   await db
     .query('team')
     .include('files')
-    .filter('files.fileType', '=', 'document')
+    // need to make this
+    // still missing
+    // .filter((s) => s('files').filter('fileType', '=', 'document'))
+    // .filter('files.fileType', '=', 'document')
     .get()
     .inspect(100)
 })

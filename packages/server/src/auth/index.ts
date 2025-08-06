@@ -18,7 +18,7 @@ import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig.js'
 import parseAuthState from './parseAuthState.js'
 import parseJSONAuthState from './parseJSONAuthState.js'
 import { reEvaulateUnauthorized } from '../incoming/ws/auth.js'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual } from '@based/utils'
 
 export { parseAuthState }
 export { parseJSONAuthState }

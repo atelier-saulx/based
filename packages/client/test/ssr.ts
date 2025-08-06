@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import getPort from 'get-port'
 import { createInlineFromCurrentCache, createInlineCache } from '../src/ssr.js'
 

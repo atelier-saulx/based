@@ -24,13 +24,13 @@
   "devDependencies": {
     "@saulx/prettier-config": "2.0.0",
     "@saulx/tsconfig": "^1.1.0",
-    "@types/node": "22.5.3",
+    "@types/node": "^22.5.3",
     "tsx": "^4.19.0",
     "typescript": "^5.6.3",
     "vite": "^6.3.2"
   },
   "dependencies": {
     "@based/schema": "5.0.0-alpha.10",
-    "@saulx/utils": "^6.7.2"
+    "@based/utils": "^1.0.0"
   }
 }

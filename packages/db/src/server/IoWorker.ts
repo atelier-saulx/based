@@ -1,7 +1,7 @@
 import { DbWorker } from './workers/DbWorker.js'
 import { DbServer } from './index.js'
-import { IoJob} from './workers/io_worker_types.js'
-import { DECODER, readInt32 } from '@saulx/utils'
+import { IoJob } from './workers/io_worker_types.js'
+import { DECODER, readInt32 } from '@based/utils'
 import native from '../native.js'
 
 export class IoWorker extends DbWorker {
@@ -12,8 +12,7 @@ export class IoWorker extends DbWorker {
     super(address, db, onExit, 'io_worker.js')
   }
 
-  override handleMsg(_buf: any): void {
-  }
+  override handleMsg(_buf: any): void {}
 
   private cb = (resolve: (x: any) => any) => {
     this.db.activeReaders++
@@ -28,7 +27,9 @@ export class IoWorker extends DbWorker {
    * Save given blocks and return errors and hashes in an array.
    * @returns [[4 bytes err], [16 bytes hash]][] with the same length as blocks.
    */
-  async saveBlocks(blocks: { filepath: string, typeId: number, start: number }[]): Promise<Uint8Array> {
+  async saveBlocks(
+    blocks: { filepath: string; typeId: number; start: number }[],
+  ): Promise<Uint8Array> {
     const job: IoJob = {
       type: 'save',
       blocks,
@@ -58,7 +59,11 @@ export class IoWorker extends DbWorker {
    * accessing the block concurrently, and it must be coordinated in the
    * main thread.
    */
-  async unloadBlock(filepath: string, typeId: number, start: number): Promise<Uint8Array> {
+  async unloadBlock(
+    filepath: string,
+    typeId: number,
+    start: number,
+  ): Promise<Uint8Array> {
     const job: IoJob = {
       type: 'unload',
       filepath,

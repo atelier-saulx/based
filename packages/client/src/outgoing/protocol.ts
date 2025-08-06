@@ -1,6 +1,6 @@
 import { deflateSync } from 'fflate'
 import { AuthState } from '../types/auth.js'
-import { writeUint32, writeUint64, writeUint24, ENCODER } from '@saulx/utils'
+import { writeUint32, writeUint64, writeUint24, ENCODER } from '@based/utils'
 import {
   ChannelPublishQueueItem,
   ChannelQueueItem,

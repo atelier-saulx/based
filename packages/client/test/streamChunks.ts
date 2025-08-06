@@ -3,7 +3,7 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { Readable } from 'node:stream'
 import getPort from 'get-port'
-import { readStream } from '@saulx/utils'
+import { readStream } from '@based/utils'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 

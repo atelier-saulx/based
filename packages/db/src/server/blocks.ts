@@ -1,12 +1,8 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { bufToHex, equals, readInt32 } from '@saulx/utils'
-import {
-  VerifTree,
-  destructureTreeKey,
-  makeTreeKey,
-} from './tree.js'
+import { bufToHex, equals, readInt32 } from '@based/utils'
+import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.js'
 import { DbServer } from './index.js'
 import { IoJobSave } from './workers/io_worker_types.js'
 
@@ -25,19 +21,16 @@ export function saveBlock(
   const mtKey = makeTreeKey(typeId, start)
   const file = VerifTree.blockSdbFile(typeId, start, end)
   const path = join(db.fileSystemPath, file)
-  const err = native.saveBlock(
-    path,
-    typeId,
-    start,
-    db.dbCtxExternal,
-    hash,
-  )
+  const err = native.saveBlock(path, typeId, start, db.dbCtxExternal, hash)
   if (err == SELVA_ENOENT) {
     // Generally we don't nor can't remove blocks from verifTree before we
     // attempt to access them.
     db.verifTree.remove(mtKey)
   } else if (err) {
-    db.emit('error', `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`)
+    db.emit(
+      'error',
+      `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`,
+    )
   } else {
     db.verifTree.update(mtKey, hash)
   }
@@ -45,7 +38,7 @@ export function saveBlock(
 
 export async function saveBlocks(
   db: DbServer,
-  blocks: IoJobSave['blocks']
+  blocks: IoJobSave['blocks'],
 ): Promise<void> {
   const res = await db.ioWorker.saveBlocks(blocks)
 
@@ -63,7 +56,10 @@ export async function saveBlocks(
       // attempt to access them.
       db.verifTree.remove(key)
     } else if (err) {
-      db.emit('error', `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`)
+      db.emit(
+        'error',
+        `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`,
+      )
     } else {
       db.verifTree.update(key, hash)
     }
@@ -73,7 +69,11 @@ export async function saveBlocks(
 /**
  * Load an existing block (typically of a partial type) back to memory.
  */
-export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
+export async function loadBlock(
+  db: DbServer,
+  def: SchemaTypeDef,
+  start: number,
+) {
   const key = makeTreeKey(def.id, start)
   const block = db.verifTree.getBlock(key)
   if (!block) {
@@ -114,7 +114,11 @@ export async function loadBlock(db: DbServer, def: SchemaTypeDef, start: number)
 /**
  * Save a block and remove it from memory.
  */
-export async function unloadBlock(db: DbServer, def: SchemaTypeDef, start: number) {
+export async function unloadBlock(
+  db: DbServer,
+  def: SchemaTypeDef,
+  start: number,
+) {
   const typeId = def.id
   const end = start + def.blockCapacity - 1
   const key = makeTreeKey(typeId, start)
@@ -123,7 +127,10 @@ export async function unloadBlock(db: DbServer, def: SchemaTypeDef, start: numbe
     throw new Error(`No such block: ${key}`)
   }
 
-  const filepath = join(db.fileSystemPath, VerifTree.blockSdbFile(typeId, start, end))
+  const filepath = join(
+    db.fileSystemPath,
+    VerifTree.blockSdbFile(typeId, start, end),
+  )
   try {
     const hash = await db.ioWorker.unloadBlock(filepath, typeId, start)
     native.delBlock(db.dbCtxExternal, typeId, start)
@@ -143,7 +150,7 @@ export function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
   cb: (start: number, end: number, hash: Uint8Array) => void,
-  includeEmptyBlocks: boolean = false
+  includeEmptyBlocks: boolean = false,
 ) {
   const step = def.blockCapacity
   for (let start = 1; start <= def.lastId; start += step) {

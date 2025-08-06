@@ -59,9 +59,11 @@ export function useClients(opts: any) {
         }
 
         if (opts.token) {
-          await client.current.setAuthState(opts.token).catch((err) => {
-            // console.error(err)
-          })
+          await client.current
+            .setAuthState({ token: opts.token })
+            .catch((err) => {
+              // console.error(err)
+            })
         }
 
         if (!opts.noCloud) {
@@ -92,9 +94,11 @@ export function useClients(opts: any) {
           //   })
 
           if (opts.token) {
-            await adminClient.current.setAuthState(opts.token).catch((err) => {
-              // console.error(err)
-            })
+            await adminClient.current
+              .setAuthState({ token: opts.token })
+              .catch((err) => {
+                // console.error(err)
+              })
           }
         }
 

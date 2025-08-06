@@ -5,10 +5,8 @@ const t = @import("../types.zig");
 const QuerySort = @import("../queryTypes/sort.zig");
 const QueryDefault = @import("../queryTypes/default.zig");
 const db = @import("../../db/db.zig");
-// maybe one types file on top?
-// crazy idea
-
 const std = @import("std");
+const ReadOp = @import("../../types.zig").ReadOp;
 
 pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, indexI: usize, len: usize) !void {
     var index: usize = indexI;
@@ -74,6 +72,7 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
     } else {
         const s = sortBuf[1..sortBuf.len];
         const isAsc = sortBuf[0] == 0;
+
         if (searchSize > 0) {
             if (isVectorSearch(search)) {
                 const searchCtx = &createSearchCtx(true, search);
@@ -92,6 +91,8 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
             }
         } else if (isAsc) {
             try QuerySort.default(false, ctx, offset, limit, typeId, filterBuf, include, s);
+        } else if (s[0] == @intFromEnum(ReadOp.ID)) {
+            try QuerySort.idDesc(ctx, offset, limit, typeId, filterBuf, include);
         } else {
             try QuerySort.default(true, ctx, offset, limit, typeId, filterBuf, include, s);
         }

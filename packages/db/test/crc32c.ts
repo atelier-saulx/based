@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { crc32c } from '@based/crc32c'
+import { crc32c } from '@based/hash'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'

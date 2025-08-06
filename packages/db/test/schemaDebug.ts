@@ -1,7 +1,7 @@
 import { serverChildProcess } from './shared/serverChildProcess.js'
 import { DbClient, DbClientHooks, DbServer } from '../src/index.js'
 import test from './shared/test.js'
-import { deepCopy, deepMerge, wait } from '@saulx/utils'
+import { deepCopy, deepMerge, wait } from '@based/utils'
 import { copy, emptyDir } from 'fs-extra/esm'
 import { deepEqual, equal } from './shared/assert.js'
 

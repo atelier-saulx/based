@@ -1,10 +1,10 @@
-import { deepEqual as uDeepEqual } from '@saulx/utils'
+import { deepEqual as uDeepEqual } from '@based/utils'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
 import color from 'picocolors'
 import * as jsondiffpatch from 'jsondiffpatch'
 import * as c from 'jsondiffpatch/formatters/console'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import { REVERSE_TYPE_INDEX_MAP, TIMESTAMP } from '@based/schema/def'
 
 const diffpatcher = jsondiffpatch.create({

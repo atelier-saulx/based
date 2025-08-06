@@ -2,7 +2,7 @@ import fetch from '@based/fetch'
 import { incoming } from '../incoming/index.js'
 import { BasedClient, encodeAuthState } from '../index.js'
 import { addObsToQueue } from '../outgoing/index.js'
-import { readUint32 } from '@saulx/utils'
+import { readUint32 } from '@based/utils'
 
 const syncSubs = (ws: FakeWebsocket) => {
   if (!ws._c) {

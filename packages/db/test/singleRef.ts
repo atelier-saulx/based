@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { ModifyRes } from '../src/client/modify/ModifyRes.js'
 import { setTimeout } from 'timers/promises'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 await test('single special cases', async (t) => {
   const db = new BasedDb({

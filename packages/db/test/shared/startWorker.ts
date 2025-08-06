@@ -1,6 +1,6 @@
 import { Worker, MessageChannel } from 'node:worker_threads'
 import fs from 'node:fs/promises'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import { DbClient } from '../../src/client/index.js'

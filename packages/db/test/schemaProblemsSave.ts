@@ -1,6 +1,6 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-import { randomString, wait } from '@saulx/utils'
+import { randomString, wait } from '@based/utils'
 import { Schema } from '@based/schema'
 
 await test('schema problems save', async (t) => {

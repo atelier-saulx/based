@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { convertToTimestamp } from '@saulx/utils'
+import { convertToTimestamp } from '@based/utils'
 
 const derp = new Set([
   '$nice',
@@ -359,4 +359,124 @@ await test('default values for all props in user type', async (t) => {
     },
     'User created with explicit null overrides',
   )
+})
+
+await test('negative default values for numeric types', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          negativeNumber: {
+            type: 'number',
+            default: -42,
+          },
+          negativeInt16: {
+            type: 'int16',
+            default: -1234,
+          },
+          negativeInt32: {
+            type: 'int32',
+            default: -123456,
+          },
+          // int8 already tested with negative value in edges test
+          // uint types shouldn't have negative defaults
+        },
+      },
+    },
+  })
+
+  const userId = await db.create('user', {})
+
+  deepEqual(
+    await db.query('user', userId).get(),
+    {
+      id: userId,
+      negativeNumber: -42,
+      negativeInt16: -1234,
+      negativeInt32: -123456,
+    },
+    'User created with negative default values',
+  )
+
+  const userOverrideId = await db.create('user', {
+    negativeNumber: -100,
+    negativeInt16: -2000,
+    negativeInt32: -500000,
+  })
+
+  deepEqual(
+    await db.query('user', userOverrideId).get(),
+    {
+      id: 2,
+      negativeNumber: -100,
+      negativeInt16: -2000,
+      negativeInt32: -500000,
+    },
+    'User created with overridden negative values',
+  )
+})
+
+await test('object', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      snurp: {
+        preferences: {
+          type: 'object',
+          props: {
+            units: ['metric', 'imperial'],
+            theme: ['light', 'dark'],
+            toursEnabled: { type: 'boolean', default: true },
+            analyticsEnabled: { type: 'boolean', default: false },
+          },
+        },
+      },
+    },
+  })
+
+  const snurpId = await db.create('snurp', {})
+
+  deepEqual(
+    await db.query('snurp', snurpId).get(),
+    {
+      id: snurpId,
+      preferences: {
+        units: undefined,
+        theme: undefined,
+        toursEnabled: true,
+        analyticsEnabled: false,
+      },
+    },
+    'empty object has default values',
+  )
+
+  const snurpCustomId = await db.create('snurp', {
+    preferences: {
+      units: 'imperial',
+      theme: 'dark',
+      toursEnabled: false,
+      analyticsEnabled: true,
+    },
+  })
+
+  deepEqual(await db.query('snurp', snurpCustomId).get(), {
+    id: 2,
+    preferences: {
+      units: 'imperial',
+      theme: 'dark',
+      toursEnabled: false,
+      analyticsEnabled: true,
+    },
+  })
 })

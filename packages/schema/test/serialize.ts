@@ -274,3 +274,11 @@ test('schema with hash', () => {
   const deserialized = deSerialize(serialized)
   ok(deepEqual({ hash: 14986952164472 }, deserialized), 'Mismatch')
 })
+
+// make something like serialize for payloads in the server
+test('serialize random object', () => {
+  const obj = { bla: [1, 23, 2, 12, { x: 1 }] }
+  const serialized = serialize(obj)
+  const deserialized = deSerialize(serialized)
+  ok(deepEqual(obj, deserialized), 'Mismatch')
+})

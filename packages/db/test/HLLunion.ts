@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 await test.skip('dev', async (t) => {
   const db = new BasedDb({

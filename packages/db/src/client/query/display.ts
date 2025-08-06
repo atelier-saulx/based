@@ -14,7 +14,7 @@ import {
   TypeIndex,
 } from '@based/schema/def'
 import { BasedQueryResponse } from './BasedIterable.js'
-import { ENCODER } from '@saulx/utils'
+import { ENCODER } from '@based/utils'
 import { AggregateType } from './aggregates/types.js'
 
 const decimals = (v: number) => ~~(v * 100) / 100

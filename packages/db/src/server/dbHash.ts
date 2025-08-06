@@ -1,6 +1,6 @@
 // @ts-ignore
 import db from '../../../basedDbNative.cjs'
-import { bufToHex } from '@saulx/utils'
+import { bufToHex } from '@based/utils'
 
 export default function createHash() {
   const state = db.hashCreate()

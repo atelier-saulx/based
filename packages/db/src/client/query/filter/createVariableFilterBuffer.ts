@@ -13,7 +13,7 @@ import {
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
-import { ENCODER, concatUint8Arr } from '@saulx/utils'
+import { ENCODER, concatUint8Arr } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)

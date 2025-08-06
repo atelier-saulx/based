@@ -78,7 +78,11 @@ export function writeString(
       const isNoCompression = t.compression === 0
       // @ts-ignore stupid str
       size = write(ctx.buf, value, ctx.len, isNoCompression, lang)
+      if (size === null) {
+        return RANGE_ERR
+      }
     }
+
     let sizepos = ctx.len + 1 - 5
     ctx.len += size
     ctx.buf[sizepos++] = size

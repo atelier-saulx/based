@@ -1,7 +1,7 @@
 import { PropDef, SchemaTypeDef } from '@based/schema/def'
 import { DbClient } from './index.js'
 import { ModifyState } from './modify/ModifyRes.js'
-import { writeUint64 } from '@saulx/utils'
+import { writeUint64 } from '@based/utils'
 
 // TODO This definitely shouldn't be copy-pasted here from server/tree.ts
 const makeTreeKeyFromNodeId = (
@@ -193,7 +193,8 @@ export const flushBuffer = (db: DbClient) => {
         }
 
         db.flushReady()
-      }).catch((e) => {
+      })
+      .catch((e) => {
         console.error('Modify Failed', e)
         execCtxQueue(resCtx, true)
       })

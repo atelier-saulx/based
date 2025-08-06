@@ -24,7 +24,7 @@ import {
 import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
 import { appendEdgeRefs } from './appendEdgeRefs.js'
-import { writeUint32 } from '@saulx/utils'
+import { writeUint32 } from '@based/utils'
 
 type FieldOp = typeof INCREMENT | typeof DECREMENT | typeof UPDATE
 
@@ -134,6 +134,9 @@ export function writeEdges(
           }
           ctx.buf[ctx.len++] = STRING
           size = write(ctx.buf, value, ctx.len + 4, edge.compression === 0)
+          if (size === null) {
+            return RANGE_ERR
+          }
         }
         let sizeU32 = size
         ctx.buf[ctx.len++] = sizeU32

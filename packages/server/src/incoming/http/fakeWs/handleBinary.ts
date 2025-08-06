@@ -8,7 +8,7 @@ import {
 } from '../../../protocol.js'
 import { handleQuery } from './query.js'
 import { handleFunction } from './function.js'
-import { readUint32 } from '@saulx/utils'
+import { readUint32 } from '@based/utils'
 
 const reader = (
   server: BasedServer,

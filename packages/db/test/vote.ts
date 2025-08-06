@@ -1,7 +1,7 @@
 import { get } from 'http'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { SchemaProp } from '@based/schema'
 import { allCountryCodes } from './shared/examples.js'
 import { clearTimeout } from 'timers'

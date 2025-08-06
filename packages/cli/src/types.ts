@@ -12,6 +12,9 @@ export type Opts = {
   watch?: boolean
   cwd?: string
   hub?: string
+  args: string[] | undefined
+  name?: string
+  value?: string
 }
 
 export type Props = {
@@ -19,14 +22,16 @@ export type Props = {
   command: 'dev' | 'deploy' | 'secrets' | 'init' | 'status' | 'logout'
 }
 
-export type LogType = {
-  id: number
+export type EventType = {
+  id?: number
   msg: string
-  type: 'info' | 'error' | 'warn' | 'debug' | 'log' | 'trace'
-  function: {
+  type: 'init' | 'deploy' | 'runtime' | 'security'
+  level: 'info' | 'error' | 'warn' | 'debug'
+  meta?: string
+  function?: {
+    id?: number
     name: string
-    checksum: number
+    checksum?: number
   }
-  createdAt: number
-  lines: number
+  createdAt?: number
 }

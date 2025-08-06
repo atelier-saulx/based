@@ -22,7 +22,7 @@ import {
   IsAuthorizedHandler,
 } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
-import { readUint64 } from '@saulx/utils'
+import { readUint64 } from '@based/utils'
 
 const sendGetData = (
   server: BasedServer,

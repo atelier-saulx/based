@@ -1,5 +1,5 @@
 import { AuthState } from '@based/functions'
-import { createEncoder } from '@saulx/utils'
+import { createEncoder } from '@based/utils'
 
 const { decode } = createEncoder(
   [

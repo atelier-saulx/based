@@ -1,0 +1,40 @@
+{
+  "name": "@based/utils",
+  "version": "1.0.0",
+  "repository": "https://github.com/atelier-saulx/based",
+  "files": [
+    "dist/src"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "clean": "rimraf {dist,node_modules}",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "tsc && node scripts/run-tests.mjs"
+  },
+  "browser": {
+    "./dist/src/readStream.js": false
+  },
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "ava": {
+    "concurrency": 0,
+    "timeout": "2m",
+    "files": [
+      "./dist/test/**/*.js"
+    ]
+  },
+  "dependencies": {
+    "@based/hash": "1.0.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.3",
+    "@saulx/prettier-config": "^1.0.0",
+    "@saulx/tsconfig": "^1.0.6",
+    "ava": "5.3.1",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2"
+  }
+}

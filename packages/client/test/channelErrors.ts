@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
@@ -24,7 +24,7 @@ test('Channel does not exist', async (t: T) => {
     () => {},
     () => {
       errCnt++
-    }
+    },
   )
   await wait(500)
   t.is(errCnt, 1)

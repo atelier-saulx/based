@@ -16,7 +16,8 @@
   "sideEffects": false,
   "devDependencies": {
     "@saulx/tsconfig": "^1.1.0",
-    "ink-testing-library": "^3.0.0"
+    "ink-testing-library": "^3.0.0",
+    "@based/ui": "8.2.0-alpha.4"
   },
   "dependencies": {
     "@based/client": "^8.0.2",
@@ -24,10 +25,11 @@
     "@based/hub": "*",
     "@based/react": "^5.2.1",
     "@based/s3": "*",
-    "@based/schema": "^5.0.0-alpha.26",
+    "@based/schema": "5.0.0-alpha.27",
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
-    "@saulx/utils": "*",
+    "@based/hash": "1.0.0",
+    "@based/utils": "^1.0.0",
     "@saulx/validators": "^1.2.1",
     "fullscreen-ink": "^0.1.0",
     "get-port": "^7.1.0",

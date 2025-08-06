@@ -7,7 +7,7 @@ import {
   cacheV2toV1,
   diffV2toV1,
 } from '../../protocol.js'
-import { deepCopy } from '@saulx/utils'
+import { deepCopy } from '@based/utils'
 import { createPatch } from '@saulx/diff'
 import { BasedServer } from '../../server.js'
 import { genChecksum } from './genChecksum.js'

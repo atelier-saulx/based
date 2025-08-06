@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>

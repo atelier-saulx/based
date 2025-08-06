@@ -1,0 +1,35 @@
+{
+  "name": "@based/hash",
+  "version": "1.0.0",
+  "repository": "https://github.com/atelier-saulx/based",
+  "description": "Fast, low collision hashing based on djb2",
+  "keywords": [
+    "hash",
+    "performance",
+    "object"
+  ],
+  "files": [
+    "dist/src"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "ava --verbose"
+  },
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "ava": {
+    "timeout": "2m",
+    "files": [
+      "./dist/test/**/*.js"
+    ]
+  },
+  "prettier": "@saulx/prettier-config",
+  "devDependencies": {
+    "ava": "5.3.1",
+    "@saulx/tsconfig": "^1.0.1",
+    "@saulx/prettier-config": "^1.0.0",
+    "typescript": "^5.2.2"
+  }
+}

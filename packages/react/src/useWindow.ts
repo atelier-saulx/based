@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from 'react'
 import { Ctx } from './Ctx.js'
 import { BasedClient, BasedQuery } from '@based/client'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 
 type UseWindowState = {
   loading: boolean
@@ -18,7 +18,7 @@ export const useWindow = (
     size: number
     persistent?: boolean
   },
-  dependencies?: any
+  dependencies?: any,
 ): UseWindowState => {
   const [checksum, setCheckum] = useState(0)
   const cache = useRef<UseWindowState>()
@@ -92,7 +92,7 @@ export const useWindow = (
             queries.current.reduce((combined, { cache }) => {
               const checksum = cache?.c
               return checksum ? combined + checksum : combined
-            }, 0)
+            }, 0),
           )
         })
       })
