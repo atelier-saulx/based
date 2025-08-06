@@ -353,3 +353,41 @@ await test('refs removal with delete', async (t) => {
   await db.save()
   db.delete('a', a)
 })
+
+await test('large block gap', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      a: {
+        blockCapacity: 10_000,
+        props: {
+          brefs: { items: { ref: 'b', prop: 'aref' } },
+          x: { type: 'uint8' },
+        },
+      },
+      b: {
+        blockCapacity: 10_000,
+        props: {
+          aref: { ref: 'a', prop: 'brefs' },
+          y: { type: 'uint8' },
+        },
+      },
+    },
+  })
+
+  db.create('b', {
+    aref: 1,
+    y: 10
+  })
+  for (let i = 268435456; i < 268468224; i++) {
+    db.create('b', {
+      aref: i,
+      y: i % 255,
+    })
+  }
+})
