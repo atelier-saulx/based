@@ -50,6 +50,18 @@ ÅffiIX
 In some cases the user might want to store string in a non-lossy manner.
 Currently this can be achieved by storing the string(s) in a `binary` field.
 
+
+Internally every string in the database is stored as follows:
+
+```mermaid
+packet-beta
+title String/Text
+0-7: "Lang (none=0)"
+8-15: "Flags (compressed=0x1)"
+16-59: "Data (variable length)"
+60-63: "CRC32C"
+```
+
 ## String Search
 
 - TODO Describe how the search works at high level
