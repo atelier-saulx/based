@@ -158,6 +158,121 @@ Filters the results based on field values.
   await db.query('user').filter('bestFriend.status', '=', 'active').get()
   ```
 
+- `has` also can be used with references (as also `>`, `>=`, `<` and `<=` ) see the example bellow.
+
+Considering the schema. `bestBud` is a single reference prop but `buddies` is a multiple references prop:
+
+```js
+await db.setSchema({
+  types: {
+    user: {
+      props: {
+        name: { type: 'string' },
+        age: { type: 'uint32' },
+        bestBud: {
+          // single Ref
+          ref: 'user',
+          prop: 'bestBudOf',
+        },
+        buddies: {
+          // multiple Ref
+          items: {
+            ref: 'user',
+            prop: 'buddies',
+          },
+        },
+      },
+    },
+  },
+})
+```
+
+populating it with:
+
+```js
+const ildo1 = db.create('user', {
+  name: 'Clemildo',
+  age: 29,
+})
+const ildo2 = db.create('user', {
+  name: 'Josefildo',
+  age: 34,
+})
+const ildo3 = db.create('user', {
+  name: 'Adeildo',
+  age: 50,
+  bestBud: ildo2,
+  buddies: [ildo1, ildo2],
+})
+```
+
+we have bidirectional references for all users, where "Adeildo" and "Josefildo" as best buddies (single ref).
+Let's filter it using the nested sintax:
+
+```js
+await db
+  .query('user')
+  .include('*')
+  .filter('bestBud.name', 'has', 'Jose')
+  .get()
+  .inspect(10)
+// [
+//   {
+//      id: 3 user,
+//      age: 50,
+//      name: "Adeildo",
+//   }
+// ]
+```
+
+but to filter multiple refs we can't apply to `db.filter()` sequancially, so we use a branched query:
+
+```js
+await db
+  .query('user')
+  .include((q) => q('buddies').include('*').filter('name', 'has', 'Jose'), '*')
+  .get()
+  .inspect(10)
+// [
+//     {
+//        id: 1 user,
+//        age: 29,
+//        name: "Clemildo",
+//        buddies: []    },
+//     {
+//        id: 2 user,
+//        age: 34,
+//        name: "Josefildo",
+//        buddies: []    },
+//     {
+//        id: 3 user,
+//        age: 50,
+//        name: "Adeildo",
+//        buddies: [{
+//           id: 2 user,
+//           age: 34,
+//           name: "Josefildo",
+//        }]    }
+//   ]
+// }
+```
+
+Notice that the result is correctly applied for the branch, but to filter the top branch where there is no buddies (`buddies.length == 0`) we have to use JS in the result.
+
+```js
+;(
+  await db
+    .query('user')
+    .include(
+      (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+      '*',
+    )
+    .get()
+    .toObject()
+).filter((u) => u.buddies.length > 0)
+// [{"id":3,"age":50,"name":"Adeildo","buddies":[{"id":2,"age":34,"name":"Josefildo"}]}]
+```
+
 ## `.sort(field, direction?)`
 
 Sorts the results by a specific field. \`direction\` can be \`'asc'\` (default) or \`'desc'\`.
