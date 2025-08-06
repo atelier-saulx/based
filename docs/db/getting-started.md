@@ -41,7 +41,7 @@ console.log(ada) // { id: 1, name: 'Ada', age: 36 }
 
 ## 4. Explore further
 
-- [Schema reference](db/schema)
+- [Schema reference](/schema)
 - [Filtering & sorting](db/filtering)
 - [Real-time subscriptions](db/examples)
 - [Aggregations](db/aggregate)
