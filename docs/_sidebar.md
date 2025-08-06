@@ -3,8 +3,7 @@
 - Deep dive
   - [Architecture](/architecture)
   - [Auth & Progressive Security](/auth-security)
-  - [API reference](db/api.md)
-- BasedDB
+- Based DB
   - [Overview](/db/)
   - [Installation](/db/install)
   - [Getting started](/db/getting-started)

@@ -1,10 +1,14 @@
 # API reference
 
-## [Simple query](db/simple.md)
+## [Simple query and include](db/simple.md)
 
 ## [Single and Multiple References](db/references.md)
 
 ## [Edges](db/edges.md)
+
+## [Search](db/search.md)
+
+## [Range](db/range.md)
 
 ## Property Types
 
@@ -15,10 +19,12 @@
 - [Colunar vector](db/colvec.md)
 - [Enumerations](db/enum.md)
 
-## [filter](db/filtering.md)
+## [Filter](db/filtering.md)
 
-## [sort](db/sort.md)
+## [Sort](db/sort.md)
 
-## [aggregation](db/aggregate.md)
+## [Aggregation](db/aggregate.md)
 
-## [Formatting output](db/formatting.md)
+## [Display & Formatting](db/display.md)
+
+## [Realtime subscriptions](db/subscription.md)
