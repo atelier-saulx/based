@@ -1,6 +1,9 @@
 import { BasedDb } from '@based/db'
 import { join } from 'path'
 
+const createdAt = { type: 'timestamp', on: 'create' } as const
+const updatedAt = { type: 'timestamp', on: 'update' } as const
+
 export const createConfigDb = async (basePath: string) => {
   const configDb = new BasedDb({
     maxModifySize: 5 * 1e3 * 1e3,
@@ -12,9 +15,9 @@ export const createConfigDb = async (basePath: string) => {
       schema: {
         name: 'alias',
         schema: 'binary',
-        status: ['ready', 'error', 'pending'],
-        createdAt: { type: 'timestamp', on: 'create' },
-        updatedAt: { type: 'timestamp', on: 'update' },
+        status: ['pending', 'error', 'ready'],
+        createdAt,
+        updatedAt,
       },
       function: {
         name: 'alias',
@@ -27,17 +30,17 @@ export const createConfigDb = async (basePath: string) => {
           'stream',
           'channel',
         ],
-        code: { type: 'string' },
+        code: 'string',
         config: 'json',
-        createdAt: { type: 'timestamp', on: 'create' },
-        updatedAt: { type: 'timestamp', on: 'update' },
+        createdAt,
+        updatedAt,
       },
       secret: {
         name: 'alias',
-        value: { type: 'string' },
+        value: 'string',
         // by whom?
-        createdAt: { type: 'timestamp', on: 'create' },
-        updatedAt: { type: 'timestamp', on: 'update' },
+        createdAt,
+        updatedAt,
       },
     },
   })

@@ -187,7 +187,6 @@ export const registerStream: BinaryMessageHandler = (
       if (!ctx.session) {
         return
       }
-      console.log('not authorized...')
       delete ctx.session.streams[reqId]
     },
   )

@@ -56,7 +56,6 @@ export function registerApiHandlers(
         } = payload
 
         // put stuff in db
-
         await s3.upload({
           Bucket,
           Key,
@@ -95,11 +94,27 @@ export function registerApiHandlers(
           name = 'based:authorize'
           config.name = name
         }
-        await configDb.upsert('function', {
+
+        const updatedAt = Date.now()
+        const id = await configDb.upsert('function', {
           name,
           type,
           code,
           config,
+          updatedAt,
+        })
+
+        return new Promise<void>(async (resolve) => {
+          const unsubscribe = configDb
+            .query('function', id)
+            .include('updatedAt')
+            .subscribe((res) => {
+              if (res.toObject().updatedAt >= updatedAt) {
+                console.log('READY')
+                resolve()
+                unsubscribe()
+              }
+            })
         })
       },
     },
@@ -107,20 +122,17 @@ export function registerApiHandlers(
       type: 'function',
       async fn(_based, serializedObject) {
         const { db, schema } = deSerialize(serializedObject) as any
-        console.log('DO IT')
         const id = await configDb.upsert('schema', {
           name: db,
           schema: serialize(schema),
           status: 'pending',
         })
-        console.log('DO IT!!!')
         return new Promise<void>((resolve, reject) => {
           const unsubscribe = configDb
             .query('schema', id)
             .include('status')
             .subscribe((res) => {
               const { status } = res.toObject()
-              console.log({ status })
               if (status === 'error') {
                 reject(new Error('Schema error'))
                 unsubscribe()

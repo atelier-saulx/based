@@ -21,10 +21,10 @@ export const deployChanges = async (
   }
 
   // Upload assets
-  await Promise.all(
+  await Promise.allSettled(
     changes.configs.map((config) => {
       if (!config.mainCtx) return
-      return Promise.all(
+      return Promise.allSettled(
         config.mainCtx.build.outputFiles.map((file) =>
           client.stream('db:file-upload', {
             contents: file.contents,

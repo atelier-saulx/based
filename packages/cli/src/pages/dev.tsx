@@ -63,6 +63,7 @@ export const Dev = ({ opts }) => {
         })
 
         const client = connect({ url: opts.url })
+        await client.setAuthState({ token: 'local', type: 'based' })
         await deployChanges(client, publicPath, results)
         await watch(results, async (err, changes) => {
           if (err) {
