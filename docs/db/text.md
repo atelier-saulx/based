@@ -32,12 +32,12 @@ change.
 **Example**
 
 ```js
-const buf1 = Buffer.from('ÅﬃⅨ'.normalize('NFKD'), 'utf-8');
-const buf2 = Buffer.from('ÅﬃⅨ', 'utf-8');
-console.log(buf1);
-console.log(buf1.toString());
-console.log(buf2);
-console.log(buf2.toString());
+const buf1 = Buffer.from('ÅﬃⅨ'.normalize('NFKD'), 'utf-8')
+const buf2 = Buffer.from('ÅﬃⅨ', 'utf-8')
+console.log(buf1)
+console.log(buf1.toString())
+console.log(buf2)
+console.log(buf2.toString())
 ```
 
 Prints:
@@ -66,9 +66,9 @@ title String/Text
 ```
 
 | Comp | Description    |
-|------|----------------|
-|    0 | No compression |
-|    1 | Raw deflate    |
+| ---- | -------------- |
+| 0    | No compression |
+| 1    | Raw deflate    |
 
 ### Comp=1
 

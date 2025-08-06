@@ -1804,80 +1804,6 @@ await test('refs with enums ', async (t) => {
   )
 })
 
-await test.skip('edges agregation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      movie: {
-        name: 'string',
-        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
-        actors: {
-          items: {
-            ref: 'actor',
-            prop: 'actors',
-            $rating: 'uint16',
-          },
-        },
-      },
-      actor: {
-        name: 'string',
-        movies: {
-          items: {
-            ref: 'movie',
-            prop: 'movies',
-          },
-        },
-      },
-    },
-  })
-
-  const a1 = db.create('actor', {
-    name: 'Uma Thurman',
-  })
-  const a2 = db.create('actor', {
-    name: 'Jonh Travolta',
-  })
-
-  const m1 = await db.create('movie', {
-    name: 'Kill Bill',
-    actors: [
-      {
-        id: a1,
-        $rating: 55,
-      },
-    ],
-  })
-  const m2 = await db.create('movie', {
-    name: 'Pulp Fiction',
-    actors: [
-      {
-        id: a1,
-        $rating: 63,
-      },
-      {
-        id: a2,
-        $rating: 77,
-      },
-    ],
-  })
-
-  // await db
-  //   .query('movie')
-  //   .include('name')
-  //   .include('actors.$rating')
-  //   .include('actors.name')
-  //   .get()
-  //   .inspect(10)
-
-  // edges unreacheable
-  db.query('movie').max('actors.$rating').get().inspect(10)
-})
-
 await test('cardinality', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -1963,123 +1889,6 @@ await test('cardinality', async (t) => {
     'cardinality main groupBy',
   )
 })
-
-await test('dev', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      lunch: {
-        week: 'string',
-        lala: 'number',
-        lele: 'number',
-        Mon: 'cardinality',
-        Tue: 'cardinality',
-        Wed: 'cardinality',
-        Thu: 'cardinality',
-        Fri: 'cardinality',
-      },
-    },
-  })
-
-  const week27 = {
-    week: '27',
-    lala: 250,
-    Mon: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
-    Tue: ['Nuno', 'Tom', 'Alex', 'Niels', 'jimdebeer', 'Francesco', 'Victor'],
-    Wed: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
-    Thu: [
-      'Nuno',
-      'yves',
-      'Fulco',
-      'Tom',
-      'Sara',
-      'Felix',
-      'Thomas',
-      'Sebastian',
-      'jimdebeer',
-      'youzi',
-      'Francesco',
-      'Victor',
-      'sandor',
-      'Fabio',
-      'Luca',
-    ],
-    Fri: [
-      'Nuno',
-      'yves',
-      'Tom',
-      'youzi',
-      'jimdebeer',
-      'Francesco',
-      'Victor',
-      'sandor',
-      'Luca',
-    ],
-  }
-  await db.create('lunch', week27)
-
-  // const eaters = await db.query('lunch').get()
-  // eaters.inspect()
-
-  // // knwon from raw data:
-  // const days = Object.keys(week27).filter((k) => k !== 'week')
-  // const meals = days.map((k) => week27[k]).flat()
-  // const totalEaters = new Set(meals)
-  // console.log(
-  //   `From raw data. Total eaters: ${totalEaters.size}, Total meals: ${meals.length}`,
-  // )
-
-  // console.log(
-  //   'Total meals from query: ',
-  //   Object.entries(eaters.toObject()[0])
-  //     .filter(([key]) => days.includes(key))
-  //     .reduce((sum, el: [string, number]) => sum + el[1], 0),
-  // )
-
-  await db.create('lunch', {
-    week: '28',
-    Mon: ['youzi', 'Marco', 'Luigui'],
-    lala: 10,
-  })
-  // deepEqual(
-  //   await db.query('lunch').cardinality('Mon').get(),
-  //   {
-  //     Mon: 7,
-  //   },
-  //   'main cardinality no group by',
-  // )
-
-  // deepEqual(
-  //   await db.query('lunch').cardinality('Mon').groupBy('week').get(),
-  //   {
-  //     27: {
-  //       Mon: 5,
-  //     },
-  //     28: {
-  //       Mon: 3,
-  //     },
-  //   },
-  //   'cardinality main groupBy',
-  // )
-  // await db.query('lunch').sum('lala').groupBy('week').get().inspect()
-  // await db.create('lunch', {
-  //   week: 0,
-  //   lala: 10,
-  //   lele: 11,
-  // })
-  // await db.query('lunch').sum('lala', 'lele').get().inspect()
-})
-
-// TODO:
-// cardinality in references
-// key name <> string (numbers)
-// validations (including for key names)
-// aggregation on edges
 
 await test('group by unique numbers', async (t) => {
   const db = new BasedDb({
@@ -2342,9 +2151,25 @@ await test('group by datetime ranges', async (t) => {
   let startDate = dtFormat.format(epoch)
   let endDate = epoch + interval * 1000
 
-  console.log(r) // epoch as index
-  console.log({ [startDate]: Object.values(r)[0] }) // startDate as index
-  console.log({ [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0] }) // range as index
+  // console.log(r) // epoch as index
+  deepEqual(r, { '1733914800000': { distance: 1326.88 } }, 'epoch as index')
+
+  const startDateAsIndex = { [startDate]: Object.values(r)[0] }
+  // console.log(startDateAsIndex) // startDate as index
+  deepEqual(
+    startDateAsIndex,
+    { '11/12/2024, 08:00': { distance: 1326.88 } },
+    'startDate as index',
+  )
+  const rangeAsIndex = {
+    [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0],
+  }
+  // console.log(rangeAsIndex) // range as index
+  deepEqual(
+    rangeAsIndex,
+    { '11/12/2024 08:00 – 08:40': { distance: 1326.88 } },
+    'range as index',
+  )
 
   let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
   let r2 = await db
@@ -2357,9 +2182,15 @@ await test('group by datetime ranges', async (t) => {
   let epoch2 = Number(Object.keys(r2)[0])
   let startDate2 = dtFormat.format(epoch2)
   let endDate2 = epoch2 + interval2 * 1000
-  console.log({
+  const rangeByIndex2 = {
     [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
-  })
+  }
+  // console.log(rangeByIndex2)
+  deepEqual(
+    rangeByIndex2,
+    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: 1326.88 } },
+    'another range interval as index',
+  )
 
   // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
   await throws(
@@ -2374,6 +2205,110 @@ await test('group by datetime ranges', async (t) => {
     false,
     `throw invalid step range error on validation`,
   )
+})
+
+await test('cardinality with dates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lunch: {
+        day: 'timestamp',
+        eaters: 'cardinality',
+      },
+    },
+  })
+
+  db.create('lunch', {
+    day: '6/30/25', // mon
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/1/25', // tue
+    eaters: [
+      'Nuno',
+      'Tom',
+      'Alex',
+      'Niels',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+    ],
+  })
+  db.create('lunch', {
+    day: '7/2/25', // wed
+    eaters: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/3/25', // thu
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/4/25', // fri
+    eaters: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  })
+
+  const total = await db.query('lunch').cardinality('eaters').get().toObject()
+
+  // console.log('Total Eaters: ', total.eaters)
+  deepEqual(total.eaters, 11, 'Total Eaters')
+
+  const groupByDay = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day')
+    .get()
+    .toObject()
+
+  const meals = Object.entries(groupByDay) //@ts-ignore
+    .map((m) => m[1].eaters)
+    .reduce((e, acc) => (acc += e))
+
+  // console.log('Total Meals: ', meals)
+  deepEqual(meals, 31, 'Total Meals')
+
+  enum months {
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  }
+
+  const groupByMonth = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day', 'month')
+    .get()
+    .toObject()
+
+  const eatersByMonth = Object.entries(groupByMonth).map((e) => {
+    //@ts-ignore
+    return { [months[e[0]]]: e[1].eaters }
+  })
+  // console.log('Total Eaters by Month: ', eatersByMonth)
+  deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
 })
 
 await test('formating timestamp', async (t) => {
@@ -2454,6 +2389,195 @@ await test('formating timestamp', async (t) => {
     'formated timestamp without range',
   )
 })
+
+await test.skip('edges agregation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  // await db
+  //   .query('movie')
+  //   .include('name')
+  //   .include('actors.$rating')
+  //   .include('actors.name')
+  //   .get()
+  //   .inspect(10)
+
+  // edges unreacheable
+  db.query('movie').max('actors.$rating').get().inspect(10)
+})
+
+await test('dev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lunch: {
+        week: 'string',
+        lala: 'number',
+        lele: 'number',
+        Mon: 'cardinality',
+        Tue: 'cardinality',
+        Wed: 'cardinality',
+        Thu: 'cardinality',
+        Fri: 'cardinality',
+      },
+    },
+  })
+
+  const week27 = {
+    week: '27',
+    lala: 250,
+    Mon: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+    Tue: ['Nuno', 'Tom', 'Alex', 'Niels', 'jimdebeer', 'Francesco', 'Victor'],
+    Wed: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+    Thu: [
+      'Nuno',
+      'yves',
+      'Fulco',
+      'Tom',
+      'Sara',
+      'Felix',
+      'Thomas',
+      'Sebastian',
+      'jimdebeer',
+      'youzi',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Fabio',
+      'Luca',
+    ],
+    Fri: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  }
+  await db.create('lunch', week27)
+
+  // const eaters = await db.query('lunch').get()
+  // eaters.inspect()
+
+  // // knwon from raw data:
+  // const days = Object.keys(week27).filter((k) => k !== 'week')
+  // const meals = days.map((k) => week27[k]).flat()
+  // const totalEaters = new Set(meals)
+  // console.log(
+  //   `From raw data. Total eaters: ${totalEaters.size}, Total meals: ${meals.length}`,
+  // )
+
+  // console.log(
+  //   'Total meals from query: ',
+  //   Object.entries(eaters.toObject()[0])
+  //     .filter(([key]) => days.includes(key))
+  //     .reduce((sum, el: [string, number]) => sum + el[1], 0),
+  // )
+
+  await db.create('lunch', {
+    week: '28',
+    Mon: ['youzi', 'Marco', 'Luigui'],
+    lala: 10,
+  })
+  // deepEqual(
+  //   await db.query('lunch').cardinality('Mon').get(),
+  //   {
+  //     Mon: 7,
+  //   },
+  //   'main cardinality no group by',
+  // )
+
+  // deepEqual(
+  //   await db.query('lunch').cardinality('Mon').groupBy('week').get(),
+  //   {
+  //     27: {
+  //       Mon: 5,
+  //     },
+  //     28: {
+  //       Mon: 3,
+  //     },
+  //   },
+  //   'cardinality main groupBy',
+  // )
+  // await db.query('lunch').sum('lala').groupBy('week').get().inspect()
+  // await db.create('lunch', {
+  //   week: 0,
+  //   lala: 10,
+  //   lele: 11,
+  // })
+  // await db.query('lunch').sum('lala', 'lele').get().inspect()
+})
+
+// TODO:
+// cardinality in references
+// aggregation on edges
 
 // numeric ranges
 // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
