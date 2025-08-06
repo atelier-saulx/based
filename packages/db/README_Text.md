@@ -79,7 +79,7 @@ title String/Text
 8-15: "1"
 16-47: "Uncompressed size"
 48-123: "Data (variable length)"
-124-127
+124-127: "CRC32C"
 ```
 
 ## String Search
