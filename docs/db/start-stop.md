@@ -1,4 +1,41 @@
-## Expiration Feature
+# Core Database Operations
+
+## Starting
+
+### Methods
+
+#### `start(options: { clean?: boolean }): Promise<void>`
+
+Initializes and starts the graph database.
+
+**Parameters:**
+
+- `options` (object):
+  - `clean` (boolean, optional): If true, initializes a fresh client database (default: false)
+
+**Behavior:**
+
+- Prepares the database for operations
+- Loads existing data if not starting clean
+- Establishes necessary internal structures
+- Must be called before any other operations
+
+## Stopping
+
+### Methods
+
+#### `stop(): Promise<void>`
+
+Gracefully shuts down the database.
+
+**Behavior:**
+
+- Flushes all pending operations
+- Persists data to disk
+- Releases resources
+- Safe to call multiple times
+
+## Expiration
 
 The `BasedDb` class provides functionality to automatically expire nodes after a specified time.
 
@@ -63,13 +100,13 @@ db.expire('token', token, 1)
 
 - The expiration time is measured in seconds
 - The expiration process continues to work even if:
-- The database is saved and restarted
+- The client database is saved and restarted
 - The application is restarted
 - You must call await db.drain() to ensure all operations are processed
 - Expired nodes are completely removed from the database
 
 The expiration mechanism is persistent:
 
-If you set an expiration and then save/restart the database, the expiration timer continues
+If you set an expiration and then save/restart the client database, the expiration timer continues
 After restart, nodes will still be removed when their time expires
 The state is maintained through database saves

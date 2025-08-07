@@ -1,30 +1,34 @@
 # API reference
 
-## [Basic db operations](db/db.md)
+## Core Database Operations
 
-### [Start/Stop/Expire/Destroy](db/start-stop.md)
+- [Start, Stop, Expire, Destroy](db/start-stop.md)
+- [Client-Server Operations](db/client-server.md)
 
-### [Set Schema and Create](db/create.md)
+## Schema and Node Operations
 
-### [Modify (update/upsert/delete/drain/isModify)](db/modify.md)
+- [Set and Populate a Schema (create nodes)](db/create.md)
 
-### [Save, Copy](db/save.md)
+- [Modify nodes (update, upsert, delete, drain and other)](db/modify.md)
+
+- [Save, Copy, Back-up](db/save.md)
 
 ## Query
 
-### [Simple query and include](db/simple.md)
+- [Simple query and include](db/simple.md)
 
-### [Single and Multiple References](db/references.md)
+- [Single and Multiple References](db/references.md)
 
-### [Edges](db/edges.md)
+- [Edges](db/edges.md)
 
-### [Search](db/search.md)
+- [Search](db/search.md)
 
-### [Range](db/range.md)
+- [Range](db/range.md)
 
-## [Filter](db/filtering.md)
+## Filtering and Sorting
 
-## [Sort](db/sort.md)
+- [Filter](db/filtering.md)
+- [Sort](db/sort.md)
 
 ## Property Types
 
@@ -36,10 +40,18 @@
 - [Enumerations](db/enum.md)
 - [JSON](db/json.md)
 
-## [Aggregation](db/aggregate.md)
+## Aggregate Operations and Functions
 
-## [Display & Formatting](db/display.md)
+- [Aggregation](db/aggregate.md)
 
-## [Realtime subscriptions](db/subscription.md)
+## Display & Formatting
 
-## [Testing](db/test.md)
+- [Display & Formatting](db/display.md)
+
+## Realtime subscriptions
+
+- [Subscriptions](db/subscription.md)
+
+## Testing
+
+- [Testing (@based/utils package)](db/test.md)
