@@ -2,56 +2,59 @@
 
 ## Core Database Operations
 
-- [Start, Stop, Expire, Destroy](db/start-stop.md)
-- [Client-Server Operations](db/client-server.md)
+- [Start, Stop, Expire, Destroy](db/start-stop)
+- [Client-Server Operations](db/client-server)
 
 ## Schema and Node Operations
 
-- [Set and Populate a Schema (create nodes)](db/create.md)
+- [Set and Populate a Schema (create nodes)](db/create)
 
-- [Modify nodes (update, upsert, delete, drain and other)](db/modify.md)
+- [Modify nodes (update, upsert, delete, drain and other)](db/modify)
 
-- [Save, Copy, Back-up](db/save.md)
+- [Save, Copy, Back-up](db/save)
 
 ## Query
 
-- [Simple query and include](db/simple.md)
+- [Simple query and include](db/simple)
 
-- [Single and Multiple References](db/references.md)
+- [Single and Multiple References](db/references)
 
-- [Edges](db/edges.md)
+- [Edges](db/edges)
 
-- [Search](db/search.md)
+- [Search](db/search)
 
-- [Range](db/range.md)
+- [Range](db/range)
 
 ## Filtering and Sorting
 
-- [Filter](db/filtering.md)
-- [Sort](db/sort.md)
+- [Filter](db/filtering)
+- [Sort](db/sort)
 
 ## Property Types
 
-- [Numeric](db/numeric.md)
-- [String ans Text](db/text.md)
-- [Timestamp](db/timestamp.md)
-- [Cardinality](db/cardinality.md)
-- [Colunar vector](db/colvec.md)
-- [Enumerations](db/enum.md)
-- [JSON](db/json.md)
+- [Numeric](db/numeric)
+- [String ans Text](db/text)
+- [Timestamp](db/timestamp)
+- [Cardinality](db/cardinality)
+- [Colunar vector](db/colvec)
+- [Enumerations](db/enum)
+- [JSON](db/json)
 
 ## Aggregate Operations and Functions
 
-- [Aggregation](db/aggregate.md)
+- [Overview Aggregation](db/aggregate)
+- [General Purpose and Statistical Aggregate Functions](db/aggregate?id=general-purpose-and-statistical-aggregations)
+- [Grouping Operations](db/aggregate?id=grouping-aggregations-with-groupby)
+- [Aggregating references with parent/child properties](db/aggregate?id=aggregations-on-references-with-parent-properties)
 
 ## Display & Formatting
 
-- [Display & Formatting](db/display.md)
+- [Display & Formatting](db/display)
 
 ## Realtime subscriptions
 
-- [Subscriptions](db/subscription.md)
+- [Subscriptions](db/subscription)
 
 ## Testing
 
-- [Testing (@based/utils package)](db/test.md)
+- [Testing (@based/utils package)](db/test)
