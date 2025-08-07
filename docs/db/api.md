@@ -1,14 +1,14 @@
 # API reference
 
-## [Basic `.db` operations](db/db.md)
+## [Basic db operations](db/db.md)
 
-### [Start/Stop](db/create.md)
+### [Start/Stop/Expire/Destroy](db/start-stop.md)
 
-### [Create](db/create.md)
+### [Set Schema and Create](db/create.md)
 
-### [Modify (update/delete/drain)](db/modify.md)
+### [Modify (update/upsert/delete/drain/isModify)](db/modify.md)
 
-### [Save, Back-up and Dump](db/save.md)
+### [Save, Copy](db/save.md)
 
 ## Query
 
