@@ -668,7 +668,373 @@ block_done:
     return rc;
 }
 
+static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
+FUNCNAME_SHORT(struct libdeflate_decompressor * restrict d,
+     const void * restrict in, size_t in_nbytes,
+     void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
+     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret)
+{
+    u8 *out_next = ((u8 *)out) + in_dict_nbytes;
+    u8 * const out_end = out_next + out_nbytes_avail;
+
+    /* Input bitstream state; see deflate_decompress.c for documentation */
+    const u8 *in_next = in;
+    const u8 * const in_end = in_next + in_nbytes;
+    bitbuf_t bitbuf = d->bitbuf_back;
+    bitbuf_t saved_bitbuf;
+    u32 bitsleft = d->bitsleft_back;
+    size_t overread_count = 0;
+
+    bool is_final_block;
+    unsigned block_type;
+    bitbuf_t litlen_tablemask;
+    u32 entry;
+
+    decompress_block_init(d);
+
+    static_assert(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
+next_block:
+    /* Starting to read the next block */
+    REFILL_BITS();
+
+    /* BFINAL: 1 bit */
+    is_final_block = bitbuf & BITMASK(1);
+
+    /* BTYPE: 2 bits */
+    block_type = (bitbuf >> 1) & BITMASK(2);
+
+    if (block_type == DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN) {
+        /* The order in which precode lengths are stored */
+        static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
+            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+        };
+
+        unsigned num_litlen_syms;
+        unsigned num_offset_syms;
+        unsigned num_explicit_precode_lens;
+        unsigned i;
+
+        /* Read the codeword length counts. */
+
+        static_assert(DEFLATE_NUM_LITLEN_SYMS == 257 + BITMASK(5));
+        num_litlen_syms = 257 + ((bitbuf >> 3) & BITMASK(5));
+
+        static_assert(DEFLATE_NUM_OFFSET_SYMS == 1 + BITMASK(5));
+        num_offset_syms = 1 + ((bitbuf >> 8) & BITMASK(5));
+
+        static_assert(DEFLATE_NUM_PRECODE_SYMS == 4 + BITMASK(4));
+        num_explicit_precode_lens = 4 + ((bitbuf >> 13) & BITMASK(4));
+
+        d->static_codes_loaded = false;
+
+        /*
+         * Read the precode codeword lengths.
+         *
+         * A 64-bit bitbuffer is just one bit too small to hold the
+         * maximum number of precode lens, so to minimize branches we
+         * merge one len with the previous fields.
+         */
+        static_assert(DEFLATE_MAX_PRE_CODEWORD_LEN == (1 << 3) - 1);
+        if (CAN_CONSUME(3 * (DEFLATE_NUM_PRECODE_SYMS - 1))) {
+            d->u.precode_lens[deflate_precode_lens_permutation[0]] =
+                (bitbuf >> 17) & BITMASK(3);
+            bitbuf >>= 20;
+            bitsleft -= 20;
+            REFILL_BITS();
+            i = 1;
+            do {
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
+                    bitbuf & BITMASK(3);
+                bitbuf >>= 3;
+                bitsleft -= 3;
+            } while (++i < num_explicit_precode_lens);
+        } else {
+            bitbuf >>= 17;
+            bitsleft -= 17;
+            i = 0;
+            do {
+                if ((u8)bitsleft < 3)
+                    REFILL_BITS();
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
+                    bitbuf & BITMASK(3);
+                bitbuf >>= 3;
+                bitsleft -= 3;
+            } while (++i < num_explicit_precode_lens);
+        }
+        for (; i < DEFLATE_NUM_PRECODE_SYMS; i++)
+            d->u.precode_lens[deflate_precode_lens_permutation[i]] = 0;
+
+        /* Build the decode table for the precode. */
+        SAFETY_CHECK(build_precode_decode_table(d));
+
+        /* Decode the litlen and offset codeword lengths. */
+        i = 0;
+        do {
+            unsigned presym;
+            u8 rep_val;
+
+            if ((u8)bitsleft < DEFLATE_MAX_PRE_CODEWORD_LEN + 7)
+                REFILL_BITS();
+
+            /*
+             * The code below assumes that the precode decode table
+             * doesn't have any subtables.
+             */
+            static_assert(PRECODE_TABLEBITS == DEFLATE_MAX_PRE_CODEWORD_LEN);
+
+            /* Decode the next precode symbol. */
+            entry = d->u.l.precode_decode_table[
+                bitbuf & BITMASK(DEFLATE_MAX_PRE_CODEWORD_LEN)];
+            bitbuf >>= (u8)entry;
+            bitsleft -= entry; /* optimization: subtract full entry */
+            presym = entry >> 16;
+
+            if (presym < 16) {
+                /* Explicit codeword length */
+                d->u.l.lens[i++] = presym;
+                continue;
+            }
+
+            /* Run-length encoded (RLE) codeword lengths */
+
+            /*
+             * Note: we don't need to immediately verify that the
+             * repeat count doesn't overflow the number of elements,
+             * since we've sized the lens array to have enough extra
+             * space to allow for the worst-case overrun (138 zeroes
+             * when only 1 length was remaining).
+             *
+             * In the case of the small repeat counts (presyms 16
+             * and 17), it is fastest to always write the maximum
+             * number of entries.  That gets rid of branches that
+             * would otherwise be required.
+             *
+             * It is not just because of the numerical order that
+             * our checks go in the order 'presym < 16', 'presym ==
+             * 16', and 'presym == 17'.  For typical data this is
+             * ordered from most frequent to least frequent case.
+             */
+            static_assert(DEFLATE_MAX_LENS_OVERRUN == 138 - 1);
+
+            if (presym == 16) {
+                /* Repeat the previous length 3 - 6 times. */
+                SAFETY_CHECK(i != 0);
+                static_assert(3 + BITMASK(2) == 6);
+                unsigned rep_count = 3 + (bitbuf & BITMASK(2));
+
+                rep_val = d->u.l.lens[i - 1];
+                bitbuf >>= 2;
+                bitsleft -= 2;
+                d->u.l.lens[i + 0] = rep_val;
+                d->u.l.lens[i + 1] = rep_val;
+                d->u.l.lens[i + 2] = rep_val;
+                d->u.l.lens[i + 3] = rep_val;
+                d->u.l.lens[i + 4] = rep_val;
+                d->u.l.lens[i + 5] = rep_val;
+                i += rep_count;
+            } else if (presym == 17) {
+                /* Repeat zero 3 - 10 times. */
+                static_assert(3 + BITMASK(3) == 10);
+                unsigned rep_count = 3 + (bitbuf & BITMASK(3));
+
+                bitbuf >>= 3;
+                bitsleft -= 3;
+                d->u.l.lens[i + 0] = 0;
+                d->u.l.lens[i + 1] = 0;
+                d->u.l.lens[i + 2] = 0;
+                d->u.l.lens[i + 3] = 0;
+                d->u.l.lens[i + 4] = 0;
+                d->u.l.lens[i + 5] = 0;
+                d->u.l.lens[i + 6] = 0;
+                d->u.l.lens[i + 7] = 0;
+                d->u.l.lens[i + 8] = 0;
+                d->u.l.lens[i + 9] = 0;
+                i += rep_count;
+            } else {
+                /* Repeat zero 11 - 138 times. */
+                static_assert(11 + BITMASK(7) == 138);
+                unsigned rep_count = 11 + (bitbuf & BITMASK(7));
+
+                bitbuf >>= 7;
+                bitsleft -= 7;
+                memset(&d->u.l.lens[i], 0,
+                       rep_count * sizeof(d->u.l.lens[i]));
+                i += rep_count;
+            }
+        } while (i < num_litlen_syms + num_offset_syms);
+
+        SAFETY_CHECK(i == num_litlen_syms + num_offset_syms);
+        if (!(i == num_litlen_syms + num_offset_syms &&
+              build_offset_decode_table(d, num_litlen_syms, num_offset_syms) &&
+              build_litlen_decode_table(d, num_litlen_syms, num_offset_syms))) {
+            return LIBDEFLATE_BAD_DATA;
+        }
+    } else if (block_type == DEFLATE_BLOCKTYPE_UNCOMPRESSED) {
+        u16 len, nlen;
+
+        /*
+         * Uncompressed block: copy 'len' bytes literally from the input
+         * buffer to the output buffer.
+         */
+
+        bitsleft -= 3; /* for BTYPE and BFINAL */
+
+        /*
+         * Align the bitstream to the next byte boundary.  This means
+         * the next byte boundary as if we were reading a byte at a
+         * time.  Therefore, we have to rewind 'in_next' by any bytes
+         * that have been refilled but not actually consumed yet (not
+         * counting overread bytes, which don't increment 'in_next').
+         */
+        _DEF_bitstream_byte_align();
+
+        SAFETY_CHECK(in_end - in_next >= 4);
+        len = get_unaligned_le16(in_next);
+        nlen = get_unaligned_le16(in_next + 2);
+        in_next += 4;
+
+        SAFETY_CHECK(len == (u16)~nlen);
+        SAFETY_CHECK(len <= in_end - in_next);
+        if (len > out_end - out_next) {
+            memcpy(out_next, in_next, out_end - out_next);
+            goto block_done;
+            //return LIBDEFLATE_INSUFFICIENT_SPACE;
+        }
+
+        size_t left = out_end - out_next;
+        size_t copy_len = MIN(len, left);
+        memcpy(out_next, in_next, copy_len);
+        in_next += len;
+        out_next += copy_len;
+
+        goto block_done;
+    } else if (block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN) {
+        /*
+         * Static Huffman block: build the decode tables for the static
+         * codes.  Skip doing so if the tables are already set up from
+         * an earlier static block; this speeds up decompression of
+         * degenerate input of many empty or very short static blocks.
+         *
+         * Afterwards, the remainder is the same as decompressing a
+         * dynamic Huffman block.
+         */
+
+        bitbuf >>= 3; /* for BTYPE and BFINAL */
+        bitsleft -= 3;
+
+        if (!d->static_codes_loaded) {
+            huffman_build_static_decode_tables(d);
+        }
+    } else {
+        return LIBDEFLATE_BAD_DATA;
+    }
+
+    /*
+     * Decompressing a Huffman block (either dynamic or static)
+     */
+    litlen_tablemask = BITMASK(d->litlen_tablebits);
+
+    /*
+     * This is the generic loop for decoding literals and matches.  This
+     * handles cases where in_next and out_next are close to the end of
+     * their respective buffers.  Usually this loop isn't performance-
+     * critical, as most time is spent in the fastloop above instead.  We
+     * therefore omit some optimizations here in favor of smaller code.
+     */
+    for (;;) {
+        u32 length, offset;
+
+        REFILL_BITS();
+        entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
+        saved_bitbuf = bitbuf;
+        bitbuf >>= (u8)entry;
+        bitsleft -= entry;
+        if (unlikely(entry & HUFFDEC_SUBTABLE_POINTER)) {
+            entry = d->u.litlen_decode_table[(entry >> 16) +
+                    EXTRACT_VARBITS(bitbuf, (entry >> 8) & 0x3F)];
+            saved_bitbuf = bitbuf;
+            bitbuf >>= (u8)entry;
+            bitsleft -= entry;
+        }
+        length = entry >> 16;
+        if (entry & HUFFDEC_LITERAL) {
+            if (out_next == out_end) {
+                goto block_done;
+                //return LIBDEFLATE_INSUFFICIENT_SPACE;
+            }
+            *out_next++ = length;
+            continue;
+        }
+        if (unlikely(entry & HUFFDEC_END_OF_BLOCK)) {
+            goto block_done;
+        }
+        length += EXTRACT_VARBITS8(saved_bitbuf, entry) >> (u8)(entry >> 8);
+        //if (length > out_end - out_next) {
+        //    return LIBDEFLATE_INSUFFICIENT_SPACE;
+        //}
+
+        if (!CAN_CONSUME(LENGTH_MAXBITS + OFFSET_MAXBITS))
+            REFILL_BITS();
+        entry = d->offset_decode_table[bitbuf & BITMASK(OFFSET_TABLEBITS)];
+        if (unlikely(entry & HUFFDEC_EXCEPTIONAL)) {
+            bitbuf >>= OFFSET_TABLEBITS;
+            bitsleft -= OFFSET_TABLEBITS;
+            entry = d->offset_decode_table[(entry >> 16) +
+                    EXTRACT_VARBITS(bitbuf, (entry >> 8) & 0x3F)];
+            if (!CAN_CONSUME(OFFSET_MAXBITS))
+                REFILL_BITS();
+        }
+        offset = entry >> 16;
+        offset += EXTRACT_VARBITS8(bitbuf, entry) >> (u8)(entry >> 8);
+        bitbuf >>= (u8)entry;
+        bitsleft -= entry;
+
+        SAFETY_CHECK(offset <= out_next - (const u8 *)out);
+        size_t left = out_end - out_next;
+        size_t copy_len = MIN(length, left);
+        generic_copy(out_next, out_next - offset, copy_len);
+        out_next += copy_len;
+        if (length > copy_len) {
+            goto block_done;
+        }
+    }
+
+    enum libdeflate_result rc;
+block_done:
+    /* Finished decoding a block */
+
+    if (is_final_block) {
+        _DEF_bitstream_byte_align();
+        rc = LIBDEFLATE_SUCCESS;
+    } else {
+        if (out_next < out_end)
+            goto next_block;
+
+        _DEF_bitstream_byte_restore();
+        //backup for next block
+        d->bitsleft_back = bitsleft & 7;
+        d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
+
+        rc = LIBDEFLATE_MORE;
+    }
+
+    /* Optionally return the actual number of bytes consumed. */
+    if (actual_in_nbytes_ret) {
+        *actual_in_nbytes_ret = in_next - (u8 *)in;
+    }
+
+    /* Optionally return the actual number of bytes written. */
+    if (actual_out_nbytes_ret) {
+        *actual_out_nbytes_ret = out_next - (((u8 *)out) + in_dict_nbytes);
+    } else {
+        if (out_next != out_end)
+            rc = LIBDEFLATE_SHORT_OUTPUT;
+    }
+    return rc;
+}
+
 #undef FUNCNAME
+#undef FUNCNAME_SHORT
 #undef ATTRIBUTES
 #undef EXTRACT_VARBITS
 #undef EXTRACT_VARBITS8
