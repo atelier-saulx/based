@@ -1,24 +1,24 @@
 ## Expiration Feature
 
-The `BasedDb` class provides functionality to automatically expire documents after a specified time.
+The `BasedDb` class provides functionality to automatically expire nodes after a specified time.
 
 ### Methods
 
 #### `expire(type: string, id: string, seconds: number): void`
 
-Sets a document to expire after a specified number of seconds.
+Sets a node to expire after a specified number of seconds.
 
 **Parameters:**
 
-- `type` (string): The type/collection of the document (e.g., 'token')
-- `id` (string): The ID of the document to expire
-- `seconds` (number): Number of seconds after which the document will be automatically deleted
+- `type` (string): The type of the node (e.g., 'token')
+- `id` (string): The ID of the node to expire
+- `seconds` (number): Number of seconds after which the node will be automatically deleted
 
 **Behavior:**
 
 - The expiration is persistent and will survive database restarts
-- The document will be automatically removed after the specified time
-- Multiple calls to `expire` for the same document will update the expiration time
+- The node will be automatically removed after the specified time
+- Multiple calls to `expire` for the same node will update the expiration time
 
 ### Example Usage
 
@@ -66,10 +66,10 @@ db.expire('token', token, 1)
 - The database is saved and restarted
 - The application is restarted
 - You must call await db.drain() to ensure all operations are processed
-- Expired documents are completely removed from the database
+- Expired nodes are completely removed from the database
 
 The expiration mechanism is persistent:
 
 If you set an expiration and then save/restart the database, the expiration timer continues
-After restart, documents will still be removed when their time expires
+After restart, nodes will still be removed when their time expires
 The state is maintained through database saves
