@@ -2390,6 +2390,97 @@ await test('formating timestamp', async (t) => {
   )
 })
 
+await test('timezone offsets', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 00:00+00'), // it is 11th Dec midnight in UTC
+    dropoff: new Date('12/01/2024 00:01-03'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 15:30+00'),
+    dropoff: new Date('12/01/2024 00:00+00'),
+    distance: 513.44,
+  })
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'day', locale: 'America/Sao_Paulo' })
+      .get(),
+    {
+      10: {
+        // it is 10th Dec 21h in São Paulo (depending on DST)
+        distance: 813.44,
+      },
+      11: {
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'hour', locale: 'America/Sao_Paulo' })
+      .get(),
+    {
+      21: {
+        distance: 813.44,
+      },
+      12: {
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('dropoff', { step: 'month', locale: 'America/Sao_Paulo' })
+      .get(),
+    {
+      11: {
+        // Dec, 0 index
+        distance: 813.44,
+      },
+      10: {
+        // Nov, 0 index
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+})
+
 await test.skip('edges agregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -2581,59 +2672,3 @@ await test('dev', async (t) => {
 
 // numeric ranges
 // await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
-
-await test('kev', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      trip: {
-        pickup: 'timestamp',
-        dropoff: 'timestamp',
-        distance: 'number',
-        vendorId: 'uint16',
-      },
-    },
-  })
-
-  db.create('trip', {
-    vendorId: 813,
-    pickup: new Date('12/11/2024 00:00+00'), // it is 11th Dec midnight in UTC
-    dropoff: new Date('12/11/2024 11:10+00'),
-    distance: 813.44,
-  })
-
-  db.create('trip', {
-    vendorId: 814,
-    pickup: new Date('12/12/2024 23:30+00'),
-    dropoff: new Date('12/12/2024 12:10+00'),
-    distance: 513.44,
-  })
-
-  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-    timeZone: 'America/Sao_Paulo',
-  })
-
-  deepEqual(
-    await db
-      .query('trip')
-      .sum('distance')
-      .groupBy('pickup', { step: 'day', locale: 'America/Sao_Paulo' }) // it is 10th Dec 21h in São Paulo (depending on DST)
-      .get(),
-    {
-      10: {
-        distance: 813.44,
-      },
-      12: {
-        distance: 513.44,
-      },
-    },
-    'reading stored datetime (as UTC) with specific timezone',
-  )
-})
