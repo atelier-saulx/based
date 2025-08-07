@@ -1,4 +1,4 @@
-import { writeUint16, writeUint32 } from '@saulx/utils'
+import { writeUint16, writeInt16, writeUint32 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { AggregateType, GroupBy, StepInput } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
@@ -32,6 +32,8 @@ export const aggregateToBuffer = (
     i += 1
     writeUint32(aggBuffer, aggregates.groupBy.stepRange || 0, i)
     i += 4
+    writeInt16(aggBuffer, aggregates.groupBy.tz || 0, i)
+    i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
     i += 1
@@ -83,11 +85,12 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 9
+    def.aggregate.size += 11
   }
   def.aggregate.groupBy = fieldDef
   def.aggregate.groupBy.stepRange = undefined
   def.aggregate.groupBy.stepType = undefined
+  def.aggregate.groupBy.tz = undefined
   def.aggregate.groupBy.display = undefined
 
   if (
@@ -95,6 +98,9 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
     StepInput !== null &&
     'step' in StepInput
   ) {
+    if (typeof StepInput.locale == 'string') {
+      def.aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.locale)
+    }
     if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString
       def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
@@ -198,4 +204,39 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
     return false
   }
   return true
+}
+
+function getTimeZoneOffsetInMinutes(
+  timeZone: string,
+  date: Date = new Date(),
+): number {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(date)
+  const getPart = (partName: string) =>
+    parseInt(parts.find((p) => p.type === partName)?.value || '0', 10)
+
+  const targetTimeAsUTC = Date.UTC(
+    getPart('year'),
+    getPart('month') - 1,
+    getPart('day'),
+    getPart('hour'),
+    getPart('minute'),
+    getPart('second'),
+  )
+
+  const originalUTCTime = date.getTime()
+  const offsetInMilliseconds = targetTimeAsUTC - originalUTCTime
+  const offsetInMinutes = offsetInMilliseconds / (1000 * 60)
+
+  return Math.round(offsetInMinutes)
 }

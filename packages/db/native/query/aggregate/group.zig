@@ -10,7 +10,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 15;
+pub const ProtocolLen = 17;
 
 pub const GroupCtx = struct {
     hashMap: GroupByHashMap,
@@ -23,6 +23,7 @@ pub const GroupCtx = struct {
     propType: types.Prop,
     stepType: u8,
     stepRange: u32,
+    timezone: i16,
 };
 
 pub inline fn setGroupResults(
@@ -160,8 +161,9 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const len = read(u16, aggInput, 4);
     const stepType: u8 = aggInput[6];
     const stepRange: u32 = read(u32, aggInput, 7);
-    const resultsSize = read(u16, aggInput, 11);
-    const accumulatorSize = read(u16, aggInput, 13);
+    const timezone: i16 = read(i16, aggInput, 11);
+    const resultsSize = read(u16, aggInput, 13);
+    const accumulatorSize = read(u16, aggInput, 15);
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
@@ -176,6 +178,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .accumulatorSize = accumulatorSize,
         .stepType = stepType,
         .stepRange = stepRange,
+        .timezone = timezone,
     };
     return groupCtx;
 }

@@ -104,6 +104,7 @@ export type QueryDefAggregation = {
 export interface aggPropDef extends PropDef {
   stepType?: Interval
   stepRange?: number
+  tz?: number
   display?: Intl.DateTimeFormat
 }
 
