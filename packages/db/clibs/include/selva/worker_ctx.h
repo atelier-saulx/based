@@ -27,3 +27,9 @@ enum libdeflate_result worker_ctx_libdeflate_decompress_stream(
 
 SELVA_EXPORT
 bool worker_ctx_libdeflate_block_state_growbuf(void);
+
+SELVA_EXPORT
+enum libdeflate_result worker_ctx_libdeflate_decompress_short(
+        const void *in, size_t in_nbytes,
+        void *out, size_t out_nbytes_avail,
+        size_t *actual_out_nbytes_ret);

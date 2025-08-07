@@ -1,6 +1,7 @@
 const selva = @import("../selva.zig");
 const std = @import("std");
 const db = @import("./db.zig");
+const deflateErrors = @import("../errors.zig").deflate;
 
 const CtxC = struct { result: []u8 };
 
@@ -19,17 +20,10 @@ pub fn cb(
 }
 
 pub inline fn decompressFirstBytes(
-    value: []u8,
-) []u8 {
-    var ctx: CtxC = .{ .result = &.{} };
-    var r: c_int = 0;
-    // TODO: make a specific fn for this (with max len)
-    _ = selva.worker_ctx_libdeflate_decompress_stream(
-        value[6..value.len].ptr,
-        value.len - 10,
-        cb,
-        @ptrCast(&ctx),
-        &r,
-    );
-    return ctx.result;
+    input: []u8,
+    output: []u8
+) ![]u8 {
+    var nbytes: usize = 0;
+    try deflateErrors(selva.worker_ctx_libdeflate_decompress_short(input[6..input.len].ptr, input.len - 10, output.ptr, output.len, &nbytes));
+    return output[0..nbytes];
 }
