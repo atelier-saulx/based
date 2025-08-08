@@ -1,7 +1,7 @@
-# String and Text Fields
+# String and Text
 
 A string field can contain a single UTF-8 string of either unlimited length or
-fixed length. a Text field can contain an UTF-8 string translations of the same
+fixed length. A Text field can contain an UTF-8 string translations of the same
 text in any supported language.
 
 ```js
@@ -52,11 +52,12 @@ ÅffiIX
 In some cases the user might want to store string in a non-lossy manner.
 Currently this can be achieved by storing the string(s) in a `binary` field.
 
-### In-Memory
+### In-memory
 
 Internally every string in the database is stored as follows:
 
 ```mermaid
+%%{init: { 'packet': {'bitWidth': 20, 'bitsPerRow': 64} } }%%
 packet-beta
 title String/Text
 0-7: "Lang (none=0)"
@@ -64,23 +65,32 @@ title String/Text
 16-59: "Data (variable length)"
 60-63: "CRC32C"
 ```
+where
 
 | Comp | Description    |
 | ---- | -------------- |
 | 0    | No compression |
 | 1    | Raw deflate    |
 
-### Comp=1
+**Comp=1**
 
 ```mermaid
+%%{init: { 'packet': {'bitWidth': 20, 'bitsPerRow': 64} } }%%
 packet-beta
 title String/Text
 0-7: "Lang (none=0)"
 8-15: "1"
 16-47: "Uncompressed size"
-48-123: "Data (variable length)"
+48-123: "Deflated data (variable length)"
 124-127: "CRC32C"
 ```
+
+In the compressed case the CRC32C value is calculated over the uncompressed data.
+It's done like this to protect the data from both, errors while stored in compressed
+format as well as decompression errors. Moreover, a slight change in the compressed
+data may affect multiple bits in the decompression output and thus more easily result
+a CRC32C value that is correvt, even if the output is not correct. The downside is
+that the deflate decompression code must be more robust against bit errors.
 
 ## String Search
 
