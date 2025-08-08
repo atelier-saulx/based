@@ -1237,8 +1237,7 @@ typedef enum libdeflate_result (*decompress_short_func_t)
     (struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-     int *is_final_block_ret);
+     size_t *actual_out_nbytes_ret, int *is_final_block_ret);
 
 #define FUNCNAME deflate_decompress_default
 #define FUNCNAME_SHORT deflate_decompress_short_default
@@ -1335,8 +1334,7 @@ libdeflate_decompress_short(struct libdeflate_decompressor *d,
                   size_t *actual_out_nbytes_ret)
 {
     decompress_block_init(d);
-    return decompress_short_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
-                                 NULL, actual_out_nbytes_ret);
+    return decompress_short_impl(d, in, in_nbytes, out, 0, out_nbytes_avail, actual_out_nbytes_ret);
 }
 
 LIBDEFLATEEXPORT struct libdeflate_decompressor *

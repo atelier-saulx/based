@@ -636,7 +636,7 @@ block_done:
         }
 
         _DEF_bitstream_byte_restore();
-        //backup for next block
+        /* backup for next block */
         d->bitsleft_back = bitsleft & 7;
         d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
 
@@ -662,7 +662,10 @@ static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME_SHORT(struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret)
+#if 0
+     size_t *actual_in_nbytes_ret,
+#endif
+     size_t *actual_out_nbytes_ret)
 {
     u8 *out_next = ((u8 *)out) + in_dict_nbytes;
     u8 * const out_end = out_next + out_nbytes_avail;
@@ -985,18 +988,22 @@ block_done:
         if (out_next < out_end)
             goto next_block;
 
+#if 0
         _DEF_bitstream_byte_restore();
-        //backup for next block
+        /* backup for next block */
         d->bitsleft_back = bitsleft & 7;
         d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
+#endif
 
         rc = LIBDEFLATE_MORE;
     }
 
+#if 0
     /* Optionally return the actual number of bytes consumed. */
     if (actual_in_nbytes_ret) {
         *actual_in_nbytes_ret = in_next - (u8 *)in;
     }
+#endif
 
     /* Optionally return the actual number of bytes written. */
     if (actual_out_nbytes_ret) {
