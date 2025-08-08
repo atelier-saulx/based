@@ -11,8 +11,8 @@
   - [Alias](/db/alias)
   - [Enum](/db/enum)
   - [Vectors](/db/vectors)
-row and columnar vectors: vector and colvec
-cardinality set
+  - [Cardinality set](/db/cardinality)
 - [Queries](/db/api?id=query)
 - [Examples](/db/examples)
 - [API reference](/db/api)
+- [Internals](/db/Internals)
