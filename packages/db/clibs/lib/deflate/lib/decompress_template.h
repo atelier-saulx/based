@@ -875,10 +875,6 @@ next_block:
 
         SAFETY_CHECK(len == (u16)~nlen);
         SAFETY_CHECK(len <= in_end - in_next);
-        if (len > out_end - out_next) {
-            memcpy(out_next, in_next, out_end - out_next);
-            goto block_done;
-        }
 
         size_t left = out_end - out_next;
         size_t copy_len = MIN(len, left);
