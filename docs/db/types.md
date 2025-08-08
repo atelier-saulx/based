@@ -60,19 +60,6 @@ await db.setSchema({
 
 ## Alias
 
-```js
-await db.setSchema({
-  types: {
-    vendor: {
-      props: {
-        vendorId: 'alias',
-        name: 'string',
-      },
-    },
-  }
-})
-```
-
 ## Enum
 
 ```js
@@ -115,6 +102,10 @@ text in any supported language.
 
 ```js
 await db.setSchema({
+  locales: {
+    en: {},
+    fi: { fallback: 'en' },
+  },
   types: {
     user: {
       props: {
@@ -125,6 +116,13 @@ await db.setSchema({
       },
     },
   },
+})
+
+db.create('user', {
+  name: 'Bob',
+  email: 'bob',
+  age: 30,
+  bio: { en: 'Empty.', fi: 'Tyhjä.' },
 })
 ```
 
