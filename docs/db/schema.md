@@ -8,7 +8,7 @@ Use `format` to specify in which format the value has to represented and modifie
 
 **For example**:
 
-```ts
+```js
 {
     types: {
         article: {

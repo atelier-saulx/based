@@ -1,6 +1,6 @@
 # Cardinality
 
-```ts
+```js
 await db.setSchema({
   types: {
     page: {

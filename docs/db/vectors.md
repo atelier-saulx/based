@@ -2,7 +2,7 @@
 
 ## vector
 
-```ts
+```js
 await db.setSchema({
   types: {
     data: {
@@ -19,7 +19,7 @@ await db.setSchema({
 
 ## colvec
 
-```ts
+```js
 await db.setSchema({
   types: {
     col: {
