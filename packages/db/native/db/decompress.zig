@@ -19,6 +19,7 @@ pub fn cb(
     return 1;
 }
 
+// Decompress as many bytes as will fit to output or available in the compressed buffer
 pub inline fn decompressFirstBytes(
     input: []u8,
     output: []u8
