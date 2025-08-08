@@ -1,4 +1,4 @@
-# String and Text Fields
+# String and Text
 
 A string field can contain a single UTF-8 string of either unlimited length or
 fixed length. A Text field can contain an UTF-8 string translations of the same
