@@ -544,7 +544,7 @@ await test.skip('taxi', async (t) => {
     .filter('pickupYear', '>=', 2022)
     .filter('pickupYear', '<=', 2024)
     .sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
-    .groupBy('pickup', { step: 'month' })
+    .groupBy('pickup', { step: 'month', timeZone: 'America/New_York' })
     .get().inspect()
 
   // Revenue Breakdown by Vendor
@@ -552,7 +552,7 @@ await test.skip('taxi', async (t) => {
   await db
     .query('vendor')
     .include('name', (select) => {
-      select('trips').groupBy('pickup', { step: 'year' }).sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
+      select('trips').groupBy('pickup', { step: 'year', timeZone: 'America/New_York' }).sum('fees.totalAmount', 'fees.tollsAmount', 'fees.tipAmount')
     })
     .get().inspect()
 
@@ -562,7 +562,7 @@ await test.skip('taxi', async (t) => {
   //await db
   //  .query('trip')
   //  .include('pickup', 'fees.tipAmount', 'tripDistance')
-  //  .groupBy('pickup', { step: 'day' })
+  //  .groupBy('pickup', { step: 'day', timeZone: 'America/New_York' })
   //  .sort('fees.tipAmount', 'desc')
   //  .range(0, 10)
   //  .get().inspect()
@@ -573,12 +573,12 @@ await test.skip('taxi', async (t) => {
     .query('trip')
     .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
-    .groupBy('pickup', { step: 'dow' })
+    .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get().toObject()
   const rh2 = await db
     .query('trip')
-    .groupBy('pickup', { step: 'dow' })
+    .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get().toObject()
   console.log(Object.keys(day2enum).reduce((prev, key) =>
@@ -600,7 +600,7 @@ await test.skip('taxi', async (t) => {
     .query('trip')
     .filter('pickupHour', '>=', 7).filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
-    .groupBy('pickup', { step: 'dow' })
+    .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     //.groupBy('pickupDropoffLocs')
     .harmonicMean('avgSpeed')
     .get().inspect()
