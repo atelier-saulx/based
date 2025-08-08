@@ -60,6 +60,19 @@ await db.setSchema({
 
 ## Alias
 
+```js
+await db.setSchema({
+  types: {
+    vendor: {
+      props: {
+        vendorId: 'alias',
+        name: 'string',
+      },
+    },
+  }
+})
+```
+
 ## Enum
 
 ```js
