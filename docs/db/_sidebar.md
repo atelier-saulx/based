@@ -3,7 +3,7 @@
 - [Install](/db/install)
 - [Getting started](/db/getting-started)
 - [Schema](/db/schema)
-  - [string and text](/db/text)
+  - [string and text](/text)
 - [Queries](/db/api?id=query)
 - [Examples](/db/examples)
 - [API reference](/db/api)
