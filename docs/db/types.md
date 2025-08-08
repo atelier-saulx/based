@@ -255,9 +255,27 @@ await db.setSchema({
     },
   },
 })
+
+db.create('col', {
+  vec: new Float32Array([
+    2311,
+    5054,
+    1.5612034346858506e-39,
+    1.007378107771942e-37,
+    3.76158192263132e-37,
+    1.6815581571897805e-44,
+    0,
+    5391
+  ]),
+})
 ```
 
-`colvec` fields are stored on `size * blockCapacity` sized arrays in-memory.
+`colvec` is a columnar property type where each column is stored as big
+contiguous arrays. When Based processes a `colvec` property in a query, it works
+on batches of property values, instead of one node and property at a time.
+`colvec`s are stored in `size * blockCapacity` sized arrays in-memory. This
+makes it possible to utilize hardware-level vectorization of queries on `colvec`
+props.
 
 ```mermaid
 block-beta
