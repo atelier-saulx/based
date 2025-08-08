@@ -6,4 +6,4 @@
 - [Queries](/db/api?id=query)
 - [Examples](/db/examples)
 - [API reference](/db/api)
-- [Internals](/db/Internals)
+- [Internals](/db/internals)
