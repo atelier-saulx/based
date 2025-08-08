@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0-alpha.60",
+  "version": "8.0.0-alpha.61",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
@@ -70,6 +70,8 @@
     "source-map": "^0.7.4",
     "terminal-kit": "^3.1.1",
     "uuid": "^11.1.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "postmark": "3.0.15"
   }
 }
+
