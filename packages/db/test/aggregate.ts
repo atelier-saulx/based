@@ -2665,10 +2665,3 @@ await test('dev', async (t) => {
   // })
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })
-
-// TODO:
-// cardinality in references
-// aggregation on edges
-
-// numeric ranges
-// await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()
