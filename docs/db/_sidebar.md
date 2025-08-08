@@ -3,7 +3,16 @@
 - [Install](/db/install)
 - [Getting started](/db/getting-started)
 - [Schema](/db/schema)
-  - [string and text](/db/text)
+  - [String and Text](/db/text)
+  - [Binary](/db/binary)
+  - [Timestamp](/db/timestamp)
+  - [Numeric types](/db/numeric)
+  - [Boolean](/db/boolean)
+  - [Alias](/db/alias)
+  - [Enum](/db/enum)
+  - [Vectors](/db/vectors)
+row and columnar vectors: vector and colvec
+cardinality set
 - [Queries](/db/api?id=query)
 - [Examples](/db/examples)
 - [API reference](/db/api)
