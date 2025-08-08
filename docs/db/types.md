@@ -36,6 +36,10 @@ await db.setSchema({
     },
   },
 })
+
+db.create('article', {
+  published: false,
+})
 ```
 
 ## Numeric
@@ -60,6 +64,31 @@ await db.setSchema({
 
 ## Alias
 
+```js
+await db.setSchema({
+  types: {
+    vendor: {
+      props: {
+        vendorId: 'alias',
+        name: 'string',
+      },
+    },
+  }
+})
+
+// Suppose vendorId comes from an external system
+db.create('vendor', {
+  vendorId: '1',
+  name: 'Vendor A',
+})
+
+// Vendor A is still there but the id is now taken by Vendor B
+db.upsert('vendor', {
+  vendorId: '1',
+  name: 'Vendor B',
+})
+```
+
 ## Enum
 
 ```js
@@ -79,6 +108,28 @@ await db.setSchema({
 ```
 
 ## JSON
+
+```js
+await db.setSchema({
+  types: {
+    person: {
+      name: 'string',
+      myJson: 'json',
+    },
+  },
+})
+
+await db.create('person', {
+  name: 'jason',
+  myJson: {
+    bllz: {
+      to: {
+        the: 'wallz',
+      },
+    },
+  },
+})
+```
 
 ## Binary
 
