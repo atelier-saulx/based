@@ -7,7 +7,6 @@ import { inviteTemplate } from './invite.js'
 let postMarkClient: PostmarkClient
 
 const templatePostmarkToken = process.env.TEMPLATE_POSTMARK_TOKEN
-console.log('-======-------', templatePostmarkToken)
 
 type Payload = {
   type: 'invite' | 'passwordReset' | 'magicLink'
