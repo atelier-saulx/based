@@ -3,7 +3,7 @@
 ```js
 await db.setSchema({
   types: {
-    user: {
+    doc: {
       props: {
         file: { type: 'binary' },
       },
