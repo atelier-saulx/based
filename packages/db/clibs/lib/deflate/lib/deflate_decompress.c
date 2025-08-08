@@ -421,6 +421,13 @@ static const u32 precode_decode_results[] = {
 #undef ENTRY
 };
 
+/**
+ * The order in which precode lengths are stored
+ */
+static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
 /* Litlen and offset decode table entry flags */
 
 /* Indicates a literal entry in the litlen decode table */
@@ -1016,9 +1023,7 @@ build_precode_decode_table(struct libdeflate_decompressor *d)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
     static_assert(PRECODE_TABLEBITS == 7 && PRECODE_ENOUGH == 128);
-
-    static_assert(ARRAY_LEN(precode_decode_results) ==
-              DEFLATE_NUM_PRECODE_SYMS);
+    static_assert(ARRAY_LEN(precode_decode_results) == DEFLATE_NUM_PRECODE_SYMS);
 
     return build_decode_table(d->u.l.precode_decode_table,
                   d->u.precode_lens,

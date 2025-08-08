@@ -1,7 +1,7 @@
 /*
  * decompress_template.h
  *
- * Copyright (c) 2024 SAULX
+ * Copyright (c) 2024-2025 SAULX
  * Copyright 2023-2024 housisong
  * Copyright 2016 Eric Biggers
  *
@@ -99,10 +99,6 @@ next_block:
     block_type = (bitbuf >> 1) & BITMASK(2);
 
     if (block_type == DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN) {
-        /* The order in which precode lengths are stored */
-        static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
-            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-        };
 
         unsigned num_litlen_syms;
         unsigned num_offset_syms;
@@ -131,15 +127,13 @@ next_block:
          */
         static_assert(DEFLATE_MAX_PRE_CODEWORD_LEN == (1 << 3) - 1);
         if (CAN_CONSUME(3 * (DEFLATE_NUM_PRECODE_SYMS - 1))) {
-            d->u.precode_lens[deflate_precode_lens_permutation[0]] =
-                (bitbuf >> 17) & BITMASK(3);
+            d->u.precode_lens[deflate_precode_lens_permutation[0]] = (bitbuf >> 17) & BITMASK(3);
             bitbuf >>= 20;
             bitsleft -= 20;
             REFILL_BITS();
             i = 1;
             do {
-                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
-                    bitbuf & BITMASK(3);
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] = bitbuf & BITMASK(3);
                 bitbuf >>= 3;
                 bitsleft -= 3;
             } while (++i < num_explicit_precode_lens);
@@ -150,8 +144,7 @@ next_block:
             do {
                 if ((u8)bitsleft < 3)
                     REFILL_BITS();
-                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
-                    bitbuf & BITMASK(3);
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] = bitbuf & BITMASK(3);
                 bitbuf >>= 3;
                 bitsleft -= 3;
             } while (++i < num_explicit_precode_lens);
@@ -178,8 +171,7 @@ next_block:
             static_assert(PRECODE_TABLEBITS == DEFLATE_MAX_PRE_CODEWORD_LEN);
 
             /* Decode the next precode symbol. */
-            entry = d->u.l.precode_decode_table[
-                bitbuf & BITMASK(DEFLATE_MAX_PRE_CODEWORD_LEN)];
+            entry = d->u.l.precode_decode_table[bitbuf & BITMASK(DEFLATE_MAX_PRE_CODEWORD_LEN)];
             bitbuf >>= (u8)entry;
             bitsleft -= entry; /* optimization: subtract full entry */
             presym = entry >> 16;
@@ -252,8 +244,7 @@ next_block:
 
                 bitbuf >>= 7;
                 bitsleft -= 7;
-                memset(&d->u.l.lens[i], 0,
-                       rep_count * sizeof(d->u.l.lens[i]));
+                memset(&d->u.l.lens[i], 0, rep_count * sizeof(d->u.l.lens[i]));
                 i += rep_count;
             }
         } while (i < num_litlen_syms + num_offset_syms);
@@ -519,8 +510,7 @@ next_block:
                     EXTRACT_VARBITS(bitbuf, (entry >> 8) & 0x3F)];
                 REFILL_BITS_IN_FASTLOOP();
                 /* No further refill needed before extra bits */
-                static_assert(CAN_CONSUME(
-                    OFFSET_MAXBITS - OFFSET_TABLEBITS));
+                static_assert(CAN_CONSUME(OFFSET_MAXBITS - OFFSET_TABLEBITS));
             } else {
                 /* No refill needed before extra bits */
                 static_assert(CAN_CONSUME(OFFSET_MAXFASTBITS));
@@ -704,11 +694,6 @@ next_block:
     block_type = (bitbuf >> 1) & BITMASK(2);
 
     if (block_type == DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN) {
-        /* The order in which precode lengths are stored */
-        static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
-            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-        };
-
         unsigned num_litlen_syms;
         unsigned num_offset_syms;
         unsigned num_explicit_precode_lens;
@@ -736,15 +721,13 @@ next_block:
          */
         static_assert(DEFLATE_MAX_PRE_CODEWORD_LEN == (1 << 3) - 1);
         if (CAN_CONSUME(3 * (DEFLATE_NUM_PRECODE_SYMS - 1))) {
-            d->u.precode_lens[deflate_precode_lens_permutation[0]] =
-                (bitbuf >> 17) & BITMASK(3);
+            d->u.precode_lens[deflate_precode_lens_permutation[0]] = (bitbuf >> 17) & BITMASK(3);
             bitbuf >>= 20;
             bitsleft -= 20;
             REFILL_BITS();
             i = 1;
             do {
-                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
-                    bitbuf & BITMASK(3);
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] = bitbuf & BITMASK(3);
                 bitbuf >>= 3;
                 bitsleft -= 3;
             } while (++i < num_explicit_precode_lens);
@@ -755,8 +738,7 @@ next_block:
             do {
                 if ((u8)bitsleft < 3)
                     REFILL_BITS();
-                d->u.precode_lens[deflate_precode_lens_permutation[i]] =
-                    bitbuf & BITMASK(3);
+                d->u.precode_lens[deflate_precode_lens_permutation[i]] = bitbuf & BITMASK(3);
                 bitbuf >>= 3;
                 bitsleft -= 3;
             } while (++i < num_explicit_precode_lens);
@@ -783,8 +765,7 @@ next_block:
             static_assert(PRECODE_TABLEBITS == DEFLATE_MAX_PRE_CODEWORD_LEN);
 
             /* Decode the next precode symbol. */
-            entry = d->u.l.precode_decode_table[
-                bitbuf & BITMASK(DEFLATE_MAX_PRE_CODEWORD_LEN)];
+            entry = d->u.l.precode_decode_table[bitbuf & BITMASK(DEFLATE_MAX_PRE_CODEWORD_LEN)];
             bitbuf >>= (u8)entry;
             bitsleft -= entry; /* optimization: subtract full entry */
             presym = entry >> 16;
@@ -857,8 +838,7 @@ next_block:
 
                 bitbuf >>= 7;
                 bitsleft -= 7;
-                memset(&d->u.l.lens[i], 0,
-                       rep_count * sizeof(d->u.l.lens[i]));
+                memset(&d->u.l.lens[i], 0, rep_count * sizeof(d->u.l.lens[i]));
                 i += rep_count;
             }
         } while (i < num_litlen_syms + num_offset_syms);
@@ -898,7 +878,6 @@ next_block:
         if (len > out_end - out_next) {
             memcpy(out_next, in_next, out_end - out_next);
             goto block_done;
-            //return LIBDEFLATE_INSUFFICIENT_SPACE;
         }
 
         size_t left = out_end - out_next;
