@@ -81,7 +81,7 @@ export type IntervalString = keyof typeof Interval
 
 export type StepObject = {
   step?: number | IntervalString
-  locale?: string
+  timeZone?: string
   display?: Intl.DateTimeFormat
 }
 

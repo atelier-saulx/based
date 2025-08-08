@@ -98,8 +98,8 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
     StepInput !== null &&
     'step' in StepInput
   ) {
-    if (typeof StepInput.locale == 'string') {
-      def.aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.locale)
+    if (typeof StepInput.timeZone == 'string') {
+      def.aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
     }
     if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString

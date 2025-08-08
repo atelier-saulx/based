@@ -2432,7 +2432,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('pickup', { step: 'day', locale: 'America/Sao_Paulo' })
+      .groupBy('pickup', { step: 'day', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       10: {
@@ -2449,7 +2449,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('pickup', { step: 'hour', locale: 'America/Sao_Paulo' })
+      .groupBy('pickup', { step: 'hour', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       21: {
@@ -2465,7 +2465,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('dropoff', { step: 'month', locale: 'America/Sao_Paulo' })
+      .groupBy('dropoff', { step: 'month', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       11: {
