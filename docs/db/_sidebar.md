@@ -1,0 +1,8 @@
+- [← Back to main docs](/)
+- [🏠 BasedDB Overview](/db/)
+- [Install](/db/install)
+- [Getting started](/db/getting-started)
+- [Schema](/db/schema)
+- [Queries](/db/api?id=query)
+- [Examples](/db/examples)
+- [API reference](/db/api)

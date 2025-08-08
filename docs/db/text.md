@@ -32,12 +32,12 @@ change.
 **Example**
 
 ```js
-const buf1 = Buffer.from('ÅﬃⅨ'.normalize('NFKD'), 'utf-8');
-const buf2 = Buffer.from('ÅﬃⅨ', 'utf-8');
-console.log(buf1);
-console.log(buf1.toString());
-console.log(buf2);
-console.log(buf2.toString());
+const buf1 = Buffer.from('ÅﬃⅨ'.normalize('NFKD'), 'utf-8')
+const buf2 = Buffer.from('ÅﬃⅨ', 'utf-8')
+console.log(buf1)
+console.log(buf1.toString())
+console.log(buf2)
+console.log(buf2.toString())
 ```
 
 Prints:
@@ -55,7 +55,7 @@ Currently this can be achieved by storing the string(s) in a `binary` field.
 ### In-Memory
 
 Internally every string in the database is stored as follows:
-                             
+
 ```mermaid
 packet-beta
 title String/Text
@@ -64,11 +64,11 @@ title String/Text
 16-59: "Data (variable length)"
 60-63: "CRC32C"
 ```
-            
+
 | Comp | Description    |
-|------|----------------|
-|    0 | No compression |
-|    1 | Raw deflate    |
+| ---- | -------------- |
+| 0    | No compression |
+| 1    | Raw deflate    |
 
 ### Comp=1
 

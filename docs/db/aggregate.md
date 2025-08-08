@@ -1,13 +1,13 @@
 # Aggregations
 
 This document provides a guide to creating aggregation queries. Aggregation queries allow you to perform calculations on your data and return summarized results.
-Full query examples can be found in the [tests](./test/aggregate.ts)
+Full query examples can be found in the [tests](https://github.com/atelier-saulx/based/blob/main/packages/db/test/aggregate.ts)
 
 ---
 
-### Features Covered
+## Features Covered
 
-#### General Purpose Aggregate Functions
+### General Purpose Aggregate Functions
 
 - **`sum()`**: Calculates the sum of numeric properties.
 - **`count()`**: Counts the number of records.
@@ -17,8 +17,10 @@ Full query examples can be found in the [tests](./test/aggregate.ts)
 
 ### Statistical Aggregate Functions
 
+- **`hmean()`**: Computes the harmonic mean of numeric properties.
 - **`stddev()`**: Calculates the standard deviation of numeric properties. Default: Population Standard Deviation.
 - **`var()`**: Computes the variance of numeric properties. Default: Population Variance.
+- **`cardinality()`**: Estimate the count of distinct records.
 
 ### Grouping Operations
 
@@ -31,14 +33,16 @@ Full query examples can be found in the [tests](./test/aggregate.ts)
 - **Branched Queries / Nested object notation** for properties.
 - **Aggregations on references (relationships)**.
 - **Grouping by enum types**.
+- **Grouping by timestamp types**.
+- **Grouping by with custom intervals**.
 
 ---
 
-### Basic Aggregation Queries
+## Basic Aggregation Queries
 
 You can perform aggregations directly on a collection of data.
 
-#### `sum()`
+### `sum()`
 
 The `sum()` function calculates the total sum of specified numeric properties.
 
@@ -101,7 +105,7 @@ yields: `{ NL: 0 }`
 
 This by desig behaviour also afects statistical functions as you can see in [Handling Numeric Types and `undefined` Values](#handling-numeric-types-and-undefined-values)
 
-#### `count()`
+### `count()`
 
 The `count()` function returns the total number of records that match the query.
 
@@ -117,11 +121,11 @@ yields:
 
 `{ $count: 3 }`
 
-### Grouping Aggregations with `groupBy()`
+## Grouping Aggregations with `groupBy()`
 
 The `groupBy()` function allows you to categorize your data based on a property and then apply aggregations to each group.
 
-#### `sum()` with `groupBy()`
+### `sum()` with `groupBy()`
 
 **Grouping by a single property and summing:**
 
@@ -162,9 +166,9 @@ yields:
 
 ---
 
-### General Purpose and Statistical Aggregations
+## General Purpose and Statistical Aggregations
 
-#### `avg()` (Average)
+### `avg()` (Average)
 
 Calculates the average value of specified numeric properties.
 
@@ -194,7 +198,7 @@ yields:
   },
 ```
 
-#### `stddev()` (Standard Deviation)
+### `stddev()` (Standard Deviation)
 
 Computes the standard deviation of numeric properties. Considers that the dataset represents the statistical population.
 
@@ -223,7 +227,7 @@ yields:
   },
 ```
 
-#### `var()` (Variance)
+### `var()` (Variance)
 
 Calculates the variance of numeric properties. Considers that the dataset represents the statistical population.
 
@@ -250,7 +254,7 @@ yields:
   },
 ```
 
-#### `max()` (Maximum Value)
+### `max()` (Maximum Value)
 
 Finds the maximum value for specified numeric properties. Multiple props acts the same way as `ìnclude()`
 
@@ -283,7 +287,7 @@ yields:
   },
 ```
 
-#### `min()` (Minimum Value)
+### `min()` (Minimum Value)
 
 Finds the minimum value for specified numeric properties.
 
@@ -293,11 +297,11 @@ Finds the minimum value for specified numeric properties.
 
 ---
 
-### Aggregations on Referenced Data
+## Aggregations on Referenced Data
 
 You can perform aggregations on data that is referenced by other records using the `include()` method. This is often referred to as "branched includes" or "branched queries".
 
-#### `sum()` on references
+### `sum()` on references
 
 ```javascript
 await db
@@ -316,7 +320,7 @@ yields:
 [{ id: 1, votes: { NL: 30, AU: 15 } }]
 ```
 
-#### `groupBy()` and `sum()` on references
+### `groupBy()` and `sum()` on references
 
 ```javascript
 await db
@@ -334,7 +338,7 @@ yields:
 [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
 ```
 
-#### Aggregations on references with parent properties
+### Aggregations on references with parent properties
 
 You can include parent properties alongside aggregated referenced data:
 
@@ -388,7 +392,7 @@ deepEqual(
 
 ---
 
-### Handling Numeric Types and `undefined` Values
+## Handling Numeric Types and `undefined` Values
 
 The aggregation functions correctly handle different numeric types (e.g., `uint8`, `int8`, `number`). When a numeric property is `undefined` for a record, it is treated as `0` for aggregation purposes, which can affect `avg()` and `max()`/`min()` results if not considered.
 
@@ -423,7 +427,7 @@ In the `max()` example, `FI` is `0` if not present in a record, thus `max` would
 
 ---
 
-### Grouping by Enum Types
+## Grouping by Enum Types
 
 You can also use `groupBy()` on properties with `enum` types.
 
