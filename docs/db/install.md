@@ -1,6 +1,6 @@
 # Install
 
-## npm
+First run:
 
 ```bash
 npm install @based/db
