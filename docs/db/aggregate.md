@@ -28,7 +28,7 @@ Full query examples can be found in the [tests](https://github.com/atelier-saulx
 
 ### Other features
 
-- **Suports for standard Based DB operations** like `filter()`, `include()`, `limit()`, etc.
+- **Support for standard Based DB operations** like `filter()`, `include()`, `limit()`, etc.
 - **Support for various numeric types**: `uint8`, `int8`, `uint16`, `int16`, `uint32`, `int32`, `number`.
 - **Branched Queries / Nested object notation** for properties.
 - **Aggregations on references (relationships)**.
