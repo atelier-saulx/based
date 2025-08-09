@@ -1,6 +1,12 @@
 import { writeUint16, writeInt16, writeUint32 } from '@saulx/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
-import { AggregateType, GroupBy, StepInput } from './types.js'
+import {
+  AggregateType,
+  GroupBy,
+  StepInput,
+  aggFnOptions,
+  setMode,
+} from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
 import {
   aggregationFieldDoesNotExist,
@@ -42,6 +48,8 @@ export const aggregateToBuffer = (
   i += 2
   writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
+  aggBuffer[i] = setMode[aggregates?.options?.mode] || 0
+  i += 1
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
     i += 1
@@ -85,7 +93,7 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 11
+    def.aggregate.size += 12
   }
   def.aggregate.groupBy = fieldDef
   def.aggregate.groupBy.stepRange = undefined
@@ -124,12 +132,16 @@ export const addAggregate = (
   type: AggregateType,
   def: QueryDef,
   fields: (string | string[])[],
+  options?: aggFnOptions,
 ) => {
   ensureAggregate(def)
+
+  if (options?.mode) def.aggregate.options = options
+
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
-      addAggregate(type, def, field)
+      addAggregate(type, def, field, options)
     } else {
       const fieldDef: PropDef =
         type === AggregateType.COUNT

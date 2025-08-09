@@ -10,7 +10,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 17;
+pub const ProtocolLen = 18;
 
 pub const GroupCtx = struct {
     hashMap: GroupByHashMap,

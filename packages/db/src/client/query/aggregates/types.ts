@@ -92,3 +92,14 @@ export type StepInput = StepObject | StepShorthand
 export type NormalizedStepObject = {
   step: number | Interval
 }
+
+export enum setMode {
+  'sample',
+  'population',
+}
+
+export type setModeString = keyof typeof setMode
+
+export interface aggFnOptions {
+  mode?: setModeString
+}
