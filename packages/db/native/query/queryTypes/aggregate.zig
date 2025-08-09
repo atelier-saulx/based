@@ -9,10 +9,14 @@ const utils = @import("../../utils.zig");
 const read = utils.read;
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
-const GroupProtocolLen = @import("../aggregate/group.zig").ProtocolLen;
+const groupFunctions = @import("../aggregate/group.zig");
+const GroupProtocolLen = groupFunctions.ProtocolLen;
+const setGroupResults = groupFunctions.setGroupResults;
+const finalizeGroupResults = groupFunctions.finalizeGroupResults;
+const finalizeResults = groupFunctions.finalizeResults;
+const createGroupCtx = groupFunctions.createGroupCtx;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-const finalizeGroupResults = @import("../aggregate/group.zig").finalizeGroupResults;
-const createGroupCtx = @import("../aggregate/group.zig").createGroupCtx;
+
 const c = @import("../../c.zig");
 const aux = @import("../aggregate/utils.zig");
 
@@ -38,6 +42,8 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     index += 2;
     const accumulatorSize = read(u16, aggInput, index);
     index += 2;
+    // options
+    index += 1;
     ctx.size = resultsSize + accumulatorSize;
     const agg = aggInput[index..aggInput.len];
     var resultBuffer: ?*anyopaque = undefined;
@@ -47,6 +53,8 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     }
     const hasFilter = conditions.len > 0;
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
+    const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
+    @memset(accumulatorField, 0);
     var hadAccumulated: bool = false;
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
@@ -62,12 +70,13 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, n, resultsField, hllAccumulator, &hadAccumulated);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
             hadAccumulated = true;
         } else {
             break :checkItem;
         }
     }
+    try finalizeResults(resultsField, accumulatorField, agg);
     writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
     return result;
 }
