@@ -274,18 +274,35 @@ export class QueryBranch<T> {
     return this
   }
 
-  var(...fields: (string | string[])[]): T {
+  var(...fields: (string | string[])[]): T
+  var(...args: [...(string | string[])[], aggFnOptions]): T
+
+  var(...args: (string | string[] | aggFnOptions)[]): T {
+    let option: aggFnOptions = {}
+    let fields: (string | string[])[] = []
+
+    const lastArg = args[args.length - 1]
+    const lastArgIsOptions =
+      typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
+
+    if (lastArgIsOptions) {
+      option = lastArg as aggFnOptions
+      fields = args.slice(0, -1) as (string | string[])[]
+    } else {
+      fields = args as (string | string[])[]
+    }
+
     if (fields.length === 0) {
-      throw new Error('Empty variance function called')
+      throw new Error('Empty variance called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'var',
-        args: fields,
+        args: [fields, option],
       })
     } else {
-      addAggregate(AggregateType.VARIANCE, this.def, fields)
+      addAggregate(AggregateType.VARIANCE, this.def, fields, option)
     }
     // @ts-ignore
     return this

@@ -1328,7 +1328,11 @@ await test('numeric types', async (t) => {
     'stddev, main, group by',
   )
   deepEqual(
-    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 42.25,
@@ -1343,7 +1347,29 @@ await test('numeric types', async (t) => {
         PL: 0,
       },
     },
-    'variance, main, group by',
+    'variance, main, group by, population',
+  )
+  deepEqual(
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'sample' })
+      .groupBy('region')
+      .get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, sample',
+  )
+  deepEqual(
+    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, default (sample)',
   )
   deepEqual(
     await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
@@ -1532,7 +1558,9 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').var('NL'))
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1550,7 +1578,35 @@ await test('numeric types', async (t) => {
         },
       },
     ],
-    'variance, references, group by',
+    'variance, references, group by, pop',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+      )
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, sample',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, defaul (sample)',
   )
 
   deepEqual(

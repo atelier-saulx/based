@@ -94,7 +94,13 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
                 const sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
+                const denominator = @as(f64, @floatFromInt(count)) - 1.0;
+                const variance = if (option == 1)
+                    (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                else
+                    numerator / denominator;
+
                 if (variance < 0.0 and variance > -std.math.inf(f64)) {
                     writeInt(f64, resultsField, resultPos, 0.0);
                 } else {
