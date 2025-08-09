@@ -210,7 +210,7 @@ pub inline fn aggregateRefsDefault(
         }
     }
     const val = try ctx.allocator.alloc(u8, resultsSize);
-    try finalizeResults(val, accumulatorField, agg);
+    try finalizeResults(val, accumulatorField, agg, null); // MV: replace null
 
     try ctx.results.append(.{
         .id = null,

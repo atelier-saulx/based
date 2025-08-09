@@ -48,7 +48,7 @@ export const aggregateToBuffer = (
   i += 2
   writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
-  aggBuffer[i] = setMode[aggregates?.options?.mode] || 0
+  aggBuffer[i] = setMode[aggregates?.option?.mode] || 0
   i += 1
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
@@ -132,16 +132,16 @@ export const addAggregate = (
   type: AggregateType,
   def: QueryDef,
   fields: (string | string[])[],
-  options?: aggFnOptions,
+  option?: aggFnOptions,
 ) => {
   ensureAggregate(def)
 
-  if (options?.mode) def.aggregate.options = options
+  if (option?.mode) def.aggregate.option = option
 
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
-      addAggregate(type, def, field, options)
+      addAggregate(type, def, field, option)
     } else {
       const fieldDef: PropDef =
         type === AggregateType.COUNT

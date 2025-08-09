@@ -244,7 +244,7 @@ export class QueryBranch<T> {
   stddev(...args: [...(string | string[])[], aggFnOptions]): T
 
   stddev(...args: (string | string[] | aggFnOptions)[]): T {
-    let options: aggFnOptions = {}
+    let option: aggFnOptions = {}
     let fields: (string | string[])[] = []
 
     const lastArg = args[args.length - 1]
@@ -252,7 +252,7 @@ export class QueryBranch<T> {
       typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
 
     if (lastArgIsOptions) {
-      options = lastArg as aggFnOptions
+      option = lastArg as aggFnOptions
       fields = args.slice(0, -1) as (string | string[])[]
     } else {
       fields = args as (string | string[])[]
@@ -265,10 +265,10 @@ export class QueryBranch<T> {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'stddev',
-        args: fields,
+        args: [fields, option],
       })
     } else {
-      addAggregate(AggregateType.STDDEV, this.def, fields, options)
+      addAggregate(AggregateType.STDDEV, this.def, fields, option)
     }
     // @ts-ignore
     return this

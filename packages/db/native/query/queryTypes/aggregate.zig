@@ -42,7 +42,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     index += 2;
     const accumulatorSize = read(u16, aggInput, index);
     index += 2;
-    // options
+    const option = aggInput[index];
     index += 1;
     ctx.size = resultsSize + accumulatorSize;
     const agg = aggInput[index..aggInput.len];
@@ -76,7 +76,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             break :checkItem;
         }
     }
-    try finalizeResults(resultsField, accumulatorField, agg);
+    try finalizeResults(resultsField, accumulatorField, agg, option);
     writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
     return result;
 }
@@ -86,7 +86,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     var first = true;
     var node = db.getFirstNode(typeEntry);
     var index: usize = 1;
-
     const groupCtx = try createGroupCtx(aggInput[index .. index + GroupProtocolLen], typeEntry, ctx);
     index += GroupProtocolLen;
     const agg = aggInput[index..];

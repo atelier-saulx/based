@@ -97,7 +97,7 @@ export type QueryDefAggregation = {
   groupBy?: aggPropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
-  options?: aggFnOptions
+  option?: aggFnOptions
   totalResultsSize: number
   totalAccumulatorSize: number
 }
