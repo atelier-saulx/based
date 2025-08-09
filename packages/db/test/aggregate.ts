@@ -965,8 +965,7 @@ await test('agg on references', async (t) => {
   )
 })
 
-// two phase accumulation
-await test('kev', async (t) => {
+await test('two phase accumulation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -1078,46 +1077,48 @@ await test('kev', async (t) => {
     },
     'stddev, top level, groupBy',
   )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').stddev('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: 13.922643427165687,
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, no groupBy',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').stddev('NL').groupBy('country'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         Brazil: {
-  //           NL: 0,
-  //         },
-  //         bb: {
-  //           NL: 6.5,
-  //         },
-  //         aa: {
-  //           NL: 2.5,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, groupBy',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL', { mode: 'population' }))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: 13.922643427165687,
+        },
+      },
+    ],
+    'stddev, branched References, no groupBy',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          Brazil: {
+            NL: 0,
+          },
+          bb: {
+            NL: 6.5,
+          },
+          aa: {
+            NL: 2.5,
+          },
+        },
+      },
+    ],
+    'stddev, branched References, groupBy',
+  )
 })
 
 await test('numeric types', async (t) => {
@@ -1287,7 +1288,11 @@ await test('numeric types', async (t) => {
     'harmonic_mean, main, group by',
   )
   deepEqual(
-    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    await db
+      .query('vote')
+      .stddev('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 6.5,
@@ -1296,6 +1301,24 @@ await test('numeric types', async (t) => {
       aa: {
         NL: 3.5,
         PL: 11.5,
+      },
+      Great: {
+        NL: 0,
+        PL: 0,
+      },
+    },
+    'stddev, main, group by',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: 9.192388155425117,
+        PL: 16.263455967290593,
+      },
+      aa: {
+        NL: 4.949747468305833,
+        PL: 16.263455967290593,
       },
       Great: {
         NL: 0,
@@ -1465,7 +1488,9 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .include((q) =>
+        q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1485,6 +1510,25 @@ await test('numeric types', async (t) => {
     ],
     'stddev, references, group by',
   )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: 9.192388155425117 },
+          aa: { NL: 4.949747468305833 },
+          Great: { NL: 0 },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
+
   deepEqual(
     await db
       .query('sequence')
@@ -1508,6 +1552,7 @@ await test('numeric types', async (t) => {
     ],
     'variance, references, group by',
   )
+
   deepEqual(
     await db
       .query('sequence')

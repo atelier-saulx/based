@@ -16,6 +16,7 @@ pub const GroupCtx = struct {
     hashMap: GroupByHashMap,
     resultsSize: u16,
     accumulatorSize: u16,
+    option: u8,
     fieldSchema: db.FieldSchema,
     start: u16,
     field: u8,
@@ -150,7 +151,7 @@ pub inline fn finalizeGroupResults(
             const resultsField = data[i .. i + ctx.resultsSize];
             @memset(resultsField, 0);
 
-            try finalizeResults(resultsField, accumulatorField, agg, null); // MV: replace null
+            try finalizeResults(resultsField, accumulatorField, agg, ctx.option);
             i += ctx.resultsSize;
         }
     }
@@ -170,6 +171,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const timezone: i16 = read(i16, aggInput, 11);
     const resultsSize = read(u16, aggInput, 13);
     const accumulatorSize = read(u16, aggInput, 15);
+    const option = aggInput[17];
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
@@ -185,6 +187,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .stepType = stepType,
         .stepRange = stepRange,
         .timezone = timezone,
+        .option = option,
     };
     return groupCtx;
 }
