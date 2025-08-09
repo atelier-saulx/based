@@ -8,21 +8,15 @@
 ## Schema and Node Operations
 
 - [Set and Populate a Schema (create nodes)](db/create)
-
 - [Modify nodes (update, upsert, delete, drain and other)](db/modify)
-
 - [Save, Copy, Back-up](db/save)
 
 ## Query
 
 - [Simple query and include](db/simple)
-
 - [Single and Multiple References](db/references)
-
 - [Edges](db/edges)
-
 - [Search](db/search)
-
 - [Range](db/range)
 
 ## Filtering and Sorting

@@ -1,5 +1,19 @@
 # @based/schema
 
+## Types
+
+- [Timestamp](db/types?id=timestamp)
+- [Boolean](db/types?id=boolean)
+- [Numeric](db/types?id=numeric)
+- [Alias](db/types?id=alias)
+- [Enum](db/types?id=enum)
+- [JSON](db/types?id=json)
+- [Binary](db/types?id=binary)
+- [String and Text](db/types?id=string-and-text)
+- [Cardinality](db/types?id=cardinality)
+- [vector](db/types?id=vector)
+- [colvec](db/types?id=colvec)
+
 ## Display & format
 
 Using `display` will not validate or transform and will purely change how the value is shown in UI and API.
