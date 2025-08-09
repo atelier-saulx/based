@@ -18,8 +18,8 @@ Full query examples can be found in the [tests](https://github.com/atelier-saulx
 ### Statistical Aggregate Functions
 
 - **`hmean()`**: Computes the harmonic mean of numeric properties.
-- **`stddev()`**: Calculates the standard deviation of numeric properties. Default: Population Standard Deviation.
-- **`var()`**: Computes the variance of numeric properties. Default: Population Variance.
+- **`stddev()`**: Calculates the standard deviation of numeric properties. Default: Sample set Standard Deviation.
+- **`var()`**: Computes the variance of numeric properties. Default: Sample set Variance.
 - **`cardinality()`**: Estimate the count of distinct records.
 
 ### Grouping Operations
@@ -200,7 +200,11 @@ yields:
 
 ### `stddev()` (Standard Deviation)
 
-Computes the standard deviation of numeric properties. Considers that the dataset represents the statistical population.
+Computes the standard deviation of numeric properties. Considers that the dataset represents the statistical sample by default.
+Standard deviation for population sets can be calculated passing the `mode`argument like: `.var(prop, {mode: 'population'})`.
+
+- `sample`: normalize with `N-1` (which is count - 1), provides the square root of the best unbiased estimator of the variance.
+- `population`: normalize with `N` , this provides the square root of the second moment around the mean.
 
 ```javascript
   await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
@@ -229,7 +233,11 @@ yields:
 
 ### `var()` (Variance)
 
-Calculates the variance of numeric properties. Considers that the dataset represents the statistical population.
+Calculates the variance of numeric properties. Considers that the dataset represents the statistical sample by default.
+Variance for population sets can be calculated passing the `mode`argument like: `.var(prop, {mode: 'population'})`.
+
+- `sample`: normalize with `N-1` (which is count - 1), provides the square root of the best unbiased estimator of the variance.
+- `population`: normalize with `N` , this provides the square root of the second moment around the mean.
 
 ```javascript
   await db.query('vote').var('NL', 'PL').groupBy('region').get(),
