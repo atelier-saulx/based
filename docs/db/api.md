@@ -36,10 +36,14 @@
 
 ## Aggregate Operations and Functions
 
-- [Overview Aggregation](db/aggregate)
-- [General Purpose and Statistical Aggregate Functions](db/aggregate?id=general-purpose-and-statistical-aggregations)
-- [Grouping Operations](db/aggregate?id=grouping-aggregations-with-groupby)
-- [Aggregating references with parent/child properties](db/aggregate?id=aggregations-on-references-with-parent-properties)
+- [General Purpose Aggregate Functions](db/aggregate?id=general-purpose-aggregate-functions)
+- [Statistical Aggregate Functions](db/aggregate?id=statistical-aggregate-functions)
+- [Grouping Operations](db/aggregate?id=grouping-operations)
+- [Temporal Grouping (Time-based Aggregations)](db/aggregate?id=temporal-grouping-time-based-aggregations)
+- [Relationship Aggregations](db/aggregate?id=relationship-aggregations)
+- [Handling Special Cases](db/aggregate?id=handling-special-cases)
+- [Performance Considerations](db/aggregate?id=performance-considerations)
+- [Common Patterns](db/aggregate?id=common-patterns)
 
 ## Display & Formatting
 

@@ -1,445 +1,469 @@
-# Aggregations
+# Aggregation API
 
-This document provides a guide to creating aggregation queries. Aggregation queries allow you to perform calculations on your data and return summarized results.
-Full query examples can be found in the [tests](https://github.com/atelier-saulx/based/blob/main/packages/db/test/aggregate.ts)
+This document provides a the API for creating aggregation queries. Aggregation queries allow you to perform calculations on your data and return summarized results.
+Full query examples can be found in the [tests](https://github.com/atelier-saulx/based/blob/main/packages/db/test/aggregate.ts).
 
----
+## General Purpose Aggregate Functions
 
-## Features Covered
+### `sum(property: string | string[], options?: object)`
 
-### General Purpose Aggregate Functions
+Calculates the sum of numeric properties across nodes.
 
-- **`sum()`**: Calculates the sum of numeric properties.
-- **`count()`**: Counts the number of records.
-- **`avg()`**: Computes the arithmetic mean of numeric properties.
-- **`max()`**: Finds the maximum value of numeric properties.
-- **`min()`**: Finds the minimum value of numeric properties.
-
-### Statistical Aggregate Functions
-
-- **`hmean()`**: Computes the harmonic mean of numeric properties.
-- **`stddev()`**: Calculates the standard deviation of numeric properties. Default: Sample set Standard Deviation.
-- **`var()`**: Computes the variance of numeric properties. Default: Sample set Variance.
-- **`cardinality()`**: Estimate the count of distinct records.
-
-### Grouping Operations
-
-- **`groupBy()`**: Groups results based on the values of a specified property.
-
-### Other features
-
-- **Support for standard Based DB operations** like `filter()`, `include()`, `limit()`, etc.
-- **Support for various numeric types**: `uint8`, `int8`, `uint16`, `int16`, `uint32`, `int32`, `number`.
-- **Branched Queries / Nested object notation** for properties.
-- **Aggregations on references (relationships)**.
-- **Grouping by enum types**.
-- **Grouping by timestamp types**.
-- **Grouping by with custom intervals**.
-
----
-
-## Basic Aggregation Queries
-
-You can perform aggregations directly on a collection of data.
-
-### `sum()`
-
-The `sum()` function calculates the total sum of specified numeric properties.
-
-**Sum of a single property:**
-
-To sum the `NL` property for all `vote` records:
+**Examples:**
 
 ```javascript
-await db.query('vote').sum('NL').get().toObject()
+// Basic sum
+await db.query('vote').sum('NL').get()
+
+// Multiple properties
+await db.query('vote').sum(['NL', 'AU']).get()
+
+// With filtering
+await db.query('vote').filter('country', '=', 'aa').sum('NL').get()
+
+// Nested properties
+await db.query('vote').sum('flap.hello').get()
 ```
 
-**Sum of multiple properties:**
+**Behavior:**
 
-You can sum multiple properties in a single query:
-
-```javascript
-await db.query('vote').sum('NL', 'AU').get().toObject()
-```
-
-**Sum with filtering:**
-
-Combine `sum()` with `filter()` to aggregate data that meets specific criteria:
-
-```javascript
-await db.query('vote').filter('country', '=', 'aa').sum('NL').get().toObject()
-```
-
-**Sum on nested properties:**
-
-You can sum properties within nested objects using dot notation:
-
-```javascript
-await db.query('vote').sum('flap.hello').get().inspect()
-```
-
-yields: `{ flap: { hello: 100 } }`
-
-**Handling empty result sets:**
-
-If a query with `sum()` returns no matching records, the sum for the specified properties will be `0`:
-
-```javascript
-const nl1 = db.create('vote', {
-  country: 'bb',
-  flap: { hello: 100 },
-  NL: 10,
-})
-const nl2 = db.create('vote', {
-  country: 'aa',
-  NL: 20,
-})
-const au1 = db.create('vote', {
-  country: 'aa',
-  AU: 15,
-})
-await db.query('vote').filter('country', '=', 'zz').sum('NL').get().toObject()
-```
-
-yields: `{ NL: 0 }`
-
-This by desig behaviour also afects statistical functions as you can see in [Handling Numeric Types and `undefined` Values](#handling-numeric-types-and-undefined-values)
+- Returns 0 for properties that don't exist
+- Handles all numeric types (int8, uint16, number, etc.)
+- Works with filtered queries
 
 ### `count()`
 
-The `count()` function returns the total number of records that match the query.
+Counts the number of nodes matching the query.
 
-**Returning sintax:**
-
-Besides other aggregate functions returning sintax, Count returns with a "$" sign:
+**Examples:**
 
 ```javascript
-await db.query('vote').count().get().inspect()
+// Simple count
+await db.query('vote').count().get()
+
+// Count with grouping
+await db.query('vote').groupBy('country').count().get()
 ```
 
-yields:
+**Note:** Returns as `{ $count: number }`
 
-`{ $count: 3 }`
+### `avg(property: string | string[], options?: object)`
 
-## Grouping Aggregations with `groupBy()`
+Calculates the arithmetic mean of numeric properties.
 
-The `groupBy()` function allows you to categorize your data based on a property and then apply aggregations to each group.
-
-### `sum()` with `groupBy()`
-
-**Grouping by a single property and summing:**
+**Examples:**
 
 ```javascript
-await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject()
+// Basic average
+await db.query('vote').avg('NL').get()
+
+// Multiple properties
+await db.query('vote').avg(['NL', 'PT', 'FI']).get()
+
+// With grouping
+await db.query('vote').avg('NL').groupBy('region').get()
 ```
 
-yields:
-` { bb: { NL: 10, AU: 0 }, aa: { NL: 20, AU: 15 } }`
+### `max(property: string | string[])` / `min(property: string | string[])`
 
-**`groupBy()` with no aggregation function:**
+Finds the maximum/minimum value of specified properties.
 
-You can use `groupBy()` without an explicit aggregation function to simply categorize results:
+**Examples:**
 
 ```javascript
-  await db.query('vote').groupBy('country').get().toObject(),
+// Single property
+await db.query('vote').max('NL').get()
+
+// Multiple properties
+await db.query('vote').min(['NL', 'NO', 'PT']).groupBy('region').get()
 ```
 
-**Filtering and grouping:**
+## Statistical Aggregate Functions
 
-Filters can be applied before grouping:
+### `stddev(property: string | string[], options?: { mode: 'sample' | 'population' })`
+
+Calculates standard deviation (sample by default).
+
+- `sample`: normalize with `N-1` (which is `count - 1`), provides the square root of the best unbiased estimator of the variance.
+- `population`: normalize with `N` (which is `count`), this provides the square root of the second moment around the mean.
+
+**Examples:**
 
 ```javascript
+// Sample standard deviation
+await db.query('vote').stddev('NL').get()
+
+// Population standard deviation
 await db
   .query('vote')
-  .filter('country', '=', 'bb')
-  .groupBy('country')
-  .count()
+  .stddev('PL', { mode: 'population' })
+  .groupBy('region')
   .get()
-  .toObject()
 ```
 
-yields:
+### `var(property: string | string[], options?: { mode: 'sample' | 'population' })`
 
-```
-{ bb: { $count: 1 } }
-```
+Computes variance (sample by default).
 
----
+- `sample`: normalize with `N-1` (which is `count - 1`), provides the square root of the best unbiased estimator of the variance.
+- `population`: normalize with `N` (which is `count`), this provides the square root of the second moment around the mean.
 
-## General Purpose and Statistical Aggregations
-
-### `avg()` (Average)
-
-Calculates the average value of specified numeric properties.
+**Examples:**
 
 ```javascript
-  await db.query('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
+// Sample variance
+await db.query('vote').var('NL').get()
+
+// Population variance with grouping
+await db.query('vote').var('PL', { mode: 'population' }).groupBy('region').get()
 ```
 
-yields:
+### `hmean(property: string | string[])`
 
-```
-  {
-    bb: {
-      NL: 16.5,
-      PT: 21.5,
-      FI: -500000.15,
-    },
-    aa: {
-      NL: 46.5,
-      PT: 46.5,
-      FI: 0,
-    },
-    Great: {
-      NL: 50,
-      PT: 50,
-      FI: -50.999,
-    },
-  },
-```
+Calculates the harmonic mean.
 
-### `stddev()` (Standard Deviation)
-
-Computes the standard deviation of numeric properties. Considers that the dataset represents the statistical sample by default.
-Standard deviation for population sets can be calculated passing the `mode`argument like: `.var(prop, {mode: 'population'})`.
-
-- `sample`: normalize with `N-1` (which is count - 1), provides the square root of the best unbiased estimator of the variance.
-- `population`: normalize with `N` , this provides the square root of the second moment around the mean.
+**Example:**
 
 ```javascript
-  await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+await db.query('metric').hmean('responseTime').groupBy('endpoint').get()
 ```
 
-yields:
+### `cardinality(property: string)`
 
-```{
-    Brazil: {
-      NL: 0,
-    },
-    bb: {
-      NL: 6.5,
-      PL: 11.5,
-    },
-    aa: {
-      NL: 3.5,
-      PL: 11.5,
-    },
-    Great: {
-      NL: 0,
-      PL: 0,
-    },
-  },
-```
+Estimates distinct value count.
+Property must have `cardinality` type.
 
-### `var()` (Variance)
+More info about in cardinality estimation [here](db/cardinality.md).
 
-Calculates the variance of numeric properties. Considers that the dataset represents the statistical sample by default.
-Variance for population sets can be calculated passing the `mode`argument like: `.var(prop, {mode: 'population'})`.
-
-- `sample`: normalize with `N-1` (which is count - 1), provides the square root of the best unbiased estimator of the variance.
-- `population`: normalize with `N` , this provides the square root of the second moment around the mean.
+**Example:**
 
 ```javascript
-  await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+await db.query('user').cardinality('country').get()
 ```
 
-yields:
+## Grouping Operations
 
-```
-  {
-    bb: {
-      NL: 42.25,
-      PL: 132.25,
-    },
-    aa: {
-      NL: 12.25,
-      PL: 132.25,
-    },
-    Great: {
-      NL: 0,
-      PL: 0,
-    },
-  },
-```
+### `groupBy(property: string)`
 
-### `max()` (Maximum Value)
+Groups results by property values.
 
-Finds the maximum value for specified numeric properties. Multiple props acts the same way as `ìnclude()`
+**Basic Examples:**
 
 ```javascript
-await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get()
+// Simple grouping
+await db.query('vote').groupBy('country').get()
+
+// Grouping with aggregation
+await db.query('vote').sum('NL', 'AU').groupBy('country').get()
 ```
 
-yields:
-
-```
-  {
-    bb: {
-      NL: 23,
-      NO: -10,
-      PT: 33,
-      FI: 0,
-    },
-    aa: {
-      NL: 50,
-      NO: -43,
-      PT: 50,
-      FI: 0,
-    },
-    Great: {
-      NL: 50,
-      NO: -50,
-      PT: 50,
-      FI: -50.999,
-    },
-  },
-```
-
-### `min()` (Minimum Value)
-
-Finds the minimum value for specified numeric properties.
+**Advanced Examples:**
 
 ```javascript
-  await db.query('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+// Multiple aggregations with grouping
+await db.query('vote').avg('NL').max('PT').min('FI').groupBy('region').get()
+
+// Grouping enum types
+await db.query('beer').avg('price').groupBy('type').get()
 ```
 
----
+## Temporal Grouping (Time-based Aggregations)
 
-## Aggregations on Referenced Data
+### `groupBy(property: string | string[], step?: string | number | { step: string | number, timeZone?: string}?)`
 
-You can perform aggregations on data that is referenced by other records using the `include()` method. This is often referred to as "branched includes" or "branched queries".
+Groups timestamp properties by time intervals.
 
-### `sum()` on references
+**Supported Intervals:**
+
+- `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`
+- Custom durations in seconds like `15 * 60 // 15 minutes`, `6 * 3600 // 6 hours`, `3 * 24 * 2600 // 3 days`
+
+**Examples:**
 
 ```javascript
+// Daily grouping with shorthand 'day'
+await db.query('event').count().groupBy('timestamp', 'day').get()
+
+// 30-minute intervals with shorthand seconds
 await db
-  .query('sequence')
-  .include((select) => {
-    select('votes').sum('NL', 'AU')
+  .query('metric')
+  .avg('value')
+  .groupBy('recordedAt', 30 * 60)
+  .get()
+
+// Daily grouping with full notaton
+await db.query('event').count().groupBy('timestamp', { step: 'day' }).get()
+
+// getting raw results in epoch format
+await db.query('trip').sum('distance').groupBy('pickup').get(),
+    // Result:
+    // {
+    //   1733916600000: {
+    //     distance: 513.44,
+    //   },
+    //   1733914800000: {
+    //     distance: 813.44,
+    //   },
+    // }
+
+// getting formated output as javascript date time or interval ranges
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 40 * 60, display: dtFormat })
+      .get()
+// Result:
+// {
+//   '11/12/2024 08:00 – 08:40': {
+//     distance: 1326.88,
+//   }
+// }
+
+await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { display: dtFormat })
+      .get(),
+// Result:
+// {
+//   '11/12/2024, 08:30': { distance: 513.44 },
+//   '11/12/2024, 08:00': { distance: 813.44 },
+// }
+
+// With multiple aggregations
+await db
+  .query('sensor')
+  .avg('temperature')
+  .max('humidity')
+  .groupBy('readingTime', 'hour')
+  .get()
+```
+
+Here's the dedicated **Working with Timezones** subsection for the Temporal Grouping section, strictly based on the test you provided:
+
+---
+
+### Working with Timezones
+
+The temporal grouping supports timezone-aware aggregations when using the object syntax for intervals. This allows grouping timestamps according to local time in any timezone.
+
+#### Timezone Grouping Syntax
+
+```javascript
+.groupBy('timestamp', {
+  step: 'day' | 'hour' | 'month',  // Interval unit
+  timeZone: 'IANA_TIMEZONE'        // IANA timezone identifier
+})
+```
+
+#### Key Behavior (from tests):
+
+1. **UTC storage**: All timestamps are stored in UTC (as shown by `new Date()` usage)
+2. **Local time grouping**: Applies timezone conversion before grouping
+3. **Return format**: Returns numeric keys representing local time components:
+   - `day`: 1-31
+   - `hour`: 0-23
+   - `month`: 0-11 (January=0)
+
+#### Examples:
+
+**1. Daily Grouping by Local Time**
+
+```javascript
+// Groups UTC midnight (00:00) to São Paulo local time (21:00 previous day)
+await db
+  .query('trip')
+  .sum('distance')
+  .groupBy('pickup', {
+    step: 'day',
+    timeZone: 'America/Sao_Paulo',
   })
   .get()
-  .toObject()
+// Returns: {
+//   10: { distance: 813.44 }, // Dec 10 local date
+//   11: { distance: 513.44 }  // Dec 11 local date
+// }
 ```
 
-yields:
-
-```
-
-[{ id: 1, votes: { NL: 30, AU: 15 } }]
-```
-
-### `groupBy()` and `sum()` on references
+**2. Hourly Grouping with Timezone**
 
 ```javascript
+// Converts UTC times to São Paulo hours
+await db
+  .query('trip')
+  .sum('distance')
+  .groupBy('pickup', {
+    step: 'hour',
+    timeZone: 'America/Sao_Paulo',
+  })
+  .get()
+// Returns: {
+//   21: { distance: 813.44 }, // 9PM local time
+//   12: { distance: 513.44 }  // 12PM local time
+// }
+```
+
+**3. Monthly Grouping Across Timezones**
+
+```javascript
+// Groups by local month index (0-11)
+await db
+  .query('trip')
+  .sum('distance')
+  .groupBy('dropoff', {
+    step: 'month',
+    timeZone: 'America/Sao_Paulo',
+  })
+  .get()
+// Returns: {
+//   11: { distance: 813.44 }, // December (UTC)
+//   10: { distance: 513.44 }  // November (local timezone conversion)
+// }
+```
+
+#### Important Notes:
+
+1. **IANA Timezone Required**: Must use official timezone names (e.g., `'America/New_York'`)
+2. **Daylight Saving Aware**: Automatically handles DST transitions
+3. **No Date Reconstruction**: Returns numeric components only - you must reconstruct full dates if needed
+4. **Month Indexing**: Returns 0-11 (unlike JavaScript's 1-31 for days)
+
+#### Timezone Conversion Example:
+
+```javascript
+// To display the local dates:
+const results = await db
+  .query('trip')
+  .groupBy('pickup', { step: 'day', timeZone: 'Asia/Tokyo' })
+  .get()
+
+const fmt = new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  dateStyle: 'full',
+})
+
+const withDates = Object.fromEntries(
+  Object.entries(results).map(([day, data]) => {
+    // Create date in Tokyo timezone (day is local date)
+    const date = new Date()
+    date.setFullYear(2024, 11, day) // Month is 0-11
+    return [fmt.format(date), data]
+  }),
+)
+```
+
+## Relationship Aggregations
+
+### Aggregations on Referenced Nodes
+
+**Examples:**
+
+```javascript
+// Simple reference aggregation
+await db
+  .query('team')
+  .include((select) => {
+    select('players').sum('goalsScored')
+  })
+  .get()
+
+// Grouped reference aggregation
 await db
   .query('sequence')
   .include((select) => {
     select('votes').groupBy('country').sum('NL', 'AU')
   })
   .get()
-  .toObject()
-```
 
-yields:
-
-```
-[{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
-```
-
-### Aggregations on references with parent properties
-
-You can include parent properties alongside aggregated referenced data:
-
-```javascript
-const result = await db
+// Mixed with parent properties
+await db
   .query('team')
-  .include('teamName', 'city', (select) => {
-    select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
+  .include('name', 'city', (select) => {
+    select('players').groupBy('position').avg('rating')
   })
   .get()
-
-deepEqual(
-  result.toObject(),
-  [
-    {
-      id: 1,
-      teamName: 'Grêmio',
-      city: 'Porto Alegre',
-      players: {
-        Forward: { goalsScored: 22, gamesPlayed: 11 },
-        Defender: { goalsScored: 1, gamesPlayed: 10 },
-      },
-    },
-    {
-      id: 2,
-      teamName: 'Ajax',
-      city: 'Amsterdam',
-      players: {
-        Forward: { goalsScored: 8, gamesPlayed: 7 },
-        Defender: { goalsScored: 2, gamesPlayed: 9 },
-      },
-    },
-    {
-      id: 3,
-      teamName: 'Boca Juniors',
-      city: 'Buenos Aires',
-      players: {},
-    },
-    {
-      id: 4,
-      teamName: 'Barcelona',
-      city: 'Barcelona',
-      players: {
-        Forward: { goalsScored: 5, gamesPlayed: 5 },
-      },
-    },
-  ],
-  'Include parent props, with referenced items grouped by their own prop, and aggregations',
-)
 ```
 
----
+## Handling Special Cases
 
-## Handling Numeric Types and `undefined` Values
+### Undefined/Null Values
 
-The aggregation functions correctly handle different numeric types (e.g., `uint8`, `int8`, `number`). When a numeric property is `undefined` for a record, it is treated as `0` for aggregation purposes, which can affect `avg()` and `max()`/`min()` results if not considered.
+- Treated as 0 for sum/avg
+- Excluded from min/max calculations
+- Affect statistical function denominators
 
-**Example with `undefined` numbers:**
-
-If a record has a `FI` property that is undefined:
+**Examples:**
 
 ```javascript
-deepEqual(
-  await db.query('vote').max('AU', 'FI').groupBy('region').get().toObject(),
-  {
-    EU: {
-      AU: 23,
-      FI: 0,
-    },
-  },
-  'number is initialized with zero',
-)
-deepEqual(
-  await db.query('vote').avg('AU', 'FI').groupBy('region').get().toObject(),
-  {
-    EU: {
-      AU: 16.5,
-      FI: -500_000.15,
-    },
-  },
-  'avg affected by count because number is initialized with zero',
-)
+// Undefined treated as 0
+await db.query('vote').sum('undefinedProp').get() // Returns 0
+
+// Avg behavior
+await db.query('item').avg('optionalNumber').get() // Counts undefined as 0 in average
 ```
 
-In the `max()` example, `FI` is `0` if not present in a record, thus `max` would return `0` if all values are `undefined` or negative. In the `avg()` example, the `undefined` values contribute to the total count for the average calculation as `0`.
+### Empty Groups
 
----
+- Return empty objects `{}` when no matches
+- Aggregations on empty groups return 0
 
-## Grouping by Enum Types
+### Numeric Type Handling
 
-You can also use `groupBy()` on properties with `enum` types.
+- Properly handles all numeric types:
+  - Integer types (int8, uint16, etc.)
+  - Floating point (number)
+  - BigInt where supported
+
+## Performance Considerations
+
+1. **Indexing**: Ensure frequently grouped properties are indexed
+2. **Query Scope**: Use filters to limit aggregation scope
+3. **Bulk Operations**: For large datasets, consider:
+
+   ```javascript
+   // Better for large datasets
+   await db
+     .query('data')
+     .filter('timestamp', '>', startDate)
+     .groupBy('category')
+     .count()
+     .get()
+   ```
+
+4. **Memory**: Complex nested aggregations may require more memory
+5. **Network**: Large result sets should use pagination:
+   ```javascript
+   await db.query('user').groupBy('department').count().range(0, 50).get()
+   ```
+
+## Common Patterns
+
+### Time Series Analysis
 
 ```javascript
+await db
+  .query('metrics')
+  .filter('timestamp', '>=', startDate)
+  .avg('value')
+  .groupBy('timestamp', '1 hour')
+  .get()
+```
+
+### Category Breakdown
+
+```javascript
+await db.query('products').sum('sales').avg('price').groupBy('category').get()
+```
+
+### Group by enum types
+
+```js
 const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
 await db.setSchema({
   types: {
@@ -455,21 +479,36 @@ await db.setSchema({
     },
   },
 })
+const b1 = await db.create('beer', {
+  name: "Brouwerij 't IJwit",
+  type: 'Wit',
+  price: 7.2,
+  alchol: 6.5,
+  year: 1985,
+})
+const b2 = await db.create('beer', {
+  name: 'De Garre Triple Ale',
+  type: 'Tripel',
+  price: 11.5,
+  alchol: 11.0,
+  year: 1986,
+})
 
-// ... create the data
+const b3 = await db.create('beer', {
+  name: 'Gulden Draak',
+  type: 'Tripel',
+  price: 12.2,
+  alchol: 10.0,
+  year: 1795,
+})
 
-deepEqual(
-  await db.query('beer').avg('price').groupBy('type').get(),
-  {
-    Tripel: {
-      price: 11.85,
-    },
-    Wit: {
-      price: 7.2,
-    },
-  },
-  'group by enum in main',
-)
+await db.query('beer').avg('price').groupBy('type').get()
+// {
+//   Tripel: {
+//     price: 11.85,
+//   },
+//   Wit: {
+//     price: 7.2,
+//   },
+// }
 ```
-
----
