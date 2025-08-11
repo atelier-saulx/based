@@ -325,7 +325,7 @@ await db
 
 #### Important Notes:
 
-1. **IANA Timezone Required**: Must use official timezone names (e.g., `'America/New_York'`)
+1. **IANA Timezone Required**: Must use official timezone names (e.g., `'Europe/Amsterdam'`)
 2. **Daylight Saving Aware**: Automatically handles DST transitions
 3. **Month Indexing**: Returns 0-11 (unlike JavaScript's 1-31 for days)
 

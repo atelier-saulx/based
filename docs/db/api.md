@@ -26,13 +26,13 @@
 
 ## Property Types
 
-- [Numeric](db/numeric)
-- [String ans Text](db/text)
-- [Timestamp](db/timestamp)
-- [Cardinality](db/cardinality)
-- [Colunar vector](db/colvec)
-- [Enumerations](db/enum)
-- [JSON](db/json)
+- [Numeric](db/types?id=numeric)
+- [String ans Text](db/types?id=string-and-text)
+- [Timestamp](db/types?id=timestamp)
+- [Cardinality](db/types?id=cardinality)
+- [Colunar vector](db/types?id=colvec)
+- [Enumerations](db/types?id=enum)
+- [JSON](db/types?id=json)
 
 ## Aggregate Operations and Functions
 
