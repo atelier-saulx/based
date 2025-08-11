@@ -311,6 +311,10 @@ export class DbServer extends DbShared {
     strictSchema: StrictSchema,
     transformFns?: TransformFns,
   ): Promise<SchemaChecksum> {
+    if (this.stopped || !this.dbCtxExternal) {
+      throw new Error('Db is stopped')
+    }
+
     const schema = strictSchemaToDbSchema(strictSchema)
 
     if (schema.hash === this.schema?.hash) {
@@ -577,6 +581,7 @@ export class DbServer extends DbShared {
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
+      this.dbCtxExternal = null
       await setTimeout(100)
     } catch (e) {
       this.stopped = false
