@@ -327,8 +327,7 @@ await db
 
 1. **IANA Timezone Required**: Must use official timezone names (e.g., `'America/New_York'`)
 2. **Daylight Saving Aware**: Automatically handles DST transitions
-3. **No Date Reconstruction**: Returns numeric components only - you must reconstruct full dates if needed
-4. **Month Indexing**: Returns 0-11 (unlike JavaScript's 1-31 for days)
+3. **Month Indexing**: Returns 0-11 (unlike JavaScript's 1-31 for days)
 
 #### Timezone Conversion Example:
 
