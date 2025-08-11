@@ -12,15 +12,15 @@ Filters the results based on field values.
 - \`<\`: Less than (numbers, timestamps).
 - \`>=\`: Greater than or equal to.
 - \`<=\`: Less than or equal to.
-- \`has\`: Contains substring (case sensitive by default for \`string\`, \`text\`, could be case insentive passing option argument).
-- \`like\`: Fuzzy search / similarity (for \`string\`, \`text\`, \`vector\`).
+- \`has\`: Contains substring (case sensitive by default for `string`, `text`, could be case insentive passing option argument).
+- \`like\`: Fuzzy search / similarity (for `string`, `text`, `vector`).
 
 **Filter Examples:**
 
 - **Equality (=)**
   Finds nodes where the field exactly matches the value.
 
-  ```typescript
+  ```js
   // Find users named exactly 'Alice'
   await db.query('user').filter('name', '=', 'Alice').get()
 
@@ -40,7 +40,7 @@ Filters the results based on field values.
 - **Inequality (!=)**
   Finds nodes where the field does _not_ match the value.
 
-  ```typescript
+  ```js
   // Find users not named 'Alice'
   await db.query('user').filter('name', '!=', 'Alice').get()
 
@@ -51,7 +51,7 @@ Filters the results based on field values.
 - **Comparison (>, \`<, >=, <=)**
   Finds nodes based on numerical or timestamp comparisons.
 
-  ```typescript
+  ```js
   // Find users older than 50
   await db.query('user').filter('age', '>', 50).get()
 
