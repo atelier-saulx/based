@@ -245,10 +245,6 @@ await db
   .get()
 ```
 
-Here's the dedicated **Working with Timezones** subsection for the Temporal Grouping section, strictly based on the test you provided:
-
----
-
 ### Working with Timezones
 
 The temporal grouping supports timezone-aware aggregations when using the object syntax for intervals. This allows grouping timestamps according to local time in any timezone.
