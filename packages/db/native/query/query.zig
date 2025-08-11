@@ -51,7 +51,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
         .db = dbCtx,
-        .id = db.getQueryId(),
         .size = 0,
         .totalResults = 0,
         .aggResult = null,

@@ -213,6 +213,29 @@ libdeflate_decompress_ex(struct libdeflate_decompressor *decompressor,
 				 size_t *actual_out_nbytes_ret);
 
 /**
+ * Decompress a small number of bytes into out.
+ * The size of the output buffer doesn't need to align with the block size of
+ * the compressed input, unlike with the block decompression API. The downside
+ * of this decompression function is that it's much slower for longer output
+ * sizes. However, it can be much faster to use this function to extract a
+ * small number of bytes (e.g. 16 bytes) rather than decompressing a full block
+ * and then extracting a few bytes from it. This is interesting also because a
+ * deflate block can be at least theoretically be extremely long, and they
+ * are typically >= 1kB in size in the wild. Whereas, with this function the
+ * output buffer can be even fitted in the stack as it's small and it's size
+ * can be hard-coded.
+ * @param in is a pointer to the compressed data.
+ * @param in_nbytes is the size of in.
+ * @param out_nbytes_avail is the size of the out buffer.
+ * @param actual_out_nbytes_ret returns the actual number of bytes decompressed.
+ */
+LIBDEFLATEEXPORT enum libdeflate_result
+libdeflate_decompress_short(struct libdeflate_decompressor *decompressor,
+			      const void *in, size_t in_nbytes,
+			      void *out, size_t out_nbytes_avail,
+			      size_t *actual_out_nbytes_ret);
+
+/**
  * ctrl libdeflate_decompress_block() stop condition
  */
 enum libdeflate_decompress_stop_by {

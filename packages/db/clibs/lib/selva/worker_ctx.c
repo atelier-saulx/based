@@ -55,3 +55,11 @@ bool worker_ctx_libdeflate_block_state_growbuf(void)
 {
     return libdeflate_block_state_growbuf(&libdeflate_block_state);
 }
+
+enum libdeflate_result worker_ctx_libdeflate_decompress_short(
+        const void *in, size_t in_nbytes,
+        void *out, size_t out_nbytes_avail,
+        size_t *actual_out_nbytes_ret)
+{
+    return libdeflate_decompress_short(libdeflate_decompressor, in, in_nbytes, out, out_nbytes_avail, actual_out_nbytes_ret);
+}

@@ -78,16 +78,6 @@ char *selva_strdup(const char *s)
     return copy;
 }
 
-int str_endswith(const char *str, const char *suffix)
-{
-    const size_t lenstr = strlen(str);
-    const size_t lensuffix = strlen(suffix);
-
-    return (lensuffix > lenstr)
-        ? 0
-        : !strcmp(str + lenstr - lensuffix, suffix);
-}
-
 int stringlist_search(const char *list, const char *str, size_t n, char wildcard)
 {
     const char *s1 = list;
