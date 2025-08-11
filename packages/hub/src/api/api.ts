@@ -69,7 +69,7 @@ export function registerApiHandlers(
       async fn(_based, name = 'default', update) {
         return configDb.query('secret', { name }).subscribe((res) => {
           const obj = res.toObject()
-          update(obj.value)
+          update(obj?.value)
         })
       },
     },
@@ -95,22 +95,19 @@ export function registerApiHandlers(
           config.name = name
         }
 
-        const updatedAt = Date.now()
         const id = await configDb.upsert('function', {
           name,
           type,
           code,
           config,
-          updatedAt,
         })
-
         return new Promise<void>(async (resolve) => {
           const unsubscribe = configDb
             .query('function', id)
-            .include('updatedAt')
+            .include('updatedAt', 'loadedAt')
             .subscribe((res) => {
-              if (res.toObject().updatedAt >= updatedAt) {
-                console.log('READY')
+              const { loadedAt, updatedAt } = res.toObject()
+              if (loadedAt === updatedAt) {
                 resolve()
                 unsubscribe()
               }

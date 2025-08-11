@@ -28,6 +28,7 @@ const start = async ({ port, path, s3, buckets }: Opts) => {
   servers.default = defaultDb.server
   server.client.db = defaultDb.client
   server.client.dbs = clients
+
   // Initialize dynamic functions and API handlers
   const { fnIds } = initDynamicFunctionsGlobals(statsDb.client)
   initDynamicFunctions(server, configDb.client, statsDb.client, fnIds)

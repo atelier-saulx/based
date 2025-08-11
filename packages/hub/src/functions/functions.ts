@@ -148,7 +148,7 @@ export const initDynamicFunctions = (
 
       await Promise.all(
         data.map(async (item) => {
-          const { code, name, config } = item
+          const { id, code, name, config } = item
           const checksum =
             config.type === 'app'
               ? crc32c(code + JSON.stringify(config))
@@ -207,6 +207,10 @@ export const initDynamicFunctions = (
                 statsDb,
               )
             }
+
+            const now = Date.now()
+            console.log(name, { now })
+            configDb.update('function', id, { loadedAt: now, updatedAt: now })
           } catch (err) {
             console.log('error', err)
             createEvent(statsDb, statsId, err.message, 'init', 'error')
