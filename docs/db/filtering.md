@@ -68,7 +68,7 @@ Filters the results based on field values.
 - **String/Text Contains (has)**
   Finds nodes where a \`string\` or \`text\` field includes a substring. Case-insensitive by default.
 
-  ```typescript
+  ```js
   // Find users whose name contains 'ali' (matches 'Alice', 'Ali', 'Salim', etc.)
   await db.query('user').filter('name', 'has', 'ali').get()
 
@@ -88,7 +88,7 @@ Filters the results based on field values.
 - **Fuzzy Match / Similarity (like)**
   Finds nodes based on approximate matching for \`string\`, \`text\`, or \`vector\` types.
 
-  ```typescript
+  ```js
   // Find users whose bio might contain a typo like 'engneer'
   await db.query('user').filter('bio', 'like', 'engneer').get()
 
@@ -114,7 +114,7 @@ Filters the results based on field values.
 - **Boolean Filtering**
   Finds nodes based on a boolean field's value.
 
-  ```typescript
+  ```js
   // Find active users (explicitly true)
   await db.query('user').filter('isActive', '=', true).get()
 
@@ -128,7 +128,7 @@ Filters the results based on field values.
 - **Enum Filtering**
   Finds nodes where an \`enum\` field matches a specific value.
 
-  ```typescript
+  ```js
   // Find users with status 'active'
   await db.query('user').filter('status', '=', 'active').get()
 
@@ -139,7 +139,7 @@ Filters the results based on field values.
 - **Filtering on Nested Fields**
   Uses dot notation to access fields within nested objects.
 
-  ```typescript
+  ```js
   // Find users where nestedData.value is 'nested info'
   await db.query('user').filter('nestedData.value', '=', 'nested info').get()
   ```
@@ -147,7 +147,7 @@ Filters the results based on field values.
 - **Filtering on Reference Fields**
   Uses dot notation to filter based on fields of referenced nodes.
 
-  ```typescript
+  ```js
   // Find users whose best friend is named 'Bob'
   await db.query('user').filter('bestFriend.name', '=', 'Bob').get()
 
@@ -277,7 +277,7 @@ Notice that the result is correctly applied for the branch, but to filter the to
 
 Sorts the results by a specific field. \`direction\` can be \`'asc'\` (default) or \`'desc'\`.
 
-```typescript
+```js
 // Sort by age descending
 await db.query('user').sort('age', 'desc').get()
 
@@ -301,12 +301,13 @@ The following data types doesn't support sort:
 
 - Reference / References (you can if you use branched queries / nested include sintax) like
 
-  ```js await db
-  .query('actor')
-  .include('*')
-  .include((q) => q('movies').include('*').sort('name', 'desc'), '*')
-  .sort('name', 'asc')
-  .get()
+  ```js
+  await db
+    .query('actor')
+    .include('*')
+    .include((q) => q('movies').include('*').sort('name', 'desc'), '*')
+    .sort('name', 'asc')
+    .get()
   ```
 
 - Vector
