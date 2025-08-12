@@ -3,7 +3,6 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@saulx/utils'
 import { v4 as uuid } from 'uuid'
-import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 
 export function registerApiHandlers(
   server,

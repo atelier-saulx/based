@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build-release": "rimraf {dist} && tsc",
     "watch": "tsc --watch",
     "demo": "tsc && node dist/demo/demo.js"
   },

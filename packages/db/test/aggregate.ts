@@ -1028,7 +1028,42 @@ await test('two phase accumulation', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
+    {
+      NL: 15.56598856481656,
+    },
+    'stddev, top level, NO groupBy, option = sample',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
+    {
+      NL: 15.56598856481656,
+    },
+    'stddev, top level, NO groupBy, no option (default = sample)',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', { mode: 'population' }).get(),
+    {
+      NL: 13.922643427165687,
+    },
+    'stddev, top level, NO groupBy, option = population',
+  )
+
+  deepEqual(
+    await db.query('vote').sum('NL').get().toObject(),
+    {
+      NL: 118,
+    },
+    'sum, top level, NO groupBy',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .stddev('NL', { mode: 'population' })
+      .groupBy('country')
+      .get()
+      .toObject(),
     {
       Brazil: {
         NL: 0,
@@ -1045,7 +1080,7 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').stddev('NL'))
+      .include((q) => q('votes').stddev('NL', { mode: 'population' }))
       .get()
       .toObject(),
     [
@@ -1061,7 +1096,9 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').stddev('NL').groupBy('country'))
+      .include((q) =>
+        q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
+      )
       .get()
       .toObject(),
     [
@@ -1251,7 +1288,11 @@ await test('numeric types', async (t) => {
     'harmonic_mean, main, group by',
   )
   deepEqual(
-    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    await db
+      .query('vote')
+      .stddev('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 6.5,
@@ -1269,7 +1310,29 @@ await test('numeric types', async (t) => {
     'stddev, main, group by',
   )
   deepEqual(
-    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: 9.192388155425117,
+        PL: 16.263455967290593,
+      },
+      aa: {
+        NL: 4.949747468305833,
+        PL: 16.263455967290593,
+      },
+      Great: {
+        NL: 0,
+        PL: 0,
+      },
+    },
+    'stddev, main, group by',
+  )
+  deepEqual(
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 42.25,
@@ -1284,7 +1347,29 @@ await test('numeric types', async (t) => {
         PL: 0,
       },
     },
-    'variance, main, group by',
+    'variance, main, group by, population',
+  )
+  deepEqual(
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'sample' })
+      .groupBy('region')
+      .get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, sample',
+  )
+  deepEqual(
+    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, default (sample)',
   )
   deepEqual(
     await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
@@ -1429,7 +1514,9 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .include((q) =>
+        q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1449,10 +1536,31 @@ await test('numeric types', async (t) => {
     ],
     'stddev, references, group by',
   )
+
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').var('NL'))
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: 9.192388155425117 },
+          aa: { NL: 4.949747468305833 },
+          Great: { NL: 0 },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1470,8 +1578,37 @@ await test('numeric types', async (t) => {
         },
       },
     ],
-    'variance, references, group by',
+    'variance, references, group by, pop',
   )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+      )
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, sample',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, defaul (sample)',
+  )
+
   deepEqual(
     await db
       .query('sequence')
@@ -2432,7 +2569,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('pickup', { step: 'day', locale: 'America/Sao_Paulo' })
+      .groupBy('pickup', { step: 'day', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       10: {
@@ -2449,7 +2586,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('pickup', { step: 'hour', locale: 'America/Sao_Paulo' })
+      .groupBy('pickup', { step: 'hour', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       21: {
@@ -2465,7 +2602,7 @@ await test('timezone offsets', async (t) => {
     await db
       .query('trip')
       .sum('distance')
-      .groupBy('dropoff', { step: 'month', locale: 'America/Sao_Paulo' })
+      .groupBy('dropoff', { step: 'month', timeZone: 'America/Sao_Paulo' })
       .get(),
     {
       11: {
@@ -2665,10 +2802,3 @@ await test('dev', async (t) => {
   // })
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })
-
-// TODO:
-// cardinality in references
-// aggregation on edges
-
-// numeric ranges
-// await db.query('trip').sum('distance').groupBy('vendorId', 1).get().inspect()

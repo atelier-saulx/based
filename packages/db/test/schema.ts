@@ -1,7 +1,7 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
 import { setTimeout } from 'node:timers/promises'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 await test('support many fields on root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -115,4 +115,23 @@ await test('dont accept modify with mismatch schema', async (t) => {
   const res = await db.query('flurp').get().toObject()
 
   deepEqual(res, [{ id: 1, title: '' }])
+})
+
+await test('set schema before start', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await throws(() => db.setSchema({
+    types: {
+      flurp: {
+        props: {
+          x: 'uint8',
+        },
+      },
+    },
+  }))
+
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
 })

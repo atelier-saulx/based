@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build-release": "rimraf {dist} && tsc",
     "watch": "tsc --watch",
     "test": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
   },

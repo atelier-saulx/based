@@ -10,12 +10,13 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
-pub const ProtocolLen = 17;
+pub const ProtocolLen = 18;
 
 pub const GroupCtx = struct {
     hashMap: GroupByHashMap,
     resultsSize: u16,
     accumulatorSize: u16,
+    option: u8,
     fieldSchema: db.FieldSchema,
     start: u16,
     field: u8,
@@ -46,7 +47,7 @@ pub inline fn setGroupResults(
     }
 }
 
-pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: []u8) !void {
+pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: []u8, option: ?u8) !void {
     var j: usize = 0;
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
@@ -88,11 +89,18 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             }
         } else if (aggType == aggregateTypes.AggType.VARIANCE) {
             const count = read(u64, accumulatorField, accumulatorPos);
+
             if (count > 1) {
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
                 const sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
+                const denominator = @as(f64, @floatFromInt(count)) - 1.0;
+                const variance = if (option == 1)
+                    (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                else
+                    numerator / denominator;
+
                 if (variance < 0.0 and variance > -std.math.inf(f64)) {
                     writeInt(f64, resultsField, resultPos, 0.0);
                 } else {
@@ -107,7 +115,12 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
                 const sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                const variance = (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
+                const denominator = @as(f64, @floatFromInt(count)) - 1.0;
+                const variance = if (option == 1)
+                    (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                else
+                    numerator / denominator;
                 const stddev = @sqrt(variance);
                 writeInt(f64, resultsField, resultPos, @floatCast(stddev));
             } else {
@@ -144,7 +157,7 @@ pub inline fn finalizeGroupResults(
             const resultsField = data[i .. i + ctx.resultsSize];
             @memset(resultsField, 0);
 
-            try finalizeResults(resultsField, accumulatorField, agg);
+            try finalizeResults(resultsField, accumulatorField, agg, ctx.option);
             i += ctx.resultsSize;
         }
     }
@@ -164,6 +177,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
     const timezone: i16 = read(i16, aggInput, 11);
     const resultsSize = read(u16, aggInput, 13);
     const accumulatorSize = read(u16, aggInput, 15);
+    const option = aggInput[17];
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
 
     const groupCtx: *GroupCtx = try ctx.allocator.create(GroupCtx);
@@ -179,6 +193,7 @@ pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*Grou
         .stepType = stepType,
         .stepRange = stepRange,
         .timezone = timezone,
+        .option = option,
     };
     return groupCtx;
 }
