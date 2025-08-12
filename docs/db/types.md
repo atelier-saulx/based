@@ -295,7 +295,7 @@ await db.setSchema({
 |-------------|----------|--------------------|--------------------|-------------|
 | `size`      | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
 | `baseType`  | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
-| `default`   | &cross;  | `TypedArray`       | Default value. |
+| `default`   | &cross;  | `TypedArray`       |                    | Default value. |
 
 
 ## colvec
@@ -335,7 +335,7 @@ db.create('col', {
 |-------------|----------|--------------------|--------------------|-------------|
 | `size`      | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
 | `baseType`  | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
-| `default`   | &cross;  | `TypedArray`       | Default value. |
+| `default`   | &cross;  | `TypedArray`       |                    | Default value. |
 
 `colvec` is a columnar property type where each column is stored as big
 contiguous arrays. When Based processes a `colvec` property in a query, it works
