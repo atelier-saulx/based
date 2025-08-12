@@ -26,6 +26,7 @@ async function initDb(t) {
           a: {
             type: 'vector',
             size: 5,
+            baseType: 'float32',
           },
           age: { type: 'uint32' },
           name: { type: 'string', maxBytes: 10 },

@@ -503,7 +503,7 @@ await test('query', async (t) => {
           friend: { ref: 'user', prop: 'friend' },
           description: 'text',
           countryCode: { type: 'string', maxBytes: 2 },
-          blap: { type: 'vector', size: 5 },
+          blap: { type: 'vector', size: 5, baseType: 'float32' },
           connections: {
             items: {
               ref: 'user',

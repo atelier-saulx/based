@@ -19,6 +19,7 @@ import {
   BLOCK_CAPACITY_MIN,
   ALIAS,
   ALIASES,
+  VECTOR,
   COLVEC,
   TypeIndex,
 } from './types.js'
@@ -213,7 +214,7 @@ export const createSchemaTypeDef = (
       if (prop.typeIndex !== NUMBER && prop.step === undefined) {
         prop.step = 1
       }
-      if (prop.typeIndex === COLVEC) {
+      if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
         prop.vectorBaseType = schemaProp.baseType ?? 'number'
       }
 
