@@ -167,6 +167,47 @@ await db.query('vote').avg('NL').max('PT').min('FI').groupBy('region').get()
 await db.query('beer').avg('price').groupBy('type').get()
 ```
 
+## Grouping by Reference node IDs
+
+The groupBy operation supports grouping nodes by their reference relationships ids.
+
+Example:
+
+```text
+Driver ->(vehicle)-> Vehicle
+Driver ->(trips)-> [Trip]->(vehicle)-> Vehicle
+```
+
+```javascript
+// Group drivers by their assigned vehicle
+await db.query('driver').sum('rank').groupBy('vehicle').get()
+// Returns: {
+//   '2': { rank: 5 }  // All drivers using vehicle ID 2
+// }
+```
+
+Works with nested queries:
+
+```javascript
+// Get drivers with their trips grouped by vehicle
+await db
+  .query('driver')
+  .include('name', 'rank', (q) => {
+    q('trips').groupBy('vehicle').sum('distance')
+  })
+  .get()
+// Returns: [
+//   {
+//     id: 1,
+//     name: 'Luc Ferry',
+//     rank: 5,
+//     trips: {
+//       '2': { distance: 523.1 }  // Trips grouped by vehicle ID
+//     }
+//   }
+// ]
+```
+
 ## Temporal Grouping (Time-based Aggregations)
 
 ### `groupBy(property: string | string[], step?: string | number | { step: string | number, timeZone?: string}?)`
