@@ -283,12 +283,20 @@ await db.setSchema({
         row: {
           type: 'vector',
           size: 5,
+          baseType: 'float32',
         },
       },
     },
   },
 })
 ```
+
+| Schema prop | Required | Type               | Default            | Description |
+|-------------|----------|--------------------|--------------------|-------------|
+| `size`      | [x]      | `number` (integer) |                  - | Number of elements in the vector. |
+| `baseType`  | [ ]      | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
+| `default`   | [ ]      | `TypedArray`       | Default value. |
+
 
 ## colvec
 
@@ -299,7 +307,11 @@ await db.setSchema({
       blockCapacity: 10_000,
       insertOnly: true,
       props: {
-        vec: { type: 'colvec', size: 8 },
+        vec: {
+          type: 'colvec',
+          size: 8,
+          baseType: 'float32',
+        },
       },
     },
   },
@@ -318,6 +330,12 @@ db.create('col', {
   ]),
 })
 ```
+
+| Schema prop | Required | Type               | Default            | Description |
+|-------------|----------|--------------------|--------------------|-------------|
+| `size`      | [x]      | `number` (integer) |                  - | Number of elements in the vector. |
+| `baseType`  | [ ]      | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
+| `default`   | [ ]      | `TypedArray`       | Default value. |
 
 `colvec` is a columnar property type where each column is stored as big
 contiguous arrays. When Based processes a `colvec` property in a query, it works
