@@ -24,6 +24,15 @@ await db.setSchema({
 })
 ```
 
+| Schema prop   | Required  | Type                      | Default   | Description       |
+|---------------|:---------:|---------------------------|----------:|-------------------|
+| `default`     | &cross;   | `number | Date | string`  |           | Default value.    |
+| `on`          | &cross;   | `'create' | 'update'`     |           | Update on event.  |
+| `display`     | &cross;   | `DateDisplay`             |           |                   |
+| `min`         | &cross;   | `number | string`         |           | Minimum value.    |
+| `max`         | &cross;   | `number | string`         |           | Maximum value.    |
+| `step`        | &cross;   | `number | 'any' | string` |   `'any'` | Step.             |
+
 ## Boolean
 
 ```js
@@ -41,6 +50,10 @@ db.create('article', {
   published: false,
 })
 ```
+
+| Schema prop   | Required  | Type      | Default   | Description       |
+|---------------|:---------:|-----------|----------:|-------------------|
+| `default`     | &cross;   | `boolean` |   `false` | Default value.    |
 
 ## Numeric
 
@@ -61,6 +74,14 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                      | Default   | Description       |
+|---------------|:---------:|---------------------------|----------:|-------------------|
+| `default`     | &cross;   | `number`                  |       `0` | Default value.    |
+| `display`     | &cross;   | `NumberDisplay`           |           |                   |
+| `min`         | &cross;   | `number`                  |           |                   |
+| `max`         | &cross;   | `number`                  |           |                   |
+| `step`        | &cross;   | `number | 'any'`          |   `'any'` |                   |
 
 ## Alias
 
@@ -89,6 +110,11 @@ db.upsert('vendor', {
 })
 ```
 
+| Schema prop   | Required  | Type              | Default       | Description       |
+|---------------|:---------:|-------------------|--------------:|-------------------|
+| `default`     | &cross;   | `string`          |          `''` | Default value.    |
+| `format`      | &cross;   | `StringFormat`    |               |                   |
+
 ## Enum
 
 ```js
@@ -106,6 +132,11 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                                  | Default       | Description       |
+|---------------|:---------:|---------------------------------------|--------------:|-------------------|
+| `enum`        | &check;   | `Array<string | number | boolean>`    |               |                   |
+| `default`     | &cross;   | `Array<string | number | boolean>`    |   `undefined` | Default value.    |
 
 ## JSON
 
@@ -131,6 +162,10 @@ await db.create('person', {
 })
 ```
 
+| Schema prop   | Required  | Type                                  | Default       | Description       |
+|---------------|:---------:|---------------------------------------|--------------:|-------------------|
+| `default`     | &cross;   |                                       |   `undefined` | Default value.    |
+
 ## Binary
 
 ```js
@@ -144,6 +179,13 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                  | Default       | Description               |
+|---------------|:---------:|-----------------------|--------------:|---------------------------|
+| `default`     | &cross;   |                       |          `[]` | Default value.            |
+| `maxBytes`    | &cross;   | `number` (integer)    |               | Maximum size in bytes.    |
+| `mime`        | &cross;   | `Mime`                |               | Mime type.                |
+| `format`      | &cross;   | `StringFormat`        |               |                           |
 
 ## String and Text
 
@@ -176,6 +218,26 @@ db.create('user', {
   bio: { en: 'Empty.', fi: 'Tyhjä.' },
 })
 ```
+
+**string**
+
+| Schema prop   | Required  | Type                  | Default       | Description                   |
+|---------------|:---------:|-----------------------|--------------:|-------------------------------|
+| `default`     | &cross;   |                       |          `''` | Default value.                |
+| `maxBytes`    | &cross;   | `number` (integer)    |     Unlimited | Maximum size in bytes.        |
+| `min`         | &cross;   | `number` (integer)    |             0 | Minimum length in Unicode code points. |
+| `max`         | &cross;   | `number` (integer)    |     Unlimited | Maximum length in Unicode code points. |
+| `mime`        | &cross;   | `Mime`                |               | Mime type.                    |
+| `format`      | &cross;   | `StringFormat`        |               |                               |
+| `compression` | &cross;   | `'none' | 'deflate'`  |        `none` | Preferred compression method. |
+
+**text**
+
+| Schema prop   | Required  | Type                  | Default       | Description                   |
+|---------------|:---------:|-----------------------|--------------:|-------------------------------|
+| `default`     | &cross;   |                       |          `''` | Default value.                |
+| `format`      | &cross;   | `StringFormat`        |               |                               |
+| `compression` | &cross;   | `'none' | 'deflate'`  |        `none` | Preferred compression method. |
 
 ### Storage Format
 
@@ -291,11 +353,11 @@ await db.setSchema({
 })
 ```
 
-| Schema prop | Required | Type               | Default            | Description |
-|-------------|----------|--------------------|--------------------|-------------|
-| `size`      | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
-| `baseType`  | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
-| `default`   | &cross;  | `TypedArray`       |                    | Default value. |
+| Schema prop   | Required | Type               | Default            | Description |
+|---------------|:--------:|--------------------|-------------------:|-------------|
+| `size`        | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
+| `baseType`    | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
+| `default`     | &cross;  | `TypedArray`       |                    | Default value. |
 
 
 ## colvec
@@ -332,7 +394,7 @@ db.create('col', {
 ```
 
 | Schema prop | Required | Type               | Default            | Description |
-|-------------|----------|--------------------|--------------------|-------------|
+|-------------|:--------:|--------------------|-------------------:|-------------|
 | `size`      | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
 | `baseType`  | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
 | `default`   | &cross;  | `TypedArray`       |                    | Default value. |
@@ -369,3 +431,9 @@ block-beta
   end
   style BLOCKS fill:#0000,stroke-width:0
 ```
+
+## Object
+
+## Reference
+
+## References
