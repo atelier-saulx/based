@@ -157,6 +157,31 @@ await db.query('vote').groupBy('country').get()
 await db.query('vote').sum('NL', 'AU').groupBy('country').get()
 ```
 
+Grouping by numeric values is also allowed. Example:
+
+```js
+const m1 = await db.create('movie', {
+  name: 'Kill Bill',
+  year: 2003,
+})
+const m2 = await db.create('movie', {
+  name: 'Pulp Fiction',
+  year: 1994,
+})
+
+await db.query('movie').groupBy('year').count().get()
+
+// Result:
+// {
+//   1994: {
+//     $count: 1,
+//   },
+//   2003: {
+//     $count: 1,
+//   },
+// }
+```
+
 **Advanced Examples:**
 
 ```javascript
