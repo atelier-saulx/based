@@ -1,5 +1,5 @@
 import { readFloatLE } from '@saulx/utils'
-import type { LangCode, SchemaLocales } from '../index.js'
+import type { LangCode, SchemaLocales, SchemaVectorBaseType } from '../index.js'
 import { Validation } from './validation.js'
 
 export type Transform = (
@@ -90,7 +90,6 @@ export function isNumberType(type: TypeIndex): boolean {
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
-
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
 export type PropDef = {
@@ -100,7 +99,7 @@ export type PropDef = {
   separate: boolean
   path: string[]
   start: number
-  len: number // bytes
+  len: number // bytes or count
   inverseTypeName?: string
   inversePropName?: string
   // 0 == none , 1 == standard deflate
@@ -113,6 +112,8 @@ export type PropDef = {
   validation: Validation
   transform?: Transform
   default: any
+  // vectors
+  vectorBaseType?: SchemaVectorBaseType
   // edge stuff
   edgeMainLen?: 0
   hasDefaultEdges?: boolean

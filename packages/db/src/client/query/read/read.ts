@@ -522,15 +522,41 @@ export const readAllFields = (
           i += size
           addField(prop, string, item)
         }
-      } else if (prop.typeIndex == VECTOR || prop.typeIndex == COLVEC) {
+      } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        const arr = new Float32Array(size / 4)
-        for (let j = 0; j < size; j += 4) {
-          arr[j / 4] = readFloatLE(result, i + 4 + j)
+        i += 4
+        const tmp = result.slice(i, i + size) // make a copy
+        let arr: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
+        switch (prop.vectorBaseType) {
+          case 'int8':
+            arr = new Int8Array(tmp.buffer)
+            break
+          case 'uint8':
+            arr = new Uint8Array(tmp.buffer)
+            break
+          case 'int16':
+            arr = new Int16Array(tmp.buffer)
+            break
+          case 'uint16':
+            arr = new Uint16Array(tmp.buffer)
+            break
+          case 'int32':
+            arr = new Int32Array(tmp.buffer)
+            break
+          case 'uint32':
+            arr = new Uint32Array(tmp.buffer)
+            break
+          case 'float32':
+            arr = new Float32Array(tmp.buffer)
+            break
+          case 'float64':
+          case 'number':
+            arr = new Float64Array(tmp.buffer)
+            break
         }
         addField(prop, arr, item)
-        i += size + 4
+        i += size
       }
     }
   }

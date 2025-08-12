@@ -274,6 +274,8 @@ export type SchemaCardinality = Prop<{
   format?: NumberDisplay // when queried should return the count
 }>
 
+export type SchemaVectorBaseType = NumberType | 'float32' | 'float64'
+
 export type SchemaVector = Prop<{
   type: 'vector'
   default?: Float32Array
@@ -282,9 +284,16 @@ export type SchemaVector = Prop<{
 
 export type SchemaColvec = Prop<{
   type: 'colvec'
-  default?: Float32Array
+  default?: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
+  /**
+   * Number of elements in the vector.
+   */
   size: number
-  // TODO Add support for other comp types
+  /**
+   * Base type of the vector.
+   * float64 == number
+   */
+  baseType?: SchemaVectorBaseType
 }>
 
 export type SchemaTimestamp = Prop<{

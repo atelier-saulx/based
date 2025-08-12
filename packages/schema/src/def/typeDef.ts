@@ -213,6 +213,9 @@ export const createSchemaTypeDef = (
       if (prop.typeIndex !== NUMBER && prop.step === undefined) {
         prop.step = 1
       }
+      if (prop.typeIndex === COLVEC) {
+        prop.vectorBaseType = schemaProp.baseType ?? 'number'
+      }
 
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
