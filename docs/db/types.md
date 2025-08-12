@@ -24,14 +24,14 @@ await db.setSchema({
 })
 ```
 
-| Schema prop   | Required  | Type                      | Default   | Description       |
-|---------------|:---------:|---------------------------|----------:|-------------------|
-| `default`     | &cross;   | `number | Date | string`  |           | Default value.    |
-| `on`          | &cross;   | `'create' | 'update'`     |           | Update on event.  |
-| `display`     | &cross;   | `DateDisplay`             |           |                   |
-| `min`         | &cross;   | `number | string`         |           | Minimum value.    |
-| `max`         | &cross;   | `number | string`         |           | Maximum value.    |
-| `step`        | &cross;   | `number | 'any' | string` |   `'any'` | Step.             |
+| Schema prop   | Required  | Type                          | Default   | Description       |
+|---------------|:---------:|-------------------------------|----------:|-------------------|
+| `default`     | &cross;   | `number \| Date \| string`    |           | Default value.    |
+| `on`          | &cross;   | `'create' \| 'update'`        |           | Update on event.  |
+| `display`     | &cross;   | `DateDisplay`                 |           |                   |
+| `min`         | &cross;   | `number \| string`            |           | Minimum value.    |
+| `max`         | &cross;   | `number \| string`            |           | Maximum value.    |
+| `step`        | &cross;   | `number \| 'any' \| string`   |   `'any'` | Step.             |
 
 ## Boolean
 
@@ -135,8 +135,8 @@ await db.setSchema({
 
 | Schema prop   | Required  | Type                                  | Default       | Description       |
 |---------------|:---------:|---------------------------------------|--------------:|-------------------|
-| `enum`        | &check;   | `Array<string | number | boolean>`    |               |                   |
-| `default`     | &cross;   | `Array<string | number | boolean>`    |   `undefined` | Default value.    |
+| `enum`        | &check;   | `Array<string \| number \| boolean>`  |               |                   |
+| `default`     | &cross;   | `Array<string \| number \| boolean>`  |   `undefined` | Default value.    |
 
 ## JSON
 
@@ -229,7 +229,7 @@ db.create('user', {
 | `max`         | &cross;   | `number` (integer)    |     Unlimited | Maximum length in Unicode code points. |
 | `mime`        | &cross;   | `Mime`                |               | Mime type.                    |
 | `format`      | &cross;   | `StringFormat`        |               |                               |
-| `compression` | &cross;   | `'none' | 'deflate'`  |        `none` | Preferred compression method. |
+| `compression` | &cross;   | `'none' \| 'deflate'` |        `none` | Preferred compression method. |
 
 **text**
 
@@ -237,7 +237,7 @@ db.create('user', {
 |---------------|:---------:|-----------------------|--------------:|-------------------------------|
 | `default`     | &cross;   |                       |          `''` | Default value.                |
 | `format`      | &cross;   | `StringFormat`        |               |                               |
-| `compression` | &cross;   | `'none' | 'deflate'`  |        `none` | Preferred compression method. |
+| `compression` | &cross;   | `'none' \| 'deflate'` |        `none` | Preferred compression method. |
 
 ### Storage Format
 
