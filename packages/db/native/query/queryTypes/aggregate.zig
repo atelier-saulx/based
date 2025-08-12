@@ -81,6 +81,17 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     return result;
 }
 
+inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeReference) []u8 {
+    if (ref != null) {
+        const dst = db.getNodeFromReference(ref);
+        if (dst != null) {
+            const id: *u32 = @alignCast(@ptrCast(dst));
+            return std.mem.asBytes(id)[0..4];
+        }
+    }
+    return &[_]u8{};
+}
+
 pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
@@ -109,6 +120,8 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                     groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
+                else if (groupCtx.propType == types.Prop.REFERENCE)
+                    getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else

@@ -22,6 +22,7 @@ import {
   COLVEC,
   isNumberType,
   TypeIndex,
+  REFERENCE,
 } from '@based/schema/def'
 import { QueryDef, QueryDefType } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -107,6 +108,11 @@ const readAggregate = (
             key = dtFormat.format(readDoubleLE(result, i))
           }
 
+          i += keyLen
+        } else if (q.aggregate.groupBy.typeIndex == REFERENCE) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, INT32)
           i += keyLen
         } else {
           keyLen = readUint16(result, i)
