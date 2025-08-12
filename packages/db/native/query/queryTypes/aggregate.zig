@@ -16,6 +16,7 @@ const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const createGroupCtx = groupFunctions.createGroupCtx;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
+const getReferenceNodeId = @import("../aggregate/references.zig").getReferenceNodeId;
 
 const c = @import("../../c.zig");
 const aux = @import("../aggregate/utils.zig");
@@ -79,17 +80,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     try finalizeResults(resultsField, accumulatorField, agg, option);
     writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
     return result;
-}
-
-inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeReference) []u8 {
-    if (ref != null) {
-        const dst = db.getNodeFromReference(ref);
-        if (dst != null) {
-            const id: *u32 = @alignCast(@ptrCast(dst));
-            return std.mem.asBytes(id)[0..4];
-        }
-    }
-    return &[_]u8{};
 }
 
 pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !c.napi_value {

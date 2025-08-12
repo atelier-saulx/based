@@ -1488,6 +1488,9 @@ await test('numeric types', async (t) => {
     ],
     'sum, references, group by',
   )
+
+  // await db.query('vote').groupBy('sequence').sum('NL').get().inspect()
+
   deepEqual(
     await db
       .query('sequence')
@@ -2615,6 +2618,98 @@ await test('timezone offsets', async (t) => {
       },
     },
     'reading stored datetime (as UTC) with specific timezone',
+  )
+})
+
+await test('group by reference ids', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'vehicle',
+        },
+      },
+      driver: {
+        name: 'string',
+        rank: 'int8',
+        trips: {
+          items: {
+            ref: 'trip',
+            prop: 'trip',
+          },
+        },
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'car',
+        },
+      },
+      vehicle: {
+        plate: 'string',
+        model: 'string',
+        year: 'number',
+      },
+    },
+  })
+  const v1 = db.create('vehicle', {
+    plate: 'DVH0101',
+    model: 'BYD 01',
+    year: 2024,
+  })
+  const v2 = db.create('vehicle', {
+    plate: 'MBT8965',
+    model: 'VW Beatle',
+    year: 1989,
+  })
+  const t1 = db.create('trip', {
+    distance: 523.1,
+    vehicle: v2,
+  })
+  const d1 = db.create('driver', {
+    name: 'Luc Ferry',
+    rank: 5,
+    vehicle: v2,
+    trips: [t1],
+  })
+
+  deepEqual(
+    await db.query('driver').sum('rank').groupBy('vehicle').get(),
+    {
+      2: {
+        rank: 5,
+      },
+    },
+    'group by reference id',
+  )
+
+  deepEqual(
+    await db
+      .query('driver')
+      .include((q) => q('trips').groupBy('vehicle').max('distance'))
+      .include('*')
+      .get(),
+    [
+      {
+        id: 1,
+        rank: 5,
+        name: 'Luc Ferry',
+        trips: {
+          2: {
+            distance: 523.1,
+          },
+        },
+      },
+    ],
+    'brached query with nested group by reference id',
   )
 })
 
