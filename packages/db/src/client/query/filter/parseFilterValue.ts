@@ -9,7 +9,7 @@ import {
   TEXT,
 } from '@based/schema/def'
 import { crc32 } from '../../crc32.js'
-import { convertToTimestamp, ENCODER } from '@saulx/utils'
+import { convertToTimestamp, ENCODER } from '@based/utils'
 // -------------------------------------------
 // conditions normal
 // field, [size 2]

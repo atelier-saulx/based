@@ -1,6 +1,6 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-import { deepCopy } from '@saulx/utils'
+import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
 import { deepEqual } from './shared/assert.js'
 

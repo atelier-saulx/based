@@ -17,6 +17,7 @@ const cli = meow(
     dev        Run in local development mode
     init       Initialize a new project
     status     Show status & logs
+    secrets    Set/get secrets. Use subcommand 'set'/'get'
     logout     Logout from the cloud
 
   Options
@@ -30,6 +31,8 @@ const cli = meow(
     --url       Use a custom discovery url
     --cwd       Override the cwd of the project
     --hub       Use hub url
+    --name, -k  Name of secret to get/set
+    --value, -v Value of secret to set
     
   Examples
     $ @based/cli deploy --watch --force
@@ -72,11 +75,20 @@ const cli = meow(
         type: 'string',
         default: process.cwd(),
       },
+      name: {
+        type: 'string',
+        shortFlag: 'k',
+      },
+      value: {
+        type: 'string',
+        shortFlag: 'v',
+      },
     },
   },
 )
 
 const command: Props['command'] = cli.input[0] as Props['command']
+const args: string[] = cli.input.slice(1)
 
 const opts: Opts = {
   noCloud: cli.flags.noCloud,
@@ -89,6 +101,9 @@ const opts: Opts = {
   cwd: cli.flags.cwd,
   org: cli.flags.org,
   hub: cli.flags.hub,
+  name: cli.flags.name,
+  value: cli.flags.value,
+  args,
 }
 
 if (cli.flags.token) {
@@ -99,7 +114,7 @@ if (cli.flags.token) {
   }
 }
 
-if (command === 'dev' || command === 'deploy') {
+if (command === 'dev' || command === 'deploy' || command === 'secrets') {
   render(<App opts={opts} command={command ?? 'status'} />)
 } else {
   withFullScreen(<App opts={opts} command={command ?? 'status'} />).start()

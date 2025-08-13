@@ -1,4 +1,3 @@
-import { readFloatLE } from '@saulx/utils'
 import type { LangCode, SchemaLocales, SchemaVectorBaseType } from '../index.js'
 import { Validation } from './validation.js'
 
@@ -35,6 +34,7 @@ export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
 export const COLVEC = 30
+export const META_SELVA_STRING = 31
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -61,6 +61,7 @@ export const TYPE_INDEX_MAP = {
   json: JSON,
   object: OBJECT,
   colvec: COLVEC,
+  metaSelvaString: META_SELVA_STRING,
 }
 
 export const enum numberTypes {
@@ -237,6 +238,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   json: 0,
   object: 0,
   colvec: 0, // separate
+  metaSelvaString: 9, // will be more (1 more for compression)
 }
 
 const reverseMap: any = {}

@@ -1,4 +1,4 @@
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import { DbClient } from '../src/client/index.js'
 import { BasedDb, getDefaultHooks } from '../src/index.js'
 import { DbServer } from '../src/server/index.js'

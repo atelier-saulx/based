@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 const countrySchema: SchemaType = {
   props: {

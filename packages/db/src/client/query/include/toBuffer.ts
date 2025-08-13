@@ -1,3 +1,4 @@
+import { META_SELVA_STRING } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
@@ -12,7 +13,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     !def.include.props.size &&
     !def.references.size &&
     !def.include.main.len &&
-    !def.include.langTextFields.size
+    !def.include.langTextFields.size &&
+    !def.include.meta
   ) {
     return result
   }
@@ -133,6 +135,15 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
       def.include.propsRead[k] = 0
     })
     result.push(includeBuffer)
+  }
+
+  if (def.include.meta) {
+    for (const prop of def.include.meta) {
+      const b = new Uint8Array(2)
+      b[0] = prop
+      b[1] = META_SELVA_STRING // prob want to add more here...
+      result.push(b)
+    }
   }
 
   return result

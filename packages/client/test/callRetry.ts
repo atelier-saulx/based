@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import getPort from 'get-port'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 

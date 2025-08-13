@@ -28,6 +28,11 @@ export type EdgeTarget = {
   ref: PropDef | PropDefEdge | null
 }
 
+export enum MainMetaInclude {
+  All = 1,
+  MetaOnly = 2,
+}
+
 export type Target = {
   type: string
   id?: number | void
@@ -133,6 +138,8 @@ export type QueryDefShared = {
         fallBacks: LangCode[]
       }
     >
+    metaMain?: Map<number, MainMetaInclude> // start
+    meta?: Set<number>
     stringFields: Set<string>
     props: Map<number, PropDef | PropDefEdge>
     propsRead: { [propName: number]: number }
@@ -189,6 +196,7 @@ export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
 export const READ_AGGREGATION = 250
+export const READ_META = 249
 
 export const enum includeOp {
   REFERENCES_AGGREGATION = 251,

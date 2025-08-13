@@ -10,7 +10,7 @@ import { verifyRoute } from '../../../verifyRoute.js'
 import { installFn } from '../../../installFn.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
-import { readUint24 } from '@saulx/utils'
+import { readUint24 } from '@based/utils'
 
 export const handleFunction: FakeBinaryMessageHandler = (
   arr,

@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import fetch from 'cross-fetch'
 import getPort from 'get-port'
 

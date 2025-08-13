@@ -1,7 +1,7 @@
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload, Options } from '@aws-sdk/lib-storage'
 import { S3Client } from './index.js'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 export const initAwsS3 = (accessKeyId: string, secretAccessKey: string) => {
   const client = new S3({

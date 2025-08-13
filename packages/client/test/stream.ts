@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { wait, readStream } from '@saulx/utils'
+import { wait, readStream } from '@based/utils'
 import { Duplex } from 'node:stream'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

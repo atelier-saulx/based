@@ -1,15 +1,16 @@
 import React from 'react'
 import { Text } from 'ink'
 import { Provider, useAuthState } from '@based/react'
-import { Login } from './login.js'
+import { Login } from './pages/login.js'
 import { AdminCtx } from './adminCtx.js'
-import { Status } from './status/status.js'
-import { Logout } from './logout.js'
-import { Dev } from './dev.js'
-import { Init } from './init.js'
+import { Events } from './pages/events.js'
+import { Logout } from './pages/logout.js'
+import { Dev } from './pages/dev.js'
+import { GetSecret, SetSecret } from './pages/secrets.js'
+import { Init } from './pages/init.js'
 import { useClients } from './hooks/useClients/useClients.js'
 import { Props } from './types.js'
-import { Deploy } from './deploy.js'
+import { Deploy } from './pages/deploy.js'
 
 const Env = (p: Props) => {
   const { userId } = useAuthState()
@@ -21,7 +22,18 @@ const Env = (p: Props) => {
   }
 
   if (p.command === 'status') {
-    return <Status />
+    return <Events />
+  }
+
+  if (p.command === 'secrets') {
+    const subCommand = p.opts.args?.[0]
+
+    if (subCommand === 'get') {
+      return <GetSecret name={p.opts.name} />
+    } else if (subCommand === 'set') {
+      return <SetSecret name={p.opts.name} value={p.opts.value} />
+    }
+    return <Text>Need to use a subcommand, this should be a help doc</Text>
   }
 
   return <Text color="yellow">Command not implemented! {p.command}</Text>
@@ -51,11 +63,11 @@ export default function App(p: Props) {
   }
 
   if (p.command === 'dev') {
-    return <Dev />
+    return <Dev {...p} />
   }
 
   if (p.command === 'deploy') {
-    return <Deploy />
+    return <Deploy {...p} />
   }
 
   return <EnvWrapper {...p} />

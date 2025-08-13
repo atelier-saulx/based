@@ -1,13 +1,17 @@
 import { context } from 'esbuild'
 import { join } from 'path'
-import { BasedFunctionConfig } from '@based/functions'
+import {
+  BasedAuthorizeFunctionConfig,
+  BasedFunctionConfig,
+} from '@based/functions'
 import { Schema } from '@based/schema'
 import { find, FindResult } from './fsUtils.js'
 import { configsFiles, schemaFiles } from './constants.js'
-import { BuildCtx, rebuild, evalBuild } from './buildUtils.js'
+import { BuildCtx, rebuild, evalBuild, importFromBuild } from './buildUtils.js'
+import { BasedOpts } from '@based/client'
 
 export type ParseResult = {
-  fnConfig: BasedFunctionConfig
+  fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig
   configCtx: BuildCtx
   indexCtx: BuildCtx
   mainCtx?: BuildCtx
@@ -16,6 +20,7 @@ export type ParseResult = {
 export type ParseResults = {
   cwd: string
   publicPath: string
+  opts: BasedOpts
   configs: ParseResult[]
   schema: {
     schema: Schema
@@ -26,6 +31,7 @@ export type ParseResults = {
 export const parseConfig = async (
   result: FindResult,
   publicPath: string,
+  opts: BasedOpts,
 ): Promise<ParseResult> => {
   const configCtx = await context({
     entryPoints: [result.path],
@@ -35,12 +41,16 @@ export const parseConfig = async (
     format: 'esm',
     metafile: true,
   }).then(rebuild)
-  const fnConfig: BasedFunctionConfig = await evalBuild(configCtx.build)
+
+  const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
+    // await evalBuild(configCtx.build, result.path)
+    importFromBuild(configCtx.build, result.path)
 
   // this has to change...
   // need to hash the file before if we wan this
   const checksum = 1 // fnConfig.checksum
-  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${fnConfig.name}',${checksum});`
+  const name = fnConfig.type === 'authorize' ? 'based:authorize' : fnConfig.name
+  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${name}',${checksum});`
   const indexCtx = await context({
     banner: {
       js: banner,
@@ -56,13 +66,16 @@ export const parseConfig = async (
 
   if (fnConfig.type === 'app') {
     const mainCtx = await context({
+      banner: {
+        js: `globalThis.basedOpts=${JSON.stringify(opts)};`,
+      },
       entryPoints: [join(result.dir, fnConfig.main)],
       entryNames: '[name]-[hash]',
       publicPath,
       bundle: true,
       write: false,
       outdir: '.',
-
+      plugins: fnConfig.plugins,
       loader: {
         '.ico': 'file',
         '.eot': 'file',
@@ -96,7 +109,8 @@ export const parseSchema = async (result: FindResult) => {
     format: 'esm',
   }).then(rebuild)
   const schema = {
-    schema: await evalBuild(schemaCtx.build),
+    // schema: await evalBuild(schemaCtx.build, result.path),
+    schema: importFromBuild(schemaCtx.build, result.path),
     schemaCtx,
   }
   return schema
@@ -105,12 +119,13 @@ export const parseSchema = async (result: FindResult) => {
 export const parse = async (
   result: FindResult,
   publicPath: string,
+  opts: BasedOpts,
 ): Promise<
   | { config: ParseResult; schema?: never }
   | { schema: { schema: Schema; schemaCtx: BuildCtx }; config?: never }
 > => {
   if (configsFiles.has(result.file)) {
-    return { config: await parseConfig(result, publicPath) }
+    return { config: await parseConfig(result, publicPath, opts) }
   }
 
   if (schemaFiles.has(result.file)) {
@@ -119,9 +134,11 @@ export const parse = async (
 }
 
 export const parseFolder = async ({
+  opts,
   cwd,
   publicPath,
 }: {
+  opts: BasedOpts
   cwd: string
   publicPath: string
 }): Promise<ParseResults> => {
@@ -131,7 +148,7 @@ export const parseFolder = async ({
     cwd,
     new Set([...configsFiles, ...schemaFiles]),
     async (result: FindResult) => {
-      const res = await parse(result, publicPath)
+      const res = await parse(result, publicPath, opts)
       if (res.schema) {
         schema = res.schema
       } else if (res.config) {
@@ -139,5 +156,5 @@ export const parseFolder = async ({
       }
     },
   )
-  return { configs, schema, publicPath, cwd }
+  return { configs, schema, publicPath, cwd, opts }
 }

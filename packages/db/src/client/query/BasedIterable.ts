@@ -3,7 +3,7 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
-import { readFloatLE, readUint32 } from '@saulx/utils'
+import { readFloatLE, readUint32 } from '@based/utils'
 
 export { time, size, inspectData }
 

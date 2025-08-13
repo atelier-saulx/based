@@ -1,6 +1,6 @@
 import { DbWorker } from './workers/DbWorker.js'
 import { DbServer } from './index.js'
-import { readUint64 } from '@saulx/utils'
+import { readUint64 } from '@based/utils'
 
 export class QueryWorker extends DbWorker {
   constructor(address: BigInt, db: DbServer, workerIndex: number) {

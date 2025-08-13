@@ -19,7 +19,7 @@ import {
   destroyChannel,
   extendChannel,
 } from '../../channel/index.js'
-import { readUint64 } from '@saulx/utils'
+import { readUint64 } from '@based/utils'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,

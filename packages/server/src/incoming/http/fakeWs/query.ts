@@ -16,7 +16,7 @@ import {
 import { verifyRoute } from '../../../verifyRoute.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
-import { readUint64 } from '@saulx/utils'
+import { readUint64 } from '@based/utils'
 
 const EMPTY = Buffer.allocUnsafe(0)
 

@@ -71,7 +71,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
-        types.Prop.STRING, types.Prop.TEXT, types.Prop.ALIAS => {
+        types.Prop.STRING, types.Prop.TEXT, types.Prop.ALIAS, types.Prop.BINARY => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {
@@ -356,7 +356,7 @@ pub fn remove(
         types.Prop.ALIAS => {
             selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
         },
-        types.Prop.STRING, types.Prop.TEXT => {
+        types.Prop.STRING, types.Prop.TEXT, types.Prop.BINARY => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_remove_buf(
                     index,
@@ -406,7 +406,7 @@ pub fn insert(
         types.Prop.ALIAS => {
             selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, node);
         },
-        types.Prop.STRING, types.Prop.TEXT => {
+        types.Prop.STRING, types.Prop.TEXT, types.Prop.BINARY => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(
                     index,

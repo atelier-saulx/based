@@ -1,4 +1,4 @@
-import { writeUint16, writeInt16, writeUint32 } from '@saulx/utils'
+import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import {
   AggregateType,

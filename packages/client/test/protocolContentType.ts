@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import getPort from 'get-port'
-import { wait, readStream } from '@saulx/utils'
+import { wait, readStream } from '@based/utils'
 import { BasedClient as BasedClientOld } from '@based/client-old'
 import { Duplex } from 'node:stream'
 

@@ -4,7 +4,7 @@ import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
 import { expectBoolean, expectObject } from './assert.js'
-import { deepCopy } from '@saulx/utils'
+import { deepCopy } from '@based/utils'
 
 export { getPropType }
 

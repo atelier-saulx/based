@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { equals } from '@saulx/utils'
+import { equals } from '@based/utils'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
