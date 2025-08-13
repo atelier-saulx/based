@@ -108,23 +108,26 @@ async function tabled(
       // TODO groupBy
     } else if (r.def.aggregate.aggregates) {
       for (const ary of r.def.aggregate.aggregates.values()) {
-        data[0].rows.push(
-          ary.map((agg) => {
-            header.push(
-              `${agg.propDef.path.join('.')} (${AggregateType[agg.type].toLowerCase()})`,
-            )
-            if (
-              agg.type === AggregateType.CARDINALITY ||
-              agg.type === AggregateType.COUNT
-            ) {
-              const offset = 0
-              return readUint32(r.result, agg.resultPos + offset)
-            } else {
-              const offset = 0
-              return readDoubleLE(r.result, agg.resultPos + offset)
-            }
-          }),
-        )
+        const row: Array<string | number> = []
+        for (const agg of ary) {
+          // Update the header
+          const hdr = `${agg.propDef.path.join('.')} (${AggregateType[agg.type].toLowerCase()})`
+          const idx = !header.includes(hdr)
+            ? header.push(hdr) - 1
+            : header.indexOf(hdr)
+
+          if (
+            agg.type === AggregateType.CARDINALITY ||
+            agg.type === AggregateType.COUNT
+          ) {
+            const offset = 0
+            row[idx] = readUint32(r.result, agg.resultPos + offset)
+          } else {
+            const offset = 0
+            row[idx] = readDoubleLE(r.result, agg.resultPos + offset)
+          }
+        }
+        data[0].rows.push(row)
       }
     }
   } else {
