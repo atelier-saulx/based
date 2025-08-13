@@ -3,6 +3,10 @@ import type { BasedClient } from '@based/client'
 import { hash } from '@saulx/hash'
 import { queued } from '@saulx/utils'
 import type { AppContext } from '../../context/index.js'
+import { isDisconnectedError } from '../../shared/errors.js'
+
+const retry = { shouldRetry: err => isDisconnectedError(err), max: 2 }
+const concurrency = 10
 
 export const queuedFileUpload = queued(
   async (client: BasedClient, payload: any, destUrl: string) => {
@@ -14,7 +18,7 @@ export const queuedFileUpload = queued(
 
     return client.stream('db:file-upload', payload)
   },
-  { dedup: (_client, payload) => hash(payload), concurrency: 10 },
+  { dedup: (_client, payload) => hash(payload), concurrency, retry },
 )
 
 export const queuedFnDeploy = queued(
@@ -58,5 +62,5 @@ export const queuedFnDeploy = queued(
 
     return { distId }
   },
-  { dedup: (_context, _client, checksum) => hash(checksum), concurrency: 10 },
+  { dedup: (_context, _client, checksum) => checksum, concurrency, retry },
 )
