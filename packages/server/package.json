@@ -12,7 +12,7 @@
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "dependencies": {
     "utility-types": "^3.10.0",

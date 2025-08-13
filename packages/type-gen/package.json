@@ -8,7 +8,7 @@
     "test": "npx ava",
     "build": "npx tsc",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "sideEffects": false,
   "dependencies": {

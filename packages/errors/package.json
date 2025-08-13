@@ -18,7 +18,7 @@
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
     "test": "npx ava",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "sideEffects": false,
   "ava": {

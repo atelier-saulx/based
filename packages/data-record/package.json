@@ -29,7 +29,7 @@
     "watch": "npx tsc --watch",
     "build": "rm -rf ./dist && tsc",
     "perf": "node --prof ./node_modules/.bin/ts-node test/perf/",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "devDependencies": {
     "tmp-promise": "^3.0.3",

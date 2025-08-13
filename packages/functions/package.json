@@ -13,7 +13,7 @@
     "clean:ts:before": "rm -rf ./dist ./tsconfig.tsbuildinfo || true",
     "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "sideEffects": false,
   "dependencies": {

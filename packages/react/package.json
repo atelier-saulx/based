@@ -10,7 +10,7 @@
     "watch-server": "nodemon ./test/based-server.js",
     "browser": "npx vite ./test/browser",
     "watch": "npm run build -- --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {dist,node_modules}"
   },
   "exports": {
     "./ssr": "./dist/ssr.js",
