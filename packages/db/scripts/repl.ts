@@ -32,10 +32,12 @@ import {
   WEAK_REFERENCES,
   JSON as SCHEMA_JSON,
 } from '@based/schema/def'
+import { readDoubleLE, readUint32 } from '@based/utils'
+import { AggregateType } from '../dist/src/client/query/aggregates/types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-const typeIndex2Align = {};
+const typeIndex2Align = {}
 typeIndex2Align[NULL] = 'l'
 typeIndex2Align[TIMESTAMP] = 'r'
 typeIndex2Align[NUMBER] = '.'
@@ -92,33 +94,62 @@ async function tabled(
     return
   }
 
-  const header = ['ID']
-  const align: Array<'l' | 'r' | 'c' | '.'> = ['r']
-  for (const k of Object.keys(schema.props)) {
-    const prop = schema.props[k]
-    header.push(prop.path.join('.'))
-    align.push(typeIndex2Align[prop.typeIndex])
-  }
+  const header: string[] = []
+  const align: Array<'l' | 'r' | 'c' | '.'> = []
   const data: { name: string; rows: (string | number)[][] }[] = [
     {
       name: title,
       rows: [],
     },
   ]
-  r.forEach((v) => {
-    data[0].rows.push([
-      v.id,
-      ...Object.keys(schema.props).map((k) => {
-        const value = k.includes('.')
-          ? k.split('.').reduce((acc, cur) => acc[cur], v)
-          : v[k]
-        if (schema.props[k].typeIndex === TEXT) {
-          return JSON.stringify(value)
-        }
-        return `${value}`
-      }),
-    ])
-  })
+
+  if (r.def.aggregate) {
+    if (r.def.aggregate.groupBy) {
+      // TODO groupBy
+    } else if (r.def.aggregate.aggregates) {
+      for (const ary of r.def.aggregate.aggregates.values()) {
+        data[0].rows.push(
+          ary.map((agg) => {
+            header.push(
+              `${agg.propDef.path.join('.')} (${AggregateType[agg.type].toLowerCase()})`,
+            )
+            if (
+              agg.type === AggregateType.CARDINALITY ||
+              agg.type === AggregateType.COUNT
+            ) {
+              const offset = 0
+              return readUint32(r.result, agg.resultPos + offset)
+            } else {
+              const offset = 0
+              return readDoubleLE(r.result, agg.resultPos + offset)
+            }
+          }),
+        )
+      }
+    }
+  } else {
+    header.push('ID')
+    align.push('r')
+    for (const k of Object.keys(schema.props)) {
+      const prop = schema.props[k]
+      header.push(prop.path.join('.'))
+      align.push(typeIndex2Align[prop.typeIndex])
+    }
+    r.forEach((v) => {
+      data[0].rows.push([
+        v.id,
+        ...Object.keys(schema.props).map((k) => {
+          const value = k.includes('.')
+            ? k.split('.').reduce((acc, cur) => acc[cur], v)
+            : v[k]
+          if (schema.props[k].typeIndex === TEXT) {
+            return JSON.stringify(value)
+          }
+          return `${value}`
+        }),
+      ])
+    })
+  }
 
   console.log(formatTable(header, align, data))
 }
