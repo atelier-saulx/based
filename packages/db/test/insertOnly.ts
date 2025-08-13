@@ -38,7 +38,7 @@ await test('colvec requires insertOnly', async (t) => {
     types: {
       audit: {
         props: {
-          v: { type: 'colvec', size: 3 },
+          v: { type: 'colvec', size: 3, baseType: 'float32' },
         },
       },
     },

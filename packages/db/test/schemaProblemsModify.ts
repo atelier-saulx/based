@@ -8,14 +8,18 @@ await test('schema problems modify', async (t) => {
     path: t.tmp,
   })
 
+  const int = setInterval(async () => {
+    await db.save()
+  }, 1e3)
+
   t.after(() => {
+    clearInterval(int)
     return t.backup(db)
   })
 
   await db.start({ clean: true })
 
   const types = {}
-
   for (let i = 0; i < 200; i++) {
     types[(~~(Math.random() * 1e6)).toString(16)] = {
       blurf: 'string',
@@ -31,14 +35,6 @@ await test('schema problems modify', async (t) => {
 
   await db.setSchema({
     types,
-  })
-
-  const int = setInterval(async () => {
-    await db.save()
-  }, 1e3)
-
-  t.after(() => {
-    clearInterval(int)
   })
 
   const q = []

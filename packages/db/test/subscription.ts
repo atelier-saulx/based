@@ -161,3 +161,53 @@ await test('subscription error', async (t) => {
 
   close()
 })
+
+await test('subscribe to refs', async (t) => {
+  const clientsN = 2
+  const { clients } = await start(t, clientsN)
+
+  await clients[0].setSchema({
+    types: {
+      queue: {
+        props: {
+          name: 'string',
+        },
+      },
+      queueItem: {
+        props: {
+          queue: {
+            ref: 'queue',
+            prop: 'items',
+          },
+          data: 'string',
+        },
+      },
+    },
+  })
+
+  const queueId = await clients[0].create('queue', { name: 'test' })
+
+  let updatesReceived = 0
+  let size = 0
+  const close = clients[1]
+    .query('queue', queueId)
+    .include('items')
+    .subscribe((q) => {
+      updatesReceived++
+      const res = q.toObject()
+      console.log(res.items.length)
+      size = res.items.length
+      const n = performance.now()
+      console.log(updatesReceived, 'update received after', n - d)
+    })
+
+  const d = performance.now()
+
+  for (let i = 0; i < 1e6; i++) {
+    await clients[0].create('queueItem', { data: `Item-${i}`, queue: queueId })
+  }
+
+  await wait(700)
+
+  close()
+})

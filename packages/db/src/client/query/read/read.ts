@@ -22,6 +22,7 @@ import {
   COLVEC,
   isNumberType,
   TypeIndex,
+  REFERENCE,
 } from '@based/schema/def'
 import { MainMetaInclude, QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
@@ -36,7 +37,6 @@ import {
   readInt64,
   readUint16,
   readUint32,
-  readUint64,
   setByPath,
 } from '@based/utils'
 import { inverseLangMap } from '@based/schema'
@@ -111,6 +111,11 @@ const readAggregate = (
             key = dtFormat.format(readDoubleLE(result, i))
           }
 
+          i += keyLen
+        } else if (q.aggregate.groupBy.typeIndex == REFERENCE) {
+          keyLen = readUint16(result, i)
+          i += 2
+          key = readNumber(result, i, INT32)
           i += keyLen
         } else {
           keyLen = readUint16(result, i)
@@ -685,15 +690,49 @@ export const readAllFields = (
           i += size
           addField(prop, string, item, false)
         }
-      } else if (prop.typeIndex == VECTOR || prop.typeIndex == COLVEC) {
+      } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
         q.include.propsRead[index] = id
         const size = readUint32(result, i)
-        const arr = new Float32Array(size / 4)
-        for (let j = 0; j < size; j += 4) {
-          arr[j / 4] = readFloatLE(result, i + 4 + j)
+        i += 4
+        const tmp = result.slice(i, i + size) // make a copy
+        let arr:
+          | Int8Array
+          | Uint8Array
+          | Int16Array
+          | Uint16Array
+          | Int32Array
+          | Uint32Array
+          | Float32Array
+          | Float64Array
+        switch (prop.vectorBaseType) {
+          case 'int8':
+            arr = new Int8Array(tmp.buffer)
+            break
+          case 'uint8':
+            arr = new Uint8Array(tmp.buffer)
+            break
+          case 'int16':
+            arr = new Int16Array(tmp.buffer)
+            break
+          case 'uint16':
+            arr = new Uint16Array(tmp.buffer)
+            break
+          case 'int32':
+            arr = new Int32Array(tmp.buffer)
+            break
+          case 'uint32':
+            arr = new Uint32Array(tmp.buffer)
+            break
+          case 'float32':
+            arr = new Float32Array(tmp.buffer)
+            break
+          case 'float64':
+          case 'number':
+            arr = new Float64Array(tmp.buffer)
+            break
         }
         addField(prop, arr, item, false)
-        i += size + 4
+        i += size
       }
     }
   }

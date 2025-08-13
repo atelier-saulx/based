@@ -828,3 +828,82 @@ await test('or numerical', async (t) => {
     20000,
   )
 })
+
+await test('has', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          age: { type: 'uint32' },
+          bestBud: {
+            // single Ref
+            ref: 'user',
+            prop: 'bestBudOf',
+          },
+          buddies: {
+            // multiple Ref
+            items: {
+              ref: 'user',
+              prop: 'buddies',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const ildo1 = db.create('user', {
+    name: 'Clemildo',
+    age: 29,
+  })
+  const ildo2 = db.create('user', {
+    name: 'Josefildo',
+    age: 34,
+  })
+  const ildo3 = db.create('user', {
+    name: 'Adeildo',
+    age: 50,
+    bestBud: ildo2,
+    buddies: [ildo1, ildo2],
+  })
+
+  // filtering refs
+  await db
+    .query('user')
+    .include('*')
+    .filter('bestBud.name', 'has', 'Jose')
+    .get()
+    .inspect(10)
+
+  // filtering multi refs
+  await db
+    .query('user')
+    .include(
+      (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+      '*',
+    )
+    .get()
+    .inspect(10)
+  // because we can't apply .filter() over a .filter() return we have to use JS .filter()
+  console.log(
+    JSON.stringify(
+      (
+        await db
+          .query('user')
+          .include(
+            (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+            '*',
+          )
+          .get()
+          .toObject()
+      ).filter((u) => u.buddies.length > 0),
+    ),
+  )
+})

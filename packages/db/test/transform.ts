@@ -158,3 +158,45 @@ await test('transform', async (t) => {
     ]),
   })
 })
+
+await test('transform ', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  const Distance = {
+    fromKilometers(num) {
+      return num * 1e3
+    },
+    _transform(type, value) {
+      // this fn needs to be fully isolated for serialization
+      if (type === 'read') {
+        return {
+          kilometers: value / 1e3,
+        }
+      }
+      return value
+    },
+  }
+
+  await db.setSchema({
+    types: {
+      flight: {
+        distanceTraveled: {
+          type: 'number',
+          transform: Distance._transform,
+        },
+      },
+    },
+  })
+
+  await db.create('flight', { distanceTraveled: Distance.fromKilometers(3) })
+
+  deepEqual(await db.query('flight').get(), [
+    { id: 1, distanceTraveled: { kilometers: 3 } },
+  ])
+})

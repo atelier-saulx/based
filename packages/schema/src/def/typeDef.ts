@@ -19,6 +19,7 @@ import {
   BLOCK_CAPACITY_MIN,
   ALIAS,
   ALIASES,
+  VECTOR,
   COLVEC,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
@@ -213,6 +214,9 @@ export const createSchemaTypeDef = (
 
       if (prop.typeIndex !== NUMBER && prop.step === undefined) {
         prop.step = 1
+      }
+      if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
+        prop.vectorBaseType = schemaProp.baseType ?? 'number'
       }
 
       if (isPropType('enum', schemaProp)) {

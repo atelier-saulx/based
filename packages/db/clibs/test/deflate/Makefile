@@ -4,7 +4,7 @@
 include ../../common.mk
 
 # Add here one or more include directories.
-IDIR := ../../include
+IDIR := ../../include ../../lib/selva/include
 
 # Set this to 1 if you will use asserts that compares floats or doubles;
 # or 0 disable
