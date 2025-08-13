@@ -3,10 +3,10 @@ import path from 'path'
 import { execSync } from 'child_process'
 import axios from 'axios'
 import * as tar from 'tar'
-import rimraf from 'rimraf'
+import { rimrafSync as rimraf } from 'rimraf'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import os, { platform } from 'os'
+import os from 'os'
 
 const args = process.argv.slice(2)
 const isRelease = args.includes('release')
@@ -152,7 +152,7 @@ async function main() {
         moveLibraryToPlatformDir(destinationLibPath, 'v' + major, platform)
 
         console.log('Cleaning up zig-out directory...')
-        rimraf.sync(path.join(__dirname, 'zig-out'))
+        rimraf(path.join(__dirname, 'zig-out'))
       } catch (error) {
         console.error(
           `Error processing version v${major} for platform ${target}:`,
