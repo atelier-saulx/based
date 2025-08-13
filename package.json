@@ -40,7 +40,7 @@
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.9.0",
     "prettier": "^3.2.5",
-    "rimraf": "^3.0.2",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
   }
 }
