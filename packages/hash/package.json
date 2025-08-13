@@ -14,6 +14,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
+    "build-release": "rimraf {dist} && tsc",
     "watch": "tsc --watch",
     "test": "ava --verbose"
   },
