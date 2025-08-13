@@ -6,7 +6,7 @@
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {dist,node_modules}",
+    "clean": "rm -rf ./dist ./node_modules",
     "test": "npx ava",
     "browser": "npx vite ./test/browser",
     "browser-server": "node ./test/browser/server.js"
@@ -56,7 +56,6 @@
     "cross-fetch": "4.0.0",
     "esbuild": "^0.23.0",
     "get-port": "7.0.0",
-    "rimraf": "^6.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.2.8",
     "@based/client-old": "npm:@based/client@6.11.2"

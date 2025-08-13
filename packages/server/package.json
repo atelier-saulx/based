@@ -12,7 +12,7 @@
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
-    "clean": "rimraf {dist,node_modules}"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "dependencies": {
     "utility-types": "^3.10.0",
@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@types/mime-types": "2.1.1",
-    "typescript": "^5.2.2",
-    "rimraf": "^6.0.1"
+    "typescript": "^5.2.2"
   }
 }

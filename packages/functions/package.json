@@ -13,7 +13,7 @@
     "clean:ts:before": "rm -rf ./dist ./tsconfig.tsbuildinfo || true",
     "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {dist,node_modules}"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "sideEffects": false,
   "dependencies": {
@@ -23,7 +23,6 @@
     "arktype": "^2.1.20"
   },
   "devDependencies": {
-    "rimraf": "^6.0.1",
     "ts-node": "10.9.1"
   },
   "peerDependencies": {
