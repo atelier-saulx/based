@@ -30,7 +30,6 @@ export const queuedFnDeploy = queued(
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {
-    context.print.log(JSON.stringify(config))
     const { error, distId } = await client.stream('based:set-function', {
       contents: js.contents,
       payload: {
