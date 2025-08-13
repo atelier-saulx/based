@@ -209,7 +209,6 @@ export const initDynamicFunctions = (
             }
 
             const now = Date.now()
-            console.log(name, { now })
             configDb.update('function', id, { loadedAt: now, updatedAt: now })
           } catch (err) {
             console.log('error', err)

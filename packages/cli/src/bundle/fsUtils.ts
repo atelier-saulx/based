@@ -18,6 +18,9 @@ export const find = async (
     const files = await readdir(dir)
     await Promise.all(
       files.map(async (file) => {
+        if (file === 'node_modules') {
+          return
+        }
         if (targets.has(file)) {
           const path = join(dir, file)
           return cb({

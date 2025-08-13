@@ -9,6 +9,7 @@ import { find, FindResult } from './fsUtils.js'
 import { configsFiles, schemaFiles } from './constants.js'
 import { BuildCtx, rebuild, evalBuild, importFromBuild } from './buildUtils.js'
 import { BasedOpts } from '@based/client'
+import { resolvePlugin } from './plugins.js'
 
 export type ParseResult = {
   fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig
@@ -75,7 +76,9 @@ export const parseConfig = async (
       bundle: true,
       write: false,
       outdir: '.',
-      plugins: fnConfig.plugins,
+      plugins: fnConfig.plugins
+        ? fnConfig.plugins.concat(resolvePlugin)
+        : [resolvePlugin],
       loader: {
         '.ico': 'file',
         '.eot': 'file',
@@ -89,7 +92,6 @@ export const parseConfig = async (
         '.woff2': 'file',
         '.wasm': 'file',
       },
-      // plugins: fnConfig.plugins,
       metafile: true,
     }).then(rebuild)
 
