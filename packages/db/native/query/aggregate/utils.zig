@@ -19,7 +19,7 @@ pub inline fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize
 
 pub inline fn datePart(timestamp: []u8, part: types.Interval, tz: i16) []const u8 {
     // tz in minutes to save 2 bytes (max tz is 14h = 840 min = 50400 sec)
-    const ts = @as(i64, @intFromFloat(@trunc(read(f64, timestamp, 0))));
+    const ts = read(i64, timestamp, 0);
     return switch (part) {
         .hour => std.mem.asBytes(&selva.selva_gmtime_hour(ts, tz | 0)),
         .day => std.mem.asBytes(&selva.selva_gmtime_mday(ts, tz | 0)),

@@ -98,17 +98,17 @@ const readAggregate = (
           keyLen = readUint16(result, i)
           i += 2
           if (!q.aggregate?.groupBy?.display) {
-            key = readDoubleLE(result, i).toString()
+            key = readInt64(result, i).toString()
           } else if (q.aggregate?.groupBy?.stepRange > 0) {
             const dtFormat = q.aggregate?.groupBy.display
-            let v = readDoubleLE(result, i)
+            let v = readInt64(result, i)
             key = dtFormat.formatRange(
               v,
               v + q.aggregate?.groupBy.stepRange * 1000,
             )
           } else {
             const dtFormat = q.aggregate?.groupBy.display
-            key = dtFormat.format(readDoubleLE(result, i))
+            key = dtFormat.format(readInt64(result, i))
           }
 
           i += keyLen
