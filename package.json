@@ -28,8 +28,8 @@
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
-    "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/hash && npm run build-release) && (cd packages/schema && npm run build-release) && (cd packages/db && npm run build-release-debug)",
-    "build-release": "npm run build-podman && npm run build-locale && (cd packages/hash && npm run build-release) && (cd packages/schema && npm run build-release) && (cd packages/db && npm run build-release)"
+    "build-release-debug": "npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release-debug)",
+    "build-release": "npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release)"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
