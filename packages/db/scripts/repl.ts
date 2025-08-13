@@ -30,9 +30,39 @@ import {
   VECTOR,
   WEAK_REFERENCE,
   WEAK_REFERENCES,
+  JSON as SCHEMA_JSON,
 } from '@based/schema/def'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+
+const typeIndex2Align = {};
+typeIndex2Align[NULL] = 'l'
+typeIndex2Align[TIMESTAMP] = 'r'
+typeIndex2Align[NUMBER] = '.'
+typeIndex2Align[CARDINALITY] = 'r'
+typeIndex2Align[INT8] = 'r'
+typeIndex2Align[UINT8] = 'r'
+typeIndex2Align[INT16] = 'r'
+typeIndex2Align[UINT16] = 'r'
+typeIndex2Align[INT32] = 'r'
+typeIndex2Align[UINT32] = 'r'
+typeIndex2Align[BOOLEAN] = 'c'
+typeIndex2Align[ENUM] = 'c'
+typeIndex2Align[STRING] = 'l'
+typeIndex2Align[TEXT] = 'l'
+typeIndex2Align[REFERENCE] = 'l'
+typeIndex2Align[REFERENCES] = 'l'
+typeIndex2Align[WEAK_REFERENCE] = 'l'
+typeIndex2Align[WEAK_REFERENCES] = 'l'
+typeIndex2Align[MICRO_BUFFER] = 'l'
+typeIndex2Align[ALIAS] = 'l'
+typeIndex2Align[ALIASES] = 'l'
+typeIndex2Align[BINARY] = 'l'
+typeIndex2Align[VECTOR] = 'l'
+typeIndex2Align[SCHEMA_JSON] = 'l'
+typeIndex2Align[OBJECT] = 'l'
+typeIndex2Align[COLVEC] = 'l'
+typeIndex2Align[META_SELVA_STRING] = 'l'
 
 async function tabled(
   response: Promise<BasedQueryResponse> | BasedQueryResponse,
@@ -60,36 +90,6 @@ async function tabled(
   if (!schema) {
     console.error('No schema')
     return
-  }
-
-  const typeIndex2Align = {
-    NULL: 'l',
-    TIMESTAMP: 'r',
-    NUMBER: '.',
-    CARDINALITY: 'r',
-    INT8: 'r',
-    UINT8: 'r',
-    INT16: 'r',
-    UINT16: 'r',
-    INT32: 'r',
-    UINT32: 'r',
-    BOOLEAN: 'c',
-    ENUM: 'c',
-    STRING: 'l',
-    TEXT: 'l',
-    REFERENCE: 'l',
-    REFERENCES: 'l',
-    WEAK_REFERENCE: 'l',
-    WEAK_REFERENCES: 'l',
-    MICRO_BUFFER: 'l',
-    ALIAS: 'l',
-    ALIASES: 'l',
-    BINARY: 'l',
-    VECTOR: 'l',
-    JSON: 'l',
-    OBJECT: 'l',
-    COLVEC: 'l',
-    META_SELVA_STRING: 'l',
   }
 
   const header = ['ID']
