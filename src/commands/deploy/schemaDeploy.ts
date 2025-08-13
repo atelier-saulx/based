@@ -1,5 +1,6 @@
 import { hash } from '@saulx/hash'
 import type { AppContext } from '../../context/index.js'
+import { isDisconnectedError } from '../../shared/errors.js'
 
 export const schemaDeploy = async (
   context: AppContext,
@@ -19,8 +20,15 @@ export const schemaDeploy = async (
     //     context.i18n('commands.deploy.methods.schema', 1, 1),
     // )
 
-    await basedClient.call(context.endpoints.DEPLOY_SET_SCHEMA, found.config)
-
+    try {
+      await basedClient.call(context.endpoints.DEPLOY_SET_SCHEMA, found.config)
+    } catch (e) {
+      if (!isDisconnectedError(e)) {
+        // we currently expect a disconnect because the hub restarts when schema changes
+        throw e
+      }
+    }
+    
     context.print.success(
       context.i18n('commands.deploy.methods.deployed') +
         context.i18n('commands.deploy.methods.schema', 1, 1),
