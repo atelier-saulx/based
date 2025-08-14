@@ -7,6 +7,7 @@ import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
 import { deepEqual } from './shared/assert.js'
 import { notEqual } from 'node:assert'
+import simdjson from 'simdjson'
 import fs from 'fs'
 
 const gunzip = promisify(_gunzip)
@@ -1119,11 +1120,14 @@ async function parseTripDump(filename: string) {
     ),
   )
   const data = await gunzip(compressedData)
-  return data
-    .toString('utf-8')
-    .split('\n')
-    .filter((line) => line.length)
-    .map((line) => JSON.parse(line))
+  return (
+    data
+      .toString('utf-8')
+      .split('\n')
+      .filter((line) => line.length)
+      // .map((line) => JSON.parse(line))
+      .map((line) => simdjson.lazyParse(line))
+  )
 }
 
 class Loading {
@@ -1146,10 +1150,91 @@ class Loading {
   }
 }
 
+const getValueForKeyPath = async (buffer, path: string) => {
+  let pathV = null
+  try {
+    pathV = await buffer.valueForKeyPath(path)
+  } catch (e) {}
+  return pathV
+}
+
 await test('taxi', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
+  const makeTrip = async (filename: string) => {
+    // const trips = await parseTripDump(filename)
+    const lazyTrips = await parseTripDump(filename)
+
+    const trips = lazyTrips.map(async (lazyTrip) => {
+      const VendorID = await getValueForKeyPath(lazyTrip, 'VendorID')
+      const tpep_pickup_datetime = await getValueForKeyPath(
+        lazyTrip,
+        'tpep_pickup_datetime',
+      )
+      const tpep_dropoff_datetime = await getValueForKeyPath(
+        lazyTrip,
+        'tpep_dropoff_datetime',
+      )
+      let passenger_count = await getValueForKeyPath(
+        lazyTrip,
+        'passenger_count',
+      )
+      const trip_distance = await getValueForKeyPath(lazyTrip, 'trip_distance')
+      const RatecodeID = await getValueForKeyPath(lazyTrip, 'RatecodeID')
+      const store_and_fwd_flag = await getValueForKeyPath(
+        lazyTrip,
+        'store_and_fwd_flag',
+      )
+      const PULocationID = await getValueForKeyPath(lazyTrip, 'PULocationID')
+      const DOLocationID = await getValueForKeyPath(lazyTrip, 'DOLocationID')
+      const payment_type = await getValueForKeyPath(lazyTrip, 'payment_type')
+      const fare_amount = await getValueForKeyPath(lazyTrip, 'fare_amount')
+      const extra = await getValueForKeyPath(lazyTrip, 'extra')
+      const mta_tax = await getValueForKeyPath(lazyTrip, 'mta_tax')
+      const tip_amount = await getValueForKeyPath(lazyTrip, 'tip_amount')
+      const tolls_amount = await getValueForKeyPath(lazyTrip, 'tolls_amount')
+      const improvement_surcharge = await getValueForKeyPath(
+        lazyTrip,
+        'improvement_surcharge',
+      )
+      const total_amount = await getValueForKeyPath(lazyTrip, 'total_amount')
+      const congestion_surcharge = await getValueForKeyPath(
+        lazyTrip,
+        'congestion_surcharge',
+      )
+      const Airport_fee = await getValueForKeyPath(lazyTrip, 'Airport_fee')
+
+      return {
+        VendorID,
+        tpep_pickup_datetime,
+        tpep_dropoff_datetime,
+        passenger_count,
+        trip_distance,
+        RatecodeID,
+        store_and_fwd_flag,
+        PULocationID,
+        DOLocationID,
+        payment_type,
+        fare_amount,
+        extra,
+        mta_tax,
+        tip_amount,
+        tolls_amount,
+        improvement_surcharge,
+        total_amount,
+        congestion_surcharge,
+        Airport_fee,
+      }
+    })
+
+    // await Promise.all(trips.map(async (trip) => console.log(await trip)))
+    await Promise.all(trips.map(async (trip) => createTrip(await trip)))
+    loading.tick()
+  }
+
+  // await makeTrip('nyc000000000000')
 
   await db.start({ clean: true })
   // FIXME
@@ -1326,12 +1411,11 @@ await test('taxi', async (t) => {
   const N = 4
   const loading = new Loading(N)
   const s = new Sema(4)
-  const makeTrip = async (filename: string) => {
-    const trips = await parseTripDump(filename)
-    await Promise.all(trips.map((trip) => createTrip(trip)))
-    loading.tick()
-  }
-
+  // const makeTrip = async (filename: string) => {
+  //   const trips = await parseTripDump(filename)
+  //   await Promise.all(trips.map((trip) => createTrip(trip)))
+  //   loading.tick()
+  // }
   loading.start()
   const taxiDumps = (
     await readdir(
@@ -1349,13 +1433,13 @@ await test('taxi', async (t) => {
   await db.drain()
 
   await db.query('zone').include('borough').get().inspect()
-  // await db.query('zone').include('*').get().inspect()
-  // await db.query('vendor').include('trips').get().inspect()
-  // await db
-  //   .query('trip')
-  //   .include('pickupLoc', 'dropoffLoc', 'paymentType')
-  //   .get()
-  //   .inspect()
+  await db.query('zone').include('*').get().inspect()
+  await db.query('vendor').include('trips').get().inspect()
+  await db
+    .query('trip')
+    .include('pickupLoc', 'dropoffLoc', 'paymentType')
+    .get()
+    .inspect()
   await db
     .query('trip')
     .include(
