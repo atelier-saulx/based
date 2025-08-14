@@ -158,6 +158,10 @@ async function tabled(
 }
 
 function initializeContext(context) {
+  if (context.db) {
+    context.db.stop(true)
+  }
+
   const db = new BasedDb({
     path: resolve(join(__dirname, '../tmp')),
   })
