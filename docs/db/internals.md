@@ -19,13 +19,15 @@ in Based:
 
 **Terminology**
 
-| Relational database   | SQL       | Based             | Description                                   |
-|-----------------------|-----------|-------------------|-----------------------------------------------|
-| tuple/record          | row       | node              | A single item.                                |
-| attribute/field       | column    | property/field    | A labeled element in an item.                 |
-| relation              | table     | type              | A set of items sharing the same properties.   |
-| derived relvar        | view      | query response    | Any set of tuples as a response to a query.   |
-| stored procedure      | 〃        | function          | A procedure that operates on the database.    |
+| Relational database   | SQL           | Based             | Description                                   |
+|-----------------------|---------------|-------------------|-----------------------------------------------|
+| tuple/record          | row           | node              | A single item.                                |
+| attribute/field       | column        | property/field    | A labeled element in an item.                 |
+| domain                | type          | data type         | The data type of an element.                  |
+| relation              | table         | type              | A set of items sharing the same properties.   |
+| relation variable     | (base) table  | type/node schema  | The schema of an item (or node) in type.      |
+| derived relvar        | view          | query response    | Any set of tuples as a response to a query.   |
+| stored procedure      | 〃            | function          | A procedure that operates on the database.    |
 
 Particularly limiting features in Based compared to most SQL databases are that
 the primary key is always and foreign references are always made to the primary
