@@ -127,6 +127,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
+                ctx.totalResults += 1;
             }
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         } else {
