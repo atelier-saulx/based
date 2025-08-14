@@ -1,5 +1,36 @@
 # Internals
 
+## Preface
+
+Internally Based is consist of several parts. At the lowest level of Based
+there is the core database and its storage backend called Selva. The core
+database can be loosely described as a relational database with some strict
+restrictions and limits.
+
+To draw some parallels between RDB/RDBMS and Based, we can consider that
+in Based:
+
+- Data is represented and stored as relations (nodes) in a collection of tables (types);
+- Based provides relational operations to manipulate the data;
+- Each table has its own unique key: `nodeId`;
+- It's possible to define alternate keys as aliases;
+- Finally references act in a similar way to foreign keys,
+  representing one-to-one, one-to-many, and many-to-many relationships.
+
+**Terminology**
+
+| Relational database   | SQL       | Based             | Description                                   |
+|-----------------------|-----------|-------------------|-----------------------------------------------|
+| tuple/record          | row       | node              | A single item.                                |
+| attribute/field       | column    | property/field    | A labeled element in an item.                 |
+| relation              | table     | type              | A set of items sharing the same properties.   |
+| derived relvar        | view      | query response    | Any set of tuples as a response to a query.   |
+| stored procedure      | 〃        | function          | A procedure that operates on the database.    |
+
+Particularly limiting features in Based compared to most SQL databases are that
+the primary key is always and foreign references are always made to the primary
+keys.
+
 ## Memory Model
 
 ```mermaid
