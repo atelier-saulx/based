@@ -5,6 +5,7 @@ import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
 import { authEmail } from './authEmail/index.js'
 import { type Opts } from '../index.js'
+import { crc32c } from '@based/hash'
 
 export function registerApiHandlers(
   server,
@@ -97,25 +98,51 @@ export function registerApiHandlers(
         const contents = await readStream(stream)
         const code = Buffer.from(contents).toString()
         const config = payload.config
+        const checksum =
+          config.type === 'app'
+            ? crc32c(code + JSON.stringify(config))
+            : crc32c(code)
+
         let { type, name } = config
         if (type === 'authorize') {
           name = 'based:authorize'
           config.name = name
         }
 
-        const id = await configDb.upsert('function', {
-          name,
-          type,
-          code,
-          config,
-        })
+        const res = await configDb
+          .query('function', { name })
+          .include('id', 'checksum')
+          .get()
+          .toObject()
+        let id: number
+        if (res) {
+          if (res.checksum === checksum) {
+            return
+          }
+          id = res.id
+          await configDb.update('function', id, {
+            name,
+            type,
+            code,
+            config,
+            checksum,
+          })
+        } else {
+          id = await configDb.create('function', {
+            name,
+            type,
+            code,
+            config,
+            checksum,
+          })
+        }
         return new Promise<void>(async (resolve) => {
           const unsubscribe = configDb
             .query('function', id)
-            .include('updatedAt', 'loadedAt')
+            .include('loaded', 'checksum')
             .subscribe((res) => {
-              const { loadedAt, updatedAt } = res.toObject()
-              if (loadedAt === updatedAt) {
+              const { loaded, checksum } = res.toObject()
+              if (loaded === checksum) {
                 resolve()
                 unsubscribe()
               }

@@ -5,24 +5,35 @@ import { initS3 } from '@based/s3'
 import startHub from '@based/hub'
 import connect from '@based/client'
 import handler from 'serve-handler'
-import http from 'http'
+import http from 'node:http'
 import { deployChanges } from './deploy.js'
 import getPort from 'get-port'
 import MailDev from 'maildev'
 import mailDevLogger from 'maildev/lib/logger.js'
 import colors from 'picocolors'
-import { networkInterfaces } from 'os'
+import { networkInterfaces } from 'node:os'
+import { format } from 'node:util'
 
 const TMP_PATH = './tmp'
 const FILES_PATH = `${TMP_PATH}/files`
 
+const info = (service: string, ...args) => console.info(`[${service}]`, ...args)
+const log = (service: string, ...args) =>
+  console.log(colors.gray(`[${service}] ${format(...args)}`))
+const error = (service: string, ...args) =>
+  console.error(colors.red(`[${service}] ${format(...args)}`))
+const warn = (service: string, ...args) =>
+  console.warn(colors.yellow(`[${service}] ${format(...args)}`))
+
 const startMailServer = (ip: string, smtpPort: number, webPort: number) => {
   mailDevLogger.setLevel(0)
-  console.info(
-    `[mail-stmp] http://localhost:${smtpPort} ${colors.gray(`http://${ip}:${smtpPort}`)}`,
+  info(
+    'mail-stmp',
+    `http://localhost:${smtpPort} ${colors.gray(`http://${ip}:${smtpPort}`)}`,
   )
-  console.info(
-    `[mail-ui] http://localhost:${webPort} ${colors.gray(`http://${ip}:${webPort}`)}`,
+  info(
+    'mail-ui',
+    `http://localhost:${webPort} ${colors.gray(`http://${ip}:${webPort}`)}`,
   )
   return new MailDev({
     smtp: smtpPort,
@@ -31,8 +42,9 @@ const startMailServer = (ip: string, smtpPort: number, webPort: number) => {
 }
 
 const startFileServer = (ip: string, port: number, path: string) => {
-  console.info(
-    `[file-server] http://localhost:${port} ${colors.gray(`http://${ip}:${port}`)}`,
+  info(
+    'file-server',
+    `http://localhost:${port} ${colors.gray(`http://${ip}:${port}`)}`,
   )
   return http
     .createServer((req, res) => {
@@ -78,8 +90,9 @@ const getMyIp = () => {
 
 const startEnvServer = (ip: string, hubPort: number, smtpPort: number) => {
   const domain = `${ip}:${hubPort}`
-  console.info(
-    `[env-server] http://localhost:${hubPort} ${colors.gray(`http://${domain}`)}`,
+  info(
+    'env-server',
+    `http://localhost:${hubPort} ${colors.gray(`http://${domain}`)}`,
   )
   process.env.DOMAIN = domain
 
@@ -100,10 +113,10 @@ const startEnvServer = (ip: string, hubPort: number, smtpPort: number) => {
     },
     console: {
       ...console,
-      log: (...args) => console.log('[env-server]', ...args),
-      warn: (...args) => console.warn('[env-server]', ...args),
-      info: (...args) => console.info('[env-server]', ...args),
-      error: (...args) => console.error('[env-server]', ...args),
+      log: log.bind(null, 'env-server'),
+      warn: warn.bind(null, 'env-server'),
+      info: info.bind(null, 'env-server'),
+      error: error.bind(null, 'env-server'),
     },
   })
 }
@@ -125,7 +138,7 @@ export const Dev = ({ opts }) => {
 
         const env = await startEnvServer(ip, envPort, smtpPort)
         const url = `ws://localhost:${envPort}`
-        const publicPath = `http://localhost:${filePort}/`
+        const publicPath = `http://${ip}:${filePort}/`
         const cwd = process.cwd()
         const results = await parseFolder({
           opts: { ...opts, url },
@@ -137,11 +150,11 @@ export const Dev = ({ opts }) => {
         await deployChanges(client, publicPath, results)
         await watch(results, async (err, changes) => {
           if (err) {
-            console.error('Error watching:', err)
+            error('watcher', 'Error watching:', err)
             return
           }
           if (changes) {
-            console.log('Detected changes, deploying...')
+            info('watcher', 'Detected changes, deploying...')
             await deployChanges(client, publicPath, changes)
             env.server.forceReload()
           }

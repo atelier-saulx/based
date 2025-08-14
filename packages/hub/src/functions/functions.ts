@@ -138,19 +138,14 @@ export const initDynamicFunctions = (
 
   configDb
     .query('function')
-    .include('code', 'name', 'config')
+    .include('code', 'name', 'config', 'checksum')
     .subscribe(async (data) => {
       const specs: BasedFunctionConfigs = {}
       const updatedJobs = {}
 
       await Promise.all(
         data.map(async (item) => {
-          const { id, code, name, config } = item
-          const checksum =
-            config.type === 'app'
-              ? crc32c(code + JSON.stringify(config))
-              : crc32c(code)
-
+          const { id, code, name, config, checksum } = item
           if (!fnIds[name]) {
             fnIds[name] = { statsId: 0 }
           }
@@ -205,8 +200,9 @@ export const initDynamicFunctions = (
               )
             }
 
-            const now = Date.now()
-            configDb.update('function', id, { loadedAt: now, updatedAt: now })
+            await configDb.update('function', id, {
+              loaded: checksum,
+            })
           } catch (err) {
             console.log('error', err)
             createEvent(statsDb, statsId, err.message, 'init', 'error')
