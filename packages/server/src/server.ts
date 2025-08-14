@@ -79,6 +79,7 @@ export type ServerOptions = {
   }
 
   getIp?: GetIp
+  console?: Console
 }
 
 /**
@@ -113,6 +114,8 @@ await server.start()
 ```
 */
 export class BasedServer {
+  public console: Console = console
+
   public clients: { [key: string]: any } // for now any...
 
   public client: BasedServerFunctionClient
@@ -247,6 +250,10 @@ export class BasedServer {
   }
 
   constructor(opts: ServerOptions) {
+    if (opts.console) {
+      this.console = opts.console
+    }
+
     if (opts.query) {
       this.queryEvents = opts.query
     }

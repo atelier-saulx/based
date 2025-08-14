@@ -3,6 +3,8 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
+import { authEmail } from './authEmail/index.js'
+import { type Opts } from '../index.js'
 
 export function registerApiHandlers(
   server,
@@ -10,8 +12,14 @@ export function registerApiHandlers(
   statsDb: DbClient,
   s3: S3Client,
   buckets: Record<'files' | 'backups' | 'dists', string>,
+  smtp: Opts['smtp'],
 ) {
   server.functions.add({
+    'based:auth-email': {
+      type: 'function',
+      public: true,
+      fn: authEmail(smtp),
+    },
     'based:events': {
       type: 'query',
       async fn(

@@ -19,6 +19,11 @@
     "@based/schema": "5.0.0-alpha.27",
     "@based/server": "^10.0.6",
     "@based/utils": "^1.0.0",
-    "arktype": "^2.1.20"
+    "arktype": "^2.1.20",
+    "nodemailer": "^7.0.5",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17"
   }
 }

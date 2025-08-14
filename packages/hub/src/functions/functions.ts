@@ -47,7 +47,7 @@ const setAuthorize = (
 
       if (authState.type === 'based' || authState.type === 'serviceAccount') {
         if (!warned) {
-          console.warn(
+          server.console.warn(
             'WARNING: based authState always verified, not suitable for online env',
           )
           warned = true
@@ -91,10 +91,7 @@ const setAppFunction = (
               text: null,
             },
             favicon: {
-              get url() {
-                console.log('TODO FAVICON')
-                return ''
-              },
+              url: config.favicon,
               content: null,
               path: null,
             },

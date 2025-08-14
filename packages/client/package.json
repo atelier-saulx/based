@@ -54,7 +54,7 @@
     "@based/functions": "^3.0.2",
     "ava": "5.3.1",
     "cross-fetch": "4.0.0",
-    "esbuild": "^0.23.0",
+    "esbuild": "^0.25.9",
     "get-port": "7.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.2.8",

@@ -3,7 +3,8 @@ import { Box, Text } from 'ink'
 import React, { useEffect } from 'react'
 import { parseFolder, ParseResults } from '../bundle/parse.js'
 import { serialize } from '@based/schema'
-import { basename } from 'path'
+import { basename, join, relative, resolve } from 'path'
+import type { OutputFile } from 'esbuild'
 
 export const deployChanges = async (
   client: BasedClient,
@@ -21,18 +22,37 @@ export const deployChanges = async (
   }
 
   // Upload assets
+  const uploaded = new Set<OutputFile>()
+  const favicons = new Set<OutputFile>()
   await Promise.allSettled(
     changes.configs.map((config) => {
-      if (!config.mainCtx) return
+      if (config.fnConfig.type !== 'app' || !config.mainCtx) {
+        return
+      }
+
+      const favicon =
+        config.fnConfig.favicon &&
+        relative(changes.cwd, join(config.dir, config.fnConfig.favicon))
+
       return Promise.allSettled(
-        config.mainCtx.build.outputFiles.map((file) =>
-          client.stream('db:file-upload', {
+        config.mainCtx.build.outputFiles.map(async (file) => {
+          const relPath = relative(changes.cwd, file.path)
+          if (
+            favicon in config.mainCtx.build.metafile.outputs[relPath].inputs
+          ) {
+            if (file.path.endsWith('.js')) {
+              return
+            }
+            favicons.add(file)
+          }
+          await client.stream('db:file-upload', {
             contents: file.contents,
             payload: {
               Key: basename(file.path),
             },
-          }),
-        ),
+          })
+          uploaded.add(file)
+        }),
       )
     }),
   )
@@ -54,11 +74,18 @@ export const deployChanges = async (
         const cssFile = config.mainCtx.build.outputFiles.find((file) =>
           file.path.endsWith('.css'),
         )
+        const faviconFile =
+          config.fnConfig.favicon &&
+          config.mainCtx.build.outputFiles.find((file) => favicons.has(file))
+
         if (jsFile) {
           payload.config.js = publicPath + basename(jsFile.path)
         }
         if (cssFile) {
           payload.config.css = publicPath + basename(cssFile.path)
+        }
+        if (faviconFile) {
+          payload.config.favicon = publicPath + basename(faviconFile.path)
         }
       }
 

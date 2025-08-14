@@ -2,7 +2,7 @@
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
     "outDir": "dist",
-    "strict": true, // Enable strict mode here
+    "strict": true,
     "noEmit": true
   },
   "include": ["packages/*/src", "packages/*/test"]

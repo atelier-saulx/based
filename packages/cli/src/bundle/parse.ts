@@ -7,11 +7,11 @@ import {
 import { Schema } from '@based/schema'
 import { find, FindResult } from './fsUtils.js'
 import { configsFiles, schemaFiles } from './constants.js'
-import { BuildCtx, rebuild, evalBuild, importFromBuild } from './buildUtils.js'
+import { BuildCtx, rebuild, importFromBuild } from './buildUtils.js'
 import { BasedOpts } from '@based/client'
 import { resolvePlugin } from './plugins.js'
 
-export type ParseResult = {
+export type ParseResult = FindResult & {
   fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig
   configCtx: BuildCtx
   indexCtx: BuildCtx
@@ -44,7 +44,6 @@ export const parseConfig = async (
   }).then(rebuild)
 
   const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
-    // await evalBuild(configCtx.build, result.path)
     importFromBuild(configCtx.build, result.path)
 
   // this has to change...
@@ -66,11 +65,14 @@ export const parseConfig = async (
   }).then(rebuild)
 
   if (fnConfig.type === 'app') {
+    const mainEntry = join(result.dir, fnConfig.main)
     const mainCtx = await context({
       banner: {
         js: `globalThis.basedOpts=${JSON.stringify(opts)};`,
       },
-      entryPoints: [join(result.dir, fnConfig.main)],
+      entryPoints: fnConfig.favicon
+        ? [mainEntry, join(result.dir, fnConfig.favicon)]
+        : [mainEntry],
       entryNames: '[name]-[hash]',
       publicPath,
       bundle: true,
@@ -95,10 +97,10 @@ export const parseConfig = async (
       metafile: true,
     }).then(rebuild)
 
-    return { fnConfig, configCtx, indexCtx, mainCtx }
+    return Object.assign(result, { fnConfig, configCtx, indexCtx, mainCtx })
   }
 
-  return { fnConfig, configCtx, indexCtx }
+  return Object.assign(result, { fnConfig, configCtx, indexCtx })
 }
 
 export const parseSchema = async (result: FindResult) => {
@@ -111,7 +113,6 @@ export const parseSchema = async (result: FindResult) => {
     format: 'esm',
   }).then(rebuild)
   const schema = {
-    // schema: await evalBuild(schemaCtx.build, result.path),
     schema: importFromBuild(schemaCtx.build, result.path),
     schemaCtx,
   }
