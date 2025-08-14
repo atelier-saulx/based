@@ -9,7 +9,6 @@ import type { S3Client } from '@based/s3'
 import { createStatsDb } from './statsDb.js'
 import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 import type SMTPConnection from 'nodemailer/lib/smtp-connection/index.js'
-import colors from 'picocolors'
 
 export type Opts = {
   port: number

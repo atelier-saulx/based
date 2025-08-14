@@ -16,18 +16,24 @@ import { networkInterfaces } from 'os'
 const TMP_PATH = './tmp'
 const FILES_PATH = `${TMP_PATH}/files`
 
-const startMailServer = (smtpPort: number, webPort: number) => {
+const startMailServer = (ip: string, smtpPort: number, webPort: number) => {
   mailDevLogger.setLevel(0)
-  console.info(`[mail-stmp] http://localhost:${smtpPort}`)
-  console.info(`[mail-ui] http://localhost:${webPort}`)
+  console.info(
+    `[mail-stmp] http://localhost:${smtpPort} ${colors.gray(`http://${ip}:${smtpPort}`)}`,
+  )
+  console.info(
+    `[mail-ui] http://localhost:${webPort} ${colors.gray(`http://${ip}:${webPort}`)}`,
+  )
   return new MailDev({
     smtp: smtpPort,
     web: webPort,
   }).listen()
 }
 
-const startFileServer = (port: number, path: string) => {
-  console.info(`[file-server] http://localhost:${port}`)
+const startFileServer = (ip: string, port: number, path: string) => {
+  console.info(
+    `[file-server] http://localhost:${port} ${colors.gray(`http://${ip}:${port}`)}`,
+  )
   return http
     .createServer((req, res) => {
       handler(req, res, {
@@ -50,34 +56,28 @@ const startFileServer = (port: number, path: string) => {
 
 const getMyIp = () => {
   const nets = networkInterfaces()
-  const results: Record<string, string[]> = {}
+  const prefer = nets.en0 || nets.lo0
+
+  for (const net of prefer) {
+    if (net.family === 'IPv4' && !net.internal) {
+      return net.address
+    }
+  }
 
   for (const name in nets) {
+    if (prefer === nets[name]) {
+      continue
+    }
     for (const net of nets[name]) {
       if (net.family === 'IPv4' && !net.internal) {
-        results[name] ??= []
-        results[name].push(net.address)
+        return net.address
       }
     }
   }
-
-  let ip = results.en0?.[0]
-
-  if (!ip) {
-    for (const k in results) {
-      ip = results[k][0]
-      if (ip) {
-        return ip
-      }
-    }
-  }
-
-  return ip
 }
 
-const startEnvServer = (hubPort: number, smtpPort: number) => {
-  const domain = `${getMyIp()}:${hubPort}`
-
+const startEnvServer = (ip: string, hubPort: number, smtpPort: number) => {
+  const domain = `${ip}:${hubPort}`
   console.info(
     `[env-server] http://localhost:${hubPort} ${colors.gray(`http://${domain}`)}`,
   )
@@ -112,17 +112,18 @@ export const Dev = ({ opts }) => {
   useEffect(() => {
     const run = async () => {
       try {
-        const [filePort, envPort, smtpPort, smtpWebPort] = await Promise.all([
-          getPort({ port: 8080 }),
+        const ip = getMyIp()
+        const [envPort, filePort, smtpWebPort, smtpPort] = await Promise.all([
           getPort({ port: 1234 }),
-          getPort({ port: 1025 }),
-          getPort({ port: 1026 }),
+          getPort({ port: 2000 }),
+          getPort({ port: 3000 }),
+          getPort({ port: 4000 }),
         ])
 
-        startFileServer(filePort, FILES_PATH)
-        startMailServer(smtpPort, smtpWebPort)
+        startFileServer(ip, filePort, FILES_PATH)
+        startMailServer(ip, smtpPort, smtpWebPort)
 
-        const env = await startEnvServer(envPort, smtpPort)
+        const env = await startEnvServer(ip, envPort, smtpPort)
         const url = `ws://localhost:${envPort}`
         const publicPath = `http://localhost:${filePort}/`
         const cwd = process.cwd()
