@@ -53,6 +53,13 @@ h6 {
   overflow-wrap: break-word;
 }
 
+.mermaid text {
+  font-size: 1.2rem !important;
+}
+.mermaid svg g text {
+  font-size: 1.2rem !important;
+}
+
 .markdown-section {
   color: var(--based-text-color);
 }
