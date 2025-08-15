@@ -451,6 +451,74 @@ await db
   .get()
 ```
 
+## Range Limiting
+
+The `.range()` method allows pagination of aggregation results, working consistently with both main queries and nested grouped references.
+
+### `.range(start: number, end: number)`
+
+Limits the number of returned groups in aggregation queries.
+
+#### Key Behavior:
+
+1. **Works with all group types**:
+
+   - Reference groupings
+   - Property-based groupings
+
+2. **Consistent pagination**:
+
+   - `start`: Inclusive index (0-based)
+   - `end`: Exclusive index
+   - Returns `end - start` groups maximum
+
+3. **Preserves structure**:
+   - Maintains grouped object structure
+   - Only includes the requested range of keys
+
+#### Examples:
+
+**1. Paginating Temporal Groups**
+
+```javascript
+// Get first 2 hourly groups
+await db
+  .query('job')
+  .groupBy('day', {
+    step: 'hour',
+    timeZone: 'America/Sao_Paulo',
+  })
+  .avg('tip')
+  .range(0, 2) // First two hours
+  .get()
+// Returns object with exactly 2 keys
+```
+
+**2. Limiting Nested Groupings**
+
+```javascript
+// Get first 2 employees with their territory sums
+await db
+  .query('employee')
+  .include((q) => q('area').groupBy('name').sum('flap'))
+  .range(0, 2) // First two employees
+  .get()
+// Returns array with exactly 2 items
+```
+
+**3. Combined with Other Operations**
+
+```javascript
+// Paginated daily aggregates with filtering
+await db
+  .query('job')
+  .filter('tip', '>', 10)
+  .groupBy('day', optionsVar)
+  .sum('tip')
+  .range(5, 10) // Groups 5 through 9
+  .get()
+```
+
 ## Handling Special Cases
 
 ### Undefined/Null Values

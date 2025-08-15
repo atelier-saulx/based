@@ -39,6 +39,7 @@
 - [General Purpose Aggregate Functions](db/aggregate?id=general-purpose-aggregate-functions)
 - [Statistical Aggregate Functions](db/aggregate?id=statistical-aggregate-functions)
 - [Grouping Operations](db/aggregate?id=grouping-operations)
+- [Grouping by Reference's node IDs](db/aggregate?id=grouping-by-reference-node-ids)
 - [Temporal Grouping (Time-based Aggregations)](db/aggregate?id=temporal-grouping-time-based-aggregations)
 - [Relationship Aggregations](db/aggregate?id=relationship-aggregations)
 - [Handling Special Cases](db/aggregate?id=handling-special-cases)
