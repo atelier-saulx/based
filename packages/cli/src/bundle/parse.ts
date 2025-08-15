@@ -3,6 +3,7 @@ import { join } from 'path'
 import {
   BasedAuthorizeFunctionConfig,
   BasedFunctionConfig,
+  BasedAppFunctionConfig,
 } from '@based/functions'
 import { Schema } from '@based/schema'
 import { find, FindResult } from './fsUtils.js'
@@ -29,6 +30,70 @@ export type ParseResults = {
   }
 }
 
+const createFunctionContext = (
+  result: FindResult,
+  fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig,
+) => {
+  // this has to change...
+  // need to hash the file before if we wan this
+  const checksum = 1 // fnConfig.checksum
+  const name = fnConfig.type === 'authorize' ? 'based:authorize' : fnConfig.name
+  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${name}',${checksum});`
+  return context({
+    mainFields: ['source', 'module', 'main'],
+    banner: {
+      js: banner,
+    },
+    entryPoints: [join(result.dir, 'index.ts')],
+    bundle: true,
+    write: false,
+    platform: 'node',
+    format: 'esm',
+    metafile: true,
+    treeShaking: true,
+  }).then(rebuild)
+}
+
+const createBrowserContext = (
+  result: FindResult,
+  fnConfig: BasedAppFunctionConfig,
+  publicPath: string,
+  opts: BasedOpts,
+) => {
+  const mainEntry = join(result.dir, fnConfig.main)
+  return context({
+    mainFields: ['browser', 'source', 'module', 'main'],
+    banner: {
+      js: `globalThis.basedOpts=${JSON.stringify(opts)};`,
+    },
+    entryPoints: fnConfig.favicon
+      ? [mainEntry, join(result.dir, fnConfig.favicon)]
+      : [mainEntry],
+    entryNames: '[name]-[hash]',
+    publicPath,
+    bundle: true,
+    write: false,
+    outdir: '.',
+    plugins: fnConfig.plugins
+      ? fnConfig.plugins.concat(resolvePlugin)
+      : [resolvePlugin],
+    loader: {
+      '.ico': 'file',
+      '.eot': 'file',
+      '.gif': 'file',
+      '.jpeg': 'file',
+      '.jpg': 'file',
+      '.png': 'file',
+      '.svg': 'file',
+      '.ttf': 'file',
+      '.woff': 'file',
+      '.woff2': 'file',
+      '.wasm': 'file',
+    },
+    metafile: true,
+  }).then(rebuild)
+}
+
 export const parseConfig = async (
   result: FindResult,
   publicPath: string,
@@ -42,65 +107,19 @@ export const parseConfig = async (
     format: 'esm',
     metafile: true,
   }).then(rebuild)
-
   const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
     importFromBuild(configCtx.build, result.path)
-
-  // this has to change...
-  // need to hash the file before if we wan this
-  const checksum = 1 // fnConfig.checksum
-  const name = fnConfig.type === 'authorize' ? 'based:authorize' : fnConfig.name
-  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${name}',${checksum});`
-  const indexCtx = await context({
-    banner: {
-      js: banner,
-    },
-    entryPoints: [join(result.dir, 'index.ts')],
-    bundle: true,
-    write: false,
-    platform: 'node',
-    format: 'esm',
-    metafile: true,
-    treeShaking: true,
-  }).then(rebuild)
-
+  const indexCtx = await createFunctionContext(result, fnConfig)
   if (fnConfig.type === 'app') {
-    const mainEntry = join(result.dir, fnConfig.main)
-    const mainCtx = await context({
-      banner: {
-        js: `globalThis.basedOpts=${JSON.stringify(opts)};`,
-      },
-      entryPoints: fnConfig.favicon
-        ? [mainEntry, join(result.dir, fnConfig.favicon)]
-        : [mainEntry],
-      entryNames: '[name]-[hash]',
+    const mainCtx = await createBrowserContext(
+      result,
+      fnConfig,
       publicPath,
-      bundle: true,
-      write: false,
-      outdir: '.',
-      plugins: fnConfig.plugins
-        ? fnConfig.plugins.concat(resolvePlugin)
-        : [resolvePlugin],
-      loader: {
-        '.ico': 'file',
-        '.eot': 'file',
-        '.gif': 'file',
-        '.jpeg': 'file',
-        '.jpg': 'file',
-        '.png': 'file',
-        '.svg': 'file',
-        '.ttf': 'file',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.wasm': 'file',
-      },
-      metafile: true,
-    }).then(rebuild)
-
-    return Object.assign(result, { fnConfig, configCtx, indexCtx, mainCtx })
+      opts,
+    )
+    return { ...result, fnConfig, configCtx, indexCtx, mainCtx }
   }
-
-  return Object.assign(result, { fnConfig, configCtx, indexCtx })
+  return { ...result, fnConfig, configCtx, indexCtx }
 }
 
 export const parseSchema = async (result: FindResult) => {
