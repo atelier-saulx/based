@@ -2713,6 +2713,93 @@ await test('group by reference ids', async (t) => {
   )
 })
 
+await test('range', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const ter = ['lala', 'lele', 'lili']
+
+  await db.setSchema({
+    types: {
+      job: {
+        day: 'timestamp',
+        tip: 'number',
+        employee: {
+          ref: 'employee',
+          prop: 'employee',
+        },
+      },
+      employee: {
+        name: 'string',
+        area: {
+          items: { ref: 'territory', prop: 'territory' },
+        },
+      },
+      territory: {
+        name: ter,
+        flap: 'number',
+        state: {
+          ref: 'state',
+          prop: 'state',
+        },
+      },
+      state: {
+        name: 'string',
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    const d = new Date('11/11/2024 11:00-3')
+    const j = db.create('job', {
+      day: new Date(d.getTime() + Math.random() * 1e7),
+      tip: Math.random() * 20,
+    })
+    const s = db.create('state', {
+      name: 'statelala' + (Math.random() * 2).toFixed(0),
+    })
+    const t = db.create('territory', {
+      name: ter[(ter.length * Math.random()) | 0],
+      flap: Math.random() * 100,
+      state: s,
+    })
+    const e = db.create('employee', {
+      name: 'emplala' + (Math.random() * 10).toFixed(0),
+      area: [t],
+    })
+  }
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('job')
+        .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
+        .avg('tip')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by main',
+  )
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('employee')
+        .include((q) => q('area').groupBy('name').sum('flap'), '*')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by references',
+  )
+})
+
 await test.skip('edges agregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
