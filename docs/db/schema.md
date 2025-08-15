@@ -2,17 +2,7 @@
 
 ## Types
 
-- [Timestamp](db/types?id=timestamp)
-- [Boolean](db/types?id=boolean)
-- [Numeric](db/types?id=numeric)
-- [Alias](db/types?id=alias)
-- [Enum](db/types?id=enum)
-- [JSON](db/types?id=json)
-- [Binary](db/types?id=binary)
-- [String and Text](db/types?id=string-and-text)
-- [Cardinality](db/types?id=cardinality)
-- [vector](db/types?id=vector)
-- [colvec](db/types?id=colvec)
+- See details about all supported types on [Property Types](db/types) API reference.
 
 ## Display & format
 

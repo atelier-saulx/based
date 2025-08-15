@@ -539,13 +539,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('user')
-      .include('name')
-      .sort('name')
-      .range(0, 2)
-      .get()
-      .inspect(2),
+    await db.query('user').include('name').sort('name').range(0, 2).get(),
     [
       {
         id: 3,
@@ -710,4 +704,43 @@ await test('unset value on create', async (t) => {
       fun: '',
     },
   ])
+})
+
+await test('combining sorting', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.stop(db))
+
+  await db.setSchema({
+    types: {
+      person: {
+        props: {
+          age: 'number',
+          rate: 'number',
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 5; i++) {
+    db.create('person', {
+      age: 20 + i,
+      rate: 10,
+    })
+  }
+  for (let i = 0; i < 5; i++) {
+    db.create('person', {
+      age: 22 + i,
+      rate: 10 - i,
+    })
+  }
+
+  // combining sorting has no effect
+  // db.query('person')
+  //   .include('*')
+  //   .sort('rate', 'asc')
+  //   .sort('age', 'asc')
+  //   .get()
 })
