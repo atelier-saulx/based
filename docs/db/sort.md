@@ -22,12 +22,13 @@ await db.query('user').sort('age', 'desc').get()
 
 **Supported Types:**
 
-- Numbers (`uint32`, `int8`, etc.)
+- [Numbers](db/sort?id=numeric-sorting) (`uint32`, `int8`, etc.)
 - Cardinality
-- Strings
-- Timestamps
+- [Strings](db/sort?id=string-sorting)
+- [Timestamps](db/sort?id=timestamp-sorting)
 - Enums
-- IDs
+- Aliases
+- [IDs](db/sort?id=id-sorting)
 
 > Sorting Aggregated operations is not supported yet.
 
