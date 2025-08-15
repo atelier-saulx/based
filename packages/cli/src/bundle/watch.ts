@@ -1,5 +1,5 @@
 import { basename, dirname, extname, join } from 'path'
-import watcher from '@parcel/watcher'
+import watcher, { AsyncSubscription } from '@parcel/watcher'
 import { configsFiles } from './constants.js'
 import { BuildCtx, importFromBuild } from './buildUtils.js'
 import { parseConfig, ParseResult, ParseResults } from './parse.js'
@@ -10,6 +10,7 @@ export const watch = async (
   cb: (err: Error | null, changes: ParseResults) => void,
 ) => {
   const inputs = new Map<string, Map<BuildCtx, ParseResult>>()
+  const linked = new Map<string, Promise<AsyncSubscription>>()
   const addResult = (result: ParseResult, buildCtx: BuildCtx) => {
     for (const file in buildCtx.build.metafile.inputs) {
       const path = join(cwd, file)
@@ -18,7 +19,16 @@ export const watch = async (
         map = new Map()
         inputs.set(path, map)
       }
+
       map.set(buildCtx, result)
+
+      if (file[0] === '.' && file[1] === '.') {
+        const i = file.lastIndexOf('../') + 3
+        const dir = file.slice(0, file.indexOf('/', i))
+        if (!linked.has(dir)) {
+          linked.set(dir, watcher.subscribe(join(cwd, dir), listener))
+        }
+      }
     }
   }
 
@@ -63,7 +73,7 @@ export const watch = async (
     schemaInputs = buildSchemaInputs(schema.schemaCtx.build)
   }
 
-  await watcher.subscribe(cwd, async (err, events) => {
+  async function listener(err, events) {
     let changedSchema: {
       schema: Schema
       schemaCtx: BuildCtx
@@ -138,5 +148,6 @@ export const watch = async (
         opts,
       })
     }
-  })
+  }
+  await watcher.subscribe(cwd, listener)
 }

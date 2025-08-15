@@ -151,9 +151,7 @@ export const Dev = ({ opts }) => {
         await watch(results, async (err, changes) => {
           if (err) {
             error('watcher', 'Error watching:', err)
-            return
-          }
-          if (changes) {
+          } else if (changes) {
             info('watcher', 'Detected changes, deploying...')
             await deployChanges(client, publicPath, changes)
             env.server.forceReload()
