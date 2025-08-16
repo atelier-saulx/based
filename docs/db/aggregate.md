@@ -241,7 +241,14 @@ Groups timestamp properties by time intervals.
 
 **Supported Intervals:**
 
-- `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`
+- `epoch`, Number of seconds that have elapsed since the beginning of the Unix epoch (January 1, 1970, at 00:00:00 UTC). Unix time or POSIX time.
+- `hour`
+- `day`, The day of the month (1–31)
+- `doy`, The day of the year (0–365)
+- `dow`, The day of the week as Sunday (0) to Saturday (6)
+- `isoDOW`, The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
+- `month`, The number of the month within the year (0–11);
+- `year`
 - Custom durations in seconds like `15 * 60 // 15 minutes`, `6 * 3600 // 6 hours`, `3 * 24 * 2600 // 3 days`
 
 **Examples:**
