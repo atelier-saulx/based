@@ -107,7 +107,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
-                    groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
+                    groupValue.ptr[2 + groupCtx.start .. groupCtx.start + read(u16, groupValue, 0)]
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == types.Prop.REFERENCE)
