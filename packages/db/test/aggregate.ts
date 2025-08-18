@@ -2909,11 +2909,11 @@ await test('kev', async (t) => {
     })
   }
 
-  db.query('product').include('*').avg('flap').groupBy('name').get().inspect()
-  db.query('shelve')
-    .include((q) => q('products').avg('flap').groupBy('name'))
-    .get()
-    .inspect()
+  // db.query('product').include('*').avg('flap').groupBy('name').get().inspect()
+  // db.query('shelve')
+  //   .include((q) => q('products').avg('flap').groupBy('name'))
+  //   .get()
+  //   .inspect()
 })
 
 await test('dev', async (t) => {
