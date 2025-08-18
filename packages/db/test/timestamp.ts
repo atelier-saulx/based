@@ -110,3 +110,30 @@ await test('timestamp', async (t) => {
   equal(updatedUser.createdAt, overwriteCreatedAt)
   equal(updatedUser.updatedAt, overwriteUpdatedAt)
 })
+
+await test('birth dates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string', maxBytes: 40 },
+          birthDate: 'timestamp',
+        },
+      },
+    },
+  })
+
+  db.create('user', {
+    name: 'Mr. Derp',
+    birthDate: new Date('1937-09-19'),
+  })
+
+  const res = await db.query('user', 1).include('birthDate').get().toObject()
+  equal(res.birthDate, new Date('1937-09-19'))
+})
