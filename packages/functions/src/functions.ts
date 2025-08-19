@@ -258,7 +258,7 @@ export type BasedFunctionTypes =
   | 'job'
   | 'http'
 
-type BasedChannelFunctionConfig = {
+export type BasedChannelFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'channel'
   /** Channel subscriber 
@@ -294,21 +294,21 @@ type BasedChannelFunctionConfig = {
   throttle?: number
 }
 
-type BasedCallFunctionConfig = {
+export type BasedCallFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'function'
   fn?: BasedFunction
   httpResponse?: HttpResponse
 }
 
-type BasedHttpFunctionConfig = {
+export type BasedHttpFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'http'
   path: string
   fn: BasedHttpFunction
 }
 
-type BasedQueryFunctionConfig = {
+export type BasedQueryFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'query'
   fn?: BasedQueryFunction
@@ -319,13 +319,13 @@ type BasedQueryFunctionConfig = {
   throttle?: number
 }
 
-type BasedStreamFunctionConfig = {
+export type BasedStreamFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'stream'
   fn: BasedStreamFunction
 }
 
-type BasedAppFunctionConfig = {
+export type BasedAppFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'app'
   main: string

@@ -1,0 +1,115 @@
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
+import createNorthwind from './shared/northwindDb.js'
+
+await test('northwind', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwind(db)
+
+  // 1. Retrieve all columns in the Region table.
+  console.log(1)
+  await db.query('region').include('*').get().inspect()
+
+  // 2. Select the FirstName and LastName columns from the Employees table.
+  console.log(2)
+  console.log(await db.query('employees').include('firstName', 'lastName').get().toObject())
+
+  // 3. Select the FirstName and LastName columns from the Employees table.
+  // Sort by LastName.
+  console.log(3)
+  await db.query('employees').include('firstName', 'lastName').sort('lastName').get().inspect()
+
+  // 4. Create a report showing Northwind's orders sorted by Freight from most
+  // expensive to cheapest.
+  // Show OrderID, OrderDate, ShippedDate, CustomerID, and Freight.
+  console.log(4)
+  // TODO
+  //await db.query('orders').include('orderDate', 'shippedDate' 'customer.id', 'freight').sort('', 'desc').get().inspect()
+
+  // 5. Create a report showing the title and the first and last name of all sales representatives.
+  console.log(5)
+  await db.query('employees').include('title', 'firstName', 'lastName').filter('title', '=', 'Sales Representative').get().inspect()
+
+  // 6. Create a report showing the first and last names of all employees who have a region specified.
+  console.log(6)
+  console.log(await db.query('employees').include('firstName', 'lastName', 'region').filter('region', '!=', '').get().toObject())
+
+  // 7. Create a report showing the first and last name of all employees whose last names start
+  // with a letter in the last half of the alphabet.
+  // Sort by LastName in descending order.
+  // TODO
+  //await db.query('employees').include('firstName', 'lastName').filter('lastName', 'startsWith', ??
+  console.log(7)
+
+  // 8. Create a report showing the title of courtesy and the first and last name of all employees
+  // whose title of courtesy begins with "M".
+  // TODO
+  console.log(8)
+
+  // 9. Create a report showing the first and last name of all sales representatives who are from
+  // Seattle or Redmond.
+  console.log(9)
+  // TODO Impossible to OR
+  console.log(await db.query('employees').include('firstName', 'lastName', 'title', 'city')
+    .filter('title', '=', 'Sales Representative')
+    .filter('region', '=', 'WA')
+    .or((f) => {
+      f.filter('city', '=', 'Seattle').or('city', '=', 'London')
+    })
+    .get().toObject())
+
+  // 10. Create a report that shows the company name, contact title, city and country of all
+  // customers in Mexico or in any city in Spain except Madrid.
+  // TODO Impossible
+
+  // 11. If the cost of freight is greater than or equal to $500.00, it will now be taxed by 10%.
+  // Create a report that shows the order id, freight cost, freight cost with this tax for all orders of
+  // $500 or more.
+  // TODO not possible to aggregate and then filter
+
+  // 12. Find the Total Number of Units Ordered of Product ID 3
+  console.log(await db.query('orderDetails')
+    .filter('product', '=', 3)
+    .count()
+    .get().toObject())
+
+  // 13. Retrieve the number of employees in each city
+  console.log(await db.query('employees')
+    .groupBy('city')
+    .count()
+    .get().toObject())
+
+  // 14. Find the number of sales representatives in each city that contains at least 2 sales
+  // representatives. Order by the number of employees.
+  // TODO Can't filter by the result
+
+  // 15. Find the Companies (the CompanyName) that placed orders in 1997
+  // TODO Needs by year filtering
+  //console.log(await db.query('orders')
+  //  .include('customer.companyName')
+  //  .filter('orderDate', '=')
+  //  .get().toObject())
+
+  // 16. Create a report showing employee orders.
+  // TODO
+
+  // 17. Create a report showing the Order ID, the name of the company that placed the order,
+  // and the first and last name of the associated employee.
+  // Only show orders placed after January 1, 1998 that shipped after they were required.
+  // Sort by Company Name.
+  // TODO filter by field?
+  console.log(await db.query('orders')
+    .include('customer.companyName', 'employee.firstName', 'employee.lastName', 'shippedDate', 'orderDate', 'requiredDate')
+    .filter('orderDate', '>=', new Date('January 1, 1998'))
+    .filter('shippedDate', '>', 'requiredDate')
+    .get().toObject())
+
+  // 18. Create a report that shows the total quantity of products (from the Order_Details table)
+  // ordered. Only show records for products for which the quantity ordered is fewer than 200.
+  // The report should return the following 5 rows.
+})

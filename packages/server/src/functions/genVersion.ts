@@ -1,5 +1,5 @@
 import { BasedFunctionConfig, isBasedFunctionConfig } from '@based/functions'
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash } from '@based/hash'
 
 export const genVersion = (spec: BasedFunctionConfig): number => {
   if (isBasedFunctionConfig('channel', spec)) {

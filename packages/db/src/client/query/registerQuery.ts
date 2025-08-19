@@ -1,5 +1,5 @@
 import native from '../../native.js'
-import { concatUint8Arr } from '@saulx/utils'
+import { concatUint8Arr } from '@based/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toByteCode/toBuffer.js'
 import { handleErrors } from './validation.js'

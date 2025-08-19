@@ -2,38 +2,78 @@ import { BasedDb } from '@based/db'
 import { join } from 'path'
 
 export const createStatsDb = async (basePath: string) => {
-  const configDb = new BasedDb({
+  const statsDb = new BasedDb({
     maxModifySize: 1e3 * 1e3,
     path: join(basePath, 'stats'),
   })
-  await configDb.start()
-  await configDb.setSchema({
+  await statsDb.start()
+  await statsDb.setSchema({
     types: {
       function: {
         name: 'alias',
         uniqueVisitors: 'cardinality',
         totalRequests: 'uint32',
-        checksum: 'uint32',
         totalErrors: 'uint32',
-        logs: {
+        checksum: 'uint32',
+        connections: 'uint32',
+        errorOnInitialization: 'boolean',
+
+        // temp
+        execTime: 'uint32',
+
+        events: {
           items: {
-            ref: 'log',
+            ref: 'event',
             prop: 'function',
             dependent: true,
           },
         },
+        measurements: {
+          props: {
+            current: {
+              ref: 'measurement',
+              prop: 'current',
+              dependent: true,
+            },
+            history: {
+              items: {
+                ref: 'measurement',
+                prop: 'function',
+                dependent: true,
+              },
+            },
+          },
+        },
       },
-      log: {
-        msg: { type: 'string', compression: 'none' },
+      measurement: {
+        execTime: 'uint32',
+        calls: 'uint32',
+        errors: 'uint32',
+        uniqueVisitors: 'cardinality',
+        maxConcurrentConnections: 'uint32',
+        current: {
+          ref: 'function',
+          prop: 'measurements.current',
+        },
         function: {
           ref: 'function',
-          prop: 'logs',
+          prop: 'measurements.history',
         },
         createdAt: { type: 'timestamp', on: 'create' },
-        type: ['info', 'error', 'warn', 'debug', 'log', 'trace'],
+        lastUpdated: { type: 'timestamp', on: 'update' },
       },
-      // meausement (avarage measurement)
+      event: {
+        msg: 'string',
+        function: {
+          ref: 'function',
+          prop: 'events',
+        },
+        createdAt: { type: 'timestamp', on: 'create' },
+        meta: 'string',
+        type: ['init', 'deploy', 'runtime', 'security'],
+        level: ['info', 'error', 'warn', 'debug'],
+      },
     },
   })
-  return configDb
+  return statsDb
 }

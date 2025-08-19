@@ -53,8 +53,8 @@ pub const GroupByHashMap = struct {
     pub fn getOrInsertWithRange(self: *GroupByHashMap, key: []u8, accumulator_size: usize, stepRange: u32) !GetOrInsertReturn {
         var it = self.inner.iterator();
         while (it.next()) |entry| {
-            const key_i64: i64 = @intFromFloat(read(f64, key, 0));
-            const entry_key_i64: i64 = @intFromFloat(read(f64, @constCast(entry.key_ptr.*), 0)); // will be i64 after Jim's push
+            const key_i64: i64 = read(i64, key, 0);
+            const entry_key_i64: i64 = read(i64, @constCast(entry.key_ptr.*), 0);
             const upper_bound = entry_key_i64 + stepRange * 1000;
             if (key_i64 >= entry_key_i64 and key_i64 < upper_bound) {
                 return .{ .value = entry.value_ptr.*, .is_new = false };

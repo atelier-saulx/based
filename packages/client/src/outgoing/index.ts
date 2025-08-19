@@ -10,7 +10,7 @@ import {
   encodeStreamMessage,
   encodeSubscribeChannelMessage,
 } from './protocol.js'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual } from '@based/utils'
 import connect from '../websocket/index.js'
 
 const PING = new Uint8Array(0)

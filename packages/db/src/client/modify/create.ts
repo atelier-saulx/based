@@ -29,7 +29,7 @@ import { writeString } from './string.js'
 import { writeText } from './text.js'
 import { writeJson } from './json.js'
 import { writeAlias } from './alias.js'
-import { getByPath } from '@saulx/utils'
+import { getByPath } from '@based/utils'
 
 export type CreateObj = Record<string, any>
 

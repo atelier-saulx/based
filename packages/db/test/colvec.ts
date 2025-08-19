@@ -13,7 +13,7 @@ await test('colvec', async (t) => {
     types: {
       row: {
         props: {
-          vec: { type: 'vector', size: 8 },
+          vec: { type: 'vector', size: 8, baseType: 'float32' },
         },
       },
       col: {

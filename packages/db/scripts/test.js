@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import picocolors from 'picocolors'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 
 import { printSummary } from '../dist/test/shared/test.js'
 import { relative } from 'node:path'

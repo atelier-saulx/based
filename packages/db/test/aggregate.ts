@@ -1488,6 +1488,9 @@ await test('numeric types', async (t) => {
     ],
     'sum, references, group by',
   )
+
+  // await db.query('vote').groupBy('sequence').sum('NL').get().inspect()
+
   deepEqual(
     await db
       .query('sequence')
@@ -2618,6 +2621,185 @@ await test('timezone offsets', async (t) => {
   )
 })
 
+await test('group by reference ids', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'vehicle',
+        },
+      },
+      driver: {
+        name: 'string',
+        rank: 'int8',
+        trips: {
+          items: {
+            ref: 'trip',
+            prop: 'trip',
+          },
+        },
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'car',
+        },
+      },
+      vehicle: {
+        plate: 'string',
+        model: 'string',
+        year: 'number',
+      },
+    },
+  })
+  const v1 = db.create('vehicle', {
+    plate: 'DVH0101',
+    model: 'BYD 01',
+    year: 2024,
+  })
+  const v2 = db.create('vehicle', {
+    plate: 'MBT8965',
+    model: 'VW Beatle',
+    year: 1989,
+  })
+  const t1 = db.create('trip', {
+    distance: 523.1,
+    vehicle: v2,
+  })
+  const d1 = db.create('driver', {
+    name: 'Luc Ferry',
+    rank: 5,
+    vehicle: v2,
+    trips: [t1],
+  })
+
+  deepEqual(
+    await db.query('driver').sum('rank').groupBy('vehicle').get(),
+    {
+      2: {
+        rank: 5,
+      },
+    },
+    'group by reference id',
+  )
+
+  deepEqual(
+    await db
+      .query('driver')
+      .include((q) => q('trips').groupBy('vehicle').max('distance'))
+      .include('*')
+      .get(),
+    [
+      {
+        id: 1,
+        rank: 5,
+        name: 'Luc Ferry',
+        trips: {
+          2: {
+            distance: 523.1,
+          },
+        },
+      },
+    ],
+    'brached query with nested group by reference id',
+  )
+})
+
+await test('range', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const ter = ['lala', 'lele', 'lili']
+
+  await db.setSchema({
+    types: {
+      job: {
+        day: 'timestamp',
+        tip: 'number',
+        employee: {
+          ref: 'employee',
+          prop: 'employee',
+        },
+      },
+      employee: {
+        name: 'string',
+        area: {
+          items: { ref: 'territory', prop: 'territory' },
+        },
+      },
+      territory: {
+        name: ter,
+        flap: 'number',
+        state: {
+          ref: 'state',
+          prop: 'state',
+        },
+      },
+      state: {
+        name: 'string',
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    const d = new Date('11/11/2024 11:00-3')
+    const j = db.create('job', {
+      day: new Date(d.getTime() + Math.random() * 1e7),
+      tip: Math.random() * 20,
+    })
+    const s = db.create('state', {
+      name: 'statelala' + (Math.random() * 2).toFixed(0),
+    })
+    const t = db.create('territory', {
+      name: ter[(ter.length * Math.random()) | 0],
+      flap: Math.random() * 100,
+      state: s,
+    })
+    const e = db.create('employee', {
+      name: 'emplala' + (Math.random() * 10).toFixed(0),
+      area: [t],
+    })
+  }
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('job')
+        .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
+        .avg('tip')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by main',
+  )
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('employee')
+        .include((q) => q('area').groupBy('name').sum('flap'), '*')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by references',
+  )
+})
+
 await test.skip('edges agregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -2690,6 +2872,48 @@ await test.skip('edges agregation', async (t) => {
 
   // edges unreacheable
   db.query('movie').max('actors.$rating').get().inspect(10)
+})
+
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      product: {
+        name: { type: 'string', maxBytes: 10 },
+        flap: 'number',
+      },
+      shelve: {
+        code: { type: 'string', maxBytes: 4 },
+        products: {
+          items: {
+            ref: 'product',
+            prop: 'product',
+          },
+        },
+      },
+    },
+  })
+  for (let i = 0; i < 100; i++) {
+    let p = db.create('product', {
+      name: 'lala' + (Math.random() * 100).toFixed(0),
+      flap: Math.random() * 100,
+    })
+    db.create('shelve', {
+      code: 'S' + (Math.random() * 10).toFixed(0),
+      products: [p],
+    })
+  }
+
+  // db.query('product').include('*').avg('flap').groupBy('name').get().inspect()
+  // db.query('shelve')
+  //   .include((q) => q('products').avg('flap').groupBy('name'))
+  //   .get()
+  //   .inspect()
 })
 
 await test('dev', async (t) => {
@@ -2801,4 +3025,93 @@ await test('dev', async (t) => {
   //   lele: 11,
   // })
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
+})
+
+await test('boundary cases for validation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        year: 'number',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    year: 2003,
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    year: 1994,
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  deepEqual(
+    await db.query('movie').groupBy('year').count().get(),
+    {
+      1994: {
+        $count: 1,
+      },
+      2003: {
+        $count: 1,
+      },
+    },
+    'group by numeric valus is allowed',
+  )
+
+  deepEqual(
+    await db.query('movie').groupBy('genre').min('year').get(),
+    {
+      undefined: {
+        year: 1994,
+      },
+    },
+    'groupBy undefined prop',
+  )
 })

@@ -6,7 +6,7 @@ import {
   CACHE_NAME,
   CACHE_AUTH,
 } from './constants.js'
-import { encodeBase64, decodeBase64 } from '@saulx/utils'
+import { encodeBase64, decodeBase64 } from '@based/utils'
 
 const decoder = new TextDecoder('utf-8')
 const encoder = new TextEncoder()
@@ -206,7 +206,7 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
 
 export const updateStorage = async (
   _client: BasedClient,
-  _instant?: boolean
+  _instant?: boolean,
 ) => {}
 
 export const initStorage = async (client: BasedClient) => {

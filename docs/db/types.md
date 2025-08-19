@@ -24,6 +24,15 @@ await db.setSchema({
 })
 ```
 
+| Schema prop   | Required  | Type                          | Default   | Description       |
+|---------------|:---------:|-------------------------------|----------:|-------------------|
+| `default`     | &cross;   | `number \| Date \| string`    |           | Default value.    |
+| `on`          | &cross;   | `'create' \| 'update'`        |           | Update on event.  |
+| `display`     | &cross;   | `DateDisplay`                 |           |                   |
+| `min`         | &cross;   | `number \| string`            |           | Minimum value.    |
+| `max`         | &cross;   | `number \| string`            |           | Maximum value.    |
+| `step`        | &cross;   | `number \| 'any' \| string`   |   `'any'` | Step.             |
+
 ## Boolean
 
 ```js
@@ -41,6 +50,10 @@ db.create('article', {
   published: false,
 })
 ```
+
+| Schema prop   | Required  | Type      | Default   | Description       |
+|---------------|:---------:|-----------|----------:|-------------------|
+| `default`     | &cross;   | `boolean` |   `false` | Default value.    |
 
 ## Numeric
 
@@ -61,6 +74,14 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                      | Default   | Description       |
+|---------------|:---------:|---------------------------|----------:|-------------------|
+| `default`     | &cross;   | `number`                  |       `0` | Default value.    |
+| `display`     | &cross;   | `NumberDisplay`           |           |                   |
+| `min`         | &cross;   | `number`                  |           |                   |
+| `max`         | &cross;   | `number`                  |           |                   |
+| `step`        | &cross;   | `number | 'any'`          |   `'any'` |                   |
 
 ## Alias
 
@@ -89,6 +110,11 @@ db.upsert('vendor', {
 })
 ```
 
+| Schema prop   | Required  | Type              | Default       | Description       |
+|---------------|:---------:|-------------------|--------------:|-------------------|
+| `default`     | &cross;   | `string`          |          `''` | Default value.    |
+| `format`      | &cross;   | `StringFormat`    |               |                   |
+
 ## Enum
 
 ```js
@@ -106,6 +132,11 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                                  | Default       | Description       |
+|---------------|:---------:|---------------------------------------|--------------:|-------------------|
+| `enum`        | &check;   | `Array<string \| number \| boolean>`  |               |                   |
+| `default`     | &cross;   | `Array<string \| number \| boolean>`  |   `undefined` | Default value.    |
 
 ## JSON
 
@@ -131,6 +162,10 @@ await db.create('person', {
 })
 ```
 
+| Schema prop   | Required  | Type                                  | Default       | Description       |
+|---------------|:---------:|---------------------------------------|--------------:|-------------------|
+| `default`     | &cross;   |                                       |   `undefined` | Default value.    |
+
 ## Binary
 
 ```js
@@ -144,6 +179,13 @@ await db.setSchema({
   },
 })
 ```
+
+| Schema prop   | Required  | Type                  | Default       | Description               |
+|---------------|:---------:|-----------------------|--------------:|---------------------------|
+| `default`     | &cross;   |                       |          `[]` | Default value.            |
+| `maxBytes`    | &cross;   | `number` (integer)    |               | Maximum size in bytes.    |
+| `mime`        | &cross;   | `Mime`                |               | Mime type.                |
+| `format`      | &cross;   | `StringFormat`        |               |                           |
 
 ## String and Text
 
@@ -176,6 +218,26 @@ db.create('user', {
   bio: { en: 'Empty.', fi: 'Tyhjä.' },
 })
 ```
+
+**string**
+
+| Schema prop   | Required  | Type                  | Default       | Description                   |
+|---------------|:---------:|-----------------------|--------------:|-------------------------------|
+| `default`     | &cross;   |                       |          `''` | Default value.                |
+| `maxBytes`    | &cross;   | `number` (integer)    |     Unlimited | Maximum size in bytes.        |
+| `min`         | &cross;   | `number` (integer)    |             0 | Minimum length in Unicode code points. |
+| `max`         | &cross;   | `number` (integer)    |     Unlimited | Maximum length in Unicode code points. |
+| `mime`        | &cross;   | `Mime`                |               | Mime type.                    |
+| `format`      | &cross;   | `StringFormat`        |               |                               |
+| `compression` | &cross;   | `'none' \| 'deflate'` |        `none` | Preferred compression method. |
+
+**text**
+
+| Schema prop   | Required  | Type                  | Default       | Description                   |
+|---------------|:---------:|-----------------------|--------------:|-------------------------------|
+| `default`     | &cross;   |                       |          `''` | Default value.                |
+| `format`      | &cross;   | `StringFormat`        |               |                               |
+| `compression` | &cross;   | `'none' \| 'deflate'` |        `none` | Preferred compression method. |
 
 ### Storage Format
 
@@ -247,13 +309,70 @@ In the compressed case the CRC32C value is calculated over the uncompressed data
 It's done like this to protect the data from both, errors while stored in compressed
 format as well as decompression errors. Moreover, a slight change in the compressed
 data may affect multiple bits in the decompression output and thus more easily result
-a CRC32C value that is correvt, even if the output is not correct. The downside is
+a CRC32C value that is correct, even if the output is not correct. The downside is
 that the deflate decompression code must be more robust against bit errors.
 
 ### String Search
 
 - TODO Describe how the search works at high level
 - TODO Query examples
+
+**Unicode codepoint U+uvwxyz conversion to UTF-8**
+
+| First codepoint   | Last codepoint    | Byte 0    | Byte 1    | Byte 2    | Byte 3    |  
+|------------------:|------------------:|-----------|-----------|-----------|-----------|
+| U+0000            | U+007F            | 0yyyzzzz  |           |           |           |
+| U+0080            | U+07FF            | 110xxxyy  | 10yyzzzz  |           |           |
+| U+0800            | U+FFFF            | 1110wwww  | 10xxxxyy  | 10yyzzzz  |           |
+| U+010000          | U+10FFFF          | 11110uvv  | 10vvwwww  | 10xxxxyy  | 10yyzzzz  |
+
+```mermaid
+---
+title: "ASCII conversion"
+---
+block-beta
+columns 9
+  A0["n"]
+  A1["ä"]:3
+  A4["ᴂ"]:3
+  A7["k"]
+  A8["a"]
+  B0["6e"]
+  B1["61"]
+  B2["cc"]
+  B3["88"]
+  B4["e1"]
+  B5["b4"]
+  B6["82"]
+  B7["6b"]
+  B8["61"]
+  space:9
+  B0-->C0["6e"]
+  B1-->C1["61"]
+  B7-->C2["6b"]
+  B8-->C3["61"]
+  C4["0"]
+  C5["0"]
+  C6["0"]
+  C7["0"]
+  C8["0"]
+  E0["n"]
+  E1["a"]
+  E2["k"]
+  E3["a"]
+  E4["0"]
+  E5["0"]
+  E6["0"]
+  E7["0"]
+  E8["0"]
+
+  classDef skip stroke:#333
+  class B2 skip
+  class B3 skip
+  class B4 skip
+  class B5 skip
+  class B6 skip
+```
 
 ### External Links
 
@@ -283,12 +402,20 @@ await db.setSchema({
         row: {
           type: 'vector',
           size: 5,
+          baseType: 'float32',
         },
       },
     },
   },
 })
 ```
+
+| Schema prop   | Required | Type               | Default            | Description |
+|---------------|:--------:|--------------------|-------------------:|-------------|
+| `size`        | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
+| `baseType`    | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
+| `default`     | &cross;  | `TypedArray`       |                    | Default value. |
+
 
 ## colvec
 
@@ -299,7 +426,11 @@ await db.setSchema({
       blockCapacity: 10_000,
       insertOnly: true,
       props: {
-        vec: { type: 'colvec', size: 8 },
+        vec: {
+          type: 'colvec',
+          size: 8,
+          baseType: 'float32',
+        },
       },
     },
   },
@@ -318,6 +449,12 @@ db.create('col', {
   ]),
 })
 ```
+
+| Schema prop | Required | Type               | Default            | Description |
+|-------------|:--------:|--------------------|-------------------:|-------------|
+| `size`      | &check;  | `number` (integer) |                  - | Number of elements in the vector. |
+| `baseType`  | &cross;  | `string`           | `number`/`float64` | Vector element type. Can be any of the numeric types. |
+| `default`   | &cross;  | `TypedArray`       |                    | Default value. |
 
 `colvec` is a columnar property type where each column is stored as big
 contiguous arrays. When Based processes a `colvec` property in a query, it works
@@ -351,3 +488,9 @@ block-beta
   end
   style BLOCKS fill:#0000,stroke-width:0
 ```
+
+## Object
+
+## Reference
+
+## References

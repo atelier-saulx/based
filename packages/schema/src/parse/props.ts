@@ -1,4 +1,4 @@
-import { convertToTimestamp } from '@saulx/utils'
+import { convertToTimestamp } from '@based/utils'
 import { NUMBER, PropDef, TYPE_INDEX_MAP } from '../def/types.js'
 import { VALIDATION_MAP } from '../def/validation.js'
 import {
@@ -244,6 +244,11 @@ p.vector = propParser<SchemaVector>(
   {
     default(val, prop, ctx) {
       return isDefault(val, prop, ctx)
+    },
+    baseType(val, prop, ctx) {
+      if (!['number', 'int8',, 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64'].includes(val)) {
+        throw Error(INVALID_VALUE)
+      }
     },
   },
   0,

@@ -1,4 +1,4 @@
-// import { wait } from '@saulx/utils'
+// import { wait } from '@based/utils'
 // import { homedir } from 'os'
 // import { fileURLToPath } from 'url'
 // import { BasedDb, compress } from '../../src/index.js'
@@ -7,7 +7,7 @@
 // import oldFs from 'node:fs'
 // import { italy } from './examples.js'
 // import { pipeline } from 'node:stream/promises'
-// import { hash } from '@saulx/hash'
+// import { hash } from '@based/hash'
 // const italyWikipedia = compress(italy)
 
 // const db = new BasedDb({ path:  })

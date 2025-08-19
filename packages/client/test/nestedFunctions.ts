@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 // make this methods on the server
 import { BasedServer, callFunction, get, observe } from '@based/server'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>

@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
-import { wait, readStream } from '@saulx/utils'
+import { wait, readStream } from '@based/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'

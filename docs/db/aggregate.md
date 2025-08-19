@@ -157,6 +157,31 @@ await db.query('vote').groupBy('country').get()
 await db.query('vote').sum('NL', 'AU').groupBy('country').get()
 ```
 
+Grouping by numeric values is also allowed. Example:
+
+```js
+const m1 = await db.create('movie', {
+  name: 'Kill Bill',
+  year: 2003,
+})
+const m2 = await db.create('movie', {
+  name: 'Pulp Fiction',
+  year: 1994,
+})
+
+await db.query('movie').groupBy('year').count().get()
+
+// Result:
+// {
+//   1994: {
+//     $count: 1,
+//   },
+//   2003: {
+//     $count: 1,
+//   },
+// }
+```
+
 **Advanced Examples:**
 
 ```javascript
@@ -167,6 +192,47 @@ await db.query('vote').avg('NL').max('PT').min('FI').groupBy('region').get()
 await db.query('beer').avg('price').groupBy('type').get()
 ```
 
+## Grouping by Reference node IDs
+
+The groupBy operation supports grouping nodes by their reference relationships ids.
+
+Example:
+
+```text
+Driver ->(vehicle)-> Vehicle
+Driver ->(trips)-> [Trip]->(vehicle)-> Vehicle
+```
+
+```javascript
+// Group drivers by their assigned vehicle
+await db.query('driver').sum('rank').groupBy('vehicle').get()
+// Returns: {
+//   '2': { rank: 5 }  // All drivers using vehicle ID 2
+// }
+```
+
+Works with nested queries:
+
+```javascript
+// Get drivers with their trips grouped by vehicle
+await db
+  .query('driver')
+  .include('name', 'rank', (q) => {
+    q('trips').groupBy('vehicle').sum('distance')
+  })
+  .get()
+// Returns: [
+//   {
+//     id: 1,
+//     name: 'Luc Ferry',
+//     rank: 5,
+//     trips: {
+//       '2': { distance: 523.1 }  // Trips grouped by vehicle ID
+//     }
+//   }
+// ]
+```
+
 ## Temporal Grouping (Time-based Aggregations)
 
 ### `groupBy(property: string | string[], step?: string | number | { step: string | number, timeZone?: string}?)`
@@ -175,7 +241,14 @@ Groups timestamp properties by time intervals.
 
 **Supported Intervals:**
 
-- `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`
+- `epoch`, Number of seconds that have elapsed since the beginning of the Unix epoch (January 1, 1970, at 00:00:00 UTC). Unix time or POSIX time.
+- `hour`
+- `day`, The day of the month (1–31)
+- `doy`, The day of the year (0–365)
+- `dow`, The day of the week as Sunday (0) to Saturday (6)
+- `isoDOW`, The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
+- `month`, The number of the month within the year (0–11);
+- `year`
 - Custom durations in seconds like `15 * 60 // 15 minutes`, `6 * 3600 // 6 hours`, `3 * 24 * 2600 // 3 days`
 
 **Examples:**
@@ -382,6 +455,74 @@ await db
   .include('name', 'city', (select) => {
     select('players').groupBy('position').avg('rating')
   })
+  .get()
+```
+
+## Range Limiting
+
+The `.range()` method allows pagination of aggregation results, working consistently with both main queries and nested grouped references.
+
+### `.range(start: number, end: number)`
+
+Limits the number of returned groups in aggregation queries.
+
+#### Key Behavior:
+
+1. **Works with all group types**:
+
+   - Reference groupings
+   - Property-based groupings
+
+2. **Consistent pagination**:
+
+   - `start`: Inclusive index (0-based)
+   - `end`: Exclusive index
+   - Returns `end - start` groups maximum
+
+3. **Preserves structure**:
+   - Maintains grouped object structure
+   - Only includes the requested range of keys
+
+#### Examples:
+
+**1. Paginating Temporal Groups**
+
+```javascript
+// Get first 2 hourly groups
+await db
+  .query('job')
+  .groupBy('day', {
+    step: 'hour',
+    timeZone: 'America/Sao_Paulo',
+  })
+  .avg('tip')
+  .range(0, 2) // First two hours
+  .get()
+// Returns object with exactly 2 keys
+```
+
+**2. Limiting Nested Groupings**
+
+```javascript
+// Get first 2 employees with their territory sums
+await db
+  .query('employee')
+  .include((q) => q('area').groupBy('name').sum('flap'))
+  .range(0, 2) // First two employees
+  .get()
+// Returns array with exactly 2 items
+```
+
+**3. Combined with Other Operations**
+
+```javascript
+// Paginated daily aggregates with filtering
+await db
+  .query('job')
+  .filter('tip', '>', 10)
+  .groupBy('day', optionsVar)
+  .sum('tip')
+  .range(5, 10) // Groups 5 through 9
   .get()
 ```
 

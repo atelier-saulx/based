@@ -9,11 +9,11 @@
     "build-ts": "tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
-    "build-release-debug": "rimraf {dist,.zig-cache,.zig-out,tmp} && && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
-    "build-release": "rimraf {dist,.zig-cache,.zig-out,tmp} && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
+    "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
+    "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",
-    "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
+    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp && npm run clean-selva",
     "playground-nodebug": "npm run build && node ./dist/test/shared/playground.js",
     "playground": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./dist/test/shared/playground.js",
     "playground-fast": "node ./dist/test/shared/playground.js",
@@ -29,7 +29,7 @@
     "test-ts": "tsc && node ./scripts/test.js",
     "test-ts-watch": "tsc --watch & node --watch ./scripts/test.js",
     "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js",
-    "repl": "LOCPATH=../locale/locale-x86_64-gnu/locale node ./scripts/repl.js"
+    "repl": "LOCPATH=../locale/locale-x86_64-gnu/locale node --experimental-strip-types ./scripts/repl.ts"
   },
   "sideEffects": false,
   "files": [
@@ -42,11 +42,10 @@
   ],
   "dependencies": {
     "@based/schema": "5.0.0-alpha.27",
-    "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^6.7.2",
+    "@based/hash": "1.0.0",
+    "@based/utils": "^1.0.0",
     "exit-hook": "^4.0.0",
-    "picocolors": "^1.1.0",
-    "@based/crc32c": "^1.0.0"
+    "picocolors": "^1.1.0"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
@@ -54,10 +53,8 @@
   "devDependencies": {
     "async-sema": "3.1.1",
     "jsondiffpatch": "^0.7.3",
-    "@based/crc32c": "^1.0.0",
     "@types/node": "^22.5.3",
     "axios": "^1.7.9",
-    "rimraf": "^3.0.2",
     "tar": "^7.4.3",
     "typescript": "^5.6.3",
     "fs-extra": "^11.1.1"

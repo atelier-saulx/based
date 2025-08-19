@@ -12,7 +12,7 @@ import initNetwork from './incoming/index.js'
 import { BasedFunctions, FunctionConfig } from './functions/index.js'
 import { BasedAuth, AuthConfig } from './auth/index.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
-import { wait } from '@saulx/utils'
+import { wait } from '@based/utils'
 import picocolors from 'picocolors'
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
 import { ActiveChannel } from './channel/index.js'
@@ -79,6 +79,7 @@ export type ServerOptions = {
   }
 
   getIp?: GetIp
+  console?: Console
 }
 
 /**
@@ -113,6 +114,8 @@ await server.start()
 ```
 */
 export class BasedServer {
+  public console: Console = console
+
   public clients: { [key: string]: any } // for now any...
 
   public client: BasedServerFunctionClient
@@ -247,6 +250,10 @@ export class BasedServer {
   }
 
   constructor(opts: ServerOptions) {
+    if (opts.console) {
+      this.console = opts.console
+    }
+
     if (opts.query) {
       this.queryEvents = opts.query
     }

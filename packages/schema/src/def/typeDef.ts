@@ -5,7 +5,7 @@ import {
   getPropType,
   SchemaLocales,
 } from '../index.js'
-import { setByPath } from '@saulx/utils'
+import { setByPath } from '@based/utils'
 import {
   PropDef,
   SchemaTypeDef,
@@ -19,8 +19,8 @@ import {
   BLOCK_CAPACITY_MIN,
   ALIAS,
   ALIASES,
+  VECTOR,
   COLVEC,
-  TypeIndex,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -81,7 +81,9 @@ function propIndexOffset(prop: PropDef) {
 }
 
 function reorderProps(props: PropDef[]) {
-  props.sort((a, b) => (a.prop + propIndexOffset(a)) - (b.prop + propIndexOffset(b)))
+  props.sort(
+    (a, b) => a.prop + propIndexOffset(a) - (b.prop + propIndexOffset(b)),
+  )
 
   // Reassign prop indices
   let lastProp = 0
@@ -213,7 +215,7 @@ export const createSchemaTypeDef = (
       if (prop.typeIndex !== NUMBER && prop.step === undefined) {
         prop.step = 1
       }
-      if (prop.typeIndex === COLVEC) {
+      if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
         prop.vectorBaseType = schemaProp.baseType ?? 'number'
       }
 

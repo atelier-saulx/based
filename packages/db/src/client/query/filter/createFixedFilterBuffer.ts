@@ -4,6 +4,7 @@ import {
   BINARY,
   STRING,
   REFERENCES,
+  TIMESTAMP,
 } from '@based/schema/def'
 import {
   ALIGNMENT_NOT_SET,
@@ -14,7 +15,7 @@ import {
   MODE_OR_FIXED,
 } from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
-import { ENCODER } from '@saulx/utils'
+import { ENCODER, writeInt64 } from '@based/utils'
 import { FilterCondition } from '../types.js'
 
 export const writeFixed = (
@@ -40,9 +41,12 @@ export const writeFixed = (
     buf[offset] = value
   } else {
     if (size === 8) {
-      // RFE no int64 for u? prob important to add...
-      const view = new DataView(buf.buffer, buf.byteOffset)
-      view.setFloat64(offset, value, true)
+      if (prop.typeIndex === TIMESTAMP) {
+        writeInt64(buf, value, offset)
+      } else {
+        const view = new DataView(buf.buffer, buf.byteOffset)
+        view.setFloat64(offset, value, true)
+      }
     } else if (size === 4) {
       buf[offset] = value
       buf[offset + 1] = value >>> 8

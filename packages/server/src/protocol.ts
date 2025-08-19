@@ -6,7 +6,7 @@ import {
   writeUint24,
   writeUint64,
   readUint32,
-} from '@saulx/utils'
+} from '@based/utils'
 
 export const COMPRESS_FROM_BYTES = 150
 

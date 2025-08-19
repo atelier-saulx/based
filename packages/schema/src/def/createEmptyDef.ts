@@ -1,5 +1,5 @@
 import { SchemaLocales, SchemaObject, StrictSchemaType } from '../types.js'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder } from '@based/hash'
 
 export const createEmptyDef = (
   typeName: string,

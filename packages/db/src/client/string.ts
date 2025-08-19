@@ -1,6 +1,12 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
-import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@saulx/utils'
+import {
+  readUint32,
+  makeTmpBuffer,
+  DECODER,
+  ENCODER,
+  combineToNumber,
+} from '@based/utils'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
@@ -13,7 +19,7 @@ export const write = (
   offset: number,
   noCompression: boolean,
   lang?: LangCode,
-): number => {
+): number | null => {
   value = value.normalize('NFKD')
   buf[offset] = lang || 0
   const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
@@ -21,7 +27,14 @@ export const write = (
 
   // 50 len maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    buf.copyWithin(offset + 6 + l, offset + 2, offset + 2 + l)
+    const insertPos = offset + 6 + l
+    const startPos = offset + 2
+    const endPos = offset + 2 + l
+    const willEnd = insertPos + l
+    if (willEnd > buf.length) {
+      return null
+    }
+    buf.copyWithin(insertPos, startPos, endPos)
     const size = native.compress(buf, offset + 6, l)
     if (size === 0) {
       buf[offset + 1] = NOT_COMPRESSED
@@ -75,7 +88,7 @@ export const read = (
   val: Uint8Array,
   offset: number,
   len: number,
-  stripCrc32: boolean,
+  strippedCrc32: boolean,
 ): string => {
   const type = val[offset + 1]
   if (type == COMPRESSED) {
@@ -86,11 +99,11 @@ export const read = (
       val,
       newBuffer,
       offset + 6,
-      stripCrc32 ? len - 2 : len - 6,
+      strippedCrc32 ? len - 2 : len - 6,
     )
     return DECODER.decode(newBuffer)
   } else if (type == NOT_COMPRESSED) {
-    if (stripCrc32) {
+    if (strippedCrc32) {
       return DECODER.decode(val.subarray(offset + 2, len + offset))
     } else {
       return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
