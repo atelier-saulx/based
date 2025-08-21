@@ -3,7 +3,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-// dummy
+enum state {
+    RECORD_START,
+    FIELD_START,
+    UNQUOTED_FIELD,
+    QUOTED_FIELD,
+    QUOTED_END,
+    ERROR,
+};
+
+const char states[] = {'R','F','U','Q','E','X'};
+
+enum chars {
+    QUOTE,
+    COMMA,
+    NEWLINE,
+    OTHER,
+};
+
+int parse_char (char ch){
+    switch (ch){
+        case '"':
+            return QUOTE;
+            break;
+        case ',':
+            return COMMA;
+            break;
+        case '\n':
+            return NEWLINE;
+            break;
+        default:
+            return OTHER;
+            break;
+    }
+}
+
+const int8_t fsm[6][4] = {
+    {3, 1, 0, 2},
+    {3, 1, 0, 2},
+    {5, 1, 0, 2},
+    {4, 3, 3, 3},
+    {3, 1, 0, 5},
+    {5, 5, 5, 5}
+};
+
 bool csv_read(const char* filename, void** data) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -12,12 +55,20 @@ bool csv_read(const char* filename, void** data) {
     }
 
     CSVData* csv_data = malloc(sizeof(CSVData));
+
+    int current_state = 0;
+    char ch;
     
+    while ((ch = fgetc(file)) != EOF) {
+        current_state = fsm[current_state][parse_char(ch)];
+        printf(" %c = %c", states[current_state], ch);
+    }
+
     csv_data->row_count = 3;
     csv_data->col_count = 2;
     csv_data->headers = malloc(2 * sizeof(char*));
-    csv_data->headers[0] = strdup("Column1");
-    csv_data->headers[1] = strdup("Column2");
+    csv_data->headers[0] = strdup("\"Column1\"");
+    csv_data->headers[1] = strdup("\"Column2\"");
     
     csv_data->data = malloc(3 * sizeof(char**));
     for (int i = 0; i < 3; i++) {
@@ -27,11 +78,11 @@ bool csv_read(const char* filename, void** data) {
     }
 
     *data = csv_data;
+
     fclose(file);
     return true;
 }
 
-// dummy
 bool csv_write(const char* filename, const void* data) {
     const CSVData* csv_data = (const CSVData*)data;
     FILE* file = fopen(filename, "w");

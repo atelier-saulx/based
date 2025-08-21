@@ -34,7 +34,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (convert_file(argv[1], argv[2], &options)) {
-        printf("%s %s\n",argv[1], argv[2]);
         printf("Conversion successful!\n");
         return 0;
     } else {
