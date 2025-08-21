@@ -14,7 +14,7 @@ export const createStatsDb = async (basePath: string) => {
         uniqueVisitors: 'cardinality',
         totalRequests: 'uint32',
         totalErrors: 'uint32',
-        checksum: 'uint32',
+        checksum: 'number',
         connections: 'uint32',
         errorOnInitialization: 'boolean',
 

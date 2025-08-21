@@ -164,9 +164,5 @@ export const Dev = ({ opts }) => {
     run()
   }, [])
 
-  return (
-    <Box>
-      <Text>Dev time!</Text>
-    </Box>
-  )
+  return null
 }

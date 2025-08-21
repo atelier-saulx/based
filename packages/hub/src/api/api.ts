@@ -5,7 +5,6 @@ import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
 import { authEmail } from './authEmail/index.js'
 import { type Opts } from '../index.js'
-import { crc32c } from '@based/hash'
 
 export function registerApiHandlers(
   server,
@@ -98,10 +97,6 @@ export function registerApiHandlers(
         const contents = await readStream(stream)
         const code = Buffer.from(contents).toString()
         const config = payload.config
-        const checksum =
-          config.type === 'app'
-            ? crc32c(code + JSON.stringify(config))
-            : crc32c(code)
 
         let { type, name } = config
         if (type === 'authorize') {
@@ -116,7 +111,7 @@ export function registerApiHandlers(
           .toObject()
         let id: number
         if (res) {
-          if (res.checksum === checksum) {
+          if (res.checksum === payload.checksum) {
             return
           }
           id = res.id
@@ -125,7 +120,7 @@ export function registerApiHandlers(
             type,
             code,
             config,
-            checksum,
+            checksum: payload.checksum,
           })
         } else {
           id = await configDb.create('function', {
@@ -133,7 +128,7 @@ export function registerApiHandlers(
             type,
             code,
             config,
-            checksum,
+            checksum: payload.checksum,
           })
         }
         return new Promise<void>(async (resolve) => {

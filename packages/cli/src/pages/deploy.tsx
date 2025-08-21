@@ -1,10 +1,12 @@
 import { BasedClient } from '@based/client'
-import { Box, Text } from 'ink'
+import { Box, Text, useApp } from 'ink'
 import React, { useEffect } from 'react'
 import { parseFolder, ParseResults } from '../bundle/parse.js'
 import { serialize } from '@based/schema'
 import { basename, join, relative, resolve } from 'path'
 import type { OutputFile } from 'esbuild'
+import { hash } from '@based/hash'
+import { useClient } from '@based/react'
 
 export const deployChanges = async (
   client: BasedClient,
@@ -89,6 +91,8 @@ export const deployChanges = async (
         }
       }
 
+      payload.checksum = hash(payload)
+
       return client
         .stream('based:set-function', {
           contents: config.indexCtx.build.outputFiles[0].contents,
@@ -107,14 +111,24 @@ export const deployChanges = async (
 }
 
 export const Deploy = ({ opts }) => {
+  const client = useClient()
+  const { exit } = useApp()
+
   useEffect(() => {
     const run = async () => {
       const cwd = process.cwd()
-      const results = await parseFolder({
-        opts,
-        cwd,
-        publicPath: 'xxx',
-      })
+      const { publicPath, version = 1 } = await client.call('based:env-info')
+      if (version === 1) {
+        console.error('This env is not compatible with this cli')
+      } else {
+        const results = await parseFolder({
+          opts,
+          cwd,
+          publicPath,
+        })
+        await deployChanges(client, publicPath, results)
+      }
+      exit()
     }
     run()
   }, [])
