@@ -66,8 +66,8 @@ export const getDefaultHooks = (
         killed = true
       }
     },
-    setSchema(schema: StrictSchema) {
-      return server.setSchema(schema)
+    setSchema(schema: StrictSchema, transformFns) {
+      return server.setSchema(schema, transformFns)
     },
     subscribeSchema(setSchema) {
       if (server.schema) {
