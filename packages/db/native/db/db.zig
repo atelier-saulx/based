@@ -124,6 +124,17 @@ pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeReference) ?Node {
     return null;
 }
 
+pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeReference) []u8 {
+    if (ref != null) {
+        const dst = getNodeFromReference(ref);
+        if (dst != null) {
+            const id: *u32 = @alignCast(@ptrCast(dst));
+            return std.mem.asBytes(id)[0..4];
+        }
+    }
+    return &[_]u8{};
+}
+
 pub fn getSingleReference(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?*selva.SelvaNodeReference {
     const result = selva.selva_fields_get_reference(ctx.selva, node, fieldSchema);
     return result;
