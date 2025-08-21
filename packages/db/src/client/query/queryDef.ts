@@ -30,7 +30,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     },
     include: {
       langTextFields: new Map(),
-      stringFields: new Set(),
+      stringFields: new Map(),
       props: new Map(),
       propsRead: {},
       main: {

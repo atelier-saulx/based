@@ -1,4 +1,4 @@
-import { META_SELVA_STRING } from '@based/schema/def'
+// import { META_SELVA_STRING } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
@@ -13,8 +13,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     !def.include.props.size &&
     !def.references.size &&
     !def.include.main.len &&
-    !def.include.langTextFields.size &&
-    !def.include.meta
+    !def.include.langTextFields.size //&&
+    // !def.include.meta
   ) {
     return result
   }
@@ -24,8 +24,8 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
   let includeBuffer: Uint8Array
 
   if (def.include.stringFields) {
-    for (const f of def.include.stringFields) {
-      walkDefs(db, def, f)
+    for (const [field, include] of def.include.stringFields.entries()) {
+      walkDefs(db, def, { field, opts: include.opts })
     }
   }
 
@@ -115,7 +115,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
       let i = 0
       for (const [prop, propDef] of def.include.props.entries()) {
         includeBuffer[i + offset] = prop
-        includeBuffer[i + offset + 1] = propDef.typeIndex
+        includeBuffer[i + offset + 1] = propDef.def.typeIndex
         i += 2
       }
     }
@@ -124,7 +124,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     let i = 0
     for (const [prop, propDef] of def.include.props.entries()) {
       buf[i] = prop
-      buf[i + 1] = propDef.typeIndex
+      buf[i + 1] = propDef.def.typeIndex
       i += 2
     }
     includeBuffer = buf
@@ -137,14 +137,14 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     result.push(includeBuffer)
   }
 
-  if (def.include.meta) {
-    for (const prop of def.include.meta) {
-      const b = new Uint8Array(2)
-      b[0] = prop
-      b[1] = META_SELVA_STRING // prob want to add more here...
-      result.push(b)
-    }
-  }
+  // if (def.include.meta) {
+  //   for (const prop of def.include.meta) {
+  //     const b = new Uint8Array(2)
+  //     b[0] = prop
+  //     b[1] = META_SELVA_STRING // prob want to add more here...
+  //     result.push(b)
+  //   }
+  // }
 
   return result
 }

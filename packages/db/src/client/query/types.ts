@@ -4,7 +4,19 @@ import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { AggregateType } from './aggregates/types.js'
 
-export type MainIncludes = { [start: string]: [number, PropDef] }
+export type IncludeOpts = {
+  end?: number
+  start?: number
+  meta?: 'only' | true | false // add more opts?
+  // more opts?
+}
+
+export type IncludeField = {
+  field: string
+  opts?: IncludeOpts
+}
+
+export type MainIncludes = { [start: string]: [number, PropDef, IncludeOpts] }
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
@@ -26,11 +38,6 @@ enum QueryDefType {
 
 export type EdgeTarget = {
   ref: PropDef | PropDefEdge | null
-}
-
-export enum MainMetaInclude {
-  All = 1,
-  MetaOnly = 2,
 }
 
 export type Target = {
@@ -130,10 +137,8 @@ export type QueryDefShared = {
         fallBacks: LangCode[]
       }
     >
-    metaMain?: Map<number, MainMetaInclude> // start
-    meta?: Set<number>
-    stringFields: Set<string>
-    props: Map<number, PropDef | PropDefEdge>
+    stringFields: Map<string, IncludeField>
+    props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
     propsRead: { [propName: number]: number }
     main: {
       include: MainIncludes
@@ -195,4 +200,13 @@ export const enum includeOp {
   EDGE = 252,
   REFERENCES = 254,
   REFERENCE = 255,
+}
+
+export const enum includeOpts {
+  HAS_OPTS = 1,
+  NO_OPTS = 0,
+  // meta just gets added as an extra include in the result
+  META = 2,
+  META_ONLY = 3,
+  SLICE = 4,
 }

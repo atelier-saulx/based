@@ -124,6 +124,8 @@ pub fn getFields(
             includeIterator += 1;
         }
 
+        // opts here
+
         if (isEdge) {
             if (edgeRef.?.edgeConstaint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (4) \n", .{});

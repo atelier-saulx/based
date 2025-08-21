@@ -21,7 +21,7 @@ import {
   CARDINALITY,
   COLVEC,
 } from '@based/schema/def'
-import { MainMetaInclude, QueryDef, QueryDefType, READ_META } from '../types.js'
+import { QueryDef, QueryDefType, READ_META } from '../types.js'
 import { read, readUtf8 } from '../../string.js'
 import {
   combineToNumber,
@@ -292,7 +292,7 @@ const readMainStringType = (
   item: Item,
 ) => {
   const len = result[index]
-  const hasChecksum = q.include.metaMain?.has(prop.start)
+  // const hasChecksum = q.include.metaMain?.has(prop.start)
   index = index + 1
   let value: any
   if (len === 0) {
@@ -303,15 +303,15 @@ const readMainStringType = (
     } else if (prop.typeIndex === BINARY) {
       value = new Uint8Array()
     }
-    if (hasChecksum) {
-      if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
-        addField(prop, { ...EMPTY_META }, item, false)
-      } else {
-        addField(prop, { ...EMPTY_META, value }, item, false)
-      }
-    } else {
-      addField(prop, value, item, false)
-    }
+    // if (hasChecksum) {
+    // if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
+    //   addField(prop, { ...EMPTY_META }, item, false)
+    // } else {
+    // addField(prop, { ...EMPTY_META, value }, item, false)
+    // }
+    // } else {
+    addField(prop, value, item, false)
+    // }
   } else {
     if (prop.typeIndex === STRING) {
       value = readUtf8(result, index, len)
@@ -320,17 +320,17 @@ const readMainStringType = (
     } else if (prop.typeIndex === BINARY) {
       value = result.subarray(index, index + len)
     }
-    if (hasChecksum) {
-      const meta = readMetaMainString(result, index, len)
-      if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
-        addField(prop, meta, item, false)
-      } else {
-        meta.value = value
-        addField(prop, meta, item, false)
-      }
-    } else {
-      addField(prop, value, item, false)
-    }
+    // if (hasChecksum) {
+    //   const meta = readMetaMainString(result, index, len)
+    //   if (q.include.metaMain?.get(prop.start) === MainMetaInclude.MetaOnly) {
+    //     addField(prop, meta, item, false)
+    //   } else {
+    //     meta.value = value
+    //     addField(prop, meta, item, false)
+    //   }
+    // } else {
+    addField(prop, value, item, false)
+    // }
   }
 }
 
@@ -367,15 +367,15 @@ const selvaStringProp = (
   const value = useDefault
     ? getDefaultSelvaStringValue(prop)
     : readSelvaStringValue(prop, buf, offset, size)
-  const checksum = q.include.meta?.has(prop.prop)
-  if (checksum) {
-    addField(prop, value, item, false, false, 0, 'value')
-    if (useDefault) {
-      addField(prop, EMPTY_META, item, true)
-    }
-  } else {
-    addField(prop, value, item, false)
-  }
+  // const checksum = q.include.meta?.has(prop.prop)
+  // if (checksum) {
+  //   addField(prop, value, item, false, false, 0, 'value')
+  //   if (useDefault) {
+  //     addField(prop, EMPTY_META, item, true)
+  //   }
+  // } else {
+  addField(prop, value, item, false)
+  // }
 }
 
 const readMain = (
@@ -407,17 +407,17 @@ const readMain = (
 
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   // can be optmized a lot... shit meta info in the propsRead objectmeta is just a shift of 8
-  if (q.include.meta) {
-    for (const k of q.include.meta) {
-      const prop = q.schema.reverseProps[k]
-      if (
-        q.include.propsRead[k] !== id &&
-        getByPath(item, prop.path) === undefined
-      ) {
-        addField(prop, { ...EMPTY_META }, item, true)
-      }
-    }
-  }
+  // if (q.include.meta) {
+  //   for (const k of q.include.meta) {
+  //     const prop = q.schema.reverseProps[k]
+  //     if (
+  //       q.include.propsRead[k] !== id &&
+  //       getByPath(item, prop.path) === undefined
+  //     ) {
+  //       addField(prop, { ...EMPTY_META }, item, true)
+  //     }
+  //   }
+  // }
 
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {

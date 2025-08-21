@@ -25,7 +25,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     }
     // locale first...
     if (!q.def.include.stringFields.size && !q.def.references.size) {
-      includeField(q.def, '*')
+      includeField(q.def, { field: '*' })
     }
     q.queryCommands = commands
 

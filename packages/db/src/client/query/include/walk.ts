@@ -11,21 +11,32 @@ import {
   ALIAS,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
-import { isRefDef, MainMetaInclude, QueryDef, QueryDefType } from '../types.js'
+import {
+  IncludeField,
+  isRefDef,
+  // MainMetaInclude,
+  QueryDef,
+  QueryDefType,
+} from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
 import { langCodesMap } from '@based/schema'
 import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
 
-export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
-  const prop = def.props[f]
-  const path = f.split('.')
+export const walkDefs = (
+  db: DbClient,
+  def: QueryDef,
+  include: IncludeField,
+) => {
+  const prop = def.props[include.field]
+  const path = include.field.split('.')
 
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       let p = path[i]
+
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(
@@ -41,7 +52,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         const edgeProp = def.edges.props[p]
 
         if (!edgeProp) {
-          includeDoesNotExist(def, f)
+          includeDoesNotExist(def, include.field)
           return
         }
 
@@ -54,85 +65,87 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
             includeAllProps(refDef)
           } else {
             const f = path.slice(i + 1).join('.')
-            if (!includeProp(refDef, refDef.props[f])) {
-              includeField(refDef, f)
+            if (!includeProp(refDef, refDef.props[f], include.opts)) {
+              includeField(refDef, { field: f, opts: include.opts })
             }
             return
           }
         } else {
-          if (
-            path[i + 1] === 'meta' &&
-            (edgeProp.typeIndex === STRING ||
-              edgeProp.typeIndex === BINARY ||
-              edgeProp.typeIndex === JSON ||
-              edgeProp.typeIndex === ALIAS)
-          ) {
-            if (edgeProp.separate) {
-              if (!def.edges.include.meta) {
-                def.edges.include.meta = new Set()
-              }
-              def.edges.include.meta.add(edgeProp.prop)
-            } else {
-              includeProp(def.edges, edgeProp)
-              if (!def.edges.include.metaMain) {
-                def.edges.include.metaMain = new Map()
-              }
-              if (!def.edges.include.main.include[edgeProp.start]) {
-                includeProp(def.edges, edgeProp)
-                def.edges.include.metaMain.set(
-                  edgeProp.start,
-                  MainMetaInclude.MetaOnly,
-                )
-              } else {
-                def.edges.include.metaMain.set(
-                  edgeProp.start,
-                  MainMetaInclude.All,
-                )
-              }
-            }
-          } else {
-            includeProp(def.edges, edgeProp)
-          }
+          // if (
+          //   // this can just become OPTS
+          //   path[i + 1] === 'meta' &&
+          //   (edgeProp.typeIndex === STRING ||
+          //     edgeProp.typeIndex === BINARY ||
+          //     edgeProp.typeIndex === JSON ||
+          //     edgeProp.typeIndex === ALIAS)
+          // ) {
+          //   if (edgeProp.separate) {
+          //     if (!def.edges.include.meta) {
+          //       def.edges.include.meta = new Set()
+          //     }
+          //     def.edges.include.meta.add(edgeProp.prop)
+          //   } else {
+          //     includeProp(def.edges, edgeProp)
+          //     if (!def.edges.include.metaMain) {
+          //       def.edges.include.metaMain = new Map()
+          //     }
+          //     if (!def.edges.include.main.include[edgeProp.start]) {
+          //       includeProp(def.edges, edgeProp)
+          //       def.edges.include.metaMain.set(
+          //         edgeProp.start,
+          //         MainMetaInclude.MetaOnly,
+          //       )
+          //     } else {
+          //       def.edges.include.metaMain.set(
+          //         edgeProp.start,
+          //         MainMetaInclude.All,
+          //       )
+          //     }
+          //   }
+          // } else {
+          includeProp(def.edges, edgeProp)
+          // }
         }
         return
       }
 
       t = t[p]
       if (!t) {
-        if (f != 'id') {
-          if (f.endsWith('.meta')) {
-            const propPath = f.split('.').slice(0, -1).join('.')
-            const prop = def.props[propPath]
-            if (
-              prop &&
-              (prop.typeIndex === STRING ||
-                prop.typeIndex === BINARY ||
-                prop.typeIndex === JSON ||
-                prop.typeIndex === ALIAS) // later add text
-            ) {
-              if (prop.separate) {
-                if (!def.include.meta) {
-                  def.include.meta = new Set()
-                }
-                def.include.meta.add(prop.prop)
-              } else {
-                if (!def.include.metaMain) {
-                  def.include.metaMain = new Map()
-                }
-                if (!def.include.main.include[prop.start]) {
-                  includeProp(def, prop)
-                  def.include.metaMain.set(prop.start, MainMetaInclude.MetaOnly)
-                } else {
-                  def.include.metaMain.set(prop.start, MainMetaInclude.All)
-                }
-              }
-            } else {
-              includeDoesNotExist(def, f)
-              return
-            }
-          } else {
-            includeDoesNotExist(def, f)
-          }
+        if (include.field != 'id') {
+          // this can just become OPTS
+          // if (include.field.endsWith('.meta')) {
+          //   const propPath = include.field.split('.').slice(0, -1).join('.')
+          //   const prop = def.props[propPath]
+          //   if (
+          //     prop &&
+          //     (prop.typeIndex === STRING ||
+          //       prop.typeIndex === BINARY ||
+          //       prop.typeIndex === JSON ||
+          //       prop.typeIndex === ALIAS) // later add text
+          //   ) {
+          //     if (prop.separate) {
+          //       if (!def.include.meta) {
+          //         def.include.meta = new Set()
+          //       }
+          //       def.include.meta.add(prop.prop)
+          //     } else {
+          //       if (!def.include.metaMain) {
+          //         def.include.metaMain = new Map()
+          //       }
+          //       if (!def.include.main.include[prop.start]) {
+          //         includeProp(def, prop)
+          //         def.include.metaMain.set(prop.start, MainMetaInclude.MetaOnly)
+          //       } else {
+          //         def.include.metaMain.set(prop.start, MainMetaInclude.All)
+          //       }
+          //     }
+          //   } else {
+          //     includeDoesNotExist(def, include.field)
+          //     return
+          //   }
+          // } else {
+          includeDoesNotExist(def, include.field)
+          // }
         }
         return
       }
@@ -141,7 +154,7 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
         const lang = path[path.length - 1]
         const langCode = langCodesMap.get(lang)
         if (!langCode || !db.schema.locales[lang]) {
-          includeLangDoesNotExist(def, f)
+          includeLangDoesNotExist(def, include.field)
           return
         }
         if (!def.include.langTextFields.has(t.prop)) {
@@ -159,8 +172,8 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
       ) {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
-        if (!includeProp(refDef, refDef.props[f])) {
-          includeField(refDef, f)
+        if (!includeProp(refDef, refDef.props[f], include.opts)) {
+          includeField(refDef, { field: f, opts: include.opts })
         }
         return
       }
@@ -170,14 +183,14 @@ export const walkDefs = (db: DbClient, def: QueryDef, f: string) => {
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
-        walkDefs(db, def, field)
+        walkDefs(db, def, { field, opts: include.opts })
       }
     }
   } else if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     const refDef = createOrGetRefQueryDef(db, def, prop)
-    includeAllProps(refDef)
+    includeAllProps(refDef, include.opts)
     return
   } else {
-    includeProp(def, prop)
+    includeProp(def, prop, include.opts)
   }
 }

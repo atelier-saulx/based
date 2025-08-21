@@ -16,6 +16,11 @@ await test('meta for selva string', async (t) => {
         props: {
           email: { type: 'string', maxBytes: 20 },
           name: 'string',
+          derp: {
+            props: {
+              x: 'string',
+            },
+          },
           items: {
             items: {
               ref: 'item',
@@ -33,7 +38,13 @@ await test('meta for selva string', async (t) => {
     email: 'a@b.com',
   })
 
-  deepEqual(await db.query('item').include('name.meta', 'name').get(), [
+  await db
+    .query('item')
+    .include('name', { meta: 'only' })
+    .get()
+    .inspect(10, true)
+
+  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {
@@ -48,7 +59,7 @@ await test('meta for selva string', async (t) => {
 
   await db.create('item', {})
 
-  deepEqual(await db.query('item').include('name.meta', 'name').get(), [
+  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {
@@ -65,7 +76,7 @@ await test('meta for selva string', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('item').include('name.meta').get(), [
+  deepEqual(await db.query('item').include('name', { meta: 'only' }).get(), [
     {
       id: 1,
       name: {
@@ -91,7 +102,7 @@ await test('meta for selva string', async (t) => {
   })
 
   deepEqual(
-    await db.query('item').include('items.$edgeName.meta').get(),
+    await db.query('item').include('items.$edgeName', { meta: 'only' }).get(),
     [
       {
         id: 1,
@@ -125,7 +136,7 @@ await test('meta for selva string', async (t) => {
     'Edge meta',
   )
 
-  deepEqual(await db.query('item').include('email.meta').get(), [
+  deepEqual(await db.query('item').include('email', { meta: 'only' }).get(), [
     {
       id: 1,
       email: {
@@ -141,7 +152,7 @@ await test('meta for selva string', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('item').include('email.meta', 'email').get(), [
+  deepEqual(await db.query('item').include('email', { meta: true }).get(), [
     {
       id: 1,
       email: {
@@ -160,7 +171,7 @@ await test('meta for selva string', async (t) => {
 
   await db.update('item', 1, { name: italy })
 
-  deepEqual(await db.query('item').include('name.meta', 'name').get(), [
+  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {

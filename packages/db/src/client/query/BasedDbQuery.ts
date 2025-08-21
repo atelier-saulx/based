@@ -12,6 +12,8 @@ import {
   addAggregate,
   groupBy,
   LangFallback,
+  IncludeOpts,
+  IncludeField,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import {
@@ -399,13 +401,20 @@ export class QueryBranch<T> {
     return this
   }
 
-  include(...fields: (string | BranchInclude | string[])[]): T {
+  include(
+    ...fields: (
+      | string
+      | BranchInclude
+      | IncludeOpts
+      | (string | IncludeOpts)[]
+    )[]
+  ): T {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
       for (const f of fields) {
         if (typeof f === 'string') {
-          includeField(this.def, f)
+          includeField(this.def, { field: f })
         } else if (typeof f === 'function') {
           f((field: string) => {
             if (field[0] == '$') {
@@ -447,9 +456,25 @@ export class QueryBranch<T> {
           })
         } else if (Array.isArray(f)) {
           if (f.length === 0) {
-            includeFields(this.def, ['id'])
+            includeField(this.def, { field: 'id' })
           } else {
-            includeFields(this.def, f)
+            for (let i = 0; i < f.length; i++) {
+              const field = f[i]
+              const opts =
+                typeof f[i + 1] === 'object' && typeof f[i + 1] !== 'function'
+                  ? (f[i + 1] as IncludeOpts)
+                  : undefined
+              if (typeof field === 'string') {
+                if (opts) {
+                  includeField(this.def, {
+                    field,
+                    opts,
+                  })
+                } else {
+                  includeField(this.def, { field })
+                }
+              }
+            }
           }
         } else if (f !== undefined) {
           throw new Error(
