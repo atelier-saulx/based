@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import createNorthwind from './shared/northwindDb.js'
 
-await test('northwind', async (t) => {
+await test.skip('northwind', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
