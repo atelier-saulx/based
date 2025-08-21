@@ -107,6 +107,10 @@ pub fn getFields(
             return size;
         }
 
+        // if op == t.IncludeOp.Meta
+        // now we just have prop as well
+        // field etc
+
         const field: u8 = @intFromEnum(op);
         var prop: t.Prop = undefined;
         var fieldSchema: *const selva.SelvaFieldSchema = undefined;
@@ -153,6 +157,7 @@ pub fn getFields(
             continue :includeField;
         }
 
+        //
         if (prop == t.Prop.META_SELVA_STRING) {
             var result = addResult(field, value, edgeType);
             if (!idIsSet) {
@@ -233,12 +238,6 @@ pub fn getFields(
                 if (includeMain) |incMain| {
                     if (incMain.len != 0) {
                         const mainSelectiveSize = read(u16, incMain, 0);
-
-                        // INFO: There is a case where this can be handled better (when larger then 16 make an extra type)
-                        // if (mainSelectiveSize > 16) {
-                        //     std.debug.print("larger then 16 \n", .{});
-                        // }
-
                         const mainSelectiveVal = try ctx.allocator.alloc(u8, mainSelectiveSize);
                         var mainPos: usize = 2;
                         var j: usize = 0;

@@ -20,15 +20,17 @@ pub const Result = struct {
     val: ?[]u8,
 };
 
+// need to know what kind of field this is might add typeIndex
+
 const HEADER_SIZE = 8;
 
+// handle meta
 fn addChecksum(item: *const *Result, data: []u8) usize {
     var offset: usize = 0;
     data[offset] = @intFromEnum(t.ReadOp.META);
     offset += 1;
     data[offset] = item.*.field;
     offset += 1;
-
     if (item.*.val) |v| {
         data[offset] = v[1];
         offset += 1;
