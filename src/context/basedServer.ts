@@ -224,7 +224,7 @@ export const contextBasedServer =
           },
           'based:auth-email': {
             type: 'function',
-            public: true,
+            internalOnly: true,
             fn: authEmail,
           },
           static: {

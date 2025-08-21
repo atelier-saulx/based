@@ -1,12 +1,10 @@
 export const inviteTemplate = ({
   appName,
   email,
-  code,
   callToAction,
 }: {
   appName: string
   email: string
-  code: string
   callToAction: string
 }) => `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -529,72 +527,6 @@ export const inviteTemplate = ({
 
                         </p>
 
-                        <!-- Login confirm words -->
-                        <table
-                          class="attributes"
-                          width="100%"
-                          cellpadding="0"
-                          cellspacing="0"
-                          role="presentation"
-                          style="margin: 32px 0px"
-                        >
-                          <tr>
-                            <td
-                              class="attributes_content"
-                              style="
-                                word-break: break-word;
-                                font-family:
-                                  'Inter', Helvetica, Arial, sans-serif;
-                                font-size: 16px;
-                              "
-                              bgcolor="#F4F4F7"
-                            >
-                              <table
-                                class="attributes_content_inner"
-                                align="center"
-                                cellpadding="0"
-                                cellspacing="0"
-                                role="presentation"
-                                style="
-                                  background-color: #f4f4f7;
-                                  margin: 0 auto;
-                                  background-color: #f4f4f7;
-                                  padding: 11px;
-                                "
-                                bgcolor="#F4F4F7"
-                              >
-                                <tr>
-                                  <td
-                                    align="center"
-                                    style="
-                                      word-break: break-word;
-                                      font-family:
-                                        'Inter', Helvetica, Arial, sans-serif;
-                                      font-size: 16px;
-                                    "
-                                  >
-                                    <p
-                                      class="f-fallback sub"
-                                      style="
-                                        font-size: 15px;
-                                        line-height: 1;
-                                        margin: 0;
-                                        color: #29292c;
-                                        text-align: center;
-                                      "
-                                      align="center"
-                                    >
-                                      <span class="f-fallback">
-                                        <strong>${code}</strong>
-                                      </span>
-                                    </p>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
-                        </table>
-
                         <p
                           style="
                             margin-top: 0;
@@ -670,7 +602,7 @@ export const inviteTemplate = ({
                                         -webkit-text-size-adjust: none;
                                         box-sizing: border-box;
                                       "
-                                      >Verify and log in</a
+                                      >Verify your email</a
                                   </td>
                                 </tr>
                               </table>

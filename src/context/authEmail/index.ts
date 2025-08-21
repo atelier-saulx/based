@@ -72,8 +72,8 @@ export const authEmail: BasedFunction<Payload> = async (
     return await postMarkClient.sendEmail({
       From: 'Based <auth@based.io>',
       To: email,
-      Subject: `${appName} user access . "${code}"`,
-      HtmlBody: inviteTemplate({ appName, code, email, callToAction }),
+      Subject: `${appName} user access.`,
+      HtmlBody: inviteTemplate({ appName, email, callToAction }),
     })
   }
 
