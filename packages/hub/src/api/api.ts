@@ -3,6 +3,8 @@ import { S3Client } from '@based/s3'
 import { deSerialize, serialize } from '@based/schema'
 import { readStream } from '@based/utils'
 import { v4 as uuid } from 'uuid'
+import { authEmail } from './authEmail/index.js'
+import { type Opts } from '../index.js'
 
 export function registerApiHandlers(
   server,
@@ -10,8 +12,14 @@ export function registerApiHandlers(
   statsDb: DbClient,
   s3: S3Client,
   buckets: Record<'files' | 'backups' | 'dists', string>,
+  smtp: Opts['smtp'],
 ) {
   server.functions.add({
+    'based:auth-email': {
+      type: 'function',
+      public: true,
+      fn: authEmail(smtp),
+    },
     'based:events': {
       type: 'query',
       async fn(
@@ -56,7 +64,6 @@ export function registerApiHandlers(
         } = payload
 
         // put stuff in db
-
         await s3.upload({
           Bucket,
           Key,
@@ -70,7 +77,7 @@ export function registerApiHandlers(
       async fn(_based, name = 'default', update) {
         return configDb.query('secret', { name }).subscribe((res) => {
           const obj = res.toObject()
-          update(obj.value)
+          update(obj?.value)
         })
       },
     },
@@ -90,16 +97,51 @@ export function registerApiHandlers(
         const contents = await readStream(stream)
         const code = Buffer.from(contents).toString()
         const config = payload.config
+
         let { type, name } = config
         if (type === 'authorize') {
           name = 'based:authorize'
           config.name = name
         }
-        await configDb.upsert('function', {
-          name,
-          type,
-          code,
-          config,
+
+        const res = await configDb
+          .query('function', { name })
+          .include('id', 'checksum')
+          .get()
+          .toObject()
+        let id: number
+        if (res) {
+          if (res.checksum === payload.checksum) {
+            return
+          }
+          id = res.id
+          await configDb.update('function', id, {
+            name,
+            type,
+            code,
+            config,
+            checksum: payload.checksum,
+          })
+        } else {
+          id = await configDb.create('function', {
+            name,
+            type,
+            code,
+            config,
+            checksum: payload.checksum,
+          })
+        }
+        return new Promise<void>(async (resolve) => {
+          const unsubscribe = configDb
+            .query('function', id)
+            .include('loaded', 'checksum')
+            .subscribe((res) => {
+              const { loaded, checksum } = res.toObject()
+              if (loaded === checksum) {
+                resolve()
+                unsubscribe()
+              }
+            })
         })
       },
     },
@@ -107,20 +149,17 @@ export function registerApiHandlers(
       type: 'function',
       async fn(_based, serializedObject) {
         const { db, schema } = deSerialize(serializedObject) as any
-        console.log('DO IT')
         const id = await configDb.upsert('schema', {
           name: db,
           schema: serialize(schema),
           status: 'pending',
         })
-        console.log('DO IT!!!')
         return new Promise<void>((resolve, reject) => {
           const unsubscribe = configDb
             .query('schema', id)
             .include('status')
             .subscribe((res) => {
               const { status } = res.toObject()
-              console.log({ status })
               if (status === 'error') {
                 reject(new Error('Schema error'))
                 unsubscribe()

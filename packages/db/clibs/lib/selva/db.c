@@ -20,34 +20,6 @@
 
 #define NODEPOOL_SLAB_SIZE 2097152
 
-/**
- * Cursor pointing to a node in a SelvaTypeEntry.
- * If the node is deleted the cursor is updated to point to the next
- * node using selva_next_node().
- */
-struct SelvaTypeCursor {
-    RB_ENTRY(SelvaTypeCursor) _entry_by_id;
-    TAILQ_ENTRY(SelvaTypeCursor) _entry_by_node_id;
-    /**
-     * Pointer back to the SelvaTypeCursors (by node_id).
-     * Saves an RB find.
-     * NULL if ptr == NULL.
-     */
-    struct SelvaTypeCursors *cursors;
-    struct SelvaNode *ptr;
-    cursor_id_t cursor_id;
-    node_type_t type;
-};
-
-/**
- * All cursors pointing to a specific node.
- */
-struct SelvaTypeCursors {
-    RB_ENTRY(SelvaTypeCursors) _entry_by_node_id;
-    TAILQ_HEAD(SelvaTypeCursorByNodeIdHead, SelvaTypeCursor) head;
-    node_id_t node_id;
-};
-
 static inline int node_id_cmp(node_id_t a, node_id_t b)
 {
     return a < b ? -1 : a > b ? 1 : 0;
@@ -83,18 +55,6 @@ static int SelvaTypeEntry_cmp(const struct SelvaTypeEntry *a, const struct Selva
     return (int)((struct SelvaTypeEntryFind *)a)->type - (int)((struct SelvaTypeEntryFind *)b)->type;
 }
 
-__attribute__((nonnull))
-static int SelvaTypeCursor_cmp(const struct SelvaTypeCursor *a, const struct SelvaTypeCursor *b)
-{
-    return (int)(a->cursor_id - b->cursor_id);
-}
-
-__attribute__((nonnull))
-static int SelvaTypeCursors_cmp(const struct SelvaTypeCursors *a, const struct SelvaTypeCursors *b)
-{
-    return node_id_cmp(a->node_id, b->node_id);
-}
-
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
 #ifdef __clang__
     __attribute__((malloc, returns_nonnull));
@@ -102,16 +62,8 @@ static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
     __attribute__((malloc, malloc(selva_free), returns_nonnull));
 #endif
 
-static void selva_cursors_node_going_away(struct SelvaTypeEntry *type, struct SelvaNode *node);
-static void selva_destroy_all_cursors(struct SelvaTypeEntry *type);
-
-RB_PROTOTYPE_STATIC(SelvaTypeCursorById, SelvaTypeCursor, _entry_by_id, SelvaTypeCursor_cmp)
-RB_PROTOTYPE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id, SelvaTypeCursors_cmp)
-
 RB_GENERATE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_GENERATE_STATIC(SelvaTypeCursorById, SelvaTypeCursor, _entry_by_id, SelvaTypeCursor_cmp)
-RB_GENERATE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id, SelvaTypeCursors_cmp)
 RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
 RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 
@@ -251,7 +203,6 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
 
 static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    selva_destroy_all_cursors(te);
     del_all_nodes(db, te);
     /*
      * We assume that as the nodes are deleted the aliases are also freed.
@@ -273,7 +224,6 @@ static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
     memset(te, 0, sizeof(*te));
 #endif
     selva_free(te->schema_buf);
-    ida_destroy(te->cursors.ida);
     mempool_return(&db->types.pool, te);
     db->types.count--;
 }
@@ -400,14 +350,6 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
 
-    /*
-     * Init cursors.
-     */
-    te->cursors.ida = ida_init(nfo.cursors_max);
-    RB_INIT(&te->cursors.by_cursor_id);
-    RB_INIT(&te->cursors.by_node_id);
-    te->cursors.nr_cursors = 0; /* cur */
-
     if (RB_INSERT(SelvaTypeEntryIndex, &db->types.index, te)) {
         db_panic("Schema update not supported");
     }
@@ -491,7 +433,6 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
     struct SelvaNodeIndex *nodes = &block->nodes;
 
     selva_remove_all_aliases(type, node->node_id);
-    selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
     if (node == type->max_node) {
         /*
@@ -657,215 +598,6 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
     }
 
     return nullptr;
-}
-
-static struct SelvaTypeCursors *find_cursors(struct SelvaTypeEntry *type, node_id_t node_id)
-{
-    struct SelvaTypeCursors find = {
-        .node_id = node_id,
-    };
-
-    return RB_FIND(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, &find);
-}
-
-static struct SelvaTypeCursors *create_cursors_struct(struct SelvaTypeEntry *type, node_id_t node_id)
-{
-        struct SelvaTypeCursors *cursors;
-
-        cursors = selva_malloc(sizeof(*cursors));
-        cursors->node_id = node_id;
-        TAILQ_INIT(&cursors->head);
-        RB_INSERT(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, cursors);
-
-        return cursors;
-}
-
-/**
- * Inserts a cursor to the cursors by node_id map.
- */
-static void selva_cursors_insert(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)
-{
-    assert(cursor->ptr);
-
-    node_id_t node_id = cursor->ptr->node_id;
-    struct SelvaTypeCursors *cursors;
-
-    cursors = find_cursors(type, node_id);
-    if (!cursors) {
-        cursors = create_cursors_struct(type, node_id);
-    }
-
-    TAILQ_INSERT_TAIL(&cursors->head, cursor, _entry_by_node_id);
-}
-
-static bool maybe_destroy_cursors(struct SelvaTypeEntry *type, struct SelvaTypeCursors *cursors)
-{
-    if (TAILQ_EMPTY(&cursors->head)) {
-        RB_REMOVE(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, cursors);
-        selva_free(cursors);
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * Remove cursor from cursors by node_id map.
- */
-static void selva_cursors_remove(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)
-{
-    struct SelvaTypeCursors *old_cursors = cursor->cursors;
-
-    cursor->cursors = nullptr;
-    TAILQ_REMOVE(&old_cursors->head, cursor, _entry_by_node_id);
-    maybe_destroy_cursors(type, old_cursors);
-}
-
-/**
- * Move all cursors having old_node to new_node.
- * @param new_node can be NULL.
- */
-static void selva_cursors_move_node(
-        struct SelvaTypeEntry *type,
-        struct SelvaNode * restrict old_node,
-        struct SelvaNode * restrict new_node)
-{
-    assert(old_node);
-
-    struct SelvaTypeCursors find_old = {
-        .node_id = old_node->node_id,
-    };
-    struct SelvaTypeCursors *old_cursors;
-
-    old_cursors = RB_FIND(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, &find_old);
-    if (!old_cursors) {
-        return;
-    }
-    assert(old_node != new_node);
-
-    if (new_node) {
-        assert(new_node->type == old_node->type);
-
-        struct SelvaTypeCursors find_new = {
-            .node_id = new_node->node_id,
-        };
-        struct SelvaTypeCursors *new_cursors;
-        struct SelvaTypeCursor *cursor;
-
-        new_cursors = RB_FIND(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, &find_new);
-        if (!new_cursors) {
-            new_cursors = create_cursors_struct(type, new_node->node_id);
-        }
-
-        TAILQ_FOREACH(cursor, &old_cursors->head, _entry_by_node_id) {
-            cursor->ptr = new_node;
-            cursor->cursors = new_cursors;
-        }
-
-        TAILQ_CONCAT(&new_cursors->head, &old_cursors->head, _entry_by_node_id);
-    }
-
-    maybe_destroy_cursors(type, old_cursors);
-}
-
-/**
- * Call this before deleting a node.
- */
-static void selva_cursors_node_going_away(struct SelvaTypeEntry *type, struct SelvaNode *node)
-{
-    if (type->cursors.nr_cursors > 0) {
-        selva_cursors_move_node(type, node, selva_next_node(type, node));
-    }
-}
-
-static void selva_cursor_destroy(struct SelvaTypeEntry *type, struct SelvaTypeCursor *cursor)
-{
-    selva_cursors_remove(type, cursor);
-    RB_REMOVE(SelvaTypeCursorById, &type->cursors.by_cursor_id, cursor);
-    ida_free(type->cursors.ida, cursor->cursor_id);
-    selva_free(cursor);
-    type->cursors.nr_cursors--;
-}
-
-static void selva_destroy_all_cursors(struct SelvaTypeEntry *type)
-{
-    struct SelvaTypeCursor *cursor;
-    struct SelvaTypeCursor *tmp;
-
-    RB_FOREACH_SAFE(cursor, SelvaTypeCursorById, &type->cursors.by_cursor_id, tmp) {
-        selva_cursor_destroy(type, cursor);
-    }
-}
-
-cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node)
-{
-    struct SelvaTypeCursor *cursor = selva_malloc(sizeof(*cursor));
-
-    assert(type->type == node->type);
-    static_assert(sizeof(ida_t) >= sizeof(cursor_id_t));
-    cursor->cursor_id = ida_alloc(type->cursors.ida);
-    cursor->type = type->type;
-    cursor->ptr = node;
-
-    if (RB_INSERT(SelvaTypeCursorById, &type->cursors.by_cursor_id, cursor)) {
-        db_panic("cursor_id already in use");
-    }
-    selva_cursors_insert(type, cursor);
-
-    type->cursors.nr_cursors++;
-
-    return cursor->cursor_id;
-}
-
-struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id)
-{
-    struct SelvaTypeCursor find = {
-        .cursor_id = id,
-    };
-    struct SelvaTypeCursor *cursor;
-
-    cursor = RB_FIND(SelvaTypeCursorById, &type->cursors.by_cursor_id, &find);
-    return cursor ? cursor->ptr : nullptr;
-}
-
-int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node)
-{
-    struct SelvaTypeCursor find = {
-        .cursor_id = id,
-    };
-    struct SelvaTypeCursor *cursor;
-
-    cursor = RB_FIND(SelvaTypeCursorById, &type->cursors.by_cursor_id, &find);
-    if (!cursor) {
-        return SELVA_ENOENT;
-    }
-
-    assert(node->type == cursor->type);
-    cursor->ptr = node;
-    if (cursor->cursors) {
-        selva_cursors_remove(type, cursor);
-    }
-    selva_cursors_insert(type, cursor);
-
-    return 0;
-}
-
-void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id)
-{
-    struct SelvaTypeCursor find = {
-        .cursor_id = id,
-    };
-    struct SelvaTypeCursor *cursor;
-
-    cursor = RB_FIND(SelvaTypeCursorById, &type->cursors.by_cursor_id, &find);
-    if (cursor) {
-        selva_cursor_destroy(type, cursor);
-    }
-}
-
-size_t selva_cursor_count(const struct SelvaTypeEntry *type)
-{
-    return type->cursors.nr_cursors;
 }
 
 size_t selva_node_count(const struct SelvaTypeEntry *type)

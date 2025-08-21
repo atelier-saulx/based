@@ -134,7 +134,7 @@ await db.setSchema({
         profilePicture: 'binary', // Raw binary data (Uint8Array)
         settings: 'json', // JSON object/array
         visits: 'cardinality', // HyperLogLog counter for unique values
-        embedding: { type: 'vector', size: 5 }, // Fixed-size float vector (size from test)
+        embedding: { type: 'vector', size: 5, baseType: 'float32' }, // Fixed-size float vector (size from test)
         status: ['pending', 'active', 'inactive'], // Enum type
         countryCode: { type: 'string', maxBytes: 2 }, // String with max byte length
         nestedData: {
@@ -487,6 +487,21 @@ await db.query('article').sort('email', 'desc').get()
 // Sort by timestamp
 await db.query('event').sort('startTime').get()
 ```
+
+The following data types doesnt support sort:
+
+- Reference / References (you can if you use branched queries / nested include sintax) like
+
+  ```js await db
+  .query('actor')
+  .include('*')
+  .include((q) => q('movies').include('*').sort('name', 'desc'), '*')
+  .sort('name', 'asc')
+  .get()
+  ```
+
+- Vector
+- Binary
 
 #### \`.range(offset, limit)\`
 

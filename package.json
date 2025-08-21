@@ -22,14 +22,14 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "for pkg in $(ls packages); do if [[ \"$pkg\" != \"fetch\" && \"$pkg\" != \"react-native-compat\" && \"$pkg\" != \"locale\" && \"$pkg\" != \"uws\" ]]; then npm run watch --workspace=packages/$pkg & fi done; wait",
-    "build": "npm run build --prefix packages/hash && npm run build --prefix packages/utils && npm run build --prefix packages/schema && npm run build --prefix packages/db && npm run build --prefix packages/functions && npm run build --prefix packages/errors && npm run build --prefix packages/server && npm run build --prefix packages/client",
+    "watch": "(cd packages && for pkg in *; do if [[ -d \"$pkg\" ]]; then npm run watch --workspace=\"$pkg\" --if-present & fi done); wait",
+    "build": "set -e; for pkg in hash utils schema db functions errors schema-diagram server client react s3 hub type-gen cli; do npm run build -w \"@based/$pkg\"; done",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
-    "build-release-debug": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release-debug)",
-    "build-release": "npm run build-podman && npm run build-locale && (cd packages/crc32c && npm run build) && (cd packages/schema && npm run build) && (cd packages/db && npm run build-release)"
+    "build-release-debug": "rm -rf packages/*/dist; npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release-debug)",
+    "build-release": "rm -rf packages/*/dist; npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release)"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -40,7 +40,6 @@
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.9.0",
     "prettier": "^3.2.5",
-    "rimraf": "^3.0.2",
     "typescript": "^5.8.3"
   }
 }

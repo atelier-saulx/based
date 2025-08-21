@@ -7,21 +7,9 @@ const read = utils.read;
 const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
+const microbufferToF64 = @import("./utils.zig").microbufferToF64;
 
-pub fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
-    return switch (propType) {
-        types.Prop.UINT8 => @as(f64, @floatFromInt(buffer[offset])),
-        types.Prop.INT8 => @as(f64, @floatFromInt(buffer[offset])),
-        types.Prop.UINT16 => @as(f64, @floatFromInt(read(u16, buffer, offset))),
-        types.Prop.INT16 => @as(f64, @floatFromInt(read(i16, buffer, offset))),
-        types.Prop.UINT32 => @as(f64, @floatFromInt(read(u32, buffer, offset))),
-        types.Prop.INT32 => @as(f64, @floatFromInt(read(i32, buffer, offset))),
-        types.Prop.NUMBER => read(f64, buffer, offset),
-        else => undefined,
-    };
-}
-
-pub inline fn execAgg(
+inline fn execAgg(
     aggPropDef: []u8,
     accumulatorField: []u8,
     value: []u8,
@@ -146,27 +134,3 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
     execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated);
     return;
 }
-
-// pub inline fn execHllAgg(
-//     aggPropDef: []u8,
-//     accumulatorField: anytype,
-//     value: anytype,
-//     fieldAggsSize: u16,
-// ) void {
-//     var j: usize = 0;
-//     while (j < fieldAggsSize) {
-//         _ = aggPropDef;
-//         // const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
-//         j += 1;
-//         // const propType: types.Prop = @enumFromInt(aggPropDef[j]);
-//         j += 1;
-//         // const start = read(u16, aggPropDef, j);
-//         j += 2;
-//         // const resultPos = read(u16, aggPropDef, j);
-//         j += 2;
-//         // const accumulatorPos = read(u16, aggPropDef, j);
-//         j += 2;
-
-//         selva.hll_union(accumulatorField, value);
-//     }
-// }

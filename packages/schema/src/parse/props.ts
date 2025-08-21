@@ -245,6 +245,11 @@ p.vector = propParser<SchemaVector>(
     default(val, prop, ctx) {
       return isDefault(val, prop, ctx)
     },
+    baseType(val, prop, ctx) {
+      if (!['number', 'int8',, 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64'].includes(val)) {
+        throw Error(INVALID_VALUE)
+      }
+    },
   },
   0,
 )
@@ -258,6 +263,11 @@ p.colvec = propParser<SchemaColvec>(
   {
     default(val, prop, ctx) {
       return isDefault(val, prop, ctx)
+    },
+    baseType(val, prop, ctx) {
+      if (!['number', 'int8',, 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64'].includes(val)) {
+        throw Error(INVALID_VALUE)
+      }
     },
   },
   0,

@@ -7,7 +7,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "clean": "rimraf {dist,node_modules}",
+    "clean": "rm -rf ./dist ./node_modules",
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "tsc && node scripts/run-tests.mjs"
@@ -33,7 +33,6 @@
     "@saulx/prettier-config": "^1.0.0",
     "@saulx/tsconfig": "^1.0.6",
     "ava": "5.3.1",
-    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.2.2"
   }

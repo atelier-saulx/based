@@ -1,9 +1,22 @@
-import { writeUint16 } from '@based/utils'
+import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
-import { AggregateType, GroupBy } from './types.js'
+import {
+  AggregateType,
+  GroupBy,
+  StepInput,
+  aggFnOptions,
+  setMode,
+} from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
-import { aggregationFieldDoesNotExist } from '../validation.js'
-import { aggregateTypeMap } from '../aggregates/types.js'
+import {
+  aggregationFieldDoesNotExist,
+  validateStepRange,
+} from '../validation.js'
+import {
+  aggregateTypeMap,
+  Interval,
+  IntervalString,
+} from '../aggregates/types.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -21,6 +34,12 @@ export const aggregateToBuffer = (
     i += 2
     writeUint16(aggBuffer, aggregates.groupBy.len, i)
     i += 2
+    aggBuffer[i] = aggregates.groupBy.stepType || 0
+    i += 1
+    writeUint32(aggBuffer, aggregates.groupBy.stepRange || 0, i)
+    i += 4
+    writeInt16(aggBuffer, aggregates.groupBy.tz || 0, i)
+    i += 2
   } else {
     aggBuffer[i] = GroupBy.NONE
     i += 1
@@ -29,6 +48,8 @@ export const aggregateToBuffer = (
   i += 2
   writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
+  aggBuffer[i] = setMode[aggregates?.option?.mode] || 0
+  i += 1
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
     i += 1
@@ -57,7 +78,7 @@ export const aggregateToBuffer = (
 const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 5,
+      size: 7,
       aggregates: new Map(),
       totalResultsSize: 0,
       totalAccumulatorSize: 0,
@@ -65,28 +86,62 @@ const ensureAggregate = (def: QueryDef) => {
   }
 }
 
-export const groupBy = (def: QueryDef, field: string) => {
+export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 6
+    def.aggregate.size += 12
   }
   def.aggregate.groupBy = fieldDef
+  def.aggregate.groupBy.stepRange = undefined
+  def.aggregate.groupBy.stepType = undefined
+  def.aggregate.groupBy.tz = undefined
+  def.aggregate.groupBy.display = undefined
+
+  if (
+    typeof StepInput === 'object' &&
+    StepInput !== null &&
+    'step' in StepInput
+  ) {
+    if (typeof StepInput.timeZone == 'string') {
+      def.aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
+    }
+    if (typeof StepInput?.step == 'string') {
+      const intervalEnumKey = StepInput.step as IntervalString
+      def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+    } else {
+      validateStepRange(def, StepInput?.step)
+      def.aggregate.groupBy.stepRange = StepInput.step
+    }
+  } else if (typeof StepInput == 'number') {
+    validateStepRange(def, StepInput)
+    def.aggregate.groupBy.stepRange = StepInput
+  } else {
+    const intervalEnumKey = StepInput as IntervalString
+    def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+  }
+  if (typeof StepInput === 'object' && StepInput?.display) {
+    def.aggregate.groupBy.display = StepInput?.display
+  }
 }
 
 export const addAggregate = (
   type: AggregateType,
   def: QueryDef,
   fields: (string | string[])[],
+  option?: aggFnOptions,
 ) => {
   ensureAggregate(def)
+
+  if (option?.mode) def.aggregate.option = option
+
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
     if (Array.isArray(field)) {
-      addAggregate(type, def, field)
+      addAggregate(type, def, field, option)
     } else {
       const fieldDef: PropDef =
         type === AggregateType.COUNT
@@ -161,4 +216,39 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
     return false
   }
   return true
+}
+
+function getTimeZoneOffsetInMinutes(
+  timeZone: string,
+  date: Date = new Date(),
+): number {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(date)
+  const getPart = (partName: string) =>
+    parseInt(parts.find((p) => p.type === partName)?.value || '0', 10)
+
+  const targetTimeAsUTC = Date.UTC(
+    getPart('year'),
+    getPart('month') - 1,
+    getPart('day'),
+    getPart('hour'),
+    getPart('minute'),
+    getPart('second'),
+  )
+
+  const originalUTCTime = date.getTime()
+  const offsetInMilliseconds = targetTimeAsUTC - originalUTCTime
+  const offsetInMinutes = offsetInMilliseconds / (1000 * 60)
+
+  return Math.round(offsetInMinutes)
 }

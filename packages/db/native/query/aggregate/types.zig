@@ -1,4 +1,9 @@
 const std = @import("std");
+const addStep = @import("./utils.zig").addStep;
+const types = @import("../../types.zig");
+const utils = @import("../../utils.zig");
+const read = utils.read;
+const aux = @import("../aggregate/utils.zig");
 
 pub const GroupedBy = enum(u8) {
     hasGroup = 255,
@@ -43,7 +48,31 @@ pub const GroupByHashMap = struct {
         }
     }
 
-    pub fn getOrInsert(self: *GroupByHashMap, key: []const u8, accumulator_size: usize) !struct { value: []u8, is_new: bool } {
+    pub const GetOrInsertReturn: type = struct { value: []u8, is_new: bool };
+
+    pub fn getOrInsertWithRange(self: *GroupByHashMap, key: []u8, accumulator_size: usize, stepRange: u32) !GetOrInsertReturn {
+        var it = self.inner.iterator();
+        while (it.next()) |entry| {
+            const key_i64: i64 = read(i64, key, 0);
+            const entry_key_i64: i64 = read(i64, @constCast(entry.key_ptr.*), 0);
+            const upper_bound = entry_key_i64 + stepRange * 1000;
+            if (key_i64 >= entry_key_i64 and key_i64 < upper_bound) {
+                return .{ .value = entry.value_ptr.*, .is_new = false };
+            }
+        }
+        const owned_key = try self.allocator.dupe(u8, key);
+        errdefer self.allocator.free(owned_key);
+        const result = try self.inner.getOrPut(owned_key);
+
+        const new_accumulator = try self.allocator.alloc(u8, accumulator_size);
+        @memset(new_accumulator, 0);
+
+        result.key_ptr.* = owned_key;
+        result.value_ptr.* = new_accumulator;
+        return .{ .value = new_accumulator, .is_new = true };
+    }
+
+    pub fn getOrInsert(self: *GroupByHashMap, key: []u8, accumulator_size: usize) !GetOrInsertReturn {
         if (self.inner.getEntry(key)) |entry| {
             return .{ .value = entry.value_ptr.*, .is_new = false };
         } else {

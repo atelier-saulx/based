@@ -421,6 +421,13 @@ static const u32 precode_decode_results[] = {
 #undef ENTRY
 };
 
+/**
+ * The order in which precode lengths are stored
+ */
+static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
 /* Litlen and offset decode table entry flags */
 
 /* Indicates a literal entry in the litlen decode table */
@@ -1016,9 +1023,7 @@ build_precode_decode_table(struct libdeflate_decompressor *d)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
     static_assert(PRECODE_TABLEBITS == 7 && PRECODE_ENOUGH == 128);
-
-    static_assert(ARRAY_LEN(precode_decode_results) ==
-              DEFLATE_NUM_PRECODE_SYMS);
+    static_assert(ARRAY_LEN(precode_decode_results) == DEFLATE_NUM_PRECODE_SYMS);
 
     return build_decode_table(d->u.l.precode_decode_table,
                   d->u.precode_lens,
@@ -1227,35 +1232,49 @@ typedef enum libdeflate_result (*decompress_func_t)
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
      size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-     enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret);
+     enum libdeflate_decompress_stop_by stop_type);
+typedef enum libdeflate_result (*decompress_short_func_t)
+    (struct libdeflate_decompressor * restrict d,
+     const void * restrict in, size_t in_nbytes,
+     void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
+     size_t *actual_out_nbytes_ret, int *is_final_block_ret);
 
 #define FUNCNAME deflate_decompress_default
+#define FUNCNAME_SHORT deflate_decompress_short_default
 #undef ATTRIBUTES
 #undef EXTRACT_VARBITS
 #undef EXTRACT_VARBITS8
 #include "decompress_template.h"
 
 /* Include architecture-specific implementation(s) if available. */
-#undef DEFAULT_IMPL
+#undef DECOMPRESS_DEFAULT_IMPL
+#undef DECOMPRESS_SHORT_DEFAULT_IMPL
 #undef arch_select_decompress_func
 #if defined(__i386__) || defined(__x86_64__)
 #  include "x86/decompress_impl.h"
 #endif
 
-#ifndef DEFAULT_IMPL
-#  define DEFAULT_IMPL deflate_decompress_default
+#ifndef DECOMPRESS_DEFAULT_IMPL
+#  define DECOMPRESS_DEFAULT_IMPL deflate_decompress_default
+#endif
+
+#ifndef DECOMPRESS_SHORT_DEFAULT_IMPL
+#  define DECOMPRESS_SHORT_DEFAULT_IMPL deflate_decompress_short_default
 #endif
 
 #ifdef arch_select_decompress_func
 static volatile decompress_func_t decompress_impl;
+static volatile decompress_short_func_t decompress_short_impl;
 
 __attribute__((constructor)) static void init_select_decompressor(void)
 {
-    decompress_impl = arch_select_decompress_func() ?: DEFAULT_IMPL;
+    decompress_impl = arch_select_decompress_func() ?: DECOMPRESS_DEFAULT_IMPL;
+    decompress_short_impl = arch_select_decompress_short_func() ?: DECOMPRESS_SHORT_DEFAULT_IMPL;
 }
 #else
 /* The best implementation is statically known, so call it directly. */
-#  define decompress_impl DEFAULT_IMPL
+#  define decompress_impl DECOMPRESS_DEFAULT_IMPL
+#  define decompress_short_impl DECOMPRESS_SHORT_DEFAULT_IMPL
 #endif
 
 LIBDEFLATEEXPORT enum libdeflate_result
@@ -1306,6 +1325,16 @@ libdeflate_decompress(struct libdeflate_decompressor *d,
     return decompress_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
                            NULL, actual_out_nbytes_ret,
                            LIBDEFLATE_STOP_BY_FINAL_BLOCK);
+}
+
+LIBDEFLATEEXPORT enum libdeflate_result
+libdeflate_decompress_short(struct libdeflate_decompressor *d,
+                  const void *in, size_t in_nbytes,
+                  void *out, size_t out_nbytes_avail,
+                  size_t *actual_out_nbytes_ret)
+{
+    decompress_block_init(d);
+    return decompress_short_impl(d, in, in_nbytes, out, 0, out_nbytes_avail, actual_out_nbytes_ret);
 }
 
 LIBDEFLATEEXPORT struct libdeflate_decompressor *

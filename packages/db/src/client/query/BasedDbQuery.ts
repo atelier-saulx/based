@@ -32,8 +32,7 @@ import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { wait } from '@based/utils'
-import { AggregateType } from './aggregates/types.js'
+import { AggregateType, StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 
@@ -180,14 +179,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string): T {
+  groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'groupBy',
-        args: [field],
+        args: [field, step],
       })
     } else {
-      groupBy(this.def, field)
+      groupBy(this.def, field, step)
     }
     // only works with aggregates for now
     // @ts-ignore
@@ -242,7 +241,24 @@ export class QueryBranch<T> {
     return this
   }
 
-  stddev(...fields: (string | string[])[]): T {
+  stddev(...fields: (string | string[])[]): T
+  stddev(...args: [...(string | string[])[], aggFnOptions]): T
+
+  stddev(...args: (string | string[] | aggFnOptions)[]): T {
+    let option: aggFnOptions = {}
+    let fields: (string | string[])[] = []
+
+    const lastArg = args[args.length - 1]
+    const lastArgIsOptions =
+      typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
+
+    if (lastArgIsOptions) {
+      option = lastArg as aggFnOptions
+      fields = args.slice(0, -1) as (string | string[])[]
+    } else {
+      fields = args as (string | string[])[]
+    }
+
     if (fields.length === 0) {
       throw new Error('Empty standard deviation function called')
     }
@@ -250,27 +266,44 @@ export class QueryBranch<T> {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'stddev',
-        args: fields,
+        args: [fields, option],
       })
     } else {
-      addAggregate(AggregateType.STDDEV, this.def, fields)
+      addAggregate(AggregateType.STDDEV, this.def, fields, option)
     }
     // @ts-ignore
     return this
   }
 
-  var(...fields: (string | string[])[]): T {
+  var(...fields: (string | string[])[]): T
+  var(...args: [...(string | string[])[], aggFnOptions]): T
+
+  var(...args: (string | string[] | aggFnOptions)[]): T {
+    let option: aggFnOptions = {}
+    let fields: (string | string[])[] = []
+
+    const lastArg = args[args.length - 1]
+    const lastArgIsOptions =
+      typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
+
+    if (lastArgIsOptions) {
+      option = lastArg as aggFnOptions
+      fields = args.slice(0, -1) as (string | string[])[]
+    } else {
+      fields = args as (string | string[])[]
+    }
+
     if (fields.length === 0) {
-      throw new Error('Empty variance function called')
+      throw new Error('Empty variance called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'var',
-        args: fields,
+        args: [fields, option],
       })
     } else {
-      addAggregate(AggregateType.VARIANCE, this.def, fields)
+      addAggregate(AggregateType.VARIANCE, this.def, fields, option)
     }
     // @ts-ignore
     return this
@@ -293,14 +326,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  harmonic_mean(...fields: (string | string[])[]): T {
+  harmonicMean(...fields: (string | string[])[]): T {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
-        method: 'harmonic_mean',
+        method: 'harmonicMean',
         args: fields,
       })
     } else {

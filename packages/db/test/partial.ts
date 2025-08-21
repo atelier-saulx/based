@@ -18,7 +18,7 @@ await test('partial', async (t) => {
         partial: true,
         props: {
           extId: 'uint32',
-          vec: { type: 'colvec', size: 2 },
+          vec: { type: 'colvec', size: 2, baseType: 'float32' },
         },
       },
     },

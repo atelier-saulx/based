@@ -52,6 +52,18 @@ selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
 
+const vectorBaseType2Size = {
+  'number': 8,
+  'int8': 1,
+  'uint8': 1,
+  'int16': 2,
+  'uint16': 2,
+  'int32': 4,
+  'uint32': 4,
+  'float32': 4,
+  'float64': 8,
+};
+
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
   const view = new DataView(buf.buffer)
@@ -92,8 +104,8 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    view.setUint16(1, prop.len, true)
-    view.setUint16(3, 4, true) // TODO Other types than f32
+    view.setUint16(1, prop.len, true) // elements
+    view.setUint16(3, vectorBaseType2Size[prop.vectorBaseType], true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
     const buf = new Uint8Array(9)
@@ -182,7 +194,7 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      1, // u8 cursorsMax
+      0, // u8 spare1
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,

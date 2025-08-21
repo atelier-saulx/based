@@ -8,7 +8,7 @@
     "test": "npx ava",
     "build": "npx tsc",
     "watch": "npx tsc --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "sideEffects": false,
   "dependencies": {
@@ -23,7 +23,6 @@
     "@types/fs-extra": "11.0.3",
     "ts-node": "10.9.1",
     "typescript": "^5.2.2",
-    "rimraf": "^3.0.2",
     "@based/client": "^8.0.2",
     "ava": "5.3.1"
   },

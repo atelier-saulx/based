@@ -302,22 +302,22 @@ pub fn getTypeSortIndexes(
 
 inline fn parseString(
     data: []u8,
+    out: []u8
 ) [*]u8 {
     if (data.len <= 6) {
-        return EMPTY_CHAR_SLICE.ptr;
+        return out.ptr;
     } else if (data.len < SIZE + 6) {
-        var arr: [SIZE]u8 = [_]u8{0} ** SIZE;
         var i: usize = 2;
         while (i < data.len - 4) : (i += 1) {
-            arr[i - 2] = data[i];
+            out[i - 2] = data[i];
         }
-        return &arr;
+        return out.ptr;
     } else if (data[1] == @intFromEnum(types.Compression.none)) {
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
-        const slice = decompressFirstBytes(data)[0..SIZE];
-        return slice.ptr;
+        const res = decompressFirstBytes(data, out) catch out;
+        return res.ptr;
     }
 }
 
@@ -365,7 +365,8 @@ pub fn remove(
                     node,
                 );
             } else {
-                selva.selva_sort_remove_buf(index, parseString(data), SIZE, node);
+                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+                selva.selva_sort_remove_buf(index, parseString(data, &buf), SIZE, node);
             }
         },
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
@@ -414,7 +415,8 @@ pub fn insert(
                     node,
                 );
             } else {
-                const str = parseString(data);
+                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+                const str = parseString(data, &buf);
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },

@@ -157,3 +157,4 @@ packages/db/*.o
 .zigversion
 aggregationNotes.md
 .vscode
+/packages/*/package-lock.json

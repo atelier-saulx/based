@@ -222,7 +222,7 @@ pub const AggFn = enum(u8) {
     stddev = 10, // population or sample should be optional parameters, default = sample
     sum = 11,
     variance = 12,
-    harmonic_mean = 13,
+    harmonicMean = 13,
 };
 
 pub const Compression = enum(u8) {
@@ -237,4 +237,23 @@ pub const QueryType = enum(u8) {
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
+};
+
+pub const Interval: type = enum(u8) {
+    none = 0,
+    epoch = 1,
+    hour = 2,
+    minute = 3,
+    second = 4,
+    microseconds = 5,
+    day = 6, // The day of the month (1–31); for interval values, the number of days
+    doy = 7, // The day of the year (0–365)
+    dow = 8, // The day of the week as Sunday (0) to Saturday (6)
+    isoDOW = 9, // The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
+    week = 10, // The number of the ISO 8601 week-numbering week of the year
+    month = 11, // The number of the month within the year (0–11);
+    isoMonth = 12, // The number of the month within the year (1–12);
+    quarter = 13, // The quarter of the year (1–4) that the date is in
+    year = 14,
+    // timeZone = 15, // ? seconds? or string?
 };

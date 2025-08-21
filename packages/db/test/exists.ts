@@ -101,3 +101,51 @@ await test('exists', async (t) => {
     { id: 2, name: '' },
   ])
 })
+
+await test('with other filters', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          start: 'timestamp',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('user', {
+    name: 'dude',
+    start: Date.now() + 10000,
+  })
+  const id2 = await db.create('user', {
+    name: 'cool guy has friends',
+    friends: [id1],
+  })
+  const id3 = await db.create('user', {
+    name: 'sad guy has no friends',
+    start: Date.now() - 10000,
+  })
+
+  deepEqual(
+    await db
+      .query('user')
+      .include('friends')
+      .filter('friends', '!exists', undefined)
+      .filter('start', '>', 'now')
+      .get(),
+    [],
+  )
+})

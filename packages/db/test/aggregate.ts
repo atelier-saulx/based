@@ -1028,7 +1028,42 @@ await test('two phase accumulation', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query('vote').stddev('NL').groupBy('country').get().toObject(),
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
+    {
+      NL: 15.56598856481656,
+    },
+    'stddev, top level, NO groupBy, option = sample',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
+    {
+      NL: 15.56598856481656,
+    },
+    'stddev, top level, NO groupBy, no option (default = sample)',
+  )
+  deepEqual(
+    await db.query('vote').stddev('NL', { mode: 'population' }).get(),
+    {
+      NL: 13.922643427165687,
+    },
+    'stddev, top level, NO groupBy, option = population',
+  )
+
+  deepEqual(
+    await db.query('vote').sum('NL').get().toObject(),
+    {
+      NL: 118,
+    },
+    'sum, top level, NO groupBy',
+  )
+
+  deepEqual(
+    await db
+      .query('vote')
+      .stddev('NL', { mode: 'population' })
+      .groupBy('country')
+      .get()
+      .toObject(),
     {
       Brazil: {
         NL: 0,
@@ -1045,7 +1080,7 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').stddev('NL'))
+      .include((q) => q('votes').stddev('NL', { mode: 'population' }))
       .get()
       .toObject(),
     [
@@ -1061,7 +1096,9 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').stddev('NL').groupBy('country'))
+      .include((q) =>
+        q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
+      )
       .get()
       .toObject(),
     [
@@ -1228,7 +1265,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('vote')
-      .harmonic_mean('NL', 'PT', 'FI')
+      .harmonicMean('NL', 'PT', 'FI')
       .groupBy('region')
       .get(),
     {
@@ -1251,7 +1288,11 @@ await test('numeric types', async (t) => {
     'harmonic_mean, main, group by',
   )
   deepEqual(
-    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    await db
+      .query('vote')
+      .stddev('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 6.5,
@@ -1269,7 +1310,29 @@ await test('numeric types', async (t) => {
     'stddev, main, group by',
   )
   deepEqual(
-    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: 9.192388155425117,
+        PL: 16.263455967290593,
+      },
+      aa: {
+        NL: 4.949747468305833,
+        PL: 16.263455967290593,
+      },
+      Great: {
+        NL: 0,
+        PL: 0,
+      },
+    },
+    'stddev, main, group by',
+  )
+  deepEqual(
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
     {
       bb: {
         NL: 42.25,
@@ -1284,7 +1347,29 @@ await test('numeric types', async (t) => {
         PL: 0,
       },
     },
-    'variance, main, group by',
+    'variance, main, group by, population',
+  )
+  deepEqual(
+    await db
+      .query('vote')
+      .var('NL', 'PL', { mode: 'sample' })
+      .groupBy('region')
+      .get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, sample',
+  )
+  deepEqual(
+    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
+    {
+      bb: { NL: 84.5, PL: 264.5 },
+      aa: { NL: 24.5, PL: 264.5 },
+      Great: { NL: 0, PL: 0 },
+    },
+    'variance, main, group by, default (sample)',
   )
   deepEqual(
     await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
@@ -1368,7 +1453,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').harmonic_mean('NL'))
+      .include((q) => q('votes').harmonicMean('NL'))
       .get(),
     [
       {
@@ -1403,6 +1488,9 @@ await test('numeric types', async (t) => {
     ],
     'sum, references, group by',
   )
+
+  // await db.query('vote').groupBy('sequence').sum('NL').get().inspect()
+
   deepEqual(
     await db
       .query('sequence')
@@ -1429,7 +1517,9 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .include((q) =>
+        q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1449,10 +1539,31 @@ await test('numeric types', async (t) => {
     ],
     'stddev, references, group by',
   )
+
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').var('NL'))
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: 9.192388155425117 },
+          aa: { NL: 4.949747468305833 },
+          Great: { NL: 0 },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'population' }),
+      )
       .get(),
     [
       {
@@ -1470,8 +1581,37 @@ await test('numeric types', async (t) => {
         },
       },
     ],
-    'variance, references, group by',
+    'variance, references, group by, pop',
   )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+      )
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, sample',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get(),
+    [
+      {
+        id: 1,
+        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+      },
+    ],
+    'variance, references, group by, defaul (sample)',
+  )
+
   deepEqual(
     await db
       .query('sequence')
@@ -1499,7 +1639,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').harmonic_mean('NL'))
+      .include((q) => q('votes').groupBy('region').harmonicMean('NL'))
       .get(),
     [
       {
@@ -1574,7 +1714,7 @@ await test('undefined numbers', async (t) => {
   deepEqual(
     await db
       .query('vote')
-      .harmonic_mean('AU', 'FI')
+      .harmonicMean('AU', 'FI')
       .groupBy('region')
       .get()
       .toObject(),
@@ -1648,7 +1788,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db.query('beer').harmonic_mean('price').groupBy('type').get(),
+    await db.query('beer').harmonicMean('price').groupBy('type').get(),
     {
       Tripel: {
         price: 11.839662447257384,
@@ -1804,80 +1944,6 @@ await test('refs with enums ', async (t) => {
   )
 })
 
-await test.skip('edges agregation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
-    types: {
-      movie: {
-        name: 'string',
-        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
-        actors: {
-          items: {
-            ref: 'actor',
-            prop: 'actors',
-            $rating: 'uint16',
-          },
-        },
-      },
-      actor: {
-        name: 'string',
-        movies: {
-          items: {
-            ref: 'movie',
-            prop: 'movies',
-          },
-        },
-      },
-    },
-  })
-
-  const a1 = db.create('actor', {
-    name: 'Uma Thurman',
-  })
-  const a2 = db.create('actor', {
-    name: 'Jonh Travolta',
-  })
-
-  const m1 = await db.create('movie', {
-    name: 'Kill Bill',
-    actors: [
-      {
-        id: a1,
-        $rating: 55,
-      },
-    ],
-  })
-  const m2 = await db.create('movie', {
-    name: 'Pulp Fiction',
-    actors: [
-      {
-        id: a1,
-        $rating: 63,
-      },
-      {
-        id: a2,
-        $rating: 77,
-      },
-    ],
-  })
-
-  // await db
-  //   .query('movie')
-  //   .include('name')
-  //   .include('actors.$rating')
-  //   .include('actors.name')
-  //   .get()
-  //   .inspect(10)
-
-  // edges unreacheable
-  db.query('movie').max('actors.$rating').get().inspect(10)
-})
-
 await test('cardinality', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -1962,6 +2028,892 @@ await test('cardinality', async (t) => {
     },
     'cardinality main groupBy',
   )
+})
+
+await test('group by unique numbers', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorIduint8: 'uint8',
+        vendorIdint8: 'int8',
+        vendorIduint16: 'uint16',
+        vendorIdint16: 'int16',
+        vendorIduint32: 'int32',
+        vendorIdint32: 'int32',
+        vendorIdnumber: 'number',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorIduint8: 13,
+    vendorIdint8: 13,
+    vendorIduint16: 813,
+    vendorIdint16: 813,
+    vendorIduint32: 813,
+    vendorIdint32: 813,
+    vendorIdnumber: 813.813,
+    pickup: new Date('11/12/2024 11:00'),
+    dropoff: new Date('11/12/2024 11:10'),
+    distance: 513.44,
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint8').get(),
+    {
+      13: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint8').get(),
+    {
+      13: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint16').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint16').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIduint32').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdint32').get(),
+    {
+      813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('vendorIdnumber').get(),
+    {
+      813.813: {
+        distance: 513.44,
+      },
+    },
+    'group by number',
+  )
+})
+
+await test('group by datetime intervals', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 513.44,
+  })
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'day').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'shorthand for step type',
+  )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'day' })
+      .get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by day, without shorthand',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
+    {
+      3: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by day of week',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
+    {
+      3: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
+    {
+      345: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
+    {
+      11: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by month[0-11]',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
+    {
+      2024: {
+        distance: 1026.88,
+      },
+    },
+    'group timestamp by hour',
+  )
+})
+
+await test('group by datetime ranges', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  let interval = 40 * 60 // 40 minutes
+  let r = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval)
+    .get()
+    .toObject()
+
+  let epoch = Number(Object.keys(r)[0])
+  let startDate = dtFormat.format(epoch)
+  let endDate = epoch + interval * 1000
+
+  // console.log(r) // epoch as index
+  deepEqual(r, { '1733914800000': { distance: 1326.88 } }, 'epoch as index')
+
+  const startDateAsIndex = { [startDate]: Object.values(r)[0] }
+  // console.log(startDateAsIndex) // startDate as index
+  deepEqual(
+    startDateAsIndex,
+    { '11/12/2024, 08:00': { distance: 1326.88 } },
+    'startDate as index',
+  )
+  const rangeAsIndex = {
+    [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0],
+  }
+  // console.log(rangeAsIndex) // range as index
+  deepEqual(
+    rangeAsIndex,
+    { '11/12/2024 08:00 – 08:40': { distance: 1326.88 } },
+    'range as index',
+  )
+
+  let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
+  let r2 = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval2)
+    .get()
+    .toObject()
+
+  let epoch2 = Number(Object.keys(r2)[0])
+  let startDate2 = dtFormat.format(epoch2)
+  let endDate2 = epoch2 + interval2 * 1000
+  const rangeByIndex2 = {
+    [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
+  }
+  // console.log(rangeByIndex2)
+  deepEqual(
+    rangeByIndex2,
+    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: 1326.88 } },
+    'another range interval as index',
+  )
+
+  // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+  await throws(
+    async () => {
+      await db
+        .query('trip')
+        .sum('distance')
+        .groupBy('pickup', 2 ** 32 + 1)
+        .get()
+        .inspect()
+    },
+    false,
+    `throw invalid step range error on validation`,
+  )
+})
+
+await test('cardinality with dates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lunch: {
+        day: 'timestamp',
+        eaters: 'cardinality',
+      },
+    },
+  })
+
+  db.create('lunch', {
+    day: '6/30/25', // mon
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/1/25', // tue
+    eaters: [
+      'Nuno',
+      'Tom',
+      'Alex',
+      'Niels',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+    ],
+  })
+  db.create('lunch', {
+    day: '7/2/25', // wed
+    eaters: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/3/25', // thu
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/4/25', // fri
+    eaters: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  })
+
+  const total = await db.query('lunch').cardinality('eaters').get().toObject()
+
+  // console.log('Total Eaters: ', total.eaters)
+  deepEqual(total.eaters, 11, 'Total Eaters')
+
+  const groupByDay = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day')
+    .get()
+    .toObject()
+
+  const meals = Object.entries(groupByDay) //@ts-ignore
+    .map((m) => m[1].eaters)
+    .reduce((e, acc) => (acc += e))
+
+  // console.log('Total Meals: ', meals)
+  deepEqual(meals, 31, 'Total Meals')
+
+  enum months {
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  }
+
+  const groupByMonth = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day', 'month')
+    .get()
+    .toObject()
+
+  const eatersByMonth = Object.entries(groupByMonth).map((e) => {
+    //@ts-ignore
+    return { [months[e[0]]]: e[1].eaters }
+  })
+  // console.log('Total Eaters by Month: ', eatersByMonth)
+  deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
+})
+
+await test('formating timestamp', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup').get(),
+    {
+      1733916600000: {
+        distance: 513.44,
+      },
+      1733914800000: {
+        distance: 813.44,
+      },
+    },
+    'no format => epoch ',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 40 * 60, display: dtFormat })
+      .get(),
+    {
+      '11/12/2024 08:00 – 08:40': {
+        distance: 1326.88,
+      },
+    },
+    'formated range interval as range',
+  )
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { display: dtFormat })
+      .get(),
+    {
+      '11/12/2024, 08:30': { distance: 513.44 },
+      '11/12/2024, 08:00': { distance: 813.44 },
+    },
+    'formated timestamp without range',
+  )
+})
+
+await test('timezone offsets', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 00:00+00'), // it is 11th Dec midnight in UTC
+    dropoff: new Date('12/01/2024 00:01-03'),
+    distance: 813.44,
+  })
+
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 15:30+00'),
+    dropoff: new Date('12/01/2024 00:00+00'),
+    distance: 513.44,
+  })
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'day', timeZone: 'America/Sao_Paulo' })
+      .get(),
+    {
+      10: {
+        // it is 10th Dec 21h in São Paulo (depending on DST)
+        distance: 813.44,
+      },
+      11: {
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'hour', timeZone: 'America/Sao_Paulo' })
+      .get(),
+    {
+      21: {
+        distance: 813.44,
+      },
+      12: {
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('dropoff', { step: 'month', timeZone: 'America/Sao_Paulo' })
+      .get(),
+    {
+      11: {
+        // Dec, 0 index
+        distance: 813.44,
+      },
+      10: {
+        // Nov, 0 index
+        distance: 513.44,
+      },
+    },
+    'reading stored datetime (as UTC) with specific timezone',
+  )
+})
+
+await test('group by reference ids', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'vehicle',
+        },
+      },
+      driver: {
+        name: 'string',
+        rank: 'int8',
+        trips: {
+          items: {
+            ref: 'trip',
+            prop: 'trip',
+          },
+        },
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'car',
+        },
+      },
+      vehicle: {
+        plate: 'string',
+        model: 'string',
+        year: 'number',
+      },
+    },
+  })
+  const v1 = db.create('vehicle', {
+    plate: 'DVH0101',
+    model: 'BYD 01',
+    year: 2024,
+  })
+  const v2 = db.create('vehicle', {
+    plate: 'MBT8965',
+    model: 'VW Beatle',
+    year: 1989,
+  })
+  const t1 = db.create('trip', {
+    distance: 523.1,
+    vehicle: v2,
+  })
+  const d1 = db.create('driver', {
+    name: 'Luc Ferry',
+    rank: 5,
+    vehicle: v2,
+    trips: [t1],
+  })
+
+  deepEqual(
+    await db.query('driver').sum('rank').groupBy('vehicle').get(),
+    {
+      2: {
+        rank: 5,
+      },
+    },
+    'group by reference id',
+  )
+
+  deepEqual(
+    await db
+      .query('driver')
+      .include((q) => q('trips').groupBy('vehicle').max('distance'))
+      .include('*')
+      .get(),
+    [
+      {
+        id: 1,
+        rank: 5,
+        name: 'Luc Ferry',
+        trips: {
+          2: {
+            distance: 523.1,
+          },
+        },
+      },
+    ],
+    'brached query with nested group by reference id',
+  )
+})
+
+await test('range', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const ter = ['lala', 'lele', 'lili']
+
+  await db.setSchema({
+    types: {
+      job: {
+        day: 'timestamp',
+        tip: 'number',
+        employee: {
+          ref: 'employee',
+          prop: 'employee',
+        },
+      },
+      employee: {
+        name: 'string',
+        area: {
+          items: { ref: 'territory', prop: 'territory' },
+        },
+      },
+      territory: {
+        name: ter,
+        flap: 'number',
+        state: {
+          ref: 'state',
+          prop: 'state',
+        },
+      },
+      state: {
+        name: 'string',
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    const d = new Date('11/11/2024 11:00-3')
+    const j = db.create('job', {
+      day: new Date(d.getTime() + Math.random() * 1e7),
+      tip: Math.random() * 20,
+    })
+    const s = db.create('state', {
+      name: 'statelala' + (Math.random() * 2).toFixed(0),
+    })
+    const t = db.create('territory', {
+      name: ter[(ter.length * Math.random()) | 0],
+      flap: Math.random() * 100,
+      state: s,
+    })
+    const e = db.create('employee', {
+      name: 'emplala' + (Math.random() * 10).toFixed(0),
+      area: [t],
+    })
+  }
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('job')
+        .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
+        .avg('tip')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by main',
+  )
+
+  deepEqual(
+    Object.keys(
+      await db
+        .query('employee')
+        .include((q) => q('area').groupBy('name').sum('flap'), '*')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by references',
+  )
+})
+
+await test.skip('edges agregation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  // await db
+  //   .query('movie')
+  //   .include('name')
+  //   .include('actors.$rating')
+  //   .include('actors.name')
+  //   .get()
+  //   .inspect(10)
+
+  // edges unreacheable
+  db.query('movie').max('actors.$rating').get().inspect(10)
+})
+
+await test('kev', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      product: {
+        name: { type: 'string', maxBytes: 10 },
+        flap: 'number',
+      },
+      shelve: {
+        code: { type: 'string', maxBytes: 4 },
+        products: {
+          items: {
+            ref: 'product',
+            prop: 'product',
+          },
+        },
+      },
+    },
+  })
+  for (let i = 0; i < 100; i++) {
+    let p = db.create('product', {
+      name: 'lala' + (Math.random() * 100).toFixed(0),
+      flap: Math.random() * 100,
+    })
+    db.create('shelve', {
+      code: 'S' + (Math.random() * 10).toFixed(0),
+      products: [p],
+    })
+  }
+
+  // db.query('product').include('*').avg('flap').groupBy('name').get().inspect()
+  // db.query('shelve')
+  //   .include((q) => q('products').avg('flap').groupBy('name'))
+  //   .get()
+  //   .inspect()
 })
 
 await test('dev', async (t) => {
@@ -2075,8 +3027,91 @@ await test('dev', async (t) => {
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })
 
-// TODO:
-// cardinality in references
-// key name <> string (numbers)
-// validations (including for key names)
-// aggregation on edges
+await test('boundary cases for validation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        year: 'number',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    year: 2003,
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    year: 1994,
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  deepEqual(
+    await db.query('movie').groupBy('year').count().get(),
+    {
+      1994: {
+        $count: 1,
+      },
+      2003: {
+        $count: 1,
+      },
+    },
+    'group by numeric valus is allowed',
+  )
+
+  deepEqual(
+    await db.query('movie').groupBy('genre').min('year').get(),
+    {
+      undefined: {
+        year: 1994,
+      },
+    },
+    'groupBy undefined prop',
+  )
+})

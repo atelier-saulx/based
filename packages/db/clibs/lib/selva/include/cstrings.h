@@ -16,21 +16,6 @@ char *selva_strndup(const char *s, size_t n)
 char *selva_strdup(const char *s)
     __attribute__((access(read_only, 1), returns_nonnull));
 
-/**
- * Locate last occurrence of character in string.
- */
-int strrnchr(const char *str, size_t len, char c)
-    __attribute__((pure, access(read_only, 1, 2)));
-
-int str_endswith(const char *str, const char *suffix)
-    __attribute__((pure, access(read_only, 1), access(read_only, 2)));
-
-/*
- * Tokenize nul-terminated strings from the buffer buf with the size of size.
- */
-const char *sztok(const char *buf, size_t size, size_t * restrict i)
-    __attribute__((pure, access(read_only, 1, 2), access(read_write, 3)));
-
 int stringlist_search(const char *list, const char *str, size_t n, char wildcard)
     __attribute__((pure, access(read_only, 1), access(read_only, 2, 3)));
 
@@ -42,15 +27,6 @@ int stringlist_search(const char *list, const char *str, size_t n, char wildcard
 void stringlist_remove_prefix(char *dst, const char *src, int len, const char *prefix_str, size_t prefix_len)
     __attribute__((access(write_only, 1), access(read_only, 2, 3)));
 
-size_t substring_count(const char *string, const char *substring, size_t n)
-    __attribute__((pure, access(read_only, 1), access(read_only, 2, 3)));
-
-/**
- * Calculate the number of instances of ch in s.
- */
-int ch_count(const char *s, char ch)
-    __attribute__((pure, access(read_only, 1)));
-
 /**
  * Replace all occurrences of orig_ch in s with new_ch.
  */
@@ -58,6 +34,9 @@ char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
     __attribute__((access(read_write, 1, 2)));
 
 #ifndef HAS_MEMRCHR
+/**
+ * Locate last occurrence of the byte c the in s.
+ */
 void *memrchr(const void *s, int c, size_t n)
     __attribute__((pure, access(read_only, 1, 3)));
 #endif

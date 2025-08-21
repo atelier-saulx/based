@@ -14,6 +14,7 @@ import { Deploy } from './pages/deploy.js'
 
 const Env = (p: Props) => {
   const { userId } = useAuthState()
+
   if (p.command === 'logout') {
     return <Logout />
   }
@@ -34,6 +35,10 @@ const Env = (p: Props) => {
       return <SetSecret name={p.opts.name} value={p.opts.value} />
     }
     return <Text>Need to use a subcommand, this should be a help doc</Text>
+  }
+
+  if (p.command === 'deploy') {
+    return <Deploy {...p} />
   }
 
   return <Text color="yellow">Command not implemented! {p.command}</Text>
@@ -64,10 +69,6 @@ export default function App(p: Props) {
 
   if (p.command === 'dev') {
     return <Dev {...p} />
-  }
-
-  if (p.command === 'deploy') {
-    return <Deploy {...p} />
   }
 
   return <EnvWrapper {...p} />

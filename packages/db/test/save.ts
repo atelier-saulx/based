@@ -66,7 +66,7 @@ await test('simple', async (t) => {
           //p: { type: 'references', ref: 'typeTest', prop: 'reference' },
           q: { type: 'reference', ref: 'user', prop: 'test' },
           r: { type: 'enum', enum: ['a', 'b', 'c'] },
-          s: { type: 'vector', size: 1 },
+          s: { type: 'vector', size: 1, baseType: 'float32' },
           //t: { type: 'set' },
         },
       },

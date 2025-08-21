@@ -39,6 +39,7 @@ import {
   langCodesMap,
   MAX_ID,
 } from '@based/schema'
+import { StepInput, StepObject, Interval } from './aggregates/types.js'
 
 export type QueryError = {
   code: number
@@ -73,6 +74,8 @@ export const ERR_SORT_LANG = 24
 
 export const ERR_AGG_ENOENT = 25
 export const ERR_AGG_TYPE = 26
+export const ERR_AGG_INVALID_STEP_TYPE = 27
+export const ERR_AGG_INVALID_STEP_RANGE = 28
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -118,6 +121,9 @@ const messages = {
   [ERR_AGG_ENOENT]: (p) =>
     `Field \"${p}\" in the aggregate function is invalid or unreacheable.`,
   [ERR_AGG_TYPE]: (p) => `Aggregate: incorrect type "${p.path.join('.')}"`,
+  [ERR_AGG_INVALID_STEP_TYPE]: (p) => `Aggregate: Incorrect step type "${p}"`,
+  [ERR_AGG_INVALID_STEP_RANGE]: (p) =>
+    `Aggregate: Incorrect step range "${p}". Step ranges are limited to uint32 max value in seconds => group by ~136 years.`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -410,7 +416,12 @@ export const validateSort = (
     }
   }
   const type = propDef.typeIndex
-  if (type === REFERENCES || type === REFERENCE || type === VECTOR) {
+  if (
+    type === REFERENCES ||
+    type === REFERENCE ||
+    type === VECTOR ||
+    type === BINARY
+  ) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
@@ -608,4 +619,14 @@ export const aggregationFieldNotNumber = (def: QueryDef, field: string) => {
     payload: field,
   })
   handleErrors(def)
+}
+
+export const validateStepRange = (def: QueryDef, step: StepInput) => {
+  if (typeof step !== 'number' || step >= 4294967296) {
+    def.errors.push({
+      code: ERR_AGG_INVALID_STEP_RANGE,
+      payload: step,
+    })
+    handleErrors(def)
+  }
 }

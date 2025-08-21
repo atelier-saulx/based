@@ -10,7 +10,7 @@
     "watch-server": "nodemon ./test/based-server.js",
     "browser": "npx vite ./test/browser",
     "watch": "npm run build -- --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rm -rf ./dist ./node_modules"
   },
   "exports": {
     "./ssr": "./dist/ssr.js",
@@ -23,10 +23,9 @@
   },
   "devDependencies": {
     "@types/react": "^18.0.29",
-    "rimraf": "^3.0.2",
     "typescript": "^5.2.2",
     "react-dom": "^18.2.0",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.9",
     "@based/client": "^8.0.2",
     "nodemon": "^3.1.7",
     "vite": "^5.2.8",
