@@ -1,7 +1,7 @@
 #ifndef CSV_HANDLER_H
 #define CSV_HANDLER_H
 
-#include "../include/converter.h"
+#include "converter.h"
 
 typedef struct {
     char** headers;
