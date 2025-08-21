@@ -166,7 +166,7 @@ pub inline fn finalizeGroupResults(
 pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {
     const field = aggInput[0];
     const srcPropType: types.Prop = @enumFromInt(aggInput[1]);
-    const propType: types.Prop = if (field == types.MAIN_PROP and srcPropType != types.Prop.ENUM and srcPropType != types.Prop.TIMESTAMP)
+    const propType: types.Prop = if (field == types.MAIN_PROP and srcPropType != types.Prop.ENUM and srcPropType != types.Prop.TIMESTAMP and srcPropType != types.Prop.STRING)
         types.Prop.MICRO_BUFFER
     else
         srcPropType;

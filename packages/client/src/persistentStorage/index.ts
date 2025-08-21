@@ -19,7 +19,7 @@ const store = async (client: BasedClient) => {
     client.storageBeingWritten = null
     const file = join(
       client.storagePath,
-      'based-' + client.storageEnvKey + '.storage'
+      'based-' + client.storageEnvKey + '.storage',
     )
     const cache: any[] = []
     client.cache.forEach((c, id) => {
@@ -36,7 +36,7 @@ const store = async (client: BasedClient) => {
   } catch (err) {
     console.error(
       '    [Based-client] Cannot update persistent storage',
-      client.storagePath
+      client.storagePath,
     )
   }
 }
@@ -57,7 +57,7 @@ const writeToStorage = async (client: BasedClient, instant?: boolean) => {
 const initStorageNode = async (client: BasedClient) => {
   const file = join(
     client.storagePath,
-    'based-' + client.storageEnvKey + '.storage'
+    'based-' + client.storageEnvKey + '.storage',
   )
   try {
     const s = existsSync(file)
@@ -86,11 +86,11 @@ const initStorageNode = async (client: BasedClient) => {
       }
     } else {
       const x = await compress(JSON.stringify({ cache: [] }))
-
       await writeFile(file, x).catch((err) => {
         if (err) {
+          console.log({ err })
           console.error(
-            '     [Based-client] Failed creating persistent storage, cannot write file'
+            '     [Based-client] Failed creating persistent storage, cannot write file',
           )
           client.storagePath = null
         }
@@ -102,7 +102,7 @@ const initStorageNode = async (client: BasedClient) => {
 const clearStorageNode = async (client: BasedClient) => {
   const file = join(
     client.storagePath,
-    'based-' + client.storageEnvKey + '.storage'
+    'based-' + client.storageEnvKey + '.storage',
   )
   clearTimeout(client.storageBeingWritten)
   return rm(file)

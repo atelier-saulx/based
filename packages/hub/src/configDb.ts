@@ -34,8 +34,8 @@ export const createConfigDb = async (basePath: string) => {
         config: 'json',
         createdAt,
         updatedAt,
-        checksum: 'uint32',
-        loaded: 'uint32',
+        checksum: 'number',
+        loaded: 'number',
       },
       secret: {
         name: 'alias',

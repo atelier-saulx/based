@@ -12,8 +12,10 @@ import { BuildCtx, rebuild, importFromBuild } from './buildUtils.js'
 import { BasedOpts } from '@based/client'
 import { resolvePlugin } from './plugins.js'
 
+type FnConfig = BasedFunctionConfig | BasedAuthorizeFunctionConfig
+
 export type ParseResult = FindResult & {
-  fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig
+  fnConfig: FnConfig
   configCtx: BuildCtx
   indexCtx: BuildCtx
   mainCtx?: BuildCtx
@@ -30,15 +32,12 @@ export type ParseResults = {
   }
 }
 
-const createFunctionContext = (
-  result: FindResult,
-  fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig,
-) => {
+const createFunctionContext = (result: FindResult, fnConfig: FnConfig) => {
   // this has to change...
   // need to hash the file before if we wan this
   const checksum = 1 // fnConfig.checksum
   const name = fnConfig.type === 'authorize' ? 'based:authorize' : fnConfig.name
-  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require} = new _FnGlobals('${name}',${checksum});`
+  const banner = `const {setInterval,setTimeout,clearInterval,clearTimeout,console,require}=new _FnGlobals('${name}',${checksum});`
   return context({
     mainFields: ['source', 'module', 'main'],
     banner: {
@@ -94,12 +93,8 @@ const createBrowserContext = (
   }).then(rebuild)
 }
 
-export const parseConfig = async (
-  result: FindResult,
-  publicPath: string,
-  opts: BasedOpts,
-): Promise<ParseResult> => {
-  const configCtx = await context({
+const createObjectContext = (result: FindResult) => {
+  return context({
     entryPoints: [result.path],
     bundle: true,
     write: false,
@@ -107,8 +102,15 @@ export const parseConfig = async (
     format: 'esm',
     metafile: true,
   }).then(rebuild)
-  const fnConfig: BasedFunctionConfig | BasedAuthorizeFunctionConfig =
-    importFromBuild(configCtx.build, result.path)
+}
+
+export const parseConfig = async (
+  result: FindResult,
+  publicPath: string,
+  opts: BasedOpts,
+): Promise<ParseResult> => {
+  const configCtx = await createObjectContext(result)
+  const fnConfig: FnConfig = importFromBuild(configCtx.build, result.path)
   const indexCtx = await createFunctionContext(result, fnConfig)
   if (fnConfig.type === 'app') {
     const mainCtx = await createBrowserContext(
@@ -123,14 +125,7 @@ export const parseConfig = async (
 }
 
 export const parseSchema = async (result: FindResult) => {
-  const schemaCtx = await context({
-    entryPoints: [result.path],
-    bundle: true,
-    write: false,
-    platform: 'node',
-    metafile: true,
-    format: 'esm',
-  }).then(rebuild)
+  const schemaCtx = await createObjectContext(result)
   const schema = {
     schema: importFromBuild(schemaCtx.build, result.path),
     schemaCtx,
