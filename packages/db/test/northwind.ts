@@ -30,6 +30,7 @@ await test('northwind', async (t) => {
   console.log(4)
   // TODO
   //await db.query('orders').include('orderDate', 'shippedDate' 'customer.id', 'freight').sort('', 'desc').get().inspect()
+  //await db.query('orderDetails').groupBy('order').sort('order.freight').get().inspect()
 
   // 5. Create a report showing the title and the first and last name of all sales representatives.
   console.log(5)
@@ -119,4 +120,9 @@ await test('northwind', async (t) => {
   // 18. Create a report that shows the total quantity of products (from the Order_Details table)
   // ordered. Only show records for products for which the quantity ordered is fewer than 200.
   // The report should return the following 5 rows.
+
+  // SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
+  // FROM Orders
+  // INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
+  console.log(await db.query('orders').include('customer.companyName', 'orderDate').range(0, 10).get().toObject())
 })
