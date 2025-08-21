@@ -121,8 +121,54 @@ await test('northwind', async (t) => {
   // ordered. Only show records for products for which the quantity ordered is fewer than 200.
   // The report should return the following 5 rows.
 
-  // SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
+  // SELECT Orders.OrderID, Customers.CompanyName, Orders.OrderDate
   // FROM Orders
   // INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
+  console.log('inner join')
   console.log(await db.query('orders').include('customer.companyName', 'orderDate').range(0, 10).get().toObject())
+
+  // SELECT Customers.CompanyName, Orders.OrderID
+  // FROM Customers
+  // LEFT JOIN Orders
+  // ON Customers.CustomerID=Orders.CustomerID
+  // ORDER BY Customers.CompanyName;
+  console.log('left join')
+  //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
+  console.dir(await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').range(0, 5).get().toObject(), { depth: 10 })
+
+  // Left join TODO
+
+  // Full join TODO
+
+  // Self join
+  // SELECT A.CustomerName AS CustomerName1, B.CustomerName AS CustomerName2, A.City
+  //   FROM Customers A, Customers B
+  //   WHERE A.CustomerID <> B.CustomerID
+  //   AND A.City = B.City
+  //   ORDER BY A.City;
+
+  // Union
+  // SELECT 'Customer' AS Type, ContactName, City, Country
+  // FROM Customers
+  // UNION
+  // SELECT 'Supplier', ContactName, City, Country
+  // FROM Suppliers
+  console.log('union')
+  const unionA = await db.query('customers').include('contactName', 'city', 'country').range(0, 2).get().toObject()
+  const unionB = await db.query('suppliers').include('contactName', 'city', 'country').range(0, 2).get().toObject()
+  const union = [ ...unionA.map((r) => ({ type: 'customer', ...r })), ...unionB.map((r) => ({ type: 'supplier', ...r })) ]
+  console.log(union)
+
+  // union all
+  // SELECT City, Country FROM Customers
+  //   WHERE Country='Germany'
+  //   UNION ALL
+  //   SELECT City, Country FROM Suppliers
+  //   WHERE Country='Germany'
+  //   ORDER BY City;
+  console.log('union all')
+  const unionAllA = await db.query('customers').include('city', 'country').range(0, 3).get().toObject()
+  const unionAllB = await db.query('suppliers').include('city', 'country').range(0, 3).get().toObject()
+  const unionAll = [ ...unionA.map(({ city, country }) => ({ city, country })), ...unionB.map(({ city, country }) => ({ city, country })) ]
+  console.log(unionAll)
 })
