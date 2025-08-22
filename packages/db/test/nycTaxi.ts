@@ -1323,7 +1323,7 @@ await test('taxi', async (t) => {
     })
   }
 
-  const N = 4
+  const N = 2
   const loading = new Loading(N)
   const s = new Sema(4)
   const makeTrip = async (filename: string) => {

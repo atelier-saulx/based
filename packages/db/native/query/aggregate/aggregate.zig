@@ -9,7 +9,7 @@ const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
 const microbufferToF64 = @import("./utils.zig").microbufferToF64;
 
-pub inline fn execAgg(
+inline fn execAgg(
     aggPropDef: []u8,
     accumulatorField: []u8,
     value: []u8,

@@ -452,6 +452,10 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 
 struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
+    if (unlikely(node_id == 0)) {
+        return nullptr;
+    }
+
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {
