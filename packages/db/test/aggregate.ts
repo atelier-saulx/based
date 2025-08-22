@@ -2874,7 +2874,7 @@ await test.skip('edges agregation', async (t) => {
   db.query('movie').max('actors.$rating').get().inspect(10)
 })
 
-await test('kev', async (t) => {
+await test('fixed length strings', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -2900,7 +2900,7 @@ await test('kev', async (t) => {
   })
   for (let i = 0; i < 100; i++) {
     let p = db.create('product', {
-      name: 'lala' + (Math.random() * 100).toFixed(0),
+      name: 'lala' + (Math.random() * 10).toFixed(0),
       flap: Math.random() * 100,
     })
     db.create('shelve', {
@@ -2909,11 +2909,35 @@ await test('kev', async (t) => {
     })
   }
 
-  // db.query('product').include('*').avg('flap').groupBy('name').get().inspect()
-  // db.query('shelve')
-  //   .include((q) => q('products').avg('flap').groupBy('name'))
-  //   .get()
-  //   .inspect()
+  equal(
+    Number(
+      Object.keys(
+        await db
+          .query('product')
+          .include('*')
+          .avg('flap')
+          .groupBy('name')
+          .get()
+          .toObject(),
+      )[0].substring(4, 6),
+    ) < 100,
+    true,
+    'fixed length strings on main',
+  )
+
+  equal(
+    Number(
+      Object.keys(
+        await db
+          .query('shelve')
+          .include((q) => q('products').avg('flap').groupBy('name'))
+          .get()
+          .toObject(),
+      )[0].substring(4, 6),
+    ) < 100,
+    true,
+    'fixed length strings on references',
+  )
 })
 
 await test('dev', async (t) => {
