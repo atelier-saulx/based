@@ -149,9 +149,9 @@ pub inline fn aggregateRefsGroup(
     try finalizeGroupResults(data, groupCtx, agg);
 
     try ctx.results.append(.{
-        .id = null,
+        .id = 0,
         .field = refField,
-        .val = data,
+        .value = data,
         .score = null,
         .type = types.ResultType.aggregate,
     });
@@ -215,13 +215,13 @@ pub inline fn aggregateRefsDefault(
             }
         }
     }
-    const val = try ctx.allocator.alloc(u8, resultsSize);
-    try finalizeResults(val, accumulatorField, agg, option);
+    const value = try ctx.allocator.alloc(u8, resultsSize);
+    try finalizeResults(value, accumulatorField, agg, option);
 
     try ctx.results.append(.{
-        .id = null,
+        .id = 0,
         .field = refField,
-        .val = val,
+        .value = value,
         .score = null,
         .type = types.ResultType.aggregate,
     });

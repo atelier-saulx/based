@@ -7,23 +7,15 @@ import {
   filterOr,
   QueryByAliasObj,
   isAlias,
-  includeField,
-  includeFields,
   addAggregate,
   groupBy,
   LangFallback,
   IncludeOpts,
-  IncludeField,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
-import {
-  createOrGetEdgeRefQueryDef,
-  createOrGetRefQueryDef,
-} from './include/utils.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
-import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
@@ -35,6 +27,7 @@ import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { AggregateType, StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
+import { include } from './include/include.js'
 
 export { QueryByAliasObj }
 
@@ -445,76 +438,7 @@ export class QueryBranch<T> {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
-      for (const f of fields) {
-        if (typeof f === 'string') {
-          includeField(this.def, { field: f })
-        } else if (typeof f === 'function') {
-          f((field: string) => {
-            if (field[0] == '$') {
-              // @ts-ignore
-              const prop = this.def.target?.propDef?.edges[field]
-              if (
-                prop &&
-                (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
-              ) {
-                const refDef = createOrGetEdgeRefQueryDef(
-                  this.db,
-                  this.def,
-                  prop,
-                )
-                // @ts-ignore
-                return new QueryBranch(this.db, refDef)
-              }
-              throw new Error(
-                `No edge reference or edge references field named "${field}"`,
-              )
-            } else {
-              const prop =
-                field[0] == '$'
-                  ? // @ts-ignore
-                    this.def.target?.propDef?.edges[field]
-                  : this.def.props[field]
-              if (
-                prop &&
-                (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
-              ) {
-                const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
-                // @ts-ignore
-                return new QueryBranch(this.db, refDef)
-              }
-              throw new Error(
-                `No reference or references field named "${field}"`,
-              )
-            }
-          })
-        } else if (Array.isArray(f)) {
-          if (f.length === 0) {
-            includeField(this.def, { field: 'id' })
-          } else {
-            for (let i = 0; i < f.length; i++) {
-              const field = f[i]
-              const opts =
-                typeof f[i + 1] === 'object' && typeof f[i + 1] !== 'function'
-                  ? (f[i + 1] as IncludeOpts)
-                  : undefined
-              if (typeof field === 'string') {
-                if (opts) {
-                  includeField(this.def, {
-                    field,
-                    opts,
-                  })
-                } else {
-                  includeField(this.def, { field })
-                }
-              }
-            }
-          }
-        } else if (f !== undefined) {
-          throw new Error(
-            'Invalid include statement: expected props, refs and edges (string or array) or function',
-          )
-        }
-      }
+      include(this, fields)
     }
     // @ts-ignore
     return this

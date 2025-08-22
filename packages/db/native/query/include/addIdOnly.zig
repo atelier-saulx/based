@@ -10,7 +10,7 @@ pub fn addIdOnly(
         .id = id,
         .type = t.ResultType.none,
         .field = @intFromEnum(t.ReadOp.ID), // id result enum
-        .val = null,
+        .value = &.{},
         .score = score,
     });
     if (score != null) {

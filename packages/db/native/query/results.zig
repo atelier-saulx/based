@@ -11,16 +11,13 @@ const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
 
-// Add comptime for SCORE to reduce the size of this
 pub const Result = struct {
-    id: ?u32,
+    id: u32,
     field: u8,
     type: t.ResultType,
     score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query but another 4 bytes saved
-    val: ?[]u8,
+    value: []u8,
 };
-
-// need to know what kind of field this is might add typeIndex
 
 const HEADER_SIZE = 8;
 
@@ -31,12 +28,11 @@ fn addChecksum(item: *const *Result, data: []u8) usize {
     offset += 1;
     data[offset] = item.*.field;
     offset += 1;
-    if (item.*.val) |v| {
-        data[offset] = v[1];
-        offset += 1;
-        utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
-        writeInt(u32, data, offset + 4, v.len);
-    }
+    const v = item.*.value;
+    data[offset] = v[1];
+    offset += 1;
+    utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
+    writeInt(u32, data, offset + 4, v.len);
     offset += 8;
     return offset;
 }
@@ -60,10 +56,10 @@ pub fn createResultsBuffer(
     for (ctx.results.items) |*item| {
 
         // Always start with id
-        if (item.id) |id| {
+        if (item.id != 0) {
             data[i] = @intFromEnum(t.ReadOp.ID);
             i += 1;
-            writeInt(u32, data, i, id);
+            writeInt(u32, data, i, item.id);
             i += 4;
             if (item.score) |s| {
                 copy(data[i .. i + 4], &s);
@@ -89,9 +85,7 @@ pub fn createResultsBuffer(
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
                 data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
             },
@@ -105,9 +99,7 @@ pub fn createResultsBuffer(
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
                 data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 10], v);
-                }
+                copy(data[i + 2 .. i + 10], item.value);
                 i += 10;
                 continue;
             },
@@ -116,9 +108,7 @@ pub fn createResultsBuffer(
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
                 data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
             },
@@ -127,9 +117,7 @@ pub fn createResultsBuffer(
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
                 data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 10;
                 continue;
             },
@@ -148,23 +136,23 @@ pub fn createResultsBuffer(
             },
         }
 
-        if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
+        if (item.field == @intFromEnum(t.ReadOp.ID)) {
             continue;
         }
 
         data[i] = item.field;
         i += 1;
 
-        const val = item.val.?;
+        const value = item.value;
 
         if (item.field == t.MAIN_PROP) {
-            copy(data[i .. i + val.len], val);
-            i += val.len;
+            copy(data[i .. i + value.len], value);
+            i += value.len;
         } else {
-            writeInt(u32, data, i, val.len);
+            writeInt(u32, data, i, value.len);
             i += 4;
-            copy(data[i .. i + val.len], val);
-            i += val.len;
+            copy(data[i .. i + value.len], value);
+            i += value.len;
         }
     }
 

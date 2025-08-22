@@ -30,7 +30,6 @@ pub const Prop = enum(u8) {
     VECTOR = 27,
     JSON = 28,
     COLVEC = 30,
-    META_SELVA_STRING = 31,
     pub fn isBuffer(self: Prop) bool {
         return switch (self) {
             Prop.BINARY,
@@ -183,11 +182,12 @@ pub const ReadOp = enum(u8) {
 };
 
 pub const IncludeOp = enum(u8) {
-    referencesAggregation = 251,
-    edge = 252,
-    references = 254,
-    reference = 255,
-    _,
+    default = 1,
+    referencesAggregation = 2,
+    edge = 3,
+    references = 4,
+    reference = 5,
+    meta = 6,
 };
 
 pub const ReadRefOp = enum(u8) {

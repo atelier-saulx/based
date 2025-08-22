@@ -29,7 +29,6 @@ import { read, readUtf8 } from '../../string.js'
 import {
   combineToNumber,
   DECODER,
-  getByPath,
   readDoubleLE,
   readFloatLE,
   readInt16,
@@ -185,7 +184,13 @@ const addField = (
     const field = path[i]
     if (!defaultOnly || !(field in item)) {
       if (item[field] && merge) {
-        item[field] = { ...item[field], ...value }
+        if (typeof value !== 'object') {
+          item[field] = { ...item[field], value }
+        } else if (typeof item[field] === 'object') {
+          item[field] = { ...item[field], ...value }
+        } else {
+          item[field] = { value: item[field], ...value }
+        }
       } else {
         item[field] = value
       }
@@ -197,7 +202,13 @@ const addField = (
       if (i === len - 1) {
         if (!defaultOnly || !(field in select)) {
           if (select[field] && merge) {
-            select[field] = { ...select[field], ...value }
+            if (typeof value !== 'object') {
+              select[field].value = { ...select[field].value, value }
+            } else if (typeof select[field] === 'object') {
+              select[field].value = { ...select[field].value, ...value }
+            } else {
+              select[field] = { value: select[field], ...value }
+            }
           } else {
             select[field] = value
           }
@@ -409,15 +420,15 @@ const selvaStringProp = (
   const value = useDefault
     ? getDefaultSelvaStringValue(prop)
     : readSelvaStringValue(prop, buf, offset, size)
-  // const checksum = q.include.meta?.has(prop.prop)
-  // if (checksum) {
-  //   addField(prop, value, item, false, false, 0, 'value')
-  //   if (useDefault) {
-  //     addField(prop, EMPTY_META, item, true)
-  //   }
-  // } else {
-  addField(prop, value, item, false)
-  // }
+  const checksum = q.include.props.get(prop.prop)?.opts?.meta
+  if (checksum) {
+    addField(prop, value, item, false, false, 0, 'value')
+    if (useDefault) {
+      addField(prop, EMPTY_META, item, true)
+    }
+  } else {
+    addField(prop, value, item, false)
+  }
 }
 
 const readMain = (
@@ -448,19 +459,6 @@ const readMain = (
 }
 
 const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
-  // can be optmized a lot... shit meta info in the propsRead objectmeta is just a shift of 8
-  // if (q.include.meta) {
-  //   for (const k of q.include.meta) {
-  //     const prop = q.schema.reverseProps[k]
-  //     if (
-  //       q.include.propsRead[k] !== id &&
-  //       getByPath(item, prop.path) === undefined
-  //     ) {
-  //       addField(prop, { ...EMPTY_META }, item, true)
-  //     }
-  //   }
-  // }
-
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
       // Only relevant for seperate props

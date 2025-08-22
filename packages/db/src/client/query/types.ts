@@ -201,20 +201,23 @@ export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
 export const READ_AGGREGATION = 250
-export const READ_META = 249
+export const READ_META = 249 // hmm expand this better
 
 export const enum includeOp {
-  REFERENCES_AGGREGATION = 251,
-  EDGE = 252,
-  REFERENCES = 254,
-  REFERENCE = 255,
+  DEFAULT = 1,
+  REFERENCES_AGGREGATION = 2,
+  EDGE = 3,
+  REFERENCES = 4,
+  REFERENCE = 5,
+
+  META = 6, // this can be a small buffer as well
 }
 
-export const enum includeOpts {
-  HAS_OPTS = 1,
-  NO_OPTS = 0,
-  // meta just gets added as an extra include in the result
-  META = 2,
-  META_ONLY = 3,
-  SLICE = 4,
-}
+// export const enum includeOpts {
+//   HAS_OPTS = 1,
+//   NO_OPTS = 0,
+//   // meta just gets added as an extra include in the result
+//   META = 2,
+//   META_ONLY = 3,
+//   SLICE = 4,
+// }

@@ -47,11 +47,10 @@ pub inline fn getRefsFields(
     const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
 
     ctx.results.append(.{
-        .id = null,
+        .id = 0,
         .field = refField,
-        .val = null,
+        .value = &.{},
         .score = null,
-
         .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
     }) catch return 0;
 
@@ -112,7 +111,7 @@ pub inline fn getRefsFields(
 
     utils.writeInt(u32, val, 0, result.size);
     utils.writeInt(u32, val, 4, result.cnt);
-    r.*.val = val;
+    r.*.value = val;
 
     if (isEdge) {
         result.size += 1;

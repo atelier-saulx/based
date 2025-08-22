@@ -1,7 +1,7 @@
 import native from '../../native.js'
 import { concatUint8Arr } from '@based/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
-import { defToBuffer } from './toByteCode/toBuffer.js'
+import { defToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'

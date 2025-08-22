@@ -6,39 +6,13 @@ const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../types.zig").QueryCtx;
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
-const types = @import("../include//types.zig");
+const types = @import("../include/types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
 const Meta = @import("./types.zig").Meta;
 const Type = @import("./types.zig").Type;
 const Mode = @import("./types.zig").Mode;
 const LangCode = @import("../../types.zig").LangCode;
-// -------------------------------------------
-// or
-// [meta = 253]  [size 2] [next 4]
-// -------------------------------------------
-// edge
-// [meta = 252] [size 2]
-// -------------------------------------------
-// ref
-// [meta = 254] [field] [typeId 2] [size 2]
-// -------------------------------------------
-// conditions normal fixed
-// field, [size 2]
-// [or = 0] [size 2] [start 2], [op] [typeIndex], value[size]
-// -------------------------------------------
-// conditions normal var
-// field, [size 4]
-// [or = 4] [size 4], [op] [typeIndex], value[size]
-// -------------------------------------------
-// conditions or fixed
-// field, [size 2]
-// [or = 1] [size 2] [start 2] [op] [typeIndex], [repeat 2], value[size] value[size] value[size]
-// -------------------------------------------
-// conditions or variable
-// field, [size 2]
-// [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
-// -------------------------------------------
 
 const EMPTY: [1]u8 = [_]u8{0} ** 1;
 const EMPTY_SLICE = @constCast(&EMPTY)[0..1];
@@ -82,8 +56,7 @@ pub fn filter(
     var i: usize = offset;
     var orJump: ?[]u8 = jump;
     var end: usize = conditions.len;
-    // [or = 0] [size 2] [start 2], [op], value[size]
-    // next OR
+
     while (i < end) {
         const meta: Meta = @enumFromInt(conditions[i]);
         if (meta == Meta.orBranch) {

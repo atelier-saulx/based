@@ -1,6 +1,6 @@
-// import { META_SELVA_STRING } from '@based/schema/def'
+import { MICRO_BUFFER } from '@based/schema/def'
 import { DbClient } from '../../index.js'
-import { QueryDef, QueryDefType } from '../types.js'
+import { QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -13,8 +13,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     !def.include.props.size &&
     !def.references.size &&
     !def.include.main.len &&
-    !def.include.langTextFields.size //&&
-    // !def.include.meta
+    !def.include.langTextFields.size
   ) {
     return result
   }
@@ -104,29 +103,35 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
   const propSize = def.include.props.size ?? 0
 
   if (mainBuffer) {
-    len = mainBuffer.byteLength + 3 + propSize * 2
+    len = mainBuffer.byteLength + 5 + propSize * 3
     includeBuffer = new Uint8Array(len)
-    includeBuffer[0] = 0
-    includeBuffer[1] = mainBuffer.byteLength
-    includeBuffer[2] = mainBuffer.byteLength >>> 8
-    const offset = 3 + mainBuffer.byteLength
-    includeBuffer.set(mainBuffer, 3)
+    includeBuffer[0] = includeOp.DEFAULT
+    includeBuffer[1] = 0
+    includeBuffer[2] = MICRO_BUFFER // add this in types
+    includeBuffer[3] = mainBuffer.byteLength
+    includeBuffer[4] = mainBuffer.byteLength >>> 8
+    const offset = 5 + mainBuffer.byteLength
+    includeBuffer.set(mainBuffer, 5)
     if (propSize) {
       let i = 0
       for (const [prop, propDef] of def.include.props.entries()) {
-        includeBuffer[i + offset] = prop
-        includeBuffer[i + offset + 1] = propDef.def.typeIndex
+        includeBuffer[i + offset] = includeOp.DEFAULT
+        includeBuffer[i + offset + 1] = prop
+        includeBuffer[i + offset + 2] = propDef.def.typeIndex
         i += 2
       }
     }
   } else if (propSize) {
-    const buf = new Uint8Array(propSize * 2)
+    const buf = new Uint8Array(propSize * 3)
     let i = 0
     for (const [prop, propDef] of def.include.props.entries()) {
-      buf[i] = prop
-      buf[i + 1] = propDef.def.typeIndex
-      i += 2
+      // const meta = propDef.opts?.meta
+      buf[i] = includeOp.DEFAULT
+      buf[i + 1] = prop
+      buf[i + 2] = propDef.def.typeIndex
+      i += 3
     }
+
     includeBuffer = buf
   }
 
@@ -136,15 +141,6 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     })
     result.push(includeBuffer)
   }
-
-  // if (def.include.meta) {
-  //   for (const prop of def.include.meta) {
-  //     const b = new Uint8Array(2)
-  //     b[0] = prop
-  //     b[1] = META_SELVA_STRING // prob want to add more here...
-  //     result.push(b)
-  //   }
-  // }
 
   return result
 }
