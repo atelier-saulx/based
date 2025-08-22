@@ -1,4 +1,4 @@
-import { parse, Schema, StrictSchema } from '@based/schema'
+import { MigrateFns, parse, Schema, StrictSchema } from '@based/schema'
 import { create, CreateObj } from './modify/create.js'
 import {
   flushBuffer,
@@ -11,7 +11,6 @@ import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
 import { upsert } from './modify/upsert.js'
 import { update } from './modify/update.js'
 import { deleteFn } from './modify/delete.js'
-import { TransformFns } from '../server/migrate/index.js'
 import { ModifyOpts } from './modify/types.js'
 import { expire } from './modify/expire.js'
 import { debugMode } from '../utils.js'
@@ -75,7 +74,7 @@ export class DbClient extends DbShared {
 
   async setSchema(
     schema: Schema,
-    transformFns?: TransformFns,
+    transformFns?: MigrateFns,
   ): Promise<SchemaChecksum> {
     const strictSchema = parse(schema).schema
     await this.drain()

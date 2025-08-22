@@ -1,12 +1,12 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { langCodesMap, LangName, StrictSchema } from '@based/schema'
+import { langCodesMap, LangName, MigrateFns, StrictSchema } from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
 import { setTimeout } from 'node:timers/promises'
-import { migrate, TransformFns } from './migrate/index.js'
+import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64 } from '@based/utils'
@@ -313,7 +313,7 @@ export class DbServer extends DbShared {
 
   async setSchema(
     strictSchema: StrictSchema,
-    transformFns?: TransformFns,
+    transformFns?: MigrateFns,
   ): Promise<SchemaChecksum> {
     if (this.stopped || !this.dbCtxExternal) {
       throw new Error('Db is stopped')

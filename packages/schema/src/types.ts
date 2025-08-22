@@ -274,7 +274,15 @@ export type SchemaCardinality = Prop<{
   format?: NumberDisplay // when queried should return the count
 }>
 
-type VectorDefaultType = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
+type VectorDefaultType =
+  | Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array
 export type SchemaVectorBaseType = NumberType | 'float32' | 'float64'
 
 export type SchemaVector = Prop<{
@@ -456,14 +464,26 @@ export type SchemaPropsOneWay<isStrict = false> = Record<
   SchemaPropOneWay<isStrict>
 > & { id?: never }
 
+type MigrateFn = (
+  node: Record<string, any>,
+) => Record<string, any> | [string, Record<string, any>]
+
+export type MigrateFns = Record<string, MigrateFn>
+
 type GenericSchema<isStrict = false> = {
+  version?: string
   types?: SchemaTypes<isStrict>
   props?: SchemaPropsOneWay<isStrict>
   locales?: Partial<SchemaLocales>
+  migrations?: {
+    version: string
+    migrate: MigrateFns
+  }[]
 }
 
 export type StrictSchema = GenericSchema<true>
-export type Schema = GenericSchema<false> | StrictSchema
+export type NonStrictSchema = GenericSchema<false>
+export type Schema = NonStrictSchema | StrictSchema
 
 export type SchemaLocales = Record<
   LangName,
