@@ -17,6 +17,7 @@ import {
   Interval,
   IntervalString,
 } from '../aggregates/types.js'
+import { BasedDbQuery, QueryBranch } from '../BasedDbQuery.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -129,63 +130,63 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
 }
 
 export const addAggregate = (
+  query: QueryBranch<any>,
   type: AggregateType,
-  def: QueryDef,
-  fields: (string | string[])[],
+  fields: string[],
   option?: aggFnOptions,
 ) => {
+  const def = query.def
+  def.schema.hooks?.aggregate?.(def, new Set(fields))
+
   ensureAggregate(def)
 
   if (option?.mode) def.aggregate.option = option
 
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
-    if (Array.isArray(field)) {
-      addAggregate(type, def, field, option)
-    } else {
-      const fieldDef: PropDef =
-        type === AggregateType.COUNT
-          ? {
-              prop: 255,
-              path: [field],
-              __isPropDef: true,
-              len: 4,
-              start: 0,
-              typeIndex: UINT32,
-              separate: true,
-              validation: () => true,
-              default: 0,
-            }
-          : def.schema.props[field]
+    const fieldDef: PropDef =
+      type === AggregateType.COUNT
+        ? {
+            prop: 255,
+            path: [field],
+            __isPropDef: true,
+            len: 4,
+            start: 0,
+            typeIndex: UINT32,
+            separate: true,
+            validation: () => true,
+            default: 0,
+          }
+        : def.schema.props[field]
 
-      if (!fieldDef) {
-        aggregationFieldDoesNotExist(def, field)
-      }
-
-      if (!aggregates.get(fieldDef.prop)) {
-        aggregates.set(fieldDef.prop, [])
-        def.aggregate.size += 3
-      }
-
-      const aggregateField = aggregates.get(fieldDef.prop)
-      aggregateField.push({
-        propDef: fieldDef,
-        type,
-        resultPos: def.aggregate.totalResultsSize,
-        accumulatorPos: def.aggregate.totalAccumulatorSize,
-      })
-
-      const specificSizes = aggregateTypeMap.get(type)
-      if (specificSizes) {
-        def.aggregate.totalResultsSize += specificSizes.resultsSize
-        def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
-      } else {
-        def.aggregate.totalResultsSize += 8
-        def.aggregate.totalAccumulatorSize += 8
-      }
-      // needs to add an extra field WRITE TO
-      def.aggregate.size += 8
+    if (!fieldDef) {
+      console.log({ fields, field })
+      aggregationFieldDoesNotExist(def, field)
     }
+
+    if (!aggregates.get(fieldDef.prop)) {
+      aggregates.set(fieldDef.prop, [])
+      def.aggregate.size += 3
+    }
+
+    const aggregateField = aggregates.get(fieldDef.prop)
+    aggregateField.push({
+      propDef: fieldDef,
+      type,
+      resultPos: def.aggregate.totalResultsSize,
+      accumulatorPos: def.aggregate.totalAccumulatorSize,
+    })
+
+    const specificSizes = aggregateTypeMap.get(type)
+    if (specificSizes) {
+      def.aggregate.totalResultsSize += specificSizes.resultsSize
+      def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
+    } else {
+      def.aggregate.totalResultsSize += 8
+      def.aggregate.totalAccumulatorSize += 8
+    }
+    // needs to add an extra field WRITE TO
+    def.aggregate.size += 8
   }
 }
 

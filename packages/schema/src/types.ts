@@ -440,7 +440,7 @@ export type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>
   update?: (payload: Record<string, any>) => void | Record<string, any>
   read?: (result: Record<string, any>) => void | null | Record<string, any>
-  // search?: (query: BasedDbQuery, fields: Set<string>) => void
+  search?: (query: BasedDbQuery, fields: Set<string>) => void
   include?: (query: BasedDbQuery, fields: Set<string>) => void
   filter?: (
     query: BasedDbQuery,
@@ -448,6 +448,8 @@ export type SchemaHooks = {
     operator: Operator,
     value: any,
   ) => void
+  groupBy?: (query: BasedDbQuery, field: string) => void
+  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
 }
 
 type GenericSchemaType<isStrict = false> = {

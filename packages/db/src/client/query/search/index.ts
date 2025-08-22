@@ -8,6 +8,7 @@ import {
   searchIncorrectType,
 } from '../validation.js'
 import { ENCODER, concatUint8Arr } from '@based/utils'
+import { QueryBranch } from '../BasedDbQuery.js'
 
 export type Search =
   | string[]
@@ -42,7 +43,12 @@ export const vectorSearch = (
   }
 }
 
-export const search = (def: QueryDef, q: string, s?: Search) => {
+export const search = (
+  queryBranch: QueryBranch<any>,
+  q: string,
+  s?: Search,
+) => {
+  const def = queryBranch.def
   const bufs: Uint8Array[] = []
   let nrBlocks = 0
   let totalByteLength = 1
@@ -137,6 +143,13 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
       field: prop.prop,
       start: prop.start ?? 0, // also need lang ofc if you have start
     })
+  }
+
+  const searchHook = def.schema.hooks?.search
+  if (searchHook) {
+    def.schema.hooks.search = null
+    searchHook(queryBranch, new Set(Object.keys(s)))
+    def.schema.hooks.search = searchHook
   }
 }
 

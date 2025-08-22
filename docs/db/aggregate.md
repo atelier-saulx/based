@@ -16,7 +16,7 @@ Calculates the sum of numeric properties across nodes.
 await db.query('vote').sum('NL').get()
 
 // Multiple properties
-await db.query('vote').sum(['NL', 'AU']).get()
+await db.query('vote').sum('NL', 'AU').get()
 
 // With filtering
 await db.query('vote').filter('country', '=', 'aa').sum('NL').get()

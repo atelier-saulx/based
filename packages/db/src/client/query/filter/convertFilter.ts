@@ -1,5 +1,7 @@
+import { QueryBranch } from '../BasedDbQuery.js'
 import { QueryDef } from '../types.js'
 import { Operator } from './filter.js'
+import { FilterBranch } from './FilterBranch.js'
 import { FilterOpts, FilterAst, toFilterCtx } from './types.js'
 
 const normalizeNeedle = (s: string): string => {
@@ -11,12 +13,24 @@ const normalizeNeedle = (s: string): string => {
 }
 
 export const convertFilter = (
-  def: QueryDef,
+  query: QueryBranch<any> | FilterBranch,
   field: string,
   operator?: Operator | boolean,
   value?: any,
   opts?: FilterOpts | undefined,
 ): FilterAst => {
+  const def = query.def
+  const filterHook = def.schema.hooks?.filter
+  if (filterHook) {
+    def.schema.hooks.filter = null
+    if (typeof operator === 'boolean') {
+      filterHook(query, field, '=', operator)
+    } else {
+      filterHook(query, field, operator, value)
+    }
+    def.schema.hooks.filter = filterHook
+  }
+
   if (operator === undefined) {
     operator = '='
     value = true
