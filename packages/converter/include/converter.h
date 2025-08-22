@@ -8,7 +8,7 @@ typedef enum {
     FORMAT_CSV,
     FORMAT_PARQUET,
     FORMAT_UNKNOWN,
-} OutputFormat;
+} FileFormat;
 
 typedef struct {
     bool verbose;
@@ -21,7 +21,7 @@ typedef bool (*WriteFunc)(const char* filename, const void* data);
 typedef void (*FreeFunc)(void* data);
 
 typedef struct {
-    OutputFormat format;
+    FileFormat format;
     const char* extension;
     ReadFunc read;
     WriteFunc write;
@@ -30,6 +30,6 @@ typedef struct {
 
 bool convert_file(const char* input_file, const char* output_file, 
                  ConverterOptions* options);
-const char* format_to_string(OutputFormat format);
+const char* format_to_string(FileFormat format);
 
 #endif

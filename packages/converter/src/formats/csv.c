@@ -38,6 +38,7 @@ int parse_char (char ch){
     }
 }
 
+// https://www.microsoft.com/en-us/research/wp-content/uploads/2019/04/chunker-sigmod19.pdf
 const int8_t fsm[6][4] = {
     {3, 1, 0, 2},
     {3, 1, 0, 2},
