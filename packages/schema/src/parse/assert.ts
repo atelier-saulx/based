@@ -1,3 +1,4 @@
+import { parse, type SemVer } from '@std/semver'
 import {
   EXPECTED_ARR,
   EXPECTED_BOOL,
@@ -7,9 +8,11 @@ import {
   EXPECTED_STR,
 } from './errors.js'
 
-export const expectVersion = (obj: any) => {
-  if (typeof obj !== 'string') {
-    throw Error(EXPECTED_STR)
+export const expectVersion = (obj: any): SemVer => {
+  try {
+    return parse(obj)
+  } catch (e) {
+    throw Error('invalid semver version')
   }
 }
 

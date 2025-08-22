@@ -80,24 +80,21 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
+      const filterHook = this.def.schema.hooks?.filter
+      if (filterHook) {
+        this.def.schema.hooks.filter = null
+        if (typeof operator === 'boolean') {
+          filterHook(this, field, '=', operator)
+        } else {
+          filterHook(this, field, operator, value)
+        }
+        this.def.schema.hooks.filter = filterHook
+      }
       const f = convertFilter(this.def, field, operator, value, opts)
       if (!f) {
         // @ts-ignore
         return this
       }
-      filter(this.db, this.def, f, this.def.filter)
-    }
-    // @ts-ignore
-    return this
-  }
-
-  filterBatch(f: FilterAst) {
-    if (this.queryCommands) {
-      this.queryCommands.push({
-        method: 'filterBatch',
-        args: [f],
-      })
-    } else {
       filter(this.db, this.def, f, this.def.filter)
     }
     // @ts-ignore
@@ -489,6 +486,12 @@ export class QueryBranch<T> {
             'Invalid include statement: expected props, refs and edges (string or array) or function',
           )
         }
+      }
+      const includeHook = this.def.schema.hooks?.include
+      if (includeHook) {
+        this.def.schema.hooks.include = null
+        includeHook(this, this.def.include.stringFields)
+        this.def.schema.hooks.include = includeHook
       }
     }
     // @ts-ignore

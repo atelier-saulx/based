@@ -12,7 +12,7 @@ await test('migration', async (t) => {
   t.after(() => t.backup(db))
 
   await db.setSchema({
-    // version: '1.0.0',
+    version: '1.0.0',
     types: {
       user: {
         firstName: 'string',
@@ -70,6 +70,17 @@ await test('migration', async (t) => {
       },
       migrations: [
         {
+          version: '2',
+          migrate: {
+            user({ fullName, ...rest }) {
+              return {
+                name: fullName,
+                ...rest,
+              }
+            },
+          },
+        },
+        {
           version: '<3',
           migrate: {
             user({ fullName, ...rest }) {
@@ -85,48 +96,8 @@ await test('migration', async (t) => {
   ]
 
   for (const schema of schemas) {
-    // const before = await db.query('user').get().toObject()
     await db.setSchema(schema)
-    // deepEqual(before.map(schema.migrations[0].user), after)
   }
 
   console.log('---', await db.query('user').get().toObject())
-
-  // let i = 10
-  // while (i--) {
-  //   db.create('user', {
-  //     firstName: 'John' + i,
-  //     lastName: 'Doe' + i,
-  //     email: 'johndoe' + i + '@example.com',
-  //     age: i + 20,
-  //   })
-  // }
-
-  // await db.drain()
-
-  // const before = await db.query('user').get().toObject()
-
-  // const transformFns = {
-  //   user({ firstName, lastName, ...rest }) {
-  //     return {
-  //       name: `${firstName} ${lastName}`,
-  //       ...rest,
-  //     }
-  //   },
-  // }
-
-  // await db.setSchema(
-  //   {
-  //     types: {
-  //       user: {
-  //         name: 'string',
-  //         email: 'string',
-  //         age: 'number',
-  //       },
-  //     },
-  //   },
-  //   transformFns,
-  // )
-
-  // const after = await db.query('user').get().toObject()
 })

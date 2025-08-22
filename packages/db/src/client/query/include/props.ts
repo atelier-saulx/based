@@ -60,6 +60,7 @@ export const includeField = (def: QueryDef, field: string) => {
   } else if (field.startsWith('**.')) {
     includeFields(def, getAllRefs(def.props, field.substring(2)))
   } else {
+    // def.schema.hooks?.include?.(def.)
     def.include.stringFields.add(field)
   }
 }

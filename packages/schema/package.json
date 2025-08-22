@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@based/utils": "^1.0.0",
+    "@std/semver": "npm:@jsr/std__semver@^1.0.5",
     "picocolors": "^1.1.0"
   }
 }

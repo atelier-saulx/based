@@ -8,10 +8,16 @@ import {
   expectBoolean,
   expectFunction,
   expectObject,
-  expectString,
   expectVersion,
 } from './assert.js'
 import { deepCopy } from '@based/utils'
+import {
+  satisfies,
+  parseRange,
+  parse as parseVersion,
+  Range,
+  rangeIntersects,
+} from '@std/semver'
 
 export { getPropType }
 
@@ -98,19 +104,38 @@ export class SchemaParser {
   }
 
   parseMigrations() {
-    const { migrations } = this.schema
+    const { migrations, version } = this.schema
+    const ranges = new Map<string, Range[]>()
+
     expectArray(migrations)
     for (const item of migrations) {
       expectObject(item)
-      expectVersion(item.version)
       expectObject(item.migrate)
+      const targetRange = parseRange(item.version)
+      const currentVersion = parseVersion(version)
+      if (satisfies(currentVersion, targetRange)) {
+        throw Error('migration version can not match current version')
+      }
       if (Object.keys(item).length > 2) {
         throw new Error(
           'migrations can only have "version" and "migrate" properties',
         )
       }
-      for (const key in item.migrate) {
-        expectFunction(item.migrate[key])
+      for (const type in item.migrate) {
+        expectFunction(item.migrate[type])
+        if (ranges.has(type)) {
+          const otherRanges = ranges.get(type)
+          for (const otherRange of otherRanges) {
+            if (rangeIntersects(targetRange, otherRange)) {
+              throw Error(
+                'invalid overlapping version for migration for ' + type,
+              )
+            }
+          }
+          ranges.get(type).push(targetRange)
+        } else {
+          ranges.set(type, [targetRange])
+        }
       }
     }
   }

@@ -1,7 +1,8 @@
 import { getPropType } from './parse/utils.js'
-import { LangName } from './lang.js'
-import { Validation } from './def/validation.js'
-import { Transform } from './def/types.js'
+import type { LangName } from './lang.js'
+import type { Validation } from './def/validation.js'
+import type { Transform } from './def/types.js'
+// import type { BasedDbQuery, Operator } from '@based/db'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -426,18 +427,31 @@ export type SchemaPropOneWay<isStrict = false> =
   | NonRefSchemaProps<isStrict>
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
-export type SchemaHook = string | Function
 export type SchemaProps<isStrict = false> = Record<
   AllowedKey,
   SchemaProp<isStrict>
 > & { id?: never }
 
+// TODO: export these types in a pkg (not db => circular!)
+type BasedDbQuery = any
+type Operator = string
+
+export type SchemaHooks = {
+  create?: (payload: Record<string, any>) => void | Record<string, any>
+  update?: (payload: Record<string, any>) => void | Record<string, any>
+  read?: (result: Record<string, any>) => void | null | Record<string, any>
+  // search?: (query: BasedDbQuery, fields: Set<string>) => void
+  include?: (query: BasedDbQuery, fields: Set<string>) => void
+  filter?: (
+    query: BasedDbQuery,
+    field: string,
+    operator: Operator,
+    value: any,
+  ) => void
+}
+
 type GenericSchemaType<isStrict = false> = {
-  hooks?: {
-    create?: SchemaHook
-    update?: SchemaHook
-    delete?: SchemaHook
-  }
+  hooks?: SchemaHooks
   id?: number
   blockCapacity?: number
   insertOnly?: boolean

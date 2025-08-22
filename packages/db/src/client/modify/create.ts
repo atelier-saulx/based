@@ -41,7 +41,6 @@ const appendCreate = (
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
-
   let err = modify(ctx, res, obj, schema, CREATE, schema.tree, true, unsafe)
   if (err) {
     return err
@@ -237,6 +236,8 @@ export function create(
       `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.schemaTypesParsed).join(', ')}`,
     )
   }
+
+  obj = def.hooks?.create?.(obj) || obj
 
   let id: number
   if ('id' in obj) {

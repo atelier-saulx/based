@@ -762,20 +762,28 @@ export const resultToObject = (
   let items: AggItem | [Item] = []
   let i = 5 + offset
 
+  const readHook = q.schema.hooks?.read
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
     let item: Item = {
       id,
     }
-
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
-    items.push(item)
+    if (readHook) {
+      const res = readHook(item)
+      if (res === null) {
+        continue
+      }
+      items.push(res || item)
+    } else {
+      items.push(item)
+    }
   }
 
   if ('id' in q.target || 'alias' in q.target) {

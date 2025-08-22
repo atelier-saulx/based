@@ -7,7 +7,6 @@ import {
   ID_FIELD_DEF,
   TEXT,
   REFERENCE,
-  REFERENCES,
 } from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
