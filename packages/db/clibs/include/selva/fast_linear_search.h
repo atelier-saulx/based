@@ -8,7 +8,8 @@
 #include "selva/types.h"
 
 struct SelvaNode;
-struct SelvaNodeReference;
+struct SelvaNodeSmallReference;
+struct SelvaNodeLargeReference;
 
 SELVA_EXPORT
 ssize_t fast_linear_search_uint32(const uint32_t arr[], size_t len, uint32_t x);
@@ -20,4 +21,7 @@ SELVA_EXPORT
 ssize_t fast_linear_search_node(const struct SelvaNode *arr[], size_t len, const struct SelvaNode *x);
 
 SELVA_EXPORT
-ssize_t fast_linear_search_references(const struct SelvaNodeReference *arr, size_t len, const struct SelvaNode *x);
+ssize_t fast_linear_search_references_small(const struct SelvaNodeSmallReference *arr, size_t len, const struct SelvaNode *x);
+
+SELVA_EXPORT
+ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference *arr, size_t len, const struct SelvaNode *x);

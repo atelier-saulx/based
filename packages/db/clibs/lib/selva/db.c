@@ -412,6 +412,9 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
         const struct SelvaFieldSchema *dst_fs;
 
         type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+#if 0
+        assert(type_dst);
+#endif
         dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
         assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
         schema = dst_fs->edge_constraint._fields_schema;

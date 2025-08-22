@@ -14,7 +14,7 @@ const p = types.Prop;
 
 pub fn writeEdges(
     ctx: *ModifyCtx,
-    ref: *selva.SelvaNodeReference,
+    ref: *selva.SelvaNodeLargeReference,
     data: []u8,
 ) !void {
     var i: usize = 0;

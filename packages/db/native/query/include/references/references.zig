@@ -61,7 +61,7 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ref.?.reference.?, refField)) |r| {
+        if (db.getEdgeReferences(ref.?.largeReference.?, refField)) |r| {
             if (ref.?.edgeConstaint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
                 // Is a edge ref cant filter on an edge field!

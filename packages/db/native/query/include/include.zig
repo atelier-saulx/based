@@ -55,7 +55,8 @@ pub fn getFields(
                 size += try addIdOnly(ctx, id, score);
             }
             size += try getFields(node, ctx, id, typeEntry, edges, .{
-                .reference = edgeRef.?.reference,
+                .smallReference = edgeRef.?.smallReference,
+                .largeReference = edgeRef.?.largeReference,
                 .edgeConstaint = edgeRef.?.edgeConstaint,
                 .edgeReference = null,
             }, null, true);
@@ -133,9 +134,9 @@ pub fn getFields(
             fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint.?, field);
             edgeType = @enumFromInt(fieldSchema.*.type);
             if (prop == t.Prop.CARDINALITY) {
-                value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema);
+                value = db.getCardinalityReference(ctx.db, edgeRef.?.largeReference.?, fieldSchema);
             } else {
-                value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
+                value = db.getEdgeProp(edgeRef.?.largeReference.?, fieldSchema);
             }
         } else {
             fieldSchema = try db.getFieldSchema(typeEntry, field);
