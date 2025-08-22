@@ -17,7 +17,8 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { serialize } from '@based/schema'
+import { MigrateFns, serialize } from '@based/schema'
+import { parse, parseRange, satisfies } from '@std/semver'
 
 export type MigrateRange = { typeId: number; start: number; end: number }
 
@@ -25,13 +26,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
-type TransformFn = (
-  node: Record<string, any>,
-) => Record<string, any> | [string, Record<string, any>]
-
-export type TransformFns = Record<string, TransformFn>
-
-const parseTransform = (transform?: TransformFns) => {
+const parseTransform = (transform?: MigrateFns) => {
   const res = {}
   if (typeof transform === 'object' && transform !== null) {
     for (const type in transform) {
@@ -53,11 +48,24 @@ export const migrate = async (
   server: DbServer,
   fromSchema: DbSchema,
   toSchema: DbSchema,
-  transform?: TransformFns,
+  transform?: MigrateFns,
 ): Promise<void> => {
   const migrationId = toSchema.hash
+
   server.migrating = migrationId
   server.emit('info', `migrating schema ${migrationId}`)
+
+  if (!transform && toSchema.migrations?.length) {
+    const fromVersion = fromSchema.version || '0.0.0'
+    transform = {}
+    for (const { migrate, version } of toSchema.migrations) {
+      if (satisfies(parse(fromVersion), parseRange(version))) {
+        for (const type in migrate) {
+          transform[type] = migrate[type]
+        }
+      }
+    }
+  }
 
   let killed = false
   const abort = () => {

@@ -1,16 +1,15 @@
-import { StrictSchema } from '@based/schema'
+import { StrictSchema, MigrateFns } from '@based/schema'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
 import { displayTarget } from './client/query/display.js'
-import { TransformFns } from './server/migrate/index.js'
 import { DbSchema, SchemaChecksum } from './schema.js'
 
 export type DbClientHooks = {
   setSchema(
     schema: StrictSchema,
-    transformFns?: TransformFns,
+    transformFns?: MigrateFns,
   ): Promise<SchemaChecksum>
   flushModify(buf: Uint8Array): Promise<{
     offsets: Record<number, number>

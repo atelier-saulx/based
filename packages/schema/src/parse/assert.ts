@@ -7,9 +7,21 @@ import {
   EXPECTED_STR,
 } from './errors.js'
 
+export const expectVersion = (obj: any) => {
+  if (typeof obj !== 'string') {
+    throw Error(EXPECTED_STR)
+  }
+}
+
 export const expectObject = (obj: any, msg?: string) => {
   if (typeof obj !== 'object' || obj === null) {
     throw Error(msg || EXPECTED_OBJ)
+  }
+}
+
+export const expectArray = (obj: any) => {
+  if (!Array.isArray(obj)) {
+    throw Error(EXPECTED_ARR)
   }
 }
 

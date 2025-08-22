@@ -3,7 +3,14 @@ import { INVALID_KEY, INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
-import { expectBoolean, expectObject } from './assert.js'
+import {
+  expectArray,
+  expectBoolean,
+  expectFunction,
+  expectObject,
+  expectString,
+  expectVersion,
+} from './assert.js'
 import { deepCopy } from '@based/utils'
 
 export { getPropType }
@@ -90,6 +97,24 @@ export class SchemaParser {
     }
   }
 
+  parseMigrations() {
+    const { migrations } = this.schema
+    expectArray(migrations)
+    for (const item of migrations) {
+      expectObject(item)
+      expectVersion(item.version)
+      expectObject(item.migrate)
+      if (Object.keys(item).length > 2) {
+        throw new Error(
+          'migrations can only have "version" and "migrate" properties',
+        )
+      }
+      for (const key in item.migrate) {
+        expectFunction(item.migrate[key])
+      }
+    }
+  }
+
   parse(): StrictSchema {
     expectObject(this.schema)
     // always do types first because it removes props shorthand
@@ -97,10 +122,14 @@ export class SchemaParser {
       this.parseTypes()
     }
     for (const key in this.schema) {
-      if (key === 'props') {
+      if (key === 'version') {
+        expectVersion(this.schema.version)
+      } else if (key === 'props') {
         this.parseProps(this.schema.props)
       } else if (key === 'locales') {
         this.parseLocales()
+      } else if (key === 'migrations') {
+        this.parseMigrations()
       } else if (key !== 'types') {
         throw Error(UNKNOWN_PROP)
       }
