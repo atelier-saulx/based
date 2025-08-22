@@ -47,6 +47,57 @@ const int8_t fsm[6][4] = {
     {5, 5, 5, 5}
 };
 
+char* append_char(char* buffer, char ch, size_t* size, size_t* capacity) {
+    if (*size + 1 >= *capacity) {
+        *capacity *= 2;
+        buffer = realloc(buffer, *capacity);
+        if (!buffer) {
+            perror("Failed to reallocate buffer");
+            return NULL;
+        }
+    }
+    buffer[(*size)++] = ch;
+    return buffer;
+}
+
+void add_field_to_record(CSVData* csv_data, char* field, int* current_col, bool is_header) {
+    if (is_header) {
+        csv_data->headers = realloc(csv_data->headers, (csv_data->col_count + 1) * sizeof(char*));
+        if (!csv_data->headers) {
+            perror("Failed to reallocate headers");
+            exit(EXIT_FAILURE);
+        }
+        csv_data->headers[csv_data->col_count] = field;
+        csv_data->col_count++;
+    } else {
+        if (*current_col >= csv_data->col_count) {
+            csv_data->data[csv_data->row_count - 1] = realloc(csv_data->data[csv_data->row_count - 1], (*current_col + 1) * sizeof(char*));
+        }
+        csv_data->data[csv_data->row_count - 1][*current_col] = field;
+        (*current_col)++;
+    }
+}
+
+void add_new_record(CSVData* csv_data, int* current_col) {
+    if (csv_data->row_count > 0 && *current_col < csv_data->col_count) {
+        for (int i = *current_col; i < csv_data->col_count; i++) {
+            csv_data->data[csv_data->row_count - 1][i] = NULL;
+        }
+    }
+    csv_data->data = realloc(csv_data->data, (csv_data->row_count + 1) * sizeof(char**));
+    if (!csv_data->data) {
+        perror("Failed to reallocate data rows");
+        exit(EXIT_FAILURE);
+    }
+    csv_data->data[csv_data->row_count] = malloc(csv_data->col_count * sizeof(char*));
+    if (!csv_data->data[csv_data->row_count]) {
+        perror("Failed to allocate data row");
+        exit(EXIT_FAILURE);
+    }
+    csv_data->row_count++;
+    *current_col = 0;
+}
+
 bool csv_read(const char* filename, void** data) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -55,31 +106,66 @@ bool csv_read(const char* filename, void** data) {
     }
 
     CSVData* csv_data = malloc(sizeof(CSVData));
+    if (!csv_data) {
+        perror("Failed to allocate CSVData");
+        fclose(file);
+        return false;
+    }
+    memset(csv_data, 0, sizeof(CSVData));
 
-    int current_state = 0;
+    int current_state = RECORD_START;
+    int current_char_type;
     char ch;
-    
+
+    size_t current_field_capacity = 16;
+    size_t current_field_size = 0;
+    char* current_field_buffer = malloc(current_field_capacity);
+    if (!current_field_buffer) {
+        perror("Failed to allocate field buffer");
+        fclose(file);
+        free(csv_data);
+        return false;
+    }
+
+    bool is_header = true;
+    int current_col = 0;
+
     while ((ch = fgetc(file)) != EOF) {
-        current_state = fsm[current_state][parse_char(ch)];
-        printf(" %c = %c", states[current_state], ch);
+        if (current_state == RECORD_START) {
+            current_field_buffer = append_char(current_field_buffer, '\0', &current_field_size, &current_field_capacity);
+            add_field_to_record(csv_data, strdup(current_field_buffer), &current_col, is_header);
+            current_field_size = 0;
+            is_header = false;
+            add_new_record(csv_data, &current_col);
+        }
+
+        current_char_type = parse_char(ch);
+        int next_state = fsm[current_state][current_char_type];
+
+        if (next_state != RECORD_START && next_state != ERROR){
+            current_field_buffer = append_char(current_field_buffer, ch, &current_field_size, &current_field_capacity);
+        }
+        if (next_state == ERROR) {
+            fprintf(stderr, "Parsing error at char '%c'.\n", ch);
+            fclose(file);
+            free(current_field_buffer);
+            *data = NULL;
+            return false;
+        };
+        
+        current_state = next_state;
     }
 
-    csv_data->row_count = 3;
-    csv_data->col_count = 2;
-    csv_data->headers = malloc(2 * sizeof(char*));
-    csv_data->headers[0] = strdup("\"Column1\"");
-    csv_data->headers[1] = strdup("\"Column2\"");
+    if (current_state != ERROR) {
+        current_field_buffer = append_char(current_field_buffer, '\0', &current_field_size, &current_field_capacity);
+        add_field_to_record(csv_data, strdup(current_field_buffer), &current_col, is_header);
+        is_header = false;
+    }
     
-    csv_data->data = malloc(3 * sizeof(char**));
-    for (int i = 0; i < 3; i++) {
-        csv_data->data[i] = malloc(2 * sizeof(char*));
-        csv_data->data[i][0] = strdup("Data1");
-        csv_data->data[i][1] = strdup("Data2");
-    }
-
-    *data = csv_data;
-
+    free(current_field_buffer);
     fclose(file);
+    *data = csv_data;
+    
     return true;
 }
 
