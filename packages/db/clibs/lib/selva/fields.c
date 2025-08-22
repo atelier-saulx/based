@@ -230,6 +230,14 @@ static void print_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs
 }
 #endif
 
+static field_t refs_get_nr_fields(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+{
+    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
+    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields - efc_fields_schema->nr_virtual_fields : 0;
+
+    return nr_fields;
+}
+
 static void remove_refs_offset(struct SelvaNodeReferences *refs)
 {
     if (refs->offset > 0) {
@@ -1568,8 +1576,7 @@ int selva_fields_references_swap(
  */
 void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields - efc_fields_schema->nr_virtual_fields : 0;
+    const field_t nr_fields = refs_get_nr_fields(db, efc);
 
     if (nr_fields > 0 && !ref->meta) {
         reference_meta_create(ref, nr_fields);
