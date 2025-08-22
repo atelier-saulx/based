@@ -29,8 +29,6 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
   }
 
   if (def.include.main.len > 0) {
-    // if (def.target.)
-
     const len =
       def.type === QueryDefType.Edge
         ? def.target.ref.edgeMainLen
@@ -38,13 +36,6 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
 
     if (def.include.main.len === len) {
       // GET ALL MAIN FIELDS
-      let m = 0
-      for (const key in def.include.main.include) {
-        const v = def.include.main.include[key]
-        const len = v[1].len
-        v[0] = m
-        m += len
-      }
       mainBuffer = EMPTY_BUFFER
     } else {
       // GET SOME MAIN FIELDS
@@ -102,37 +93,38 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
 
   const propSize = def.include.props.size ?? 0
 
+  let offset = 0
   if (mainBuffer) {
-    len = mainBuffer.byteLength + 5 + propSize * 3
-    includeBuffer = new Uint8Array(len)
-    includeBuffer[0] = includeOp.DEFAULT
-    includeBuffer[1] = 0
-    includeBuffer[2] = MICRO_BUFFER // add this in types
-    includeBuffer[3] = mainBuffer.byteLength
-    includeBuffer[4] = mainBuffer.byteLength >>> 8
-    const offset = 5 + mainBuffer.byteLength
-    includeBuffer.set(mainBuffer, 5)
-    if (propSize) {
-      let i = 0
-      for (const [prop, propDef] of def.include.props.entries()) {
-        includeBuffer[i + offset] = includeOp.DEFAULT
-        includeBuffer[i + offset + 1] = prop
-        includeBuffer[i + offset + 2] = propDef.def.typeIndex
-        i += 2
-      }
+    if (mainBuffer.byteLength !== 0) {
+      len = mainBuffer.byteLength + 5 + propSize * 3
+      includeBuffer = new Uint8Array(len)
+      includeBuffer[0] = includeOp.PARTIAL
+      includeBuffer[1] = 0
+      includeBuffer[2] = MICRO_BUFFER // add this in types
+      includeBuffer[3] = mainBuffer.byteLength
+      includeBuffer[4] = mainBuffer.byteLength >>> 8
+      offset = 5 + mainBuffer.byteLength
+      includeBuffer.set(mainBuffer, 5)
+    } else {
+      len = (propSize + 1) * 3
+      includeBuffer = new Uint8Array(len)
+      includeBuffer[0] = includeOp.DEFAULT
+      includeBuffer[1] = 0
+      includeBuffer[2] = MICRO_BUFFER
+      offset = 3
     }
   } else if (propSize) {
-    const buf = new Uint8Array(propSize * 3)
+    includeBuffer = new Uint8Array(propSize * 3)
+  }
+
+  if (propSize) {
     let i = 0
     for (const [prop, propDef] of def.include.props.entries()) {
-      // const meta = propDef.opts?.meta
-      buf[i] = includeOp.DEFAULT
-      buf[i + 1] = prop
-      buf[i + 2] = propDef.def.typeIndex
-      i += 3
+      includeBuffer[i + offset] = includeOp.DEFAULT
+      includeBuffer[i + offset + 1] = prop
+      includeBuffer[i + offset + 2] = propDef.def.typeIndex
+      i += 2
     }
-
-    includeBuffer = buf
   }
 
   if (includeBuffer) {

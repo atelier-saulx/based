@@ -38,7 +38,7 @@ pub inline fn get(
         result = .{
             .type = t.ResultType.edge,
             .id = 0,
-            .score = null, // rly want to get rid of this with a comptime result (extra 4 bytes for no reason)
+            .score = null,
             .field = field,
             .value = value,
         };
@@ -51,7 +51,7 @@ pub inline fn get(
         result = .{
             .type = t.ResultType.none,
             .id = 0,
-            .score = null, // rly want to get rid of this with a comptime result (extra 4 bytes for no reason)
+            .score = null,
             .field = field,
             .value = value,
         };
@@ -97,26 +97,26 @@ pub inline fn selvaString(
     return valueLen + 5;
 }
 
-pub inline fn microBuffer(
+pub inline fn partial(
     ctx: *QueryCtx,
     result: *results.Result,
     includeMain: []u8,
 ) !usize {
-    const main = result.value;
-    const mainSelectiveSize = utils.read(u16, includeMain, 0);
-    const mainSelectiveVal = try ctx.allocator.alloc(u8, mainSelectiveSize);
+    const original = result.*.value;
+    const size = utils.read(u16, includeMain, 0);
+    const value = try ctx.allocator.alloc(u8, size);
     var mainPos: usize = 2;
     var j: usize = 0;
     while (mainPos < includeMain.len) {
         const mainOp = includeMain[mainPos..];
         const start = utils.read(u16, mainOp, 0);
         const len = utils.read(u16, mainOp, 2);
-        utils.copy(mainSelectiveVal[j .. j + len], main[start .. start + len]);
+        utils.copy(value[j .. j + len], original[start .. start + len]);
         j += len;
         mainPos += 4;
     }
-    result.*.value = mainSelectiveVal;
-    return mainSelectiveSize + 1;
+    result.*.value = value;
+    return size + 1;
 }
 
 pub inline fn textSpecific(

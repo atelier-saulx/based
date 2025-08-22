@@ -188,6 +188,7 @@ pub const IncludeOp = enum(u8) {
     references = 4,
     reference = 5,
     meta = 6,
+    partial = 7,
 };
 
 pub const ReadRefOp = enum(u8) {

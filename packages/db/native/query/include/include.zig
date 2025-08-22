@@ -83,9 +83,20 @@ pub fn getFields(
             t.IncludeOp.meta => {
                 // handle here
             },
-            // t.IncludeOp.partial => {
-
-            // },
+            t.IncludeOp.partial => {
+                var result: ?*results.Result = null;
+                const field: u8 = include[i];
+                const prop: t.Prop = @enumFromInt(include[i + 1]);
+                i += 2;
+                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
+                const includeSize = read(u16, include, i);
+                i += 2 + includeSize;
+                if (result) |r| {
+                    size += try f.partial(ctx, r, include[i - includeSize .. i]);
+                    if (isEdge) size += 1;
+                    size += try f.add(ctx, id, score, idIsSet, r);
+                }
+            },
             t.IncludeOp.default => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
@@ -99,32 +110,13 @@ pub fn getFields(
                             if (isEdge) size += 1;
                             size += try f.add(ctx, id, score, idIsSet, r);
                         },
-                        t.Prop.MICRO_BUFFER => {
-                            const includeSize = read(u16, include, i);
-                            i += 2 + includeSize;
-                            if (includeSize != 0) {
-                                size += try f.microBuffer(ctx, r, include[i - includeSize .. i]);
-                            } else {
-                                size += try f.default(r);
-                            }
-                            if (isEdge) size += 1;
-                            size += try f.add(ctx, id, score, idIsSet, r);
-                        },
                         t.Prop.TEXT => {
                             const code: t.LangCode = @enumFromInt(include[i]);
                             const fallbackSize = include[i + 1];
                             i += 2;
                             if (fallbackSize > 0) {
-                                size += try f.textFallback(
-                                    isEdge,
-                                    ctx,
-                                    id,
-                                    score,
-                                    r,
-                                    code,
-                                    idIsSet,
-                                    include[i .. i + fallbackSize],
-                                );
+                                const fb = include[i .. i + fallbackSize];
+                                size += try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb);
                                 i += fallbackSize;
                             } else if (code == t.LangCode.NONE) {
                                 size += try f.textAll(isEdge, ctx, id, score, r, idIsSet);
