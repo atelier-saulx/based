@@ -11,12 +11,15 @@ await test('meta for selva string', async (t) => {
   t.after(() => t.backup(db))
 
   await db.setSchema({
+    // add [en,it]
+    locales: { en: {}, it: { fallback: 'en' } },
     types: {
       item: {
         props: {
           x: 'uint32',
           // email: { type: 'string', maxBytes: 10 },
           name: 'string',
+          flap: 'text',
           // derp: {
           //   props: {
           //     x: 'string',
@@ -36,6 +39,7 @@ await test('meta for selva string', async (t) => {
 
   const id1 = await db.create('item', {
     name: 'a',
+    flap: { en: 'a', it: 'b' },
     // email: 'a@b.com',
     x: 100,
   })
@@ -44,7 +48,7 @@ await test('meta for selva string', async (t) => {
 
   // await (await db.query('item').include('name', 'x').get()).debug()
 
-  await db.query('item').include('name', 'x').get().inspect()
+  await db.query('item').include('name', 'flap', 'x').get().inspect()
 
   // console.log(
   //   'xx',

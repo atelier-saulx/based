@@ -10,7 +10,6 @@ const t = @import("../../types.zig");
 const f = @import("./field.zig");
 const results = @import("../results.zig");
 
-// remove!
 const std = @import("std");
 
 pub fn getFields(

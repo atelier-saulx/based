@@ -66,23 +66,25 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     ] of def.include.langTextFields.entries()) {
       def.include.propsRead[prop] = 0
       if (codes.has(0)) {
-        const b = new Uint8Array(4)
-        b[0] = prop
-        b[1] = propDef.typeIndex
-        b[2] = 0
+        const b = new Uint8Array(5)
+        b[0] = includeOp.DEFAULT
+        b[1] = prop
+        b[2] = propDef.typeIndex
         b[3] = 0
+        b[4] = 0
         result.push(b)
       } else {
         for (const code of codes) {
           const fallBackSize = fallBacks.length
-          const b = new Uint8Array(4 + fallBackSize)
-          b[0] = prop
-          b[1] = propDef.typeIndex
-          b[2] = code
-          b[3] = fallBackSize
+          const b = new Uint8Array(5 + fallBackSize)
+          b[0] = includeOp.DEFAULT
+          b[1] = prop
+          b[2] = propDef.typeIndex
+          b[3] = code
+          b[4] = fallBackSize
           let i = 0
           for (const fallback of fallBacks) {
-            b[i + 4] = fallback
+            b[i + 5] = fallback
             i++
           }
           result.push(b)
