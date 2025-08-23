@@ -1,3 +1,3 @@
 Examples
 
-- [Migrating from SQL](/sql)
+- [Migrating from SQL](/db/sql)
