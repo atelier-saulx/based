@@ -117,32 +117,6 @@ usStates : stateRegion __string__
 Queries
 -------
 
-### Inner Join
-
-```sql
-SELECT orders.OrderID, customers.company_name, orders.order_date
-FROM orders
-INNER JOIN customers ON orders.customer_id=customers.customer_id;
-```
-
-```ts
-await db.query('orders').include('customer.company_name', 'order_date').range(0, 10).get()
-```
-
-### Left Join
-
-```sql
-SELECT customers.company_name, orders.order_id
-FROM customers
-LEFT JOIN orders
-ON customers.customer_id=orders.customer_id
-ORDER BY customers.company_name;
-```
-
-```ts
-await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').get()
-```
-
 ### Select
 
 ```sql
@@ -469,6 +443,32 @@ FROM customers;
 
 ```ts
 (await db.query('customers').include('companyName').get().toObject()).map((r) => ({ id: r.id, customer: r.companyName }))
+```
+
+### Inner Join
+
+```sql
+SELECT orders.OrderID, customers.company_name, orders.order_date
+FROM orders
+INNER JOIN customers ON orders.customer_id=customers.customer_id;
+```
+
+```ts
+await db.query('orders').include('customer.company_name', 'order_date').range(0, 10).get()
+```
+
+### Left Join
+
+```sql
+SELECT customers.company_name, orders.order_id
+FROM customers
+LEFT JOIN orders
+ON customers.customer_id=orders.customer_id
+ORDER BY customers.company_name;
+```
+
+```ts
+await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').get()
 ```
 
 ### Right Join
