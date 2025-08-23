@@ -55,7 +55,7 @@ await test('subscription', async (t) => {
     })
     setCnt++
   }, 200)
-
+  //@ts-ignore
   t.after((t) => {
     clearInterval(interval)
   })
