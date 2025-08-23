@@ -281,6 +281,8 @@ FROM products;
 await db.query('products').min('unitPrice').get()
 ```
 
+`MIN` with `GROUP BY`:
+
 ```sql
 SELECT MIN(unit_price) AS SmallestPrice, category_id
 FROM products
@@ -309,14 +311,20 @@ SELECT COUNT(*)
 FROM products;
 ```
 
+```js
+await db.query('products').count().get()
+```
+
 ```sql
 SELECT COUNT(DISTINCT unit_price)
 FROM products;
 ```
 
 ```js
-await db.query('products').count().get()
+await db.query('products').count('unitPrice').get()
 ```
+
+`COUNT` with `GROUP BY`:
 
 ```sql
 SELECT COUNT(*) AS [number of products], category_id
@@ -339,6 +347,8 @@ FROM order_details;
 await db.query('orderDetails').sum('quantity').get()
 ```
 
+`SUM` with `WHERE`:
+
 ```sql
 SELECT SUM(quantity)
 FROM order_details
@@ -348,6 +358,8 @@ WHERE product_id = 11;
 ```js
 await db.query('orderDetails').sum('quantity').filter('product.id', '=', 11).get()
 ```
+
+`SUM` with `GROUP BY`:
 
 ```sql
 SELECT order_id, SUM(quantity) AS [Total Quantity]
@@ -370,6 +382,8 @@ FROM products;
 await db.query('products').avg('unitPrice').get()
 ```
 
+`AVG` with `WHERE`:
+
 ```sql
 SELECT AVG(unit_price)
 FROM products
@@ -379,6 +393,8 @@ WHERE category_id = 1;
 ```js
 await db.query('products').avg('unitPrice').filter('category.id', '=', 1).get()
 ```
+
+`AVG` with `GROUP BY`:
 
 ```sql
 SELECT AVG(unit_price) AS AveragePrice, category_id
