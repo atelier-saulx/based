@@ -24,8 +24,8 @@ RB_HEAD(SelvaAliasesByDest, SelvaAlias);
  */
 struct SelvaNode {
     node_id_t node_id;
+    uint16_t _reserved; /*!< Reserved for id extension. */
     node_type_t type;
-    uint16_t _spare;
     RB_ENTRY(SelvaNode) _index_entry;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
