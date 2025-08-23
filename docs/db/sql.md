@@ -459,7 +459,7 @@ await db.query('products')
 
 A sample from the result:
 
-``json
+```json
 {
   "1": {
     "unitPrice": 37.979166666666664
