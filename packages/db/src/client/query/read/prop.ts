@@ -85,7 +85,6 @@ export const readProp = (
     addProp(q, prop, readString(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === STRING) {
-    console.log('???', i)
     const size = readUint32(result, i)
     addProp(q, prop, readString(prop, result, i + 4, size), item)
     i += size + 4

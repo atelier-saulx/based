@@ -30,7 +30,9 @@ await test('meta for selva string', async (t) => {
             items: {
               ref: 'item',
               prop: 'items',
-              $edgeName: 'string',
+              $name: 'string',
+              $x: 'number',
+              $email: 'string',
             },
           },
         },
@@ -53,14 +55,19 @@ await test('meta for selva string', async (t) => {
     items: [
       {
         id: id1,
-        $edgeName: 'DERP!',
+        $name: 'DERP!',
+        $x: 10,
+        $email: 'x@x.com',
       },
     ],
   })
 
   console.log('derp')
 
-  const q = await db.query('item').include('items.$edgeName').get()
+  const q = await db
+    .query('item')
+    .include('items.$name', 'items.$x', 'items.$email')
+    .get()
 
   q.debug()
   q.inspect(10, true)
