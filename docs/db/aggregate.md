@@ -159,7 +159,7 @@ await db.query('vote').sum('NL', 'AU').groupBy('country').get()
 
 Grouping by numeric values is also allowed. Example:
 
-```js
+```ts
 const m1 = await db.create('movie', {
   name: 'Kill Bill',
   year: 2003,
@@ -599,7 +599,7 @@ await db.query('products').sum('sales').avg('price').groupBy('category').get()
 
 ### Group by enum types
 
-```js
+```ts
 const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
 await db.setSchema({
   types: {

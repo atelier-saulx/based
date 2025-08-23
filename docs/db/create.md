@@ -15,7 +15,7 @@ Defines or updates the graph schema.
 
 **Schema Example:**
 
-```js
+```ts
 {
   types: {
     user: {
