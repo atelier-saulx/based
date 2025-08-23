@@ -1,9 +1,9 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
-import createNorthwind from './shared/northwindDb.js'
+import { BasedDb } from '../../src/index.js'
+import { mermaid } from '@based/schema-diagram'
+import test from '../shared/test.js'
+import createNorthwind from '../shared/northwindDb.js'
 
-await test.skip('northwind', async (t) => {
+await test('northwind', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -121,6 +121,37 @@ await test.skip('northwind', async (t) => {
   // ordered. Only show records for products for which the quantity ordered is fewer than 200.
   // The report should return the following 5 rows.
 
+  // SELECT * FROM Customers
+  // WHERE Country='Mexico';
+  console.log('where')
+  await db.query('customers').filter('country', '=', 'Mexico').get().inspect()
+
+  // SELECT * FROM products
+  // ORDER BY price;
+  console.log('order by')
+  await db.query('products').sort('unitPrice', 'desc').get().inspect()
+
+  // SELECT * FROM products
+  // ORDER BY price;
+  console.log('limit')
+  console.dir(await db.query('products').sort('unitPrice', 'desc').range(0, 3).get().toObject(), { depth: 10 })
+
+  // SELECT * FROM customers
+  // WHERE country IN ('Germany', 'France', 'UK');
+  console.log('in')
+  await db.query('customers').filter('country', '=', ['Germany', 'France', 'UK']).get().inspect()
+
+  // SELECT * FROM products
+  // WHERE unitPrice BETWEEN 10 AND 20
+  // ORDER BY price;
+  console.log('between')
+  await db.query('products').filter('unitPrice', '..', [10, 20]).sort('unitPrice', 'desc').get().inspect()
+
+  // SELECT CustomerID AS ID, CompanyName AS Customer
+  // FROM customers;
+  console.log('sql aliases')
+  console.log((await db.query('customers').include('companyName').get().toObject()).map((r) => ({ id: r.id, customer: r.companyName })))
+
   // SELECT Orders.OrderID, Customers.CompanyName, Orders.OrderDate
   // FROM Orders
   // INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
@@ -136,11 +167,11 @@ await test.skip('northwind', async (t) => {
   //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
   console.dir(await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').range(0, 5).get().toObject(), { depth: 10 })
 
-  // Left join TODO
+  // Right join TODO
 
   // Full join TODO
 
-  // Self join
+  // Self join TODO
   // SELECT A.CustomerName AS CustomerName1, B.CustomerName AS CustomerName2, A.City
   //   FROM Customers A, Customers B
   //   WHERE A.CustomerID <> B.CustomerID
@@ -161,14 +192,124 @@ await test.skip('northwind', async (t) => {
 
   // union all
   // SELECT City, Country FROM Customers
-  //   WHERE Country='Germany'
-  //   UNION ALL
-  //   SELECT City, Country FROM Suppliers
-  //   WHERE Country='Germany'
-  //   ORDER BY City;
+  // WHERE Country='Germany'
+  // UNION ALL
+  // SELECT City, Country FROM Suppliers
+  // WHERE Country='Germany'
+  // ORDER BY City;
   console.log('union all')
   const unionAllA = await db.query('customers').include('city', 'country').range(0, 3).get().toObject()
   const unionAllB = await db.query('suppliers').include('city', 'country').range(0, 3).get().toObject()
-  const unionAll = [ ...unionA.map(({ city, country }) => ({ city, country })), ...unionB.map(({ city, country }) => ({ city, country })) ]
+  const unionAll = [ ...unionA.map(({ city, country }) => ({ city, country })), ...unionB.map(({ city, country }) => ({ city, country })) ].sort((a, b) => a.city.localeCompare(b.city))
   console.log(unionAll)
+
+  // @ts-ignore
+  console.log(mermaid(db.client.schema));
+})
+
+await test('northwind insert and update', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwind(db)
+
+  // INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
+  // VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
+  const res = db.create('customers', {
+    companyName: 'Cardinal',
+    contactName: 'Tom B. Erichsen',
+    address: 'Skagen 21',
+    city: 'Stavanger',
+    postalCode: '4006',
+    country: 'Norway',
+  })
+  console.log('created')
+  await db.query('customers').include('*').filter('companyName', '=', 'Cardinal').get().inspect()
+
+  // UPDATE customers
+  // SET contact_name = 'Haakon Christensen'
+  // WHERE CustomerID = 1;
+  db.update('customers', res, {
+    contactName: 'Haakon Christensen',
+  })
+  console.log('updated')
+  await db.query('customers').include('*').filter('companyName', '=', 'Cardinal').get().inspect()
+
+  // DELETE FROM Customers WHERE CustomerName='Cardinal';
+  db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
+  console.log('deleted')
+  await db.query('customers').include('*').filter('companyName', '=', 'Cardinal').get().inspect()
+})
+
+await test('aggregates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwind(db)
+
+  // SELECT MIN(unit_price)
+  // FROM products;
+  console.log('min')
+  await db.query('products').min('unitPrice').get().inspect()
+
+  // SELECT MIN(unit_price) AS SmallestPrice, category_id
+  // FROM products
+  // GROUP BY category_id;
+  console.log('min group by')
+  await db.query('products').min('unitPrice').groupBy('category').get().inspect()
+
+  // SELECT MAX(unit_price)
+  // FROM products;
+  console.log('max')
+  await db.query('products').max('unitPrice').get().inspect()
+
+  // SELECT COUNT(*)
+  // FROM products;
+  console.log('count')
+  await db.query('products').count().get().inspect()
+
+  // SELECT COUNT(*) AS [number of products], category_id
+  // FROM products
+  // GROUP BY category_id;
+  console.log('count group by')
+  await db.query('products').count().groupBy('category').get().inspect()
+
+  // SELECT SUM(quantity)
+  // FROM order_details;
+  console.log('sum')
+  await db.query('orderDetails').sum('quantity').get().inspect()
+
+  // SELECT SUM(quantity)
+  // FROM order_details
+  // WHERE product_id = 11;
+  console.log('sum where')
+  await db.query('orderDetails').sum('quantity').filter('product.id', '=', 11).get().inspect()
+
+
+  // SELECT order_id, SUM(quantity) AS [Total Quantity]
+  // FROM order_details
+  // GROUP BY order_id;
+  console.log('sum group by')
+  await db.query('orderDetails').sum('quantity').groupBy('order').get().inspect()
+
+  // SELECT AVG(unit_price)
+  // FROM products;
+  console.log('avg')
+  await db.query('products').avg('unitPrice').get().inspect()
+
+  // SELECT AVG(unit_price)
+  // FROM products
+  // WHERE category_id = 1;
+  console.log('avg where')
+  await db.query('products').avg('unitPrice').filter('category.id', '=', 1).get().inspect()
+
+  // SELECT AVG(unit_price) AS AveragePrice, category_id
+  // FROM products
+  // GROUP BY category_id;
+  console.log('avg group by')
+  await db.query('products').avg('unitPrice').groupBy('category').get().inspect()
 })
