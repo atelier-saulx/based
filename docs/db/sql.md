@@ -108,3 +108,71 @@ usStates : stateName __string__
 usStates : stateAbbr __string__
 usStates : stateRegion __string__
 ```
+
+Queries
+-------
+
+### Inner Join
+
+```
+SELECT Orders.OrderID, Customers.CompanyName, Orders.OrderDate
+FROM Orders
+INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
+```
+
+```js
+await db.query('orders').include('customer.companyName', 'orderDate').range(0, 10).get()
+```
+
+### Left Join
+
+```
+SELECT Customers.CompanyName, Orders.OrderID
+FROM Customers
+LEFT JOIN Orders
+ON Customers.CustomerID=Orders.CustomerID
+ORDER BY Customers.CompanyName;
+```
+
+```js
+await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').get()
+```
+
+### Right Join
+### Full Join
+### Self Join
+### Union
+
+```
+Union
+SELECT 'Customer' AS Type, ContactName, City, Country
+FROM Customers
+UNION
+SELECT 'Supplier', ContactName, City, Country
+FROM Suppliers
+```
+
+```js
+const unionA = await db.query('customers').include('contactName', 'city', 'country').get().toObject()
+const unionB = await db.query('suppliers').include('contactName', 'city', 'country').get().toObject()
+const union = [ ...unionA.map((r) => ({ type: 'customer', ...r })), ...unionB.map((r) => ({ type: 'supplier', ...r })) ]
+```
+
+### Union All
+
+```
+union all
+SELECT City, Country FROM Customers
+  WHERE Country='Germany'
+  UNION ALL
+  SELECT City, Country FROM Suppliers
+  WHERE Country='Germany'
+  ORDER BY City;
+```
+
+```js
+console.log('union all')
+const unionAllA = await db.query('customers').include('city', 'country').get().toObject()
+const unionAllB = await db.query('suppliers').include('city', 'country').get().toObject()
+const unionAll = [ ...unionA.map(({ city, country }) => ({ city, country })), ...unionB.map(({ city, country }) => ({ city, country })) ]
+```
