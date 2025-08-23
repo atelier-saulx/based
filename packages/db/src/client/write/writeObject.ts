@@ -1,13 +1,13 @@
 import { SchemaTypeDef, isPropDef } from '@based/schema/def'
 import { Ctx } from './Ctx.js'
 import { writeSeperate } from './writeSeperate.js'
-import { writeMain } from './writeMain.js'
+import { writeMainValue } from './writeMain.js'
 import { writeIncrement } from './writeIncrement.js'
 
 export const writeObject = (
   ctx: Ctx,
-  obj: Record<string, any>,
   tree: SchemaTypeDef['tree'],
+  obj: Record<string, any>,
 ) => {
   for (const key in obj) {
     const val = obj[key]
@@ -22,7 +22,7 @@ export const writeObject = (
       throw [tree, key]
     }
     if (!isPropDef(def)) {
-      writeObject(ctx, obj[key], def)
+      writeObject(ctx, def, val)
       continue
     }
     if (def.separate) {
@@ -30,7 +30,7 @@ export const writeObject = (
       continue
     }
     if (ctx.overwrite) {
-      writeMain(ctx, def, val)
+      writeMainValue(ctx, def, val)
       continue
     }
     if (typeof val === 'object' && val !== null) {

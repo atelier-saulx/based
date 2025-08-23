@@ -4,7 +4,11 @@ import { SIZE, INCREMENT, DECREMENT } from '../modify/types.js'
 import { Ctx } from './Ctx.js'
 import { writeFixed } from './writeFixed.js'
 import { resize } from './resize.js'
-import { writeMainProp, writeNode, writeType } from './writeCursor.js'
+import {
+  writeMainCursor,
+  writeNodeCursor,
+  writeTypeCursor,
+} from './writeCursor.js'
 
 export const writeIncrement = (ctx: Ctx, def: PropDef, val) => {
   if (typeof val.increment !== 'number') {
@@ -14,9 +18,9 @@ export const writeIncrement = (ctx: Ctx, def: PropDef, val) => {
     return
   }
   resize(ctx, ctx.index + SIZE.DEFAULT_CURSOR)
-  writeType(ctx)
-  writeMainProp(ctx)
-  writeNode(ctx)
+  writeTypeCursor(ctx)
+  writeMainCursor(ctx)
+  writeNodeCursor(ctx)
   let increment: number, operation: number
   if (val.increment > 0) {
     increment = val.increment

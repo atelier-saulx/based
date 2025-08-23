@@ -9,7 +9,7 @@ import {
 } from '../modify/types.js'
 import { Ctx } from './Ctx.js'
 
-export const writeType = (ctx: Ctx) => {
+export const writeTypeCursor = (ctx: Ctx) => {
   if (ctx.schema.id !== ctx.current.schema) {
     ctx.array[ctx.index] = SWITCH_TYPE // switch node type
     ctx.array.set(ctx.schema.idUint8, ctx.index + 1)
@@ -31,7 +31,7 @@ export const writeProp = (ctx: Ctx, def: PropDef) => {
   }
 }
 
-export const writeMainProp = (ctx: Ctx) => {
+export const writeMainCursor = (ctx: Ctx) => {
   if (ctx.current.prop !== 0) {
     ctx.array[ctx.index] = SWITCH_FIELD
     ctx.array[ctx.index + 1] = 0
@@ -41,7 +41,7 @@ export const writeMainProp = (ctx: Ctx) => {
   }
 }
 
-export const writeNode = (ctx: Ctx) => {
+export const writeNodeCursor = (ctx: Ctx) => {
   if (ctx.id !== ctx.current.id) {
     ctx.array[ctx.index] =
       ctx.operation === CREATE ? SWITCH_ID_CREATE : SWITCH_ID_UPDATE // swtch id
@@ -50,10 +50,4 @@ export const writeNode = (ctx: Ctx) => {
     ctx.current.id = ctx.id
     ctx.current.main = null
   }
-}
-
-export const writeCursor = (ctx: Ctx, def: PropDef) => {
-  writeType(ctx)
-  writeProp(ctx, def)
-  writeNode(ctx)
 }
