@@ -21,11 +21,11 @@ const utils = @import("../../../utils.zig");
 // | Offset  | Field     | Size (bytes)| Description                          |
 // |---------|-----------|-------------|--------------------------------------|
 // | 0       | op        | 1           | Operation identifier (253)           |
-// | 1       | field     | 1           | Field identifier                     |
+// | 1       | prop      | 1           | Prop identifier                      |
 // | 2       | refSize   | 4           | Reference size (u32)                 |
 // | 6       | totalRefs | 4           | Total number of references (u32)     |
 
-pub inline fn getRefsFields(
+pub fn getRefsFields(
     ctx: *QueryCtx,
     include: []u8,
     node: db.Node,
@@ -48,7 +48,7 @@ pub inline fn getRefsFields(
 
     ctx.results.append(.{
         .id = 0,
-        .field = refField,
+        .prop = refField,
         .value = &.{},
         .score = null,
         .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
@@ -66,7 +66,6 @@ pub inline fn getRefsFields(
                 // Is a edge ref cant filter on an edge field!
                 return 11;
             }
-
             const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;

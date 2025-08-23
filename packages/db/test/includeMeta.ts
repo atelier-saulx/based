@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, resultToObject } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
@@ -20,18 +20,19 @@ await test('meta for selva string', async (t) => {
           x: 'uint32',
           email: { type: 'string', maxBytes: 10 },
           name: 'string',
-          flap: 'text',
           derp: {
             props: {
               x: 'string',
             },
           },
+          flap: 'text',
           items: {
             items: {
               ref: 'item',
               prop: 'items',
               $name: 'string',
               $x: 'uint8',
+              $y: 'string',
               $email: 'string',
             },
           },
@@ -41,36 +42,56 @@ await test('meta for selva string', async (t) => {
   })
 
   const id1 = await db.create('item', {
-    name: 'This is a longer string',
+    // name: 'This is a longer string',
     flap: { en: 'a2', it: 'b2' },
-    email: 'b@a.com',
-    x: 100,
+    // email: 'b@a.com',
+    // x: 100,
   })
 
   const id2 = await db.create('item', {
-    name: 'XX',
+    // name: 'XX',
     flap: { en: 'a', it: 'b' },
-    email: 'a@b.com',
-    x: 100,
-    items: [
-      {
-        id: id1,
-        $name: 'DERP!',
-        $x: 10,
-        $email: 'x@x.com',
-      },
-    ],
+    // email: 'a@b.com',
+    // x: 100,
+    // items: [
+    //   {
+    //     id: id1,
+    //     $name: 'DERP!',
+    //     $x: 10,
+    //     $email: 'x@x.com',
+    //   },
+    // ],
   })
 
-  console.log('derp')
+  // const q = await db
+  //   .query('item')
+  //   .include('items.$name', 'items.$x', 'items.$email', 'items.$y')
+  //   .get()
 
-  const q = await db
-    .query('item')
-    .include('items.$name', 'items.$x', 'items.$email')
-    .get()
+  // q.debug()
+  // q.inspect(10, true)
 
-  q.debug()
-  q.inspect(10, true)
+  for (let i = 0; i < 1e6; i++) {
+    db.create('item', {
+      // x: 100,
+      // flap: { it: 'x' },
+    })
+  }
+
+  console.log('set all', await db.drain(), 'ms')
+
+  // 'items.id'
+  const q2 = await db.query('item').include('*', 'items.id').range(0, 1e6).get()
+
+  console.log('exec q', q2.execTime, 'ms', q2.result.byteLength)
+
+  const d = Date.now()
+  resultToObject(q2.def, q2.result, q2.result.byteLength - 4, 0)
+  console.log('read buf', Date.now() - d, 'ms')
+
+  q2.inspect()
+
+  // q2.inspect()
 
   // await (await db.query('item').include('name', 'x').get()).debug()
 

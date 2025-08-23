@@ -13,7 +13,7 @@ const writeInt = utils.writeInt;
 
 pub const Result = struct {
     id: u32,
-    field: u8,
+    prop: u8,
     type: t.ResultType,
     score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query but another 4 bytes saved
     value: []u8,
@@ -26,7 +26,7 @@ fn addChecksum(item: *const *Result, data: []u8) usize {
     var offset: usize = 0;
     data[offset] = @intFromEnum(t.ReadOp.META);
     offset += 1;
-    data[offset] = item.*.field;
+    data[offset] = item.*.prop;
     offset += 1;
     const v = item.*.value;
     data[offset] = v[1];
@@ -81,10 +81,10 @@ pub fn createResultsBuffer(
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (254)           |
-                // | 1       | field     | 1           | Field identifier                     |
+                // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
-                data[i + 1] = item.field;
+                data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
@@ -94,11 +94,11 @@ pub fn createResultsBuffer(
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (253)           |
-                // | 1       | field     | 1           | Field identifier                     |
+                // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                data[i + 1] = item.field;
+                data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 10], item.value);
                 i += 10;
                 continue;
@@ -107,7 +107,7 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
-                data[i + 1] = item.field;
+                data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
@@ -116,7 +116,7 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                data[i + 1] = item.field;
+                data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 6], item.value);
                 i += 10;
                 continue;
@@ -130,7 +130,6 @@ pub fn createResultsBuffer(
             },
             t.ResultType.meta => {
                 // only / or not only
-                std.debug.print("GURP \n", .{});
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
@@ -139,16 +138,16 @@ pub fn createResultsBuffer(
             },
         }
 
-        if (item.field == @intFromEnum(t.ReadOp.ID)) {
+        if (item.prop == @intFromEnum(t.ReadOp.ID)) {
             continue;
         }
 
-        data[i] = item.field;
+        data[i] = item.prop;
         i += 1;
 
         const value = item.value;
 
-        if (item.field == t.MAIN_PROP) {
+        if (item.prop == t.MAIN_PROP) {
             copy(data[i .. i + value.len], value);
             i += value.len;
         } else {

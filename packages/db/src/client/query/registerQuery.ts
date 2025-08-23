@@ -14,6 +14,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     const def = createQueryDef(
       q.db,
       QueryDefType.Root,
+      // @ts-ignore
       q.target,
       q.skipValidation,
     )

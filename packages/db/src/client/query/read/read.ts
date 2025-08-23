@@ -16,10 +16,10 @@ import { readMetaSeperate } from './meta.js'
 import { addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
-import { undefinedProps } from './undefinedProps.js'
+import { undefinedProps } from './undefined.js'
 export * from './types.js'
 
-const meta: ReadInstruction = (q, result, i, item) => {
+const meta: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
   const prop = q.schema.reverseProps[field]
@@ -28,19 +28,20 @@ const meta: ReadInstruction = (q, result, i, item) => {
   return i
 }
 
-const aggregation: ReadInstruction = (q, result, i, item) => {
+const aggregation: ReadInstruction = (id, q, result, i, item) => {
   let field = result[i]
   i++
   const size = readUint32(result, i)
   i += 4
   const ref = q.references.get(field) as QueryDefRest
   const def = ref.target.propDef
+  // pass id to readAgg as well
   addProp(q, def, readAggregate(ref, result, i, i + size), item)
   i += size
   return i
 }
 
-const reference: ReadInstruction = (q, result, i, item) => {
+const reference: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
   const size = readUint32(result, i)
@@ -61,7 +62,7 @@ const reference: ReadInstruction = (q, result, i, item) => {
   return i
 }
 
-const references: ReadInstruction = (q, result, i, item) => {
+const references: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
   const ref = q.references.get(field) as QueryDefRest
@@ -74,11 +75,12 @@ const references: ReadInstruction = (q, result, i, item) => {
   return i
 }
 
-const edge: ReadInstruction = (q, result, i, item) => {
-  return readInstruction(result[i], q.edges, result, i + 1, item)
+const edge: ReadInstruction = (id, q, result, i, item) => {
+  return readInstruction(id, result[i], q.edges, result, i + 1, item)
 }
 
 const readInstruction = (
+  id: number,
   instruction: number,
   q: QueryDef,
   result: Uint8Array,
@@ -86,19 +88,19 @@ const readInstruction = (
   item: Item,
 ): number => {
   if (instruction === READ_META) {
-    return meta(q, result, i, item)
+    return meta(id, q, result, i, item)
   } else if (instruction === READ_AGGREGATION) {
-    return aggregation(q, result, i, item)
+    return aggregation(id, q, result, i, item)
   } else if (instruction === READ_REFERENCE) {
-    return reference(q, result, i, item)
+    return reference(id, q, result, i, item)
   } else if (instruction === READ_REFERENCES) {
-    return references(q, result, i, item)
+    return references(id, q, result, i, item)
   } else if (instruction === READ_EDGE) {
-    return edge(q, result, i, item)
+    return edge(id, q, result, i, item)
   } else if (instruction === 0) {
     return readMain(q, result, i, item)
   } else {
-    return readProp(instruction, q, result, i, item)
+    return readProp(id, instruction, q, result, i, item)
   }
 }
 
@@ -115,11 +117,11 @@ export const readProps = (
     const instruction = result[i]
     i++
     if (instruction === READ_ID) {
-      // Next node
       undefinedProps(id, q, item)
+      // Next node
       return i - offset
     }
-    i = readInstruction(instruction, q, result, i, item)
+    i = readInstruction(id, instruction, q, result, i, item)
   }
   // For the last id
   undefinedProps(id, q, item)

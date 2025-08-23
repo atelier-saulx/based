@@ -39,7 +39,7 @@ pub inline fn get(
             .type = t.ResultType.edge,
             .id = 0,
             .score = null,
-            .field = field,
+            .prop = field,
             .value = value,
         };
     } else {
@@ -52,7 +52,7 @@ pub inline fn get(
             .type = t.ResultType.none,
             .id = 0,
             .score = null,
-            .field = field,
+            .prop = field,
             .value = value,
         };
     }
@@ -76,6 +76,34 @@ pub fn add(
         }
     }
     try ctx.results.append(result.*);
+    return size;
+}
+
+pub fn addUndefined(
+    ctx: *QueryCtx,
+    id: u32,
+    score: ?[4]u8,
+    idIsSet: bool,
+    comptime isEdge: bool,
+    prop: u8,
+) !usize {
+    var result: results.Result = .{
+        .type = if (isEdge) t.ResultType.undefinedEdge else t.ResultType.undefined,
+        .prop = prop,
+        .value = &.{},
+        .id = 0,
+        .score = null,
+    };
+    var size: usize = 2;
+    if (!idIsSet) {
+        size += 5;
+        result.id = id;
+        if (score != null) {
+            result.score = score;
+            size += 4;
+        }
+    }
+    try ctx.results.append(result);
     return size;
 }
 
@@ -141,7 +169,7 @@ pub inline fn textSpecific(
             .type = result.*.type,
             .id = 0,
             .score = score,
-            .field = result.*.field,
+            .prop = result.*.prop,
             .value = s[0 .. s.len - 4],
         };
         size += try add(ctx, id, score, idIsSetLocal, &r);
@@ -173,7 +201,7 @@ pub inline fn textFallback(
             .type = result.*.type,
             .id = 0,
             .score = score,
-            .field = result.*.field,
+            .prop = result.*.prop,
             .value = s[0 .. s.len - 4],
         };
         size += try add(ctx, id, score, idIsSetLocal, &r);
@@ -203,7 +231,7 @@ pub inline fn textAll(
             .type = result.*.type,
             .id = 0,
             .score = score,
-            .field = result.*.field,
+            .prop = result.*.prop,
             .value = s[0 .. s.len - 4],
         };
         size += try add(ctx, id, score, idIsSetLocal, &r);

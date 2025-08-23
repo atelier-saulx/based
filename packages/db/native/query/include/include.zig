@@ -159,6 +159,12 @@ pub fn getFields(
                         },
                     }
                     idIsSet = true;
+                } else {
+                    if (prop == t.Prop.TEXT) {
+                        i += 2;
+                        const fallbackSize = include[i + 1];
+                        i += fallbackSize;
+                    }
                 }
             },
         }

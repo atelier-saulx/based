@@ -60,6 +60,7 @@ const readString = (
 }
 
 export const readProp = (
+  id: number,
   instruction: number,
   q: QueryDef,
   result: Uint8Array,
@@ -71,6 +72,8 @@ export const readProp = (
     q.type === QueryDefType.Edge
       ? q.target.ref.reverseSeperateEdges[instruction]
       : q.schema.reverseProps[instruction]
+
+  q.include.propsRead[prop.prop] = id
 
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)

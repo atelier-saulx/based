@@ -33,7 +33,7 @@ pub fn getSingleRefFields(
     ctx.results.append(.{
         .id = 0,
         .score = null,
-        .field = refField,
+        .prop = refField,
         .value = &.{},
         .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;

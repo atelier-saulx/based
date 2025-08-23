@@ -150,7 +150,7 @@ pub inline fn aggregateRefsGroup(
 
     try ctx.results.append(.{
         .id = 0,
-        .field = refField,
+        .prop = refField,
         .value = data,
         .score = null,
         .type = types.ResultType.aggregate,
@@ -220,7 +220,7 @@ pub inline fn aggregateRefsDefault(
 
     try ctx.results.append(.{
         .id = 0,
-        .field = refField,
+        .prop = refField,
         .value = value,
         .score = null,
         .type = types.ResultType.aggregate,

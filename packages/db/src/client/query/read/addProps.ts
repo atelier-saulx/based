@@ -4,7 +4,7 @@ import { inverseLangMap } from '@based/schema'
 import { QueryDef } from '../types.js'
 
 export const addProp = (
-  q: QueryDef,
+  q: QueryDef, // for meta
   p: PropDef | PropDefEdge,
   value: any,
   item: Item,
@@ -16,11 +16,13 @@ export const addProp = (
     value = p.transform('read', value)
   }
   let i = p.__isEdge === true ? 1 : 0
+
   const path = lastField
     ? [...p.path, lastField]
     : lang
       ? [...p.path, inverseLangMap.get(lang)]
       : p.path
+
   const len = path.length
   if (len - i === 1) {
     const field = path[i]

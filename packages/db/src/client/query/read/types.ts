@@ -25,6 +25,7 @@ export type TypedArray =
   | Float64Array
 
 export type ReadInstruction = (
+  id: number,
   q: QueryDef,
   result: Uint8Array,
   i: number,
