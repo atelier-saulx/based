@@ -44,10 +44,11 @@ await test('test embedded', async (t) => {
   const ctime = performance.now() - start
   console.log(ctime, 'ms', toxps(N, ctime), 'c/s')
 
+  const arr = Array.from({ length: N2 })
   start = performance.now()
-  let res = (await Promise.all(Array.from({ length: N2 }).map(() => db.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
-  assert(res === 10000000)
+  let res = (await Promise.all(arr.map(() => db.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
   const qtime = performance.now() - start
+  assert(res === 10000000)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
@@ -81,10 +82,11 @@ await test('test client-server', async (t) => {
   const ctime = performance.now() - start
   console.log(ctime, 'ms', toxps(N, ctime), 'c/s')
 
+  const arr = Array.from({ length: N2 })
   start = performance.now()
-  let res = (await Promise.all(Array.from({ length: N2 }).map(() => client1.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
-  assert(res === 10000000)
+  let res = (await Promise.all(arr.map(() => client1.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
   const qtime = performance.now() - start
+  assert(res === 10000000)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
