@@ -1,4 +1,4 @@
-import picocolors from 'picocolors'
+import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
@@ -44,11 +44,11 @@ const test = async (
   ) {
     counts.skipped++
     console.log('')
-    console.log(picocolors.gray('skip ' + name))
+    console.log(styleText('gray', 'skip ' + name))
     return
   }
   let hasErrored = false
-  console.log(picocolors.gray(`\nstart ${name}`))
+  console.log(styleText('gray', `\nstart ${name}`))
   const d = performance.now()
   const afters = []
   const t: T = {
@@ -90,15 +90,15 @@ const test = async (
 
       let d = performance.now()
       await db.save()
-      console.log(picocolors.gray(`saved db ${performance.now() - d} ms`))
+      console.log(styleText('gray', `saved db ${performance.now() - d} ms`))
 
       const size = await dirSize(t.tmp)
 
       const kbs = ~~(size / 1024)
       if (kbs < 5000) {
-        console.log(picocolors.gray(`backup size ${kbs}kb`))
+        console.log(styleText('gray', `backup size ${kbs}kb`))
       } else {
-        console.log(picocolors.gray(`backup size ${~~(kbs / 1024)}mb`))
+        console.log(styleText('gray', `backup size ${~~(kbs / 1024)}mb`))
       }
 
       type MyBlockMap = {
@@ -137,7 +137,7 @@ const test = async (
 
       d = Date.now()
       await newDb.start()
-      console.log(picocolors.gray(`started from backup ${Date.now() - d} ms`))
+      console.log(styleText('gray', `started from backup ${Date.now() - d} ms`))
 
       const [backupChecksums, b, c] = await make(newDb)
       // console.dir(b, { depth: null })
@@ -185,22 +185,22 @@ const test = async (
     await fn(t)
     counts.success++
     console.log(
-      picocolors.green(`✓ ${name}`),
-      picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText('green', `✓ ${name}`),
+      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
     )
   } catch (err) {
     hasErrored = true
     counts.errors++
     console.log(
-      picocolors.red(`! ${name}`),
-      picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText('red', `! ${name}`),
+      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
     )
     const msg =
       (err.stack ?? err.msg ?? err)
         .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(picocolors.red(msg))
+    console.log(styleText('red', msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
 
     const x = global._currentTestPath.split('/')
@@ -226,8 +226,8 @@ const test = async (
   } catch (err) {
     counts.errors++
     console.log(
-      picocolors.red(`! ${name}`),
-      picocolors.gray(`${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText('red', `! ${name}`),
+      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
     )
 
     const msg =
@@ -235,7 +235,7 @@ const test = async (
         .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(picocolors.red(msg))
+    console.log(styleText('red', msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
   }
 }
@@ -243,7 +243,7 @@ const test = async (
 test.skip = async (name: string, fn: (t?: T) => Promise<void>) => {
   counts.skipped++
   console.log('')
-  console.log(picocolors.gray('skip ' + name))
+  console.log(styleText('gray', 'skip ' + name))
 }
 
 export const printSummary = () => {
@@ -307,11 +307,11 @@ Good: ${counts.success}
         .map((v) => '  ' + v)
         .join('\n')}\n${msg}`
     }
-    console.log(picocolors.red(msg))
+    console.log(styleText('red', msg))
   } else if (counts.success) {
-    console.log(picocolors.green(msg))
+    console.log(styleText('green', msg))
   } else {
-    console.log(picocolors.gray(msg))
+    console.log(styleText('gray', msg))
   }
 }
 
