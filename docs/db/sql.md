@@ -170,37 +170,39 @@ await db.query('products')
   .get()
 ```
 
+Result:
+
 ```json
 [
   {
-    id: 38,
-    productName: 'Côte de Blaye',
-    quantityPerUnit: '12 - 75 cl bottles',
-    unitPrice: 263.5,
-    unitsInStock: 17,
-    unitsOnOrder: 0,
-    reorderLevel: 15,
-    discontinued: 0
+    "id": 38,
+    "productName": "Côte de Blaye",
+    "quantityPerUnit": "12 - 75 cl bottles",
+    "unitPrice": 263.5,
+    "unitsInStock": 17,
+    "unitsOnOrder": 0,
+    "reorderLevel": 15,
+    "discontinued": 0
   },
   {
-    id: 29,
-    productName: 'Thüringer Rostbratwurst',
-    quantityPerUnit: '50 bags x 30 sausgs.',
-    unitPrice: 123.79,
-    unitsInStock: 0,
-    unitsOnOrder: 0,
-    reorderLevel: 0,
-    discontinued: 1
+    "id": 29,
+    "productName": "Thüringer Rostbratwurst",
+    "quantityPerUnit": "50 bags x 30 sausgs.",
+    "unitPrice": 123.79,
+    "unitsInStock": 0,
+    "unitsOnOrder": 0,
+    "reorderLevel": 0,
+    "discontinued": 1
   },
   {
-    id: 9,
-    productName: 'Mishi Kobe Niku',
-    quantityPerUnit: '18 - 500 g pkgs.',
-    unitPrice: 97,
-    unitsInStock: 29,
-    unitsOnOrder: 0,
-    reorderLevel: 0,
-    discontinued: 1
+    "id": 9,
+    "productName": "Mishi Kobe Niku",
+    "quantityPerUnit": "18 - 500 g pkgs.",
+    "unitPrice": 97,
+    "unitsInStock": 29,
+    "unitsOnOrder": 0,
+    "reorderLevel": 0,
+    "discontinued": 1
   }
 ]
 ```
@@ -334,6 +336,37 @@ db.query('products')
   .get()
 ```
 
+Result:
+
+```json
+{      
+  "1": {     
+    "$count": 12                            
+  },   
+  "2": {     
+    "$count": 12                
+  },   
+  "3": {     
+    "$count": 13                  
+  },   
+  "4": {     
+    "$count": 10                                     
+  },   
+  "5": {                                             
+    "$count": 7         
+  },                         
+  "6": {        
+    "$count": 6          
+  },                                                 
+  "7": {                                             
+    "$count": 5
+  },        
+  "8": {                                             
+    "$count": 12
+  }                           
+} 
+```
+
 **SUM()**
 
 ```sql
@@ -403,6 +436,14 @@ await db.query('products')
   .get()
 ```
 
+Result:
+
+```json
+{
+  "unitPrice": 37.979166666666664                    
+} 
+```
+
 `AVG` with `GROUP BY`:
 
 ```sql
@@ -414,6 +455,37 @@ GROUP BY category_id;
 ```js
 await db.query('products')
   .avg('unitPrice').groupBy('category').get()
+```
+
+A sample from the result:
+
+``json
+{
+  "1": {
+    "unitPrice": 37.979166666666664
+  },
+  "2": {
+    "unitPrice": 22.854166666666668
+  },
+  "3": {
+    "unitPrice": 25.16
+  },
+  "4": {
+    "unitPrice": 28.73
+  },
+  "5": {
+    "unitPrice": 20.25
+  },
+  "6": {
+    "unitPrice": 54.00666666666667
+  },
+  "7": {
+    "unitPrice": 32.37
+  },
+  "8": {
+    "unitPrice": 20.6825
+  }
+}
 ```
 
 ### Like
@@ -455,6 +527,55 @@ WHERE country IN ('Germany', 'France', 'UK');
 await db.query('customers')
   .filter('country', '=', ['Germany', 'France', 'UK'])
   .get()
+```
+
+A sample from the result:
+
+```json
+[
+  {
+    "id": 1,
+    "companyName": "Alfreds Futterkiste",
+    "contactName": "Maria Anders",
+    "contactTitle": "Sales Representative",
+    "address": "Obere Str. 57",
+    "city": "Berlin",
+    "region": "",
+    "postalCode": "12209",
+    "country": "Germany",
+    "phone": "030-0074321",
+    "fax": "030-0076545",
+    "customerId": "ALFKI"
+  },
+  {
+    "id": 4,
+    "companyName": "Around the Horn",
+    "contactName": "Thomas Hardy",
+    "contactTitle": "Sales Representative",
+    "address": "120 Hanover Sq.",
+    "city": "London",
+    "region": "",
+    "postalCode": "WA1 1DP",
+    "country": "UK",
+    "phone": "(171) 555-7788",
+    "fax": "(171) 555-6750",
+    "customerId": "AROUT"
+  },
+  {
+    "id": 6,
+    "companyName": "Blauer See Delikatessen",
+    "contactName": "Hanna Moos",
+    "contactTitle": "Sales Representative",
+    "address": "Forsterstr. 57",
+    "city": "Mannheim",
+    "region": "",
+    "postalCode": "68306",
+    "country": "Germany",
+    "phone": "0621-08460",
+    "fax": "0621-08924",
+    "customerId": "BLAUS"
+  }
+]
 ```
 
 ### Between
