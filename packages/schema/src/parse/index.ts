@@ -8,6 +8,7 @@ import {
   expectBoolean,
   expectFunction,
   expectObject,
+  expectString,
   expectVersion,
 } from './assert.js'
 import { deepCopy } from '@based/utils'
@@ -103,6 +104,10 @@ export class SchemaParser {
     }
   }
 
+  parseDefaultTimezone() {
+    expectString(this.schema.defaultTimezone)
+  }
+
   parseMigrations() {
     const { migrations, version } = this.schema
     const ranges = new Map<string, Range[]>()
@@ -153,6 +158,8 @@ export class SchemaParser {
         this.parseProps(this.schema.props)
       } else if (key === 'locales') {
         this.parseLocales()
+      } else if (key === 'defaultTimezone') {
+        this.parseDefaultTimezone()
       } else if (key === 'migrations') {
         this.parseMigrations()
       } else if (key !== 'types') {

@@ -491,6 +491,7 @@ type GenericSchema<isStrict = false> = {
   types?: SchemaTypes<isStrict>
   props?: SchemaPropsOneWay<isStrict>
   locales?: Partial<SchemaLocales>
+  defaultTimezone?: string
   migrations?: {
     version: string
     migrate: MigrateFns
