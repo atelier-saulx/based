@@ -124,7 +124,9 @@ SELECT company_name,city FROM customers;
 ```
 
 ```js
-await db.query('customers').include('companyName', 'city').get()
+await db.query('customers')
+  .include('companyName', 'city')
+  .get()
 ```
 
 ### Where
@@ -135,7 +137,9 @@ WHERE country='Mexico';
 ```
 
 ```js
-await db.query('customers').filter('country', '=', 'Mexico').get()
+await db.query('customers')
+  .filter('country', '=', 'Mexico')
+  .get()
 ```
 
 ### Order By
@@ -146,7 +150,9 @@ ORDER BY price;
 ```
 
 ```js
-await db.query('products').sort('unitPrice', 'desc').get()
+await db.query('products')
+  .sort('unitPrice', 'desc')
+  .get()
 ```
 
 ### Select Top/Limit
@@ -158,7 +164,10 @@ LIMIT 3;
 ```
 
 ```js
-await db.query('products').sort('unitPrice', 'desc').range(0, 3).get()
+await db.query('products')
+  .sort('unitPrice', 'desc')
+  .range(0, 3)
+  .get()
 ```
 
 ```json
@@ -252,7 +261,9 @@ FROM products;
 ```
 
 ```js
-await db.query('products').min('unitPrice').get()
+await db.query('products')
+  .min('unitPrice')
+  .get()
 ```
 
 `MIN` with `GROUP BY`:
@@ -264,7 +275,10 @@ GROUP BY category_id;
 ```
 
 ```js
-await db.query('products').min('unitPrice').groupBy('category').get()
+await db.query('products')
+  .min('unitPrice')
+  .groupBy('category')
+  .get()
 ```
 
 **MAX()**
@@ -275,7 +289,10 @@ FROM products;
 ```
 
 ```js
-await db.query('products').max('unitPrice').get().inspect()
+await db.query('products')
+  .max('unitPrice')
+  .get()
+  .inspect()
 ```
 
 **COUNT()**
@@ -286,7 +303,9 @@ FROM products;
 ```
 
 ```js
-await db.query('products').count().get()
+await db.query('products')
+  .count()
+  .get()
 ```
 
 ```sql
@@ -295,7 +314,9 @@ FROM products;
 ```
 
 ```js
-await db.query('products').count('unitPrice').get()
+await db.query('products')
+  .count('unitPrice')
+  .get()
 ```
 
 `COUNT` with `GROUP BY`:
@@ -307,7 +328,10 @@ GROUP BY category_id;
 ```
 
 ```js
-db.query('products').count().groupBy('category').get()
+db.query('products')
+  .count()
+  .groupBy('category')
+  .get()
 ```
 
 **SUM()**
@@ -318,7 +342,9 @@ FROM order_details;
 ```
 
 ```js
-await db.query('orderDetails').sum('quantity').get()
+await db.query('orderDetails')
+  .sum('quantity')
+  .get()
 ```
 
 `SUM` with `WHERE`:
@@ -330,7 +356,10 @@ WHERE product_id = 11;
 ```
 
 ```js
-await db.query('orderDetails').sum('quantity').filter('product.id', '=', 11).get()
+await db.query('orderDetails')
+  .sum('quantity')
+  .filter('product.id', '=', 11)
+  .get()
 ```
 
 `SUM` with `GROUP BY`:
@@ -342,7 +371,10 @@ GROUP BY order_id;
 ```
 
 ```js
-await db.query('orderDetails').sum('quantity').groupBy('order').get()
+await db.query('orderDetails')
+  .sum('quantity')
+  .groupBy('order')
+  .get()
 ```
 
 **AVG()**
@@ -365,7 +397,10 @@ WHERE category_id = 1;
 ```
 
 ```js
-await db.query('products').avg('unitPrice').filter('category.id', '=', 1).get()
+await db.query('products')
+  .avg('unitPrice')
+  .filter('category.id', '=', 1)
+  .get()
 ```
 
 `AVG` with `GROUP BY`:
@@ -377,7 +412,8 @@ GROUP BY category_id;
 ```
 
 ```js
-await db.query('products').avg('unitPrice').groupBy('category').get()
+await db.query('products')
+  .avg('unitPrice').groupBy('category').get()
 ```
 
 ### Like
@@ -416,7 +452,9 @@ WHERE country IN ('Germany', 'France', 'UK');
 ```
 
 ```js
-await db.query('customers').filter('country', '=', ['Germany', 'France', 'UK']).get().inspect()
+await db.query('customers')
+  .filter('country', '=', ['Germany', 'France', 'UK'])
+  .get()
 ```
 
 ### Between
@@ -428,7 +466,10 @@ ORDER BY price;
 ```
 
 ```js
-await db.query('products').filter('unitPrice', '..', [10, 20]).sort('unitPrice', 'desc').get()
+await db.query('products')
+  .filter('unitPrice', '..', [10, 20])
+  .sort('unitPrice', 'desc')
+  .get()
 ```
 
 ### Aliases
@@ -454,7 +495,10 @@ INNER JOIN customers ON orders.customer_id=customers.customer_id;
 ```
 
 ```js
-await db.query('orders').include('customer.company_name', 'order_date').range(0, 10).get()
+await db.query('orders')
+  .include('customer.company_name', 'order_date')
+  .range(0, 10)
+  .get()
 ```
 
 ### Left Join
@@ -468,7 +512,11 @@ ORDER BY customers.company_name;
 ```
 
 ```js
-await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').get()
+await db.query('customers')
+  .include('companyName', (q) => q('orders')
+  .include('id'))
+  .sort('companyName')
+  .get()
 ```
 
 ### Right Join
@@ -510,7 +558,10 @@ SELECT city, country FROM customers
 console.log('union all')
 const unionAllA = await db.query('customers').include('city', 'country').get().toObject()
 const unionAllB = await db.query('suppliers').include('city', 'country').get().toObject()
-const unionAll = [ ...unionA.map(({ city, country }) => ({ city, country })), ...unionB.map(({ city, country }) => ({ city, country })) ].sort((a, b) => a.city.localeCompare(b.city))
+const unionAll = [
+  ...unionA.map(({ city, country }) => ({ city, country })),
+  ...unionB.map(({ city, country }) => ({ city, country }))
+].sort((a, b) => a.city.localeCompare(b.city))
 ```
 
 ### Having
