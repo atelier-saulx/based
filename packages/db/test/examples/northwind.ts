@@ -181,6 +181,7 @@ await test('northwind', async (t) => {
   await db
     .query('customers')
     .filter('country', '=', ['Germany', 'France', 'UK'])
+    .range(0, 3)
     .get()
     .inspect()
 
@@ -298,7 +299,7 @@ await test('northwind', async (t) => {
   console.log(unionAll)
 
   // @ts-ignore
-  console.log(mermaid(db.client.schema))
+  //console.log(mermaid(db.client.schema))
 })
 
 await test('northwind insert and update', async (t) => {
@@ -400,12 +401,19 @@ await test('aggregates', async (t) => {
   // FROM products
   // GROUP BY category_id;
   console.log('count group by')
-  await db.query('products').count().groupBy('category').get().inspect()
+  await db.query('products')
+    .count()
+    .groupBy('category')
+    .get()
+    .inspect()
 
   // SELECT SUM(quantity)
   // FROM order_details;
   console.log('sum')
-  await db.query('orderDetails').sum('quantity').get().inspect()
+  await db.query('orderDetails')
+    .sum('quantity')
+    .get()
+    .inspect()
 
   // SELECT SUM(quantity)
   // FROM order_details
@@ -426,6 +434,7 @@ await test('aggregates', async (t) => {
     .query('orderDetails')
     .sum('quantity')
     .groupBy('order')
+    .range(0, 10)
     .get()
     .inspect()
 
