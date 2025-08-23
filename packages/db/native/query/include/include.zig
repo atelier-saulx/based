@@ -91,6 +91,7 @@ pub fn getFields(
                     size += try f.partial(ctx, r, include[i - includeSize .. i]);
                     if (isEdge) size += 1;
                     size += try f.add(ctx, id, score, idIsSet, r);
+                    idIsSet = true;
                 }
             },
 

@@ -112,40 +112,7 @@ export const walkDefs = (
       t = t[p]
       if (!t) {
         if (include.field != 'id') {
-          // this can just become OPTS
-          // if (include.field.endsWith('.meta')) {
-          //   const propPath = include.field.split('.').slice(0, -1).join('.')
-          //   const prop = def.props[propPath]
-          //   if (
-          //     prop &&
-          //     (prop.typeIndex === STRING ||
-          //       prop.typeIndex === BINARY ||
-          //       prop.typeIndex === JSON ||
-          //       prop.typeIndex === ALIAS) // later add text
-          //   ) {
-          //     if (prop.separate) {
-          //       if (!def.include.meta) {
-          //         def.include.meta = new Set()
-          //       }
-          //       def.include.meta.add(prop.prop)
-          //     } else {
-          //       if (!def.include.metaMain) {
-          //         def.include.metaMain = new Map()
-          //       }
-          //       if (!def.include.main.include[prop.start]) {
-          //         includeProp(def, prop)
-          //         def.include.metaMain.set(prop.start, MainMetaInclude.MetaOnly)
-          //       } else {
-          //         def.include.metaMain.set(prop.start, MainMetaInclude.All)
-          //       }
-          //     }
-          //   } else {
-          //     includeDoesNotExist(def, include.field)
-          //     return
-          //   }
-          // } else {
           includeDoesNotExist(def, include.field)
-          // }
         }
         return
       }
@@ -157,14 +124,16 @@ export const walkDefs = (
           includeLangDoesNotExist(def, include.field)
           return
         }
-        if (!def.include.langTextFields.has(t.prop)) {
-          def.include.langTextFields.set(t.prop, {
+        if (!def.include.props.has(t.prop)) {
+          def.include.props.set(t.prop, {
             def: t,
-            codes: new Set(),
-            fallBacks: [],
+            opts: {
+              codes: new Set(),
+              fallBacks: [],
+            },
           })
         }
-        def.include.langTextFields.get(t.prop).codes.add(langCode)
+        def.include.props.get(t.prop).opts.codes.add(langCode)
         return
       } else if (
         isPropDef(t) &&

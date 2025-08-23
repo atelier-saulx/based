@@ -48,6 +48,7 @@ const readNumber = (
 }
 
 export const readAggregate = (
+  // only need agg
   q: QueryDef,
   result: Uint8Array,
   offset: number,

@@ -1,7 +1,13 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
-import { debug, resultToObject, Item, readProps } from './query.js'
+import {
+  debug,
+  resultToObject,
+  Item,
+  readProps,
+  convertToReaderSchema,
+} from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '@based/utils'
 
@@ -96,7 +102,14 @@ export class BasedQueryResponse {
         item.$searchScore = readFloatLE(result, i)
         i += 4
       }
-      const l = readProps(this.def, result, i, result.byteLength - 4, item, id)
+      const l = readProps(
+        convertToReaderSchema(this.def),
+        result,
+        i,
+        result.byteLength - 4,
+        item,
+        id,
+      )
       i += l
       yield item
     }
@@ -139,7 +152,13 @@ export class BasedQueryResponse {
   }
 
   toObject(): any {
-    return resultToObject(this.def, this.result, this.end - 4, 0)
+    //
+    return resultToObject(
+      convertToReaderSchema(this.def),
+      this.result,
+      this.end - 4,
+      0,
+    )
   }
 
   toJSON() {

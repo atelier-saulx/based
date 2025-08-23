@@ -102,14 +102,17 @@ export const includeProp = (
   }
 
   if (prop.typeIndex === TEXT) {
-    if (!def.include.langTextFields.has(prop.prop)) {
-      def.include.langTextFields.set(prop.prop, {
+    if (!def.include.props.has(prop.prop)) {
+      def.include.props.set(prop.prop, {
         def: prop,
-        codes: new Set(),
-        fallBacks: [],
+        opts: {
+          codes: new Set(),
+          fallBacks: [],
+          ...opts,
+        },
       })
     }
-    const langs = def.include.langTextFields.get(prop.prop)
+    const langs = def.include.props.get(prop.prop).opts
     if (def.lang.fallback.length > 0) {
       for (const fallback of def.lang.fallback) {
         if (!langs.fallBacks.includes(fallback)) {
@@ -126,9 +129,6 @@ export const includeProp = (
     if (prop.separate) {
       def.include.props.set(prop.prop, { def: prop, opts })
     } else {
-      // if (def.include.metaMain?.has(prop.start)) {
-      //   def.include.metaMain.set(prop.start, MainMetaInclude.All)
-      // }
       def.include.main.len += prop.len
       def.include.main.include[prop.start] = [0, prop as PropDef, opts]
       return true

@@ -4,29 +4,6 @@ import { includeField } from './props.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
 
-function includeArrayFields(
-  query: QueryBranch<any>,
-  arr: (string | IncludeOpts)[],
-) {
-  for (let i = 0; i < arr.length; i++) {
-    const field = arr[i]
-    const opts =
-      typeof arr[i + 1] === 'object' && typeof arr[i + 1] !== 'function'
-        ? (arr[i + 1] as IncludeOpts)
-        : undefined
-    if (typeof field === 'string') {
-      if (opts) {
-        includeField(query.def, {
-          field,
-          opts,
-        })
-      } else {
-        includeField(query.def, { field })
-      }
-    }
-  }
-}
-
 export const include = (
   query: QueryBranch<any>,
   fields: (string | BranchInclude | IncludeOpts | (string | IncludeOpts)[])[],

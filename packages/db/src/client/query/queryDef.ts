@@ -8,7 +8,6 @@ import {
   QueryDefRest,
   QueryDefShared,
   QueryDefType,
-  QueryTarget,
   Target,
 } from './types.js'
 import {
@@ -29,10 +28,8 @@ const createEmptySharedDef = (skipValidation: boolean) => {
       fallback: [],
     },
     include: {
-      langTextFields: new Map(),
       stringFields: new Map(),
       props: new Map(),
-      propsRead: {},
       main: {
         len: 0,
         include: {},

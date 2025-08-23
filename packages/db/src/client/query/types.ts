@@ -8,7 +8,8 @@ export type IncludeOpts = {
   end?: number
   start?: number
   meta?: 'only' | true | false // add more opts?
-  // more opts?
+  codes?: Set<LangCode>
+  fallBacks?: LangCode[]
 }
 
 export type IncludeField = {
@@ -137,17 +138,9 @@ export type QueryDefShared = {
     limit: number
   }
   include: {
-    langTextFields: Map<
-      number, // prop name
-      {
-        def: PropDef | PropDefEdge
-        codes: Set<LangCode>
-        fallBacks: LangCode[]
-      }
-    >
     stringFields: Map<string, IncludeField>
+    // add text here to opts
     props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
-    propsRead: { [propName: number]: number }
     main: {
       include: MainIncludes
       len: number
@@ -212,12 +205,3 @@ export const enum includeOp {
   META = 6, // this can be a small buffer as well
   PARTIAL = 7,
 }
-
-// export const enum includeOpts {
-//   HAS_OPTS = 1,
-//   NO_OPTS = 0,
-//   // meta just gets added as an extra include in the result
-//   META = 2,
-//   META_ONLY = 3,
-//   SLICE = 4,
-// }

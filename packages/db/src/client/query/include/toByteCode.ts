@@ -1,4 +1,4 @@
-import { MICRO_BUFFER } from '@based/schema/def'
+import { MICRO_BUFFER, TEXT } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
@@ -12,15 +12,12 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     !def.include.stringFields.size &&
     !def.include.props.size &&
     !def.references.size &&
-    !def.include.main.len &&
-    !def.include.langTextFields.size
+    !def.include.main.len
   ) {
     return result
   }
 
   let mainBuffer: Uint8Array
-  let len = 0
-  let includeBuffer: Uint8Array
 
   if (def.include.stringFields) {
     for (const [field, include] of def.include.stringFields.entries()) {
@@ -37,6 +34,12 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     if (def.include.main.len === len) {
       // GET ALL MAIN FIELDS
       mainBuffer = EMPTY_BUFFER
+      let i = 2
+      for (const key in def.include.main.include) {
+        const v = def.include.main.include[key]
+        v[0] = v[1].start
+        i += 4
+      }
     } else {
       // GET SOME MAIN FIELDS
       const size = Object.keys(def.include.main.include).length
@@ -55,40 +58,6 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
         mainBuffer[i + 3] = len >>> 8
         i += 4
         m += len
-      }
-    }
-  }
-
-  if (def.include.langTextFields.size) {
-    for (const [
-      prop,
-      { codes, def: propDef, fallBacks },
-    ] of def.include.langTextFields.entries()) {
-      def.include.propsRead[prop] = 0
-      if (codes.has(0)) {
-        const b = new Uint8Array(5)
-        b[0] = includeOp.DEFAULT
-        b[1] = prop
-        b[2] = propDef.typeIndex
-        b[3] = 0
-        b[4] = 0
-        result.push(b)
-      } else {
-        for (const code of codes) {
-          const fallBackSize = fallBacks.length
-          const b = new Uint8Array(5 + fallBackSize)
-          b[0] = includeOp.DEFAULT
-          b[1] = prop
-          b[2] = propDef.typeIndex
-          b[3] = code
-          b[4] = fallBackSize
-          let i = 0
-          for (const fallback of fallBacks) {
-            b[i + 5] = fallback
-            i++
-          }
-          result.push(b)
-        }
       }
     }
   }
@@ -123,18 +92,43 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
         result.push(buf)
       }
       if (propDef.opts?.meta !== 'only') {
-        const buf = new Uint8Array(3)
-        buf[0] = includeOp.DEFAULT
-        buf[1] = prop
-        buf[2] = propDef.def.typeIndex
-        result.push(buf)
+        if (propDef.def.typeIndex === TEXT) {
+          const codes = propDef.opts.codes
+          if (codes.has(0)) {
+            const b = new Uint8Array(5)
+            b[0] = includeOp.DEFAULT
+            b[1] = prop
+            b[2] = propDef.def.typeIndex
+            b[3] = 0
+            b[4] = 0
+            result.push(b)
+          } else {
+            for (const code of codes) {
+              const fallBackSize = propDef.opts.fallBacks.length
+              const b = new Uint8Array(5 + fallBackSize)
+              b[0] = includeOp.DEFAULT
+              b[1] = prop
+              b[2] = propDef.def.typeIndex
+              b[3] = code
+              b[4] = fallBackSize
+              let i = 0
+              for (const fallback of propDef.opts.fallBacks) {
+                b[i + 5] = fallback
+                i++
+              }
+              result.push(b)
+            }
+          }
+        } else {
+          const buf = new Uint8Array(3)
+          buf[0] = includeOp.DEFAULT
+          buf[1] = prop
+          buf[2] = propDef.def.typeIndex
+          result.push(buf)
+        }
       }
     }
   }
-
-  def.include.props.forEach((v, k) => {
-    def.include.propsRead[k] = 0
-  })
 
   return result
 }

@@ -1,6 +1,6 @@
 import { readUint32 } from '@based/utils/dist/src/uint8.js'
 import { QueryDef, QueryDefType } from '../types.js'
-import { Item } from './types.js'
+import { Item, ReaderPropDef, ReaderSchema } from './types.js'
 import { addProp } from './addProps.js'
 import {
   ALIAS,
@@ -16,7 +16,7 @@ import {
 } from '@based/schema/def'
 import { read, readUtf8 } from '../../string.js'
 
-const readVector = (prop: PropDef | PropDefEdge, tmp: Uint8Array) => {
+const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
   switch (prop.vectorBaseType) {
     case 'int8':
       return new Int8Array(tmp)
@@ -39,7 +39,7 @@ const readVector = (prop: PropDef | PropDefEdge, tmp: Uint8Array) => {
 }
 
 const readString = (
-  prop: PropDef | PropDefEdge,
+  prop: ReaderPropDef,
   buf: Uint8Array,
   offset: number,
   size: number,
@@ -62,63 +62,58 @@ const readString = (
 export const readProp = (
   id: number,
   instruction: number,
-  q: QueryDef,
+  q: ReaderSchema,
   result: Uint8Array,
   i: number,
   item: Item,
 ) => {
-  // TODO replace with a seperate EDGE typeDef
-  const prop =
-    q.type === QueryDefType.Edge
-      ? q.target.ref.reverseSeperateEdges[instruction]
-      : q.schema.reverseProps[instruction]
+  const prop = q.props[instruction]
 
-  q.include.propsRead[prop.prop] = id
+  console.log(prop, instruction, q.props)
 
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)
-    addProp(q, prop, readUint32(result, i + 4), item)
+    addProp(prop, readUint32(result, i + 4), item)
     i += size + 4
   } else if (prop.typeIndex === JSON) {
     const size = readUint32(result, i)
-    addProp(q, prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readString(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === BINARY) {
     const size = readUint32(result, i)
-    addProp(q, prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readString(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === STRING) {
     const size = readUint32(result, i)
-    addProp(q, prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readString(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex == TEXT) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing
     } else {
-      if (q.lang.lang != 0) {
-        addProp(q, prop, read(result, i + 4, size, true), item)
-      } else {
-        addProp(q, prop, read(result, i + 4, size, true), item, result[i + 4])
-      }
+      // if (q.lang.lang != 0) {
+      //   addProp(prop, read(result, i + 4, size, true), item)
+      // } else {
+      addProp(prop, read(result, i + 4, size, true), item, result[i + 4])
+      // }
     }
     i += size + 4
   } else if (prop.typeIndex === ALIAS) {
-    // ALIASES
     const size = readUint32(result, i)
     i += 4
     if (size === 0) {
-      addProp(q, prop, '', item)
+      addProp(prop, '', item)
     } else {
       const string = readUtf8(result, i, size)
       i += size
-      addProp(q, prop, string, item)
+      addProp(prop, string, item)
     }
   } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
     const size = readUint32(result, i)
     i += 4
     const tmp = result.subarray(i, i + size) // Make a copy
-    addProp(q, prop, readVector(prop, tmp), item)
+    addProp(prop, readVector(prop, tmp), item)
     i += size
   }
   return i

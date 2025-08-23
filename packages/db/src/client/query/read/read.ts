@@ -1,5 +1,11 @@
 import { readFloatLE, readUint32 } from '@based/utils/dist/src/uint8.js'
-import { AggItem, Item, ReadInstruction } from './types.js'
+import {
+  AggItem,
+  Item,
+  ReaderSchema,
+  ReaderSchemaEnum,
+  ReadInstruction,
+} from './types.js'
 import { readAggregate } from './aggregate.js'
 import {
   QueryDef,
@@ -16,47 +22,47 @@ import { readMetaSeperate } from './meta.js'
 import { addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
-import { undefinedProps } from './undefined.js'
+// import { undefinedProps } from './undefined.js'
 export * from './types.js'
 
 const meta: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
-  const prop = q.schema.reverseProps[field]
-  addProp(q, prop, readMetaSeperate(result, i), item)
+  const prop = q.props[field]
+  addProp(prop, readMetaSeperate(result, i), item)
   i += 9
   return i
 }
 
-const aggregation: ReadInstruction = (id, q, result, i, item) => {
-  let field = result[i]
-  i++
-  const size = readUint32(result, i)
-  i += 4
-  const ref = q.references.get(field) as QueryDefRest
-  const def = ref.target.propDef
-  // pass id to readAgg as well
-  addProp(q, def, readAggregate(ref, result, i, i + size), item)
-  i += size
-  return i
-}
+// const aggregation: ReadInstruction = (id, q, result, i, item) => {
+//   let field = result[i]
+//   i++
+//   const size = readUint32(result, i)
+//   i += 4
+//   const ref = q.references.get(field) as QueryDefRest
+//   const def = ref.target.propDef
+//   // pass id to readAgg as well
+//   addProp(q, def, readAggregate(ref, result, i, i + size), item)
+//   i += size
+//   return i
+// }
 
 const reference: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
   const size = readUint32(result, i)
   i += 4
-  const ref = q.references.get(field) as QueryDefRest
+  const ref = q.refs[field]
   if (size === 0) {
-    addProp(q, ref.target.propDef, null, item)
+    addProp(ref.prop, null, item)
     i += size
   } else {
     i++
     const id = readUint32(result, i)
     i += 4
     const refItem: Item = { id }
-    readProps(ref, result, i, size + i - 5, refItem, id)
-    addProp(q, ref.target.propDef, refItem, item)
+    readProps(ref.schema, result, i, size + i - 5, refItem, id)
+    addProp(ref.prop, refItem, item)
     i += size - 5
   }
   return i
@@ -65,12 +71,11 @@ const reference: ReadInstruction = (id, q, result, i, item) => {
 const references: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
-  const ref = q.references.get(field) as QueryDefRest
+  const ref = q.refs[field]
   const size = readUint32(result, i)
   i += 4
-  const refs = resultToObject(ref, result, size + i + 4, i)
-  // q.include.propsRead[field] = id
-  addProp(q, ref.target.propDef, refs, item)
+  const refs = resultToObject(ref.schema, result, size + i + 4, i)
+  addProp(ref.prop, refs, item)
   i += size + 4
   return i
 }
@@ -82,7 +87,7 @@ const edge: ReadInstruction = (id, q, result, i, item) => {
 const readInstruction = (
   id: number,
   instruction: number,
-  q: QueryDef,
+  q: ReaderSchema,
   result: Uint8Array,
   i: number,
   item: Item,
@@ -90,7 +95,7 @@ const readInstruction = (
   if (instruction === READ_META) {
     return meta(id, q, result, i, item)
   } else if (instruction === READ_AGGREGATION) {
-    return aggregation(id, q, result, i, item)
+    // return aggregation(id, q, result, i, item)
   } else if (instruction === READ_REFERENCE) {
     return reference(id, q, result, i, item)
   } else if (instruction === READ_REFERENCES) {
@@ -105,7 +110,7 @@ const readInstruction = (
 }
 
 export const readProps = (
-  q: QueryDef,
+  q: ReaderSchema,
   result: Uint8Array,
   offset: number,
   end: number,
@@ -117,28 +122,28 @@ export const readProps = (
     const instruction = result[i]
     i++
     if (instruction === READ_ID) {
-      undefinedProps(id, q, item)
+      // undefinedProps(id, q, item)
       // Next node
       return i - offset
     }
     i = readInstruction(id, instruction, q, result, i, item)
   }
   // For the last id
-  undefinedProps(id, q, item)
+  // undefinedProps(id, q, item)
 }
 
 export const resultToObject = (
-  q: QueryDef,
+  q: ReaderSchema,
   result: Uint8Array,
   end: number,
   offset: number = 0,
 ) => {
-  if (q.aggregate) {
-    return readAggregate(q, result, 0, result.byteLength - 4)
-  }
+  // if (q.aggregate) {
+  //   return readAggregate(q, result, 0, result.byteLength - 4)
+  // }
   const len = readUint32(result, offset)
   if (len === 0) {
-    if ('id' in q.target || 'alias' in q.target) {
+    if (q.type === ReaderSchemaEnum.single) {
       return null
     }
     return []
@@ -151,19 +156,21 @@ export const resultToObject = (
     let item: Item = {
       id,
     }
-    if (q.search) {
-      item.$searchScore = readFloatLE(result, i)
-      i += 4
-    }
+    // if (q.search) {
+    //   item.$searchScore = readFloatLE(result, i)
+    //   i += 4
+    // }
     const l = readProps(q, result, i, end, item, id)
     i += l
     items.push(item)
   }
-  if ('id' in q.target || 'alias' in q.target) {
-    if (q.type === QueryDefType.Root && q.target.type === '_root') {
-      delete items[0].id
-    }
+
+  if (q.type === ReaderSchemaEnum.rootProps) {
+    delete items[0].id
+    return items[0]
+  } else if (q.type === ReaderSchemaEnum.single) {
     return items[0]
   }
+
   return items
 }

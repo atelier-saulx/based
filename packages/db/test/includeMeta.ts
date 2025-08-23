@@ -1,7 +1,8 @@
-import { BasedDb, resultToObject } from '../src/index.js'
+import { BasedDb, convertToReaderSchema, resultToObject } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
+import { deflateSync } from 'zlib'
 
 await test('meta for selva string', async (t) => {
   const db = new BasedDb({
@@ -18,6 +19,8 @@ await test('meta for selva string', async (t) => {
       item: {
         props: {
           x: 'uint32',
+          y: 'uint32',
+          g: ['abraa darba', 'b', 'c'],
           email: { type: 'string', maxBytes: 10 },
           name: 'string',
           derp: {
@@ -45,7 +48,8 @@ await test('meta for selva string', async (t) => {
     // name: 'This is a longer string',
     flap: { en: 'a2', it: 'b2' },
     // email: 'b@a.com',
-    // x: 100,
+    g: 'abraa darba',
+    x: 100,
   })
 
   const id2 = await db.create('item', {
@@ -53,14 +57,14 @@ await test('meta for selva string', async (t) => {
     flap: { en: 'a', it: 'b' },
     // email: 'a@b.com',
     // x: 100,
-    // items: [
-    //   {
-    //     id: id1,
-    //     $name: 'DERP!',
-    //     $x: 10,
-    //     $email: 'x@x.com',
-    //   },
-    // ],
+    items: [
+      {
+        id: id1,
+        $name: 'DERP!',
+        $x: 10,
+        $email: 'x@x.com',
+      },
+    ],
   })
 
   // const q = await db
@@ -71,25 +75,50 @@ await test('meta for selva string', async (t) => {
   // q.debug()
   // q.inspect(10, true)
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e3; i++) {
     db.create('item', {
-      // x: 100,
-      // flap: { it: 'x' },
+      x: 100,
+      g: 'abraa darba',
+      name: 'Snurp de lerp flap flap derp',
+      flap: { it: 'Snurp de lerp flap flap derp' },
     })
   }
 
   console.log('set all', await db.drain(), 'ms')
 
   // 'items.id'
-  const q2 = await db.query('item').include('*', 'items.id').range(0, 1e6).get()
+  const q2 = await db
+    .query('item')
+    // .include('*', 'items.$name')
+    // .include('g', 'x')
+    .include('g', 'x', 'items.$name', 'name', 'flap')
+    .range(0, 1e6)
+    .get()
 
   console.log('exec q', q2.execTime, 'ms', q2.result.byteLength)
 
   const d = Date.now()
-  resultToObject(q2.def, q2.result, q2.result.byteLength - 4, 0)
+  const y = new TextEncoder()
+  console.log(
+    y.encode(
+      JSON.stringify(
+        resultToObject(
+          convertToReaderSchema(q2.def),
+          q2.result,
+          q2.result.byteLength - 4,
+          0,
+        ),
+      ),
+    ),
+  )
   console.log('read buf', Date.now() - d, 'ms')
 
+  // q2.debug()
   q2.inspect()
+
+  console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+
+  // console.log(deflateSync(JSON.stringify(convertToReaderSchema(q2.def))))
 
   // q2.inspect()
 
