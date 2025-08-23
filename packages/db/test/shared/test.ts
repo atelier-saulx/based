@@ -6,7 +6,6 @@ import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@based/utils'
 import { destructureTreeKey, VerifTree } from '../../src/server/tree.js'
 import fs from 'node:fs/promises'
-import assert from 'node:assert'
 
 export const counts = {
   errors: 0,
@@ -29,9 +28,15 @@ const relativePath = '../tmp'
 const errorFiles = new Set<string>()
 const errors = new Set<string>()
 
+export type T = {
+  after: (fn: () => Promise<void> | void, push?: boolean) => void
+  backup: (db: BasedDb) => Promise<void>
+  tmp: string
+}
+
 const test = async (
   name: string,
-  fn: (t?: any) => Promise<void>,
+  fn: (t?: T) => Promise<void>,
 ): Promise<any> => {
   if (
     process.env.TEST_TO_RUN &&
@@ -46,7 +51,7 @@ const test = async (
   console.log(picocolors.gray(`\nstart ${name}`))
   const d = performance.now()
   const afters = []
-  const t = {
+  const t: T = {
     after: (fn: () => Promise<void> | void, push?: boolean) => {
       if (push) {
         afters.push(fn)
@@ -235,7 +240,7 @@ const test = async (
   }
 }
 
-test.skip = async (name: string, fn: (t?: any) => Promise<void>) => {
+test.skip = async (name: string, fn: (t?: T) => Promise<void>) => {
   counts.skipped++
   console.log('')
   console.log(picocolors.gray('skip ' + name))

@@ -25,31 +25,32 @@ const p = join(__dirname, '../dist/test')
 const walk = async (dir = p) => {
   const files = await fs.readdir(dir)
   const promises = []
-
   for (const f of files) {
     if (f.endsWith('.js')) {
+      const path = join(dir, f)
       if (match.length > 0) {
+        const relPath = relative(p, path)
         for (const test of match) {
           if (test.includes(':')) {
             const [a, b] = test.split(':')
-            if (f.toLowerCase().includes(a.slice(1).toLowerCase())) {
-              testsToRun.push([join(dir, f), b])
+            if (relPath.toLowerCase().includes(a.slice(1).toLowerCase())) {
+              testsToRun.push([path, b])
               break
             }
           } else if (test.startsWith('^')) {
-            if (!f.toLowerCase().includes(test.slice(1).toLowerCase())) {
-              testsToRun.push([join(dir, f)])
+            if (!relPath.toLowerCase().includes(test.slice(1).toLowerCase())) {
+              testsToRun.push([path])
               break
             }
-          } else if (f.toLowerCase().includes(test.toLowerCase())) {
-            testsToRun.push([join(dir, f)])
+          } else if (relPath.toLowerCase().includes(test.toLowerCase())) {
+            testsToRun.push([path])
             break
           }
         }
       } else {
-        testsToRun.push([join(dir, f)])
+        testsToRun.push([path])
       }
-    } else if (f[0] !== '.' && f !== 'shared' && f !== 'tmp') {
+    } else if (!f.includes('.') && f !== 'shared' && f !== 'tmp') {
       promises.push(walk(join(dir, f)).catch(() => {}))
     }
   }
