@@ -157,21 +157,6 @@ struct SelvaDb {
     struct SelvaExpire expiring;
 };
 
-static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
-{
-#if 0
-    assert(((uintptr_t)type & 0xFFFF) == 0);
-#endif
-    return (void *)((uintptr_t)type | type->type);
-}
-
-static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
-{
-    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
-    __builtin_prefetch(te);
-    return te;
-}
-
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
