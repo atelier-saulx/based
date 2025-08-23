@@ -1,5 +1,5 @@
 import { readUint32 } from '@based/utils/dist/src/uint8.js'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 import { Item } from './types.js'
 import { addProp } from './addProps.js'
 import {
@@ -16,18 +16,7 @@ import {
 } from '@based/schema/def'
 import { read, readUtf8 } from '../../string.js'
 
-type ByteArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
-
-const readVector = (prop: PropDef | PropDefEdge, tmp: ArrayBuffer) => {
-  let arr: ByteArray
+const readVector = (prop: PropDef | PropDefEdge, tmp: Uint8Array) => {
   switch (prop.vectorBaseType) {
     case 'int8':
       return new Int8Array(tmp)
@@ -77,7 +66,12 @@ export const readProp = (
   i: number,
   item: Item,
 ) => {
-  const prop = q.schema.reverseProps[instruction]
+  // TODO replace with a seperate EDGE typeDef
+  const prop =
+    q.type === QueryDefType.Edge
+      ? q.target.ref.reverseSeperateEdges[instruction]
+      : q.schema.reverseProps[instruction]
+
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)
     addProp(q, prop, readUint32(result, i + 4), item)
@@ -91,6 +85,7 @@ export const readProp = (
     addProp(q, prop, readString(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === STRING) {
+    console.log('???', i)
     const size = readUint32(result, i)
     addProp(q, prop, readString(prop, result, i + 4, size), item)
     i += size + 4
@@ -120,8 +115,8 @@ export const readProp = (
   } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
     const size = readUint32(result, i)
     i += 4
-    const tmp = result.slice(i, i + size) // Make a copy
-    addProp(q, prop, readVector(prop, tmp.buffer), item)
+    const tmp = result.subarray(i, i + size) // Make a copy
+    addProp(q, prop, readVector(prop, tmp), item)
     i += size
   }
   return i

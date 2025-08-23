@@ -1,5 +1,5 @@
 import { readFloatLE, readUint32 } from '@based/utils/dist/src/uint8.js'
-import { AggItem, Item } from './types.js'
+import { AggItem, Item, ReadInstruction } from './types.js'
 import { readAggregate } from './aggregate.js'
 import {
   QueryDef,
@@ -12,19 +12,12 @@ import {
   READ_EDGE,
 } from '../types.js'
 import { READ_ID } from '../types.js'
-import { undefinedProps } from './undefinedProps.js'
 import { readMetaSeperate } from './meta.js'
 import { addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
+import { undefinedProps } from './undefinedProps.js'
 export * from './types.js'
-
-type ReadInstruction = (
-  q: QueryDef,
-  result: Uint8Array,
-  i: number,
-  item: Item,
-) => number
 
 const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]
@@ -82,11 +75,10 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
-  i++
-  return readInstruction(result[i], q.edges, result, i, item)
+  return readInstruction(result[i], q.edges, result, i + 1, item)
 }
 
-export const readInstruction = (
+const readInstruction = (
   instruction: number,
   q: QueryDef,
   result: Uint8Array,
@@ -127,7 +119,6 @@ export const readProps = (
       undefinedProps(id, q, item)
       return i - offset
     }
-    // do want this...
     i = readInstruction(instruction, q, result, i, item)
   }
   // For the last id

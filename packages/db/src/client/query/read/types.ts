@@ -1,3 +1,5 @@
+import { QueryDef } from '../types.js'
+
 export type Item = {
   id: number
 } & { [key: string]: any }
@@ -21,3 +23,10 @@ export type TypedArray =
   | Uint32Array
   | Float32Array
   | Float64Array
+
+export type ReadInstruction = (
+  q: QueryDef,
+  result: Uint8Array,
+  i: number,
+  item: Item,
+) => number

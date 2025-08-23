@@ -8,7 +8,8 @@ await test('meta for selva string', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  // t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     // add [en,it]
@@ -17,43 +18,61 @@ await test('meta for selva string', async (t) => {
       item: {
         props: {
           x: 'uint32',
-          // email: { type: 'string', maxBytes: 10 },
+          email: { type: 'string', maxBytes: 10 },
           name: 'string',
           flap: 'text',
-          // derp: {
-          //   props: {
-          //     x: 'string',
-          //   },
-          // },
-          // items: {
-          //   items: {
-          //     ref: 'item',
-          //     prop: 'items',
-          //     $edgeName: 'string',
-          //   },
-          // },
+          derp: {
+            props: {
+              x: 'string',
+            },
+          },
+          items: {
+            items: {
+              ref: 'item',
+              prop: 'items',
+              $edgeName: 'string',
+            },
+          },
         },
       },
     },
   })
 
   const id1 = await db.create('item', {
+    name: 'This is a longer string',
+    flap: { en: 'a2', it: 'b2' },
+    email: 'b@a.com',
+    x: 100,
+  })
+
+  const id2 = await db.create('item', {
     name: 'XX',
     flap: { en: 'a', it: 'b' },
-    // email: 'a@b.com',
+    email: 'a@b.com',
     x: 100,
+    items: [
+      {
+        id: id1,
+        $edgeName: 'DERP!',
+      },
+    ],
   })
 
   console.log('derp')
 
-  // await (await db.query('item').include('name', 'x').get()).debug()
-
-  await db.query('item').include('name', 'flap', 'x').get().inspect()
-
-  const q = await db.query('item').include('name', { meta: true }).get()
+  const q = await db.query('item').include('items.$edgeName').get()
 
   q.debug()
   q.inspect(10, true)
+
+  // await (await db.query('item').include('name', 'x').get()).debug()
+
+  // await db.query('item').include('name', 'flap', 'x').get().inspect()
+
+  // const q = await db.query('item').include('name', { meta: true }).get()
+
+  // q.debug()
+  // q.inspect(10, true)
 
   // console.log(
   //   'xx',
