@@ -117,6 +117,8 @@ usStates : stateRegion __string__
 Queries
 -------
 
+Basic SQL queries and their Based DB equivalents.
+
 ### Select
 
 ```sql
