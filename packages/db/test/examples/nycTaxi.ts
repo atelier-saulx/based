@@ -1,13 +1,10 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import { deepEqual } from './shared/assert.js'
-import { notEqual } from 'node:assert'
-import fs from 'fs'
 
 const gunzip = promisify(_gunzip)
 
