@@ -31,7 +31,7 @@ await test('meta for selva string', async (t) => {
               ref: 'item',
               prop: 'items',
               $name: 'string',
-              $x: 'number',
+              $x: 'uint8',
               $email: 'string',
             },
           },
