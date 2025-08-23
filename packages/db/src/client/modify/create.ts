@@ -29,7 +29,7 @@ import { writeString } from './string.js'
 import { writeText } from './text.js'
 import { writeJson } from './json.js'
 import { writeAlias } from './alias.js'
-import { getByPath } from '@based/utils'
+import { getByPath, writeUint16, writeUint32 } from '@based/utils'
 
 export type CreateObj = Record<string, any>
 
@@ -60,13 +60,10 @@ const appendCreate = (
         continue
       }
       if (ctx.lastMain === -1) {
-        let mainLenU32 = schema.mainLen
         setCursor(ctx, schema, prop.prop, MICRO_BUFFER, res.tmpId, CREATE)
-        ctx.buf[ctx.len++] = CREATE
-        ctx.buf[ctx.len++] = mainLenU32
-        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
-        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
-        ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+        ctx.buf[ctx.len] = CREATE
+        writeUint32(ctx.buf, schema.mainLen, ctx.len + 1)
+        ctx.len += 5
         ctx.lastMain = ctx.len
         ctx.buf.set(schema.mainEmpty, ctx.len)
         ctx.len += schema.mainLen
@@ -85,13 +82,10 @@ const appendCreate = (
   } else if (ctx.lastMain === -1 && !schema.mainEmptyAllZeroes) {
     // this is there to handle different defaults
     if (ctx.lastMain === -1) {
-      let mainLenU32 = schema.mainLen
       setCursor(ctx, schema, 0, MICRO_BUFFER, res.tmpId, CREATE)
-      ctx.buf[ctx.len++] = CREATE
-      ctx.buf[ctx.len++] = mainLenU32
-      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
-      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
-      ctx.buf[ctx.len++] = mainLenU32 >>>= 8
+      ctx.buf[ctx.len] = CREATE
+      writeUint32(ctx.buf, schema.mainLen, ctx.len + 1)
+      ctx.len += 5
       ctx.lastMain = ctx.len
       ctx.buf.set(schema.mainEmpty, ctx.len)
       ctx.len += schema.mainLen
@@ -163,7 +157,7 @@ const appendCreate = (
         return RANGE_ERR
       }
       ctx.buf[ctx.len++] = ADD_EMPTY_SORT
-      let sizepos = ctx.len
+      const sizepos = ctx.len
       ctx.len += 2
       for (const { prop } of schema.seperateSort.props) {
         if (schema.seperateSort.bufferTmp[prop] === 0) {
@@ -173,9 +167,7 @@ const appendCreate = (
           ctx.buf[ctx.len++] = prop
         }
       }
-      let size = ctx.len - sizepos - 2
-      ctx.buf[sizepos++] = size
-      ctx.buf[sizepos] = size >>>= 8
+      writeUint16(ctx.buf, ctx.len - sizepos - 2, sizepos)
     }
 
     if (ctx.hasSortField !== -1) {

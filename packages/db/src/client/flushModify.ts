@@ -50,21 +50,27 @@ export class ModifyCtx {
 
   dirtyRanges = new Set<number>()
   dirtyTypes = new Map<number, number>()
+
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
     const key = makeTreeKeyFromNodeId(schema.id, schema.blockCapacity, nodeId)
+
     if (this.dirtyRanges.has(key)) {
       return
     }
+
     this.dirtyRanges.add(key)
     this.updateMax()
   }
+
   markTypeDirty(schema: SchemaTypeDef) {
     if (this.dirtyTypes.has(schema.id)) {
       return
     }
+
     this.dirtyTypes.set(schema.id, schema.lastId)
     this.updateMax()
   }
+
   updateMax() {
     // reserve space in the end of the buf [...data, type (16), lastId (32), typesSize (16), ...ranges (64)[], dataLen (32)]
     this.max =
@@ -74,6 +80,7 @@ export class ModifyCtx {
       this.dirtyTypes.size * 10 -
       this.dirtyRanges.size * 8
   }
+
   getData(lastIds: Record<number, number>) {
     const rangesSize = this.dirtyRanges.size
     const typesSize = this.dirtyTypes.size
