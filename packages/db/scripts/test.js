@@ -61,7 +61,12 @@ const walk = async (dir = p) => {
 await walk(p)
 
 console.log('\n\n')
-console.log(styleText('bgWhite', ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 's'} `))
+console.log(
+  styleText(
+    'bgWhite',
+    ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 's'} `,
+  ),
+)
 console.log('')
 
 let cnt = 0
@@ -74,7 +79,12 @@ for (let i = 0; i < repeat; i++) {
   for (const test of testsToRun) {
     const fullPath = test[0]
     const relPath = relative(p, fullPath)
-    console.log(styleText('bgBlue', ` ${styleText('bold', styleText('black', relPath))} `))
+    console.log(
+      styleText(
+        'bgBlue',
+        ` ${styleText('bold', styleText('black', relPath))} `,
+      ),
+    )
 
     if (test[1]) {
       process.env.TEST_TO_RUN = test[1]

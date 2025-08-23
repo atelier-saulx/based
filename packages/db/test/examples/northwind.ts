@@ -401,19 +401,12 @@ await test('aggregates', async (t) => {
   // FROM products
   // GROUP BY category_id;
   console.log('count group by')
-  await db.query('products')
-    .count()
-    .groupBy('category')
-    .get()
-    .inspect()
+  await db.query('products').count().groupBy('category').get().inspect()
 
   // SELECT SUM(quantity)
   // FROM order_details;
   console.log('sum')
-  await db.query('orderDetails')
-    .sum('quantity')
-    .get()
-    .inspect()
+  await db.query('orderDetails').sum('quantity').get().inspect()
 
   // SELECT SUM(quantity)
   // FROM order_details
