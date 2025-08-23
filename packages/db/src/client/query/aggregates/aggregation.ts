@@ -96,10 +96,12 @@ export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
   if (!def.aggregate.groupBy) {
     def.aggregate.size += 12
   }
+  let dst =
+    new Date().getTimezoneOffset() - new Date('1/1/1970').getTimezoneOffset()
   def.aggregate.groupBy = fieldDef
   def.aggregate.groupBy.stepRange = undefined
   def.aggregate.groupBy.stepType = undefined
-  def.aggregate.groupBy.tz = undefined
+  def.aggregate.groupBy.tz = new Date().getTimezoneOffset() - dst
   def.aggregate.groupBy.display = undefined
 
   if (

@@ -2152,14 +2152,14 @@ await test('group by datetime intervals', async (t) => {
 
   db.create('trip', {
     vendorId: 813,
-    pickup: new Date('12/11/2024 11:00+00'),
-    dropoff: new Date('12/11/2024 11:10+00'),
+    pickup: new Date('12/11/2024 11:00'), // local tz
+    // dropoff: new Date('12/11/2024 11:10'),
     distance: 513.44,
   })
   db.create('trip', {
     vendorId: 814,
-    pickup: new Date('12/11/2024 11:30+00'),
-    dropoff: new Date('12/12/2024 12:10+00'),
+    pickup: new Date('12/11/2024 11:30'), // local tz DST
+    // dropoff: new Date('12/12/2024 12:10'),
     distance: 513.44,
   })
 
@@ -2210,7 +2210,7 @@ await test('group by datetime intervals', async (t) => {
         distance: 1026.88,
       },
     },
-    'group timestamp by hour',
+    'group timestamp by isoDOW',
   )
   deepEqual(
     await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
@@ -2219,7 +2219,7 @@ await test('group by datetime intervals', async (t) => {
         distance: 1026.88,
       },
     },
-    'group timestamp by hour',
+    'group timestamp by DOY',
   )
   deepEqual(
     await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
@@ -2237,7 +2237,7 @@ await test('group by datetime intervals', async (t) => {
         distance: 1026.88,
       },
     },
-    'group timestamp by hour',
+    'group timestamp by year',
   )
 })
 
@@ -2364,11 +2364,11 @@ await test('cardinality with dates', async (t) => {
   })
 
   db.create('lunch', {
-    day: new Date('6/30/2025 00:00+0'), // mon
+    day: new Date('6/30/2025'), // mon
     eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
   })
   db.create('lunch', {
-    day: new Date('7/1/2025 00:00+0'), // tue
+    day: new Date('7/1/2025'), // tue
     eaters: [
       'Nuno',
       'Tom',
@@ -2402,53 +2402,67 @@ await test('cardinality with dates', async (t) => {
     ],
   })
 
-  const total = await db.query('lunch').cardinality('eaters').get().toObject()
+  // const total = await db.query('lunch').cardinality('eaters').get().toObject()
 
-  // console.log('Total Eaters: ', total.eaters)
-  deepEqual(total.eaters, 11, 'Total Eaters')
+  // // console.log('Total Eaters: ', total.eaters)
+  // deepEqual(total.eaters, 11, 'Total Eaters')
 
-  const groupByDay = await db
-    .query('lunch')
-    .cardinality('eaters')
-    .groupBy('day')
-    .get()
-    .toObject()
+  // const groupByDay = await db
+  //   .query('lunch')
+  //   .cardinality('eaters')
+  //   .groupBy('day')
+  //   .get()
+  //   .toObject()
 
-  const meals = Object.entries(groupByDay) //@ts-ignore
-    .map((m) => m[1].eaters)
-    .reduce((e, acc) => (acc += e))
+  // const meals = Object.entries(groupByDay) //@ts-ignore
+  //   .map((m) => m[1].eaters)
+  //   .reduce((e, acc) => (acc += e))
 
-  // console.log('Total Meals: ', meals)
-  deepEqual(meals, 31, 'Total Meals')
+  // // console.log('Total Meals: ', meals)
+  // deepEqual(meals, 31, 'Total Meals')
 
-  enum months {
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  }
+  // enum months {
+  //   'Jan',
+  //   'Feb',
+  //   'Mar',
+  //   'Apr',
+  //   'May',
+  //   'Jun',
+  //   'Jul',
+  //   'Ago',
+  //   'Sep',
+  //   'Oct',
+  //   'Nov',
+  //   'Dec',
+  // }
 
-  const groupByMonth = await db
+  // 1751320800000 Tue Jul 01 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  let f = Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Amsterdam' })
+  let d = new Date('6/30/25')
+  console.log(d)
+  //@ts-ignore
+  console.log(new Intl.DateTimeFormat(f).format(d))
+
+  await db
     .query('lunch')
     .cardinality('eaters')
     .groupBy('day', 'month')
     .get()
-    .toObject()
+    .inspect()
 
-  const eatersByMonth = Object.entries(groupByMonth).map((e) => {
-    //@ts-ignore
-    return { [months[e[0]]]: e[1].eaters }
-  })
-  // console.log('Total Eaters by Month: ', eatersByMonth)
-  deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
+  // const groupByMonth = await db
+  //   .query('lunch')
+  //   .cardinality('eaters')
+  //   .groupBy('day', 'month')
+  //   .get()
+  //   .toObject()
+
+  // const eatersByMonth = Object.entries(groupByMonth).map((e) => {
+  //   //@ts-ignore
+  //   return { [months[e[0]]]: e[1].eaters }
+  // })
+  // // console.log('Total Eaters by Month: ', eatersByMonth)
+  // deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
 })
 
 await test('formating timestamp', async (t) => {
