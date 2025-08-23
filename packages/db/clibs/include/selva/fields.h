@@ -50,23 +50,6 @@ struct SelvaNodeWeakReferences {
     struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
-/**
- * Type helper to determine the size of statically (constant/fixed) sized fields.
- */
-union SelvaStaticFields {
-    bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
-    double number; /*!< SELVA_FIELD_TYPE_NUMBER */
-    struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
-    int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
-    uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
-    int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
-    uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
-    int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
-    uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
-    uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
-    struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
-};
-
 struct SelvaFieldsPointer {
     uint8_t *ptr;
     size_t off;
