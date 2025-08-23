@@ -154,7 +154,7 @@ export type QueryDefShared = {
     }
   }
   references: Map<number, QueryDef>
-  edges?: QueryDef
+  edges?: QueryDefEdges
 }
 
 export type QueryDefEdges = {

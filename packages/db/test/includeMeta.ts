@@ -38,7 +38,7 @@ await test('meta for selva string', async (t) => {
   })
 
   const id1 = await db.create('item', {
-    name: 'a',
+    name: 'XX',
     flap: { en: 'a', it: 'b' },
     // email: 'a@b.com',
     x: 100,
@@ -49,6 +49,11 @@ await test('meta for selva string', async (t) => {
   // await (await db.query('item').include('name', 'x').get()).debug()
 
   await db.query('item').include('name', 'flap', 'x').get().inspect()
+
+  const q = await db.query('item').include('name', { meta: true }).get()
+
+  q.debug()
+  q.inspect(10, true)
 
   // console.log(
   //   'xx',

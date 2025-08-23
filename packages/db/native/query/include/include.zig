@@ -79,9 +79,6 @@ pub fn getFields(
                 size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
                 return size;
             },
-            t.IncludeOp.meta => {
-                // handle here
-            },
             t.IncludeOp.partial => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
@@ -96,10 +93,42 @@ pub fn getFields(
                     size += try f.add(ctx, id, score, idIsSet, r);
                 }
             },
+
+            // t.IncludeOp.NapiCallback
+            // cbId, node id, edge
+            // db.getEdgeField(type, id, propType, prop)
+            // db.getField(type, id, propType, prop)
+            // [cbId]: => ({ proxyGet [] db getField(type, id, propType, prop) })
+            // => {} return js use js Serialize / Deserialize
+            // this can also be used instead of JSON (for now use JSON)
+
+            t.IncludeOp.meta => {
+                var result: ?*results.Result = null;
+                const field: u8 = include[i];
+                const prop: t.Prop = @enumFromInt(include[i + 1]);
+                i += 2;
+                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
+                if (result) |r| {
+                    switch (prop) {
+                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON => {
+                            if (isEdge) {
+                                size += 1;
+                                r.*.type = t.ResultType.metaEdge;
+                            } else {
+                                r.*.type = t.ResultType.meta;
+                            }
+                            size += 11 + try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
+                        },
+                        else => {},
+                    }
+                }
+            },
             t.IncludeOp.default => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
+                // here we add a start + end var (bit longer but fine)
                 i += 2;
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
                 if (result) |r| {

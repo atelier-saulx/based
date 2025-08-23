@@ -122,12 +122,15 @@ pub fn createResultsBuffer(
                 continue;
             },
             t.ResultType.metaEdge => {
+                // only / or not only
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
             t.ResultType.meta => {
+                // only / or not only
+                std.debug.print("GURP \n", .{});
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
