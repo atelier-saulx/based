@@ -8,7 +8,6 @@
 
 struct SelvaDb;
 struct SelvaNodeSchema;
-struct ref_save_map_item;
 
 struct schema_info {
     size_t block_capacity; /*!< Max number of consecutive nodes stored per block. */

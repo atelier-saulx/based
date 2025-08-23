@@ -12,7 +12,6 @@
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
 #include "expire.h"
-#include "ref_save_map.h"
 
 RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
@@ -143,13 +142,6 @@ struct SelvaDb {
         struct mempool pool; /*!< types area allocated from here. */
         size_t count; /*!< Total count of types. */
     } types;
-
-    /**
-     * Schema related items.
-     */
-    struct {
-        struct ref_save_map ref_save_map;
-    } schema;
 
     /**
      * Expiring nodes.

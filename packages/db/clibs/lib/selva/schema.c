@@ -17,7 +17,6 @@
 #include "bits.h"
 #include "db_panic.h"
 #include "db.h"
-#include "ref_save_map.h"
 #include "schema.h"
 
 #define SCHEMA_MIN_SIZE                 8
@@ -28,7 +27,6 @@
 #define SCHEMA_OFF_SPARE1               7 /*!< u8 */
 
 struct schemabuf_parser_ctx {
-    struct ref_save_map *ref_save_map;
     struct SelvaTypeEntry *te;
     const uint8_t *buf; /*!< Current position in the schema buf. */
     size_t len;
@@ -135,12 +133,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         return SELVA_EINVAL;
     }
 
-    enum EdgeFieldConstraintFlag flags = constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT;
-    if (type == SELVA_FIELD_TYPE_REFERENCE && (constraints.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
-        flags |= EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP;
-    } else {
-        flags |= ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP;
-    }
+    enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT | EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
@@ -454,7 +447,6 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const uin
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {
-        .ref_save_map = &db->schema.ref_save_map,
         .te = containerof(ns, struct SelvaTypeEntry, ns),
         .alias_index = 0,
     };
