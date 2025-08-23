@@ -8,7 +8,7 @@ import {
   expectBoolean,
   expectFunction,
   expectObject,
-  expectString,
+  expectTimezoneName,
   expectVersion,
 } from './assert.js'
 import { deepCopy } from '@based/utils'
@@ -105,7 +105,7 @@ export class SchemaParser {
   }
 
   parseDefaultTimezone() {
-    expectString(this.schema.defaultTimezone)
+    expectTimezoneName(this.schema.defaultTimezone)
   }
 
   parseMigrations() {
