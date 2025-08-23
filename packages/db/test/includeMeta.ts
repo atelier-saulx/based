@@ -75,12 +75,12 @@ await test('meta for selva string', async (t) => {
   // q.debug()
   // q.inspect(10, true)
 
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('item', {
       x: 100,
-      g: 'abraa darba',
-      name: 'Snurp de lerp flap flap derp',
-      flap: { it: 'Snurp de lerp flap flap derp' },
+      // g: 'abraa darba',
+      // name: 'Snurp de lerp flap flap derp',
+      // flap: { it: 'Snurp de lerp flap flap derp' },
     })
   }
 
@@ -91,7 +91,7 @@ await test('meta for selva string', async (t) => {
     .query('item')
     // .include('*', 'items.$name')
     // .include('g', 'x')
-    .include('g', 'x', 'items.$name', 'name', 'flap')
+    .include('x', 'name') // 'name', 'flap'
     .range(0, 1e6)
     .get()
 

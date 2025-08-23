@@ -29,6 +29,7 @@ const meta: ReadInstruction = (id, q, result, i, item) => {
   const field = result[i]
   i++
   const prop = q.props[field]
+  // maybe do this a bit smooter - like this it the meta
   addProp(prop, readMetaSeperate(result, i), item)
   i += 9
   return i

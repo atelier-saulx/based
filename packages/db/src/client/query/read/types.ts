@@ -129,7 +129,6 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
     readerSchema.hasSearch = true
   }
 
-  console.log(q.include)
   for (const [k, v] of q.include.props) {
     readerSchema.props[k] = createReaderPropDef(v.def, v.opts)
   }

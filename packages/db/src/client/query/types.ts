@@ -47,6 +47,7 @@ export type Target = {
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
   alias?: QueryByAliasObj
+  // This can just instantly be added
   resolvedAlias?: { def: PropDef; value: string }
 }
 
@@ -67,6 +68,7 @@ export type QueryDefFilter = {
   schema?: SchemaTypeDef
   edges?: Map<number, FilterCondition[]>
   or?: QueryDefFilter
+  // Make this work
   and?: QueryDefFilter
 }
 
@@ -139,7 +141,6 @@ export type QueryDefShared = {
   }
   include: {
     stringFields: Map<string, IncludeField>
-    // add text here to opts
     props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
     main: {
       include: MainIncludes
@@ -155,7 +156,6 @@ export type QueryDefEdges = {
   target: EdgeTarget
   schema: null
   props: PropDef['edges']
-  reverseProps: PropDef['edges']
 } & QueryDefShared
 
 export type QueryDefRest = {

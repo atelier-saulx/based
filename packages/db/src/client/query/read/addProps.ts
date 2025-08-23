@@ -3,11 +3,11 @@ import { inverseLangMap } from '@based/schema' // remove this
 
 export const addProp = (
   p: ReaderPropDef,
-  value: any,
+  value: any, // is meta or something
   item: Item,
   lang: number = 0,
 ) => {
-  // will use q to handle META
+  // will use p to handle META
   // if (p.transform) {
   //   value = p.transform('read', value)
   // }
@@ -28,6 +28,8 @@ export const addProp = (
       const field = path[i]
       if (i === len - 1) {
         if (!(field in select)) {
+          // if p.hasMeta etc
+          // if (p.hasMeta && value)
           select[field] = value
         }
       } else {
