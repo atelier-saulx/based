@@ -10,7 +10,7 @@ Simple function in based/schema to convert your schema to a mermaid.
 
 ## Example usage
 
-```ts
+```js
 import { parse } from '@based/schema'
 import { mermaid } from '@based/schema-diagram'
 

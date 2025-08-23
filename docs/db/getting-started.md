@@ -2,7 +2,7 @@
 
 ## 1. Start the database
 
-```ts
+```js
 import { BasedDb } from '@based/db'
 
 const db = new BasedDb({ path: './data' })
@@ -11,7 +11,7 @@ await db.start({ clean: true })
 
 ## 2. Define a schema
 
-```ts
+```js
 await db.setSchema({
   types: {
     user: {
@@ -27,7 +27,7 @@ await db.setSchema({
 
 ## 3. Create & query
 
-```ts
+```js
 const id = await db.create('user', {
   name: 'Ada',
   email: 'ada@lovelace.dev',

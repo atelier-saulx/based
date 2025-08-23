@@ -123,7 +123,7 @@ Queries
 SELECT company_name,city FROM customers;
 ```
 
-```ts
+```js
 await db.query('customers').include('companyName', 'city').get()
 ```
 
@@ -134,7 +134,7 @@ SELECT * FROM customers
 WHERE country='Mexico';
 ```
 
-```ts
+```js
 await db.query('customers').filter('country', '=', 'Mexico').get()
 ```
 
@@ -145,7 +145,7 @@ SELECT * FROM products
 ORDER BY price;
 ```
 
-```ts
+```js
 await db.query('products').sort('unitPrice', 'desc').get()
 ```
 
@@ -157,7 +157,7 @@ ORDER BY price
 LIMIT 3;
 ```
 
-```ts
+```js
 await db.query('products').sort('unitPrice', 'desc').range(0, 3).get()
 ```
 
@@ -205,7 +205,7 @@ INSERT INTO customers (company_name, contact_name, address, city, postal_code, c
 VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
 ```
 
-```ts
+```js
 db.create('customers', {
   companyName: 'Cardinal',
   contactName: 'Tom B. Erichsen',
@@ -224,7 +224,7 @@ SET contact_name = 'Haakon Christensen'
 WHERE customer_id = 1;
 ```
 
-```ts
+```js
 db.update('customers', 1, {
   contactName: 'Haakon Christensen',
 })
@@ -236,7 +236,7 @@ db.update('customers', 1, {
 DELETE FROM customers WHERE customer_name='Cardinal';
 ```
 
-```ts
+```js
 await db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
 ```
 
@@ -251,7 +251,7 @@ SELECT MIN(unit_price)
 FROM products;
 ```
 
-```ts
+```js
 await db.query('products').min('unitPrice').get()
 ```
 
@@ -263,7 +263,7 @@ FROM products
 GROUP BY category_id;
 ```
 
-```ts
+```js
 await db.query('products').min('unitPrice').groupBy('category').get()
 ```
 
@@ -274,7 +274,7 @@ SELECT MAX(unit_price)
 FROM products;
 ```
 
-```ts
+```js
 await db.query('products').max('unitPrice').get().inspect()
 ```
 
@@ -285,7 +285,7 @@ SELECT COUNT(*)
 FROM products;
 ```
 
-```ts
+```js
 await db.query('products').count().get()
 ```
 
@@ -294,7 +294,7 @@ SELECT COUNT(DISTINCT unit_price)
 FROM products;
 ```
 
-```ts
+```js
 await db.query('products').count('unitPrice').get()
 ```
 
@@ -306,7 +306,7 @@ FROM products
 GROUP BY category_id;
 ```
 
-```ts
+```js
 db.query('products').count().groupBy('category').get()
 ```
 
@@ -317,7 +317,7 @@ SELECT SUM(quantity)
 FROM order_details;
 ```
 
-```ts
+```js
 await db.query('orderDetails').sum('quantity').get()
 ```
 
@@ -329,7 +329,7 @@ FROM order_details
 WHERE product_id = 11;
 ```
 
-```ts
+```js
 await db.query('orderDetails').sum('quantity').filter('product.id', '=', 11).get()
 ```
 
@@ -341,7 +341,7 @@ FROM order_details
 GROUP BY order_id;
 ```
 
-```ts
+```js
 await db.query('orderDetails').sum('quantity').groupBy('order').get()
 ```
 
@@ -352,7 +352,7 @@ SELECT AVG(unit_price)
 FROM products;
 ```
 
-```ts
+```js
 await db.query('products').avg('unitPrice').get()
 ```
 
@@ -364,7 +364,7 @@ FROM products
 WHERE category_id = 1;
 ```
 
-```ts
+```js
 await db.query('products').avg('unitPrice').filter('category.id', '=', 1).get()
 ```
 
@@ -376,7 +376,7 @@ FROM products
 GROUP BY category_id;
 ```
 
-```ts
+```js
 await db.query('products').avg('unitPrice').groupBy('category').get()
 ```
 
@@ -415,7 +415,7 @@ SELECT * FROM customers
 WHERE country IN ('Germany', 'France', 'UK');
 ```
 
-```ts
+```js
 await db.query('customers').filter('country', '=', ['Germany', 'France', 'UK']).get().inspect()
 ```
 
@@ -427,7 +427,7 @@ WHERE unitPrice BETWEEN 10 AND 20
 ORDER BY price;
 ```
 
-```ts
+```js
 await db.query('products').filter('unitPrice', '..', [10, 20]).sort('unitPrice', 'desc').get()
 ```
 
@@ -441,7 +441,7 @@ SELECT customer_id AS ID, company_name AS Customer
 FROM customers;
 ```
 
-```ts
+```js
 (await db.query('customers').include('companyName').get().toObject()).map((r) => ({ id: r.id, customer: r.companyName }))
 ```
 
@@ -453,7 +453,7 @@ FROM orders
 INNER JOIN customers ON orders.customer_id=customers.customer_id;
 ```
 
-```ts
+```js
 await db.query('orders').include('customer.company_name', 'order_date').range(0, 10).get()
 ```
 
@@ -467,7 +467,7 @@ ON customers.customer_id=orders.customer_id
 ORDER BY customers.company_name;
 ```
 
-```ts
+```js
 await db.query('customers').include('companyName', (q) => q('orders').include('id')).sort('companyName').get()
 ```
 
@@ -488,7 +488,7 @@ SELECT 'supplier', contact_name, city, country
 FROM suppliers
 ```
 
-```ts
+```js
 const unionA = await db.query('customers').include('contactName', 'city', 'country').get().toObject()
 const unionB = await db.query('suppliers').include('contactName', 'city', 'country').get().toObject()
 const union = [ ...unionA.map((r) => ({ type: 'customer', ...r })), ...unionB.map((r) => ({ type: 'supplier', ...r })) ]
@@ -506,7 +506,7 @@ SELECT city, country FROM customers
   ORDER BY city;
 ```
 
-```ts
+```js
 console.log('union all')
 const unionAllA = await db.query('customers').include('city', 'country').get().toObject()
 const unionAllB = await db.query('suppliers').include('city', 'country').get().toObject()
