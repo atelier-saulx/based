@@ -228,4 +228,3 @@ pub inline fn aggregateRefsDefault(
 
     return resultsSize + 2 + 4;
 }
-

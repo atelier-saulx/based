@@ -2364,11 +2364,11 @@ await test('cardinality with dates', async (t) => {
   })
 
   db.create('lunch', {
-    day: '6/30/25', // mon
+    day: new Date('6/30/2025 00:00+0'), // mon
     eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
   })
   db.create('lunch', {
-    day: '7/1/25', // tue
+    day: new Date('7/1/2025 00:00+0'), // tue
     eaters: [
       'Nuno',
       'Tom',
