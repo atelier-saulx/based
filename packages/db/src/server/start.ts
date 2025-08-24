@@ -76,7 +76,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       const def = db.schemaTypesParsedById[typeId]
-      if (!def.partial || !opts.noLoadDumps) {
+      if (!def.partial && !opts.noLoadDumps) {
         for (const dump of dumps) {
           const fname = dump.file
           if (fname?.length > 0) {
