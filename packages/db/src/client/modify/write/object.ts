@@ -1,8 +1,8 @@
 import { SchemaTypeDef, isPropDef } from '@based/schema/def'
-import { Ctx } from './Ctx.js'
-import { writeSeperate } from './writeSeperate.js'
-import { writeMainValue } from './writeMain.js'
-import { writeIncrement } from './writeIncrement.js'
+import { Ctx } from '../Ctx.js'
+import { writeSeperate } from './seperate.js'
+import { writeMainValue } from './main.js'
+import { writeIncrement } from './increment.js'
 
 export const writeObject = (
   ctx: Ctx,

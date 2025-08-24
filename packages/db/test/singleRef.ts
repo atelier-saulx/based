@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { ModifyRes } from '../src/client/modify/ModifyRes.js'
+import { ModifyRes } from '../src/client/_modify/ModifyRes.js'
 import { setTimeout } from 'timers/promises'
 import { wait } from '@based/utils'
 

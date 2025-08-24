@@ -11,7 +11,7 @@ import {
   COLVEC,
   JSON,
 } from '@based/schema/def'
-import { Ctx } from './Ctx.js'
+import { Ctx } from '../Ctx.js'
 
 export const writeSeperate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex

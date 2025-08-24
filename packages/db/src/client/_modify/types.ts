@@ -1,5 +1,5 @@
 import { LangName } from '@based/schema'
-// import { ModifyError } from './ModifyRes.js'
+import { ModifyError } from './ModifyRes.js'
 
 export const CREATE = 3
 export const UPDATE = 6
@@ -37,7 +37,7 @@ export const enum SIZE {
   DEFAULT_CURSOR = 11,
 }
 
-// export type ModifyErr = typeof RANGE_ERR | ModifyError | void
+export type ModifyErr = typeof RANGE_ERR | ModifyError | void
 
 export type ModifyOpts = {
   unsafe?: boolean

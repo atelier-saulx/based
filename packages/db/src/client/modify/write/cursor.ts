@@ -6,8 +6,8 @@ import {
   CREATE,
   SWITCH_ID_CREATE,
   SWITCH_ID_UPDATE,
-} from '../modify/types.js'
-import { Ctx } from './Ctx.js'
+} from '../../_modify/types.js'
+import { Ctx } from '../Ctx.js'
 
 export const writeTypeCursor = (ctx: Ctx) => {
   if (ctx.schema.id !== ctx.current.schema) {

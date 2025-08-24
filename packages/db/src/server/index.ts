@@ -9,7 +9,7 @@ import { setTimeout } from 'node:timers/promises'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { readUint16, readUint32, readUint64 } from '@based/utils'
+import { readUint16, readUint32, readUint64, writeUint32 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
 import { strictSchemaToDbSchema } from './schema.js'
 import { SchemaChecksum } from '../schema.js'
@@ -355,97 +355,162 @@ export class DbServer extends DbShared {
     return schema.hash
   }
 
-  modify(bufWithHash: Uint8Array): Record<number, number> | null {
-    const schemaHash = readUint64(bufWithHash, 0)
-    if (schemaHash !== this.schema?.hash) {
-      this.emit('info', 'Schema mismatch in modify')
+  modify(
+    payload: Uint8Array,
+    skipParse?: boolean,
+  ): Record<number, number> | null {
+    const hash = readUint64(payload, 0)
+    const contentEnd = readUint32(payload, payload.byteLength - 4)
+    let result: Record<number, number>
+
+    if (this.schema?.hash !== hash) {
+      console.log(this.schema?.hash, hash)
+      this.emit('info', 'Schema mismatch in write')
       return null
     }
 
-    const buf = bufWithHash.subarray(8)
-    const offsets = {}
-    const dataLen = readUint32(buf, buf.length - 4)
-    let typesSize = readUint16(buf, dataLen)
-    let i = dataLen + 2
+    if (!skipParse) {
+      result = {}
+      let i = payload.byteLength - 4
+      while (i > contentEnd) {
+        const typeId = readUint16(payload, i - 6)
+        const count = readUint32(payload, i - 4)
+        const typeDef = this.schemaTypesParsedById[typeId]
 
-    while (typesSize--) {
-      const typeId = readUint16(buf, i)
-      i += 2
-      const startId = readUint32(buf, i)
-      const def = this.schemaTypesParsedById[typeId]
-      if (!def) {
-        console.error(
-          `Wrong cannot get def in modify ${typeId} ${schemaHash} ${this.schema?.hash}!}`,
-        )
-        return null
+        if (!typeDef) {
+          this.emit('info', 'Missing typeDef, cancel write')
+          return null
+        }
+
+        // TODO replace this with Ctx.created
+        const offset = typeDef.lastId + 1 - count
+        console.log({ typeId, lastId: typeDef.lastId, count, offset })
+        // write the offset into payload for zig to use
+        writeUint32(payload, offset, i - 4)
+        result[typeId] = offset
+        typeDef.lastId += count
+        i -= 6
       }
-      let offset = def.lastId - startId
-
-      if (offset < 0) {
-        offset = 0
-      }
-
-      buf[i++] = offset
-      buf[i++] = offset >>> 8
-      buf[i++] = offset >>> 16
-      buf[i++] = offset >>> 24
-
-      const lastId = readUint32(buf, i)
-      i += 4
-
-      def.lastId = lastId + offset
-      offsets[typeId] = offset
     }
+
+    const content = payload.subarray(8, contentEnd)
+    const offsets = payload.subarray(contentEnd, payload.byteLength - 4)
 
     if (this.activeReaders) {
-      this.modifyQueue.push(new Uint8Array(bufWithHash))
+      this.modifyQueue.push(new Uint8Array(payload))
     } else {
-      this.#modify(buf)
-    }
-
-    return offsets
-  }
-
-  #modify(buf: Uint8Array) {
-    if (this.stopped) {
-      console.error('Db is stopped - trying to modify')
-      return
-    }
-
-    const end = buf.length - 4
-    const dataLen = readUint32(buf, end)
-    let typesSize = readUint16(buf, dataLen)
-    const typesLen = typesSize * 10
-    const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
-    const data = buf.subarray(0, dataLen)
-
-    let i = dataLen + 2
-
-    while (typesSize--) {
-      const typeId = readUint16(buf, i)
-      const def = this.schemaTypesParsedById[typeId]
-      const key = makeTreeKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
-      this.dirtyRanges.add(key)
-      i += 10
-    }
-
-    const view = new DataView(buf.buffer, buf.byteOffset)
-    while (i < end) {
-      // const key = view.getFloat64(i, true)
-      // These node ranges may not actually exist
-      // this.dirtyRanges.add(key)
-      i += 8
-    }
-
-    resizeModifyDirtyRanges(this)
-    native.modify(data, types, this.dbCtxExternal, this.modifyDirtyRanges)
-    for (let key of this.modifyDirtyRanges) {
-      if (key === 0) {
-        break
+      console.log(':', content)
+      resizeModifyDirtyRanges(this)
+      native.modify(
+        content,
+        offsets,
+        this.dbCtxExternal,
+        this.modifyDirtyRanges,
+      )
+      for (const key of this.modifyDirtyRanges) {
+        if (key === 0) break
+        this.dirtyRanges.add(key)
       }
-      this.dirtyRanges.add(key)
     }
+
+    return result
+
+    // const schemaHash = readUint64(bufWithHash, 0)
+    // if (schemaHash !== this.schema?.hash) {
+    //   this.emit('info', 'Schema mismatch in modify')
+    //   return null
+    // }
+
+    // const buf = bufWithHash.subarray(8)
+    // const offsets = {}
+    // // const dataEnd = readUint32(buf, buf.length - 4)
+    // // let i = bufWithHash.byteLength
+    // // while (i > dataEnd) {
+
+    // // }
+
+    // const dataLen = readUint32(buf, buf.length - 4)
+    // let typesSize = readUint16(buf, dataLen)
+    // let i = dataLen + 2
+
+    // while (typesSize--) {
+    //   const typeId = readUint16(buf, i)
+    //   i += 2
+    //   const startId = readUint32(buf, i)
+    //   const def = this.schemaTypesParsedById[typeId]
+    //   if (!def) {
+    //     console.error(
+    //       `Wrong cannot get def in modify ${typeId} ${schemaHash} ${this.schema?.hash}!}`,
+    //     )
+    //     return null
+    //   }
+    //   let offset = def.lastId - startId
+
+    //   if (offset < 0) {
+    //     offset = 0
+    //   }
+
+    //   buf[i++] = offset
+    //   buf[i++] = offset >>> 8
+    //   buf[i++] = offset >>> 16
+    //   buf[i++] = offset >>> 24
+
+    //   const lastId = readUint32(buf, i)
+    //   i += 4
+
+    //   def.lastId = lastId + offset
+    //   offsets[typeId] = offset
+    // }
+
+    // if (this.activeReaders) {
+    //   this.modifyQueue.push(new Uint8Array(bufWithHash))
+    // } else {
+    //   this.#modify(buf)
+    // }
+
+    // return offsets
   }
+
+  // #modify(buf: Uint8Array) {
+  //   if (this.stopped) {
+  //     console.error('Db is stopped - trying to modify')
+  //     return
+  //   }
+
+  //   const end = buf.length - 4
+  //   const dataLen = readUint32(buf, end)
+  //   let typesSize = readUint16(buf, dataLen)
+  //   const typesLen = typesSize * 10
+  //   const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
+  //   const data = buf.subarray(0, dataLen)
+
+  //   let i = dataLen + 2
+
+  //   while (typesSize--) {
+  //     const typeId = readUint16(buf, i)
+  //     const def = this.schemaTypesParsedById[typeId]
+  //     const key = makeTreeKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
+  //     this.dirtyRanges.add(key)
+  //     i += 10
+  //   }
+
+  //   const view = new DataView(buf.buffer, buf.byteOffset)
+  //   while (i < end) {
+  //     // const key = view.getFloat64(i, true)
+  //     // These node ranges may not actually exist
+  //     // this.dirtyRanges.add(key)
+  //     i += 8
+  //   }
+
+  //   resizeModifyDirtyRanges(this)
+  //   native.modify(data, types, this.dbCtxExternal, this.modifyDirtyRanges)
+  //   for (let key of this.modifyDirtyRanges) {
+  //     if (key === 0) {
+  //       break
+  //     }
+  //     this.dirtyRanges.add(key)
+  //   }
+  // }
 
   #expire() {
     resizeModifyDirtyRanges(this)
@@ -455,10 +520,8 @@ export class DbServer extends DbShared {
       this.dbCtxExternal,
       this.modifyDirtyRanges,
     )
-    for (let key of this.modifyDirtyRanges) {
-      if (key === 0) {
-        break
-      }
+    for (const key of this.modifyDirtyRanges) {
+      if (key === 0) break
       this.dirtyRanges.add(key)
     }
   }
@@ -536,14 +599,14 @@ export class DbServer extends DbShared {
       if (this.modifyQueue.length) {
         const modifyQueue = this.modifyQueue
         this.modifyQueue = []
-        for (const bufWithHash of modifyQueue) {
-          const schemaHash = readUint64(bufWithHash, 0)
+        for (const payload of modifyQueue) {
+          const schemaHash = readUint64(payload, 0)
           if (schemaHash !== this.schema?.hash) {
             this.emit('info', 'Schema mismatch in modify')
             return null
           }
-          const buf = bufWithHash.subarray(8)
-          this.#modify(buf)
+          const buf = payload.subarray(8)
+          this.modify(buf, false)
         }
       }
       if (this.queryQueue.size) {

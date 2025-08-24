@@ -7,7 +7,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { BasedDbOpts } from './types.js'
-export * from './client/modify/modify.js'
+export * from './client/_modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx }
 export { DbClient, DbServer }

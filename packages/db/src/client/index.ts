@@ -1,5 +1,5 @@
 import { MigrateFns, parse, Schema, StrictSchema } from '@based/schema'
-import { create, CreateObj } from './modify/create.js'
+import { create, CreateObj } from './_modify/create.js'
 import {
   flushBuffer,
   makeFlushIsReady,
@@ -7,12 +7,12 @@ import {
   startDrain,
 } from './flushModify.js'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
-import { ModifyRes, ModifyState } from './modify/ModifyRes.js'
-import { upsert } from './modify/upsert.js'
-import { update } from './modify/update.js'
-import { deleteFn } from './modify/delete.js'
-import { ModifyOpts } from './modify/types.js'
-import { expire } from './modify/expire.js'
+import { ModifyRes, ModifyState } from './_modify/ModifyRes.js'
+import { upsert } from './_modify/upsert.js'
+import { update } from './_modify/update.js'
+import { deleteFn } from './_modify/delete.js'
+import { ModifyOpts } from './_modify/types.js'
+import { expire } from './_modify/expire.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'

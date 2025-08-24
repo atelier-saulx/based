@@ -1,4 +1,4 @@
-import { RANGE_ERR } from '../modify/types.js'
+import { RANGE_ERR } from '../_modify/types.js'
 import { Ctx } from './Ctx.js'
 
 export const resize = (ctx: Ctx, end: number) => {
