@@ -10,8 +10,16 @@ import {
 } from './write/cursor.js'
 import { getByPath } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from './write/main.js'
+import { Tmp } from './Tmp.js'
+import { DbClient } from '../../index.js'
+import { drain } from './drain.js'
 
-export function create(ctx: Ctx, typeDef: SchemaTypeDef, payload: any) {
+export function create(
+  db: DbClient,
+  ctx: Ctx,
+  typeDef: SchemaTypeDef,
+  payload: any,
+) {
   const intialIndex = ctx.index
 
   if (!(typeDef.id in ctx.created)) {
@@ -37,11 +45,11 @@ export function create(ctx: Ctx, typeDef: SchemaTypeDef, payload: any) {
   try {
     resize(ctx, ctx.index + SIZE.DEFAULT_CURSOR)
     writeTypeCursor(ctx)
+    writeNodeCursor(ctx)
     const preWriteIndex = ctx.index
     writeObject(ctx, typeDef.tree, payload)
     if (ctx.index === preWriteIndex || ctx.schema.mainLen === 0) {
       writeMainCursor(ctx)
-      writeNodeCursor(ctx)
     }
     if (ctx.schema.createTs) {
       let createTs: number
@@ -62,16 +70,30 @@ export function create(ctx: Ctx, typeDef: SchemaTypeDef, payload: any) {
     if (e === RANGE_ERR) {
       if (intialIndex === 8) {
         ctx.index = intialIndex
-        ctx.current = {}
+        ctx.cursor = {}
         throw { msg: 'Out of range. Not enough space for this payload' }
       }
-      ctx.index = 8
-      ctx.current = {}
+      drain(db, ctx)
       return create.apply(null, arguments)
-    } else {
-      ctx.index = intialIndex
-      ctx.current = {}
-      throw e
     }
+
+    if (e instanceof Tmp) {
+      return e.then(() => create.apply(null, arguments))
+    }
+
+    if (e.then) {
+      return e.then((id: number) => {
+        e.id = id
+        return create.apply(null, arguments)
+      })
+    }
+
+    ctx.index = intialIndex
+    ctx.cursor = {}
+    throw e
   }
+
+  // schedule(db, ctx)
+
+  return new Tmp(ctx)
 }

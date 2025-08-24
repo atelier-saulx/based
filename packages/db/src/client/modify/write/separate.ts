@@ -12,15 +12,16 @@ import {
   JSON,
 } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
+import { writeReference } from './reference.js'
 
-export const writeSeperate = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
   if (type === STRING) {
     // writeString(0, val, ctx, schema, def, res.tmpId, mod)
   } else if (type === TEXT) {
     // writeText(val, ctx, schema, def, res, res.tmpId, mod)
   } else if (type === REFERENCE) {
-    // writeReference(val, ctx, schema, def, res, mod)
+    writeReference(ctx, def, val)
   } else if (type === REFERENCES) {
     // writeReferences(val, ctx, schema, def, res, mod)
   } else if (type === BINARY) {

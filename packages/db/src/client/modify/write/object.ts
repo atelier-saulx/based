@@ -1,6 +1,6 @@
 import { SchemaTypeDef, isPropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
-import { writeSeperate } from './seperate.js'
+import { writeSeparate } from './separate.js'
 import { writeMainValue } from './main.js'
 import { writeIncrement } from './increment.js'
 
@@ -26,7 +26,7 @@ export const writeObject = (
       continue
     }
     if (def.separate) {
-      writeSeperate(ctx, def, val)
+      writeSeparate(ctx, def, val)
       continue
     }
     if (ctx.overwrite) {

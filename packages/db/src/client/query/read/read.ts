@@ -463,7 +463,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
 
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
-      // Only relevant for seperate props
+      // Only relevant for separate props
       const prop = q.schema.reverseProps[k]
       if (prop.typeIndex === CARDINALITY) {
         addField(prop, 0, item, false)

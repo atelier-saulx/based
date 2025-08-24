@@ -1,6 +1,7 @@
 import { writeUint16, writeUint32 } from '@based/utils'
 import { DbClient } from '../../index.js'
 import { Ctx } from './Ctx.js'
+import { resolveTmp } from './Tmp.js'
 
 export const consume = (ctx: Ctx) => {
   const typeIds = Object.keys(ctx.created)
@@ -14,29 +15,34 @@ export const consume = (ctx: Ctx) => {
     writeUint32(payload, count, i + 2)
   }
   ctx.index = 8
-  ctx.current = {}
+  ctx.cursor = {}
   ctx.created = {}
+  ctx.batch = {}
   return payload
 }
 
 export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
+    const { batch } = ctx
     const payload = consume(ctx)
     ctx.draining = db.hooks
       .flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {
         db.writeTime += dbWriteTime ?? 0
-        console.log({ offsets })
+        batch.offsets = offsets
+        batch.promises?.forEach(resolveTmp)
+        batch.promises = null
       })
       .catch(console.error)
       .finally(() => {
         ctx.draining = null
+        return drain(db, ctx)
       })
-    return ctx.draining
   }
+  return ctx.draining
 }
 
-export const scheduleDrain = (db: DbClient, ctx: Ctx) => {
+export const schedule = (db: DbClient, ctx: Ctx) => {
   if (ctx.scheduled) {
     return
   }

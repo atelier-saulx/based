@@ -41,13 +41,13 @@ export function writeText(
     let locale = res.locale
     if (!locale) {
       // TODO: Add def lang option...
-      for (const localeCode of schema.seperateTextSort.localeToIndex.keys()) {
+      for (const localeCode of schema.separateTextSort.localeToIndex.keys()) {
         locale = localeCode
         break
       }
     }
 
-    if (!schema.seperateTextSort.localeToIndex.has(locale)) {
+    if (!schema.separateTextSort.localeToIndex.has(locale)) {
       return new ModifyError(t, locale, 'Invalid locale')
     }
 
@@ -63,12 +63,12 @@ export function writeText(
 
     if (modifyOp === CREATE) {
       const index = t.prop * (schema.localeSize + 1)
-      const langIndex = schema.seperateTextSort.localeToIndex.get(locale)
-      schema.seperateTextSort.bufferTmp[index] -= 1
-      schema.seperateTextSort.bufferTmp[index + langIndex] = 0
+      const langIndex = schema.separateTextSort.localeToIndex.get(locale)
+      schema.separateTextSort.bufferTmp[index] -= 1
+      schema.separateTextSort.bufferTmp[index + langIndex] = 0
       ctx.hasSortText += 1
       if (schema.hasSeperateDefaults) {
-        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        schema.separateDefaults.bufferTmp[t.prop] = 1
         ctx.hasDefaults++
       }
     }
@@ -82,7 +82,7 @@ export function writeText(
     // @ts-ignore
     for (const lang in value) {
       const langC: Uint8Array =
-        schema.seperateTextSort.localeStringToIndex.get(lang)
+        schema.separateTextSort.localeStringToIndex.get(lang)
       if (!langC) {
         return new ModifyError(t, lang, 'Invalid locale')
       }
@@ -103,11 +103,11 @@ export function writeText(
 
       if (modifyOp === CREATE) {
         const index = t.prop * (1 + schema.localeSize)
-        schema.seperateTextSort.bufferTmp[index] -= 1
-        schema.seperateTextSort.bufferTmp[index + langC[0]] = 0
+        schema.separateTextSort.bufferTmp[index] -= 1
+        schema.separateTextSort.bufferTmp[index + langC[0]] = 0
         ctx.hasSortText += 1
         if (schema.hasSeperateDefaults) {
-          schema.seperateDefaults.bufferTmp[t.prop]++
+          schema.separateDefaults.bufferTmp[t.prop]++
         }
       }
     }

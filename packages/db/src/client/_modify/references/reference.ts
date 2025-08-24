@@ -11,7 +11,7 @@ import {
   NOEDGE_NOINDEX_TMPID,
   EDGE_NOINDEX_REALID,
   NOEDGE_INDEX_REALID,
-  CREATE,
+  NOEDGE_NOINDEX_REALID,
 } from '../types.js'
 import { writeEdges } from './edge.js'
 import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
@@ -26,7 +26,11 @@ function writeRef(
   hasEdges: boolean,
   isTmpId: boolean,
 ): ModifyErr {
-  if (!def.validation(id, def) || ((schema.idUint8[1] << 8 | schema.idUint8[0]) === def.inverseTypeId && parentId === id)) {
+  if (
+    !def.validation(id, def) ||
+    (((schema.idUint8[1] << 8) | schema.idUint8[0]) === def.inverseTypeId &&
+      parentId === id)
+  ) {
     return new ModifyError(def, id)
   }
 
@@ -39,7 +43,7 @@ function writeRef(
   if (isTmpId) {
     ctx.buf[ctx.len++] = hasEdges ? EDGE_NOINDEX_TMPID : NOEDGE_NOINDEX_TMPID
   } else {
-    ctx.buf[ctx.len++] = hasEdges ? EDGE_NOINDEX_REALID : NOEDGE_INDEX_REALID
+    ctx.buf[ctx.len++] = hasEdges ? EDGE_NOINDEX_REALID : NOEDGE_NOINDEX_REALID
   }
   ctx.buf[ctx.len++] = id
   ctx.buf[ctx.len++] = id >>>= 8

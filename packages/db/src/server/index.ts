@@ -375,6 +375,7 @@ export class DbServer extends DbShared {
       while (i > contentEnd) {
         const typeId = readUint16(payload, i - 6)
         const count = readUint32(payload, i - 4)
+
         const typeDef = this.schemaTypesParsedById[typeId]
 
         if (!typeDef) {
@@ -383,8 +384,7 @@ export class DbServer extends DbShared {
         }
 
         // TODO replace this with Ctx.created
-        const offset = typeDef.lastId + 1 - count
-        console.log({ typeId, lastId: typeDef.lastId, count, offset })
+        const offset = typeDef.lastId
         // write the offset into payload for zig to use
         writeUint32(payload, offset, i - 4)
         result[typeId] = offset
@@ -399,7 +399,6 @@ export class DbServer extends DbShared {
     if (this.activeReaders) {
       this.modifyQueue.push(new Uint8Array(payload))
     } else {
-      console.log(':', content)
       resizeModifyDirtyRanges(this)
       native.modify(
         content,

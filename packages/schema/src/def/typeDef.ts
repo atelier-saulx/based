@@ -285,13 +285,13 @@ export const createSchemaTypeDef = (
         setByPath(result.tree, f.path, f)
         if (f.default !== undefined) {
           result.hasSeperateDefaults = true
-          if (!result.seperateDefaults) {
-            result.seperateDefaults = {
+          if (!result.separateDefaults) {
+            result.separateDefaults = {
               props: new Map(),
               bufferTmp: new Uint8Array(),
             }
           }
-          result.seperateDefaults.props.set(f.prop, f)
+          result.separateDefaults.props.set(f.prop, f)
           if (f.prop > biggestSeperatePropDefault) {
             biggestSeperatePropDefault = f.prop
           }
@@ -308,7 +308,7 @@ export const createSchemaTypeDef = (
     }
 
     if (result.hasSeperateDefaults) {
-      result.seperateDefaults.bufferTmp = new Uint8Array(
+      result.separateDefaults.bufferTmp = new Uint8Array(
         biggestSeperatePropDefault + 1,
       )
     }

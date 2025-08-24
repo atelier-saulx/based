@@ -21,7 +21,7 @@ export function writeJson(
       }
       if (modifyOp === CREATE) {
         if (schema.hasSeperateDefaults) {
-          schema.seperateDefaults.bufferTmp[t.prop] = 1
+          schema.separateDefaults.bufferTmp[t.prop] = 1
           ctx.hasDefaults++
         }
       }

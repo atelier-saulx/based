@@ -59,10 +59,10 @@ export function writeString(
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {
-      schema.seperateSort.bufferTmp[t.prop] = 2
+      schema.separateSort.bufferTmp[t.prop] = 2
       ctx.hasSortField++
       if (schema.hasSeperateDefaults) {
-        schema.seperateDefaults.bufferTmp[t.prop] = 1
+        schema.separateDefaults.bufferTmp[t.prop] = 1
         ctx.hasDefaults++
       }
     }

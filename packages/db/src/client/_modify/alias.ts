@@ -40,10 +40,10 @@ export function writeAlias(
         return RANGE_ERR
       }
       if (modifyOp === CREATE) {
-        def.seperateSort.bufferTmp[t.prop] = 2
+        def.separateSort.bufferTmp[t.prop] = 2
         ctx.hasSortField++
         if (def.hasSeperateDefaults) {
-          def.seperateDefaults.bufferTmp[t.prop] = 1
+          def.separateDefaults.bufferTmp[t.prop] = 1
           ctx.hasDefaults++
         }
       }

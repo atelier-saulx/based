@@ -1,6 +1,7 @@
 import { SchemaTypeDef, PropDef } from '@based/schema/def'
 import { ModifyOp } from './types.js'
 import { writeUint64 } from '@based/utils'
+import type { Tmp } from './Tmp.js'
 
 export class Ctx {
   constructor(schemaChecksum: number, array: Uint8Array<ArrayBuffer>) {
@@ -9,8 +10,8 @@ export class Ctx {
     writeUint64(array, schemaChecksum, 0)
   }
   id: number
-  schema: SchemaTypeDef
   index: number = 8
+  schema: SchemaTypeDef
   array: Uint8Array<ArrayBuffer>
   max: number
   unsafe?: boolean
@@ -20,8 +21,12 @@ export class Ctx {
   draining: Promise<void>
   scheduled: boolean
   created: Record<number, number> = {} // <typeId, count
-  current: {
-    schema?: number
+  batch: {
+    promises?: Tmp[]
+    offsets?: Record<number, number>
+  } = {}
+  cursor: {
+    type?: number
     prop?: number
     main?: number
     id?: number

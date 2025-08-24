@@ -30,14 +30,14 @@ export const createEmptyDef = (
     separateSortText: 0,
     localeSize: 0,
     hasSeperateSort: false,
-    seperateSort: {
+    separateSort: {
       size: 0,
       props: [],
       buffer: new Uint8Array([]),
       bufferTmp: new Uint8Array([]),
     },
     hasSeperateTextSort: false,
-    seperateTextSort: {
+    separateTextSort: {
       size: 0, // prop len
       props: [],
       buffer: new Uint8Array([]),

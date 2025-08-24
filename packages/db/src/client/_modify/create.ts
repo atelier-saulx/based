@@ -94,15 +94,15 @@ const appendCreate = (
   }
 
   if (schema.hasSeperateDefaults) {
-    const buf = schema.seperateDefaults.bufferTmp
+    const buf = schema.separateDefaults.bufferTmp
     // if ctx.hasDefault === -1 means it needs defaults
 
-    if (ctx.hasDefaults !== schema.seperateDefaults.props.size - 1) {
+    if (ctx.hasDefaults !== schema.separateDefaults.props.size - 1) {
       const id = res.tmpId
-      for (const propDef of schema.seperateDefaults.props.values()) {
+      for (const propDef of schema.separateDefaults.props.values()) {
         const prop = propDef.prop
         const type = propDef.typeIndex
-        if (schema.seperateDefaults.bufferTmp[prop] === 0) {
+        if (schema.separateDefaults.bufferTmp[prop] === 0) {
           if (type === BINARY) {
             writeBinary(propDef.default, ctx, schema, propDef, id, CREATE)
           } else if (type === STRING) {
@@ -115,10 +115,10 @@ const appendCreate = (
             writeAlias(propDef.default, ctx, schema, propDef, id, CREATE)
           }
         } else if (type === TEXT) {
-          const buf = schema.seperateTextSort.bufferTmp
+          const buf = schema.separateTextSort.bufferTmp
           const amount = schema.localeSize + 1
-          const len = amount * schema.seperateTextSort.props.length
-          for (const { prop } of schema.seperateTextSort.props) {
+          const len = amount * schema.separateTextSort.props.length
+          for (const { prop } of schema.separateTextSort.props) {
             const index = prop * amount
             if (buf[index] !== 0) {
               for (let i = index + 1; i < len + index; i++) {
@@ -152,15 +152,15 @@ const appendCreate = (
 
   if (schema.hasSeperateSort) {
     // just do it here!
-    if (ctx.hasSortField !== schema.seperateSort.size - 1) {
+    if (ctx.hasSortField !== schema.separateSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
       ctx.buf[ctx.len++] = ADD_EMPTY_SORT
       const sizepos = ctx.len
       ctx.len += 2
-      for (const { prop } of schema.seperateSort.props) {
-        if (schema.seperateSort.bufferTmp[prop] === 0) {
+      for (const { prop } of schema.separateSort.props) {
+        if (schema.separateSort.bufferTmp[prop] === 0) {
           if (ctx.len + 1 > ctx.max) {
             return RANGE_ERR
           }
@@ -171,15 +171,15 @@ const appendCreate = (
     }
 
     if (ctx.hasSortField !== -1) {
-      schema.seperateSort.bufferTmp.set(schema.seperateSort.buffer, 0)
+      schema.separateSort.bufferTmp.set(schema.separateSort.buffer, 0)
     }
     // add test for this
     ctx.hasSortField = -1
   }
 
   if (schema.hasSeperateTextSort) {
-    const buf = schema.seperateTextSort.bufferTmp
-    if (ctx.hasSortText !== schema.seperateTextSort.size - 1) {
+    const buf = schema.separateTextSort.bufferTmp
+    if (ctx.hasSortText !== schema.separateTextSort.size - 1) {
       if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
@@ -187,8 +187,8 @@ const appendCreate = (
       let sizepos = ctx.len
       ctx.len += 2
       const amount = schema.localeSize + 1
-      const len = amount * schema.seperateTextSort.props.length
-      for (const { prop } of schema.seperateTextSort.props) {
+      const len = amount * schema.separateTextSort.props.length
+      for (const { prop } of schema.separateTextSort.props) {
         const index = prop * amount
         if (buf[index] !== 0) {
           ctx.buf[ctx.len++] = prop
@@ -208,7 +208,7 @@ const appendCreate = (
     }
 
     if (ctx.hasSortText !== -1) {
-      buf.set(schema.seperateTextSort.buffer, 0)
+      buf.set(schema.separateTextSort.buffer, 0)
     }
     ctx.hasSortText = -1
   }

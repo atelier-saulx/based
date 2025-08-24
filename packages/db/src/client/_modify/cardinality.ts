@@ -25,7 +25,7 @@ export function writeHll(
   }
   const err = addHll(value, ctx, def, t, parentId, modifyOp)
   if (!err && modifyOp === CREATE) {
-    def.seperateSort.bufferTmp[t.prop] = 2
+    def.separateSort.bufferTmp[t.prop] = 2
     ctx.hasSortField++
   }
 
