@@ -12,8 +12,8 @@ import {
   TEXT,
 } from '@based/schema/def'
 import { QueryDef } from '../types.js'
-import { Item, ReaderPropDef, ReaderSchema } from './types.js'
-import { addProp } from './addProps.js'
+import { Item, Meta, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
+import { addMetaProp, addProp } from './addProps.js'
 import { readVector } from './readVector.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {
@@ -57,7 +57,20 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
   for (const k in q.props) {
     const p = q.props[k]
     if (p.readBy !== q.readId) {
-      addProp(p, undefinedValue(p), item)
+      if (p.meta) {
+        const meta: Meta = {
+          checksum: 0,
+          size: 0,
+          crc32: 0,
+          compressed: false,
+        }
+        if (p.meta === ReaderMeta.combined) {
+          meta.value = undefinedValue(p)
+        }
+        addMetaProp(p, meta, item)
+      } else {
+        addProp(p, undefinedValue(p), item)
+      }
       //   const prop = q.schema.reverseProps[k]
       // handle edge
       // Only relevant for seperate props

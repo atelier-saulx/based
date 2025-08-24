@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 import { wait } from '@based/utils'
+import { deflateSync } from 'node:zlib'
 
 await test('meta for selva string', async (t) => {
   const db = new BasedDb({
@@ -49,11 +50,12 @@ await test('meta for selva string', async (t) => {
     flap: { en: 'a2', it: 'b2' },
     // email: 'b@a.com',
     g: 'abraa darba',
+    name: 'flap',
     x: 100,
   })
 
   const id2 = await db.create('item', {
-    // name: 'XX',
+    name: 'XX',
     flap: { en: 'a', it: 'b' },
     // email: 'a@b.com',
     // x: 100,
@@ -78,8 +80,9 @@ await test('meta for selva string', async (t) => {
   for (let i = 0; i < 1; i++) {
     for (let i = 0; i < 1e6; i++) {
       db.create('item', {
-        x: 100,
+        x: i % 10,
         g: 'abraa darba',
+        // name: 'derp ' + i,
         // name: 'Snurp de lerp flap flap derp',
         flap: { it: 'Snurp de lerp flap flap derp' },
       })
@@ -91,13 +94,18 @@ await test('meta for selva string', async (t) => {
   // 'items.id'
   const q2 = await db
     .query('item')
-    .include('flap.en')
+    .include('name', { meta: true })
+    // .include('flap.en')
+    // .groupBy('x')
+    // .count()
     // .locale('it')
     // .include('*', 'items.$name')
     // .include('g', 'x')
     // .include('x', 'name', 'g') // 'name', 'flap'
-    .range(0, 1e6)
+    .range(0, 4)
     .get()
+
+  q2.debug()
 
   console.log('exec q', q2.execTime, 'ms', q2.result.byteLength)
   const rDef = convertToReaderSchema(q2.def)
@@ -112,17 +120,35 @@ await test('meta for selva string', async (t) => {
   const zz = JSON.parse(x)
 
   console.log(Date.now() - d2, 'ms json parse time')
-
-  console.log(y.encode(x))
-
-  // q2.debug()
-  q2.inspect(100)
-
-  console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+  const jsonSize = y.encode(x).byteLength
   console.log(
-    'JSON size',
-    y.encode(JSON.stringify(convertToReaderSchema(q2.def))),
+    'json size',
+    jsonSize,
+    'our size',
+    q2.result.byteLength,
+    ' ',
+    jsonSize / q2.result.byteLength,
+    'x',
   )
+
+  console.log('\n----READ READ----')
+  // q2.debug()
+  q2.inspect(5, true)
+
+  // console.log('\n=============\nSCHEMA STUFF')
+  // console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+  // console.log(
+  //   'JSON size',
+  //   y.encode(JSON.stringify(convertToReaderSchema(q2.def))).byteLength,
+  // )
+
+  // const bla =
+  //   `30 21 04 6e 61 6d 65 0b 40 03 20 46 46 57 27 00 17 80 b4 00 41 04 66 6c 61 70 0c 42 52 01 32 b7 7a 04 d2 e8 14 40 00 01 01 78 07 00 00 41 01 79 07 00 00 81 01 67 0a 13 0b 61 62 72 61 61 20 64 61 72 62 61 01 62 01 63 00 09 10 56 56 d6 16 96 c0 b0 00`.split(
+  //     ' ',
+  //   )
+  // const bla2 = Uint8Array.from(Buffer.from(bla.join(''), 'hex'))
+  // // @ts-ignore
+  // console.log(bla2.byteLength, deflateSync(bla2).byteLength)
 
   // console.log(
   //   'tmp schema',

@@ -12,7 +12,7 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { QueryDef, ReaderSchema } from '../../../index.js'
+import { ReaderSchema } from './types.js'
 import {
   readInt64,
   readUint16,
@@ -61,11 +61,12 @@ export const readAggregate = (
       let key: string = ''
       let keyLen: number = 0
       if (result[i] == 0) {
-        if (q.aggregate.groupBy.default) {
-          key = q.aggregate.groupBy.default
-        } else {
-          key = `$undefined`
-        }
+        // tmp this is rly nice to have...
+        // if (q.aggregate.groupBy.default) {
+        //   key = q.aggregate.groupBy.default
+        // } else {
+        key = `$undefined`
+        // }
         i += 2
       } else {
         if (q.aggregate.groupBy.typeIndex == ENUM) {
@@ -104,7 +105,6 @@ export const readAggregate = (
             const dtFormat = q.aggregate?.groupBy.display
             key = dtFormat.format(readInt64(result, i))
           }
-
           i += keyLen
         } else if (q.aggregate.groupBy.typeIndex == REFERENCE) {
           keyLen = readUint16(result, i)
@@ -119,36 +119,32 @@ export const readAggregate = (
         }
       }
       const resultKey = (results[key] = {})
-      for (const aggregatesArray of q.aggregate.aggregates.values()) {
-        for (const agg of aggregatesArray) {
-          var val = undefined
-          if (
-            agg.type === AggregateType.CARDINALITY ||
-            agg.type === AggregateType.COUNT
-          ) {
-            val = readUint32(result, agg.resultPos + i)
-          } else {
-            val = readDoubleLE(result, agg.resultPos + i)
-          }
-          setByPath(resultKey, agg.propDef.path, val)
-        }
-      }
-      i += q.aggregate.totalResultsSize
-    }
-  } else {
-    for (const aggregatesArray of q.aggregate.aggregates.values()) {
-      for (const agg of aggregatesArray) {
+      for (const agg of q.aggregate.aggregates) {
         var val = undefined
         if (
           agg.type === AggregateType.CARDINALITY ||
           agg.type === AggregateType.COUNT
         ) {
-          val = readUint32(result, agg.resultPos + offset)
+          val = readUint32(result, agg.resultPos + i)
         } else {
-          val = readDoubleLE(result, agg.resultPos + offset)
+          val = readDoubleLE(result, agg.resultPos + i)
         }
-        setByPath(results, agg.propDef.path, val)
+        setByPath(resultKey, agg.path, val)
       }
+      i += q.aggregate.totalResultsSize
+    }
+  } else {
+    for (const agg of q.aggregate.aggregates) {
+      var val = undefined
+      if (
+        agg.type === AggregateType.CARDINALITY ||
+        agg.type === AggregateType.COUNT
+      ) {
+        val = readUint32(result, agg.resultPos + offset)
+      } else {
+        val = readDoubleLE(result, agg.resultPos + offset)
+      }
+      setByPath(results, agg.path, val)
     }
   }
   return results

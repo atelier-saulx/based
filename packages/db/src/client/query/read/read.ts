@@ -16,7 +16,7 @@ import {
 } from '../types.js'
 import { READ_ID } from '../types.js'
 import { readMetaSeperate } from './meta.js'
-import { addProp } from './addProps.js'
+import { addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
@@ -26,7 +26,8 @@ const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]
   i++
   const prop = q.props[field]
-  addProp(prop, readMetaSeperate(result, i), item)
+  prop.readBy = q.readId
+  addMetaProp(prop, readMetaSeperate(result, i), item)
   i += 9
   return i
 }
@@ -57,7 +58,6 @@ const reference: ReadInstruction = (q, result, i, item) => {
     const id = readUint32(result, i)
     i += 4
     const refItem: Item = { id }
-
     readProps(ref.schema, result, i, size + i - 5, refItem)
     addProp(ref.prop, refItem, item)
     i += size - 5
@@ -125,6 +125,7 @@ export const readProps = (
     i = readInstruction(instruction, q, result, i, item)
   }
   // For the last id
+  q.readId ^= 1
   undefinedProps(q, item)
 }
 

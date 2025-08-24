@@ -121,6 +121,7 @@ pub fn getFields(
                             size += 11 + try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
+                        // hanlde TEXT
                         else => {},
                     }
                 }
