@@ -19,6 +19,7 @@ import { DbSchema } from '../schema.js'
 export type StartOpts = {
   clean?: boolean
   hosted?: boolean
+  noLoadDumps?: boolean
   delayInMs?: number
   queryThreads?: number
 }
@@ -75,17 +76,22 @@ export async function start(db: DbServer, opts: StartOpts) {
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       const def = db.schemaTypesParsedById[typeId]
-      for (const dump of dumps) {
-        const fname = dump.file
-        if (fname?.length > 0) {
-          if (!def.partial) {
+      if (!def.partial && !opts.noLoadDumps) {
+        for (const dump of dumps) {
+          const fname = dump.file
+          if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because verifTree is not avail
               native.loadBlock(join(path, fname), db.dbCtxExternal)
             } catch (e) {
               console.error(e.message)
             }
-          } else {
+          }
+        }
+      } else {
+        for (const dump of dumps) {
+          const fname = dump.file
+          if (fname?.length > 0) {
             partials.push([
               makeTreeKey(def.id, dump.start),
               hexToBuf(dump.hash),
