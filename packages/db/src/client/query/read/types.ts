@@ -5,7 +5,13 @@ import {
   TypeIndex,
   VECTOR,
 } from '@based/schema/def'
-import { IncludeOpts, QueryDef, QueryDefType, Target } from '../types.js'
+import {
+  IncludeOpts,
+  QueryDef,
+  QueryDefAggregation,
+  QueryDefType,
+  Target,
+} from '../types.js'
 
 export type Item = {
   id: number
@@ -32,7 +38,6 @@ export type TypedArray =
   | Float64Array
 
 export type ReadInstruction = (
-  id: number,
   q: ReaderSchema,
   result: Uint8Array,
   i: number,
@@ -63,6 +68,7 @@ export type ReaderPropDef = {
   hasMeta?: boolean
   enum?: any[]
   vectorBaseType?: PropDef['vectorBaseType']
+  readBy: number
 }
 
 export enum ReaderSchemaEnum {
@@ -72,7 +78,10 @@ export enum ReaderSchemaEnum {
   rootProps = 4,
 }
 
+// Move these types to seperate pkg including query def agg
 export type ReaderSchema = {
+  readId: number
+  // maybe current read id that you add
   props: { [prop: string]: ReaderPropDef }
   main: { props: { [start: string]: ReaderPropDef }; len: number }
   type: ReaderSchemaEnum
@@ -82,10 +91,11 @@ export type ReaderSchema = {
       prop: ReaderPropDef
     }
   }
+  aggregate?: QueryDefAggregation
   edges?: ReaderSchema
   // langCodeToString: { [langCode: string]: string }
   // =============
-  hasSearch?: boolean
+  search?: boolean
 }
 
 const createReaderPropDef = (
@@ -96,6 +106,7 @@ const createReaderPropDef = (
     path: p.__isEdge ? p.path.slice(1) : p.path,
     typeIndex: p.typeIndex,
     hasMeta: opts?.meta ? true : false,
+    readBy: 0,
   }
   if (p.typeIndex === ENUM) {
     readerPropDef.enum = p.enum
@@ -111,8 +122,8 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
   const isRoot = t === QueryDefType.Root
   const isSingle = isRoot && ('id' in q.target || 'alias' in q.target)
   const isEdge = t === QueryDefType.Edge
-
   const readerSchema: ReaderSchema = {
+    readId: 0,
     props: {},
     main: { len: 0, props: {} },
     refs: {},
@@ -124,21 +135,17 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
           : ReaderSchemaEnum.single
         : ReaderSchemaEnum.default,
   }
-
   if (isRoot && q.search) {
-    readerSchema.hasSearch = true
+    readerSchema.search = true
   }
-
   for (const [k, v] of q.include.props) {
     readerSchema.props[k] = createReaderPropDef(v.def, v.opts)
   }
-
   readerSchema.main.len = q.include.main.len
   for (const k in q.include.main.include) {
     const [start, p, opts] = q.include.main.include[k]
     readerSchema.main.props[start] = createReaderPropDef(p, opts)
   }
-
   for (const [k, v] of q.references.entries()) {
     const target = v.target as Target
     const propDef = target.propDef
@@ -147,13 +154,15 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
       prop: {
         path: propDef.path,
         typeIndex: propDef.typeIndex,
+        readBy: 0,
       },
     }
   }
-
   if (q.edges) {
     readerSchema.edges = convertToReaderSchema(q.edges)
   }
-
+  if (q.aggregate) {
+    readerSchema.aggregate = q.aggregate
+  }
   return readerSchema
 }

@@ -12,7 +12,7 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { QueryDef } from '../../../index.js'
+import { QueryDef, ReaderSchema } from '../../../index.js'
 import {
   readInt64,
   readUint16,
@@ -49,7 +49,7 @@ const readNumber = (
 
 export const readAggregate = (
   // only need agg
-  q: QueryDef,
+  q: ReaderSchema,
   result: Uint8Array,
   offset: number,
   len: number,

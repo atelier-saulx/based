@@ -108,7 +108,6 @@ export class BasedQueryResponse {
         i,
         result.byteLength - 4,
         item,
-        id,
       )
       i += l
       yield item

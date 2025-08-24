@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 import { deflateSync } from 'zlib'
+import { wait } from '@based/utils'
 
 await test('meta for selva string', async (t) => {
   const db = new BasedDb({
@@ -75,48 +76,53 @@ await test('meta for selva string', async (t) => {
   // q.debug()
   // q.inspect(10, true)
 
-  for (let i = 0; i < 1e6; i++) {
-    db.create('item', {
-      x: 100,
-      // g: 'abraa darba',
-      // name: 'Snurp de lerp flap flap derp',
-      // flap: { it: 'Snurp de lerp flap flap derp' },
-    })
+  for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 1e6; i++) {
+      db.create('item', {
+        x: 100,
+        g: 'abraa darba',
+        // name: 'Snurp de lerp flap flap derp',
+        // flap: { it: 'Snurp de lerp flap flap derp' },
+      })
+    }
+    console.log(`set all block ${i} (${i + 1})M items`, await db.drain(), 'ms')
+    // await wait(100)
   }
-
-  console.log('set all', await db.drain(), 'ms')
 
   // 'items.id'
   const q2 = await db
     .query('item')
     // .include('*', 'items.$name')
     // .include('g', 'x')
-    .include('x', 'name') // 'name', 'flap'
+    .include('x', 'name', 'g') // 'name', 'flap'
     .range(0, 1e6)
     .get()
 
   console.log('exec q', q2.execTime, 'ms', q2.result.byteLength)
-
+  const rDef = convertToReaderSchema(q2.def)
   const d = Date.now()
-  const y = new TextEncoder()
-  console.log(
-    y.encode(
-      JSON.stringify(
-        resultToObject(
-          convertToReaderSchema(q2.def),
-          q2.result,
-          q2.result.byteLength - 4,
-          0,
-        ),
-      ),
-    ),
-  )
+  const result = resultToObject(rDef, q2.result, q2.result.byteLength - 4, 0)
   console.log('read buf', Date.now() - d, 'ms')
+
+  const y = new TextEncoder()
+
+  const x = JSON.stringify(result)
+  const d2 = Date.now()
+  const zz = JSON.parse(x)
+
+  console.log(Date.now() - d2, 'ms json parse time')
+
+  console.log(y.encode(x))
 
   // q2.debug()
   q2.inspect()
 
   console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+
+  // AGGREGATE
+  // LANG (min map)
+  // UNDEFINED PROPS
+  // cache reader schema on query (and remove on update)
 
   // console.log(deflateSync(JSON.stringify(convertToReaderSchema(q2.def))))
 

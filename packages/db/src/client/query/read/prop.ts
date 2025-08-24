@@ -15,28 +15,7 @@ import {
   VECTOR,
 } from '@based/schema/def'
 import { read, readUtf8 } from '../../string.js'
-
-const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
-  switch (prop.vectorBaseType) {
-    case 'int8':
-      return new Int8Array(tmp)
-    case 'uint8':
-      return new Uint8Array(tmp)
-    case 'int16':
-      return new Int16Array(tmp)
-    case 'uint16':
-      return new Uint16Array(tmp)
-    case 'int32':
-      return new Int32Array(tmp)
-    case 'uint32':
-      return new Uint32Array(tmp)
-    case 'float32':
-      return new Float32Array(tmp)
-    case 'float64':
-    case 'number':
-      return new Float64Array(tmp)
-  }
-}
+import { readVector } from './readVector.js'
 
 const readString = (
   prop: ReaderPropDef,
@@ -60,7 +39,6 @@ const readString = (
 }
 
 export const readProp = (
-  id: number,
   instruction: number,
   q: ReaderSchema,
   result: Uint8Array,
@@ -68,7 +46,7 @@ export const readProp = (
   item: Item,
 ) => {
   const prop = q.props[instruction]
-
+  prop.readBy = q.readId
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
