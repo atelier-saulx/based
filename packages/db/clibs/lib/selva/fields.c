@@ -2148,19 +2148,29 @@ nil:
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (nfo->in_use) {
-                hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), p);
+                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
+                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
+                    goto nil;
+                }
+
+                hash_ref(hash_state, db, efc, p);
             } else {
                 goto nil;
             }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             do {
+                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
+                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
+                    goto nil;
+                }
+
                 const struct SelvaNodeReferences *refs = p;
                 const size_t len = nfo->in_use ? refs->nr_refs : 0;
 
                 selva_hash_update(hash_state, &len, sizeof(len));
                 for (size_t i = 0; i < len; i++) {
-                    hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), &refs->refs[i]);
+                    hash_ref(hash_state, db, efc, &refs->refs[i]);
                 }
             } while (0);
             break;
