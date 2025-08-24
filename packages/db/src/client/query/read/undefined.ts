@@ -57,7 +57,6 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
       p.readBy = q.readId
       if (p.meta) {
         if (p.typeIndex === TEXT && p.locales) {
-          console.log(p.locales)
           for (const code in p.locales) {
             const meta = emptyMeta()
             if (p.meta === ReaderMeta.combined) {

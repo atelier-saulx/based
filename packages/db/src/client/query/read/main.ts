@@ -1,5 +1,5 @@
-import { ReaderPropDef, ReaderSchema } from '../../../index.js'
-import { addProp } from './addProps.js'
+import { ReaderMeta, ReaderPropDef, ReaderSchema } from '../../../index.js'
+import { addMetaProp, addProp } from './addProps.js'
 import {
   readInt64,
   readDoubleLE,
@@ -25,6 +25,7 @@ import {
 } from '@based/schema/def'
 import { readUtf8 } from '../../string.js'
 import { Item } from './types.js'
+import { readMetaMainString } from './meta.js'
 
 const readMainValue = (
   prop: ReaderPropDef,
@@ -51,7 +52,16 @@ const readMainValue = (
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)
-    addProp(prop, value, item)
+    if (prop.meta) {
+      if (prop.meta === ReaderMeta.combined) {
+        addMetaProp(prop, readMetaMainString(result, i, len), item)
+        addProp(prop, value, item)
+      } else {
+        addMetaProp(prop, readMetaMainString(result, i, len), item)
+      }
+    } else {
+      addProp(prop, value, item)
+    }
   } else if (typeIndex === JSON) {
     const len = result[i]
     i++

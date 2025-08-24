@@ -123,7 +123,6 @@ pub fn getFields(
                             idIsSet = true;
                         },
                         t.Prop.TEXT => {
-                            std.debug.print("DERP DERP! ZIG lang: {any} \n", .{langCode});
                             if (isEdge) {
                                 size += 1;
                                 r.*.type = t.ResultType.metaEdge;
@@ -131,9 +130,11 @@ pub fn getFields(
                                 r.*.type = t.ResultType.meta;
                             }
                             const s = db.getTextFromValue(r.*.value, langCode);
-                            r.*.value = s;
-                            size += 12 + try f.add(ctx, id, score, idIsSet, r);
-                            idIsSet = true;
+                            if (s.len != 0) {
+                                r.*.value = s;
+                                size += 12 + try f.add(ctx, id, score, idIsSet, r);
+                                idIsSet = true;
+                            }
                         },
                         else => {},
                     }

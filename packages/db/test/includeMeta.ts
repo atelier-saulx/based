@@ -23,7 +23,7 @@ await test('meta for selva string', async (t) => {
         props: {
           name: 'string',
           body: 'text',
-          email: { maxBytes: 200, type: 'string' }, // fix main prop
+          email: { maxBytes: 20, type: 'string' }, // fix main prop
           items: {
             items: {
               ref: 'item',
@@ -194,4 +194,157 @@ await test('meta for selva string', async (t) => {
       name: { checksum: 0, size: 0, crc32: 0, compressed: false, value: '' },
     },
   ])
+
+  deepEqual(await db.query('item').include('body', { meta: true }).get(), [
+    {
+      id: 1,
+      body: {
+        en: {
+          checksum: 7931262287216642,
+          size: 2,
+          crc32: 3781920570,
+          compressed: false,
+          value: 'en',
+        },
+        it: {
+          checksum: 2578600672886786,
+          size: 2,
+          crc32: 1229572617,
+          compressed: false,
+          value: 'it',
+        },
+      },
+    },
+    {
+      id: 2,
+      body: {
+        en: { checksum: 0, size: 0, crc32: 0, compressed: false, value: '' },
+        it: { checksum: 0, size: 0, crc32: 0, compressed: false, value: '' },
+      },
+    },
+  ])
+
+  await db.update('item', 2, {
+    body: {
+      en: 'English!',
+    },
+  })
+
+  deepEqual(
+    await db.query('item').include('body', { meta: true }).get(),
+    [
+      {
+        id: 1,
+        body: {
+          en: {
+            checksum: 7931262287216642,
+            size: 2,
+            crc32: 3781920570,
+            compressed: false,
+            value: 'en',
+          },
+          it: {
+            checksum: 2578600672886786,
+            size: 2,
+            crc32: 1229572617,
+            compressed: false,
+            value: 'it',
+          },
+        },
+      },
+      {
+        id: 2,
+        body: {
+          en: {
+            checksum: 5708264572452872,
+            size: 8,
+            crc32: 2721912657,
+            compressed: false,
+            value: 'English!',
+          },
+          it: { checksum: 0, size: 0, crc32: 0, compressed: false, value: '' },
+        },
+      },
+    ],
+    'text all meta + value',
+  )
+
+  deepEqual(
+    await db.query('item').include('body', { meta: 'only' }).get(),
+    [
+      {
+        id: 1,
+        body: {
+          en: {
+            checksum: 7931262287216642,
+            size: 2,
+            crc32: 3781920570,
+            compressed: false,
+          },
+          it: {
+            checksum: 2578600672886786,
+            size: 2,
+            crc32: 1229572617,
+            compressed: false,
+          },
+        },
+      },
+      {
+        id: 2,
+        body: {
+          en: {
+            checksum: 5708264572452872,
+            size: 8,
+            crc32: 2721912657,
+            compressed: false,
+          },
+          it: { checksum: 0, size: 0, crc32: 0, compressed: false },
+        },
+      },
+    ],
+    'text all meta only ',
+  )
+
+  deepEqual(
+    await db.query('item').include('body', { meta: 'only' }).locale('it').get(),
+    [
+      {
+        id: 1,
+        body: {
+          checksum: 2578600672886786,
+          size: 2,
+          crc32: 1229572617,
+          compressed: false,
+        },
+      },
+      {
+        id: 2,
+        body: { checksum: 0, size: 0, crc32: 0, compressed: false },
+      },
+    ],
+  )
+
+  deepEqual(
+    await db.query('item').include('body', { meta: 'only' }).locale('en').get(),
+    [
+      {
+        id: 1,
+        body: {
+          checksum: 7931262287216642,
+          size: 2,
+          crc32: 3781920570,
+          compressed: false,
+        },
+      },
+      {
+        id: 2,
+        body: {
+          checksum: 5708264572452872,
+          size: 8,
+          crc32: 2721912657,
+          compressed: false,
+        },
+      },
+    ],
+  )
 })
