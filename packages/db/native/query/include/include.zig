@@ -107,7 +107,8 @@ pub fn getFields(
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
-                i += 2;
+                const langCode: t.LangCode = @enumFromInt(include[i + 2]);
+                i += 3;
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
                 if (result) |r| {
                     switch (prop) {
@@ -118,10 +119,22 @@ pub fn getFields(
                             } else {
                                 r.*.type = t.ResultType.meta;
                             }
-                            size += 11 + try f.add(ctx, id, score, idIsSet, r);
+                            size += 12 + try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
-                        // hanlde TEXT
+                        t.Prop.TEXT => {
+                            std.debug.print("DERP DERP! ZIG lang: {any} \n", .{langCode});
+                            if (isEdge) {
+                                size += 1;
+                                r.*.type = t.ResultType.metaEdge;
+                            } else {
+                                r.*.type = t.ResultType.meta;
+                            }
+                            const s = db.getTextFromValue(r.*.value, langCode);
+                            r.*.value = s;
+                            size += 12 + try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
+                        },
                         else => {},
                     }
                 }
@@ -133,6 +146,7 @@ pub fn getFields(
                 // here we add a start + end var (bit longer but fine)
                 i += 2;
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
+
                 if (result) |r| {
                     switch (prop) {
                         t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON => {

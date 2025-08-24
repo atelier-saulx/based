@@ -50,7 +50,7 @@ await test('meta for selva string', async (t) => {
     flap: { en: 'a2', it: 'b2' },
     // email: 'b@a.com',
     g: 'abraa darba',
-    name: 'flap',
+    // name: italy,
     x: 100,
   })
 
@@ -84,7 +84,7 @@ await test('meta for selva string', async (t) => {
         g: 'abraa darba',
         // name: 'derp ' + i,
         // name: 'Snurp de lerp flap flap derp',
-        flap: { it: 'Snurp de lerp flap flap derp' },
+        // flap: { it: 'Snurp de lerp flap flap derp' },
       })
     }
     console.log(`set all block ${i} (${i + 1})M items`, await db.drain(), 'ms')
@@ -94,15 +94,17 @@ await test('meta for selva string', async (t) => {
   // 'items.id'
   const q2 = await db
     .query('item')
-    .include('name', { meta: true })
-    // .include('flap.en')
+    // .include('name', { meta: true })
+    .include('flap.en', { meta: true })
+    // .locale('')
+    // .include('flap')
     // .groupBy('x')
     // .count()
     // .locale('it')
     // .include('*', 'items.$name')
     // .include('g', 'x')
     // .include('x', 'name', 'g') // 'name', 'flap'
-    .range(0, 4)
+    .range(0, 10)
     .get()
 
   q2.debug()
@@ -135,12 +137,12 @@ await test('meta for selva string', async (t) => {
   // q2.debug()
   q2.inspect(5, true)
 
-  // console.log('\n=============\nSCHEMA STUFF')
-  // console.dir(convertToReaderSchema(q2.def), { depth: 10 })
-  // console.log(
-  //   'JSON size',
-  //   y.encode(JSON.stringify(convertToReaderSchema(q2.def))).byteLength,
-  // )
+  console.log('\n=============\nSCHEMA STUFF')
+  console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+  console.log(
+    'JSON size',
+    y.encode(JSON.stringify(convertToReaderSchema(q2.def))).byteLength,
+  )
 
   // const bla =
   //   `30 21 04 6e 61 6d 65 0b 40 03 20 46 46 57 27 00 17 80 b4 00 41 04 66 6c 61 70 0c 42 52 01 32 b7 7a 04 d2 e8 14 40 00 01 01 78 07 00 00 41 01 79 07 00 00 81 01 67 0a 13 0b 61 62 72 61 61 20 64 61 72 62 61 01 62 01 63 00 09 10 56 56 d6 16 96 c0 b0 00`.split(

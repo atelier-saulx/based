@@ -19,3 +19,12 @@ export const readMetaMainString = (
   const checksum = combineToNumber(crc32, len)
   return { checksum, size: len, crc32, compressed: false }
 }
+
+export const emptyMeta = (): Meta => {
+  return {
+    checksum: 0,
+    size: 0,
+    crc32: 0,
+    compressed: false,
+  }
+}

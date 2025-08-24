@@ -29,11 +29,14 @@ fn addChecksum(item: *const *Result, data: []u8) usize {
     data[offset] = item.*.prop;
     offset += 1;
     const v = item.*.value;
+    data[offset] = v[0]; // tmp
+    offset += 1;
     data[offset] = v[1];
     offset += 1;
     utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
     writeInt(u32, data, offset + 4, v.len);
     offset += 8;
+    // add language here then we have it
     return offset;
 }
 

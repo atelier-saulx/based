@@ -1,20 +1,17 @@
 import {
   STRING,
   JSON,
-  TypeIndex,
   BINARY,
   CARDINALITY,
   REFERENCES,
   REFERENCE,
   VECTOR,
-  PropDefEdge,
-  PropDef,
   TEXT,
 } from '@based/schema/def'
-import { QueryDef } from '../types.js'
 import { Item, Meta, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
-import { addMetaProp, addProp } from './addProps.js'
+import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readVector } from './readVector.js'
+import { emptyMeta } from './meta.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {
   const typeIndex = prop.typeIndex
@@ -57,46 +54,27 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
   for (const k in q.props) {
     const p = q.props[k]
     if (p.readBy !== q.readId) {
+      p.readBy = q.readId
       if (p.meta) {
-        const meta: Meta = {
-          checksum: 0,
-          size: 0,
-          crc32: 0,
-          compressed: false,
+        if (p.typeIndex === TEXT && p.locales) {
+          console.log(p.locales)
+          for (const code in p.locales) {
+            const meta = emptyMeta()
+            if (p.meta === ReaderMeta.combined) {
+              meta.value = ''
+            }
+            addLangMetaProp(p, meta, item, Number(code))
+          }
+        } else {
+          const meta = emptyMeta()
+          if (p.meta === ReaderMeta.combined) {
+            meta.value = undefinedValue(p)
+          }
+          addMetaProp(p, meta, item)
         }
-        if (p.meta === ReaderMeta.combined) {
-          meta.value = undefinedValue(p)
-        }
-        addMetaProp(p, meta, item)
       } else {
         addProp(p, undefinedValue(p), item)
       }
-      //   const prop = q.schema.reverseProps[k]
-      // handle edge
-      // Only relevant for seperate props
-      //   const prop = q.schema.reverseProps[k]
-      //   if (prop.typeIndex === CARDINALITY) {
-      //     addProp(prop, 0, item)
-      //   } else if (prop.typeIndex === TEXT && q.lang.lang == 0) {
-      //     const lan = getEmptyField(prop, item)
-      //     const lang = q.include.langTextFields.get(prop.prop).codes
-      //     if (lang.has(0)) {
-      //       for (const locale in q.schema.locales) {
-      //         if (lan[locale] == undefined) {
-      //           lan[locale] = ''
-      //         }
-      //       }
-      //     } else {
-      //       for (const code of lang) {
-      //         const locale = inverseLangMap.get(code)
-      //         if (!lan[locale]) {
-      //           lan[locale] = ''
-      //         }
-      //       }
-      //     }
-      // } else {
-      //   // selvaStringProp(q, prop, item)
-      // }
     }
   }
 }

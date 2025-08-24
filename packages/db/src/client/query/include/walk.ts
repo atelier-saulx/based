@@ -1,23 +1,13 @@
 import {
-  BINARY,
-  STRING,
   isPropDef,
   PropDef,
   REFERENCE,
   REFERENCES,
   SchemaPropTree,
   TEXT,
-  JSON,
-  ALIAS,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
-import {
-  IncludeField,
-  isRefDef,
-  // MainMetaInclude,
-  QueryDef,
-  QueryDefType,
-} from '../types.js'
+import { IncludeField, isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
@@ -71,40 +61,8 @@ export const walkDefs = (
             return
           }
         } else {
-          // if (
-          //   // this can just become OPTS
-          //   path[i + 1] === 'meta' &&
-          //   (edgeProp.typeIndex === STRING ||
-          //     edgeProp.typeIndex === BINARY ||
-          //     edgeProp.typeIndex === JSON ||
-          //     edgeProp.typeIndex === ALIAS)
-          // ) {
-          //   if (edgeProp.separate) {
-          //     if (!def.edges.include.meta) {
-          //       def.edges.include.meta = new Set()
-          //     }
-          //     def.edges.include.meta.add(edgeProp.prop)
-          //   } else {
-          //     includeProp(def.edges, edgeProp)
-          //     if (!def.edges.include.metaMain) {
-          //       def.edges.include.metaMain = new Map()
-          //     }
-          //     if (!def.edges.include.main.include[edgeProp.start]) {
-          //       includeProp(def.edges, edgeProp)
-          //       def.edges.include.metaMain.set(
-          //         edgeProp.start,
-          //         MainMetaInclude.MetaOnly,
-          //       )
-          //     } else {
-          //       def.edges.include.metaMain.set(
-          //         edgeProp.start,
-          //         MainMetaInclude.All,
-          //       )
-          //     }
-          //   }
-          // } else {
-          includeProp(def.edges, edgeProp)
-          // }
+          // add text for edges
+          includeProp(def.edges, edgeProp, include.opts)
         }
         return
       }
@@ -125,13 +83,10 @@ export const walkDefs = (
           return
         }
         if (!def.include.props.has(t.prop)) {
-          def.include.props.set(t.prop, {
-            def: t,
-            opts: {
-              codes: new Set(),
-              fallBacks: [],
-            },
-          })
+          const opts = include.opts ?? {}
+          opts.codes = new Set()
+          opts.fallBacks = []
+          def.include.props.set(t.prop, { def: t, opts })
         }
         def.include.props.get(t.prop).opts.codes.add(langCode)
         return

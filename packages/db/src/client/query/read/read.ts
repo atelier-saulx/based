@@ -16,18 +16,25 @@ import {
 } from '../types.js'
 import { READ_ID } from '../types.js'
 import { readMetaSeperate } from './meta.js'
-import { addMetaProp, addProp } from './addProps.js'
+import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
+import { TEXT } from '@based/schema/def'
 export * from './types.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]
   i++
   const prop = q.props[field]
+  const lang = result[i]
+  i++
   prop.readBy = q.readId
-  addMetaProp(prop, readMetaSeperate(result, i), item)
+  if (prop.typeIndex === TEXT && prop.locales) {
+    addLangMetaProp(prop, readMetaSeperate(result, i), item, lang)
+  } else {
+    addMetaProp(prop, readMetaSeperate(result, i), item)
+  }
   i += 9
   return i
 }
@@ -113,6 +120,7 @@ export const readProps = (
   item: Item,
 ) => {
   q.readId ^= 1
+  console.log(q.readId, item.id)
   let i = offset
   while (i < end) {
     const instruction = result[i]
@@ -125,7 +133,6 @@ export const readProps = (
     i = readInstruction(instruction, q, result, i, item)
   }
   // For the last id
-  q.readId ^= 1
   undefinedProps(q, item)
 }
 

@@ -2,6 +2,7 @@ import { MICRO_BUFFER, TEXT } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
+import { langCodesMap } from '@based/schema'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 
@@ -85,11 +86,35 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
       if (propDef.opts?.meta) {
-        const buf = new Uint8Array(3)
-        buf[0] = includeOp.META
-        buf[1] = prop
-        buf[2] = propDef.def.typeIndex
-        result.push(buf)
+        if (propDef.opts.codes) {
+          if (propDef.opts.codes.has(0)) {
+            // TODO use locales for 0 make this NICE
+            for (const code in def.schema.locales) {
+              const buf = new Uint8Array(4)
+              buf[0] = includeOp.META
+              buf[1] = prop
+              buf[2] = propDef.def.typeIndex
+              buf[3] = langCodesMap.get(code) // lang
+              result.push(buf)
+            }
+          } else {
+            for (const code of propDef.opts.codes) {
+              const buf = new Uint8Array(4)
+              buf[0] = includeOp.META
+              buf[1] = prop
+              buf[2] = propDef.def.typeIndex
+              buf[3] = code // lang
+              result.push(buf)
+            }
+          }
+        } else {
+          const buf = new Uint8Array(4)
+          buf[0] = includeOp.META
+          buf[1] = prop
+          buf[2] = propDef.def.typeIndex
+          buf[3] = 0 // lang
+          result.push(buf)
+        }
       }
       if (propDef.opts?.meta !== 'only') {
         if (propDef.def.typeIndex === TEXT) {
