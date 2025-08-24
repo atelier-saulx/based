@@ -1,20 +1,19 @@
-CC = clang
-CFLAGS = -Wall -Wextra -std=gnu23 -g
-INCLUDES = -Iinclude -Isrc
+SHELL := /bin/bash
+include ../db/clibs/common.mk
 
-SRC = src/main.c src/converter.c src/formats/csv.c
-OBJ = $(SRC:.c=.o)
-TARGET = bin/converter
-
-.PHONY: all clean
+CFLAGS += -iquote ./include \
+		  -include ../db/clibs/include/cdefs.h
+OBJ = src/main.o \
+	  src/converter.o \
+	  src/formats/csv.o
+TARGET = converter
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
-
-%.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+	$(CC) -o $@ $(LDFLAGS) $^
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+
+.PHONY: all clean
