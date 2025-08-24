@@ -52,7 +52,11 @@ export async function start(db: DbServer, opts: StartOpts) {
     writelog = JSON.parse(
       (await readFile(join(path, WRITELOG_FILE))).toString(),
     )
+  } catch (err) {
+    // No dump
+  }
 
+  if (writelog) {
     // Load the common dump
     try {
       native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
@@ -61,6 +65,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       throw e
     }
 
+    // Load schema
     const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
     if (schema) {
       const s = deSerialize(schema) as DbSchema
@@ -72,10 +77,11 @@ export async function start(db: DbServer, opts: StartOpts) {
       }
     }
 
-    // Load all range dumps
+    // Load block dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       const def = db.schemaTypesParsedById[typeId]
+
       if (!def.partial && !opts?.noLoadDumps) {
         for (const dump of dumps) {
           const fname = dump.file
@@ -100,8 +106,6 @@ export async function start(db: DbServer, opts: StartOpts) {
         }
       }
     }
-  } catch (err) {
-    // TODO In some cases we really should give up!
   }
 
   db.verifTree = new VerifTree(db.schemaTypesParsed)
