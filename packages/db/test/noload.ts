@@ -61,6 +61,12 @@ await test('noLoadDumps', async (t) => {
     { id: 1, name: 'youzi', email: 'youzi@yazi.yo' },
     { id: 2, name: 'doug', email: 'doug@yari.yo' }
   ])
-  // await db2.query('employee').count('subordinates').get().inspect()
-  // deepEqual(await db2.query('employee', 1).count('subordinates').get().toObject(), 750 TODO
+  // deepEqual(await db2.query('employee', 2).count('subordinates').get().toObject(), 750 TODO
+  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+
+  await db2.server.loadBlock('employee', 1100)
+  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+  await db2.server.unloadBlock('employee', 1100)
+  // FIXME refs shouldn't probably disappear on unload
+  //deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
 })
