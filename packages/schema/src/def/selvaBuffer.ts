@@ -76,7 +76,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
 }
 
-function makeEdgeConstraintFlags(refSet: RefSet | null, nodeTypeId: number, prop: PropDef, inverseProp: PropDef): number {
+function makeEdgeConstraintFlags(refSet: RefSet | null, nodeTypeId: number, prop: PropDef, dstNodeTypeId: number, inverseProp: PropDef): number {
   let flags = 0
 
   flags |= prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
@@ -85,7 +85,8 @@ function makeEdgeConstraintFlags(refSet: RefSet | null, nodeTypeId: number, prop
     : 0x00
 
   if (refSet) {
-    flags |= refSet.add(nodeTypeId, prop.prop, prop.inverseTypeId, prop.inversePropNumber) ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
+    const x = refSet.add(nodeTypeId, prop.prop, dstNodeTypeId, inverseProp.prop)
+    flags |= x ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
   }
 
   return flags
@@ -124,7 +125,7 @@ const propDefBuffer = (
 
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
-    buf[1] = makeEdgeConstraintFlags(refSet, nodeTypeId, prop, dstType.props[prop.inversePropName]) // flags
+    buf[1] = makeEdgeConstraintFlags(refSet, nodeTypeId, prop, dstType.id, dstType.props[prop.inversePropName]) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     view.setUint32(5, 0, true) // schema_len
     if (!isEdge) {
