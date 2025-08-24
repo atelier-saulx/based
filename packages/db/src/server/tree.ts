@@ -27,6 +27,10 @@ type Hash = Uint8Array
 const HASH_SIZE = 16
 
 export type VerifBlock = {
+  /**
+   * key = typeId + startNodeId
+   * Made with makeTreeKey(t, i) and can be destructured with destructureTreeKey(k).
+   */
   key: number,
   /**
    * Last acquired hash of the block.
