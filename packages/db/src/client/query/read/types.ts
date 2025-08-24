@@ -108,7 +108,7 @@ const createReaderPropDef = (
     typeIndex: p.typeIndex,
     readBy: 0,
   }
-  if (opts.meta) {
+  if (opts?.meta) {
     readerPropDef.meta =
       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
   }

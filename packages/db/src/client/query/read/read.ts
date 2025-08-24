@@ -120,7 +120,6 @@ export const readProps = (
   item: Item,
 ) => {
   q.readId ^= 1
-  console.log(q.readId, item.id)
   let i = offset
   while (i < end) {
     const instruction = result[i]
