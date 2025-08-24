@@ -1,15 +1,12 @@
 import { readUint32 } from '@based/utils/dist/src/uint8.js'
-import { QueryDef, QueryDefType } from '../types.js'
 import { Item, ReaderPropDef, ReaderSchema } from './types.js'
-import { addProp } from './addProps.js'
+import { addProp, addLangProp } from './addProps.js'
 import {
   ALIAS,
   BINARY,
   CARDINALITY,
   COLVEC,
   JSON,
-  PropDef,
-  PropDefEdge,
   STRING,
   TEXT,
   VECTOR,
@@ -68,11 +65,11 @@ export const readProp = (
     if (size === 0) {
       // do nothing
     } else {
-      // if (q.lang.lang != 0) {
-      //   addProp(prop, read(result, i + 4, size, true), item)
-      // } else {
-      addProp(prop, read(result, i + 4, size, true), item, result[i + 4])
-      // }
+      if (!prop.locales) {
+        addProp(prop, read(result, i + 4, size, true), item)
+      } else {
+        addLangProp(prop, read(result, i + 4, size, true), item, result[i + 4])
+      }
     }
     i += size + 4
   } else if (prop.typeIndex === ALIAS) {

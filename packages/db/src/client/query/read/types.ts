@@ -2,6 +2,7 @@ import {
   ENUM,
   PropDef,
   PropDefEdge,
+  TEXT,
   TypeIndex,
   VECTOR,
 } from '@based/schema/def'
@@ -12,6 +13,7 @@ import {
   QueryDefType,
   Target,
 } from '../types.js'
+import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 
 export type Item = {
   id: number
@@ -44,23 +46,7 @@ export type ReadInstruction = (
   item: Item,
 ) => number
 
-// get string names of props
-// edge & non edge
-// prop has meta (only or all)
-// aggregate
-// query target (id or alias or non) + type
-// has search
-// references have to have this nested
-// main info (all or specific)
-
-/*
-  propDef
-    // __isEdge optional can prop do this better
-    path
-    typeIndex
-*/
-
-// need inverseLangCodes that are relevant
+export type ReaderLocales = { [langCode: string]: string }
 
 export type ReaderPropDef = {
   path: string[]
@@ -69,6 +55,10 @@ export type ReaderPropDef = {
   enum?: any[]
   vectorBaseType?: PropDef['vectorBaseType']
   readBy: number
+  locales?: { [langCode: string]: string }
+  // locale?: string
+  // lang: { codes, fallbacks } (ref to to top level)
+  // code - can be specific
 }
 
 export enum ReaderSchemaEnum {
@@ -93,13 +83,13 @@ export type ReaderSchema = {
   }
   aggregate?: QueryDefAggregation
   edges?: ReaderSchema
-  // langCodeToString: { [langCode: string]: string }
   // =============
   search?: boolean
 }
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,
+  locales: ReaderLocales,
   opts?: IncludeOpts,
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
@@ -114,10 +104,34 @@ const createReaderPropDef = (
   if (p.typeIndex === VECTOR) {
     readerPropDef.vectorBaseType = p.vectorBaseType
   }
+  if (p.typeIndex === TEXT) {
+    if (opts.codes.has(0)) {
+      readerPropDef.locales = locales
+    } else {
+      if (opts.codes.size === 1) {
+        // this just means the value is this
+        // readerPropDef.locale =
+      } else {
+        readerPropDef.locales = {}
+        for (const code of opts.codes) {
+          readerPropDef.locales[code] = inverseLangMap.get(code)
+        }
+      }
+    }
+  }
   return readerPropDef
 }
 
-export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
+export const convertToReaderSchema = (
+  q: QueryDef,
+  locales?: ReaderLocales,
+): ReaderSchema => {
+  if (!locales) {
+    locales = {}
+    for (const lang in q.schema.locales) {
+      locales[langCodesMap.get(lang)] = lang
+    }
+  }
   const t = q.type
   const isRoot = t === QueryDefType.Root
   const isSingle = isRoot && ('id' in q.target || 'alias' in q.target)
@@ -139,18 +153,18 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
     readerSchema.search = true
   }
   for (const [k, v] of q.include.props) {
-    readerSchema.props[k] = createReaderPropDef(v.def, v.opts)
+    readerSchema.props[k] = createReaderPropDef(v.def, locales, v.opts)
   }
   readerSchema.main.len = q.include.main.len
   for (const k in q.include.main.include) {
     const [start, p, opts] = q.include.main.include[k]
-    readerSchema.main.props[start] = createReaderPropDef(p, opts)
+    readerSchema.main.props[start] = createReaderPropDef(p, locales, opts)
   }
   for (const [k, v] of q.references.entries()) {
     const target = v.target as Target
     const propDef = target.propDef
     readerSchema.refs[k] = {
-      schema: convertToReaderSchema(v),
+      schema: convertToReaderSchema(v, locales),
       prop: {
         path: propDef.path,
         typeIndex: propDef.typeIndex,
@@ -159,7 +173,7 @@ export const convertToReaderSchema = (q: QueryDef): ReaderSchema => {
     }
   }
   if (q.edges) {
-    readerSchema.edges = convertToReaderSchema(q.edges)
+    readerSchema.edges = convertToReaderSchema(q.edges, locales)
   }
   if (q.aggregate) {
     readerSchema.aggregate = q.aggregate

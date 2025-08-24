@@ -138,6 +138,7 @@ pub fn getFields(
                             size += try f.selvaString(r);
                             if (isEdge) size += 1;
                             size += try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
                         },
                         t.Prop.TEXT => {
                             const code: t.LangCode = @enumFromInt(include[i]);
@@ -145,25 +146,34 @@ pub fn getFields(
                             i += 2;
                             if (fallbackSize > 0) {
                                 const fb = include[i .. i + fallbackSize];
-                                size += try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb);
+                                const s = try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb);
+                                if (s != 0) {
+                                    idIsSet = true;
+                                    size += s;
+                                }
                                 i += fallbackSize;
                             } else if (code == t.LangCode.NONE) {
                                 size += try f.textAll(isEdge, ctx, id, score, r, idIsSet);
+                                idIsSet = true;
                             } else {
-                                size += try f.textSpecific(isEdge, ctx, id, score, r, code, idIsSet);
+                                const s = try f.textSpecific(isEdge, ctx, id, score, r, code, idIsSet);
+                                if (s != 0) {
+                                    idIsSet = true;
+                                    size += s;
+                                }
                             }
                         },
                         else => {
                             size += try f.default(r);
                             if (isEdge) size += 1;
                             size += try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
                         },
                     }
-                    idIsSet = true;
                 } else {
                     if (prop == t.Prop.TEXT) {
-                        i += 2;
                         const fallbackSize = include[i + 1];
+                        i += 2;
                         i += fallbackSize;
                     }
                 }

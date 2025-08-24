@@ -1,40 +1,48 @@
 import { Item, ReaderPropDef } from './types.js'
-import { inverseLangMap } from '@based/schema' // remove this
 
-export const addProp = (
+export const addLangProp = (
   p: ReaderPropDef,
   value: any, // is meta or something
   item: Item,
-  lang: number = 0,
+  lang: number,
 ) => {
-  // will use p to handle META
-  // if (p.transform) {
-  //   value = p.transform('read', value)
-  // }
   let i = 0
-
-  // inversse lang map will go into the prop probably
-  const path = lang ? [...p.path, inverseLangMap.get(lang)] : p.path
-
+  const path = p.path
+  let langs: { [lang: string]: string }
   const len = path.length
-  if (len - i === 1) {
+  let select: any = item
+  for (; i < len; i++) {
     const field = path[i]
-    if (!(field in item)) {
-      item[field] = value
-    }
-  } else {
-    let select: any = item
-    for (; i < len; i++) {
-      const field = path[i]
-      if (i === len - 1) {
-        if (!(field in select)) {
-          // if p.hasMeta etc
-          // if (p.hasMeta && value)
-          select[field] = value
+    if (i === len - 1) {
+      if (!(field in select)) {
+        select[field] = langs = {}
+        for (const lang in p.locales) {
+          const str = p.locales[lang]
+          langs[str] = ''
         }
       } else {
-        select = select[field] ?? (select[field] = {})
+        langs = select[field]
       }
+    } else {
+      select = select[field] ?? (select[field] = {})
+    }
+  }
+  langs[p.locales[lang]] = value
+}
+
+export const addProp = (p: ReaderPropDef, value: any, item: Item) => {
+  let i = 0
+  const path = p.path
+  const len = path.length
+  let select: any = item
+  for (; i < len; i++) {
+    const field = path[i]
+    if (i === len - 1) {
+      if (!(field in select)) {
+        select[field] = value
+      }
+    } else {
+      select = select[field] ?? (select[field] = {})
     }
   }
 }

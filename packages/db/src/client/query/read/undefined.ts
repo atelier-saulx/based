@@ -9,6 +9,7 @@ import {
   VECTOR,
   PropDefEdge,
   PropDef,
+  TEXT,
 } from '@based/schema/def'
 import { QueryDef } from '../types.js'
 import { Item, ReaderPropDef, ReaderSchema } from './types.js'
@@ -38,7 +39,17 @@ const undefinedValue = (prop: ReaderPropDef) => {
   if (typeIndex === VECTOR) {
     return readVector(prop, new Uint8Array())
   }
-  // TEXT
+  if (typeIndex === TEXT) {
+    if (prop.locales) {
+      const codes = {}
+      for (const code in prop.locales) {
+        codes[prop.locales[code]] = ''
+      }
+      return codes
+    } else {
+      return ''
+    }
+  }
   return undefined
 }
 

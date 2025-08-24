@@ -26,7 +26,6 @@ const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]
   i++
   const prop = q.props[field]
-  // maybe do this a bit smooter - like this it the meta
   addProp(prop, readMetaSeperate(result, i), item)
   i += 9
   return i
@@ -39,7 +38,6 @@ const aggregation: ReadInstruction = (q, result, i, item) => {
   i += 4
   const ref = q.refs[field]
   const def = ref.prop
-  // pass id to readAgg as well
   addProp(def, readAggregate(ref.schema, result, i, i + size), item)
   i += size
   return i
@@ -141,7 +139,6 @@ export const resultToObject = (
   }
 
   const len = readUint32(result, offset)
-
   if (len === 0) {
     if (q.type === ReaderSchemaEnum.single) {
       return null

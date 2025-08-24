@@ -2,7 +2,6 @@ import { BasedDb, convertToReaderSchema, resultToObject } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
-import { deflateSync } from 'zlib'
 import { wait } from '@based/utils'
 
 await test('meta for selva string', async (t) => {
@@ -82,7 +81,7 @@ await test('meta for selva string', async (t) => {
         x: 100,
         g: 'abraa darba',
         // name: 'Snurp de lerp flap flap derp',
-        // flap: { it: 'Snurp de lerp flap flap derp' },
+        flap: { it: 'Snurp de lerp flap flap derp' },
       })
     }
     console.log(`set all block ${i} (${i + 1})M items`, await db.drain(), 'ms')
@@ -92,9 +91,11 @@ await test('meta for selva string', async (t) => {
   // 'items.id'
   const q2 = await db
     .query('item')
+    .include('flap.en')
+    // .locale('it')
     // .include('*', 'items.$name')
     // .include('g', 'x')
-    .include('x', 'name', 'g') // 'name', 'flap'
+    // .include('x', 'name', 'g') // 'name', 'flap'
     .range(0, 1e6)
     .get()
 
@@ -115,13 +116,23 @@ await test('meta for selva string', async (t) => {
   console.log(y.encode(x))
 
   // q2.debug()
-  q2.inspect()
+  q2.inspect(100)
 
   console.dir(convertToReaderSchema(q2.def), { depth: 10 })
+  console.log(
+    'JSON size',
+    y.encode(JSON.stringify(convertToReaderSchema(q2.def))),
+  )
 
+  // console.log(
+  //   'tmp schema',
+  //   serializeReaderSchema(convertToReaderSchema(q2.def)),
+  // )
   // AGGREGATE
   // LANG (min map)
-  // UNDEFINED PROPS
+  // UNDEFINED PROPS (also for text)
+  // META
+  // START END FOR STRING PROPS
   // cache reader schema on query (and remove on update)
 
   // console.log(deflateSync(JSON.stringify(convertToReaderSchema(q2.def))))
