@@ -79,4 +79,10 @@ await test('noLoadDumps', async (t) => {
   deepEqual(getBlock2().inmem, false)
   // FIXME refs shouldn't probably disappear on unload
   //deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+
+  // for (const type of db2.server.verifTree.types()) {
+  //   for (const block of db2.server.verifTree.blocks(type)) {
+  //     console.log(block)
+  //   }
+  // }
 })

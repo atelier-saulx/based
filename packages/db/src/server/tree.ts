@@ -79,6 +79,13 @@ export class VerifTree {
     }
   }
 
+  *blocks(type: VerifType) {
+    const { blocks } = type
+    for (const block of blocks) {
+      yield block
+    }
+  }
+
   foreachBlock(cb: (block: VerifBlock) => void): void {
     for (const k of Object.keys(this.#types)) {
       const { blocks } = this.#types[k]
