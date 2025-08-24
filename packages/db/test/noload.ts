@@ -2,6 +2,7 @@ import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 import NAMES from './shared/names.js'
+import {makeTreeKey} from '../src/server/tree.js'
 
 await test('noLoadDumps', async (t) => {
   const db = new BasedDb({
@@ -55,6 +56,9 @@ await test('noLoadDumps', async (t) => {
   await db2.start({ noLoadDumps: true })
   t.after(() => db2.destroy())
 
+  const getBlock1 = () => db2.server.verifTree.getBlock(makeTreeKey(db2.client.schema.types['employee'].id, 1))
+  const getBlock2 = () => db2.server.verifTree.getBlock(makeTreeKey(db2.client.schema.types['employee'].id, 1200))
+
   deepEqual(await db2.query('employee').include('*').get().toObject(), [])
   await db2.server.loadBlock('employee', 1)
   deepEqual(await db2.query('employee').include('*').range(0, 2).get().toObject(), [
@@ -64,9 +68,15 @@ await test('noLoadDumps', async (t) => {
   // deepEqual(await db2.query('employee', 2).count('subordinates').get().toObject(), 750 TODO
   deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
 
+  deepEqual(getBlock1().inmem, true)
+  deepEqual(getBlock2().inmem, false)
+
   await db2.server.loadBlock('employee', 1100)
+  deepEqual(getBlock2().inmem, true)
   deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+
   await db2.server.unloadBlock('employee', 1100)
+  deepEqual(getBlock2().inmem, false)
   // FIXME refs shouldn't probably disappear on unload
   //deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
 })
