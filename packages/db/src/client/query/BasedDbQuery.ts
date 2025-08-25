@@ -13,7 +13,7 @@ import {
   IncludeOpts,
   ReaderSchema,
 } from './query.js'
-import { BasedQueryResponse } from './BasedIterable.js'
+import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
 import native from '../../native.js'
@@ -555,9 +555,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     } else if (res instanceof Error) {
       reject(res)
     } else {
-      resolve(
-        new BasedQueryResponse(this.id, this.def, res, performance.now() - d),
-      )
+      resolve(new BasedQueryResponse(this.def, res, performance.now() - d))
     }
   }
 
@@ -626,7 +624,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const d = performance.now()
     const res = native.getQueryBuf(buf, dbCtxExternal)
     return new BasedQueryResponse(
-      this.id,
       this.def,
       new Uint8Array(res),
       performance.now() - d,

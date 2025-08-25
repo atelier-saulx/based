@@ -1,14 +1,7 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
-import {
-  debug,
-  resultToObject,
-  Item,
-  readProps,
-  convertToReaderSchema,
-  ReaderSchema,
-} from './query.js'
+import { debug, resultToObject, Item, readProps, readId } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '@based/utils'
 
@@ -23,20 +16,21 @@ export class BasedQueryResponse {
   def: QueryDef
   execTime: number
   end: number
-  id: number
 
   constructor(
-    id: number,
     def: QueryDef,
     result: Uint8Array,
     execTime: number,
     end: number = result.length,
   ) {
-    this.id = id
     this.def = def
     this.result = result
     this.execTime = execTime
     this.end = end
+  }
+
+  get id() {
+    return readId(this.def.readSchema, this.result)
   }
 
   get version() {
@@ -155,7 +149,10 @@ export class BasedQueryResponse {
     return resultToObject(this.def.readSchema, this.result, this.end - 4, 0)
   }
 
-  toJSON(replacer?: (this: any, key: string, value: any) => any, space?: string | number) {
+  toJSON(
+    replacer?: (this: any, key: string, value: any) => any,
+    space?: string | number,
+  ) {
     // TODO: optimize
     return JSON.stringify(this.toObject(), replacer, space)
   }

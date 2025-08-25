@@ -187,3 +187,15 @@ export const resultToObject = (
 
   return items
 }
+
+export const readId = (
+  q: ReaderSchema,
+  result: Uint8Array,
+  offset: number = 0,
+) => {
+  if (q.type === ReaderSchemaEnum.single && !q.aggregate) {
+    let i = 5 + offset
+    return readUint32(result, i)
+  }
+  return undefined
+}

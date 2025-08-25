@@ -1,7 +1,7 @@
 import { deepEqual as uDeepEqual } from '@based/utils'
 import { styleText } from 'node:util'
 import util from 'node:util'
-import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
+import { BasedQueryResponse } from '../../src/client/query/BasedQueryResponse.js'
 import * as jsondiffpatch from 'jsondiffpatch'
 import * as c from 'jsondiffpatch/formatters/console'
 import { hash } from '@based/hash'
