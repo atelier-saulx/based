@@ -95,7 +95,10 @@ export function getPropLen(schemaProp: SchemaProp) {
   } else if (isPropType('colvec', schemaProp)) {
     len =
       schemaProp.size *
-      VECTOR_BASE_TYPE_SIZE_MAP[schemaProp.baseType ?? 'number']
+      VECTOR_BASE_TYPE_SIZE_MAP[
+        schemaVectorBaseTypeToEnum(schemaProp.baseType) ??
+          VectorBaseType.Float64
+      ]
   }
 
   return len

@@ -113,6 +113,7 @@ const propDefBuffer = (
 
     buf[0] = selvaType
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType]
+
     view.setUint16(1, prop.len / baseSize, true) // elements
     view.setUint16(3, baseSize, true) // element size
     return [...buf]

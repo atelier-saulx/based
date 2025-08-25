@@ -218,18 +218,6 @@ export type SchemaTypeDef = {
   hooks?: SchemaHooks
 }
 
-export const VECTOR_BASE_TYPE_SIZE_MAP = {
-  int8: 1,
-  uint8: 1,
-  int16: 2,
-  uint16: 2,
-  int32: 4,
-  uint32: 4,
-  float32: 4,
-  float64: 8,
-  number: 8,
-}
-
 export enum VectorBaseType {
   Int8 = 1,
   Uint8 = 2,
@@ -239,6 +227,17 @@ export enum VectorBaseType {
   Uint32 = 6,
   Float32 = 7,
   Float64 = 8,
+}
+
+export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseType, number> = {
+  [VectorBaseType.Int8]: 1,
+  [VectorBaseType.Uint8]: 1,
+  [VectorBaseType.Int16]: 2,
+  [VectorBaseType.Uint16]: 2,
+  [VectorBaseType.Int32]: 4,
+  [VectorBaseType.Uint32]: 4,
+  [VectorBaseType.Float32]: 4,
+  [VectorBaseType.Float64]: 8,
 }
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
