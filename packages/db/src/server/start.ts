@@ -19,6 +19,7 @@ import { DbSchema } from '../schema.js'
 export type StartOpts = {
   clean?: boolean
   hosted?: boolean
+  noLoadDumps?: boolean
   delayInMs?: number
   queryThreads?: number
 }
@@ -51,7 +52,11 @@ export async function start(db: DbServer, opts: StartOpts) {
     writelog = JSON.parse(
       (await readFile(join(path, WRITELOG_FILE))).toString(),
     )
+  } catch (err) {
+    // No dump
+  }
 
+  if (writelog) {
     // Load the common dump
     try {
       native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
@@ -60,6 +65,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       throw e
     }
 
+    // Load schema
     const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
     if (schema) {
       const s = deSerialize(schema) as DbSchema
@@ -71,21 +77,27 @@ export async function start(db: DbServer, opts: StartOpts) {
       }
     }
 
-    // Load all range dumps
+    // Load block dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
       const def = db.schemaTypesParsedById[typeId]
-      for (const dump of dumps) {
-        const fname = dump.file
-        if (fname?.length > 0) {
-          if (!def.partial) {
+
+      if (!def.partial && !opts?.noLoadDumps) {
+        for (const dump of dumps) {
+          const fname = dump.file
+          if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because verifTree is not avail
               native.loadBlock(join(path, fname), db.dbCtxExternal)
             } catch (e) {
               console.error(e.message)
             }
-          } else {
+          }
+        }
+      } else {
+        for (const dump of dumps) {
+          const fname = dump.file
+          if (fname?.length > 0) {
             partials.push([
               makeTreeKey(def.id, dump.start),
               hexToBuf(dump.hash),
@@ -94,8 +106,6 @@ export async function start(db: DbServer, opts: StartOpts) {
         }
       }
     }
-  } catch (err) {
-    // TODO In some cases we really should give up!
   }
 
   db.verifTree = new VerifTree(db.schemaTypesParsed)

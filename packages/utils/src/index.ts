@@ -49,3 +49,5 @@ export * from './longTimeOut.js'
 export * from './timestamp.js'
 
 export * from './uint8.js'
+
+export * from './fastPrng.js'

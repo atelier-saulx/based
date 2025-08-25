@@ -64,3 +64,8 @@ export const expectPositiveNumber = (v: any) => {
     throw Error('Expected positive number')
   }
 }
+
+export const expectTimezoneName = (v: any) => {
+  expectString(v)
+  Intl.DateTimeFormat(undefined, { timeZone: v });
+}

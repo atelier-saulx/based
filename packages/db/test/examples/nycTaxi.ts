@@ -1,13 +1,11 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import { deepEqual } from './shared/assert.js'
-import { notEqual } from 'node:assert'
-import fs from 'fs'
+import {logMemoryUsage} from '../shared/index.js'
 
 const gunzip = promisify(_gunzip)
 
@@ -1485,26 +1483,5 @@ await test('taxi', async (t) => {
     .get()
     .inspect()
 
-  const formatBytes = (bytes) => {
-    if (bytes < 1024) {
-      return bytes + ' Bytes'
-    } else if (bytes < 1024 * 1024) {
-      return (bytes / 1024).toFixed(2) + ' KB'
-    } else if (bytes < 1024 * 1024 * 1024) {
-      return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-    } else {
-      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
-    }
-  }
-
-  const memoryUsage = process.memoryUsage()
-
-  console.log('Memory Usage:')
-  console.log(`  rss: ${formatBytes(memoryUsage.rss)}`)
-  console.log(`  heapTotal: ${formatBytes(memoryUsage.heapTotal)}`)
-  console.log(`  heapUsed: ${formatBytes(memoryUsage.heapUsed)}`)
-  console.log(`  external: ${formatBytes(memoryUsage.external)}`)
-  if (memoryUsage.arrayBuffers !== undefined) {
-    console.log(`  arrayBuffers: ${formatBytes(memoryUsage.arrayBuffers)}`)
-  }
+  logMemoryUsage()
 })

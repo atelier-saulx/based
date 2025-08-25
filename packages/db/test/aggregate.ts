@@ -3,6 +3,7 @@ import { BasedDb } from '../src/index.js'
 import { allCountryCodes } from './shared/examples.js'
 import test from './shared/test.js'
 import { throws, deepEqual } from './shared/assert.js'
+import { fastPrng } from '@based/utils'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({
@@ -353,15 +354,16 @@ await test('sum performance', async (t) => {
     (v) => v !== 'flap' && v !== 'country',
   )
 
+  const rnd = fastPrng()
   for (let i = 0; i < 1; i++) {
     const x: any = {
-      country: allCountryCodes[~~(Math.random() * allCountryCodes.length)],
+      country: allCountryCodes[rnd(0, allCountryCodes.length - 1)],
       flap: {
         hello: 1,
       },
     }
     for (const key of countries) {
-      x[key] = ~~(Math.random() * 20)
+      x[key] = rnd(0, 20)
     }
     delete x.sequence
     db.create('vote', x)
@@ -1825,14 +1827,16 @@ await test('overall performance', async (t) => {
 
   const beers = 1e6
   const years = [1940, 1990, 2013, 2006]
+  const rnd = fastPrng()
   for (let i = 0; i < beers; i++) {
-    const beer = await db.create('beer', {
+    await db.create('beer', {
       name: 'Beer' + i,
-      type: types[(types.length * Math.random()) | 0],
+      type: types[rnd(0, types.length - 1)],
       price: Math.random() * 100,
-      year: years[(years.length * Math.random()) | 0],
+      year: years[rnd(0, years.length - 1)],
     })
   }
+  await db.drain()
 
   const scriptName = process.env.npm_lifecycle_event || ''
   const isDebugMode = scriptName.includes('debug')
@@ -2364,11 +2368,11 @@ await test('cardinality with dates', async (t) => {
   })
 
   db.create('lunch', {
-    day: '6/30/25', // mon
+    day: new Date('6/30/2025 00:00+0'), // mon
     eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
   })
   db.create('lunch', {
-    day: '7/1/25', // tue
+    day: new Date('7/1/2025 00:00+0'), // tue
     eaters: [
       'Nuno',
       'Tom',
@@ -2752,22 +2756,23 @@ await test('range', async (t) => {
     },
   })
 
+  const rnd = fastPrng()
   for (let i = 0; i < 10; i++) {
     const d = new Date('11/11/2024 11:00-3')
-    const j = db.create('job', {
+    db.create('job', {
       day: new Date(d.getTime() + Math.random() * 1e7),
       tip: Math.random() * 20,
     })
     const s = db.create('state', {
-      name: 'statelala' + (Math.random() * 2).toFixed(0),
+      name: `statelala ${rnd(0, 2)}`,
     })
     const t = db.create('territory', {
-      name: ter[(ter.length * Math.random()) | 0],
+      name: ter[rnd(0, ter.length - 1)],
       flap: Math.random() * 100,
       state: s,
     })
-    const e = db.create('employee', {
-      name: 'emplala' + (Math.random() * 10).toFixed(0),
+    db.create('employee', {
+      name: `emplala ${rnd(0, 10)}`,
       area: [t],
     })
   }
@@ -2898,13 +2903,15 @@ await test('fixed length strings', async (t) => {
       },
     },
   })
+
+  const rnd = fastPrng()
   for (let i = 0; i < 100; i++) {
     let p = db.create('product', {
-      name: 'lala' + (Math.random() * 10).toFixed(0),
+      name: `lala ${rnd(0, 10)}`,
       flap: Math.random() * 100,
     })
     db.create('shelve', {
-      code: 'S' + (Math.random() * 10).toFixed(0),
+      code: `S${rnd(0, 10)}`,
       products: [p],
     })
   }

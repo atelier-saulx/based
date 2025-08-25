@@ -487,15 +487,15 @@ export class QueryBranch<T> {
 
 export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
-const resToJSON = (res: BasedQueryResponse) => res.toJSON()
+const resToJSON = (res: BasedQueryResponse, replacer?: (this: any, key: string, value: any) => any, space?: string | number) => res.toJSON(replacer, space)
 const resToObject = (res: BasedQueryResponse) => res.toObject()
 
 class GetPromise extends Promise<BasedQueryResponse> {
   toObject() {
     return this.then(resToObject)
   }
-  toJSON() {
-    return this.then(resToJSON)
+  toJSON(replacer?: (this: any, key: string, value: any) => any, space?: string | number) {
+    return this.then((res) => resToJSON(res, replacer, space))
   }
   inspect(depth?: number, raw?: boolean) {
     return this.then(

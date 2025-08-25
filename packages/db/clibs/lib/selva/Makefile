@@ -44,7 +44,6 @@ OBJ := \
 	node_id_set.o \
 	poptop.o \
 	print_ready.o \
-	ref_save_map.o \
 	schema.o \
 	selva_error.o \
 	selva_hash128.o \

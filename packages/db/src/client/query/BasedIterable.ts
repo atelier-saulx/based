@@ -149,9 +149,9 @@ export class BasedQueryResponse {
     return resultToObject(this.def, this.result, this.end - 4, 0)
   }
 
-  toJSON() {
+  toJSON(replacer?: (this: any, key: string, value: any) => any, space?: string | number) {
     // TODO: optimize
-    return JSON.stringify(this.toObject())
+    return JSON.stringify(this.toObject(), replacer, space)
   }
 
   toString() {

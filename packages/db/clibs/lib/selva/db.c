@@ -157,7 +157,6 @@ struct SelvaDb *selva_db_create(void)
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     mempool_init(&db->types.pool, te_slab_size(), sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
-    ref_save_map_init(&db->schema.ref_save_map);
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     selva_expire_init(&db->expiring);
@@ -249,7 +248,6 @@ static void del_all_types(struct SelvaDb *db)
 void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
-    ref_save_map_destroy(&db->schema.ref_save_map);
     selva_expire_deinit(&db->expiring);
 #if 0
     memset(db, 0, sizeof(*db));

@@ -90,7 +90,7 @@ export async function loadBlock(
   const p = db.ioWorker.loadBlock(join(db.fileSystemPath, filename))
   block.loadPromise = p
   await p
-  delete block.loadPromise
+  block.loadPromise = null
 
   // Update and verify the hash
   const hash = new Uint8Array(16)

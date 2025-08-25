@@ -1,7 +1,7 @@
 import { deepEqual as uDeepEqual } from '@based/utils'
+import { styleText } from 'node:util'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
-import color from 'picocolors'
 import * as jsondiffpatch from 'jsondiffpatch'
 import * as c from 'jsondiffpatch/formatters/console'
 import { hash } from '@based/hash'
@@ -126,9 +126,9 @@ export const throws = async (
     if (logErr == true) {
       console.log('')
       if (label) {
-        console.log(color.gray(`${label} "${err.stack}"`))
+        console.log(styleText('gray', `${label} "${err.stack}"`))
       } else {
-        console.log(color.gray(err.stack))
+        console.log(styleText('gray', err.stack))
       }
       console.log('')
     }

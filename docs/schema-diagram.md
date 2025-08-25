@@ -11,7 +11,7 @@ Simple function in based/schema to convert your schema to a mermaid.
 ## Example usage
 
 ```js
-import { parse } from '@based/schema';
+import { parse } from '@based/schema'
 import { mermaid } from '@based/schema-diagram'
 
 const schema = {
@@ -36,7 +36,7 @@ const schema = {
       },
     },
   },
-};
+}
 const parsed = parse(schema).schema
 
 console.dir(parsed, { depth: null })

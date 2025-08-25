@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
+import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
-import picocolors from 'picocolors'
 import { wait } from '@based/utils'
 
 import { printSummary } from '../dist/test/shared/test.js'
@@ -62,7 +62,8 @@ await walk(p)
 
 console.log('\n\n')
 console.log(
-  picocolors.bgWhite(
+  styleText(
+    'bgWhite',
     ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 's'} `,
   ),
 )
@@ -79,7 +80,10 @@ for (let i = 0; i < repeat; i++) {
     const fullPath = test[0]
     const relPath = relative(p, fullPath)
     console.log(
-      picocolors.bgBlue(` ${picocolors.bold(picocolors.black(relPath))} `),
+      styleText(
+        'bgBlue',
+        ` ${styleText('bold', styleText('black', relPath))} `,
+      ),
     )
 
     if (test[1]) {
@@ -95,7 +99,7 @@ for (let i = 0; i < repeat; i++) {
     await import(fullPath + `?_=${++cnt}`)
       .catch((err) => {
         console.log('')
-        console.log(picocolors.bgRed(` Err: ${relPath} `))
+        console.log(styleText('bgRed', ` Err: ${relPath} `))
         console.error(err)
       })
       .then(() => {})

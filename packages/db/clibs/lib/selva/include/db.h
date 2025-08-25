@@ -12,7 +12,6 @@
 #include "selva/types.h"
 #include "selva/selva_hash128.h"
 #include "expire.h"
-#include "ref_save_map.h"
 
 RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
@@ -145,32 +144,10 @@ struct SelvaDb {
     } types;
 
     /**
-     * Schema related items.
-     */
-    struct {
-        struct ref_save_map ref_save_map;
-    } schema;
-
-    /**
      * Expiring nodes.
      */
     struct SelvaExpire expiring;
 };
-
-static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
-{
-#if 0
-    assert(((uintptr_t)type & 0xFFFF) == 0);
-#endif
-    return (void *)((uintptr_t)type | type->type);
-}
-
-static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
-{
-    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
-    __builtin_prefetch(te);
-    return te;
-}
 
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
