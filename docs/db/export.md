@@ -1,4 +1,5 @@
 # Database Exporter Utility
+Availabe in: v0.0.72
 
 ## Overview
 
@@ -50,6 +51,7 @@ This command:
 - Exports them to the specified custom directory (`~/my_dumps_in_csvs`)
 - Creates the directory if it doesn't exist
 - Overwrites any existing files with the same names
+- *Currently references are not exported. Referred properties are exported as well as properties*.
 
 ### Combined Options
 
