@@ -78,7 +78,7 @@ export function create(
     }
 
     if (e instanceof Tmp) {
-      return e.then(() => create.apply(null, arguments))
+      return e.then(create.bind(null, ...arguments))
     }
 
     if (e.then) {
