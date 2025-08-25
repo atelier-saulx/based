@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('kev', async (t) => {
+await test('export to csv', async (t) => {
   const db = new BasedDb({
     path: '../exporter/tmp',
   })
@@ -40,4 +40,8 @@ await test('kev', async (t) => {
 
   await db.drain()
   await db.save()
+
+  // cd ../exporter and run `npm run test`
+  // check the first line of a exported csv
+  // check the number of lines like with `wc -l`
 })
