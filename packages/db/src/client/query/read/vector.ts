@@ -2,7 +2,6 @@ import { PropDef } from '@based/schema/def'
 import { ReaderPropDef, ReaderVectorBaseType } from './types.js'
 
 export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
-  console.log(prop)
   switch (prop.vectorBaseType) {
     case ReaderVectorBaseType.Int8:
       return new Int8Array(tmp.buffer, tmp.byteOffset, tmp.byteLength)

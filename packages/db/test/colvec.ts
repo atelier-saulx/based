@@ -132,3 +132,32 @@ await test('colvec int8', async (t) => {
     { id: 5, str: new Int8Array([5, 6, 7, 8]) },
   ])
 })
+
+await test('colvec float32', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      col: {
+        blockCapacity: 10_000,
+        insertOnly: true,
+        props: {
+          str: { type: 'colvec', size: 2, baseType: 'float32' },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1; i++) {
+    db.create('col', {
+      str: Float32Array.from([1.23123, 1.3]),
+    })
+  }
+  deepEqual(await db.query('col').include('str').get(), [
+    { id: 1, str: new Float32Array([1.23123, 1.3]) },
+  ])
+})

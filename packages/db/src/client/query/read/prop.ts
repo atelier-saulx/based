@@ -45,8 +45,6 @@ export const readProp = (
   const prop = q.props[instruction]
   prop.readBy = q.readId
 
-  console.log('hello -> ', prop)
-
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
