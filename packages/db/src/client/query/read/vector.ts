@@ -1,23 +1,23 @@
-import { PropDef } from '@based/schema/def'
-import { ReaderPropDef, ReaderVectorBaseType } from './types.js'
+import { VectorBaseType } from '@based/schema/def'
+import { ReaderPropDef } from './types.js'
 
 export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
   switch (prop.vectorBaseType) {
-    case ReaderVectorBaseType.Int8:
+    case VectorBaseType.Int8:
       return new Int8Array(tmp.buffer, tmp.byteOffset, tmp.byteLength)
-    case ReaderVectorBaseType.Uint8:
+    case VectorBaseType.Uint8:
       return tmp
-    case ReaderVectorBaseType.Int16:
+    case VectorBaseType.Int16:
       return new Int16Array(tmp.buffer)
-    case ReaderVectorBaseType.Uint16:
+    case VectorBaseType.Uint16:
       return new Uint16Array(tmp.buffer)
-    case ReaderVectorBaseType.Int32:
+    case VectorBaseType.Int32:
       return new Int32Array(tmp.buffer)
-    case ReaderVectorBaseType.Uint32:
+    case VectorBaseType.Uint32:
       return new Uint32Array(tmp.buffer)
-    case ReaderVectorBaseType.Float32:
+    case VectorBaseType.Float32:
       return new Float32Array(tmp.buffer)
-    case ReaderVectorBaseType.Float64:
+    case VectorBaseType.Float64:
       return new Float64Array(tmp.buffer)
   }
 }
