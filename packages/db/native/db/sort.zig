@@ -300,10 +300,7 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(
-    data: []u8,
-    out: []u8
-) [*]u8 {
+inline fn parseString(data: []u8, out: []u8) [*]u8 {
     if (data.len <= 6) {
         return out.ptr;
     } else if (data.len < SIZE + 6) {

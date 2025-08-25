@@ -118,6 +118,7 @@ test('stream functions (over http + stream)', async (t: T) => {
           'content-encoding': 'gzip',
           'content-type': 'application/json',
         },
+        // @ts-ignore
         body: x,
       })
     ).text()

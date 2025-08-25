@@ -10,9 +10,11 @@ import {
   PropDef,
   PropDefEdge,
   SIZE_MAP,
+  VECTOR_BASE_TYPE_SIZE_MAP,
+  VectorBaseType,
 } from './types.js'
 
-import { SchemaProp, isPropType } from '../types.js'
+import { SchemaProp, SchemaVectorBaseType, isPropType } from '../types.js'
 import { getPropType } from '../parse/utils.js'
 import { convertToTimestamp } from '@based/utils'
 
@@ -49,6 +51,31 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
   return false
 }
 
+export const schemaVectorBaseTypeToEnum = (
+  vector: SchemaVectorBaseType,
+): VectorBaseType => {
+  switch (vector) {
+    case 'int8':
+      return VectorBaseType.Int8
+    case 'uint8':
+      return VectorBaseType.Uint8
+    case 'int16':
+      return VectorBaseType.Int16
+    case 'uint16':
+      return VectorBaseType.Uint16
+    case 'int32':
+      return VectorBaseType.Int32
+    case 'uint32':
+      return VectorBaseType.Uint32
+    case 'float32':
+      return VectorBaseType.Float32
+    case 'float64':
+      return VectorBaseType.Float64
+    case 'number':
+      return VectorBaseType.Float64
+  }
+}
+
 export function getPropLen(schemaProp: SchemaProp) {
   let len = SIZE_MAP[getPropType(schemaProp)]
   if (
@@ -66,7 +93,9 @@ export function getPropLen(schemaProp: SchemaProp) {
   } else if (isPropType('vector', schemaProp)) {
     len = 4 * schemaProp.size
   } else if (isPropType('colvec', schemaProp)) {
-    len = schemaProp.size
+    len =
+      schemaProp.size *
+      VECTOR_BASE_TYPE_SIZE_MAP[schemaProp.baseType ?? 'number']
   }
 
   return len

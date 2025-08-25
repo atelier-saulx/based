@@ -40,7 +40,6 @@ export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
 export const COLVEC = 30
-export const META_SELVA_STRING = 31
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -67,7 +66,6 @@ export const TYPE_INDEX_MAP = {
   json: JSON,
   object: OBJECT,
   colvec: COLVEC,
-  metaSelvaString: META_SELVA_STRING,
 }
 
 export const enum numberTypes {
@@ -120,7 +118,8 @@ export type PropDef = {
   transform?: Transform
   default: any
   // vectors
-  vectorBaseType?: SchemaVectorBaseType
+  vectorBaseType?: VectorBaseType
+  vectorSize?: number
   // edge stuff
   edgeMainLen?: 0
   hasDefaultEdges?: boolean
@@ -219,6 +218,29 @@ export type SchemaTypeDef = {
   hooks?: SchemaHooks
 }
 
+export const VECTOR_BASE_TYPE_SIZE_MAP = {
+  int8: 1,
+  uint8: 1,
+  int16: 2,
+  uint16: 2,
+  int32: 4,
+  uint32: 4,
+  float32: 4,
+  float64: 8,
+  number: 8,
+}
+
+export enum VectorBaseType {
+  Int8 = 1,
+  Uint8 = 2,
+  Int16 = 3,
+  Uint16 = 4,
+  Int32 = 5,
+  Uint32 = 6,
+  Float32 = 7,
+  Float64 = 8,
+}
+
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
@@ -245,7 +267,6 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   json: 0,
   object: 0,
   colvec: 0, // separate
-  metaSelvaString: 9, // will be more (1 more for compression)
 }
 
 const reverseMap: any = {}

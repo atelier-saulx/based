@@ -274,6 +274,13 @@ int selva_fields_set_text(
         const char *str,
         size_t len);
 
+int selva_fields_get_mutable_text(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        size_t len,
+        struct selva_string **out);
+
 /**
  * Get text field translation.
  *

@@ -57,3 +57,9 @@
 ## Testing
 
 - [Testing (@based/utils package)](db/test)
+
+## Dumping and Exporting
+
+- Saving and dumping
+- [Database Exporter Utility](db/export)
+  - Exporting to CSV

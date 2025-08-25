@@ -429,6 +429,7 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
   // }
 }
 
+// -------------
 const decoder = new TextDecoder()
 
 export const deSerializeKey = (buf: Uint8Array, keySize: number, i: number) => {

@@ -1179,6 +1179,39 @@ int selva_fields_set_text(
     return 0;
 }
 
+int selva_fields_get_mutable_text(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        size_t len,
+        struct selva_string **out)
+{
+    struct ensure_text_field tf;
+    int err;
+
+    if (fs->type != SELVA_FIELD_TYPE_TEXT) {
+        return SELVA_EINVAL;
+    }
+
+    tf = ensure_text_field(&node->fields, fs, lang);
+    if (unlikely(!tf.text)) {
+        db_panic("Text missing");
+    } else if (tf.tl) {
+        db_panic("We only support previously unset translations for now");
+    }
+
+    tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
+    tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
+
+    err = selva_string_init(tf.tl, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+    if (err) {
+        return err;
+    }
+    *out = tf.tl;
+
+    return 0;
+}
+
 int selva_fields_get_text(
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,

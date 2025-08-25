@@ -443,7 +443,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
  * @param[out] ns
  * @param[out] type
  */
-int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len)
+int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len)
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {

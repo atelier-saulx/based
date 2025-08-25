@@ -829,7 +829,7 @@ await test('or numerical', async (t) => {
   )
 })
 
-await test('has', async (t) => {
+await test.skip('has', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

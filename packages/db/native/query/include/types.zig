@@ -3,16 +3,13 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const std = @import("std");
 
-pub const IncludeError = error{
-    Recursion,
-};
-
 pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
         return struct { weakRefs: selva.SelvaNodeWeakReferences, fs: db.FieldSchema };
     }
     return *selva.SelvaNodeReferences;
 }
+
 pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {
     if (isEdge) {
         return refs.weakRefs.nr_refs;
@@ -20,7 +17,6 @@ pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {
     return refs.nr_refs;
 }
 
-// Tmake this optional isEdge
 pub const RefStruct = struct {
     smallReference: ?*selva.SelvaNodeSmallReference,
     largeReference: ?*selva.SelvaNodeLargeReference,
@@ -77,10 +73,6 @@ pub inline fn RefResult(
             return std.mem.zeroInit(RefStruct, .{});
         }
     }
-
-    if (edgeConstrain != null) {
-        std.debug.print("GOT EDGE CONTRAIN FOR EDGE REF WRONG! {any} \n", .{edgeConstrain});
-    }
     return .{
         .smallReference = null,
         .largeReference = null,
@@ -88,3 +80,9 @@ pub inline fn RefResult(
         .edgeConstaint = null,
     };
 }
+
+pub const IncludeOpts = struct {
+    meta: u8,
+    start: u8,
+    end: u8,
+};
