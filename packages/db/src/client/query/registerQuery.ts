@@ -1,11 +1,11 @@
 import native from '../../native.js'
 import { concatUint8Arr } from '@based/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
-import { defToBuffer } from './toByteCode/toBuffer.js'
+import { defToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
-import { includeField } from './query.js'
+import { convertToReaderSchema, includeField } from './query.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
@@ -14,6 +14,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     const def = createQueryDef(
       q.db,
       QueryDefType.Root,
+      // @ts-ignore
       q.target,
       q.skipValidation,
     )
@@ -25,7 +26,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     }
     // locale first...
     if (!q.def.include.stringFields.size && !q.def.references.size) {
-      includeField(q.def, '*')
+      includeField(q.def, { field: '*' })
     }
     q.queryCommands = commands
 
@@ -34,6 +35,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     let id = native.crc32(buf)
     q.id = id
     q.buffer = buf
+    q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)
     return buf
   }

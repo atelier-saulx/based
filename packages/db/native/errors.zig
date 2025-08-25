@@ -64,7 +64,6 @@ pub fn selva(rc: c_int) SelvaError!void {
     };
 }
 
-
 pub const DeflateError = error{
     BAD_DATA,
     SHORT_OUTPUT,
@@ -86,4 +85,8 @@ pub const DbError = error{
     SHARD_NOT_CREATED,
     WRONG_SORTFIELD_TYPE,
     INCORRECT_QUERY_TYPE,
+};
+
+pub const DbIncludeError = error{
+    EDGE_FROM_WEAKREF,
 };

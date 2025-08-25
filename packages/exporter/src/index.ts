@@ -3,10 +3,25 @@ import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
+import os from 'node:os'
 
 const CHUNK_SIZE = 1025
 
-const OUTPUT_DIR = './tmp/export'
+let OUTPUT_DIR = './tmp/export'
+let verbose = false
+
+process.argv.forEach((val) => {
+  if (val.includes('verbose')) {
+    verbose = true
+  }
+  if (val.toLowerCase().includes('dest')) {
+    OUTPUT_DIR = val.split('=')[1].replace(/^~(?=$|\/|\\)/, os.homedir)
+  }
+})
+
+var log = (...params) => {
+  if (verbose === true) console.log(...params)
+}
 
 const getCsvFileName = (typeId: number, startNodeId: number) => {
   return join(OUTPUT_DIR, `${typeId}_${startNodeId}.csv`)
@@ -16,7 +31,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   const [typeId, startNodeId] = destructureTreeKey(blockKey)
   const def = db.client.schemaTypesParsedById[typeId]
 
-  console.log(
+  log(
     `Processing block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
   )
 
@@ -28,14 +43,14 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   const csvHeader = ['id', ...propsToExport]
 
-  let offsetStart = 0
-  let offsetEnd = CHUNK_SIZE
+  let offsetStart = startNodeId - 1
+  let offsetEnd = startNodeId - 1 + CHUNK_SIZE
   let isDone = false
   let fileHandle: any | undefined
 
   const filename = getCsvFileName(typeId, startNodeId)
   fileHandle = await open(filename, 'w')
-  console.log(`  - Opened file for writing: ${filename}`)
+  log(`  - Opened file for writing: ${filename}`)
   await fileHandle.write(toCsvHeader(csvHeader))
 
   const allCsvRows: any[][] = []
@@ -48,7 +63,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     }
   })
   while (!isDone) {
-    console.log(`  - Loading chunk from offset ${offsetStart}...`)
+    log(`  - Loading chunk from offset ${offsetStart}...`)
 
     const data = await db
       .query(def.type)
@@ -59,7 +74,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
     if (!data || Object.keys(data).length === 0) {
       isDone = true
-      console.log('    - No more data in this chunk. Finishing.')
+      log('    - No more data in this chunk. Finishing.')
       break
     }
 
@@ -87,7 +102,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     if (fileHandle) {
       await fileHandle.close()
     }
-    console.log(`  - Successfully exported to ${filename}`)
+    log(`  - Successfully exported to ${filename}`)
   } catch (error) {
     console.error(`  - Failed to write CSV file:`, error)
   }

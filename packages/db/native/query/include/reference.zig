@@ -31,10 +31,10 @@ pub fn getSingleRefFields(
     const refField = include[2];
 
     ctx.results.append(.{
-        .id = null,
+        .id = 0,
         .score = null,
-        .field = refField,
-        .val = null,
+        .prop = refField,
+        .value = &.{},
         .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;
 
@@ -55,7 +55,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ref.?.reference.?, refField);
+        var selvaRef = db.getEdgeReference(ref.?.largeReference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -64,11 +64,10 @@ pub fn getSingleRefFields(
             fieldSchema,
         );
 
-        edgeRefStruct = .{
-            .reference = null,
+        edgeRefStruct = std.mem.zeroInit(types.RefStruct, .{
             .edgeConstaint = edgeConstrain,
             .edgeReference = selvaRef,
-        };
+        });
         node = db.resolveEdgeReference(ctx.db, fieldSchema.?, &selvaRef.?);
         if (node == null) {
             return 6 + size;
@@ -83,9 +82,10 @@ pub fn getSingleRefFields(
         );
 
         edgeRefStruct = .{
-            .reference = @ptrCast(selvaRef.?),
-            .edgeConstaint = edgeConstrain,
+            .smallReference = null,
+            .largeReference = @ptrCast(selvaRef.?),
             .edgeReference = null,
+            .edgeConstaint = edgeConstrain,
         };
         node = selvaRef.?.*.dst;
         if (node == null) {
@@ -117,7 +117,7 @@ pub fn getSingleRefFields(
     };
 
     utils.writeInt(u32, val, 0, resultSizeNest);
-    ctx.results.items[resultIndex].val = val;
+    ctx.results.items[resultIndex].value = val;
 
     size += 6 + resultSizeNest;
 

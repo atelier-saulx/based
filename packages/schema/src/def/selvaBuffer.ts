@@ -17,6 +17,7 @@ import {
   WEAK_REFERENCES,
   JSON,
   COLVEC,
+  VECTOR_BASE_TYPE_SIZE_MAP,
 } from './types.js'
 import RefSet from './refSet.js'
 
@@ -52,18 +53,6 @@ selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
-
-const vectorBaseType2Size = {
-  number: 8,
-  int8: 1,
-  uint8: 1,
-  int16: 2,
-  uint16: 2,
-  int32: 4,
-  uint32: 4,
-  float32: 4,
-  float64: 8,
-}
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -123,8 +112,10 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    view.setUint16(1, prop.len, true) // elements
-    view.setUint16(3, vectorBaseType2Size[prop.vectorBaseType], true) // element size
+    const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType]
+
+    view.setUint16(1, prop.len / baseSize, true) // elements
+    view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
     const buf = new Uint8Array(9)

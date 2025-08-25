@@ -1,3 +1,4 @@
+const assert = std.debug.assert;
 const db = @import("../db/db.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
@@ -23,7 +24,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 
-    _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
+    _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, refsLen);
 
     while (i < len) : (i += 5) {
         const op: RefEdgeOp = @enumFromInt(data[i]);
@@ -47,13 +48,14 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         // pretty sure its this thats slow
         const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
+        assert(ref.type == selva.SELVA_NODE_REFERENCE_LARGE);
 
         if (hasEdgeData) {
             const sizepos = if (hasIndex) i + 9 else i + 5;
             const edgelen = read(u32, data, sizepos);
             const edgepos = sizepos + 4;
             const edges = data[edgepos .. edgepos + edgelen];
-            try edge.writeEdges(ctx, ref, edges);
+            try edge.writeEdges(ctx, ref.p.large, edges);
             i += edges.len + 4;
         }
         if (hasIndex) {

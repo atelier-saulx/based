@@ -148,13 +148,13 @@ await test('filter references', async (t) => {
   //   await db.query('team').include('*', '**').get().inspect(100)
   //   await db.query('libraryFile').include('*', '**').get().inspect(100)
 
-  await db
-    .query('team')
-    .include('files')
-    // need to make this
-    // still missing
-    // .filter((s) => s('files').filter('fileType', '=', 'document'))
-    // .filter('files.fileType', '=', 'document')
-    .get()
-    .inspect(100)
+  //await db
+  //  .query('team')
+  //  .include('files')
+  //  // need to make this
+  //  // still missing
+  //  // .filter((s) => s('files').filter('fileType', '=', 'document'))
+  //  // .filter('files.fileType', '=', 'document')
+  //  .get()
+  //  .inspect(100)
 })
