@@ -4,7 +4,7 @@ import { deepEqual } from './shared/assert.js'
 
 await test('kev', async (t) => {
   const db = new BasedDb({
-    path: t.tmp,
+    path: '../exporter/tmp',
   })
   await db.start({ clean: true })
   t.after(() => db.stop())
@@ -12,7 +12,7 @@ await test('kev', async (t) => {
   await db.setSchema({
     types: {
       product: {
-        name: { type: 'string', maxBytes: 10 },
+        sku: { type: 'string', maxBytes: 10 },
         flap: 'number',
       },
       shelve: {
@@ -26,21 +26,18 @@ await test('kev', async (t) => {
       },
     },
   })
-  for (let i = 0; i < 100; i++) {
+  // 1M items, 1K SKUs, 50 shelves
+  for (let i = 0; i < 1e6; i++) {
     let p = db.create('product', {
-      name: 'lala' + (Math.random() * 10).toFixed(0),
-      flap: Math.random() * 100,
+      sku: 'lala' + (Math.random() * 10).toFixed(0),
+      flap: Math.random() * 1000,
     })
     db.create('shelve', {
-      code: 'S' + (Math.random() * 10).toFixed(0),
+      code: 'S' + (Math.random() * 50).toFixed(0),
       products: [p],
     })
   }
 
   await db.drain()
   await db.save()
-
-  // const serialized = serialize(testSchema)
-
-  // const deserialized = deSerialize(serialized)
 })
