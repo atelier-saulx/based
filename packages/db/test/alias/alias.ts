@@ -30,11 +30,15 @@ await test('simple', async (t) => {
     externalId: 'cool2',
   })
 
-  deepEqual((await db.query('user', user1).get()).toObject(), {
-    id: 1,
-    externalId: 'cool',
-    potato: '',
-  })
+  deepEqual(
+    await db.query('user', user1).get(),
+    {
+      id: 1,
+      externalId: 'cool',
+      potato: '',
+    },
+    'One alias',
+  )
 
   deepEqual((await db.query('user', user2).get()).toObject(), {
     id: 2,
@@ -338,21 +342,13 @@ await test('Update existing alias field', async (t) => {
   })
   await db.drain()
 
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get()
-      .toObject(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'login',
-      currentToken: newToken,
-    },
-  )
+  deepEqual(await db.query('user', { email }).get(), {
+    id: 1,
+    name: 'nuno',
+    email: 'nuno@saulx.com',
+    status: 'login',
+    currentToken: newToken,
+  })
 
   newToken =
     '6093127416cbc7ff8126cda605a2239a2e061a5c65a77cc38b23034441832d2c40afdaa91f83285c52edccc5dd8d18d5'
@@ -865,14 +861,12 @@ await test('alias and edge ref', async (t) => {
   const user1 = await db.create('user', { name: 'Mario' })
   const user2 = await db.create('user', { name: 'Luigi' })
 
-  //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
-  //await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
-
   const adminRole = await db
     .query('role', { alias: 'admin' })
     .include('id')
     .get()
     .toObject()
+
   await db.update('project', prj, {
     users: { add: [{ id: user1, $role: adminRole }] },
   })

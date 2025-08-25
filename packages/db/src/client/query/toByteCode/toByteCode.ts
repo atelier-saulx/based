@@ -1,6 +1,6 @@
 import { createSortBuffer } from '../sort.js'
 import { QueryDef, QueryDefType, QueryType, includeOp } from '../types.js'
-import { includeToBuffer } from '../include/toBuffer.js'
+import { includeToBuffer } from '../include/toByteCode.js'
 import { filterToBuffer } from '../query.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'

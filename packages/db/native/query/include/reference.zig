@@ -31,10 +31,10 @@ pub fn getSingleRefFields(
     const refField = include[2];
 
     ctx.results.append(.{
-        .id = null,
+        .id = 0,
         .score = null,
-        .field = refField,
-        .val = null,
+        .prop = refField,
+        .value = &.{},
         .type = if (isEdge) t.ResultType.referenceEdge else t.ResultType.reference,
     }) catch return 0;
 
@@ -117,7 +117,7 @@ pub fn getSingleRefFields(
     };
 
     utils.writeInt(u32, val, 0, resultSizeNest);
-    ctx.results.items[resultIndex].val = val;
+    ctx.results.items[resultIndex].value = val;
 
     size += 6 + resultSizeNest;
 

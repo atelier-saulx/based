@@ -42,8 +42,6 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
       } else if (value < convertToTimestamp(t.min)) {
         return false
       }
-    } else {
-      return value > -1
     }
     if (t.max !== undefined) {
       if (typeof t.max === 'number') {
