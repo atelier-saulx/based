@@ -7,7 +7,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export abstract class DbWorker {
-  constructor(address: BigInt, db: DbServer, onExit: (code: number) => void, workerName: string) {
+  constructor(
+    address: BigInt,
+    db: DbServer,
+    onExit: (code: number) => void,
+    workerName: string,
+  ) {
     const { port1, port2 } = new MessageChannel()
 
     this.db = db

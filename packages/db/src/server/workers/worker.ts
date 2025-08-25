@@ -31,7 +31,9 @@ export function registerMsgHandler(
       if (typeof msg === 'bigint') {
         if (msg === 0n) {
           // terminate
-          nextTick(() => typeof self === 'undefined' ? process.exit() : self.close())
+          nextTick(() =>
+            typeof self === 'undefined' ? process.exit() : self.close(),
+          )
           channel.postMessage(null)
         } else {
           // it's a ctx address

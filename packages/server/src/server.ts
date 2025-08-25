@@ -13,10 +13,9 @@ import { BasedFunctions, FunctionConfig } from './functions/index.js'
 import { BasedAuth, AuthConfig } from './auth/index.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
 import { wait } from '@based/utils'
-import picocolors from 'picocolors'
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
 import { ActiveChannel } from './channel/index.js'
-import util from 'node:util'
+import util, { styleText } from 'node:util'
 import { encodeReload } from './protocol.js'
 
 type EventMap = {
@@ -102,12 +101,12 @@ const server = new BasedServer({
   }
 })
 
-server.functions.add({ 
-  hello: { type: 'function', fn: async () => 'hello' } 
+server.functions.add({
+  hello: { type: 'function', fn: async () => 'hello' }
 })
 
-server.functions.addRoutes({ 
-  bla: { type: 'query' } 
+server.functions.addRoutes({
+  bla: { type: 'query' }
 })
 
 await server.start()
@@ -382,7 +381,7 @@ export class BasedServer {
           resolve(this)
         } else {
           console.info(
-            picocolors.red('🤮  Based-server error on port:'),
+            styleText('red', '🤮  Based-server error on port:'),
             this.port,
           )
           if (this.http?.close) {
@@ -400,7 +399,7 @@ export class BasedServer {
     }
 
     if (!this.silent) {
-      console.info(picocolors.gray(`    Destroy Based-server ${this.port} \n`))
+      console.info(styleText('grey', `    Destroy Based-server ${this.port} \n`))
     }
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)

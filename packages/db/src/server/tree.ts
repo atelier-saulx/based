@@ -12,7 +12,8 @@ export const makeTreeKey = (typeId: number, start: number) =>
 export const nodeId2Start = (blockCapacity: number, nodeId: number) =>
   ((nodeId - +!(nodeId % blockCapacity)) / blockCapacity) | 0
 
-const nodeId2BlockI = (nodeId: number, blockCapacity: number) => ((nodeId - 1) - ((nodeId - 1) % blockCapacity)) / blockCapacity
+const nodeId2BlockI = (nodeId: number, blockCapacity: number) =>
+  (nodeId - 1 - ((nodeId - 1) % blockCapacity)) / blockCapacity
 
 export const makeTreeKeyFromNodeId = (
   typeId: number,
@@ -26,34 +27,44 @@ export const makeTreeKeyFromNodeId = (
 type Hash = Uint8Array
 const HASH_SIZE = 16
 
+/**
+ * Block state.
+ * Type and a node id range.
+ */
 export type VerifBlock = {
   /**
    * key = typeId + startNodeId
    * Made with makeTreeKey(t, i) and can be destructured with destructureTreeKey(k).
    */
-  key: number,
+  key: number
   /**
    * Last acquired hash of the block.
    * This is normally updated at load and save time but never during read/modify ops.
    */
-  hash: Hash,
+  hash: Hash
   /**
    * If false the block is offloaded to fs;
    * true doesn't necessarily mean that the block still exists because it could have been deleted.
    */
-  inmem: boolean,
+  inmem: boolean
   /**
    * If set, the block is being loaded and it can be awaited with this promise.
    */
-  loadPromise: null | Promise<void>,
+  loadPromise: null | Promise<void>
 }
 
+/**
+ * Container for a whole type.
+ */
 type VerifType = {
-  typeId: number,
-  blockCapacity: number,
-  blocks: VerifBlock[],
+  typeId: number /*!< typeId as in the schema. */
+  blockCapacity: number /*!< Max number of nodes per block. */
+  blocks: VerifBlock[]
 }
 
+/**
+ * An object that keeps track of all blocks of nodes existing in the database.
+ */
 export class VerifTree {
   #types: { [key: number]: VerifType }
   #h = createDbHash()
@@ -62,19 +73,32 @@ export class VerifTree {
     this.#types = VerifTree.#makeTypes(schemaTypesParsed)
   }
 
-  static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): { [key: number]: VerifType }  {
-    return Object.preventExtensions(Object.keys(schemaTypesParsed)
-      .sort((a: string, b: string) => schemaTypesParsed[a].id - schemaTypesParsed[b].id)
-      .reduce((obj: { [key: number]: VerifType }, key: string): { [key: number]: VerifType } => {
-        const def = schemaTypesParsed[key]
-        const typeId = def.id
-        obj[typeId] = {
-          typeId,
-          blockCapacity: def.blockCapacity,
-          blocks: [],
-        }
-        return obj
-      }, {}))
+  static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): {
+    [key: number]: VerifType
+  } {
+    return Object.preventExtensions(
+      Object.keys(schemaTypesParsed)
+        .sort(
+          (a: string, b: string) =>
+            schemaTypesParsed[a].id - schemaTypesParsed[b].id,
+        )
+        .reduce(
+          (
+            obj: { [key: number]: VerifType },
+            key: string,
+          ): { [key: number]: VerifType } => {
+            const def = schemaTypesParsed[key]
+            const typeId = def.id
+            obj[typeId] = {
+              typeId,
+              blockCapacity: def.blockCapacity,
+              blocks: [],
+            }
+            return obj
+          },
+          {},
+        ),
+    )
   }
 
   *types() {
@@ -113,7 +137,14 @@ export class VerifTree {
       throw new Error(`type ${typeId} not found`)
     }
     const blockI = nodeId2BlockI(start, type.blockCapacity)
-    const block = type.blocks[blockI] ?? (type.blocks[blockI] = Object.preventExtensions({ key, hash, inmem, loadPromise: null }))
+    const block =
+      type.blocks[blockI] ??
+      (type.blocks[blockI] = Object.preventExtensions({
+        key,
+        hash,
+        inmem,
+        loadPromise: null,
+      }))
     block.hash = hash
     block.inmem = inmem
   }
