@@ -103,9 +103,6 @@ const shared: PropsFns<SchemaAnyProp> = {
   validation(val) {
     expectFunction(val)
   },
-  transform(val) {
-    expectFunction(val)
-  },
 }
 
 function propParser<PropType extends SchemaAnyProp>(
@@ -246,7 +243,20 @@ p.vector = propParser<SchemaVector>(
       return isDefault(val, prop, ctx)
     },
     baseType(val, prop, ctx) {
-      if (!['number', 'int8',, 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64'].includes(val)) {
+      if (
+        ![
+          'number',
+          'int8',
+          ,
+          'uint8',
+          'int16',
+          'uint16',
+          'int32',
+          'uint32',
+          'float32',
+          'float64',
+        ].includes(val)
+      ) {
         throw Error(INVALID_VALUE)
       }
     },
@@ -265,7 +275,20 @@ p.colvec = propParser<SchemaColvec>(
       return isDefault(val, prop, ctx)
     },
     baseType(val, prop, ctx) {
-      if (!['number', 'int8',, 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64'].includes(val)) {
+      if (
+        ![
+          'number',
+          'int8',
+          ,
+          'uint8',
+          'int16',
+          'uint16',
+          'int32',
+          'uint32',
+          'float32',
+          'float64',
+        ].includes(val)
+      ) {
         throw Error(INVALID_VALUE)
       }
     },

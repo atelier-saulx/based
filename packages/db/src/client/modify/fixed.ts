@@ -45,9 +45,6 @@ map[BINARY] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   const size = buf.byteLength
   if (ctx.len + size + 1 > ctx.max) {
     return RANGE_ERR
@@ -65,9 +62,6 @@ map[STRING] = (ctx, val, def, mod) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
-  }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   if (ctx.len + size + 1 > ctx.max) {
     return RANGE_ERR
@@ -91,9 +85,6 @@ map[BOOLEAN] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   if (typeof val === 'boolean') {
     ctx.buf[ctx.len++] = val ? 1 : 0
   } else {
@@ -107,9 +98,6 @@ map[ENUM] = (ctx, val, def, mod) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
-  }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   if (val === null) {
     ctx.buf[ctx.len++] = def.default
@@ -130,9 +118,6 @@ map[NUMBER] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   const view = new DataView(ctx.buf.buffer, ctx.buf.byteOffset + ctx.len, 8)
   ctx.len += 8
   view.setFloat64(0, val, true)
@@ -149,9 +134,6 @@ map[TIMESTAMP] = (ctx, val, def, mod) => {
   if (!def.validation(parsedValue, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   writeInt64(ctx.buf, parsedValue, ctx.len)
   ctx.len += 8
 }
@@ -165,9 +147,6 @@ map[UINT32] = (ctx, val, def, mod) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
-  }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   writeUint32(ctx.buf, val, ctx.len)
   ctx.len += 4
@@ -183,9 +162,6 @@ map[UINT16] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   writeUint16(ctx.buf, val, ctx.len)
   ctx.len += 2
 }
@@ -200,9 +176,6 @@ map[UINT8] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   ctx.buf[ctx.len++] = val
 }
 
@@ -215,9 +188,6 @@ map[INT32] = (ctx, val, def, mod) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
-  }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   writeInt32(ctx.buf, val, ctx.len)
   ctx.len += 4
@@ -233,9 +203,6 @@ map[INT16] = (ctx, val, def, mod) => {
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
   }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
-  }
   writeInt16(ctx.buf, val, ctx.len)
   ctx.len += 2
 }
@@ -249,9 +216,6 @@ map[INT8] = (ctx, val, def, mod) => {
   }
   if (!def.validation(val, def)) {
     return new ModifyError(def, val)
-  }
-  if (def.transform) {
-    val = def.transform(MOD_OPS_TO_STRING[mod], val)
   }
   ctx.buf[ctx.len++] = val
 }
