@@ -18,7 +18,7 @@ export const LOCAL_AUTH_INFO: string = join(
   INTERNAL_PATH as string,
   'auth.json',
 )
-export const CONNECTION_TIMEOUT: number = 120e3
+export const CONNECTION_TIMEOUT: number = 600e3
 export const IS_VALID_CHAR = (char: number): boolean => {
   return (
     (char >= NUMBER_ZERO && char <= NUMBER_NINE) ||
