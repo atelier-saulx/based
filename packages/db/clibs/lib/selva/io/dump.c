@@ -618,12 +618,31 @@ static int load_field_text(struct selva_io *io, struct SelvaNode *node, const st
 
     for (uint8_t i = 0; i < len; i++) {
         struct sdb_text_meta meta;
+        int err;
+#if 0
         __selva_autofree char *str;
+#endif
 
         io->sdb_read(&meta, sizeof(meta), 1, io);
+#if 0
         str = selva_malloc(meta.len); /* TODO Optimize */
         io->sdb_read(str, sizeof(char), meta.len, io);
         selva_fields_set_text(node, fs, str, meta.len);
+#endif
+
+        enum selva_lang_code lang;
+        io->sdb_read(&lang, sizeof(lang), 1, io);
+
+        size_t len = meta.len - sizeof(uint32_t);
+        struct selva_string *s;
+        err = selva_fields_get_mutable_text(node, fs, lang, len, &s);
+        if (err) {
+            return err;
+        }
+        char *str = selva_string_to_mstr(s, &len);
+        assert(len == meta.len - sizeof(uint32_t));
+        str[0] = lang;
+        io->sdb_read(str + 1, sizeof(char), meta.len - 1, io); /* will also read the CRC that's at the end. */
     }
 
     return 0;
