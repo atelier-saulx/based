@@ -213,11 +213,7 @@ export const convertToReaderSchema = (
       const propDef = target.propDef
       readerSchema.refs[k] = {
         schema: convertToReaderSchema(v, locales),
-        prop: {
-          path: propDef.path,
-          typeIndex: propDef.typeIndex,
-          readBy: 0,
-        },
+        prop: createReaderPropDef(propDef, locales),
       }
     }
     if (q.edges) {

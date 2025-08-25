@@ -861,14 +861,12 @@ await test('alias and edge ref', async (t) => {
   const user1 = await db.create('user', { name: 'Mario' })
   const user2 = await db.create('user', { name: 'Luigi' })
 
-  //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
-  //await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
-
   const adminRole = await db
     .query('role', { alias: 'admin' })
     .include('id')
     .get()
     .toObject()
+
   await db.update('project', prj, {
     users: { add: [{ id: user1, $role: adminRole }] },
   })
