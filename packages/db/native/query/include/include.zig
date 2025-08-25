@@ -182,6 +182,12 @@ pub fn getFields(
                                 }
                             }
                         },
+                        t.Prop.MICRO_BUFFER => {
+                            size += try f.microBuffer(r);
+                            if (isEdge) size += 1;
+                            size += try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
+                        },
                         else => {
                             size += try f.default(r);
                             if (isEdge) size += 1;

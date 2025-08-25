@@ -30,12 +30,8 @@ await test('simple', async (t) => {
     externalId: 'cool2',
   })
 
-  const q = await db.query('user', user1).get()
-
-  q.debug()
-
   deepEqual(
-    q.toObject(),
+    await db.query('user', user1).get(),
     {
       id: 1,
       externalId: 'cool',
@@ -346,21 +342,13 @@ await test('Update existing alias field', async (t) => {
   })
   await db.drain()
 
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get()
-      .toObject(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'login',
-      currentToken: newToken,
-    },
-  )
+  deepEqual(await db.query('user', { email }).get(), {
+    id: 1,
+    name: 'nuno',
+    email: 'nuno@saulx.com',
+    status: 'login',
+    currentToken: newToken,
+  })
 
   newToken =
     '6093127416cbc7ff8126cda605a2239a2e061a5c65a77cc38b23034441832d2c40afdaa91f83285c52edccc5dd8d18d5'

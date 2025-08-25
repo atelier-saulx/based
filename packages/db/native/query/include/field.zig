@@ -113,6 +113,12 @@ pub inline fn default(
     return result.value.len + 5;
 }
 
+pub inline fn microBuffer(
+    result: *results.Result,
+) !usize {
+    return result.value.len + 1;
+}
+
 pub inline fn selvaString(
     result: *results.Result,
 ) !usize {
