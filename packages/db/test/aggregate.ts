@@ -2876,7 +2876,7 @@ await test.skip('edges agregation', async (t) => {
   //   .inspect(10)
 
   // edges unreacheable
-  db.query('movie').max('actors.$rating').get().inspect(10)
+  //db.query('movie').max('actors.$rating').get().inspect(10)
 })
 
 await test('fixed length strings', async (t) => {
