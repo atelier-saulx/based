@@ -75,6 +75,7 @@ export const readProp = (
   } else if (prop.typeIndex === ALIAS) {
     const size = readUint32(result, i)
     i += 4
+
     if (size === 0) {
       addProp(prop, '', item)
     } else {

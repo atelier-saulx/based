@@ -110,7 +110,7 @@ pub fn addUndefined(
 pub inline fn default(
     result: *results.Result,
 ) !usize {
-    return result.value.len + 1;
+    return result.value.len + 5;
 }
 
 pub inline fn selvaString(

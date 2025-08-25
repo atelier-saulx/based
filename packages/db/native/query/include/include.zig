@@ -112,7 +112,7 @@ pub fn getFields(
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
                 if (result) |r| {
                     switch (prop) {
-                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON => {
+                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS => {
                             if (isEdge) {
                                 size += 1;
                                 r.*.type = t.ResultType.metaEdge;
@@ -150,7 +150,10 @@ pub fn getFields(
 
                 if (result) |r| {
                     switch (prop) {
-                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON => {
+                        t.Prop.BINARY,
+                        t.Prop.STRING,
+                        t.Prop.JSON,
+                        => {
                             size += try f.selvaString(r);
                             if (isEdge) size += 1;
                             size += try f.add(ctx, id, score, idIsSet, r);

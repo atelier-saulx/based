@@ -30,11 +30,19 @@ await test('simple', async (t) => {
     externalId: 'cool2',
   })
 
-  deepEqual((await db.query('user', user1).get()).toObject(), {
-    id: 1,
-    externalId: 'cool',
-    potato: '',
-  })
+  const q = await db.query('user', user1).get()
+
+  q.debug()
+
+  deepEqual(
+    q.toObject(),
+    {
+      id: 1,
+      externalId: 'cool',
+      potato: '',
+    },
+    'One alias',
+  )
 
   deepEqual((await db.query('user', user2).get()).toObject(), {
     id: 2,
@@ -788,32 +796,32 @@ await test('alias and ref', async (t) => {
     },
   })
 
-  const adminRole = await db.create('role', { name: 'Admin Role', alias: 'admin' })
+  const adminRole = await db.create('role', {
+    name: 'Admin Role',
+    alias: 'admin',
+  })
 
   const user1 = await db.create('user', { name: 'Mario' })
   //await db.update('user', user, { role: { alias: 'admin' }})
-  await db.upsert('role', { alias: 'admin', users: { add: [user1]}})
+  await db.upsert('role', { alias: 'admin', users: { add: [user1] } })
 
   const user2 = await db.create('user', { name: 'Luigi' })
-  await db.upsert('role', { alias: 'admin', users: { add: [user2]}})
+  await db.upsert('role', { alias: 'admin', users: { add: [user2] } })
 
-  deepEqual(
-    await db.query('role', adminRole).include('name', 'users').get(),
-    {
-      id: 1,
-      name: "Admin Role",
-      users: [
-        {
-          id: 1,
-          name: 'Mario',
-        },
-        {
-          id: 2,
-          name: 'Luigi',
-        }
-      ]
-    }
-  )
+  deepEqual(await db.query('role', adminRole).include('name', 'users').get(), {
+    id: 1,
+    name: 'Admin Role',
+    users: [
+      {
+        id: 1,
+        name: 'Mario',
+      },
+      {
+        id: 2,
+        name: 'Luigi',
+      },
+    ],
+  })
 })
 
 await test('alias and edge ref', async (t) => {
@@ -848,7 +856,7 @@ await test('alias and edge ref', async (t) => {
                 ref: 'role',
               },
             },
-          }
+          },
         },
       },
       role: {
@@ -868,23 +876,34 @@ await test('alias and edge ref', async (t) => {
   //await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
   //await db.update('project', prj, { users: { add: [ { id: user1, $role: { alias: 'admin' } }] }})
 
-  const adminRole = await db.query('role', { alias: 'admin' }).include('id').get().toObject()
-  await db.update('project', prj, { users: { add: [ { id: user1, $role: adminRole }] }})
+  const adminRole = await db
+    .query('role', { alias: 'admin' })
+    .include('id')
+    .get()
+    .toObject()
+  await db.update('project', prj, {
+    users: { add: [{ id: user1, $role: adminRole }] },
+  })
 
   deepEqual(
-    await db.query('project', prj).include('name', 'users', 'users.$role').get(),
+    await db
+      .query('project', prj)
+      .include('name', 'users', 'users.$role')
+      .get(),
     {
       id: 1,
       name: 'Best',
-      users: [{
-        id: 1,
-        name: 'Mario',
-        $role: {
+      users: [
+        {
           id: 1,
-          name: 'Admin Role',
-          alias: 'admin',
+          name: 'Mario',
+          $role: {
+            id: 1,
+            name: 'Admin Role',
+            alias: 'admin',
+          },
         },
-      }]
-    }
+      ],
+    },
   )
 })

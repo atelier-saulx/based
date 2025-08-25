@@ -7,6 +7,7 @@ import {
   REFERENCE,
   VECTOR,
   TEXT,
+  ALIAS,
 } from '@based/schema/def'
 import { Item, Meta, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
@@ -15,7 +16,7 @@ import { emptyMeta } from './meta.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {
   const typeIndex = prop.typeIndex
-  if (typeIndex === STRING) {
+  if (typeIndex === STRING || typeIndex === ALIAS) {
     return ''
   }
   if (typeIndex === JSON) {

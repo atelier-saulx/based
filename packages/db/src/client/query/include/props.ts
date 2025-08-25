@@ -1,20 +1,11 @@
 import {
-  BINARY,
-  JSON,
-  ALIAS,
   PropDef,
   PropDefEdge,
   REFERENCE,
   REFERENCES,
   TEXT,
 } from '@based/schema/def'
-import {
-  IncludeField,
-  IncludeOpts,
-  // MainMetaInclude,
-  QueryDef,
-  QueryDefType,
-} from '../types.js'
+import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
   props: QueryDef['props'],
