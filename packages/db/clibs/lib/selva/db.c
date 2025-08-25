@@ -342,7 +342,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
 
     memset(te, 0, sizeof(*te));
     te->type = type;
-    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
