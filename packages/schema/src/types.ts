@@ -441,7 +441,16 @@ export type SchemaHooks = {
   update?: (payload: Record<string, any>) => void | Record<string, any>
   read?: (result: Record<string, any>) => void | null | Record<string, any>
   search?: (query: BasedDbQuery, fields: Set<string>) => void
-  include?: (query: BasedDbQuery, fields: Set<string>) => void
+  include?: (
+    query: BasedDbQuery,
+    fields: Map<
+      string,
+      {
+        field: string
+        opts?: any // temp this type
+      }
+    >,
+  ) => void
   filter?: (
     query: BasedDbQuery,
     field: string,

@@ -8,7 +8,6 @@ import {
   QueryDefRest,
   QueryDefShared,
   QueryDefType,
-  QueryTarget,
   Target,
 } from './types.js'
 import {
@@ -29,10 +28,8 @@ const createEmptySharedDef = (skipValidation: boolean) => {
       fallback: [],
     },
     include: {
-      langTextFields: new Map(),
-      stringFields: new Set(),
+      stringFields: new Map(),
       props: new Map(),
-      propsRead: {},
       main: {
         len: 0,
         include: {},
@@ -45,12 +42,21 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   return q
 }
 
-export const createQueryDef = (
+type CreateQueryDefReturn<T extends QueryDefType> = T extends QueryDefType.Edge
+  ? QueryDefEdges
+  : T extends
+        | QueryDefType.Root
+        | QueryDefType.Reference
+        | QueryDefType.References
+    ? QueryDefRest
+    : QueryDef
+
+export function createQueryDef<T extends QueryDefType>(
   db: DbClient,
-  type: QueryDefType,
-  target: QueryTarget,
+  type: T,
+  target: T extends QueryDefType.Edge ? EdgeTarget : Target,
   skipValidation: boolean,
-): QueryDef => {
+): CreateQueryDefReturn<T> {
   const queryDef = createEmptySharedDef(skipValidation)
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
@@ -58,7 +64,7 @@ export const createQueryDef = (
     q.props = t.ref.edges
     q.type = type
     q.target = t
-    return q
+    return q as CreateQueryDefReturn<T>
   } else {
     const t = target as Target
     const q = queryDef as QueryDefRest
@@ -80,6 +86,6 @@ export const createQueryDef = (
     } else if (type === QueryDefType.References) {
       q.range.limit = DEF_RANGE_REF_LIMIT
     }
-    return q
+    return q as CreateQueryDefReturn<T>
   }
 }

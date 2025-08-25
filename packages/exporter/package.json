@@ -1,15 +1,16 @@
 {
   "name": "exporter",
   "version": "0.0.1",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "clean": "rm -Rf node_modules dist",
     "test": "tsc -b && node dist/index.js",
     "test-watch": "tsc --watch & node --watch dist/index.js",
     "watch": "tsc -b --watch",
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "start": "node dist/index.js"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "source": "src/index.ts",

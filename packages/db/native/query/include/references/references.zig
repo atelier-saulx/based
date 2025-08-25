@@ -21,11 +21,11 @@ const utils = @import("../../../utils.zig");
 // | Offset  | Field     | Size (bytes)| Description                          |
 // |---------|-----------|-------------|--------------------------------------|
 // | 0       | op        | 1           | Operation identifier (253)           |
-// | 1       | field     | 1           | Field identifier                     |
+// | 1       | prop      | 1           | Prop identifier                      |
 // | 2       | refSize   | 4           | Reference size (u32)                 |
 // | 6       | totalRefs | 4           | Total number of references (u32)     |
 
-pub inline fn getRefsFields(
+pub fn getRefsFields(
     ctx: *QueryCtx,
     include: []u8,
     node: db.Node,
@@ -47,11 +47,10 @@ pub inline fn getRefsFields(
     const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
 
     ctx.results.append(.{
-        .id = null,
-        .field = refField,
-        .val = null,
+        .id = 0,
+        .prop = refField,
+        .value = &.{},
         .score = null,
-
         .type = if (isEdge) t.ResultType.referencesEdge else t.ResultType.references,
     }) catch return 0;
 
@@ -61,13 +60,12 @@ pub inline fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ref.?.reference.?, refField)) |r| {
+        if (db.getEdgeReferences(ref.?.largeReference.?, refField)) |r| {
             if (ref.?.edgeConstaint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
                 // Is a edge ref cant filter on an edge field!
                 return 11;
             }
-
             const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;
@@ -112,7 +110,7 @@ pub inline fn getRefsFields(
 
     utils.writeInt(u32, val, 0, result.size);
     utils.writeInt(u32, val, 4, result.cnt);
-    r.*.val = val;
+    r.*.value = val;
 
     if (isEdge) {
         result.size += 1;

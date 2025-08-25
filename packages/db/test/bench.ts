@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { start  as startMulti } from './shared/multi.js'
+import { start as startMulti } from './shared/multi.js'
 import assert from 'node:assert'
 
 const N = 1e7 // Nodes
@@ -18,7 +18,7 @@ const schema = {
   },
 } as const
 
-const toxpsNum = (n, t) => (n / (t / 1000))
+const toxpsNum = (n, t) => n / (t / 1000)
 const toxps = (n, t) => (n / (t / 1000)).toFixed(2)
 
 await test('test embedded', async (t) => {
@@ -35,8 +35,8 @@ await test('test embedded', async (t) => {
   let i = N
   while (i--) {
     db.create('test', {
-        x: i % 100,
-        s: `hello ${i}`
+      x: i % 100,
+      s: `hello ${i}`,
     })
   }
 
@@ -46,13 +46,23 @@ await test('test embedded', async (t) => {
 
   const arr = Array.from({ length: N2 })
   start = performance.now()
-  let res = (await Promise.all(arr.map(() => db.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
+  let res = (
+    await Promise.all(
+      arr.map(() =>
+        db.query('test').filter('x', '=', 0).range(1, 10_001).get(),
+      ),
+    )
+  ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime = performance.now() - start
-  assert(res === 10000000)
+  assert(res === N)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
-  res = (await Promise.all(Array.from({ length: N2 }).map((_, i) => db.query('test', i + 1).get()))).reduce((prev, cur) => prev + cur.length, 0)
+  res = (
+    await Promise.all(
+      Array.from({ length: N2 }).map((_, i) => db.query('test', i + 1).get()),
+    )
+  ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime1 = performance.now() - start
   console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
 
@@ -73,8 +83,8 @@ await test('test client-server', async (t) => {
   let i = N
   while (i--) {
     client1.create('test', {
-        x: i % 100,
-        s: `hello ${i}`
+      x: i % 100,
+      s: `hello ${i}`,
     })
   }
 
@@ -84,13 +94,25 @@ await test('test client-server', async (t) => {
 
   const arr = Array.from({ length: N2 })
   start = performance.now()
-  let res = (await Promise.all(arr.map(() => client1.query('test').filter('x', '=', 0).range(1, 10_001).get()))).reduce((prev, cur) => prev + cur.length, 0)
+  let res = (
+    await Promise.all(
+      arr.map(() =>
+        client1.query('test').filter('x', '=', 0).range(1, 10_001).get(),
+      ),
+    )
+  ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime = performance.now() - start
   assert(res === 10000000)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
-  res = (await Promise.all(Array.from({ length: N2 }).map((_, i) => client1.query('test', i + 1).get()))).reduce((prev, cur) => prev + cur.length, 0)
+  res = (
+    await Promise.all(
+      Array.from({ length: N2 }).map((_, i) =>
+        client1.query('test', i + 1).get(),
+      ),
+    )
+  ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime1 = performance.now() - start
   console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
 

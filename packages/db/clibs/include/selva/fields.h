@@ -24,17 +24,51 @@ struct SelvaTextField {
 } __packed;
 #endif
 
-struct SelvaNodeReference {
+struct SelvaNodeSmallReference {
+    struct SelvaNode *dst;
+};
+
+struct SelvaNodeLargeReference {
     struct SelvaNode *dst;
     struct SelvaFields *meta;
 };
 
+enum SelvaNodeReferenceType {
+    SELVA_NODE_REFERENCE_NULL = 0,
+    SELVA_NODE_REFERENCE_SMALL = 1,
+    SELVA_NODE_REFERENCE_LARGE = 2,
+} __packed;
+
+struct SelvaNodeReferenceAny {
+    enum SelvaNodeReferenceType type;
+    union {
+        void *any;
+        struct SelvaNodeSmallReference *small;
+        struct SelvaNodeLargeReference *large;
+    }
+#ifdef __zig
+      p
+#endif
+    ;
+};
+
+static_assert(offsetof(struct SelvaNodeLargeReference, dst) == offsetof(struct SelvaNodeSmallReference, dst));
+
 struct SelvaNodeReferences {
     uint32_t nr_refs;
     uint16_t offset;
-    struct SelvaNodeReference *refs __pcounted_by(nr_refs);
+    enum SelvaNodeReferenceType size;
+
+    union {
+        void *any;
+        struct SelvaNodeLargeReference *large __pcounted_by(nr_refs);
+        struct SelvaNodeSmallReference *small __pcounted_by(nr_refs);
+    };
     node_id_t *index __pcounted_by(nr_refs); /*!< Sorted index of all nodes in `.refs`. */
 };
+static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct SelvaNodeReferences, small));
+static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct SelvaNodeReferences, large));
+static_assert(offsetof(struct SelvaNodeReferences, small) == offsetof(struct SelvaNodeReferences, large));
 
 struct SelvaNodeWeakReference {
     /* The type can be found from the schema. */
@@ -85,7 +119,7 @@ struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node);
 void selva_fields_ensure_ref_meta(
         struct SelvaDb *db,
         struct SelvaNode *node,
-        struct SelvaNodeReference *ref,
+        struct SelvaNodeLargeReference *ref,
         const struct EdgeFieldConstraint *efc)
     __attribute__((nonnull));
 
@@ -114,7 +148,7 @@ struct selva_string *selva_fields_ensure_string2(
         struct SelvaDb *db,
         struct SelvaNode *node,
         const struct EdgeFieldConstraint *efc,
-        struct SelvaNodeReference *ref,
+        struct SelvaNodeLargeReference *ref,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
 
@@ -127,7 +161,7 @@ int selva_fields_reference_set(
         struct SelvaNode * restrict src,
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReference **ref_out,
+        struct SelvaNodeReferenceAny *ref_out,
         selva_dirty_node_cb_t dirty_cb,
         void *dirty_ctx);
     // __attribute__((access(write_only, 5), access(write_only, 6)));
@@ -145,7 +179,7 @@ int selva_fields_references_insert(
         bool reorder,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReference **ref_out)
+        struct SelvaNodeReferenceAny *ref_out)
     __attribute__((access(write_only, 8)));
 
 /**
@@ -153,7 +187,7 @@ int selva_fields_references_insert(
  * @returns nr_refs.
  */
 SELVA_EXPORT
-size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
+size_t selva_fields_prealloc_refs(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
 
 SELVA_EXPORT
 int selva_fields_references_insert_tail_wupsert(
@@ -193,7 +227,7 @@ SELVA_EXPORT
 int selva_fields_set_reference_meta(
         struct SelvaDb *db,
         struct SelvaNode *node,
-        struct SelvaNodeReference *ref,
+        struct SelvaNodeLargeReference *ref,
         const struct EdgeFieldConstraint *efc,
         const struct SelvaFieldSchema *efs,
         const void *value, size_t len);
@@ -202,7 +236,7 @@ SELVA_EXPORT
 int selva_fields_get_reference_meta_mutable_string(
         struct SelvaDb *db,
         struct SelvaNode *node,
-        struct SelvaNodeReference *ref,
+        struct SelvaNodeLargeReference *ref,
         const struct EdgeFieldConstraint *efc,
         const struct SelvaFieldSchema *efs,
         size_t len,
@@ -240,6 +274,13 @@ int selva_fields_set_text(
         const char *str,
         size_t len);
 
+int selva_fields_get_mutable_text(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        size_t len,
+        struct selva_string **out);
+
 /**
  * Get text field translation.
  *
@@ -276,7 +317,7 @@ SELVA_EXPORT
 int selva_fields_set_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts);
 
 SELVA_EXPORT
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeLargeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
@@ -299,7 +340,7 @@ struct SelvaNode *selva_fields_resolve_weak_reference(
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string3(struct SelvaNodeReference *ref, const struct SelvaFieldSchema *fs)
+struct selva_string *selva_fields_get_selva_string3(struct SelvaDb *db, struct SelvaNodeLargeReference *ref, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT

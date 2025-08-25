@@ -8,9 +8,9 @@ pub fn addIdOnly(
 ) !usize {
     try ctx.results.append(.{
         .id = id,
-        .type = t.ResultType.none,
-        .field = @intFromEnum(t.ReadOp.ID), // id result enum
-        .val = null,
+        .type = t.ResultType.default,
+        .prop = @intFromEnum(t.ReadOp.ID), // id result enum
+        .value = &.{},
         .score = score,
     });
     if (score != null) {

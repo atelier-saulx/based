@@ -342,7 +342,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
 
     memset(te, 0, sizeof(*te));
     te->type = type;
-    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
@@ -412,6 +412,9 @@ const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaD
         const struct SelvaFieldSchema *dst_fs;
 
         type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+#if 0
+        assert(type_dst);
+#endif
         dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
         assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
         schema = dst_fs->edge_constraint._fields_schema;

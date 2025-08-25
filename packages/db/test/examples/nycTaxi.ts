@@ -5,7 +5,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import {logMemoryUsage} from '../shared/index.js'
+import { logMemoryUsage } from '../shared/index.js'
 
 const gunzip = promisify(_gunzip)
 
@@ -1111,7 +1111,7 @@ const day2enum = {
 
 async function parseTripDump(filename: string) {
   const compressedData = await readFile(
-    join(import.meta.dirname, 'shared', 'nyc_taxi', filename).replace(
+    join(import.meta.dirname, '..', 'shared', 'nyc_taxi', filename).replace(
       '/dist',
       '',
     ),

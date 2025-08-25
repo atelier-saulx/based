@@ -3,8 +3,23 @@ import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { AggregateType, Interval, aggFnOptions } from './aggregates/types.js'
+import { ReaderSchema } from './query.js'
 
-export type MainIncludes = { [start: string]: [number, PropDef] }
+export type IncludeOpts = {
+  end?: number
+  start?: number
+  meta?: 'only' | true | false // add more opts?
+  codes?: Set<LangCode>
+  fallBacks?: LangCode[]
+  localeFromDef?: LangCode
+}
+
+export type IncludeField = {
+  field: string
+  opts?: IncludeOpts
+}
+
+export type MainIncludes = { [start: string]: [number, PropDef, IncludeOpts] }
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
@@ -28,17 +43,13 @@ export type EdgeTarget = {
   ref: PropDef | PropDefEdge | null
 }
 
-export enum MainMetaInclude {
-  All = 1,
-  MetaOnly = 2,
-}
-
 export type Target = {
   type: string
   id?: number | void
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
   alias?: QueryByAliasObj
+  // This can just instantly be added
   resolvedAlias?: { def: PropDef; value: string }
 }
 
@@ -59,6 +70,7 @@ export type QueryDefFilter = {
   schema?: SchemaTypeDef
   edges?: Map<number, FilterCondition[]>
   or?: QueryDefFilter
+  // Make this work
   and?: QueryDefFilter
 }
 
@@ -130,26 +142,16 @@ export type QueryDefShared = {
     limit: number
   }
   include: {
-    langTextFields: Map<
-      number, // prop name
-      {
-        def: PropDef | PropDefEdge
-        codes: Set<LangCode>
-        fallBacks: LangCode[]
-      }
-    >
-    metaMain?: Map<number, MainMetaInclude> // start
-    meta?: Set<number>
-    stringFields: Set<string>
-    props: Map<number, PropDef | PropDefEdge>
-    propsRead: { [propName: number]: number }
+    stringFields: Map<string, IncludeField>
+    props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
     main: {
       include: MainIncludes
       len: number
     }
   }
   references: Map<number, QueryDef>
-  edges?: QueryDef
+  edges?: QueryDefEdges
+  readSchema?: ReaderSchema
 }
 
 export type QueryDefEdges = {
@@ -157,7 +159,6 @@ export type QueryDefEdges = {
   target: EdgeTarget
   schema: null
   props: PropDef['edges']
-  reverseProps: PropDef['edges']
 } & QueryDefShared
 
 export type QueryDefRest = {
@@ -196,11 +197,14 @@ export const READ_EDGE = 252
 export const READ_REFERENCES = 253
 export const READ_REFERENCE = 254
 export const READ_AGGREGATION = 250
-export const READ_META = 249
+export const READ_META = 249 // hmm expand this better
 
 export const enum includeOp {
-  REFERENCES_AGGREGATION = 251,
-  EDGE = 252,
-  REFERENCES = 254,
-  REFERENCE = 255,
+  DEFAULT = 1,
+  REFERENCES_AGGREGATION = 2,
+  EDGE = 3,
+  REFERENCES = 4,
+  REFERENCE = 5,
+  META = 6, // this can be a small buffer as well
+  PARTIAL = 7,
 }

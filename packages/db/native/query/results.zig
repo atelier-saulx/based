@@ -11,31 +11,32 @@ const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
 
-// Add comptime for SCORE to reduce the size of this
 pub const Result = struct {
-    id: ?u32,
-    field: u8,
+    id: u32,
+    prop: u8,
     type: t.ResultType,
     score: ?[4]u8, // TODO use comptime for results for search - bit shitty to make in query but another 4 bytes saved
-    val: ?[]u8,
+    value: []u8,
 };
 
 const HEADER_SIZE = 8;
 
+// handle meta
 fn addChecksum(item: *const *Result, data: []u8) usize {
     var offset: usize = 0;
     data[offset] = @intFromEnum(t.ReadOp.META);
     offset += 1;
-    data[offset] = item.*.field;
+    data[offset] = item.*.prop;
     offset += 1;
-
-    if (item.*.val) |v| {
-        data[offset] = v[1];
-        offset += 1;
-        utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
-        writeInt(u32, data, offset + 4, v.len);
-    }
+    const v = item.*.value;
+    data[offset] = v[0]; // tmp
+    offset += 1;
+    data[offset] = v[1];
+    offset += 1;
+    utils.copy(data[offset .. offset + 4], v[v.len - 4 .. v.len]);
+    writeInt(u32, data, offset + 4, v.len);
     offset += 8;
+    // add language here then we have it
     return offset;
 }
 
@@ -58,10 +59,10 @@ pub fn createResultsBuffer(
     for (ctx.results.items) |*item| {
 
         // Always start with id
-        if (item.id) |id| {
+        if (item.id != 0) {
             data[i] = @intFromEnum(t.ReadOp.ID);
             i += 1;
-            writeInt(u32, data, i, id);
+            writeInt(u32, data, i, item.id);
             i += 4;
             if (item.score) |s| {
                 copy(data[i .. i + 4], &s);
@@ -73,23 +74,23 @@ pub fn createResultsBuffer(
             t.ResultType.aggregate => {
                 data[i] = @intFromEnum((t.ReadOp.REFERENCES_AGGREGATION));
                 i += 1;
+                // make this the thing
             },
-            t.ResultType.edge => {
+            t.ResultType.edge, t.ResultType.edgeFixed => {
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
+                // make this the thing
             },
             t.ResultType.reference => {
                 //  Single Reference Protocol Schema:
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (254)           |
-                // | 1       | field     | 1           | Field identifier                     |
+                // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
-                data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                data[i + 1] = item.prop;
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
             },
@@ -98,14 +99,12 @@ pub fn createResultsBuffer(
                 // | Offset  | Field     | Size (bytes)| Description                          |
                 // |---------|-----------|-------------|--------------------------------------|
                 // | 0       | op        | 1           | Operation identifier (253)           |
-                // | 1       | field     | 1           | Field identifier                     |
+                // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 10], v);
-                }
+                data[i + 1] = item.prop;
+                copy(data[i + 2 .. i + 10], item.value);
                 i += 10;
                 continue;
             },
@@ -113,10 +112,8 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCE);
-                data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                data[i + 1] = item.prop;
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
                 continue;
             },
@@ -124,45 +121,44 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 data[i] = @intFromEnum(t.ReadOp.REFERENCES);
-                data[i + 1] = item.field;
-                if (item.val) |v| {
-                    copy(data[i + 2 .. i + 6], v);
-                }
+                data[i + 1] = item.prop;
+                copy(data[i + 2 .. i + 6], item.value);
                 i += 10;
                 continue;
             },
             t.ResultType.metaEdge => {
+                // only / or not only
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
             t.ResultType.meta => {
+                // only / or not only
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
-            t.ResultType.none => {
-                // Do nothing
-            },
+            else => {},
         }
 
-        if (item.field == @intFromEnum(t.ReadOp.ID) or item.val == null) {
+        if (item.prop == @intFromEnum(t.ReadOp.ID)) {
             continue;
         }
 
-        data[i] = item.field;
+        data[i] = item.prop;
         i += 1;
 
-        const val = item.val.?;
+        const value = item.value;
 
-        if (item.field == t.MAIN_PROP) {
-            copy(data[i .. i + val.len], val);
-            i += val.len;
+        // put all this in siwtch statement
+        if (item.type == t.ResultType.fixed or item.type == t.ResultType.edgeFixed) {
+            copy(data[i .. i + value.len], value);
+            i += value.len;
         } else {
-            writeInt(u32, data, i, val.len);
+            writeInt(u32, data, i, value.len);
             i += 4;
-            copy(data[i .. i + val.len], val);
-            i += val.len;
+            copy(data[i .. i + value.len], value);
+            i += value.len;
         }
     }
 

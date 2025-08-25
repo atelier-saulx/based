@@ -416,12 +416,7 @@ export const validateSort = (
     }
   }
   const type = propDef.typeIndex
-  if (
-    type === REFERENCES ||
-    type === REFERENCE ||
-    type === VECTOR ||
-    type === BINARY
-  ) {
+  if (type === REFERENCES || type === REFERENCE || type === VECTOR) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,

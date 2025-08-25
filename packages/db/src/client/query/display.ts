@@ -161,6 +161,7 @@ const inspectObject = (
   }
   const prefixBody = ''.padEnd(level + 3, ' ')
   let edges = []
+  // use reader schema
   for (const k in object) {
     const key = path ? path + '.' + k : k
     let def: PropDef | PropDefEdge
