@@ -198,7 +198,7 @@ pub const ReadRefOp = enum(u8) {
 };
 
 pub const ResultType = enum(u8) {
-    none = 0,
+    default = 0,
     references = 1,
     reference = 2,
     edge = 3,
@@ -207,6 +207,8 @@ pub const ResultType = enum(u8) {
     aggregate = 6,
     meta = 7,
     metaEdge = 8,
+    fixed = 9,
+    edgeFixed = 10,
 };
 
 pub const AggFn = enum(u8) {

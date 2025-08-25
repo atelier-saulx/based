@@ -74,10 +74,12 @@ pub fn createResultsBuffer(
             t.ResultType.aggregate => {
                 data[i] = @intFromEnum((t.ReadOp.REFERENCES_AGGREGATION));
                 i += 1;
+                // make this the thing
             },
-            t.ResultType.edge => {
+            t.ResultType.edge, t.ResultType.edgeFixed => {
                 data[i] = @intFromEnum(t.ReadOp.EDGE);
                 i += 1;
+                // make this the thing
             },
             t.ResultType.reference => {
                 //  Single Reference Protocol Schema:
@@ -136,9 +138,7 @@ pub fn createResultsBuffer(
                 i += addChecksum(&item, data[i..]);
                 continue;
             },
-            t.ResultType.none => {
-                // Do nothing
-            },
+            else => {},
         }
 
         if (item.prop == @intFromEnum(t.ReadOp.ID)) {
@@ -150,7 +150,8 @@ pub fn createResultsBuffer(
 
         const value = item.value;
 
-        if (item.prop == t.MAIN_PROP) {
+        // put all this in siwtch statement
+        if (item.type == t.ResultType.fixed or item.type == t.ResultType.edgeFixed) {
             copy(data[i .. i + value.len], value);
             i += value.len;
         } else {

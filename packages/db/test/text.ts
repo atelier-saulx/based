@@ -972,8 +972,6 @@ await test('text and compression', async (t) => {
     article: { en: italy, it: 'cool' },
   })
 
-  await db.query('user', user1).get().inspect()
-
   await db.update(
     'user',
     user1,

@@ -49,12 +49,10 @@ async function initDb(t) {
 
 await test('vector set/get', async (t) => {
   const db = await initDb(t)
-
   const res = (await db.query('data').get()).toObject()
   for (const r of res) {
     const a = new Uint8Array(r.a.buffer, 0, r.a.byteLength)
     const b = new Uint8Array(new Float32Array(data[r.name]).buffer)
-
     equal(equals(a, b), true)
   }
 })
@@ -164,7 +162,7 @@ await test('search', async (t) => {
     })
   }
 
-  console.log(await db.drain())
+  await db.drain()
 
   deepEqual(
     await db
@@ -172,9 +170,7 @@ await test('search', async (t) => {
       .include('id', 'name')
       .range(0, 3)
       .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
-      .get()
-      .inspect()
-      .toObject(),
+      .get(),
     [
       { id: 3, $searchScore: 0.6100001335144043, name: 'apple' },
       { id: 4, $searchScore: 0.7999996542930603, name: 'strawberry' },

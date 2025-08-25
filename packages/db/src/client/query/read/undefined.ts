@@ -11,7 +11,7 @@ import {
 } from '@based/schema/def'
 import { Item, Meta, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
-import { readVector } from './readVector.js'
+import { readVector } from './vector.js'
 import { emptyMeta } from './meta.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {

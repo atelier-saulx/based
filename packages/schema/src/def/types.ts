@@ -113,6 +113,7 @@ export type PropDef = {
   default: any
   // vectors
   vectorBaseType?: SchemaVectorBaseType
+  vectorSize?: number
   // edge stuff
   edgeMainLen?: 0
   hasDefaultEdges?: boolean

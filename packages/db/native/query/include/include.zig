@@ -84,40 +84,27 @@ pub fn getFields(
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 i += 2;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
+                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.fixed);
                 const includeSize = read(u16, include, i);
                 i += 2 + includeSize;
                 if (result) |r| {
-                    size += try f.partial(ctx, r, include[i - includeSize .. i]);
-                    if (isEdge) size += 1;
+                    size += try f.partial(ctx, r, include[i - includeSize .. i], isEdge);
                     size += try f.add(ctx, id, score, idIsSet, r);
                     idIsSet = true;
                 }
             },
-
-            // t.IncludeOp.NapiCallback
-            // cbId, node id, edge
-            // db.getEdgeField(type, id, propType, prop)
-            // db.getField(type, id, propType, prop)
-            // [cbId]: => ({ proxyGet [] db getField(type, id, propType, prop) })
-            // => {} return js use js Serialize / Deserialize
-            // this can also be used instead of JSON (for now use JSON)
-
             t.IncludeOp.meta => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 const langCode: t.LangCode = @enumFromInt(include[i + 2]);
                 i += 3;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
+                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
                 if (result) |r| {
                     switch (prop) {
                         t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS => {
                             if (isEdge) {
                                 size += 1;
-                                r.*.type = t.ResultType.metaEdge;
-                            } else {
-                                r.*.type = t.ResultType.meta;
                             }
                             size += 12 + try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
@@ -125,9 +112,6 @@ pub fn getFields(
                         t.Prop.TEXT => {
                             if (isEdge) {
                                 size += 1;
-                                r.*.type = t.ResultType.metaEdge;
-                            } else {
-                                r.*.type = t.ResultType.meta;
                             }
                             const s = db.getTextFromValue(r.*.value, langCode);
                             if (s.len != 0) {
@@ -146,16 +130,14 @@ pub fn getFields(
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 // here we add a start + end var (bit longer but fine)
                 i += 2;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge);
-
+                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
                     switch (prop) {
                         t.Prop.BINARY,
                         t.Prop.STRING,
                         t.Prop.JSON,
                         => {
-                            size += try f.selvaString(r);
-                            if (isEdge) size += 1;
+                            size += try f.selvaString(r, isEdge);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
@@ -182,15 +164,13 @@ pub fn getFields(
                                 }
                             }
                         },
-                        t.Prop.MICRO_BUFFER => {
-                            size += try f.microBuffer(r);
-                            if (isEdge) size += 1;
+                        t.Prop.MICRO_BUFFER, t.Prop.VECTOR => {
+                            size += try f.fixed(r, isEdge);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         else => {
-                            size += try f.default(r);
-                            if (isEdge) size += 1;
+                            size += try f.default(r, isEdge);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },

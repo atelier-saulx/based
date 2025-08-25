@@ -8,6 +8,12 @@ const results = @import("../results.zig");
 const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
 
+pub const ResultType = enum(u8) {
+    default = 0,
+    meta = 7,
+    fixed = 9,
+};
+
 pub inline fn get(
     ctx: *QueryCtx,
     id: u32,
@@ -17,6 +23,7 @@ pub inline fn get(
     typeEntry: db.Type,
     edgeRef: ?types.RefStruct,
     comptime isEdge: bool,
+    comptime subType: ResultType,
 ) !?*results.Result {
     var value: []u8 = undefined;
     var fieldSchema: *const selva.SelvaFieldSchema = undefined;
@@ -36,7 +43,7 @@ pub inline fn get(
             return null;
         }
         result = .{
-            .type = t.ResultType.edge,
+            .type = if (subType == ResultType.meta) t.ResultType.metaEdge else if (subType == ResultType.fixed) t.ResultType.edgeFixed else t.ResultType.edge,
             .id = 0,
             .score = null,
             .prop = field,
@@ -49,7 +56,7 @@ pub inline fn get(
             return null;
         }
         result = .{
-            .type = t.ResultType.none,
+            .type = if (subType == ResultType.meta) t.ResultType.meta else if (subType == ResultType.fixed) t.ResultType.fixed else t.ResultType.default,
             .id = 0,
             .score = null,
             .prop = field,
@@ -79,48 +86,61 @@ pub fn add(
     return size;
 }
 
-pub fn addUndefined(
-    ctx: *QueryCtx,
-    id: u32,
-    score: ?[4]u8,
-    idIsSet: bool,
-    comptime isEdge: bool,
-    prop: u8,
-) !usize {
-    var result: results.Result = .{
-        .type = if (isEdge) t.ResultType.undefinedEdge else t.ResultType.undefined,
-        .prop = prop,
-        .value = &.{},
-        .id = 0,
-        .score = null,
-    };
-    var size: usize = 2;
-    if (!idIsSet) {
-        size += 5;
-        result.id = id;
-        if (score != null) {
-            result.score = score;
-            size += 4;
-        }
-    }
-    try ctx.results.append(result);
-    return size;
-}
+// pub fn addUndefined(
+//     ctx: *QueryCtx,
+//     id: u32,
+//     score: ?[4]u8,
+//     idIsSet: bool,
+//     comptime isEdge: bool,
+//     prop: u8,
+// ) !usize {
+//     var result: results.Result = .{
+//         .type = if (isEdge) t.ResultType.undefinedEdge else t.ResultType.undefined,
+//         .prop = prop,
+//         .value = &.{},
+//         .id = 0,
+//         .score = null,
+//     };
+//     var size: usize = 2;
+//     if (!idIsSet) {
+//         size += 5;
+//         result.id = id;
+//         if (score != null) {
+//             result.score = score;
+//             size += 4;
+//         }
+//     }
+//     try ctx.results.append(result);
+//     return size;
+// }
 
 pub inline fn default(
     result: *results.Result,
+    comptime isEdge: bool,
 ) !usize {
-    return result.value.len + 5;
+    if (isEdge) {
+        return result.value.len + 6;
+    } else {
+        return result.value.len + 5;
+    }
 }
 
-pub inline fn microBuffer(
+pub inline fn fixed(
     result: *results.Result,
+    comptime isEdge: bool,
 ) !usize {
-    return result.value.len + 1;
+    if (isEdge) {
+        result.*.type = t.ResultType.edgeFixed;
+        return result.value.len + 2;
+    } else {
+        result.*.type = t.ResultType.fixed;
+        return result.value.len + 1;
+    }
 }
 
 pub inline fn selvaString(
     result: *results.Result,
+    comptime isEdge: bool,
 ) !usize {
     var valueLen = result.*.value.len;
     if (valueLen == 0) {
@@ -128,13 +148,19 @@ pub inline fn selvaString(
     }
     valueLen = valueLen - 4;
     result.*.value = result.*.value[0..valueLen];
-    return valueLen + 5;
+
+    if (isEdge) {
+        return valueLen + 6;
+    } else {
+        return valueLen + 5;
+    }
 }
 
 pub inline fn partial(
     ctx: *QueryCtx,
     result: *results.Result,
     includeMain: []u8,
+    comptime isEdge: bool,
 ) !usize {
     const original = result.*.value;
     const size = utils.read(u16, includeMain, 0);
@@ -150,7 +176,11 @@ pub inline fn partial(
         mainPos += 4;
     }
     result.*.value = value;
-    return size + 1;
+    if (isEdge) {
+        return size + 2;
+    } else {
+        return size + 1;
+    }
 }
 
 pub inline fn textSpecific(

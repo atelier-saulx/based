@@ -12,7 +12,7 @@ import {
   VECTOR,
 } from '@based/schema/def'
 import { read, readUtf8 } from '../../string.js'
-import { readVector } from './readVector.js'
+import { readVector } from './vector.js'
 
 const readString = (
   prop: ReaderPropDef,
@@ -84,11 +84,9 @@ export const readProp = (
       addProp(prop, string, item)
     }
   } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
-    const size = readUint32(result, i)
-    i += 4
-    const tmp = result.subarray(i, i + size) // Make a copy
+    const tmp = result.slice(i, i + prop.len) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
-    i += size
+    i += prop.len
   }
   return i
 }

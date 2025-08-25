@@ -100,6 +100,7 @@ export const includeProp = (
           codes: new Set(),
           fallBacks: [],
           ...opts,
+          localeFromDef: def.lang.lang,
         },
       })
     }

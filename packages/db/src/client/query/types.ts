@@ -11,6 +11,7 @@ export type IncludeOpts = {
   meta?: 'only' | true | false // add more opts?
   codes?: Set<LangCode>
   fallBacks?: LangCode[]
+  localeFromDef?: LangCode
 }
 
 export type IncludeField = {
