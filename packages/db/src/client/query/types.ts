@@ -3,6 +3,7 @@ import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { AggregateType, Interval, aggFnOptions } from './aggregates/types.js'
+import { ReaderSchema } from './query.js'
 
 export type IncludeOpts = {
   end?: number
@@ -149,6 +150,7 @@ export type QueryDefShared = {
   }
   references: Map<number, QueryDef>
   edges?: QueryDefEdges
+  readSchema?: ReaderSchema
 }
 
 export type QueryDefEdges = {

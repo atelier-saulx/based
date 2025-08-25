@@ -1,9 +1,7 @@
-import { BasedDb, convertToReaderSchema, resultToObject } from '../src/index.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { italy } from './shared/examples.js'
-import { wait } from '@based/utils'
-import { deflateSync } from 'node:zlib'
 
 await test('meta for selva string', async (t) => {
   const db = new BasedDb({
@@ -11,7 +9,6 @@ await test('meta for selva string', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
-  // t.after(() => db.stop())
 
   await db.setSchema({
     locales: {
@@ -36,7 +33,7 @@ await test('meta for selva string', async (t) => {
     },
   })
 
-  const id1 = await db.create('item', {
+  await db.create('item', {
     name: 'a',
     email: 'a@b.com',
     body: {
@@ -44,12 +41,6 @@ await test('meta for selva string', async (t) => {
       en: 'en',
     },
   })
-
-  await db
-    .query('item')
-    .include('name', { meta: 'only' })
-    .get()
-    .inspect(10, true)
 
   deepEqual(await db.query('item').include('name', { meta: true }).get(), [
     {

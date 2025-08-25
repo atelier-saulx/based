@@ -11,6 +11,7 @@ import {
   groupBy,
   LangFallback,
   IncludeOpts,
+  ReaderSchema,
 } from './query.js'
 import { BasedQueryResponse } from './BasedIterable.js'
 import { FilterBranch } from './filter/FilterBranch.js'
@@ -468,6 +469,7 @@ class GetPromise extends Promise<BasedQueryResponse> {
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   skipValidation = false
   target: QueryTarget
+  readSchema: ReaderSchema
   constructor(
     db: DbClient,
     type: string,

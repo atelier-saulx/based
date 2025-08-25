@@ -94,7 +94,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               buf[0] = includeOp.META
               buf[1] = prop
               buf[2] = propDef.def.typeIndex
-              buf[3] = langCodesMap.get(code) // lang
+              buf[3] = langCodesMap.get(code)
               result.push(buf)
             }
           } else {
@@ -103,7 +103,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               buf[0] = includeOp.META
               buf[1] = prop
               buf[2] = propDef.def.typeIndex
-              buf[3] = code // lang
+              buf[3] = code
               result.push(buf)
             }
           }
@@ -112,7 +112,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           buf[0] = includeOp.META
           buf[1] = prop
           buf[2] = propDef.def.typeIndex
-          buf[3] = 0 // lang
+          buf[3] = 0
           result.push(buf)
         }
       }
@@ -149,6 +149,9 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           buf[0] = includeOp.DEFAULT
           buf[1] = prop
           buf[2] = propDef.def.typeIndex
+          // mod len (then we can use this to add other things e.g. things for vectors etc)
+          // start
+          // end
           result.push(buf)
         }
       }

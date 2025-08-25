@@ -7,6 +7,7 @@ import {
   Item,
   readProps,
   convertToReaderSchema,
+  ReaderSchema,
 } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '@based/utils'
@@ -103,7 +104,7 @@ export class BasedQueryResponse {
         i += 4
       }
       const l = readProps(
-        convertToReaderSchema(this.def),
+        this.def.readSchema,
         result,
         i,
         result.byteLength - 4,
@@ -151,13 +152,7 @@ export class BasedQueryResponse {
   }
 
   toObject(): any {
-    //
-    return resultToObject(
-      convertToReaderSchema(this.def),
-      this.result,
-      this.end - 4,
-      0,
-    )
+    return resultToObject(this.def.readSchema, this.result, this.end - 4, 0)
   }
 
   toJSON() {

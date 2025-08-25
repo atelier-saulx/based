@@ -5,7 +5,7 @@ import { defToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
-import { includeField } from './query.js'
+import { convertToReaderSchema, includeField } from './query.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
@@ -35,6 +35,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     let id = native.crc32(buf)
     q.id = id
     q.buffer = buf
+    q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)
     return buf
   }
