@@ -25,7 +25,7 @@ import {
   ENCODER,
 } from '@based/utils'
 import { getBuffer } from './binary.js'
-import { resize } from '../resize.js'
+import { reserve, resize } from '../resize.js'
 
 const map: Record<
   number,
@@ -54,7 +54,7 @@ map[STRING] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + size + 1)
+  reserve(ctx, size + 1)
   const fullSize = def.len - 1
   ctx.array[ctx.index] = size
   ctx.array.set(valBuf, ctx.index + 1)
@@ -75,7 +75,7 @@ map[BOOLEAN] = (ctx, val, def) => {
   if (typeof val !== 'boolean') {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 1)
+  reserve(ctx, 1)
   ctx.array[ctx.index] = val ? 1 : 0
   ctx.index += 1
 }
@@ -85,10 +85,10 @@ map[ENUM] = (ctx, val, def) => {
     throw [def, val]
   }
   if (val === null) {
-    resize(ctx, ctx.index + 1)
+    reserve(ctx, 1)
     ctx.array[ctx.index] = def.default
   } else if (val in def.reverseEnum) {
-    resize(ctx, ctx.index + 1)
+    reserve(ctx, 1)
     ctx.array[ctx.index] = def.reverseEnum[val] + 1
   } else {
     throw [def, val]
@@ -107,7 +107,7 @@ map[NUMBER] = (ctx, val, def) => {
     ctx.array.byteOffset + ctx.index,
     8,
   )
-  resize(ctx, ctx.index + 8)
+  reserve(ctx, 8)
   view.setFloat64(0, val, true)
   ctx.index += 8
 }
@@ -118,7 +118,7 @@ map[TIMESTAMP] = (ctx, val, def) => {
   if (!def.validation(parsedValue, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 8)
+  reserve(ctx, 8)
   writeInt64(ctx.array, parsedValue, ctx.index)
   ctx.index += 8
 }
@@ -128,7 +128,7 @@ map[UINT32] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 4)
+  reserve(ctx, 4)
   writeUint32(ctx.array, val, ctx.index)
   ctx.index += 4
 }
@@ -138,7 +138,7 @@ map[UINT16] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 2)
+  reserve(ctx, 2)
   writeUint16(ctx.array, val, ctx.index)
   ctx.index += 2
 }
@@ -148,7 +148,7 @@ map[UINT8] = map[INT8] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 1)
+  reserve(ctx, 1)
   ctx.array[ctx.index] = val
   ctx.index += 1
 }
@@ -158,7 +158,7 @@ map[INT32] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 4)
+  reserve(ctx, 4)
   writeInt32(ctx.array, val, ctx.index)
   ctx.index += 4
 }
@@ -168,7 +168,7 @@ map[INT16] = (ctx, val, def) => {
   if (!def.validation(val, def)) {
     throw [def, val]
   }
-  resize(ctx, ctx.index + 2)
+  reserve(ctx, 2)
   writeInt16(ctx.array, val, ctx.index)
   ctx.index += 2
 }

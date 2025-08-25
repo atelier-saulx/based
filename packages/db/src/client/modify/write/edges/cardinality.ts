@@ -2,7 +2,7 @@ import { PropDefEdge, CARDINALITY } from '@based/schema/def'
 import { ENCODER } from '@based/utils'
 import { xxHash64 } from '../../../xxHash64.js'
 import { Ctx } from '../../Ctx.js'
-import { resize } from '../../resize.js'
+import { reserve } from '../../resize.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 
@@ -12,7 +12,7 @@ export const writeCardinalityEdge = (
   vals: any,
 ) => {
   if (vals === null) {
-    resize(ctx, ctx.index + 3 + 4)
+    reserve(ctx, 3 + 4)
     writeEdgeHeader(ctx, edge, CARDINALITY)
     writeU32(ctx, 0)
     return
@@ -21,10 +21,9 @@ export const writeCardinalityEdge = (
     vals = [vals]
   }
   const size = 4 + vals.length * 8
-  resize(ctx, ctx.index + 3 + size)
+  reserve(ctx, 3 + size)
   writeEdgeHeader(ctx, edge, CARDINALITY)
   writeU32(ctx, size)
-  ctx.index += 7
   for (const val of vals) {
     if (edge.validation(val, edge)) {
       if (typeof val === 'string') {

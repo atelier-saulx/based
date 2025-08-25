@@ -1,12 +1,12 @@
 import { PropDefEdge, REFERENCE } from '@based/schema/def'
 import { Ctx } from '../../Ctx.js'
-import { resize } from '../../resize.js'
+import { reserve } from '../../resize.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 
 export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {
-    resize(ctx, ctx.index + 3 + 4)
+    reserve(ctx, 3 + 4)
     writeEdgeHeader(ctx, edge, REFERENCE)
     writeU32(ctx, 0)
     return
@@ -22,7 +22,7 @@ export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
     if (!edge.validation(val, edge)) {
       throw [edge, val]
     }
-    resize(ctx, ctx.index + 3 + 4)
+    reserve(ctx, 3 + 4)
     writeEdgeHeader(ctx, edge, REFERENCE)
     writeU32(ctx, val)
     return

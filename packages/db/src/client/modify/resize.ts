@@ -9,3 +9,5 @@ export const resize = (ctx: Ctx, end: number) => {
     ctx.array.buffer.resize(end)
   }
 }
+
+export const reserve = (ctx: Ctx, size: number) => resize(ctx, ctx.index + size)

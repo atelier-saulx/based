@@ -1,7 +1,7 @@
 import { SchemaTypeDef } from '@based/schema/def'
 import { Ctx } from './Ctx.js'
 import { writeObject } from './write/object.js'
-import { resize } from './resize.js'
+import { reserve, resize } from './resize.js'
 import { CREATE, RANGE_ERR, SIZE } from '../_modify/types.js'
 import {
   writeMainCursor,
@@ -43,7 +43,7 @@ export function create(
   ctx.overwrite = true
 
   try {
-    resize(ctx, ctx.index + SIZE.DEFAULT_CURSOR)
+    reserve(ctx, SIZE.DEFAULT_CURSOR)
     writeTypeCursor(ctx)
     writeNodeCursor(ctx)
     const preWriteIndex = ctx.index

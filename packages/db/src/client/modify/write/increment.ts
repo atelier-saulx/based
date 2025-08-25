@@ -3,7 +3,7 @@ import { writeUint16 } from '@based/utils'
 import { SIZE, INCREMENT, DECREMENT } from '../../_modify/types.js'
 import { Ctx } from '../Ctx.js'
 import { writeFixedAtOffset } from './fixed.js'
-import { resize } from '../resize.js'
+import { reserve } from '../resize.js'
 import { writeMainCursor, writeNodeCursor, writeTypeCursor } from './cursor.js'
 
 export const writeIncrement = (ctx: Ctx, def: PropDef, val) => {
@@ -13,7 +13,7 @@ export const writeIncrement = (ctx: Ctx, def: PropDef, val) => {
   if (val.increment === 0) {
     return
   }
-  resize(ctx, ctx.index + SIZE.DEFAULT_CURSOR)
+  reserve(ctx, SIZE.DEFAULT_CURSOR)
   writeMainCursor(ctx)
   let increment: number, operation: number
   if (val.increment > 0) {

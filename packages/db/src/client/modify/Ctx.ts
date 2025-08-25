@@ -1,6 +1,7 @@
-import { SchemaTypeDef, PropDef } from '@based/schema/def'
-import { ModifyOp } from './types.js'
 import { writeUint64 } from '@based/utils'
+import type { SchemaTypeDef, PropDef } from '@based/schema/def'
+import type { LangCode } from '@based/schema'
+import type { ModifyOp } from './types.js'
 import type { Tmp } from './Tmp.js'
 
 export class Ctx {
@@ -21,14 +22,18 @@ export class Ctx {
   draining: Promise<void>
   scheduled: boolean
   created: Record<number, number> = {} // <typeId, count
+  locale: LangCode
   batch: {
     promises?: Tmp[]
     offsets?: Record<number, number>
   } = {}
   cursor: {
+    id?: number
     type?: number
     prop?: number
     main?: number
-    id?: number
+    sort?: number
+    sortText?: number
+    defaults?: number
   } = {}
 }

@@ -2,11 +2,11 @@ import { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../../Ctx.js'
 import { writeSeparateEdge } from './separate.js'
 import { DECREMENT, INCREMENT, UPDATE } from '../../types.js'
-import { resize } from '../../resize.js'
 import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
 import { writeU16, writeU32 } from '../uint.js'
 import { writeFixed } from '../fixed.js'
 import { writeUint16 } from '@based/utils'
+import { reserve } from '../../resize.js'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {
@@ -62,7 +62,7 @@ export const writeEdges = (
     }
 
     if (!hasIncr && def.edgeMainLen === edge.len) {
-      resize(ctx, ctx.index + 3 + 4 + edge.len)
+      reserve(ctx, 3 + 4 + edge.len)
       writeEdgeHeaderMain(ctx)
       writeU32(ctx, edge.len)
       writeFixed(ctx, edge, val)
@@ -87,7 +87,7 @@ export const writeEdges = (
 
   if (mainFields || def.hasDefaultEdges) {
     if (!hasIncr && mainSize === def.edgeMainLen) {
-      resize(ctx, ctx.index + 3 + 4 + mainSize)
+      reserve(ctx, 3 + 4 + mainSize)
       writeEdgeHeaderMain(ctx)
       writeU32(ctx, mainSize)
       for (let i = 0; i < mainFields.length; i += 3) {
@@ -98,7 +98,7 @@ export const writeEdges = (
     } else {
       mainFields ??= []
       const mainFieldsStartSize = mainFields.length * 2
-      resize(ctx, ctx.index + 3 + 4 + 2 + mainSize + mainFieldsStartSize)
+      reserve(ctx, 3 + 4 + 2 + mainSize + mainFieldsStartSize)
       writeEdgeHeaderPartial(ctx)
       writeU32(ctx, mainFieldsStartSize + def.edgeMainLen)
       writeU16(ctx, def.edgeMainLen)

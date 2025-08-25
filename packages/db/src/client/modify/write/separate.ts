@@ -13,13 +13,15 @@ import {
 } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeReference } from './reference.js'
+import { writeString } from './string.js'
+import { writeText } from './text.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
   if (type === STRING) {
-    // writeString(0, val, ctx, schema, def, res.tmpId, mod)
+    writeString(ctx, def, val, 0)
   } else if (type === TEXT) {
-    // writeText(val, ctx, schema, def, res, res.tmpId, mod)
+    writeText(ctx, def, val)
   } else if (type === REFERENCE) {
     writeReference(ctx, def, val)
   } else if (type === REFERENCES) {

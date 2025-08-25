@@ -3,8 +3,8 @@ import { writeUint32 } from '@based/utils'
 import { SIZE } from '../../_modify/types.js'
 import { Ctx } from '../Ctx.js'
 import { writeFixedAtOffset } from './fixed.js'
-import { resize } from '../resize.js'
-import { writeMainCursor, writeNodeCursor, writeTypeCursor } from './cursor.js'
+import { reserve } from '../resize.js'
+import { writeMainCursor } from './cursor.js'
 
 export const writeMainBuffer = (ctx: Ctx) => {
   if (ctx.cursor.main === null) {
@@ -18,7 +18,7 @@ export const writeMainBuffer = (ctx: Ctx) => {
 }
 
 export const writeMainValue = (ctx: Ctx, def: PropDef, val: any) => {
-  resize(ctx, ctx.index + SIZE.DEFAULT_CURSOR + 5 + ctx.schema.mainLen)
+  reserve(ctx, SIZE.DEFAULT_CURSOR + 5 + ctx.schema.mainLen)
   writeMainBuffer(ctx)
   writeFixedAtOffset(
     ctx,
