@@ -4,7 +4,6 @@ import { create } from '../../src/client/modify/create.js'
 import { Ctx } from '../../src/client/modify/Ctx.js'
 import { drain } from '../../src/client/modify/drain.js'
 import { deepEqual } from '../shared/assert.js'
-import { wait } from '@based/utils'
 
 test('better create', async (t) => {
   const db = new BasedDb({
@@ -13,7 +12,7 @@ test('better create', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => t.backup(db))
+  t.after(() => db.destroy())
 
   await db.setSchema({
     types: {
@@ -29,6 +28,14 @@ test('better create', async (t) => {
         user: {
           ref: 'user',
           prop: 'ofUser',
+          $timestamp: 'timestamp',
+          $number: 'number',
+          $uint8: 'uint8',
+          $int8: 'int8',
+          $uint16: 'uint16',
+          $int16: 'int16',
+          $uint32: 'uint32',
+          $int32: 'int32',
         },
       },
     },
@@ -182,5 +189,37 @@ test('better create', async (t) => {
     drain(db.client, ctx)
   }
   await drain(db.client, ctx)
-  console.log(await lastUser('user'))
+  deepEqual(await lastUser('user.id'), {
+    id: 21,
+    user: { id: 20 },
+  })
+  // ref with edges
+  create(db.client, ctx, db.client.schemaTypesParsed.user, {
+    user: {
+      id: 1,
+      // $timestamp: 5,
+      // $number: 5,
+      $uint8: 5,
+      // $int8: 5,
+      // $uint16: 5,
+      // $int16: 5,
+      // $uint32: 5,
+      // $int32: 5,
+    },
+  })
+  await drain(db.client, ctx)
+  deepEqual(await lastUser('user.$uint8'), {
+    id: 22,
+    user: {
+      id: 1,
+      // $timestamp: 5,
+      // $number: 5,
+      $uint8: 5,
+      // $int8: 5,
+      // $uint16: 5,
+      // $int16: 5,
+      // $uint32: 5,
+      // $int32: 5,
+    },
+  })
 })

@@ -77,11 +77,10 @@ export function create(
       return create.apply(null, arguments)
     }
 
-    if (e instanceof Tmp) {
-      return e.then(create.bind(null, ...arguments))
-    }
-
-    if (e.then) {
+    if (typeof e.then === 'function') {
+      if (e instanceof Tmp) {
+        return e.then(() => create.apply(null, arguments))
+      }
       return e.then((id: number) => {
         e.id = id
         return create.apply(null, arguments)

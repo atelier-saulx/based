@@ -175,7 +175,7 @@ map[INT16] = (ctx, val, def) => {
 
 export const writeFixed = (
   ctx: Ctx,
-  def: PropDef,
+  def: PropDef | PropDefEdge,
   val: string | boolean | number,
 ) => {
   return map[def.typeIndex](ctx, val, def)
