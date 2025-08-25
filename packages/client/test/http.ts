@@ -369,6 +369,7 @@ test.serial('functions (over http + contentEncoding)', async (t: T) => {
         'content-encoding': 'deflate',
         'content-type': 'application/json',
       },
+      // @ts-ignore
       body: await deflate(JSON.stringify({ flurp: 1 })),
     })
   ).text()
@@ -382,6 +383,7 @@ test.serial('functions (over http + contentEncoding)', async (t: T) => {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
       },
+      // @ts-ignore
       body: await gzip(JSON.stringify({ flurp: 2 })),
     })
   ).text()
@@ -401,6 +403,7 @@ test.serial('functions (over http + contentEncoding)', async (t: T) => {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
       },
+      // @ts-ignore
       body: await gzip(JSON.stringify(bigBod)),
     })
   ).json()
