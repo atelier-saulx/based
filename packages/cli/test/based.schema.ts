@@ -1,16 +1,83 @@
 // import { schema } from '@based/schema'
+// based.schema.ts
 
-export default {
+const schema1 = {
+  version: '1',
   types: {
-    x: {
-      x: 'string',
-      y: 'text',
-    },
-    flap: {
-      flap: 'string',
+    user: {
+      firstName: 'string',
+      lastName: 'string',
     },
   },
 }
 
-// .infer, .schema
-// type Flap = typeof schema.infer['flap']
+const schema2 = {
+  version: '1',
+  types: {
+    user: {
+      firstName: 'string',
+      lastName: 'string',
+      age: 'number',
+    },
+  },
+}
+
+const schema3 = {
+  version: '1',
+  types: {
+    user: {
+      firstName: 'string',
+      lastName: 'string',
+      age: 'uint8',
+      email: 'youzi@example.nl',
+    },
+  },
+}
+
+const schema4 = {
+  version: '2',
+  types: {
+    user: {
+      fullName: 'string',
+      age: 'uint8',
+      email: 'youzi@example.nl',
+    },
+  },
+  migrations: [
+    {
+      version: '<2',
+      migrate: {
+        user({ firstName, lastName, ...rest }) {
+          return {
+            fullName: firstName + ' ' + lastName,
+            ...rest,
+          }
+        },
+      },
+    },
+  ],
+}
+
+const schema4 = {
+  version: '3',
+  types: {
+    user: {
+      name: 'string',
+      age: 'uint8',
+      email: 'youzi@example.nl',
+    },
+  },
+  migrations: [
+    {
+      version: '<3',
+      migrate: {
+        user({ firstName, lastName, fullName, ...rest }) {
+          return {
+            fullName: fullName || firstName + ' ' + lastName,
+            ...rest,
+          }
+        },
+      },
+    },
+  ],
+}

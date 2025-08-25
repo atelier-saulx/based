@@ -26,25 +26,22 @@ pub fn default(
 ) !void {
     var correctedForOffset: u32 = offset;
     const typeEntry = try db.getType(ctx.db, typeId);
-    var first = true;
     var node = db.getFirstNode(typeEntry);
     checkItem: while (ctx.totalResults < limit) {
-        if (first) {
-            first = false;
-        } else {
-            node = db.getNextNode(typeEntry, node.?);
-        }
         if (node == null) {
             break :checkItem;
         }
+
         // Todo measure if this optmizes things
         if (filterType == FilterType.default) {
             if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+                node = db.getNextNode(typeEntry, node.?);
                 continue :checkItem;
             }
         }
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
+            node = db.getNextNode(typeEntry, node.?);
             continue :checkItem;
         }
         const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, include, null, null, false);
@@ -52,6 +49,8 @@ pub fn default(
             ctx.size += size;
             ctx.totalResults += 1;
         }
+
+        node = db.getNextNode(typeEntry, node.?);
     }
 }
 

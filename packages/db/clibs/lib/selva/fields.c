@@ -230,6 +230,14 @@ static void print_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs
 }
 #endif
 
+static field_t refs_get_nr_fields(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+{
+    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
+    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields - efc_fields_schema->nr_virtual_fields : 0;
+
+    return nr_fields;
+}
+
 static void remove_refs_offset(struct SelvaNodeReferences *refs)
 {
     if (refs->offset > 0) {
@@ -995,6 +1003,39 @@ int selva_fields_set_text(
     return 0;
 }
 
+int selva_fields_get_mutable_text(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        size_t len,
+        struct selva_string **out)
+{
+    struct ensure_text_field tf;
+    int err;
+
+    if (fs->type != SELVA_FIELD_TYPE_TEXT) {
+        return SELVA_EINVAL;
+    }
+
+    tf = ensure_text_field(&node->fields, fs, lang);
+    if (unlikely(!tf.text)) {
+        db_panic("Text missing");
+    } else if (tf.tl) {
+        db_panic("We only support previously unset translations for now");
+    }
+
+    tf.text->tl = selva_realloc(tf.text->tl, ++tf.text->len * sizeof(*tf.text->tl));
+    tf.tl = memset(&tf.text->tl[tf.text->len - 1], 0, sizeof(*tf.tl));
+
+    err = selva_string_init(tf.tl, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+    if (err) {
+        return err;
+    }
+    *out = tf.tl;
+
+    return 0;
+}
+
 int selva_fields_get_text(
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
@@ -1568,8 +1609,7 @@ int selva_fields_references_swap(
  */
 void selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
-    const struct SelvaFieldsSchema *efc_fields_schema = selva_get_edge_field_fields_schema(db, efc);
-    const field_t nr_fields = efc_fields_schema ? efc_fields_schema->nr_fields - efc_fields_schema->nr_virtual_fields : 0;
+    const field_t nr_fields = refs_get_nr_fields(db, efc);
 
     if (nr_fields > 0 && !ref->meta) {
         reference_meta_create(ref, nr_fields);
@@ -2141,19 +2181,29 @@ nil:
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (nfo->in_use) {
-                hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), p);
+                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
+                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
+                    goto nil;
+                }
+
+                hash_ref(hash_state, db, efc, p);
             } else {
                 goto nil;
             }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             do {
+                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
+                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
+                    goto nil;
+                }
+
                 const struct SelvaNodeReferences *refs = p;
                 const size_t len = nfo->in_use ? refs->nr_refs : 0;
 
                 selva_hash_update(hash_state, &len, sizeof(len));
                 for (size_t i = 0; i < len; i++) {
-                    hash_ref(hash_state, db, selva_get_edge_field_constraint(fs), &refs->refs[i]);
+                    hash_ref(hash_state, db, efc, &refs->refs[i]);
                 }
             } while (0);
             break;

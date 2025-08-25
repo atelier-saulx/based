@@ -137,6 +137,9 @@ export const createSchemaTypeDef = (
     if (result.partial == false && 'partial' in type) {
       result.partial = !!type.partial
     }
+    if ('hooks' in type) {
+      result.hooks = type.hooks
+    }
   }
   result.locales = locales
   result.localeSize = Object.keys(locales).length

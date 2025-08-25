@@ -16,7 +16,6 @@ const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const createGroupCtx = groupFunctions.createGroupCtx;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-const getReferenceNodeId = @import("../aggregate/references.zig").getReferenceNodeId;
 
 const c = @import("../../c.zig");
 const aux = @import("../aggregate/utils.zig");
@@ -106,7 +105,6 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             }
             const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
-                //if (groupCtx.
                 if (groupCtx.propType == types.Prop.STRING)
                     if (groupCtx.field == 0)
                         groupValue.ptr[groupCtx.start + 1 .. groupCtx.start + 1 + groupValue[groupCtx.start]]
@@ -115,7 +113,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == types.Prop.REFERENCE)
-                    getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
+                    db.getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else

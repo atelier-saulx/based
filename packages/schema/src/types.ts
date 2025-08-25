@@ -1,7 +1,8 @@
 import { getPropType } from './parse/utils.js'
-import { LangName } from './lang.js'
-import { Validation } from './def/validation.js'
-import { Transform } from './def/types.js'
+import type { LangName } from './lang.js'
+import type { Validation } from './def/validation.js'
+import type { Transform } from './def/types.js'
+// import type { BasedDbQuery, Operator } from '@based/db'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -274,7 +275,15 @@ export type SchemaCardinality = Prop<{
   format?: NumberDisplay // when queried should return the count
 }>
 
-type VectorDefaultType = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
+type VectorDefaultType =
+  | Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array
 export type SchemaVectorBaseType = NumberType | 'float32' | 'float64'
 
 export type SchemaVector = Prop<{
@@ -418,18 +427,33 @@ export type SchemaPropOneWay<isStrict = false> =
   | NonRefSchemaProps<isStrict>
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
-export type SchemaHook = string | Function
 export type SchemaProps<isStrict = false> = Record<
   AllowedKey,
   SchemaProp<isStrict>
 > & { id?: never }
 
+// TODO: export these types in a pkg (not db => circular!)
+type BasedDbQuery = any
+type Operator = string
+
+export type SchemaHooks = {
+  create?: (payload: Record<string, any>) => void | Record<string, any>
+  update?: (payload: Record<string, any>) => void | Record<string, any>
+  read?: (result: Record<string, any>) => void | null | Record<string, any>
+  search?: (query: BasedDbQuery, fields: Set<string>) => void
+  include?: (query: BasedDbQuery, fields: Set<string>) => void
+  filter?: (
+    query: BasedDbQuery,
+    field: string,
+    operator: Operator,
+    value: any,
+  ) => void
+  groupBy?: (query: BasedDbQuery, field: string) => void
+  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
+}
+
 type GenericSchemaType<isStrict = false> = {
-  hooks?: {
-    create?: SchemaHook
-    update?: SchemaHook
-    delete?: SchemaHook
-  }
+  hooks?: SchemaHooks
   id?: number
   blockCapacity?: number
   insertOnly?: boolean
@@ -456,14 +480,27 @@ export type SchemaPropsOneWay<isStrict = false> = Record<
   SchemaPropOneWay<isStrict>
 > & { id?: never }
 
+type MigrateFn = (
+  node: Record<string, any>,
+) => Record<string, any> | [string, Record<string, any>]
+
+export type MigrateFns = Record<string, MigrateFn>
+
 type GenericSchema<isStrict = false> = {
+  version?: string
   types?: SchemaTypes<isStrict>
   props?: SchemaPropsOneWay<isStrict>
   locales?: Partial<SchemaLocales>
+  defaultTimezone?: string
+  migrations?: {
+    version: string
+    migrate: MigrateFns
+  }[]
 }
 
 export type StrictSchema = GenericSchema<true>
-export type Schema = GenericSchema<false> | StrictSchema
+export type NonStrictSchema = GenericSchema<false>
+export type Schema = NonStrictSchema | StrictSchema
 
 export type SchemaLocales = Record<
   LangName,

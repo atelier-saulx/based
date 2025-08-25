@@ -122,7 +122,7 @@ pub inline fn aggregateRefsGroup(
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == types.Prop.REFERENCE)
-                    getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
+                    db.getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
@@ -227,15 +227,4 @@ pub inline fn aggregateRefsDefault(
     });
 
     return resultsSize + 2 + 4;
-}
-
-pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeReference) []u8 {
-    if (ref != null) {
-        const dst = db.getNodeFromReference(ref);
-        if (dst != null) {
-            const id: *u32 = @alignCast(@ptrCast(dst));
-            return std.mem.asBytes(id)[0..4];
-        }
-    }
-    return &[_]u8{};
 }

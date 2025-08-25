@@ -1,3 +1,4 @@
+import { parse, type SemVer } from '@std/semver'
 import {
   EXPECTED_ARR,
   EXPECTED_BOOL,
@@ -7,9 +8,23 @@ import {
   EXPECTED_STR,
 } from './errors.js'
 
+export const expectVersion = (obj: any): SemVer => {
+  try {
+    return parse(obj)
+  } catch (e) {
+    throw Error('invalid semver version')
+  }
+}
+
 export const expectObject = (obj: any, msg?: string) => {
   if (typeof obj !== 'object' || obj === null) {
     throw Error(msg || EXPECTED_OBJ)
+  }
+}
+
+export const expectArray = (obj: any) => {
+  if (!Array.isArray(obj)) {
+    throw Error(EXPECTED_ARR)
   }
 }
 
@@ -48,4 +63,9 @@ export const expectPositiveNumber = (v: any) => {
   if (v < 0) {
     throw Error('Expected positive number')
   }
+}
+
+export const expectTimezoneName = (v: any) => {
+  expectString(v)
+  Intl.DateTimeFormat(undefined, { timeZone: v });
 }

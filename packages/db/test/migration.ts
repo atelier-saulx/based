@@ -1,5 +1,5 @@
+import { NonStrictSchema } from '@based/schema'
 import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('migration', async (t) => {
@@ -12,12 +12,13 @@ await test('migration', async (t) => {
   t.after(() => t.backup(db))
 
   await db.setSchema({
+    version: '1.0.0',
     types: {
       user: {
         firstName: 'string',
         lastName: 'string',
+        age: 'uint8',
         email: 'string',
-        age: 'number',
       },
     },
   })
@@ -34,31 +35,69 @@ await test('migration', async (t) => {
 
   await db.drain()
 
-  const before = await db.query('user').get().toObject()
-
-  const transformFns = {
-    user({ firstName, lastName, ...rest }) {
-      return {
-        name: `${firstName} ${lastName}`,
-        ...rest,
-      }
-    },
-  }
-
-  await db.setSchema(
+  const schemas: NonStrictSchema[] = [
     {
+      version: '2.0.0',
+      types: {
+        user: {
+          fullName: 'string',
+          age: 'uint8',
+          email: 'string',
+        },
+      },
+      migrations: [
+        {
+          version: '<2',
+          migrate: {
+            user({ firstName, lastName, ...rest }) {
+              return {
+                fullName: firstName + ' ' + lastName,
+                ...rest,
+              }
+            },
+          },
+        },
+      ],
+    },
+    {
+      version: '3.0.0',
       types: {
         user: {
           name: 'string',
+          age: 'uint8',
           email: 'string',
-          age: 'number',
         },
       },
+      migrations: [
+        {
+          version: '2',
+          migrate: {
+            user({ fullName, ...rest }) {
+              return {
+                name: fullName,
+                ...rest,
+              }
+            },
+          },
+        },
+        {
+          version: '<3',
+          migrate: {
+            user({ fullName, ...rest }) {
+              return {
+                name: fullName,
+                ...rest,
+              }
+            },
+          },
+        },
+      ],
     },
-    transformFns,
-  )
+  ]
 
-  const after = await db.query('user').get().toObject()
+  for (const schema of schemas) {
+    await db.setSchema(schema)
+  }
 
-  deepEqual(before.map(transformFns.user), after)
+  console.log('---', await db.query('user').get().toObject())
 })

@@ -3,8 +3,22 @@ import { INVALID_KEY, INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
-import { expectBoolean, expectObject } from './assert.js'
+import {
+  expectArray,
+  expectBoolean,
+  expectFunction,
+  expectObject,
+  expectTimezoneName,
+  expectVersion,
+} from './assert.js'
 import { deepCopy } from '@based/utils'
+import {
+  satisfies,
+  parseRange,
+  parse as parseVersion,
+  Range,
+  rangeIntersects,
+} from '@std/semver'
 
 export { getPropType }
 
@@ -90,6 +104,47 @@ export class SchemaParser {
     }
   }
 
+  parseDefaultTimezone() {
+    expectTimezoneName(this.schema.defaultTimezone)
+  }
+
+  parseMigrations() {
+    const { migrations, version } = this.schema
+    const ranges = new Map<string, Range[]>()
+
+    expectArray(migrations)
+    for (const item of migrations) {
+      expectObject(item)
+      expectObject(item.migrate)
+      const targetRange = parseRange(item.version)
+      const currentVersion = parseVersion(version)
+      if (satisfies(currentVersion, targetRange)) {
+        throw Error('migration version can not match current version')
+      }
+      if (Object.keys(item).length > 2) {
+        throw new Error(
+          'migrations can only have "version" and "migrate" properties',
+        )
+      }
+      for (const type in item.migrate) {
+        expectFunction(item.migrate[type])
+        if (ranges.has(type)) {
+          const otherRanges = ranges.get(type)
+          for (const otherRange of otherRanges) {
+            if (rangeIntersects(targetRange, otherRange)) {
+              throw Error(
+                'invalid overlapping version for migration for ' + type,
+              )
+            }
+          }
+          ranges.get(type).push(targetRange)
+        } else {
+          ranges.set(type, [targetRange])
+        }
+      }
+    }
+  }
+
   parse(): StrictSchema {
     expectObject(this.schema)
     // always do types first because it removes props shorthand
@@ -97,10 +152,16 @@ export class SchemaParser {
       this.parseTypes()
     }
     for (const key in this.schema) {
-      if (key === 'props') {
+      if (key === 'version') {
+        expectVersion(this.schema.version)
+      } else if (key === 'props') {
         this.parseProps(this.schema.props)
       } else if (key === 'locales') {
         this.parseLocales()
+      } else if (key === 'defaultTimezone') {
+        this.parseDefaultTimezone()
+      } else if (key === 'migrations') {
+        this.parseMigrations()
       } else if (key !== 'types') {
         throw Error(UNKNOWN_PROP)
       }

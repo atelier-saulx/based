@@ -1,3 +1,4 @@
+import { fastPrng } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
@@ -270,10 +271,11 @@ await test('string + refs', async (t) => {
     )
   }
 
+  const rnd = fastPrng()
   const amount = 1
   for (let i = 0; i < amount; i++) {
     db.create('simple', {
-      user: users[~~(Math.random() * users.length)],
+      user: users[rnd(0, users.length - 1)],
       countryCode: 'aa',
       lilBlup: 1,
     })

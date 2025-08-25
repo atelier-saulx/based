@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
+import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
-import picocolors from 'picocolors'
 import { wait } from '@based/utils'
 
 import { printSummary } from '../dist/test/shared/test.js'
@@ -25,31 +25,32 @@ const p = join(__dirname, '../dist/test')
 const walk = async (dir = p) => {
   const files = await fs.readdir(dir)
   const promises = []
-
   for (const f of files) {
     if (f.endsWith('.js')) {
+      const path = join(dir, f)
       if (match.length > 0) {
+        const relPath = relative(p, path)
         for (const test of match) {
           if (test.includes(':')) {
             const [a, b] = test.split(':')
-            if (f.toLowerCase().includes(a.slice(1).toLowerCase())) {
-              testsToRun.push([join(dir, f), b])
+            if (relPath.toLowerCase().includes(a.slice(1).toLowerCase())) {
+              testsToRun.push([path, b])
               break
             }
           } else if (test.startsWith('^')) {
-            if (!f.toLowerCase().includes(test.slice(1).toLowerCase())) {
-              testsToRun.push([join(dir, f)])
+            if (!relPath.toLowerCase().includes(test.slice(1).toLowerCase())) {
+              testsToRun.push([path])
               break
             }
-          } else if (f.toLowerCase().includes(test.toLowerCase())) {
-            testsToRun.push([join(dir, f)])
+          } else if (relPath.toLowerCase().includes(test.toLowerCase())) {
+            testsToRun.push([path])
             break
           }
         }
       } else {
-        testsToRun.push([join(dir, f)])
+        testsToRun.push([path])
       }
-    } else if (f[0] !== '.' && f !== 'shared' && f !== 'tmp') {
+    } else if (!f.includes('.') && f !== 'shared' && f !== 'tmp') {
       promises.push(walk(join(dir, f)).catch(() => {}))
     }
   }
@@ -61,7 +62,8 @@ await walk(p)
 
 console.log('\n\n')
 console.log(
-  picocolors.bgWhite(
+  styleText(
+    'bgWhite',
     ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 's'} `,
   ),
 )
@@ -78,7 +80,10 @@ for (let i = 0; i < repeat; i++) {
     const fullPath = test[0]
     const relPath = relative(p, fullPath)
     console.log(
-      picocolors.bgBlue(` ${picocolors.bold(picocolors.black(relPath))} `),
+      styleText(
+        'bgBlue',
+        ` ${styleText('bold', styleText('black', relPath))} `,
+      ),
     )
 
     if (test[1]) {
@@ -94,7 +99,7 @@ for (let i = 0; i < repeat; i++) {
     await import(fullPath + `?_=${++cnt}`)
       .catch((err) => {
         console.log('')
-        console.log(picocolors.bgRed(` Err: ${relPath} `))
+        console.log(styleText('bgRed', ` Err: ${relPath} `))
         console.error(err)
       })
       .then(() => {})

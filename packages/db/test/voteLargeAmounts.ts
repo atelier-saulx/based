@@ -143,7 +143,13 @@ await test('schema with many uint8 fields', async (t) => {
 
     console.log(
       'group by on all',
-      (await db.query('vote').groupBy('fromCountry').sum(s).get()).execTime,
+      (
+        await db
+          .query('vote')
+          .groupBy('fromCountry')
+          .sum(...s)
+          .get()
+      ).execTime,
       'ms',
     )
   }

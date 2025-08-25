@@ -38,7 +38,7 @@ export class FilterBranch {
       field(f)
       this.def.filter.size += f.filterBranch.size
     } else {
-      const f = convertFilter(this.def, field, operator, value, opts)
+      const f = convertFilter(this, field, operator, value, opts)
       if (f) {
         filterOr(this.db, this.def, f, this.filterBranch)
       }
@@ -47,7 +47,7 @@ export class FilterBranch {
   }
 
   filter(field: string, operator?: Operator | boolean, value?: any) {
-    const f = convertFilter(this.def, field, operator, value)
+    const f = convertFilter(this, field, operator, value)
     if (f) {
       filter(this.db, this.def, f, this.filterBranch)
     }

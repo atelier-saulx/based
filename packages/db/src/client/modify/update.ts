@@ -90,6 +90,8 @@ export const update = (
     )
   }
 
+  obj = def.hooks?.update?.(obj) || obj
+
   if (!isValidId(id)) {
     throw new Error(`Update ${id} is not a valid id`)
   }

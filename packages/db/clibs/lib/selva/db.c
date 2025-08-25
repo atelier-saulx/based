@@ -157,7 +157,6 @@ struct SelvaDb *selva_db_create(void)
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     mempool_init(&db->types.pool, te_slab_size(), sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
-    ref_save_map_init(&db->schema.ref_save_map);
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     selva_expire_init(&db->expiring);
@@ -201,9 +200,13 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
     }
 }
 
-static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
+static inline void clear_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     del_all_nodes(db, te);
+}
+
+static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
+{
     /*
      * We assume that as the nodes are deleted the aliases are also freed.
      * The following function will just free te->aliases.
@@ -234,6 +237,10 @@ static void del_all_types(struct SelvaDb *db)
     struct SelvaTypeEntry *tmp;
 
     RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
+        clear_type(db, te);
+    }
+
+    RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
         destroy_type(db, te);
     }
 }
@@ -241,7 +248,6 @@ static void del_all_types(struct SelvaDb *db)
 void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
-    ref_save_map_destroy(&db->schema.ref_save_map);
     selva_expire_deinit(&db->expiring);
 #if 0
     memset(db, 0, sizeof(*db));
@@ -336,7 +342,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
 
     memset(te, 0, sizeof(*te));
     te->type = type;
-    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
@@ -452,6 +458,10 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 
 struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
+    if (unlikely(node_id == 0)) {
+        return nullptr;
+    }
+
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {

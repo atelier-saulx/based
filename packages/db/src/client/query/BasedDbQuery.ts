@@ -21,7 +21,7 @@ import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
 import { LangCode, langCodesMap, LangName } from '@based/schema'
-import { FilterAst, FilterBranchFn, FilterOpts } from './filter/types.js'
+import { FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
@@ -76,24 +76,11 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
-      const f = convertFilter(this.def, field, operator, value, opts)
+      const f = convertFilter(this, field, operator, value, opts)
       if (!f) {
         // @ts-ignore
         return this
       }
-      filter(this.db, this.def, f, this.def.filter)
-    }
-    // @ts-ignore
-    return this
-  }
-
-  filterBatch(f: FilterAst) {
-    if (this.queryCommands) {
-      this.queryCommands.push({
-        method: 'filterBatch',
-        args: [f],
-      })
-    } else {
       filter(this.db, this.def, f, this.def.filter)
     }
     // @ts-ignore
@@ -149,7 +136,7 @@ export class QueryBranch<T> {
 
       if (fields.length) {
         if (fields.length === 1) {
-          search(this.def, query, fields[0])
+          search(this, query, fields[0])
         } else {
           const s = {}
           for (const f of fields) {
@@ -163,12 +150,13 @@ export class QueryBranch<T> {
               Object.assign(s, f)
             }
           }
-          search(this.def, query, s)
+          search(this, query, s)
         }
       } else {
-        search(this.def, query)
+        search(this, query)
       }
     }
+
     // @ts-ignore
     return this
   }
@@ -180,6 +168,12 @@ export class QueryBranch<T> {
         args: [field, step],
       })
     } else {
+      const groupByHook = this.def.schema.hooks?.groupBy
+      if (groupByHook) {
+        this.def.schema.hooks.groupBy = null
+        groupByHook(this, field)
+        this.def.schema.hooks.groupBy = groupByHook
+      }
       groupBy(this.def, field, step)
     }
     // only works with aggregates for now
@@ -195,13 +189,13 @@ export class QueryBranch<T> {
       })
     } else {
       const p = field.split('.')
-      addAggregate(AggregateType.COUNT, this.def, p)
+      addAggregate(this, AggregateType.COUNT, p)
     }
     // @ts-ignore
     return this
   }
 
-  sum(...fields: (string | string[])[]): T {
+  sum(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty sum() called')
     }
@@ -212,7 +206,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(AggregateType.SUM, this.def, fields)
+      addAggregate(this, AggregateType.SUM, fields)
     }
     // @ts-ignore
     return this
@@ -229,98 +223,87 @@ export class QueryBranch<T> {
         args: [field],
       })
     } else {
-      addAggregate(AggregateType.CARDINALITY, this.def, [field])
+      addAggregate(this, AggregateType.CARDINALITY, [field])
     }
     // @ts-ignore
     return this
   }
 
-  stddev(...fields: (string | string[])[]): T
-  stddev(...args: [...(string | string[])[], aggFnOptions]): T
-
-  stddev(...args: (string | string[] | aggFnOptions)[]): T {
-    let option: aggFnOptions = {}
-    let fields: (string | string[])[] = []
-
-    const lastArg = args[args.length - 1]
-    const lastArgIsOptions =
-      typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
-
-    if (lastArgIsOptions) {
-      option = lastArg as aggFnOptions
-      fields = args.slice(0, -1) as (string | string[])[]
-    } else {
-      fields = args as (string | string[])[]
-    }
-
-    if (fields.length === 0) {
-      throw new Error('Empty standard deviation function called')
-    }
-
+  stddev(...args: (string | aggFnOptions)[]): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'stddev',
-        args: [fields, option],
+        args,
       })
     } else {
-      addAggregate(AggregateType.STDDEV, this.def, fields, option)
+      let option: aggFnOptions = {}
+      let fields: string[]
+
+      const lastArg = args[args.length - 1]
+      const lastArgIsOptions = typeof lastArg === 'object' && lastArg !== null
+
+      if (lastArgIsOptions) {
+        option = lastArg as aggFnOptions
+        fields = args.slice(0, -1) as string[]
+      } else {
+        fields = args as string[]
+      }
+
+      if (fields.length === 0) {
+        throw new Error('Empty standard deviation function called')
+      }
+      addAggregate(this, AggregateType.STDDEV, fields, option)
     }
     // @ts-ignore
     return this
   }
 
-  var(...fields: (string | string[])[]): T
-  var(...args: [...(string | string[])[], aggFnOptions]): T
-
-  var(...args: (string | string[] | aggFnOptions)[]): T {
-    let option: aggFnOptions = {}
-    let fields: (string | string[])[] = []
-
-    const lastArg = args[args.length - 1]
-    const lastArgIsOptions =
-      typeof lastArg === 'object' && lastArg !== null && !Array.isArray(lastArg)
-
-    if (lastArgIsOptions) {
-      option = lastArg as aggFnOptions
-      fields = args.slice(0, -1) as (string | string[])[]
-    } else {
-      fields = args as (string | string[])[]
-    }
-
-    if (fields.length === 0) {
-      throw new Error('Empty variance called')
-    }
-
+  var(...args: (string | aggFnOptions)[]): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'var',
-        args: [fields, option],
+        args,
       })
     } else {
-      addAggregate(AggregateType.VARIANCE, this.def, fields, option)
+      let option: aggFnOptions = {}
+      let fields: string[] = []
+
+      const lastArg = args[args.length - 1]
+      const lastArgIsOptions = typeof lastArg === 'object' && lastArg !== null
+
+      if (lastArgIsOptions) {
+        option = lastArg as aggFnOptions
+        fields = args.slice(0, -1) as string[]
+      } else {
+        fields = args as string[]
+      }
+
+      if (fields.length === 0) {
+        throw new Error('Empty variance called')
+      }
+      addAggregate(this, AggregateType.VARIANCE, fields, option)
     }
     // @ts-ignore
     return this
   }
 
-  avg(...fields: (string | string[])[]): T {
+  avg(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty average function called')
     }
-
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'avg',
         args: fields,
       })
     } else {
-      addAggregate(AggregateType.AVERAGE, this.def, fields)
+      addAggregate(this, AggregateType.AVERAGE, fields)
     }
     // @ts-ignore
     return this
   }
 
-  harmonicMean(...fields: (string | string[])[]): T {
+  harmonicMean(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
@@ -331,13 +314,13 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(AggregateType.HMEAN, this.def, fields)
+      addAggregate(this, AggregateType.HMEAN, fields)
     }
     // @ts-ignore
     return this
   }
 
-  max(...fields: (string | string[])[]): T {
+  max(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty maximum function called')
     }
@@ -348,13 +331,13 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(AggregateType.MAX, this.def, fields)
+      addAggregate(this, AggregateType.MAX, fields)
     }
     // @ts-ignore
     return this
   }
 
-  min(...fields: (string | string[])[]): T {
+  min(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty minimum function called')
     }
@@ -365,7 +348,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(AggregateType.MIN, this.def, fields)
+      addAggregate(this, AggregateType.MIN, fields)
     }
     // @ts-ignore
     return this
@@ -399,7 +382,7 @@ export class QueryBranch<T> {
         field(f)
         this.def.filter.size += f.filterBranch.size
       } else {
-        const f = convertFilter(this.def, field, operator, value, opts)
+        const f = convertFilter(this, field, operator, value, opts)
         if (f) {
           filterOr(this.db, this.def, f, this.def.filter)
         }
@@ -440,6 +423,12 @@ export class QueryBranch<T> {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
       include(this, fields)
+      const includeHook = this.def.schema.hooks?.include
+      if (includeHook) {
+        this.def.schema.hooks.include = null
+        includeHook(this, this.def.include.stringFields)
+        this.def.schema.hooks.include = includeHook
+      }
     }
     // @ts-ignore
     return this
@@ -448,15 +437,22 @@ export class QueryBranch<T> {
 
 export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
-const resToJSON = (res: BasedQueryResponse) => res.toJSON()
+const resToJSON = (
+  res: BasedQueryResponse,
+  replacer?: (this: any, key: string, value: any) => any,
+  space?: string | number,
+) => res.toJSON(replacer, space)
 const resToObject = (res: BasedQueryResponse) => res.toObject()
 
 class GetPromise extends Promise<BasedQueryResponse> {
   toObject() {
     return this.then(resToObject)
   }
-  toJSON() {
-    return this.then(resToJSON)
+  toJSON(
+    replacer?: (this: any, key: string, value: any) => any,
+    space?: string | number,
+  ) {
+    return this.then((res) => resToJSON(res, replacer, space))
   }
   inspect(depth?: number, raw?: boolean) {
     return this.then(

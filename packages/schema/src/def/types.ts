@@ -1,4 +1,10 @@
-import type { LangCode, SchemaLocales, SchemaVectorBaseType } from '../index.js'
+import type {
+  LangCode,
+  Schema,
+  SchemaHooks,
+  SchemaLocales,
+  SchemaVectorBaseType,
+} from '../index.js'
 import { Validation } from './validation.js'
 
 export type Transform = (
@@ -209,6 +215,7 @@ export type SchemaTypeDef = {
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>
   localeSize: number
+  hooks?: SchemaHooks
 }
 
 export const VECTOR_BASE_TYPE_SIZE_MAP = {

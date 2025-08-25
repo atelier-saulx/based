@@ -1,3 +1,4 @@
+import { fastPrng } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from 'assert'
@@ -28,6 +29,7 @@ await test('mem', async (t) => {
   const repeat = 1e3
   // 2M inserts rmeoves
 
+  const rnd = fastPrng()
   for (let j = 0; j < repeat; j++) {
     // To keep many different blocks
     await db.create('data', {
@@ -38,7 +40,7 @@ await test('mem', async (t) => {
     const ids = []
     let cnt = 0
     for (let i = 0; i < amount; i++) {
-      const x = ids[Math.floor(Math.random() * ids.length)]
+      const x = ids[rnd(0, ids.length - 1)]
       if (x) {
         cnt++
       }
@@ -47,7 +49,7 @@ await test('mem', async (t) => {
           age: i,
           name: `Mr FLAP ${i}`,
           a: x
-            ? { id: ids[Math.floor(Math.random() * ids.length)], $derp: i }
+            ? { id: ids[rnd(0, ids.length - 1)], $derp: i }
             : null,
         }),
       )
