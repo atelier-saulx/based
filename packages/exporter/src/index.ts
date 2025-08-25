@@ -28,7 +28,8 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   const csvHeader = ['id', ...propsToExport]
 
-  let offset = 0
+  let offsetStart = 0
+  let offsetEnd = CHUNK_SIZE
   let isDone = false
   let fileHandle: any | undefined
 
@@ -39,20 +40,20 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   const allCsvRows: any[][] = []
 
+  await db.server.loadBlock(def.type, startNodeId).catch((e) => {
+    if (e.message !== 'Block hash mismatch') {
+      console.error(e)
+      console.log('Skipping block due to error.')
+      isDone = true
+    }
+  })
   while (!isDone) {
-    await db.server.loadBlock(def.type, startNodeId).catch((e) => {
-      if (e.message !== 'Block hash mismatch') {
-        console.error(e)
-        console.log('Skipping block due to error.')
-        isDone = true
-      }
-    })
-    console.log(`  - Loading chunk from offset ${offset}...`)
+    console.log(`  - Loading chunk from offset ${offsetStart}...`)
 
     const data = await db
       .query(def.type)
       .include('*')
-      .range(offset, CHUNK_SIZE)
+      .range(offsetStart, offsetEnd)
       .get()
       .toObject()
 
@@ -72,21 +73,17 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       return row
     })
 
-    // allCsvRows.push(...csvRows) // depois isso vai pra função sem o header
     await fileHandle.write(toCsvChunk(csvRows))
 
     if (csvRows.length == CHUNK_SIZE) {
-      offset += CHUNK_SIZE
+      offsetStart += CHUNK_SIZE
+      offsetEnd += CHUNK_SIZE
+      isDone = false
     } else {
       isDone = true
     }
   }
-
-  // const csvContent = toCsvString(csvHeader, allCsvRows)
-
   try {
-    // const filename = getCsvFileName(typeId, startNodeId)
-    // await writeFile(filename, csvContent)
     if (fileHandle) {
       await fileHandle.close()
     }

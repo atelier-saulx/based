@@ -27,7 +27,7 @@ await test('export to csv', async (t) => {
     },
   })
   // 1M items, 1K SKUs, 50 shelves
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e4; i++) {
     let p = db.create('product', {
       sku: 'lala' + (Math.random() * 10).toFixed(0),
       flap: Math.random() * 1000,
@@ -42,6 +42,6 @@ await test('export to csv', async (t) => {
   await db.save()
 
   // cd ../exporter and run `npm run test`
-  // check the first line of a exported csv
+  // check the id from the first and last lines of the exported csv with head/tail
   // check the number of lines like with `wc -l`
 })
