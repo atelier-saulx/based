@@ -86,37 +86,9 @@ pub fn add(
     return size;
 }
 
-// pub fn addUndefined(
-//     ctx: *QueryCtx,
-//     id: u32,
-//     score: ?[4]u8,
-//     idIsSet: bool,
-//     comptime isEdge: bool,
-//     prop: u8,
-// ) !usize {
-//     var result: results.Result = .{
-//         .type = if (isEdge) t.ResultType.undefinedEdge else t.ResultType.undefined,
-//         .prop = prop,
-//         .value = &.{},
-//         .id = 0,
-//         .score = null,
-//     };
-//     var size: usize = 2;
-//     if (!idIsSet) {
-//         size += 5;
-//         result.id = id;
-//         if (score != null) {
-//             result.score = score;
-//             size += 4;
-//         }
-//     }
-//     try ctx.results.append(result);
-//     return size;
-// }
-
 pub inline fn default(
-    result: *results.Result,
     comptime isEdge: bool,
+    result: *results.Result,
 ) !usize {
     if (isEdge) {
         return result.value.len + 6;
@@ -126,8 +98,8 @@ pub inline fn default(
 }
 
 pub inline fn fixed(
-    result: *results.Result,
     comptime isEdge: bool,
+    result: *results.Result,
 ) !usize {
     if (isEdge) {
         result.*.type = t.ResultType.edgeFixed;
@@ -139,8 +111,8 @@ pub inline fn fixed(
 }
 
 pub inline fn selvaString(
-    result: *results.Result,
     comptime isEdge: bool,
+    result: *results.Result,
 ) !usize {
     var valueLen = result.*.value.len;
     if (valueLen == 0) {
@@ -157,10 +129,10 @@ pub inline fn selvaString(
 }
 
 pub inline fn partial(
+    comptime isEdge: bool,
     ctx: *QueryCtx,
     result: *results.Result,
     includeMain: []u8,
-    comptime isEdge: bool,
 ) !usize {
     const original = result.*.value;
     const size = utils.read(u16, includeMain, 0);

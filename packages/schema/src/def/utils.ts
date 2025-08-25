@@ -10,6 +10,7 @@ import {
   PropDef,
   PropDefEdge,
   SIZE_MAP,
+  VECTOR_BASE_TYPE_SIZE_MAP,
 } from './types.js'
 
 import { SchemaProp, isPropType } from '../types.js'
@@ -66,7 +67,9 @@ export function getPropLen(schemaProp: SchemaProp) {
   } else if (isPropType('vector', schemaProp)) {
     len = 4 * schemaProp.size
   } else if (isPropType('colvec', schemaProp)) {
-    len = schemaProp.size
+    len =
+      schemaProp.size *
+      VECTOR_BASE_TYPE_SIZE_MAP[schemaProp.baseType ?? 'number']
   }
 
   return len

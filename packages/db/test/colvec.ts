@@ -30,7 +30,7 @@ await test('colvec', async (t) => {
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)
-  const reset = () => seed = 100
+  const reset = () => (seed = 100)
   const vec = new Float32Array(8)
   const genVec = () => {
     for (let j = 0; j < 8; j++) {
@@ -81,42 +81,23 @@ await test('colvec', async (t) => {
   const tc1 = performance.now()
   console.log(`QUERY col: ${tc1 - tc0} ms`)
 
-  const res = await db
-    .query('col')
-    .include('vec')
-    .range(0, 2)
-    .get()
-    .toObject()
-  deepEqual(
-    res,
-    [
-      {
-        id: 1,
-        vec: new Float32Array([
-          2311,
-          5054,
-          1.5612034346858506e-39,
-          1.007378107771942e-37,
-          3.76158192263132e-37,
-          1.6815581571897805e-44,
-          0,
-          5391
-        ])
-      },
-      {
-        id: 2,
-        vec: new Float32Array([
-          5391,
-          5094,
-          1.5612034346858506e-39,
-          4.029512431087768e-37,
-          3.76158192263132e-37,
-          1.6815581571897805e-44,
-          0,
-          6071
-        ])
-      }
-    ])
+  const res = await db.query('col').include('vec').range(0, 2).get().toObject()
+  deepEqual(res, [
+    {
+      id: 1,
+      vec: new Float32Array([
+        2311, 5054, 1.5612034346858506e-39, 1.007378107771942e-37,
+        3.76158192263132e-37, 1.6815581571897805e-44, 0, 5391,
+      ]),
+    },
+    {
+      id: 2,
+      vec: new Float32Array([
+        5391, 5094, 1.5612034346858506e-39, 4.029512431087768e-37,
+        3.76158192263132e-37, 1.6815581571897805e-44, 0, 6071,
+      ]),
+    },
+  ])
 })
 
 await test('colvec int8', async (t) => {
@@ -143,13 +124,11 @@ await test('colvec int8', async (t) => {
       str: Int8Array.from([i + 1, i + 2, i + 3, i + 4]),
     })
   }
-  deepEqual(await db.query('col').include('str').get(),
-    [
-      { id: 1, str: new Int8Array([ 1, 2, 3, 4 ]) },
-      { id: 2, str: new Int8Array([ 2, 3, 4, 5 ]) },
-      { id: 3, str: new Int8Array([ 3, 4, 5, 6 ]) },
-      { id: 4, str: new Int8Array([ 4, 5, 6, 7 ]) },
-      { id: 5, str: new Int8Array([ 5, 6, 7, 8 ]) }
-    ]
-  )
+  deepEqual(await db.query('col').include('str').get(), [
+    { id: 1, str: new Int8Array([1, 2, 3, 4]) },
+    { id: 2, str: new Int8Array([2, 3, 4, 5]) },
+    { id: 3, str: new Int8Array([3, 4, 5, 6]) },
+    { id: 4, str: new Int8Array([4, 5, 6, 7]) },
+    { id: 5, str: new Int8Array([5, 6, 7, 8]) },
+  ])
 })

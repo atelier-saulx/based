@@ -39,6 +39,5 @@ await test('alignModify - putrefs', async (t) => {
 
   const res = await db.query('user').get().toObject()
 
-  console.log(res.length, res)
   deepEqual(res.length, 3)
 })

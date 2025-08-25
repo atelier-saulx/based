@@ -17,21 +17,22 @@ import {
   WEAK_REFERENCES,
   JSON,
   COLVEC,
+  VECTOR_BASE_TYPE_SIZE_MAP,
 } from './types.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
-    NULL: 0,
-    MICRO_BUFFER: 1,
-    STRING: 2,
-    TEXT: 3,
-    REFERENCE: 4,
-    REFERENCES: 5,
-    WEAK_REFERENCE: 6,
-    WEAK_REFERENCES: 7,
-    ALIAS: 8,
-    ALIASES: 9,
-    COLVEC: 10,
-};
+  NULL: 0,
+  MICRO_BUFFER: 1,
+  STRING: 2,
+  TEXT: 3,
+  REFERENCE: 4,
+  REFERENCES: 5,
+  WEAK_REFERENCE: 6,
+  WEAK_REFERENCES: 7,
+  ALIAS: 8,
+  ALIASES: 9,
+  COLVEC: 10,
+}
 
 const selvaTypeMap = new Uint8Array(32) // 1.2x faster than JS array
 selvaTypeMap[MICRO_BUFFER] = selvaFieldType.MICRO_BUFFER
@@ -52,18 +53,6 @@ selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
 
-const vectorBaseType2Size = {
-  'number': 8,
-  'int8': 1,
-  'uint8': 1,
-  'int16': 2,
-  'uint16': 2,
-  'int32': 4,
-  'uint32': 4,
-  'float32': 4,
-  'float64': 8,
-};
-
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
   const view = new DataView(buf.buffer)
@@ -78,7 +67,9 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 function makeEdgeConstraintFlags(prop: PropDef, inverseProp: PropDef): number {
   return (
     (prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00) |
-    (prop.typeIndex === REFERENCE && inverseProp && inverseProp.typeIndex === REFERENCES
+    (prop.typeIndex === REFERENCE &&
+    inverseProp &&
+    inverseProp.typeIndex === REFERENCES
       ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
       : 0x00)
   )
@@ -99,13 +90,14 @@ const propDefBuffer = (
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
     return [...buf]
-  } else if (prop.len && (type === COLVEC)) {
+  } else if (prop.len && type === COLVEC) {
     const buf = new Uint8Array(5)
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    view.setUint16(1, prop.len, true) // elements
-    view.setUint16(3, vectorBaseType2Size[prop.vectorBaseType], true) // element size
+    const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType]
+    view.setUint16(1, prop.len / baseSize, true) // elements
+    view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
     const buf = new Uint8Array(9)
@@ -173,14 +165,18 @@ export function schemaToSelvaBuffer(schema: {
     let virtualFields = 0
 
     if (nrFields >= 250) {
-        throw new Error('Too many fields')
+      throw new Error('Too many fields')
     }
 
     for (const f of props) {
       if (f.separate) {
         if (f.typeIndex === REFERENCE || f.typeIndex === REFERENCES) {
           refFields++
-        } else if (f.typeIndex === ALIAS || f.typeIndex === ALIASES || f.typeIndex === COLVEC) {
+        } else if (
+          f.typeIndex === ALIAS ||
+          f.typeIndex === ALIASES ||
+          f.typeIndex === COLVEC
+        ) {
           // We assume that these are always the last props!
           virtualFields++
         }

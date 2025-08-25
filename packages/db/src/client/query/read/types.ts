@@ -1,4 +1,5 @@
 import {
+  COLVEC,
   ENUM,
   PropDef,
   PropDefEdge,
@@ -43,7 +44,6 @@ export enum ReaderVectorBaseType {
   Uint32 = 6,
   Float32 = 7,
   Float64 = 8,
-  Number = 9,
 }
 
 export enum ReaderSchemaEnum {
@@ -129,7 +129,7 @@ const createReaderPropDef = (
   if (p.typeIndex === ENUM) {
     readerPropDef.enum = p.enum
   }
-  if (p.typeIndex === VECTOR) {
+  if (p.typeIndex === VECTOR || p.typeIndex === COLVEC) {
     readerPropDef.vectorBaseType = vectorBaseTypeToReaderType(p.vectorBaseType)
     readerPropDef.len = p.len
   }

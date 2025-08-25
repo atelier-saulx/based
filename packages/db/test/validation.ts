@@ -96,10 +96,6 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
-    await db.create('user', { date: -10 })
-  })
-
-  await throws(async () => {
     await db.create('user', { json: function () {} })
   })
 

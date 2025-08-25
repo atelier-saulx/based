@@ -211,6 +211,18 @@ export type SchemaTypeDef = {
   localeSize: number
 }
 
+export const VECTOR_BASE_TYPE_SIZE_MAP = {
+  int8: 1,
+  uint8: 1,
+  int16: 2,
+  uint16: 2,
+  int32: 4,
+  uint32: 4,
+  float32: 4,
+  float64: 8,
+  number: 8,
+}
+
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value

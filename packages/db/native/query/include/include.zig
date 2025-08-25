@@ -88,7 +88,7 @@ pub fn getFields(
                 const includeSize = read(u16, include, i);
                 i += 2 + includeSize;
                 if (result) |r| {
-                    size += try f.partial(ctx, r, include[i - includeSize .. i], isEdge);
+                    size += try f.partial(isEdge, ctx, r, include[i - includeSize .. i]);
                     size += try f.add(ctx, id, score, idIsSet, r);
                     idIsSet = true;
                 }
@@ -137,7 +137,7 @@ pub fn getFields(
                         t.Prop.STRING,
                         t.Prop.JSON,
                         => {
-                            size += try f.selvaString(r, isEdge);
+                            size += try f.selvaString(isEdge, r);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
@@ -154,8 +154,11 @@ pub fn getFields(
                                 }
                                 i += fallbackSize;
                             } else if (code == t.LangCode.NONE) {
-                                size += try f.textAll(isEdge, ctx, id, score, r, idIsSet);
-                                idIsSet = true;
+                                const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet);
+                                if (s != 0) {
+                                    idIsSet = true;
+                                    size += s;
+                                }
                             } else {
                                 const s = try f.textSpecific(isEdge, ctx, id, score, r, code, idIsSet);
                                 if (s != 0) {
@@ -164,13 +167,13 @@ pub fn getFields(
                                 }
                             }
                         },
-                        t.Prop.MICRO_BUFFER, t.Prop.VECTOR => {
-                            size += try f.fixed(r, isEdge);
+                        t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
+                            size += try f.fixed(isEdge, r);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         else => {
-                            size += try f.default(r, isEdge);
+                            size += try f.default(isEdge, r);
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },

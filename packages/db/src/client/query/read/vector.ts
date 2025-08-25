@@ -2,6 +2,7 @@ import { PropDef } from '@based/schema/def'
 import { ReaderPropDef, ReaderVectorBaseType } from './types.js'
 
 export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
+  console.log(prop)
   switch (prop.vectorBaseType) {
     case ReaderVectorBaseType.Int8:
       return new Int8Array(tmp.buffer, tmp.byteOffset, tmp.byteLength)
@@ -18,7 +19,6 @@ export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
     case ReaderVectorBaseType.Float32:
       return new Float32Array(tmp.buffer)
     case ReaderVectorBaseType.Float64:
-    case ReaderVectorBaseType.Number:
       return new Float64Array(tmp.buffer)
   }
 }
@@ -44,6 +44,6 @@ export const vectorBaseTypeToReaderType = (
     case 'float64':
       return ReaderVectorBaseType.Float64
     case 'number':
-      return ReaderVectorBaseType.Number
+      return ReaderVectorBaseType.Float64
   }
 }
