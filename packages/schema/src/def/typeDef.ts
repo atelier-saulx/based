@@ -26,7 +26,12 @@ import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
-import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
+import {
+  getPropLen,
+  isSeparate,
+  parseMinMaxStep,
+  schemaVectorBaseTypeToEnum,
+} from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
@@ -216,7 +221,9 @@ export const createSchemaTypeDef = (
         prop.step = 1
       }
       if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
-        prop.vectorBaseType = schemaProp.baseType ?? 'number'
+        prop.vectorBaseType = schemaVectorBaseTypeToEnum(
+          schemaProp.baseType ?? 'number',
+        )
       }
 
       if (isPropType('enum', schemaProp)) {

@@ -112,7 +112,7 @@ export type PropDef = {
   transform?: Transform
   default: any
   // vectors
-  vectorBaseType?: SchemaVectorBaseType
+  vectorBaseType?: VectorBaseType
   vectorSize?: number
   // edge stuff
   edgeMainLen?: 0
@@ -221,6 +221,17 @@ export const VECTOR_BASE_TYPE_SIZE_MAP = {
   float32: 4,
   float64: 8,
   number: 8,
+}
+
+export enum VectorBaseType {
+  Int8 = 1,
+  Uint8 = 2,
+  Int16 = 3,
+  Uint16 = 4,
+  Int32 = 5,
+  Uint32 = 6,
+  Float32 = 7,
+  Float64 = 8,
 }
 
 export const SIZE_MAP: Record<InternalSchemaProp, number> = {

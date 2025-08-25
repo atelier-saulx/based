@@ -21,28 +21,3 @@ export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
       return new Float64Array(tmp.buffer)
   }
 }
-
-export const vectorBaseTypeToReaderType = (
-  vector: PropDef['vectorBaseType'],
-): ReaderVectorBaseType => {
-  switch (vector) {
-    case 'int8':
-      return ReaderVectorBaseType.Int8
-    case 'uint8':
-      return ReaderVectorBaseType.Uint8
-    case 'int16':
-      return ReaderVectorBaseType.Int16
-    case 'uint16':
-      return ReaderVectorBaseType.Uint16
-    case 'int32':
-      return ReaderVectorBaseType.Int32
-    case 'uint32':
-      return ReaderVectorBaseType.Uint32
-    case 'float32':
-      return ReaderVectorBaseType.Float32
-    case 'float64':
-      return ReaderVectorBaseType.Float64
-    case 'number':
-      return ReaderVectorBaseType.Float64
-  }
-}

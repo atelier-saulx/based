@@ -6,10 +6,10 @@ import {
   TEXT,
   TypeIndex,
   VECTOR,
+  VectorBaseType,
 } from '@based/schema/def'
 import { IncludeOpts, QueryDef, QueryDefType, Target } from '../types.js'
 import { inverseLangMap, langCodesMap } from '@based/schema'
-import { vectorBaseTypeToReaderType } from './vector.js'
 
 export type Item = {
   id: number
@@ -34,17 +34,6 @@ export type TypedArray =
   | Uint32Array
   | Float32Array
   | Float64Array
-
-export enum ReaderVectorBaseType {
-  Int8 = 1,
-  Uint8 = 2,
-  Int16 = 3,
-  Uint16 = 4,
-  Int32 = 5,
-  Uint32 = 6,
-  Float32 = 7,
-  Float64 = 8,
-}
 
 export enum ReaderSchemaEnum {
   edge = 1,
@@ -72,7 +61,7 @@ export type ReaderPropDef = {
   typeIndex: TypeIndex
   meta?: ReaderMeta
   enum?: any[]
-  vectorBaseType?: ReaderVectorBaseType
+  vectorBaseType?: VectorBaseType
   len?: number
   readBy: number
   locales?: { [langCode: string]: string }
@@ -130,7 +119,7 @@ const createReaderPropDef = (
     readerPropDef.enum = p.enum
   }
   if (p.typeIndex === VECTOR || p.typeIndex === COLVEC) {
-    readerPropDef.vectorBaseType = vectorBaseTypeToReaderType(p.vectorBaseType)
+    readerPropDef.vectorBaseType = p.vectorBaseType
     readerPropDef.len = p.len
   }
   if (p.typeIndex === TEXT) {
