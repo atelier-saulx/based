@@ -39,9 +39,10 @@ pub fn getFields(
                     size += try addIdOnly(ctx, id, score);
                 }
                 size += try getFields(node, ctx, id, typeEntry, operation, .{
-                    .reference = edgeRef.?.reference,
-                    .edgeConstaint = edgeRef.?.edgeConstaint,
+                    .smallReference = edgeRef.?.smallReference,
+                    .largeReference = edgeRef.?.largeReference,
                     .edgeReference = null,
+                    .edgeConstaint = edgeRef.?.edgeConstaint,
                 }, null, true);
                 i += edgeSize + 2;
             },

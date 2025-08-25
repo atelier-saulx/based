@@ -35,9 +35,9 @@ pub inline fn get(
         fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint.?, field);
         if (prop == t.Prop.CARDINALITY) {
             // make this in getEdgeProp
-            value = db.getCardinalityReference(edgeRef.?.reference.?, fieldSchema);
+            value = db.getCardinalityReference(ctx.db, edgeRef.?.largeReference.?, fieldSchema);
         } else {
-            value = db.getEdgeProp(edgeRef.?.reference.?, fieldSchema);
+            value = db.getEdgeProp(edgeRef.?.largeReference.?, fieldSchema);
         }
         if (value.len == 0) {
             return null;
