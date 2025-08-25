@@ -10,7 +10,7 @@ const OUTPUT_DIR = './tmp/export'
 
 let verbose = false
 
-process.argv.forEach(function (val, index, array) {
+process.argv.forEach((val) => {
   if (val.includes('verbose')) {
     verbose = true
   }
