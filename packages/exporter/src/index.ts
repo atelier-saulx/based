@@ -3,16 +3,19 @@ import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
+import os from 'node:os'
 
 const CHUNK_SIZE = 1025
 
-const OUTPUT_DIR = './tmp/export'
-
+let OUTPUT_DIR = './tmp/export'
 let verbose = false
 
 process.argv.forEach((val) => {
   if (val.includes('verbose')) {
     verbose = true
+  }
+  if (val.toLowerCase().includes('dest')) {
+    OUTPUT_DIR = val.split('=')[1].replace(/^~(?=$|\/|\\)/, os.homedir)
   }
 })
 
