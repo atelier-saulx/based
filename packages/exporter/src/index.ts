@@ -28,8 +28,8 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   const csvHeader = ['id', ...propsToExport]
 
-  let offsetStart = 0
-  let offsetEnd = CHUNK_SIZE
+  let offsetStart = startNodeId - 1
+  let offsetEnd = startNodeId - 1 + CHUNK_SIZE
   let isDone = false
   let fileHandle: any | undefined
 
