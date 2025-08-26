@@ -53,6 +53,15 @@ This command:
 - Overwrites any existing files with the same names
 - *Currently references are not exported. Referred properties are exported as well as properties*.
 
+### Custom Chunk Size
+
+```bash
+npm start -- chunk=50000
+```
+
+- Split each block processing in chunks defined by the chunk size number in records
+- Used to releave JS memory in case of bigger blogs. Use it if you have a big block or are consuming too much memory
+
 ### Combined Options
 
 ```bash
