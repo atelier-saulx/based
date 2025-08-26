@@ -37,13 +37,13 @@ await test('slice string / text', async (t) => {
     // use something long e.g. italy
     name: 'abcdefg',
     b: italy,
-    c: '🤪💩👌⚡️',
+    c: '🤪💩👌⚡️🤪💩👌⚡️',
   })
 
   // const q = await db.query('item', 1).get()
   // equal(q.id, 1)
 
-  await db
+  const x = await db
     .query('item', id1)
     .include('name', {
       end: 3,
@@ -56,6 +56,8 @@ await test('slice string / text', async (t) => {
     })
     .get()
     .inspect()
+
+  console.log(new TextEncoder().encode(x.toObject().c))
 
   // for (let i = 0; i < 100e3; i++) {
   //   db.create('item', {

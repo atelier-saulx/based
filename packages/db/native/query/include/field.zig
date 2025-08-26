@@ -170,7 +170,14 @@ fn parseOptsString(
                     len = value.len - 4;
                 }
                 while (i < len) {
-                    std.debug.print("derp {any} {any} \n", .{ value[i], len });
+                    const charLen = selva.selva_mblen(value[i]);
+
+                    std.debug.print("derp {any} {any} {any} \n", .{ value[i], len, charLen });
+                    // use msb - this will give the size
+                    // skip i until next char
+                    // great success!
+
+                    // export this part of the fn
                     if (value[i] < 129) {
                         if (chars == opts.end) {
                             return value[0..i];
@@ -179,6 +186,7 @@ fn parseOptsString(
                     }
                     i += 1;
                 }
+                return value[0..i];
             }
         }
     }
