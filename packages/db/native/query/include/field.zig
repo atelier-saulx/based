@@ -146,7 +146,7 @@ fn parseOptsString(
                 const v = try ctx.allocator.alloc(u8, opts.end + 2);
                 v[0] = value[0];
                 v[1] = 0;
-                _ = try decompressFirstBytes(value, v[2..]);
+                _ = try decompressFirstBytes(ctx.db, value, v[2..]);
                 return v;
             } else if (value.len - 4 < opts.end + 2) {
                 return value[0 .. value.len - 4];
@@ -160,7 +160,7 @@ fn parseOptsString(
                 const v = try ctx.allocator.alloc(u8, opts.end + 2);
                 v[0] = value[0];
                 v[1] = 0;
-                _ = try decompressFirstBytes(value, v[2..]);
+                _ = try decompressFirstBytes(ctx.db, value, v[2..]);
                 return v;
             } else {
                 var i: usize = 2;
