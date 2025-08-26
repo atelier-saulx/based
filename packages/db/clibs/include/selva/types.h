@@ -49,25 +49,15 @@ struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
         /**
-         * _fields_schema is referenced from the opposite efc and shouldn't be freed.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED = 0x40,
-        /**
          * Skip saving this field while dumping.
          * If the field is of type SELVA_FIELD_TYPE_REFERENCES it's saved
          * regardless of this flag to preserve the original order of references.
-         * However, the meta is only save from one side, i.e. the side that's
-         * not skipped.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
     field_t inverse_field;
     node_type_t dst_node_type;
-    /**
-     * Don't use directly!
-     * Use: `selva_get_edge_field_fields_schema()`
-     */
-    struct SelvaFieldsSchema *_fields_schema;
+    node_type_t meta_node_type;
 };
 
 struct SelvaFieldSchema {

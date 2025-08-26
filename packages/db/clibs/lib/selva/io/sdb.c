@@ -67,9 +67,12 @@
  *
  * **2**
  * - Adds colvec serialization at the end of each range file
+ *
+ * **3**
+ * - Breaking change! meta is now a type
  */
 
-#define SDB_VERSION 2 /*!< Bump this if the serialization format changes. */
+#define SDB_VERSION 3 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
