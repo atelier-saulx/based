@@ -22,7 +22,6 @@ export const configsInvalidateCode = async (
   )
   const typeName = FUNCTION_TYPES[found.config.type]
   let hasExport: boolean = false
-  let hasType: boolean = false
   let isAsync: boolean = false
 
   ts.forEachChild(sourceFile, function walk(node) {
@@ -31,16 +30,6 @@ export const configsInvalidateCode = async (
       node.kind === ts.SyntaxKind.ExportKeyword
     ) {
       hasExport = true
-    }
-
-    if (
-      typeName &&
-      // @ts-ignore
-      node.type?.typeName?.escapedText &&
-      // @ts-ignore
-      node.type?.typeName?.escapedText === typeName
-    ) {
-      hasType = true
     }
 
     if (
@@ -59,30 +48,10 @@ export const configsInvalidateCode = async (
       return
     }
 
-    if (!hasType || !hasExport) {
+    if (!hasExport) {
       ts.forEachChild(node, walk)
     }
   })
-
-  if (!hasType) {
-    context.print
-      .intro(context.i18n('methods.bundling.wrongTypeIntro'))
-      .warning(
-        context.i18n(
-          'methods.bundling.wrongType',
-          found.config.name || found.config.type,
-          Object.values(FUNCTION_TYPES)
-            .map((type) => `'<b>${type}</b>'`)
-            .join(','),
-        ),
-      )
-      .pipe()
-      .warning(
-        `<white><b>${found.config.name}</b> <dim>| ${rel(found.index)}</dim></white>`,
-      )
-
-    return false
-  }
 
   if (!hasExport) {
     context.print
