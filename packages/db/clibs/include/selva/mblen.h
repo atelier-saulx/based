@@ -3,9 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+#include "selva/_export.h"
 #include <stdint.h>
 
-static inline unsigned selva_mblen(char first_byte)
+/***
+ * Get the length of multibyte char.
+ */
+SELVA_EXPORT
+inline unsigned selva_mblen(char first_byte)
+#ifndef __zig
 {
     uint8_t x = first_byte;
     unsigned l = 0;
@@ -22,3 +28,6 @@ static inline unsigned selva_mblen(char first_byte)
 
     return l;
 }
+#else
+;
+#endif /* __zig */
