@@ -2,11 +2,14 @@ import { MessageChannel, Worker, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { DbServer } from '../index.js'
+import native from '../../native.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export abstract class DbWorker {
+  #threadId: BigInt
+
   constructor(
     address: BigInt,
     db: DbServer,
@@ -27,8 +30,11 @@ export abstract class DbWorker {
     })
 
     this.readyPromise = new Promise((resolve) => {
-      const onReady = (msg: string) => {
-        if (msg === 'READY') {
+      const onReady = (msg: { status: string, theadId: BigInt } | any) => {
+        if (msg?.status === 'READY') {
+          // TODO Also call native.destroyThreadCtx() somewhere
+          this.#threadId = msg.threadId
+          native.createThreadCtx(db.dbCtxExternal, this.#threadId)
           this.worker.off('message', onReady)
           resolve(true)
         }
@@ -87,6 +93,8 @@ export abstract class DbWorker {
   }
 
   updateCtx(address: BigInt): Promise<void> {
+    const ctx = native.externalFromInt(address)
+    native.createThreadCtx(ctx, this.#threadId)
     return this.call(address) as Promise<unknown> as Promise<void>
   }
 }

@@ -1,5 +1,5 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { BasedQueryResponse } from '../BasedIterable.js'
+import { BasedQueryResponse } from '../BasedQueryResponse.js'
 import { registerQuery } from '../registerQuery.js'
 import { OnData, OnError, OnClose } from './types.js'
 
@@ -12,7 +12,7 @@ export class SubStore {
   subscribe(q: BasedDbQuery) {
     const onData = (res: Uint8Array) => {
       if (!this.response) {
-        this.response = new BasedQueryResponse(q.id, q.def, res, 0)
+        this.response = new BasedQueryResponse(q.def, res, 0)
       } else {
         this.response.result = res
         this.response.end = res.byteLength

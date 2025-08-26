@@ -1,45 +1,62 @@
-// import { BasedDb } from '../src/index.js'
-// import test from './shared/test.js'
+import { equal } from 'assert'
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
 
-// await test('slice string / text', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => t.backup(db))
+await test('slice string / text', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
 
-//   await db.setSchema({
-//     locales: {
-//       en: {},
-//       it: {},
-//     },
-//     types: {
-//       item: {
-//         props: {
-//           name: 'string',
-//           // body: 'text',
-//           // email: { maxBytes: 20, type: 'string' }, // fix main prop
-//           // items: {
-//           //   items: {
-//           //     ref: 'item',
-//           //     prop: 'items',
-//           //     $edgeName: 'string',
-//           //   },
-//           // },
-//         },
-//       },
-//     },
-//   })
+  await db.setSchema({
+    locales: {
+      en: {},
+      it: {},
+    },
+    types: {
+      item: {
+        props: {
+          x: 'uint32',
+          name: 'string',
+          body: 'text',
+          a: 'string',
+          b: 'string',
+          c: 'string',
+          d: 'string',
+          e: 'string',
+        },
+      },
+    },
+  })
 
-//   const id1 = await db.create('item', {
-//     // first uncompressed then compressed!
-//     // use something long e.g. italy
-//     name: 'mr flaperinus is here for you and me!',
-//   })
+  const id1 = await db.create('item', {
+    // first uncompressed then compressed!
+    // use something long e.g. italy
+    name: 'mr flaperinus is here for you and me!',
+  })
 
-//   await db
-//     .query('item')
-//     .include('name', { start: 0, end: 5 })
-//     .get()
-//     .inspect(10, true)
-// })
+  const q = await db.query('item', 1).get()
+  equal(q.id, 1)
+
+  for (let i = 0; i < 100e3; i++) {
+    db.create('item', {
+      x: i,
+      name: `Name ${i}`,
+      a: 'a',
+      b: 'b',
+      c: 'c',
+      d: 'd',
+      e: 'e',
+      body: { it: `It ${i}`, en: `En ${i}` },
+    })
+  }
+
+  console.log(await db.drain())
+  await db
+    .query('item')
+    // .include('name', { start: 0, end: 5 })
+    .range(0, 1e6)
+    .get()
+    .inspect()
+})

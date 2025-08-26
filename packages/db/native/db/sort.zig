@@ -241,7 +241,7 @@ pub fn createSortIndex(
             fieldSchema,
             prop,
         );
-        insert(sortIndex, data, node.?);
+        insert(dbCtx, sortIndex, data, node.?);
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -300,7 +300,7 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(data: []u8, out: []u8) [*]u8 {
+inline fn parseString(ctx: *db.DbCtx, data: []u8, out: []u8) [*]u8 {
     if (data.len <= 6) {
         return out.ptr;
     } else if (data.len < SIZE + 6) {
@@ -313,7 +313,7 @@ inline fn parseString(data: []u8, out: []u8) [*]u8 {
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
-        const res = decompressFirstBytes(data, out) catch out;
+        const res = decompressFirstBytes(ctx, data, out) catch out;
         return res.ptr;
     }
 }
@@ -339,6 +339,7 @@ inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, nod
 }
 
 pub fn remove(
+    ctx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -363,7 +364,7 @@ pub fn remove(
                 );
             } else {
                 var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                selva.selva_sort_remove_buf(index, parseString(data, &buf), SIZE, node);
+                selva.selva_sort_remove_buf(index, parseString(ctx, data, &buf), SIZE, node);
             }
         },
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
@@ -389,6 +390,7 @@ inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: d
 }
 
 pub fn insert(
+    ctx: *db.DbCtx,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -413,7 +415,7 @@ pub fn insert(
                 );
             } else {
                 var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                const str = parseString(data, &buf);
+                const str = parseString(ctx, data, &buf);
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },

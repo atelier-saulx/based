@@ -58,17 +58,9 @@ export function writeBinary(
   if (value === null) {
     size = 0
   } else {
-    if (t.transform) {
-      // validation happens before
-      if (!value || !t.validation(value, t)) {
-        return new ModifyError(t, value)
-      }
-      value = getBuffer(t.transform(MOD_OPS_TO_STRING[modifyOp], value))
-    } else {
-      value = getBuffer(value)
-      if (!value || !t.validation(value, t)) {
-        return new ModifyError(t, value)
-      }
+    value = getBuffer(value)
+    if (!value || !t.validation(value, t)) {
+      return new ModifyError(t, value)
     }
     size = value.byteLength + 6
   }

@@ -24,11 +24,11 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
             if (currentData == null) {
                 currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             }
-            sort.remove(entry.value_ptr.*, currentData.?, ctx.node.?);
+            sort.remove(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
         }
     } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-        sort.remove(ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
@@ -43,7 +43,7 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
                     ctx.fieldType,
                     sortIndex.langCode,
                 );
-                sort.remove(sortIndex, t, ctx.node.?);
+                sort.remove(ctx.db, sortIndex, t, ctx.node.?);
             }
         }
     }
@@ -57,8 +57,8 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
             const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-            sort.remove(ctx.currentSortIndex.?, currentData, ctx.node.?);
-            sort.insert(ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
+            sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+            sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == types.Prop.TEXT) {
             var it = ctx.typeSortIndex.?.text.iterator();
             while (it.next()) |entry| {
@@ -72,8 +72,8 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                         ctx.fieldType,
                         sortIndex.langCode,
                     );
-                    sort.remove(sortIndex, t, ctx.node.?);
-                    sort.insert(sortIndex, sort.EMPTY_SLICE, ctx.node.?);
+                    sort.remove(ctx.db, sortIndex, t, ctx.node.?);
+                    sort.insert(ctx.db, sortIndex, sort.EMPTY_SLICE, ctx.node.?);
                 }
             }
         }
@@ -109,8 +109,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
     if (t.len >= 6) {
         const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
         if (sortIndex) |sI| {
-            sort.remove(sI, t, ctx.node.?);
-            sort.insert(sI, sort.EMPTY_SLICE, ctx.node.?);
+            sort.remove(ctx.db, sI, t, ctx.node.?);
+            sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
         }
         _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN);
     }

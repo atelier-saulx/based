@@ -6,7 +6,7 @@ const DECODER = new TextDecoder('utf-8')
 const ENCODER = new TextEncoder()
 
 const selvaIoErrlog = new Uint8Array(256)
-var compressor = db.createCompressor() // put on threadCtx
+var compressor = db.createCompressor()
 var decompressor = db.createDecompressor()
 
 function SelvaIoErrlogToString(buf: Uint8Array) {
@@ -15,16 +15,17 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
-// add worker CTX HERE
-// then add it to every function
-// worker should allways be here
-// then add ThreadCtx to modify ctx and query ctx
-
 const native = {
-  threadCtx: null, // add compressors here as well!
+  getThreadId: (): BigInt => {
+    return db.getThreadId()
+  },
 
-  workerCtxInit: (): void => {
-    return db.workerCtxInit()
+  createThreadCtx: (dbCtx: any, threadId: BigInt): void => {
+    db.createThreadCtx(dbCtx, threadId)
+  },
+
+  destroyThreadCtx: (dbCtx: any, threadId: BigInt): void => {
+    db.destroyThreadCtx(dbCtx, threadId)
   },
 
   externalFromInt(address: BigInt): any {

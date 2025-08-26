@@ -47,9 +47,6 @@ export function writeString(
     if (!t.validation(value, t)) {
       return new ModifyError(t, value)
     }
-    if (t.transform) {
-      value = t.transform(MOD_OPS_TO_STRING[modifyOp], value)
-    }
     let size = isBuffer
       ? // @ts-ignore
         value.byteLength

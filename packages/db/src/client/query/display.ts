@@ -13,7 +13,7 @@ import {
   TIMESTAMP,
   TypeIndex,
 } from '@based/schema/def'
-import { BasedQueryResponse } from './BasedIterable.js'
+import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '@based/utils'
 import { AggregateType } from './aggregates/types.js'
 

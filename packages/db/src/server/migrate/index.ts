@@ -126,11 +126,9 @@ export const migrate = async (
       to: toAddress,
       fromSchema: serialize(fromSchema, {
         stripMetaInformation: true,
-        stripTransform: true,
       }),
       toSchema: serialize(toSchema, {
         stripMetaInformation: true,
-        stripTransform: true,
       }),
       channel: port2,
       workerState,

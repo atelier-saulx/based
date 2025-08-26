@@ -184,64 +184,6 @@ test('Simple shared prop', () => {
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
 
-test('transform', () => {
-  const basicSchema: StrictSchema = parse({
-    types: {
-      article: {
-        props: {
-          body: {
-            type: 'string',
-            transform: (type, value) => {
-              if (type !== 'read') {
-                return 'derp!'
-              }
-              return value
-            },
-          },
-        },
-      },
-    },
-  }).schema
-
-  const serialized = serialize(basicSchema)
-  const deserialized = deSerialize(serialized)
-  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
-})
-
-test('transform with method', () => {
-  const basicSchema: StrictSchema = parse({
-    types: {
-      article: {
-        props: {
-          body: {
-            type: 'string',
-            transform(type, value) {
-              if (type !== 'read') {
-                return 'derp!'
-              }
-              return value
-            },
-          },
-          x: {
-            type: 'string',
-            // @ts-ignore
-            transform(type, value) {
-              if (type !== 'read') {
-                return 'derp!'
-              }
-              return value
-            },
-          },
-        },
-      },
-    },
-  }).schema
-
-  const serialized = serialize(basicSchema)
-  const deserialized = deSerialize(serialized)
-  ok(deepEqual(basicSchema, deserialized), 'Mismatch')
-})
-
 test('empty schema', () => {
   const serialized = serialize({})
   const deserialized = deSerialize(serialized)

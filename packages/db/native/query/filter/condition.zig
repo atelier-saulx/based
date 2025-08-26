@@ -11,9 +11,11 @@ const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const Prop = @import("../../types.zig").Prop;
 const selva = @import("../../selva.zig");
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
-pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
     const next = i + 11 + valueSize;
@@ -47,13 +49,13 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             j += size + 2;
         }
         return .{ next, false };
-    } else if (has.has(true, op, prop, value, query, mainLen)) {
+    } else if (has.has(decompressor, blockState, true, op, prop, value, query, mainLen)) {
         return .{ next, true };
     }
     return .{ next, false };
 }
 
-pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
@@ -100,6 +102,8 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         }
     } else if (isText) {
         if (!has.has(
+            decompressor,
+            blockState,
             false,
             op,
             prop,
@@ -110,6 +114,8 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             pass = false;
         }
     } else if (!has.has(
+        decompressor,
+        blockState,
         false,
         op,
         prop,

@@ -73,8 +73,7 @@ OBJ := \
 	vector/vl1.o \
 	vector/vl2s.o \
 	vector/vsc.o \
-	version.o \
-	worker_ctx.o
+	version.o
 
 ifeq ($(uname_M),x86_64)
 OBJ += \

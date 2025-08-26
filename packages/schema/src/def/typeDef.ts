@@ -204,10 +204,6 @@ export const createSchemaTypeDef = (
         prop: isseparate ? ++result.cnt : 0,
       }
 
-      if (schemaProp.transform) {
-        prop.transform = schemaProp.transform
-      }
-
       if (schemaProp.max !== undefined) {
         prop.max = parseMinMaxStep(schemaProp.max)
       }

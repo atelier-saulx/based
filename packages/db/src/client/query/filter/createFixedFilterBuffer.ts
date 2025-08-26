@@ -25,9 +25,6 @@ export const writeFixed = (
   size: number,
   offset: number,
 ) => {
-  if (prop.transform) {
-    value = prop.transform('filter', value)
-  }
   if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
     if (typeof value === 'string') {
       const { written } = ENCODER.encodeInto(value, buf.subarray(offset + 1))

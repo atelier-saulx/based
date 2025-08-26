@@ -1,4 +1,5 @@
 const db = @import("../../db/db.zig");
+const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const dbSort = @import("../../db/sort.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
@@ -44,7 +45,7 @@ pub fn sort(
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, fieldSchema, sortProp);
-        dbSort.insert(&metaSortIndex, value, node.?);
+        dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
     }
     // ------------------------------
     var it: selva.SelvaSortIterator = undefined;
@@ -123,6 +124,10 @@ pub fn search(
     include: []u8,
     searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
+    const tctx = try getThreadCtx(ctx.db);
+    const decompressor = tctx.decompressor;
+    const blockState = tctx.libdeflateBlockState;
+
     const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
     var searchCtxC = s.createSearchCtx(isVector, 0);
@@ -133,6 +138,8 @@ pub fn search(
             break :checkItem;
         }
         s.addToScore(
+            decompressor,
+            blockState,
             isVector,
             ctx,
             &searchCtxC,

@@ -43,24 +43,27 @@ await test('partial', async (t) => {
   const events1 = await db2.query('event').include('extId').range(0, 10).get().toObject()
   deepEqual(events1, [])
 
-  await db2.server.loadBlock('event', 1)
-  const events2 = await db2.query('event').include('extId').range(0, 10).get().toObject()
-  deepEqual(events2, [
-    { id: 1, extId: 100 },
-    { id: 2, extId: 100 },
-    { id: 3, extId: 100 },
-    { id: 4, extId: 100 },
-    { id: 5, extId: 100 },
-    { id: 6, extId: 100 },
-    { id: 7, extId: 100 },
-    { id: 8, extId: 100 },
-    { id: 9, extId: 100 },
-    { id: 10, extId: 100 }
-  ])
+  for (let i = 1; i < 3 * 1025; i += 1025) {
+    await db2.server.loadBlock('event', i)
+    const events2 = await db2.query('event').include('extId').range(0, 10).get().toObject()
+    deepEqual(events2, [
+      { id: i + 0, extId: 100 },
+      { id: i + 1, extId: 100 },
+      { id: i + 2, extId: 100 },
+      { id: i + 3, extId: 100 },
+      { id: i + 4, extId: 100 },
+      { id: i + 5, extId: 100 },
+      { id: i + 6, extId: 100 },
+      { id: i + 7, extId: 100 },
+      { id: i + 8, extId: 100 },
+      { id: i + 9, extId: 100 }
+    ])
+    //db2.server.verifTree.foreachBlock((block) => console.log(block))
 
-  await db2.server.unloadBlock('event', 1)
-  const events3 = await db2.query('event').include('extId').range(0, 10).get().toObject()
-  deepEqual(events3, [])
+    await db2.server.unloadBlock('event', i)
+    const events3 = await db2.query('event').include('extId').range(0, 10).get().toObject()
+    deepEqual(events3, [])
+  }
 })
 
 await test('invalid partial type', async (t) => {
