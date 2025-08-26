@@ -402,38 +402,10 @@ extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(
 
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
 {
-    struct SelvaFieldsSchema *schema = efc->_fields_schema;
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->meta_node_type);
+    const struct SelvaNodeSchema *ns = selva_get_ns_by_te(te);
 
-    if (!schema && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
-        /*
-         * Schema not found on this side, try the dst_type.
-         */
-        struct SelvaTypeEntry *type_dst;
-        const struct SelvaFieldSchema *dst_fs;
-
-        type_dst = selva_get_type_by_index(db, efc->dst_node_type);
-#if 0
-        assert(type_dst);
-#endif
-        dst_fs = selva_get_fs_by_ns_field(&type_dst->ns, efc->inverse_field);
-        assert(dst_fs->type == SELVA_FIELD_TYPE_REFERENCE || dst_fs->type == SELVA_FIELD_TYPE_REFERENCES);
-        schema = dst_fs->edge_constraint._fields_schema;
-
-        /**
-         * Cache the result.
-         * RFE This is not very optimal and nice way to do this but currently
-         * it's not very easy to prepare these links in schemabuf_parse_ns()
-         * because the type lookup index is not built there and it's
-         * likely incomplete until all types have been created.
-         * The flag can be safely set here even if `schema` is nullptr to
-         * speed up future lookups.
-         */
-        struct EdgeFieldConstraint *efcm = (struct EdgeFieldConstraint *)efc;
-        efcm->_fields_schema = schema;
-        efcm->flags |= EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED;
-    }
-
-    return schema;
+    return &ns->fields_schema;
 }
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
