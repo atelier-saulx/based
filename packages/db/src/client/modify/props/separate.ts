@@ -15,6 +15,12 @@ import { Ctx } from '../Ctx.js'
 import { writeReference } from './reference.js'
 import { writeString } from './string.js'
 import { writeText } from './text.js'
+import { writeReferences } from './references.js'
+import { writeBinary } from './binary.js'
+import { writeAlias } from './alias.js'
+import { writeCardinality } from './cardinality.js'
+import { writeVector } from './vector.js'
+import { writeJson } from './json.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
@@ -25,16 +31,16 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   } else if (type === REFERENCE) {
     writeReference(ctx, def, val)
   } else if (type === REFERENCES) {
-    // writeReferences(val, ctx, schema, def, res, mod)
+    writeReferences(ctx, def, val)
   } else if (type === BINARY) {
-    // writeBinary(val, ctx, schema, def, res.tmpId, mod)
+    writeBinary(ctx, def, val)
   } else if (type === ALIAS) {
-    // writeAlias(val, ctx, schema, def, res.tmpId, mod)
+    writeAlias(ctx, def, val)
   } else if (type === CARDINALITY) {
-    // writeHll(val, ctx, schema, def, res.tmpId, mod)
+    writeCardinality(ctx, def, val)
   } else if (type === VECTOR || type === COLVEC) {
-    // writeVector(val, ctx, schema, def, res.tmpId, mod)
+    writeVector(ctx, def, val)
   } else if (type === JSON) {
-    // writeJson(val, ctx, schema, def, res.tmpId, mod)
+    writeJson(ctx, def, val)
   }
 }

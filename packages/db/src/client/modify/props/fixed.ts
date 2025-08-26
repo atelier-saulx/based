@@ -15,17 +15,11 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import {
-  convertToTimestamp,
-  writeInt64,
-  writeUint32,
-  writeUint16,
-  writeInt32,
-  writeInt16,
-  ENCODER,
-} from '@based/utils'
+import { convertToTimestamp, ENCODER } from '@based/utils'
 import { getBuffer } from './binary.js'
-import { reserve, resize } from '../resize.js'
+import { reserve } from '../resize.js'
+import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.js'
+import { validate } from '../validate.js'
 
 const map: Record<
   number,
@@ -33,16 +27,11 @@ const map: Record<
 > = {}
 
 map[BINARY] = (ctx, val, def) => {
-  const buf = getBuffer(val)
-  if (buf === undefined || !def.validation(val, def)) {
-    throw [def, val]
-  }
-  const size = buf.byteLength
-  const end = ctx.index + size + 1
-  resize(ctx, end)
-  ctx.array[ctx.index] = size
-  ctx.array.set(buf, ctx.index + 1)
-  ctx.index = end
+  val = getBuffer(val)
+  validate(def, val)
+  reserve(ctx, val.byteLength + 1)
+  writeU8(ctx, val.byteLength)
+  writeU8Array(ctx, val)
 }
 
 map[STRING] = (ctx, val, def) => {
@@ -51,57 +40,40 @@ map[STRING] = (ctx, val, def) => {
   if (size + 1 > def.len) {
     throw [def, val, `max length of ${def.len - 1},`]
   }
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, size + 1)
   const fullSize = def.len - 1
   ctx.array[ctx.index] = size
   ctx.array.set(valBuf, ctx.index + 1)
   ctx.index += fullSize + 1
-
   if (fullSize !== size) {
     ctx.array.fill(0, ctx.index - (fullSize - size), ctx.index)
   }
 }
 
 map[BOOLEAN] = (ctx, val, def) => {
-  if (val === null) {
-    val = def.default
-  }
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
-  if (typeof val !== 'boolean') {
-    throw [def, val]
-  }
+  val ??= def.default
+  validate(def, val)
   reserve(ctx, 1)
-  ctx.array[ctx.index] = val ? 1 : 0
-  ctx.index += 1
+  writeU8(ctx, val ? 1 : 0)
 }
 
 map[ENUM] = (ctx, val, def) => {
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   if (val === null) {
     reserve(ctx, 1)
-    ctx.array[ctx.index] = def.default
+    writeU8(ctx, def.default)
   } else if (val in def.reverseEnum) {
     reserve(ctx, 1)
-    ctx.array[ctx.index] = def.reverseEnum[val] + 1
+    writeU8(ctx, def.reverseEnum[val] + 1)
   } else {
     throw [def, val]
   }
-
-  ctx.index += 1
 }
 
 map[NUMBER] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   const view = new DataView(
     ctx.array.buffer,
     ctx.array.byteOffset + ctx.index,
@@ -115,62 +87,44 @@ map[NUMBER] = (ctx, val, def) => {
 map[TIMESTAMP] = (ctx, val, def) => {
   val ??= def.default
   const parsedValue = convertToTimestamp(val)
-  if (!def.validation(parsedValue, def)) {
-    throw [def, val]
-  }
+  validate(def, parsedValue)
   reserve(ctx, 8)
-  writeInt64(ctx.array, parsedValue, ctx.index)
-  ctx.index += 8
+  writeU64(ctx, parsedValue)
 }
 
 map[UINT32] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, 4)
-  writeUint32(ctx.array, val, ctx.index)
-  ctx.index += 4
+  writeU32(ctx, val)
 }
 
 map[UINT16] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, 2)
-  writeUint16(ctx.array, val, ctx.index)
-  ctx.index += 2
+  writeU16(ctx, val)
 }
 
 map[UINT8] = map[INT8] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, 1)
-  ctx.array[ctx.index] = val
-  ctx.index += 1
+  writeU8(ctx, val)
 }
 
 map[INT32] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, 4)
-  writeInt32(ctx.array, val, ctx.index)
-  ctx.index += 4
+  writeU32(ctx, val)
 }
 
 map[INT16] = (ctx, val, def) => {
   val ??= def.default
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
+  validate(def, val)
   reserve(ctx, 2)
-  writeInt16(ctx.array, val, ctx.index)
-  ctx.index += 2
+  writeU16(ctx, val)
 }
 
 export const writeFixed = (

@@ -1,6 +1,6 @@
 import { PropDefEdge, REFERENCES } from '@based/schema/def'
-import { Ctx } from '../../Ctx.js'
-import { reserve } from '../../resize.js'
+import { Ctx } from '../Ctx.js'
+import { reserve } from '../resize.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 

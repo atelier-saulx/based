@@ -1,7 +1,7 @@
 import { PropDefEdge, STRING } from '@based/schema/def'
-import { Ctx } from '../../Ctx.js'
-import { reserve, resize } from '../../resize.js'
-import { getBuffer, writeBinaryRaw } from '../binary.js'
+import { Ctx } from '../Ctx.js'
+import { reserve, resize } from '../resize.js'
+import { getBuffer, writeBinaryRaw } from '../props/binary.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 

@@ -1,9 +1,9 @@
 import { PropDefEdge, STRING } from '@based/schema/def'
 import { ENCODER } from '@based/utils'
-import { write } from '../../../string.js'
-import { Ctx } from '../../Ctx.js'
-import { reserve } from '../../resize.js'
-import { RANGE_ERR } from '../../types.js'
+import { write } from '../../string.js'
+import { Ctx } from '../Ctx.js'
+import { reserve } from '../resize.js'
+import { RANGE_ERR } from '../types.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 

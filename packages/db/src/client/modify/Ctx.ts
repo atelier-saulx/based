@@ -1,7 +1,7 @@
 import { writeUint64 } from '@based/utils'
 import type { SchemaTypeDef, PropDef } from '@based/schema/def'
 import type { LangCode } from '@based/schema'
-import type { ModifyOp } from './types.js'
+import { RANGE_ERR, type ModifyOp } from './types.js'
 import type { Tmp } from './Tmp.js'
 
 export class Ctx {
@@ -23,17 +23,17 @@ export class Ctx {
   scheduled: boolean
   created: Record<number, number> = {} // <typeId, count
   locale: LangCode
-  batch: {
-    promises?: Tmp[]
-    offsets?: Record<number, number>
-  } = {}
+  sort?: number
+  sortText?: number
+  defaults?: number
   cursor: {
     id?: number
     type?: number
     prop?: number
     main?: number
-    sort?: number
-    sortText?: number
-    defaults?: number
+  } = {}
+  batch: {
+    promises?: Tmp[]
+    offsets?: Record<number, number>
   } = {}
 }

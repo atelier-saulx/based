@@ -6,7 +6,7 @@ import {
   REFERENCES,
   CARDINALITY,
 } from '@based/schema/def'
-import { Ctx } from '../../Ctx.js'
+import { Ctx } from '../Ctx.js'
 import { writeBinaryEdge } from './binary.js'
 import { writeStringEdge } from './string.js'
 import { writeReferenceEdge } from './reference.js'

@@ -1,12 +1,12 @@
 import { PropDef, PropDefEdge } from '@based/schema/def'
-import { Ctx } from '../../Ctx.js'
+import { Ctx } from '../Ctx.js'
 import { writeSeparateEdge } from './separate.js'
-import { DECREMENT, INCREMENT, UPDATE } from '../../types.js'
+import { DECREMENT, INCREMENT, UPDATE } from '../types.js'
 import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
 import { writeU16, writeU32 } from '../uint.js'
-import { writeFixed } from '../fixed.js'
-import { writeUint16 } from '@based/utils'
-import { reserve } from '../../resize.js'
+import { writeFixed } from '../props/fixed.js'
+import { writeUint16, writeUint32 } from '@based/utils'
+import { reserve } from '../resize.js'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {
@@ -26,6 +26,10 @@ export const writeEdges = (
   def: PropDef,
   obj: Record<string, any>,
 ) => {
+  const index = ctx.index
+  ctx.index += 4
+  const start = ctx.index
+
   let hasIncr = false
   let mainSize = 0
   let mainFields: (PropDefEdge | any | EdgeOperation)[]
@@ -126,4 +130,7 @@ export const writeEdges = (
       ctx.index = startMain + def.edgeMainLen
     }
   }
+
+  const size = ctx.index - start
+  writeUint32(ctx.array, size, index)
 }

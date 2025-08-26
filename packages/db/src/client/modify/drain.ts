@@ -1,5 +1,5 @@
 import { writeUint16, writeUint32 } from '@based/utils'
-import { DbClient } from '../../index.js'
+import { DbClient, DbClientHooks } from '../../index.js'
 import { Ctx } from './Ctx.js'
 import { resolveTmp } from './Tmp.js'
 
@@ -21,14 +21,13 @@ export const consume = (ctx: Ctx) => {
   return payload
 }
 
-export const drain = (db: DbClient, ctx: Ctx) => {
+export const drain = (ctx: Ctx, flushModify: DbClientHooks['flushModify']) => {
   if (ctx.index > 8) {
     const { batch } = ctx
     const payload = consume(ctx)
-    ctx.draining = db.hooks
-      .flushModify(payload)
+    ctx.draining = flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {
-        db.writeTime += dbWriteTime ?? 0
+        // db.writeTime += dbWriteTime ?? 0
         batch.offsets = offsets
         batch.promises?.forEach(resolveTmp)
         batch.promises = null
@@ -36,26 +35,26 @@ export const drain = (db: DbClient, ctx: Ctx) => {
       .catch(console.error)
       .finally(() => {
         ctx.draining = null
-        return drain(db, ctx)
+        return drain(ctx, flushModify)
       })
   }
   return ctx.draining
 }
 
-export const schedule = (db: DbClient, ctx: Ctx) => {
-  if (ctx.scheduled) {
-    return
-  }
-  ctx.scheduled = true
-  if (db.flushTime === 0) {
-    process.nextTick(() => {
-      ctx.scheduled = false
-      drain(db, ctx)
-    })
-  } else {
-    setTimeout(() => {
-      ctx.scheduled = false
-      drain(db, ctx)
-    }, db.flushTime)
-  }
-}
+// export const schedule = (db: DbClient, ctx: Ctx) => {
+//   if (ctx.scheduled) {
+//     return
+//   }
+//   ctx.scheduled = true
+//   if (db.flushTime === 0) {
+//     process.nextTick(() => {
+//       ctx.scheduled = false
+//       drain(db, ctx)
+//     })
+//   } else {
+//     setTimeout(() => {
+//       ctx.scheduled = false
+//       drain(db, ctx)
+//     }, db.flushTime)
+//   }
+// }

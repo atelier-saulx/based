@@ -1,6 +1,6 @@
 import { MICRO_BUFFER, PropDefEdge } from '@based/schema/def'
-import { Ctx } from '../../Ctx.js'
-import { UPDATE, UPDATE_PARTIAL } from '../../types.js'
+import { Ctx } from '../Ctx.js'
+import { UPDATE, UPDATE_PARTIAL } from '../types.js'
 
 export const writeEdgeHeader = (ctx: Ctx, edge: PropDefEdge, type: number) => {
   ctx.array[ctx.index] = UPDATE

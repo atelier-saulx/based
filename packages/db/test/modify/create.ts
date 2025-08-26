@@ -1,6 +1,6 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
-import { create } from '../../src/client/modify/create.js'
+import { create } from '../../src/client/modify/create/index.js'
 import { Ctx } from '../../src/client/modify/Ctx.js'
 import { drain } from '../../src/client/modify/drain.js'
 import { deepEqual } from '../shared/assert.js'

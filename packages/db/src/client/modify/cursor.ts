@@ -1,14 +1,15 @@
 import { MICRO_BUFFER, PropDef } from '@based/schema/def'
 import { writeUint32 } from '@based/utils'
+import { Ctx } from './Ctx.js'
 import {
   SWITCH_TYPE,
   SWITCH_FIELD,
   CREATE,
   SWITCH_ID_CREATE,
   SWITCH_ID_UPDATE,
-} from '../../_modify/types.js'
-import { Ctx } from '../Ctx.js'
+} from './types.js'
 
+export const TYPE_CURSOR_SIZE = 3
 export const writeTypeCursor = (ctx: Ctx) => {
   if (ctx.schema.id !== ctx.cursor.type) {
     ctx.array[ctx.index] = SWITCH_TYPE // switch node type
@@ -21,6 +22,7 @@ export const writeTypeCursor = (ctx: Ctx) => {
   }
 }
 
+export const PROP_CURSOR_SIZE = 3
 export const writePropCursor = (ctx: Ctx, def: PropDef) => {
   if (def.prop !== ctx.cursor.prop) {
     ctx.array[ctx.index] = SWITCH_FIELD
@@ -29,6 +31,11 @@ export const writePropCursor = (ctx: Ctx, def: PropDef) => {
     ctx.index += 3
     ctx.cursor.prop = def.prop
   }
+}
+
+export const resetPropCursor = (ctx: Ctx, def: PropDef) => {
+  ctx.cursor.prop = null
+  writePropCursor(ctx, def)
 }
 
 export const writeMainCursor = (ctx: Ctx) => {
@@ -41,6 +48,7 @@ export const writeMainCursor = (ctx: Ctx) => {
   }
 }
 
+export const NODE_CURSOR_SIZE = 5
 export const writeNodeCursor = (ctx: Ctx) => {
   if (ctx.id !== ctx.cursor.id) {
     ctx.array[ctx.index] =
