@@ -44,9 +44,6 @@
               (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
-static __thread struct libdeflate_compressor *compressor;
-static __thread struct libdeflate_decompressor *decompressor;
-
 /**
  * Test that only one or none of excl flags are set in flags.
  */
@@ -88,14 +85,14 @@ static inline char *get_buf(const struct selva_string *s)
  * buffer. must_free is set to indicate that the returned buffer must be freed
  * with selva_free().
  */
-static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, bool *must_free)
+static char *get_comparable_buf(struct libdeflate_decompressor *decompressor, const struct selva_string *s, size_t *buf_len, bool *must_free)
 {
     size_t len = selva_string_getz_ulen(s);
     char *buf;
 
     if (s->flags & SELVA_STRING_COMPRESS) {
         buf = selva_malloc(len);
-        selva_string_decompress(s, buf); /* RFE Should we return a NULL on error? */
+        selva_string_decompress(decompressor, s, buf); /* RFE Should we return a NULL on error? */
         buf[len] = '\0';
         *must_free = true;
     } else {
@@ -374,7 +371,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
     return s;
 }
 
-struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
+struct selva_string *selva_string_createz(struct libdeflate_compressor *compressor, const char *in_str, size_t in_len, enum selva_string_flags flags)
 {
     const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
     struct selva_string *s;
@@ -428,7 +425,7 @@ static const void *get_compressed_data(const struct selva_string *s, size_t *com
     return buf + sizeof(hdr);
 }
 
-int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
+int selva_string_decompress(struct libdeflate_decompressor *decompressor, const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
         const void *data;
@@ -799,16 +796,16 @@ void selva_string_set_compress(struct selva_string *s)
     s->flags |= SELVA_STRING_COMPRESS;
 }
 
-static int selva_string_cmp_unz(const struct selva_string *a, const struct selva_string *b)
+static int selva_string_cmp_unz(struct libdeflate_decompressor *, const struct selva_string *a, const struct selva_string *b)
 {
     return strcmp(get_buf(a), get_buf(b));
 }
 
-static int selva_string_cmp_shortz(const struct selva_string *a, const struct selva_string *b)
+static int selva_string_cmp_shortz(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b)
 {
     bool must_free_a, must_free_b;
-    char *a_str = get_comparable_buf(a, nullptr, &must_free_a);
-    char *b_str = get_comparable_buf(b, nullptr, &must_free_b);
+    char *a_str = get_comparable_buf(decompressor, a, nullptr, &must_free_a);
+    char *b_str = get_comparable_buf(decompressor, b, nullptr, &must_free_b);
     int res;
 
     res = strcmp(a_str, b_str);
@@ -823,14 +820,14 @@ static int selva_string_cmp_shortz(const struct selva_string *a, const struct se
     return res;
 }
 
-static int selva_string_cmp_alongz(const struct selva_string *a, const struct selva_string *b)
+static int selva_string_cmp_alongz(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b)
 {
     size_t a_zlen;
     size_t a_ulen;
     const char *a_zstr = get_compressed_data(a, &a_zlen, &a_ulen);
     bool must_free_b;
     size_t b_ulen;
-    char *b_str = get_comparable_buf(b, &b_ulen, &must_free_b);
+    char *b_str = get_comparable_buf(decompressor, b, &b_ulen, &must_free_b);
     struct libdeflate_block_state state;
     int res;
 
@@ -845,9 +842,9 @@ static int selva_string_cmp_alongz(const struct selva_string *a, const struct se
     return res;
 }
 
-static int selva_string_cmp_blongz(const struct selva_string *a, const struct selva_string *b)
+static int selva_string_cmp_blongz(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b)
 {
-    return selva_string_cmp_alongz(b, a);
+    return selva_string_cmp_alongz(decompressor, b, a);
 }
 
 /**
@@ -858,7 +855,7 @@ static int selva_string_cmp_blongz(const struct selva_string *a, const struct se
  * - 3: b_len > DEFLATE_STRINGS_THRESHOLD_SIZE
  * - 4: b >= a
  */
-static int (*const selva_string_cmp_fn[])(const struct selva_string *a, const struct selva_string *b) = {
+static int (*const selva_string_cmp_fn[])(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b) = {
     [0x00] = selva_string_cmp_unz, /* 00000, neither is compressed and b < a. */
     [0x04] = selva_string_cmp_unz, /* 00100. */
     [0x08] = selva_string_cmp_unz, /* 01000. */
@@ -893,7 +890,7 @@ static int (*const selva_string_cmp_fn[])(const struct selva_string *a, const st
     [0x1f] = selva_string_cmp_blongz, /* 11111, a and b are compressed and uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b >= a. */
 };
 
-int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
+int selva_string_cmp(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b)
 {
     const unsigned z = (!!(a->flags & SELVA_STRING_COMPRESS)) | ((!!(b->flags & SELVA_STRING_COMPRESS)) << 1);
     const size_t a_ulen = selva_string_getz_ulen(a);
@@ -903,7 +900,11 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     const unsigned bgea = (b_ulen >= a_ulen) << 4;
     unsigned selector = z | aget | bget | bgea;
 
-    return selva_string_cmp_fn[selector](a, b);
+    if (z && !decompressor) {
+        return 0;
+    }
+
+    return selva_string_cmp_fn[selector](decompressor, a, b);
 }
 
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
@@ -916,7 +917,7 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     }
 
     bool must_free;
-    char *str = get_comparable_buf(s, nullptr, &must_free);
+    char *str = get_comparable_buf(nullptr, s, nullptr, &must_free); /* TODO No support for compressed for now. */
     int res = !memcmp(str + len - lensuffix, suffix, lensuffix);
 
     if (must_free) {
@@ -924,32 +925,4 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     }
 
     return res;
-}
-
-void selva_string_init_tls(void)
-{
-    assert(!compressor && !decompressor);
-
-    /*
-     * TODO How to configure compression level?
-     * This is now the same as in native/string.zig, hopefully...
-     */
-    compressor = libdeflate_alloc_compressor(3);
-    if (!compressor) {
-        abort();
-    }
-
-    decompressor = libdeflate_alloc_decompressor();
-    if (!decompressor) {
-        abort();
-    }
-}
-
-void selva_string_deinit_tls(void)
-{
-    libdeflate_free_compressor(compressor);
-    compressor = nullptr;
-
-    libdeflate_free_decompressor(decompressor);
-    decompressor = nullptr;
 }

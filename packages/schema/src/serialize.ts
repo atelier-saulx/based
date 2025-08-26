@@ -166,7 +166,6 @@ type Opts = {
   // deflate?: boolean
   readOnly?: boolean
   stripMetaInformation?: boolean
-  stripTransform?: boolean
 }
 
 const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
@@ -268,13 +267,6 @@ const walk = (
   } else {
     for (const key in obj) {
       if (
-        opts.stripTransform &&
-        isFromObj &&
-        key === 'transform' &&
-        typeof obj[key] === 'function'
-      ) {
-        continue
-      } else if (
         opts.readOnly &&
         isFromObj &&
         (key === 'validation' || key === 'default')

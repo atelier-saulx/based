@@ -3,14 +3,12 @@ import { nextTick } from 'node:process'
 import native from '../../native.js'
 
 let dbCtx: any
-let wCtx: any // This must be held until the worker exits otherwise the ctx will be autofreed instantly
 
 if (isMainThread) {
   console.warn(`running a worker in the mainthread - incorrect`)
 } else if (workerData?.isDbWorker) {
   let { address } = workerData
   dbCtx = native.externalFromInt(address)
-  wCtx = native.workerCtxInit()
 } else {
   console.info('incorrect worker db query')
 }
@@ -31,9 +29,13 @@ export function registerMsgHandler(
       if (typeof msg === 'bigint') {
         if (msg === 0n) {
           // terminate
-          nextTick(() =>
-            typeof self === 'undefined' ? process.exit() : self.close(),
-          )
+          nextTick(() => {
+            if (typeof self === 'undefined') {
+              process.exit()
+            } else {
+              self.close()
+            }
+          })
           channel.postMessage(null)
         } else {
           // it's a ctx address
@@ -51,5 +53,5 @@ export function registerMsgHandler(
   }
 
   channel.on('message', handleMsg)
-  parentPort.postMessage('READY')
+  parentPort.postMessage({ status: 'READY', threadId: native.getThreadId() })
 }

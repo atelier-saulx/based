@@ -24,10 +24,6 @@ const parseValue = (
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
-  if (prop.transform) {
-    value = prop.transform('filter', value)
-  }
-
   if (ctx.operation === HAS_TO_LOWER_CASE && typeof value === 'string') {
     value = value.toLowerCase()
   }

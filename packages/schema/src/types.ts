@@ -1,8 +1,6 @@
 import { getPropType } from './parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
-import type { Transform } from './def/types.js'
-// import type { BasedDbQuery, Operator } from '@based/db'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -181,7 +179,6 @@ type PropValues = {
   type?: string
   default?: any
   validation?: Validation
-  transform?: Transform
 }
 type Prop<V extends PropValues> = {
   required?: boolean
@@ -193,7 +190,6 @@ type Prop<V extends PropValues> = {
   readOnly?: boolean
   examples?: string[]
   validation?: Validation
-  transform?: Transform
 } & V
 
 type EnumItem = string | number | boolean

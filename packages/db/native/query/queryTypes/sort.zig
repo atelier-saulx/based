@@ -1,6 +1,7 @@
 const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const db = @import("../../db/db.zig");
+const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
@@ -125,6 +126,10 @@ pub fn search(
     sortBuffer: []u8,
     searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
+    const tctx = try getThreadCtx(ctx.db);
+    const decompressor = tctx.decompressor;
+    const blockState = tctx.libdeflateBlockState;
+
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
     const start = read(u16, sortBuffer, 2);
@@ -155,6 +160,8 @@ pub fn search(
             node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
         }
         s.addToScore(
+            decompressor,
+            blockState,
             isVector,
             ctx,
             &searchCtxC,

@@ -3,22 +3,29 @@ export const toCsvHeader = (headers: string[]): string => {
 }
 
 export const toCsvChunk = (rows: any[][]): string => {
-  const dataRows = rows
-    .map((row) => {
-      const escapedRow = row.map((value) => {
-        let stringValue = String(value)
-        if (
-          stringValue.includes(',') ||
-          stringValue.includes('"') ||
-          stringValue.includes('\n')
-        ) {
-          stringValue = `"${stringValue.replace(/"/g, '""')}"`
-        }
-        return stringValue
-      })
-      return escapedRow.join(',')
-    })
-    .join('\n')
+  let chunkString = ''
+  const numRows = rows.length
 
-  return dataRows + '\n'
+  for (let i = 0; i < numRows; i++) {
+    const row = rows[i]
+    const numCols = row.length
+
+    for (let j = 0; j < numCols; j++) {
+      let stringValue = String(row[j])
+      if (
+        stringValue.includes(',') ||
+        stringValue.includes('"') ||
+        stringValue.includes('\n')
+      ) {
+        stringValue = `"${stringValue.replace(/"/g, '""')}"`
+      }
+      chunkString += stringValue
+      if (j < numCols - 1) {
+        chunkString += ','
+      }
+    }
+    chunkString += '\n'
+  }
+
+  return chunkString
 }

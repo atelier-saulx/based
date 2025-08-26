@@ -37,51 +37,50 @@ fn startInternal(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     return externalNapi;
 }
 
-fn createThreadCtx(napi_env: c.napi_env, _: c.napi_callback_info) !c.napi_value {
-    const ctx = try dbCtx.createDbCtx();
-    ctx.selva = selva.selva_db_create();
-    var externalNapi: c.napi_value = undefined;
-    ctx.initialized = true;
-    _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
-    return externalNapi;
-}
-
-fn removeThreadCtx(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(1, napi_env, info);
-    const thread = try napi.get(*dbCtx.ThreadCtx, napi_env, args[0]);
-    thread.deinit();
-    return null;
-}
-
 fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const ctx = try napi.get(*dbCtx.DbCtx, napi_env, args[0]);
-    // threadCtx
 
     if (!ctx.initialized) {
         std.log.err("Db already de-initialized \n", .{});
         return null;
     }
 
-    ctx.initialized = false;
-
-    var it = ctx.sortIndexes.iterator();
-    while (it.next()) |index| {
-        var mainIt = index.value_ptr.*.main.iterator();
-        while (mainIt.next()) |main| {
-            selva.selva_sort_destroy(main.value_ptr.*.index);
-        }
-        var fieldIt = index.value_ptr.*.field.iterator();
-        while (fieldIt.next()) |field| {
-            selva.selva_sort_destroy(field.value_ptr.*.index);
-        }
-    }
-
-    // clear thread specific as well
-
-    selva.selva_db_destroy(ctx.selva);
-    ctx.selva = null;
-    ctx.arena.deinit();
+    dbCtx.destroyDbCtx(ctx);
 
     return null;
+}
+
+pub fn getThreadId(env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    var result: c.napi_value = undefined;
+    if (c.napi_create_bigint_uint64(env, dbCtx.getThreadId(), &result) != c.napi_ok) {
+        return null;
+    }
+    return result;
+}
+
+fn _createThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, nfo);
+    const ctx = try napi.get(*dbCtx.DbCtx, env, args[0]);
+    const threadId= try napi.get(u64, env, args[1]);
+
+    try dbCtx.createThreadCtx(ctx, threadId);
+    return null;
+}
+
+pub fn createThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c.napi_value {
+    return _createThreadCtx(env, nfo) catch null;
+}
+
+fn _destroyThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, nfo);
+    const ctx = try napi.get(*dbCtx.DbCtx, env, args[0]);
+    const threadId= try napi.get(u64, env, args[1]);
+
+    try dbCtx.destroyThreadCtx(ctx, threadId);
+    return null;
+}
+
+pub fn destroyThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c.napi_value {
+    return _destroyThreadCtx(env, nfo) catch  null;
 }

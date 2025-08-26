@@ -10,6 +10,8 @@
 
 struct finalizer;
 struct selva_string;
+struct libdeflate_compressor;
+struct libdeflate_decompressor;
 
 /**
  * Selva string flags.
@@ -165,7 +167,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
  */
 [[nodiscard]]
 SELVA_EXPORT
-struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
+struct selva_string *selva_string_createz(struct libdeflate_compressor *compressor, const char *in_str, size_t in_len, enum selva_string_flags flags)
     __attribute__((access(read_only, 1, 2)));
 
 /**
@@ -178,7 +180,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
  *          SELVA_EINVAL if the string cannot be decompressed.
  */
 SELVA_EXPORT
-int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
+int selva_string_decompress(struct libdeflate_decompressor *decompressor, const struct selva_string * restrict s, char * restrict buf)
     __attribute__((access(read_only, 1), access(write_only, 2)));
 
 /**
@@ -395,6 +397,7 @@ void selva_string_set_compress(struct selva_string *s)
 /**
  * Compare two strings.
  * This function works correctly with compressed strings.
+ * @param decompress can be nullptr if strings are not compressed.
  * @param a is a pointer to the first string to be compared.
  * @param b is a pointer to the second strings to be compared.
  * @returns < 0 if the first character that does not match has a lower value in ptr1 than in ptr2;
@@ -402,7 +405,7 @@ void selva_string_set_compress(struct selva_string *s)
  *          > 0 if the first character that does not match has a greater value in ptr1 than in ptr2.
  */
 SELVA_EXPORT
-int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
+int selva_string_cmp(struct libdeflate_decompressor *decompressor, const struct selva_string *a, const struct selva_string *b)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 
 /**

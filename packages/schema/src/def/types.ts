@@ -7,11 +7,6 @@ import type {
 } from '../index.js'
 import { Validation } from './validation.js'
 
-export type Transform = (
-  type: 'create' | 'update' | 'read' | 'filter' | 'search',
-  value: any,
-) => any
-
 // WARN: The following type codes are used in js and zig but selva has its own typing.
 export const NULL = 0
 export const TIMESTAMP = 1
@@ -115,7 +110,6 @@ export type PropDef = {
   dependent?: boolean
   // default here?
   validation: Validation
-  transform?: Transform
   default: any
   // vectors
   vectorBaseType?: VectorBaseType

@@ -17,7 +17,7 @@ export { default as createHash } from './server/dbHash.js'
 export * from './utils.js'
 export * from './client/query/query.js'
 export * from './client/query/BasedDbQuery.js'
-export * from './client/query/BasedIterable.js'
+export * from './client/query/BasedQueryResponse.js'
 export * from './server/save.js'
 export * from './hooks.js'
 

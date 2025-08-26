@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { wait } from '@based/utils'
 
 await test('export to csv', async (t) => {
   const db = new BasedDb({
@@ -12,31 +13,45 @@ await test('export to csv', async (t) => {
   await db.setSchema({
     types: {
       product: {
-        sku: { type: 'string', maxBytes: 10 },
+        sku: 'number', // { type: 'string', maxBytes: 10 },
         flap: 'number',
       },
       shelve: {
-        code: { type: 'string', maxBytes: 4 },
-        products: {
-          items: {
-            ref: 'product',
-            prop: 'product',
-          },
-        },
+        code: 'number', //{ type: 'string', maxBytes: 4 },
+        // products: {
+        //   items: {
+        //     ref: 'product',
+        //     prop: 'product',
+        //   },
+        // },
       },
     },
   })
-  // 1M items, 1K SKUs, 50 shelves
-  for (let i = 0; i < 1e6; i++) {
-    let p = db.create('product', {
-      sku: 'lala' + (Math.random() * 10).toFixed(0),
-      flap: Math.random() * 1000,
-    })
-    db.create('shelve', {
-      code: 'S' + (Math.random() * 50).toFixed(0),
-      products: [p],
-    })
+
+  for (let j = 0; j < 1000; j++) {
+    // 1M items, 1K SKUs, 50 shelves
+    for (let i = 0; i < 1e6; i++) {
+      let p = db.create('product', {
+        // sku: 'lala' + (Math.random() * 10).toFixed(0),
+        sku: i,
+        flap: i,
+      })
+      // db.create('shelve', {
+      //   code: i,
+      //   // code: 'S' + (Math.random() * 50).toFixed(0),
+      //   // products: [p],
+      // })
+    }
+    console.log(
+      `#${j} (${(j + 1) * 1000}M)`,
+      (await db.drain()).toFixed(),
+      'ms',
+    )
+    await wait(10)
   }
+
+  // Small delay between batches
+  await new Promise((resolve) => setTimeout(resolve, 50))
 
   await db.drain()
   await db.save()
