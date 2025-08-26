@@ -1,8 +1,9 @@
-import { MICRO_BUFFER, TEXT } from '@based/schema/def'
+import { MICRO_BUFFER, STRING, TEXT, JSON } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
 import { langCodesMap } from '@based/schema'
+import { writeUint32 } from '@based/utils'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 
@@ -69,16 +70,17 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     if (mainBuffer.byteLength !== 0) {
       const buf = new Uint8Array(5)
       buf[0] = includeOp.PARTIAL
-      buf[1] = 0
-      buf[2] = MICRO_BUFFER // add this in types
+      buf[1] = 0 // field name 0
+      buf[2] = MICRO_BUFFER
       buf[3] = mainBuffer.byteLength
       buf[4] = mainBuffer.byteLength >>> 8
       result.push(buf, mainBuffer)
     } else {
-      const buf = new Uint8Array(3)
+      const buf = new Uint8Array(4)
       buf[0] = includeOp.DEFAULT
-      buf[1] = 0
+      buf[1] = 0 // field name 0
       buf[2] = MICRO_BUFFER
+      buf[3] = 0 // opts len
       result.push(buf)
     }
   }
@@ -116,16 +118,18 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           result.push(buf)
         }
       }
+
       if (propDef.opts?.meta !== 'only') {
-        if (propDef.def.typeIndex === TEXT) {
+        const t = propDef.def.typeIndex
+        if (t === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
-            const b = new Uint8Array(5)
+            const b = new Uint8Array(4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
             b[2] = propDef.def.typeIndex
-            b[3] = 0
-            b[4] = 0
+            b[3] = 0 // opts len
+            // expand start + end
             result.push(b)
           } else {
             for (const code of codes) {
@@ -134,8 +138,9 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               b[0] = includeOp.DEFAULT
               b[1] = prop
               b[2] = propDef.def.typeIndex
-              b[3] = code
-              b[4] = fallBackSize
+              b[3] = fallBackSize + 1 // opts len
+              // expand start + end
+              b[4] = code
               let i = 0
               for (const fallback of propDef.opts.fallBacks) {
                 b[i + 5] = fallback
@@ -145,13 +150,18 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
             }
           }
         } else {
-          const buf = new Uint8Array(3)
+          const hasEnd = propDef.opts?.end
+          const buf = new Uint8Array(hasEnd ? 9 : 4)
           buf[0] = includeOp.DEFAULT
           buf[1] = prop
           buf[2] = propDef.def.typeIndex
-          // mod len (then we can use this to add other things e.g. things for vectors etc)
-          // start
-          // end
+          if (hasEnd) {
+            buf[3] = 5 // opts len
+            buf[4] = t === TEXT || t === JSON || t === STRING ? 1 : 0
+            writeUint32(buf, propDef.opts.end, 5)
+          } else {
+            buf[3] = 0 // opts len
+          }
           result.push(buf)
         }
       }

@@ -81,8 +81,4 @@ pub inline fn RefResult(
     };
 }
 
-pub const IncludeOpts = struct {
-    meta: u8,
-    start: u8,
-    end: u8,
-};
+pub const IncludeOpts = struct { end: u32, isChars: bool };

@@ -20,11 +20,9 @@ pub fn cb(
 }
 
 // Decompress as many bytes as will fit to output or available in the compressed buffer
-pub inline fn decompressFirstBytes(
-    input: []u8,
-    output: []u8
-) ![]u8 {
+pub inline fn decompressFirstBytes(input: []u8, output: []u8) ![]u8 {
     var nbytes: usize = 0;
     try deflateErrors(selva.worker_ctx_libdeflate_decompress_short(input[6..input.len].ptr, input.len - 10, output.ptr, output.len, &nbytes));
+    std.debug.print("->>> {any} \n", .{nbytes});
     return output[0..nbytes];
 }
