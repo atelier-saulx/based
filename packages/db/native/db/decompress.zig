@@ -1,7 +1,11 @@
+const dbCtx = @import("../db/ctx.zig");
 const selva = @import("../selva.zig");
 const std = @import("std");
 const db = @import("./db.zig");
 const deflateErrors = @import("../errors.zig").deflate;
+
+pub const LibdeflateDecompressor = selva.libdeflate_decompressor;
+pub const LibdeflateBlockState = selva.libdeflate_block_state;
 
 const CtxC = struct { result: []u8 };
 
@@ -20,9 +24,12 @@ pub fn cb(
 }
 
 // Decompress as many bytes as will fit to output or available in the compressed buffer
-pub inline fn decompressFirstBytes(input: []u8, output: []u8) ![]u8 {
+pub inline fn decompressFirstBytes(ctx: *db.DbCtx, input: []u8, output: []u8) ![]u8 {
+    // TODO Move to higher up in the call chain
+    const tctx = try dbCtx.getThreadCtx(ctx);
+    const decompressor = tctx.decompressor;
     var nbytes: usize = 0;
-    try deflateErrors(selva.worker_ctx_libdeflate_decompress_short(input[6..input.len].ptr, input.len - 10, output.ptr, output.len, &nbytes));
-    std.debug.print("->>> {any} \n", .{nbytes});
+
+    try deflateErrors(selva.libdeflate_decompress_short(decompressor, input[6..input.len].ptr, input.len - 10, output.ptr, output.len, &nbytes));
     return output[0..nbytes];
 }

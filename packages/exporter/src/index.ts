@@ -5,8 +5,7 @@ import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
 import os from 'node:os'
 
-const CHUNK_SIZE = 1025
-
+let CHUNK_SIZE = 1025
 let OUTPUT_DIR = './tmp/export'
 let verbose = false
 
@@ -16,6 +15,9 @@ process.argv.forEach((val) => {
   }
   if (val.toLowerCase().includes('dest')) {
     OUTPUT_DIR = val.split('=')[1].replace(/^~(?=$|\/|\\)/, os.homedir)
+  }
+  if (val.toLowerCase().includes('chunk')) {
+    CHUNK_SIZE = Number(val.split('=')[1])
   }
 })
 
@@ -62,6 +64,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       isDone = true
     }
   })
+  log(`Using chunks with ${CHUNK_SIZE} size.`)
   while (!isDone) {
     log(`  - Loading chunk from offset ${offsetStart}...`)
 

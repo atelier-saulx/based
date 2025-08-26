@@ -1,6 +1,6 @@
 import { registerMsgHandler } from './worker.js'
 import { IoJob } from './io_worker_types.js'
-import { ENCODER, writeInt32 } from '@based/utils'
+import { writeInt32 } from '@based/utils'
 import native from '../../native.js'
 
 function loadBlock(dbCtx: any, filepath: string): null | ArrayBuffer {

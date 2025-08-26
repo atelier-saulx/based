@@ -1,6 +1,8 @@
 const selva = @import("../../selva.zig");
 const std = @import("std");
 const db = @import("../../db/db.zig");
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 
 fn Ctx(dataType: type) type {
     return struct {
@@ -76,6 +78,8 @@ fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType)
 }
 
 pub inline fn decompress(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     comptime DataType: type,
     comptime compare: Compare(DataType),
     query: []u8,
@@ -86,14 +90,16 @@ pub inline fn decompress(
     var loop: bool = true;
     var hasMatch: c_int = 0;
     while (loop) {
-        const result = selva.worker_ctx_libdeflate_decompress_stream(
+        const result = selva.libdeflate_decompress_stream(
+            decompressor,
+            blockState,
             value[6..value.len].ptr,
             value.len - 10,
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
-        loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.worker_ctx_libdeflate_block_state_growbuf();
+        loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.libdeflate_block_state_growbuf(blockState);
     }
     return hasMatch == 1;
 }

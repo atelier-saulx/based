@@ -1,5 +1,7 @@
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -45,6 +47,8 @@ pub fn createSearchCtx(comptime isVector: bool, offset: u32) QuerySearchCtx(isVe
 
 // comptime isVector
 pub fn addToScore(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     comptime isVector: bool,
     queryCtx: *QueryCtx,
     ctx: *QuerySearchCtx(isVector),
@@ -68,7 +72,7 @@ pub fn addToScore(
         }
         ctx.totalSearchResults += 1;
     } else {
-        ctx.score = searchMethods.search(node, typeEntry, searchCtx);
+        ctx.score = searchMethods.search(decompressor, blockState, node, typeEntry, searchCtx);
         if (ctx.score > searchCtx.bad) {
             return;
         }

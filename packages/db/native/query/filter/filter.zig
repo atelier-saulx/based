@@ -5,6 +5,7 @@ const read = @import("../../utils.zig").read;
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../types.zig").QueryCtx;
 const db = @import("../../db/db.zig");
+const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const selva = @import("../../selva.zig");
 const types = @import("../include/types.zig");
 const std = @import("std");
@@ -53,6 +54,9 @@ pub fn filter(
     offset: usize,
     comptime isEdge: bool,
 ) bool {
+    const tctx = getThreadCtx(ctx) catch return false;
+    const decompressor = tctx.decompressor;
+    const blockState = tctx.libdeflateBlockState;
     var i: usize = offset;
     var orJump: ?[]u8 = jump;
     var end: usize = conditions.len;
@@ -183,7 +187,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
-                if (value.len == 0 or !runCondition(query, value)) {
+                if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -197,7 +201,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.largeReference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(query, value)) {
+                if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -219,7 +223,7 @@ pub fn filter(
                         var f: usize = 0;
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            if (!runCondition(query, s)) {
+                            if (!runCondition(decompressor, blockState, query, s)) {
                                 f += 1;
                             } else {
                                 // 1 match is enough
@@ -235,12 +239,12 @@ pub fn filter(
                             lang,
                             query[query.len - 2 - fallBackSize .. query.len - 2],
                         );
-                        if (s.len == 0 or !runCondition(query, s)) {
+                        if (s.len == 0 or !runCondition(decompressor, blockState,  query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
                         const s = db.getTextFromValue(value, lang);
-                        if (s.len == 0 or !runCondition(query, s)) {
+                        if (s.len == 0 or !runCondition(decompressor, blockState,  query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }
@@ -275,7 +279,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
-                    if (value.len == 0 or !runCondition(query, value)) {
+                    if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }
