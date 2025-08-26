@@ -1,5 +1,8 @@
 const db = @import("../../db/db.zig");
+const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const selva = @import("../../selva.zig");
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -62,6 +65,10 @@ pub fn defaultSimpleFilter(
     conditions: []u8,
     include: []u8,
 ) !void {
+    const tctx = try getThreadCtx(ctx.db);
+    const decompressor = tctx.decompressor;
+    const blockState = tctx.libdeflateBlockState;
+
     var correctedForOffset: u32 = offset;
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
@@ -80,7 +87,7 @@ pub fn defaultSimpleFilter(
             break :checkItem;
         }
         const value = db.getField(typeEntry, 0, node.?, fieldSchema, t.Prop.MICRO_BUFFER);
-        if (value.len == 0 or !runConditions(query, value)) {
+        if (value.len == 0 or !runConditions(decompressor, blockState, query, value)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {
@@ -98,6 +105,8 @@ pub fn defaultSimpleFilter(
 pub fn search(
     comptime isVector: bool,
     ctx: *QueryCtx,
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
@@ -119,6 +128,8 @@ pub fn search(
             break :checkItem;
         }
         s.addToScore(
+            decompressor,
+            blockState,
             isVector,
             ctx,
             &searchCtxC,

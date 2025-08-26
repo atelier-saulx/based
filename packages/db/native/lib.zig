@@ -18,7 +18,6 @@ const dbCtx = @import("./db/ctx.zig");
 
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
-const workerCtxInit = dbCtx.workerCtxInit;
 
 pub fn registerFunction(
     env: c.napi_env,
@@ -97,12 +96,12 @@ fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c
     return _selvaStrerror(napi_env, nfo) catch return null;
 }
 
-// TODO: global structs create on init here
-
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    registerFunction(env, exports, "workerCtxInit", workerCtxInit) catch return null;
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
+    registerFunction(env, exports, "getThreadId", lifeTime.getThreadId) catch return null;
+    registerFunction(env, exports, "createThreadCtx", lifeTime.createThreadCtx) catch return null;
+    registerFunction(env, exports, "destroyThreadCtx", lifeTime.destroyThreadCtx) catch return null;
 
     registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;
     registerFunction(env, exports, "saveBlock", dump.saveBlock) catch return null;

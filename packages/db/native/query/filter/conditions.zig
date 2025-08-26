@@ -7,8 +7,12 @@ const ConditionsResult = t.ConditionsResult;
 const c = @import("./condition.zig");
 const std = @import("std");
 const selva = @import("../../selva.zig");
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 
 inline fn condition(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     mode: Mode,
     q: []u8,
     v: []u8,
@@ -16,8 +20,8 @@ inline fn condition(
 ) ConditionsResult {
     return switch (mode) {
         Mode.default => c.default(q, v, i),
-        Mode.defaultVar => c.defaultVar(q, v, i),
-        Mode.orVar => c.orVar(q, v, i),
+        Mode.defaultVar => c.defaultVar(decompressor, blockState, q, v, i),
+        Mode.orVar => c.orVar(decompressor, blockState, q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
         Mode.reference => c.reference(q, v, i),
@@ -25,6 +29,8 @@ inline fn condition(
 }
 
 pub inline fn runConditions(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     q: []u8,
     v: []u8,
 ) bool {
@@ -33,7 +39,7 @@ pub inline fn runConditions(
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
-        const result = condition(mode, q, v, i);
+        const result = condition(decompressor, blockState, mode, q, v, i);
         if (topLevelType == Type.negate) {
             if (result[1] == true) {
                 return false;

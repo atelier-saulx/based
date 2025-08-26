@@ -14,6 +14,8 @@ const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
 const move = @import("../../utils.zig").move;
 const Compression = @import("../../types.zig").Compression;
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
@@ -298,6 +300,8 @@ pub fn strSearchCompressed(
 }
 
 inline fn getScore(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     value: []u8,
     query: []u8,
     score: *u8,
@@ -305,6 +309,8 @@ inline fn getScore(
 ) bool {
     if (value[1] == @intFromEnum(Compression.compressed)) {
         _ = decompress(
+            decompressor,
+            blockState,
             *u8,
             strSearchCompressed,
             query,
@@ -322,6 +328,8 @@ inline fn getScore(
 }
 
 pub fn search(
+    decompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx(false),
@@ -372,7 +380,7 @@ pub fn search(
                     if (code == LangCode.NONE) {
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
-                            _ = getScore(s, query, &score, penalty);
+                            _ = getScore(decompressor, blockState, s, query, &score, penalty);
                             if (score < bestScore) {
                                 bestScore = score;
                                 if (score - penalty == 0) {
@@ -385,7 +393,7 @@ pub fn search(
                         const fallbacks = ctx.fields[j + 6];
                         const s = if (fallbacks > 0) db.getTextFromValueFallback(value, code, ctx.fields[j + 7 .. j + 7 + fallbacks]) else db.getTextFromValue(value, code);
                         if (s.len > 0) {
-                            _ = getScore(s, query, &score, penalty);
+                            _ = getScore(decompressor, blockState, s, query, &score, penalty);
                             if (score < bestScore) {
                                 bestScore = score;
                                 if (score - penalty == 0) {
@@ -396,7 +404,7 @@ pub fn search(
                         }
                     }
                 } else {
-                    if (getScore(value, query, &score, penalty)) {
+                    if (getScore(decompressor, blockState, value, query, &score, penalty)) {
                         continue :fieldLoop;
                     }
                     if (score < bestScore) {

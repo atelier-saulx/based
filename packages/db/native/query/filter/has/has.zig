@@ -12,6 +12,8 @@ const db = @import("../../../db/db.zig");
 const std = @import("std");
 const toSlice = @import("../../../utils.zig").toSlice;
 const Compression = @import("../../../types.zig").Compression;
+const LibdeflateDecompressor = @import("../../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../../db/decompress.zig").LibdeflateBlockState;
 
 inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
@@ -38,6 +40,8 @@ inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
 }
 
 inline fn hasInner(
+    libdeflateDecompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     comptime isOr: bool,
     compare: Compare(void),
     mainLen: u16,
@@ -50,7 +54,7 @@ inline fn hasInner(
         return like.vector(vecAligned, query);
     } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
         if (value[1] == @intFromEnum(Compression.compressed)) {
-            if (!decompress(void, orCompare(isOr, compare).func, query, value, undefined)) {
+            if (!decompress(libdeflateDecompressor, blockState, void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
             }
         } else if (!orCompare(isOr, compare).func(value[2..value.len - 4], query)) {
@@ -63,6 +67,8 @@ inline fn hasInner(
 }
 
 pub inline fn has(
+    libdeflateDecompressor: *LibdeflateDecompressor,
+    blockState: *LibdeflateBlockState,
     comptime isOr: bool,
     op: Op,
     prop: Prop,
@@ -71,11 +77,11 @@ pub inline fn has(
     mainLen: u16,
 ) bool {
     if (op == Op.like) {
-        return hasInner(isOr, like.str, mainLen, prop, value, query);
+        return hasInner(libdeflateDecompressor, blockState, isOr, like.str, mainLen, prop, value, query);
     } else if (op == Op.has) {
-        return hasInner(isOr, default, mainLen, prop, value, query);
+        return hasInner(libdeflateDecompressor, blockState, isOr, default, mainLen, prop, value, query);
     } else if (op == Op.hasLowerCase) {
-        return hasInner(isOr, loose, mainLen, prop, value, query);
+        return hasInner(libdeflateDecompressor, blockState, isOr, loose, mainLen, prop, value, query);
     }
     return false;
 }

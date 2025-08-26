@@ -1,3 +1,6 @@
+const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
+const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
+const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 const read = @import("../../utils.zig").read;
 const createSearchCtx = @import("../filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("../filter/search.zig").isVectorSearch;
@@ -5,10 +8,15 @@ const t = @import("../types.zig");
 const QuerySort = @import("../queryTypes/sort.zig");
 const QueryDefault = @import("../queryTypes/default.zig");
 const db = @import("../../db/db.zig");
+
 const std = @import("std");
 const ReadOp = @import("../../types.zig").ReadOp;
 
 pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, indexI: usize, len: usize) !void {
+    const tctx = try getThreadCtx(ctx.db);
+    const decompressor = tctx.decompressor;
+    const blockState = tctx.libdeflateBlockState;
+
     var index: usize = indexI;
     const offset = read(u32, q, index);
     index += 4;
@@ -41,6 +49,8 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
                 try QueryDefault.search(
                     true,
                     ctx,
+                    decompressor,
+                    blockState,
                     offset,
                     limit,
                     typeId,
@@ -52,6 +62,8 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
                 try QueryDefault.search(
                     false,
                     ctx,
+                    decompressor,
+                    blockState,
                     offset,
                     limit,
                     typeId,

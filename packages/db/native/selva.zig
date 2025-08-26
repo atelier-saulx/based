@@ -12,7 +12,6 @@ pub usingnamespace @cImport({
 
     @cInclude("cdefs.h");
 
-    @cInclude("selva/worker_ctx.h");
     @cInclude("selva/db.h");
     @cInclude("selva/fields.h");
     @cInclude("selva/node_id_set.h");
@@ -35,6 +34,7 @@ pub usingnamespace @cImport({
     @cInclude("selva/strsearch.h");
     @cInclude("selva/vector.h");
 
+    @cInclude("selva/thread.h");
     @cInclude("selva/membar.h");
 });
 
