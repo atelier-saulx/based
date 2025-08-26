@@ -170,8 +170,9 @@ fn parseOptsString(
                     len = value.len - 4;
                 }
                 while (i < len) {
+                    // std.debug.print("put byte {any} \n", .{value[i]});
                     const charLen = selva.selva_mblen(value[i]);
-
+                    //
                     std.debug.print("derp {any} {any} {any} \n", .{ value[i], len, charLen });
                     // use msb - this will give the size
                     // skip i until next char
