@@ -567,7 +567,7 @@ void *SVector_Pop(SVector * restrict vec) {
         }
 
         last = n->p;
-        RB_REMOVE(SVector_rbtree, &vec->vec_rbhead, last);
+        RB_REMOVE(SVector_rbtree, &vec->vec_rbhead, n);
         mempool_return(&vec->vec_rbmempool, n);
         vec->vec_last--;
     }
