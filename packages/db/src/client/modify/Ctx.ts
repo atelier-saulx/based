@@ -1,7 +1,7 @@
 import { writeUint64 } from '@based/utils'
 import type { SchemaTypeDef, PropDef } from '@based/schema/def'
 import type { LangCode } from '@based/schema'
-import { RANGE_ERR, type ModifyOp } from './types.js'
+import { type ModifyOp } from './types.js'
 import type { Tmp } from './Tmp.js'
 
 export class Ctx {
@@ -11,6 +11,7 @@ export class Ctx {
     writeUint64(array, schemaChecksum, 0)
   }
   id: number
+  start: number
   index: number = 8
   schema: SchemaTypeDef
   array: Uint8Array<ArrayBuffer>
@@ -35,5 +36,7 @@ export class Ctx {
   batch: {
     promises?: Tmp[]
     offsets?: Record<number, number>
+    ready?: boolean
+    error?: Error
   } = {}
 }

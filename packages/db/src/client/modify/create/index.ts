@@ -3,9 +3,8 @@ import { Ctx } from '../Ctx.js'
 import { writeObject } from '../props/object.js'
 import { reserve } from '../resize.js'
 import {
-  NODE_CURSOR_SIZE,
+  FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
-  TYPE_CURSOR_SIZE,
   writeMainCursor,
   writeNodeCursor,
   writeTypeCursor,
@@ -13,8 +12,8 @@ import {
 import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
-import { DbClientHooks } from '../../../index.js'
-import { drain } from '../drain.js'
+import { DbClient, DbClientHooks } from '../../../index.js'
+import { drain, schedule } from '../drain.js'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
@@ -26,6 +25,8 @@ import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU8 } from '../uint.js'
+import { validatePayload } from '../validate.js'
+import { handleError } from '../error.js'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
@@ -140,12 +141,13 @@ const writeCreateTs = (ctx: Ctx, payload: any) => {
 }
 
 const writeCreate = (ctx: Ctx, payload: any) => {
-  reserve(ctx, TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + PROP_CURSOR_SIZE)
+  reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
   writeNodeCursor(ctx)
   const index = ctx.index
   writeObject(ctx, ctx.schema.tree, payload)
   if (ctx.index === index || ctx.schema.mainLen === 0) {
+    reserve(ctx, PROP_CURSOR_SIZE)
     writeMainCursor(ctx)
   }
   writeCreateTs(ctx, payload)
@@ -158,55 +160,55 @@ const writeCreate = (ctx: Ctx, payload: any) => {
 }
 
 export function create(
-  ctx: Ctx,
-  schema: SchemaTypeDef,
+  db: DbClient,
+  type: string,
   payload: any,
   opts: ModifyOpts,
-  flushModify: DbClientHooks['flushModify'],
-) {
-  if (schema.hooks?.create) {
-    payload = schema.hooks.create(payload) || payload
-  }
+): Promise<number> {
+  const schema = db.schemaTypesParsed[type]
+  const ctx = db.modifyCtx
 
-  if (!(schema.id in ctx.created)) {
-    ctx.created[schema.id] = 0
-    ctx.max -= 6
-  }
-
-  ctx.schema = schema
-  ctx.operation = CREATE
-  ctx.overwrite = true
-  ctx.locale = opts.locale && langCodesMap.get(opts.locale)
-  ctx.defaults = 0
-  ctx.sortText = 0
-  ctx.sort = 0
-
-  const index = ctx.index
   try {
+    validatePayload(payload)
+
+    if (schema.hooks?.create) {
+      payload = schema.hooks.create(payload) || payload
+    }
+
+    if (payload.id) {
+      if (!opts?.unsafe) {
+        throw 'Invalid payload. "id" not allowed'
+      }
+      ctx.id = payload.id
+    } else {
+      if (!(schema.id in ctx.created)) {
+        ctx.created[schema.id] = 0
+        ctx.max -= 6
+      }
+      ctx.id = ctx.created[schema.id] + 1
+    }
+
+    if (ctx.sort) {
+      ctx.sort = 0
+      schema.separateSort.bufferTmp.set(schema.separateSort.buffer)
+    }
+
+    if (ctx.sortText) {
+      ctx.sortText = 0
+      schema.separateTextSort.bufferTmp.set(schema.separateTextSort.buffer)
+    }
+
+    ctx.schema = schema
+    ctx.operation = CREATE
+    ctx.overwrite = true
+    ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+    ctx.defaults = 0
+    ctx.start = ctx.index
     writeCreate(ctx, payload)
     ctx.created[schema.id]++
+    schedule(db, ctx)
+    return new Tmp(ctx)
   } catch (e) {
-    if (e === RANGE_ERR) {
-      if (index === 8) {
-        ctx.index = index
-        ctx.cursor = {}
-        throw { msg: 'Out of range. Not enough space for this payload' }
-      }
-      drain(ctx, flushModify)
-      return create.apply(null, arguments)
-    }
-
-    if (typeof e.then === 'function') {
-      return e.then((id: number) => {
-        if (!(e instanceof Tmp)) {
-          e.id = id
-        }
-        return create.apply(null, arguments)
-      })
-    }
-
-    throw e
+    return handleError(db, ctx, create, arguments, e)
   }
-
-  return new Tmp(ctx)
 }

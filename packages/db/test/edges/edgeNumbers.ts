@@ -30,12 +30,14 @@ await test('number', async (t) => {
   })
 
   const user1 = await db.create('user', {})
+  console.log('----1')
   const user2 = await db.create('user', {
     bestFriend: {
       id: user1,
       $uint8: 21,
     },
   })
+  console.log('----2')
 
   await db.update('user', user2, {
     bestFriend: {

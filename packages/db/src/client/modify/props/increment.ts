@@ -1,10 +1,10 @@
-import { INCREMENT, DECREMENT } from '../../_modify/types.js'
 import { PROP_CURSOR_SIZE, writeMainCursor } from '../cursor.js'
 import { writeU16, writeU8 } from '../uint.js'
 import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
 import { writeFixed } from './fixed.js'
 import { Ctx } from '../Ctx.js'
+import { DECREMENT, INCREMENT } from '../types.js'
 
 export const writeIncrement = (ctx: Ctx, def: PropDef, val: any) => {
   if (typeof val.increment !== 'number') {

@@ -65,14 +65,14 @@ await test('references', async (t) => {
     (await db.query('article').include('contributors.name').get()).toObject(),
     [
       {
-        id: strudelArticle.tmpId,
-        contributors: [{ id: mrSnurp.tmpId, name: 'Mr snurp' }],
+        id: await strudelArticle,
+        contributors: [{ id: await mrSnurp, name: 'Mr snurp' }],
       },
       {
-        id: piArticle.tmpId,
+        id: await piArticle,
         contributors: [
-          { id: mrSnurp.tmpId, name: 'Mr snurp' },
-          { id: flippie.tmpId, name: 'Flippie' },
+          { id: await mrSnurp, name: 'Mr snurp' },
+          { id: await flippie, name: 'Flippie' },
         ],
       },
     ],

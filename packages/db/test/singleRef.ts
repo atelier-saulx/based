@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { ModifyRes } from '../src/client/_modify/ModifyRes.js'
 import { setTimeout } from 'timers/promises'
 import { wait } from '@based/utils'
 
@@ -418,7 +417,7 @@ await test('nested', async (t) => {
   })
 
   const amount = 1e5
-  let lastRes: ModifyRes
+  let lastRes: ReturnType<typeof db.create>
   for (let i = 0; i < amount; i++) {
     lastRes = db.create('simple', {
       user,

@@ -39,21 +39,18 @@ export const writeString = (
   }
 
   validate(def, val)
-  const maxSize = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
-  reserve(ctx, PROP_CURSOR_SIZE + 11 + maxSize)
+  let size = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
+  reserve(ctx, PROP_CURSOR_SIZE + 11 + size)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   const index = ctx.index
   ctx.index += 4
   if (isUint8) {
     writeU8Array(ctx, val)
-    writeUint32(ctx.array, maxSize, index)
   } else {
-    const size = write(ctx.array, val, ctx.index, def.compression === 0, lang)
-    writeUint32(ctx.array, size, index)
+    size = write(ctx.array, val, ctx.index, def.compression === 0, lang)
     ctx.index += size
   }
-  if (ctx.operation === CREATE) {
-    markString(ctx, def)
-  }
+  writeUint32(ctx.array, size, index)
+  markString(ctx, def)
 }

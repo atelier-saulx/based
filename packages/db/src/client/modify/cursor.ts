@@ -10,6 +10,11 @@ import {
 } from './types.js'
 
 export const TYPE_CURSOR_SIZE = 3
+export const PROP_CURSOR_SIZE = 3
+export const NODE_CURSOR_SIZE = 5
+export const FULL_CURSOR_SIZE =
+  TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + PROP_CURSOR_SIZE
+
 export const writeTypeCursor = (ctx: Ctx) => {
   if (ctx.schema.id !== ctx.cursor.type) {
     ctx.array[ctx.index] = SWITCH_TYPE // switch node type
@@ -22,7 +27,6 @@ export const writeTypeCursor = (ctx: Ctx) => {
   }
 }
 
-export const PROP_CURSOR_SIZE = 3
 export const writePropCursor = (ctx: Ctx, def: PropDef) => {
   if (def.prop !== ctx.cursor.prop) {
     ctx.array[ctx.index] = SWITCH_FIELD
@@ -48,7 +52,6 @@ export const writeMainCursor = (ctx: Ctx) => {
   }
 }
 
-export const NODE_CURSOR_SIZE = 5
 export const writeNodeCursor = (ctx: Ctx) => {
   if (ctx.id !== ctx.cursor.id) {
     ctx.array[ctx.index] =

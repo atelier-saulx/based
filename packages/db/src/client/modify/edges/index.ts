@@ -7,6 +7,7 @@ import { writeU16, writeU32 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { reserve } from '../resize.js'
+import { PROP_CURSOR_SIZE } from '../cursor.js'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {
@@ -25,6 +26,7 @@ export const writeEdges = (
   ctx: Ctx,
   def: PropDef,
   obj: Record<string, any>,
+  isSingleRefFix: boolean,
 ) => {
   const index = ctx.index
   ctx.index += 4
@@ -102,7 +104,11 @@ export const writeEdges = (
     } else {
       mainFields ??= []
       const mainFieldsStartSize = mainFields.length * 2
-      reserve(ctx, 3 + 4 + 2 + mainSize + mainFieldsStartSize)
+      // reserve(ctx, PROP_CURSOR_SIZE + 4 + 2 + mainSize + mainFieldsStartSize)
+      reserve(
+        ctx,
+        PROP_CURSOR_SIZE + 4 + 2 + mainFieldsStartSize + def.edgeMainLen,
+      )
       writeEdgeHeaderPartial(ctx)
       writeU32(ctx, mainFieldsStartSize + def.edgeMainLen)
       writeU16(ctx, def.edgeMainLen)
@@ -131,6 +137,6 @@ export const writeEdges = (
     }
   }
 
-  const size = ctx.index - start
+  const size = ctx.index - start + (isSingleRefFix ? 4 : 0)
   writeUint32(ctx.array, size, index)
 }

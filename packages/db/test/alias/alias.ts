@@ -31,7 +31,7 @@ await test('simple', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', user1).get(),
+    await db.query('user', await user1).get(),
     {
       id: 1,
       externalId: 'cool',
@@ -74,7 +74,6 @@ await test('simple', async (t) => {
       },
     ],
   )
-
   const res1 = await db.upsert('user', {
     externalId: 'potato',
     potato: 'success',
@@ -85,18 +84,18 @@ await test('simple', async (t) => {
     externalId: 'potato',
     potato: 'success',
   })
-
+  console.log('x')
   const res2 = await db.upsert('user', {
     externalId: 'potato',
     potato: 'wrong',
   })
-
+  console.log('x')
   deepEqual((await db.query('user', res2).get()).toObject(), {
     id: 3,
     externalId: 'potato',
     potato: 'wrong',
   })
-
+  console.log('x')
   deepEqual(
     (
       await db.query('user', { externalId: 'i-dont-exists-haha!' }).get()

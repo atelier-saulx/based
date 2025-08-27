@@ -150,7 +150,7 @@ await test('update', async (t) => {
   })
 
   deepEqual(await db.query('user', cId).include('cardinality').get(), {
-    id: cId.tmpId,
+    id: await cId,
     cardinality: 2,
   })
 

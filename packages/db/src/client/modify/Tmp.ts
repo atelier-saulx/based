@@ -20,18 +20,36 @@ const promisify = (tmp: Tmp) => {
 export const resolveTmp = (tmp: Tmp) => {
   tmp.resolve(tmp.id)
 }
+export const rejectTmp = (tmp: Tmp) => tmp.reject(tmp.error)
 
-export class Tmp implements PromiseLike<number> {
-  constructor(ctx: Ctx) {
+export class Tmp implements Promise<number> {
+  constructor(ctx: Ctx, id?: number) {
     this.type = ctx.cursor.type
     this.tmpId = ctx.id
     this.batch = ctx.batch
+    this.#id = id
   }
-  get id() {
-    if (this.batch.offsets) {
-      const offset = this.batch.offsets[this.type]
-      return this.tmpId + offset
+  get [Symbol.toStringTag]() {
+    return 'ModifyPromise'
+  }
+  #id: number
+  get error(): Error {
+    if (!this.batch.ready) {
+      return
     }
+    return this.batch.error
+  }
+  get id(): number {
+    if (!this.batch.ready) {
+      return
+    }
+    if (!this.#id) {
+      if (this.batch.offsets) {
+        const offset = this.batch.offsets[this.type]
+        this.#id = this.tmpId + offset
+      }
+    }
+    return this.#id
   }
   type: number
   tmpId: number

@@ -46,7 +46,7 @@ export const writeReference = (
   if (typeof val === 'number') {
     if (def.hasDefaultEdges) {
       writeReferenceId(ctx, def, val, EDGE_NOINDEX_REALID)
-      writeEdges(ctx, def, {})
+      writeEdges(ctx, def, {}, true)
     } else {
       writeReferenceId(ctx, def, val, NOEDGE_NOINDEX_REALID)
     }
@@ -59,7 +59,7 @@ export const writeReference = (
         writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
       } else {
         writeReferenceId(ctx, def, val.id, EDGE_NOINDEX_REALID)
-        writeEdges(ctx, def, val)
+        writeEdges(ctx, def, val, true)
       }
       return
     }
@@ -70,7 +70,7 @@ export const writeReference = (
       }
       if (def.hasDefaultEdges) {
         writeReferenceId(ctx, def, val.tmpId, EDGE_NOINDEX_TMPID)
-        writeEdges(ctx, def, {})
+        writeEdges(ctx, def, {}, true)
       } else {
         writeReferenceId(ctx, def, val.tmpId, NOEDGE_NOINDEX_TMPID)
       }
@@ -85,7 +85,7 @@ export const writeReference = (
         writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)
       } else {
         writeReferenceId(ctx, def, val.id.tmpId, EDGE_NOINDEX_TMPID)
-        writeEdges(ctx, def, val)
+        writeEdges(ctx, def, val, true)
       }
       return
     }

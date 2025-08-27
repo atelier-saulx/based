@@ -1,8 +1,7 @@
-import { deepMerge } from '@based/utils'
-import { DbClient } from '../index.js'
-import { ModifyOpts } from './types.js'
 import { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
-import { QueryByAliasObj } from '../query/types.js'
+import { DbClient, QueryByAliasObj } from '../../../index.js'
+import { ModifyOpts } from '../types.js'
+import { deepMerge } from '@based/utils'
 
 const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
   let aliases: QueryByAliasObj
@@ -27,12 +26,12 @@ const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
   return aliases
 }
 
-export async function upsert(
+export const upsert = (
   db: DbClient,
   type: string,
-  obj: Record<string, any>,
-  opts?: ModifyOpts,
-) {
+  obj: any,
+  opts: ModifyOpts,
+): Promise<number> => {
   const tree = db.schemaTypesParsed[type].tree
   const aliases = filterAliases(obj, tree)
   const q = db.query(type, aliases)

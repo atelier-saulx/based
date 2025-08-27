@@ -1,24 +1,20 @@
 import { MigrateFns, parse, Schema, StrictSchema } from '@based/schema'
-import { create, CreateObj } from './_modify/create.js'
-import {
-  flushBuffer,
-  makeFlushIsReady,
-  ModifyCtx,
-  startDrain,
-} from './flushModify.js'
+// import { flushBuffer, makeFlushIsReady, startDrain } from './flushModify.js'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
-import { ModifyRes, ModifyState } from './_modify/ModifyRes.js'
-import { upsert } from './_modify/upsert.js'
-import { update } from './_modify/update.js'
-import { deleteFn } from './_modify/delete.js'
-import { ModifyOpts } from './_modify/types.js'
-import { expire } from './_modify/expire.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'
 import { DbClientHooks } from '../hooks.js'
 import { setLocalClientSchema } from './setLocalClientSchema.js'
 import { SchemaChecksum } from '../schema.js'
+import { ModifyOpts } from './modify/types.js'
+import { create } from './modify/create/index.js'
+import { Ctx } from './modify/Ctx.js'
+import { update } from './modify/update/index.js'
+import { del } from './modify/delete/index.js'
+import { expire } from './modify/expire/index.js'
+import { cancel, consume, drain, schedule } from './modify/drain.js'
+import { upsert } from './modify/upsert/index.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -37,9 +33,12 @@ export class DbClient extends DbShared {
     super()
     this.hooks = hooks
     this.maxModifySize = maxModifySize
-    this.modifyCtx = new ModifyCtx(this)
+    this.modifyCtx = new Ctx(
+      0,
+      new Uint8Array(new ArrayBuffer(8, { maxByteLength: maxModifySize })),
+    )
     this.flushTime = flushTime
-    makeFlushIsReady(this)
+
     if (debug) {
       debugMode(this)
     }
@@ -54,17 +53,15 @@ export class DbClient extends DbShared {
 
   // modify
   flushTime: number
-  flushReady: () => void
-  flushIsReady: Promise<void>
+  // flushReady: () => void
+  // flushIsReady: Promise<void>
 
   writeTime: number = 0
   isDraining = false
-  modifyCtx: ModifyCtx
+  modifyCtx: Ctx
   maxModifySize: number
-  upserting: Map<
-    number,
-    { o: Record<string, any>; p: Promise<number | ModifyRes> }
-  > = new Map()
+  upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
+    new Map()
 
   async schemaIsSet() {
     if (!this.schema) {
@@ -89,17 +86,17 @@ export class DbClient extends DbShared {
     return schemaChecksum
   }
 
-  create(type: string, obj: CreateObj = {}, opts?: ModifyOpts): ModifyRes {
+  create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
     return create(this, type, obj, opts)
   }
 
   async copy(
     type: string,
-    target: number | ModifyRes,
+    target: number,
     objOrTransformFn?:
       | Record<string, any>
       | ((item: Record<string, any>) => Promise<any>),
-  ): Promise<ModifyRes> {
+  ): Promise<number> {
     const item = await this.query(type, target)
       .include('*', '**.id')
       .get()
@@ -140,8 +137,8 @@ export class DbClient extends DbShared {
     type: string,
     id?:
       | number
-      | ModifyRes
-      | (number | ModifyRes)[]
+      | Promise<number>
+      | (number | Promise<number>)[]
       | QueryByAliasObj
       | QueryByAliasObj[]
       | Uint32Array,
@@ -153,8 +150,7 @@ export class DbClient extends DbShared {
     type?: string,
     id?:
       | number
-      | ModifyRes
-      | (number | ModifyRes)[]
+      | number[]
       | QueryByAliasObj
       | QueryByAliasObj[]
       | Uint32Array
@@ -164,108 +160,101 @@ export class DbClient extends DbShared {
       return new BasedDbQuery(this, '_root', 1)
     }
 
-    // this is now double resolve
-    if (Array.isArray(id)) {
-      let i = id.length
-      while (i--) {
-        if (typeof id[i] === 'object') {
-          if (id[i] instanceof ModifyState) {
-            // @ts-ignore
-            id[i] = id[i].tmpId
-          } else {
-            // it's get by alias
-          }
-        }
-      }
-    } else if (id instanceof Uint32Array) {
-      // all good
-    } else if (typeof id === 'object') {
-      if (id instanceof ModifyState) {
-        id = id.tmpId
-      } else {
-        // it's get by alias
-      }
-    }
+    // // this is now double resolve
+    // if (Array.isArray(id)) {
+    //   let i = id.length
+    //   while (i--) {
+    //     if (typeof id[i] === 'object') {
+    //       if (typeof id[i]) {
+    //         // @ts-ignore
+    //         id[i] = id[i].tmpId
+    //       } else {
+    //         // it's get by alias
+    //       }
+    //     }
+    //   }
+    // } else if (id instanceof Uint32Array) {
+    //   // all good
+    // } else if (typeof id === 'object') {
+    //   if (id instanceof ModifyState) {
+    //     id = id.tmpId
+    //   } else {
+    //     // it's get by alias
+    //   }
+    // }
 
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
   update(
     type: string,
-    id: number | ModifyRes,
+    id: number | Promise<number>,
     value: any,
     opts?: ModifyOpts,
-  ): ModifyRes
+  ): Promise<number>
 
   update(
     type: string,
-    value: Record<string, any> & { id: number | ModifyRes },
+    value: Record<string, any> & { id: number },
     opts?: ModifyOpts,
-  ): ModifyRes
+  ): Promise<number>
 
-  update(value: Record<string, any>, opts?: ModifyOpts): ModifyRes
+  update(value: Record<string, any>, opts?: ModifyOpts): Promise<number>
 
   update(
     typeOrValue: string | any,
     idOverwriteOrValue:
       | number
-      | ModifyRes
+      | Promise<number>
       | boolean
       | ModifyOpts
-      | (Record<string, any> & { id: number | ModifyRes }),
+      | (Record<string, any> & { id: number }),
     value?: any,
     opts?: ModifyOpts,
-  ): ModifyRes {
-    if (typeof typeOrValue === 'string') {
-      if (typeof idOverwriteOrValue === 'object') {
-        if (idOverwriteOrValue instanceof ModifyState) {
-          return update(
-            this,
-            typeOrValue,
-            idOverwriteOrValue.tmpId,
-            value,
-            opts,
-          )
-        }
-        if ('id' in idOverwriteOrValue) {
-          const { id, ...props } = idOverwriteOrValue
-          return this.update(typeOrValue, id, props, opts)
-        }
-      }
-      return update(
-        this,
+  ): Promise<number> {
+    if (typeof typeOrValue !== 'string') {
+      return this.update(
+        '_root',
+        1,
         typeOrValue,
-        idOverwriteOrValue as number,
-        value,
-        opts,
+        idOverwriteOrValue as ModifyOpts,
       )
     }
-    // else it is rootProps
-    return update(
-      this,
-      '_root',
-      1,
-      typeOrValue,
-      idOverwriteOrValue as ModifyOpts,
-    )
+    if (typeof idOverwriteOrValue === 'object') {
+      if (
+        'then' in idOverwriteOrValue &&
+        typeof idOverwriteOrValue.then === 'function'
+      ) {
+        return idOverwriteOrValue.then((id: number) => {
+          return this.update(typeOrValue, id, value, opts)
+        })
+      }
+      if ('id' in idOverwriteOrValue) {
+        const { id, ...props } = idOverwriteOrValue
+        return this.update(typeOrValue, id, props, opts)
+      }
+    }
+    return update(this, typeOrValue, idOverwriteOrValue as number, value, opts)
   }
 
   upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
     return upsert(this, type, obj, opts)
   }
 
-  delete(type: string, id: number | ModifyRes) {
-    return deleteFn(this, type, typeof id === 'number' ? id : id.tmpId)
+  delete(type: string, id: number | Promise<number>) {
+    if (typeof id !== 'number') {
+      return id.then((id) => this.delete(type, id))
+    }
+    return del(this, type, id)
   }
 
-  expire(type: string, id: number | ModifyRes, seconds: number) {
-    return expire(this, type, typeof id === 'number' ? id : id.tmpId, seconds)
+  expire(type: string, id: number, seconds: number) {
+    return expire(this, type, id, seconds)
   }
 
   destroy() {
     this.stop()
     delete this.listeners
-    this.modifyCtx.db = null // Make sure we don't have a circular ref and leak mem
   }
 
   stop() {
@@ -273,7 +262,7 @@ export class DbClient extends DbShared {
       onClose()
     }
     this.subs.clear()
-    this.modifyCtx.len = 0
+    cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
   }
 
   // For more advanced / internal usage - use isModified instead for most cases
@@ -281,17 +270,13 @@ export class DbClient extends DbShared {
     if (this.upserting.size) {
       await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
     }
-    await flushBuffer(this)
+    await drain(this, this.modifyCtx)
     const t = this.writeTime
     this.writeTime = 0
     return t
   }
 
-  async isModified() {
-    if (!this.isDraining) {
-      startDrain(this)
-    }
-    await this.flushIsReady
-    return
+  isModified() {
+    return schedule(this, this.modifyCtx)
   }
 }

@@ -363,7 +363,6 @@ export class DbServer extends DbShared {
     let result: Record<number, number>
 
     if (this.schema?.hash !== hash) {
-      console.log(this.schema?.hash, hash)
       this.emit('info', 'Schema mismatch in write')
       return null
     }
