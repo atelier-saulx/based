@@ -1,9 +1,11 @@
 import { BasedDb } from '@based/db'
+import { REFERENCE, REFERENCES, NUMBER } from '../../schema/dist/def/types.js'
 import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
 import os from 'node:os'
+import { buffer } from 'node:stream/consumers'
 
 let CHUNK_SIZE = 1025
 let OUTPUT_DIR = './tmp/export'
@@ -29,10 +31,7 @@ const getCsvFileName = (typeId: number, startNodeId: number) => {
   return join(OUTPUT_DIR, `${typeId}_${startNodeId}.csv`)
 }
 
-var query
-
 const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
-  const xx = Date.now()
   const [typeId, startNodeId] = destructureTreeKey(blockKey)
   const def = db.client.schemaTypesParsedById[typeId]
   log(
@@ -42,10 +41,14 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   const propsToExport = Object.keys(def.props).filter((propName) => {
     const typeIndex = def.props[propName].typeIndex
     // For now we do not export references, waiting for partials
-    return typeIndex !== 13 && typeIndex !== 14
+    return typeIndex !== REFERENCE && typeIndex !== REFERENCES
   })
 
   const csvHeader = ['id', ...propsToExport]
+  const propTypes = [
+    NUMBER,
+    ...Object.keys(def.props).map((propName) => def.props[propName].typeIndex),
+  ]
 
   let offsetStart = startNodeId - 1
   let offsetEnd = startNodeId - 1 + CHUNK_SIZE
@@ -58,9 +61,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   await fileHandle.write(toCsvHeader(csvHeader))
 
   const allCsvRows: any[][] = []
-  log(Date.now() - xx, 'ms start')
 
-  const x = Date.now()
   await db.server.loadBlock(def.type, startNodeId).catch((e) => {
     if (e.message !== 'Block hash mismatch') {
       console.error(e)
@@ -69,39 +70,14 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     }
   })
 
-  log(Date.now() - x, 'ms', 'load dat shit')
-  log(`  - Using chunks with ${CHUNK_SIZE} size.`)
   while (!isDone) {
     log(`  - Processing chunk from offset ${offsetStart}...`)
-    const d = Date.now()
-
-    // if (!query) {
-    // console.log('!query', offsetStart, offsetEnd)
-    // query = db.query(def.type).include('*').range(offsetStart, offsetEnd)
-    // // } else {
-    // //   console.log('reset', offsetStart, offsetEnd)
-    // //   query.reset()
-    // //   query.range(offsetStart, offsetEnd)
-    // // }
-
-    // const q = await query.get()
-    // const data = q.toObject()
     const data = await db
       .query(def.type)
       .include('*')
-      .range(offsetStart, offsetEnd)
+      .range(0, CHUNK_SIZE)
       .get()
       .toObject()
-    // log(
-    //   data.length,
-    //   'Total read time',
-    //   Date.now() - d,
-    //   'ms',
-    //   'query exec time (without read)',
-    //   q.execTime,
-    // )
-
-    let d2 = Date.now()
 
     if (!data || Object.keys(data).length === 0 || data.length === 0) {
       isDone = true
@@ -109,6 +85,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       break
     }
 
+    // add propDef from schema
     const csvRows = data.map((prop) => {
       let row = [prop.id]
       for (let p = 0; p < propsToExport.length; p++) {
@@ -119,17 +96,14 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       return row
     })
 
-    await fileHandle.write(toCsvChunk(csvRows))
-
-    if (csvRows.length == CHUNK_SIZE) {
-      console.log(csvRows.length)
+    await fileHandle.write(toCsvChunk(csvRows, propTypes))
+    if (csvRows.length == CHUNK_SIZE && offsetEnd < def.blockCapacity) {
       offsetStart += CHUNK_SIZE
       offsetEnd += CHUNK_SIZE
       isDone = false
     } else {
       isDone = true
     }
-    log("chunk's write time", Date.now() - d2)
   }
 
   try {
@@ -144,7 +118,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     `  - Unload block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
   )
   await db.server.unloadBlock(def.type, startNodeId)
-  log('==================')
 }
 
 const db = new BasedDb({ path: './tmp' })
@@ -160,13 +133,8 @@ await import('fs')
   .catch(console.error)
 
 for (const blockInfo of db.server.verifTree.types()) {
-  let i = 0
-  blockLoop: for (const block of db.server.verifTree.blocks(blockInfo)) {
-    if (i == 3) {
-      break blockLoop
-    }
+  for (const block of db.server.verifTree.blocks(blockInfo)) {
     await processBlockAndExportToCsv(db, block.key)
-    i++
   }
 }
 
