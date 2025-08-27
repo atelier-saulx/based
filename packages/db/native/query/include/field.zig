@@ -170,20 +170,16 @@ fn parseOptsString(
                     len = value.len - 4;
                 }
                 while (i < len) {
-                    // std.debug.print("put byte {any} \n", .{value[i]});
-                    const charLen = selva.selva_mblen(value[i]);
-                    //
-                    std.debug.print("derp {any} {any} {any} \n", .{ value[i], len, charLen });
-                    // use msb - this will give the size
-                    // skip i until next char
-                    // great success!
-
-                    // export this part of the fn
-                    if (value[i] < 129) {
+                    if (value[i] < 127) {
                         if (chars == opts.end) {
                             return value[0..i];
                         }
                         chars += 1;
+                    } else {
+                        // std.debug.print("put byte {any} \n", .{value[i]});
+                        const charLen = selva.selva_mblen(value[i]) + 1;
+                        // var code_point_bytes: [4]u8 = undefined;
+                        std.debug.print("derp {any} {any} {any} \n", .{ value[i], len, charLen });
                     }
                     i += 1;
                 }

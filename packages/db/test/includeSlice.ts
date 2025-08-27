@@ -27,6 +27,8 @@ await test('slice string / text', async (t) => {
           c: 'string',
           d: 'string',
           e: 'string',
+          f: 'string',
+          g: 'string',
         },
       },
     },
@@ -38,6 +40,10 @@ await test('slice string / text', async (t) => {
     name: 'abcdefg',
     b: italy,
     c: '🤪💩👌⚡️🤪💩👌⚡️',
+    d: 'üßßa',
+    e: '你好',
+    f: '€Abc',
+    g: 'éAAAA',
   })
 
   // const q = await db.query('item', 1).get()
@@ -46,12 +52,24 @@ await test('slice string / text', async (t) => {
   const x = await db
     .query('item', id1)
     .include('name', {
-      end: 3,
+      end: 1,
+    })
+    .include('d', {
+      end: 1,
+    })
+    .include('e', {
+      end: 1,
+    })
+    .include('f', {
+      end: 1,
     })
     // .include('b', {
     //   end: 200,
     // })
     .include('c', {
+      end: 1,
+    })
+    .include('g', {
       end: 1,
     })
     .get()
