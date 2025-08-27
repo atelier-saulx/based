@@ -21,7 +21,6 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
         value[i.*] == 240 and
         value[i.* + 1] == 159 and
         value[i.* + 2] == 135 and
-        // need to use different one for the deflate (can need an extra)
         value[i.* + 4] == 240;
 }
 
