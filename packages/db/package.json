@@ -8,7 +8,7 @@
     "build": "make -C clibs && npm run build-zig && tsc",
     "build-ts": "tsc",
     "build-zig": "npx tsx scripts/zig_cross_compile.ts",
-    "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64)",
+    "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",

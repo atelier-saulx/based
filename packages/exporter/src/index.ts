@@ -29,10 +29,12 @@ const getCsvFileName = (typeId: number, startNodeId: number) => {
   return join(OUTPUT_DIR, `${typeId}_${startNodeId}.csv`)
 }
 
+var query
+
 const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
+  const xx = Date.now()
   const [typeId, startNodeId] = destructureTreeKey(blockKey)
   const def = db.client.schemaTypesParsedById[typeId]
-
   log(
     `Processing block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
   )
@@ -56,7 +58,9 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   await fileHandle.write(toCsvHeader(csvHeader))
 
   const allCsvRows: any[][] = []
+  log(Date.now() - xx, 'ms start')
 
+  const x = Date.now()
   await db.server.loadBlock(def.type, startNodeId).catch((e) => {
     if (e.message !== 'Block hash mismatch') {
       console.error(e)
@@ -64,18 +68,42 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       isDone = true
     }
   })
-  log(`Using chunks with ${CHUNK_SIZE} size.`)
-  while (!isDone) {
-    log(`  - Loading chunk from offset ${offsetStart}...`)
 
+  log(Date.now() - x, 'ms', 'load dat shit')
+  log(`  - Using chunks with ${CHUNK_SIZE} size.`)
+  while (!isDone) {
+    log(`  - Processing chunk from offset ${offsetStart}...`)
+    const d = Date.now()
+
+    // if (!query) {
+    // console.log('!query', offsetStart, offsetEnd)
+    // query = db.query(def.type).include('*').range(offsetStart, offsetEnd)
+    // // } else {
+    // //   console.log('reset', offsetStart, offsetEnd)
+    // //   query.reset()
+    // //   query.range(offsetStart, offsetEnd)
+    // // }
+
+    // const q = await query.get()
+    // const data = q.toObject()
     const data = await db
       .query(def.type)
       .include('*')
       .range(offsetStart, offsetEnd)
       .get()
       .toObject()
+    // log(
+    //   data.length,
+    //   'Total read time',
+    //   Date.now() - d,
+    //   'ms',
+    //   'query exec time (without read)',
+    //   q.execTime,
+    // )
 
-    if (!data || Object.keys(data).length === 0) {
+    let d2 = Date.now()
+
+    if (!data || Object.keys(data).length === 0 || data.length === 0) {
       isDone = true
       log('    - No more data in this chunk. Finishing.')
       break
@@ -94,13 +122,16 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     await fileHandle.write(toCsvChunk(csvRows))
 
     if (csvRows.length == CHUNK_SIZE) {
+      console.log(csvRows.length)
       offsetStart += CHUNK_SIZE
       offsetEnd += CHUNK_SIZE
       isDone = false
     } else {
       isDone = true
     }
+    log("chunk's write time", Date.now() - d2)
   }
+
   try {
     if (fileHandle) {
       await fileHandle.close()
@@ -109,6 +140,11 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   } catch (error) {
     console.error(`  - Failed to write CSV file:`, error)
   }
+  log(
+    `  - Unload block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
+  )
+  await db.server.unloadBlock(def.type, startNodeId)
+  log('==================')
 }
 
 const db = new BasedDb({ path: './tmp' })
@@ -124,8 +160,13 @@ await import('fs')
   .catch(console.error)
 
 for (const blockInfo of db.server.verifTree.types()) {
-  for (const block of db.server.verifTree.blocks(blockInfo)) {
+  let i = 0
+  blockLoop: for (const block of db.server.verifTree.blocks(blockInfo)) {
+    if (i == 3) {
+      break blockLoop
+    }
     await processBlockAndExportToCsv(db, block.key)
+    i++
   }
 }
 
