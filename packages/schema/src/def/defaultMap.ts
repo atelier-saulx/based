@@ -5,7 +5,7 @@ export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [TYPE_INDEX_MAP.alias]: '',
   [TYPE_INDEX_MAP.binary]: new Uint8Array([]),
   [TYPE_INDEX_MAP.boolean]: false,
-  [TYPE_INDEX_MAP.cardinality]: 0,
+  [TYPE_INDEX_MAP.cardinality]: [],
   [TYPE_INDEX_MAP.number]: 0,
   [TYPE_INDEX_MAP.timestamp]: 0,
   [TYPE_INDEX_MAP.enum]: 0,

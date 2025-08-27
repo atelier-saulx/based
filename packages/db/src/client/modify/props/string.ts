@@ -24,7 +24,7 @@ export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
   if (ctx.operation !== UPDATE) {
     return
   }
-  if (lang === 0) {
+  if (!lang) {
     reserve(ctx, PROP_CURSOR_SIZE + 1)
     writePropCursor(ctx, def)
     writeU8(ctx, DELETE)

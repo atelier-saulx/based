@@ -60,6 +60,8 @@ await test('client server basic', async (t) => {
     },
   })
 
+  console.log(await client1.query('user').get())
+
   const fred = client1.create('user', {
     name: 'fred',
   })
@@ -70,6 +72,7 @@ await test('client server basic', async (t) => {
     name: 'marie',
   })
 
+  console.log('--', await youzi, await fred)
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],

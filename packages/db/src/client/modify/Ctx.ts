@@ -21,12 +21,12 @@ export class Ctx {
   operation: ModifyOp
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
-  scheduled: boolean
+  scheduled: Promise<void>
   created: Record<number, number> = {} // <typeId, count
   locale: LangCode
-  sort?: number
-  sortText?: number
-  defaults?: number
+  sort: number = 0
+  sortText: number = 0
+  defaults: number = 0
   cursor: {
     id?: number
     type?: number

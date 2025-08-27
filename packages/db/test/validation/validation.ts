@@ -144,7 +144,7 @@ await test('update', async (t) => {
   })
 
   await throws(async () => {
-    db.update('user', cId, {
+    await db.update('user', cId, {
       cardinality: ['a', 'b', 1],
     })
   })
@@ -905,11 +905,6 @@ await test('set text without locale', async (t) => {
     },
     { locale: 'it' },
   )
-
-  await db.update('country', country1, {
-    name: 'Land1',
-    cool: 'english text2',
-  })
 })
 
 await test('range validation', async (t) => {

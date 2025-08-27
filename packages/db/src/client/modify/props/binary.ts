@@ -33,13 +33,24 @@ export const writeBinaryRaw = (ctx: Ctx, val: Uint8Array): void => {
   writeU32(ctx, crc)
 }
 
-export const writeBinary = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeBinary = (
+  ctx: Ctx,
+  def: PropDef,
+  val: any,
+  validated?: boolean,
+) => {
   if (val === null) {
     deleteProp(ctx, def)
     return
   }
-  validate(def, val)
+
   const buf = getBuffer(val)
+  if (buf === undefined) {
+    throw [def, val]
+  }
+  if (!validated) {
+    validate(def, buf)
+  }
   if (!buf.byteLength) {
     deleteProp(ctx, def)
     return

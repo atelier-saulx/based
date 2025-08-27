@@ -3,8 +3,7 @@ import { DbClient } from '../../src/client/index.js'
 import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
-import { equal } from 'assert'
-import { deepEqual } from '../shared/assert.js'
+import { deepEqual, equal } from '../shared/assert.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -104,6 +103,7 @@ await test('subscription schema changes', async (t) => {
     derp: 100,
   })
   await wait(20)
+  console.log(subResults)
   equal(cnt, 3, 'fired 3 times')
   deepEqual(
     subResults,

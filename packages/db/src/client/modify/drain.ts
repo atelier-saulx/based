@@ -66,21 +66,18 @@ export const drain = (db: DbClient, ctx: Ctx) => {
 export const schedule = (db: DbClient, ctx: Ctx) => {
   // return drain(db, ctx)
   if (ctx.scheduled || ctx.index === 8) {
-    return
+    return ctx.scheduled
   }
-  ctx.scheduled = true
-  return new Promise<void>((resolve) => {
+  ctx.scheduled = new Promise<void>((resolve) => {
     if (db.flushTime === 0) {
-      process.nextTick(async () => {
-        ctx.scheduled = false
-        await drain(db, ctx)
-        resolve()
+      process.nextTick(() => {
+        ctx.scheduled = null
+        resolve(drain(db, ctx))
       })
     } else {
-      setTimeout(async () => {
-        ctx.scheduled = false
-        await drain(db, ctx)
-        resolve()
+      setTimeout(() => {
+        ctx.scheduled = null
+        resolve(drain(db, ctx))
       }, db.flushTime)
     }
   })

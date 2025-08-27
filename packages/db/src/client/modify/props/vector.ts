@@ -33,6 +33,6 @@ export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
 
   writeU32(ctx, size + 4)
   writeU8(ctx, padding)
-  writePadding(ctx, padding)
+  writePadding(ctx, 3 - padding)
   writeU8Array(ctx, new Uint8Array(val.buffer).subarray(0, size))
 }

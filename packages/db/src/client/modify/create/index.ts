@@ -27,11 +27,10 @@ import { writeU8 } from '../uint.js'
 import { validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 
-const writeDefaults = (ctx: Ctx) => {
+const writeDefaults = (ctx: Ctx, payload) => {
   if (!ctx.schema.hasSeperateDefaults) {
     return
   }
-
   if (ctx.defaults !== ctx.schema.separateDefaults.props.size) {
     for (const def of ctx.schema.separateDefaults.props.values()) {
       const type = def.typeIndex
@@ -153,9 +152,9 @@ const writeCreate = (ctx: Ctx, payload: any) => {
   if (!ctx.cursor.main && !ctx.schema.mainEmptyAllZeroes) {
     writeMainBuffer(ctx)
   }
-  writeDefaults(ctx)
-  // writeSortable(ctx)
-  // writeSortableText(ctx)
+  writeDefaults(ctx, payload)
+  writeSortable(ctx)
+  writeSortableText(ctx)
 }
 
 export function create(
@@ -169,6 +168,7 @@ export function create(
 
   try {
     validatePayload(payload)
+    validatePayload(schema)
 
     if (schema.hooks?.create) {
       payload = schema.hooks.create(payload) || payload
@@ -178,6 +178,7 @@ export function create(
       if (!opts?.unsafe) {
         throw 'Invalid payload. "id" not allowed'
       }
+
       ctx.id = payload.id
     } else {
       if (!(schema.id in ctx.created)) {
@@ -185,6 +186,19 @@ export function create(
         ctx.max -= 6
       }
       ctx.id = ctx.created[schema.id] + 1
+    }
+
+    // TODO remove this, this is only for migration
+    schema.lastId ??= 0
+    if (schema.lastId < payload.id) {
+      schema.lastId = payload.id
+    }
+
+    // console.log(type, ctx.id, payload, schema.lastId)
+
+    if (ctx.defaults) {
+      ctx.defaults = 0
+      schema.separateDefaults?.bufferTmp.fill(0)
     }
 
     if (ctx.sort) {
@@ -200,8 +214,10 @@ export function create(
     ctx.schema = schema
     ctx.operation = CREATE
     ctx.overwrite = true
+    ctx.unsafe = opts?.unsafe
     ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
-    ctx.defaults = 0
+
+    ctx.start = ctx.index
     ctx.start = ctx.index
     writeCreate(ctx, payload)
     ctx.created[schema.id]++

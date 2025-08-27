@@ -3,6 +3,7 @@ import { validateId } from '../validate.js'
 import {
   FULL_CURSOR_SIZE,
   writeMainCursor,
+  writeNodeCursor,
   writePropCursor,
   writeTypeCursor,
 } from '../cursor.js'
@@ -20,13 +21,17 @@ export function del(db: DbClient, type: string, id: number) {
     if (schema.insertOnly) {
       throw `This type is insertOnly`
     }
+
+    ctx.id = id
     ctx.start = ctx.index
     ctx.schema = schema
     ctx.operation = UPDATE
+
     validateId(id)
     reserve(ctx, FULL_CURSOR_SIZE + 2 + schema.separate.length * 12) // 12 too much?
     writeTypeCursor(ctx)
     writeMainCursor(ctx)
+    writeNodeCursor(ctx)
     writeU8(ctx, DELETE_SORT_INDEX)
     for (const def of schema.separate) {
       writePropCursor(ctx, def)

@@ -373,20 +373,24 @@ export class DbServer extends DbShared {
       while (i > contentEnd) {
         const typeId = readUint16(payload, i - 6)
         const count = readUint32(payload, i - 4)
-
         const typeDef = this.schemaTypesParsedById[typeId]
-
+        const lastId =
+          typeDef.lastId || native.getTypeInfo(typeId, this.dbCtxExternal)?.[1]
+        console.log(
+          { typeId, lastId },
+          native.getTypeInfo(typeId, this.dbCtxExternal),
+        )
         if (!typeDef) {
           this.emit('info', 'Missing typeDef, cancel write')
           return null
         }
 
         // TODO replace this with Ctx.created
-        const offset = typeDef.lastId
+        const offset = lastId
         // write the offset into payload for zig to use
         writeUint32(payload, offset, i - 4)
         result[typeId] = offset
-        typeDef.lastId += count
+        typeDef.lastId = lastId + count
         i -= 6
       }
     }

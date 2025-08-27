@@ -13,6 +13,7 @@ import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { deSerialize } from '@based/schema'
 import { DbSchema } from '../../schema.js'
+import { setTimeout } from 'node:timers/promises'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -141,7 +142,8 @@ if (isMainThread) {
 
       // WE ARE ONLY GOING TO SEND { type: lastNodeId }
       channel.postMessage(cp(toDb.server.schemaTypesParsed))
-
+      // for debugging only
+      await setTimeout(100)
       setToSleep(workerState)
     }
   } catch (e) {
