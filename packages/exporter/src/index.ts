@@ -77,7 +77,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   while (!isDone) {
     log(`  - Processing chunk from offset ${offsetStart}...`)
-    log(`.range(${offsetStart}, ${offsetEnd})`)
     const data = await db
       .query(def.type)
       .include('*')
@@ -103,9 +102,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
     await fileHandle.write(toCsvChunk(csvRows, propTypes))
 
-    console.log(
-      `===> offsetStart (${offsetStart}) + CHUNK_SIZE (${CHUNK_SIZE}) >= endNodeId (${endNodeId})`,
-    )
     if (offsetStart + CHUNK_SIZE >= endNodeId) {
       isDone = true
       log('    - Final chunk processed. Finishing.')
