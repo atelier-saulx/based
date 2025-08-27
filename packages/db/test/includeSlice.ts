@@ -29,6 +29,8 @@ await test('slice string / text', async (t) => {
           e: 'string',
           f: 'string',
           g: 'string',
+          h: 'string',
+          flags: 'string',
         },
       },
     },
@@ -40,10 +42,12 @@ await test('slice string / text', async (t) => {
     name: 'abcdefg',
     b: italy,
     c: '🤪💩👌⚡️🤪💩👌⚡️',
-    d: 'üßßa',
-    e: '你好',
+    d: 'üaßßa',
+    e: '你a好AAAA',
     f: '€Abc',
     g: 'éAAAA',
+    h: '🚀🚀🚀🚀🚀🚀🚀',
+    flags: '🇺🇸🇿🇼🇺🇸',
   })
 
   // const q = await db.query('item', 1).get()
@@ -55,7 +59,10 @@ await test('slice string / text', async (t) => {
       end: 1,
     })
     .include('d', {
-      end: 1,
+      end: 4,
+    })
+    .include('flags', {
+      end: 2,
     })
     .include('e', {
       end: 1,
@@ -71,6 +78,9 @@ await test('slice string / text', async (t) => {
     })
     .include('g', {
       end: 1,
+    })
+    .include('e', {
+      end: 3,
     })
     .get()
     .inspect()

@@ -134,6 +134,15 @@ fn parseOpts(
     return value;
 }
 
+pub inline fn isFlagEmoj(i: *usize, len: *usize, charLen: *u32, value: []u8) bool {
+    return i.* + 8 < len.* and
+        charLen.* == 3 and
+        value[i.*] == 240 and
+        value[i.* + 1] == 159 and
+        value[i.* + 2] == 135 and
+        value[i.* + 4] == 240;
+}
+
 fn parseOptsString(
     ctx: *QueryCtx,
     value: []u8,
@@ -154,37 +163,56 @@ fn parseOptsString(
                 const v = value[0 .. opts.end + 2];
                 return v;
             }
-        } else {
-            if (value[1] == 1) {
-                // *4
-                const v = try ctx.allocator.alloc(u8, opts.end + 2);
-                v[0] = value[0];
-                v[1] = 0;
-                _ = try decompressFirstBytes(ctx.db, value, v[2..]);
-                return v;
+        } else if (value[1] == 1) {
+            // +8 per 10 chars
+            var extraSize: usize = undefined;
+            if (opts.end > 10) {
+                extraSize = opts.end / 8 + 8;
             } else {
-                var i: usize = 2;
-                var chars: usize = 0;
-                var len: usize = opts.end * 4 + 2;
-                if (len > value.len - 4) {
-                    len = value.len - 4;
+                extraSize = 8;
+            }
+
+            std.debug.print("extra size decompress {any} len: {any} \n", .{ extraSize, opts.end });
+
+            const v = try ctx.allocator.alloc(u8, opts.end + 2);
+            v[0] = value[0];
+            v[1] = 0;
+            _ = try decompressFirstBytes(ctx.db, value, v[2..]);
+            // Return collectChars(value, opts); going to be harder scince you may have to expand more chars...
+
+            return v;
+        } else {
+            var i: usize = 2;
+            var prevChar: usize = i;
+            var chars: usize = 0;
+            const len: usize = value.len - 4;
+            while (i < len) {
+                if (chars == opts.end) {
+                    return value[0..i];
                 }
-                while (i < len) {
-                    if (value[i] < 127) {
-                        if (chars == opts.end) {
-                            return value[0..i];
-                        }
-                        chars += 1;
+                var charLen = selva.selva_mblen(value[i]);
+                if (charLen > 0) {
+                    chars += 1;
+                    if (isFlagEmoj(&i, value)) {
+                        i += 4;
                     } else {
-                        // std.debug.print("put byte {any} \n", .{value[i]});
-                        const charLen = selva.selva_mblen(value[i]);
-                        // var code_point_bytes: [4]u8 = undefined;
-                        std.debug.print("MULTIBYE? byte: {any} mlen: {any} \n", .{ value[i], charLen });
+                        i += (charLen + 1);
+                    }
+                    prevChar = i;
+                } else {
+                    chars += 1;
+                    // Ascii expansion characters
+                    if (i + 2 < len and value[i] < 128 and value[i + 1] == 204) {
+                        charLen = selva.selva_mblen(value[i + 1]);
+                        if (charLen > 0) {
+                            i += charLen + 1;
+                        }
                     }
                     i += 1;
+                    prevChar = i;
                 }
-                return value[0..i];
             }
+            return value[0..i];
         }
     }
     return value[0 .. value.len - 4];
