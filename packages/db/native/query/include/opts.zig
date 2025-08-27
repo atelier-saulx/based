@@ -15,6 +15,21 @@ pub inline fn getOpts(v: []u8, i: *u16) *const IncludeOpts {
     return &.{ .end = utils.read(u32, v, i.* + 1), .isChars = v[i.*] == 1 };
 }
 
+// Non string slice (bytes)
+pub fn parseOpts(
+    value: []u8,
+    opts: *const IncludeOpts,
+) []u8 {
+    if (opts.end != 0) {
+        if (value.len < opts.end) {
+            return value[0..value.len];
+        } else {
+            return value[0..opts.end];
+        }
+    }
+    return value;
+}
+
 pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u8) bool {
     return i.* + 8 < len.* and
         charLen.* == 3 and
@@ -90,20 +105,6 @@ fn parseCharEndDeflate(
         return parseCharEndDeflate(ctx, value, opts, extraSize);
     }
     return alloc[0 .. i + 2];
-}
-
-pub fn parseOpts(
-    value: []u8,
-    opts: *const IncludeOpts,
-) []u8 {
-    if (opts.end != 0) {
-        if (value.len < opts.end) {
-            return value[0..value.len];
-        } else {
-            return value[0..opts.end];
-        }
-    }
-    return value;
 }
 
 pub fn parseOptsString(
