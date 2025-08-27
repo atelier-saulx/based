@@ -379,6 +379,23 @@ pub fn writeEdgeProp(
     }
 }
 
+pub fn ensureEdgePropString(
+    ctx: *modifyCtx.ModifyCtx,
+    node: Node,
+    efc: *const selva.EdgeFieldConstraint,
+    ref: *selva.SelvaNodeLargeReference,
+    fieldSchema: FieldSchema,
+) !*selva.selva_string {
+    return selva.selva_fields_ensure_string2(
+        ctx.db.selva.?,
+        node,
+        efc,
+        ref,
+        fieldSchema,
+        selva.HLL_INIT_SIZE,
+    ) orelse errors.SelvaError.SELVA_ENOTSUP;
+}
+
 fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
     const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
     modifyCtx.markDirtyRange(mctx, typeId, nodeId);
