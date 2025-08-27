@@ -62,9 +62,10 @@ await test('slice string / text', async (t) => {
 
   const x = await db
     .query('item', id1)
-    // .include('name', {
-    //   end: 1,
-    // })
+    .include('name', {
+      end: 1,
+      meta: true,
+    })
     // .include('d', {
     //   end: 4,
     // })
@@ -89,9 +90,9 @@ await test('slice string / text', async (t) => {
     // .include('e', {
     //   end: 3,
     // })
-    .include('bigBoyString', { end: 5 })
+    .include('bigBoyString', { meta: 'only' }) // end: 60,
     .get()
-    .inspect()
+    .inspect(10, true)
 
   console.log(new TextEncoder().encode(x.toObject().c))
 

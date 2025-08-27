@@ -28,12 +28,16 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
     data[i.*] = item.*.prop;
     i.* += 1;
     const v = item.*.value;
-    data[i.*] = v[0]; // tmp
+    data[i.*] = v[0];
     i.* += 1;
     data[i.*] = v[1];
     i.* += 1;
     utils.copy(data[i.* .. i.* + 4], v[v.len - 4 .. v.len]);
-    writeInt(u32, data, i.* + 4, v.len);
+    if (v[1] == 1) {
+        utils.copy(data[i.* + 4 .. i.* + 8], v[2..6]);
+    } else {
+        writeInt(u32, data, i.* + 4, v.len);
+    }
     i.* += 8;
 }
 

@@ -31,8 +31,11 @@ fn parseCharEndDeflate(
     extraSize: *usize,
 ) []u8 {
     const size = utils.read(u32, value, 2);
-
-    const alloc = ctx.allocator.alloc(u8, opts.end + 2 + extraSize.*) catch |err| {
+    const allocLen: usize = opts.end + 2 + extraSize.*;
+    if (size < allocLen) {
+        return value;
+    }
+    const alloc = ctx.allocator.alloc(u8, allocLen) catch |err| {
         std.log.err("Error allocating mem parseCharEndDeflate {any} \n", .{err});
         return &.{};
     };
@@ -42,21 +45,18 @@ fn parseCharEndDeflate(
         std.log.err("Error decompressing parseCharEndDeflate {any} \n", .{err});
         return &.{};
     };
-
-    std.debug.print("---> s: {d} v: {any}, alloc: {any} {any}", .{ size, v, alloc, value });
-    // Return collectChars(value, opts); going to be harder scince you may have to expand more chars...
     var i: usize = 0;
     var prevChar: usize = i;
-    var chars: usize = 0;
+    var chars: u32 = 0;
     while (i < v.len) {
         if (chars == opts.end) {
-            return v[0..i];
+            return alloc[0 .. i + 2];
         }
         var charLen = selva.selva_mblen(v[i]);
         if (charLen > 0) {
             chars += 1;
             if (isFlagEmoj(&i, &v.len, &charLen, v)) {
-                i += 4;
+                i += 8;
             } else {
                 i += (charLen + 1);
             }
@@ -74,14 +74,11 @@ fn parseCharEndDeflate(
             prevChar = i;
         }
     }
-
     if (i >= v.len) {
-        std.debug.print("\nDERP!\n", .{});
         ctx.allocator.destroy(&alloc);
         extraSize.* = extraSize.* * 2;
         return parseCharEndDeflate(ctx, value, opts, extraSize);
     }
-
     return alloc[0 .. i + 2];
 }
 
@@ -104,7 +101,6 @@ pub fn parseOptsString(
     value: []u8,
     opts: *const IncludeOpts,
 ) ![]u8 {
-    std.debug.print("{any} \n", .{opts});
     if (opts.end != 0) {
         if (!opts.isChars) {
             if (value[1] == 1) {
@@ -120,8 +116,6 @@ pub fn parseOptsString(
                 return v;
             }
         } else if (value[1] == 1) {
-            // this has to be a function where it will decompress more if there is not enough
-            // +8 per 10 chars
             var extraSize: usize = undefined;
             if (opts.end > 10) {
                 extraSize = opts.end / 8 + 8;
@@ -142,7 +136,7 @@ pub fn parseOptsString(
                 if (charLen > 0) {
                     chars += 1;
                     if (isFlagEmoj(&i, &len, &charLen, value)) {
-                        i += 4;
+                        i += 8;
                     } else {
                         i += (charLen + 1);
                     }

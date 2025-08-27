@@ -131,9 +131,6 @@ pub fn getFields(
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 const optsSize = include[i + 2];
-                std.debug.print("SOME OPTS {any} {any} {any} \n", .{ optsSize, prop, field });
-                // .{}
-                // here we add a start + end var (bit longer but fine)
                 i += 3;
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
@@ -152,6 +149,8 @@ pub fn getFields(
                             idIsSet = true;
                         },
                         t.Prop.TEXT => {
+                            // textOptsSize
+                            // normalOpts
                             // - actual options ofc
                             if (optsSize == 0) {
                                 const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
@@ -160,6 +159,7 @@ pub fn getFields(
                                     size += s;
                                 }
                             } else {
+                                // add this
                                 const fallbackSize = optsSize - 1;
                                 const code: t.LangCode = @enumFromInt(include[i]);
                                 i += optsSize;
@@ -180,12 +180,20 @@ pub fn getFields(
                             }
                         },
                         t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
-                            size += try f.fixed(isEdge, r, false, undefined);
+                            if (optsSize != 0) {
+                                size += try f.fixed(isEdge, r, false, undefined);
+                            } else {
+                                size += try f.fixed(isEdge, r, true, o.getOpts(include, &i));
+                            }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         else => {
-                            size += try f.default(isEdge, r, false, undefined);
+                            if (optsSize != 0) {
+                                size += try f.default(isEdge, r, false, undefined);
+                            } else {
+                                size += try f.default(isEdge, r, true, o.getOpts(include, &i));
+                            }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
