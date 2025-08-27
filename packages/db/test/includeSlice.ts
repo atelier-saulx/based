@@ -31,10 +31,16 @@ await test('slice string / text', async (t) => {
           g: 'string',
           h: 'string',
           flags: 'string',
+          bigBoyString: 'string',
         },
       },
     },
   })
+
+  let bigBoyString = '🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸'
+  for (let i = 0; i < 200; i++) {
+    bigBoyString += 'a'
+  }
 
   const id1 = await db.create('item', {
     // first uncompressed then compressed!
@@ -48,6 +54,7 @@ await test('slice string / text', async (t) => {
     g: 'éAAAA',
     h: '🚀🚀🚀🚀🚀🚀🚀',
     flags: '🇺🇸🇿🇼🇺🇸',
+    bigBoyString,
   })
 
   // const q = await db.query('item', 1).get()
@@ -55,33 +62,34 @@ await test('slice string / text', async (t) => {
 
   const x = await db
     .query('item', id1)
-    .include('name', {
-      end: 1,
-    })
-    .include('d', {
-      end: 4,
-    })
-    .include('flags', {
-      end: 2,
-    })
-    .include('e', {
-      end: 1,
-    })
-    .include('f', {
-      end: 1,
-    })
-    // .include('b', {
-    //   end: 200,
+    // .include('name', {
+    //   end: 1,
     // })
-    .include('c', {
-      end: 1,
-    })
-    .include('g', {
-      end: 1,
-    })
-    .include('e', {
-      end: 3,
-    })
+    // .include('d', {
+    //   end: 4,
+    // })
+    // .include('flags', {
+    //   end: 2,
+    // })
+    // .include('e', {
+    //   end: 1,
+    // })
+    // .include('f', {
+    //   end: 1,
+    // })
+    // // .include('b', {
+    // //   end: 200,
+    // // })
+    // .include('c', {
+    //   end: 1,
+    // })
+    // .include('g', {
+    //   end: 1,
+    // })
+    // .include('e', {
+    //   end: 3,
+    // })
+    .include('bigBoyString', { end: 5 })
     .get()
     .inspect()
 

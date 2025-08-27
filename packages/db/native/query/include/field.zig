@@ -143,6 +143,54 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
         value[i.* + 4] == 240;
 }
 
+fn parseCharEndDeflate(ctx: *QueryCtx, value: []u8, opts: *const types.IncludeOpts) ![]u8 {
+    // this has to be a function where it will decompress more if there is not enough
+    // +8 per 10 chars
+    var extraSize: usize = undefined;
+    if (opts.end > 10) {
+        extraSize = opts.end / 8 + 8;
+    } else {
+        extraSize = 8;
+    }
+    const len: usize = opts.end + 2 + extraSize;
+    std.debug.print("extra size decompress {any} len: {any} \n", .{ extraSize, opts.end });
+    const v = try ctx.allocator.alloc(u8, len);
+    v[0] = value[0];
+    v[1] = 0;
+    _ = try decompressFirstBytes(ctx.db, value, v[2..]);
+    // Return collectChars(value, opts); going to be harder scince you may have to expand more chars...
+    var i: usize = 2;
+    var prevChar: usize = i;
+    var chars: usize = 0;
+    while (i < len) {
+        if (chars == opts.end) {
+            return v[0..i];
+        }
+        var charLen = selva.selva_mblen(v[i]);
+        if (charLen > 0) {
+            chars += 1;
+            if (isFlagEmoj(&i, &len, &charLen, v)) {
+                i += 4;
+            } else {
+                i += (charLen + 1);
+            }
+            prevChar = i;
+        } else {
+            chars += 1;
+            // Ascii expansion characters
+            if (i + 2 < len and v[i] < 128 and v[i + 1] == 204) {
+                charLen = selva.selva_mblen(v[i + 1]);
+                if (charLen > 0) {
+                    i += charLen + 1;
+                }
+            }
+            i += 1;
+            prevChar = i;
+        }
+    }
+    return v[0..i];
+}
+
 fn parseOptsString(
     ctx: *QueryCtx,
     value: []u8,
@@ -164,23 +212,7 @@ fn parseOptsString(
                 return v;
             }
         } else if (value[1] == 1) {
-            // +8 per 10 chars
-            var extraSize: usize = undefined;
-            if (opts.end > 10) {
-                extraSize = opts.end / 8 + 8;
-            } else {
-                extraSize = 8;
-            }
-
-            std.debug.print("extra size decompress {any} len: {any} \n", .{ extraSize, opts.end });
-
-            const v = try ctx.allocator.alloc(u8, opts.end + 2);
-            v[0] = value[0];
-            v[1] = 0;
-            _ = try decompressFirstBytes(ctx.db, value, v[2..]);
-            // Return collectChars(value, opts); going to be harder scince you may have to expand more chars...
-
-            return v;
+            return try parseCharEndDeflate(ctx, value, opts);
         } else {
             var i: usize = 2;
             var prevChar: usize = i;
