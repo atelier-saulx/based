@@ -94,7 +94,7 @@ await test('slice string / text', async (t) => {
     .get()
     .inspect(10, true)
 
-  console.log(new TextEncoder().encode(x.toObject().c))
+  // console.log(new TextEncoder().encode(x.toObject().c))
 
   // for (let i = 0; i < 100e3; i++) {
   //   db.create('item', {
