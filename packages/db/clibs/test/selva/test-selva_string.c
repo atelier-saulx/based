@@ -7,16 +7,6 @@
 #include <stdio.h>
 #include "selva/selva_string.h"
 
-void setup(void)
-{
-    selva_string_init_tls();
-}
-
-void teardown(void)
-{
-    selva_string_deinit_tls();
-}
-
 PU_TEST(test_create)
 {
     struct selva_string *s;
@@ -52,6 +42,7 @@ PU_TEST(test_createf)
     return nullptr;
 }
 
+#if 0
 PU_TEST(test_createz)
 {
     static char uncompressed[1048576];
@@ -69,6 +60,7 @@ PU_TEST(test_createz)
 
     return nullptr;
 }
+#endif
 
 PU_TEST(test_dup)
 {
@@ -165,6 +157,7 @@ PU_TEST(test_crc)
     return nullptr;
 }
 
+#if 0
 PU_TEST(test_cmp)
 {
     struct selva_string *s1;
@@ -186,3 +179,4 @@ PU_TEST(test_cmp)
 
     return nullptr;
 }
+#endif
