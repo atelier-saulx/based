@@ -44,7 +44,8 @@ export const write = (
     } else {
       let len = l
       buf[offset + 1] = COMPRESSED
-      writeUint32(buf, len, offset + l + 2)
+      console.log('derp', len)
+      writeUint32(buf, len, offset + 2)
       writeUint32(buf, crc, offset + l + 6)
       return size + 10
     }

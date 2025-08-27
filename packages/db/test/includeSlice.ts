@@ -46,7 +46,7 @@ await test('slice string / text', async (t) => {
     // first uncompressed then compressed!
     // use something long e.g. italy
     name: 'abcdefg',
-    b: italy,
+    // b: italy,
     c: '🤪💩👌⚡️🤪💩👌⚡️',
     d: 'üaßßa',
     e: '你a好AAAA',

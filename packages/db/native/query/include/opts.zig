@@ -30,29 +30,32 @@ fn parseCharEndDeflate(
     opts: *const IncludeOpts,
     extraSize: *usize,
 ) []u8 {
-    const len: usize = opts.end + 2 + extraSize.*;
-    std.debug.print("extra size decompress {any} len: {any} \n", .{ extraSize.*, opts.end });
-    const v = ctx.allocator.alloc(u8, len) catch |err| {
+    const size = utils.read(u32, value, 2);
+
+    const alloc = ctx.allocator.alloc(u8, opts.end + 2 + extraSize.*) catch |err| {
         std.log.err("Error allocating mem parseCharEndDeflate {any} \n", .{err});
         return &.{};
     };
-    v[0] = value[0];
-    v[1] = 0;
-    _ = decompressFirstBytes(ctx.db, value, v[2..]) catch |err| {
+    alloc[0] = value[0];
+    alloc[1] = 0;
+    const v = decompressFirstBytes(ctx.db, value, alloc[2..]) catch |err| {
         std.log.err("Error decompressing parseCharEndDeflate {any} \n", .{err});
+        return &.{};
     };
+
+    std.debug.print("---> s: {d} v: {any}, alloc: {any} {any}", .{ size, v, alloc, value });
     // Return collectChars(value, opts); going to be harder scince you may have to expand more chars...
-    var i: usize = 2;
+    var i: usize = 0;
     var prevChar: usize = i;
     var chars: usize = 0;
-    while (i < len) {
+    while (i < v.len) {
         if (chars == opts.end) {
             return v[0..i];
         }
         var charLen = selva.selva_mblen(v[i]);
         if (charLen > 0) {
             chars += 1;
-            if (isFlagEmoj(&i, &len, &charLen, v)) {
+            if (isFlagEmoj(&i, &v.len, &charLen, v)) {
                 i += 4;
             } else {
                 i += (charLen + 1);
@@ -61,7 +64,7 @@ fn parseCharEndDeflate(
         } else {
             chars += 1;
             // Ascii expansion characters
-            if (i + 2 < len and v[i] < 128 and v[i + 1] == 204) {
+            if (i + 2 < v.len and v[i] < 128 and v[i + 1] == 204) {
                 charLen = selva.selva_mblen(v[i + 1]);
                 if (charLen > 0) {
                     i += charLen + 1;
@@ -71,7 +74,15 @@ fn parseCharEndDeflate(
             prevChar = i;
         }
     }
-    return v[0..i];
+
+    if (i >= v.len) {
+        std.debug.print("\nDERP!\n", .{});
+        ctx.allocator.destroy(&alloc);
+        extraSize.* = extraSize.* * 2;
+        return parseCharEndDeflate(ctx, value, opts, extraSize);
+    }
+
+    return alloc[0 .. i + 2];
 }
 
 pub fn parseOpts(
