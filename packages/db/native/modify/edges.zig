@@ -39,7 +39,7 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const val = db.getEdgeProp(ref, edgeFieldSchema);
+            const val = db.getEdgeProp(ctx.db, edgeConstraint, ref, edgeFieldSchema);
 
             if (val.len > 0) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
@@ -58,11 +58,11 @@ pub fn writeEdges(
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 try db.writeEdgeProp(
                     ctx,
-                    edgeData,
                     ctx.node.?,
                     edgeConstraint,
                     ref,
                     edgeFieldSchema,
+                    edgeData,
                 );
             }
         } else if (t == p.REFERENCE) {
@@ -71,11 +71,11 @@ pub fn writeEdges(
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
                 ctx,
-                edgeData,
                 ctx.node.?,
                 edgeConstraint,
                 ref,
                 edgeFieldSchema,
+                edgeData,
             );
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
@@ -94,11 +94,11 @@ pub fn writeEdges(
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
                 ctx,
-                edgeData,
                 ctx.node.?,
                 edgeConstraint,
                 ref,
                 edgeFieldSchema,
+                edgeData,
             );
         }
 
