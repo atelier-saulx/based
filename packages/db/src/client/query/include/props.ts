@@ -104,6 +104,7 @@ export const includeProp = (
         },
       })
     }
+
     const langs = def.include.props.get(prop.prop).opts
     if (def.lang.fallback.length > 0) {
       for (const fallback of def.lang.fallback) {

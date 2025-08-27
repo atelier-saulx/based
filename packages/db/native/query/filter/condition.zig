@@ -64,7 +64,7 @@ pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *Lib
     const isText: bool = prop == Prop.TEXT;
 
     const op: Op = @enumFromInt(q[i + 10]);
-    const next = i + 11 + valueSize;
+    const next = if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
     var query = q[i + 11 .. next];
     var value: []u8 = undefined;
     var pass = true;

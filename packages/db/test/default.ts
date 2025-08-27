@@ -288,7 +288,7 @@ await test('default values for all props in user type', async (t) => {
           friends: {
             type: 'references',
             items: {
-              ref: 'user', // Self-reference for simplicity in this test
+              ref: 'user',
               prop: 'friends',
             },
             // default: [], // something in there

@@ -33,6 +33,10 @@ export class BasedQueryResponse {
     return readId(this.def.readSchema, this.result)
   }
 
+  get queryId() {
+    return this.def.queryId
+  }
+
   get version() {
     return (this.checksum >>> 0) * FACTOR + (this.result.byteLength & MASK_B)
   }

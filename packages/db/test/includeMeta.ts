@@ -173,8 +173,8 @@ await test('meta for selva string', async (t) => {
     {
       id: 1,
       name: {
-        checksum: 1734243019465138,
-        size: 74162,
+        checksum: 1734243019581653,
+        size: 190677,
         crc32: 826951513,
         compressed: true,
         value: italy,

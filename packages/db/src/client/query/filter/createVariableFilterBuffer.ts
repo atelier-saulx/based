@@ -13,7 +13,7 @@ import {
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
-import { ENCODER, concatUint8Arr } from '@based/utils'
+import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
@@ -192,17 +192,10 @@ function writeVarFilter(
   buf[0] = ctx.type
   buf[1] = mode
   buf[2] = prop.typeIndex
-  buf[3] = start
-  buf[4] = start >>> 8
-  buf[5] = len
-  buf[6] = len >>> 8
-  buf[7] = size
-  buf[8] = size >>> 8
-  buf[9] = size >>> 16
-  buf[10] = size >>> 24
+  writeUint16(buf, start, 3)
+  writeUint16(buf, len, 5)
+  writeUint32(buf, size, 7)
   buf[11] = ctx.operation
-  // need to pas LANG FROM QUERY
-  // need to set on 12 if TEXT
   buf.set(val, 12)
 
   return buf

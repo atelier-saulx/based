@@ -1,5 +1,4 @@
 import { BasedDb } from '../../src/index.js'
-// import { mermaid } from '@based/schema-diagram'
 import test from '../shared/test.js'
 import createNorthwind from '../shared/northwindDb.js'
 
@@ -79,22 +78,21 @@ await test('northwind', async (t) => {
   // Seattle or Redmond.
   console.log(9)
   // TODO Impossible to OR
-  console.log(
-    await db
-      .query('employees')
-      .include('firstName', 'lastName', 'title', 'city')
-      .filter('title', '=', 'Sales Representative')
-      .filter('region', '=', 'WA')
-      .or((f) => {
-        f.filter('city', '=', 'Seattle').or('city', '=', 'London')
-      })
-      .get()
-      .toObject(),
-  )
+  ;(await db
+    .query('employees')
+    .include('firstName', 'lastName', 'title', 'city')
+    .filter('title', '=', 'Sales Representative')
+    .filter('region', '=', 'WA')
+    .or((f) => {
+      f.filter('city', '=', 'Seattle').or('city', '=', 'London')
+    })
+    .get()
+    .toObject(),
+    // if (1) process.exit()
 
-  // 10. Create a report that shows the company name, contact title, city and country of all
-  // customers in Mexico or in any city in Spain except Madrid.
-  console.log(10)
+    // 10. Create a report that shows the company name, contact title, city and country of all
+    // customers in Mexico or in any city in Spain except Madrid.
+    console.log(10))
   // TODO Impossible
 
   // 11. If the cost of freight is greater than or equal to $500.00, it will now be taxed by 10%.
