@@ -70,7 +70,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             if (currentData == null) {
-                currentData = selva.selva_fields_ensure_string(ctx.node.?, ctx.fieldSchema.?, selva.HLL_INIT_SIZE);
+                currentData = try db.ensurePropString(ctx, ctx.fieldSchema.?);
                 selva.hll_init(currentData, 14, true);
             }
             var i: usize = 4;

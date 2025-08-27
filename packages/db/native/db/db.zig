@@ -379,6 +379,15 @@ pub fn writeEdgeProp(
     }
 }
 
+// TODO This is now hll specific but we might want to change it.
+pub fn ensurePropString(
+    ctx: *modifyCtx.ModifyCtx,
+    fieldSchema: FieldSchema,
+) !*selva.selva_string {
+    return selva.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+}
+
+// TODO This is now hll specific but we might want to change it.
 pub fn ensureEdgePropString(
     ctx: *modifyCtx.ModifyCtx,
     node: Node,
@@ -393,7 +402,7 @@ pub fn ensureEdgePropString(
         ref,
         fieldSchema,
         selva.HLL_INIT_SIZE,
-    ) orelse errors.SelvaError.SELVA_ENOTSUP;
+    ) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
 fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
