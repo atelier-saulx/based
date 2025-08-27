@@ -311,9 +311,9 @@ pub fn getEdgeProp(
     }
 }
 
-pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-        selva.selva_get_edge_field_fields_schema(db, edgeConstaint),
+        selva.selva_get_edge_field_fields_schema(db.selva, edgeConstaint),
         field,
     );
     if (edgeFieldSchema == null) {
@@ -467,9 +467,9 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
+pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
     var hash: u128 = undefined;
-    try errors.selva(selva.selva_node_hash_range(db, typeEntry, start, end, &hash));
+    try errors.selva(selva.selva_node_hash_range(db.selva, typeEntry, start, end, &hash));
     return hash;
 }
 

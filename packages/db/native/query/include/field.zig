@@ -34,7 +34,7 @@ pub inline fn get(
         if (edgeRef.?.edgeConstaint == null) {
             return errors.DbIncludeError.EDGE_FROM_WEAKREF;
         }
-        fieldSchema = try db.getEdgeFieldSchema(ctx.db.selva.?, edgeRef.?.edgeConstaint.?, field);
+        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstaint.?, field);
         if (prop == t.Prop.CARDINALITY) {
             // make this in getEdgeProp
             value = db.getCardinalityReference(ctx.db, edgeRef.?.largeReference.?, fieldSchema);
