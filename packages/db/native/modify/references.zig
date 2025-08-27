@@ -42,11 +42,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         const node = try db.upsertNode(id, refTypeEntry);
 
-        // $index lets ignore for mark dirty
-
-        // if Other side is single ref then do the same as a single ref on this side
-
-        // pretty sure its this thats slow
         const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {
