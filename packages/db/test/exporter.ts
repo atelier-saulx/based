@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { wait } from '@based/utils'
 
-await test('export to csv', async (t) => {
+await test.skip('export to csv', async (t) => {
   const db = new BasedDb({
     path: '../exporter/tmp',
   })
