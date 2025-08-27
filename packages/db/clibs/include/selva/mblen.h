@@ -6,16 +6,15 @@
 #include "selva/_export.h"
 #include <stdint.h>
 
-/*
- * optnone is needed at least on clang to not optimize out the clz.
- * Otherwise this function will always return 0.
- */
-
 /***
  * Get the length of multibyte char.
  */
 SELVA_EXPORT
 #if defined(__clang__)
+/*
+ * optnone is needed at least on clang to not optimize out the clz.
+ * Otherwise this function will always return 0.
+ */
 __attribute__((optnone))
 #endif
 inline unsigned selva_mblen(char first_byte)
