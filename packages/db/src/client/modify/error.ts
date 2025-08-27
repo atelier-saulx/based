@@ -63,10 +63,11 @@ export const handleError = (
   args: IArguments,
   e: any,
 ): Promise<number> => {
+  ctx.index = ctx.start
+  ctx.cursor = {}
+
   if (e === RANGE_ERR) {
     if (ctx.start === 8) {
-      ctx.index = ctx.start
-      ctx.cursor = {}
       throw 'Out of range. Not enough space for this payload'
     }
     drain(db, ctx)

@@ -393,7 +393,7 @@ export class DbServer extends DbShared {
 
     const content = payload.subarray(8, contentEnd)
     const offsets = payload.subarray(contentEnd, payload.byteLength - 4)
-
+    // console.log({ content, offsets })
     if (this.activeReaders) {
       this.modifyQueue.push(new Uint8Array(payload))
     } else {

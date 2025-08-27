@@ -1,6 +1,8 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
 import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@based/utils'
+import { Ctx } from './modify/Ctx.js'
+import { resize } from './modify/resize.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
@@ -8,12 +10,14 @@ export const COMPRESSED = 1
 export const NOT_COMPRESSED = 0
 
 export const write = (
-  buf: Uint8Array,
+  ctx: Ctx,
   value: string,
   offset: number,
   noCompression: boolean,
   lang?: LangCode,
 ): number | null => {
+  const buf = ctx.array
+
   value = value.normalize('NFKD')
   buf[offset] = lang || 0
   const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
@@ -25,12 +29,15 @@ export const write = (
     const startPos = offset + 2
     const endPos = offset + 2 + l
     const willEnd = insertPos + l
-    if (willEnd > buf.length) {
-      return null
-    }
+    resize(ctx, willEnd)
+    // if (willEnd > buf.length) {
+    //   return null
+    // }
     buf.copyWithin(insertPos, startPos, endPos)
     const size = native.compress(buf, offset + 6, l)
+
     if (size === 0) {
+      resize(ctx, l + 6)
       buf[offset + 1] = NOT_COMPRESSED
       ENCODER.encodeInto(value, buf.subarray(offset + 2))
       buf[offset + l + 2] = crc
@@ -39,6 +46,7 @@ export const write = (
       buf[offset + l + 5] = crc >>>= 8
       return l + 6
     } else {
+      resize(ctx, size + 10)
       let len = l
 
       buf[offset + 1] = COMPRESSED
@@ -68,9 +76,13 @@ export const write = (
 export const compress = (str: string): Uint8Array => {
   const len = ENCODER.encode(str).byteLength
   const tmpCompressBlock = getTmpBuffer(len * 3)
-  const l = write(tmpCompressBlock, str, 0, false)
+  // @ts-ignore
+  const l = write({ array: tmpCompressBlock }, str, 0, false)
   const nBuffer = new Uint8Array(l)
   nBuffer.set(tmpCompressBlock.subarray(0, l))
+  // const l = write(tmpCompressBlock, str, 0, false)
+  // const nBuffer = new Uint8Array(l)
+  // nBuffer.set(tmpCompressBlock.subarray(0, l))
   return nBuffer
 }
 

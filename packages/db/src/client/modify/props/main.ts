@@ -7,6 +7,7 @@ import { writeU32, writeU8, writeU8Array } from '../uint.js'
 
 export const writeMainBuffer = (ctx: Ctx) => {
   if (ctx.cursor.main === null) {
+    reserve(ctx, PROP_CURSOR_SIZE + 5 + ctx.schema.mainLen)
     writeMainCursor(ctx)
     writeU8(ctx, ctx.operation)
     writeU32(ctx, ctx.schema.mainLen)

@@ -45,10 +45,9 @@ export const writeBinary = (ctx: Ctx, def: PropDef, val: any) => {
     return
   }
   const size = buf.byteLength + 6
-  reserve(ctx, PROP_CURSOR_SIZE + 5 + size)
+  reserve(ctx, PROP_CURSOR_SIZE + size + 11)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
-  writeU32(ctx, size)
   writeBinaryRaw(ctx, buf)
   markDefaults(ctx, def)
 }

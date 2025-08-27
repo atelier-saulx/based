@@ -87,8 +87,9 @@ export function update(
     }
 
     writeUpdate(ctx, payload)
+    const tmp = new Tmp(ctx, id)
     schedule(db, ctx)
-    return new Tmp(ctx, id)
+    return tmp
   } catch (e) {
     return handleError(db, ctx, update, arguments, e)
   }

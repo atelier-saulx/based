@@ -1,8 +1,18 @@
 import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { LangCode } from '@based/schema'
-import { CREATE, DELETE, DELETE_TEXT_FIELD, UPDATE } from '../types.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
+import {
+  CREATE,
+  DELETE,
+  DELETE_TEXT_FIELD,
+  RANGE_ERR,
+  UPDATE,
+} from '../types.js'
+import {
+  FULL_CURSOR_SIZE,
+  PROP_CURSOR_SIZE,
+  writePropCursor,
+} from '../cursor.js'
 import { reserve } from '../resize.js'
 import { ENCODER, writeUint32 } from '@based/utils'
 import { write } from '../../string.js'
@@ -40,7 +50,7 @@ export const writeString = (
 
   validate(def, val)
   let size = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
-  reserve(ctx, PROP_CURSOR_SIZE + 11 + size)
+  reserve(ctx, FULL_CURSOR_SIZE + 11 + size)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   const index = ctx.index
@@ -48,7 +58,10 @@ export const writeString = (
   if (isUint8) {
     writeU8Array(ctx, val)
   } else {
-    size = write(ctx.array, val, ctx.index, def.compression === 0, lang)
+    size = write(ctx, val, ctx.index, def.compression === 0, lang)
+    if (size === null) {
+      throw RANGE_ERR
+    }
     ctx.index += size
   }
   writeUint32(ctx.array, size, index)

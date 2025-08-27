@@ -1,6 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { wait } from '@based/utils'
 
 await test('references', async (t) => {
   const db = new BasedDb({
@@ -47,7 +48,9 @@ await test('references', async (t) => {
     flap: 20,
   })
 
+  console.log('aaaaa')
   await db.drain()
+  console.log('bbbbb')
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',

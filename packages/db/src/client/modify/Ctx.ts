@@ -5,7 +5,7 @@ import { type ModifyOp } from './types.js'
 import type { Tmp } from './Tmp.js'
 
 export class Ctx {
-  constructor(schemaChecksum: number, array: Uint8Array<ArrayBuffer>) {
+  constructor(schemaChecksum: number, array: Uint8Array<ArrayBufferLike>) {
     this.array = array
     this.max = array.buffer.maxByteLength - 4 // dataLen
     writeUint64(array, schemaChecksum, 0)
@@ -14,7 +14,7 @@ export class Ctx {
   start: number
   index: number = 8
   schema: SchemaTypeDef
-  array: Uint8Array<ArrayBuffer>
+  array: Uint8Array<ArrayBufferLike>
   max: number
   unsafe?: boolean
   overwrite?: boolean

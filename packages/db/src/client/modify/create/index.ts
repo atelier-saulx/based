@@ -19,7 +19,6 @@ import {
   ADD_EMPTY_SORT_TEXT,
   CREATE,
   ModifyOpts,
-  RANGE_ERR,
 } from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
@@ -206,8 +205,9 @@ export function create(
     ctx.start = ctx.index
     writeCreate(ctx, payload)
     ctx.created[schema.id]++
+    const tmp = new Tmp(ctx)
     schedule(db, ctx)
-    return new Tmp(ctx)
+    return tmp
   } catch (e) {
     return handleError(db, ctx, create, arguments, e)
   }

@@ -4,11 +4,15 @@ import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
 import { reserve } from './resize.js'
 
+let test = 0
 export const reset = (ctx: Ctx) => {
   ctx.index = 8
+  ctx.max = ctx.array.buffer.maxByteLength - 4
   ctx.cursor = {}
   ctx.created = {}
-  ctx.batch = {}
+  test++
+  // @ts-ignore
+  ctx.batch = { test }
 }
 
 export const cancel = (ctx: Ctx, error: Error) => {
@@ -18,7 +22,10 @@ export const cancel = (ctx: Ctx, error: Error) => {
 }
 
 export const consume = (ctx: Ctx) => {
-  console.log('too large:', ctx.index > ctx.array.byteLength)
+  if (ctx.index > ctx.array.byteLength) {
+    throw new Error('Invalid size - modify buffer length mismatch')
+  }
+
   const typeIds = Object.keys(ctx.created)
   const typeSize = typeIds.length * 6 + 4
   reserve(ctx, typeSize)
@@ -32,17 +39,21 @@ export const consume = (ctx: Ctx) => {
     writeUint32(payload, count, i + 2)
   }
   reset(ctx)
+
   return payload
 }
-
+let cnt = 0
 export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
+    const testCnt = cnt++
+    // console.log('drain:', ctx.index, testCnt, ctx.batch)
     const { batch } = ctx
     const payload = consume(ctx)
-
+    // console.log({ payload })
     ctx.draining = db.hooks
       .flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {
+        // console.log('done:', testCnt, batch)
         db.writeTime += dbWriteTime ?? 0
         batch.ready = true
         batch.offsets = offsets
@@ -54,28 +65,29 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         ctx.draining = null
         return drain(db, ctx)
       })
+    return ctx.draining
   }
-  return ctx.draining
 }
 
 export const schedule = (db: DbClient, ctx: Ctx) => {
-  if (ctx.scheduled || ctx.index === 8) {
-    return
-  }
-  ctx.scheduled = true
-  return new Promise<void>((resolve) => {
-    if (db.flushTime === 0) {
-      process.nextTick(() => {
-        ctx.scheduled = false
-        drain(db, ctx)
-        resolve()
-      })
-    } else {
-      setTimeout(() => {
-        ctx.scheduled = false
-        drain(db, ctx)
-        resolve()
-      }, db.flushTime)
-    }
-  })
+  drain(db, ctx)
+  // if (ctx.scheduled || ctx.index === 8) {
+  //   return
+  // }
+  // ctx.scheduled = true
+  // return new Promise<void>((resolve) => {
+  //   if (db.flushTime === 0) {
+  //     process.nextTick(() => {
+  //       drain(db, ctx)
+  //       resolve()
+  //       ctx.scheduled = false
+  //     })
+  //   } else {
+  //     setTimeout(() => {
+  //       drain(db, ctx)
+  //       resolve()
+  //       ctx.scheduled = false
+  //     }, db.flushTime)
+  //   }
+  // })
 }

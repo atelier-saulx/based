@@ -62,7 +62,7 @@ const putReferences = (
   refOp: RefOp,
 ): number => {
   writeU8(ctx, ctx.operation)
-  writeU32(ctx, val.length * 4)
+  writeU32(ctx, val.length * 4 + 1)
   writeU8(
     ctx,
     refOp === REF_OP_OVERWRITE ? REF_OP_PUT_OVERWRITE : REF_OP_PUT_ADD,
@@ -79,6 +79,7 @@ const putReferences = (
       if (hasEdgeOrIndex(def, id)) {
         return index
       }
+      console.log('PUT IT G!!')
       validate(def, id.id)
       writeU32(ctx, id.id)
       index++
@@ -185,6 +186,7 @@ const putOrUpdateReferences = (
   writePropCursor(ctx, def)
   const start = ctx.index
   const index = putReferences(ctx, def, val, refOp)
+  console.log('res:', val.length, ctx.array.subarray(start, ctx.index))
   if (index === val.length) {
     // did all
     return

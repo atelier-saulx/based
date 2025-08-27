@@ -4,6 +4,7 @@ import { reserve, resize } from '../resize.js'
 import { getBuffer, writeBinaryRaw } from '../props/binary.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
+import { PROP_CURSOR_SIZE } from '../cursor.js'
 
 export const writeBinaryEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   let size = 0
@@ -17,7 +18,7 @@ export const writeBinaryEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   }
 
   if (size) {
-    reserve(ctx, 3 + 6 + size + 4)
+    reserve(ctx, PROP_CURSOR_SIZE + size + 10)
     writeEdgeHeader(ctx, edge, STRING)
     writeBinaryRaw(ctx, val)
   } else {

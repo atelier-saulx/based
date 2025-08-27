@@ -23,7 +23,7 @@ export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
       : ENCODER.encode(val).byteLength + 6
   reserve(ctx, 3 + maxSize + 4)
   writeEdgeHeader(ctx, edge, STRING)
-  const realSize = write(ctx.array, val, ctx.index + 4, !edge.compression)
+  const realSize = write(ctx, val, ctx.index + 4, !edge.compression)
   if (realSize === null) {
     throw RANGE_ERR
   }

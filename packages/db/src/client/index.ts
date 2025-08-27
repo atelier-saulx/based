@@ -35,7 +35,7 @@ export class DbClient extends DbShared {
     this.maxModifySize = maxModifySize
     this.modifyCtx = new Ctx(
       0,
-      new Uint8Array(new ArrayBuffer(8, { maxByteLength: maxModifySize })),
+      new Uint8Array(new ArrayBuffer(12, { maxByteLength: maxModifySize })),
     )
     this.flushTime = flushTime
 
