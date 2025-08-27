@@ -1,15 +1,14 @@
-import { equal } from 'assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
+import { deepEqual, equal } from './shared/assert.js'
 
 await test('slice string / text', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
   await db.start({ clean: true })
-  // t.after(() => t.backup(db))
-  t.after(() => db.stop())
+  t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: {
@@ -44,10 +43,8 @@ await test('slice string / text', async (t) => {
   }
 
   const id1 = await db.create('item', {
-    // first uncompressed then compressed!
-    // use something long e.g. italy
     name: 'abcdefg',
-    // b: italy,
+    b: italy,
     c: '🤪💩👌⚡️🤪💩👌⚡️',
     d: 'üaßßa',
     e: '你a好AAAA',
@@ -63,70 +60,107 @@ await test('slice string / text', async (t) => {
     },
   })
 
-  // const q = await db.query('item', 1).get()
-  // equal(q.id, 1)
+  const q = await db.query('item', 1).get()
+  equal(q.id, 1)
 
-  const x = await db
-    .query('item', id1)
-    .include('body', { end: 3 })
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('name', {
+        end: 1,
+        meta: true,
+      })
+      .include('d', {
+        end: 4,
+      })
+      .include('flags', {
+        end: 2,
+      })
+      .include('e', {
+        end: 1,
+      })
+      .include('f', {
+        end: 1,
+      })
+      .include('b', {
+        end: 50,
+      })
+      .include('c', {
+        end: 1,
+      })
+      .include('g', {
+        end: 1,
+      })
+      .include('e', {
+        end: 3,
+      })
+      .include('bigBoyString', { meta: true, end: 3 })
+      .get(),
+    {
+      id: 1,
+      name: {
+        checksum: 8097896832434183,
+        size: 7,
+        crc32: 3861378113,
+        compressed: false,
+        value: 'a',
+      },
+      d: 'üaßß',
+      flags: '🇺🇸🇿🇼',
+      e: '你a好',
+      f: '€',
+      c: '🤪',
+      g: 'é',
+      bigBoyString: {
+        checksum: 6678244981997910,
+        size: 342,
+        crc32: 3184435359,
+        compressed: true,
+        value: '🤪🇺🇸🇿🇼',
+      },
+      b: '\nMain menu\n\nWikipediaThe Free Encyclopedia\nSearch ',
+    },
+    'Strings + chars',
+  )
+
+  deepEqual(
+    await db.query('item', id1).include('body', { end: 3 }).get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin', it: 'abc' } },
+    'Text all + chars',
+  )
+
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('body.fi', { end: 3 }, 'body.en', { end: 3 })
+      .get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin' } },
+    'Text specific',
+  )
+
+  deepEqual(
+    await db.query('item', id1).include('body', { end: 3 }).locale('en').get(),
+    { id: 1, body: '🤪🇺🇸🇿🇼' },
+    'Text specific locale',
+  )
+
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('body', { end: 4, bytes: true })
+      .locale('en')
+      .get(),
+    { id: 1, body: '🤪' },
+    'Text specific locale bytes',
+  )
+
+  /*
+    // .include('body', { end: 3 })
     // .include('body')
     // .include('body.fi', { end: 3 })
-
     // .include('body.en')
     // .include('body.it')
     // .include('body.fi')
-    // .include('name', {
-    //   end: 1,
-    //   meta: true,
-    // })
-    // .include('d', {
-    //   end: 4,
-    // })
-    // .include('flags', {
-    //   end: 2,
-    // })
-    // .include('e', {
-    //   end: 1,
-    // })
-    // .include('f', {
-    //   end: 1,
-    // })
-    // // .include('b', {
-    // //   end: 200,
-    // // })
-    // .include('c', {
-    //   end: 1,
-    // })
-    // .include('g', {
-    //   end: 1,
-    // })
-    // .include('e', {
-    //   end: 3,
-    // })
-    // .include('bigBoyString', { meta: true, end: 3 }) // end: 60,
-    .get()
-    .inspect(10, true)
 
-  // console.log(new TextEncoder().encode(x.toObject().c))
-
-  // for (let i = 0; i < 100e3; i++) {
-  //   db.create('item', {
-  //     x: i,
-  //     name: `Name ${i}`,
-  //     a: 'a',
-  //     b: 'b',
-  //     c: 'c',
-  //     d: 'd',
-  //     e: 'e',
-  //     body: { it: `It ${i}`, en: `En ${i}` },
-  //   })
-  // }
-
-  // console.log(await db.drain())
-  // await db
-  //   .query('item')
-  //   // .include('name', { start: 0, end: 5 })
-  //   .range(0, 1e6)
-  //   .get()
-  //   .inspect()
+  */
 })
