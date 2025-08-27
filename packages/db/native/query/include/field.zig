@@ -37,7 +37,7 @@ pub inline fn get(
         fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstraint.?, field);
         if (prop == t.Prop.CARDINALITY) {
             // make this in getEdgeProp
-            value = db.getCardinalityReference(ctx.db, edgeRef.?.largeReference.?, fieldSchema);
+            value = db.getCardinalityReference(ctx.db, edgeRef.?.edgeConstaint.?, edgeRef.?.largeReference.?, fieldSchema);
         } else {
             value = db.getEdgeProp(edgeRef.?.largeReference.?, fieldSchema);
         }

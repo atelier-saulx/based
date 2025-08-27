@@ -72,7 +72,7 @@ struct sdb_text_meta {
     enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
 };
 
-static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
+static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
 
 /**
  * Write one of the magic numbers to the dump.
@@ -146,7 +146,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
     }
 }
 
-static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc, const struct SelvaFieldsSchema *schema, struct SelvaNodeLargeReference *ref)
+static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeLargeReference *ref)
 {
     /*
      * If EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP then this is a SELVA_FIELD_TYPE_REFERENCES
@@ -162,7 +162,7 @@ static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc,
  * Save references.
  * The caller must save nr_refs.
  */
-static void save_field_references(struct selva_io *io, const struct EdgeFieldConstraint *efc, const struct SelvaFieldsSchema *schema, struct SelvaNodeReferences *refs)
+static void save_field_references(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs)
 {
     switch (refs->size) {
     case SELVA_NODE_REFERENCE_NULL:
@@ -173,19 +173,19 @@ static void save_field_references(struct selva_io *io, const struct EdgeFieldCon
                 .dst = refs->small[i].dst,
                 .meta = 0,
             };
-            save_ref(io, efc, schema, &ref);
+            save_ref(io, efc, &ref);
         }
         break;
     case SELVA_NODE_REFERENCE_LARGE:
         for (size_t i = 0; i < refs->nr_refs; i++) {
-            save_ref(io, efc, schema, &refs->large[i]);
+            save_ref(io, efc, &refs->large[i]);
         }
         break;
     }
 }
 
 __attribute__((nonnull))
-static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     const size_t nr_fields = fields->nr_fields;
 
@@ -228,12 +228,11 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCE:
             if (((struct SelvaNodeLargeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeLargeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, efc, eschema, ref);
+                save_ref(io, efc, ref);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -241,12 +240,11 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCES:
             if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, efc, eschema, refs);
+                save_field_references(io, efc, refs);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -287,7 +285,7 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
-    save_fields(io, db, schema, &node->fields);
+    save_fields(io, schema, &node->fields);
 }
 
 static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
