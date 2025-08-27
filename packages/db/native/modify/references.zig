@@ -128,7 +128,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
-    std.debug.print("PUT REFS id: {d} len: {d} data: {any} {any}\n", .{ ctx.id, len, u32ids, ctx.node.? });
+
     try db.putReferences(
         ctx,
         u32ids,
@@ -136,6 +136,8 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         ctx.fieldSchema.?,
         refTypeEntry,
     );
+
+    // const res = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
 
     return len;
 }

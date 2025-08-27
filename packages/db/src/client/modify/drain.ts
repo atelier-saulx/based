@@ -65,8 +65,8 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         ctx.draining = null
         return drain(db, ctx)
       })
-    return ctx.draining
   }
+  return ctx.draining
 }
 
 export const schedule = (db: DbClient, ctx: Ctx) => {

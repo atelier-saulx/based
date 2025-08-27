@@ -1,4 +1,4 @@
-import { fastPrng } from '@based/utils'
+import { fastPrng, wait } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'

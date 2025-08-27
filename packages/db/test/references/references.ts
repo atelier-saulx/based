@@ -63,9 +63,20 @@ await test('references', async (t) => {
   })
 
   await db.drain()
+  await wait(1e3)
+
+  console.log(
+    await db
+      .query('article')
+      .include('*', 'contributors')
+      .get()
+      .inspect(10, true),
+  )
 
   deepEqual(
-    (await db.query('article').include('contributors.name').get()).toObject(),
+    (
+      await db.query('article').include('*', 'contributors.name').get()
+    ).toObject(),
     [
       {
         id: await strudelArticle,
