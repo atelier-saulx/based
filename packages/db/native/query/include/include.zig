@@ -8,6 +8,7 @@ const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefs
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const f = @import("./field.zig");
+const o = @import("./opts.zig");
 const results = @import("../results.zig");
 
 const std = @import("std");
@@ -142,7 +143,7 @@ pub fn getFields(
                         t.Prop.JSON,
                         => {
                             if (optsSize != 0) {
-                                size += try f.selvaString(ctx, isEdge, r, true, f.getOpts(include, &i));
+                                size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
                                 i += optsSize;
                             } else {
                                 size += try f.selvaString(ctx, isEdge, r, false, undefined);

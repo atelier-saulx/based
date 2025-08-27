@@ -80,5 +80,3 @@ pub inline fn RefResult(
         .edgeConstaint = null,
     };
 }
-
-pub const IncludeOpts = struct { end: u32, isChars: bool };
