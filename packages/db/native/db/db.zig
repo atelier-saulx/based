@@ -311,9 +311,9 @@ pub fn getEdgeProp(
     }
 }
 
-pub fn getEdgeFieldSchema(db: *selva.SelvaDb, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-        selva.selva_get_edge_field_fields_schema(db, edgeConstaint),
+        selva.selva_get_edge_field_fields_schema(db.selva, edgeConstaint),
         field,
     );
     if (edgeFieldSchema == null) {
@@ -379,6 +379,15 @@ pub fn writeEdgeProp(
     }
 }
 
+// TODO This is now hll specific but we might want to change it.
+pub fn ensurePropString(
+    ctx: *modifyCtx.ModifyCtx,
+    fieldSchema: FieldSchema,
+) !*selva.selva_string {
+    return selva.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+}
+
+// TODO This is now hll specific but we might want to change it.
 pub fn ensureEdgePropString(
     ctx: *modifyCtx.ModifyCtx,
     node: Node,
@@ -393,7 +402,11 @@ pub fn ensureEdgePropString(
         ref,
         fieldSchema,
         selva.HLL_INIT_SIZE,
-    ) orelse errors.SelvaError.SELVA_ENOTSUP;
+    ) orelse errors.SelvaError.SELVA_EINTYPE;
+}
+
+pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
+    _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
 fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
@@ -403,6 +416,10 @@ fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
 
 pub fn deleteField(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.db.selva, node, fieldSchema, markDirtyCb, ctx));
+}
+
+pub fn deleteTextFieldTranslation(ctx: *modifyCtx.ModifyCtx, fieldSchema: FieldSchema, lang: types.LangCode) !void {
+    return errors.selva(selva.selva_fields_set_text(ctx.node, fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 
 pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
@@ -450,9 +467,9 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(db: *selva.SelvaDb, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
+pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
     var hash: u128 = undefined;
-    try errors.selva(selva.selva_node_hash_range(db, typeEntry, start, end, &hash));
+    try errors.selva(selva.selva_node_hash_range(db.selva, typeEntry, start, end, &hash));
     return hash;
 }
 

@@ -137,7 +137,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (r.edgeConstaint != null) {
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, r.edgeConstaint.?, field) catch {
+                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstaint.?, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const value = db.getEdgeProp(r.largeReference.?, edgeFieldSchema);
@@ -197,7 +197,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
 
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx.selva.?, ref.?.edgeConstaint.?, field) catch {
+                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstaint.?, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.largeReference.?, edgeFieldSchema);

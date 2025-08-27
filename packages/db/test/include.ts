@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, equal } from './shared/assert.js'
 
 await test('include ', async (t) => {
   const db = new BasedDb({
@@ -43,4 +43,8 @@ await test('include ', async (t) => {
     ],
     'empty array should return nothing',
   )
+
+  equal((await db.query('user', 1).get()).id, 1)
+
+  equal((await db.query('user', 1).get()).queryId, 3978712180)
 })

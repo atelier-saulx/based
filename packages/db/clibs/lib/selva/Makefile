@@ -59,6 +59,7 @@ OBJ := \
 	string/cstrings.o \
 	string/eztrie.o \
 	string/fast_memmem.o \
+	string/mblen.o \
 	string/mempbrk.o \
 	string/strntol.o \
 	string/strsearch_hamming.o \

@@ -8,6 +8,7 @@ const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefs
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const f = @import("./field.zig");
+const o = @import("./opts.zig");
 const results = @import("../results.zig");
 
 const std = @import("std");
@@ -129,8 +130,8 @@ pub fn getFields(
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
-                // here we add a start + end var (bit longer but fine)
-                i += 2;
+                const optsSize = include[i + 2];
+                i += 3;
                 result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
                     switch (prop) {
@@ -138,53 +139,61 @@ pub fn getFields(
                         t.Prop.STRING,
                         t.Prop.JSON,
                         => {
-                            size += try f.selvaString(isEdge, r);
+                            if (optsSize != 0) {
+                                size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
+                            } else {
+                                size += try f.selvaString(ctx, isEdge, r, false, undefined);
+                            }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         t.Prop.TEXT => {
-                            const code: t.LangCode = @enumFromInt(include[i]);
-                            const fallbackSize = include[i + 1];
-                            i += 2;
-                            if (fallbackSize > 0) {
-                                const fb = include[i .. i + fallbackSize];
-                                const s = try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb);
-                                if (s != 0) {
-                                    idIsSet = true;
-                                    size += s;
-                                }
-                                i += fallbackSize;
-                            } else if (code == t.LangCode.NONE) {
-                                const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet);
-                                if (s != 0) {
-                                    idIsSet = true;
-                                    size += s;
-                                }
+                            var s: usize = undefined;
+                            if (optsSize == 0) {
+                                s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
                             } else {
-                                const s = try f.textSpecific(isEdge, ctx, id, score, r, code, idIsSet);
-                                if (s != 0) {
-                                    idIsSet = true;
-                                    size += s;
+                                const code: t.LangCode = @enumFromInt(include[i]);
+                                const fallbackSize = include[i + 1];
+                                const hasEnd = include[i + 2] == 1;
+                                if (hasEnd) {
+                                    i += optsSize - 5;
+                                    const opts = o.getOpts(include, &i);
+                                    i += 5;
+                                    s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, true, opts);
+                                } else {
+                                    i += optsSize;
+                                    s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, false, undefined);
                                 }
+                            }
+                            if (s != 0) {
+                                idIsSet = true;
+                                size += s;
                             }
                         },
                         t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
-                            size += try f.fixed(isEdge, r);
+                            if (optsSize == 0) {
+                                size += try f.fixed(isEdge, r, false, undefined);
+                            } else {
+                                size += try f.fixed(isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
+                            }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         else => {
-                            size += try f.default(isEdge, r);
+                            if (optsSize == 0) {
+                                size += try f.default(isEdge, r, false, undefined);
+                            } else {
+                                size += try f.default(isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
+                            }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                     }
-                } else {
-                    if (prop == t.Prop.TEXT) {
-                        const fallbackSize = include[i + 1];
-                        i += 2;
-                        i += fallbackSize;
-                    }
+                } else if (optsSize != 0) {
+                    i += optsSize;
                 }
             },
         }

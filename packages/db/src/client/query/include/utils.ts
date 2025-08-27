@@ -6,7 +6,8 @@ import {
 } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
-import { QueryDef, QueryDefType } from '../types.js'
+import { IncludeOpts, QueryDef, QueryDefType } from '../types.js'
+import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 
 export const getAllFieldFromObject = (
   tree: SchemaPropTree | PropDef,
@@ -72,4 +73,17 @@ export const createOrGetEdgeRefQueryDef = (
   def.edges.props[t.name] = t
   const refDef = createOrGetRefQueryDef(db, def.edges, t)
   return refDef
+}
+
+export const getEnd = (opts?: IncludeOpts, lang?: LangCode): number => {
+  if (!opts || !opts.end) {
+    return 0
+  }
+  if (typeof opts.end === 'object') {
+    if (lang) {
+      return opts.end[inverseLangMap.get(lang)] ?? opts.end[0] ?? undefined
+    }
+    return opts.end[0] ?? undefined
+  }
+  return opts.end
 }

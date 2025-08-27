@@ -80,9 +80,3 @@ pub inline fn RefResult(
         .edgeConstaint = null,
     };
 }
-
-pub const IncludeOpts = struct {
-    meta: u8,
-    start: u8,
-    end: u8,
-};

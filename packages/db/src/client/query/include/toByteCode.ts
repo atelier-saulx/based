@@ -1,8 +1,10 @@
-import { MICRO_BUFFER, TEXT } from '@based/schema/def'
+import { MICRO_BUFFER, STRING, TEXT, JSON } from '@based/schema/def'
 import { DbClient } from '../../index.js'
-import { QueryDef, QueryDefType, includeOp } from '../types.js'
+import { IncludeOpts, QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
 import { langCodesMap } from '@based/schema'
+import { writeUint32 } from '@based/utils'
+import { getEnd } from './utils.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 
@@ -69,16 +71,17 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
     if (mainBuffer.byteLength !== 0) {
       const buf = new Uint8Array(5)
       buf[0] = includeOp.PARTIAL
-      buf[1] = 0
-      buf[2] = MICRO_BUFFER // add this in types
+      buf[1] = 0 // field name 0
+      buf[2] = MICRO_BUFFER
       buf[3] = mainBuffer.byteLength
       buf[4] = mainBuffer.byteLength >>> 8
       result.push(buf, mainBuffer)
     } else {
-      const buf = new Uint8Array(3)
+      const buf = new Uint8Array(4)
       buf[0] = includeOp.DEFAULT
-      buf[1] = 0
+      buf[1] = 0 // field name 0
       buf[2] = MICRO_BUFFER
+      buf[3] = 0 // opts len
       result.push(buf)
     }
   }
@@ -116,42 +119,71 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           result.push(buf)
         }
       }
+
       if (propDef.opts?.meta !== 'only') {
-        if (propDef.def.typeIndex === TEXT) {
+        const hasEnd = propDef.opts?.end
+        const t = propDef.def.typeIndex
+        if (t === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
-            const b = new Uint8Array(5)
+            const b = new Uint8Array(hasEnd ? 12 : 4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
             b[2] = propDef.def.typeIndex
-            b[3] = 0
-            b[4] = 0
+            if (hasEnd) {
+              b[3] = 8 // opts len
+              b[4] = 0 // lang code
+              b[5] = 0 // fallbackSize
+              b[6] = 1 // has end
+              b[7] = propDef.opts?.bytes ? 0 : 1 // is string
+              writeUint32(b, getEnd(propDef.opts), 8)
+            } else {
+              b[3] = 0 // opts len
+            }
             result.push(b)
           } else {
             for (const code of codes) {
               const fallBackSize = propDef.opts.fallBacks.length
-              const b = new Uint8Array(5 + fallBackSize)
+              const endCode = getEnd(propDef.opts, code)
+              const b = new Uint8Array(7 + (endCode ? 5 : 0) + fallBackSize)
               b[0] = includeOp.DEFAULT
               b[1] = prop
               b[2] = propDef.def.typeIndex
-              b[3] = code
-              b[4] = fallBackSize
               let i = 0
+              if (endCode) {
+                b[3] = fallBackSize + 8 // opts
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+                b[6] = 1 // has end
+                b[7] = propDef.opts?.bytes ? 0 : 1 // is string use chars (can be optional)
+                writeUint32(b, endCode, 8)
+                i = 11
+              } else {
+                b[3] = fallBackSize + 3 // opts
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+                b[6] = 0 // no end
+                i = 7
+              }
               for (const fallback of propDef.opts.fallBacks) {
-                b[i + 5] = fallback
+                b[i] = fallback
                 i++
               }
               result.push(b)
             }
           }
         } else {
-          const buf = new Uint8Array(3)
+          const buf = new Uint8Array(hasEnd ? 9 : 4)
           buf[0] = includeOp.DEFAULT
           buf[1] = prop
           buf[2] = propDef.def.typeIndex
-          // mod len (then we can use this to add other things e.g. things for vectors etc)
-          // start
-          // end
+          if (hasEnd) {
+            buf[3] = 5 // opts len
+            buf[4] = propDef.opts?.bytes || (t !== JSON && t !== STRING) ? 0 : 1
+            writeUint32(buf, getEnd(propDef.opts), 5)
+          } else {
+            buf[3] = 0 // opts len
+          }
           result.push(buf)
         }
       }
