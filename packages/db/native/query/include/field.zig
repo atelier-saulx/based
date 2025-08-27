@@ -134,7 +134,7 @@ fn parseOpts(
     return value;
 }
 
-pub inline fn isFlagEmoj(i: *usize, len: *usize, charLen: *u32, value: []u8) bool {
+pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u8) bool {
     return i.* + 8 < len.* and
         charLen.* == 3 and
         value[i.*] == 240 and
@@ -193,7 +193,7 @@ fn parseOptsString(
                 var charLen = selva.selva_mblen(value[i]);
                 if (charLen > 0) {
                     chars += 1;
-                    if (isFlagEmoj(&i, value)) {
+                    if (isFlagEmoj(&i, &len, &charLen, value)) {
                         i += 4;
                     } else {
                         i += (charLen + 1);
