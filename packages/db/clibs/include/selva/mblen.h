@@ -15,7 +15,10 @@
  * Get the length of multibyte char.
  */
 SELVA_EXPORT
-inline unsigned selva_mblen(char first_byte) __attribute__((optnone))
+#if defined(__clang__)
+__attribute__((optnone))
+#endif
+inline unsigned selva_mblen(char first_byte)
 #ifndef __zig
 {
     uint8_t x = first_byte;
