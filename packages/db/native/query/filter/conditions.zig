@@ -36,6 +36,8 @@ pub inline fn runConditions(
 ) bool {
     var i: usize = 0;
     while (i < q.len) {
+        std.debug.print("F -> {any} {any} \n", .{ i, q });
+
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);

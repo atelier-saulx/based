@@ -34,6 +34,7 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     const buf = concatUint8Arr(b)
     let id = native.crc32(buf)
     q.id = id
+    def.queryId = q.id
     q.buffer = buf
     q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)
