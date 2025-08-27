@@ -177,9 +177,9 @@ fn parseOptsString(
                         chars += 1;
                     } else {
                         // std.debug.print("put byte {any} \n", .{value[i]});
-                        const charLen = selva.selva_mblen(value[i]) + 1;
+                        const charLen = selva.selva_mblen(value[i]);
                         // var code_point_bytes: [4]u8 = undefined;
-                        std.debug.print("derp {any} {any} {any} \n", .{ value[i], len, charLen });
+                        std.debug.print("MULTIBYE? byte: {any} mlen: {any} \n", .{ value[i], charLen });
                     }
                     i += 1;
                 }
