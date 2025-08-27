@@ -7,9 +7,19 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import os from 'os'
 
+const AVAILABLE_PLATFORMS = [
+  { os: 'linux', arch: 'aarch64' },
+  { os: 'macos', arch: 'aarch64' },
+  { os: 'linux', arch: 'x86_64' },
+  //   { os: 'macos', arch: 'x86_64' },
+]
+const ARGS_PLATFORMS = {}
+AVAILABLE_PLATFORMS.forEach((v) => ARGS_PLATFORMS[`${v.os}-${v.arch}`] = v)
+
 const args = process.argv.slice(2)
 const isRelease = args.includes('release')
 const isDebugging = args.includes('debug')
+const argsArchs = args.map((arg) => ARGS_PLATFORMS[arg]).filter((v) => v) // Throw an error for invalid arch
 
 let debugOption = ''
 if (isDebugging) {
@@ -17,13 +27,6 @@ if (isDebugging) {
 }
 
 type Platform = { os: string; arch: string }
-
-const AVAILABLE_PLATFORMS = [
-  { os: 'linux', arch: 'aarch64' },
-  { os: 'macos', arch: 'aarch64' },
-  { os: 'linux', arch: 'x86_64' },
-  //   { os: 'macos', arch: 'x86_64' },
-]
 
 async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
   const { data } = await axios.get('https://nodejs.org/dist/index.json')
@@ -40,6 +43,7 @@ async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
 
 const PLATFORMS = isRelease
   ? AVAILABLE_PLATFORMS
+  : argsArchs.length ? argsArchs
   : [
       {
         os: os.platform() === 'darwin' ? 'macos' : os.platform(),
