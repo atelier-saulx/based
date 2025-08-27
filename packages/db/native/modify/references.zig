@@ -48,9 +48,9 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         // pretty sure its this thats slow
         const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
-        assert(ref.type == selva.SELVA_NODE_REFERENCE_LARGE);
 
         if (hasEdgeData) {
+            assert(ref.type == selva.SELVA_NODE_REFERENCE_LARGE);
             const sizepos = if (hasIndex) i + 9 else i + 5;
             const edgelen = read(u32, data, sizepos);
             const edgepos = sizepos + 4;
