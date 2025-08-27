@@ -36,16 +36,17 @@ pub inline fn runConditions(
 ) bool {
     var i: usize = 0;
     while (i < q.len) {
-        std.debug.print("F -> {any} {any} \n", .{ i, q });
-
+        // figure out which one this is
+        // if (q[i] > 2) {
+        //     i -= 1;
+        // }
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
+
         const result = condition(decompressor, blockState, mode, q, v, i);
-        if (topLevelType == Type.negate) {
-            if (result[1] == true) {
-                return false;
-            }
+        if (topLevelType == Type.negate and result[1] == true) {
+            return false;
         } else if (result[1] == false) {
             return false;
         }
