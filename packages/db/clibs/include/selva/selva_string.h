@@ -168,7 +168,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
 [[nodiscard]]
 SELVA_EXPORT
 struct selva_string *selva_string_createz(struct libdeflate_compressor *compressor, const char *in_str, size_t in_len, enum selva_string_flags flags)
-    __attribute__((access(read_only, 1, 2)));
+    __attribute__((access(read_only, 2, 3)));
 
 /**
  * Decompress a compressed string.
@@ -181,7 +181,7 @@ struct selva_string *selva_string_createz(struct libdeflate_compressor *compress
  */
 SELVA_EXPORT
 int selva_string_decompress(struct libdeflate_decompressor *decompressor, const struct selva_string * restrict s, char * restrict buf)
-    __attribute__((access(read_only, 1), access(write_only, 2)));
+    __attribute__((access(read_only, 2), access(write_only, 3)));
 
 /**
  * Duplicate a string.
