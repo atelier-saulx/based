@@ -149,9 +149,6 @@ pub fn getFields(
                             idIsSet = true;
                         },
                         t.Prop.TEXT => {
-                            // textOptsSize
-                            // normalOpts
-                            // - actual options ofc
                             if (optsSize == 0) {
                                 const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
                                 if (s != 0) {
@@ -159,11 +156,19 @@ pub fn getFields(
                                     size += s;
                                 }
                             } else {
-                                // add this
-                                const fallbackSize = optsSize - 1;
                                 const code: t.LangCode = @enumFromInt(include[i]);
+                                const fallbackSize = include[i + 1];
+                                // const hasEnd = include[i] == 1;
+
                                 i += optsSize;
-                                if (fallbackSize > 0) {
+
+                                if (optsSize == 0) {
+                                    const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
+                                    if (s != 0) {
+                                        idIsSet = true;
+                                        size += s;
+                                    }
+                                } else if (fallbackSize > 0) {
                                     const fb = include[i .. i + fallbackSize];
                                     const s = try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb, false, undefined);
                                     if (s != 0) {

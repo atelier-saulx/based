@@ -120,44 +120,58 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
       }
 
       if (propDef.opts?.meta !== 'only') {
+        const hasEnd = propDef.opts?.end
         const t = propDef.def.typeIndex
         if (t === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
-            const b = new Uint8Array(4)
+            const b = new Uint8Array(hasEnd ? 10 : 4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
             b[2] = propDef.def.typeIndex
-            b[3] = 0 // opts len
+            if (hasEnd) {
+              b[3] = 6 // opts len
+              b[4] = 0 // lang code
+              b[5] = 0 // fallbackSize
+              writeUint32(b, propDef.opts?.end, 6)
+            } else {
+              b[3] = 0 // opts len
+            }
             // expand start + end
             result.push(b)
           } else {
             for (const code of codes) {
               const fallBackSize = propDef.opts.fallBacks.length
-              const b = new Uint8Array(5 + fallBackSize)
+              const b = new Uint8Array(6 + fallBackSize)
               b[0] = includeOp.DEFAULT
               b[1] = prop
               b[2] = propDef.def.typeIndex
-              b[3] = fallBackSize + 1 // opts len
+              if (hasEnd) {
+                b[3] = fallBackSize + 2 // opts len
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+              } else {
+                b[3] = fallBackSize + 2 // opts len
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+              }
               // expand start + end
-              b[4] = code
               let i = 0
               for (const fallback of propDef.opts.fallBacks) {
-                b[i + 5] = fallback
+                b[i + 6] = fallback
                 i++
               }
               result.push(b)
             }
           }
         } else {
-          const hasEnd = propDef.opts?.end
           const buf = new Uint8Array(hasEnd ? 9 : 4)
           buf[0] = includeOp.DEFAULT
           buf[1] = prop
           buf[2] = propDef.def.typeIndex
           if (hasEnd) {
             buf[3] = 5 // opts len
-            buf[4] = t === TEXT || t === JSON || t === STRING ? 1 : 0
+            buf[4] = t === JSON || t === STRING ? 1 : 0
             writeUint32(buf, propDef.opts.end, 5)
           } else {
             buf[3] = 0 // opts len
