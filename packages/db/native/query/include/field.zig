@@ -253,7 +253,7 @@ pub inline fn textAll(
             .prop = result.prop,
             .value = if (hasOpts) o.parseOptsString(s[0 .. s.len - 4], opts) else s[0 .. s.len - 4],
         };
-        if (isEdge) size += (r.value.len + 2) else size += (r.value.len + 1);
+        if (isEdge) size += (r.value.len + 6) else size += (r.value.len + 5);
         size += try add(ctx, id, score, idIsSetLocal, &r);
         idIsSetLocal = true;
     }
