@@ -21,6 +21,7 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
         value[i.*] == 240 and
         value[i.* + 1] == 159 and
         value[i.* + 2] == 135 and
+        // need to use different one for the deflate (can need an extra)
         value[i.* + 4] == 240;
 }
 
@@ -50,13 +51,23 @@ fn parseCharEndDeflate(
     var chars: u32 = 0;
     while (i < v.len) {
         if (chars == opts.end) {
-            return alloc[0 .. i + 2];
+            break;
         }
         var charLen = selva.selva_mblen(v[i]);
         if (charLen > 0) {
             chars += 1;
-            if (isFlagEmoj(&i, &v.len, &charLen, v)) {
-                i += 8;
+            // Start of flag emoji check
+            if (charLen == 3 and v[i] == 240) {
+                if (i + 8 < v.len) {
+                    // Flag emoji
+                    if (v[i + 1] == 159 and v[i + 2] == 135 and v[i + 4] == 240) {
+                        i += 8;
+                    } else {
+                        i += (charLen + 1);
+                    }
+                } else {
+                    i += 8;
+                }
             } else {
                 i += (charLen + 1);
             }

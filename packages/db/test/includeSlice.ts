@@ -90,7 +90,7 @@ await test('slice string / text', async (t) => {
     // .include('e', {
     //   end: 3,
     // })
-    .include('bigBoyString', { meta: 'only' }) // end: 60,
+    .include('bigBoyString', { meta: true, end: 3 }) // end: 60,
     .get()
     .inspect(10, true)
 
