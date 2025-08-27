@@ -156,7 +156,7 @@ export const resultToObject = (
   let items: AggItem | [Item] = []
   let i = 5 + offset
 
-  // const readHook = q.schema.hooks?.read
+  const readHook = q.hook
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
@@ -167,15 +167,15 @@ export const resultToObject = (
     }
     const l = readProps(q, result, i, end, item)
     i += l
-    // if (readHook) {
-    //   const res = readHook(item)
-    //   if (res === null) {
-    //     continue
-    //   }
-    //   items.push(res || item)
-    // } else {
-    items.push(item)
-    // }
+    if (readHook) {
+      const res = readHook(item)
+      if (res === null) {
+        continue
+      }
+      items.push(res || item)
+    } else {
+      items.push(item)
+    }
   }
 
   if (q.type === ReaderSchemaEnum.rootProps) {
