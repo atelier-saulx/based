@@ -7,6 +7,7 @@ import { ReaderSchema } from './query.js'
 
 export type IncludeOpts = {
   end?: number
+  bytes?: boolean
   meta?: 'only' | true | false // add more opts?
   codes?: Set<LangCode>
   fallBacks?: LangCode[]

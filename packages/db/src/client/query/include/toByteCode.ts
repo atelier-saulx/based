@@ -125,16 +125,17 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
         if (t === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
-            const b = new Uint8Array(hasEnd ? 11 : 4)
+            const b = new Uint8Array(hasEnd ? 12 : 4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
             b[2] = propDef.def.typeIndex
             if (hasEnd) {
-              b[3] = 7 // opts len
+              b[3] = 8 // opts len
               b[4] = 0 // lang code
               b[5] = 0 // fallbackSize
               b[6] = 1 // has end
-              writeUint32(b, propDef.opts?.end, 7)
+              b[7] = propDef.opts?.bytes ? 0 : 1 // is string
+              writeUint32(b, propDef.opts?.end, 8)
             } else {
               b[3] = 0 // opts len
             }
@@ -152,7 +153,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
                 b[4] = code // say if there is a end option
                 b[5] = fallBackSize
                 b[6] = 1 // has end
-                b[7] = 1 // is string use chars (can be optional)
+                b[7] = propDef.opts?.bytes ? 0 : 1 // is string use chars (can be optional)
                 writeUint32(b, propDef.opts?.end, 8)
                 i = 11
               } else {
@@ -176,7 +177,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           buf[2] = propDef.def.typeIndex
           if (hasEnd) {
             buf[3] = 5 // opts len
-            buf[4] = t === JSON || t === STRING ? 1 : 0
+            buf[4] = propDef.opts?.bytes || (t !== JSON && t !== STRING) ? 0 : 1
             writeUint32(buf, propDef.opts.end, 5)
           } else {
             buf[3] = 0 // opts len

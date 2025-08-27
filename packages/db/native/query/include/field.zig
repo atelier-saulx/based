@@ -219,14 +219,14 @@ pub inline fn textSpecific(
     else
         db.getTextFromValue(result.value, code);
     if (s.len > 0) {
-        if (isEdge) size += (s.len + 2) else size += (s.len + 1);
         var r: results.Result = .{
             .type = result.type,
             .id = 0,
-            .score = score,
+            .score = null,
             .prop = result.prop,
-            .value = s[0 .. s.len - 4],
+            .value = if (hasOpts) s else s[0 .. s.len - 4],
         };
+        if (isEdge) size += (r.value.len + 6) else size += (r.value.len + 5);
         size += try add(ctx, id, score, idIsSetLocal, &r);
         idIsSetLocal = true;
     }
@@ -252,14 +252,14 @@ pub inline fn textFallback(
     else
         db.getTextFromValueFallback(result.value, code, fallbacks);
     if (s.len > 0) {
-        if (isEdge) size += (s.len + 2) else size += (s.len + 1);
         var r: results.Result = .{
             .type = result.type,
             .id = 0,
-            .score = score,
+            .score = null,
             .prop = result.prop,
-            .value = s[0 .. s.len - 4],
+            .value = if (hasOpts) s else s[0 .. s.len - 4],
         };
+        if (isEdge) size += (r.value.len + 6) else size += (r.value.len + 5);
         size += try add(ctx, id, score, idIsSetLocal, &r);
         idIsSetLocal = true;
     }
@@ -284,9 +284,9 @@ pub inline fn textAll(
         r = .{
             .type = result.type,
             .id = 0,
-            .score = score,
+            .score = null,
             .prop = result.prop,
-            .value = if (hasOpts) try o.parseOptsString(ctx, s[0 .. s.len - 4], opts) else s[0 .. s.len - 4],
+            .value = if (hasOpts) try o.parseOptsString(ctx, s, opts) else s[0 .. s.len - 4],
         };
         if (isEdge) size += (r.value.len + 6) else size += (r.value.len + 5);
         size += try add(ctx, id, score, idIsSetLocal, &r);
