@@ -154,13 +154,9 @@ await test('slice string / text', async (t) => {
     'Text specific locale bytes',
   )
 
-  /*
-    // .include('body', { end: 3 })
-    // .include('body')
-    // .include('body.fi', { end: 3 })
-    // .include('body.en')
-    // .include('body.it')
-    // .include('body.fi')
-
-  */
+  deepEqual(
+    await db.query('item', id1).include('body.en', { end: 3 }, 'body.fi').get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'finland 🇫🇮! this is finland!' } },
+    'Different ends per language',
+  )
 })

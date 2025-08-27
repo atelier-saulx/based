@@ -86,9 +86,23 @@ export const walkDefs = (
           const opts = include.opts ?? {}
           opts.codes = new Set()
           opts.fallBacks = []
+
+          if (opts.end && typeof opts.end === 'number') {
+            opts.end = { [lang]: opts.end }
+          }
           def.include.props.set(t.prop, { def: t, opts })
         }
-        def.include.props.get(t.prop).opts.codes.add(langCode)
+
+        const opts = def.include.props.get(t.prop).opts
+
+        if (include.opts?.end) {
+          if (typeof include.opts?.end === 'number') {
+            opts.end[lang] = include.opts?.end
+          } else if (typeof opts.end === 'object') {
+            opts.end = { ...opts.end, ...include.opts.end }
+          }
+        }
+        opts.codes.add(langCode)
         return
       } else if (
         isPropDef(t) &&
