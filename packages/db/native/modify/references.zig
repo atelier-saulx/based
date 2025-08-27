@@ -24,7 +24,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 
-    _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, refsLen);
+    db.preallocReferences(ctx, refsLen);
 
     while (i < len) : (i += 5) {
         const op: RefEdgeOp = @enumFromInt(data[i]);

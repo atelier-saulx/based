@@ -405,6 +405,10 @@ pub fn ensureEdgePropString(
     ) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
+pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
+    _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
+}
+
 fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
     const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
     modifyCtx.markDirtyRange(mctx, typeId, nodeId);
