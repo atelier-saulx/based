@@ -3,6 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { throws } from './shared/assert.js'
 import { wait } from '@based/utils'
+import {makeTreeKey} from '../src/server/tree.js'
 
 await test('partial', async (t) => {
   const db = new BasedDb({
@@ -127,8 +128,11 @@ await test('simple load/unload', async (t) => {
   await db.setSchema({
     types: {
       product: {
-        sku: 'number',
-        flap: 'number',
+        blockCapacity: 100_000,
+        props: {
+          sku: 'number',
+          flap: 'number',
+        }
       },
     },
   })
@@ -146,8 +150,10 @@ await test('simple load/unload', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-
   await db2.start({ noLoadDumps: true })
+  t.after(() => db2.destroy())
+
+  db2.server.verifTree.foreachBlock((block) => deepEqual(block.inmem, false))
 
   await db2.server.loadBlock('product', 1)
 
@@ -161,13 +167,15 @@ await test('simple load/unload', async (t) => {
   deepEqual(d1.length, 100_000, 'first query')
 
   await db2.server.unloadBlock('product', 1)
+  db2.server.verifTree.foreachBlock((block) => deepEqual(block.inmem, false))
 
   await db2.server.loadBlock('product', 100_001)
+  deepEqual(db.server.verifTree.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).inmem, true)
 
   const d2 = await db2
     .query('product')
     .include('*')
-    .range(100_000, 200_000)
+    .range(0, 100_000)
     .get()
     .toObject()
 
