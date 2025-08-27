@@ -16,9 +16,10 @@ export const reset = (ctx: Ctx) => {
 }
 
 export const cancel = (ctx: Ctx, error: Error) => {
-  ctx.batch.error = error
-  ctx.batch.promises?.forEach(rejectTmp)
+  const { batch } = ctx
   reset(ctx)
+  batch.error = error
+  batch.promises?.forEach(rejectTmp)
 }
 
 export const consume = (ctx: Ctx) => {
@@ -38,6 +39,7 @@ export const consume = (ctx: Ctx) => {
     writeUint16(payload, Number(typeId), i)
     writeUint32(payload, count, i + 2)
   }
+
   reset(ctx)
 
   return payload
@@ -45,15 +47,11 @@ export const consume = (ctx: Ctx) => {
 let cnt = 0
 export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
-    const testCnt = cnt++
-    // console.log('drain:', ctx.index, testCnt, ctx.batch)
     const { batch } = ctx
     const payload = consume(ctx)
-    // console.log({ payload })
     ctx.draining = db.hooks
       .flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {
-        // console.log('done:', testCnt, batch)
         db.writeTime += dbWriteTime ?? 0
         batch.ready = true
         batch.offsets = offsets
@@ -61,33 +59,29 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         batch.promises = null
       })
       .catch(console.error)
-      .finally(() => {
-        ctx.draining = null
-        return drain(db, ctx)
-      })
   }
   return ctx.draining
 }
 
 export const schedule = (db: DbClient, ctx: Ctx) => {
-  drain(db, ctx)
-  // if (ctx.scheduled || ctx.index === 8) {
-  //   return
-  // }
-  // ctx.scheduled = true
-  // return new Promise<void>((resolve) => {
-  //   if (db.flushTime === 0) {
-  //     process.nextTick(() => {
-  //       drain(db, ctx)
-  //       resolve()
-  //       ctx.scheduled = false
-  //     })
-  //   } else {
-  //     setTimeout(() => {
-  //       drain(db, ctx)
-  //       resolve()
-  //       ctx.scheduled = false
-  //     }, db.flushTime)
-  //   }
-  // })
+  // return drain(db, ctx)
+  if (ctx.scheduled || ctx.index === 8) {
+    return
+  }
+  ctx.scheduled = true
+  return new Promise<void>((resolve) => {
+    if (db.flushTime === 0) {
+      process.nextTick(async () => {
+        ctx.scheduled = false
+        await drain(db, ctx)
+        resolve()
+      })
+    } else {
+      setTimeout(async () => {
+        ctx.scheduled = false
+        await drain(db, ctx)
+        resolve()
+      }, db.flushTime)
+    }
+  })
 }

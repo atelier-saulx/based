@@ -35,6 +35,7 @@ export class DbClient extends DbShared {
     this.maxModifySize = maxModifySize
     this.modifyCtx = new Ctx(
       0,
+      // new Uint8Array(100000),
       new Uint8Array(new ArrayBuffer(12, { maxByteLength: maxModifySize })),
     )
     this.flushTime = flushTime
@@ -225,6 +226,11 @@ export class DbClient extends DbShared {
         'then' in idOverwriteOrValue &&
         typeof idOverwriteOrValue.then === 'function'
       ) {
+        // @ts-ignore
+        if (idOverwriteOrValue.id) {
+          // @ts-ignore
+          return this.update(typeOrValue, idOverwriteOrValue.id, value, opts)
+        }
         return idOverwriteOrValue.then((id: number) => {
           return this.update(typeOrValue, id, value, opts)
         })

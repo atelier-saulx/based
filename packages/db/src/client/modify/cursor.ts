@@ -37,11 +37,6 @@ export const writePropCursor = (ctx: Ctx, def: PropDef) => {
   }
 }
 
-export const resetPropCursor = (ctx: Ctx, def: PropDef) => {
-  ctx.cursor.prop = null
-  writePropCursor(ctx, def)
-}
-
 export const writeMainCursor = (ctx: Ctx) => {
   if (ctx.cursor.prop !== 0) {
     ctx.array[ctx.index] = SWITCH_FIELD

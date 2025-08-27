@@ -1,11 +1,7 @@
 import { Ctx } from '../Ctx.js'
 import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
-import {
-  PROP_CURSOR_SIZE,
-  resetPropCursor,
-  writePropCursor,
-} from '../cursor.js'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { Tmp } from '../Tmp.js'
 import { validate } from '../validate.js'
@@ -61,6 +57,8 @@ const putReferences = (
   val: any,
   refOp: RefOp,
 ): number => {
+  reserve(ctx, PROP_CURSOR_SIZE + 6 + val.length * 4)
+  writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   writeU32(ctx, val.length * 4 + 1)
   writeU8(
@@ -79,7 +77,6 @@ const putReferences = (
       if (hasEdgeOrIndex(def, id)) {
         return index
       }
-      console.log('PUT IT G!!')
       validate(def, id.id)
       writeU32(ctx, id.id)
       index++
@@ -96,13 +93,16 @@ const updateReferences = (
   val: any[],
   index: number,
   length: number,
+  refOp: RefOp,
 ) => {
-  reserve(ctx, 5 + length * 9)
+  reserve(ctx, PROP_CURSOR_SIZE + 6 + val.length * 9)
+  writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   const sizeIndex = ctx.index
   ctx.index += 4
   const start = ctx.index
-  writeU8(ctx, index > 0 ? REF_OP_UPDATE : ctx.operation)
+  writeU8(ctx, index > 0 ? REF_OP_UPDATE : refOp)
+  writeU32(ctx, length)
   while (length--) {
     let id = val[index++]
     if (def.hasDefaultEdges) {
@@ -135,7 +135,7 @@ const updateReferences = (
       }
       if (id instanceof Tmp && id.batch === ctx.batch) {
         writeU8(ctx, NOEDGE_NOINDEX_TMPID)
-        writeU32(ctx, id.id)
+        writeU32(ctx, id.tmpId)
         continue
       }
       throw id
@@ -159,7 +159,7 @@ const updateReferences = (
         writeReferenceObj(ctx, def, id.id.tmpId, id, true)
         continue
       }
-      throw id
+      throw id.id
     }
   }
 
@@ -178,15 +178,12 @@ const putOrUpdateReferences = (
   }
 
   if (def.hasDefaultEdges) {
-    updateReferences(ctx, def, val, 0, val.length)
+    updateReferences(ctx, def, val, 0, val.length, refOp)
     return
   }
 
-  reserve(ctx, 9 + val.length * 4)
-  writePropCursor(ctx, def)
   const start = ctx.index
   const index = putReferences(ctx, def, val, refOp)
-  console.log('res:', val.length, ctx.array.subarray(start, ctx.index))
   if (index === val.length) {
     // did all
     return
@@ -194,11 +191,12 @@ const putOrUpdateReferences = (
   if (index === 0) {
     // did nothing
     ctx.index = start
-    updateReferences(ctx, def, val, 0, val.length)
+    ctx.cursor.prop = null
+    updateReferences(ctx, def, val, 0, val.length, refOp)
   } else {
     // did partial
-    resetPropCursor(ctx, def)
-    updateReferences(ctx, def, val, index, val.length - index)
+    ctx.cursor.prop = null
+    updateReferences(ctx, def, val, index, val.length - index, refOp)
   }
 }
 
@@ -285,11 +283,11 @@ export const writeReferences = (ctx: Ctx, def: PropDef, val: any) => {
       throw [def, val]
     }
     if (key === 'update' || key === 'add') {
-      putOrUpdateReferences(ctx, def, val, REF_OP_UPDATE)
+      putOrUpdateReferences(ctx, def, arr, REF_OP_UPDATE)
       continue
     }
     if (key === 'delete') {
-      deleteReferences(ctx, def, val)
+      deleteReferences(ctx, def, arr)
       continue
     }
     throw [def, val]

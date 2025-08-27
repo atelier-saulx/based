@@ -21,6 +21,7 @@ import { writeAlias } from './alias.js'
 import { writeCardinality } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { writeJson } from './json.js'
+import { markDefaults } from '../create/mark.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
@@ -43,4 +44,5 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   } else if (type === JSON) {
     writeJson(ctx, def, val)
   }
+  markDefaults(ctx, def)
 }

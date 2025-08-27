@@ -49,5 +49,4 @@ export const writeBinary = (ctx: Ctx, def: PropDef, val: any) => {
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   writeBinaryRaw(ctx, buf)
-  markDefaults(ctx, def)
 }

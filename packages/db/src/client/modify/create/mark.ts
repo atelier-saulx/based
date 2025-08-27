@@ -16,8 +16,10 @@ export const markString = (ctx: Ctx, def: PropDef) => {
 
 export const markDefaults = (ctx: Ctx, def: PropDef) => {
   if (ctx.operation === CREATE && ctx.schema.hasSeperateDefaults) {
-    ctx.schema.separateDefaults.bufferTmp[def.prop] = 1
-    ctx.defaults++
+    if (!ctx.schema.separateDefaults.bufferTmp[def.prop]) {
+      ctx.schema.separateDefaults.bufferTmp[def.prop] = 1
+      ctx.defaults++
+    }
   }
 }
 

@@ -79,7 +79,7 @@ export const writeReference = (
 
     if (val.id instanceof Tmp) {
       if (val.id.batch !== ctx.batch) {
-        throw val
+        throw val.id
       }
       if (!def.edges) {
         writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)

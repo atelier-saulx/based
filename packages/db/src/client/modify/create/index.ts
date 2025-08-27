@@ -154,8 +154,8 @@ const writeCreate = (ctx: Ctx, payload: any) => {
     writeMainBuffer(ctx)
   }
   writeDefaults(ctx)
-  writeSortable(ctx)
-  writeSortableText(ctx)
+  // writeSortable(ctx)
+  // writeSortableText(ctx)
 }
 
 export function create(

@@ -67,7 +67,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
-    std.debug.print("CLEAR REFS id: {d} \n", .{ctx.id});
     const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
     if (refs) |r| {
         if (r.nr_refs == 0) {
@@ -83,7 +82,6 @@ pub fn clearReferences(ctx: *ModifyCtx) void {
 }
 
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
-    std.debug.print("DELETE REFS id: {d} \n", .{ctx.id});
     const len: usize = read(u32, data, 0);
 
     if (ctx.node == null) {
@@ -136,8 +134,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         ctx.fieldSchema.?,
         refTypeEntry,
     );
-
-    // const res = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
 
     return len;
 }
