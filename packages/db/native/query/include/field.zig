@@ -166,6 +166,41 @@ pub inline fn selvaString(
     return r.value.len + (if (isEdge) 6 else 5);
 }
 
+pub inline fn switchText(
+    comptime isEdge: bool,
+    code: t.LangCode,
+    ctx: *QueryCtx,
+    id: u32,
+    score: ?[4]u8,
+    fallbackSize: u8,
+    include: []u8,
+    i: *u16,
+    r: *results.Result,
+    idIsSet: bool,
+    comptime hasOpts: bool,
+    opts: if (hasOpts) *const o.IncludeOpts else void,
+) !usize {
+    if (hasOpts) {
+        if (code == t.LangCode.NONE) {
+            return try textAll(isEdge, ctx, id, score, r, idIsSet, true, opts);
+        } else if (fallbackSize > 0) {
+            const fb = include[i.* - fallbackSize .. i.*];
+            return try textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb, true, opts);
+        } else {
+            return try textSpecific(isEdge, ctx, id, score, r, code, idIsSet, true, opts);
+        }
+    } else {
+        if (code == t.LangCode.NONE) {
+            return try textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
+        } else if (fallbackSize > 0) {
+            const fb = include[i.* - fallbackSize .. i.*];
+            return try textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb, false, undefined);
+        } else {
+            return try textSpecific(isEdge, ctx, id, score, r, code, idIsSet, false, undefined);
+        }
+    }
+}
+
 pub inline fn textSpecific(
     comptime isEdge: bool,
     ctx: *QueryCtx,
@@ -180,7 +215,7 @@ pub inline fn textSpecific(
     var idIsSetLocal: bool = idIsSet;
     var size: usize = 0;
     const s = if (hasOpts)
-        o.parseOptsString(db.getTextFromValue(result.value, code), opts)
+        try o.parseOptsString(ctx, db.getTextFromValue(result.value, code), opts)
     else
         db.getTextFromValue(result.value, code);
     if (s.len > 0) {
@@ -213,7 +248,7 @@ pub inline fn textFallback(
     var idIsSetLocal: bool = idIsSet;
     var size: usize = 0;
     const s = if (hasOpts)
-        o.parseOptsString(db.getTextFromValueFallback(result.value, code, fallbacks), opts)
+        try o.parseOptsString(ctx, db.getTextFromValueFallback(result.value, code, fallbacks), opts)
     else
         db.getTextFromValueFallback(result.value, code, fallbacks);
     if (s.len > 0) {
@@ -251,7 +286,7 @@ pub inline fn textAll(
             .id = 0,
             .score = score,
             .prop = result.prop,
-            .value = if (hasOpts) o.parseOptsString(s[0 .. s.len - 4], opts) else s[0 .. s.len - 4],
+            .value = if (hasOpts) try o.parseOptsString(ctx, s[0 .. s.len - 4], opts) else s[0 .. s.len - 4],
         };
         if (isEdge) size += (r.value.len + 6) else size += (r.value.len + 5);
         size += try add(ctx, id, score, idIsSetLocal, &r);

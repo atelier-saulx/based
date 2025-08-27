@@ -149,44 +149,32 @@ pub fn getFields(
                             idIsSet = true;
                         },
                         t.Prop.TEXT => {
+                            var s: usize = undefined;
                             if (optsSize == 0) {
-                                const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
-                                if (s != 0) {
-                                    idIsSet = true;
-                                    size += s;
-                                }
+                                s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
                             } else {
                                 const code: t.LangCode = @enumFromInt(include[i]);
                                 const fallbackSize = include[i + 1];
-                                // const hasEnd = include[i] == 1;
-
-                                i += optsSize;
-
-                                if (optsSize == 0) {
-                                    const s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
-                                    if (s != 0) {
-                                        idIsSet = true;
-                                        size += s;
-                                    }
-                                } else if (fallbackSize > 0) {
-                                    const fb = include[i .. i + fallbackSize];
-                                    const s = try f.textFallback(isEdge, ctx, id, score, r, code, idIsSet, fb, false, undefined);
-                                    if (s != 0) {
-                                        idIsSet = true;
-                                        size += s;
-                                    }
+                                const hasEnd = include[i + 2] == 1;
+                                if (hasEnd) {
+                                    i += optsSize - 5;
+                                    const opts = o.getOpts(include, &i);
+                                    i += 5;
+                                    s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, true, opts);
                                 } else {
-                                    const s = try f.textSpecific(isEdge, ctx, id, score, r, code, idIsSet, false, undefined);
-                                    if (s != 0) {
-                                        idIsSet = true;
-                                        size += s;
-                                    }
+                                    i += optsSize;
+                                    s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, false, undefined);
                                 }
+                            }
+                            if (s != 0) {
+                                idIsSet = true;
+                                size += s;
                             }
                         },
                         t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
                             if (optsSize != 0) {
                                 size += try f.fixed(isEdge, r, false, undefined);
+                                i += optsSize;
                             } else {
                                 size += try f.fixed(isEdge, r, true, o.getOpts(include, &i));
                             }
@@ -196,6 +184,7 @@ pub fn getFields(
                         else => {
                             if (optsSize != 0) {
                                 size += try f.default(isEdge, r, false, undefined);
+                                i += optsSize;
                             } else {
                                 size += try f.default(isEdge, r, true, o.getOpts(include, &i));
                             }

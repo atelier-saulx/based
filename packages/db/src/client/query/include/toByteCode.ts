@@ -125,40 +125,45 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
         if (t === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
-            const b = new Uint8Array(hasEnd ? 10 : 4)
+            const b = new Uint8Array(hasEnd ? 11 : 4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
             b[2] = propDef.def.typeIndex
             if (hasEnd) {
-              b[3] = 6 // opts len
+              b[3] = 7 // opts len
               b[4] = 0 // lang code
               b[5] = 0 // fallbackSize
-              writeUint32(b, propDef.opts?.end, 6)
+              b[6] = 1 // has end
+              writeUint32(b, propDef.opts?.end, 7)
             } else {
               b[3] = 0 // opts len
             }
-            // expand start + end
             result.push(b)
           } else {
             for (const code of codes) {
               const fallBackSize = propDef.opts.fallBacks.length
-              const b = new Uint8Array(6 + fallBackSize)
+              const b = new Uint8Array(7 + (hasEnd ? 5 : 0) + fallBackSize)
               b[0] = includeOp.DEFAULT
               b[1] = prop
               b[2] = propDef.def.typeIndex
-              if (hasEnd) {
-                b[3] = fallBackSize + 2 // opts len
-                b[4] = code // say if there is a end option
-                b[5] = fallBackSize
-              } else {
-                b[3] = fallBackSize + 2 // opts len
-                b[4] = code // say if there is a end option
-                b[5] = fallBackSize
-              }
-              // expand start + end
               let i = 0
+              if (hasEnd) {
+                b[3] = fallBackSize + 8 // opts
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+                b[6] = 1 // has end
+                b[7] = 1 // is string use chars (can be optional)
+                writeUint32(b, propDef.opts?.end, 8)
+                i = 11
+              } else {
+                b[3] = fallBackSize + 3 // opts
+                b[4] = code // say if there is a end option
+                b[5] = fallBackSize
+                b[6] = 0 // no end
+                i = 7
+              }
               for (const fallback of propDef.opts.fallBacks) {
-                b[i + 6] = fallback
+                b[i] = fallback
                 i++
               }
               result.push(b)
