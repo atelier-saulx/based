@@ -172,21 +172,21 @@ pub fn getFields(
                             }
                         },
                         t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
-                            if (optsSize != 0) {
+                            if (optsSize == 0) {
                                 size += try f.fixed(isEdge, r, false, undefined);
-                                i += optsSize;
                             } else {
                                 size += try f.fixed(isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
                             }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
                         else => {
-                            if (optsSize != 0) {
+                            if (optsSize == 0) {
                                 size += try f.default(isEdge, r, false, undefined);
-                                i += optsSize;
                             } else {
                                 size += try f.default(isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
                             }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;

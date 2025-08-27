@@ -1,5 +1,4 @@
 import { BasedDb } from '../../src/index.js'
-// import { mermaid } from '@based/schema-diagram'
 import test from '../shared/test.js'
 import createNorthwind from '../shared/northwindDb.js'
 
