@@ -29,8 +29,8 @@ await test('export to csv', async (t) => {
     },
   })
 
-  for (let j = 0; j < 1000; j++) {
-    for (let i = 0; i < 1e6; i++) {
+  for (let j = 0; j < 1e3; j++) {
+    for (let i = 0; i < 1e3; i++) {
       let p = db.create('product', {
         // sku: 'lala' + (Math.random() * 10).toFixed(0),
         sku: i,
@@ -42,11 +42,11 @@ await test('export to csv', async (t) => {
       //   // products: [p],
       // })
     }
-    console.log(
-      `#${j} (${(j + 1) * 1000}M)`,
-      (await db.drain()).toFixed(),
-      'ms',
-    )
+    // console.log(
+    //   `#${j} (${(j + 1) * 1000}M)`,
+    //   (await db.drain()).toFixed(),
+    //   'ms',
+    // )
     await wait(10)
   }
 

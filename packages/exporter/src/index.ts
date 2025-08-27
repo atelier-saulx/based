@@ -27,8 +27,12 @@ var log = (...params) => {
   if (verbose === true) console.log(...params)
 }
 
-const getCsvFileName = (typeId: number, startNodeId: number) => {
-  return join(OUTPUT_DIR, `${typeId}_${startNodeId}.csv`)
+const getCsvFileName = (
+  typeId: number,
+  startNodeId: number,
+  endNodeId: number,
+) => {
+  return join(OUTPUT_DIR, `${typeId}_${startNodeId}_${endNodeId}.csv`)
 }
 
 const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
@@ -50,12 +54,13 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     ...Object.keys(def.props).map((propName) => def.props[propName].typeIndex),
   ]
 
-  let offsetStart = startNodeId - 1
-  let offsetEnd = startNodeId - 1 + CHUNK_SIZE
+  let offsetStart = 0
+  let offsetEnd = offsetStart + CHUNK_SIZE
   let isDone = false
   let fileHandle: any | undefined
+  const endNodeId = startNodeId + def.blockCapacity
 
-  const filename = getCsvFileName(typeId, startNodeId)
+  const filename = getCsvFileName(typeId, startNodeId, endNodeId)
   fileHandle = await open(filename, 'w')
   log(`  - Opened file for writing: ${filename}`)
   await fileHandle.write(toCsvHeader(csvHeader))
@@ -72,10 +77,11 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
 
   while (!isDone) {
     log(`  - Processing chunk from offset ${offsetStart}...`)
+    log(`.range(${offsetStart}, ${offsetEnd})`)
     const data = await db
       .query(def.type)
       .include('*')
-      .range(0, CHUNK_SIZE)
+      .range(offsetStart, offsetEnd)
       .get()
       .toObject()
 
@@ -85,7 +91,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       break
     }
 
-    // add propDef from schema
     const csvRows = data.map((prop) => {
       let row = [prop.id]
       for (let p = 0; p < propsToExport.length; p++) {
@@ -97,13 +102,29 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
     })
 
     await fileHandle.write(toCsvChunk(csvRows, propTypes))
-    if (csvRows.length == CHUNK_SIZE && offsetEnd < def.blockCapacity) {
+
+    console.log(
+      `===> offsetStart (${offsetStart}) + CHUNK_SIZE (${CHUNK_SIZE}) >= endNodeId (${endNodeId})`,
+    )
+    if (offsetStart + CHUNK_SIZE >= endNodeId) {
+      isDone = true
+      log('    - Final chunk processed. Finishing.')
+    } else {
       offsetStart += CHUNK_SIZE
       offsetEnd += CHUNK_SIZE
-      isDone = false
-    } else {
-      isDone = true
+      log(
+        `    - Chunk full, continuing to next chunk at offset ${offsetStart}.`,
+      )
     }
+    // if (csvRows.length == CHUNK_SIZE) {
+    //   offsetStart += CHUNK_SIZE
+    //   offsetEnd += offsetStart + CHUNK_SIZE
+    //   if (offsetStart >= def.blockCapacity) {
+    //     isDone = true
+    //   }
+    // } else {
+    //   isDone = true
+    // }
   }
 
   try {
