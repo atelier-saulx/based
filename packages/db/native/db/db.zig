@@ -418,6 +418,10 @@ pub fn deleteField(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSche
     try errors.selva(selva.selva_fields_del(ctx.db.selva, node, fieldSchema, markDirtyCb, ctx));
 }
 
+pub fn deleteTextFieldTranslation(ctx: *modifyCtx.ModifyCtx, fieldSchema: FieldSchema, lang: types.LangCode) !void {
+    return errors.selva(selva.selva_fields_set_text(ctx.node, fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
+}
+
 pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     return result;

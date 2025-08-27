@@ -112,6 +112,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
             sort.remove(ctx.db, sI, t, ctx.node.?);
             sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
         }
-        _ = selva.selva_fields_set_text(ctx.node, ctx.fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN);
+        db.deleteTextFieldTranslation(ctx, ctx.fieldSchema.?, lang) catch |e| {
+            std.log.debug("Failed to delete a translation ({any}:{any}.{any}.{any}): {any}", .{ ctx.typeId, ctx.id, ctx.field, lang, e });
+        };
     }
 }
