@@ -131,4 +131,13 @@ await test('emoji enum', async (t) => {
       score: '🙂',
     },
   ])
+
+  db.create('review', { score: '☹️' })
+  db.create('review', { score: '😐' })
+  deepEqual(await db.query('review').include('score').sort('score', 'desc').get(), [
+    { id: 2, score: '🙂' },
+    { id: 1, score: '😐' },
+    { id: 4, score: '😐' },
+    { id: 3, score: '☹️' }
+  ])
 })
