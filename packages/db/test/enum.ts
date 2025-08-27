@@ -52,7 +52,10 @@ await test('enum', async (t) => {
         .filter('fancyness', '=', 'fire')
         .get()
     ).toObject(),
-    [{ id: 2, fancyness: 'fire' }, { id: 4, fancyness: 'fire' }],
+    [
+      { id: 2, fancyness: 'fire' },
+      { id: 4, fancyness: 'fire' },
+    ],
   )
 
   db.update('user', user1, {
@@ -70,20 +73,71 @@ await test('enum', async (t) => {
     fancyness: null,
   })
 
-  throws(() => db.update('user', user2, {
-    fancyness: 3,
-  }))
-  throws(() => db.update('user', user2, {
-    fancyness: 'fond',
-  }))
-  throws(() => db.update('user', user2, {
-    fancyness: undefined,
-  }))
+  throws(() =>
+    db.update('user', user2, {
+      fancyness: 3,
+    }),
+  )
+  throws(() =>
+    db.update('user', user2, {
+      fancyness: 'fond',
+    }),
+  )
+  throws(() =>
+    db.update('user', user2, {
+      fancyness: undefined,
+    }),
+  )
 
   deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
     { id: 1, fancyness: 'fire' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
     { id: 4, fancyness: 'fire' },
+  ])
+})
+
+await test('emoji enum', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      review: {
+        props: {
+          score: {
+            type: 'enum',
+            enum: ['☹️', '😐', '🙂'],
+            default: '😐',
+          },
+        },
+      },
+    },
+  })
+
+  db.create('review', {})
+  db.create('review', { score: '🙂' })
+
+  deepEqual(await db.query('review').include('score').get(), [
+    {
+      id: 1,
+      score: '😐',
+    },
+    {
+      id: 2,
+      score: '🙂',
+    },
+  ])
+
+  db.create('review', { score: '☹️' })
+  db.create('review', { score: '😐' })
+  deepEqual(await db.query('review').include('score').sort('score', 'desc').get(), [
+    { id: 2, score: '🙂' },
+    { id: 1, score: '😐' },
+    { id: 4, score: '😐' },
+    { id: 3, score: '☹️' }
   ])
 })

@@ -18,6 +18,7 @@ const test = async () => {
       backups: './tmp/backups',
       dists: './tmp/dists',
     },
+    smtp: { auth: {} },
   })
 
   const client = connect({
@@ -36,7 +37,7 @@ const test = async () => {
 
   await wait(100)
 
-  let i = 1
+  let i = 10
   while (i--) {
     await statsDb.create('event', {
       function: 1,
@@ -50,12 +51,12 @@ const test = async () => {
   console.log('created')
 
   const q = []
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 30; i++) {
     q.push(
       new Promise<void>((resolve) =>
         client
           .query('based:events', {
-            search: 'dol' + i,
+            search: 'dol',
             page: 0,
           })
           .subscribe(
@@ -78,6 +79,7 @@ const test = async () => {
   await wait(2e3)
 
   await client.destroy()
+  await wait(2e3)
   await close()
   // process.exit(1)
 }

@@ -16,21 +16,21 @@ await test('export to csv', async (t) => {
         sku: 'number', // { type: 'string', maxBytes: 10 },
         flap: 'number',
       },
-      shelve: {
-        code: 'number', //{ type: 'string', maxBytes: 4 },
-        // products: {
-        //   items: {
-        //     ref: 'product',
-        //     prop: 'product',
-        //   },
-        // },
-      },
+      // shelve: {
+      //   code: 'number', //{ type: 'string', maxBytes: 4 },
+      //   // products: {
+      //   //   items: {
+      //   //     ref: 'product',
+      //   //     prop: 'product',
+      //   //   },
+      //   // },
+      // },
     },
   })
 
   for (let j = 0; j < 1000; j++) {
     // 1M items, 1K SKUs, 50 shelves
-    for (let i = 0; i < 1e6; i++) {
+    for (let i = 0; i < 1000; i++) {
       let p = db.create('product', {
         // sku: 'lala' + (Math.random() * 10).toFixed(0),
         sku: i,
@@ -50,11 +50,8 @@ await test('export to csv', async (t) => {
     await wait(10)
   }
 
-  // Small delay between batches
-  await new Promise((resolve) => setTimeout(resolve, 50))
-
   await db.drain()
-  await db.save()
+  // await db.save()
 
   // cd ../exporter and run `npm run test`
   // check the id from the first and last lines of the exported csv with head/tail

@@ -60,8 +60,8 @@ const hello: BasedFunction = async (based) => {
   // // return 'FLAP DROOLxx'
 
   console.log('call this')
-
-  return based.db.schema
+  return 'xxx'
+  // return based.db.schema
 }
 
 export default hello

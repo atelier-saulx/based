@@ -11,6 +11,12 @@ static inline uint64_t selva_get_thread_id(void);
 #define _GNU_SOURCE
 #include <unistd.h>
 
+/*
+ * Sometimes the symbol for getid not there even if _GNU_SOURCE should now
+ * expose it on glibc 2.30+.
+ */
+pid_t gettid(void);
+
 static inline uint64_t selva_get_thread_id(void)
 {
     return (uint64_t)gettid();
