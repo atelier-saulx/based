@@ -20,7 +20,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
-
     const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 
@@ -39,6 +38,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         }
 
         if (ctx.id == id and ctx.typeId == refTypeId) {
+
             // don't ref yourself
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -129,7 +129,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const u32ids = read([]u32, aligned, 0);
-
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
