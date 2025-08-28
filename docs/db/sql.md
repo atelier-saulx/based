@@ -114,8 +114,8 @@ usStates : stateAbbr __string__
 usStates : stateRegion __string__
 ```
 
-Queries
--------
+Select Queries
+--------------
 
 Basic SQL queries and their Based DB equivalents.
 
@@ -644,7 +644,60 @@ await db.query('customers')
 
 ### Right Join
 
+Right join can be made in the similar way as left join.
+
 ### Full Join
+
+```sql
+SELECT customers.company_name, orders.order_id
+FROM customers
+FULL OUTER JOIN orders ON customers.customer_id=orders.customer_id
+ORDER BY customers.company_name;
+```
+
+```js
+const customers = await db.query('customers').get().toObject()
+const orders = await db.query('orders').include('customer.id').get().toObject()
+const result = [];
+
+// LEFT JOIN: Customers with Orders
+customers.forEach((customer) => {
+  const matchingOrders = orders.filter((order) => order?.customer?.id === customer.id)
+  if (matchingOrders.length > 0) {
+    matchingOrders.forEach((order) => {
+      result.push({
+        companyName: customer.companyName,
+        OrderId: order.id
+      })
+    })
+  } else {
+    result.push({
+      companyName: customer.companyName,
+      orderId: null
+    })
+  }
+});
+
+// RIGHT JOIN: Orders with no matching Customers
+orders.forEach((order) => {
+  const customer = customers.find((c) => c.id === order.customer?.id);
+  if (!customer) {
+    result.push({
+      companyName: null,
+      orderId: order.id
+    });
+  }
+});
+
+// Sort by companyName
+result.sort((a, b) => {
+  if (a.companyName === null) return 1;
+  if (b.companyName === null) return -1;
+  return a.companyName.localeCompare(b.companyName);
+});
+
+console.dir(result);
+```
 
 ### Self Join
 
@@ -733,9 +786,9 @@ SELECT city, country FROM customers
 
 ```js
 console.log('union all')
-const unionAllA = await db.query('customers').include('city', 'country').get().toObject()
-const unionAllB = await db.query('suppliers').include('city', 'country').get().toObject()
-const unionAll = [
+const unionA = await db.query('customers').include('city', 'country').get().toObject()
+const unionB = await db.query('suppliers').include('city', 'country').get().toObject()
+const union = [
   ...unionA.map(({ city, country }) => ({ city, country })),
   ...unionB.map(({ city, country }) => ({ city, country }))
 ].sort((a, b) => a.city.localeCompare(b.city))
@@ -744,3 +797,52 @@ const unionAll = [
 ### Having
 
 ### Exists
+
+Modifying Data
+--------------
+
+### Insert
+
+```js
+const res = db.create('customers', {
+  companyName: 'Cardinal',
+  contactName: 'Tom B. Erichsen',
+  address: 'Skagen 21',
+  city: 'Stavanger',
+  postalCode: '4006',
+  country: 'Norway',
+})
+```
+
+### Update
+
+```js
+db.update('customers', id, {
+  contactName: 'Haakon Christensen',
+})
+```
+
+### Delete
+
+**Deleting a single node**
+
+```js
+await db.delete('customers', id)
+```
+
+
+**Delete WELLI**
+
+```js
+db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
+```
+
+**Delete all orders by WANDK**
+
+```js
+const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
+const wandkOrders = await db.query('orders').filter('customer', '=', wandk).get()
+for (const order of wandkOrders) {
+  db.delete('orders', order.id)
+}
+```
