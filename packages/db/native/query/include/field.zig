@@ -31,10 +31,10 @@ pub inline fn get(
     var fieldSchema: *const selva.SelvaFieldSchema = undefined;
     var result: results.Result = undefined;
     if (isEdge) {
-        if (edgeRef.?.edgeConstaint == null) {
+        if (edgeRef.?.edgeConstraint == null) {
             return errors.DbIncludeError.EDGE_FROM_WEAKREF;
         }
-        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstaint.?, field);
+        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstraint.?, field);
         if (prop == t.Prop.CARDINALITY) {
             // make this in getEdgeProp
             value = db.getCardinalityReference(ctx.db, edgeRef.?.largeReference.?, fieldSchema);

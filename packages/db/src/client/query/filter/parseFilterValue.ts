@@ -9,7 +9,7 @@ import {
   TEXT,
 } from '@based/schema/def'
 import { crc32 } from '../../crc32.js'
-import { convertToTimestamp, ENCODER } from '@based/utils'
+import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // -------------------------------------------
 // conditions normal
 // field, [size 2]
@@ -35,16 +35,8 @@ export const parseFilterValue = (
   ) {
     const b = value instanceof Uint8Array ? value : ENCODER.encode(value)
     const buf = new Uint8Array(8)
-    let crc = crc32(b)
-    buf[0] = crc
-    buf[1] = crc >>>= 8
-    buf[2] = crc >>>= 8
-    buf[3] = crc >>>= 8
-    let len = b.byteLength
-    buf[4] = len
-    buf[5] = len >>>= 8
-    buf[6] = len >>>= 8
-    buf[7] = len >>>= 8
+    writeUint32(buf, crc32(b), 0)
+    writeUint32(buf, b.byteLength, 4)
     return buf
   } else if (prop.typeIndex === BOOLEAN) {
     return value ? 1 : 0

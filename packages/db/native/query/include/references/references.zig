@@ -56,17 +56,17 @@ pub fn getRefsFields(
 
     const resultIndex: usize = ctx.results.items.len - 1;
 
-    var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
+    var edgeConstraint: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
         if (db.getEdgeReferences(ref.?.largeReference.?, refField)) |r| {
-            if (ref.?.edgeConstaint == null) {
+            if (ref.?.edgeConstraint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
                 // Is a edge ref cant filter on an edge field!
                 return 11;
             }
-            const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstaint.?, refField) catch {
+            const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint.?, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;
             };
@@ -80,7 +80,7 @@ pub fn getRefsFields(
             // default empty size - means a bug!
             return 10;
         };
-        edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
+        edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) {
             // default empty size - this should never happen
@@ -92,14 +92,14 @@ pub fn getRefsFields(
 
     if (sortArr != null) {
         if (hasFilter) {
-            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
+            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
         } else {
-            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, false, null, offset, limit);
+            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, false, null, offset, limit);
         }
     } else if (hasFilter) {
-        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
+        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
     } else {
-        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstrain, false, null, offset, limit);
+        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, false, null, offset, limit);
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];

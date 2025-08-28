@@ -63,7 +63,6 @@ pub fn filter(
 
     while (i < end) {
         const meta: Meta = @enumFromInt(conditions[i]);
-
         if (meta == Meta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
             end = read(u32, conditions, i + 3);
@@ -96,7 +95,7 @@ pub fn filter(
             };
             const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
             const refNode: ?db.Node = selvaRef.?.*.dst;
-            const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+            const edgeConstraint: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
@@ -112,7 +111,7 @@ pub fn filter(
                     .smallReference = null,
                     .largeReference = @ptrCast(selvaRef.?),
                     .edgeReference = null,
-                    .edgeConstaint = edgeConstrain,
+                    .edgeConstraint = edgeConstraint,
                 },
                 null,
                 i + 6,
@@ -138,8 +137,8 @@ pub fn filter(
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else if (r.edgeConstaint != null) {
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstaint.?, field) catch {
+                    } else if (r.edgeConstraint != null) {
+                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint.?, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const value = db.getEdgeProp(r.largeReference.?, edgeFieldSchema);
@@ -193,13 +192,13 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
-                if (ref.?.edgeConstaint == null) {
+                if (ref.?.edgeConstraint == null) {
                     std.log.err("Trying to get an edge field from a weakRef (2) \n", .{});
                     // Is a edge ref cant filter on an edge field!
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
 
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstaint.?, field) catch {
+                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint.?, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.largeReference.?, edgeFieldSchema);
@@ -286,7 +285,6 @@ pub fn filter(
                     }
                 }
             }
-
             i += querySize + 3;
         }
     }

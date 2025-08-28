@@ -43,7 +43,7 @@ pub fn getFields(
                     .smallReference = edgeRef.?.smallReference,
                     .largeReference = edgeRef.?.largeReference,
                     .edgeReference = null,
-                    .edgeConstaint = edgeRef.?.edgeConstaint,
+                    .edgeConstraint = edgeRef.?.edgeConstraint,
                 }, null, true);
                 i += edgeSize + 2;
             },

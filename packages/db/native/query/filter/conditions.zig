@@ -36,18 +36,11 @@ pub inline fn runConditions(
 ) bool {
     var i: usize = 0;
     while (i < q.len) {
-        // figure out which one this is
-        // if (q[i] > 2) {
-        //     i -= 1;
-        // }
-        const topLevelType: Type = @enumFromInt(q[i]);
+        const match = @as(Type, @enumFromInt(q[i])) == Type.default;
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
-
         const result = condition(decompressor, blockState, mode, q, v, i);
-        if (topLevelType == Type.negate and result[1] == true) {
-            return false;
-        } else if (result[1] == false) {
+        if (result[1] != match) {
             return false;
         }
         i += result[0];

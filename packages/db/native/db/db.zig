@@ -311,9 +311,9 @@ pub fn getEdgeProp(
     }
 }
 
-pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-        selva.selva_get_edge_field_fields_schema(db.selva, edgeConstaint),
+        selva.selva_get_edge_field_fields_schema(db.selva, edgeConstraint),
         field,
     );
     if (edgeFieldSchema == null) {
