@@ -39,7 +39,7 @@ await test('Basic SQL', async (t) => {
 
   // 4. Create a report showing Northwind's orders sorted by Freight from most
   // expensive to cheapest.
-  // Show OrderID, OrderDate, ShippedDate, CustomerID, and Freight.
+  // Show OrderId, OrderDate, ShippedDate, CustomerId, and Freight.
   console.log(4)
   await db
     .query('orders')
@@ -260,12 +260,37 @@ await test('Basic SQL', async (t) => {
 
   // Full join TODO
 
-  // Self join TODO
+  // Self join
   // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
   // FROM customers A, customers B
   // WHERE A.customer_id <> B.customer_id
   // AND A.city = B.city
   // ORDER BY A.city;
+  console.log('self join')
+  const selfJoinResult = []
+  ;(
+    (await db
+      .query('customers')
+      .include('customerId', 'companyName', 'city')
+      .get()
+      .toObject()) as {
+      id: number
+      customerId: string
+      city: string
+      companyName: string
+    }[]
+  ).forEach((a, _, customers) => {
+    customers.forEach((b) => {
+      if (a.city === b.city && a.customerId !== b.customerId) {
+        selfJoinResult.push({
+          customerA: a.customerId,
+          customerB: b.customerId,
+          city: a.city,
+        })
+      }
+    })
+  })
+  console.log(selfJoinResult)
 
   // Union
   // SELECT 'customer' AS Type, contact_name, city, country
