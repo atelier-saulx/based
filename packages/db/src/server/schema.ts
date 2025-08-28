@@ -49,9 +49,10 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
       )
     }
   }
+
   // Insert a root node
   if (schema.types._root) {
-    const tmpArr = new Uint8Array(100)
+    const tmpArr = new Uint8Array(new ArrayBuffer(1e3, { maxByteLength: 10e3 }))
     const tmpCtx = new Ctx(schema.hash, tmpArr)
     writeCreate(tmpCtx, server.schemaTypesParsed._root, {}, null)
     const buf = consume(tmpCtx)

@@ -7,7 +7,12 @@ export const resize = (ctx: Ctx, size: number) => {
   }
   if (size > ctx.array.buffer.byteLength) {
     if ('resize' in ctx.array.buffer) {
-      ctx.array.buffer.resize(size)
+      ctx.array.buffer.resize(
+        Math.min(
+          ctx.array.buffer.maxByteLength,
+          ctx.array.buffer.byteLength * 2,
+        ),
+      )
     } else {
       throw RANGE_ERR
     }
