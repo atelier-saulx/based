@@ -1,14 +1,13 @@
 import { TypeIndex } from '@based/schema/prop-types'
 import { ReaderPropDef, ReaderSchema } from '../types.js'
 import { DECODER, readUint16 } from '@based/utils'
-import { scheduler } from 'timers/promises'
 
 const PROPERTY_MAP = {
-  meta: 1 << 0, // Bit 0
-  enum: 1 << 1, // Bit 1
-  vectorBaseType: 1 << 2, // Bit 2
-  len: 1 << 3, // Bit 3
-  locales: 1 << 4, // Bit 4
+  meta: 1 << 0,
+  enum: 1 << 1,
+  vectorBaseType: 1 << 2,
+  len: 1 << 3,
+  locales: 1 << 4,
 }
 
 const readPath = (
@@ -16,12 +15,14 @@ const readPath = (
   off: number,
 ): { path: string[]; size: number } => {
   const len = p[off]
-  const path = []
+  const path = new Array(len)
   let index = 1 + off
-  while (path.length != len) {
-    const propLen = p[index]
-    path.push(DECODER.decode(p.subarray(index + 1, propLen + index + 1)))
-    index += propLen + 1
+  let cnt = 0
+  while (cnt != len) {
+    const len = p[index]
+    path[cnt] = DECODER.decode(p.subarray(index + 1, len + index + 1))
+    index += len + 1
+    cnt++
   }
   return { path, size: index - off }
 }
@@ -42,11 +43,50 @@ const deSerializeProp = (
 
   let index = keySize + 2 + off + path.size
 
-  // if (map & PROPERTY_MAP.meta) result.meta = {}
-  // if (map & PROPERTY_MAP.enum) result.enum = []
-  // if (map & PROPERTY_MAP.vectorBaseType) result.vectorBaseType = 'u8' // Default empty value
-  // if (map & PROPERTY_MAP.len) result.len = 0
-  // if (map & PROPERTY_MAP.locales) result.locales = {}
+  if (map & PROPERTY_MAP.meta) {
+    prop.meta = p[index]
+    index++
+  }
+  if (map & PROPERTY_MAP.enum) {
+    const useJSON = p[index] === 1
+    index += 1
+    if (useJSON) {
+      const size = readUint16(p, index)
+      index += 2
+      prop.enum = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
+      index += size
+    } else {
+      const len = p[index]
+      index++
+      let cnt = 0
+      prop.enum = new Array(len)
+      while (cnt !== len) {
+        const len = p[index]
+        prop.enum[cnt] = DECODER.decode(p.subarray(index + 1, len + index + 1))
+        index += len + 1
+        cnt++
+      }
+    }
+  }
+  if (map & PROPERTY_MAP.vectorBaseType) {
+    prop.vectorBaseType = p[index] + 1
+    index++
+  }
+  if (map & PROPERTY_MAP.len) {
+    prop.len = readUint16(p, index)
+    index += 2
+  }
+  if (map & PROPERTY_MAP.locales) {
+    prop.locales = {}
+    const end = p[index] * 4 + index + 1
+    index++
+    while (index < end) {
+      prop.locales[readUint16(p, index)] = DECODER.decode(
+        p.subarray(index + 2, index + 4),
+      )
+      index += 4
+    }
+  }
   return { def: prop, key, size: index - off }
 }
 
@@ -104,7 +144,6 @@ const deSerializeSchemaInner = (
       count++
     }
   }
-
   const hasEdge = schema[i]
   i++
   if (hasEdge) {
@@ -112,7 +151,34 @@ const deSerializeSchemaInner = (
     s.edges = x.schema
     i += x.size
   }
-
+  const hasHook = schema[i]
+  if (hasHook) {
+    const len = readUint16(schema, i)
+    i += 2
+    const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n)`
+    // @ts-ignore
+    s.hook = new Function('n', fn)
+    i += len
+  } else {
+    i++
+  }
+  const hasAgg = schema[i]
+  if (hasAgg) {
+    const len = readUint16(schema, i)
+    i += 2
+    s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
+    if (s.aggregate.groupBy?.display) {
+      s.aggregate.groupBy.display = new Intl.DateTimeFormat(
+        // @ts-ignore
+        s.aggregate.groupBy.display.locale,
+        // @ts-ignore
+        s.aggregate.groupBy.display,
+      )
+    }
+    i += len
+  } else {
+    i++
+  }
   return { schema: s as ReaderSchema, size: i - offset }
 }
 

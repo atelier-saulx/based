@@ -11,11 +11,9 @@ import {
   isEmptyObject,
   writeUint16,
 } from '@based/utils'
-import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
 
 export type ReaderSchema2 = {
   readId: number
-  // maybe current read id that you add
   props: { [prop: string]: ReaderPropDef }
   main: { props: { [start: string]: ReaderPropDef }; len: number }
   type: ReaderSchemaEnum
@@ -40,11 +38,11 @@ const getSize = (blocks: Uint8Array[], offset: number = 0): number => {
 }
 
 const PROPERTY_MAP = {
-  meta: 1 << 0, // Bit 0
-  enum: 1 << 1, // Bit 1
-  vectorBaseType: 1 << 2, // Bit 2
-  len: 1 << 3, // Bit 3
-  locales: 1 << 4, // Bit 4
+  meta: 1 << 0,
+  enum: 1 << 1,
+  vectorBaseType: 1 << 2,
+  len: 1 << 3,
+  locales: 1 << 4,
 }
 
 const serializeProp = (
@@ -78,7 +76,27 @@ const serializeProp = (
   }
   if ('enum' in prop) {
     options |= PROPERTY_MAP.enum
-    console.log('enum later..')
+    let useJSON = false
+    const tmp: Uint8Array[] = []
+    for (const p of prop.enum) {
+      if (typeof p !== 'string') {
+        useJSON = true
+        break
+      } else {
+        const n = ENCODER.encode(p)
+        tmp.push(new Uint8Array([n.byteLength]), n)
+      }
+    }
+    if (useJSON) {
+      blocks.push(new Uint8Array([1]))
+      const s = ENCODER.encode(JSON.stringify(prop.enum))
+      const x = new Uint8Array(s.byteLength + 2)
+      writeUint16(x, s.byteLength, 0)
+      x.set(s, 2)
+      blocks.push(x)
+    } else {
+      blocks.push(new Uint8Array([0, prop.enum.length]), ...tmp)
+    }
   }
   if ('vectorBaseType' in prop) {
     options |= PROPERTY_MAP.vectorBaseType
@@ -93,7 +111,17 @@ const serializeProp = (
   }
   if ('locales' in prop) {
     options |= PROPERTY_MAP.locales
-    console.log('locales later')
+    const keys = Object.keys(prop.locales)
+    const len = keys.length
+    const locales = new Uint8Array(len * 4 + 1)
+    let i = 1
+    for (const key of keys) {
+      writeUint16(locales, Number(key), i)
+      ENCODER.encodeInto(prop.locales[key], locales.subarray(i + 2, i + 4))
+      i += 4
+    }
+    locales[0] = len
+    blocks.push(locales)
   }
   header[keySize + 1] = options
 }
@@ -151,6 +179,34 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
       innerSerialize(schema.edges, blocks)
     }
   }
+
+  if (!schema.hook) {
+    blocks.push(new Uint8Array([0]))
+  } else {
+    const n = ENCODER.encode(schema.hook.toString())
+    const x = new Uint8Array(n.byteLength + 2)
+    writeUint16(x, n.byteLength, 0)
+    x.set(n, 2)
+    blocks.push(x)
+  }
+
+  if (!schema.aggregate) {
+    blocks.push(new Uint8Array([0]))
+  } else {
+    const n = ENCODER.encode(
+      JSON.stringify(schema.aggregate, (k, v) => {
+        if (k === 'groupBy' && v.display) {
+          return { ...v, display: v.display.resolvedOptions() }
+        }
+        return v
+      }),
+    )
+    const x = new Uint8Array(n.byteLength + 2)
+    writeUint16(x, n.byteLength, 0)
+    x.set(n, 2)
+    blocks.push(x)
+  }
+
   return blocks
 }
 

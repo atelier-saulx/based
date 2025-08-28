@@ -114,8 +114,8 @@ usStates : stateAbbr __string__
 usStates : stateRegion __string__
 ```
 
-Queries
--------
+Select Queries
+--------------
 
 Basic SQL queries and their Based DB equivalents.
 
@@ -210,48 +210,6 @@ Result:
 ```
 
 ### And and Or
-
-### Insert
-
-```sql
-INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
-VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-```
-
-```js
-db.create('customers', {
-  companyName: 'Cardinal',
-  contactName: 'Tom B. Erichsen',
-  address: 'Skagen 21',
-  city: 'Stavanger',
-  postalCode: '4006',
-  country: 'Norway',
-})
-```
-
-### Update
-
-```sql
-UPDATE customers
-SET contact_name = 'Haakon Christensen'
-WHERE customer_id = 1;
-```
-
-```js
-db.update('customers', 1, {
-  contactName: 'Haakon Christensen',
-})
-```
-
-### Delete
-
-```sql
-DELETE FROM customers WHERE customer_name='Cardinal';
-```
-
-```js
-await db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
-```
 
 ### Null Values
 
@@ -644,7 +602,60 @@ await db.query('customers')
 
 ### Right Join
 
+Right join can be made in the similar way as left join.
+
 ### Full Join
+
+```sql
+SELECT customers.company_name, orders.order_id
+FROM customers
+FULL OUTER JOIN orders ON customers.customer_id=orders.customer_id
+ORDER BY customers.company_name;
+```
+
+```js
+const customers = await db.query('customers').get().toObject()
+const orders = await db.query('orders').include('customer.id').get().toObject()
+const result = [];
+
+// LEFT JOIN: Customers with Orders
+customers.forEach((customer) => {
+  const matchingOrders = orders.filter((order) => order?.customer?.id === customer.id)
+  if (matchingOrders.length > 0) {
+    matchingOrders.forEach((order) => {
+      result.push({
+        companyName: customer.companyName,
+        OrderId: order.id
+      })
+    })
+  } else {
+    result.push({
+      companyName: customer.companyName,
+      orderId: null
+    })
+  }
+});
+
+// RIGHT JOIN: Orders with no matching Customers
+orders.forEach((order) => {
+  const customer = customers.find((c) => c.id === order.customer?.id);
+  if (!customer) {
+    result.push({
+      companyName: null,
+      orderId: order.id
+    });
+  }
+});
+
+// Sort by companyName
+result.sort((a, b) => {
+  if (a.companyName === null) return 1;
+  if (b.companyName === null) return -1;
+  return a.companyName.localeCompare(b.companyName);
+});
+
+console.dir(result);
+```
 
 ### Self Join
 
@@ -744,3 +755,138 @@ const union = [
 ### Having
 
 ### Exists
+
+Modifying Data
+--------------
+
+### Insert
+
+```sql
+INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
+VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
+```
+
+```js
+db.create('customers', {
+  companyName: 'Cardinal',
+  contactName: 'Tom B. Erichsen',
+  address: 'Skagen 21',
+  city: 'Stavanger',
+  postalCode: '4006',
+  country: 'Norway',
+})
+```
+
+### Update
+
+```sql
+UPDATE customers
+SET contact_name = 'Haakon Christensen'
+WHERE customer_id = 1;
+```
+
+```js
+db.update('customers', 1, {
+  contactName: 'Haakon Christensen',
+})
+```
+
+### Delete
+
+**Deleting a single node**
+
+```sql
+DELETE FROM customers WHERE customer_name='Cardinal';
+```
+
+```js
+await db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
+```
+
+**Delete WELLI**
+
+```sql
+DELETE FROM customers
+WHERE customer_id = 'WELLI';
+```
+
+```js
+db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
+```
+
+**Delete all orders by WANDK**
+
+```sql
+DELETE FROM orders
+WHERE CustomerID = 'WANDK';
+```
+
+```js
+const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
+const wandkOrders = await db.query('orders').filter('customer', '=', wandk).get()
+for (const order of wandkOrders) {
+  db.delete('orders', order.id)
+}
+```
+
+Note that these queries don't delete entries from *OrderDetails* that should be
+also deleted to completely wipe the orders of this customers.
+
+Triggers
+--------
+
+SQL triggers are stored procedures that are executed at an event like `INSERT`
+or `UPDATE`. The equivalent of a trigger in Based DB is called hook.
+
+In the following example we calculate the discount amount for each item in
+orders on creation and update. Finally we find the average discount amount
+int a query.
+
+```sql
+-- Trigger for INSERT
+CREATE TRIGGER trg_order_details_insert
+ON order_details
+AFTER INSERT
+AS
+BEGIN
+    UPDATE od
+    SET discount_amount = od.unit_price * od.discount
+    FROM order_details od
+    INNER JOIN inserted i ON od.order_id = i.order_id AND od.product_id = i.product_id;
+END;
+
+-- Trigger for UPDATE
+CREATE TRIGGER trg_order_details_update
+ON OrderDetails
+AFTER UPDATE
+AS
+BEGIN
+    UPDATE od
+    SET discount_amount = od.unit_price * od.discount
+    FROM order_details od
+    INNER JOIN inserted i ON od.order_id = i.order_id AND od.product_id = i.product_id;
+END;
+```
+
+```js
+const schema = deepCopy(defaultSchema)
+schema.types.orderDetails.props['discountAmount'] = 'number'
+schema.types.orderDetails['hooks'] = {
+  create(payload: Record<string, any>) {
+    if (payload.unitPrice !== undefined && payload.discount !== 0) {
+      payload.discountAmount = payload.unitPrice * payload.discount
+    }
+  },
+  update(payload: Record<string, any>) {
+    if (payload.unitPrice !== undefined && payload.discount !== 0) {
+      payload.discountAmount = payload.unitPrice * payload.discount
+    }
+  },
+}
+await createNorthwindDb(db, schema as Schema)
+
+// SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
+// or with the trigger:
+// SELECT Avg(discount_amount) AS [Average discount] FROM [order_details];
+await db.query('orderDetails').avg('discountAmount').get().inspect()
+```
