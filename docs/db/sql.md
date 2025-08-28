@@ -213,241 +213,6 @@ Result:
 
 ### Null Values
 
-### Aggregate Functions
-
-**MIN()**
-
-```sql
-SELECT MIN(unit_price)
-FROM products;
-```
-
-```js
-await db.query('products')
-  .min('unitPrice')
-  .get()
-```
-
-`MIN` with `GROUP BY`:
-
-```sql
-SELECT MIN(unit_price) AS SmallestPrice, category_id
-FROM products
-GROUP BY category_id;
-```
-
-```js
-await db.query('products')
-  .min('unitPrice')
-  .groupBy('category')
-  .get()
-```
-
-**MAX()**
-
-```sql
-SELECT MAX(unit_price)
-FROM products;
-```
-
-```js
-await db.query('products')
-  .max('unitPrice')
-  .get()
-  .inspect()
-```
-
-**COUNT()**
-
-```sql
-SELECT COUNT(*)
-FROM products;
-```
-
-```js
-await db.query('products')
-  .count()
-  .get()
-```
-
-```sql
-SELECT COUNT(DISTINCT unit_price)
-FROM products;
-```
-
-```js
-await db.query('products')
-  .count('unitPrice')
-  .get()
-```
-
-`COUNT` with `GROUP BY`:
-
-```sql
-SELECT COUNT(*) AS [number of products], category_id
-FROM products
-GROUP BY category_id;
-```
-
-```js
-db.query('products')
-  .count()
-  .groupBy('category')
-  .get()
-```
-
-Result:
-
-```json
-{
-  "1": {
-    "$count": 12
-  },
-  "2": {
-    "$count": 12
-  },
-  "3": {
-    "$count": 13
-  },
-  "4": {
-    "$count": 10
-  },
-  "5": {
-    "$count": 7
-  },
-  "6": {
-    "$count": 6
-  },
-  "7": {
-    "$count": 5
-  },
-  "8": {
-    "$count": 12
-  }
-}
-```
-
-**SUM()**
-
-```sql
-SELECT SUM(quantity)
-FROM order_details;
-```
-
-```js
-await db.query('orderDetails')
-  .sum('quantity')
-  .get()
-```
-
-`SUM` with `WHERE`:
-
-```sql
-SELECT SUM(quantity)
-FROM order_details
-WHERE product_id = 11;
-```
-
-```js
-await db.query('orderDetails')
-  .sum('quantity')
-  .filter('product.id', '=', 11)
-  .get()
-```
-
-`SUM` with `GROUP BY`:
-
-```sql
-SELECT order_id, SUM(quantity) AS [Total Quantity]
-FROM order_details
-GROUP BY order_id;
-```
-
-```js
-await db.query('orderDetails')
-  .sum('quantity')
-  .groupBy('order')
-  .get()
-```
-
-**AVG()**
-
-```sql
-SELECT AVG(unit_price)
-FROM products;
-```
-
-```js
-await db.query('products').avg('unitPrice').get()
-```
-
-`AVG` with `WHERE`:
-
-```sql
-SELECT AVG(unit_price)
-FROM products
-WHERE category_id = 1;
-```
-
-```js
-await db.query('products')
-  .avg('unitPrice')
-  .filter('category.id', '=', 1)
-  .get()
-```
-
-Result:
-
-```json
-{
-  "unitPrice": 37.979166666666664
-}
-```
-
-`AVG` with `GROUP BY`:
-
-```sql
-SELECT AVG(unit_price) AS AveragePrice, category_id
-FROM products
-GROUP BY category_id;
-```
-
-```js
-await db.query('products')
-  .avg('unitPrice').groupBy('category').get()
-```
-
-A sample from the result:
-
-```json
-{
-  "1": {
-    "unitPrice": 37.979166666666664
-  },
-  "2": {
-    "unitPrice": 22.854166666666668
-  },
-  "3": {
-    "unitPrice": 25.16
-  },
-  "4": {
-    "unitPrice": 28.73
-  },
-  "5": {
-    "unitPrice": 20.25
-  },
-  "6": {
-    "unitPrice": 54.00666666666667
-  },
-  "7": {
-    "unitPrice": 32.37
-  },
-  "8": {
-    "unitPrice": 20.6825
-  }
-}
-```
-
 ### Like
 
 **Starts with**
@@ -751,6 +516,242 @@ const union = [
   ...unionB.map(({ city, country }) => ({ city, country }))
 ].sort((a, b) => a.city.localeCompare(b.city))
 ```
+
+### Aggregate Functions
+
+**MIN()**
+
+```sql
+SELECT MIN(unit_price)
+FROM products;
+```
+
+```js
+await db.query('products')
+  .min('unitPrice')
+  .get()
+```
+
+`MIN` with `GROUP BY`:
+
+```sql
+SELECT MIN(unit_price) AS SmallestPrice, category_id
+FROM products
+GROUP BY category_id;
+```
+
+```js
+await db.query('products')
+  .min('unitPrice')
+  .groupBy('category')
+  .get()
+```
+
+**MAX()**
+
+```sql
+SELECT MAX(unit_price)
+FROM products;
+```
+
+```js
+await db.query('products')
+  .max('unitPrice')
+  .get()
+  .inspect()
+```
+
+**COUNT()**
+
+```sql
+SELECT COUNT(*)
+FROM products;
+```
+
+```js
+await db.query('products')
+  .count()
+  .get()
+```
+
+```sql
+SELECT COUNT(DISTINCT unit_price)
+FROM products;
+```
+
+```js
+await db.query('products')
+  .count('unitPrice')
+  .get()
+```
+
+`COUNT` with `GROUP BY`:
+
+```sql
+SELECT COUNT(*) AS [number of products], category_id
+FROM products
+GROUP BY category_id;
+```
+
+```js
+db.query('products')
+  .count()
+  .groupBy('category')
+  .get()
+```
+
+Result:
+
+```json
+{
+  "1": {
+    "$count": 12
+  },
+  "2": {
+    "$count": 12
+  },
+  "3": {
+    "$count": 13
+  },
+  "4": {
+    "$count": 10
+  },
+  "5": {
+    "$count": 7
+  },
+  "6": {
+    "$count": 6
+  },
+  "7": {
+    "$count": 5
+  },
+  "8": {
+    "$count": 12
+  }
+}
+```
+
+**SUM()**
+
+```sql
+SELECT SUM(quantity)
+FROM order_details;
+```
+
+```js
+await db.query('orderDetails')
+  .sum('quantity')
+  .get()
+```
+
+`SUM` with `WHERE`:
+
+```sql
+SELECT SUM(quantity)
+FROM order_details
+WHERE product_id = 11;
+```
+
+```js
+await db.query('orderDetails')
+  .sum('quantity')
+  .filter('product.id', '=', 11)
+  .get()
+```
+
+`SUM` with `GROUP BY`:
+
+```sql
+SELECT order_id, SUM(quantity) AS [Total Quantity]
+FROM order_details
+GROUP BY order_id;
+```
+
+```js
+await db.query('orderDetails')
+  .sum('quantity')
+  .groupBy('order')
+  .get()
+```
+
+**AVG()**
+
+```sql
+SELECT AVG(unit_price)
+FROM products;
+```
+
+```js
+await db.query('products').avg('unitPrice').get()
+```
+
+`AVG` with `WHERE`:
+
+```sql
+SELECT AVG(unit_price)
+FROM products
+WHERE category_id = 1;
+```
+
+```js
+await db.query('products')
+  .avg('unitPrice')
+  .filter('category.id', '=', 1)
+  .get()
+```
+
+Result:
+
+```json
+{
+  "unitPrice": 37.979166666666664
+}
+```
+
+`AVG` with `GROUP BY`:
+
+```sql
+SELECT AVG(unit_price) AS AveragePrice, category_id
+FROM products
+GROUP BY category_id;
+```
+
+```js
+await db.query('products')
+  .avg('unitPrice').groupBy('category').get()
+```
+
+A sample from the result:
+
+```json
+{
+  "1": {
+    "unitPrice": 37.979166666666664
+  },
+  "2": {
+    "unitPrice": 22.854166666666668
+  },
+  "3": {
+    "unitPrice": 25.16
+  },
+  "4": {
+    "unitPrice": 28.73
+  },
+  "5": {
+    "unitPrice": 20.25
+  },
+  "6": {
+    "unitPrice": 54.00666666666667
+  },
+  "7": {
+    "unitPrice": 32.37
+  },
+  "8": {
+    "unitPrice": 20.6825
+  }
+}
+```
+
 
 ### Having
 
