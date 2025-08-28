@@ -1,15 +1,14 @@
 - Getting started
-  - [Quick start](/quick-start)
+  - [Quick Start](/quick-start)
 - Deep dive
   - [Architecture](/architecture)
   - [Auth & Progressive Security](/auth-security)
 - [Based DB](/db/)
-  - [Install](/db/install)
-  - [Getting started](/db/getting-started)
+  - [Getting Started](/db/getting-started)
   - [Schema](/db/schema)
   - [Queries](/db/api?id=query)
   - [Examples](/db/examples)
     - [Migrating from SQL](/db/sql)
-  - [API reference](/db/api)
+  - [API Reference](/db/api)
 - [FAQ](/faq)
 - [GitHub ↗](https://github.com/atelier-saulx/based)
