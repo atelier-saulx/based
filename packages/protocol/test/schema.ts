@@ -3,6 +3,8 @@ import { serialize } from '../src/db-read/schema/serialize.js'
 import { deSerializeSchema } from '../src/db-read/schema/deserialize.js'
 import { ReaderSchema } from '../dist/db-read/types.js'
 import { ENCODER } from '@based/utils'
+import { TIMEOUT } from 'node:dns/promises'
+import { TIMESTAMP } from '@based/schema/prop-types'
 
 await test('schema', () => {
   const simple: ReaderSchema = {
@@ -159,8 +161,9 @@ await test('schema', () => {
     refs: {},
     type: 2,
     aggregate: {
-      aggregates: [{ path: ['count'], type: 2, resultPos: 0 }],
-      totalResultsSize: 4,
+      aggregates: [{ path: ['distance'], type: 1, resultPos: 0 }],
+      totalResultsSize: 8,
+      groupBy: { typeIndex: 1, stepType: true },
     },
   }
 

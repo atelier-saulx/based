@@ -193,7 +193,14 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   if (!schema.aggregate) {
     blocks.push(new Uint8Array([0]))
   } else {
-    const n = ENCODER.encode(JSON.stringify(schema.aggregate))
+    const n = ENCODER.encode(
+      JSON.stringify(schema.aggregate, (k, v) => {
+        if (k === 'groupBy' && v.display) {
+          return { ...v, display: v.display.resolvedOptions() }
+        }
+        return v
+      }),
+    )
     const x = new Uint8Array(n.byteLength + 2)
     writeUint16(x, n.byteLength, 0)
     x.set(n, 2)

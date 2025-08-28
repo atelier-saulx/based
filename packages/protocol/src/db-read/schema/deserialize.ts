@@ -167,6 +167,14 @@ const deSerializeSchemaInner = (
     const len = readUint16(schema, i)
     i += 2
     s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
+    if (s.aggregate.groupBy?.display) {
+      s.aggregate.groupBy.display = new Intl.DateTimeFormat(
+        // @ts-ignore
+        s.aggregate.groupBy.display.locale,
+        // @ts-ignore
+        s.aggregate.groupBy.display,
+      )
+    }
     i += len
   } else {
     i++
