@@ -5,7 +5,8 @@ import { defToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
-import { convertToReaderSchema, includeField } from './query.js'
+import { includeField } from './query.js'
+import { convertToReaderSchema } from '@based/protocol/db-read-schema'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {

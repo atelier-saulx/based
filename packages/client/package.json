@@ -46,7 +46,7 @@
     "@based/opts": "^1.1.0",
     "@based/utils": "^1.0.0",
     "@saulx/diff": "^2.0.3",
-    "fflate": "0.8.1",
+    "fflate": "0.8.2",
     "isomorphic-ws": "^5.0.0",
     "ws": "^8.13.0"
   },

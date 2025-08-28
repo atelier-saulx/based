@@ -1,106 +1,22 @@
+import type { IncludeOpts, QueryDef, Target } from '@based/db'
+import { inverseLangMap, langCodesMap } from '@based/schema'
 import {
-  COLVEC,
-  ENUM,
   PropDef,
   PropDefEdge,
+  COLVEC,
+  ENUM,
   TEXT,
-  TypeIndex,
   VECTOR,
-  VectorBaseType,
 } from '@based/schema/def'
-import { IncludeOpts, QueryDef, QueryDefType, Target } from '../types.js'
-import { inverseLangMap, langCodesMap, SchemaHooks } from '@based/schema'
+import {
+  ReaderLocales,
+  ReaderMeta,
+  ReaderPropDef,
+  ReaderSchema,
+  ReaderSchemaEnum,
+} from '../types.js'
 
-export type Item = {
-  id: number
-} & { [key: string]: any }
-
-export type Meta = {
-  checksum: number
-  size: number
-  crc32: number
-  compressed: boolean
-  value?: any
-}
-
-export type AggItem = Partial<Item>
-
-export type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
-
-export enum ReaderSchemaEnum {
-  edge = 1,
-  default = 2,
-  single = 3,
-  rootProps = 4,
-}
-
-export enum ReaderMeta {
-  only = 1,
-  combined = 2,
-}
-
-export type ReadInstruction = (
-  q: ReaderSchema,
-  result: Uint8Array,
-  i: number,
-  item: Item,
-) => number
-
-export type ReaderLocales = { [langCode: string]: string }
-
-export type ReaderPropDef = {
-  path: string[]
-  typeIndex: TypeIndex
-  meta?: ReaderMeta
-  enum?: any[]
-  vectorBaseType?: VectorBaseType
-  len?: number
-  readBy: number
-  locales?: { [langCode: string]: string }
-}
-
-export type ReaderAggregateSchema = {
-  aggregates: {
-    path: string[]
-    type: number
-    resultPos: number
-  }[]
-  groupBy?: {
-    typeIndex: number
-    stepRange?: number
-    stepType?: boolean
-    display?: Intl.DateTimeFormat // find a way for this -- shitty
-    enum?: any[]
-  }
-  totalResultsSize: number
-}
-
-// Move these types to seperate pkg including query def agg
-export type ReaderSchema = {
-  readId: number
-  // maybe current read id that you add
-  props: { [prop: string]: ReaderPropDef }
-  main: { props: { [start: string]: ReaderPropDef }; len: number }
-  type: ReaderSchemaEnum
-  refs: {
-    [prop: string]: {
-      schema: ReaderSchema
-      prop: ReaderPropDef
-    }
-  }
-  hook?: SchemaHooks['read']
-  aggregate?: ReaderAggregateSchema
-  edges?: ReaderSchema
-  search?: boolean
-}
+// TODO lang will be different can just be the code no longer need a map
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,
@@ -151,9 +67,9 @@ export const convertToReaderSchema = (
     }
   }
   const t = q.type
-  const isRoot = t === QueryDefType.Root
+  const isRoot = t === 4 // QueryDefType.Root (cant import type enum ofc)
   const isSingle = isRoot && ('id' in q.target || 'alias' in q.target)
-  const isEdge = t === QueryDefType.Edge
+  const isEdge = t === 1 // QueryDefType.Edge (cant import type enum ofc)
   const readerSchema: ReaderSchema = {
     readId: 0,
     props: {},

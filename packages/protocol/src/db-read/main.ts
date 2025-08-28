@@ -1,4 +1,4 @@
-import { ReaderMeta, ReaderPropDef, ReaderSchema } from '../../../index.js'
+import { ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addMetaProp, addProp } from './addProps.js'
 import {
   readInt64,
@@ -7,6 +7,7 @@ import {
   readInt16,
   readUint16,
   readInt32,
+  readUtf8,
 } from '@based/utils'
 import {
   INT8,
@@ -22,8 +23,7 @@ import {
   STRING,
   JSON,
   BINARY,
-} from '@based/schema/def'
-import { readUtf8 } from '../../string.js'
+} from '@based/schema/prop-types'
 import { Item } from './types.js'
 import { readMetaMainString } from './meta.js'
 

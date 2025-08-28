@@ -46,7 +46,8 @@
     "@based/utils": "^1.0.0",
     "@std/semver": "npm:@jsr/std__semver@^1.0.5",
     "exit-hook": "^4.0.0",
-    "picocolors": "^1.1.0"
+    "picocolors": "^1.1.0",
+    "@based/protocol": "0.0.1"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"

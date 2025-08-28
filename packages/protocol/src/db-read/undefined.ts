@@ -8,8 +8,8 @@ import {
   VECTOR,
   TEXT,
   ALIAS,
-} from '@based/schema/def'
-import { Item, Meta, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
+} from '@based/schema/prop-types'
+import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readVector } from './vector.js'
 import { emptyMeta } from './meta.js'

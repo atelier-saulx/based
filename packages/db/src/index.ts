@@ -1,4 +1,4 @@
-import { compress, decompress } from './client/string.js'
+import { compress } from './client/string.js'
 import { ModifyCtx } from './client/flushModify.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
@@ -7,6 +7,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { BasedDbOpts } from './types.js'
+import { decompress } from '@based/protocol/db-read'
 export * from './client/modify/modify.js'
 export { compress, decompress }
 export { ModifyCtx }

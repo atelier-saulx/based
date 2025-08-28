@@ -39,7 +39,7 @@ import {
   langCodesMap,
   MAX_ID,
 } from '@based/schema'
-import { StepInput, StepObject, Interval } from './aggregates/types.js'
+import { StepInput } from './aggregates/types.js'
 
 export type QueryError = {
   code: number

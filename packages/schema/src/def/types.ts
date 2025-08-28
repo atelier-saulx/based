@@ -1,42 +1,38 @@
-import type {
-  LangCode,
-  Schema,
-  SchemaHooks,
-  SchemaLocales,
-  SchemaVectorBaseType,
-} from '../index.js'
+import type { LangCode, SchemaHooks, SchemaLocales } from '../index.js'
 import { Validation } from './validation.js'
+import {
+  ALIAS,
+  ALIASES,
+  BINARY,
+  BOOLEAN,
+  CARDINALITY,
+  COLVEC,
+  ENUM,
+  INT16,
+  INT32,
+  INT8,
+  JSON,
+  MICRO_BUFFER,
+  NULL,
+  NUMBER,
+  OBJECT,
+  REFERENCE,
+  REFERENCES,
+  STRING,
+  TEXT,
+  TIMESTAMP,
+  UINT16,
+  UINT32,
+  UINT8,
+  VECTOR,
+  TypeIndex,
+  VectorBaseType,
+  ID,
+} from './typeIndexes.js'
 
-// WARN: The following type codes are used in js and zig but selva has its own typing.
-export const NULL = 0
-export const TIMESTAMP = 1
-export const NUMBER = 4
-export const CARDINALITY = 5
-export const INT8 = 20
-export const UINT8 = 6
-export const INT16 = 21
-export const UINT16 = 22
-export const INT32 = 23
-export const UINT32 = 7
-export const BOOLEAN = 9
-export const ENUM = 10
-export const STRING = 11
-export const TEXT = 12
-export const REFERENCE = 13
-export const REFERENCES = 14
-export const WEAK_REFERENCE = 15
-export const WEAK_REFERENCES = 16
-export const MICRO_BUFFER = 17
-export const ALIAS = 18
-export const ALIASES = 19
-export const BINARY = 25
-export const ID = 26
-export const VECTOR = 27
-export const JSON = 28
-export const OBJECT = 29
-export const COLVEC = 30
+export * from './typeIndexes.js'
 
-export const TYPE_INDEX_MAP = {
+export const TYPE_INDEX_MAP: Record<string, TypeIndex> = {
   alias: ALIAS,
   aliases: ALIASES,
   microbuffer: MICRO_BUFFER,
@@ -74,23 +70,7 @@ export const enum numberTypes {
   cardinality = CARDINALITY,
 }
 
-const numberTypeValues = [
-  NUMBER,
-  UINT16,
-  UINT32,
-  INT16,
-  INT32,
-  UINT8,
-  INT8,
-  CARDINALITY,
-] as const
-
-export function isNumberType(type: TypeIndex): boolean {
-  return (numberTypeValues as readonly number[]).includes(type)
-}
-
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
-export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
 export type PropDef = {
   __isPropDef: true
@@ -212,17 +192,6 @@ export type SchemaTypeDef = {
   hooks?: SchemaHooks
 }
 
-export enum VectorBaseType {
-  Int8 = 1,
-  Uint8 = 2,
-  Int16 = 3,
-  Uint16 = 4,
-  Int32 = 5,
-  Uint32 = 6,
-  Float32 = 7,
-  Float64 = 8,
-}
-
 export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseType, number> = {
   [VectorBaseType.Int8]: 1,
   [VectorBaseType.Uint8]: 1,
@@ -267,6 +236,7 @@ for (const k in TYPE_INDEX_MAP) {
   reverseMap[TYPE_INDEX_MAP[k]] = k
 }
 
+// @ts-ignore
 export const REVERSE_SIZE_MAP: Record<TypeIndex, number> = {}
 
 for (const k in SIZE_MAP) {
@@ -277,7 +247,7 @@ export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
   reverseMap
 
 export const ID_FIELD_DEF: PropDef = {
-  typeIndex: TYPE_INDEX_MAP['id'],
+  typeIndex: ID,
   separate: true,
   path: ['id'],
   start: 0,
@@ -289,7 +259,7 @@ export const ID_FIELD_DEF: PropDef = {
 }
 
 export const EMPTY_MICRO_BUFFER: PropDef = {
-  typeIndex: TYPE_INDEX_MAP['microbuffer'],
+  typeIndex: MICRO_BUFFER,
   separate: true,
   path: [''],
   start: 0,
