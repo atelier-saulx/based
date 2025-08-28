@@ -11,6 +11,7 @@ import { deepCopy } from '@based/utils'
 import { createPatch } from '@saulx/diff'
 import { BasedServer } from '../../server.js'
 import { genChecksum } from './genChecksum.js'
+import { BasedQueryResponse } from '@based/db'
 
 export const updateListener = (
   server: BasedServer,
@@ -59,7 +60,8 @@ export const updateListener = (
         t === 'string' ||
         t === 'number' ||
         t === 'boolean' ||
-        data instanceof Uint8Array
+        data instanceof Uint8Array ||
+        data instanceof BasedQueryResponse
       ) {
         obs.rawData = data
         obs.previousChecksum = obs.checksum

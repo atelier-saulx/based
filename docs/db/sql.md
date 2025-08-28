@@ -341,32 +341,32 @@ db.query('products')
 Result:
 
 ```json
-{      
-  "1": {     
-    "$count": 12                            
-  },   
-  "2": {     
-    "$count": 12                
-  },   
-  "3": {     
-    "$count": 13                  
-  },   
-  "4": {     
-    "$count": 10                                     
-  },   
-  "5": {                                             
-    "$count": 7         
-  },                         
-  "6": {        
-    "$count": 6          
-  },                                                 
-  "7": {                                             
-    "$count": 5
-  },        
-  "8": {                                             
+{
+  "1": {
     "$count": 12
-  }                           
-} 
+  },
+  "2": {
+    "$count": 12
+  },
+  "3": {
+    "$count": 13
+  },
+  "4": {
+    "$count": 10
+  },
+  "5": {
+    "$count": 7
+  },
+  "6": {
+    "$count": 6
+  },
+  "7": {
+    "$count": 5
+  },
+  "8": {
+    "$count": 12
+  }
+}
 ```
 
 **SUM()**
@@ -442,8 +442,8 @@ Result:
 
 ```json
 {
-  "unitPrice": 37.979166666666664                    
-} 
+  "unitPrice": 37.979166666666664
+}
 ```
 
 `AVG` with `GROUP BY`:
@@ -647,6 +647,60 @@ await db.query('customers')
 ### Full Join
 
 ### Self Join
+
+```sql
+SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
+FROM customers A, customers B
+WHERE A.customer_id <> B.customer_id
+AND A.city = B.city
+ORDER BY A.city;
+```
+
+```ts
+  const result = []
+  ;(
+    (await db
+      .query('customers')
+      .include('customerId', 'companyName', 'city')
+      .get()
+      .toObject()) as {
+      id: number
+      customerId: string
+      city: string
+      companyName: string
+    }[]
+  ).forEach((a, _, customers) => {
+    customers.forEach((b) => {
+      if (a.city === b.city && a.customerId !== b.customerId) {
+        result.push({
+          customerA: a.customerId,
+          customerB: b.customerId,
+          city: a.city,
+        })
+      }
+    })
+  })
+```
+
+Result:
+
+```json
+[
+  { customerA: 'ANATR', customerB: 'ANTON', city: 'México D.F.' },
+  { customerA: 'ANATR', customerB: 'CENTC', city: 'México D.F.' },
+  { customerA: 'ANATR', customerB: 'PERIC', city: 'México D.F.' },
+  { customerA: 'ANATR', customerB: 'TORTU', city: 'México D.F.' },
+  { customerA: 'ANTON', customerB: 'ANATR', city: 'México D.F.' },
+  { customerA: 'ANTON', customerB: 'CENTC', city: 'México D.F.' },
+  { customerA: 'ANTON', customerB: 'PERIC', city: 'México D.F.' },
+  { customerA: 'ANTON', customerB: 'TORTU', city: 'México D.F.' },
+  { customerA: 'AROUT', customerB: 'BSBEV', city: 'London' },
+  { customerA: 'AROUT', customerB: 'CONSH', city: 'London' },
+  { customerA: 'AROUT', customerB: 'EASTC', city: 'London' },
+  { customerA: 'AROUT', customerB: 'NORTS', city: 'London' },
+  { customerA: 'AROUT', customerB: 'SEVES', city: 'London' },
+...
+```
 
 ### Union
 

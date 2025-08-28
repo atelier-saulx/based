@@ -1,19 +1,19 @@
 {
-  "name": "exporter",
+  "name": "@based/exporter",
   "version": "0.0.1",
-  "main": "dist/index.js",
+  "main": "dist/exporter.js",
   "scripts": {
     "clean": "rm -Rf node_modules dist",
-    "test": "tsc -b && node dist/index.js",
-    "test-watch": "tsc --watch & node --watch dist/index.js",
+    "test": "tsc -b && node dist/exporter.js",
+    "test-watch": "tsc --watch & node --watch dist/exporter.js",
     "watch": "tsc -b --watch",
     "build": "tsc -b",
-    "start": "node dist/index.js"
+    "start": "node dist/exporter.js"
   },
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "source": "src/index.ts",
+  "source": "src/exporter.ts",
   "sideEffects": false,
   "keywords": [
     "based",
