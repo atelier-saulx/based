@@ -1,6 +1,6 @@
 import { TypeIndex } from '@based/schema/prop-types'
 import { ReaderPropDef, ReaderSchema } from '../types.js'
-import { DECODER } from '@based/utils'
+import { DECODER, readUint16 } from '@based/utils'
 
 const PROPERTY_MAP = {
   meta: 1 << 0, // Bit 0
@@ -28,24 +28,25 @@ const readPath = (
 const deSerializeProp = (
   p: Uint8Array,
   off: number,
+  keySize: 1 | 2,
 ): { def: ReaderPropDef; size: number; key: number } => {
-  const path = readPath(p, off + 3)
+  const path = readPath(p, off + 2 + keySize)
   const prop: ReaderPropDef = {
-    typeIndex: p[off + 1] as TypeIndex,
+    typeIndex: p[off + keySize] as TypeIndex,
     path: path.path,
     readBy: 0,
   }
 
-  const map = p[off + 2]
-  let index = 4 + off + path.size
+  const map = p[off + keySize + 1]
+  let index = keySize + 2 + off + path.size
 
   // if (map & PROPERTY_MAP.meta) result.meta = {}
   // if (map & PROPERTY_MAP.enum) result.enum = []
   // if (map & PROPERTY_MAP.vectorBaseType) result.vectorBaseType = 'u8' // Default empty value
   // if (map & PROPERTY_MAP.len) result.len = 0
   // if (map & PROPERTY_MAP.locales) result.locales = {}
-
-  return { def: prop, key: p[off], size: index - off }
+  const key = keySize === 1 ? p[off] : readUint16(p, off)
+  return { def: prop, key, size: index - off }
 }
 
 export const deSerializeSchema = (
@@ -66,16 +67,31 @@ export const deSerializeSchema = (
   if (ref !== 0) {
   }
   const propsLen = schema[i]
-  console.log({ propsLen })
   i++
   if (propsLen) {
     let count = 0
     while (count != propsLen) {
-      const { def, key, size } = deSerializeProp(schema, i)
+      const { def, key, size } = deSerializeProp(schema, i, 1)
       s.props[key] = def
       i += size
       count++
     }
   }
+  console.log(i)
+  const mainLen = readUint16(schema, i)
+  i += 2
+  if (mainLen) {
+    let count = 0
+    const mainPropsLen = schema[i]
+    s.main.len = mainLen
+    i++
+    while (count != mainPropsLen) {
+      const { def, key, size } = deSerializeProp(schema, i, 2)
+      s.main.props[key] = def
+      i += size
+      count++
+    }
+  }
+
   return s as ReaderSchema
 }

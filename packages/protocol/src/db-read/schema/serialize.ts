@@ -49,14 +49,20 @@ const PROPERTY_MAP = {
 
 const serializeProp = (
   key: number,
+  keySize: 1 | 2,
   prop: ReaderPropDef,
   blocks: Uint8Array[],
 ) => {
-  const header = new Uint8Array(4)
-  header[0] = key
-  header[1] = prop.typeIndex
+  const header = new Uint8Array(3 + keySize)
+  if (keySize === 1) {
+    header[0] = key
+  } else if (keySize === 2) {
+    writeUint16(header, key, 0)
+  }
+
+  header[keySize] = prop.typeIndex
   // 2 opions
-  header[3] = prop.path.length
+  header[keySize + 2] = prop.path.length
   blocks.push(header)
 
   for (const p of prop.path) {
@@ -89,7 +95,7 @@ const serializeProp = (
     options |= PROPERTY_MAP.locales
     console.log('locales later')
   }
-  header[2] = options
+  header[keySize + 1] = options
 }
 
 const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
@@ -109,12 +115,26 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   } else {
     const propsHeader = new Uint8Array(1)
     blocks.push(propsHeader)
-    let size = 0
+    let count = 0
     for (const key in schema.props) {
-      size++
-      serializeProp(Number(key), schema.props[key], blocks)
+      count++
+      serializeProp(Number(key), 1, schema.props[key], blocks)
     }
-    propsHeader[0] = size
+    propsHeader[0] = count
+  }
+
+  const mainBlock = new Uint8Array(2)
+  writeUint16(mainBlock, schema.main.len, 0)
+  blocks.push(mainBlock)
+  if (schema.main.len) {
+    const propsHeader = new Uint8Array(1)
+    blocks.push(propsHeader)
+    let count = 0
+    for (const key in schema.main.props) {
+      count++
+      serializeProp(Number(key), 2, schema.main.props[key], blocks)
+    }
+    propsHeader[0] = count
   }
 
   // 3 optional, 3 normal
