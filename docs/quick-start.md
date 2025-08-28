@@ -17,5 +17,4 @@ Browse to http://localhost:3000/playground – a minimal React UI is pre-wired t
 
 ## 3. Next
 
-- [Install BasedDB for production](/db/install)
 - [Read the architecture overview](/architecture)

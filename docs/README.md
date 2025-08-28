@@ -14,8 +14,7 @@ Based combines:
 ## First steps
 
 1. [Quick start](/quick-start) – spin up a playground in 5 min
-2. [Install BasedDB](/db/install) – pick npm, Docker or build from source
-3. [Write your first schema](/db/getting-started)
+2. [Getting Started](/db/getting-started)
 
 > Need help? Open an [issue](https://github.com/atelier-saulx/based/issues) or join our [Discord](https://discord.com/channels/1062656194960953384/1086242106999308298).
 
