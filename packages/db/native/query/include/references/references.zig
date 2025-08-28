@@ -66,7 +66,7 @@ pub fn getRefsFields(
                 // Is a edge ref cant filter on an edge field!
                 return 11;
             }
-            const edgeFs = db.getEdgeFieldSchema(ctx.db.selva.?, ref.?.edgeConstaint.?, refField) catch {
+            const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstaint.?, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;
             };

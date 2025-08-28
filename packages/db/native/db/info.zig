@@ -52,7 +52,7 @@ pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c
         return nil;
     }
 
-    const hash = db.getNodeRangeHash(ctx.selva.?, te.?, start, end) catch return nil;
+    const hash = db.getNodeRangeHash(ctx, te.?, start, end) catch return nil;
     copy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
 
     return ok;

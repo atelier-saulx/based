@@ -25,7 +25,7 @@ pub fn writeEdges(
         const t: p = @enumFromInt(data[i + 2]);
         i += 3;
 
-        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch {
+        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
             std.log.err("Edge field schema cannot be found \n", .{});
             return;
         };

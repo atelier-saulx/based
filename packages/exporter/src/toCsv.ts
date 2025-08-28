@@ -1,4 +1,4 @@
-import { ENUM, STRING, JSON, TEXT, TypeIndex } from '@based/schema/def'
+import { ENUM, STRING, JSON as JSON2, TEXT, TypeIndex } from '@based/schema/def'
 import { concatUint8Arr } from '@based/utils'
 
 export const toCsvHeader = (headers: string[]): string => {
@@ -15,8 +15,10 @@ export const toCsvChunk = (rows: any[][], propTypes: TypeIndex[]): string => {
 
     for (let j = 0; j < numCols; j++) {
       const type = propTypes[j]
-      if (type === ENUM || type === STRING || type === JSON || type === TEXT) {
-        chunkString += escapeCSVReservedChars(row[j])
+      if (type === ENUM || type === STRING) {
+        chunkString += escapeCSVReservedChars(String(row[j]))
+      } else if (type === JSON2 || type === TEXT) {
+        chunkString += escapeCSVReservedChars(JSON.stringify(row[j]))
       } else {
         chunkString += row[j]
       }
