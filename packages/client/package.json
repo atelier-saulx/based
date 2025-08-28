@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "8.0.2",
+  "version": "8.1.0",
   "license": "MIT",
   "scripts": {
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@based/client-old": "npm:@based/client@6.11.2",
-    "@based/db": "^0.0.71",
+    "@based/db": "^0.1.0",
     "@based/functions": "^3.0.2",
     "ava": "5.3.1",
     "cross-fetch": "4.0.0",
