@@ -1,300 +1,304 @@
+import { Schema } from '@based/schema'
 import { BasedDb } from '../../src/index.js'
 
-export default async function createNorthwind(db: BasedDb) {
-  const schCompanyName = { type: 'string', maxBytes: 40 } as const
-  const schContactName = { type: 'string', maxBytes: 30 } as const
-  const schContactTitle = { type: 'string', maxBytes: 30 } as const
-  const schAddress = { type: 'string', maxBytes: 60 } as const
-  const schCity = { type: 'string', maxBytes: 15 } as const
-  const schRegion = { type: 'string', maxBytes: 15 } as const
-  const schPostalCode = { type: 'string', maxBytes: 10 } as const
-  const schCountry = { type: 'string', maxBytes: 15 } as const
-  const schPhone = { type: 'string', maxBytes: 24 } as const
-  const schExtension = { type: 'string', maxBytes: 4 } as const
-  await db.setSchema({
-    types: {
-      // CREATE TABLE categories (
-      //   category_id smallint NOT NULL PRIMARY KEY,
-      //   category_name character varying(15) NOT NULL,
-      //   description text,
-      //   picture bytea
-      // );
-      categories: {
-        props: {
-          categoryName: { type: 'string', maxBytes: 15 },
-          description: 'string',
-          picture: 'binary',
-        },
-      },
-      // CREATE TABLE customer_demographics (
-      //   customer_type_id bpchar NOT NULL PRIMARY KEY,
-      //   customer_desc text
-      // );
-      customerDemographics: {
-        props: {
-          customerDesc: 'string',
-        },
-      },
-      // CREATE TABLE customers (
-      //   customer_id bpchar NOT NULL PRIMARY KEY,
-      //   company_name character varying(40) NOT NULL,
-      //   contact_name character varying(30),
-      //   contact_title character varying(30),
-      //   address character varying(60),
-      //   city character varying(15),
-      //   region character varying(15),
-      //   postal_code character varying(10),
-      //   country character varying(15),
-      //   phone character varying(24),
-      //   fax character varying(24)
-      // );
-      // CREATE TABLE customer_customer_demo (
-      //         customer_id bpchar NOT NULL,
-      //         customer_type_id bpchar NOT NULL,
-      //         PRIMARY KEY (customer_id, customer_type_id),
-      //         FOREIGN KEY (customer_type_id) REFERENCES customer_demographics,
-      //         FOREIGN KEY (customer_id) REFERENCES customers
-      // );
-      customers: {
-        props: {
-          customerId: 'alias',
-          companyName: schCompanyName,
-          contactName: schContactName,
-          contactTitle: schContactTitle,
-          address: schAddress,
-          city: schCity,
-          region: schRegion,
-          postalCode: schPostalCode,
-          country: schCountry,
-          phone: schPhone,
-          fax: { type: 'string', maxBytes: 24 },
-          customerDemo: {
-            items: {
-              ref: 'customerDemographics',
-              prop: 'customers',
-            },
-          },
-        },
-      },
-      // CREATE TABLE employees (
-      //   employee_id smallint NOT NULL PRIMARY KEY,
-      //   last_name character varying(20) NOT NULL,
-      //   first_name character varying(10) NOT NULL,
-      //   title character varying(30),
-      //   title_of_courtesy character varying(25),
-      //   birth_date date,
-      //   hire_date date,
-      //   address character varying(60),
-      //   city character varying(15),
-      //   region character varying(15),
-      //   postal_code character varying(10),
-      //   country character varying(15),
-      //   home_phone character varying(24),
-      //   extension character varying(4),
-      //   photo bytea,
-      //   notes text,
-      //   reports_to smallint,
-      //   photo_path character varying(255),
-      //   FOREIGN KEY (reports_to) REFERENCES employees
-      // );
-      employees: {
-        props: {
-          lastName: { type: 'string', maxBytes: 20 },
-          firstName: { type: 'string', maxBytes: 10 },
-          title: { type: 'string', maxBytes: 30 },
-          titleOfCourtesy: { type: 'string', maxBytes: 25 },
-          birthDate: 'timestamp',
-          hireDate: 'timestamp',
-          address: schAddress,
-          city: schCity,
-          region: schRegion,
-          postalCode: schPostalCode,
-          country: schCountry,
-          homePhone: schPhone,
-          extension: schExtension,
-          photo: 'binary',
-          notes: 'string',
-          reportsTo: { ref: 'employees', prop: 'subordinates' },
-          photoPath: { type: 'string', max: 255 },
-          territories: {
-            items: {
-              ref: 'territories',
-              prop: 'employees',
-            },
-          },
-        },
-      },
-      // CREATE TABLE suppliers (
-      //   supplier_id smallint NOT NULL PRIMARY KEY,
-      //   company_name character varying(40) NOT NULL,
-      //   contact_name character varying(30),
-      //   contact_title character varying(30),
-      //   address character varying(60),
-      //   city character varying(15),
-      //   region character varying(15),
-      //   postal_code character varying(10),
-      //   country character varying(15),
-      //   phone character varying(24),
-      //   fax character varying(24),
-      //   homepage text
-      // );
-      suppliers: {
-        props: {
-          companyName: schCompanyName,
-          contactName: schContactName,
-          contactTitle: schContactTitle,
-          address: schAddress,
-          city: schCity,
-          region: schRegion,
-          postalCode: schPostalCode,
-          country: schCountry,
-          phone: schPhone,
-          fax: schPhone,
-          homepage: 'string',
-        },
-      },
-      // CREATE TABLE products (
-      //   product_id smallint NOT NULL PRIMARY KEY,
-      //   product_name character varying(40) NOT NULL,
-      //   supplier_id smallint,
-      //   category_id smallint,
-      //   quantity_per_unit character varying(20),
-      //   unit_price real,
-      //   units_in_stock smallint,
-      //   units_on_order smallint,
-      //   reorder_level smallint,
-      //   discontinued integer NOT NULL,
-      //   FOREIGN KEY (category_id) REFERENCES categories,
-      //   FOREIGN KEY (supplier_id) REFERENCES suppliers
-      // );
-      products: {
-        props: {
-          productName: { type: 'string', maxBytes: 40 },
-          supplier: { ref: 'suppliers', prop: 'products' },
-          category: { ref: 'categories', prop: 'products' },
-          quantityPerUnit: { type: 'string', maxBytes: 20 },
-          unitPrice: 'number',
-          unitsInStock: 'int16',
-          unitsOnOrder: 'int16',
-          reorderLevel: 'int16',
-          discontinued: 'int32',
-        },
-      },
-      // CREATE TABLE region (
-      //   region_id smallint NOT NULL PRIMARY KEY,
-      //   region_description bpchar NOT NULL
-      // );
-      region: {
-        props: {
-          regionDescription: { type: 'string' },
-        },
-      },
-      // CREATE TABLE shippers (
-      //   shipper_id smallint NOT NULL PRIMARY KEY,
-      //   company_name character varying(40) NOT NULL,
-      //   phone character varying(24)
-      // );
-      shippers: {
-        props: {
-          companyName: schCompanyName,
-          phone: schPhone,
-        },
-      },
-      // CREATE TABLE orders (
-      //   order_id smallint NOT NULL PRIMARY KEY,
-      //   customer_id bpchar,
-      //   employee_id smallint,
-      //   order_date date,
-      //   required_date date,
-      //   shipped_date date,
-      //   ship_via smallint,
-      //   freight real,
-      //   ship_name character varying(40),
-      //   ship_address character varying(60),
-      //   ship_city character varying(15),
-      //   ship_region character varying(15),
-      //   ship_postal_code character varying(10),
-      //   ship_country character varying(15),
-      //   FOREIGN KEY (customer_id) REFERENCES customers,
-      //   FOREIGN KEY (employee_id) REFERENCES employees,
-      //   FOREIGN KEY (ship_via) REFERENCES shippers
-      // );
-      orders: {
-        props: {
-          customer: { ref: 'customers', prop: 'orders' },
-          employee: { ref: 'employees', prop: 'orders' },
-          orderStatus: { type: 'enum', enum: ['created', 'shipped'], default: 'created' },
-          orderDate: 'timestamp',
-          requiredDate: 'timestamp',
-          shippedDate: 'timestamp', // valid only if orderStatus = shipped
-          shipVia: { ref: 'shippers', prop: 'orders' },
-          freight: 'number',
-          shipName: { type: 'string', maxBytes: 40 },
-          shipAddress: schAddress,
-          shipCity: schCity,
-          shipRegion: schRegion,
-          shipPostalCode: schPostalCode,
-          shipCountry: schCountry,
-        },
-      },
-      // CREATE TABLE territories (
-      //  territory_id character varying(20) NOT NULL PRIMARY KEY,
-      //  territory_description bpchar NOT NULL,
-      //  region_id smallint NOT NULL,
-      //  FOREIGN KEY (region_id) REFERENCES region
-      // );
-      // CREATE TABLE employee_territories (
-      //   employee_id smallint NOT NULL,
-      //   territory_id character varying(20) NOT NULL,
-      //   PRIMARY KEY (employee_id, territory_id),
-      //   FOREIGN KEY (territory_id) REFERENCES territories,
-      //   FOREIGN KEY (employee_id) REFERENCES employees
-      // );
-      territories: {
-        props: {
-          territoryId: 'alias',
-          territoryDescription: { type: 'string' },
-          region: { ref: 'region', prop: 'territories' },
-          employees: {
-            items: {
-              ref: 'employees',
-              prop: 'territories',
-            },
-          },
-        },
-      },
-      // CREATE TABLE order_details (
-      //   order_id smallint NOT NULL,
-      //   product_id smallint NOT NULL,
-      //   unit_price real NOT NULL,
-      //   quantity smallint NOT NULL,
-      //   discount real NOT NULL,
-      //   PRIMARY KEY (order_id, product_id),
-      //   FOREIGN KEY (product_id) REFERENCES products,
-      //   FOREIGN KEY (order_id) REFERENCES orders
-      // );
-      orderDetails: {
-        props: {
-          order: { ref: 'orders', prop: 'details' },
-          product: { ref: 'products', prop: 'orders' },
-          unitPrice: 'number',
-          quantity: 'int16',
-          discount: 'number',
-        },
-      },
-      // CREATE TABLE us_states (
-      //   state_id smallint NOT NULL PRIMARY KEY,
-      //   state_name character varying(100),
-      //   state_abbr character varying(2),
-      //   state_region character varying(50)
-      // );
-      usStates: {
-        stateName: { type: 'string', max: 100 },
-        stateAbbr: { type: 'string', maxBytes: 2 },
-        stateRegion: { type: 'string', max: 50 },
+const schCompanyName = { type: 'string', maxBytes: 40 } as const
+const schContactName = { type: 'string', maxBytes: 30 } as const
+const schContactTitle = { type: 'string', maxBytes: 30 } as const
+const schAddress = { type: 'string', maxBytes: 60 } as const
+const schCity = { type: 'string', maxBytes: 15 } as const
+const schRegion = { type: 'string', maxBytes: 15 } as const
+const schPostalCode = { type: 'string', maxBytes: 10 } as const
+const schCountry = { type: 'string', maxBytes: 15 } as const
+const schPhone = { type: 'string', maxBytes: 24 } as const
+const schExtension = { type: 'string', maxBytes: 4 } as const
+
+export const defaultSchema = Object.freeze({
+  types: {
+    // CREATE TABLE categories (
+    //   category_id smallint NOT NULL PRIMARY KEY,
+    //   category_name character varying(15) NOT NULL,
+    //   description text,
+    //   picture bytea
+    // );
+    categories: {
+      props: {
+        categoryName: { type: 'string', maxBytes: 15 },
+        description: 'string',
+        picture: 'binary',
       },
     },
-  })
+    // CREATE TABLE customer_demographics (
+    //   customer_type_id bpchar NOT NULL PRIMARY KEY,
+    //   customer_desc text
+    // );
+    customerDemographics: {
+      props: {
+        customerDesc: 'string',
+      },
+    },
+    // CREATE TABLE customers (
+    //   customer_id bpchar NOT NULL PRIMARY KEY,
+    //   company_name character varying(40) NOT NULL,
+    //   contact_name character varying(30),
+    //   contact_title character varying(30),
+    //   address character varying(60),
+    //   city character varying(15),
+    //   region character varying(15),
+    //   postal_code character varying(10),
+    //   country character varying(15),
+    //   phone character varying(24),
+    //   fax character varying(24)
+    // );
+    // CREATE TABLE customer_customer_demo (
+    //         customer_id bpchar NOT NULL,
+    //         customer_type_id bpchar NOT NULL,
+    //         PRIMARY KEY (customer_id, customer_type_id),
+    //         FOREIGN KEY (customer_type_id) REFERENCES customer_demographics,
+    //         FOREIGN KEY (customer_id) REFERENCES customers
+    // );
+    customers: {
+      props: {
+        customerId: 'alias',
+        companyName: schCompanyName,
+        contactName: schContactName,
+        contactTitle: schContactTitle,
+        address: schAddress,
+        city: schCity,
+        region: schRegion,
+        postalCode: schPostalCode,
+        country: schCountry,
+        phone: schPhone,
+        fax: { type: 'string', maxBytes: 24 },
+        customerDemo: {
+          items: {
+            ref: 'customerDemographics',
+            prop: 'customers',
+          },
+        },
+      },
+    },
+    // CREATE TABLE employees (
+    //   employee_id smallint NOT NULL PRIMARY KEY,
+    //   last_name character varying(20) NOT NULL,
+    //   first_name character varying(10) NOT NULL,
+    //   title character varying(30),
+    //   title_of_courtesy character varying(25),
+    //   birth_date date,
+    //   hire_date date,
+    //   address character varying(60),
+    //   city character varying(15),
+    //   region character varying(15),
+    //   postal_code character varying(10),
+    //   country character varying(15),
+    //   home_phone character varying(24),
+    //   extension character varying(4),
+    //   photo bytea,
+    //   notes text,
+    //   reports_to smallint,
+    //   photo_path character varying(255),
+    //   FOREIGN KEY (reports_to) REFERENCES employees
+    // );
+    employees: {
+      props: {
+        lastName: { type: 'string', maxBytes: 20 },
+        firstName: { type: 'string', maxBytes: 10 },
+        title: { type: 'string', maxBytes: 30 },
+        titleOfCourtesy: { type: 'string', maxBytes: 25 },
+        birthDate: 'timestamp',
+        hireDate: 'timestamp',
+        address: schAddress,
+        city: schCity,
+        region: schRegion,
+        postalCode: schPostalCode,
+        country: schCountry,
+        homePhone: schPhone,
+        extension: schExtension,
+        photo: 'binary',
+        notes: 'string',
+        reportsTo: { ref: 'employees', prop: 'subordinates' },
+        photoPath: { type: 'string', max: 255 },
+        territories: {
+          items: {
+            ref: 'territories',
+            prop: 'employees',
+          },
+        },
+      },
+    },
+    // CREATE TABLE suppliers (
+    //   supplier_id smallint NOT NULL PRIMARY KEY,
+    //   company_name character varying(40) NOT NULL,
+    //   contact_name character varying(30),
+    //   contact_title character varying(30),
+    //   address character varying(60),
+    //   city character varying(15),
+    //   region character varying(15),
+    //   postal_code character varying(10),
+    //   country character varying(15),
+    //   phone character varying(24),
+    //   fax character varying(24),
+    //   homepage text
+    // );
+    suppliers: {
+      props: {
+        companyName: schCompanyName,
+        contactName: schContactName,
+        contactTitle: schContactTitle,
+        address: schAddress,
+        city: schCity,
+        region: schRegion,
+        postalCode: schPostalCode,
+        country: schCountry,
+        phone: schPhone,
+        fax: schPhone,
+        homepage: 'string',
+      },
+    },
+    // CREATE TABLE products (
+    //   product_id smallint NOT NULL PRIMARY KEY,
+    //   product_name character varying(40) NOT NULL,
+    //   supplier_id smallint,
+    //   category_id smallint,
+    //   quantity_per_unit character varying(20),
+    //   unit_price real,
+    //   units_in_stock smallint,
+    //   units_on_order smallint,
+    //   reorder_level smallint,
+    //   discontinued integer NOT NULL,
+    //   FOREIGN KEY (category_id) REFERENCES categories,
+    //   FOREIGN KEY (supplier_id) REFERENCES suppliers
+    // );
+    products: {
+      props: {
+        productName: { type: 'string', maxBytes: 40 },
+        supplier: { ref: 'suppliers', prop: 'products' },
+        category: { ref: 'categories', prop: 'products' },
+        quantityPerUnit: { type: 'string', maxBytes: 20 },
+        unitPrice: 'number',
+        unitsInStock: 'int16',
+        unitsOnOrder: 'int16',
+        reorderLevel: 'int16',
+        discontinued: 'int32',
+      },
+    },
+    // CREATE TABLE region (
+    //   region_id smallint NOT NULL PRIMARY KEY,
+    //   region_description bpchar NOT NULL
+    // );
+    region: {
+      props: {
+        regionDescription: { type: 'string' },
+      },
+    },
+    // CREATE TABLE shippers (
+    //   shipper_id smallint NOT NULL PRIMARY KEY,
+    //   company_name character varying(40) NOT NULL,
+    //   phone character varying(24)
+    // );
+    shippers: {
+      props: {
+        companyName: schCompanyName,
+        phone: schPhone,
+      },
+    },
+    // CREATE TABLE orders (
+    //   order_id smallint NOT NULL PRIMARY KEY,
+    //   customer_id bpchar,
+    //   employee_id smallint,
+    //   order_date date,
+    //   required_date date,
+    //   shipped_date date,
+    //   ship_via smallint,
+    //   freight real,
+    //   ship_name character varying(40),
+    //   ship_address character varying(60),
+    //   ship_city character varying(15),
+    //   ship_region character varying(15),
+    //   ship_postal_code character varying(10),
+    //   ship_country character varying(15),
+    //   FOREIGN KEY (customer_id) REFERENCES customers,
+    //   FOREIGN KEY (employee_id) REFERENCES employees,
+    //   FOREIGN KEY (ship_via) REFERENCES shippers
+    // );
+    orders: {
+      props: {
+        customer: { ref: 'customers', prop: 'orders' },
+        employee: { ref: 'employees', prop: 'orders' },
+        orderStatus: { type: 'enum', enum: ['created', 'shipped'], default: 'created' },
+        orderDate: 'timestamp',
+        requiredDate: 'timestamp',
+        shippedDate: 'timestamp', // valid only if orderStatus = shipped
+        shipVia: { ref: 'shippers', prop: 'orders' },
+        freight: 'number',
+        shipName: { type: 'string', maxBytes: 40 },
+        shipAddress: schAddress,
+        shipCity: schCity,
+        shipRegion: schRegion,
+        shipPostalCode: schPostalCode,
+        shipCountry: schCountry,
+      },
+    },
+    // CREATE TABLE territories (
+    //  territory_id character varying(20) NOT NULL PRIMARY KEY,
+    //  territory_description bpchar NOT NULL,
+    //  region_id smallint NOT NULL,
+    //  FOREIGN KEY (region_id) REFERENCES region
+    // );
+    // CREATE TABLE employee_territories (
+    //   employee_id smallint NOT NULL,
+    //   territory_id character varying(20) NOT NULL,
+    //   PRIMARY KEY (employee_id, territory_id),
+    //   FOREIGN KEY (territory_id) REFERENCES territories,
+    //   FOREIGN KEY (employee_id) REFERENCES employees
+    // );
+    territories: {
+      props: {
+        territoryId: 'alias',
+        territoryDescription: { type: 'string' },
+        region: { ref: 'region', prop: 'territories' },
+        employees: {
+          items: {
+            ref: 'employees',
+            prop: 'territories',
+          },
+        },
+      },
+    },
+    // CREATE TABLE order_details (
+    //   order_id smallint NOT NULL,
+    //   product_id smallint NOT NULL,
+    //   unit_price real NOT NULL,
+    //   quantity smallint NOT NULL,
+    //   discount real NOT NULL,
+    //   PRIMARY KEY (order_id, product_id),
+    //   FOREIGN KEY (product_id) REFERENCES products,
+    //   FOREIGN KEY (order_id) REFERENCES orders
+    // );
+    orderDetails: {
+      props: {
+        order: { ref: 'orders', prop: 'details' },
+        product: { ref: 'products', prop: 'orders' },
+        unitPrice: 'number',
+        quantity: 'int16',
+        discount: 'number',
+      },
+    },
+    // CREATE TABLE us_states (
+    //   state_id smallint NOT NULL PRIMARY KEY,
+    //   state_name character varying(100),
+    //   state_abbr character varying(2),
+    //   state_region character varying(50)
+    // );
+    usStates: {
+      stateName: { type: 'string', max: 100 },
+      stateAbbr: { type: 'string', maxBytes: 2 },
+      stateRegion: { type: 'string', max: 50 },
+    },
+  },
+})
+
+export default async function createNorthwindDb(db: BasedDb, schema: Schema = defaultSchema as Schema) {
+  await db.setSchema(schema)
 
   // categories
   ;[
