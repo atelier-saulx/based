@@ -2,8 +2,8 @@ import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
-import { AggregateType, Interval, aggFnOptions } from './aggregates/types.js'
-import { ReaderSchema } from './query.js'
+import { Interval, aggFnOptions } from './aggregates/types.js'
+import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
 
 export type IncludeOpts = {
   end?: { [langCode: string]: number } | number
@@ -198,13 +198,6 @@ export const isAlias = (
     typeof id.then !== 'function'
   )
 }
-
-export const READ_ID = 255
-export const READ_EDGE = 252
-export const READ_REFERENCES = 253
-export const READ_REFERENCE = 254
-export const READ_AGGREGATION = 250
-export const READ_META = 249 // hmm expand this better
 
 export const enum includeOp {
   DEFAULT = 1,

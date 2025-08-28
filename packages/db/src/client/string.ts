@@ -1,19 +1,11 @@
-import { LangCode } from '@based/schema'
+import type { LangCode } from '@based/schema'
 import native from '../native.js'
-import {
-  readUint32,
-  makeTmpBuffer,
-  DECODER,
-  ENCODER,
-  writeUint32,
-} from '@based/utils'
+import { makeTmpBuffer, ENCODER, writeUint32 } from '@based/utils'
+import { COMPRESSED, NOT_COMPRESSED } from '@based/protocol/db-read'
 import { Ctx } from './modify/Ctx.js'
 import { resize } from './modify/resize.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
-
-export const COMPRESSED = 1
-export const NOT_COMPRESSED = 0
 
 export const write = (
   ctx: Ctx,
@@ -74,44 +66,4 @@ export const compress = (str: string): Uint8Array => {
   // const nBuffer = new Uint8Array(l)
   // nBuffer.set(tmpCompressBlock.subarray(0, l))
   return nBuffer
-}
-
-export const decompress = (val: Uint8Array): string => {
-  return read(val, 0, val.length, false)
-}
-
-export const read = (
-  val: Uint8Array,
-  offset: number,
-  len: number,
-  strippedCrc32: boolean,
-): string => {
-  const type = val[offset + 1]
-  if (type == COMPRESSED) {
-    const origSize = readUint32(val, offset + 2)
-    const newBuffer = getTmpBuffer(origSize)
-    // Browser fallback required for this
-    native.decompress(
-      val,
-      newBuffer,
-      offset + 6,
-      strippedCrc32 ? len - 2 : len - 6,
-    )
-    return DECODER.decode(newBuffer)
-  } else if (type == NOT_COMPRESSED) {
-    if (strippedCrc32) {
-      return DECODER.decode(val.subarray(offset + 2, len + offset))
-    } else {
-      return DECODER.decode(val.subarray(offset + 2, len + offset - 4))
-    }
-  }
-  return ''
-}
-
-export const readUtf8 = (
-  val: Uint8Array,
-  offset: number,
-  len: number,
-): string => {
-  return DECODER.decode(val.subarray(offset, len + offset))
 }

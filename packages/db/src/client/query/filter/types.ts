@@ -1,4 +1,3 @@
-import { LangCode } from '@based/schema'
 import { QueryDef } from '../types.js'
 import { filterOperatorDoesNotExist } from '../validation.js'
 import { FilterBranch } from './FilterBranch.js'
@@ -32,13 +31,6 @@ export type Operator =
   | 'exists'
   | '!exists'
 
-export const VECTOR_FNS = [
-  'dotProduct',
-  'manhattanDistance',
-  'cosineSimilarity',
-  'euclideanDistance',
-]
-
 export type FilterOpts<O = Operator> = {
   lowerCase?: boolean
   fn?:
@@ -48,6 +40,13 @@ export type FilterOpts<O = Operator> = {
     | 'euclideanDistance'
   score?: number
 }
+
+export const VECTOR_FNS = [
+  'dotProduct',
+  'manhattanDistance',
+  'cosineSimilarity',
+  'euclideanDistance',
+]
 
 // -------------------------------------------
 // operations shared

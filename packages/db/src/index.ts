@@ -1,4 +1,4 @@
-import { compress, decompress } from './client/string.js'
+import { compress } from './client/string.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import { wait } from '@based/utils'
@@ -6,6 +6,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { BasedDbOpts } from './types.js'
+import { decompress } from '@based/protocol/db-read'
 export { compress, decompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'

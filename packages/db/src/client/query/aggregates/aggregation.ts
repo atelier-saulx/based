@@ -1,12 +1,6 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
-import {
-  AggregateType,
-  GroupBy,
-  StepInput,
-  aggFnOptions,
-  setMode,
-} from './types.js'
+import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import { PropDef, UINT32 } from '@based/schema/def'
 import {
   aggregationFieldDoesNotExist,
@@ -17,7 +11,8 @@ import {
   Interval,
   IntervalString,
 } from '../aggregates/types.js'
-import { BasedDbQuery, QueryBranch } from '../BasedDbQuery.js'
+import { QueryBranch } from '../BasedDbQuery.js'
+import { AggregateType } from '@based/protocol/db-read'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,

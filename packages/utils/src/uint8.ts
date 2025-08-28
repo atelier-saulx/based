@@ -343,3 +343,11 @@ export const combineToNumber = (a: number, b: number): number => {
   const shifted_a = val1_unsigned * FACTOR
   return shifted_a + truncated_b
 }
+
+export const readUtf8 = (
+  val: Uint8Array,
+  offset: number,
+  len: number,
+): string => {
+  return DECODER.decode(val.subarray(offset, len + offset))
+}

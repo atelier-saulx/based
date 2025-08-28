@@ -1,14 +1,16 @@
 import { BasedDb } from '../../src/index.js'
+import { deepCopy } from '@based/utils'
+import { Schema } from '@based/schema'
 import test from '../shared/test.js'
-import createNorthwind from '../shared/northwindDb.js'
+import createNorthwindDb, { defaultSchema } from '../shared/northwindDb.js'
 
-await test('northwind', async (t) => {
+await test('Basic SQL', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
-  await createNorthwind(db)
+  await createNorthwindDb(db)
 
   // 1. Retrieve all columns in the Region table.
   console.log(1)
@@ -306,7 +308,7 @@ await test('northwind insert and update', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
-  await createNorthwind(db)
+  await createNorthwindDb(db)
 
   // INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
   // VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
@@ -367,7 +369,7 @@ await test('aggregates', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
-  await createNorthwind(db)
+  await createNorthwindDb(db)
 
   // SELECT MIN(unit_price)
   // FROM products;
@@ -455,4 +457,31 @@ await test('aggregates', async (t) => {
     .groupBy('category')
     .get()
     .inspect()
+})
+
+await test('hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  const schema = deepCopy(defaultSchema)
+  schema.types.orderDetails.props['discountAmount'] = 'number'
+  schema.types.orderDetails['hooks'] = {
+    create(payload: Record<string, any>) {
+      if (payload.unitPrice !== undefined && payload.discount !== 0) {
+        payload.discountAmount = payload.unitPrice * payload.discount
+      }
+    },
+    update(payload: Record<string, any>) {
+      if (payload.unitPrice !== undefined && payload.discount !== 0) {
+        payload.discountAmount = payload.unitPrice * payload.discount
+      }
+    },
+  }
+  await createNorthwindDb(db, schema as Schema)
+
+  // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
+  await db.query('orderDetails').avg('discountAmount').get().inspect()
 })

@@ -1,4 +1,4 @@
-import { readFloatLE, readUint32 } from '@based/utils/dist/src/uint8.js'
+import { readFloatLE, readUint32 } from '@based/utils'
 import {
   AggItem,
   Item,
@@ -13,15 +13,16 @@ import {
   READ_REFERENCE,
   READ_REFERENCES,
   READ_EDGE,
-} from '../types.js'
-import { READ_ID } from '../types.js'
+  READ_ID,
+} from './types.js'
 import { readMetaSeperate } from './meta.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
-import { TEXT } from '@based/schema/def'
+import { TEXT } from '@based/schema/prop-types'
 export * from './types.js'
+export * from './string.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]

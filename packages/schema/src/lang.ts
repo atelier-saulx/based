@@ -155,3 +155,8 @@ langCodesMap.forEach((v, k) => {
 })
 export type LangName = keyof typeof langCodes
 export type LangCode = (typeof langCodes)[LangName]
+
+// generate this
+// __aaabafaksqamarangyasaevaeyazeubebnbisbsbrbgmycakmcezhcvkwcohrxsdadvnldzenetfofifrffgdgldegswelklguhtahahehihuisiiganiaiuikgaitjaknkskkrwkokukylolalvlblilnltmkmgmsmlmtgvmironmnesenoenbnocoroospsfaplptqurmrusmsascrsdsisklslsostnresswssvtlttattethbotitotstntrktkugukuruzveviwacyfywoxhyiyozukacnr
+// for the reader index = code * 2 [0] [1]
+// add a file to the build step
