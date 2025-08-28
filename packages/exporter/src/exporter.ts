@@ -1,10 +1,5 @@
 import { BasedDb } from '@based/db'
-import {
-  REFERENCE,
-  REFERENCES,
-  NUMBER,
-  TypeIndex,
-} from '../../schema/dist/def/types.js'
+import { REFERENCE, REFERENCES, NUMBER, TypeIndex } from '@based/schema/def'
 import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
