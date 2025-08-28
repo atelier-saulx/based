@@ -1,3 +1,4 @@
+import { writeUint16, writeUint32 } from '@based/utils'
 import { QueryDefFilter, FilterCondition } from '../types.js'
 import {
   META_EDGE,
@@ -62,8 +63,7 @@ export const fillConditionsBuffer = (
       const sizeIndex = lastWritten
       lastWritten += 2
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      result[sizeIndex] = size
-      result[sizeIndex + 1] = size >>> 8
+      writeUint16(result, size, sizeIndex)
       lastWritten += size
     }
   }
@@ -76,8 +76,7 @@ export const fillConditionsBuffer = (
       lastWritten += 2
       const size = writeConditions(result, k, lastWritten, v)
       lastWritten += size
-      result[sizeIndex] = size
-      result[sizeIndex + 1] = size >>> 8
+      writeUint16(result, size, sizeIndex)
     })
   }
 
@@ -85,10 +84,7 @@ export const fillConditionsBuffer = (
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
     result[orJumpIndex] = size
     result[orJumpIndex + 1] = size >>> 8
-    result[orJumpIndex + 2] = lastWritten
-    result[orJumpIndex + 3] = lastWritten >>> 8
-    result[orJumpIndex + 4] = lastWritten >>> 16
-    result[orJumpIndex + 5] = lastWritten >>> 24
+    writeUint32(result, lastWritten, 2)
     lastWritten += size
   }
 
@@ -114,7 +110,8 @@ export const isSimpleMainFilter = (conditions: QueryDefFilter) => {
     !conditions.edges &&
     conditions.conditions.size === 1 &&
     conditions.conditions.has(0) &&
-    !conditions.or
+    !conditions.or &&
+    !conditions.exists
   ) {
     return true
   }

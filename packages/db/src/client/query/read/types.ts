@@ -167,9 +167,6 @@ export const convertToReaderSchema = (
           : ReaderSchemaEnum.single
         : ReaderSchemaEnum.default,
   }
-  if (q.schema.hooks?.read) {
-    readerSchema.hook = q.schema.hooks.read
-  }
 
   if (q.aggregate) {
     readerSchema.aggregate = {
@@ -204,6 +201,9 @@ export const convertToReaderSchema = (
       }
     }
   } else {
+    if (q.schema.hooks?.read) {
+      readerSchema.hook = q.schema.hooks.read
+    }
     if (isRoot && q.search) {
       readerSchema.search = true
     }

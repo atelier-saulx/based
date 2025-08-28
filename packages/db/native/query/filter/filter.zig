@@ -63,6 +63,7 @@ pub fn filter(
 
     while (i < end) {
         const meta: Meta = @enumFromInt(conditions[i]);
+
         if (meta == Meta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
             end = read(u32, conditions, i + 3);
@@ -124,6 +125,7 @@ pub fn filter(
             const field: u8 = conditions[i + 1];
             const negate: Type = @enumFromInt(conditions[i + 2]);
             const prop: Prop = @enumFromInt(conditions[i + 3]);
+
             if (isEdge) {
                 if (ref) |r| {
                     if (prop == Prop.REFERENCES) {
@@ -145,7 +147,6 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        std.log.err("Trying to get an edge field from a weakRef \n", .{});
                         // Is a edge ref cant filter on an edge field!
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -174,6 +175,7 @@ pub fn filter(
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
                     const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+
                     if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -187,7 +189,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
-                if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
+                if (value.len == 0 or !runCondition(decompressor, blockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -201,7 +203,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 value = db.getEdgeProp(ref.?.largeReference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
+                if (value.len == 0 or !runCondition(decompressor, blockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -239,12 +241,12 @@ pub fn filter(
                             lang,
                             query[query.len - 2 - fallBackSize .. query.len - 2],
                         );
-                        if (s.len == 0 or !runCondition(decompressor, blockState,  query, s)) {
+                        if (s.len == 0 or !runCondition(decompressor, blockState, query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
                         const s = db.getTextFromValue(value, lang);
-                        if (s.len == 0 or !runCondition(decompressor, blockState,  query, s)) {
+                        if (s.len == 0 or !runCondition(decompressor, blockState, query, s)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }
@@ -279,7 +281,7 @@ pub fn filter(
                     } else {
                         value = db.getField(typeEntry, 0, node, fieldSchema, prop);
                     }
-                    if (value.len == 0 or !runCondition(decompressor, blockState,  query, value)) {
+                    if (value.len == 0 or !runCondition(decompressor, blockState, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 }
