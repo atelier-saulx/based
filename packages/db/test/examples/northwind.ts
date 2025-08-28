@@ -338,8 +338,8 @@ await test('Basic SQL', async (t) => {
     .get()
     .toObject()
   const unionAll = [
-    ...unionA.map(({ city, country }) => ({ city, country })),
-    ...unionB.map(({ city, country }) => ({ city, country })),
+    ...unionAllA.map(({ city, country }) => ({ city, country })),
+    ...unionAllB.map(({ city, country }) => ({ city, country })),
   ].sort((a, b) => a.city.localeCompare(b.city))
   console.log(unionAll)
 })

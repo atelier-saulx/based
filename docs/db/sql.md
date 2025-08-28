@@ -733,9 +733,9 @@ SELECT city, country FROM customers
 
 ```js
 console.log('union all')
-const unionAllA = await db.query('customers').include('city', 'country').get().toObject()
-const unionAllB = await db.query('suppliers').include('city', 'country').get().toObject()
-const unionAll = [
+const unionA = await db.query('customers').include('city', 'country').get().toObject()
+const unionB = await db.query('suppliers').include('city', 'country').get().toObject()
+const union = [
   ...unionA.map(({ city, country }) => ({ city, country })),
   ...unionB.map(({ city, country }) => ({ city, country }))
 ].sort((a, b) => a.city.localeCompare(b.city))
