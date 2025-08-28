@@ -144,7 +144,8 @@ await test('schema', () => {
     },
     refs: {},
     type: 2,
-    hook: (result) => {
+    hook(result) {
+      console.log('x', result)
       if (result.private) {
         return {
           id: result.id,
@@ -167,10 +168,12 @@ await test('schema', () => {
     },
   }
 
-  const schema = agg
+  const schema = enums
 
   // -----------------------
   const s = serialize(schema)
+
+  deSerializeSchema(s).hook({})
 
   const d = Date.now()
   for (let i = 0; i < 1e6; i++) {

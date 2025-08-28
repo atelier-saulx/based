@@ -183,7 +183,13 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   if (!schema.hook) {
     blocks.push(new Uint8Array([0]))
   } else {
-    const n = ENCODER.encode(schema.hook.toString())
+    let src = schema.hook.toString()
+    // later prep this correctly in the schema file when updating it
+    // and run dry run
+    if (/^[a-zA-Z0-9_$]+\s*\(/.test(src)) {
+      src = 'function ' + src
+    }
+    const n = ENCODER.encode(src)
     const x = new Uint8Array(n.byteLength + 2)
     writeUint16(x, n.byteLength, 0)
     x.set(n, 2)

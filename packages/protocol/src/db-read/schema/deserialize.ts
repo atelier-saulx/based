@@ -155,7 +155,7 @@ const deSerializeSchemaInner = (
   if (hasHook) {
     const len = readUint16(schema, i)
     i += 2
-    const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n)`
+    const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n);`
     // @ts-ignore
     s.hook = new Function('n', fn)
     i += len

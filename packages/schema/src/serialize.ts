@@ -93,7 +93,7 @@ const handleSingleValue = (
   } else if (type === 'function') {
     // Support both arrow functions and methods (including shorthand method syntax)
     let str = val.toString()
-    if (typeof val === 'function' && /^[a-zA-Z0-9_$]+\s*\(/.test(str)) {
+    if (/^[a-zA-Z0-9_$]+\s*\(/.test(str)) {
       str = 'function ' + str
     }
     ensureCapacity(1 + 2 + str.length * 4)
