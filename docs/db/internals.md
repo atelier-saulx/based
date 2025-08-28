@@ -247,7 +247,7 @@ block-beta
 
 ## Columnar Vectors (colvec)
 
-
+Documented [here](db/types?id=colvec) under type for now.
 
 ## Partial Data
 
