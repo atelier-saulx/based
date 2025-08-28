@@ -1,0 +1,726 @@
+import { equal } from 'node:assert'
+import { BasedDb } from '../../src/index.js'
+import { allCountryCodes } from '../shared/examples.js'
+import test from '../shared/test.js'
+import { throws, deepEqual } from '../shared/assert.js'
+import { fastPrng } from '@based/utils'
+
+await test('sum branched includes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string' },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').sum('NL', 'AU')
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { NL: 30, AU: 15 } }],
+    'brached include, sum, references',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').groupBy('country').sum('NL', 'AU')
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+    'branched include, references, groupBy',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').filter('country', '=', 'aa').sum('NL', 'AU')
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { NL: 20, AU: 15 } }],
+    'branched include, references, filtered, groupBy',
+  )
+})
+
+await test('count branched includes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      sequence: {
+        props: {
+          votes: {
+            items: {
+              ref: 'vote',
+              prop: 'sequence',
+            },
+          },
+        },
+      },
+      vote: {
+        props: {
+          sequence: {
+            ref: 'sequence',
+            prop: 'votes',
+          },
+          flap: {
+            props: {
+              hello: 'uint32',
+            },
+          },
+          country: { type: 'string' },
+          AU: 'uint8',
+          NL: 'uint8',
+        },
+      },
+    },
+  })
+  const nl1 = db.create('vote', {
+    country: 'bb',
+    flap: { hello: 100 },
+    NL: 10,
+  })
+  const nl2 = db.create('vote', {
+    country: 'aa',
+    NL: 20,
+  })
+  const au1 = db.create('vote', {
+    country: 'aa',
+    AU: 15,
+  })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').count()
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { count: 3 } }],
+    'brached include, count, references',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').groupBy('country').sum('NL', 'AU')
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+    'branched include, references, groupBy',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((select) => {
+        select('votes').filter('country', '=', 'aa').count()
+      })
+      .get()
+      .toObject(),
+    [{ id: 1, votes: { count: 2 } }],
+    'count, branched include, references, filtered',
+  )
+})
+
+await test('agg on references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e6,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      team: {
+        props: {
+          teamName: { type: 'string' },
+          city: { type: 'string' },
+          players: {
+            items: {
+              ref: 'player',
+              prop: 'team',
+            },
+          },
+        },
+      },
+      player: {
+        props: {
+          playerName: { type: 'string' },
+          position: { type: 'string' },
+          goalsScored: 'uint16',
+          gamesPlayed: 'uint16',
+          team: {
+            ref: 'team',
+            prop: 'players',
+          },
+        },
+      },
+    },
+  })
+
+  const p1 = db.create('player', {
+    playerName: 'Martin',
+    position: 'Forward',
+    goalsScored: 10,
+    gamesPlayed: 5,
+  })
+  const p2 = db.create('player', {
+    playerName: 'Jemerson',
+    position: 'Defender',
+    goalsScored: 1,
+    gamesPlayed: 10,
+  })
+  const p3 = db.create('player', {
+    playerName: 'Pavon',
+    position: 'Forward',
+    goalsScored: 12,
+    gamesPlayed: 6,
+  })
+  const p4 = db.create('player', {
+    playerName: 'Wout',
+    position: 'Forward',
+    goalsScored: 8,
+    gamesPlayed: 7,
+  })
+  const p5 = db.create('player', {
+    playerName: 'Jorrel',
+    position: 'Defender',
+    goalsScored: 2,
+    gamesPlayed: 9,
+  })
+
+  const t1 = db.create('team', {
+    teamName: 'Grêmio',
+    city: 'Porto Alegre',
+    players: [p1, p2, p3],
+  })
+  const t2 = db.create('team', {
+    teamName: 'Ajax',
+    city: 'Amsterdam',
+    players: [p4, p5],
+  })
+  const t3 = db.create('team', {
+    teamName: 'Boca Juniors',
+    city: 'Buenos Aires',
+    players: [],
+  })
+  const t4 = db.create('team', {
+    teamName: 'Barcelona',
+    city: 'Barcelona',
+    players: [
+      db.create('player', {
+        playerName: 'Lewandowski',
+        position: 'Forward',
+        goalsScored: 5,
+        gamesPlayed: 5,
+      }),
+    ],
+  })
+
+  const result = await db
+    .query('team')
+    .include('teamName', 'city', (select) => {
+      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
+    })
+    .get()
+
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        teamName: 'Grêmio',
+        city: 'Porto Alegre',
+        players: {
+          Forward: { goalsScored: 22, gamesPlayed: 11 }, // Martin (10,5) + Pavon (12,6)
+          Defender: { goalsScored: 1, gamesPlayed: 10 }, // Jemerson (1,10)
+        },
+      },
+      {
+        id: 2,
+        teamName: 'Ajax',
+        city: 'Amsterdam',
+        players: {
+          Forward: { goalsScored: 8, gamesPlayed: 7 }, // Wout (8,7)
+          Defender: { goalsScored: 2, gamesPlayed: 9 }, // Jorrel (2,9)
+        },
+      },
+      {
+        id: 3,
+        teamName: 'Boca Juniors',
+        city: 'Buenos Aires',
+        players: {}, // does anybody wants to play for Boca?
+      },
+      {
+        id: 4,
+        teamName: 'Barcelona',
+        city: 'Barcelona',
+        players: {
+          Forward: { goalsScored: 5, gamesPlayed: 5 }, // Lewandowski
+        },
+      },
+    ],
+    'Include parent props, with referenced items grouped by their own prop, and aggregations',
+  )
+})
+
+await test('enums', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
+  await db.setSchema({
+    types: {
+      beer: {
+        props: {
+          name: 'string',
+          type: types,
+          price: 'number',
+          bitterness: 'number',
+          alchol: 'number',
+          year: 'uint16',
+        },
+      },
+    },
+  })
+
+  const b1 = await db.create('beer', {
+    name: "Brouwerij 't IJwit",
+    type: 'Wit',
+    price: 7.2,
+    alchol: 6.5,
+    year: 1985,
+  })
+  const b2 = await db.create('beer', {
+    name: 'De Garre Triple Ale',
+    type: 'Tripel',
+    price: 11.5,
+    alchol: 11.0,
+    year: 1986,
+  })
+
+  const b3 = await db.create('beer', {
+    name: 'Gulden Draak',
+    type: 'Tripel',
+    price: 12.2,
+    alchol: 10.0,
+    year: 1795,
+  })
+
+  deepEqual(
+    await db.query('beer').avg('price').groupBy('type').get(),
+    {
+      Tripel: {
+        price: 11.85,
+      },
+      Wit: {
+        price: 7.2,
+      },
+    },
+    'group by enum in main',
+  )
+
+  deepEqual(
+    await db.query('beer').harmonicMean('price').groupBy('type').get(),
+    {
+      Tripel: {
+        price: 11.839662447257384,
+      },
+      Wit: {
+        price: 7.199999999999999, // 7.2 should be approximated
+      },
+    },
+    'harmonic_mean by enum in main',
+  )
+})
+
+await test('refs with enums ', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actor',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movie',
+          },
+        },
+      },
+    },
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    genre: 'Crime',
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    genre: 'Crime',
+  })
+  const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
+  const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
+
+  deepEqual(
+    await db
+      .query('actor')
+      .include((q) => q('movies').groupBy('genre').count())
+      .get(),
+    [
+      {
+        id: 1,
+        movies: {
+          Crime: {
+            count: 2,
+          },
+        },
+      },
+      {
+        id: 2,
+        movies: {
+          Crime: {
+            count: 1,
+          },
+        },
+      },
+    ],
+    'count group by enum in refs',
+  )
+})
+
+await test('cardinality', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lunch: {
+        week: 'string',
+        lala: 'number',
+        lele: 'number',
+        Mon: 'cardinality',
+        Tue: 'cardinality',
+        Wed: 'cardinality',
+        Thu: 'cardinality',
+        Fri: 'cardinality',
+      },
+    },
+  })
+
+  const week27 = {
+    week: '27',
+    lala: 250,
+    Mon: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+    Tue: ['Nuno', 'Tom', 'Alex', 'Niels', 'jimdebeer', 'Francesco', 'Victor'],
+    Wed: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+    Thu: [
+      'Nuno',
+      'yves',
+      'Fulco',
+      'Tom',
+      'Sara',
+      'Felix',
+      'Thomas',
+      'Sebastian',
+      'jimdebeer',
+      'youzi',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Fabio',
+      'Luca',
+    ],
+    Fri: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  }
+  await db.create('lunch', week27)
+  await db.create('lunch', {
+    week: '28',
+    Mon: ['youzi', 'Marco', 'Luigui'],
+    lala: 10,
+  })
+
+  deepEqual(
+    await db.query('lunch').cardinality('Mon').get(),
+    {
+      Mon: 7,
+    },
+    'main cardinality no group by',
+  )
+
+  deepEqual(
+    await db.query('lunch').cardinality('Mon').groupBy('week').get(),
+    {
+      27: {
+        Mon: 5,
+      },
+      28: {
+        Mon: 3,
+      },
+    },
+    'cardinality main groupBy',
+  )
+})
+
+await test('group by reference ids', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'vehicle',
+        },
+      },
+      driver: {
+        name: 'string',
+        rank: 'int8',
+        trips: {
+          items: {
+            ref: 'trip',
+            prop: 'trip',
+          },
+        },
+        vehicle: {
+          ref: 'vehicle',
+          prop: 'car',
+        },
+      },
+      vehicle: {
+        plate: 'string',
+        model: 'string',
+        year: 'number',
+      },
+    },
+  })
+  const v1 = db.create('vehicle', {
+    plate: 'DVH0101',
+    model: 'BYD 01',
+    year: 2024,
+  })
+  const v2 = db.create('vehicle', {
+    plate: 'MBT8965',
+    model: 'VW Beatle',
+    year: 1989,
+  })
+  const t1 = db.create('trip', {
+    distance: 523.1,
+    vehicle: v2,
+  })
+  const d1 = db.create('driver', {
+    name: 'Luc Ferry',
+    rank: 5,
+    vehicle: v2,
+    trips: [t1],
+  })
+
+  deepEqual(
+    await db.query('driver').sum('rank').groupBy('vehicle').get(),
+    {
+      2: {
+        rank: 5,
+      },
+    },
+    'group by reference id',
+  )
+
+  deepEqual(
+    await db
+      .query('driver')
+      .include((q) => q('trips').groupBy('vehicle').max('distance'))
+      .include('*')
+      .get(),
+    [
+      {
+        id: 1,
+        rank: 5,
+        name: 'Luc Ferry',
+        trips: {
+          2: {
+            distance: 523.1,
+          },
+        },
+      },
+    ],
+    'brached query with nested group by reference id',
+  )
+})
+
+await test.skip('edges agregation', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      movie: {
+        name: 'string',
+        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
+        actors: {
+          items: {
+            ref: 'actor',
+            prop: 'actors',
+            $rating: 'uint16',
+          },
+        },
+      },
+      actor: {
+        name: 'string',
+        movies: {
+          items: {
+            ref: 'movie',
+            prop: 'movies',
+          },
+        },
+      },
+    },
+  })
+
+  const a1 = db.create('actor', {
+    name: 'Uma Thurman',
+  })
+  const a2 = db.create('actor', {
+    name: 'Jonh Travolta',
+  })
+
+  const m1 = await db.create('movie', {
+    name: 'Kill Bill',
+    actors: [
+      {
+        id: a1,
+        $rating: 55,
+      },
+    ],
+  })
+  const m2 = await db.create('movie', {
+    name: 'Pulp Fiction',
+    actors: [
+      {
+        id: a1,
+        $rating: 63,
+      },
+      {
+        id: a2,
+        $rating: 77,
+      },
+    ],
+  })
+
+  // await db
+  //   .query('movie')
+  //   .include('name')
+  //   .include('actors.$rating')
+  //   .include('actors.name')
+  //   .get()
+  //   .inspect(10)
+
+  // edges unreacheable
+  //db.query('movie').max('actors.$rating').get().inspect(10)
+})
