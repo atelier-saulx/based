@@ -1,10 +1,6 @@
 import { BasedDb, save } from '../../index.js'
 import { dirname, join } from 'path'
-import {
-  Worker,
-  MessageChannel,
-  receiveMessageOnPort,
-} from 'node:worker_threads'
+import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 import { destructureTreeKey } from '../tree.js'
 import { foreachDirtyBlock } from '../blocks.js'
@@ -18,7 +14,11 @@ import {
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
 import { MigrateFns, serialize } from '@based/schema'
-import { parse, parseRange, satisfies } from '@std/semver'
+
+// remove the other files
+import { satisfies } from './semver/satisfies.js'
+import { parseRange } from './semver/parse_range.js'
+import { parse } from './semver/parse.js'
 
 export type MigrateRange = { typeId: number; start: number; end: number }
 

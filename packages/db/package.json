@@ -1,7 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.0.71",
-  "license": "MIT",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
@@ -42,10 +41,9 @@
   ],
   "dependencies": {
     "@based/hash": "1.0.0",
-    "@based/schema": "5.0.0-alpha.27",
+    "@based/schema": "^5.0.0",
     "@based/utils": "^1.0.0",
     "@based/protocol": "0.0.2",
-    "@std/semver": "npm:@jsr/std__semver@^1.0.5",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0"
   },

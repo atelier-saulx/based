@@ -1,7 +1,6 @@
 {
   "name": "@based/schema",
-  "version": "5.0.0-alpha.27",
-  "license": "MIT",
+  "version": "5.0.1",
   "files": [
     "dist",
     "README.md",
@@ -32,7 +31,6 @@
   },
   "dependencies": {
     "@based/utils": "^1.0.0",
-    "@std/semver": "npm:@jsr/std__semver@^1.0.5",
     "picocolors": "^1.1.0"
   }
 }
