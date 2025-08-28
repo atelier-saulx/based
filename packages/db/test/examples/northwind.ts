@@ -1,4 +1,5 @@
 import { BasedDb } from '../../src/index.js'
+import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
 import test from '../shared/test.js'
@@ -484,4 +485,9 @@ await test('hooks', async (t) => {
 
   // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
   await db.query('orderDetails').avg('discountAmount').get().inspect()
+})
+
+await test.skip('mermaid', async (t) => {
+  // @ts-ignore
+  console.log(mermaid(db.client.schema))
 })
