@@ -840,7 +840,7 @@ SQL triggers are stored procedures that are executed at an event like `INSERT`
 or `UPDATE`. The equivalent of a trigger in Based DB is called hook.
 
 In the following example we calculate the discount amount for each item in
-orders on creation and update. Finally we find the average discount amount
+*orders* on *creation* and *update*. Finally we find the average discount amount
 int a query.
 
 ```sql
