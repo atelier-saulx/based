@@ -1,5 +1,10 @@
 import { BasedDb } from '@based/db'
-import { REFERENCE, REFERENCES, NUMBER } from '../../schema/dist/def/types.js'
+import {
+  REFERENCE,
+  REFERENCES,
+  NUMBER,
+  TypeIndex,
+} from '../../schema/dist/def/types.js'
 import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
@@ -49,7 +54,7 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   })
 
   const csvHeader = ['id', ...propsToExport]
-  const propTypes = [
+  const propTypes: TypeIndex[] = [
     NUMBER,
     ...Object.keys(def.props).map((propName) => def.props[propName].typeIndex),
   ]
@@ -112,15 +117,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
         `    - Chunk full, continuing to next chunk at offset ${offsetStart}.`,
       )
     }
-    // if (csvRows.length == CHUNK_SIZE) {
-    //   offsetStart += CHUNK_SIZE
-    //   offsetEnd += offsetStart + CHUNK_SIZE
-    //   if (offsetStart >= def.blockCapacity) {
-    //     isDone = true
-    //   }
-    // } else {
-    //   isDone = true
-    // }
   }
 
   try {
