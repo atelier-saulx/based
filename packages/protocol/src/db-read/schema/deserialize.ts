@@ -80,7 +80,6 @@ const deSerializeProp = (
     prop.locales = {}
     const end = p[index] * 4 + index + 1
     index++
-    console.log(end, index)
     while (index < end) {
       prop.locales[readUint16(p, index)] = DECODER.decode(
         p.subarray(index + 2, index + 4),

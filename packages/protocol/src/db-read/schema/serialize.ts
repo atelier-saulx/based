@@ -121,8 +121,6 @@ const serializeProp = (
       i += 4
     }
     locales[0] = len
-    console.log(locales)
-
     blocks.push(locales)
   }
   header[keySize + 1] = options
