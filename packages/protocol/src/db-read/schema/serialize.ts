@@ -99,15 +99,16 @@ const serializeProp = (
 }
 
 const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
-  const top = new Uint8Array(2)
+  const top = new Uint8Array(3)
   top[0] = schema.type
+  top[1] = schema.search ? 1 : 0
   blocks.push(top)
   if (schema.refs.schema) {
-    top[1] = 0
+    top[2] = 0
     // parse prop first
     // then schema (similair to edges)
   } else {
-    top[1] = 0
+    top[2] = 0
   }
 
   if (isEmptyObject(schema.props)) {
@@ -145,10 +146,6 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   //     let index = blocks.length - 1
   //     innerSerialize(schema.edges, blocks)
   //     writeUint16(edges, getSize(blocks, index), 1)
-  //   }
-
-  //   if (schema.search) {
-  //     blocks.push(new Uint8Array([TopLevelKeys.search]))
   //   }
 
   // agg

@@ -57,11 +57,12 @@ export const deSerializeSchema = (
   const s: Partial<ReaderSchema> = {
     readId: 0,
     type: schema[i],
+    search: schema[i + 1] === 1,
     refs: {},
     props: {},
     main: { len: 0, props: {} },
   }
-  i++
+  i += 2
   const ref = schema[i]
   i++
   if (ref !== 0) {
@@ -77,7 +78,6 @@ export const deSerializeSchema = (
       count++
     }
   }
-  console.log(i)
   const mainLen = readUint16(schema, i)
   i += 2
   if (mainLen) {
@@ -92,6 +92,7 @@ export const deSerializeSchema = (
       count++
     }
   }
+  schema
 
   return s as ReaderSchema
 }
