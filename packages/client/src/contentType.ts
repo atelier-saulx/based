@@ -3,6 +3,7 @@ export const CONTENT_TYPE_UINT8_ARRAY = 254
 export const CONTENT_TYPE_STRING = 253
 export const CONTENT_TYPE_UNDEFINED = 252
 export const CONTENT_TYPE_NULL = 251
+export const CONTENT_TYPE_DB_QUERY = 249
 
 export type CONTENT_TYPE =
   | typeof CONTENT_TYPE_JSON
@@ -10,6 +11,7 @@ export type CONTENT_TYPE =
   | typeof CONTENT_TYPE_STRING
   | typeof CONTENT_TYPE_UNDEFINED
   | typeof CONTENT_TYPE_NULL
+  | typeof CONTENT_TYPE_DB_QUERY
 
 export const CONTENT_TYPE_JSON_U8 = new Uint8Array([CONTENT_TYPE_JSON])
 export const CONTENT_TYPE_UINT8_ARRAY_U8 = new Uint8Array([
@@ -20,3 +22,4 @@ export const CONTENT_TYPE_UNDEFINED_U8 = new Uint8Array([
   CONTENT_TYPE_UNDEFINED,
 ])
 export const CONTENT_TYPE_NULL_U8 = new Uint8Array([CONTENT_TYPE_NULL])
+export const CONTENT_TYPE_DB_QUERY_U8 = new Uint8Array([CONTENT_TYPE_DB_QUERY])

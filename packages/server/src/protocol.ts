@@ -7,6 +7,9 @@ import {
   writeUint64,
   readUint32,
 } from '@based/utils'
+import { BasedQueryResponse } from '@based/db'
+import { serialize } from '@based/protocol/db-read/serialize-schema'
+import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
 
 export const COMPRESS_FROM_BYTES = 150
 
@@ -67,6 +70,7 @@ export const CONTENT_TYPE_STRING_U8 = new Uint8Array([253])
 export const CONTENT_TYPE_UNDEFINED_U8 = new Uint8Array([252])
 export const CONTENT_TYPE_NULL_U8 = new Uint8Array([251])
 export const CONTENT_TYPE_VERSION_1_U8 = new Uint8Array([250])
+export const CONTENT_TYPE_DB_QUERY = new Uint8Array([249])
 
 const EMPTY_BUFFER = new Uint8Array([])
 
@@ -94,6 +98,20 @@ export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
       n.set(newEncoded.buf, 20)
       return n
     }
+  } else if (buf[20] === CONTENT_TYPE_DB_QUERY[0]) {
+    const header = decodeHeader(readUint32(buf, 0))
+    const slice = buf.subarray(21)
+    const schemaLen = readUint32(slice, 0)
+    const schema = deSerializeSchema(slice.subarray(4, schemaLen + 4))
+    const result = slice.subarray(schemaLen + 4)
+    const jsonBuf = ENCODER.encode(
+      JSON.stringify(resultToObject(schema, result, result.byteLength)),
+    )
+    const n = new Uint8Array(20 + jsonBuf.byteLength)
+    n.set(buf.subarray(0, 20), 0)
+    encodeHeader(header.type, header.isDeflate, header.len - 1, n, 0)
+    n.set(jsonBuf, 20)
+    return n
   } else {
     const header = decodeHeader(readUint32(buf, 0))
     const n = new Uint8Array(buf.byteLength - 1)
@@ -127,6 +145,8 @@ export const valueToBufferV1 = (
   let buf: Uint8Array
   if (payload === undefined) {
     buf = new Uint8Array([])
+  } else if (payload instanceof BasedQueryResponse) {
+    buf = ENCODER.encode(payload.toJSON())
   } else {
     try {
       buf = ENCODER.encode(JSON.stringify(payload))
@@ -188,6 +208,22 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
     return {
       contentByte: CONTENT_TYPE_UINT8_ARRAY_U8,
       buf: payload,
+      deflate: false,
+    }
+  }
+
+  if (payload instanceof BasedQueryResponse) {
+    const serializedSchema = serialize(payload.def.readSchema)
+    const res = payload.result.subarray(0, -4) // minus 4 for hash
+    // keep 4 for serializedSchema byteLength
+    const buf = new Uint8Array(4 + serializedSchema.byteLength + res.byteLength)
+    writeUint32(buf, serializedSchema.byteLength, 0)
+    buf.set(serializedSchema, 4)
+    buf.set(res, serializedSchema.byteLength + 4)
+
+    return {
+      contentByte: CONTENT_TYPE_DB_QUERY,
+      buf,
       deflate: false,
     }
   }
