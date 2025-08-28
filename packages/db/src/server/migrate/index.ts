@@ -14,11 +14,8 @@ import {
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
 import { MigrateFns, serialize } from '@based/schema'
-
-// remove the other files
-import { satisfies } from './semver/satisfies.js'
-import { parseRange } from './semver/parse_range.js'
-import { parse } from './semver/parse.js'
+import { semver } from '@based/schema'
+const { satisfies, parseRange, parse } = semver
 
 export type MigrateRange = { typeId: number; start: number; end: number }
 

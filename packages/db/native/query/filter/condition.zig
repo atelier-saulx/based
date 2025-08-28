@@ -20,9 +20,6 @@ pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *Libdefla
     const valueSize = read(u32, q, i + 6);
     const next = i + 10 + valueSize;
     const mainLen = read(u16, q, i + 4);
-
-    // const next = if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
-
     const query = q[i + 11 .. next + 1];
     const op: Op = @enumFromInt(q[i + 10]);
     const start = read(u16, q, i + 2);
@@ -62,11 +59,9 @@ pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *Lib
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
     var valueSize = read(u32, q, i + 6);
-
     const isText: bool = prop == Prop.TEXT;
-
     const op: Op = @enumFromInt(q[i + 10]);
-    const next = i + 10 + valueSize; // if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
+    const next = i + 10 + valueSize;
     var query = q[i + 11 .. next + 1];
     var value: []u8 = undefined;
     var pass = true;
@@ -165,7 +160,6 @@ pub inline fn default(
     const op: Op = @enumFromInt(q[i + 6]);
     const query = q[i + 7 .. i + valueSize + 7];
     const next = 7 + valueSize;
-
     if (op == Op.equal) {
         const value = v[start .. start + valueSize];
         var j: u8 = 0;
