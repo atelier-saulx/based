@@ -9,6 +9,7 @@
   - [Queries](/db/api?id=query)
   - [Examples](/db/examples)
     - [Migrating from SQL](/db/sql)
+  - [Internals](/db/internals)
   - [API Reference](/db/api)
 - [FAQ](/faq)
 - [GitHub ↗](https://github.com/atelier-saulx/based)
