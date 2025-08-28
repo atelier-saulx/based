@@ -410,3 +410,32 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
 })
+
+await test('groupBy ranges in numeric properties', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      trip: {
+        tripId: 'number',
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    db.create('trip', {
+      tripId: i,
+      pickup: new Date('08/28/2024').getTime() * 1e4,
+      distance: Math.random() * 1e4 * Math.random(),
+    })
+  }
+
+  await db.query('trip').sum('distance').groupBy('tripId').get().inspect()
+})
