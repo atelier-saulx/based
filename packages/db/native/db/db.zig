@@ -351,7 +351,7 @@ pub fn getEdgeReferences(
     field: u8,
 ) ?selva.SelvaNodeWeakReferences {
     const meta_node = getMetaNode(db, efc, ref);
-    if (!meta_node) {
+    if (meta_node == null) {
         return null;
     }
 
@@ -375,7 +375,7 @@ pub fn getEdgeReference(
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
     const meta_node = getMetaNode(db, efc, ref);
-    if (!meta_node) {
+    if (meta_node == null) {
         return null;
     }
 
