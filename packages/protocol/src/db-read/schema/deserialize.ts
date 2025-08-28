@@ -6,11 +6,7 @@ type ReaderState = {
   byteIndex: number
   bitIndex: number
 }
-
-const readBits = (
-  state: ReaderState,
-  numBits: number,
-): { value: number; newState: ReaderState } => {
+const readBits = (state: ReaderState, numBits: number) => {
   let { buffer, byteIndex, bitIndex } = state
   let value = 0
   for (let i = 0; i < numBits; i++) {
@@ -28,12 +24,10 @@ const readBits = (
   return { value, newState: { buffer, byteIndex, bitIndex } }
 }
 
-const readString = (
-  state: ReaderState,
-): { value: string; newState: ReaderState } => {
+const readString = (state: ReaderState) => {
   const { value: length, newState: stateAfterLen } = readBits(state, 16) // Use 2 bytes for string length
   let nextState = stateAfterLen
-  const bytes: number[] = []
+  const bytes = []
   for (let i = 0; i < length; i++) {
     const { value: byte, newState } = readBits(nextState, 8)
     bytes.push(byte)

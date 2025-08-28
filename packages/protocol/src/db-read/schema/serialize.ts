@@ -2,6 +2,17 @@ import { ReaderSchema } from '../types.js'
 
 const writeBits = (state, value, numBits) => {
   let { buffer, byteIndex, bitIndex } = state
+  // Fast path for byte-aligned writes
+  if (bitIndex === 0 && numBits % 8 === 0) {
+    const numBytes = numBits / 8
+    for (let i = 0; i < numBytes; i++) {
+      buffer[byteIndex + i] = (value >> (8 * (numBytes - 1 - i))) & 0xff
+    }
+    byteIndex += numBytes
+    return { buffer, byteIndex, bitIndex }
+  }
+
+  // Slower path for unaligned writes
   for (let i = numBits - 1; i >= 0; i--) {
     const bit = (value >> i) & 1
     if (bit === 1) {
@@ -20,8 +31,15 @@ const writeString = (state, str) => {
   const encoder = new TextEncoder()
   const encoded = encoder.encode(str)
   let nextState = writeBits(state, encoded.length, 16) // Use 2 bytes for string length
-  for (const byte of encoded) {
-    nextState = writeBits(nextState, byte, 8)
+  // Fast path for byte-aligned string copy
+  if (nextState.bitIndex === 0) {
+    nextState.buffer.set(encoded, nextState.byteIndex)
+    nextState.byteIndex += encoded.length
+  } else {
+    // Slower path if not aligned
+    for (const byte of encoded) {
+      nextState = writeBits(nextState, byte, 8)
+    }
   }
   return nextState
 }

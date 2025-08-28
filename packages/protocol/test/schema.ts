@@ -1,7 +1,6 @@
 import test from 'node:test'
 import { serialize } from '../src/db-read/schema/serialize.js'
 import { deSerializeSchema } from '../src/db-read/schema/deserialize.js'
-import { deepEqual } from 'assert'
 import { ReaderSchema } from '../dist/db-read/types.js'
 import { ENCODER } from '@based/utils'
 
