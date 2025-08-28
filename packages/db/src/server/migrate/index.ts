@@ -44,6 +44,22 @@ const parseTransform = (transform?: MigrateFns) => {
   return res
 }
 
+const stripHooks = (schema: DbSchema): DbSchema => {
+  const res = {}
+  for (const i in schema) {
+    if (i === 'types') {
+      res[i] = {}
+      for (const type in schema.types) {
+        const { hooks: _, ...rest } = schema.types[type]
+        res[i][type] = rest
+      }
+    } else {
+      res[i] = schema[i]
+    }
+  }
+  return res as DbSchema
+}
+
 export const migrate = async (
   server: DbServer,
   fromSchema: DbSchema,
@@ -54,6 +70,9 @@ export const migrate = async (
 
   server.migrating = migrationId
   server.emit('info', `migrating schema ${migrationId}`)
+
+  fromSchema = stripHooks(fromSchema)
+  toSchema = stripHooks(toSchema)
 
   if (!transform && toSchema.migrations?.length) {
     const fromVersion = fromSchema.version || '0.0.0'
