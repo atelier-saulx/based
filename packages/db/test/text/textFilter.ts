@@ -201,5 +201,5 @@ await test('compressionFilter', async (t) => {
     msg: derp,
   })
 
-  deepEqual(await db.query('event').filter('msg', 'has', 'derp').get(), [])
+  deepEqual(await db.query('event').filter('msg', 'includes', 'derp').get(), [])
 })

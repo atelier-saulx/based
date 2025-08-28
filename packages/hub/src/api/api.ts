@@ -40,9 +40,9 @@ export function registerApiHandlers(
             'meta',
           )
         if (search) {
-          q.filter('msg', 'has', search)
-            .or('msg', 'has', search)
-            .or('meta', 'has', search)
+          q.filter('msg', 'includes', search)
+            .or('msg', 'includes', search)
+            .or('meta', 'includes', search)
         }
         q.range(page * 100, (page + 1) * 100)
         return q.subscribe((res) => {
