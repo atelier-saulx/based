@@ -1,3 +1,4 @@
+import { writeUint16, writeUint32 } from '@based/utils'
 import { QueryDefFilter, FilterCondition } from '../types.js'
 import {
   META_EDGE,
@@ -25,8 +26,7 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
-  result[sizeIndex] = conditionSize
-  result[sizeIndex + 1] = conditionSize >>> 8
+  writeUint16(result, conditionSize, sizeIndex)
   return lastWritten - offset
 }
 
@@ -56,14 +56,12 @@ export const fillConditionsBuffer = (
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
-      result[lastWritten] = refConditions.schema.id
-      result[lastWritten + 1] = refConditions.schema.id >>> 8
+      writeUint16(result, refConditions.schema.id, lastWritten)
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      result[sizeIndex] = size
-      result[sizeIndex + 1] = size >>> 8
+      writeUint16(result, size, sizeIndex)
       lastWritten += size
     }
   }
@@ -76,19 +74,14 @@ export const fillConditionsBuffer = (
       lastWritten += 2
       const size = writeConditions(result, k, lastWritten, v)
       lastWritten += size
-      result[sizeIndex] = size
-      result[sizeIndex + 1] = size >>> 8
+      writeUint16(result, size, sizeIndex)
     })
   }
 
   if (conditions.or && conditions.or.size != 0) {
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
-    result[orJumpIndex] = size
-    result[orJumpIndex + 1] = size >>> 8
-    result[orJumpIndex + 2] = lastWritten
-    result[orJumpIndex + 3] = lastWritten >>> 8
-    result[orJumpIndex + 4] = lastWritten >>> 16
-    result[orJumpIndex + 5] = lastWritten >>> 24
+    writeUint16(result, size, orJumpIndex)
+    writeUint32(result, lastWritten, orJumpIndex + 2)
     lastWritten += size
   }
 
@@ -114,7 +107,8 @@ export const isSimpleMainFilter = (conditions: QueryDefFilter) => {
     !conditions.edges &&
     conditions.conditions.size === 1 &&
     conditions.conditions.has(0) &&
-    !conditions.or
+    !conditions.or &&
+    !conditions.exists
   ) {
     return true
   }

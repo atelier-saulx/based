@@ -1,6 +1,56 @@
 # Getting started with BasedDB
 
-## 1. Start the database
+## Install
+
+First run:
+
+```bash
+npm install @based/db
+```
+
+### Podman
+
+This script builds a container image for building `based-db` server for different
+architectures on macOS.
+
+**Prerequisites**
+
+- Node ≥ 22.14
+- [podman desktop](https://podman-desktop.io/)
+
+**Building**
+
+```bash
+npm run build-podman
+```
+
+or
+
+```bash
+cd podman
+./build.sh
+```
+
+### Locally
+
+**Prerequisites**
+
+- Node ≥ 22.14
+- GNU make
+- gcc 14.2 (Linux) or clang 17 (macOS)
+- Zig 0.14.0
+
+**Building**
+
+```bash
+git clone https://github.com/atelier-saulx/based
+cd based/packages/db
+npm run build
+```
+
+## Starting the Database
+
+**1. Start the database**
 
 ```js
 import { BasedDb } from '@based/db'
@@ -9,7 +59,7 @@ const db = new BasedDb({ path: './data' })
 await db.start({ clean: true })
 ```
 
-## 2. Define a schema
+**2. Define a schema**
 
 ```js
 await db.setSchema({
@@ -25,7 +75,7 @@ await db.setSchema({
 })
 ```
 
-## 3. Create & query
+**3. Create & query**
 
 ```js
 const id = await db.create('user', {
@@ -39,7 +89,7 @@ const ada = await db.query('user', id).include('name', 'age').get().toObject()
 console.log(ada) // { id: 1, name: 'Ada', age: 36 }
 ```
 
-## 4. Explore further
+## Explore further
 
 - [Schema reference](/schema)
 - [Filtering & sorting](db/filtering)

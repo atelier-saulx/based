@@ -43,6 +43,12 @@ export const readProp = (
   item: Item,
 ) => {
   const prop = q.props[instruction]
+
+  // debug
+  // if (!prop) {
+  //   console.dir(q, { depth: 10 })
+  // }
+
   prop.readBy = q.readId
 
   if (prop.typeIndex === CARDINALITY) {

@@ -646,7 +646,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db
       .query('person')
-      .filter('alias', 'has', 'slim')
+      .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
       .get()
       .toObject(),
@@ -655,7 +655,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db2
       .query('person')
-      .filter('alias', 'has', 'slim')
+      .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
       .get()
       .toObject(),
@@ -666,7 +666,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db
       .query('person')
-      .filter('alias', 'has', 'slick')
+      .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
       .get()
       .toObject(),
@@ -675,7 +675,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db2
       .query('person')
-      .filter('alias', 'has', 'slick')
+      .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
       .get()
       .toObject(),
@@ -686,7 +686,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db
       .query('person')
-      .filter('alias', 'has', 'boss')
+      .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
       .get()
       .toObject(),
@@ -695,7 +695,7 @@ await test('simulated periodic save', async (t) => {
   deepEqual(
     await db2
       .query('person')
-      .filter('alias', 'has', 'boss')
+      .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
       .get()
       .toObject(),

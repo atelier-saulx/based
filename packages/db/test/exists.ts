@@ -114,6 +114,7 @@ await test('with other filters', async (t) => {
       user: {
         props: {
           name: 'string',
+          derp: 'string',
           start: 'timestamp',
           friends: {
             items: {
@@ -142,10 +143,28 @@ await test('with other filters', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .include('friends')
-      .filter('friends', '!exists', undefined)
+      .include('name')
+      .filter('start', '>', 'now')
+      .filter('derp', 'exists')
+      .get(),
+    [],
+    'exists',
+  )
+
+  deepEqual(
+    await db
+      .query('user')
+      .include('name')
+      .filter('name', '!exists')
       .filter('start', '>', 'now')
       .get(),
     [],
+    '!exists',
+  )
+
+  deepEqual(
+    await db.query('user').include('name').filter('friends', '!exists').get(),
+    [{ id: 3, name: 'sad guy has no friends' }],
+    '!exists refs',
   )
 })

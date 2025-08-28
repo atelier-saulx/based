@@ -40,11 +40,9 @@ pub inline fn runConditions(
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
         const result = condition(decompressor, blockState, mode, q, v, i);
-        if (topLevelType == Type.negate) {
-            if (result[1] == true) {
-                return false;
-            }
-        } else if (result[1] == false) {
+        if (topLevelType == Type.negate and result[1] == true) {
+            return false;
+        } else if (result[1] == false and topLevelType == Type.default) {
             return false;
         }
         i += result[0];

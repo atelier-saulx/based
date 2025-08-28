@@ -162,7 +162,8 @@ await test('subscription error', async (t) => {
   close()
 })
 
-await test('subscribe to refs', async (t) => {
+// subscribe to refs
+await test('kev', async (t) => {
   const clientsN = 2
   const { clients } = await start(t, clientsN)
 
@@ -206,6 +207,18 @@ await test('subscribe to refs', async (t) => {
   for (let i = 0; i < 1e6; i++) {
     await clients[0].create('queueItem', { data: `Item-${i}`, queue: queueId })
   }
+
+  // console.log(
+  //   await clients[1]
+  //     .query('queue', queueId)
+  //     .include('items')
+  //     .count('items')
+  //     .get()
+  //     // .inspect(),
+  //   .toObject(),
+  // )
+
+  // { items: 1 }
 
   await wait(700)
 

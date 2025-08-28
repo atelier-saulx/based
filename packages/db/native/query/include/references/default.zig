@@ -12,7 +12,7 @@ pub fn defaultReferences(
     ctx: *QueryCtx,
     include: []u8,
     typeEntry: db.Type,
-    edgeConstrain: ?db.EdgeFieldConstraint,
+    edgeConstraint: ?db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
@@ -24,7 +24,7 @@ pub fn defaultReferences(
 
     checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
         if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
-            const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
+            const refStruct = types.RefResult(isEdge, refs, edgeConstraint, i);
             if (hasFilter and !filter(
                 ctx.db,
                 refNode,

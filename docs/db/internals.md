@@ -244,3 +244,27 @@ block-beta
   style ROOT fill:#0000,stroke-width:0
   style TYPES fill:#0000,stroke-width:0
 ```
+
+## Partial Data
+
+Currently as an experimental feature it's possible to offload parts of
+the database to the disk (offline) and retrieve them later when needed. The
+feature can be enabled by setting `partial: true` on a type schema.
+
+** Example Schema**
+
+```js
+await db.setSchema({
+  types: {
+    event: {
+      blockCapacity: 1025, // this many nodes per file
+      insertOnly: true, // optional, only required with the experimental 'colvec' type
+      partial: true, // Allows saving blocks of this type to be stored offline
+      props: {
+        extId: 'uint32',
+        vec: { type: 'colvec', size: 8, baseType: 'float32' },
+      },
+    },
+  },
+})
+```

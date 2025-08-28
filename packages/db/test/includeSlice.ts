@@ -1,6 +1,7 @@
-import { equal } from 'assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { italy } from './shared/examples.js'
+import { deepEqual, equal } from './shared/assert.js'
 
 await test('slice string / text', async (t) => {
   const db = new BasedDb({
@@ -13,6 +14,7 @@ await test('slice string / text', async (t) => {
     locales: {
       en: {},
       it: {},
+      fi: {},
     },
     types: {
       item: {
@@ -25,38 +27,136 @@ await test('slice string / text', async (t) => {
           c: 'string',
           d: 'string',
           e: 'string',
+          f: 'string',
+          g: 'string',
+          h: 'string',
+          flags: 'string',
+          bigBoyString: 'string',
         },
       },
     },
   })
 
+  let bigBoyString = '🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸'
+  for (let i = 0; i < 200; i++) {
+    bigBoyString += 'a'
+  }
+
   const id1 = await db.create('item', {
-    // first uncompressed then compressed!
-    // use something long e.g. italy
-    name: 'mr flaperinus is here for you and me!',
+    name: 'abcdefg',
+    b: italy,
+    c: '🤪💩👌⚡️🤪💩👌⚡️',
+    d: 'üaßßa',
+    e: '你a好AAAA',
+    f: '€Abc',
+    g: 'éAAAA',
+    h: '🚀🚀🚀🚀🚀🚀🚀',
+    flags: '🇺🇸🇿🇼🇺🇸',
+    bigBoyString,
+    body: {
+      en: bigBoyString,
+      it: 'abcdefg',
+      fi: 'finland 🇫🇮! this is finland!',
+    },
   })
 
   const q = await db.query('item', 1).get()
   equal(q.id, 1)
 
-  for (let i = 0; i < 100e3; i++) {
-    db.create('item', {
-      x: i,
-      name: `Name ${i}`,
-      a: 'a',
-      b: 'b',
-      c: 'c',
-      d: 'd',
-      e: 'e',
-      body: { it: `It ${i}`, en: `En ${i}` },
-    })
-  }
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('name', {
+        end: 1,
+        meta: true,
+      })
+      .include('d', {
+        end: 4,
+      })
+      .include('flags', {
+        end: 2,
+      })
+      .include('e', {
+        end: 1,
+      })
+      .include('f', {
+        end: 1,
+      })
+      .include('b', {
+        end: 50,
+      })
+      .include('c', {
+        end: 1,
+      })
+      .include('g', {
+        end: 1,
+      })
+      .include('e', {
+        end: 3,
+      })
+      .include('bigBoyString', { meta: true, end: 3 })
+      .get(),
+    {
+      id: 1,
+      name: {
+        checksum: 8097896832434183,
+        size: 7,
+        crc32: 3861378113,
+        compressed: false,
+        value: 'a',
+      },
+      d: 'üaßß',
+      flags: '🇺🇸🇿🇼',
+      e: '你a好',
+      f: '€',
+      c: '🤪',
+      g: 'é',
+      bigBoyString: {
+        checksum: 6678244981997910,
+        size: 342,
+        crc32: 3184435359,
+        compressed: true,
+        value: '🤪🇺🇸🇿🇼',
+      },
+      b: '\nMain menu\n\nWikipediaThe Free Encyclopedia\nSearch ',
+    },
+    'Strings + chars',
+  )
 
-  console.log(await db.drain())
-  await db
-    .query('item')
-    // .include('name', { start: 0, end: 5 })
-    .range(0, 1e6)
-    .get()
-    .inspect()
+  deepEqual(
+    await db.query('item', id1).include('body', { end: 3 }).get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin', it: 'abc' } },
+    'Text all + chars',
+  )
+
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('body.fi', { end: 3 }, 'body.en', { end: 3 })
+      .get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin' } },
+    'Text specific',
+  )
+
+  deepEqual(
+    await db.query('item', id1).include('body', { end: 3 }).locale('en').get(),
+    { id: 1, body: '🤪🇺🇸🇿🇼' },
+    'Text specific locale',
+  )
+
+  deepEqual(
+    await db
+      .query('item', id1)
+      .include('body', { end: 4, bytes: true })
+      .locale('en')
+      .get(),
+    { id: 1, body: '🤪' },
+    'Text specific locale bytes',
+  )
+
+  deepEqual(
+    await db.query('item', id1).include('body.en', { end: 3 }, 'body.fi').get(),
+    { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'finland 🇫🇮! this is finland!' } },
+    'Different ends per language',
+  )
 })
