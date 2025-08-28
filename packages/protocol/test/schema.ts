@@ -23,6 +23,13 @@ await test('schema', () => {
 
   console.log('schema')
   const s = serialize(schema)
+
+  const d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    deSerializeSchema(s)
+  }
+  console.log(Date.now() - d, 'ms')
+
   console.dir(deSerializeSchema(s), { depth: 10 })
   console.log(s)
   console.log(
