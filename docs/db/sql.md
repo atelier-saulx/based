@@ -114,8 +114,8 @@ usStates : stateAbbr __string__
 usStates : stateRegion __string__
 ```
 
-Queries
--------
+Select Queries
+--------------
 
 Basic SQL queries and their Based DB equivalents.
 
@@ -797,3 +797,52 @@ const union = [
 ### Having
 
 ### Exists
+
+Modifying Data
+--------------
+
+### Insert
+
+```js
+const res = db.create('customers', {
+  companyName: 'Cardinal',
+  contactName: 'Tom B. Erichsen',
+  address: 'Skagen 21',
+  city: 'Stavanger',
+  postalCode: '4006',
+  country: 'Norway',
+})
+```
+
+### Update
+
+```js
+db.update('customers', id, {
+  contactName: 'Haakon Christensen',
+})
+```
+
+### Delete
+
+**Deleting a single node**
+
+```js
+await db.delete('customers', id)
+```
+
+
+**Delete WELLI**
+
+```js
+db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
+```
+
+**Delete orders by WANDK**
+
+```
+const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
+const wandkOrders = await db.query('orders').filter('customer', '=', wandk).get()
+for (const order of wandkOrders) {
+  db.delete('orders', order.id)
+}
+```
