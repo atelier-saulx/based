@@ -1,4 +1,3 @@
-import { parse, type SemVer } from '@std/semver'
 import {
   EXPECTED_ARR,
   EXPECTED_BOOL,
@@ -7,6 +6,8 @@ import {
   EXPECTED_OBJ,
   EXPECTED_STR,
 } from './errors.js'
+import { parse } from './semver/parse.js'
+import { SemVer } from './semver/types.js'
 
 export const expectVersion = (obj: any): SemVer => {
   try {
@@ -67,5 +68,5 @@ export const expectPositiveNumber = (v: any) => {
 
 export const expectTimezoneName = (v: any) => {
   expectString(v)
-  Intl.DateTimeFormat(undefined, { timeZone: v });
+  Intl.DateTimeFormat(undefined, { timeZone: v })
 }

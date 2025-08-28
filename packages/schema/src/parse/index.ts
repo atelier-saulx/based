@@ -12,14 +12,11 @@ import {
   expectVersion,
 } from './assert.js'
 import { deepCopy } from '@based/utils'
-import {
-  satisfies,
-  parseRange,
-  parse as parseVersion,
-  Range,
-  rangeIntersects,
-} from '@std/semver'
-
+import { parse as parseVersion } from './semver/parse.js'
+import { parseRange } from './semver/parse_range.js'
+import { satisfies } from './semver/satisfies.js'
+import { rangeIntersects } from './semver/range_intersects.js'
+import type { Range } from './semver/types.js'
 export { getPropType }
 
 export class SchemaParser {
