@@ -4,6 +4,8 @@ import { BasedServer } from '@based/server'
 import { BasedDb } from '@based/db'
 import { BasedClient as BasedClientOld } from '@based/client-old'
 import getPort from 'get-port'
+import { setTimeout } from 'node:timers/promises'
+import { deepEqual } from 'node:assert'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -63,22 +65,33 @@ test('db query', async (t: T) => {
     name: 'xx',
   })
 
-  const res = await client.call('getUser')
-  const resQuery = await new Promise((resolve) => {
-    client.query('users').subscribe((res) => resolve(res))
-  })
+  let nextResolve: any
+  let nextResolveOld: any
 
+  const res = await client.call('getUser')
   const resOld = await clientOld.call('getUser')
-  const resQueryOld = await new Promise((resolve) => {
-    clientOld.query('users').subscribe((res) => resolve(res))
-    db.create('user', {
-      name: 'xx',
-    })
-  })
+
+  client.query('users').subscribe((res) => nextResolve?.(res))
+  clientOld.query('users').subscribe((res) => nextResolveOld?.(res))
+  const [resQuery, resQueryOld] = await Promise.all([
+    new Promise((r) => (nextResolve = r)),
+    new Promise((r) => (nextResolveOld = r)),
+  ])
 
   t.true(typeof resQuery === 'object')
   t.true(typeof res === 'object')
   t.deepEqual(res, resOld)
   t.deepEqual(resQuery, resQueryOld)
-  console.log({ res, resOld, resQuery, resQueryOld })
+
+  db.create('user', { name: 'yyy' })
+  const [resQuery2, resQueryOld2] = await Promise.all([
+    new Promise((r) => (nextResolve = r)),
+    new Promise((r) => (nextResolveOld = r)),
+  ])
+
+  deepEqual(resQuery2, [
+    { id: 1, name: 'xx' },
+    { id: 2, name: 'yyy' },
+  ])
+  deepEqual(resQuery2, resQueryOld2)
 })
