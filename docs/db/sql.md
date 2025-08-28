@@ -211,48 +211,6 @@ Result:
 
 ### And and Or
 
-### Insert
-
-```sql
-INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
-VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-```
-
-```js
-db.create('customers', {
-  companyName: 'Cardinal',
-  contactName: 'Tom B. Erichsen',
-  address: 'Skagen 21',
-  city: 'Stavanger',
-  postalCode: '4006',
-  country: 'Norway',
-})
-```
-
-### Update
-
-```sql
-UPDATE customers
-SET contact_name = 'Haakon Christensen'
-WHERE customer_id = 1;
-```
-
-```js
-db.update('customers', 1, {
-  contactName: 'Haakon Christensen',
-})
-```
-
-### Delete
-
-```sql
-DELETE FROM customers WHERE customer_name='Cardinal';
-```
-
-```js
-await db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
-```
-
 ### Null Values
 
 ### Aggregate Functions
@@ -803,8 +761,13 @@ Modifying Data
 
 ### Insert
 
+```sql
+INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
+VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
+```
+
 ```js
-const res = db.create('customers', {
+db.create('customers', {
   companyName: 'Cardinal',
   contactName: 'Tom B. Erichsen',
   address: 'Skagen 21',
@@ -816,8 +779,14 @@ const res = db.create('customers', {
 
 ### Update
 
+```sql
+UPDATE customers
+SET contact_name = 'Haakon Christensen'
+WHERE customer_id = 1;
+```
+
 ```js
-db.update('customers', id, {
+db.update('customers', 1, {
   contactName: 'Haakon Christensen',
 })
 ```
@@ -826,18 +795,31 @@ db.update('customers', id, {
 
 **Deleting a single node**
 
-```js
-await db.delete('customers', id)
+```sql
+DELETE FROM customers WHERE customer_name='Cardinal';
 ```
 
+```js
+await db.delete('customers', (await db.query('customers').include('id').filter('companyName', '=', 'Cardinal').get().toObject())[0].id)
+```
 
 **Delete WELLI**
+
+```sql
+DELETE FROM customers
+WHERE customer_id = 'WELLI';
+```
 
 ```js
 db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
 ```
 
 **Delete all orders by WANDK**
+
+```sql
+DELETE FROM orders
+WHERE CustomerID = 'WANDK';
+```
 
 ```js
 const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
@@ -846,6 +828,9 @@ for (const order of wandkOrders) {
   db.delete('orders', order.id)
 }
 ```
+
+Note that these queries don't delete entries from *OrderDetails* that should be
+also deleted to completely wipe the orders of this customers.
 
 Triggers
 --------
@@ -856,6 +841,32 @@ or `UPDATE`. The equivalent of a trigger in Based DB is called hook.
 In the following example we calculate the discount amount for each item in
 orders on creation and update. Finally we find the average discount amount
 int a query.
+
+```sql
+-- Trigger for INSERT
+CREATE TRIGGER trg_order_details_insert
+ON order_details
+AFTER INSERT
+AS
+BEGIN
+    UPDATE od
+    SET discount_amount = od.unit_price * od.discount
+    FROM order_details od
+    INNER JOIN inserted i ON od.order_id = i.order_id AND od.product_id = i.product_id;
+END;
+
+-- Trigger for UPDATE
+CREATE TRIGGER trg_order_details_update
+ON OrderDetails
+AFTER UPDATE
+AS
+BEGIN
+    UPDATE od
+    SET discount_amount = od.unit_price * od.discount
+    FROM order_details od
+    INNER JOIN inserted i ON od.order_id = i.order_id AND od.product_id = i.product_id;
+END;
+```
 
 ```js
 const schema = deepCopy(defaultSchema)
@@ -875,5 +886,7 @@ schema.types.orderDetails['hooks'] = {
 await createNorthwindDb(db, schema as Schema)
 
 // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
+// or with the trigger:
+// SELECT Avg(discount_amount) AS [Average discount] FROM [order_details];
 await db.query('orderDetails').avg('discountAmount').get().inspect()
 ```
