@@ -153,7 +153,8 @@ export function foreachBlock(
   includeEmptyBlocks: boolean = false,
 ) {
   const step = def.blockCapacity
-  const lastId = native.getTypeInfo(def.id, db.dbCtxExternal)[1]
+  const lastId = def.lastId || native.getTypeInfo(def.id, db.dbCtxExternal)[1]
+
   for (let start = 1; start <= lastId; start += step) {
     const end = start + step - 1
     const hash = new Uint8Array(16)

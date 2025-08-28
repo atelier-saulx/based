@@ -13,7 +13,7 @@ import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
-import { schedule } from '../drain.js'
+import { drain, schedule } from '../drain.js'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
@@ -155,7 +155,6 @@ export const writeCreate = (
     if (!opts?.unsafe) {
       throw 'Invalid payload. "id" not allowed'
     }
-
     ctx.id = payload.id
   } else {
     if (!(schema.id in ctx.created)) {
@@ -165,14 +164,6 @@ export const writeCreate = (
     }
     ctx.id = ctx.created[schema.id] + 1
   }
-
-  // TODO remove this, this is only for migration
-  schema.lastId ??= 0
-  if (schema.lastId < payload.id) {
-    schema.lastId = payload.id
-  }
-
-  // console.log(type, ctx.id, payload, schema.lastId)
 
   if (ctx.defaults) {
     ctx.defaults = 0
@@ -211,7 +202,9 @@ export const writeCreate = (
   writeDefaults(ctx, payload)
   writeSortable(ctx)
   writeSortableText(ctx)
-  ctx.created[schema.id]++
+  if (schema.id in ctx.created) {
+    ctx.created[schema.id]++
+  }
 }
 
 export function create(

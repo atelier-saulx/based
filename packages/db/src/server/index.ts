@@ -382,13 +382,8 @@ export class DbServer extends DbShared {
         }
 
         const lastId =
-          typeDef.lastId || native.getTypeInfo(typeId, this.dbCtxExternal)?.[1]
-
-        // console.log(
-        //   { typeId, lastId },
-        //   native.getTypeInfo(typeId, this.dbCtxExternal),
-        // )
-
+          typeDef.lastId ||
+          native.getTypeInfo(typeDef.id, this.dbCtxExternal)[1]
         // TODO replace this with Ctx.created
         const offset = lastId
         // write the offset into payload for zig to use

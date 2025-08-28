@@ -4,6 +4,7 @@ import { DbServer } from '../../src/server/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { BasedDb, getDefaultHooks } from '../../src/index.js'
+import { wait } from '@based/utils'
 
 await test('client server schema updates', async (t) => {
   const server = new DbServer({
@@ -183,7 +184,7 @@ await test('rapid modifies during schema update', async (t) => {
   const client2 = new DbClient({
     hooks: getDefaultHooks(server),
   })
-
+  // console.log('set schema 1')
   await client1.setSchema({
     types: {
       user: {
@@ -193,14 +194,16 @@ await test('rapid modifies during schema update', async (t) => {
   })
 
   const youzies = 500_000
+
   let a = youzies
   while (a--) {
     client2.create('user', {
       name: 'youzi' + a,
     })
   }
-  await client2.drain()
 
+  await client2.drain()
+  // console.log('set schema 2')
   await client1.setSchema({
     types: {
       user: {
@@ -210,7 +213,7 @@ await test('rapid modifies during schema update', async (t) => {
     },
   })
 
-  const jamesies = 1000
+  const jamesies = 1e3
   let b = jamesies
   while (b--) {
     const name = 'jamex' + b
@@ -222,6 +225,8 @@ await test('rapid modifies during schema update', async (t) => {
   }
 
   const all = await client2.query('user').range(0, 1000_000).get().toObject()
+  // await wait(1e3)
+  // console.log(all.length, all.slice(0, 10), all.slice(-10))
   deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 })
   deepEqual(all.at(-1), { id: 501000, name: 'jamex0', age: 0 })
   deepEqual(all.length, youzies + jamesies)

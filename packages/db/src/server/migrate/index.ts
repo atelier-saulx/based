@@ -196,11 +196,11 @@ export const migrate = async (
   }
 
   let msg: any
-  let schemaTypesParsed: any
+  // let schemaTypesParsed: any
 
-  while ((msg = receiveMessageOnPort(port1))) {
-    schemaTypesParsed = msg.message
-  }
+  // while ((msg = receiveMessageOnPort(port1))) {
+  //   schemaTypesParsed = msg.message
+  // }
 
   server.dbCtxExternal = toCtx
   server.sortIndexes = {}
@@ -209,11 +209,11 @@ export const migrate = async (
   // pass last node IDS { type: lastId }
   setSchemaOnServer(server, toSchema)
 
-  for (const key in schemaTypesParsed) {
-    // maybe only send the lastId
-    const def = server.schemaTypesParsed[key]
-    def.lastId = schemaTypesParsed[key].lastId
-  }
+  // for (const key in schemaTypesParsed) {
+  //   // maybe only send the lastId
+  //   const def = server.schemaTypesParsed[key]
+  //   def.lastId = schemaTypesParsed[key].lastId
+  // }
   // -----------------------------------------
 
   tmpDb.server.dbCtxExternal = fromCtx
