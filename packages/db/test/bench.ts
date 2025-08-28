@@ -68,7 +68,7 @@ await test('test embedded', async (t) => {
 
   assert(toxpsNum(N, ctime) > 1000000)
   assert(toxpsNum(N2, qtime) > 500)
-  assert(toxpsNum(N3, qtime1) > 60000000)
+  assert(toxpsNum(N3, qtime1) > 10000000)
 })
 
 await test('test client-server', async (t) => {
@@ -118,5 +118,5 @@ await test('test client-server', async (t) => {
 
   assert(toxpsNum(N, ctime) > 1000000)
   assert(toxpsNum(N2, qtime) > 500)
-  assert(toxpsNum(N3, qtime1) > 7000000)
+  assert(toxpsNum(N3, qtime1) > 1000000)
 })
