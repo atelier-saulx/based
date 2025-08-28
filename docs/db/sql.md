@@ -20,10 +20,10 @@ and some examples
 ```mermaid
 classDiagram
 categories : categoryName __string__
-categories : description __text__
+categories : description __string__
 categories : picture __binary__
 categories --> products : products[]
-customerDemographics : customerDesc __text__
+customerDemographics : customerDesc __string__
 customerDemographics --> customers : customers[]
 customers : customerId __alias__
 customers : companyName __string__
@@ -52,7 +52,7 @@ employees : country __string__
 employees : homePhone __string__
 employees : extension __string__
 employees : photo __binary__
-employees : notes __text__
+employees : notes __string__
 employees --> employees : reportsTo
 employees : photoPath __string__
 employees --> territories : territories[]
