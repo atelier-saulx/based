@@ -285,7 +285,6 @@ pub fn filter(
                     }
                 }
             }
-
             i += querySize + 3;
         }
     }

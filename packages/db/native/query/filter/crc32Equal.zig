@@ -12,7 +12,7 @@ pub inline fn crc32Equal(
     const origLen = read(u32, query, 4);
     var valueLen: usize = undefined;
     if (prop == Prop.STRING and v[1] == 1) {
-        valueLen = read(u32, v, 2); // is this correct?
+        valueLen = read(u32, v, 2);
     } else {
         valueLen = v.len - 6;
     }
