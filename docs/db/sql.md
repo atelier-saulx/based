@@ -837,9 +837,9 @@ await db.delete('customers', id)
 db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
 ```
 
-**Delete orders by WANDK**
+**Delete all orders by WANDK**
 
-```
+```js
 const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
 const wandkOrders = await db.query('orders').filter('customer', '=', wandk).get()
 for (const order of wandkOrders) {
