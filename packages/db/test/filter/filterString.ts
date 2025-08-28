@@ -666,7 +666,7 @@ await test('includes and neq', async (t) => {
       ent: {
         props: {
           city: { type: 'string', maxBytes: 15 },
-          country: { type: 'string', maxBytes: 15 }
+          country: { type: 'string', maxBytes: 15 },
         },
       },
     },
@@ -702,7 +702,7 @@ await test('includes and neq', async (t) => {
   })
 
   deepEqual(
-    db
+    await db
       .query('ent')
       .filter('country', 'includes', ['Italy', 'Germany'])
       .filter('city', '!=', 'Berlin')
@@ -710,6 +710,6 @@ await test('includes and neq', async (t) => {
     [
       { id: 1, city: 'Rome', country: 'Italy' },
       { id: 3, city: 'Cologne', country: 'Germany' },
-    ]
+    ],
   )
 })
