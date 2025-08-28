@@ -1,6 +1,6 @@
 {
   "name": "@based/protocol",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "files": [
     "dist",
@@ -8,10 +8,8 @@
     "package.json",
     "!dist/**/*.map"
   ],
-  "main": "./dist/index.js",
   "exports": {
-    "./db-read-schema": "./dist/read/readSchema/schema.js",
-    "./db-read": "./dist/read/read.js"
+    "./db-read": "./dist/db-read/read.js"
   },
   "scripts": {
     "build": "tsc",
@@ -22,7 +20,6 @@
   "sideEffects": false,
   "type": "module",
   "devDependencies": {
-    "@based/db": "^0.0.71",
     "@saulx/prettier-config": "2.0.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.5.3",

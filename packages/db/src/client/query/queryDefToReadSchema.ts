@@ -1,4 +1,4 @@
-import type { IncludeOpts, QueryDef, Target } from '@based/db'
+// import type { IncludeOpts, QueryDef, Target } from '@based/db'
 import { inverseLangMap, langCodesMap } from '@based/schema'
 import {
   PropDef,
@@ -14,9 +14,8 @@ import {
   ReaderPropDef,
   ReaderSchema,
   ReaderSchemaEnum,
-} from '../types.js'
-
-// TODO lang will be different can just be the code no longer need a map
+} from '@based/protocol/db-read'
+import { IncludeOpts, QueryDef, Target } from './types.js'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,

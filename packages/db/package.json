@@ -44,10 +44,10 @@
     "@based/hash": "1.0.0",
     "@based/schema": "5.0.0-alpha.27",
     "@based/utils": "^1.0.0",
+    "@based/protocol": "0.0.2",
     "@std/semver": "npm:@jsr/std__semver@^1.0.5",
     "exit-hook": "^4.0.0",
-    "picocolors": "^1.1.0",
-    "@based/protocol": "0.0.1"
+    "picocolors": "^1.1.0"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
