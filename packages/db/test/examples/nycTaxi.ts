@@ -1111,7 +1111,7 @@ const day2enum = {
 
 async function parseTripDump(filename: string) {
   const compressedData = await readFile(
-    join(import.meta.dirname, '..', 'shared', 'nyc_taxi', filename).replace(
+    join(import.meta.dirname, 'nyc_taxi', filename).replace(
       '/dist',
       '',
     ),
@@ -1144,7 +1144,7 @@ class Loading {
   }
 }
 
-await test.skip('taxi', async (t) => {
+await test('taxi', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -1177,10 +1177,18 @@ await test.skip('taxi', async (t) => {
         },
       },
       trip: {
+        hooks: {
+          create(payload: Record<string, any>) {
+            payload.pickupYear = new Date(`${payload.pickup.getUTCFullYear()}`).getUTCFullYear()
+            payload.pickupHour = payload.pickup.getUTCHours()
+            payload.avgSpeed = payload.tripDistance /
+              (((payload.dropoff.getTime() - payload.pickup.getTime()) / 3.6e6) || 0)
+          },
+        },
         props: {
           vendor: { ref: 'vendor', prop: 'trips' },
-          pickupYear: 'int16', // TODO a hack to filter by year
-          pickupHour: 'uint8', // TODO a hack to filter by hour
+          pickupYear: 'int16',
+          pickupHour: 'uint8',
           pickup: 'timestamp',
           dropoff: 'timestamp',
           pickupLoc: { ref: 'zone', prop: 'pickups' },
@@ -1292,12 +1300,8 @@ await test.skip('taxi', async (t) => {
     const dropoff = new Date(trip.tpep_dropoff_datetime)
     db.create('trip', {
       vendor,
-      pickupYear: new Date(`${pickup.getUTCFullYear()}`).getUTCFullYear(),
-      pickupHour: pickup.getUTCHours(),
       pickup,
       dropoff,
-      avgSpeed:
-        trip.trip_distance / ((dropoff.getTime() - pickup.getTime()) / 3.6e6),
       passengerCount: sanitize(Number(trip.passenger_count)),
       tripDistance: trip.trip_distance,
       rate,
@@ -1333,7 +1337,7 @@ await test.skip('taxi', async (t) => {
   loading.start()
   const taxiDumps = (
     await readdir(
-      join(import.meta.dirname, 'shared', 'nyc_taxi').replace('/dist', ''),
+      join(import.meta.dirname, 'nyc_taxi').replace('/dist', ''),
     )
   ).slice(0, N)
   await Promise.all(
