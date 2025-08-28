@@ -18,9 +18,12 @@ const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
-    const next = i + 11 + valueSize;
-    const query = q[i + 11 .. next];
+    const next = i + 10 + valueSize;
     const mainLen = read(u16, q, i + 4);
+
+    // const next = if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
+
+    const query = q[i + 11 .. next + 1];
     const op: Op = @enumFromInt(q[i + 10]);
     const start = read(u16, q, i + 2);
     var value: []u8 = undefined;
@@ -63,8 +66,8 @@ pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *Lib
     const isText: bool = prop == Prop.TEXT;
 
     const op: Op = @enumFromInt(q[i + 10]);
-    const next = if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
-    var query = q[i + 11 .. next];
+    const next = i + 10 + valueSize; // if (mainLen != 0) i + 10 + valueSize else i + 11 + valueSize;
+    var query = q[i + 11 .. next + 1];
     var value: []u8 = undefined;
     var pass = true;
     if (mainLen != 0) {

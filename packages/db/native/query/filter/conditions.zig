@@ -36,6 +36,7 @@ pub inline fn runConditions(
 ) bool {
     var i: usize = 0;
     while (i < q.len) {
+        // std.debug.print("{d} {any} -- {any} \n", .{ q, i, q[i .. i + 5] });
         const match = @as(Type, @enumFromInt(q[i])) == Type.default;
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
@@ -43,6 +44,8 @@ pub inline fn runConditions(
         if (result[1] != match) {
             return false;
         }
+        // std.debug.print("{d} \n", .{result[0]});
+
         i += result[0];
     }
     return true;
