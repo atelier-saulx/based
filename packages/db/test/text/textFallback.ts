@@ -79,7 +79,7 @@ await test('textFallback', async (t) => {
       .query('project')
       .locale('nl')
       .include('title')
-      .filter('title', 'has', 'English')
+      .filter('title', 'includes', 'English')
       .get(),
     [
       {

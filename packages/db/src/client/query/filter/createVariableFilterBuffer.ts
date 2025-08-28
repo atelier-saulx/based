@@ -3,8 +3,8 @@ import {
   EQUAL,
   EQUAL_CRC32,
   FILTER_MODE,
-  HAS,
-  HAS_TO_LOWER_CASE,
+  INCLUDES,
+  INCLUDES_TO_LOWER_CASE,
   LIKE,
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
@@ -24,7 +24,7 @@ const parseValue = (
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
-  if (ctx.operation === HAS_TO_LOWER_CASE && typeof value === 'string') {
+  if (ctx.operation === INCLUDES_TO_LOWER_CASE && typeof value === 'string') {
     value = value.toLowerCase()
   }
 
@@ -118,9 +118,9 @@ export const createVariableFilterBuffer = (
 
   if (
     ctx.operation === EQUAL ||
-    ctx.operation === HAS ||
+    ctx.operation === INCLUDES ||
     ctx.operation === LIKE ||
-    ctx.operation === HAS_TO_LOWER_CASE
+    ctx.operation === INCLUDES_TO_LOWER_CASE
   ) {
     if (prop.separate) {
       if (

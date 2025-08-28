@@ -77,14 +77,14 @@ await test('simple', async (t) => {
     .query('dialog')
     .locale('it')
     .include('id', 'fun')
-    .filter('fun', 'has', 'fliperdieflaperdiefloep', { lowerCase: true })
+    .filter('fun', 'includes', 'fliperdieflaperdiefloep', { lowerCase: true })
     .get()
   deepEqual(result.toObject(), [], 'Filter fun with non-existent text')
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
-    .filter('fun', 'has', 'italy', { lowerCase: true })
+    .filter('fun', 'includes', 'italy', { lowerCase: true })
     .get()
 
   deepEqual(
@@ -106,7 +106,7 @@ await test('simple', async (t) => {
     .query('dialog')
     .locale('it')
     .include('id', 'fun')
-    .filter('fun', 'has', 'italy', { lowerCase: true })
+    .filter('fun', 'includes', 'italy', { lowerCase: true })
     .get()
   deepEqual(
     result.toObject(),
@@ -122,14 +122,14 @@ await test('simple', async (t) => {
   result = await db
     .query('dialog')
     .include('id', 'fun')
-    .filter('fun.en', 'has', 'italy', { lowerCase: true })
+    .filter('fun.en', 'includes', 'italy', { lowerCase: true })
     .get()
   deepEqual(result.toObject(), [], 'Filter fun.en with text italy')
 
   result = await db
     .query('dialog')
     .include('id', 'fun')
-    .filter('fun.it', 'has', 'italy', { lowerCase: true })
+    .filter('fun.it', 'includes', 'italy', { lowerCase: true })
     .get()
   deepEqual(
     result.toObject(),
@@ -150,7 +150,7 @@ await test('simple', async (t) => {
     .query('dialog')
     .locale('en')
     .include('id', 'fun')
-    .filter('fun.it', 'has', 'italy', { lowerCase: true })
+    .filter('fun.it', 'includes', 'italy', { lowerCase: true })
     .get()
   deepEqual(
     result.toObject(),

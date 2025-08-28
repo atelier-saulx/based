@@ -37,7 +37,7 @@ await test('filter api: object', async (t) => {
     await db
       .query('user')
       .include('friends')
-      .filter('friends', 'has', { id: 2 })
+      .filter('friends', 'includes', { id: 2 })
       .get(),
     [
       { id: 1, friends: [{ id: 2 }] },
@@ -50,7 +50,7 @@ await test('filter api: object', async (t) => {
     await db
       .query('user')
       .include('friends')
-      .filter('friends', 'has', [{ id: 2 }, { id: 1 }])
+      .filter('friends', 'includes', [{ id: 2 }, { id: 1 }])
       .get(),
     [
       { id: 1, friends: [{ id: 2 }] },
