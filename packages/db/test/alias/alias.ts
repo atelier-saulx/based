@@ -1,6 +1,6 @@
+import { notEqual } from 'assert'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
-import { notEqual } from 'node:assert'
 import test from '../shared/test.js'
 
 await test('simple', async (t) => {
@@ -31,7 +31,7 @@ await test('simple', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', user1).get(),
+    await db.query('user', await user1).get(),
     {
       id: 1,
       externalId: 'cool',
@@ -74,7 +74,6 @@ await test('simple', async (t) => {
       },
     ],
   )
-
   const res1 = await db.upsert('user', {
     externalId: 'potato',
     potato: 'success',
@@ -85,18 +84,15 @@ await test('simple', async (t) => {
     externalId: 'potato',
     potato: 'success',
   })
-
   const res2 = await db.upsert('user', {
     externalId: 'potato',
     potato: 'wrong',
   })
-
   deepEqual((await db.query('user', res2).get()).toObject(), {
     id: 3,
     externalId: 'potato',
     potato: 'wrong',
   })
-
   deepEqual(
     (
       await db.query('user', { externalId: 'i-dont-exists-haha!' }).get()
@@ -156,43 +152,24 @@ await test('alias - references', async (t) => {
   await db.upsert('user', {
     name: '2',
     email: '2@saulx.com',
-    bestFriend: {
-      upsert: {
-        email: 'jim@saulx.com',
-      },
-    },
+    bestFriend: db.upsert('user', { email: 'jim@saulx.com' }),
     friends: {
-      upsert: [
-        {
-          email: 'jim@saulx.com',
-          name: 'jim',
-        },
-      ],
+      add: [db.upsert('user', { email: 'jim@saulx.com' })],
     },
   })
 
   deepEqual(
-    await db.query('user').include('friends').get().toObject(),
+    await db.query('user').include('email', 'friends').get().toObject(),
     [
       {
-        friends: [
-          {
-            email: 'jim@saulx.com',
-            id: 2,
-            name: 'jim',
-          },
-        ],
         id: 1,
+        email: 'jim@saulx.com',
+        friends: [{ id: 2, name: '2', email: '2@saulx.com' }],
       },
       {
-        friends: [
-          {
-            email: '2@saulx.com',
-            id: 1,
-            name: '2',
-          },
-        ],
         id: 2,
+        email: '2@saulx.com',
+        friends: [{ id: 1, email: 'jim@saulx.com', name: '' }],
       },
     ],
     'simple',
@@ -201,19 +178,9 @@ await test('alias - references', async (t) => {
   await db.upsert('user', {
     name: '2',
     email: '2@saulx.com',
-    bestFriend: {
-      upsert: {
-        email: 'jim@saulx.com',
-        name: 'jim',
-      },
-    },
+    bestFriend: db.upsert('user', { email: 'jim@saulx.com', name: 'jim' }),
     friends: {
-      upsert: [
-        {
-          email: 'jim@saulx.com',
-          name: 'jim',
-        },
-      ],
+      add: [db.upsert('user', { email: 'jim@saulx.com', name: 'jim' })],
     },
   })
 
@@ -222,25 +189,13 @@ await test('alias - references', async (t) => {
     [
       {
         id: 1,
-        email: '2@saulx.com',
-        friends: [
-          {
-            email: 'jim@saulx.com',
-            id: 2,
-            name: 'jim',
-          },
-        ],
+        email: 'jim@saulx.com',
+        friends: [{ id: 2, name: '2', email: '2@saulx.com' }],
       },
       {
         id: 2,
-        email: 'jim@saulx.com',
-        friends: [
-          {
-            email: '2@saulx.com',
-            id: 1,
-            name: '2',
-          },
-        ],
+        email: '2@saulx.com',
+        friends: [{ id: 1, name: 'jim', email: 'jim@saulx.com' }],
       },
     ],
     'update 1',
@@ -252,13 +207,7 @@ await test('alias - references', async (t) => {
       .filter('email', 'includes', '2', { lowerCase: true })
       .get()
       .toObject(),
-    [
-      {
-        email: '2@saulx.com',
-        id: 1,
-        name: '2',
-      },
-    ],
+    [{ id: 2, name: '2', email: '2@saulx.com' }],
     'update 2',
   )
 })

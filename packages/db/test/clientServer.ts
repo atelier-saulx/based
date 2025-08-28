@@ -94,7 +94,7 @@ await test('client server basic', async (t) => {
 
 await test('client server rapid fire', async (t) => {
   const promises = []
-  const clientsN = 1
+  const clientsN = 2
   const nodesN = 100
   const multi = 2
   const { clients } = await start(t, clientsN)

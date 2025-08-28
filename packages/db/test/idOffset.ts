@@ -19,7 +19,7 @@ await test('idOffset', async (t) => {
     },
   })
 
-  let i = 10
+  let i = 100
   while (i--) {
     const userId = await db.create('user', {})
 

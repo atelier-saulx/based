@@ -114,6 +114,8 @@ function propParser<PropType extends SchemaAnyProp>(
     if (typeof prop === 'string') {
       // allow string
       if (allowShorthand === 0) {
+        // @ts-ignore
+        required?.type?.(prop, { type: prop }, ctx)
         return
       }
       throw Error(EXPECTED_OBJ)

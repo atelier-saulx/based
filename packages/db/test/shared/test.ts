@@ -202,7 +202,7 @@ const test = async (
       ),
     )
     const msg =
-      (err.stack ?? err.msg ?? err)
+      (err.stack || err.msg || err.message || err)
         .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
@@ -240,7 +240,7 @@ const test = async (
     )
 
     const msg =
-      (err.stack ?? err.msg ?? err)
+      (err.stack || err.msg || err.message || err)
         .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'

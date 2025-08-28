@@ -23,7 +23,7 @@ pub const ModifyCtx = struct {
 
 pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
     var j: usize = 0;
-    while (j < ctx.typeInfo.len) : (j += 10) {
+    while (j < ctx.typeInfo.len) : (j += 6) {
         const tId = read(u16, ctx.typeInfo, j);
         if (tId == typeId) {
             return read(u32, ctx.typeInfo, j + 2);

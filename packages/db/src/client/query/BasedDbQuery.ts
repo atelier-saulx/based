@@ -472,6 +472,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     rawTarget?:
       | QueryByAliasObj
       | number
+      | Promise<number>
       | Uint32Array
       | (QueryByAliasObj | number)[],
     skipValidation?: boolean, // for internal use
@@ -512,6 +513,9 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     try {
       if (!this.db.schema) {
         await this.db.once('schema')
+      }
+      if ('id' in this.target) {
+        this.target.id = await this.target.id
       }
       buf = registerQuery(this)
     } catch (err) {

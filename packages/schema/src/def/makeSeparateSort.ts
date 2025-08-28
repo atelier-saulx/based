@@ -15,18 +15,18 @@ export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
     }
   }
 
-  result.seperateSort.buffer = new Uint8Array(max + 1)
+  result.separateSort.buffer = new Uint8Array(max + 1)
   for (const f of result.separate) {
     if (
       f.typeIndex === STRING ||
       f.typeIndex === ALIAS ||
       f.typeIndex === CARDINALITY
     ) {
-      result.seperateSort.buffer[f.prop] = 1
-      result.seperateSort.props.push(f)
-      result.seperateSort.size++
+      result.separateSort.buffer[f.prop] = 1
+      result.separateSort.props.push(f)
+      result.separateSort.size++
     }
   }
-  result.seperateSort.bufferTmp = new Uint8Array(max + 1)
-  result.seperateSort.buffer.set(result.seperateSort.bufferTmp)
+  result.separateSort.bufferTmp = new Uint8Array(max + 1)
+  result.separateSort.buffer.set(result.separateSort.bufferTmp)
 }

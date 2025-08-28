@@ -109,6 +109,7 @@ export const drainQueue = (client: BasedClient) => {
           l += len
         }
 
+        // reuse resizable array
         const n = new Uint8Array(l)
         let c = 0
         for (const b of buffs) {

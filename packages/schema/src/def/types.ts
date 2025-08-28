@@ -176,15 +176,15 @@ export type SchemaTypeDef = {
   separateSortProps: number
   separateSortText: number
   hasSeperateSort: boolean
-  seperateSort: SchemaSortUndefinedHandler
+  separateSort: SchemaSortUndefinedHandler
   hasSeperateTextSort: boolean
-  seperateTextSort: SchemaSortUndefinedHandler & {
+  separateTextSort: SchemaSortUndefinedHandler & {
     noUndefined: Uint8Array
     localeStringToIndex: Map<string, Uint8Array> // [langCode][index]
     localeToIndex: Map<LangCode, number>
   }
   hasSeperateDefaults: boolean
-  seperateDefaults?: { props: Map<number, PropDef>; bufferTmp: Uint8Array }
+  separateDefaults?: { props: Map<number, PropDef>; bufferTmp: Uint8Array }
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>

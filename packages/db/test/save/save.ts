@@ -776,7 +776,7 @@ await test('edge val', async (t) => {
   //await db.query('phase').include('scenarios.$sequence').get().inspect()
   await db.save()
 
-  db.update('phase', phase, {
+  await db.update('phase', phase, {
     scenarios: {
       delete: [scenario1],
     },

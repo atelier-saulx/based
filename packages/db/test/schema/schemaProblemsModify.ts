@@ -33,6 +33,7 @@ await test('schema problems modify', async (t) => {
   const bla = Object.keys(types)
 
   await db.setSchema({
+    locales: { en: {} },
     types,
   })
 

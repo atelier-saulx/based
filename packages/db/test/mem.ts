@@ -48,9 +48,7 @@ await test('mem', async (t) => {
         db.create('data', {
           age: i,
           name: `Mr FLAP ${i}`,
-          a: x
-            ? { id: ids[rnd(0, ids.length - 1)], $derp: i }
-            : null,
+          a: x ? { id: ids[rnd(0, ids.length - 1)], $derp: i } : null,
         }),
       )
     }
@@ -75,7 +73,7 @@ await test('mem', async (t) => {
     )
 
     for (let i = 0; i < amount; i++) {
-      db.delete('data', ids[i].tmpId)
+      db.delete('data', ids[i])
     }
 
     await db.drain()

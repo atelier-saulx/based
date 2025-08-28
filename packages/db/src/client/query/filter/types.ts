@@ -71,7 +71,7 @@ export const STARTS_WITH_LOWER_CASE = 14
 export const ENDS_WITH_LOWER_CASE = 15
 export const LIKE = 18
 // -------------------------------------------
-// only valid for seperate fields
+// only valid for separate fields
 export const EXISTS = 19
 
 export type OPERATOR =

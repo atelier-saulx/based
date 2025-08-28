@@ -1,7 +1,8 @@
 import { updateTypeDefs } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import { DbSchema } from '../schema.js'
-import { execCtxQueue } from './flushModify.js'
+import { cancel } from './modify/drain.js'
+import { Ctx } from './modify/Ctx.js'
 
 export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   if (client.schema && client.schema.hash === schema.hash) {
@@ -12,14 +13,12 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   client.schemaTypesParsed = schemaTypesParsed
   client.schemaTypesParsedById = schemaTypesParsedById
 
-  if (client.modifyCtx.len > 8) {
+  if (client.modifyCtx.index > 8) {
     console.info('Modify cancelled - schema updated')
   }
 
-  // cancel modify queue
-  const resCtx = client.modifyCtx.ctx
-  client.modifyCtx.reset()
-  execCtxQueue(resCtx, true)
+  cancel(client.modifyCtx, Error('Schema changed - in-flight modify cancelled'))
+  client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.array)
 
   // resubscribe
   for (const [q, store] of client.subs) {

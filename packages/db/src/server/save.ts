@@ -158,7 +158,9 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
 }
 
 export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
-  if (inhibitSave(db, opts)) return
+  if (inhibitSave(db, opts)) {
+    return
+  }
 
   let ts = Date.now()
   db.saveInProgress = true
@@ -179,12 +181,14 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       typeId: number
       start: number
     }[] = []
+
     if (opts.forceFullDump) {
       // reset the state just in case
       db.verifTree = new VerifTree(db.schemaTypesParsed)
 
       // We use db.verifTree.types instead of db.schemaTypesParsed because it's
       // ordered.
+
       for (const { typeId } of db.verifTree.types()) {
         const def = db.schemaTypesParsedById[typeId]
         foreachBlock(
