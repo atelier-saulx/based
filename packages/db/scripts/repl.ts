@@ -14,7 +14,6 @@ import {
   INT16,
   INT32,
   INT8,
-  META_SELVA_STRING,
   MICRO_BUFFER,
   NULL,
   NUMBER,
@@ -33,7 +32,7 @@ import {
   JSON as SCHEMA_JSON,
 } from '@based/schema/def'
 import { readDoubleLE, readUint32 } from '@based/utils'
-import { AggregateType } from '../dist/src/client/query/aggregates/types.js'
+import {AggregateType} from '@based/protocol/db-read'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
@@ -64,7 +63,6 @@ typeIndex2Align[VECTOR] = 'l'
 typeIndex2Align[SCHEMA_JSON] = 'l'
 typeIndex2Align[OBJECT] = 'l'
 typeIndex2Align[COLVEC] = 'l'
-typeIndex2Align[META_SELVA_STRING] = 'l'
 
 async function tabled(
   response: Promise<BasedQueryResponse> | BasedQueryResponse,
