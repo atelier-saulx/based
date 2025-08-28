@@ -219,79 +219,6 @@ await test('Basic SQL', async (t) => {
       (r) => ({ id: r.id, customer: r.companyName }),
     ),
   )
-
-  // SELECT orders.order_id, customers.company_name, orders.order_date
-  // FROM orders
-  // INNER JOIN customers ON orders.customer_id = customers.customer_id;
-  console.log('inner join')
-  console.log(
-    await db
-      .query('orders')
-      .include('customer.companyName', 'orderDate')
-      .range(0, 10)
-      .get()
-      .toObject(),
-  )
-
-  // SELECT customers.company_name, orders.order_id
-  // FROM customers
-  // LEFT JOIN orders
-  // ON customers.customer_id = orders.customer_id
-  // ORDER BY customers.company_name;
-  console.log('left join')
-  //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
-  console.dir(
-    await db
-      .query('customers')
-      .include('companyName', (q) => q('orders').include('id'))
-      .sort('companyName')
-      .range(0, 5)
-      .get()
-      .toObject(),
-    { depth: 10 },
-  )
-
-  // Right join TODO
-  // SELECT orders.order_id employees.Last_name, employees.first_name
-  // FROM orders
-  // RIGHT JOIN employees
-  // ON orders.employee_id = employees.employee_id
-  // ORDER BY orders.order_id;
-
-  // Full join TODO
-
-  // Self join
-  // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
-  // FROM customers A, customers B
-  // WHERE A.customer_id <> B.customer_id
-  // AND A.city = B.city
-  // ORDER BY A.city;
-  console.log('self join')
-  const selfJoinResult = []
-  ;(
-    (await db
-      .query('customers')
-      .include('customerId', 'companyName', 'city')
-      .get()
-      .toObject()) as {
-      id: number
-      customerId: string
-      city: string
-      companyName: string
-    }[]
-  ).forEach((a, _, customers) => {
-    customers.forEach((b) => {
-      if (a.city === b.city && a.customerId !== b.customerId) {
-        selfJoinResult.push({
-          customerA: a.customerId,
-          customerB: b.customerId,
-          city: a.city,
-        })
-      }
-    })
-  })
-  console.log(selfJoinResult)
-
   // Union
   // SELECT 'customer' AS Type, contact_name, city, country
   // FROM customers
@@ -403,6 +330,162 @@ await test('insert and update', async (t) => {
     .filter('companyName', '=', 'Cardinal')
     .get()
     .inspect()
+})
+
+await test('inner join', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwindDb(db)
+
+  // SELECT orders.order_id, customers.company_name, orders.order_date
+  // FROM orders
+  // INNER JOIN customers ON orders.customer_id = customers.customer_id;
+  await db
+    .query('orders')
+    .include('customer.companyName', 'orderDate')
+    .range(0, 10)
+    .get()
+    .inspect()
+})
+
+await test('left join', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwindDb(db)
+
+  // SELECT customers.company_name, orders.order_id
+  // FROM customers
+  // LEFT JOIN orders
+  // ON customers.customer_id = orders.customer_id
+  // ORDER BY customers.company_name;
+  //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
+  await db
+    .query('customers')
+    .include('companyName', (q) => q('orders').include('id'))
+    .sort('companyName')
+    .range(0, 5)
+    .get()
+    .inspect(10)
+})
+
+await test.skip('right join', async (t) => {
+  // Right join TODO
+  // SELECT orders.order_id employees.Last_name, employees.first_name
+  // FROM orders
+  // RIGHT JOIN employees
+  // ON orders.employee_id = employees.employee_id
+  // ORDER BY orders.order_id;
+})
+
+await test('full join', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwindDb(db)
+
+  db.delete('customers', (await db.query('customers', { customerId: 'WELLI' }).get()).id)
+
+  // Delete orders by WANDK
+  const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
+  const wandkOrders = await db.query('orders').filter('customer', '=', wandk).get()
+  for (const order of wandkOrders) {
+    db.delete('orders', order.id)
+  }
+
+  // SELECT customers.company_name, orders.order_id
+  // FROM customers
+  // FULL OUTER JOIN orders ON customers.customer_id=orders.customer_id
+  // ORDER BY customers.company_name;
+
+  const customers = await db.query('customers').get().toObject()
+  const orders = await db.query('orders').include('customer.id').get().toObject()
+  const result = [];
+
+  // LEFT JOIN: Customers with Orders
+  customers.forEach((customer) => {
+    const matchingOrders = orders.filter((order) => order?.customer?.id === customer.id)
+    if (matchingOrders.length > 0) {
+      matchingOrders.forEach((order) => {
+        result.push({
+          companyName: customer.companyName,
+          OrderId: order.id
+        })
+      })
+    } else {
+      result.push({
+        companyName: customer.companyName,
+        orderId: null
+      })
+    }
+  });
+
+  // RIGHT JOIN: Orders with no matching Customers
+  orders.forEach((order) => {
+    const customer = customers.find((c) => c.id === order.customer?.id);
+    if (!customer) {
+      result.push({
+        companyName: null,
+        orderId: order.id
+      });
+    }
+  });
+
+  // Sort by companyName
+  result.sort((a, b) => {
+    if (a.companyName === null) return 1;
+    if (b.companyName === null) return -1;
+    return a.companyName.localeCompare(b.companyName);
+  });
+
+  console.dir(result);
+})
+
+await test('self join', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await createNorthwindDb(db)
+
+  // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
+  // FROM customers A, customers B
+  // WHERE A.customer_id <> B.customer_id
+  // AND A.city = B.city
+  // ORDER BY A.city;
+  const result = []
+  ;(
+    (await db
+      .query('customers')
+      .include('customerId', 'companyName', 'city')
+      .get()
+      .toObject()) as {
+      id: number
+      customerId: string
+      city: string
+      companyName: string
+    }[]
+  ).forEach((a, _, customers) => {
+    customers.forEach((b) => {
+      if (a.city === b.city && a.customerId !== b.customerId) {
+        result.push({
+          customerA: a.customerId,
+          customerB: b.customerId,
+          city: a.city,
+        })
+      }
+    })
+  })
+
+  console.log(result)
 })
 
 await test('aggregates', async (t) => {
