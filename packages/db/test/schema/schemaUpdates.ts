@@ -203,7 +203,6 @@ await test('rapid modifies during schema update', async (t) => {
   }
 
   await client2.drain()
-  // console.log('set schema 2')
   await client1.setSchema({
     types: {
       user: {

@@ -230,7 +230,6 @@ const test = async (
       throw errs[0]
     }
   } catch (err) {
-    console.log(2, { err })
     counts.errors++
     console.log(
       styleText('red', `! ${name}`),

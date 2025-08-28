@@ -44,8 +44,6 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
-  console.log('++++')
-
   deepEqual(
     (
       await db

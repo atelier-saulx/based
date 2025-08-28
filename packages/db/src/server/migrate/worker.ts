@@ -12,12 +12,10 @@ import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { deSerialize } from '@based/schema'
 import { DbSchema } from '../../schema.js'
-// import { setTimeout } from 'node:timers/promises'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
 } else if (workerData?.isDbMigrateWorker) {
-  // console.info('----init migration----')
   const { from, to, fromSchema, toSchema, channel, workerState, transformFns } =
     workerData
 
@@ -29,31 +27,6 @@ if (isMainThread) {
 
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
-  // const cp = (obj: any) => {
-  //   let copy: object
-
-  //   for (const key in obj) {
-  //     const val = obj[key]
-  //     if (typeof val === 'number') {
-  //       // only copy numbers
-  //       copy ??= Array.isArray(obj) ? [] : {}
-  //       copy[key] = val
-  //     } else if (
-  //       typeof val === 'object' &&
-  //       val !== null &&
-  //       !isTypedArray(val)
-  //     ) {
-  //       const res = cp(val)
-  //       if (res) {
-  //         copy ??= Array.isArray(obj) ? [] : {}
-  //         copy[key] = cp(val)
-  //       }
-  //     }
-  //   }
-
-  //   return copy
-  // }
-
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
@@ -139,15 +112,7 @@ if (isMainThread) {
       }
 
       await toDb.drain()
-
       native.membarSyncWrite()
-
-      // // for debugging only
-      // await setTimeout(100)
-      // WE ARE ONLY GOING TO SEND { type: lastNodeId }
-
-      // channel.postMessage(cp(toDb.server.schemaTypesParsed))
-      // await setTimeout(100)
       setToSleep(workerState)
     }
   } catch (e) {

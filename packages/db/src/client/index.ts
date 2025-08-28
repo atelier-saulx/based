@@ -1,5 +1,4 @@
 import { MigrateFns, parse, Schema, StrictSchema } from '@based/schema'
-// import { flushBuffer, makeFlushIsReady, startDrain } from './flushModify.js'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'
@@ -160,29 +159,6 @@ export class DbClient extends DbShared {
     if (type === undefined) {
       return new BasedDbQuery(this, '_root', 1)
     }
-
-    // // this is now double resolve
-    // if (Array.isArray(id)) {
-    //   let i = id.length
-    //   while (i--) {
-    //     if (typeof id[i] === 'object') {
-    //       if (typeof id[i]) {
-    //         // @ts-ignore
-    //         id[i] = id[i].tmpId
-    //       } else {
-    //         // it's get by alias
-    //       }
-    //     }
-    //   }
-    // } else if (id instanceof Uint32Array) {
-    //   // all good
-    // } else if (typeof id === 'object') {
-    //   if (id instanceof ModifyState) {
-    //     id = id.tmpId
-    //   } else {
-    //     // it's get by alias
-    //   }
-    // }
 
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }

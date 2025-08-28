@@ -396,9 +396,7 @@ export class DbServer extends DbShared {
 
     const content = payload.subarray(8, contentEnd)
     const offsets = payload.subarray(contentEnd, payload.byteLength - 4)
-    // console.log({ content, offsets })
     if (this.activeReaders) {
-      // console.log('-----push it')
       this.modifyQueue.push(new Uint8Array(payload))
     } else {
       resizeModifyDirtyRanges(this)
@@ -415,103 +413,7 @@ export class DbServer extends DbShared {
     }
 
     return result
-
-    // const schemaHash = readUint64(bufWithHash, 0)
-    // if (schemaHash !== this.schema?.hash) {
-    //   this.emit('info', 'Schema mismatch in modify')
-    //   return null
-    // }
-
-    // const buf = bufWithHash.subarray(8)
-    // const offsets = {}
-    // // const dataEnd = readUint32(buf, buf.length - 4)
-    // // let i = bufWithHash.byteLength
-    // // while (i > dataEnd) {
-
-    // // }
-
-    // const dataLen = readUint32(buf, buf.length - 4)
-    // let typesSize = readUint16(buf, dataLen)
-    // let i = dataLen + 2
-
-    // while (typesSize--) {
-    //   const typeId = readUint16(buf, i)
-    //   i += 2
-    //   const startId = readUint32(buf, i)
-    //   const def = this.schemaTypesParsedById[typeId]
-    //   if (!def) {
-    //     console.error(
-    //       `Wrong cannot get def in modify ${typeId} ${schemaHash} ${this.schema?.hash}!}`,
-    //     )
-    //     return null
-    //   }
-    //   let offset = def.lastId - startId
-
-    //   if (offset < 0) {
-    //     offset = 0
-    //   }
-
-    //   buf[i++] = offset
-    //   buf[i++] = offset >>> 8
-    //   buf[i++] = offset >>> 16
-    //   buf[i++] = offset >>> 24
-
-    //   const lastId = readUint32(buf, i)
-    //   i += 4
-
-    //   def.lastId = lastId + offset
-    //   offsets[typeId] = offset
-    // }
-
-    // if (this.activeReaders) {
-    //   this.modifyQueue.push(new Uint8Array(bufWithHash))
-    // } else {
-    //   this.#modify(buf)
-    // }
-
-    // return offsets
   }
-
-  // #modify(buf: Uint8Array) {
-  //   if (this.stopped) {
-  //     console.error('Db is stopped - trying to modify')
-  //     return
-  //   }
-
-  //   const end = buf.length - 4
-  //   const dataLen = readUint32(buf, end)
-  //   let typesSize = readUint16(buf, dataLen)
-  //   const typesLen = typesSize * 10
-  //   const types = buf.subarray(dataLen + 2, dataLen + typesLen + 2)
-  //   const data = buf.subarray(0, dataLen)
-
-  //   let i = dataLen + 2
-
-  //   while (typesSize--) {
-  //     const typeId = readUint16(buf, i)
-  //     const def = this.schemaTypesParsedById[typeId]
-  //     const key = makeTreeKeyFromNodeId(def.id, def.blockCapacity, def.lastId)
-  //     this.dirtyRanges.add(key)
-  //     i += 10
-  //   }
-
-  //   const view = new DataView(buf.buffer, buf.byteOffset)
-  //   while (i < end) {
-  //     // const key = view.getFloat64(i, true)
-  //     // These node ranges may not actually exist
-  //     // this.dirtyRanges.add(key)
-  //     i += 8
-  //   }
-
-  //   resizeModifyDirtyRanges(this)
-  //   native.modify(data, types, this.dbCtxExternal, this.modifyDirtyRanges)
-  //   for (let key of this.modifyDirtyRanges) {
-  //     if (key === 0) {
-  //       break
-  //     }
-  //     this.dirtyRanges.add(key)
-  //   }
-  // }
 
   #expire() {
     resizeModifyDirtyRanges(this)

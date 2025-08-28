@@ -60,8 +60,6 @@ await test('client server basic', async (t) => {
     },
   })
 
-  console.log(await client1.query('user').get())
-
   const fred = client1.create('user', {
     name: 'fred',
   })
@@ -71,8 +69,6 @@ await test('client server basic', async (t) => {
   const marie = await client2.create('user', {
     name: 'marie',
   })
-
-  console.log('--', await youzi, await fred)
 
   const res = await client1.update('user', youzi, {
     name: 'youzi',
@@ -133,7 +129,6 @@ await test('client server rapid fire', async (t) => {
                 name: `user${clientI} ${cnt}`,
                 users: userIds.slice(-1000, -1),
               })
-              // console.log('client', clients.length, clientI, userId)
               userIds.push(userId)
             })(),
             client.query('user').sort('name').include('name', 'users').get(),

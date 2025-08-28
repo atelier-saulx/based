@@ -61,7 +61,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
-        // std.debug.print("OP: {any}\n", .{op});
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
                 // Wrongly here.. lets find it...
@@ -111,7 +110,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     }
                 }
                 ctx.id = read(u32, operation, 0) + idOffset;
-                // std.debug.print("\nID: {d} OFFSET: {d}\n", .{ ctx.id, idOffset });
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;

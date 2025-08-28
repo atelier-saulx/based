@@ -66,7 +66,6 @@ export const drain = (db: DbClient, ctx: Ctx) => {
 }
 
 export const schedule = (db: DbClient, ctx: Ctx) => {
-  // return drain(db, ctx)
   if (ctx.scheduled || ctx.index === 8) {
     return ctx.scheduled
   }

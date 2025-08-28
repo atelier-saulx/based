@@ -104,7 +104,6 @@ export const writeEdges = (
     } else {
       mainFields ??= []
       const mainFieldsStartSize = mainFields.length * 2
-      // reserve(ctx, PROP_CURSOR_SIZE + 4 + 2 + mainSize + mainFieldsStartSize)
       reserve(
         ctx,
         PROP_CURSOR_SIZE + 4 + 2 + mainFieldsStartSize + def.edgeMainLen,

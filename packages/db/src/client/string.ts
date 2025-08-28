@@ -28,9 +28,6 @@ export const write = (
     const endPos = offset + 2 + l
     const willEnd = insertPos + l
     resize(ctx, willEnd)
-    // if (willEnd > buf.length) {
-    //   return null
-    // }
     buf.copyWithin(insertPos, startPos, endPos)
     const size = native.compress(buf, offset + 6, l)
 
@@ -58,12 +55,8 @@ export const write = (
 export const compress = (str: string): Uint8Array => {
   const len = ENCODER.encode(str).byteLength
   const tmpCompressBlock = getTmpBuffer(len * 3)
-  // @ts-ignore
-  const l = write({ array: tmpCompressBlock }, str, 0, false)
+  const l = write({ array: tmpCompressBlock } as Ctx, str, 0, false)
   const nBuffer = new Uint8Array(l)
   nBuffer.set(tmpCompressBlock.subarray(0, l))
-  // const l = write(tmpCompressBlock, str, 0, false)
-  // const nBuffer = new Uint8Array(l)
-  // nBuffer.set(tmpCompressBlock.subarray(0, l))
   return nBuffer
 }

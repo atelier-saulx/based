@@ -195,27 +195,9 @@ export const migrate = async (
     return
   }
 
-  let msg: any
-  // let schemaTypesParsed: any
-
-  // while ((msg = receiveMessageOnPort(port1))) {
-  //   schemaTypesParsed = msg.message
-  // }
-
   server.dbCtxExternal = toCtx
   server.sortIndexes = {}
-
-  // ----------------MAKE NICE THIS------------------
-  // pass last node IDS { type: lastId }
   setSchemaOnServer(server, toSchema)
-
-  // for (const key in schemaTypesParsed) {
-  //   // maybe only send the lastId
-  //   const def = server.schemaTypesParsed[key]
-  //   def.lastId = schemaTypesParsed[key].lastId
-  // }
-  // -----------------------------------------
-
   tmpDb.server.dbCtxExternal = fromCtx
 
   // TODO makes this SYNC

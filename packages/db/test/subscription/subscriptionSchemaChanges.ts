@@ -103,7 +103,6 @@ await test('subscription schema changes', async (t) => {
     derp: 100,
   })
   await wait(20)
-  console.log(subResults)
   equal(cnt, 3, 'fired 3 times')
   deepEqual(
     subResults,
