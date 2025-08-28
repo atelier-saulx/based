@@ -1,5 +1,4 @@
 import { QueryBranch } from '../BasedDbQuery.js'
-import { QueryDef } from '../types.js'
 import { Operator } from './filter.js'
 import { FilterBranch } from './FilterBranch.js'
 import { FilterOpts, FilterAst, toFilterCtx } from './types.js'

@@ -15,7 +15,7 @@ import {
 } from '@based/schema/def'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '@based/utils'
-import { AggregateType } from './aggregates/types.js'
+import { AggregateType } from '@based/protocol/db-read'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 

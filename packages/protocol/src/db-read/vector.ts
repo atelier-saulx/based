@@ -1,4 +1,4 @@
-import { VectorBaseType } from '@based/schema/def'
+import { VectorBaseType } from '@based/schema/prop-types'
 import { ReaderPropDef } from './types.js'
 
 export const readVector = (prop: ReaderPropDef, tmp: Uint8Array) => {
