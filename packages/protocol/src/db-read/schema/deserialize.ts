@@ -1,14 +1,13 @@
 import { TypeIndex } from '@based/schema/prop-types'
 import { ReaderPropDef, ReaderSchema } from '../types.js'
 import { DECODER, readUint16 } from '@based/utils'
-import { scheduler } from 'timers/promises'
 
 const PROPERTY_MAP = {
-  meta: 1 << 0, // Bit 0
-  enum: 1 << 1, // Bit 1
-  vectorBaseType: 1 << 2, // Bit 2
-  len: 1 << 3, // Bit 3
-  locales: 1 << 4, // Bit 4
+  meta: 1 << 0,
+  enum: 1 << 1,
+  vectorBaseType: 1 << 2,
+  len: 1 << 3,
+  locales: 1 << 4,
 }
 
 const readPath = (
@@ -153,20 +152,26 @@ const deSerializeSchemaInner = (
     s.edges = x.schema
     i += x.size
   }
-
   const hasHook = schema[i]
-
   if (hasHook) {
-    const hookLen = readUint16(schema, i)
+    const len = readUint16(schema, i)
     i += 2
-    const fn = `return (${DECODER.decode(schema.subarray(i, i + hookLen))})(n)`
+    const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n)`
     // @ts-ignore
     s.hook = new Function('n', fn)
-    i += hookLen
+    i += len
   } else {
     i++
   }
-
+  const hasAgg = schema[i]
+  if (hasAgg) {
+    const len = readUint16(schema, i)
+    i += 2
+    s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
+    i += len
+  } else {
+    i++
+  }
   return { schema: s as ReaderSchema, size: i - offset }
 }
 

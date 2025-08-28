@@ -7,16 +7,13 @@ import {
 } from '../types.js'
 import {
   concatUint8Arr,
-  DECODER,
   ENCODER,
   isEmptyObject,
   writeUint16,
 } from '@based/utils'
-import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
 
 export type ReaderSchema2 = {
   readId: number
-  // maybe current read id that you add
   props: { [prop: string]: ReaderPropDef }
   main: { props: { [start: string]: ReaderPropDef }; len: number }
   type: ReaderSchemaEnum
@@ -41,11 +38,11 @@ const getSize = (blocks: Uint8Array[], offset: number = 0): number => {
 }
 
 const PROPERTY_MAP = {
-  meta: 1 << 0, // Bit 0
-  enum: 1 << 1, // Bit 1
-  vectorBaseType: 1 << 2, // Bit 2
-  len: 1 << 3, // Bit 3
-  locales: 1 << 4, // Bit 4
+  meta: 1 << 0,
+  enum: 1 << 1,
+  vectorBaseType: 1 << 2,
+  len: 1 << 3,
+  locales: 1 << 4,
 }
 
 const serializeProp = (
@@ -189,6 +186,16 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     blocks.push(new Uint8Array([0]))
   } else {
     const n = ENCODER.encode(schema.hook.toString())
+    const x = new Uint8Array(n.byteLength + 2)
+    writeUint16(x, n.byteLength, 0)
+    x.set(n, 2)
+    blocks.push(x)
+  }
+
+  if (!schema.aggregate) {
+    blocks.push(new Uint8Array([0]))
+  } else {
+    const n = ENCODER.encode(JSON.stringify(schema.aggregate))
     const x = new Uint8Array(n.byteLength + 2)
     writeUint16(x, n.byteLength, 0)
     x.set(n, 2)

@@ -152,7 +152,19 @@ await test('schema', () => {
     },
   }
 
-  const schema = smallMeta
+  const agg: ReaderSchema = {
+    readId: 0,
+    props: {},
+    main: { len: 0, props: {} },
+    refs: {},
+    type: 2,
+    aggregate: {
+      aggregates: [{ path: ['count'], type: 2, resultPos: 0 }],
+      totalResultsSize: 4,
+    },
+  }
+
+  const schema = agg
 
   // -----------------------
   const s = serialize(schema)
