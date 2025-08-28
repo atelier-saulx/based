@@ -4,7 +4,7 @@ This document provides a high-level overview of our database release plan.
 It highlights the major planned evolutions and key milestones, without getting into extensive technical details.
 Version numers could change due to nightly releases.
 
-## v0.0.72 (Sep 2025)
+## v0.1.0 (Sep 2025)
 
 **Include**
 
