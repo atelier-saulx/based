@@ -80,7 +80,7 @@ const test = async (
           let x = await db.query(type).include(fields).get()
           checksums.push(x.checksum)
           data.push(x.toObject())
-          counts.push(await db.query(type).count().get().toObject().$count)
+          counts.push(await db.query(type).count().get().toObject().count)
         }
 
         return [checksums, data, counts]
@@ -186,14 +186,20 @@ const test = async (
     counts.success++
     console.log(
       styleText('green', `✓ ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
   } catch (err) {
     hasErrored = true
     counts.errors++
     console.log(
       styleText('red', `! ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
     const msg =
       (err.stack ?? err.msg ?? err)
@@ -227,7 +233,10 @@ const test = async (
     counts.errors++
     console.log(
       styleText('red', `! ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
 
     const msg =

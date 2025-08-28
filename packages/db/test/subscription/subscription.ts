@@ -162,8 +162,7 @@ await test('subscription error', async (t) => {
   close()
 })
 
-// subscribe to refs
-await test('kev', async (t) => {
+await test('subscribe to refs', async (t) => {
   const clientsN = 2
   const { clients } = await start(t, clientsN)
 

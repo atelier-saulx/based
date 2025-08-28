@@ -214,10 +214,10 @@ await test('schema problems', async (t) => {
   await Promise.all(q)
 
   equal(
-    (await db.query('flap').count().get().inspect().toObject()).$count,
+    (await db.query('flap').count().get().inspect().toObject()).count,
     1_100_001,
   )
-  equal((await db.query('seq').count().get().inspect().toObject()).$count, 1)
+  equal((await db.query('seq').count().get().inspect().toObject()).count, 1)
 
   // to Object on nested refs does not work if combin count + sum
   equal(
@@ -228,7 +228,7 @@ await test('schema problems', async (t) => {
         .get()
         .inspect()
         .toObject()
-    )[0].flap.$count,
+    )[0].flap.count,
     1_100_000,
   )
 
