@@ -25,14 +25,40 @@ export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
 
   let size = Math.min(val.byteLength, def.len)
   let padding = 0
-
-  if (ctx.index % 4 !== 0) {
+  if (ctx.index % 4 != 0) {
     padding = ctx.index % 4
-    size -= padding
   }
 
-  writeU32(ctx, size + 4)
-  writeU8(ctx, padding)
-  writePadding(ctx, 3 - padding)
-  writeU8Array(ctx, new Uint8Array(val.buffer).subarray(0, size))
+  size -= padding
+  let tmp = size + 4
+
+  // 16-bits would be enough but the zig expects 32-bits
+  ctx.array[ctx.index++] = tmp
+  ctx.array[ctx.index++] = tmp >>>= 8
+  ctx.array[ctx.index++] = tmp >>>= 8
+  ctx.array[ctx.index++] = tmp >>>= 8
+
+  ctx.array[ctx.index++] = padding
+  ctx.array[ctx.index++] = 0
+  ctx.array[ctx.index++] = 0
+  ctx.array[ctx.index++] = 0
+
+  ctx.array.set(
+    new Uint8Array(val.buffer).subarray(0, size),
+    ctx.index - padding,
+  )
+  ctx.index += size
+
+  // let size = Math.min(val.byteLength, def.len)
+  // let padding = 0
+
+  // if (ctx.index % 4 !== 0) {
+  //   padding = ctx.index % 4
+  //   size -= padding
+  // }
+
+  // writeU32(ctx, size + 4)
+  // writeU8(ctx, padding)
+  // writePadding(ctx, 3 - padding)
+  // writeU8Array(ctx, new Uint8Array(val.buffer).subarray(0, size))
 }
