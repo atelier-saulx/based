@@ -5,7 +5,7 @@ import { ReaderSchema } from '../dist/db-read/types.js'
 import { ENCODER } from '@based/utils'
 
 await test('schema', () => {
-  const x: ReaderSchema = {
+  const simple: ReaderSchema = {
     readId: 0,
     props: { '1': { path: ['name'], typeIndex: 11, readBy: 0 } },
     main: {
@@ -20,7 +20,7 @@ await test('schema', () => {
     // hook: [Function: read]
   }
 
-  const schema: ReaderSchema = {
+  const refs: ReaderSchema = {
     readId: 0,
     props: { '3': { path: ['name'], typeIndex: 18, readBy: 0 } },
     main: { len: 0, props: {} },
@@ -67,17 +67,103 @@ await test('schema', () => {
     type: 2,
   }
 
-  console.log('schema')
+  const textSchema: ReaderSchema = {
+    readId: 0,
+    props: {
+      '1': {
+        path: ['fun'],
+        typeIndex: 12,
+        readBy: 0,
+        locales: { '36': 'en', '39': 'fi', '61': 'it' },
+      },
+    },
+    main: { len: 0, props: {} },
+    refs: {},
+    type: 2,
+  }
+
+  const metaSchema: ReaderSchema = {
+    readId: 0,
+    props: {},
+    main: { len: 0, props: {} },
+    refs: {
+      '1': {
+        schema: {
+          readId: 0,
+          props: {},
+          main: { len: 0, props: {} },
+          refs: {},
+          type: 2,
+          edges: {
+            readId: 0,
+            props: {
+              '1': {
+                path: ['$edgeName'],
+                typeIndex: 11,
+                readBy: 0,
+                meta: 1,
+              },
+            },
+            main: { len: 0, props: {} },
+            refs: {},
+            type: 1,
+          },
+        },
+        prop: { path: ['items'], typeIndex: 14, readBy: 0 },
+      },
+    },
+    type: 2,
+  }
+
+  const smallMeta: ReaderSchema = {
+    readId: 0,
+    props: {},
+    main: {
+      len: 21,
+      props: { '0': { path: ['email'], typeIndex: 11, readBy: 0, meta: 1 } },
+    },
+    refs: {},
+    type: 2,
+  }
+
+  const enums: ReaderSchema = {
+    readId: 0,
+    props: {},
+    main: {
+      len: 1,
+      props: {
+        '0': {
+          path: ['status'],
+          typeIndex: 10,
+          readBy: 0,
+          enum: ['a', 'b', 'c', 'd', 'e', 'f'],
+        },
+      },
+    },
+    refs: {},
+    type: 2,
+    hook: (result) => {
+      if (result.private) {
+        return {
+          id: result.id,
+          private: true,
+        }
+      }
+    },
+  }
+
+  const schema = smallMeta
+
+  // -----------------------
   const s = serialize(schema)
 
   const d = Date.now()
-  // for (let i = 0; i < 1e6; i++) {
-  //   deSerializeSchema(s)
-  // }
+  for (let i = 0; i < 1e6; i++) {
+    deSerializeSchema(s)
+  }
   console.log(Date.now() - d, 'ms')
 
   console.dir(deSerializeSchema(s), { depth: 10 })
-  console.log(s)
   console.log(
     ENCODER.encode(JSON.stringify(schema)).byteLength,
     'JSON SIZE',

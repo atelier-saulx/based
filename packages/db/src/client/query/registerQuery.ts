@@ -40,9 +40,9 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     def.queryId = q.id
     q.buffer = buf
 
-    // console.log('--------------------------------------------------')
-    // console.dir(convertToReaderSchema(q.def), { depth: 100 })
-    // console.log(deSerializeSchema(serialize(convertToReaderSchema(q.def))))
+    console.log('--------------------------------------------------')
+    console.dir(convertToReaderSchema(q.def), { depth: 100 })
+    console.log(deSerializeSchema(serialize(convertToReaderSchema(q.def))))
 
     // q.def.readSchema = deSerializeSchema(
     //   serialize(convertToReaderSchema(q.def)),

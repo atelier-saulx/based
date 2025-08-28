@@ -7,6 +7,7 @@ import {
 } from '../types.js'
 import {
   concatUint8Arr,
+  DECODER,
   ENCODER,
   isEmptyObject,
   writeUint16,
@@ -78,7 +79,27 @@ const serializeProp = (
   }
   if ('enum' in prop) {
     options |= PROPERTY_MAP.enum
-    console.log('enum later..')
+    let useJSON = false
+    const tmp: Uint8Array[] = []
+    for (const p of prop.enum) {
+      if (typeof p !== 'string') {
+        useJSON = true
+        break
+      } else {
+        const n = ENCODER.encode(p)
+        tmp.push(new Uint8Array([n.byteLength]), n)
+      }
+    }
+    if (useJSON) {
+      blocks.push(new Uint8Array([1]))
+      const s = ENCODER.encode(JSON.stringify(prop.enum))
+      const x = new Uint8Array(s.byteLength + 2)
+      writeUint16(x, s.byteLength, 0)
+      x.set(s, 2)
+      blocks.push(x)
+    } else {
+      blocks.push(new Uint8Array([0, prop.enum.length]), ...tmp)
+    }
   }
   if ('vectorBaseType' in prop) {
     options |= PROPERTY_MAP.vectorBaseType
@@ -93,7 +114,19 @@ const serializeProp = (
   }
   if ('locales' in prop) {
     options |= PROPERTY_MAP.locales
-    console.log('locales later')
+    const keys = Object.keys(prop.locales)
+    const len = keys.length
+    const locales = new Uint8Array(len * 4 + 1)
+    let i = 1
+    for (const key of keys) {
+      writeUint16(locales, Number(key), i)
+      ENCODER.encodeInto(prop.locales[key], locales.subarray(i + 2, i + 4))
+      i += 4
+    }
+    locales[0] = len
+    console.log(locales)
+
+    blocks.push(locales)
   }
   header[keySize + 1] = options
 }
@@ -151,6 +184,17 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
       innerSerialize(schema.edges, blocks)
     }
   }
+
+  if (!schema.hook) {
+    blocks.push(new Uint8Array([0]))
+  } else {
+    const n = ENCODER.encode(schema.hook.toString())
+    const x = new Uint8Array(n.byteLength + 2)
+    writeUint16(x, n.byteLength, 0)
+    x.set(n, 2)
+    blocks.push(x)
+  }
+
   return blocks
 }
 

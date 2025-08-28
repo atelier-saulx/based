@@ -10,9 +10,10 @@ import {
   writeUint16,
   writeUint24,
   writeUint32,
+  ENCODER,
+  DECODER,
 } from '@based/utils'
 
-const ENCODER = new TextEncoder()
 const UINT8 = 245
 const FALSE = 246
 const TRUE = 247
@@ -422,7 +423,6 @@ export const serialize = (schema: any, opts: Opts = {}): Uint8Array => {
 }
 
 // -------------
-const decoder = new TextDecoder()
 
 export const deSerializeKey = (buf: Uint8Array, keySize: number, i: number) => {
   let size = 0
@@ -431,26 +431,26 @@ export const deSerializeKey = (buf: Uint8Array, keySize: number, i: number) => {
     const dictAddress = readUint24(buf, i)
     size += 3
     const actualKeySize = buf[dictAddress] - KEY_OPTS
-    value = decoder.decode(
+    value = DECODER.decode(
       buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
     )
   } else if (keySize === KEY_ADDRESS_2_BYTES) {
     const dictAddress = readUint16(buf, i)
     size += 2
     const actualKeySize = buf[dictAddress] - KEY_OPTS
-    value = decoder.decode(
+    value = DECODER.decode(
       buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
     )
   } else if (keySize === KEY_ADDRESS_1_BYTE) {
     const dictAddress = buf[i]
     size += 1
     const actualKeySize = buf[dictAddress] - KEY_OPTS
-    value = decoder.decode(
+    value = DECODER.decode(
       buf.subarray(dictAddress + 1, actualKeySize + dictAddress + 1),
     )
   } else {
     const actualKeySize = keySize - KEY_OPTS
-    value = decoder.decode(buf.subarray(i, actualKeySize + i))
+    value = DECODER.decode(buf.subarray(i, actualKeySize + i))
     size += actualKeySize
   }
   return { size, value }
@@ -553,14 +553,14 @@ export const deSerializeInner = (
       i += 1
       const size = readUint16(buf, i)
       i += 2
-      const fn = `return (${decoder.decode(buf.subarray(i, i + size))})(payload, prop)`
+      const fn = `return (${DECODER.decode(buf.subarray(i, i + size))})(payload, prop)`
       obj[key] = new Function('payload', 'prop', fn)
       i += size
     } else if (buf[i] === STRING) {
       i += 1
       const size = readUint16(buf, i)
       i += 2
-      obj[key] = decoder.decode(buf.subarray(i, i + size))
+      obj[key] = DECODER.decode(buf.subarray(i, i + size))
       i += size
     } else if (buf[i] === BINARY) {
       i += 1
