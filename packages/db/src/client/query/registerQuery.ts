@@ -7,6 +7,8 @@ import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
 import { includeField } from './query.js'
 import { convertToReaderSchema } from './queryDefToReadSchema.js'
+import { deSerializeSchema } from '@based/protocol/db-read'
+import { serialize } from '@based/protocol/db-read/serialize-schema'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
@@ -37,7 +39,17 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     q.id = id
     def.queryId = q.id
     q.buffer = buf
-    q.def.readSchema = convertToReaderSchema(q.def)
+
+    console.log(
+      '\n--------------------',
+      convertToReaderSchema(q.def),
+      deSerializeSchema(serialize(convertToReaderSchema(q.def))),
+    )
+
+    q.def.readSchema = deSerializeSchema(
+      serialize(convertToReaderSchema(q.def)),
+    )
+    // q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)
     return buf
   }

@@ -87,7 +87,6 @@ await test('migration', async (t) => {
     },
     {
       version: '3.0.0',
-
       types: {
         user: {
           props: {

@@ -8,10 +8,10 @@ export const createObs = (
   name: string,
   id: number,
   payload: any,
-  noStart?: boolean
+  noStart?: boolean,
 ): ActiveObservable => {
   if (hasObs(server, id)) {
-    const msg = `Allready has observable ${name} ${id}`
+    const msg = `Already has observable ${name} ${id}`
     console.error(msg)
     throw new Error(msg)
   }
