@@ -115,7 +115,6 @@ export const filterRaw = (
       }
     }
     if (field === 'id') {
-      console.log('ID FIELD')
       fieldDef = ID_FIELD_DEF
       return primitiveFilter(def, fieldDef, filter, conditions, {
         lang: def.lang.lang,
