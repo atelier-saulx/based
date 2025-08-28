@@ -38,10 +38,21 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             id = id + idOffset;
         }
 
+        if (ctx.id == id and ctx.typeId == refTypeId) {
+            // don't ref yourself
+            if (hasEdgeData) {
+                const sizepos = if (hasIndex) i + 9 else i + 5;
+                const edgelen = read(u32, data, sizepos);
+                const edgepos = sizepos + 4;
+                const edges = data[edgepos .. edgepos + edgelen];
+                i += edges.len + 4;
+            }
+            i += 4;
+            continue;
+        }
+
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
-
         const node = try db.upsertNode(id, refTypeEntry);
-
         const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {

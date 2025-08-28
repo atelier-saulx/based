@@ -236,7 +236,7 @@ const writeReferenceObj = (
 
 const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
   const size = 4 * val.length + 1
-  reserve(ctx, PROP_CURSOR_SIZE + 5 + size)
+  reserve(ctx, PROP_CURSOR_SIZE + 6 + size)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   writeU32(ctx, size)
@@ -244,7 +244,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
   for (const id of val) {
     if (typeof id === 'number') {
       validate(def, id)
-      writeU8(ctx, id)
+      writeU32(ctx, id)
       continue
     }
 
@@ -257,7 +257,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
     }
 
     if (typeof id.id === 'number') {
-      writeU8(ctx, id)
+      writeU32(ctx, id)
       continue
     }
 

@@ -20,6 +20,11 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         id = id + Modify.getIdOffset(ctx, refTypeId);
     }
 
+    if (ctx.id == id and ctx.typeId == refTypeId) {
+        // don't ref yourself
+        return 5;
+    }
+
     var ref: ?*selva.SelvaNodeLargeReference = null;
     var node: db.Node = undefined;
 

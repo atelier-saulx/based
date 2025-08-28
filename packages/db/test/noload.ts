@@ -47,14 +47,17 @@ await test('noLoadDumps', async (t) => {
   })
   for (let i = 0; i < 1500; i++) {
     const employee = makeEmployee(i)
-    employee.reportsTo = i % 2 + 1
+    employee.reportsTo = (i % 2) + 1
     db.create('employee', employee)
   }
 
-  deepEqual(await db.query('employee').include('*').range(0, 2).get().toObject(), [
-    { id: 1, name: 'youzi', email: 'youzi@yazi.yo' },
-    { id: 2, name: 'doug', email: 'doug@yari.yo' }
-  ])
+  deepEqual(
+    await db.query('employee').include('*').range(0, 2).get().toObject(),
+    [
+      { id: 1, name: 'youzi', email: 'youzi@yazi.yo' },
+      { id: 2, name: 'doug', email: 'doug@yari.yo' },
+    ],
+  )
 
   await db.drain()
   await db.save()
@@ -64,24 +67,41 @@ await test('noLoadDumps', async (t) => {
   await db2.start({ noLoadDumps: true })
   t.after(() => db2.destroy())
 
-  const getBlock1 = () => db2.server.verifTree.getBlock(makeTreeKey(db2.client.schema.types['employee'].id, 1))
-  const getBlock2 = () => db2.server.verifTree.getBlock(makeTreeKey(db2.client.schema.types['employee'].id, 1200))
+  const getBlock1 = () =>
+    db2.server.verifTree.getBlock(
+      makeTreeKey(db2.client.schema.types['employee'].id, 1),
+    )
+  const getBlock2 = () =>
+    db2.server.verifTree.getBlock(
+      makeTreeKey(db2.client.schema.types['employee'].id, 1200),
+    )
 
   deepEqual(await db2.query('employee').include('*').get().toObject(), [])
   await db2.server.loadBlock('employee', 1)
-  deepEqual(await db2.query('employee').include('*').range(0, 2).get().toObject(), [
-    { id: 1, name: 'youzi', email: 'youzi@yazi.yo' },
-    { id: 2, name: 'doug', email: 'doug@yari.yo' }
-  ])
+  deepEqual(
+    await db2.query('employee').include('*').range(0, 2).get().toObject(),
+    [
+      { id: 1, name: 'youzi', email: 'youzi@yazi.yo' },
+      { id: 2, name: 'doug', email: 'doug@yari.yo' },
+    ],
+  )
   // deepEqual(await db2.query('employee', 2).count('subordinates').get().toObject(), 750 TODO
-  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+  deepEqual(
+    (await db2.query('employee', 2).include('subordinates').get().toObject())
+      .subordinates.length,
+    750,
+  )
 
   deepEqual(getBlock1().inmem, true)
   deepEqual(getBlock2().inmem, false)
 
   await db2.server.loadBlock('employee', 1100)
   deepEqual(getBlock2().inmem, true)
-  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+  deepEqual(
+    (await db2.query('employee', 2).include('subordinates').get().toObject())
+      .subordinates.length,
+    750,
+  )
 
   await db2.server.unloadBlock('employee', 1100)
   deepEqual(getBlock2().inmem, false)
@@ -138,8 +158,9 @@ await test('references', async (t) => {
   for (let i = 0; i < 2000; i++) {
     const employee = makeEmployee(i)
     employee.reportsTo = rnd()
-    db.create('employee', employee, { unsafe: true })
+    db.create('employee', employee)
   }
+
   for (let i = 0; i < 500; i++) {
     db.create('project', {
       name: NAMES[rnd()].split(' ')[0],
