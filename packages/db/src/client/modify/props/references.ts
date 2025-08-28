@@ -76,7 +76,7 @@ const putReferences = (
       index++
       continue
     }
-    if (typeof id === 'object' && id !== null && id.id) {
+    if (typeof id === 'object' && id !== null && typeof id.id === 'number') {
       if (hasEdgeOrIndex(def, id)) {
         return index
       }
@@ -124,7 +124,6 @@ const updateReferences = (
       writeU32(ctx, id)
       continue
     }
-
     if (typeof id !== 'object' || id === null) {
       throw [def, val]
     }
@@ -257,7 +256,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
     }
 
     if (typeof id.id === 'number') {
-      writeU32(ctx, id)
+      writeU32(ctx, id.id)
       continue
     }
 
