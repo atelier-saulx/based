@@ -67,7 +67,6 @@ await test('filter or', async (t) => {
     'branch fn',
   )
 
-  console.info('------------------------------------')
   deepEqual(
     (
       await db
