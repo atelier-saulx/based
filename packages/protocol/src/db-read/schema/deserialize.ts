@@ -1,6 +1,7 @@
 import { TypeIndex } from '@based/schema/prop-types'
 import { ReaderPropDef, ReaderSchema } from '../types.js'
 import { DECODER, readUint16 } from '@based/utils'
+import { scheduler } from 'timers/promises'
 
 const PROPERTY_MAP = {
   meta: 1 << 0, // Bit 0
@@ -30,6 +31,8 @@ const deSerializeProp = (
   off: number,
   keySize: 1 | 2,
 ): { def: ReaderPropDef; size: number; key: number } => {
+  const key = keySize === 1 ? p[off] : readUint16(p, off)
+  const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
   const prop: ReaderPropDef = {
     typeIndex: p[off + keySize] as TypeIndex,
@@ -37,7 +40,6 @@ const deSerializeProp = (
     readBy: 0,
   }
 
-  const map = p[off + keySize + 1]
   let index = keySize + 2 + off + path.size
 
   // if (map & PROPERTY_MAP.meta) result.meta = {}
@@ -45,14 +47,13 @@ const deSerializeProp = (
   // if (map & PROPERTY_MAP.vectorBaseType) result.vectorBaseType = 'u8' // Default empty value
   // if (map & PROPERTY_MAP.len) result.len = 0
   // if (map & PROPERTY_MAP.locales) result.locales = {}
-  const key = keySize === 1 ? p[off] : readUint16(p, off)
   return { def: prop, key, size: index - off }
 }
 
-export const deSerializeSchema = (
+const deSerializeSchemaInner = (
   schema: Uint8Array,
   offset: number = 0,
-): ReaderSchema => {
+): { schema: ReaderSchema; size: number } => {
   let i = offset
   const s: Partial<ReaderSchema> = {
     readId: 0,
@@ -66,6 +67,17 @@ export const deSerializeSchema = (
   const ref = schema[i]
   i++
   if (ref !== 0) {
+    let count = 0
+    while (count != ref) {
+      const { def, key, size } = deSerializeProp(schema, i, 1)
+      // @ts-ignore
+      s.refs[key] = { prop: def }
+      i += size
+      const x = deSerializeSchemaInner(schema, i)
+      s.refs[key].schema = x.schema
+      i += x.size
+      count++
+    }
   }
   const propsLen = schema[i]
   i++
@@ -92,7 +104,17 @@ export const deSerializeSchema = (
       count++
     }
   }
-  schema
 
-  return s as ReaderSchema
+  const hasEdge = schema[i]
+  i++
+  if (hasEdge) {
+    const x = deSerializeSchemaInner(schema, i)
+    s.edges = x.schema
+    i += x.size
+  }
+
+  return { schema: s as ReaderSchema, size: i - offset }
 }
+
+export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) =>
+  deSerializeSchemaInner(schema, offset).schema

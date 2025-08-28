@@ -101,18 +101,19 @@ const serializeProp = (
 const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   const top = new Uint8Array(3)
   top[0] = schema.type
-  top[2] = schema.search ? 1 : 0
+  top[1] = schema.search ? 1 : 0
 
   blocks.push(top)
-  if (schema.refs.schema) {
-    top[1] = 0
-    // parse prop first
-    // then schema (similair to edges)
+  if (!isEmptyObject(schema.refs)) {
+    let cnt = 0
+    for (const key in schema.refs) {
+      serializeProp(Number(key), 1, schema.refs[key].prop, blocks)
+      innerSerialize(schema.refs[key].schema, blocks)
+      cnt++
+    }
+    top[2] = cnt
   } else {
-    top[1] = 0
-  }
-
-  if (schema.search) {
+    top[2] = 0
   }
 
   if (isEmptyObject(schema.props)) {
@@ -142,17 +143,14 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     propsHeader[0] = count
   }
 
-  // 3 optional, 3 normal
-  //   if (schema.edges) {
-  //     const edges = new Uint8Array(3)
-  //     edges[0] = TopLevelKeys.edges
-  //     blocks.push(edges)
-  //     let index = blocks.length - 1
-  //     innerSerialize(schema.edges, blocks)
-  //     writeUint16(edges, getSize(blocks, index), 1)
-  //   }
-
-  // agg
+  if (!schema.edges) {
+    blocks.push(new Uint8Array([0]))
+  } else {
+    if (schema.edges) {
+      blocks.push(new Uint8Array([1]))
+      innerSerialize(schema.edges, blocks)
+    }
+  }
   return blocks
 }
 
