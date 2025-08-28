@@ -245,6 +245,10 @@ block-beta
   style TYPES fill:#0000,stroke-width:0
 ```
 
+## Columnar Vectors (colvec)
+
+
+
 ## Partial Data
 
 Currently as an experimental feature it's possible to offload parts of

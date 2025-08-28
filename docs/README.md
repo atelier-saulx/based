@@ -20,7 +20,7 @@ Based combines:
 
 ### Migration
 
-Comming from old version, check our [migration guide](/migration.md) [WIP].
+Coming from old version, check our [migration guide](/migration.md) [WIP].
 
 ### License
 
