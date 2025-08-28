@@ -9,7 +9,8 @@
     "!dist/**/*.map"
   ],
   "exports": {
-    "./db-read": "./dist/db-read/read.js"
+    "./db-read": "./dist/db-read/read.js",
+    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js"
   },
   "scripts": {
     "build": "tsc",

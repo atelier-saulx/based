@@ -31,10 +31,10 @@ export const equals = (aB: Uint8Array, bB: Uint8Array): boolean => {
   }
 }
 
-export function concatUint8Arr(
+export const concatUint8Arr = (
   bufs: Uint8Array[],
   totalByteLength?: number,
-): Uint8Array {
+): Uint8Array => {
   totalByteLength =
     totalByteLength ?? bufs.reduce((acc, cur) => acc + cur.byteLength, 0)
   const res = new Uint8Array(totalByteLength)
@@ -46,7 +46,6 @@ export function concatUint8Arr(
     res.set(buf, off)
     off += buf.byteLength
   }
-
   return res
 }
 

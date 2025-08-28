@@ -23,6 +23,7 @@ import { undefinedProps } from './undefined.js'
 import { TEXT } from '@based/schema/prop-types'
 export * from './types.js'
 export * from './string.js'
+export * from './schema/deserialize.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
   const field = result[i]

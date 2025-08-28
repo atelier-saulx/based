@@ -14,15 +14,7 @@ import retry from './retry.js'
 
 import randomString from './randomString.js'
 
-export {
-  deepCopy,
-  queued,
-  isObject,
-  wait,
-  deepEqual,
-  retry,
-  randomString,
-}
+export { deepCopy, queued, isObject, wait, deepEqual, retry, randomString }
 
 export * from './isWinterTimeInEurope.js'
 
@@ -32,7 +24,7 @@ export * from './encoder/index.js'
 
 export * from './deepMerge.js'
 
-export * from './walker.js'
+export * from './isEmptyObject.js'
 
 export * from './getType.js'
 
@@ -41,8 +33,6 @@ export * from './query.js'
 export * from './path.js'
 
 export * from './base64.js'
-
-// export * from './nonRecursiveWalker.js'
 
 export * from './longTimeOut.js'
 
