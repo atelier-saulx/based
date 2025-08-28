@@ -60,7 +60,7 @@ export const primitiveFilter = (
       !isNumerical(ctx.operation),
     )
   } else if (prop.typeIndex === CARDINALITY) {
-    parsedCondition = createFixedFilterBuffer(prop, 2, ctx, value, false)
+    parsedCondition = createFixedFilterBuffer(prop, 4, ctx, value, false)
   } else if (propSize) {
     parsedCondition = createFixedFilterBuffer(prop, propSize, ctx, value, false)
   } else {
