@@ -16,7 +16,7 @@ pub fn sortedReferences(
     include: []u8,
     sortBuffer: []u8,
     typeEntry: db.Type,
-    edgeConstrain: ?db.EdgeFieldConstraint,
+    edgeConstraint: ?db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
@@ -71,7 +71,7 @@ pub fn sortedReferences(
             db.getNodeId(refNode),
             typeEntry,
             include,
-            queryTypes.RefResult(isEdge, refs, edgeConstrain, i),
+            queryTypes.RefResult(isEdge, refs, edgeConstraint, i),
             null,
             false,
         ) catch 0;

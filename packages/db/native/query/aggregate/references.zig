@@ -73,7 +73,7 @@ pub inline fn aggregateRefsGroup(
     filterArr: ?[]u8,
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
+    var edgeConstraint: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
@@ -83,7 +83,7 @@ pub inline fn aggregateRefsGroup(
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 0;
         };
-        edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
+        edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) {
             return 0;
@@ -107,7 +107,7 @@ pub inline fn aggregateRefsGroup(
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
             if (hasFilter) {
-                const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
+                const refStruct = incTypes.RefResult(isEdge, refs, edgeConstraint, i);
                 if (!filter(ctx.db, n, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                     continue :checkItem;
                 }
@@ -175,7 +175,7 @@ pub inline fn aggregateRefsDefault(
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
+    var edgeConstraint: ?*const selva.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
@@ -186,7 +186,7 @@ pub inline fn aggregateRefsDefault(
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 10;
         };
-        edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
+        edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
         refs = db.getReferences(ctx.db, node, fieldSchema);
         if (refs == null) {
             return 10;
@@ -206,7 +206,7 @@ pub inline fn aggregateRefsDefault(
         checkItem: while (i < refsCnt) : (i += 1) {
             if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
                 if (hasFilter) {
-                    const refStruct = incTypes.RefResult(isEdge, refs, edgeConstrain, i);
+                    const refStruct = incTypes.RefResult(isEdge, refs, edgeConstraint, i);
                     if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                         continue :checkItem;
                     }

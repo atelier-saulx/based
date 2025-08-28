@@ -21,7 +21,7 @@ pub const RefStruct = struct {
     smallReference: ?*selva.SelvaNodeSmallReference,
     largeReference: ?*selva.SelvaNodeLargeReference,
     edgeReference: ?selva.SelvaNodeWeakReference,
-    edgeConstaint: ?db.EdgeFieldConstraint,
+    edgeConstraint: ?db.EdgeFieldConstraint,
 };
 
 pub inline fn resolveRefsNode(
@@ -51,7 +51,7 @@ pub const RefsResult = struct {
 pub inline fn RefResult(
     comptime isEdge: bool,
     refs: ?Refs(isEdge),
-    edgeConstrain: ?db.EdgeFieldConstraint,
+    edgeConstraint: ?db.EdgeFieldConstraint,
     i: usize,
 ) ?RefStruct {
     if (!isEdge) {
@@ -60,14 +60,14 @@ pub inline fn RefResult(
                 .smallReference = @ptrCast(&refs.?.unnamed_0.small[i]),
                 .largeReference = null,
                 .edgeReference = null,
-                .edgeConstaint = edgeConstrain.?,
+                .edgeConstraint = edgeConstraint.?,
             };
         } else if (refs.?.size == selva.SELVA_NODE_REFERENCE_LARGE) {
             return .{
                 .smallReference = null,
                 .largeReference = @ptrCast(&refs.?.unnamed_0.large[i]),
                 .edgeReference = null,
-                .edgeConstaint = edgeConstrain.?,
+                .edgeConstraint = edgeConstraint.?,
             };
         } else {
             return std.mem.zeroInit(RefStruct, .{});
@@ -77,6 +77,6 @@ pub inline fn RefResult(
         .smallReference = null,
         .largeReference = null,
         .edgeReference = refs.?.weakRefs.refs[i],
-        .edgeConstaint = null,
+        .edgeConstraint = null,
     };
 }
