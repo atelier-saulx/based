@@ -30,6 +30,6 @@
   "dependencies": {
     "fflate": "0.8.2",
     "@based/utils": "^1.0.0",
-    "@based/schema": "^5.0.0-alpha.27"
+    "@based/schema": "^5.0.0"
   }
 }

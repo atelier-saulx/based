@@ -30,7 +30,7 @@
     "vite": "^6.3.2"
   },
   "dependencies": {
-    "@based/schema": "5.0.0-alpha.10",
+    "@based/schema": "^5.0.0",
     "@based/utils": "^1.0.0"
   }
 }
