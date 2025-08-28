@@ -1,8 +1,8 @@
 Migrating from SQL
 ==================
 
-Northwind
----------
+Northwind Sample Database
+-------------------------
 
 The [Northwind](https://github.com/atelier-saulx/based/blob/main/packages/db/test/shared/northwindDb.ts)
 database is a sample database that was originally created by Microsoft and used in
