@@ -247,7 +247,7 @@ export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
   reverseMap
 
 export const ID_FIELD_DEF: PropDef = {
-  typeIndex: ID,
+  typeIndex: NULL,
   separate: true,
   path: ['id'],
   start: 0,
