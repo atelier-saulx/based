@@ -846,3 +846,34 @@ for (const order of wandkOrders) {
   db.delete('orders', order.id)
 }
 ```
+
+Triggers
+--------
+
+SQL triggers are stored procedures that are executed at an event like `INSERT`
+or `UPDATE`. The equivalent of a trigger in Based DB is called hook.
+
+In the following example we calculate the discount amount for each item in
+orders on creation and update. Finally we find the average discount amount
+int a query.
+
+```js
+const schema = deepCopy(defaultSchema)
+schema.types.orderDetails.props['discountAmount'] = 'number'
+schema.types.orderDetails['hooks'] = {
+  create(payload: Record<string, any>) {
+    if (payload.unitPrice !== undefined && payload.discount !== 0) {
+      payload.discountAmount = payload.unitPrice * payload.discount
+    }
+  },
+  update(payload: Record<string, any>) {
+    if (payload.unitPrice !== undefined && payload.discount !== 0) {
+      payload.discountAmount = payload.unitPrice * payload.discount
+    }
+  },
+}
+await createNorthwindDb(db, schema as Schema)
+
+// SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
+await db.query('orderDetails').avg('discountAmount').get().inspect()
+```
