@@ -42,14 +42,30 @@ await test('migration', async (t) => {
 
   await db.drain()
 
+  const hooksThatShouldBeIgnoredByMigration = {
+    create() {
+      return {
+        name: 'disaster',
+      }
+    },
+    read() {
+      return {
+        name: 'its a secret',
+      }
+    },
+  }
+
   const schemas: NonStrictSchema[] = [
     {
       version: '2.0.0',
       types: {
         user: {
-          fullName: 'string',
-          age: 'uint8',
-          email: 'string',
+          props: {
+            fullName: 'string',
+            age: 'uint8',
+            email: 'string',
+          },
+          hooks: hooksThatShouldBeIgnoredByMigration,
         },
         person: {
           email: 'string',
@@ -71,11 +87,15 @@ await test('migration', async (t) => {
     },
     {
       version: '3.0.0',
+
       types: {
         user: {
-          name: 'string',
-          age: 'uint8',
-          email: 'string',
+          props: {
+            name: 'string',
+            age: 'uint8',
+            email: 'string',
+          },
+          hooks: hooksThatShouldBeIgnoredByMigration,
         },
         person: {
           email: 'string',
