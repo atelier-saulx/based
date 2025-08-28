@@ -1454,7 +1454,8 @@ await test.skip('taxi', async (t) => {
   console.log(
     Object.keys(day2enum).reduce(
       (prev, key) => (
-        (prev[day2enum[key]] = rh1[key].$count / rh2[key].$count), prev
+        (prev[day2enum[key]] = rh1[key].count / rh2[key].count),
+        prev
       ),
       {},
     ),

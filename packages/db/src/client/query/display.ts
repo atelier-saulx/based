@@ -210,27 +210,45 @@ const inspectObject = (
       }
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === REFERENCES) {
-        str += inspectData(
-          v,
-          q.references.get(def.prop),
-          level + 2,
-          false,
-          depth,
-        )
+        if (q.aggregate) {
+          str += printNumber(v)
+          const [[__, akv], _] = q.aggregate.aggregates
+          const aggType = akv[0].type
+          str += picocolors.italic(
+            picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
+          )
+        } else {
+          str += inspectData(
+            v,
+            q.references.get(def.prop),
+            level + 2,
+            false,
+            depth,
+          )
+        }
       } else if (def.typeIndex === REFERENCE) {
         if (!v || !v.id) {
           str += 'null,\n'
         } else {
-          str += inspectObject(
-            v,
-            q.references.get(def.prop),
-            '',
-            level + 2,
-            false,
-            false,
-            true,
-            depth,
-          )
+          if (q.aggregate) {
+            str += printNumber(v)
+            const [[__, akv], _] = q.aggregate.aggregates
+            const aggType = akv[0].type
+            str += picocolors.italic(
+              picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
+            )
+          } else {
+            str += inspectObject(
+              v,
+              q.references.get(def.prop),
+              '',
+              level + 2,
+              false,
+              false,
+              true,
+              depth,
+            )
+          }
         }
       } else if (def.typeIndex === BINARY) {
         if (v === undefined) {

@@ -80,7 +80,7 @@ const test = async (
           let x = await db.query(type).include(fields).get()
           checksums.push(x.checksum)
           data.push(x.toObject())
-          counts.push(await db.query(type).count().get().toObject().$count)
+          counts.push(await db.query(type).count().get().toObject().count)
         }
 
         return [checksums, data, counts]

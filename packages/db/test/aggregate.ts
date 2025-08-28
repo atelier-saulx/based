@@ -400,7 +400,7 @@ await test('count top level bignumber', async (t) => {
   await db.drain()
 
   const q = await db.query('sequence').count().get()
-  equal(q.toObject().$count, 1e6)
+  equal(q.toObject().count, 1e6)
 })
 
 await test('top level count', async (t) => {
@@ -460,7 +460,7 @@ await test('top level count', async (t) => {
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
-    { $count: 3 },
+    { count: 3 },
     'count, top level, prop',
   )
 
@@ -471,13 +471,13 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { $count: 2 },
+    { count: 2 },
     'count with filter',
   )
 
   deepEqual(
     await db.query('vote').include('IT').count().get(),
-    { $count: 3 },
+    { count: 3 },
     'count, top level, ignoring include',
   )
 
@@ -488,19 +488,19 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { $count: 0 },
+    { count: 0 },
     'count, with no match filtering, string value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '=', 20).count().get(),
-    { $count: 1 },
+    { count: 1 },
     'count, with filtering an int value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-    { $count: 0 },
+    { count: 0 },
     'count, with no match filtering, int value',
   )
 })
@@ -567,7 +567,7 @@ await test('count branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { $count: 3 } }],
+    [{ id: 1, votes: { count: 3 } }],
     'brached include, count, references',
   )
 
@@ -591,7 +591,7 @@ await test('count branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { $count: 2 } }],
+    [{ id: 1, votes: { count: 2 } }],
     'count, branched include, references, filtered',
   )
 })
@@ -654,10 +654,10 @@ await test('count group by', async (t) => {
     await db.query('vote').count().groupBy('country').get().toObject(),
     {
       bb: {
-        $count: 1,
+        count: 1,
       },
       aa: {
-        $count: 2,
+        count: 2,
       },
     },
     'count, top level, groupBy',
@@ -671,7 +671,7 @@ await test('count group by', async (t) => {
       .count()
       .get()
       .toObject(),
-    { bb: { $count: 1 } },
+    { bb: { count: 1 } },
     'count, filter, groupBy on single distinct value',
   )
 })
@@ -1231,13 +1231,13 @@ await test('numeric types', async (t) => {
     await db.query('vote').count().groupBy('region').get(),
     {
       bb: {
-        $count: 2,
+        count: 2,
       },
       aa: {
-        $count: 2,
+        count: 2,
       },
       Great: {
-        $count: 1,
+        count: 1,
       },
     },
     'count, main, group by',
@@ -1502,13 +1502,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            $count: 2,
+            count: 2,
           },
           aa: {
-            $count: 2,
+            count: 2,
           },
           Great: {
-            $count: 1,
+            count: 1,
           },
         },
       },
@@ -1930,7 +1930,7 @@ await test('refs with enums ', async (t) => {
         id: 1,
         movies: {
           Crime: {
-            $count: 2,
+            count: 2,
           },
         },
       },
@@ -1938,7 +1938,7 @@ await test('refs with enums ', async (t) => {
         id: 2,
         movies: {
           Crime: {
-            $count: 1,
+            count: 1,
           },
         },
       },
@@ -3126,10 +3126,10 @@ await test('boundary cases for validation', async (t) => {
     await db.query('movie').groupBy('year').count().get(),
     {
       1994: {
-        $count: 1,
+        count: 1,
       },
       2003: {
-        $count: 1,
+        count: 1,
       },
     },
     'group by numeric valus is allowed',
