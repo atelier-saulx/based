@@ -161,4 +161,10 @@ await test('with other filters', async (t) => {
     [],
     '!exists',
   )
+
+  deepEqual(
+    await db.query('user').include('name').filter('friends', '!exists').get(),
+    [{ id: 3, name: 'sad guy has no friends' }],
+    '!exists refs',
+  )
 })
