@@ -22,7 +22,7 @@ export default async function createNorthwind(db: BasedDb) {
       categories: {
         props: {
           categoryName: { type: 'string', maxBytes: 15 },
-          description: 'text',
+          description: 'string',
           picture: 'binary',
         },
       },
@@ -32,7 +32,7 @@ export default async function createNorthwind(db: BasedDb) {
       // );
       customerDemographics: {
         props: {
-          customerDesc: 'text',
+          customerDesc: 'string',
         },
       },
       // CREATE TABLE customers (
@@ -113,7 +113,7 @@ export default async function createNorthwind(db: BasedDb) {
           homePhone: schPhone,
           extension: schExtension,
           photo: 'binary',
-          notes: 'text',
+          notes: 'string',
           reportsTo: { ref: 'employees', prop: 'subordinates' },
           photoPath: { type: 'string', max: 255 },
           territories: {
