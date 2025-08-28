@@ -1,5 +1,5 @@
 import { BasedDb } from '../../src/index.js'
-import { mermaid } from '@based/schema-diagram'
+// import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
 import test from '../shared/test.js'
@@ -41,7 +41,8 @@ await test('Basic SQL', async (t) => {
   // expensive to cheapest.
   // Show OrderID, OrderDate, ShippedDate, CustomerID, and Freight.
   console.log(4)
-  await db.query('orders')
+  await db
+    .query('orders')
     .include('orderDate', 'shippedDate', 'customer.id', 'freight')
     .sort('freight', 'desc')
     .get()
@@ -136,10 +137,15 @@ await test('Basic SQL', async (t) => {
 
   // 15. Find the Companies (the CompanyName) that placed orders in 1997
   console.log(15)
-  await db.query('orders')
+  await db
+    .query('orders')
     .include('orderDate', 'customer.companyName')
-    .filter('orderDate', '..', [ new Date('1997'), new Date(+new Date('1998') - 1) ])
-    .get().inspect()
+    .filter('orderDate', '..', [
+      new Date('1997'),
+      new Date(+new Date('1998') - 1),
+    ])
+    .get()
+    .inspect()
 
   // 16. Create a report showing employee orders.
   console.log(16)
@@ -311,7 +317,6 @@ await test('Basic SQL', async (t) => {
     ...unionB.map(({ city, country }) => ({ city, country })),
   ].sort((a, b) => a.city.localeCompare(b.city))
   console.log(unionAll)
-
 })
 
 await test('insert and update', async (t) => {
