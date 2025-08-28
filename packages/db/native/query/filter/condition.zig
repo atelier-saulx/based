@@ -166,9 +166,6 @@ pub inline fn default(
     if (op == Op.equal) {
         const value = v[start .. start + valueSize];
         var j: u8 = 0;
-
-        std.debug.print("Hello {any} {any} {any} {any} s{any} \n", .{ valueSize, prop, value, query, start });
-
         while (j < query.len) : (j += 1) {
             if (value[j] != query[j]) {
                 return .{ next, false };
