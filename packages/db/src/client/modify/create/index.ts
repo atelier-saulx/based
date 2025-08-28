@@ -161,6 +161,7 @@ export const writeCreate = (
     if (!(schema.id in ctx.created)) {
       ctx.created[schema.id] = 0
       ctx.max -= 6
+      ctx.size -= 6
     }
     ctx.id = ctx.created[schema.id] + 1
   }

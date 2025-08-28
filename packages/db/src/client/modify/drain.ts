@@ -3,15 +3,13 @@ import { DbClient } from '../../index.js'
 import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
 
-let test = 0
 export const reset = (ctx: Ctx) => {
   ctx.index = 8
   ctx.max = ctx.array.buffer.maxByteLength - 4
+  ctx.size = ctx.array.buffer.byteLength - 4
   ctx.cursor = {}
   ctx.created = {}
-  test++
-  // @ts-ignore
-  ctx.batch = { test }
+  ctx.batch = {}
 }
 
 export const cancel = (ctx: Ctx, error: Error) => {

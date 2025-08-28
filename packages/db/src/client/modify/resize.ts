@@ -5,17 +5,15 @@ export const resize = (ctx: Ctx, size: number) => {
   if (size > ctx.max) {
     throw RANGE_ERR
   }
-  if (size > ctx.array.buffer.byteLength) {
-    if ('resize' in ctx.array.buffer) {
-      ctx.array.buffer.resize(
-        Math.min(
-          ctx.array.buffer.maxByteLength,
-          ctx.array.buffer.byteLength * 2,
-        ),
-      )
-    } else {
-      throw RANGE_ERR
-    }
+  if (size > ctx.size) {
+    const avail = ctx.array.buffer.maxByteLength
+    const affix = avail - ctx.max
+    const required = size + affix
+    const double = Math.max(required, ctx.size * 2)
+    const length = Math.min(avail, double)
+    // @ts-ignore
+    ctx.array.buffer.resize(length)
+    ctx.size = length - affix
   }
 }
 

@@ -8,6 +8,7 @@ export class Ctx {
   constructor(schemaChecksum: number, array: Uint8Array<ArrayBufferLike>) {
     this.array = array
     this.max = array.buffer.maxByteLength - 4 // dataLen
+    this.size = array.buffer.byteLength - this.max
     writeUint64(array, schemaChecksum, 0)
   }
   id: number
@@ -16,6 +17,7 @@ export class Ctx {
   schema: SchemaTypeDef
   array: Uint8Array<ArrayBufferLike>
   max: number
+  size: number
   unsafe?: boolean
   overwrite?: boolean
   operation: ModifyOp
