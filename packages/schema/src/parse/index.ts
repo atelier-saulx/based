@@ -133,7 +133,9 @@ export class SchemaParser {
           for (const otherRange of otherRanges) {
             if (rangeIntersects(targetRange, otherRange)) {
               throw Error(
-                'invalid overlapping version for migration for ' + type,
+                'invalid overlapping version for migration for ' +
+                  type +
+                  ` ${JSON.stringify(otherRange)} ${JSON.stringify(targetRange)} ${otherRange === targetRange}`,
               )
             }
           }

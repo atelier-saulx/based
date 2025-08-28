@@ -2,7 +2,7 @@ import { SchemaTypeDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { ModifyOpts, UPDATE, UPDATE_PARTIAL } from '../types.js'
 import { DbClient, DbClientHooks } from '../../../index.js'
-import { validateId, validatePayload } from '../validate.js'
+import { getValidSchema, validateId, validatePayload } from '../validate.js'
 import { isValidId, langCodesMap } from '@based/schema'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'
@@ -65,7 +65,7 @@ export function update(
   payload: any,
   opts: ModifyOpts,
 ): Promise<number> {
-  const schema = db.schemaTypesParsed[type]
+  const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
   try {
     validatePayload(payload)

@@ -10,6 +10,9 @@ import { makeTreeKey } from './tree.js'
 import { SCHEMA_FILE } from '../types.js'
 import { saveSync } from './save.js'
 import { hash } from '@based/hash'
+import { writeCreate } from '../client/modify/create/index.js'
+import { Ctx } from '../client/modify/Ctx.js'
+import { consume } from '../client/modify/drain.js'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
@@ -48,23 +51,11 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   }
   // Insert a root node
   if (schema.types._root) {
-    // TODO fix server add it in schema at least
-    const data = [2, 1, 0, 0, 0, 1, 9, 1, 0, 0, 0, 7, 1, 0, 1]
-    const blockKey = makeTreeKey(1, 1)
-    const buf = new Uint8Array(8 + data.length + 2 + 8 + 4)
-    const view = new DataView(buf.buffer, 0, buf.byteLength)
-    // set schema hash
-    writeUint64(buf, server.schema.hash, 0)
-    // add content
-    buf.set(data, 8)
-    // add typesLen
-    view.setFloat64(8 + data.length, 0, true)
-    // add dirty key
-    view.setFloat64(8 + data.length + 2, blockKey, true)
-    // add dataLen
-    view.setUint32(buf.length - 4, data.length, true)
+    const tmpArr = new Uint8Array(100)
+    const tmpCtx = new Ctx(schema.hash, tmpArr)
+    writeCreate(tmpCtx, server.schemaTypesParsed._root, {}, null)
+    const buf = consume(tmpCtx)
     server.modify(buf)
-    //server.verifTree = new VerifTree(.schemaTypesParsed)
   }
 
   server.verifTree.updateTypes(server.schemaTypesParsed)

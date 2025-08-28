@@ -1,4 +1,4 @@
-import { validateId } from '../validate.js'
+import { getValidSchema, validateId } from '../validate.js'
 import { handleError } from '../error.js'
 import { DbClient } from '../../../index.js'
 import { reserve } from '../resize.js'
@@ -20,7 +20,7 @@ export function expire(
   seconds: number,
 ): Promise<number> {
   const ctx = db.modifyCtx
-  const schema = db.schemaTypesParsed[type]
+  const schema = getValidSchema(db, type)
   try {
     ctx.start = ctx.index
     ctx.schema = schema

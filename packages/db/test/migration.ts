@@ -1,6 +1,7 @@
 import { NonStrictSchema } from '@based/schema'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { equal } from './shared/assert.js'
 
 await test('migration', async (t) => {
   const db = new BasedDb({
@@ -80,17 +81,6 @@ await test('migration', async (t) => {
             },
           },
         },
-        {
-          version: '<3',
-          migrate: {
-            user({ fullName, ...rest }) {
-              return {
-                name: fullName,
-                ...rest,
-              }
-            },
-          },
-        },
       ],
     },
   ]
@@ -99,5 +89,7 @@ await test('migration', async (t) => {
     await db.setSchema(schema)
   }
 
+  const res = await db.query('user').get().toObject()
+  equal(res.length, 10)
   console.log('---', await db.query('user').get().toObject())
 })

@@ -1,5 +1,5 @@
 import { DbClient } from '../../../index.js'
-import { validateId } from '../validate.js'
+import { getValidSchema, validateId } from '../validate.js'
 import {
   FULL_CURSOR_SIZE,
   writeMainCursor,
@@ -15,7 +15,7 @@ import { Tmp } from '../Tmp.js'
 import { schedule } from '../drain.js'
 
 export function del(db: DbClient, type: string, id: number) {
-  const schema = db.schemaTypesParsed[type]
+  const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
   try {
     if (schema.insertOnly) {

@@ -374,16 +374,19 @@ export class DbServer extends DbShared {
         const typeId = readUint16(payload, i - 6)
         const count = readUint32(payload, i - 4)
         const typeDef = this.schemaTypesParsedById[typeId]
-        const lastId =
-          typeDef.lastId || native.getTypeInfo(typeId, this.dbCtxExternal)?.[1]
-        console.log(
-          { typeId, lastId },
-          native.getTypeInfo(typeId, this.dbCtxExternal),
-        )
+
         if (!typeDef) {
+          console.error('Missing typeDef, cancel write', { typeId, count })
           this.emit('info', 'Missing typeDef, cancel write')
           return null
         }
+
+        const lastId =
+          typeDef.lastId || native.getTypeInfo(typeId, this.dbCtxExternal)?.[1]
+        // console.log(
+        //   { typeId, lastId },
+        //   native.getTypeInfo(typeId, this.dbCtxExternal),
+        // )
 
         // TODO replace this with Ctx.created
         const offset = lastId

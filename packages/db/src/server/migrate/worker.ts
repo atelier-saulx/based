@@ -18,6 +18,7 @@ import { setTimeout } from 'node:timers/promises'
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
 } else if (workerData?.isDbMigrateWorker) {
+  // console.info('----init migration----')
   const { from, to, fromSchema, toSchema, channel, workerState, transformFns } =
     workerData
 
@@ -101,6 +102,7 @@ if (isMainThread) {
 
     while (true) {
       let msg: any
+
       while ((msg = receiveMessageOnPort(channel))) {
         const leafData: MigrateRange = msg.message
         const { type, include } = map[leafData.typeId]
@@ -138,12 +140,15 @@ if (isMainThread) {
       }
 
       await toDb.drain()
+
       native.membarSyncWrite()
 
+      // // for debugging only
+      // await setTimeout(100)
       // WE ARE ONLY GOING TO SEND { type: lastNodeId }
+
       channel.postMessage(cp(toDb.server.schemaTypesParsed))
-      // for debugging only
-      await setTimeout(100)
+      // await setTimeout(100)
       setToSleep(workerState)
     }
   } catch (e) {

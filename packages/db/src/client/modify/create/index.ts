@@ -24,7 +24,7 @@ import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU8 } from '../uint.js'
-import { validatePayload } from '../validate.js'
+import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 
 const writeDefaults = (ctx: Ctx, payload) => {
@@ -138,7 +138,62 @@ const writeCreateTs = (ctx: Ctx, payload: any) => {
   }
 }
 
-const writeCreate = (ctx: Ctx, payload: any) => {
+export const writeCreate = (
+  ctx: Ctx,
+  schema: SchemaTypeDef,
+  payload: any,
+  opts: ModifyOpts,
+) => {
+  validatePayload(payload)
+  validatePayload(schema)
+
+  if (schema.hooks?.create) {
+    payload = schema.hooks.create(payload) || payload
+  }
+
+  if (payload.id) {
+    if (!opts?.unsafe) {
+      throw 'Invalid payload. "id" not allowed'
+    }
+
+    ctx.id = payload.id
+  } else {
+    if (!(schema.id in ctx.created)) {
+      ctx.created[schema.id] = 0
+      ctx.max -= 6
+    }
+    ctx.id = ctx.created[schema.id] + 1
+  }
+
+  // TODO remove this, this is only for migration
+  schema.lastId ??= 0
+  if (schema.lastId < payload.id) {
+    schema.lastId = payload.id
+  }
+
+  // console.log(type, ctx.id, payload, schema.lastId)
+
+  if (ctx.defaults) {
+    ctx.defaults = 0
+    schema.separateDefaults?.bufferTmp.fill(0)
+  }
+
+  if (ctx.sort) {
+    ctx.sort = 0
+    schema.separateSort.bufferTmp.set(schema.separateSort.buffer)
+  }
+
+  if (ctx.sortText) {
+    ctx.sortText = 0
+    schema.separateTextSort.bufferTmp.set(schema.separateTextSort.buffer)
+  }
+
+  ctx.schema = schema
+  ctx.operation = CREATE
+  ctx.overwrite = true
+  ctx.unsafe = opts?.unsafe
+  ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+  ctx.start = ctx.index
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
   writeNodeCursor(ctx)
@@ -155,6 +210,7 @@ const writeCreate = (ctx: Ctx, payload: any) => {
   writeDefaults(ctx, payload)
   writeSortable(ctx)
   writeSortableText(ctx)
+  ctx.created[schema.id]++
 }
 
 export function create(
@@ -163,64 +219,10 @@ export function create(
   payload: any,
   opts: ModifyOpts,
 ): Promise<number> {
-  const schema = db.schemaTypesParsed[type]
+  const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
-
   try {
-    validatePayload(payload)
-    validatePayload(schema)
-
-    if (schema.hooks?.create) {
-      payload = schema.hooks.create(payload) || payload
-    }
-
-    if (payload.id) {
-      if (!opts?.unsafe) {
-        throw 'Invalid payload. "id" not allowed'
-      }
-
-      ctx.id = payload.id
-    } else {
-      if (!(schema.id in ctx.created)) {
-        ctx.created[schema.id] = 0
-        ctx.max -= 6
-      }
-      ctx.id = ctx.created[schema.id] + 1
-    }
-
-    // TODO remove this, this is only for migration
-    schema.lastId ??= 0
-    if (schema.lastId < payload.id) {
-      schema.lastId = payload.id
-    }
-
-    // console.log(type, ctx.id, payload, schema.lastId)
-
-    if (ctx.defaults) {
-      ctx.defaults = 0
-      schema.separateDefaults?.bufferTmp.fill(0)
-    }
-
-    if (ctx.sort) {
-      ctx.sort = 0
-      schema.separateSort.bufferTmp.set(schema.separateSort.buffer)
-    }
-
-    if (ctx.sortText) {
-      ctx.sortText = 0
-      schema.separateTextSort.bufferTmp.set(schema.separateTextSort.buffer)
-    }
-
-    ctx.schema = schema
-    ctx.operation = CREATE
-    ctx.overwrite = true
-    ctx.unsafe = opts?.unsafe
-    ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
-
-    ctx.start = ctx.index
-    ctx.start = ctx.index
-    writeCreate(ctx, payload)
-    ctx.created[schema.id]++
+    writeCreate(ctx, schema, payload, opts)
     const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp

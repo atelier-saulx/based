@@ -73,6 +73,7 @@ await test('client server basic', async (t) => {
   })
 
   console.log('--', await youzi, await fred)
+
   const res = await client1.update('user', youzi, {
     name: 'youzi',
     others: [fred, marie],

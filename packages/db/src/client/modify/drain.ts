@@ -22,7 +22,7 @@ export const cancel = (ctx: Ctx, error: Error) => {
   batch.promises?.forEach(rejectTmp)
 }
 
-export const consume = (ctx: Ctx) => {
+export const consume = (ctx: Ctx): Uint8Array => {
   if (ctx.index > ctx.array.byteLength) {
     throw new Error('Invalid size - modify buffer length mismatch')
   }
@@ -44,11 +44,12 @@ export const consume = (ctx: Ctx) => {
 
   return payload
 }
-let cnt = 0
+
 export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
     const { batch } = ctx
     const payload = consume(ctx)
+    console.log('drain:', payload.byteLength)
     ctx.draining = db.hooks
       .flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {
@@ -58,7 +59,13 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         batch.promises?.forEach(resolveTmp)
         batch.promises = null
       })
-      .catch(console.error)
+      .catch((e) => {
+        console.error(e)
+        batch.ready = true
+        batch.error = e
+        batch.promises?.forEach(rejectTmp)
+        batch.promises = null
+      })
   }
   return ctx.draining
 }

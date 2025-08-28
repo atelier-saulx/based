@@ -92,7 +92,5 @@ export const handleError = (
     throw Error(parseErrorMsg(def, val, msg))
   }
 
-  console.trace({ e })
-
   throw e
 }
