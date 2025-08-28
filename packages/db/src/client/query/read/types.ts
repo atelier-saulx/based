@@ -201,7 +201,7 @@ export const convertToReaderSchema = (
       }
     }
   } else {
-    if (q.schema.hooks?.read) {
+    if (q.schema?.hooks?.read) {
       readerSchema.hook = q.schema.hooks.read
     }
     if (isRoot && q.search) {
