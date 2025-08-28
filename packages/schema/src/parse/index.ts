@@ -176,7 +176,9 @@ export const print = (schema: Schema, path: string[]) => {
   let obj = schema
   const depth = path.length - 1
   const lines: string[] = path.map((key, lvl) => {
-    if (!obj) return ''
+    if (typeof obj !== 'object') {
+      return ''
+    }
     const v = obj[key]
     const padding = '  '.repeat(lvl)
     const prefix = key === Object.keys(obj)[0] ? '' : `${padding}...\n`
