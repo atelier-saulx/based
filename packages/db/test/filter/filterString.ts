@@ -654,3 +654,62 @@ await test('OR equal main', async (t) => {
     1,
   )
 })
+
+await test('includes and neq', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await db.setSchema({
+    types: {
+      ent: {
+        props: {
+          city: { type: 'string', maxBytes: 15 },
+          country: { type: 'string', maxBytes: 15 }
+        },
+      },
+    },
+  })
+
+  db.create('ent', {
+    city: 'Rome',
+    country: 'Italy',
+  })
+  db.create('ent', {
+    city: 'Rome',
+    country: 'USA',
+  })
+  db.create('ent', {
+    city: 'Cologne',
+    country: 'Germany',
+  })
+  db.create('ent', {
+    city: 'Berlin',
+    country: 'Germany',
+  })
+  db.create('ent', {
+    city: 'Berlin',
+    country: 'USA',
+  })
+  db.create('ent', {
+    city: 'Paris',
+    country: 'France',
+  })
+  db.create('ent', {
+    city: 'Paris',
+    country: 'Canada',
+  })
+
+  deepEqual(
+    db
+      .query('ent')
+      .filter('country', 'includes', ['Italy', 'Germany'])
+      .filter('city', '!=', 'Berlin')
+      .get(),
+    [
+      { id: 1, city: 'Rome', country: 'Italy' },
+      { id: 3, city: 'Cologne', country: 'Germany' },
+    ]
+  )
+})

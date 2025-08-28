@@ -1,4 +1,5 @@
 import { BasedDb } from '../../src/index.js'
+import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
 import test from '../shared/test.js'
@@ -40,9 +41,11 @@ await test('Basic SQL', async (t) => {
   // expensive to cheapest.
   // Show OrderID, OrderDate, ShippedDate, CustomerID, and Freight.
   console.log(4)
-  // TODO
-  //await db.query('orders').include('orderDate', 'shippedDate' 'customer.id', 'freight').sort('', 'desc').get().inspect()
-  //await db.query('orderDetails').groupBy('order').sort('order.freight').get().inspect()
+  await db.query('orders')
+    .include('orderDate', 'shippedDate', 'customer.id', 'freight')
+    .sort('freight', 'desc')
+    .get()
+    .inspect()
 
   // 5. Create a report showing the title and the first and last name of all sales representatives.
   console.log(5)
@@ -68,8 +71,8 @@ await test('Basic SQL', async (t) => {
   // with a letter in the last half of the alphabet.
   // Sort by LastName in descending order.
   // TODO
-  //await db.query('employees').include('firstName', 'lastName').filter('lastName', 'startsWith', ??
   console.log(7)
+  //await db.query('employees').include('firstName', 'lastName').filter('lastName', 'startsWith', ??
 
   // 8. Create a report showing the title of courtesy and the first and last name of all employees
   // whose title of courtesy begins with "M".
@@ -80,7 +83,7 @@ await test('Basic SQL', async (t) => {
   // Seattle or Redmond.
   console.log(9)
   // TODO Impossible to OR
-  ;(await db
+  await db
     .query('employees')
     .include('firstName', 'lastName', 'title', 'city')
     .filter('title', '=', 'Sales Representative')
@@ -89,13 +92,20 @@ await test('Basic SQL', async (t) => {
       f.filter('city', '=', 'Seattle').or('city', '=', 'London')
     })
     .get()
-    .toObject(),
-    // if (1) process.exit()
+    .inspect(10)
 
-    // 10. Create a report that shows the company name, contact title, city and country of all
-    // customers in Mexico or in any city in Spain except Madrid.
-    console.log(10))
+  // 10. Create a report that shows the company name, contact title, city and country of all
+  // customers in Mexico or in any city in Spain except Madrid.
+  console.log(10)
   // TODO Impossible
+  await db
+    .query('customers')
+    .include('companyName', 'contactTitle', 'city', 'country')
+    //.filter('country', 'includes', ['Mexico', 'Spain'])
+    .filter('country', 'includes', ['Mexico', 'Spain'])
+    .filter('city', '!=', 'Madrid')
+    .get()
+    .inspect(100)
 
   // 11. If the cost of freight is greater than or equal to $500.00, it will now be taxed by 10%.
   // Create a report that shows the order id, freight cost, freight cost with this tax for all orders of
@@ -126,11 +136,10 @@ await test('Basic SQL', async (t) => {
 
   // 15. Find the Companies (the CompanyName) that placed orders in 1997
   console.log(15)
-  // TODO Needs by year filtering
-  //console.log(await db.query('orders')
-  //  .include('customer.companyName')
-  //  .filter('orderDate', '=')
-  //  .get().toObject())
+  await db.query('orders')
+    .include('orderDate', 'customer.companyName')
+    .filter('orderDate', '..', [ new Date('1997'), new Date(+new Date('1998') - 1) ])
+    .get().inspect()
 
   // 16. Create a report showing employee orders.
   console.log(16)
@@ -150,10 +159,10 @@ await test('Basic SQL', async (t) => {
 
   // 18. Create a report that shows the total quantity of products (from the Order_Details table)
   // ordered. Only show records for products for which the quantity ordered is fewer than 200.
-  // The report should return the following 5 rows.
+  // TODO
 
   // SELECT * FROM Customers
-  // WHERE Country='Mexico';
+  // WHERE country='Mexico';
   console.log('where')
   await db.query('customers').filter('country', '=', 'Mexico').get().inspect()
 
@@ -196,7 +205,7 @@ await test('Basic SQL', async (t) => {
     .get()
     .inspect()
 
-  // SELECT CustomerID AS ID, CompanyName AS Customer
+  // SELECT customer_id AS ID, company_name AS customer
   // FROM customers;
   console.log('sql aliases')
   console.log(
@@ -205,9 +214,9 @@ await test('Basic SQL', async (t) => {
     ),
   )
 
-  // SELECT Orders.OrderID, Customers.CompanyName, Orders.OrderDate
-  // FROM Orders
-  // INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
+  // SELECT orders.order_id, customers.company_name, orders.order_date
+  // FROM orders
+  // INNER JOIN customers ON orders.customer_id = customers.customer_id;
   console.log('inner join')
   console.log(
     await db
@@ -218,11 +227,11 @@ await test('Basic SQL', async (t) => {
       .toObject(),
   )
 
-  // SELECT Customers.CompanyName, Orders.OrderID
-  // FROM Customers
-  // LEFT JOIN Orders
-  // ON Customers.CustomerID=Orders.CustomerID
-  // ORDER BY Customers.CompanyName;
+  // SELECT customers.company_name, orders.order_id
+  // FROM customers
+  // LEFT JOIN orders
+  // ON customers.customer_id = orders.customer_id
+  // ORDER BY customers.company_name;
   console.log('left join')
   //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
   console.dir(
@@ -237,21 +246,26 @@ await test('Basic SQL', async (t) => {
   )
 
   // Right join TODO
+  // SELECT orders.order_id employees.Last_name, employees.first_name
+  // FROM orders
+  // RIGHT JOIN employees
+  // ON orders.employee_id = employees.employee_id
+  // ORDER BY orders.order_id;
 
   // Full join TODO
 
   // Self join TODO
-  // SELECT A.CustomerName AS CustomerName1, B.CustomerName AS CustomerName2, A.City
-  //   FROM Customers A, Customers B
-  //   WHERE A.CustomerID <> B.CustomerID
-  //   AND A.City = B.City
-  //   ORDER BY A.City;
+  // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
+  // FROM customers A, customers B
+  // WHERE A.customer_id <> B.customer_id
+  // AND A.city = B.city
+  // ORDER BY A.city;
 
   // Union
-  // SELECT 'Customer' AS Type, ContactName, City, Country
-  // FROM Customers
+  // SELECT 'customer' AS Type, contact_name, city, country
+  // FROM customers
   // UNION
-  // SELECT 'Supplier', ContactName, City, Country
+  // SELECT 'supplier', contact_name, city, country
   // FROM Suppliers
   console.log('union')
   const unionA = await db
@@ -298,11 +312,9 @@ await test('Basic SQL', async (t) => {
   ].sort((a, b) => a.city.localeCompare(b.city))
   console.log(unionAll)
 
-  // @ts-ignore
-  //console.log(mermaid(db.client.schema))
 })
 
-await test('northwind insert and update', async (t) => {
+await test('insert and update', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -484,4 +496,9 @@ await test('hooks', async (t) => {
 
   // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
   await db.query('orderDetails').avg('discountAmount').get().inspect()
+})
+
+await test.skip('mermaid', async (t) => {
+  // @ts-ignore
+  console.log(mermaid(db.client.schema))
 })
