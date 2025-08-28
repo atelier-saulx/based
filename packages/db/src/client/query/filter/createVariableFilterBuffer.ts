@@ -96,15 +96,14 @@ export const createVariableFilterBuffer = (
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
-      const x = []
+      const values = []
       for (const v of value) {
-        const a = parseValue(v, prop, ctx, lang)
+        const parsedValue = parseValue(v, prop, ctx, lang)
         const size = new Uint8Array(2)
-        size[0] = a.byteLength
-        size[1] = a.byteLength >>> 8
-        x.push(size, a)
+        writeUint16(size, parsedValue.byteLength, 0)
+        values.push(size, parsedValue)
       }
-      val = concatUint8Arr(x)
+      val = concatUint8Arr(values)
     } else {
       const x = []
       for (const v of value) {
@@ -133,14 +132,8 @@ export const createVariableFilterBuffer = (
           const crc = crc32(val.slice(0, -fbLen))
           const len = val.byteLength - fbLen
           const v = new Uint8Array(8 + fbLen)
-          v[0] = crc
-          v[1] = crc >>> 8
-          v[2] = crc >>> 16
-          v[3] = crc >>> 24
-          v[4] = len
-          v[5] = len >>> 8
-          v[6] = len >>> 16
-          v[7] = len >>> 24
+          writeUint32(v, crc, 0)
+          writeUint32(v, len, 4)
           for (let i = 0; i < fbLen; i++) {
             v[v.byteLength - (i + 1)] = val[val.byteLength - (i + 1)]
           }
@@ -188,7 +181,6 @@ function writeVarFilter(
 ): Uint8Array {
   const size = val.byteLength
   const buf = new Uint8Array(12 + size)
-
   buf[0] = ctx.type
   buf[1] = mode
   buf[2] = prop.typeIndex
@@ -197,6 +189,5 @@ function writeVarFilter(
   writeUint32(buf, size, 7)
   buf[11] = ctx.operation
   buf.set(val, 12)
-
   return buf
 }

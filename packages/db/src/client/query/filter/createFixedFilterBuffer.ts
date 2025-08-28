@@ -15,7 +15,13 @@ import {
   MODE_OR_FIXED,
 } from './types.js'
 import { parseFilterValue } from './parseFilterValue.js'
-import { ENCODER, writeInt64 } from '@based/utils'
+import {
+  ENCODER,
+  writeDoubleLE,
+  writeInt64,
+  writeUint16,
+  writeUint32,
+} from '@based/utils'
 import { FilterCondition } from '../types.js'
 
 export const writeFixed = (
@@ -41,17 +47,12 @@ export const writeFixed = (
       if (prop.typeIndex === TIMESTAMP) {
         writeInt64(buf, value, offset)
       } else {
-        const view = new DataView(buf.buffer, buf.byteOffset)
-        view.setFloat64(offset, value, true)
+        writeDoubleLE(buf, value, offset)
       }
     } else if (size === 4) {
-      buf[offset] = value
-      buf[offset + 1] = value >>> 8
-      buf[offset + 2] = value >>> 16
-      buf[offset + 3] = value >>> 24
+      writeUint32(buf, value, offset)
     } else if (size === 2) {
-      buf[offset] = value
-      buf[offset + 1] = value >>> 8
+      writeUint16(buf, value, offset)
     } else if (size === 1) {
       buf[offset] = value
     }
@@ -76,24 +77,16 @@ export const createFixedFilterBuffer = (
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
     buf[2] = prop.typeIndex
-    buf[3] = size
-    buf[4] = size >>> 8
-    buf[5] = start
-    buf[6] = start >>> 8
+    writeUint16(buf, size, 3)
+    writeUint16(buf, start, 5)
     buf[7] = ctx.operation
-    buf[8] = len
-    buf[9] = len >>> 8
+    writeUint16(buf, len, 8)
     buf[10] = ALIGNMENT_NOT_SET
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
-        const off = 18 + i * size
-        const val = value[i]
-        buf[off] = val
-        buf[off + 1] = val >>> 8
-        buf[off + 2] = val >>> 16
-        buf[off + 3] = val >>> 24
+        writeUint32(buf, value[i], 18 + i * size)
       }
     } else {
       for (let i = 0; i < len; i++) {
@@ -112,10 +105,8 @@ export const createFixedFilterBuffer = (
     buf[0] = ctx.type
     buf[1] = MODE_DEFAULT
     buf[2] = prop.typeIndex
-    buf[3] = size
-    buf[4] = size >>> 8
-    buf[5] = start
-    buf[6] = start >>> 8
+    writeUint16(buf, size, 3)
+    writeUint16(buf, start, 5)
     buf[7] = ctx.operation
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
     return buf

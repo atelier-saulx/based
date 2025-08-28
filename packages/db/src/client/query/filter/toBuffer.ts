@@ -26,8 +26,7 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
-  result[sizeIndex] = conditionSize
-  result[sizeIndex + 1] = conditionSize >>> 8
+  writeUint16(result, conditionSize, sizeIndex)
   return lastWritten - offset
 }
 
@@ -57,8 +56,7 @@ export const fillConditionsBuffer = (
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
-      result[lastWritten] = refConditions.schema.id
-      result[lastWritten + 1] = refConditions.schema.id >>> 8
+      writeUint16(result, refConditions.schema.id, lastWritten)
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
@@ -82,9 +80,8 @@ export const fillConditionsBuffer = (
 
   if (conditions.or && conditions.or.size != 0) {
     const size = fillConditionsBuffer(result, conditions.or, lastWritten)
-    result[orJumpIndex] = size
-    result[orJumpIndex + 1] = size >>> 8
-    writeUint32(result, lastWritten, 2)
+    writeUint16(result, size, orJumpIndex)
+    writeUint32(result, lastWritten, orJumpIndex + 2)
     lastWritten += size
   }
 

@@ -63,7 +63,6 @@ pub fn filter(
 
     while (i < end) {
         const meta: Meta = @enumFromInt(conditions[i]);
-
         if (meta == Meta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
             end = read(u32, conditions, i + 3);
