@@ -15,6 +15,7 @@ import { buffer } from 'node:stream/consumers'
 let CHUNK_SIZE = 1025
 let OUTPUT_DIR = './tmp/export'
 let verbose = false
+let locale = undefined
 
 process.argv.forEach((val) => {
   if (val.includes('verbose')) {
@@ -25,6 +26,9 @@ process.argv.forEach((val) => {
   }
   if (val.toLowerCase().includes('chunk')) {
     CHUNK_SIZE = Number(val.split('=')[1])
+  }
+  if (val.toLowerCase().includes('locale')) {
+    locale = String(val.split('=')[1])
   }
 })
 
@@ -46,7 +50,6 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   log(
     `Processing block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
   )
-
   const propsToExport = Object.keys(def.props).filter((propName) => {
     const typeIndex = def.props[propName].typeIndex
     // For now we do not export references, waiting for partials
@@ -105,7 +108,11 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
       return row
     })
 
-    await fileHandle.write(toCsvChunk(csvRows, propTypes))
+    if (locale === undefined) {
+      locale = def.localeSize > 0 ? Object.keys(def.locales)[0] : ''
+    }
+
+    await fileHandle.write(toCsvChunk(csvRows, propTypes, locale))
 
     if (offsetStart + CHUNK_SIZE >= endNodeId) {
       isDone = true

@@ -5,7 +5,11 @@ export const toCsvHeader = (headers: string[]): string => {
   return headers.join(',') + '\n'
 }
 
-export const toCsvChunk = (rows: any[][], propTypes: TypeIndex[]): string => {
+export const toCsvChunk = (
+  rows: any[][],
+  propTypes: TypeIndex[],
+  locale: string,
+): string => {
   let chunkString = ''
   const numRows = rows.length
 
@@ -17,8 +21,10 @@ export const toCsvChunk = (rows: any[][], propTypes: TypeIndex[]): string => {
       const type = propTypes[j]
       if (type === ENUM || type === STRING) {
         chunkString += escapeCSVReservedChars(String(row[j]))
-      } else if (type === JSON2 || type === TEXT) {
+      } else if (type === JSON2) {
         chunkString += escapeCSVReservedChars(JSON.stringify(row[j]))
+      } else if (type === TEXT) {
+        chunkString += escapeCSVReservedChars(row[j][locale] || '')
       } else {
         chunkString += row[j]
       }
@@ -33,8 +39,10 @@ export const toCsvChunk = (rows: any[][], propTypes: TypeIndex[]): string => {
 }
 
 const escapeCSVReservedChars = (value: string): string => {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    value = `"${value.replace(/"/g, '""')}"`
+  if (/[,"\n\r\t]/.test(value) || value.trim() !== value) {
+    let escapedValue = value.replace(/"/g, '""')
+    escapedValue = escapedValue.replace(/\n/g, '\\n')
+    return `"${escapedValue}"`
   }
   return value
 }

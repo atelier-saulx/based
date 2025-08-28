@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { wait } from '@based/utils'
+import { italy } from './shared/examples.js'
 
 await test.skip('csv performance', async (t) => {
   const db = new BasedDb({
@@ -48,7 +49,11 @@ await test('export to csv', async (t) => {
   const cat = ['toy', 'food', 'weapon']
 
   await db.setSchema({
-    locales: { en: {} },
+    locales: {
+      en: {},
+      it: { fallback: 'en' },
+      fi: { fallback: 'en' },
+    },
     types: {
       product: {
         sku: { type: 'string', maxBytes: 10 },
@@ -81,6 +86,7 @@ await test('export to csv', async (t) => {
         category: cat[j],
         meta: '{ "lala": ["lele, lili"]}',
         description: {
+          it: italy.slice(0, 50),
           en: 'ufgiwegflhie"gF WFEW wf \newF EHWBFlh ewvb""dlHFVWH Dilv',
         },
       })
