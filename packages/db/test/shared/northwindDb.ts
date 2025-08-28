@@ -224,7 +224,11 @@ export const defaultSchema = Object.freeze({
       props: {
         customer: { ref: 'customers', prop: 'orders' },
         employee: { ref: 'employees', prop: 'orders' },
-        orderStatus: { type: 'enum', enum: ['created', 'shipped'], default: 'created' },
+        orderStatus: {
+          type: 'enum',
+          enum: ['created', 'shipped'],
+          default: 'created',
+        },
         orderDate: 'timestamp',
         requiredDate: 'timestamp',
         shippedDate: 'timestamp', // valid only if orderStatus = shipped
@@ -297,25 +301,34 @@ export const defaultSchema = Object.freeze({
   },
 })
 
-export default async function createNorthwindDb(db: BasedDb, schema: Schema = defaultSchema as Schema) {
+export default async function createNorthwindDb(
+  db: BasedDb,
+  schema: Schema = defaultSchema as Schema,
+) {
   await db.setSchema(schema)
 
   // categories
   ;[
     ['Beverages', 'Soft drinks, coffees, teas, beers, and ales'],
-    ['Condiments', 'Sweet and savory sauces, relishes, spreads, and seasonings'],
+    [
+      'Condiments',
+      'Sweet and savory sauces, relishes, spreads, and seasonings',
+    ],
     ['Confections', 'Desserts, candies, and sweet breads'],
     ['Dairy Products', 'Cheeses'],
     ['Grains/Cereals', 'Breads, crackers, pasta, and cereal'],
     ['Meat/Poultry', 'Prepared meats'],
     ['Produce', 'Dried fruit and bean curd'],
     ['Seafood', 'Seaweed and fish'],
-  ].forEach((row) => db.create('categories', {
-    categoryName: row[0],
-    description: row[1],
-  }));
+  ].forEach((row) =>
+    db.create('categories', {
+      categoryName: row[0],
+      description: row[1],
+    }),
+  )
 
   // customers
+  // prettier-ignore
   ;[
     ['ALFKI', 'Alfreds Futterkiste', 'Maria Anders', 'Sales Representative', 'Obere Str. 57', 'Berlin', '', '12209', 'Germany', '030-0074321', '030-0076545'],
     ['ANATR', 'Ana Trujillo Emparedados y helados', 'Ana Trujillo', 'Owner', 'Avda. de la Constitución 2222', 'México D.F.', '', '05021', 'Mexico', '(5) 555-4729', '(5) 555-3745'],
@@ -423,6 +436,8 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // employees
+  // prettier-ignore
+  ;
   ;[
     ['Davolio', 'Nancy', 'Sales Representative', 'Ms.', '1948-12-08', '1992-05-01', '507 - 20th Ave. E.\nApt. 2A', 'Seattle', 'WA', '98122', 'USA', '(206) 555-9857', '5467', '', 'Education includes a BA in psychology from Colorado State University in 1970.  She also completed The Art of the Cold Call.  Nancy is a member of Toastmasters International.', 2, 'http://accweb/emmployees/davolio.bmp'],
     ['Fuller', 'Andrew', 'Vice President, Sales', 'Dr.', '1952-02-19', '1992-08-14', '908 W. Capital Way', 'Tacoma', 'WA', '98401', 'USA', '(206) 555-9482', '3457', '', 'Andrew received his BTS commercial in 1974 and a Ph.D. in international marketing from the University of Dallas in 1981.  He is fluent in French and Italian and reads German.  He joined the company as a sales representative, was promoted to sales manager in January 1992 and to vice president of sales in March 1993.  Andrew is a member of the Sales Management Roundtable, the Seattle Chamber of Commerce, and the Pacific Rim Importers Association.', 0, 'http://accweb/emmployees/fuller.bmp'],
@@ -453,11 +468,13 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // region
+  // prettier-ignore
   ;['Eastern', 'Western', 'Northern', 'Southern'].forEach((regionDescription) => db.create('region', {
     regionDescription
   }))
 
   // territories
+  // prettier-ignore
   ;[
     ['01581', 'Westboro', 1],
     ['01730', 'Bedford', 1],
@@ -518,6 +535,7 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
     region: row[2],
   }))
   // employee territories
+  // prettier-ignore
   ;[
     [1, '06897'],
     [1, '19713'],
@@ -576,6 +594,7 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // shippers
+  // prettier-ignore
   ;[
     ['Speedy Express', '(503) 555-9831'],
     ['United Package', '(503) 555-3199'],
@@ -583,12 +602,15 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
     ['Alliance Shippers', '1-800-222-0451'],
     ['UPS', '1-800-782-7892'],
     ['DHL', '1-800-225-5345'],
-  ].forEach((row) => db.create('shippers', {
-    companyName: row[0],
-    phone: row[1],
-  }))
+  ].forEach((row) =>
+    db.create('shippers', {
+      companyName: row[0],
+      phone: row[1],
+    }),
+  )
 
   // orders
+  // prettier-ignore
   await Promise.all([
     [10248, 'VINET', 5, '1996-07-04', '1996-08-01', '1996-07-16', 3, 32.38, 'Vins et alcools Chevalier', '59 rue de l\'Abbaye', 'Reims', '', '51100', 'France'],
     [10249, 'TOMSP', 6, '1996-07-05', '1996-08-16', '1996-07-10', 1, 11.61, 'Toms Spezialitäten', 'Luisenstr. 48', 'Münster', '', '44087', 'Germany'],
@@ -1439,6 +1461,8 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }, { unsafe: true })))
 
   // suppliers
+  // prettier-ignore
+  ;
   ;[
     ['Exotic Liquids', 'Charlotte Cooper', 'Purchasing Manager', '49 Gilbert St.', 'London', '', 'EC1 4SD', 'UK', '(171) 555-2222', '', ''],
     ['New Orleans Cajun Delights', 'Shelley Burke', 'Order Administrator', 'P.O. Box 78934', 'New Orleans', 'LA', '70117', 'USA', '(100) 555-4822', '', '#CAJUN.HTM#'],
@@ -1484,6 +1508,7 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // products
+  // prettier-ignore
   ;[
     ['Chai', 8, 1, '10 boxes x 30 bags', 18, 39, 0, 10, 1],
     ['Chang', 1, 1, '24 - 12 oz bottles', 19, 17, 40, 25, 1],
@@ -1575,6 +1600,7 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // orderDetails
+  // prettier-ignore
   ;[
     [10248, 11, 14, 12, 0],
     [10248, 42, 9.8, 10, 0],
@@ -3740,6 +3766,7 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
   }))
 
   // usStates
+  // prettier-ignore
   ;[
     [1, 'Alabama', 'AL', 'south'],
     [2, 'Alaska', 'AK', 'north'],
@@ -3792,10 +3819,16 @@ export default async function createNorthwindDb(db: BasedDb, schema: Schema = de
     [49, 'West Virginia', 'WV', 'south'],
     [50, 'Wisconsin', 'WI', 'midwest'],
     [51, 'Wyoming', 'WY', 'west'],
-  ].forEach((row) => db.create('usStates', {
-    id: row[0],
-    stateName: row[1],
-    stateAbbr: row[2],
-    stateRegion: row[3],
-  }, { unsafe: true }))
+  ].forEach((row) =>
+    db.create(
+      'usStates',
+      {
+        id: row[0],
+        stateName: row[1],
+        stateAbbr: row[2],
+        stateRegion: row[3],
+      },
+      { unsafe: true },
+    ),
+  )
 }
