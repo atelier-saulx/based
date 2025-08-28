@@ -55,9 +55,6 @@ export class DbClient extends DbShared {
 
   // modify
   flushTime: number
-  // flushReady: () => void
-  // flushIsReady: Promise<void>
-
   writeTime: number = 0
   isDraining = false
   modifyCtx: Ctx

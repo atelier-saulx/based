@@ -58,18 +58,16 @@ await test('upsert', async (t) => {
   await client2.upsert('article', {
     externalId: 'flap',
     name: 'flap',
-    contributors: {
-      upsert: [
-        {
-          email: 'james@flapmail.com',
-          name: 'James!',
-        },
-        {
-          email: 'derp@flapmail.com',
-          name: 'Derp!',
-        },
-      ],
-    },
+    contributors: [
+      client2.upsert('user', {
+        email: 'james@flapmail.com',
+        name: 'James!',
+      }),
+      client2.upsert('user', {
+        email: 'derp@flapmail.com',
+        name: 'Derp!',
+      }),
+    ],
   })
 
   deepEqual(await client1.query('article').include('*', '**').get(), [

@@ -358,6 +358,7 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
     struct SelvaExpireToken *token;
     const sdb_arr_len_t count = selva_expire_count(&db->expiring);
 
+
     write_dump_magic(io, DUMP_MAGIC_EXPIRE);
     io->sdb_write(&count, sizeof(count), 1, io);
 
@@ -546,15 +547,16 @@ static int load_schema(struct selva_io *io, struct SelvaDb *db)
 
 __attribute__((warn_unused_result))
 static int load_expire(struct selva_io *io, struct SelvaDb *db)
-{
+{   
     sdb_arr_len_t count;
-
+    
     if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
         selva_io_errlog(io, "Ivalid types magic");
         return SELVA_EINVAL;
     }
 
     io->sdb_read(&count, sizeof(count), 1, io);
+
 
     for (sdb_arr_len_t i = 0; i < count; i++) {
         node_type_t type;

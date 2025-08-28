@@ -192,7 +192,6 @@ const test = async (
       ),
     )
   } catch (err) {
-    console.log(1, { err })
     hasErrored = true
     counts.errors++
     console.log(
@@ -203,11 +202,11 @@ const test = async (
       ),
     )
     const msg =
-      (err.stack ?? err.msg ?? err)
-        .replace?.(/\.js(?=\s|$)/g, '.ts')
+      (err.stack || err.msg || err.message || err)
+        .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(msg ? styleText('red', msg) : err)
+    console.log(styleText('red', msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
 
     const x = global._currentTestPath.split('/')
@@ -242,11 +241,11 @@ const test = async (
     )
 
     const msg =
-      (err.stack ?? err.msg ?? err)
-        .replace?.(/\.js(?=\s|$)/g, '.ts')
+      (err.stack || err.msg || err.message || err)
+        .replace(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(msg ? styleText('red', msg) : err)
+    console.log(styleText('red', msg))
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
   }
 }

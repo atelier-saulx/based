@@ -22,6 +22,7 @@ export function expire(
   const ctx = db.modifyCtx
   const schema = getValidSchema(db, type)
   try {
+    ctx.id = id
     ctx.start = ctx.index
     ctx.schema = schema
     ctx.operation = EXPIRE
