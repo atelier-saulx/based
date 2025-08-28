@@ -622,14 +622,14 @@ await test('query', async (t) => {
 
   await throws(
     // @ts-ignore
-    () => db.query('user').filter('rating', 'has', 1).get(),
+    () => db.query('user').filter('rating', 'includes', 1).get(),
     false,
     'Filter incorrect operator on uint32',
   )
 
   await throws(
     // @ts-ignore
-    () => db.query('user').filter('isOn', 'has', 1).get(),
+    () => db.query('user').filter('isOn', 'includes', 1).get(),
     false,
     'Filter incorrect operator on bool',
   )
@@ -640,7 +640,7 @@ await test('query', async (t) => {
 
   await throws(
     // @ts-ignore
-    () => db.query('user').filter('friend', 'has', 1).get(),
+    () => db.query('user').filter('friend', 'includes', 1).get(),
     false,
     'Filter incorrect operator on reference',
   )
@@ -668,7 +668,7 @@ await test('query', async (t) => {
   deepEqual(
     await db
       .query('user')
-      .filter('name', 'has', '')
+      .filter('name', 'includes', '')
       .include('name')
       .get()
       .toObject(),
@@ -679,7 +679,7 @@ await test('query', async (t) => {
   deepEqual(
     await db
       .query('user', [])
-      .filter('name', 'has', '')
+      .filter('name', 'includes', '')
       .include('name')
       .get()
       .toObject(),
@@ -800,7 +800,10 @@ await test('query', async (t) => {
   }, false)
 
   await throws(async () => {
-    const envs = await db.query('user').filter('connections', 'has', 0).get()
+    const envs = await db
+      .query('user')
+      .filter('connections', 'includes', 0)
+      .get()
   }, false)
 })
 

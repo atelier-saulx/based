@@ -22,7 +22,7 @@ import { DbClient } from '../index.js'
 import {
   EQUAL,
   EXISTS,
-  HAS,
+  INCLUDES,
   isNumerical,
   LIKE,
   operatorReverseMap,
@@ -261,7 +261,7 @@ export const validateFilter = (
       return true
     }
   } else if (t === VECTOR) {
-    if (isNumerical(op) || op === HAS) {
+    if (isNumerical(op) || op === INCLUDES) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }

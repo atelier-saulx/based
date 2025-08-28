@@ -192,7 +192,7 @@ fn resultMatcher(
     if (index + ql > l) {
         return d;
     }
-    if (index == 1 or isSeparator(value[index - 1])) {
+    if (index == 1 or index > 0 and isSeparator(value[index - 1])) {
         const nd = hamming(value, index, query);
         if (nd < minDist) {
             return nd;

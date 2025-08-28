@@ -25,7 +25,7 @@ pub fn writeEdges(
         const t: p = @enumFromInt(data[i + 2]);
         i += 3;
 
-        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db.selva.?, edgeConstraint, prop) catch {
+        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
             std.log.err("Edge field schema cannot be found \n", .{});
             return;
         };
@@ -80,14 +80,7 @@ pub fn writeEdges(
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
-            const hll = selva.selva_fields_ensure_string2(
-                ctx.db.selva.?,
-                ctx.node.?,
-                edgeConstraint,
-                ref,
-                edgeFieldSchema,
-                selva.HLL_INIT_SIZE,
-            );
+            const hll = try db.ensureEdgePropString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
             selva.hll_init(hll, 14, true);
             var it: usize = i + offset;
             while (it < len) {

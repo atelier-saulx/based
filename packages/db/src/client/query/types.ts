@@ -6,8 +6,8 @@ import { AggregateType, Interval, aggFnOptions } from './aggregates/types.js'
 import { ReaderSchema } from './query.js'
 
 export type IncludeOpts = {
-  end?: number
-  start?: number
+  end?: { [langCode: string]: number } | number
+  bytes?: boolean
   meta?: 'only' | true | false // add more opts?
   codes?: Set<LangCode>
   fallBacks?: LangCode[]
@@ -129,6 +129,7 @@ export interface aggPropDef extends PropDef {
 export type LangFallback = LangName | false
 
 export type QueryDefShared = {
+  queryId?: number
   schemaChecksum?: number
   errors: QueryError[]
   lang: { lang: LangCode; fallback: LangCode[] }

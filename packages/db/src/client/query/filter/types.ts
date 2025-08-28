@@ -18,8 +18,8 @@ export const IsFilter = (f: FilterAst): f is Filter => {
 
 export type Operator =
   | '='
-  | 'has'
-  | '!has' // includes ?
+  | 'includes'
+  | '!includes' // includes ?
   | '<'
   | '>'
   | '!='
@@ -52,7 +52,7 @@ export type FilterOpts<O = Operator> = {
 // -------------------------------------------
 // operations shared
 export const EQUAL = 1
-export const HAS = 2
+export const INCLUDES = 2
 export const ENDS_WITH = 4
 export const STARTS_WITH = 5
 export const EQUAL_CRC32 = 17
@@ -67,7 +67,7 @@ export const RANGE_EXCLUDE = 11
 // -------------------------------------------
 // operations strings
 export const EQUAL_LOWER_CASE = 12
-export const HAS_TO_LOWER_CASE = 13
+export const INCLUDES_TO_LOWER_CASE = 13
 export const STARTS_WITH_LOWER_CASE = 14
 export const ENDS_WITH_LOWER_CASE = 15
 export const LIKE = 18
@@ -77,7 +77,7 @@ export const EXISTS = 19
 
 export type OPERATOR =
   | typeof EQUAL
-  | typeof HAS
+  | typeof INCLUDES
   | typeof ENDS_WITH
   | typeof STARTS_WITH
   | typeof GREATER_THAN
@@ -87,7 +87,7 @@ export type OPERATOR =
   | typeof RANGE
   | typeof RANGE_EXCLUDE
   | typeof EQUAL_LOWER_CASE
-  | typeof HAS_TO_LOWER_CASE
+  | typeof INCLUDES_TO_LOWER_CASE
   | typeof STARTS_WITH_LOWER_CASE
   | typeof ENDS_WITH_LOWER_CASE
   | typeof LIKE
@@ -188,10 +188,10 @@ export const toFilterCtx = (
     }
   }
 
-  if (op === 'has' || op === '!has') {
+  if (op === 'includes' || op === '!includes') {
     return {
-      operation: opts.lowerCase ? HAS_TO_LOWER_CASE : HAS,
-      type: op === '!has' ? TYPE_NEGATE : TYPE_DEFAULT,
+      operation: opts.lowerCase ? INCLUDES_TO_LOWER_CASE : INCLUDES,
+      type: op === '!includes' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
     }
   }
@@ -221,7 +221,7 @@ export const toFilterCtx = (
 
 export const operatorReverseMap: Record<OPERATOR, string> = {
   [EQUAL]: '=',
-  [HAS]: 'has',
+  [INCLUDES]: 'includes',
   [ENDS_WITH]: 'endsWith',
   [STARTS_WITH]: 'startsWith',
   [GREATER_THAN]: '>',
@@ -231,7 +231,7 @@ export const operatorReverseMap: Record<OPERATOR, string> = {
   [RANGE]: '..',
   [RANGE_EXCLUDE]: '!..',
   [EQUAL_LOWER_CASE]: '= (lowerCase)',
-  [HAS_TO_LOWER_CASE]: 'has (lowerCase)',
+  [INCLUDES_TO_LOWER_CASE]: 'includes (lowerCase)',
   [STARTS_WITH_LOWER_CASE]: 'startsWith (lowerCase)',
   [ENDS_WITH_LOWER_CASE]: 'endsWith (lowerCase)',
   [LIKE]: 'like',

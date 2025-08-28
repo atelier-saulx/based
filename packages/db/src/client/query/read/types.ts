@@ -9,7 +9,7 @@ import {
   VectorBaseType,
 } from '@based/schema/def'
 import { IncludeOpts, QueryDef, QueryDefType, Target } from '../types.js'
-import { inverseLangMap, langCodesMap } from '@based/schema'
+import { inverseLangMap, langCodesMap, SchemaHooks } from '@based/schema'
 
 export type Item = {
   id: number
@@ -96,6 +96,7 @@ export type ReaderSchema = {
       prop: ReaderPropDef
     }
   }
+  hook?: SchemaHooks['read']
   aggregate?: ReaderAggregateSchema
   edges?: ReaderSchema
   search?: boolean
@@ -200,6 +201,9 @@ export const convertToReaderSchema = (
       }
     }
   } else {
+    if (q.schema?.hooks?.read) {
+      readerSchema.hook = q.schema.hooks.read
+    }
     if (isRoot && q.search) {
       readerSchema.search = true
     }

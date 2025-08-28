@@ -88,11 +88,13 @@ await test('single', async (t) => {
     ],
   )
   deepEqual(
-    (await db.query('org').filter('name', 'has', '0').get()).toObject(),
+    (await db.query('org').filter('name', 'includes', '0').get()).toObject(),
     [],
   )
   deepEqual(
-    (await db.query('org').filter('name', 'has', 'hello').get()).toObject(),
+    (
+      await db.query('org').filter('name', 'includes', 'hello').get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -234,7 +236,11 @@ await test('simple', async (t) => {
     Array.from({ length: amount }).map(() => {
       const rand = ~~(Math.random() * lastId) || 1
       const derp = [make(), make(), make(), rand]
-      return db.query('env').include('*').filter('machines', 'has', derp).get()
+      return db
+        .query('env')
+        .include('*')
+        .filter('machines', 'includes', derp)
+        .get()
     }),
   )
 
@@ -260,7 +266,7 @@ await test('simple', async (t) => {
       const envs = await db
         .query('env')
         .include('*')
-        .filter('machines', 'has', rand)
+        .filter('machines', 'includes', rand)
         .get()
       mi += envs.toObject().length
       measure += envs.execTime
@@ -829,7 +835,7 @@ await test('or numerical', async (t) => {
   )
 })
 
-await test.skip('has', async (t) => {
+await test.skip('includes', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -878,7 +884,7 @@ await test.skip('has', async (t) => {
   await db
     .query('user')
     .include('*')
-    .filter('bestBud.name', 'has', 'Jose')
+    .filter('bestBud.name', 'includes', 'Jose')
     .get()
     .inspect(10)
 
@@ -886,7 +892,7 @@ await test.skip('has', async (t) => {
   await db
     .query('user')
     .include(
-      (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+      (q) => q('buddies').include('*').filter('name', 'includes', 'Jose'),
       '*',
     )
     .get()
@@ -898,7 +904,7 @@ await test.skip('has', async (t) => {
         await db
           .query('user')
           .include(
-            (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+            (q) => q('buddies').include('*').filter('name', 'includes', 'Jose'),
             '*',
           )
           .get()

@@ -3,8 +3,8 @@ import {
   EQUAL,
   EQUAL_CRC32,
   FILTER_MODE,
-  HAS,
-  HAS_TO_LOWER_CASE,
+  INCLUDES,
+  INCLUDES_TO_LOWER_CASE,
   LIKE,
   MODE_DEFAULT_VAR,
   MODE_OR_VAR,
@@ -13,7 +13,7 @@ import {
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
-import { ENCODER, concatUint8Arr } from '@based/utils'
+import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
@@ -24,7 +24,7 @@ const parseValue = (
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
-  if (ctx.operation === HAS_TO_LOWER_CASE && typeof value === 'string') {
+  if (ctx.operation === INCLUDES_TO_LOWER_CASE && typeof value === 'string') {
     value = value.toLowerCase()
   }
 
@@ -96,15 +96,14 @@ export const createVariableFilterBuffer = (
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
-      const x = []
+      const values = []
       for (const v of value) {
-        const a = parseValue(v, prop, ctx, lang)
+        const parsedValue = parseValue(v, prop, ctx, lang)
         const size = new Uint8Array(2)
-        size[0] = a.byteLength
-        size[1] = a.byteLength >>> 8
-        x.push(size, a)
+        writeUint16(size, parsedValue.byteLength, 0)
+        values.push(size, parsedValue)
       }
-      val = concatUint8Arr(x)
+      val = concatUint8Arr(values)
     } else {
       const x = []
       for (const v of value) {
@@ -118,9 +117,9 @@ export const createVariableFilterBuffer = (
 
   if (
     ctx.operation === EQUAL ||
-    ctx.operation === HAS ||
+    ctx.operation === INCLUDES ||
     ctx.operation === LIKE ||
-    ctx.operation === HAS_TO_LOWER_CASE
+    ctx.operation === INCLUDES_TO_LOWER_CASE
   ) {
     if (prop.separate) {
       if (
@@ -133,14 +132,8 @@ export const createVariableFilterBuffer = (
           const crc = crc32(val.slice(0, -fbLen))
           const len = val.byteLength - fbLen
           const v = new Uint8Array(8 + fbLen)
-          v[0] = crc
-          v[1] = crc >>> 8
-          v[2] = crc >>> 16
-          v[3] = crc >>> 24
-          v[4] = len
-          v[5] = len >>> 8
-          v[6] = len >>> 16
-          v[7] = len >>> 24
+          writeUint32(v, crc, 0)
+          writeUint32(v, len, 4)
           for (let i = 0; i < fbLen; i++) {
             v[v.byteLength - (i + 1)] = val[val.byteLength - (i + 1)]
           }
@@ -188,22 +181,13 @@ function writeVarFilter(
 ): Uint8Array {
   const size = val.byteLength
   const buf = new Uint8Array(12 + size)
-
   buf[0] = ctx.type
   buf[1] = mode
   buf[2] = prop.typeIndex
-  buf[3] = start
-  buf[4] = start >>> 8
-  buf[5] = len
-  buf[6] = len >>> 8
-  buf[7] = size
-  buf[8] = size >>> 8
-  buf[9] = size >>> 16
-  buf[10] = size >>> 24
+  writeUint16(buf, start, 3)
+  writeUint16(buf, len, 5)
+  writeUint32(buf, size, 7)
   buf[11] = ctx.operation
-  // need to pas LANG FROM QUERY
-  // need to set on 12 if TEXT
   buf.set(val, 12)
-
   return buf
 }

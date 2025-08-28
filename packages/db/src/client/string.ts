@@ -1,6 +1,12 @@
 import { LangCode } from '@based/schema'
 import native from '../native.js'
-import { readUint32, makeTmpBuffer, DECODER, ENCODER } from '@based/utils'
+import {
+  readUint32,
+  makeTmpBuffer,
+  DECODER,
+  ENCODER,
+  writeUint32,
+} from '@based/utils'
 import { Ctx } from './modify/Ctx.js'
 import { resize } from './modify/resize.js'
 
@@ -40,35 +46,19 @@ export const write = (
       resize(ctx, l + 6)
       buf[offset + 1] = NOT_COMPRESSED
       ENCODER.encodeInto(value, buf.subarray(offset + 2))
-      buf[offset + l + 2] = crc
-      buf[offset + l + 3] = crc >>>= 8
-      buf[offset + l + 4] = crc >>>= 8
-      buf[offset + l + 5] = crc >>>= 8
+      writeUint32(buf, crc, offset + l + 2)
       return l + 6
     } else {
       resize(ctx, size + 10)
       let len = l
-
       buf[offset + 1] = COMPRESSED
-
-      buf[offset + 2] = len
-      buf[offset + 3] = len >>>= 8
-      buf[offset + 4] = len >>>= 8
-      buf[offset + 5] = len >>>= 8
-
-      buf[offset + size + 6] = crc
-      buf[offset + size + 7] = crc >>>= 8
-      buf[offset + size + 8] = crc >>>= 8
-      buf[offset + size + 9] = crc >>>= 8
+      writeUint32(buf, len, offset + 2)
+      writeUint32(buf, crc, offset + size + 6)
       return size + 10
     }
   } else {
     buf[offset + 1] = NOT_COMPRESSED
-
-    buf[offset + l + 2] = crc
-    buf[offset + l + 3] = crc >>>= 8
-    buf[offset + l + 4] = crc >>>= 8
-    buf[offset + l + 5] = crc >>>= 8
+    writeUint32(buf, crc, offset + l + 2)
     return l + 6
   }
 }
