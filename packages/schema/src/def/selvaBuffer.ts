@@ -135,8 +135,6 @@ const propDefBuffer = (
     view.setUint16(2, dstType.id, true) // dst_node_type
     view.setUint32(5, 0, true) // schema_len
     if (!isEdge) {
-      prop.inverseTypeId = dstType.id
-      prop.inversePropNumber = dstType.props[prop.inversePropName].prop
       buf[4] = prop.inversePropNumber
 
       if (prop.edges) {
