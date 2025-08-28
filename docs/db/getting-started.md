@@ -1,6 +1,8 @@
 # Getting started with BasedDB
 
-## 1. Start the database
+## Starting the Database
+
+**1. Start the database**
 
 ```js
 import { BasedDb } from '@based/db'
@@ -9,7 +11,7 @@ const db = new BasedDb({ path: './data' })
 await db.start({ clean: true })
 ```
 
-## 2. Define a schema
+**2. Define a schema**
 
 ```js
 await db.setSchema({
@@ -25,7 +27,7 @@ await db.setSchema({
 })
 ```
 
-## 3. Create & query
+**3. Create & query**
 
 ```js
 const id = await db.create('user', {
@@ -39,7 +41,7 @@ const ada = await db.query('user', id).include('name', 'age').get().toObject()
 console.log(ada) // { id: 1, name: 'Ada', age: 36 }
 ```
 
-## 4. Explore further
+## Explore further
 
 - [Schema reference](/schema)
 - [Filtering & sorting](db/filtering)
