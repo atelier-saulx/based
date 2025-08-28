@@ -1,5 +1,5 @@
 import { convertToTimestamp } from '@based/utils'
-import { NUMBER, PropDef, TYPE_INDEX_MAP } from '../def/types.js'
+import { NUMBER, PropDef, TYPE_INDEX_MAP, TypeIndex } from '../def/types.js'
 import { VALIDATION_MAP } from '../def/validation.js'
 import {
   SchemaAnyProp,
@@ -160,7 +160,7 @@ function propParser<PropType extends SchemaAnyProp>(
 const p: Record<string, ReturnType<typeof propParser>> = {}
 
 export const isDefault = (val, prop, ctx) => {
-  let typeIndex: number
+  let typeIndex: TypeIndex
   typeIndex = TYPE_INDEX_MAP[prop.type]
   if ('enum' in prop) {
     typeIndex = TYPE_INDEX_MAP['enum']

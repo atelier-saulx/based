@@ -1,4 +1,4 @@
-import { schemaToSelvaBuffer, updateTypeDefs } from '@based/schema/def'
+import { updateTypeDefs } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import { DbSchema } from '../schema.js'
 import { execCtxQueue } from './flushModify.js'
@@ -11,9 +11,6 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   client.schema = schema
   client.schemaTypesParsed = schemaTypesParsed
   client.schemaTypesParsedById = schemaTypesParsedById
-  // Adds bidrectional refs on defs... oh god why
-  schemaToSelvaBuffer(client.schemaTypesParsed)
-  // this has to happen before the listeners
 
   if (client.modifyCtx.len > 8) {
     console.info('Modify cancelled - schema updated')

@@ -11,7 +11,6 @@ import {
   groupBy,
   LangFallback,
   IncludeOpts,
-  ReaderSchema,
 } from './query.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { FilterBranch } from './filter/FilterBranch.js'
@@ -25,10 +24,11 @@ import { FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
-import { AggregateType, StepInput, aggFnOptions } from './aggregates/types.js'
+import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 import { include } from './include/include.js'
+import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
 
 export { QueryByAliasObj }
 

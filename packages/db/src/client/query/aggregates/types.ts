@@ -1,16 +1,7 @@
-export enum AggregateType {
-  SUM = 1,
-  COUNT = 2,
-  CARDINALITY = 3,
-  STDDEV = 4,
-  AVERAGE = 5,
-  VARIANCE = 6,
-  MAX = 7,
-  MIN = 8,
-  HMEAN = 9,
-}
+import { AggregateType } from '@based/protocol/db-read'
 
-export const enum AccumulatorSize { // comptime
+export const enum AccumulatorSize {
+  // comptime
   SUM = 8,
   COUNT = 4,
   CARDINALITY = 4,
@@ -98,8 +89,8 @@ export enum setMode {
   'population',
 }
 
-export type setModeString = keyof typeof setMode
+export type setModeString = 'sample' | 'population'
 
-export interface aggFnOptions {
+export type aggFnOptions = {
   mode?: setModeString
 }

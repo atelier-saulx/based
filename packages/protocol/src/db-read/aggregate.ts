@@ -3,7 +3,6 @@ import {
   isNumberType,
   TIMESTAMP,
   REFERENCE,
-  TypeIndex,
   INT16,
   INT32,
   INT8,
@@ -11,8 +10,9 @@ import {
   UINT16,
   UINT32,
   UINT8,
-} from '@based/schema/def'
-import { ReaderSchema } from './types.js'
+  TypeIndex,
+} from '@based/schema/prop-types'
+import { ReaderSchema, AggregateType } from './types.js'
 import {
   readInt64,
   readUint16,
@@ -21,7 +21,6 @@ import {
   readInt16,
   readInt32,
 } from '@based/utils'
-import { AggregateType } from '../aggregates/types.js'
 import { setByPath, DECODER } from '@based/utils'
 
 const readNumber = (

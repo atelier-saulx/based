@@ -1,36 +1,72 @@
 import { convertToTimestamp } from '@based/utils'
-import { TypeIndex, TYPE_INDEX_MAP, PropDef, PropDefEdge } from './types.js'
+import {
+  TypeIndex,
+  PropDef,
+  PropDefEdge,
+  ALIAS,
+  BINARY,
+  JSON,
+  BOOLEAN,
+  CARDINALITY,
+  TIMESTAMP,
+  INT16,
+  INT32,
+  INT8,
+  UINT8,
+  UINT16,
+  UINT32,
+  NUMBER,
+  ENUM,
+  ID,
+  MICRO_BUFFER,
+  REFERENCE,
+  REFERENCES,
+  STRING,
+  TEXT,
+  ALIASES,
+  VECTOR,
+  COLVEC,
+  WEAK_REFERENCE,
+  WEAK_REFERENCES,
+  NULL,
+  OBJECT,
+} from './types.js'
 import { MAX_ID, MIN_ID } from '../types.js'
 
 export type Validation = (payload: any, prop: PropDef | PropDefEdge) => boolean
 const EPSILON = 1e-9 // Small tolerance for floating point comparisons
 
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
-  [TYPE_INDEX_MAP.alias]: (value) => {
+  [NULL]: () => true,
+  [OBJECT]: () => true,
+  [COLVEC]: () => true,
+  [WEAK_REFERENCE]: () => true,
+  [WEAK_REFERENCES]: () => true,
+  [ALIAS]: (value) => {
     if (typeof value !== 'string') {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.binary]: (value) => {
+  [BINARY]: (value) => {
     if (value instanceof Uint8Array) {
       return true
     }
     return false
   },
-  [TYPE_INDEX_MAP.boolean]: (value) => {
+  [BOOLEAN]: (value) => {
     if (typeof value !== 'boolean') {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.cardinality]: (val) => {
+  [CARDINALITY]: (val) => {
     return (
       typeof val === 'string' ||
       (val instanceof Uint8Array && val.byteLength === 8)
     )
   },
-  [TYPE_INDEX_MAP.timestamp]: (value, t) => {
+  [TIMESTAMP]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -54,7 +90,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.int16]: (value, t) => {
+  [INT16]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -69,7 +105,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.int32]: (value, t) => {
+  [INT32]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -84,7 +120,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.int8]: (value, t) => {
+  [INT8]: (value, t) => {
     // use % for steps size
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
@@ -100,7 +136,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.uint8]: (value, t) => {
+  [UINT8]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -115,7 +151,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.uint16]: (value, t) => {
+  [UINT16]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -130,7 +166,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.uint32]: (value, t) => {
+  [UINT32]: (value, t) => {
     if (typeof value !== 'number' || value % t.step !== 0) {
       return false
     }
@@ -145,7 +181,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.number]: (value, t) => {
+  [NUMBER]: (value, t) => {
     if (t.step) {
       const div = value / t.step
       if (Math.abs(div - Math.round(div)) > EPSILON) {
@@ -163,7 +199,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.enum]: (value, prop) => {
+  [ENUM]: (value, prop) => {
     if (value === null) {
       return true
     }
@@ -175,23 +211,23 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return false
   },
-  [TYPE_INDEX_MAP.id]: (value) => {
+  [ID]: (value) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.json]: (value) => {
+  [JSON]: (value) => {
     // mep
     return true
   },
-  [TYPE_INDEX_MAP.microbuffer]: (value) => {
+  [MICRO_BUFFER]: (value) => {
     if (!(value instanceof Uint8Array)) {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.reference]: (v) => {
+  [REFERENCE]: (v) => {
     if (typeof v !== 'number') {
       return false
     }
@@ -200,7 +236,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.references]: (v) => {
+  [REFERENCES]: (v) => {
     if (typeof v !== 'number') {
       return false
     }
@@ -209,21 +245,21 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.string]: (value, t) => {
+  [STRING]: (value, t) => {
     // add max etc all here - make a ref to the original SCHEMA on DEF
     if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.text]: (value, t) => {
+  [TEXT]: (value, t) => {
     // add max etc all here - make a ref to the original SCHEMA on DEF
     if (typeof value !== 'string' && !(value instanceof Uint8Array)) {
       return false
     }
     return true
   },
-  [TYPE_INDEX_MAP.aliases]: (value) => {
+  [ALIASES]: (value) => {
     if (!Array.isArray(value)) {
       return false
     }
@@ -235,7 +271,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [TYPE_INDEX_MAP.vector]: (value) => {
+  [VECTOR]: (value) => {
     // Array should be supported
     if (!(value instanceof Float32Array)) {
       return false

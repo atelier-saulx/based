@@ -1,4 +1,4 @@
-import { readUint32 } from '@based/utils/dist/src/uint8.js'
+import { readUint32, readUtf8 } from '@based/utils/dist/src/uint8.js'
 import { Item, ReaderPropDef, ReaderSchema } from './types.js'
 import { addProp, addLangProp } from './addProps.js'
 import {
@@ -11,10 +11,10 @@ import {
   TEXT,
   VECTOR,
 } from '@based/schema/def'
-import { read, readUtf8 } from '../../string.js'
+import { readString } from './string.js'
 import { readVector } from './vector.js'
 
-const readString = (
+const readStringProp = (
   prop: ReaderPropDef,
   buf: Uint8Array,
   offset: number,
@@ -25,10 +25,10 @@ const readString = (
     prop.typeIndex === STRING ||
     prop.typeIndex === ALIAS
   ) {
-    return read(buf, offset, size, true)
+    return readString(buf, offset, size, true)
   }
   if (prop.typeIndex === JSON) {
-    return global.JSON.parse(read(buf, offset, size, true))
+    return global.JSON.parse(readString(buf, offset, size, true))
   }
   if (prop.typeIndex === BINARY) {
     return buf.subarray(offset + 2, size + offset)
@@ -43,29 +43,22 @@ export const readProp = (
   item: Item,
 ) => {
   const prop = q.props[instruction]
-
-  // debug
-  // if (!prop) {
-  //   console.dir(q, { depth: 10 })
-  // }
-
   prop.readBy = q.readId
-
   if (prop.typeIndex === CARDINALITY) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
     i += size + 4
   } else if (prop.typeIndex === JSON) {
     const size = readUint32(result, i)
-    addProp(prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === BINARY) {
     const size = readUint32(result, i)
-    addProp(prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === STRING) {
     const size = readUint32(result, i)
-    addProp(prop, readString(prop, result, i + 4, size), item)
+    addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex == TEXT) {
     const size = readUint32(result, i)
@@ -73,16 +66,20 @@ export const readProp = (
       // do nothing
     } else {
       if (!prop.locales) {
-        addProp(prop, read(result, i + 4, size, true), item)
+        addProp(prop, readString(result, i + 4, size, true), item)
       } else {
-        addLangProp(prop, read(result, i + 4, size, true), item, result[i + 4])
+        addLangProp(
+          prop,
+          readString(result, i + 4, size, true),
+          item,
+          result[i + 4],
+        )
       }
     }
     i += size + 4
   } else if (prop.typeIndex === ALIAS) {
     const size = readUint32(result, i)
     i += 4
-
     if (size === 0) {
       addProp(prop, '', item)
     } else {
