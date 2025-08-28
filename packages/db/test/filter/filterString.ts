@@ -2,7 +2,6 @@ import { BasedDb, compress, decompress } from '../../src/index.js'
 import test from '../shared/test.js'
 import { equal, deepEqual } from '../shared/assert.js'
 import { italy, sentence, readBible } from '../shared/examples.js'
-import {count} from 'console'
 
 const bible = readBible()
 
