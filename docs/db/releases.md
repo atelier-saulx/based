@@ -1,4 +1,4 @@
-# Releases
+# Release Plan
 
 This document provides a high-level overview of our database release plan.
 It highlights the major planned evolutions and key milestones, without getting into extensive technical details.
@@ -61,7 +61,7 @@ Version numers could change due to nightly releases.
 **General Fixes & Improvements**
 
 - Fixed stability issues with `.expire()`
-- Fixed condition length of strict equality fixed string filters
+- Fixed condition length of var string filters
 - Fixed out of bounds read for an edge case with search
 - Fixed incorrect timestamp validation, not allowing dates before 1970
 - Fixed incorrect reading of references data for certain edge cases
@@ -85,12 +85,69 @@ Version numers could change due to nightly releases.
   - Uses based-dbn on new env-hub this will go further in the future
 - Launcher for Linux testing on MacOS
 - Start of @based/protocol will centralize all protocols in 1 place
+- @saulx/utils is replaced with `@based/utils` use this in the future
+- @saulx/hash is replaced with `@based/hash` use this in the future
 
 ### Breaking changes
 
-- _Changed the $count result in aggegrations with [.....]_
+- \*Changed the `$count` result in aggegrations to `count`
 - Filter operation `has` has been renamed to `ìncludes`. As shown in the [docs](db/filtering?id=operators)
 - Removed `transform` opton from schema properties in favor of Schema Hooks
 - Removed `upsert` option from references modify api in favor of newly created `db.upsert` command. See the [docs](db/upsert)\*
 - BasedQueryResponse now uses id for node ids vs the queryId
 - Don't allow setting a string to text props without a locale
+
+## v0.0.73 (Oct 2025)
+
+- Database Documentation
+- High performance native subscriptions
+- Optimized Server client integration
+  - Protocol package for each format
+  - Refactor of buffer loading - allow sending chunks and receive accordingly on client - avoids memcopies
+- Improved reference(s) implementation
+  - space requirement improvements
+  - support all property types in edges
+  - edges as nodes remove the transient type
+- New result type for aggregations
+- Aggregation with multiple distinct function types
+- Option to include data from session context in basedQueries
+- "Insert" option for upsert (only create if alias does not exist)
+
+## v0.0.74 (Nov 2025)
+
+- CLI v.1 nightly
+  - Automatic infered response types from db queries
+  - Can show all information about and env e.g. logs, stats
+- Env-hub v.1
+  - Monitoring of function perfomance and calls
+  - Searchable log storage
+- Sort on References as option on schema
+- Max len option for references & types
+- Partial loading of large databases (Experimental)
+- CSV export working with References
+- Parquet exporter
+- Filter engine v.1 working for partials
+- JS function support for include / filter / aggregate
+
+## v0.0.75 (Dec 2025)
+
+- Fully automated partial loading & offloading of large databases
+- Sorted results on aggregations
+- Automatic testing for Linux (all the tests in CI/CD setup)
+- Cloud v.1 nightly
+  - Orchestrator working on new based-db
+  - Team / Org / Individual login
+  - Env management
+  - Branch deploy / normal deploy
+  - Cli fully operational in combination with Cloud v.1
+
+## v0.0.76 (Jan 2026)
+
+- Based Platform Documentation
+- Cloud v.1 release
+  - UI for cloud v1
+  - Clear organisation wide usage statistics and billing information
+  - Integration with external suppliers
+- Fully integrated internal columnar vector storage for `'insertOnly'` types
+  - More space efficient for large data sets
+  - Improved filter and aggregate performance
