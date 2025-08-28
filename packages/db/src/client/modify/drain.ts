@@ -2,7 +2,6 @@ import { writeUint16, writeUint32 } from '@based/utils'
 import { DbClient } from '../../index.js'
 import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
-import { reserve } from './resize.js'
 
 let test = 0
 export const reset = (ctx: Ctx) => {
@@ -29,7 +28,6 @@ export const consume = (ctx: Ctx): Uint8Array => {
 
   const typeIds = Object.keys(ctx.created)
   const typeSize = typeIds.length * 6 + 4
-  reserve(ctx, typeSize)
   const payload = ctx.array.subarray(0, ctx.index + typeSize)
   let i = payload.byteLength - 4
   writeUint32(payload, ctx.index, i)
@@ -49,7 +47,6 @@ export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
     const { batch } = ctx
     const payload = consume(ctx)
-    console.log('drain:', payload.byteLength)
     ctx.draining = db.hooks
       .flushModify(payload)
       .then(({ offsets, dbWriteTime }) => {

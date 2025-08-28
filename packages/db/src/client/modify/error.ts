@@ -75,6 +75,7 @@ export const handleError = (
   }
 
   if (typeof e.then === 'function') {
+    if (e.id) process.exit()
     return e.then((id: number) => {
       if (!(e instanceof Tmp)) {
         e.id = id

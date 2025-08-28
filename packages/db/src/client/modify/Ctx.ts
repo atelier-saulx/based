@@ -32,6 +32,7 @@ export class Ctx {
     type?: number
     prop?: number
     main?: number
+    operation?: ModifyOp
   } = {}
   batch: {
     promises?: Tmp[]

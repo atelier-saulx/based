@@ -44,5 +44,5 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   } else if (type === JSON) {
     writeJson(ctx, def, val)
   }
-  markDefaults(ctx, def)
+  markDefaults(ctx, def, val)
 }

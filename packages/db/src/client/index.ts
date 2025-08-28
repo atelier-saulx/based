@@ -249,9 +249,21 @@ export class DbClient extends DbShared {
   }
 
   delete(type: string, id: number | Promise<number>) {
-    if (typeof id !== 'number') {
-      return id.then((id) => this.delete(type, id))
+    if (
+      typeof id === 'object' &&
+      id !== null &&
+      'then' in id &&
+      typeof id.then === 'function'
+    ) {
+      // @ts-ignore
+      if (id.id) {
+        // @ts-ignore
+        id = id.id
+      } else {
+        return id.then((id) => this.delete(type, id))
+      }
     }
+    // @ts-ignore
     return del(this, type, id)
   }
 
@@ -277,7 +289,6 @@ export class DbClient extends DbShared {
     if (this.upserting.size) {
       await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
     }
-    console.log('leggo', this.modifyCtx.index)
     await drain(this, this.modifyCtx)
     const t = this.writeTime
     this.writeTime = 0

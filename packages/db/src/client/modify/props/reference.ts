@@ -54,11 +54,38 @@ export const writeReference = (
   }
 
   if (typeof val === 'object') {
+    if (typeof val.id === 'object') {
+      if (val.id === null) {
+        throw [def, val]
+      }
+      if ('then' in val.id && typeof val.id.then === 'function') {
+        // @ts-ignore
+        const resolvedId = val.id.id
+        if (resolvedId) {
+          // @ts-ignore
+          val.id = resolvedId
+        }
+      }
+    }
+
     if (typeof val.id === 'number') {
       if (!def.edges || val instanceof Tmp || val instanceof Promise) {
         writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
       } else {
         writeReferenceId(ctx, def, val.id, EDGE_NOINDEX_REALID)
+        writeEdges(ctx, def, val, true)
+      }
+      return
+    }
+
+    if (val.id instanceof Tmp) {
+      if (val.id.batch !== ctx.batch) {
+        throw val.id
+      }
+      if (!def.edges) {
+        writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)
+      } else {
+        writeReferenceId(ctx, def, val.id.tmpId, EDGE_NOINDEX_TMPID)
         writeEdges(ctx, def, val, true)
       }
       return
@@ -77,20 +104,11 @@ export const writeReference = (
       return
     }
 
-    if (val.id instanceof Tmp) {
-      if (val.id.batch !== ctx.batch) {
-        throw val.id
-      }
-      if (!def.edges) {
-        writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)
-      } else {
-        writeReferenceId(ctx, def, val.id.tmpId, EDGE_NOINDEX_TMPID)
-        writeEdges(ctx, def, val, true)
-      }
-      return
+    if (val.id instanceof Promise) {
+      throw val.id
     }
 
-    if (val instanceof Promise || val.id instanceof Promise) {
+    if (val instanceof Promise) {
       throw val
     }
   }

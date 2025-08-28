@@ -186,21 +186,28 @@ const test = async (
     counts.success++
     console.log(
       styleText('green', `✓ ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
   } catch (err) {
+    console.log(1, { err })
     hasErrored = true
     counts.errors++
     console.log(
       styleText('red', `! ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
     const msg =
       (err.stack ?? err.msg ?? err)
-        .replace(/\.js(?=\s|$)/g, '.ts')
+        .replace?.(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(styleText('red', msg))
+    console.log(msg ? styleText('red', msg) : err)
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
 
     const x = global._currentTestPath.split('/')
@@ -224,18 +231,22 @@ const test = async (
       throw errs[0]
     }
   } catch (err) {
+    console.log(2, { err })
     counts.errors++
     console.log(
       styleText('red', `! ${name}`),
-      styleText('gray', `${Math.round((performance.now() - d) * 100) / 100} ms`),
+      styleText(
+        'gray',
+        `${Math.round((performance.now() - d) * 100) / 100} ms`,
+      ),
     )
 
     const msg =
       (err.stack ?? err.msg ?? err)
-        .replace(/\.js(?=\s|$)/g, '.ts')
+        .replace?.(/\.js(?=\s|$)/g, '.ts')
         .replaceAll('/dist/', '/')
         .replace('Error: ', '\n') + '\n'
-    console.log(styleText('red', msg))
+    console.log(msg ? styleText('red', msg) : err)
     errors.add(`${global._currentTestPath} (${name}):\n${msg}`)
   }
 }

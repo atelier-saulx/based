@@ -47,7 +47,6 @@ export const start = async (t, clientsN = 2) => {
   const clients = Array.from({ length: clientsN }).map(
     () =>
       new DbClient({
-        debug: true,
         hooks: { ...hooks },
       }),
   )

@@ -186,10 +186,9 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       // reset the state just in case
       db.verifTree = new VerifTree(db.schemaTypesParsed)
 
-      console.log('RESULT:', db.schemaTypesParsed, db.verifTree)
-
       // We use db.verifTree.types instead of db.schemaTypesParsed because it's
       // ordered.
+
       for (const { typeId } of db.verifTree.types()) {
         const def = db.schemaTypesParsedById[typeId]
         foreachBlock(

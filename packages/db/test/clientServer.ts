@@ -98,7 +98,7 @@ await test('client server basic', async (t) => {
 
 await test('client server rapid fire', async (t) => {
   const promises = []
-  const clientsN = 1
+  const clientsN = 2
   const nodesN = 100
   const multi = 2
   const { clients } = await start(t, clientsN)
@@ -133,6 +133,7 @@ await test('client server rapid fire', async (t) => {
                 name: `user${clientI} ${cnt}`,
                 users: userIds.slice(-1000, -1),
               })
+              // console.log('client', clients.length, clientI, userId)
               userIds.push(userId)
             })(),
             client.query('user').sort('name').include('name', 'users').get(),

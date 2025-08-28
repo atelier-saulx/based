@@ -91,5 +91,4 @@ await test('migration', async (t) => {
 
   const res = await db.query('user').get().toObject()
   equal(res.length, 10)
-  console.log('---', await db.query('user').get().toObject())
 })

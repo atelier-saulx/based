@@ -153,7 +153,8 @@ export function foreachBlock(
   includeEmptyBlocks: boolean = false,
 ) {
   const step = def.blockCapacity
-  for (let start = 1; start <= def.lastId; start += step) {
+  const lastId = native.getTypeInfo(def.id, db.dbCtxExternal)[1]
+  for (let start = 1; start <= lastId; start += step) {
     const end = start + step - 1
     const hash = new Uint8Array(16)
     const res = native.getNodeRangeHash(
@@ -163,6 +164,7 @@ export function foreachBlock(
       hash,
       db.dbCtxExternal,
     )
+
     if (res || includeEmptyBlocks) {
       cb(start, end, hash)
     }

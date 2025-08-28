@@ -383,6 +383,7 @@ export class DbServer extends DbShared {
 
         const lastId =
           typeDef.lastId || native.getTypeInfo(typeId, this.dbCtxExternal)?.[1]
+
         // console.log(
         //   { typeId, lastId },
         //   native.getTypeInfo(typeId, this.dbCtxExternal),
@@ -402,6 +403,7 @@ export class DbServer extends DbShared {
     const offsets = payload.subarray(contentEnd, payload.byteLength - 4)
     // console.log({ content, offsets })
     if (this.activeReaders) {
+      // console.log('-----push it')
       this.modifyQueue.push(new Uint8Array(payload))
     } else {
       resizeModifyDirtyRanges(this)
@@ -604,13 +606,7 @@ export class DbServer extends DbShared {
         const modifyQueue = this.modifyQueue
         this.modifyQueue = []
         for (const payload of modifyQueue) {
-          const schemaHash = readUint64(payload, 0)
-          if (schemaHash !== this.schema?.hash) {
-            this.emit('info', 'Schema mismatch in modify')
-            return null
-          }
-          const buf = payload.subarray(8)
-          this.modify(buf, false)
+          this.modify(payload, true)
         }
       }
       if (this.queryQueue.size) {
@@ -663,13 +659,7 @@ export class DbServer extends DbShared {
   async destroy() {
     await this.stop(true)
     if (this.fileSystemPath) {
-      await rm(this.fileSystemPath, { recursive: true }).catch((err) => {
-        // console.warn(
-        //   'Error removing dump folder',
-        //   this.fileSystemPath,
-        //   err.message,
-        // ),
-      })
+      await rm(this.fileSystemPath, { recursive: true }).catch((err) => {})
     }
   }
 }

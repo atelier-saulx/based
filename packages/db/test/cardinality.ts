@@ -223,12 +223,10 @@ await test('hll', async (t) => {
     name: 900,
   })
 
-  console.log('----- edges -----')
   const edge = await db.create('article', {
     derp: 813,
     contributors: [{ id: mrSnurp, $tokens: ['lala', 'lele', 'lili'] }],
   })
-  console.log('----- edges end -----')
 
   deepEqual(
     await db

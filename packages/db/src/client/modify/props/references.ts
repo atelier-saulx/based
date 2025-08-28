@@ -42,6 +42,9 @@ const hasEdgeOrIndex = (def: PropDef, obj: Record<string, any>): boolean => {
 }
 
 const hasAnEdge = (def: PropDef, obj: Record<string, any>): boolean => {
+  if (def.hasDefaultEdges) {
+    return true
+  }
   if (def.edges) {
     for (const key in obj) {
       if (key[0] === '$' && key !== '$index') {
@@ -258,7 +261,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
       continue
     }
 
-    throw id
+    throw id.id || id
   }
 }
 

@@ -48,12 +48,13 @@ export const writeMainCursor = (ctx: Ctx) => {
 }
 
 export const writeNodeCursor = (ctx: Ctx) => {
-  if (ctx.id !== ctx.cursor.id) {
+  if (ctx.id !== ctx.cursor.id || ctx.operation !== ctx.cursor.operation) {
     ctx.array[ctx.index] =
       ctx.operation === CREATE ? SWITCH_ID_CREATE : SWITCH_ID_UPDATE // swtch id
     writeUint32(ctx.array, ctx.id, ctx.index + 1)
     ctx.index += 5
     ctx.cursor.id = ctx.id
     ctx.cursor.main = null
+    ctx.cursor.operation = ctx.operation
   }
 }

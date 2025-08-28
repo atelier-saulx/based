@@ -240,7 +240,6 @@ await test('one to many really', async (t) => {
     resources: [cpu, kbd, mouse, fd],
   })
   await db.drain()
-  console.log('-----------------A')
   deepEqual(
     await db.query('user', user).include('resources').get().toObject(),
     {
@@ -265,7 +264,6 @@ await test('one to many really', async (t) => {
       ],
     },
   )
-  console.log('-----------------B')
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
