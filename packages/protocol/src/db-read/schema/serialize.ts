@@ -1,157 +1,149 @@
-import type { SchemaHooks } from '@based/schema'
-import {
-  ReaderAggregateSchema,
-  ReaderPropDef,
-  ReaderSchema,
-  ReaderSchemaEnum,
-} from '../types.js'
-import {
-  concatUint8Arr,
-  ENCODER,
-  isEmptyObject,
-  writeUint16,
-} from '@based/utils'
-import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
+import { ReaderSchema } from '../types.js'
 
-export type ReaderSchema2 = {
-  readId: number
-  // maybe current read id that you add
-  props: { [prop: string]: ReaderPropDef }
-  main: { props: { [start: string]: ReaderPropDef }; len: number }
-  type: ReaderSchemaEnum
-  refs: {
-    [prop: string]: {
-      schema: ReaderSchema
-      prop: ReaderPropDef
+const writeBits = (state, value, numBits) => {
+  let { buffer, byteIndex, bitIndex } = state
+  for (let i = numBits - 1; i >= 0; i--) {
+    const bit = (value >> i) & 1
+    if (bit === 1) {
+      buffer[byteIndex] |= 1 << (7 - bitIndex)
+    }
+    bitIndex++
+    if (bitIndex === 8) {
+      bitIndex = 0
+      byteIndex++
     }
   }
-  hook?: SchemaHooks['read']
-  aggregate?: ReaderAggregateSchema
-  edges?: ReaderSchema
-  search?: boolean
+  return { buffer, byteIndex, bitIndex }
 }
 
-const getSize = (blocks: Uint8Array[], offset: number = 0): number => {
-  let total = 0
-  for (let i = offset; i < blocks.length; i++) {
-    total += blocks[i].byteLength
+const writeString = (state, str) => {
+  const encoder = new TextEncoder()
+  const encoded = encoder.encode(str)
+  let nextState = writeBits(state, encoded.length, 16) // Use 2 bytes for string length
+  for (const byte of encoded) {
+    nextState = writeBits(nextState, byte, 8)
   }
-  return total
+  return nextState
 }
 
-const PROPERTY_MAP = {
-  meta: 1 << 0, // Bit 0
-  enum: 1 << 1, // Bit 1
-  vectorBaseType: 1 << 2, // Bit 2
-  len: 1 << 3, // Bit 3
-  locales: 1 << 4, // Bit 4
-}
-
-const serializeProp = (
-  key: number,
-  keySize: 1 | 2,
-  prop: ReaderPropDef,
-  blocks: Uint8Array[],
-) => {
-  const header = new Uint8Array(3 + keySize)
-  if (keySize === 1) {
-    header[0] = key
-  } else if (keySize === 2) {
-    writeUint16(header, key, 0)
-  }
-
-  header[keySize] = prop.typeIndex
-  // 2 opions
-  header[keySize + 2] = prop.path.length
-  blocks.push(header)
-
+const serializeProp = (state, prop) => {
+  let nextState = writeBits(state, prop.path.length, 4)
   for (const p of prop.path) {
-    const n = ENCODER.encode(p)
-    blocks.push(new Uint8Array([n.byteLength]), n)
+    nextState = writeString(nextState, p)
   }
-  // Optional things
-  let options = 0
-  if ('meta' in prop) {
-    //   1 or 2
-    options |= PROPERTY_MAP.meta
-    blocks.push(new Uint8Array([prop.meta]))
+  nextState = writeBits(nextState, prop.typeIndex, 8)
+  nextState = writeBits(nextState, prop.meta, 2)
+
+  if (prop.locales) {
+    nextState = writeBits(nextState, 1, 1)
+    const keys = Object.keys(prop.locales)
+    nextState = writeBits(nextState, keys.length, 4)
+    for (const key of keys) {
+      nextState = writeBits(nextState, parseInt(key), 6)
+      nextState = writeString(nextState, prop.locales[key])
+    }
+  } else {
+    nextState = writeBits(nextState, 0, 1)
   }
-  if ('enum' in prop) {
-    options |= PROPERTY_MAP.enum
-    console.log('enum later..')
+
+  if (prop.enum) {
+    nextState = writeBits(nextState, 1, 1)
+    nextState = writeBits(nextState, prop.enum.length, 4)
+    for (const e of prop.enum) {
+      nextState = writeString(nextState, e)
+    }
+  } else {
+    nextState = writeBits(nextState, 0, 1)
   }
-  if ('vectorBaseType' in prop) {
-    options |= PROPERTY_MAP.vectorBaseType
-    // Size 8
-    blocks.push(new Uint8Array([prop.vectorBaseType - 1]))
-  }
-  if ('len' in prop) {
-    options |= PROPERTY_MAP.len
-    const len = new Uint8Array(2)
-    writeUint16(len, prop.len, 0)
-    blocks.push(len)
-  }
-  if ('locales' in prop) {
-    options |= PROPERTY_MAP.locales
-    console.log('locales later')
-  }
-  header[keySize + 1] = options
+  return nextState
 }
 
-const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
-  const top = new Uint8Array(3)
-  top[0] = schema.type
-  top[1] = schema.search ? 1 : 0
-  blocks.push(top)
-  if (schema.refs.schema) {
-    top[2] = 0
-    // parse prop first
-    // then schema (similair to edges)
-  } else {
-    top[2] = 0
-  }
-
-  if (isEmptyObject(schema.props)) {
-    blocks.push(new Uint8Array([0]))
-  } else {
-    const propsHeader = new Uint8Array(1)
-    blocks.push(propsHeader)
-    let count = 0
-    for (const key in schema.props) {
-      count++
-      serializeProp(Number(key), 1, schema.props[key], blocks)
+const serializeAggregate = (state, aggregate) => {
+  let nextState = writeBits(state, aggregate.aggregates.length, 4)
+  for (const agg of aggregate.aggregates) {
+    nextState = writeBits(nextState, agg.path.length, 4)
+    for (const p of agg.path) {
+      nextState = writeString(nextState, p)
     }
-    propsHeader[0] = count
+    nextState = writeBits(nextState, agg.type, 8)
+    nextState = writeBits(nextState, agg.resultPos, 8)
   }
 
-  const mainBlock = new Uint8Array(2)
-  writeUint16(mainBlock, schema.main.len, 0)
-  blocks.push(mainBlock)
-  if (schema.main.len) {
-    const propsHeader = new Uint8Array(1)
-    blocks.push(propsHeader)
-    let count = 0
-    for (const key in schema.main.props) {
-      count++
-      serializeProp(Number(key), 2, schema.main.props[key], blocks)
+  if (aggregate.groupBy) {
+    nextState = writeBits(nextState, 1, 1)
+    const { groupBy } = aggregate
+    nextState = writeBits(nextState, groupBy.typeIndex, 8)
+
+    if (groupBy.stepRange !== undefined) {
+      nextState = writeBits(nextState, 1, 1)
+      nextState = writeBits(nextState, groupBy.stepRange, 8)
+    } else {
+      nextState = writeBits(nextState, 0, 1)
     }
-    propsHeader[0] = count
+
+    if (groupBy.stepType !== undefined) {
+      nextState = writeBits(nextState, 1, 1)
+      nextState = writeBits(nextState, groupBy.stepType ? 1 : 0, 1)
+    } else {
+      nextState = writeBits(nextState, 0, 1)
+    }
+
+    if (groupBy.enum) {
+      nextState = writeBits(nextState, 1, 1)
+      nextState = writeBits(nextState, groupBy.enum.length, 4)
+      for (const e of groupBy.enum) {
+        nextState = writeString(nextState, e)
+      }
+    } else {
+      nextState = writeBits(nextState, 0, 1)
+    }
+  } else {
+    nextState = writeBits(nextState, 0, 1)
   }
 
-  // 3 optional, 3 normal
-  //   if (schema.edges) {
-  //     const edges = new Uint8Array(3)
-  //     edges[0] = TopLevelKeys.edges
-  //     blocks.push(edges)
-  //     let index = blocks.length - 1
-  //     innerSerialize(schema.edges, blocks)
-  //     writeUint16(edges, getSize(blocks, index), 1)
-  //   }
-
-  // agg
-  return blocks
+  nextState = writeBits(nextState, aggregate.totalResultsSize, 16)
+  return nextState
 }
 
+// max size is now 2kb
+const SHARED_BUFFER = new Uint8Array(2096)
 export const serialize = (schema: ReaderSchema) => {
-  return concatUint8Arr(innerSerialize(schema))
+  let state = { buffer: SHARED_BUFFER, byteIndex: 0, bitIndex: 0 }
+
+  state = writeBits(state, schema.type, 4)
+
+  const propsKeys = Object.keys(schema.props)
+  state = writeBits(state, propsKeys.length, 4)
+  for (const key of propsKeys) {
+    state = writeBits(state, parseInt(key), 8)
+    state = serializeProp(state, schema.props[key])
+  }
+
+  state = writeBits(state, schema.main.len, 8)
+  const mainPropsKeys = Object.keys(schema.main.props)
+  state = writeBits(state, mainPropsKeys.length, 4)
+  for (const key of mainPropsKeys) {
+    state = writeBits(state, parseInt(key), 16)
+    state = serializeProp(state, schema.main.props[key])
+  }
+
+  const refsKeys = Object.keys(schema.refs)
+  state = writeBits(state, refsKeys.length, 4)
+
+  if (schema.aggregate) {
+    state = writeBits(state, 1, 1)
+    state = serializeAggregate(state, schema.aggregate)
+  } else {
+    state = writeBits(state, 0, 1)
+  }
+
+  if (schema.hook) {
+    state = writeBits(state, 1, 1) // hook exists flag
+    const hookStr =
+      typeof schema.hook === 'function' ? schema.hook.toString() : schema.hook
+    state = writeString(state, hookStr)
+  } else {
+    state = writeBits(state, 0, 1)
+  }
+  return state.buffer.slice(0, state.byteIndex + (state.bitIndex > 0 ? 1 : 0))
 }
