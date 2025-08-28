@@ -25,9 +25,9 @@ await test('ids', async (t) => {
     },
   })
 
-  const ids: number[] = []
+  const res: ReturnType<typeof db.create>[] = []
   for (let i = 0; i < 1e5; i++) {
-    ids.push(
+    res.push(
       db.create('user', {
         age: ~~(Math.random() * 100000),
         name: i + ' Mr Dinkelburry',
@@ -36,12 +36,12 @@ await test('ids', async (t) => {
         blurf: Math.random() * 10000,
         bla: ~~(Math.random() * 5),
         mep: i + 'X',
-      }).tmpId,
+      }),
     )
   }
 
   await db.drain()
-
+  const ids: number[] = await Promise.all(res)
   isSorted(await db.query('user', ids).sort('age').get(), 'age')
   isSorted(await db.query('user', ids).sort('name').get(), 'name')
   isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
@@ -85,16 +85,17 @@ await test('references', async (t) => {
     },
   })
 
-  const ids: number[] = []
+  const res: ReturnType<typeof db.create>[] = []
   for (let i = 0; i < 1e4; i++) {
-    ids.push(
+    res.push(
       db.create('user', {
         flap: ~~(Math.random() * 100000),
         name: 'Mr Dinkelburry ' + i,
-      }).tmpId,
+      }),
     )
   }
 
+  const ids: number[] = await Promise.all(res)
   const id = await db.create('article', {
     name: '100k contributors master piece',
     contributors: ids,

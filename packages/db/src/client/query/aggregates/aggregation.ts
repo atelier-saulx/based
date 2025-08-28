@@ -155,7 +155,6 @@ export const addAggregate = (
         : def.schema.props[field]
 
     if (!fieldDef) {
-      console.log({ fields, field })
       aggregationFieldDoesNotExist(def, field)
     }
 

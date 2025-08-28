@@ -5,6 +5,7 @@ import { parse } from '@based/schema'
 await test('shorthands', () => {
   deepEqual(
     parse({
+      locales: { en: {} },
       types: {
         hello: {
           props: {
@@ -20,6 +21,7 @@ await test('shorthands', () => {
       },
     }).schema,
     {
+      locales: { en: {} },
       types: {
         hello: {
           props: {
@@ -38,6 +40,7 @@ await test('shorthands', () => {
 
   deepEqual(
     parse({
+      locales: { en: {} },
       types: {
         article: {
           header: 'text',
@@ -47,6 +50,7 @@ await test('shorthands', () => {
       },
     }).schema,
     {
+      locales: { en: {} },
       types: {
         article: {
           props: {
@@ -67,6 +71,7 @@ await test('shorthands', () => {
 
   deepEqual(
     parse({
+      locales: { en: {} },
       types: {
         article: {
           header: 'text',
@@ -76,6 +81,7 @@ await test('shorthands', () => {
       },
     }).schema,
     {
+      locales: { en: {} },
       types: {
         article: {
           props: {

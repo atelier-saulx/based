@@ -45,6 +45,7 @@ await test('schema problems save', async (t) => {
   }
 
   await db.setSchema({
+    locales: { en: {} },
     types,
   })
 

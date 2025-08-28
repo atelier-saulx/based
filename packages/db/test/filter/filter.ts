@@ -187,10 +187,10 @@ await test('simple', async (t) => {
   })
 
   const now = Date.now()
-  let lastId = 0
-  const m: number[] = []
+  let lastNode: ReturnType<typeof db.create>
+  const m = []
   for (let i = 0; i < 1e5; i++) {
-    lastId = db.create('machine', {
+    lastNode = db.create('machine', {
       env,
       status: status[Math.floor(Math.random() * (status.length - 1))],
       requestsServed: i,
@@ -199,9 +199,9 @@ await test('simple', async (t) => {
       temperature: Math.random() * 40 - Math.random() * 40,
       isLive: !!(i % 2),
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
-    }).tmpId
+    })
     if (i % 2) {
-      m.push(lastId)
+      m.push(lastNode)
     }
   }
 
@@ -210,7 +210,7 @@ await test('simple', async (t) => {
   })
 
   await db.drain()
-
+  const lastId = await lastNode
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 
   equal(
@@ -623,7 +623,7 @@ await test('or', async (t) => {
       temperature: Math.random() * 40 - Math.random() * 40,
       isLive: !!(i % 2),
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
-    }).tmpId
+    })
   }
 
   await db.drain()

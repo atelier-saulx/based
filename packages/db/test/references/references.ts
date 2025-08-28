@@ -1,6 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { wait } from '@based/utils'
 
 await test('references', async (t) => {
   const db = new BasedDb({
@@ -65,14 +66,14 @@ await test('references', async (t) => {
     (await db.query('article').include('contributors.name').get()).toObject(),
     [
       {
-        id: strudelArticle.tmpId,
-        contributors: [{ id: mrSnurp.tmpId, name: 'Mr snurp' }],
+        id: await strudelArticle,
+        contributors: [{ id: await mrSnurp, name: 'Mr snurp' }],
       },
       {
-        id: piArticle.tmpId,
+        id: await piArticle,
         contributors: [
-          { id: mrSnurp.tmpId, name: 'Mr snurp' },
-          { id: flippie.tmpId, name: 'Flippie' },
+          { id: await mrSnurp, name: 'Mr snurp' },
+          { id: await flippie, name: 'Flippie' },
         ],
       },
     ],
@@ -239,7 +240,6 @@ await test('one to many really', async (t) => {
     resources: [cpu, kbd, mouse, fd],
   })
   await db.drain()
-
   deepEqual(
     await db.query('user', user).include('resources').get().toObject(),
     {
@@ -264,7 +264,6 @@ await test('one to many really', async (t) => {
       ],
     },
   )
-
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
@@ -525,15 +524,11 @@ await test('update', async (t) => {
     name: 'The wonders of Strudel',
     contributors: [mrSnurp],
   })
-
   await db.drain()
-
   db.update('article', strudelArticle, {
     contributors: [flippie],
   })
-
   await db.drain()
-
   deepEqual(
     (await db.query('article').include('contributors.name').get()).toObject(),
     [
@@ -548,6 +543,7 @@ await test('update', async (t) => {
       },
     ],
   )
+  await wait(1000)
 })
 
 await test('filter', async (t) => {

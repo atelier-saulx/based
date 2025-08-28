@@ -151,16 +151,15 @@ export const migrate = async (
   let rangesToMigrate: MigrateRange[] = []
 
   await save(server, { skipMigrationCheck: true })
+
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
-
     rangesToMigrate.push({ typeId, start, end })
   })
 
   await waitUntilSleeping(workerState)
-
   while (i < rangesToMigrate.length) {
     if (abort()) {
       break
@@ -196,27 +195,9 @@ export const migrate = async (
     return
   }
 
-  let msg: any
-  let schemaTypesParsed: any
-
-  while ((msg = receiveMessageOnPort(port1))) {
-    schemaTypesParsed = msg.message
-  }
-
   server.dbCtxExternal = toCtx
   server.sortIndexes = {}
-
-  // ----------------MAKE NICE THIS------------------
-  // pass last node IDS { type: lastId }
   setSchemaOnServer(server, toSchema)
-
-  for (const key in schemaTypesParsed) {
-    // maybe only send the lastId
-    const def = server.schemaTypesParsed[key]
-    def.lastId = schemaTypesParsed[key].lastId
-  }
-  // -----------------------------------------
-
   tmpDb.server.dbCtxExternal = fromCtx
 
   // TODO makes this SYNC
@@ -239,7 +220,6 @@ export const migrate = async (
     skipMigrationCheck: true,
   })
   await writeSchemaFile(server, toSchema)
-
   server.migrating = 0
   process.nextTick(() => server.emit('schema', server.schema))
 }

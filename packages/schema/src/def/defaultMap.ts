@@ -29,16 +29,15 @@ import {
   OBJECT,
 } from './types.js'
 
-// TODO update defaults
 export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [NULL]: 0,
   [OBJECT]: 0,
   [WEAK_REFERENCE]: 0,
   [WEAK_REFERENCES]: 0,
   [ALIAS]: '',
-  [BINARY]: new Uint8Array([]),
+  [BINARY]: new Uint8Array(),
   [BOOLEAN]: false,
-  [CARDINALITY]: 0,
+  [CARDINALITY]: [],
   [NUMBER]: 0,
   [TIMESTAMP]: 0,
   [ENUM]: 0,

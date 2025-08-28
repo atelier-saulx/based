@@ -1,5 +1,5 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 
 await test.skip('colvec', async (t) => {
@@ -26,7 +26,7 @@ await test.skip('colvec', async (t) => {
     },
   })
 
-  deepEqual(db.server.schemaTypesParsed['col'].blockCapacity, 10_000)
+  deepEqual(db.server.schemaTypesParsed.col.blockCapacity, 10_000)
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)
@@ -124,6 +124,8 @@ await test('colvec int8', async (t) => {
       str: Int8Array.from([i + 1, i + 2, i + 3, i + 4]),
     })
   }
+  // await db.drain()
+
   deepEqual(await db.query('col').include('str').get(), [
     { id: 1, str: new Int8Array([1, 2, 3, 4]) },
     { id: 2, str: new Int8Array([2, 3, 4, 5]) },

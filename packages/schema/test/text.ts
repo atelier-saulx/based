@@ -29,4 +29,14 @@ await test('text', () => {
       },
     })
   }, 'type text requires locales to be defined')
+
+  throws(() => {
+    parse({
+      types: {
+        product: {
+          description: 'text',
+        },
+      },
+    })
+  }, 'type text requires locales to be defined 2')
 })

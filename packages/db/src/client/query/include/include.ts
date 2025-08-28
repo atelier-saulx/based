@@ -61,7 +61,6 @@ export const include = (
         include(query, f)
       }
     } else if (f !== undefined) {
-      console.log('derp', f)
       throw new Error(
         'Invalid include statement: expected props, refs and edges (string or array) or function',
       )

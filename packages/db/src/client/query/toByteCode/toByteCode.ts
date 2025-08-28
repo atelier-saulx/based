@@ -141,7 +141,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
         buf.set(filterToBuffer(def.filter), 8 + aliasLen)
       }
       result.push(buf)
-    } else if (def.target.id) {
+    } else if (typeof def.target.id === 'number') {
       const buf = new Uint8Array(9 + filterSize)
       buf[0] = QueryType.id
       buf[1] = def.schema.idUint8[0]

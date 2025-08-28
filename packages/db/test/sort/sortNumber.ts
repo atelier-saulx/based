@@ -83,7 +83,6 @@ await test('numbers', async (t) => {
       .then((v) => v.toObject().map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
-
   db.delete('example', 1)
   isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
 

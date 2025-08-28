@@ -6,7 +6,6 @@ import {
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { isTypedArray } from 'node:util/types'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
@@ -22,36 +21,12 @@ if (isMainThread) {
 
   const fromCtx = native.externalFromInt(from)
   const toCtx = native.externalFromInt(to)
+
   native.createThreadCtx(fromCtx, native.getThreadId())
   native.createThreadCtx(toCtx, native.getThreadId())
 
   const fromDb = new BasedDb({ path: null })
   const toDb = new BasedDb({ path: null })
-  const cp = (obj: any) => {
-    let copy: object
-
-    for (const key in obj) {
-      const val = obj[key]
-      if (typeof val === 'number') {
-        // only copy numbers
-        copy ??= Array.isArray(obj) ? [] : {}
-        copy[key] = val
-      } else if (
-        typeof val === 'object' &&
-        val !== null &&
-        !isTypedArray(val)
-      ) {
-        const res = cp(val)
-        if (res) {
-          copy ??= Array.isArray(obj) ? [] : {}
-          copy[key] = cp(val)
-        }
-      }
-    }
-
-    return copy
-  }
-
   fromDb.server.dbCtxExternal = fromCtx
   toDb.server.dbCtxExternal = toCtx
 
@@ -100,6 +75,7 @@ if (isMainThread) {
 
     while (true) {
       let msg: any
+
       while ((msg = receiveMessageOnPort(channel))) {
         const leafData: MigrateRange = msg.message
         const { type, include } = map[leafData.typeId]
@@ -129,7 +105,6 @@ if (isMainThread) {
             .include(include)
             .range(leafData.start - 1, leafData.end)
             ._getSync(fromCtx)
-
           for (const node of nodes) {
             toDb.create(type, node, { unsafe: true })
           }
@@ -138,10 +113,6 @@ if (isMainThread) {
 
       await toDb.drain()
       native.membarSyncWrite()
-
-      // WE ARE ONLY GOING TO SEND { type: lastNodeId }
-      channel.postMessage(cp(toDb.server.schemaTypesParsed))
-
       setToSleep(workerState)
     }
   } catch (e) {

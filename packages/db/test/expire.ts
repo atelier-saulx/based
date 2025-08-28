@@ -45,17 +45,30 @@ await test('expire', async (t) => {
     name: 'my new token',
     user: user1,
   })
-  db.expire('token', token2, 1)
+  await db.expire('token', token2, 1)
   await db.drain()
   await db.save()
-
+  equal(
+    (await db.query('token').get().toObject()).length,
+    1,
+    '1 token before save',
+  )
   const db2 = new BasedDb({
     path: t.tmp,
   })
   t.after(() => db2.destroy(), true)
   await db2.start()
 
-  equal((await db2.query('token').get().toObject()).length, 1)
+  equal(
+    (await db2.query('token').get().toObject()).length,
+    1,
+    '1 token after load',
+  )
   await setTimeout(3e3)
-  equal((await db2.query('token').get().toObject()).length, 0)
+  console.log(await db2.query('token').get().toObject())
+  equal(
+    (await db2.query('token').get().toObject()).length,
+    0,
+    '0 tokens after expiry',
+  )
 })

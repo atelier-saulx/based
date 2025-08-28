@@ -84,7 +84,6 @@ await test('set schema dont migrate', async (t) => {
 
   deepEqual(updates, 3, '3 update')
   // deepEqual(migrates, 2, '2 migrates')
-
   await db.update({
     badguy: true,
     coolguy: 'arnold',

@@ -69,7 +69,6 @@ await test('number', async (t) => {
   }
 
   await db.drain() // will become async
-
   deepEqual(
     (await db.query('user').get()).toObject(),
     payloads.map((payload, index) => {
@@ -103,7 +102,6 @@ await test('number', async (t) => {
       increment: 12,
     },
   })
-
   deepEqual((await db.query('user', newThing).get()).toObject(), {
     id: newThing,
     number: 12,

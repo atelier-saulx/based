@@ -109,7 +109,7 @@ export const isSorted = (
 }
 
 export const throws = async (
-  fn: () => Promise<any>,
+  fn: () => PromiseLike<any>,
   logErr?: string | boolean,
   label?: string,
 ) => {

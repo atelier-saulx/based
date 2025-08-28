@@ -45,7 +45,7 @@ export type EdgeTarget = {
 
 export type Target = {
   type: string
-  id?: number | void
+  id?: number | void | Promise<number>
   ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
   alias?: QueryByAliasObj
@@ -180,7 +180,12 @@ export type QueryByAliasObj = {
 }
 
 export const isAlias = (
-  id: QueryByAliasObj | number | Uint32Array | (QueryByAliasObj | number)[],
+  id:
+    | Promise<number>
+    | QueryByAliasObj
+    | number
+    | Uint32Array
+    | (QueryByAliasObj | number | Promise<number>)[],
 ): id is QueryByAliasObj => {
   if (id instanceof Uint32Array) {
     return false
@@ -189,7 +194,8 @@ export const isAlias = (
     typeof id === 'object' &&
     id !== null &&
     !Array.isArray(id) &&
-    !ArrayBuffer.isView(id)
+    !ArrayBuffer.isView(id) &&
+    typeof id.then !== 'function'
   )
 }
 

@@ -1,6 +1,5 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 import { wait } from '@based/utils'
 
 await test.skip('csv performance', async (t) => {
@@ -49,6 +48,7 @@ await test('export to csv', async (t) => {
   const cat = ['toy', 'food', 'weapon']
 
   await db.setSchema({
+    locales: { en: {} },
     types: {
       product: {
         sku: { type: 'string', maxBytes: 10 },
@@ -80,7 +80,9 @@ await test('export to csv', async (t) => {
         expiration: new Date(),
         category: cat[j],
         meta: '{ "lala": ["lele, lili"]}',
-        description: 'ufgiwegflhie"gF WFEW wf \newF EHWBFlh ewvb""dlHFVWH Dilv',
+        description: {
+          en: 'ufgiwegflhie"gF WFEW wf \newF EHWBFlh ewvb""dlHFVWH Dilv',
+        },
       })
       db.create('shelve', {
         code: 'S' + (Math.random() * 50).toFixed(0),
