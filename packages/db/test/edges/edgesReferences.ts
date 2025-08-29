@@ -595,27 +595,9 @@ await test('simple references', async (t) => {
     },
   })
 
-  // await db.update('phase', phaseId, {
-  //   scenarios: {
-  //     add: [
-  //       {
-  //         id: scenarioId2,
-  //         $sequence: sequenceId,
-  //       },
-  //     ],
-  //   },
-  // })
-
-  // await db.update('phase', phaseId, {
-  //   scenarios: {
-  //     add: [
-  //       {
-  //         id: scenarioId3,
-  //         $sequence: sequenceId,
-  //       },
-  //     ],
-  //   },
-  // })
+  deepEqual(await db.query('phase').include('scenarios').get().inspect(), [
+    { id: 1, scenarios: [{ id: scenarioId1, name: 'scenario' }] },
+  ])
 
   await db.save()
 })
