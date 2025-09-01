@@ -6,14 +6,18 @@ Filters the results based on field values.
 
 ### Operators:
 
-- \`=\`: Equal to (works for most types, including exact string match).
-- \`!=\`: Not equal to.
-- \`>\`: Greater than (numbers, timestamps).
-- \`<\`: Less than (numbers, timestamps).
-- \`>=\`: Greater than or equal to.
-- \`<=\`: Less than or equal to.
-- \`has\`: Contains substring (case sensitive by default for `string`, `text`, could be case insentive passing option argument).
-- \`like\`: Fuzzy search / similarity (for `string`, `text`, `vector`).
+- `=`: Equal to (works for most types, including exact string match).
+- `!=`: Not equal to.
+- `>`: Greater than (numbers, timestamps).
+- `<`: Less than (numbers, timestamps).
+- `>=`: Greater than or equal to.
+- `<=`: Less than or equal to.
+- `includes`: Contains substring (case sensitive by default for `string`, `text`, could be case insentive passing option argument).
+- `!includes` Not contains. The negation with the same options as the above.
+- `like`: Fuzzy search / similarity (for `string`, `text`, `vector`).
+- `..`: Range filter, meaning between two values in array.
+- `exists`: At least one result on filtering.
+- `!exists`: None/empty result on filtering.
 
 **Filter Examples:**
 
@@ -65,24 +69,24 @@ Filters the results based on field values.
     .get()
   ```
 
-- **String/Text Contains (has)**
+- **String/Text Contains (includes)**
   Finds nodes where a \`string\` or \`text\` field includes a substring. Case-insensitive by default.
 
   ```js
   // Find users whose name contains 'ali' (matches 'Alice', 'Ali', 'Salim', etc.)
-  await db.query('user').filter('name', 'has', 'ali').get()
+  await db.query('user').filter('name', 'includes', 'ali').get()
 
   // Find users whose name contains 'ALI' (case-sensitive)
   await db
     .query('user')
-    .filter('name', 'has', 'ALI', { lowerCase: false })
+    .filter('name', 'includes', 'ALI', { lowerCase: false })
     .get()
 
   // Find users whose bio (any language) contains 'engineer'
-  await db.query('user').filter('bio', 'has', 'engineer').get()
+  await db.query('user').filter('bio', 'includes', 'engineer').get()
 
   // Find users whose English bio contains 'dev'
-  await db.query('user').filter('bio.en', 'has', 'dev').get()
+  await db.query('user').filter('bio.en', 'includes', 'dev').get()
   ```
 
 - **Fuzzy Match / Similarity (like)**
@@ -158,7 +162,7 @@ Filters the results based on field values.
   await db.query('user').filter('bestFriend.status', '=', 'active').get()
   ```
 
-- `has` also can be used with references (as also `>`, `>=`, `<` and `<=` ) see the example bellow.
+- `includes` also can be used with references (as also `>`, `>=`, `<` and `<=` ) see the example bellow.
 
 Considering the schema. `bestBud` is a single reference prop but `buddies` is a multiple references prop:
 
@@ -213,7 +217,7 @@ Let's filter it using the nested sintax:
 await db
   .query('user')
   .include('*')
-  .filter('bestBud.name', 'has', 'Jose')
+  .filter('bestBud.name', 'includes', 'Jose')
   .get()
   .inspect(10)
 // [
@@ -230,7 +234,10 @@ but to filter multiple refs we can't apply to `db.filter()` sequancially, so we 
 ```js
 await db
   .query('user')
-  .include((q) => q('buddies').include('*').filter('name', 'has', 'Jose'), '*')
+  .include(
+    (q) => q('buddies').include('*').filter('name', 'includes', 'Jose'),
+    '*',
+  )
   .get()
   .inspect(10)
 // [
@@ -264,7 +271,7 @@ Notice that the result is correctly applied for the branch, but to filter the to
   await db
     .query('user')
     .include(
-      (q) => q('buddies').include('*').filter('name', 'has', 'Jose'),
+      (q) => q('buddies').include('*').filter('name', 'includes', 'Jose'),
       '*',
     )
     .get()
