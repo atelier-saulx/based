@@ -29,14 +29,6 @@ export type ReaderSchema2 = {
   search?: boolean
 }
 
-const getSize = (blocks: Uint8Array[], offset: number = 0): number => {
-  let total = 0
-  for (let i = offset; i < blocks.length; i++) {
-    total += blocks[i].byteLength
-  }
-  return total
-}
-
 const PROPERTY_MAP = {
   meta: 1 << 0,
   enum: 1 << 1,
@@ -161,14 +153,14 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   writeUint16(mainBlock, schema.main.len, 0)
   blocks.push(mainBlock)
   if (schema.main.len) {
-    const propsHeader = new Uint8Array(1)
+    const propsHeader = new Uint8Array(2)
     blocks.push(propsHeader)
     let count = 0
     for (const key in schema.main.props) {
       count++
       serializeProp(Number(key), 2, schema.main.props[key], blocks)
     }
-    propsHeader[0] = count
+    writeUint16(propsHeader, count, 0)
   }
 
   if (!schema.edges) {

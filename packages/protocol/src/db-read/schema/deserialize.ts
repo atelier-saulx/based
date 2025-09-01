@@ -33,6 +33,7 @@ const deSerializeProp = (
   keySize: 1 | 2,
 ): { def: ReaderPropDef; size: number; key: number } => {
   const key = keySize === 1 ? p[off] : readUint16(p, off)
+
   const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
   const prop: ReaderPropDef = {
@@ -131,12 +132,14 @@ const deSerializeSchemaInner = (
     }
   }
   const mainLen = readUint16(schema, i)
+
   i += 2
   if (mainLen) {
     let count = 0
-    const mainPropsLen = schema[i]
+    const mainPropsLen = readUint16(schema, i) // schema[i]
+    // here we gop
     s.main.len = mainLen
-    i++
+    i += 2
     while (count != mainPropsLen) {
       const { def, key, size } = deSerializeProp(schema, i, 2)
       s.main.props[key] = def
