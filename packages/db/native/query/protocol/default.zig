@@ -14,8 +14,6 @@ const ReadOp = @import("../../types.zig").ReadOp;
 
 pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, indexI: usize, len: usize) !void {
     const tctx = try getThreadCtx(ctx.db);
-    const decompressor = tctx.decompressor;
-    const blockState = tctx.libdeflateBlockState;
 
     var index: usize = indexI;
     const offset = read(u32, q, index);
@@ -49,8 +47,8 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
                 try QueryDefault.search(
                     true,
                     ctx,
-                    decompressor,
-                    blockState,
+                    tctx.decompressor.?,
+                    &tctx.libdeflateBlockState,
                     offset,
                     limit,
                     typeId,
@@ -62,8 +60,8 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
                 try QueryDefault.search(
                     false,
                     ctx,
-                    decompressor,
-                    blockState,
+                    tctx.decompressor.?,
+                    &tctx.libdeflateBlockState,
                     offset,
                     limit,
                     typeId,

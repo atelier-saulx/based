@@ -75,7 +75,11 @@ export abstract class DbWorker {
 
   async terminate(): Promise<void> {
     // TODO do we want to force this.worker.terminate() after a timeout?
+    const p = new Promise<void>((resolve) => {
+      this.worker.on('exit', () => resolve())
+    })
     await this.call(0n)
+    return p
   }
 
   abstract handleMsg(buf: any): void

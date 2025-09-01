@@ -10,8 +10,9 @@ const SelvaError = @import("../errors.zig").SelvaError;
 const rand = std.crypto.random;
 
 const ThreadCtx = struct {
-    decompressor: *selva.libdeflate_decompressor,
-    libdeflateBlockState: *selva.libdeflate_block_state,
+    threadId: u64,
+    decompressor: ?*selva.libdeflate_decompressor,
+    libdeflateBlockState: selva.libdeflate_block_state,
 };
 
 pub fn getThreadId() u64 {
@@ -23,7 +24,7 @@ pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
-    threadCtx: std.AutoHashMap(u64, ThreadCtx),
+    threadCtx: [42]ThreadCtx,
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
 
@@ -53,21 +54,22 @@ pub fn createDbCtx() !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
-    const threadCtx = std.AutoHashMap(u64, ThreadCtx).init(base_allocator);
     errdefer {
         arena.deinit();
         db_backing_allocator.destroy(arena);
-        threadCtx.deinit();
     }
     b.* = .{
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,
-        .threadCtx = threadCtx,
+        .threadCtx = undefined , //.{ .threadId = 0, .decompressor = null, .libdeflateBlockState = .{} } ** 42,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = null,
     };
+    for (&b.*.threadCtx) |*tctx| {
+        tctx.* = .{ .threadId = 0, .decompressor = null, .libdeflateBlockState = undefined };
+    }
     _ = createThreadCtx(b, getThreadId()) catch null;
 
     return b;
@@ -88,12 +90,10 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         }
     }
 
-    var iterator = ctx.threadCtx.iterator();
-    while (iterator.next()) |tctx| {
-        selva.libdeflate_block_state_deinit(tctx.value_ptr.*.libdeflateBlockState);
-        selva.libdeflate_free_decompressor(tctx.value_ptr.*.decompressor);
+    for (&ctx.threadCtx) |*tctx| {
+        selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
+        selva.libdeflate_free_decompressor(tctx.*.decompressor);
     }
-    ctx.threadCtx.deinit();
 
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
@@ -101,25 +101,43 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
 }
 
 pub fn createThreadCtx(ctx: *DbCtx, threadId: u64) !void {
-    const blockState = try base_allocator.create(selva.libdeflate_block_state);
-    blockState.* = selva.libdeflate_block_state_init(305000);
-    try ctx.*.threadCtx.put(threadId, .{
-        .decompressor = selva.libdeflate_alloc_decompressor().?, // never fails
-        .libdeflateBlockState = blockState,
-    });
+    selva.membar_sync_read();
+
+    for (&ctx.threadCtx) |*tctx| {
+        if (tctx.*.threadId == 0) {
+            tctx.* = .{
+                .threadId = threadId,
+                .decompressor = selva.libdeflate_alloc_decompressor().?, // never fails
+                .libdeflateBlockState = selva.libdeflate_block_state_init(305000),
+            };
+            break;
+        }
+    }
+    selva.membar_sync_write();
 }
 
 pub fn destroyThreadCtx(ctx: *DbCtx, threadId: u64) !void {
-    if (ctx.threadCtx.fetchRemove(threadId)) |tctx| {
-        selva.libdeflate_block_state_deinit(tctx.value.libdeflateBlockState);
-        selva.libdeflate_free_decompressor(tctx.value.decompressor);
+    selva.membar_sync_read();
+    for (&ctx.threadCtx) |*tctx| {
+        if (tctx.*.threadId == threadId) {
+            selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
+            selva.libdeflate_free_decompressor(tctx.*.decompressor);
+            tctx.* = .{ .threadId = 0, .decompressor = null, .libdeflateBlockState = undefined };
+            break;
+        }
     }
+    selva.membar_sync_write();
 }
 
-pub fn getThreadCtx(ctx: *DbCtx) !ThreadCtx {
-    const tctx = ctx.threadCtx.get(getThreadId());
-    if (tctx) |v| {
-        return v;
+pub fn getThreadCtx(ctx: *DbCtx) !*ThreadCtx {
+    const threadId = getThreadId();
+
+    selva.membar_sync_read();
+    for (&ctx.threadCtx) |*tctx| {
+        if (tctx.*.threadId == threadId) {
+            return tctx;
+        }
     }
+
     return SelvaError.DB_NOT_CREATED;
 }

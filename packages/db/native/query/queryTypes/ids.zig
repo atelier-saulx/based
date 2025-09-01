@@ -125,8 +125,6 @@ pub fn search(
     searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
     const tctx = try getThreadCtx(ctx.db);
-    const decompressor = tctx.decompressor;
-    const blockState = tctx.libdeflateBlockState;
 
     const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
@@ -138,8 +136,8 @@ pub fn search(
             break :checkItem;
         }
         s.addToScore(
-            decompressor,
-            blockState,
+            tctx.decompressor.?,
+            &tctx.libdeflateBlockState,
             isVector,
             ctx,
             &searchCtxC,
