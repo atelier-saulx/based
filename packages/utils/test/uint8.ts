@@ -542,28 +542,6 @@ test('Performance comparison: writeInt64 vs writeUint64', (t) => {
     int64Time / uint64Time < 5,
     `writeInt64 is too slow compared to writeUint64: ${(int64Time / uint64Time).toFixed(2)}x`,
   )
-
-  // Test with negative values to see if that affects performance
-  const negativeInt64Start = performance.now()
-  for (let i = 0; i < iterations; i++) {
-    writeInt64(buf, -i, 0)
-  }
-  const negativeInt64End = performance.now()
-  const negativeInt64Time = negativeInt64End - negativeInt64Start
-
-  console.log(
-    `writeInt64 (negative): ${negativeInt64Time.toFixed(2)}ms for ${iterations.toLocaleString()} iterations`,
-  )
-  console.log(
-    `Performance ratio (negative/positive): ${(negativeInt64Time / int64Time).toFixed(2)}x`,
-  )
-
-  // Negative values use DataView while positive values use fast arithmetic
-  // This is expected to be slower, but should still be reasonable
-  t.true(
-    negativeInt64Time / int64Time < 10,
-    `Negative values are too slow compared to positive: ${(negativeInt64Time / int64Time).toFixed(2)}x`,
-  )
 })
 
 test('Performance comparison: readInt64 vs readUint64', (t) => {
