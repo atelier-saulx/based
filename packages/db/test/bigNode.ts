@@ -2,6 +2,8 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { SchemaProps } from '@based/schema'
+import { serialize } from '@based/protocol/db-read/serialize-schema'
+import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
 
 await test('big nodes', async (t) => {
   const db = new BasedDb({
@@ -32,12 +34,6 @@ await test('big nodes', async (t) => {
           ref: { type: 'reference', ref: 'mega', prop: 'ref' },
         },
       },
-      //giga: {
-      //  props: {
-      //    ...makeALot(2 * 4096),
-      //    ref: { type: 'reference', ref: 'mega', prop: 'ref' },
-      //  }
-      //},
     },
   })
 
@@ -68,8 +64,31 @@ await test('big nodes', async (t) => {
   db.update('giga', giga1, { ref: mega2 })
   await db.drain()
 
-  const megaRef = (await db.query('mega').include('ref').get()).toObject()
+  const megaRefQ = await db.query('mega').include('ref').get()
+
+  const megaRef = megaRefQ.toObject()
   const gigaRef = (await db.query('giga').include('ref').get()).toObject()
   deepEqual(gigaRef[0].ref.id, 2)
   deepEqual(megaRef[1].ref.id, 1)
+
+  const megaInclude = await db.query('mega').get()
+
+  const compressed = serialize(megaInclude.def.readSchema)
+
+  console.log({
+    megaInclude: megaInclude.def.readSchema.main.props,
+    compressed,
+  })
+
+  const x = deSerializeSchema(compressed)
+
+  const obj = resultToObject(x, megaInclude.result, 0)
+
+  console.log({ obj })
+
+  console.log('????????', x)
+  // deepEqual()
+  // then read and make sure it works
+
+  // const compressed = serialize(megaInclude.def.readSchema)
 })

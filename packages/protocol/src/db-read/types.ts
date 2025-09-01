@@ -89,7 +89,7 @@ export type ReaderSchema = {
   hook?: SchemaHooks['read']
   aggregate?: ReaderAggregateSchema
   edges?: ReaderSchema
-  search?: boolean
+  search: boolean
 }
 
 export const READ_ID = 255
