@@ -2,7 +2,7 @@
 
 This document provides a high-level overview of our database release plan.
 It highlights the major planned evolutions and key milestones, without getting into extensive technical details.
-Version numers could change due to nightly releases.
+Version numbers could change due to nightly releases.
 
 ## v0.1.0 (Sep 2025)
 
@@ -37,17 +37,17 @@ Version numers could change due to nightly releases.
 
 **Aggregations**
 
-- Date/time & intervals in Aggregations: Aggregate functions now supports date, time, and interval data types.
-- Grouping by time windows, named intervals (day, week, ISO week, ISO year, etc) with timezone support
-- Group by reference node IDs
+- [Date/time & intervals in Aggregations](https://atelier-saulx.github.io/based/#/db/aggregate?id=temporal-grouping-time-based-aggregations): Aggregate functions now supports date, time, and interval data types.
+- Grouping by time windows, named intervals (day, week, ISO week, ISO year, etc) with [timezone support](https://atelier-saulx.github.io/based/#/db/aggregate?id=working-with-timezones)
+- [Group by reference node IDs](https://atelier-saulx.github.io/based/#/db/aggregate?id=grouping-by-reference-node-ids)
 - `BaseType` options for `'vector'` (8/16/32-bit integers and 32/64-bit floating-points)
-- New harmonic_mean aggregation function
-- Improved stddev and variance option to compute on sample or population mode
+- New [harmonic_mean](https://atelier-saulx.github.io/based/#/db/aggregate?id=hmeanproperty-string-string) aggregation function
+- Improved [stddev and variance option to compute on [sample or population mode](https://atelier-saulx.github.io/based/#/db/aggregate?id=stddevproperty-string-string-options-mode-39sample39-39population39-)
 
 **Interoperability**
 
-- New package: Export to CSV
-- We're introducing a new dedicated package for generating compliant CSV files from dumped datasets
+- New package: [Export to CSV](https://atelier-saulx.github.io/based/#/db/export)
+  - We're introducing a new dedicated package for generating compliant CSV files from dumped datasets
 
 **Schema**
 
@@ -74,8 +74,8 @@ Version numers could change due to nightly releases.
 
 **Documentation & Examples**
 
-- Start of documentation can be found [here](db/)
-- Northwind sample dataset - comparing SQL to BasedDb
+- Start of documentation can be found [here](https://atelier-saulx.github.io/based/#/)
+- [Northwind sample dataset](https://atelier-saulx.github.io/based/#/db/sql?id=northwind-sample-database) - comparing SQL to BasedDb
 
 **Based Platform**
 
@@ -91,13 +91,13 @@ Version numers could change due to nightly releases.
 ### Breaking changes
 
 - \*Changed the `$count` result in aggegrations to `count`
-- Filter operation `has` has been renamed to `ìncludes`. As shown in the [docs](db/filtering?id=operators)
+- Filter operation `has` has been renamed to `ìncludes`. As shown in the [docs](https://atelier-saulx.github.io/based/#/db/filtering?id=operators)
 - Removed `transform` opton from schema properties in favor of Schema Hooks
-- Removed `upsert` option from references modify api in favor of newly created `db.upsert` command. See the [docs](db/upsert)\*
+- Removed `upsert` option from references modify api in favor of newly created `db.upsert` command.
 - BasedQueryResponse now uses id for node ids vs the queryId
 - Don't allow setting a string to text props without a locale
 
-## v0.0.73 (Oct 2025)
+## v0.1.1 (Oct 2025)
 
 - Database Documentation
 - High performance native subscriptions
@@ -113,7 +113,7 @@ Version numers could change due to nightly releases.
 - Option to include data from session context in basedQueries
 - "Insert" option for upsert (only create if alias does not exist)
 
-## v0.0.74 (Nov 2025)
+## v0.1.2 (Nov 2025)
 
 - CLI v.1 nightly
   - Automatic infered response types from db queries
@@ -129,7 +129,7 @@ Version numers could change due to nightly releases.
 - Filter engine v.1 working for partials
 - JS function support for include / filter / aggregate
 
-## v0.0.75 (Dec 2025)
+## v0.1.3 (Dec 2025)
 
 - Fully automated partial loading & offloading of large databases
 - Sorted results on aggregations
@@ -141,7 +141,7 @@ Version numers could change due to nightly releases.
   - Branch deploy / normal deploy
   - Cli fully operational in combination with Cloud v.1
 
-## v0.0.76 (Jan 2026)
+## v0.1.4 (Jan 2026)
 
 - Based Platform Documentation
 - Cloud v.1 release
