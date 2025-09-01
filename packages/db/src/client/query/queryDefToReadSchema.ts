@@ -72,6 +72,7 @@ export const convertToReaderSchema = (
   const readerSchema: ReaderSchema = {
     readId: 0,
     props: {},
+    search: false,
     main: { len: 0, props: {} },
     refs: {},
     type: isEdge
