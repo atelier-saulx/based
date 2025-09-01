@@ -1,7 +1,7 @@
 import type { OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
-import { hash } from '@saulx/hash'
-import { queued } from '@saulx/utils'
+import { hash } from '@based/hash'
+import { queued } from '@based/utils'
 import type { AppContext } from '../../context/index.js'
 import { isDisconnectedError } from '../../shared/errors.js'
 

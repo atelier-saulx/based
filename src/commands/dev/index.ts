@@ -8,7 +8,7 @@ import type {
   BasedFunctionConfig,
 } from "@based/functions";
 import type { BasedServer } from "@based/server";
-import { hash } from "@saulx/hash";
+import { hash } from "@based/hash";
 import type { Command } from "commander";
 import getPort from "get-port";
 import { WebSocket, WebSocketServer } from "ws";

@@ -1,4 +1,4 @@
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import type { AppContext } from '../../context/index.js'
 import { isDisconnectedError } from '../../shared/errors.js'
 

@@ -10,7 +10,7 @@
 // import type { BasedClient } from '@based/client'
 // import type { BasedAuthorizeFunctionConfig } from '@based/functions'
 // import type { BasedServer } from '@based/server'
-// import { hash } from '@saulx/hash'
+// import { hash } from '@based/hash'
 // import { AppContext } from '../../context/index.js'
 // import {
 //   BASED_OPTS_SCRIPT,
