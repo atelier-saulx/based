@@ -595,27 +595,68 @@ await test('simple references', async (t) => {
     },
   })
 
-  // await db.update('phase', phaseId, {
-  //   scenarios: {
-  //     add: [
-  //       {
-  //         id: scenarioId2,
-  //         $sequence: sequenceId,
-  //       },
-  //     ],
-  //   },
-  // })
+  deepEqual(await db.query('phase').include('scenarios').get().inspect(), [
+    { id: 1, scenarios: [{ id: scenarioId1, name: 'scenario' }] },
+  ])
+})
 
-  // await db.update('phase', phaseId, {
-  //   scenarios: {
-  //     add: [
-  //       {
-  //         id: scenarioId3,
-  //         $sequence: sequenceId,
-  //       },
-  //     ],
-  //   },
-  // })
+await test('many to many', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
 
-  await db.save()
+  t.after(() => t.backup(db))
+
+  await db.start()
+
+  await db.setSchema({
+    types: {
+      phase: {
+        name: 'string',
+        scenarios: {
+          items: {
+            ref: 'phase',
+            prop: 'scenarios',
+            $name: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const phaseId = await db.create('phase', { name: 'phase' })
+  const phaseId2 = await db.create('phase', { name: 'phase' })
+  const phaseId3 = await db.create('phase', { name: 'phase' })
+
+  await db.update('phase', phaseId, {
+    scenarios: { add: [{ id: phaseId2, $name: 'a' }] },
+  })
+
+  // await db.query('phase').include('scenarios').get().
+
+  deepEqual(await db.query('phase').include('scenarios').get(), [
+    { id: 1, scenarios: [{ id: 2, name: 'phase' }] },
+    { id: 2, scenarios: [{ id: 1, name: 'phase' }] },
+    { id: 3, scenarios: [] },
+  ])
+
+  await db.update('phase', phaseId, {
+    scenarios: { add: [{ id: phaseId3, $name: 'b' }] },
+  })
+
+  await db.drain()
+
+  deepEqual(await db.query('phase').include('scenarios').get(), [
+    {
+      id: 1,
+      scenarios: [
+        { id: 2, name: 'phase' },
+        { id: 3, name: 'phase' },
+      ],
+    },
+    { id: 2, scenarios: [{ id: 1, name: 'phase' }] },
+    { id: 3, scenarios: [{ id: 1, name: 'phase' }] },
+  ])
 })
