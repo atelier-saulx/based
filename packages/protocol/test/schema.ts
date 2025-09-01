@@ -226,26 +226,20 @@ await test('schema serialization/deserialization', async (t) => {
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, agg)
   })
+
+  // big schema test
+  await t.test('big schema', () => {
+    const agg: ReaderSchema = {
+      readId: 0,
+      search: false,
+      props: {},
+      main: { len: 0, props: {} },
+      refs: {},
+      type: 2,
+    }
+
+    const serialized = serialize(agg)
+    const deserialized = deSerializeSchema(serialized)
+    deepEqual(deserialized, agg)
+  })
 })
-
-// big schema test
-//   await t.test('schema with aggregation', () => {
-//     const agg: ReaderSchema = {
-//       readId: 0,
-//       search: false,
-//       props: {},
-//       main: { len: 0, props: {} },
-//       refs: {},
-//       type: 2,
-//       aggregate: {
-//         aggregates: [{ path: ['distance'], type: 1, resultPos: 0 }],
-//         totalResultsSize: 8,
-//         groupBy: { typeIndex: 1, stepType: true },
-//       },
-//     }
-
-//     const serialized = serialize(agg)
-//     const deserialized = deSerializeSchema(serialized)
-//     deepEqual(deserialized, agg)
-//   })
-// })
