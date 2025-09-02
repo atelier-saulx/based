@@ -29,14 +29,18 @@ export abstract class DbWorker {
       transferList: [port2],
     })
 
-    this.readyPromise = new Promise((resolve) => {
+    this.readyPromise = new Promise((resolve, reject) => {
       const onReady = (msg: { status: string, theadId: BigInt } | any) => {
         if (msg?.status === 'READY') {
           // TODO Also call native.destroyThreadCtx() somewhere
           this.#threadId = msg.threadId
-          native.createThreadCtx(db.dbCtxExternal, this.#threadId)
-          this.worker.off('message', onReady)
-          resolve(true)
+          try {
+            native.createThreadCtx(db.dbCtxExternal, this.#threadId)
+            this.worker.off('message', onReady)
+            resolve(true)
+          } catch (e) {
+            reject(e)
+          }
         }
       }
       this.worker.on('message', onReady)
@@ -74,9 +78,15 @@ export abstract class DbWorker {
   readyPromise: Promise<true>
 
   async terminate(): Promise<void> {
-    // TODO do we want to force this.worker.terminate() after a timeout?
+    // worker.terminate() is known to cause crashes but this is the best we can
+    // do if the thread won't exit voluntarily.
+    const tim = setTimeout(() => this.worker.terminate(), 5e3)
+
     const p = new Promise<void>((resolve) => {
-      this.worker.on('exit', () => resolve())
+      this.worker.on('exit', () => {
+        clearTimeout(tim)
+        resolve()
+      })
     })
     await this.call(0n)
     return p

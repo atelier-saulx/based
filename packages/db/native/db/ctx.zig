@@ -101,8 +101,9 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
 }
 
 pub fn createThreadCtx(ctx: *DbCtx, threadId: u64) !void {
-    selva.membar_sync_read();
+    var set: bool = false;
 
+    selva.membar_sync_read();
     for (&ctx.threadCtx) |*tctx| {
         if (tctx.*.threadId == 0) {
             tctx.* = .{
@@ -110,8 +111,12 @@ pub fn createThreadCtx(ctx: *DbCtx, threadId: u64) !void {
                 .decompressor = selva.libdeflate_alloc_decompressor().?, // never fails
                 .libdeflateBlockState = selva.libdeflate_block_state_init(305000),
             };
+            set = true;
             break;
         }
+    }
+    if (set == false) {
+        return error.SELVA_ENOBUFS;
     }
     selva.membar_sync_write();
 }

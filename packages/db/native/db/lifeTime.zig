@@ -69,7 +69,10 @@ fn _createThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
 }
 
 pub fn createThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c.napi_value {
-    return _createThreadCtx(env, nfo) catch null;
+    return _createThreadCtx(env, nfo) catch {
+        _ = napi.jsThrow(env, "Failed to create a thread context");
+        return null;
+    };
 }
 
 fn _destroyThreadCtx(env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
