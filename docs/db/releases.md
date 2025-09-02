@@ -22,7 +22,7 @@ Version numbers could change due to nightly releases.
 **Backups**
 
 - Backup improvement. IoWorker threads for non blocking saving and loading (huge improvement)
-- Start of partial loading of backups (works for types without references)
+- Start of [partial](https://atelier-saulx.github.io/based/#/db/internals?id=partial-data) loading of backups (works for types without references)
 - Improved backup checksums
 
 **Modify**
