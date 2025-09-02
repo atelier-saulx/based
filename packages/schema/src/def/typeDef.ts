@@ -40,14 +40,7 @@ import { defaultValidation, VALIDATION_MAP } from './validation.js'
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
-  for (const typeName in schemaTypesParsed) {
-    if (typeName in schema.types) {
-      continue
-    }
-    const id = schemaTypesParsed[typeName].id
-    delete schemaTypesParsed[typeName]
-    delete schemaTypesParsedById[id]
-  }
+
   for (const typeName in schema.types) {
     const type = schema.types[typeName]
     if (!type.id) {
