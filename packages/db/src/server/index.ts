@@ -345,7 +345,7 @@ export class DbServer extends DbShared {
 
     setSchemaOnServer(this, schema)
     await writeSchemaFile(this, schema)
-    await setNativeSchema(this, schema)
+    setNativeSchema(this, schema)
 
     process.nextTick(() => {
       this.emit('schema', this.schema)
