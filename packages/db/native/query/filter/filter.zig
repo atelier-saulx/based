@@ -199,7 +199,7 @@ pub fn filter(
                 const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint.?, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
-                value = db.getEdgeProp(ctx, ref.?.largeReference.?, edgeFieldSchema);
+                value = db.getEdgeProp(ctx, ref.?.edgeConstraint.?, ref.?.largeReference.?, edgeFieldSchema);
                 if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
