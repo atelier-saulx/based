@@ -4,7 +4,7 @@ This document provides a high-level overview of our database release plan.
 It highlights the major planned evolutions and key milestones, without getting into extensive technical details.
 Version numbers could change due to nightly releases.
 
-## v0.1.0 (Sep 2025)
+## v0.1.1 (Sep 2025)
 
 **Include**
 
@@ -97,13 +97,14 @@ Version numbers could change due to nightly releases.
 - BasedQueryResponse now uses id for node ids vs the queryId
 - Don't allow setting a string to text props without a locale
 
-## v0.1.1 (Oct 2025)
+## v0.2.\* (Oct 1st 2025)
 
 - Database Documentation
-- High performance native subscriptions
+- High performance native subscriptions _(check with Jim)_
 - Optimized Server client integration
-  - Protocol package for each format
-  - Refactor of buffer loading - allow sending chunks and receive accordingly on client - avoids memcopies
+  - Protocol package for each format _(check with Jim)_
+  - Performance improvement by refactoring buffer loading allowing sending chunks and receive accordingly on client (avoids memcopies).
+- Improving reliability on client-server communication by replacing current get and set process by atomic upserting
 - Improved reference(s) implementation
   - space requirement improvements
   - support all property types in edges
@@ -113,41 +114,44 @@ Version numbers could change due to nightly releases.
 - Option to include data from session context in basedQueries
 - "Insert" option for upsert (only create if alias does not exist)
 
-## v0.1.2 (Nov 2025)
+## v0.3.\* (Nov 1st 2025)
 
 - CLI v.1 nightly
-  - Automatic infered response types from db queries
-  - Can show all information about and env e.g. logs, stats
+  - Enabling strong typed db query responses with automatic inference
+  - Add feature rich logging system able to present all relevant information about the environment
+  - Feature complete in local development environment
+  - Improved bundling and deployment performance
 - Env-hub v.1
-  - Monitoring of function perfomance and calls
+  - Monitoring of function performance and calls
   - Searchable log storage
-- Sort on References as option on schema
-- Max len option for references & types
+- Sortable References as an option on schema
+- Max len option for References & types
 - Partial loading of large databases (Experimental)
 - CSV export working with References
 - Parquet exporter
-- Filter engine v.1 working for partials
-- JS function support for include / filter / aggregate
+- Filter engine working for partials - MVP _(check with Jim/Olli)_
+- JS function support for include / filter / aggregate allowing the user to create custom query functions
 
-## v0.1.3 (Dec 2025)
+## v0.4.\* (Dec 1st 2025)
 
 - Fully automated partial loading & offloading of large databases
-- Sorted results on aggregations
+- Sorted results on aggregations _Marco_
 - Automatic testing for Linux (all the tests in CI/CD setup)
 - Cloud v.1 nightly
-  - Orchestrator working on new based-db
-  - Team / Org / Individual login
+  - Orchestrator working on new Based Db
+  - Updated Authorization System accordinly with Team / Org / Individual login _(check with Jim)_
   - Env management
-  - Branch deploy / normal deploy
-  - Cli fully operational in combination with Cloud v.1
+  - Ability to deploy in branches or manual deploy
+  - CLI v.1 fully operational in combination with Cloud v.1 nightly
 
-## v0.1.4 (Jan 2026)
+## v0.5.\* (Feb 1st 2026)
 
 - Based Platform Documentation
 - Cloud v.1 release
-  - UI for cloud v1
-  - Clear organisation wide usage statistics and billing information
-  - Integration with external suppliers
+  - UI Dashboard
+  - Usage statistics report
+  - Billing information report
+  - Integration with external cloud providers
 - Fully integrated internal columnar vector storage for `'insertOnly'` types
   - More space efficient for large data sets
   - Improved filter and aggregate performance
