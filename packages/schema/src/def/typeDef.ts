@@ -106,7 +106,7 @@ function reorderProps(props: PropDef[]) {
   }
 }
 
-export const createSchemaTypeDef = (
+const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
   parsed: SchemaTypesParsed,
