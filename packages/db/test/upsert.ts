@@ -83,7 +83,7 @@ await test('upsert', async (t) => {
   ])
 })
 
-await test('upsert drain test', async (t) => {
+await test('upsert no alias', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -102,7 +102,14 @@ await test('upsert drain test', async (t) => {
     },
   })
 
-  await db.drain()
+  // await db.drain()
+
+  await db.query('lala').include('*').get().inspect()
+
+  await db.upsert('lala', {
+    lele: 'lulu',
+    lili: 813,
+  })
 
   await db.query('lala').include('*').get().inspect()
 
