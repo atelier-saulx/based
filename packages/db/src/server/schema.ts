@@ -119,8 +119,8 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
     }
   }
 
-  const { hash: _, ...rest } = dbSchema
-  dbSchema.hash = hash(rest)
+  delete dbSchema.hash
+  dbSchema.hash = hash(dbSchema)
 
   return dbSchema
 }
