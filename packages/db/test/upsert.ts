@@ -82,3 +82,34 @@ await test('upsert', async (t) => {
     },
   ])
 })
+
+await test('upsert drain test', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start()
+  t.after(() => db.destroy())
+  // t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      lala: {
+        props: {
+          lele: 'string',
+          lili: 'number',
+        },
+      },
+    },
+  })
+
+  await db.drain()
+
+  await db.query('lala').include('*').get().inspect()
+
+  await db.upsert('lala', {
+    lele: 'lulu',
+    lili: 813,
+  })
+
+  await db.query('lala').include('*').get().inspect()
+})
