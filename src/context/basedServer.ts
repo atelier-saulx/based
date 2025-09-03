@@ -8,11 +8,11 @@ import type {
   ObservableUpdateFunction,
 } from '@based/functions'
 import type { BasedServer } from '@based/server'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import { v4 as uuid } from 'uuid'
 import { getContentType, getMyIp, streamToUint8Array } from '../shared/index.js'
 import type { AppContext } from './AppContext.js'
-import { deepMerge } from '@saulx/utils'
+import { deepMerge } from '@based/utils'
 import { createRequire } from 'module'
 global.require = createRequire(import.meta.url)
 import { authEmail } from './authEmail/index.js'
@@ -56,6 +56,8 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
   'db:set-schema': {
     type: 'function',
     fn: async (based, schema) => {
+      
+      // @ts-ignore
       const db = based.db.v2 as BasedDb
       if (!Array.isArray(schema)) {
         schema = [schema.schema ? schema : { schema }]
@@ -125,6 +127,7 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
       const ip = getMyIp()
       const port = based.server.port
       const src = `http://${ip}:${port}/static/${Bucket}/${Key}`
+      // @ts-ignore
       const db = based.db.v2 as BasedDb
 
       const basedDbId = await db.create('file', {
@@ -309,6 +312,8 @@ export const contextBasedServer =
           path: join(process.cwd(), 'tmp'),
           saveIntervalInSeconds: 5,
         })
+
+        console.log("BasedDB PROCESS ID =",process.pid)
 
         await basedDb.start({})
         const dbServerClient = {

@@ -1,6 +1,6 @@
 import { clearTimeout } from 'node:timers'
 import { type AuthState, BasedClient, type BasedOpts } from '@based/client'
-import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrderNest } from '@based/hash'
 import { AppContext } from '../context/AppContext.js'
 import { CONNECTION_TIMEOUT } from './constants.js'
 

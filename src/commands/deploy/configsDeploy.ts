@@ -1,5 +1,5 @@
 import type { BundleResult } from '@based/bundle'
-import { hash } from '@saulx/hash'
+import { hash } from '@based/hash'
 import type { AppContext } from '../../context/index.js'
 import { queuedFnDeploy } from './queues.js'
 
