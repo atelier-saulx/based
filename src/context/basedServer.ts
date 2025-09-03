@@ -313,8 +313,6 @@ export const contextBasedServer =
           saveIntervalInSeconds: 5,
         })
 
-        console.log("BasedDB PROCESS ID =",process.pid)
-
         await basedDb.start({})
         const dbServerClient = {
           channel(...args) {
