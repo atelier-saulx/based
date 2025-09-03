@@ -67,9 +67,12 @@
  *
  * **2**
  * - Adds colvec serialization at the end of each range file
+ *
+ * **3**
+ * - ref save logic moved completely to flags given from the schema package
  */
 
-#define SDB_VERSION 2 /*!< Bump this if the serialization format changes. */
+#define SDB_VERSION 3 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
@@ -559,7 +562,7 @@ int sdb_read_header(struct selva_io *io)
     }
 
     io->sdb_version = letoh(io->sdb_version);
-    if (io->sdb_version > SDB_VERSION) {
+    if (io->sdb_version < 3 || io->sdb_version > SDB_VERSION) {
         return SELVA_ENOTSUP;
     }
 
