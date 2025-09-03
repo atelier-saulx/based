@@ -323,8 +323,19 @@ export const contextBasedServer =
           },
         }
 
-        server.client.db ??= {}
-        server.client.db.v2 = basedDb.client
+
+        server.client.db = basedDb.client
+
+        Object.defineProperty(basedDb.client, 'v2', {
+          get() {
+            console.warn(
+              '[warning] based.db.v2 is deprecated and will be removed soon, use based.db instead',
+            )
+            return basedDb.client
+          },
+        })
+
+        // @ts-ignore
         server.client.db.getDbClient = (name: string) => {
           return { dbClient: basedDb.client, dbServerClient }
         }
