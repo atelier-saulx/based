@@ -88,8 +88,8 @@ await test('upsert no alias', async (t) => {
     path: t.tmp,
   })
   await db.start()
-  t.after(() => db.destroy())
-  // t.after(() => db.stop())
+  // t.after(() => db.destroy())
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
