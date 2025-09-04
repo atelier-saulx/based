@@ -9,6 +9,7 @@ import {
   Item,
   readProps,
   readId,
+  readChecksum,
 } from '@based/protocol/db-read'
 
 export { time, size, inspectData }
@@ -145,9 +146,7 @@ export class BasedQueryResponse {
   }
 
   get checksum() {
-    const result = this.result
-    const offset = result.byteLength - 4
-    return readUint32(result, offset)
+    return readChecksum(this.result)
   }
 
   get length() {

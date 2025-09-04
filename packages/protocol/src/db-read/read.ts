@@ -1,4 +1,4 @@
-import { readFloatLE, readUint32 } from '@based/utils'
+import { combineToNumber, readFloatLE, readUint32 } from '@based/utils'
 import {
   AggItem,
   Item,
@@ -200,4 +200,9 @@ export const readId = (
     return readUint32(result, i)
   }
   return undefined
+}
+
+export const readChecksum = (result: Uint8Array) => {
+  const len = result.byteLength
+  return combineToNumber(readUint32(result, len - 4), len)
 }
