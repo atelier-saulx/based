@@ -1,14 +1,12 @@
 import { TypeIndex } from '@based/schema/prop-types'
-import { ReaderPropDef, ReaderSchema } from '../types.js'
-import { DECODER, readUint16 } from '@based/utils'
-
-const PROPERTY_MAP = {
-  meta: 1 << 0,
-  enum: 1 << 1,
-  vectorBaseType: 1 << 2,
-  len: 1 << 3,
-  locales: 1 << 4,
-}
+import {
+  ReaderPropDef,
+  ReaderSchema,
+  PROPERTY_BIT_MAP,
+  DEF_BIT_MAP,
+  GROUP_BY_BIT_MAP,
+} from '../types.js'
+import { DECODER, readDoubleLE, readUint16, readUint32 } from '@based/utils'
 
 const readPath = (
   p: Uint8Array,
@@ -25,6 +23,102 @@ const readPath = (
     cnt++
   }
   return { path, size: index - off }
+}
+
+const deserializeAggregate = (
+  p: Uint8Array,
+  off: number,
+): { agg: ReaderSchema['aggregate']['aggregates'][number]; size: number } => {
+  let index = off
+  const agg: ReaderSchema['aggregate']['aggregates'][number] = {
+    type: p[index],
+    resultPos: readUint32(p, index + 1),
+    path: [],
+  }
+  index += 5
+  const { size, path } = readPath(p, index)
+  agg.path = path
+  index += size
+  return { agg, size: index - off }
+}
+
+const deserializeAggregates = (
+  p: Uint8Array,
+  off: number,
+): { agg: ReaderSchema['aggregate']; size: number } => {
+  const aggs = p[off]
+  const totalResultsSize = readUint32(p, off + 1)
+  let index = off + 5
+  let count = 0
+  const result: ReaderSchema['aggregate'] = {
+    aggregates: [],
+    totalResultsSize,
+  }
+  while (count != aggs) {
+    const { agg, size } = deserializeAggregate(p, index)
+    result.aggregates.push(agg)
+    index += size
+    count++
+  }
+
+  const hasGroup = p[index]
+  index++
+  if (hasGroup) {
+    const opts = p[index]
+    const groupBy: ReaderSchema['aggregate']['groupBy'] = {
+      typeIndex: p[index + 1] as TypeIndex,
+    }
+    index += 2
+
+    if (opts & GROUP_BY_BIT_MAP.stepRange) {
+      // prop.meta = p[index]
+      groupBy.stepRange = readDoubleLE(p, index)
+      index += 8
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.stepType) {
+      groupBy.stepType = true
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.display) {
+      groupBy.stepType = true
+      const size = readUint16(p, index)
+      index += 2
+      const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
+      groupBy.display = new Intl.DateTimeFormat(tmp.locale, tmp)
+      index += size
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.enum) {
+      const useJSON = p[index] === 1
+      index += 1
+      if (useJSON) {
+        const size = readUint16(p, index)
+        index += 2
+        groupBy.enum = JSON.parse(
+          DECODER.decode(p.subarray(index, index + size)),
+        )
+        index += size
+      } else {
+        const len = p[index]
+        index++
+        let cnt = 0
+        groupBy.enum = new Array(len)
+        while (cnt !== len) {
+          const len = p[index]
+          groupBy.enum[cnt] = DECODER.decode(
+            p.subarray(index + 1, len + index + 1),
+          )
+          index += len + 1
+          cnt++
+        }
+      }
+    }
+
+    result.groupBy = groupBy
+  }
+
+  return { agg: result, size: index - off }
 }
 
 const deSerializeProp = (
@@ -44,11 +138,11 @@ const deSerializeProp = (
 
   let index = keySize + 2 + off + path.size
 
-  if (map & PROPERTY_MAP.meta) {
+  if (map & PROPERTY_BIT_MAP.meta) {
     prop.meta = p[index]
     index++
   }
-  if (map & PROPERTY_MAP.enum) {
+  if (map & PROPERTY_BIT_MAP.enum) {
     const useJSON = p[index] === 1
     index += 1
     if (useJSON) {
@@ -69,15 +163,15 @@ const deSerializeProp = (
       }
     }
   }
-  if (map & PROPERTY_MAP.vectorBaseType) {
+  if (map & PROPERTY_BIT_MAP.vectorBaseType) {
     prop.vectorBaseType = p[index] + 1
     index++
   }
-  if (map & PROPERTY_MAP.len) {
+  if (map & PROPERTY_BIT_MAP.len) {
     prop.len = readUint16(p, index)
     index += 2
   }
-  if (map & PROPERTY_MAP.locales) {
+  if (map & PROPERTY_BIT_MAP.locales) {
     prop.locales = {}
     const end = p[index] * 4 + index + 1
     index++
@@ -96,18 +190,22 @@ const deSerializeSchemaInner = (
   offset: number = 0,
 ): { schema: ReaderSchema; size: number } => {
   let i = offset
+
+  const map = schema[i + 1]
+
   const s: Partial<ReaderSchema> = {
     readId: 0,
     type: schema[i],
-    search: schema[i + 1] === 1,
+    search: (map & DEF_BIT_MAP.search) !== 0,
     refs: {},
     props: {},
     main: { len: 0, props: {} },
   }
   i += 2
-  const ref = schema[i]
-  i++
-  if (ref !== 0) {
+
+  if (map & DEF_BIT_MAP.refs) {
+    const ref = schema[i]
+    i++
     let count = 0
     while (count != ref) {
       const { def, key, size } = deSerializeProp(schema, i, 1)
@@ -120,9 +218,10 @@ const deSerializeSchemaInner = (
       count++
     }
   }
-  const propsLen = schema[i]
-  i++
-  if (propsLen) {
+
+  if (map & DEF_BIT_MAP.props) {
+    const propsLen = schema[i]
+    i++
     let count = 0
     while (count != propsLen) {
       const { def, key, size } = deSerializeProp(schema, i, 1)
@@ -131,59 +230,49 @@ const deSerializeSchemaInner = (
       count++
     }
   }
-  const mainLen = readUint16(schema, i)
 
-  i += 2
-  if (mainLen) {
-    let count = 0
-    const mainPropsLen = readUint16(schema, i) // schema[i]
-    // here we gop
-    s.main.len = mainLen
+  if (map & DEF_BIT_MAP.main) {
+    const mainLen = readUint16(schema, i)
     i += 2
-    while (count != mainPropsLen) {
-      const { def, key, size } = deSerializeProp(schema, i, 2)
-      s.main.props[key] = def
-      i += size
-      count++
+    if (mainLen) {
+      let count = 0
+      const mainPropsLen = readUint16(schema, i)
+      s.main.len = mainLen
+      const keySize = mainLen > 255 ? 2 : 1
+      i += 2
+      while (count != mainPropsLen) {
+        const { def, key, size } = deSerializeProp(schema, i, keySize)
+        s.main.props[key] = def
+        i += size
+        count++
+      }
     }
   }
-  const hasEdge = schema[i]
-  i++
-  if (hasEdge) {
+
+  if (map & DEF_BIT_MAP.edges) {
     const x = deSerializeSchemaInner(schema, i)
     s.edges = x.schema
     i += x.size
   }
-  const hasHook = schema[i]
-  if (hasHook) {
+
+  if (map & DEF_BIT_MAP.hook) {
     const len = readUint16(schema, i)
     i += 2
     const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n);`
     // @ts-ignore
     s.hook = new Function('n', fn)
     i += len
-  } else {
-    i++
   }
-  const hasAgg = schema[i]
-  if (hasAgg) {
-    const len = readUint16(schema, i)
-    i += 2
-    s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
-    if (s.aggregate.groupBy?.display) {
-      s.aggregate.groupBy.display = new Intl.DateTimeFormat(
-        // @ts-ignore
-        s.aggregate.groupBy.display.locale,
-        // @ts-ignore
-        s.aggregate.groupBy.display,
-      )
-    }
-    i += len
-  } else {
-    i++
+
+  if (map & DEF_BIT_MAP.aggregate) {
+    const { agg, size } = deserializeAggregates(schema, i)
+    s.aggregate = agg
+    i += size
   }
+
   return { schema: s as ReaderSchema, size: i - offset }
 }
 
-export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) =>
-  deSerializeSchemaInner(schema, offset).schema
+export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) => {
+  return deSerializeSchemaInner(schema, offset).schema
+}
