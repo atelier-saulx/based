@@ -6,14 +6,13 @@ import { destructureTreeKey } from '../tree.js'
 import { foreachDirtyBlock } from '../blocks.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
-import { DbSchema } from '../../schema.js'
 import {
   setNativeSchema,
   setSchemaOnServer,
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { MigrateFns, serialize } from '@based/schema'
+import { DbSchema, MigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
 const { satisfies, parseRange, parse } = semver
 

@@ -1,10 +1,9 @@
-import { StrictSchema, MigrateFns } from '@based/schema'
+import { StrictSchema, MigrateFns, DbSchema, SchemaChecksum } from '@based/schema'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
 import { displayTarget } from './client/query/display.js'
-import { DbSchema, SchemaChecksum } from './schema.js'
 
 export type DbClientHooks = {
   setSchema(
