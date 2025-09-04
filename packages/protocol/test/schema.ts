@@ -61,6 +61,7 @@ await test('schema serialization/deserialization', async (t) => {
     }
 
     const serialized = serialize(refs)
+
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, refs)
   })
@@ -158,6 +159,7 @@ await test('schema serialization/deserialization', async (t) => {
     }
 
     const serialized = serialize(enums)
+
     const deserialized = deSerializeSchema(serialized)
 
     // hook is not serializable, so we compare without it
