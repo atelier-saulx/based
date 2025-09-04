@@ -281,17 +281,17 @@ const createSchemaTypeDef = (
           }
         }
       }
+    }
 
-      const mainProps = vals.filter((v) => !v.separate).sort(sortMainProps)
-      for (const f of mainProps) {
-        if (!result.mainLen) {
-          len += 2
-        }
-        len += 1
-        f.start = result.mainLen
-        result.mainLen += f.len
-        setByPath(result.tree, f.path, f)
+    const mainProps = vals.filter((v) => !v.separate).sort(sortMainProps)
+    for (const f of mainProps) {
+      if (!result.mainLen) {
+        len += 2
       }
+      len += 1
+      f.start = result.mainLen
+      result.mainLen += f.len
+      setByPath(result.tree, f.path, f)
     }
 
     if (result.hasSeperateDefaults) {
