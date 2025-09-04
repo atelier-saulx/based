@@ -1,14 +1,11 @@
 import { TypeIndex } from '@based/schema/prop-types'
-import { ReaderPropDef, ReaderSchema } from '../types.js'
+import {
+  ReaderPropDef,
+  ReaderSchema,
+  PROPERTY_BIT_MAP,
+  DEF_BIT_MAP,
+} from '../types.js'
 import { DECODER, readUint16 } from '@based/utils'
-
-const PROPERTY_MAP = {
-  meta: 1 << 0,
-  enum: 1 << 1,
-  vectorBaseType: 1 << 2,
-  len: 1 << 3,
-  locales: 1 << 4,
-}
 
 const readPath = (
   p: Uint8Array,
@@ -44,11 +41,11 @@ const deSerializeProp = (
 
   let index = keySize + 2 + off + path.size
 
-  if (map & PROPERTY_MAP.meta) {
+  if (map & PROPERTY_BIT_MAP.meta) {
     prop.meta = p[index]
     index++
   }
-  if (map & PROPERTY_MAP.enum) {
+  if (map & PROPERTY_BIT_MAP.enum) {
     const useJSON = p[index] === 1
     index += 1
     if (useJSON) {
@@ -69,15 +66,15 @@ const deSerializeProp = (
       }
     }
   }
-  if (map & PROPERTY_MAP.vectorBaseType) {
+  if (map & PROPERTY_BIT_MAP.vectorBaseType) {
     prop.vectorBaseType = p[index] + 1
     index++
   }
-  if (map & PROPERTY_MAP.len) {
+  if (map & PROPERTY_BIT_MAP.len) {
     prop.len = readUint16(p, index)
     index += 2
   }
-  if (map & PROPERTY_MAP.locales) {
+  if (map & PROPERTY_BIT_MAP.locales) {
     prop.locales = {}
     const end = p[index] * 4 + index + 1
     index++
@@ -96,18 +93,22 @@ const deSerializeSchemaInner = (
   offset: number = 0,
 ): { schema: ReaderSchema; size: number } => {
   let i = offset
+
+  const map = schema[i + 1]
+
   const s: Partial<ReaderSchema> = {
     readId: 0,
     type: schema[i],
-    search: schema[i + 1] === 1,
+    search: (map & DEF_BIT_MAP.search) !== 0,
     refs: {},
     props: {},
     main: { len: 0, props: {} },
   }
   i += 2
-  const ref = schema[i]
-  i++
-  if (ref !== 0) {
+
+  if (map & DEF_BIT_MAP.refs) {
+    const ref = schema[i]
+    i++
     let count = 0
     while (count != ref) {
       const { def, key, size } = deSerializeProp(schema, i, 1)
@@ -120,9 +121,10 @@ const deSerializeSchemaInner = (
       count++
     }
   }
-  const propsLen = schema[i]
-  i++
-  if (propsLen) {
+
+  if (map & DEF_BIT_MAP.props) {
+    const propsLen = schema[i]
+    i++
     let count = 0
     while (count != propsLen) {
       const { def, key, size } = deSerializeProp(schema, i, 1)
@@ -131,41 +133,41 @@ const deSerializeSchemaInner = (
       count++
     }
   }
-  const mainLen = readUint16(schema, i)
-  i += 2
-  if (mainLen) {
-    let count = 0
-    const mainPropsLen = readUint16(schema, i)
-    s.main.len = mainLen
-    const keySize = mainLen > 255 ? 2 : 1
+
+  if (map & DEF_BIT_MAP.main) {
+    const mainLen = readUint16(schema, i)
     i += 2
-    while (count != mainPropsLen) {
-      const { def, key, size } = deSerializeProp(schema, i, keySize)
-      s.main.props[key] = def
-      i += size
-      count++
+    if (mainLen) {
+      let count = 0
+      const mainPropsLen = readUint16(schema, i)
+      s.main.len = mainLen
+      const keySize = mainLen > 255 ? 2 : 1
+      i += 2
+      while (count != mainPropsLen) {
+        const { def, key, size } = deSerializeProp(schema, i, keySize)
+        s.main.props[key] = def
+        i += size
+        count++
+      }
     }
   }
-  const hasEdge = schema[i]
-  i++
-  if (hasEdge) {
+
+  if (map & DEF_BIT_MAP.edges) {
     const x = deSerializeSchemaInner(schema, i)
     s.edges = x.schema
     i += x.size
   }
-  const hasHook = schema[i]
-  if (hasHook) {
+
+  if (map & DEF_BIT_MAP.hook) {
     const len = readUint16(schema, i)
     i += 2
     const fn = `return (${DECODER.decode(schema.subarray(i, i + len))})(n);`
     // @ts-ignore
     s.hook = new Function('n', fn)
     i += len
-  } else {
-    i++
   }
-  const hasAgg = schema[i]
-  if (hasAgg) {
+
+  if (map & DEF_BIT_MAP.aggregate) {
     const len = readUint16(schema, i)
     i += 2
     s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
@@ -178,13 +180,11 @@ const deSerializeSchemaInner = (
       )
     }
     i += len
-  } else {
-    i++
   }
+
   return { schema: s as ReaderSchema, size: i - offset }
 }
 
 export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) => {
-  console.log('SCHEMA =>', schema.byteLength)
   return deSerializeSchemaInner(schema, offset).schema
 }

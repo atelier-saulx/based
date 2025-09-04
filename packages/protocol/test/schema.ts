@@ -31,28 +31,28 @@ await test('schema serialization/deserialization', async (t) => {
             main: { len: 0, props: {} },
             refs: {},
             type: 2,
-            edges: {
-              search: false,
-              readId: 0,
-              props: {},
-              main: { len: 0, props: {} },
-              refs: {
-                '1': {
-                  schema: {
-                    search: false,
-                    readId: 0,
-                    props: {
-                      '1': { path: ['name'], typeIndex: 18, readBy: 0 },
-                    },
-                    main: { len: 0, props: {} },
-                    refs: {},
-                    type: 2,
-                  },
-                  prop: { path: ['$sequence'], typeIndex: 13, readBy: 0 },
-                },
-              },
-              type: 1,
-            },
+            // edges: {
+            //   search: false,
+            //   readId: 0,
+            //   props: {},
+            //   main: { len: 0, props: {} },
+            //   refs: {
+            //     '1': {
+            //       schema: {
+            //         search: false,
+            //         readId: 0,
+            //         props: {
+            //           '1': { path: ['name'], typeIndex: 18, readBy: 0 },
+            //         },
+            //         main: { len: 0, props: {} },
+            //         refs: {},
+            //         type: 2,
+            //       },
+            //       prop: { path: ['$sequence'], typeIndex: 13, readBy: 0 },
+            //     },
+            //   },
+            //   type: 1,
+            // },
           },
           prop: { path: ['scenarios'], typeIndex: 14, readBy: 0 },
         },
@@ -123,7 +123,6 @@ await test('schema serialization/deserialization', async (t) => {
       },
       type: 2,
     }
-
     const serialized = serialize(metaSchema)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, metaSchema)
@@ -209,7 +208,6 @@ await test.only('schema serialization/deserialization - main', async (t) => {
     deepEqual(deserialized, smallMeta)
   })
 
-  // big schema test
   await t.test('big schema', () => {
     const size = 4000
 

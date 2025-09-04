@@ -4,6 +4,8 @@ import {
   ReaderPropDef,
   ReaderSchema,
   ReaderSchemaEnum,
+  PROPERTY_BIT_MAP,
+  DEF_BIT_MAP,
 } from '../types.js'
 import {
   concatUint8Arr,
@@ -27,14 +29,6 @@ export type ReaderSchema2 = {
   aggregate?: ReaderAggregateSchema
   edges?: ReaderSchema
   search?: boolean
-}
-
-const PROPERTY_MAP = {
-  meta: 1 << 0,
-  enum: 1 << 1,
-  vectorBaseType: 1 << 2,
-  len: 1 << 3,
-  locales: 1 << 4,
 }
 
 const serializeProp = (
@@ -63,11 +57,11 @@ const serializeProp = (
   let options = 0
   if ('meta' in prop) {
     //   1 or 2
-    options |= PROPERTY_MAP.meta
+    options |= PROPERTY_BIT_MAP.meta
     blocks.push(new Uint8Array([prop.meta]))
   }
   if ('enum' in prop) {
-    options |= PROPERTY_MAP.enum
+    options |= PROPERTY_BIT_MAP.enum
     let useJSON = false
     const tmp: Uint8Array[] = []
     for (const p of prop.enum) {
@@ -91,18 +85,18 @@ const serializeProp = (
     }
   }
   if ('vectorBaseType' in prop) {
-    options |= PROPERTY_MAP.vectorBaseType
+    options |= PROPERTY_BIT_MAP.vectorBaseType
     // Size 8
     blocks.push(new Uint8Array([prop.vectorBaseType - 1]))
   }
   if ('len' in prop) {
-    options |= PROPERTY_MAP.len
+    options |= PROPERTY_BIT_MAP.len
     const len = new Uint8Array(2)
     writeUint16(len, prop.len, 0)
     blocks.push(len)
   }
   if ('locales' in prop) {
-    options |= PROPERTY_MAP.locales
+    options |= PROPERTY_BIT_MAP.locales
     const keys = Object.keys(prop.locales)
     const len = keys.length
     const locales = new Uint8Array(len * 4 + 1)
@@ -118,40 +112,39 @@ const serializeProp = (
   header[keySize + 1] = options
 }
 
-const DEF_MAP = {
-  search: 1 << 0,
-  refs: 1 << 1,
-  props: 1 << 2,
-  main: 1 << 3,
-  edges: 1 << 4,
-  hook: 1 << 5,
-  aggregate: 1 << 6,
-}
-
 const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
-  const top = new Uint8Array(3)
+  const top = new Uint8Array(2)
   top[0] = schema.type
 
-  // DEF_MAP [1]
+  // DEF_BIT_MAP
+  let options = 0
 
-  top[1] = schema.search ? 1 : 0
+  // top[1]
+  if (schema.search) {
+    options |= DEF_BIT_MAP.search
+  }
 
   blocks.push(top)
+
   if (!isEmptyObject(schema.refs)) {
+    options |= DEF_BIT_MAP.refs
+    const refsHeader = new Uint8Array(1)
+    blocks.push(refsHeader)
     let cnt = 0
     for (const key in schema.refs) {
       serializeProp(Number(key), 1, schema.refs[key].prop, blocks)
       innerSerialize(schema.refs[key].schema, blocks)
       cnt++
     }
-    top[2] = cnt
+    refsHeader[0] = cnt
   } else {
-    top[2] = 0
+    // top[2] = 0
   }
 
   if (isEmptyObject(schema.props)) {
-    blocks.push(new Uint8Array([0]))
+    // blocks.push(new Uint8Array([0]))
   } else {
+    options |= DEF_BIT_MAP.props
     const propsHeader = new Uint8Array(1)
     blocks.push(propsHeader)
     let count = 0
@@ -162,11 +155,15 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     propsHeader[0] = count
   }
 
-  const mainBlock = new Uint8Array(2)
   const mainLen = schema.main.len
-  writeUint16(mainBlock, mainLen, 0)
-  blocks.push(mainBlock)
+
   if (mainLen > 0) {
+    options |= DEF_BIT_MAP.main
+
+    const mainBlock = new Uint8Array(2)
+    writeUint16(mainBlock, mainLen, 0)
+    blocks.push(mainBlock)
+
     const keySize = mainLen > 255 ? 2 : 1
     const propsHeader = new Uint8Array(2)
     blocks.push(propsHeader)
@@ -178,18 +175,13 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     writeUint16(propsHeader, count, 0)
   }
 
-  if (!schema.edges) {
-    blocks.push(new Uint8Array([0]))
-  } else {
-    if (schema.edges) {
-      blocks.push(new Uint8Array([1]))
-      innerSerialize(schema.edges, blocks)
-    }
+  if (schema.edges) {
+    options |= DEF_BIT_MAP.edges
+    innerSerialize(schema.edges, blocks)
   }
 
-  if (!schema.hook) {
-    blocks.push(new Uint8Array([0]))
-  } else {
+  if (schema.hook) {
+    options |= DEF_BIT_MAP.hook
     let src = schema.hook.toString()
     // later prep this correctly in the schema file when updating it
     // and run dry run
@@ -204,8 +196,10 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   }
 
   if (!schema.aggregate) {
-    blocks.push(new Uint8Array([0]))
+    // blocks.push(new Uint8Array([0]))
   } else {
+    options |= DEF_BIT_MAP.aggregate
+
     const n = ENCODER.encode(
       JSON.stringify(schema.aggregate, (k, v) => {
         if (k === 'groupBy' && v.display) {
@@ -219,6 +213,9 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     x.set(n, 2)
     blocks.push(x)
   }
+
+  // options
+  top[1] = options
 
   return blocks
 }
