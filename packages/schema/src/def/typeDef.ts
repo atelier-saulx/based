@@ -21,6 +21,9 @@ import {
   ALIASES,
   VECTOR,
   COLVEC,
+  SIZE_MAP,
+  REVERSE_SIZE_MAP,
+  REVERSE_TYPE_INDEX_MAP,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -30,7 +33,9 @@ import {
   getPropLen,
   isSeparate,
   parseMinMaxStep,
+  reorderProps,
   schemaVectorBaseTypeToEnum,
+  sortMainProps,
 } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
@@ -72,38 +77,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
   }
 
   return { schemaTypesParsed, schemaTypesParsedById }
-}
-
-function propIndexOffset(prop: PropDef) {
-  if (!prop.separate) {
-    return 0
-  }
-
-  switch (prop.typeIndex) {
-    case REFERENCES:
-    case REFERENCE:
-      return -300
-    case ALIAS:
-    case ALIASES:
-    case COLVEC:
-      return 300
-    default:
-      return 0
-  }
-}
-
-function reorderProps(props: PropDef[]) {
-  props.sort(
-    (a, b) => a.prop + propIndexOffset(a) - (b.prop + propIndexOffset(b)),
-  )
-
-  // Reassign prop indices
-  let lastProp = 0
-  for (const p of props) {
-    if (p.separate) {
-      p.prop = ++lastProp
-    }
-  }
 }
 
 const createSchemaTypeDef = (
@@ -289,6 +262,7 @@ const createSchemaTypeDef = (
     reorderProps(vals)
     let len = 2
     let biggestSeperatePropDefault = 0
+
     for (const f of vals) {
       if (f.separate) {
         len += 2
@@ -306,15 +280,18 @@ const createSchemaTypeDef = (
             biggestSeperatePropDefault = f.prop
           }
         }
-      } else {
-        if (!result.mainLen) {
-          len += 2
-        }
-        len += 1
-        f.start = result.mainLen
-        result.mainLen += f.len
-        setByPath(result.tree, f.path, f)
       }
+    }
+
+    const mainProps = vals.filter((v) => !v.separate).sort(sortMainProps)
+    for (const f of mainProps) {
+      if (!result.mainLen) {
+        len += 2
+      }
+      len += 1
+      f.start = result.mainLen
+      result.mainLen += f.len
+      setByPath(result.tree, f.path, f)
     }
 
     if (result.hasSeperateDefaults) {

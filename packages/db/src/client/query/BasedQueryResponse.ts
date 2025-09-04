@@ -10,13 +10,10 @@ import {
   readProps,
   readId,
   readChecksum,
+  readVersion,
 } from '@based/protocol/db-read'
 
 export { time, size, inspectData }
-
-const BITS_FOR_BYTE_LEN = 21
-const FACTOR = 2 ** BITS_FOR_BYTE_LEN
-const MASK_B = FACTOR - 1
 
 export class BasedQueryResponse {
   result: Uint8Array
@@ -45,7 +42,7 @@ export class BasedQueryResponse {
   }
 
   get version() {
-    return (this.checksum >>> 0) * FACTOR + (this.result.byteLength & MASK_B)
+    return readVersion(this.result)
   }
 
   get size() {

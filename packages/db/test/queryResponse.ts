@@ -2,12 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { notEqual } from 'assert'
-
-const getChecksum = (version: number) => {
-  const BITS_FOR_B = 21
-  const FACTOR = 2 ** BITS_FOR_B
-  return Math.floor(version / FACTOR)
-}
+import { extractNumber } from '@based/utils'
 
 await test('correct version', async (t) => {
   const db = new BasedDb({
@@ -33,7 +28,7 @@ await test('correct version', async (t) => {
   const response = await db.query('user', user1).get()
 
   equal(
-    getChecksum(response.version),
+    extractNumber(response.version),
     response.checksum,
     'Checksum is recoverable from the 53 bit js version number',
   )

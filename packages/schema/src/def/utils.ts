@@ -12,6 +12,12 @@ import {
   SIZE_MAP,
   VECTOR_BASE_TYPE_SIZE_MAP,
   VectorBaseType,
+  REVERSE_SIZE_MAP,
+  REFERENCES,
+  REFERENCE,
+  ALIAS,
+  ALIASES,
+  COLVEC,
 } from './types.js'
 
 import { SchemaProp, SchemaVectorBaseType, isPropType } from '../types.js'
@@ -113,5 +119,55 @@ export const parseMinMaxStep = (val: any) => {
       return convertToTimestamp(val)
     }
     return val
+  }
+}
+
+export const sortMainProps = (
+  a: PropDef | PropDefEdge,
+  b: PropDef | PropDefEdge,
+) => {
+  const sizeA = REVERSE_SIZE_MAP[a.typeIndex]
+  const sizeB = REVERSE_SIZE_MAP[b.typeIndex]
+  if (sizeA === 8) {
+    return -1
+  }
+  if (sizeA === 4 && sizeB !== 8) {
+    return -1
+  }
+  if (sizeA === sizeB) {
+    return 0
+  }
+  return 1
+}
+
+export const propIndexOffset = (prop: PropDef) => {
+  if (!prop.separate) {
+    return 0
+  }
+
+  switch (prop.typeIndex) {
+    case REFERENCES:
+    case REFERENCE:
+      return -300
+    case ALIAS:
+    case ALIASES:
+    case COLVEC:
+      return 300
+    default:
+      return 0
+  }
+}
+
+export const reorderProps = (props: PropDef[]) => {
+  props.sort(
+    (a, b) => a.prop + propIndexOffset(a) - (b.prop + propIndexOffset(b)),
+  )
+
+  // Reassign prop indices
+  let lastProp = 0
+  for (const p of props) {
+    if (p.separate) {
+      p.prop = ++lastProp
+    }
   }
 }
