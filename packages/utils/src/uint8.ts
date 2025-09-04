@@ -350,3 +350,9 @@ export const readUtf8 = (
 ): string => {
   return DECODER.decode(val.subarray(offset, len + offset))
 }
+
+export const extractNumber = (b: number) => {
+  const BITS_FOR_B = 21
+  const FACTOR = 2 ** BITS_FOR_B
+  return Math.floor(b / FACTOR)
+}

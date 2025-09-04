@@ -204,5 +204,10 @@ export const readId = (
 
 export const readChecksum = (result: Uint8Array) => {
   const len = result.byteLength
+  return readUint32(result, len - 4)
+}
+
+export const readVersion = (result: Uint8Array) => {
+  const len = result.byteLength
   return combineToNumber(readUint32(result, len - 4), len)
 }
