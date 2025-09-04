@@ -80,9 +80,9 @@ await test('big nodes', async (t) => {
   const obj = resultToObject(
     deserializedSchema,
     megaInclude.result,
-    megaInclude.result.byteLength,
+    megaInclude.result.byteLength - 4,
     0,
   )
 
-  deepEqual(obj[1].f100, 1337)
+  deepEqual(obj[1].f4092, 1337)
 })
