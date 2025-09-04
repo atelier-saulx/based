@@ -4,8 +4,9 @@ import {
   ReaderSchema,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
+  GROUP_BY_BIT_MAP,
 } from '../types.js'
-import { DECODER, readUint16 } from '@based/utils'
+import { DECODER, readDoubleLE, readUint16, readUint32 } from '@based/utils'
 
 const readPath = (
   p: Uint8Array,
@@ -22,6 +23,102 @@ const readPath = (
     cnt++
   }
   return { path, size: index - off }
+}
+
+const deserializeAggregate = (
+  p: Uint8Array,
+  off: number,
+): { agg: ReaderSchema['aggregate']['aggregates'][number]; size: number } => {
+  let index = off
+  const agg: ReaderSchema['aggregate']['aggregates'][number] = {
+    type: p[index],
+    resultPos: readUint32(p, index + 1),
+    path: [],
+  }
+  index += 5
+  const { size, path } = readPath(p, index)
+  agg.path = path
+  index += size
+  return { agg, size: index - off }
+}
+
+const deserializeAggregates = (
+  p: Uint8Array,
+  off: number,
+): { agg: ReaderSchema['aggregate']; size: number } => {
+  const aggs = p[off]
+  const totalResultsSize = readUint32(p, off + 1)
+  let index = off + 5
+  let count = 0
+  const result: ReaderSchema['aggregate'] = {
+    aggregates: [],
+    totalResultsSize,
+  }
+  while (count != aggs) {
+    const { agg, size } = deserializeAggregate(p, index)
+    result.aggregates.push(agg)
+    index += size
+    count++
+  }
+
+  const hasGroup = p[index]
+  index++
+  if (hasGroup) {
+    const opts = p[index]
+    const groupBy: ReaderSchema['aggregate']['groupBy'] = {
+      typeIndex: p[index + 1] as TypeIndex,
+    }
+    index += 2
+
+    if (opts & GROUP_BY_BIT_MAP.stepRange) {
+      // prop.meta = p[index]
+      groupBy.stepRange = readDoubleLE(p, index)
+      index += 8
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.stepType) {
+      groupBy.stepType = true
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.display) {
+      groupBy.stepType = true
+      const size = readUint16(p, index)
+      index += 2
+      const tmp = JSON.parse(DECODER.decode(p.subarray(index, index + size)))
+      groupBy.display = new Intl.DateTimeFormat(tmp.locale, tmp)
+      index += size
+    }
+
+    if (opts & GROUP_BY_BIT_MAP.enum) {
+      const useJSON = p[index] === 1
+      index += 1
+      if (useJSON) {
+        const size = readUint16(p, index)
+        index += 2
+        groupBy.enum = JSON.parse(
+          DECODER.decode(p.subarray(index, index + size)),
+        )
+        index += size
+      } else {
+        const len = p[index]
+        index++
+        let cnt = 0
+        groupBy.enum = new Array(len)
+        while (cnt !== len) {
+          const len = p[index]
+          groupBy.enum[cnt] = DECODER.decode(
+            p.subarray(index + 1, len + index + 1),
+          )
+          index += len + 1
+          cnt++
+        }
+      }
+    }
+
+    result.groupBy = groupBy
+  }
+
+  return { agg: result, size: index - off }
 }
 
 const deSerializeProp = (
@@ -168,18 +265,9 @@ const deSerializeSchemaInner = (
   }
 
   if (map & DEF_BIT_MAP.aggregate) {
-    const len = readUint16(schema, i)
-    i += 2
-    s.aggregate = JSON.parse(DECODER.decode(schema.subarray(i, i + len)))
-    if (s.aggregate.groupBy?.display) {
-      s.aggregate.groupBy.display = new Intl.DateTimeFormat(
-        // @ts-ignore
-        s.aggregate.groupBy.display.locale,
-        // @ts-ignore
-        s.aggregate.groupBy.display,
-      )
-    }
-    i += len
+    const { agg, size } = deserializeAggregates(schema, i)
+    s.aggregate = agg
+    i += size
   }
 
   return { schema: s as ReaderSchema, size: i - offset }

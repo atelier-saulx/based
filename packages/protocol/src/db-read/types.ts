@@ -131,3 +131,10 @@ export const DEF_BIT_MAP = {
   hook: 1 << 5,
   aggregate: 1 << 6,
 }
+
+export const GROUP_BY_BIT_MAP = {
+  stepRange: 1 << 0,
+  stepType: 1 << 1,
+  display: 1 << 2,
+  enum: 1 << 3,
+}

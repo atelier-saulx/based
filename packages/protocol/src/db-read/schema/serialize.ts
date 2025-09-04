@@ -6,12 +6,15 @@ import {
   ReaderSchemaEnum,
   PROPERTY_BIT_MAP,
   DEF_BIT_MAP,
+  GROUP_BY_BIT_MAP,
 } from '../types.js'
 import {
   concatUint8Arr,
   ENCODER,
   isEmptyObject,
+  writeDoubleLE,
   writeUint16,
+  writeUint32,
 } from '@based/utils'
 
 export type ReaderSchema2 = {
@@ -29,6 +32,111 @@ export type ReaderSchema2 = {
   aggregate?: ReaderAggregateSchema
   edges?: ReaderSchema
   search?: boolean
+}
+
+// export type ReaderAggregateSchema = {
+//   aggregates: {
+//     path: string[]
+//     type: number
+//     resultPos: number
+//   }[]
+//   groupBy?: {
+//     typeIndex: TypeIndex
+//     stepRange?: number
+//     stepType?: boolean
+//     display?: Intl.DateTimeFormat // find a way for this -- shitty
+//     enum?: any[]
+//   }
+//   totalResultsSize: number
+// }
+
+const serializeAggregate = (
+  agg: ReaderAggregateSchema['aggregates'][number],
+  blocks: Uint8Array[],
+) => {
+  const header = new Uint8Array(6)
+  header[0] = agg.type
+  blocks.push(header)
+  writeUint32(header, agg.resultPos, 1)
+  header[5] = agg.path.length
+  for (const p of agg.path) {
+    const n = ENCODER.encode(p)
+    blocks.push(new Uint8Array([n.byteLength]), n)
+  }
+}
+
+const serializeEnum = (
+  prop: { [key: string]: any; enum?: any[] },
+  blocks: Uint8Array[],
+) => {
+  let useJSON = false
+  const tmp: Uint8Array[] = []
+  for (const p of prop.enum) {
+    if (typeof p !== 'string') {
+      useJSON = true
+      break
+    } else {
+      const n = ENCODER.encode(p)
+      tmp.push(new Uint8Array([n.byteLength]), n)
+    }
+  }
+  if (useJSON) {
+    blocks.push(new Uint8Array([1]))
+    const s = ENCODER.encode(JSON.stringify(prop.enum))
+    const x = new Uint8Array(s.byteLength + 2)
+    writeUint16(x, s.byteLength, 0)
+    x.set(s, 2)
+    blocks.push(x)
+  } else {
+    blocks.push(new Uint8Array([0, prop.enum.length]), ...tmp)
+  }
+}
+
+const serializeAggregates = (
+  agg: ReaderAggregateSchema,
+  blocks: Uint8Array[],
+) => {
+  const header = new Uint8Array(5)
+
+  header[0] = agg.aggregates.length
+  writeUint32(header, agg.totalResultsSize, 1)
+
+  blocks.push(header)
+  for (const a of agg.aggregates) {
+    serializeAggregate(a, blocks)
+  }
+
+  if (agg.groupBy) {
+    let options = 0
+    const opts = new Uint8Array([1, 0, agg.groupBy.typeIndex])
+    blocks.push(opts)
+    if ('stepRange' in agg.groupBy) {
+      options |= GROUP_BY_BIT_MAP.stepRange
+      const step = new Uint8Array(8)
+      writeDoubleLE(step, agg.groupBy.stepRange, 0)
+      blocks.push(step)
+    }
+    if ('stepType' in agg.groupBy) {
+      options |= GROUP_BY_BIT_MAP.stepType
+    }
+    if ('display' in agg.groupBy) {
+      options |= GROUP_BY_BIT_MAP.display
+      const displayString = JSON.stringify(
+        agg.groupBy.display.resolvedOptions(),
+      )
+      const n = ENCODER.encode(displayString)
+      const sizeHeader = new Uint8Array(2)
+      writeUint16(sizeHeader, n.byteLength, 0)
+      blocks.push(sizeHeader, n)
+    }
+    if ('enum' in agg.groupBy) {
+      options |= GROUP_BY_BIT_MAP.enum
+      serializeEnum(agg.groupBy, blocks)
+    }
+    opts[1] = options
+  } else {
+    blocks.push(new Uint8Array([0]))
+  }
 }
 
 const serializeProp = (
@@ -62,27 +170,7 @@ const serializeProp = (
   }
   if ('enum' in prop) {
     options |= PROPERTY_BIT_MAP.enum
-    let useJSON = false
-    const tmp: Uint8Array[] = []
-    for (const p of prop.enum) {
-      if (typeof p !== 'string') {
-        useJSON = true
-        break
-      } else {
-        const n = ENCODER.encode(p)
-        tmp.push(new Uint8Array([n.byteLength]), n)
-      }
-    }
-    if (useJSON) {
-      blocks.push(new Uint8Array([1]))
-      const s = ENCODER.encode(JSON.stringify(prop.enum))
-      const x = new Uint8Array(s.byteLength + 2)
-      writeUint16(x, s.byteLength, 0)
-      x.set(s, 2)
-      blocks.push(x)
-    } else {
-      blocks.push(new Uint8Array([0, prop.enum.length]), ...tmp)
-    }
+    serializeEnum(prop, blocks)
   }
   if ('vectorBaseType' in prop) {
     options |= PROPERTY_BIT_MAP.vectorBaseType
@@ -137,13 +225,9 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
       cnt++
     }
     refsHeader[0] = cnt
-  } else {
-    // top[2] = 0
   }
 
-  if (isEmptyObject(schema.props)) {
-    // blocks.push(new Uint8Array([0]))
-  } else {
+  if (!isEmptyObject(schema.props)) {
     options |= DEF_BIT_MAP.props
     const propsHeader = new Uint8Array(1)
     blocks.push(propsHeader)
@@ -159,11 +243,9 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
 
   if (mainLen > 0) {
     options |= DEF_BIT_MAP.main
-
     const mainBlock = new Uint8Array(2)
     writeUint16(mainBlock, mainLen, 0)
     blocks.push(mainBlock)
-
     const keySize = mainLen > 255 ? 2 : 1
     const propsHeader = new Uint8Array(2)
     blocks.push(propsHeader)
@@ -195,26 +277,12 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
     blocks.push(x)
   }
 
-  if (!schema.aggregate) {
-    // blocks.push(new Uint8Array([0]))
-  } else {
+  if (schema.aggregate) {
     options |= DEF_BIT_MAP.aggregate
-
-    const n = ENCODER.encode(
-      JSON.stringify(schema.aggregate, (k, v) => {
-        if (k === 'groupBy' && v.display) {
-          return { ...v, display: v.display.resolvedOptions() }
-        }
-        return v
-      }),
-    )
-    const x = new Uint8Array(n.byteLength + 2)
-    writeUint16(x, n.byteLength, 0)
-    x.set(n, 2)
-    blocks.push(x)
+    serializeAggregates(schema.aggregate, blocks)
   }
 
-  // options
+  // Options bitmap
   top[1] = options
 
   return blocks
