@@ -20,7 +20,9 @@ const testSchema = {
       tags: { items: 'string' },
       metadata: { type: 'json' },
       published: { type: 'boolean' },
+      derp: { type: 'alias' },
       createdAt: { type: 'timestamp' },
+      flap: { type: 'vector', baseType: 'uint8', size: 32 },
     },
   },
 } as const satisfies Schema
@@ -67,7 +69,9 @@ const post: Post = {
   tags: ['typescript', 'schema'],
   metadata: { views: 100, likes: 5 },
   published: true,
-  createdAt: Date.now(),
+  createdAt: new Date(), // Date.now(),
+  flap: new Uint8Array(32),
+  derp: 'alias!',
 }
 
 console.log('Type inference working correctly!')
