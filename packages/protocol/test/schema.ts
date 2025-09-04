@@ -202,9 +202,8 @@ await test.only('schema serialization/deserialization - main', async (t) => {
       refs: {},
       type: 2,
     }
-    const serialized = serialize(smallMeta)
 
-    console.log({ s: serialized.byteLength })
+    const serialized = serialize(smallMeta)
     const deserialized = deSerializeSchema(serialized)
 
     deepEqual(deserialized, smallMeta)
@@ -232,10 +231,8 @@ await test.only('schema serialization/deserialization - main', async (t) => {
     }
 
     const serialized = serialize(bigSchema)
-
-    console.log({ s: serialized.byteLength })
-
     const deserialized = deSerializeSchema(serialized)
+
     deepEqual(deserialized, bigSchema)
   })
 
@@ -256,10 +253,8 @@ await test.only('schema serialization/deserialization - main', async (t) => {
     }
 
     const serialized = serialize(simple)
-
-    console.log({ s: serialized.byteLength })
-
     const deserialized = deSerializeSchema(serialized)
+
     deepEqual(deserialized, simple)
   })
 })

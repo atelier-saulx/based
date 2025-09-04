@@ -135,11 +135,9 @@ const deSerializeSchemaInner = (
   i += 2
   if (mainLen) {
     let count = 0
-    const mainPropsLen = readUint16(schema, i) // schema[i]
-    // here we gop
+    const mainPropsLen = readUint16(schema, i)
     s.main.len = mainLen
     const keySize = mainLen > 255 ? 2 : 1
-
     i += 2
     while (count != mainPropsLen) {
       const { def, key, size } = deSerializeProp(schema, i, keySize)
@@ -186,5 +184,7 @@ const deSerializeSchemaInner = (
   return { schema: s as ReaderSchema, size: i - offset }
 }
 
-export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) =>
-  deSerializeSchemaInner(schema, offset).schema
+export const deSerializeSchema = (schema: Uint8Array, offset: number = 0) => {
+  console.log('SCHEMA =>', schema.byteLength)
+  return deSerializeSchemaInner(schema, offset).schema
+}

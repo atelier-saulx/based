@@ -118,9 +118,22 @@ const serializeProp = (
   header[keySize + 1] = options
 }
 
+const DEF_MAP = {
+  search: 1 << 0,
+  refs: 1 << 1,
+  props: 1 << 2,
+  main: 1 << 3,
+  edges: 1 << 4,
+  hook: 1 << 5,
+  aggregate: 1 << 6,
+}
+
 const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   const top = new Uint8Array(3)
   top[0] = schema.type
+
+  // DEF_MAP [1]
+
   top[1] = schema.search ? 1 : 0
 
   blocks.push(top)
