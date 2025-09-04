@@ -559,6 +559,55 @@ await test('cardinality', async (t) => {
   )
 })
 
+await test('cardinality on references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      booth: {
+        company: 'string',
+        // badgesScanned: 'number',
+        badgesScanned: 'cardinality',
+      },
+      fair: {
+        day: 'timestamp',
+        booths: {
+          items: {
+            ref: 'booth',
+            prop: 'booth',
+          },
+        },
+      },
+    },
+  })
+
+  const bg = db.create('booth', {
+    company: 'big one',
+    badgesScanned: ['engineer 1', 'salesman', 'spy', 'annonymous'],
+  })
+  const stp = db.create('booth', {
+    company: 'just another startup',
+    badgesScanned: ['nice ceo', 'entusiastic dev'],
+  })
+  db.create('fair', {
+    day: new Date('08/02/2024'),
+    booths: [bg, stp],
+  })
+
+  // await db.query('fair').include('*', '**').get().inspect()
+  await db.query('fair').include('booths.badgesScanned').get().inspect()
+  await db
+    .query('fair')
+    .cardinality('booths.badgesScanned')
+    .groupBy('day')
+    .get()
+  //   .inspect()
+})
+
 await test('group by reference ids', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
