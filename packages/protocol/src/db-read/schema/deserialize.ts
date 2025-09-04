@@ -132,16 +132,17 @@ const deSerializeSchemaInner = (
     }
   }
   const mainLen = readUint16(schema, i)
-
   i += 2
   if (mainLen) {
     let count = 0
     const mainPropsLen = readUint16(schema, i) // schema[i]
     // here we gop
     s.main.len = mainLen
+    const keySize = mainLen > 255 ? 2 : 1
+
     i += 2
     while (count != mainPropsLen) {
-      const { def, key, size } = deSerializeProp(schema, i, 2)
+      const { def, key, size } = deSerializeProp(schema, i, keySize)
       s.main.props[key] = def
       i += size
       count++

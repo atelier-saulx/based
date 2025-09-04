@@ -150,15 +150,17 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   }
 
   const mainBlock = new Uint8Array(2)
-  writeUint16(mainBlock, schema.main.len, 0)
+  const mainLen = schema.main.len
+  writeUint16(mainBlock, mainLen, 0)
   blocks.push(mainBlock)
-  if (schema.main.len) {
+  if (mainLen > 0) {
+    const keySize = mainLen > 255 ? 2 : 1
     const propsHeader = new Uint8Array(2)
     blocks.push(propsHeader)
     let count = 0
     for (const key in schema.main.props) {
       count++
-      serializeProp(Number(key), 2, schema.main.props[key], blocks)
+      serializeProp(Number(key), keySize, schema.main.props[key], blocks)
     }
     writeUint16(propsHeader, count, 0)
   }
