@@ -181,4 +181,19 @@ await test('number', async (t) => {
     int32: 18,
     uint32: 19,
   })
+
+  await db.update('user', newThing, {
+    uint16: 100,
+  })
+
+  deepEqual((await db.query('user', newThing).get()).toObject(), {
+    id: newThing,
+    number: 13,
+    int8: 14,
+    uint8: 15,
+    int16: 16,
+    uint16: 100,
+    int32: 18,
+    uint32: 19,
+  })
 })
