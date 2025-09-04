@@ -21,6 +21,9 @@ import {
   ALIASES,
   VECTOR,
   COLVEC,
+  SIZE_MAP,
+  REVERSE_SIZE_MAP,
+  REVERSE_TYPE_INDEX_MAP,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -289,6 +292,7 @@ const createSchemaTypeDef = (
     reorderProps(vals)
     let len = 2
     let biggestSeperatePropDefault = 0
+
     for (const f of vals) {
       if (f.separate) {
         len += 2
@@ -306,7 +310,26 @@ const createSchemaTypeDef = (
             biggestSeperatePropDefault = f.prop
           }
         }
-      } else {
+      }
+
+      const mainProps = vals
+        .filter((v) => !v.separate)
+        .sort((a, b) => {
+          const sizeA = REVERSE_SIZE_MAP[a.typeIndex]
+          const sizeB = REVERSE_SIZE_MAP[b.typeIndex]
+          if (sizeA === 8) {
+            return -1
+          }
+          if (sizeA === 4 && sizeB !== 8) {
+            return -1
+          }
+          if (sizeA === sizeB) {
+            return 0
+          }
+          return 1
+        })
+
+      for (const f of mainProps) {
         if (!result.mainLen) {
           len += 2
         }
