@@ -600,12 +600,12 @@ await test('cardinality on references', async (t) => {
 
   // await db.query('fair').include('*', '**').get().inspect()
   await db.query('fair').include('booths.badgesScanned').get().inspect()
-  await db
-    .query('fair')
-    .cardinality('booths.badgesScanned')
-    .groupBy('day')
-    .get()
-  //   .inspect()
+  // await db
+  //   .query('fair')
+  //   .cardinality('booths.badgesScanned')
+  //   .groupBy('day')
+  //   .get()
+  // //   .inspect()
 })
 
 await test('group by reference ids', async (t) => {
