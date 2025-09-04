@@ -10,7 +10,12 @@ import {
   ENUM,
   NUMBER,
 } from './types.js'
-import { getPropLen, isSeparate, parseMinMaxStep } from './utils.js'
+import {
+  getPropLen,
+  isSeparate,
+  parseMinMaxStep,
+  sortMainProps,
+} from './utils.js'
 import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
@@ -50,7 +55,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         separate,
         path: [...prop.path, key],
         default: edgeProp.default ?? DEFAULT_MAP[typeIndex],
-        start: prop.edgeMainLen,
+        // start: prop.edgeMainLen,
       }
 
       if (!separate) {
@@ -73,7 +78,6 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         edge.step = 1
       }
 
-      prop.edgeMainLen += edge.len
       if (edge.typeIndex === ENUM) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
@@ -90,10 +94,15 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       prop.edges[key] = edge
       if (separate) {
         prop.reverseSeperateEdges[edge.prop] = edge
-      } else {
-        prop.reverseMainEdges[edge.start] = edge
       }
     }
+  }
+
+  mainEdges.sort(sortMainProps)
+  for (const edge of mainEdges) {
+    edge.start = prop.edgeMainLen
+    prop.edgeMainLen += edge.len
+    prop.reverseMainEdges[edge.start] = edge
   }
 
   prop.edgeMainEmpty = fillEmptyMain(mainEdges, prop.edgeMainLen)

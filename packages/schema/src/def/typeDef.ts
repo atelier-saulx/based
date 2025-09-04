@@ -33,7 +33,9 @@ import {
   getPropLen,
   isSeparate,
   parseMinMaxStep,
+  reorderProps,
   schemaVectorBaseTypeToEnum,
+  sortMainProps,
 } from './utils.js'
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
@@ -75,38 +77,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
   }
 
   return { schemaTypesParsed, schemaTypesParsedById }
-}
-
-function propIndexOffset(prop: PropDef) {
-  if (!prop.separate) {
-    return 0
-  }
-
-  switch (prop.typeIndex) {
-    case REFERENCES:
-    case REFERENCE:
-      return -300
-    case ALIAS:
-    case ALIASES:
-    case COLVEC:
-      return 300
-    default:
-      return 0
-  }
-}
-
-function reorderProps(props: PropDef[]) {
-  props.sort(
-    (a, b) => a.prop + propIndexOffset(a) - (b.prop + propIndexOffset(b)),
-  )
-
-  // Reassign prop indices
-  let lastProp = 0
-  for (const p of props) {
-    if (p.separate) {
-      p.prop = ++lastProp
-    }
-  }
 }
 
 const createSchemaTypeDef = (
@@ -312,23 +282,7 @@ const createSchemaTypeDef = (
         }
       }
 
-      const mainProps = vals
-        .filter((v) => !v.separate)
-        .sort((a, b) => {
-          const sizeA = REVERSE_SIZE_MAP[a.typeIndex]
-          const sizeB = REVERSE_SIZE_MAP[b.typeIndex]
-          if (sizeA === 8) {
-            return -1
-          }
-          if (sizeA === 4 && sizeB !== 8) {
-            return -1
-          }
-          if (sizeA === sizeB) {
-            return 0
-          }
-          return 1
-        })
-
+      const mainProps = vals.filter((v) => !v.separate).sort(sortMainProps)
       for (const f of mainProps) {
         if (!result.mainLen) {
           len += 2
