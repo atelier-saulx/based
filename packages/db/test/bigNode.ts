@@ -4,6 +4,7 @@ import { deepEqual } from './shared/assert.js'
 import { SchemaProps } from '@based/schema'
 import { serialize } from '@based/protocol/db-read/serialize-schema'
 import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
+import { equal } from 'assert'
 
 await test('big nodes', async (t) => {
   const db = new BasedDb({
@@ -73,22 +74,15 @@ await test('big nodes', async (t) => {
 
   const megaInclude = await db.query('mega').get()
 
-  const compressed = serialize(megaInclude.def.readSchema)
+  const serializedSchema = serialize(megaInclude.def.readSchema)
+  const deserializedSchema = deSerializeSchema(serializedSchema)
 
-  console.log({
-    megaInclude: megaInclude.def.readSchema.main.props,
-    compressed,
-  })
+  const obj = resultToObject(
+    deserializedSchema,
+    megaInclude.result,
+    megaInclude.result.byteLength,
+    0,
+  )
 
-  const x = deSerializeSchema(compressed)
-
-  const obj = resultToObject(x, megaInclude.result, 0)
-
-  console.log({ obj })
-
-  console.log('????????', x)
-  // deepEqual()
-  // then read and make sure it works
-
-  // const compressed = serialize(megaInclude.def.readSchema)
+  deepEqual(obj[1].f100, 1337)
 })
