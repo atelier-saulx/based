@@ -1,7 +1,7 @@
 import { NonStrictSchema } from '@based/schema'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
 
 await test('migration', async (t) => {
   const db = new BasedDb({
@@ -254,4 +254,11 @@ await test('migration', async (t) => {
       emailPrimary: 'person0@example.com',
     },
   ])
+
+  const lastSchema = schemas.at(-1)
+  lastSchema.types.user.props.age = 'string'
+  const checksum1 = db.client.schema.hash
+  await db.setSchema(lastSchema)
+  const checksum2 = db.client.schema.hash
+  notEqual(checksum1, checksum2)
 })

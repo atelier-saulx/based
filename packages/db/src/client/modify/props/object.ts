@@ -25,25 +25,21 @@ export const writeObject = (
       writeObject(ctx, def, val)
       continue
     }
-    // try {
-    if (def.separate) {
-      writeSeparate(ctx, def, val)
-      continue
+    try {
+      if (def.separate) {
+        writeSeparate(ctx, def, val)
+      } else if (ctx.overwrite) {
+        writeMainValue(ctx, def, val)
+      } else if (typeof val === 'object' && val !== null) {
+        writeIncrement(ctx, def, val)
+      } else {
+        ctx.main.set(def, val)
+      }
+    } catch (e) {
+      if (ctx.unsafe && Array.isArray(e)) {
+        continue
+      }
+      throw e
     }
-    if (ctx.overwrite) {
-      writeMainValue(ctx, def, val)
-      continue
-    }
-    if (typeof val === 'object' && val !== null) {
-      writeIncrement(ctx, def, val)
-      continue
-    }
-    ctx.main.set(def, val)
-    // } catch (e) {
-    //   if (ctx.unsafe && Array.isArray(e)) {
-    //     continue
-    //   }
-    //   throw e
-    // }
   }
 }
