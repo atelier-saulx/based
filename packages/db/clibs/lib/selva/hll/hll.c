@@ -179,7 +179,7 @@ void hll_union(struct selva_string *result, struct selva_string *hll_new) {
 
     HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hll_new, nullptr);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
-    
+
     size_t num_registers = current_hll->num_registers;
 
     #if __ARM_NEON
