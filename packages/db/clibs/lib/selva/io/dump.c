@@ -381,19 +381,16 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
 {
-    struct selva_io io;
+    struct selva_io io = {
+        .errlog_buf = nullptr,
+        .errlog_left = 0,
+    };
     int err;
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
-
-    /*
-     * Just in case.
-     */
-    io.errlog_buf = nullptr;
-    io.errlog_left = 0;
 
     /*
      * Save all the common data here that can't be split up.
@@ -410,7 +407,10 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 #if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
 #endif
-    struct selva_io io;
+    struct selva_io io = {
+        .errlog_buf = nullptr,
+        .errlog_left = 0,
+    };
     int err;
 
     struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
@@ -431,12 +431,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     if (err) {
         return err;
     }
-
-    /*
-     * Just in case.
-     */
-    io.errlog_buf = nullptr;
-    io.errlog_left = 0;
 
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
@@ -1128,16 +1122,16 @@ static int load_type(struct selva_io *io, struct SelvaDb *db)
 
 int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
-    struct selva_io io;
+    struct selva_io io = {
+        .errlog_buf = errlog_buf,
+        .errlog_left = errlog_size,
+    };
     int err;
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
-
-    io.errlog_buf = errlog_buf;
-    io.errlog_left = errlog_size;
 
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
@@ -1148,16 +1142,16 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlo
 
 int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
 {
-    struct selva_io io;
+    struct selva_io io = {
+        .errlog_buf = errlog_buf,
+        .errlog_left = errlog_size,
+    };
     int err;
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
-
-    io.errlog_buf = errlog_buf;
-    io.errlog_left = errlog_size;
 
     err = load_type(&io, db);
     selva_io_end(&io, nullptr);

@@ -243,6 +243,7 @@ static void *SVector_InsertFast(SVector *vec, void *el) {
             vec->vec_arr_len = sz;
             vec->vec_arr = selva_malloc(VEC_SIZE(sz));
         }
+        SVector_ShiftReset(vec);
 
         ssize_t l = 0;
         ssize_t r = (ssize_t)vec->vec_last - 1;
