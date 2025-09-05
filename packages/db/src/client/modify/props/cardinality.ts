@@ -8,6 +8,7 @@ import { ENCODER } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { CREATE } from '../types.js'
+import { writeBinary } from './binary.js'
 
 export const writeCardinalityRaw = (
   ctx: Ctx,
@@ -17,11 +18,6 @@ export const writeCardinalityRaw = (
 ) => {
   writeU32(ctx, sizeFixBecauseEdgeIsDifferent)
   for (const item of val) {
-    if (item instanceof Uint8Array) {
-      reserve(ctx, item.byteLength)
-      writeU8Array(ctx, item)
-      continue
-    }
     validate(def, item)
     if (typeof item === 'string') {
       xxHash64(ENCODER.encode(item), ctx.array, ctx.index)
@@ -39,6 +35,11 @@ export const writeCardinalityRaw = (
 export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
   if (val === null) {
     deleteProp(ctx, def)
+    return
+  }
+
+  if (val instanceof Uint8Array && val.byteLength !== 8) {
+    writeBinary(ctx, def, val, true)
     return
   }
 
