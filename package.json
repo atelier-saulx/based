@@ -4,6 +4,7 @@
   "author": "Based",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "homepage": "https://github.com/atelier-saulx/based#readme",
   "bugs": {
     "url": "https://github.com/atelier-saulx/based/issues"
@@ -22,7 +23,7 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "(cd packages && for pkg in *; do if [[ -d \"$pkg\" ]]; then npm run watch --workspace=\"$pkg\" --if-present & fi done); wait",
+    "watch": "node ./scripts/concurrently watch",
     "build": "set -e; for pkg in hash utils schema protocol db functions errors schema-diagram server client react s3 hub type-gen cli exporter; do npm run build -w \"@based/$pkg\"; done",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
@@ -35,10 +36,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "http-proxy": "^1.18.1",
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "^22.9.0",
+    "concurrently": "^9.2.1",
+    "http-proxy": "^1.18.1",
     "prettier": "^3.2.5",
     "typescript": "^5.8.3"
   }

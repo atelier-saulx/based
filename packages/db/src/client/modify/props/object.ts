@@ -25,6 +25,7 @@ export const writeObject = (
       writeObject(ctx, def, val)
       continue
     }
+    // try {
     if (def.separate) {
       writeSeparate(ctx, def, val)
       continue
@@ -38,5 +39,11 @@ export const writeObject = (
       continue
     }
     ctx.main.set(def, val)
+    // } catch (e) {
+    //   if (ctx.unsafe && Array.isArray(e)) {
+    //     continue
+    //   }
+    //   throw e
+    // }
   }
 }

@@ -46,7 +46,7 @@ class Emitter {
 
   once<E extends Event>(
     type: E,
-    fn?: Listener<EventMap[E]>
+    fn?: Listener<EventMap[E]>,
   ): Promise<EventMap[E]> | void {
     if (!fn) {
       return new Promise((resolve) => {
