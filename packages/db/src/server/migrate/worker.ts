@@ -10,8 +10,7 @@ import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
-import { deSerialize } from '@based/schema'
-import { DbSchema } from '../../schema.js'
+import { DbSchema, deSerialize } from '@based/schema'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')

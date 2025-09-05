@@ -13,7 +13,7 @@ import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
-import { drain, schedule } from '../drain.js'
+import { schedule } from '../drain.js'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,

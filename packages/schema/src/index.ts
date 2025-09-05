@@ -1,4 +1,5 @@
 export * from './types.js'
+export * from './dbSchema.js'
 export * from './parse/index.js'
 export * from './lang.js'
 export * from './def/validation.js'

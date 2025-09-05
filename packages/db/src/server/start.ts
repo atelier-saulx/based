@@ -9,12 +9,11 @@ import { VerifTree, makeTreeKey } from './tree.js'
 import { foreachBlock } from './blocks.js'
 import exitHook from 'exit-hook'
 import { save, saveSync, Writelog } from './save.js'
-import { deSerialize } from '@based/schema'
+import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
-import { DbSchema } from '../schema.js'
 
 export type StartOpts = {
   clean?: boolean

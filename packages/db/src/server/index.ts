@@ -1,6 +1,6 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { langCodesMap, LangName, MigrateFns, StrictSchema } from '@based/schema'
+import { StrictSchema, langCodesMap, LangName, MigrateFns, SchemaChecksum, strictSchemaToDbSchema } from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
@@ -11,8 +11,6 @@ import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64, writeUint32 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
-import { strictSchemaToDbSchema } from './schema.js'
-import { SchemaChecksum } from '../schema.js'
 import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
 import { DbShared } from '../shared/DbBase.js'
@@ -344,8 +342,8 @@ export class DbServer extends DbShared {
     }
 
     setSchemaOnServer(this, schema)
-    await writeSchemaFile(this, schema)
     setNativeSchema(this, schema)
+    await writeSchemaFile(this, schema)
 
     process.nextTick(() => {
       this.emit('schema', this.schema)

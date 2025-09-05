@@ -1,4 +1,4 @@
-import { DbSchema } from '../schema.js'
+import { DbSchema } from "@based/schema"
 
 export type EventMap = {
   schema: DbSchema

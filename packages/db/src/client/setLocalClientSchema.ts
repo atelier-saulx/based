@@ -1,6 +1,6 @@
 import { updateTypeDefs } from '@based/schema/def'
+import { DbSchema } from '@based/schema'
 import { DbClient } from '../index.js'
-import { DbSchema } from '../schema.js'
 import { cancel } from './modify/drain.js'
 import { Ctx } from './modify/Ctx.js'
 

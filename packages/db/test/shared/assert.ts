@@ -42,6 +42,19 @@ ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
   }
 }
 
+export const notEqual = (a, b, msg?: string) => {
+  if (uDeepEqual(a, b)) {
+    const m = `${msg || 'Should not be equal:'} 
+------------------ A ---------------------
+${util.inspect(a, { depth: 10, maxStringLength: 60 })}
+------------------ B ---------------------
+${util.inspect(b, { depth: 10, maxStringLength: 60 })}
+------------------------------------------`
+    const error = new Error(m)
+    throw error
+  }
+}
+
 export const equal = deepEqual
 
 const SORT_ERR_MSG = 'Incorrect sort oder'
