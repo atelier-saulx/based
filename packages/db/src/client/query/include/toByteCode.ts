@@ -1,4 +1,4 @@
-import { MICRO_BUFFER, STRING, TEXT, JSON } from '@based/schema/def'
+import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { IncludeOpts, QueryDef, QueryDefType, includeOp } from '../types.js'
 import { walkDefs } from './walk.js'
@@ -88,6 +88,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
 
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
+      const typeIndex = propDef.opts?.raw ? BINARY : propDef.def.typeIndex
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
           if (propDef.opts.codes.has(0)) {
@@ -96,7 +97,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               const buf = new Uint8Array(4)
               buf[0] = includeOp.META
               buf[1] = prop
-              buf[2] = propDef.def.typeIndex
+              buf[2] = typeIndex
               buf[3] = langCodesMap.get(code)
               result.push(buf)
             }
@@ -105,7 +106,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               const buf = new Uint8Array(4)
               buf[0] = includeOp.META
               buf[1] = prop
-              buf[2] = propDef.def.typeIndex
+              buf[2] = typeIndex
               buf[3] = code
               result.push(buf)
             }
@@ -114,7 +115,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           const buf = new Uint8Array(4)
           buf[0] = includeOp.META
           buf[1] = prop
-          buf[2] = propDef.def.typeIndex
+          buf[2] = typeIndex
           buf[3] = 0
           result.push(buf)
         }
@@ -122,14 +123,13 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
 
       if (propDef.opts?.meta !== 'only') {
         const hasEnd = propDef.opts?.end
-        const t = propDef.def.typeIndex
-        if (t === TEXT) {
+        if (typeIndex === TEXT) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
             const b = new Uint8Array(hasEnd ? 12 : 4)
             b[0] = includeOp.DEFAULT
             b[1] = prop
-            b[2] = propDef.def.typeIndex
+            b[2] = typeIndex
             if (hasEnd) {
               b[3] = 8 // opts len
               b[4] = 0 // lang code
@@ -148,7 +148,7 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
               const b = new Uint8Array(7 + (endCode ? 5 : 0) + fallBackSize)
               b[0] = includeOp.DEFAULT
               b[1] = prop
-              b[2] = propDef.def.typeIndex
+              b[2] = typeIndex
               let i = 0
               if (endCode) {
                 b[3] = fallBackSize + 8 // opts
@@ -176,10 +176,14 @@ export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
           const buf = new Uint8Array(hasEnd ? 9 : 4)
           buf[0] = includeOp.DEFAULT
           buf[1] = prop
-          buf[2] = propDef.def.typeIndex
+          buf[2] = typeIndex
           if (hasEnd) {
             buf[3] = 5 // opts len
-            buf[4] = propDef.opts?.bytes || (t !== JSON && t !== STRING) ? 0 : 1
+            buf[4] =
+              propDef.opts?.bytes ||
+              (typeIndex !== JSON && typeIndex !== STRING)
+                ? 0
+                : 1
             writeUint32(buf, getEnd(propDef.opts), 5)
           } else {
             buf[3] = 0 // opts len
