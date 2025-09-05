@@ -13,6 +13,7 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
   // reserve 1 for root (even if you dont have it)
   dbSchema.lastId = 1
 
+  // Make the _root type
   if (dbSchema.props) {
     for (const key in dbSchema.props) {
       const prop = dbSchema.props[key]
@@ -54,10 +55,11 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
     delete dbSchema.props
   }
 
-  for (const field in dbSchema.types) {
-    if (!('id' in dbSchema.types[field])) {
+  // Assign typeIds
+  for (const typeName in dbSchema.types) {
+    if (!('id' in dbSchema.types[typeName])) {
       dbSchema.lastId++
-      dbSchema.types[field].id = dbSchema.lastId
+      dbSchema.types[typeName].id = dbSchema.lastId
     }
   }
 
