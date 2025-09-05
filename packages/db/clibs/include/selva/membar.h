@@ -4,6 +4,15 @@
  */
 #include "selva/_export.h"
 
+/*
+ * When you run threads on different cores on Graviton it doesn't guarantee that
+ * a write in one thread is seen in the other one immediately.
+ * https://github.com/aws/aws-graviton-getting-started/blob/main/optimizing.md#ordering-issues
+ *
+ * This is also true on the Apple M arch:
+ * https://developer.apple.com/documentation/apple-silicon/addressing-architectural-differences-in-your-macos-code
+ */
+
 /**
  * Read memory barrier.
  * Call this function before read in case another thread has potentially
