@@ -51,7 +51,7 @@ void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now)
         if (next->expire > now) {
             break;
         }
-        (void)SVector_Pop(&ex->list);
+        (void)SVector_Shift(&ex->list);
 
         struct SelvaExpireToken *np;
         do {
