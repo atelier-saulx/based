@@ -34,22 +34,6 @@ export type ReaderSchema2 = {
   search?: boolean
 }
 
-// export type ReaderAggregateSchema = {
-//   aggregates: {
-//     path: string[]
-//     type: number
-//     resultPos: number
-//   }[]
-//   groupBy?: {
-//     typeIndex: TypeIndex
-//     stepRange?: number
-//     stepType?: boolean
-//     display?: Intl.DateTimeFormat // find a way for this -- shitty
-//     enum?: any[]
-//   }
-//   totalResultsSize: number
-// }
-
 const serializeAggregate = (
   agg: ReaderAggregateSchema['aggregates'][number],
   blocks: Uint8Array[],

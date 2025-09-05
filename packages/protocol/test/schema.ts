@@ -203,6 +203,7 @@ await test('schema serialization/deserialization', async (t) => {
     }
     const serialized = serialize(agg)
     const deserialized = deSerializeSchema(serialized)
+
     deepEqual(deserialized, agg)
   })
 
