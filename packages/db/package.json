@@ -42,7 +42,7 @@
   ],
   "dependencies": {
     "@based/hash": "1.0.0",
-    "@based/schema": "^5.0.2",
+    "@based/schema": "^5.0.3",
     "@based/utils": "^1.0.0",
     "@based/protocol": "^0.0.3",
     "exit-hook": "^4.0.0",
