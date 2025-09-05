@@ -28,6 +28,12 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
   }
 }
 
+/**
+ * Set schema used in native code.
+ * This function should be only called when a new schema is set to an empty DB
+ * instance. If a `common.sdb` file is loaded then calling this function isn't
+ * necessary because `common.sdb` already contains the required schema.
+ */
 export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
