@@ -128,6 +128,7 @@ Note that version numbers may change due to nightly releases.
   - Property hooks
   - Guard against side effect
 - Allows array payloads for create and upsert (improves developer experience)
+- Fix regression: migrate should skip incompatible values
 
 ## v0.3.\* (Nov 1st 2025)
 
