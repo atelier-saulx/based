@@ -17,6 +17,11 @@ export const writeCardinalityRaw = (
 ) => {
   writeU32(ctx, sizeFixBecauseEdgeIsDifferent)
   for (const item of val) {
+    if (item instanceof Uint8Array) {
+      reserve(ctx, item.byteLength)
+      writeU8Array(ctx, item)
+      continue
+    }
     validate(def, item)
     if (typeof item === 'string') {
       xxHash64(ENCODER.encode(item), ctx.array, ctx.index)

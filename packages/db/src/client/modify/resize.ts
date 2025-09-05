@@ -18,5 +18,6 @@ export const resize = (ctx: Ctx, size: number) => {
 }
 
 export const reserve = (ctx: Ctx, size: number) => {
+  console.log('reserve:', ctx.size, size)
   resize(ctx, ctx.index + size)
 }
