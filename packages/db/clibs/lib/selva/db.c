@@ -403,9 +403,8 @@ extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(
 const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
 {
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->meta_node_type);
-    const struct SelvaNodeSchema *ns = selva_get_ns_by_te(te);
 
-    return &ns->fields_schema;
+    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
 }
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
