@@ -137,33 +137,34 @@ const propDefBuffer = (
     if (!isEdge) {
       buf[4] = prop.inversePropNumber
 
-      if (prop.edges) {
-        const edgesS = Object.values(prop.edges)
-        if (edgesS.length) {
-          const props = edgesS
-            .filter((v) => v.separate === true)
-            .sort((a, b) => (a.prop > b.prop ? 1 : -1))
-          const p = [
-            {
-              ...EMPTY_MICRO_BUFFER,
-              len: prop.edgeMainLen || 1, // allow zero here... else useless padding
-              __isEdgeDef: true,
-            },
-            // or handle this here...
-            ...props,
-          ]
-          eschema = p
-            .map((prop) =>
-              propDefBuffer(null, 0, schema, prop as PropDef, true),
-            )
-            .flat(1)
-          eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0, 0, 0)
-          view.setUint32(5, eschema.length, true)
-        }
-      }
+      //if (prop.edges) {
+      //  const edgesS = Object.values(prop.edges)
+      //  if (edgesS.length) {
+      //    const props = edgesS
+      //      .filter((v) => v.separate === true)
+      //      .sort((a, b) => (a.prop > b.prop ? 1 : -1))
+      //    const p = [
+      //      {
+      //        ...EMPTY_MICRO_BUFFER,
+      //        len: prop.edgeMainLen || 1, // allow zero here... else useless padding
+      //        __isEdgeDef: true,
+      //      },
+      //      // or handle this here...
+      //      ...props,
+      //    ]
+      //    eschema = p
+      //      .map((prop) =>
+      //        propDefBuffer(null, 0, schema, prop as PropDef, true),
+      //      )
+      //      .flat(1)
+      //    eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0, 0, 0)
+      //    view.setUint32(5, eschema.length, true)
+      //  }
+      //}
     }
 
-    return [...buf, ...eschema]
+    //return [...buf, ...eschema]
+    return [...buf]
   } else if (
     type === STRING ||
     type === BINARY ||
