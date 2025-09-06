@@ -124,11 +124,10 @@ inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEn
 #endif
 
 SELVA_EXPORT
-__attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
 #ifndef __zig
 {
-    if (field >= fields_schema->nr_fields) {
+    if (!fields_schema || field >= fields_schema->nr_fields) {
         return nullptr;
     }
 
