@@ -36,7 +36,7 @@ typedef struct {
     };
     uint16_t num_registers;
     uint32_t count;
-    uint32_t registers[];
+    uint8_t registers[];
 } HyperLogLogPlusPlus;
 
 static_assert(HLL_INIT_SIZE == sizeof(HyperLogLogPlusPlus));
@@ -61,7 +61,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     } else {
         uint32_t num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint32_t));
+        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint8_t));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
 
         hll->is_sparse = false;
@@ -104,7 +104,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
             new_num_registers |= new_num_registers >> 16;
             new_num_registers++;
 
-            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(uint32_t));
+            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(uint8_t));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
             hll->num_registers = new_num_registers;
@@ -132,7 +132,7 @@ void hll_array_union(struct selva_string *result, struct selva_string *hll_array
     hll_init(result, precision, DENSE);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
 
-    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint32_t));
+    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint8_t));
 
     for (size_t j = 1; j < count; j++) {
         HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
@@ -264,7 +264,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
 
     // uint32_t precision = hll->precision;
     const uint32_t num_registers = hll->num_registers;
-    const uint32_t *registers = hll->registers;
+    const uint8_t *registers = hll->registers;
 
     double raw_estimate = 0.0;
     double zero_count = 0.0;
