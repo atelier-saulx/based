@@ -118,22 +118,21 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // do the query
                 const writeIndex = read(u32, operation, 0);
                 const updateIndex = read(u32, operation, 4);
-
+                var nextIndex: u32 = writeIndex;
                 var j: u32 = 8;
                 while (j < writeIndex) {
                     const prop = read(u8, operation, j);
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
-
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         // write the id into the operation
                         writeInt(u32, operation, updateIndex + 1, db.getNodeId(node));
-                        i = i + updateIndex + 1;
+                        nextIndex = updateIndex;
                         break;
                     }
                     j = j + 5 + len;
                 }
-                i = i + writeIndex + 1;
+                i = i + nextIndex + 1;
             },
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);

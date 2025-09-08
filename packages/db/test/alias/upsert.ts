@@ -43,7 +43,7 @@ await test('alias upsert', async (t) => {
     [
       {
         id: 1,
-        two: 0,
+        two: 2,
         one: 1,
         uuid: 'x',
       },
