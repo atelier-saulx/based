@@ -110,11 +110,10 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         enum EdgeFieldConstraintFlag flags;
         node_type_t dst_node_type;
         field_t inverse_field;
-        uint32_t schema_len;
-        uint8_t schema[] __counted_by(schema_len);
+        node_type_t meta_node_type;
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 9);
+    static_assert(sizeof(constraints) == 7);
 
     if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -123,10 +122,6 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     memcpy(&constraints, buf, sizeof(constraints));
     buf += sizeof(constraints);
     len -= sizeof(constraints);
-
-    if (constraints.schema_len > len) {
-        return SELVA_EINVAL;
-    }
 
     enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT | EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
 
@@ -137,6 +132,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
             .flags = flags,
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
+            .meta_node_type = constraints.meta_node_type,
         },
     };
 
