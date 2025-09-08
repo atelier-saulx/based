@@ -90,12 +90,14 @@ export type BasedQueryFunction<P = any, K = any> =
       payload: P,
       update: ObservableUpdateFunction<K>,
       error: ObserveErrorListener,
+      ctx?: any,
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
       payload: P,
       update: ObservableUpdateFunction<K>,
       error: ObserveErrorListener,
+      ctx?: any,
     ) => () => void)
 
 export type BasedChannelFunction<P = any, K = any> = (
@@ -317,6 +319,8 @@ export type BasedQueryFunctionConfig = {
   closeAfterIdleTime?: number
   /** Throttle amount of outgoing messages, in milliseconds */
   throttle?: number
+  /** Bind this query function to specific paths in clients ctx */
+  ctx?: string[]
 }
 
 export type BasedStreamFunctionConfig = {
