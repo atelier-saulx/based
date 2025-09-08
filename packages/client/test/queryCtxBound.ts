@@ -31,10 +31,10 @@ test('query ctx bound', async (t: T) => {
 
           uninstallAfterIdleTime: 1e3,
           // 4rd argument ctx?
-          fn: (based, payload, update, ctx) => {
+          fn: (based, payload, update, error, ctx) => {
             let cnt = 0
             update(cnt)
-            console.log('SNURF!') //
+            console.log('SNURF -> CTX:', ctx) //
 
             const counter = setInterval(() => {
               update(++cnt)

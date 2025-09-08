@@ -14,6 +14,7 @@ import { channelPublishMessage } from './channelPublish.js'
 import { receiveChunkStream, registerStream } from './stream.js'
 import { BasedErrorCode } from '@based/errors'
 import { readUint32 } from '@based/utils'
+import { incomingFunctionSubType, incomingFunctionType } from './types.js'
 
 const reader = (
   server: BasedServer,
@@ -25,37 +26,44 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint32(arr, start))
   const next = len + start
 
-  // type 0 = function
-  if (type === 0 && functionMessage(arr, start, len, isDeflate, ctx, server)) {
-    return next
-  }
-
-  // type 1 = subscribe
-  if (type === 1 && subscribeMessage(arr, start, len, isDeflate, ctx, server)) {
-    return next
-  }
-
-  // type 2 = unsubscribe
   if (
-    type === 2 &&
+    type === incomingFunctionType.function &&
+    functionMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
+    return next
+  }
+
+  if (
+    type === incomingFunctionType.subscribe &&
+    subscribeMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
+    return next
+  }
+
+  if (
+    type === incomingFunctionType.unsubscribe &&
     unsubscribeMessage(arr, start, len, isDeflate, ctx, server)
   ) {
     return next
   }
 
-  // type 3 = get
-  if (type === 3 && getMessage(arr, start, len, isDeflate, ctx, server)) {
+  if (
+    type === incomingFunctionType.get &&
+    getMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
     return next
   }
 
-  // type 4 = auth
-  if (type === 4 && authMessage(arr, start, len, isDeflate, ctx, server)) {
+  if (
+    type === incomingFunctionType.auth &&
+    authMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
     return next
   }
 
   // type 5 = channelSubscribe
   if (
-    type === 5 &&
+    type === incomingFunctionType.channelSubscribe &&
     channelSubscribeMessage(arr, start, len, isDeflate, ctx, server)
   ) {
     return next
@@ -63,32 +71,32 @@ const reader = (
 
   // type 6 = channelPublish
   if (
-    type === 6 &&
+    type === incomingFunctionType.channelPublish &&
     channelPublishMessage(arr, start, len, isDeflate, ctx, server)
   ) {
     return next
   }
 
   // type 7.x = subType
-  if (type === 7) {
+  if (type === incomingFunctionType.subType) {
     const subType = arr[start + 4]
 
     // type 7.0 = channelUnsubscribe
-    if (subType === 0) {
+    if (subType === incomingFunctionSubType.channelUnsubscribe) {
       if (unsubscribeChannelMessage(arr, start, len, isDeflate, ctx, server)) {
         return next
       }
     }
 
     // type 7.1 = register stream
-    if (subType === 1) {
+    if (subType === incomingFunctionSubType.registerStream) {
       if (registerStream(arr, start, len, isDeflate, ctx, server)) {
         return next
       }
     }
 
     // type 7.2 = chunk
-    if (subType === 2) {
+    if (subType === incomingFunctionSubType.chunk) {
       if (receiveChunkStream(arr, start, len, isDeflate, ctx, server)) {
         return next
       }

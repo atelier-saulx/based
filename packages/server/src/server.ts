@@ -51,7 +51,7 @@ type ChannelEvents = {
 }
 
 export type ServerOptions = {
-  clients?: { [key: string]: any } // for now any...
+  clients?: { [key: string]: any }
   port?: number
   key?: string
   geo?: (ctx: Context) => Promise<Geo>
@@ -63,10 +63,8 @@ export type ServerOptions = {
   rateLimit?: RateLimit
   client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
-
   query?: QueryEvents
   channel?: ChannelEvents
-
   ws?: {
     maxBackpressureSize?: number
     open?: (client: Context<WebSocketSession>) => void
@@ -399,7 +397,9 @@ export class BasedServer {
     }
 
     if (!this.silent) {
-      console.info(styleText('grey', `    Destroy Based-server ${this.port} \n`))
+      console.info(
+        styleText('grey', `    Destroy Based-server ${this.port} \n`),
+      )
     }
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
