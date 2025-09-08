@@ -118,10 +118,10 @@ const propDefBuffer = (
     view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf = new Uint8Array(9)
+    const buf = new Uint8Array(7)
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    let eschema = []
+    //let eschema = []
 
     // @ts-ignore
     buf[0] = selvaType + 2 * !!isEdge // field type
@@ -133,9 +133,14 @@ const propDefBuffer = (
       dstType.props[prop.inversePropName],
     ) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
-    view.setUint32(5, 0, true) // schema_len
-    if (!isEdge) {
+    if (isEdge) {
+      buf[4] = 0
+      view.setUint16(5, 0, true)
+    } else {
       buf[4] = prop.inversePropNumber
+      // TODO meta_node_type
+      view.setUint16(5, prop.edgeNodeTypeId, true) // meta_node_type
+    }
 
       //if (prop.edges) {
       //  const edgesS = Object.values(prop.edges)
@@ -161,7 +166,7 @@ const propDefBuffer = (
       //    view.setUint32(5, eschema.length, true)
       //  }
       //}
-    }
+    //}
 
     //return [...buf, ...eschema]
     return [...buf]
