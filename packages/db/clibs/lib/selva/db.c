@@ -400,12 +400,7 @@ extern inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchem
 
 extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
 
-const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
-{
-    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->meta_node_type);
-
-    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
-}
+extern inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
