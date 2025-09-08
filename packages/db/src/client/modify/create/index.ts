@@ -27,7 +27,7 @@ import { writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 
-const writeDefaults = (ctx: Ctx, payload) => {
+const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
     return
   }
@@ -145,24 +145,9 @@ export const writeCreate = (
   opts: ModifyOpts,
 ) => {
   validatePayload(payload)
-  validatePayload(schema)
 
   if (schema.hooks?.create) {
     payload = schema.hooks.create(payload) || payload
-  }
-
-  if (payload.id) {
-    if (!opts?.unsafe) {
-      throw 'Invalid payload. "id" not allowed'
-    }
-    ctx.id = payload.id
-  } else {
-    if (!(schema.id in ctx.created)) {
-      ctx.created[schema.id] = 0
-      ctx.max -= 6
-      ctx.size -= 6
-    }
-    ctx.id = ctx.created[schema.id] + 1
   }
 
   if (ctx.defaults) {
@@ -185,7 +170,7 @@ export const writeCreate = (
   ctx.overwrite = true
   ctx.unsafe = opts?.unsafe
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
-  ctx.start = ctx.index
+
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
   writeNodeCursor(ctx)
@@ -199,7 +184,7 @@ export const writeCreate = (
   if (!ctx.cursor.main && !ctx.schema.mainEmptyAllZeroes) {
     writeMainBuffer(ctx)
   }
-  writeDefaults(ctx, payload)
+  writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)
   if (schema.id in ctx.created) {
@@ -215,7 +200,22 @@ export function create(
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
+  ctx.start = ctx.index
+
   try {
+    if (payload.id) {
+      if (!opts?.unsafe) {
+        throw 'Invalid payload. "id" not allowed'
+      }
+      ctx.id = payload.id
+    } else {
+      if (!(schema.id in ctx.created)) {
+        ctx.created[schema.id] = 0
+        ctx.max -= 6
+        ctx.size -= 6
+      }
+      ctx.id = ctx.created[schema.id] + 1
+    }
     writeCreate(ctx, schema, payload, opts)
     const tmp = new Tmp(ctx)
     schedule(db, ctx)

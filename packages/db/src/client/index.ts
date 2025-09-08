@@ -1,4 +1,10 @@
-import { MigrateFns, parse, Schema, StrictSchema, SchemaChecksum } from '@based/schema'
+import {
+  MigrateFns,
+  parse,
+  Schema,
+  StrictSchema,
+  SchemaChecksum,
+} from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'

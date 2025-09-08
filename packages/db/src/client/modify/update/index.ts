@@ -1,9 +1,8 @@
-import { SchemaTypeDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { ModifyOpts, UPDATE, UPDATE_PARTIAL } from '../types.js'
-import { DbClient, DbClientHooks } from '../../../index.js'
+import { DbClient } from '../../../index.js'
 import { getValidSchema, validateId, validatePayload } from '../validate.js'
-import { isValidId, langCodesMap } from '@based/schema'
+import { langCodesMap } from '@based/schema'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'
 import { writeObject } from '../props/object.js'
@@ -19,6 +18,7 @@ import { getByPath, writeUint32 } from '@based/utils'
 import { writeU16, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
+import { SchemaTypeDef } from '@based/schema/def'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {
   if (ctx.schema.updateTs) {
@@ -49,7 +49,27 @@ const writeMergeMain = (ctx: Ctx) => {
   }
 }
 
-const writeUpdate = (ctx: Ctx, payload: any) => {
+export const writeUpdate = (
+  ctx: Ctx,
+  schema: SchemaTypeDef,
+  payload: any,
+  opts: ModifyOpts,
+) => {
+  validatePayload(payload)
+
+  if (schema.hooks?.update) {
+    payload = schema.hooks.update(payload) || payload
+  }
+
+  ctx.schema = schema
+  ctx.operation = UPDATE
+  ctx.overwrite = opts?.overwrite
+  ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+
+  if (ctx.main.size) {
+    ctx.main.clear()
+  }
+
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
   writeNodeCursor(ctx)
@@ -67,26 +87,11 @@ export function update(
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
+  ctx.start = ctx.index
   try {
-    validatePayload(payload)
     validateId(id)
-
-    if (schema.hooks?.update) {
-      payload = schema.hooks.update(payload) || payload
-    }
-
     ctx.id = id
-    ctx.schema = schema
-    ctx.operation = UPDATE
-    ctx.overwrite = opts?.overwrite
-    ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
-    ctx.start = ctx.index
-
-    if (ctx.main.size) {
-      ctx.main.clear()
-    }
-
-    writeUpdate(ctx, payload)
+    writeUpdate(ctx, schema, payload, opts)
     const tmp = new Tmp(ctx, id)
     schedule(db, ctx)
     return tmp

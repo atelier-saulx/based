@@ -22,6 +22,7 @@ const dbSort = @import("../db/sort.zig");
 const increment = Update.increment;
 const config = @import("config");
 const read = utils.read;
+const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -34,15 +35,15 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
-    const typeInfo = try napi.get([]u8, env, args[1]);
+    const idOffsets = try napi.get([]u8, env, args[1]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
     const dirtyRanges = try napi.get([]f64, env, args[3]);
 
     var i: usize = 0;
     var ctx: ModifyCtx = .{
         .field = undefined,
-        .typeId = undefined,
-        .id = undefined,
+        .typeId = 0,
+        .id = 0,
         .currentSortIndex = null,
         .typeSortIndex = null,
         .node = null,
@@ -50,17 +51,19 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .fieldSchema = null,
         .fieldType = types.Prop.NULL,
         .db = dbCtx,
-        .typeInfo = typeInfo,
+        .idOffsets = idOffsets,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
     };
-    defer ctx.dirtyRanges.deinit();
 
+    const idCounts = try dbCtx.allocator.dupe(u8, idOffsets);
+    var idCount: u32 = 0;
+    defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
-    var idOffset: u32 = 0;
 
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
+
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
                 // Wrongly here.. lets find it...
@@ -97,39 +100,80 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
-            types.ModOp.CREATE_OR_GET => {
-                if (config.enable_debug) {
-                    // Only assert this on DEBUG scince it makes it a lot slower
-                    ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
-                        std.log.err("Overflow ID error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
-                        return err;
-                    };
-                    if (ctx.id == 0) {
-                        std.log.err("ID == 0 error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
-                        return errors.SelvaError.SELVA_EINVAL;
-                    }
-                }
-                ctx.id = read(u32, operation, 0) + idOffset;
+            types.ModOp.SWITCH_ID_CREATE => {
+                idCount = idCount + 1;
+                ctx.id = idCount;
+                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                i = i + 1;
+            },
+            types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
+                ctx.id = read(u32, operation, 0);
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
-            types.ModOp.SWITCH_NODE => {
-                ctx.id = read(u32, operation, 0);
-                ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-                if (ctx.node != null) {
-                    // It would be even better if we'd mark it dirty only in the case
-                    // something was actually changed.
-                    Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+            types.ModOp.UPSERT => {
+
+                // do the query
+                const writeIndex = read(u32, operation, 0);
+                const updateIndex = read(u32, operation, 4);
+
+                var j: u32 = 8;
+                while (j < writeIndex) {
+                    const prop = read(u8, operation, j);
+                    const len = read(u32, operation, j + 1);
+                    const val = operation[j + 5 .. j + 5 + len];
+
+                    if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                        // write the id into the operation
+                        writeInt(u32, operation, updateIndex + 1, db.getNodeId(node));
+                        i = i + updateIndex + 1;
+                        break;
+                    }
+                    j = j + 5 + len;
+                }
+                i = i + writeIndex + 1;
+            },
+            types.ModOp.SWITCH_ID_UPDATE => {
+                const id = read(u32, operation, 0);
+                if (id != 0) {
+                    // if its zero than we don't want to switch (for upsert)
+                    ctx.id = id;
+                    ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                    if (ctx.node != null) {
+                        // It would be even better if we'd mark it dirty only in the case
+                        // something was actually changed.
+                        Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                    }
                 }
                 i = i + 5;
             },
             types.ModOp.SWITCH_TYPE => {
+                if (ctx.typeId != 0) {
+                    // store previous lastId into lastIds
+                    var j: usize = 0;
+                    while (j < idCounts.len) : (j += 6) {
+                        const tId = read(u16, idCounts, j);
+                        if (tId == ctx.typeId) {
+                            writeInt(u32, idCounts, j + 2, idCount);
+                            break;
+                        }
+                    }
+                }
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-                // store offset for this type
-                idOffset = Modify.getIdOffset(&ctx, ctx.typeId);
+
+                // grab previous lastId from lastIds
+                var j: usize = 0;
+                while (j < idCounts.len) : (j += 6) {
+                    const tId = read(u16, idCounts, j);
+                    if (tId == ctx.typeId) {
+                        idCount = read(u32, idCounts, j + 2);
+                        break;
+                    }
+                }
                 // RFE shouldn't we technically unset .id and .node now?
                 i = i + 3;
             },

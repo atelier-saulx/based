@@ -17,16 +17,16 @@ pub const ModifyCtx = struct {
     node: ?db.Node,
     fieldType: types.Prop,
     db: *db.DbCtx,
-    typeInfo: []u8,
+    idOffsets: []u8,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
 };
 
 pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
     var j: usize = 0;
-    while (j < ctx.typeInfo.len) : (j += 6) {
-        const tId = read(u16, ctx.typeInfo, j);
+    while (j < ctx.idOffsets.len) : (j += 6) {
+        const tId = read(u16, ctx.idOffsets, j);
         if (tId == typeId) {
-            return read(u32, ctx.typeInfo, j + 2);
+            return read(u32, ctx.idOffsets, j + 2);
         }
     }
     return 0;

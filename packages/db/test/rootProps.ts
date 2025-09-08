@@ -31,7 +31,10 @@ await test('rootProps', async (t) => {
     },
   })
 
-  deepEqual(db.server.schemaTypesParsed['_root'].blockCapacity, BLOCK_CAPACITY_MAX)
+  deepEqual(
+    db.server.schemaTypesParsed['_root'].blockCapacity,
+    BLOCK_CAPACITY_MAX,
+  )
 
   const rootData = {
     myString: 'im the root',
@@ -53,9 +56,17 @@ await test('rootProps', async (t) => {
     bestArticles: [article],
   })
 
-  rootRes = await db.query().include('bestArticles').get()
+  rootRes = await db.query().include('bestArticles').get().toObject()
 
   deepEqual(rootRes, {
     bestArticles: [{ id: 1, name: 'best article', body: 'success' }],
   })
+
+  const rootRes2 = await db
+    .query('_root', 1)
+    .include('bestArticles')
+    .get()
+    .toObject()
+
+  deepEqual(rootRes, rootRes2)
 })
