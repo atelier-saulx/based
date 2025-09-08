@@ -26,7 +26,7 @@ pub fn writeEdges(
         i += 3;
 
         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
-            std.log.err("Edge field schema cannot be found \n", .{});
+            std.log.err("Edge field schema not found\n", .{});
             return;
         };
 
