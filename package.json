@@ -65,7 +65,6 @@
     "inquirer": "^11.1.0",
     "mime-types": "^2.1.35",
     "minimatch": "^10.0.1",
-    "ora": "^8.1.0",
     "picocolors": "^1.1.0",
     "serve-handler": "^6.1.5",
     "source-map": "^0.7.4",
@@ -75,3 +74,4 @@
     "postmark": "3.0.15"
   }
 }
+
