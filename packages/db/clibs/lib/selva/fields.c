@@ -1804,16 +1804,14 @@ int selva_fields_references_swap(
  */
 struct SelvaNode *selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, const struct EdgeFieldConstraint *efc, struct SelvaNodeLargeReference *ref)
 {
-    const field_t nr_fields = refs_get_nr_fields(db, efc);
-    struct SelvaTypeEntry *meta_type;
+    struct SelvaTypeEntry *meta_type = selva_get_type_by_index(db, efc->meta_node_type);
     struct SelvaNode *meta;
     bool do_share = false;
 
-    if (nr_fields == 0) {
+    if (!meta_type) {
         return nullptr;
     }
 
-    meta_type = selva_get_type_by_index(db, efc->meta_node_type);
     if (ref->meta == 0) {
         if (meta_type->max_node) {
             ref->meta = meta_type->max_node->node_id + 1;
