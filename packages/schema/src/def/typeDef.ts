@@ -75,7 +75,7 @@ export const updateTypeDefs = (schema: StrictSchema) => {
           prop.inversePropNumber = dstType.props[prop.inversePropName].prop
 
           // Update edgeNodeTypeId
-          if (prop.edges && prop.edgeNodeTypeId === 0) {
+          if (prop.edges && !prop.edgeNodeTypeId) {
             const edgeTypeName = `${schema.type}:${prop.path.join('.')}`
             const edgeType = schemaTypesParsed[edgeTypeName]
 
