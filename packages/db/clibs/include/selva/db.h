@@ -222,7 +222,16 @@ inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const s
 #endif
 
 SELVA_EXPORT
-const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
+inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+#ifndef __zig
+{
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->meta_node_type);
+
+    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts);
