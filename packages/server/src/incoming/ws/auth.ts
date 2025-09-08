@@ -5,7 +5,7 @@ import {
   valueToBufferV1,
 } from '../../protocol.js'
 import { BasedServer } from '../../server.js'
-import { enableSubscribe } from './query.js'
+import { enableSubscribe, queryIsNotAuthorized } from './query.js'
 import { rateLimitRequest } from '../../security.js'
 import {
   AuthState,
@@ -51,46 +51,47 @@ export const reEvaulateUnauthorized = (
 
   if (session.attachedAuthStateObs?.size) {
     session.attachedAuthStateObs.forEach((id) => {
-      session.attachedAuthStateObs.delete(id)
       const obs = server.activeObservablesById.get(id)
-      const payloadChecksum = obs.checksum
       const prevAttachedCtx = obs.attachCtx
-      unsubscribeWs(server, id, ctx)
-
-      const payload = obs.payload
-      const checksum = obs.checksum
-
       const attachedCtx = attachCtx(
         prevAttachedCtx.config,
         ctx,
         prevAttachedCtx.fromId,
       )
-      id = attachedCtx.id
+      if (attachedCtx.id !== id) {
+        session.attachedAuthStateObs.delete(id)
+        unsubscribeWs(server, id, ctx)
 
-      if (session.obs.has(id)) {
-        // Allready subscribed to this id
-        return // tmp
+        const payload = obs.payload
+        const checksum = obs.checksum
+
+        id = attachedCtx.id
+
+        if (session.obs.has(id)) {
+          // Allready subscribed to this id
+          return // tmp
+        }
+
+        const route: BasedRoute<'query'> = {
+          name: obs.name,
+          type: 'query',
+        }
+
+        session.obs.add(id)
+
+        authorize(
+          route,
+          route.public,
+          server,
+          ctx,
+          payload,
+          enableSubscribe,
+          id,
+          checksum,
+          attachedCtx,
+          queryIsNotAuthorized,
+        )
       }
-
-      const route: BasedRoute<'query'> = {
-        name: obs.name,
-        type: 'query',
-      }
-
-      session.obs.add(id)
-
-      authorize(
-        route,
-        route.public,
-        server,
-        ctx,
-        payload,
-        enableSubscribe,
-        id,
-        checksum,
-        attachedCtx,
-        // add unauths tuff as well...
-      )
     })
   }
 

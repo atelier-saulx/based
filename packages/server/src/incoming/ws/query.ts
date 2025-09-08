@@ -44,7 +44,7 @@ export const enableSubscribe: IsAuthorizedHandler<
   subscribeWs(server, id, checksum, ctx)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+export const queryIsNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
 > = (route, server, ctx, payload, id, checksum) => {
@@ -145,7 +145,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     id,
     checksum,
     attachedCtx,
-    isNotAuthorized,
+    queryIsNotAuthorized,
   )
 
   return true
