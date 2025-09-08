@@ -220,15 +220,6 @@ await test('sortCardinality', async (t) => {
     count: ['name1', 'name2'],
   })
 
-  console.log(
-    await db
-      .query('article')
-      .sort('count', 'desc')
-      .include('count')
-      .get()
-      .toObject(),
-  )
-
   deepEqual(
     await db
       .query('article')

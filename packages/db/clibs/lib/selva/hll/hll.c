@@ -59,8 +59,8 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     } else {
         uint32_t num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(hll->registers[0]));
         HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(hll->registers[0]));
 
         hll->is_sparse = false;
         hll->precision = precision;
@@ -130,7 +130,7 @@ void hll_array_union(struct selva_string *result, struct selva_string *hll_array
     hll_init(result, precision, DENSE);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
 
-    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(hll->registers[0]));
+    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(result_hll->registers[0]));
 
     for (size_t j = 1; j < count; j++) {
         HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
