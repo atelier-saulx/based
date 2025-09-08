@@ -7,6 +7,10 @@ export type DbSchema = StrictSchema & { lastId: number; hash: number }
 export type SchemaChecksum = number
 
 function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: SchemaProps<true>, propPrefix: string): void {
+  type EdgeProps = Record<`$${string}`, SchemaPropOneWay>
+  const putEdgeProps = (typeName: string, refPath: string, edgeProps: EdgeProps) =>
+    newTypes[`${typeName}:${refPath}`] = { props: edgeProps }
+
   for (const propName in props) {
     const prop = props[propName]
     const propType = getPropType(prop)
@@ -18,12 +22,12 @@ function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: Sc
         const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
         Object.keys(prop).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop[k])
 
-        newTypes[`${typeName}.${nextPropPrefix}`] = { props: edgeProps }
+        putEdgeProps(typeName, nextPropPrefix, edgeProps)
     } else if (propType === 'references') {
         const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
         Object.keys(prop.items).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop.items[k])
 
-        newTypes[`${typeName}:${nextPropPrefix}`] = { props: edgeProps }
+        putEdgeProps(typeName, nextPropPrefix, edgeProps)
     }
   }
 }

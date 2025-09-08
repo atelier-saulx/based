@@ -65,14 +65,26 @@ export const updateTypeDefs = (schema: StrictSchema) => {
     schemaTypesParsedById[type.id] = def
   }
 
-  // Update inverseProps in references
   for (const schema of Object.values(schemaTypesParsed)) {
     for (const prop of Object.values(schema.props)) {
       if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
         if (!prop.__isEdge) {
+          // Update inverseProps in references
           const dstType: SchemaTypeDef = schemaTypesParsed[prop.inverseTypeName]
           prop.inverseTypeId = dstType.id
           prop.inversePropNumber = dstType.props[prop.inversePropName].prop
+
+          // Update edgeNodeTypeId
+          if (prop.edges) {
+            for (const k in prop.edges) {
+              const edgeProp = prop.edges[k]
+              const edgeTypeName = `${schema.type}:${edgeProp.path.slice(0, -1).join('.')}`
+              const edgeType = schemaTypesParsed[edgeTypeName]
+              prop.edgeNodeTypeId = edgeType.id
+            }
+          } else {
+            prop.edgeNodeTypeId = 0
+          }
         }
       }
     }
