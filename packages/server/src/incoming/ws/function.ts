@@ -137,7 +137,7 @@ export const functionMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(route, server, ctx, payload, sendFunction, requestId)
+  authorize(route, route.public, server, ctx, payload, sendFunction, requestId)
 
   return true
 }

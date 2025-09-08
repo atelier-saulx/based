@@ -16,12 +16,12 @@ test('query ctx bound', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
-    silent: true,
+    // silent: true,
     functions: {
       configs: {
         counter: {
           type: 'query',
-          ctx: ['authState.userId', 'geo.country'],
+          ctx: ['authState.token', 'geo.country'],
           // if ctx pass it to the thign use the ctx as extra check if incoming (not only id)
           // on ctx change send invalidate cache command to client
           // if this is there pass ctx as 4th argument (different ctx)
@@ -55,6 +55,18 @@ test('query ctx bound', async (t: T) => {
     },
   })
 
+  const close2 = client
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe((d) => {
+      console.log('DERPY?')
+    })
+
+  await wait(500)
+
+  const result = await client.setAuthState({ token: '?' })
+
   const close = client
     .query('counter', {
       myQuery: 123,
@@ -66,5 +78,6 @@ test('query ctx bound', async (t: T) => {
   await wait(500)
 
   close()
+  close2()
   t.true(true)
 })

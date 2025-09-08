@@ -5,6 +5,12 @@ import { destroyObs } from './destroy.js'
 import { sendErrorData } from '../sendError.js'
 import { ActiveObservable, ObservableError } from './types.js'
 
+// const getId = () => {
+// get attached stuff
+// just send ID + extra thing (new protocol type) that holds the original id
+// this creates the mapping on the client and it immediatly has the extra thing
+// }
+
 export const sendObsWs = (
   ctx: Context<WebSocketSession>,
   buffer: Uint8Array,

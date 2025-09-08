@@ -171,13 +171,14 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     payload,
     enableChannelSubscribe,
     id,
     0,
-    false,
+    undefined,
     isNotAuthorized,
   )
 

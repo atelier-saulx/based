@@ -4,6 +4,7 @@ import {
   unsubscribeWs,
   subscribeWs,
   hasObs,
+  AttachedCtx,
 } from '../../query/index.js'
 import { BasedErrorCode } from '@based/errors'
 import { WebSocketSession, BasedRoute } from '@based/functions'
@@ -17,11 +18,12 @@ import {
 } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
+import { attachCtx } from '../../query/attachCtx.js'
 
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _spec, server, ctx, payload, id, checksum) => {
+> = (route, _spec, server, ctx, payload, id, checksum, attachCtx) => {
   if (hasObs(server, id)) {
     subscribeWs(server, id, checksum, ctx)
     return
@@ -31,7 +33,13 @@ export const enableSubscribe: IsAuthorizedHandler<
     return
   }
   if (!hasObs(server, id)) {
-    createObs(server, route.name, id, payload)
+    const obs = createObs(server, route.name, id, payload, false, attachCtx)
+    if (obs.attachCtx.authState) {
+      if (!ctx.session?.attachedAuthStateObs) {
+        ctx.session.attachedAuthStateObs = new Set()
+      }
+      ctx.session.attachedAuthStateObs.add(id)
+    }
   }
   subscribeWs(server, id, checksum, ctx)
 }
@@ -39,7 +47,7 @@ export const enableSubscribe: IsAuthorizedHandler<
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _server, ctx, payload, id, checksum) => {
+> = (route, server, ctx, payload, id, checksum) => {
   const session = ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
@@ -63,7 +71,9 @@ export const subscribeMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
   const nameLen = arr[start + 20]
-  const id = readUint64(arr, start + 4)
+  // get id maybe
+
+  let id = readUint64(arr, start + 4)
   const checksum = readUint64(arr, start + 12)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
@@ -102,12 +112,19 @@ export const subscribeMessage: BinaryMessageHandler = (
 
   const session = ctx.session
 
+  let attachedCtx: AttachedCtx
+
+  if (route.ctx) {
+    attachedCtx = attachCtx(route.ctx, ctx, id)
+    id = attachedCtx.id
+  }
+
   if (session.obs.has(id)) {
     // Allready subscribed to this id
     return true
   }
 
-  const payload =
+  let payload =
     len === nameLen + 21
       ? undefined
       : decodePayload(
@@ -120,13 +137,14 @@ export const subscribeMessage: BinaryMessageHandler = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     payload,
     enableSubscribe,
     id,
     checksum,
-    false,
+    attachedCtx,
     isNotAuthorized,
   )
 

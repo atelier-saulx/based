@@ -97,16 +97,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(
-    route,
-    server,
-    ctx,
-    payload,
-    publish,
-    id,
-    undefined,
-    route.publicPublisher,
-  )
+  authorize(route, route.publicPublisher, server, ctx, payload, publish, id)
 
   return true
 }

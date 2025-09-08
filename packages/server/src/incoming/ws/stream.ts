@@ -176,13 +176,14 @@ export const registerStream: BinaryMessageHandler = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     streamPayload,
     startStreamFunction,
     reqId,
     undefined,
-    route.public,
+    undefined,
     () => {
       if (!ctx.session) {
         return

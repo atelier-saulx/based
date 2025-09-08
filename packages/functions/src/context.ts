@@ -22,6 +22,12 @@ export type WebSocketSession = {
     name: string
     payload: any
   }>
+  attachedAuthStateObs?: Set<{
+    id: number
+    checksum: number
+    name: string
+    payload: any
+  }>
   streams?: { [reqId: string]: StreamPayload }
   headers: { [key: string]: string }
   unauthorizedChannels?: Set<{

@@ -1,5 +1,5 @@
 import { BasedServer } from '../server.js'
-import { ActiveObservable } from './types.js'
+import { ActiveObservable, AttachedCtx } from './types.js'
 import { start } from './start/index.js'
 import { hasObs } from './get.js'
 
@@ -9,6 +9,7 @@ export const createObs = (
   id: number,
   payload: any,
   noStart?: boolean,
+  attachCtx?: AttachedCtx,
 ): ActiveObservable => {
   if (hasObs(server, id)) {
     const msg = `Already has observable ${name} ${id}`
@@ -26,11 +27,17 @@ export const createObs = (
     isDestroyed: false,
     startId: 0,
     timeTillDestroy: null,
+    attachCtx,
   }
 
   if (!server.activeObservables[name]) {
     server.activeObservables[name] = new Map()
   }
+
+  // if (attachCtx) {
+  //   // needs a count prob...
+  //   server.activeCtxObservables.set(id, { config: attachCtx.config, count: 0 })
+  // }
 
   server.activeObservables[name].set(id, obs)
   server.activeObservablesById.set(id, obs)

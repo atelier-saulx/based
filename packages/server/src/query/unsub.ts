@@ -33,14 +33,21 @@ export const unsubscribeWs = (
 
   const isV1 = ctx.session.v < 2
 
+  // need to get if its a CTX bound one - extra check... map of ctx bound id to normal id
+
+  const obs = server.activeObservablesById.get(id)
+  session.obs.delete(id)
+
+  if (ctx.session.attachedAuthStateObs?.has(id)) {
+    ctx.session.attachedAuthStateObs.delete(id)
+  }
+
   if (isV1) {
     ctx.session.ws.unsubscribe(String(id) + '-v1')
   } else {
     ctx.session.ws.unsubscribe(String(id))
   }
 
-  const obs = server.activeObservablesById.get(id)
-  session.obs.delete(id)
   if (!obs) {
     return
   }

@@ -89,9 +89,15 @@ export const start = (server: BasedServer, id: number) => {
     relay(server, spec.relay, obs, client, update)
   } else {
     try {
-      const r = spec.fn(server.client, payload, update, (err) => {
-        errorListener(server, obs, err)
-      })
+      const r = spec.fn(
+        server.client,
+        payload,
+        update,
+        (err) => {
+          errorListener(server, obs, err)
+        },
+        obs.attachCtx?.ctx,
+      )
       if (r instanceof Promise) {
         r.then((close) => {
           if (obs.isDestroyed || startId !== obs.startId) {

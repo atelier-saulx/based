@@ -52,6 +52,7 @@ export const singleStream = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     streamPayload,
@@ -82,7 +83,7 @@ export const singleStream = (
     },
     undefined,
     undefined,
-    false,
+    undefined,
     () => {
       stream.destroy()
     },

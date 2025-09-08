@@ -1,4 +1,5 @@
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
+import { BasedQueryFunctionConfig } from '@based/functions'
 
 export type ObservableError =
   | BasedErrorData<BasedErrorCode.FunctionError>
@@ -38,4 +39,13 @@ export type ActiveObservable = {
   closeAfterIdleTime?: number
   timeTillDestroy: number | null
   isDestroyed: boolean
+  attachCtx?: AttachedCtx
+}
+
+export type AttachedCtx = {
+  ctx: { [key: string]: any }
+  id: number
+  authState: boolean
+  config: BasedQueryFunctionConfig['ctx']
+  fromId: number
 }

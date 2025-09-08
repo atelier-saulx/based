@@ -5,6 +5,8 @@ import {
   HttpSession,
   Geo,
   isClientContext,
+  BasedQuery,
+  BasedQueryFunctionConfig,
 } from '@based/functions'
 import type { ActiveObservable } from './query/index.js'
 import uws from '@based/uws'
@@ -219,6 +221,12 @@ export class BasedServer {
   public activeObservables: {
     [name: string]: Map<number, ActiveObservable>
   } = {}
+
+  // // Mapping... CTX ID -> normal id nessecary for unsubscribe
+  // public activeCtxObservables: Map<
+  //   number,
+  //   { config: BasedQueryFunctionConfig['ctx']; count: number }
+  // > = new Map()
 
   public activeObservablesById: Map<number, ActiveObservable> = new Map()
 

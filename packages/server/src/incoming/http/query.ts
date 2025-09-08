@@ -257,6 +257,7 @@ export const httpGet = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     payload,

@@ -10,6 +10,7 @@ import {
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
+  AttachedCtx,
 } from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
 import { BasedErrorCode } from '@based/errors'
@@ -23,6 +24,7 @@ import {
 } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
+import { attachCtx } from '../../query/attachCtx.js'
 
 const sendGetData = (
   server: BasedServer,
@@ -136,7 +138,7 @@ export const getMessage: BinaryMessageHandler = (
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
   const nameLen = arr[start + 20]
-  const id = readUint64(arr, start + 4)
+  let id = readUint64(arr, start + 4)
   const checksum = readUint64(arr, start + 12)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
@@ -173,6 +175,12 @@ export const getMessage: BinaryMessageHandler = (
     return true
   }
 
+  let attachedCtx: AttachedCtx
+  if (route.ctx) {
+    attachedCtx = attachCtx(route.ctx, ctx, id)
+    id = attachedCtx.id
+  }
+
   const payload =
     len === nameLen + 21
       ? undefined
@@ -184,13 +192,14 @@ export const getMessage: BinaryMessageHandler = (
 
   authorize(
     route,
+    route.public,
     server,
     ctx,
     payload,
     isAuthorized,
     id,
     checksum,
-    false,
+    attachedCtx,
     isNotAuthorized,
   )
 

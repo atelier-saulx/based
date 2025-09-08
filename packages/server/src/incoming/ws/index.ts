@@ -22,7 +22,7 @@ const reader = (
   arr: Uint8Array,
   start: number,
 ): number => {
-  // decode from buffer
+  // Decode from buffer
   const { len, isDeflate, type } = decodeHeader(readUint32(arr, start))
   const next = len + start
 
@@ -80,21 +80,18 @@ const reader = (
   // type 7.x = subType
   if (type === incomingFunctionType.subType) {
     const subType = arr[start + 4]
-
     // type 7.0 = channelUnsubscribe
     if (subType === incomingFunctionSubType.channelUnsubscribe) {
       if (unsubscribeChannelMessage(arr, start, len, isDeflate, ctx, server)) {
         return next
       }
     }
-
     // type 7.1 = register stream
     if (subType === incomingFunctionSubType.registerStream) {
       if (registerStream(arr, start, len, isDeflate, ctx, server)) {
         return next
       }
     }
-
     // type 7.2 = chunk
     if (subType === incomingFunctionSubType.chunk) {
       if (receiveChunkStream(arr, start, len, isDeflate, ctx, server)) {
