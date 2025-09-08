@@ -367,6 +367,10 @@ struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_ty
 {
     struct SelvaTypeEntryFind find = { type };
 
+    if (type == 0) {
+        return nullptr;
+    }
+
     return RB_FIND(SelvaTypeEntryIndex, (typeof_unqual(db->types.index) *)&db->types.index, (struct SelvaTypeEntry *)&find);
 }
 
