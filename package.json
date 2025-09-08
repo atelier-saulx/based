@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
@@ -74,4 +74,3 @@
     "postmark": "3.0.15"
   }
 }
-
