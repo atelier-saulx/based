@@ -29,13 +29,11 @@ enum hll_type {
 #define DSC false
 
 typedef struct {
-    struct {
-        uint8_t is_sparse : 1;
-        uint8_t dirty : 1;
-        uint8_t precision : 6;
-    };
-    uint16_t num_registers;
     uint32_t count;
+    uint16_t num_registers;
+    uint16_t precision : 14;
+    uint8_t is_sparse : 1;
+    uint8_t dirty : 1;
     uint8_t registers[];
 } HyperLogLogPlusPlus;
 
@@ -108,6 +106,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
             hll->num_registers = new_num_registers;
+            fprintf(stderr, "regs: %zu\n", hll->num_registers *  sizeof(uint8_t));
         }
     }
 
