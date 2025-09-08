@@ -2207,6 +2207,7 @@ static void reference_meta_destroy(
         struct SelvaNode *meta_node;
 
         meta_type = selva_get_type_by_index(db, efc->meta_node_type);
+        assert(meta_type);
         meta_node = selva_find_node(meta_type, ref->meta);
         ref->meta = 0;
 
