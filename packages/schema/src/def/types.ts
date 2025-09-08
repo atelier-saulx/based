@@ -95,6 +95,7 @@ export type PropDef = {
   vectorBaseType?: VectorBaseType
   vectorSize?: number
   // edge stuff
+  edgeNodeTypeId?: number,
   edgeMainLen?: 0
   hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }
