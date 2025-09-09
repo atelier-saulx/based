@@ -29,13 +29,11 @@ enum hll_type {
 #define DSC false
 
 typedef struct {
-    struct {
-        uint8_t is_sparse : 1;
-        uint8_t dirty : 1;
-        uint8_t precision : 6;
-    };
-    uint16_t num_registers;
     uint32_t count;
+    uint16_t num_registers;
+    uint16_t precision : 14;
+    uint8_t is_sparse : 1;
+    uint8_t dirty : 1;
     uint8_t registers[];
 } HyperLogLogPlusPlus;
 
@@ -51,19 +49,19 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     }
 
     size_t len;
+    HyperLogLogPlusPlus *hll;
 
     if (is_sparse) {
-        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
-
+        hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
         hll->is_sparse = true;
         hll->precision = precision;
         hll->num_registers = 0;
     } else {
         uint32_t num_registers = 1ULL << precision;
 
-        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(uint8_t));
-        HyperLogLogPlusPlus *hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
+        (void)selva_string_append(hllss, nullptr, num_registers * sizeof(hll->registers[0]));
 
+        hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
         hll->is_sparse = false;
         hll->precision = precision;
         hll->num_registers = num_registers;
@@ -104,7 +102,7 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
             new_num_registers |= new_num_registers >> 16;
             new_num_registers++;
 
-            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(uint8_t));
+            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(hll->registers[0]));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
             hll->num_registers = new_num_registers;
@@ -132,7 +130,7 @@ void hll_array_union(struct selva_string *result, struct selva_string *hll_array
     hll_init(result, precision, DENSE);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
 
-    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(uint8_t));
+    memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(result_hll->registers[0]));
 
     for (size_t j = 1; j < count; j++) {
         HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
