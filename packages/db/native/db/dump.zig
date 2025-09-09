@@ -11,8 +11,16 @@ pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
 
+    // TODO Replace this
+    const tst = "hello world";
+    var com: selva.selva_dump_common_data = .{
+        .meta_data = tst.ptr,
+        .meta_len = tst.len,
+        .errlog_buf = null,
+        .errlog_size = 0,
+    };
     var res: c.napi_value = null;
-    const rc = selva.selva_dump_save_common(ctx.selva, sdb_filename.ptr);
+    const rc = selva.selva_dump_save_common(ctx.selva, &com, sdb_filename.ptr);
     _ = c.napi_create_int32(napi_env, rc, &res);
     return res;
 }
@@ -48,9 +56,21 @@ pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
     const errlog = napi.get([]u8, napi_env, args[2]) catch return null;
 
+    var com: selva.selva_dump_common_data = .{
+        .errlog_buf = errlog.ptr,
+        .errlog_size = errlog.len,
+    };
+    const rc = selva.selva_dump_load_common(ctx.selva, &com, sdb_filename.ptr);
     var res: c.napi_value = null;
-    const rc = selva.selva_dump_load_common(ctx.selva, sdb_filename.ptr, errlog.ptr, errlog.len);
     _ = c.napi_create_int32(napi_env, rc, &res);
+
+    if (com.meta_data != null) {
+        // TODO read this data
+        const metadata: [*]u8 = @ptrCast(@constCast(com.meta_data));
+        std.log.err("meta: {s}", .{ metadata[0..com.meta_len] });
+        selva.selva_free(@constCast(com.meta_data));
+    }
+
     return res;
 }
 
