@@ -2211,7 +2211,7 @@ static void reference_meta_destroy(
         meta_node = selva_find_node(meta_type, ref->meta);
         ref->meta = 0;
 
-        if (!keep_meta_node) {
+        if (meta_node && !keep_meta_node) {
             selva_del_node(db, meta_type, meta_node, dirty_cb, dirty_ctx);
         }
     }
