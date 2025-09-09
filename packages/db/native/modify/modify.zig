@@ -114,7 +114,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 5;
             },
             types.ModOp.UPSERT => {
-
                 // do the query
                 const writeIndex = read(u32, operation, 0);
                 const updateIndex = read(u32, operation, 4);

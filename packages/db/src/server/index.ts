@@ -1,6 +1,13 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { StrictSchema, langCodesMap, LangName, MigrateFns, SchemaChecksum, strictSchemaToDbSchema } from '@based/schema'
+import {
+  StrictSchema,
+  langCodesMap,
+  LangName,
+  MigrateFns,
+  SchemaChecksum,
+  strictSchemaToDbSchema,
+} from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
@@ -379,9 +386,11 @@ export class DbServer extends DbShared {
           return null
         }
 
-        const lastId =
-          typeDef.lastId ||
-          native.getTypeInfo(typeDef.id, this.dbCtxExternal)[1]
+        const lastId = Math.max(
+          typeDef.lastId,
+          native.getTypeInfo(typeDef.id, this.dbCtxExternal)[1],
+        )
+
         // TODO replace this with Ctx.created
         const offset = lastId
         // write the offset into payload for zig to use
@@ -428,7 +437,7 @@ export class DbServer extends DbShared {
   }
 
   addToQueryQueue(resolve, buf) {
-    if (this.queryQueue.size === 16777216) {
+    if (this.queryQueue.size === 16_777_216) {
       resolve(new Error('Query queue exceeded'))
       return
     }

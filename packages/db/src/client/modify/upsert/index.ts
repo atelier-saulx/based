@@ -5,11 +5,11 @@ import { getValidSchema } from '../validate.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import { reserve } from '../resize.js'
 import { Ctx } from '../Ctx.js'
-import { writeUint32 } from '@based/utils'
+import { deepMerge, writeUint32 } from '@based/utils'
 import { writeCreate } from '../create/index.js'
 import { handleError } from '../error.js'
 import { writeUpdate } from '../update/index.js'
-import { schedule } from '../drain.js'
+import { drain, schedule } from '../drain.js'
 import { TYPE_CURSOR_SIZE, writeTypeCursor } from '../cursor.js'
 
 const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
@@ -35,6 +35,61 @@ const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
   return aliases
 }
 
+const promisify = (tmp: Upserting) => {
+  if (!tmp.promise) {
+    const id = tmp.id
+    if (id) {
+      tmp.promise = Promise.resolve(id)
+    } else {
+      tmp.promise = new Promise((resolve) => {
+        const aliases = filterAliases(tmp.payload, tmp.tree)
+        resolve(
+          tmp.db
+            .query(tmp.type, aliases)
+            .get()
+            .then((res) => {
+              const obj = res.toObject()
+              return Array.isArray(obj) ? obj[0].id : obj.id
+            }),
+        )
+      })
+    }
+  }
+  return tmp.promise
+}
+
+class Upserting implements Promise<number> {
+  constructor(db: DbClient, type: string, payload: any, tree: SchemaPropTree) {
+    this.db = db
+    this.type = type
+    this.payload = payload
+    this.tree = tree
+  }
+  db: DbClient
+  type: string
+  payload: any
+  tree: SchemaPropTree
+  id: number
+  promise?: Promise<number>;
+  [Symbol.toStringTag]: 'UpsertPromise'
+  then<Res1 = number, Res2 = never>(
+    onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
+    onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
+  ): Promise<Res1 | Res2> {
+    return promisify(this).then(onfulfilled, onrejected)
+  }
+
+  catch<Res = never>(
+    onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
+  ): Promise<number | Res> {
+    return promisify(this).catch(onrejected)
+  }
+
+  finally(onfinally?: (() => void) | null): Promise<number> {
+    return promisify(this).finally(onfinally)
+  }
+}
+
 const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
   for (const key in obj) {
     const def = tree[key]
@@ -46,7 +101,6 @@ const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
       writeAliases(ctx, def, val)
     } else if (def.typeIndex === ALIAS) {
       const buf = ENCODER.encode(val)
-      console.log(def.prop, obj, buf, val, buf.byteLength)
       reserve(ctx, 1 + 4 + buf.byteLength)
       writeU8(ctx, def.prop)
       writeU32(ctx, buf.byteLength)
@@ -67,7 +121,16 @@ export function upsert(
   ctx.schema = schema
 
   try {
-    console.log('-->', payload)
+    if (schema.id in ctx.created) {
+      if (ctx.created[schema.id] > 0) {
+        drain(db, ctx)
+      }
+    } else {
+      // TODO: reconsider this, do we want to rely on the client info or on the server lastId (latter would require more waiting)?
+      ctx.created[schema.id] = 0
+      ctx.max -= 6
+      ctx.size -= 6
+    }
     reserve(ctx, TYPE_CURSOR_SIZE + 1 + 4 + 4)
     writeTypeCursor(ctx)
     writeU8(ctx, UPSERT)
@@ -75,60 +138,14 @@ export function upsert(
     ctx.index += 8
     ctx.id = 0
     writeAliases(ctx, schema.tree, payload)
-    console.log('write:', ctx.index)
     writeUint32(ctx.array, ctx.index - start, start)
     writeCreate(ctx, schema, {}, opts)
-    console.log('update:', ctx.index)
     writeUint32(ctx.array, ctx.index - start, start + 4)
     ctx.id = 0
     writeUpdate(ctx, schema, payload, opts)
     schedule(db, ctx)
-    // return {
-    //   then() {
-    //     const aliases = filterAliases(payload, schema.tree)
-    //     const q = db.query(type, aliases)
-    //   },
-    // }
+    return new Upserting(db, type, payload, schema.tree)
   } catch (e) {
     return handleError(db, ctx, upsert, arguments, e)
   }
-
-  // try {
-  //   // writeTypeCursor(ctx)
-  //   // upsert mode
-  //   // do a create (if not exist)
-  //   //
-  // } catch (e) {}
-
-  // db.create(type, obj, opts)
-
-  // const tree = db.schemaTypesParsed[type].tree
-  // const aliases = filterAliases(obj, tree)
-  // const q = db.query(type, aliases)
-
-  // q.register()
-
-  // if (db.upserting.has(q.id)) {
-  //   const store = db.upserting.get(q.id)
-  //   deepMerge(store.o, obj)
-  //   return store.p
-  // }
-
-  // const store = {
-  //   o: obj,
-  //   p: q.get().then((res) => {
-  //     db.upserting.delete(q.id)
-  //     if (res.length === 0) {
-  //       return db.create(type, store.o, opts)
-  //     } else {
-  //       const obj = res.toObject()
-  //       const id = Array.isArray(obj) ? obj[0].id : obj.id
-  //       // don't call update if it's not necessary
-  //       return db.update(type, id, store.o, opts)
-  //     }
-  //   }),
-  // }
-
-  // db.upserting.set(q.id, store)
-  // return store.p
 }

@@ -13,7 +13,7 @@ import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
-import { schedule } from '../drain.js'
+import { drain, schedule } from '../drain.js'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
@@ -187,9 +187,6 @@ export const writeCreate = (
   writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)
-  if (schema.id in ctx.created) {
-    ctx.created[schema.id]++
-  }
 }
 
 export function create(
@@ -201,7 +198,6 @@ export function create(
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
   ctx.start = ctx.index
-
   try {
     if (payload.id) {
       if (!opts?.unsafe) {
@@ -210,6 +206,9 @@ export function create(
       ctx.id = payload.id
     } else {
       if (!(schema.id in ctx.created)) {
+        if (ctx.cursor.upserting) {
+          drain(db, ctx)
+        }
         ctx.created[schema.id] = 0
         ctx.max -= 6
         ctx.size -= 6
@@ -217,6 +216,9 @@ export function create(
       ctx.id = ctx.created[schema.id] + 1
     }
     writeCreate(ctx, schema, payload, opts)
+    if (schema.id in ctx.created) {
+      ctx.created[schema.id]++
+    }
     const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp

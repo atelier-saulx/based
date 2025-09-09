@@ -29,9 +29,7 @@ export class Tmp implements Promise<number> {
     this.batch = ctx.batch
     this.#id = id
   }
-  get [Symbol.toStringTag]() {
-    return 'ModifyPromise'
-  }
+  [Symbol.toStringTag]: 'ModifyPromise'
   #id: number
   get error(): Error {
     if (!this.batch.ready) {
