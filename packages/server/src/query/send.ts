@@ -5,12 +5,6 @@ import { destroyObs } from './destroy.js'
 import { sendErrorData } from '../sendError.js'
 import { ActiveObservable, ObservableError } from './types.js'
 
-// const getId = () => {
-// get attached stuff
-// just send ID + extra thing (new protocol type) that holds the original id
-// this creates the mapping on the client and it immediatly has the extra thing
-// }
-
 export const sendObsWs = (
   ctx: Context<WebSocketSession>,
   buffer: Uint8Array,
@@ -22,7 +16,8 @@ export const sendObsWs = (
   }
   if (ctx.session.v < 2) {
     if (obs.reusedCache) {
-      const prevId = updateId(buffer, obs.id)
+      const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+      const prevId = updateId(buffer, id)
       if (isDiff) {
         ctx.session.ws.send(diffV2toV1(buffer), true, false)
       } else {
@@ -38,7 +33,8 @@ export const sendObsWs = (
     }
   } else {
     if (obs.reusedCache) {
-      const prevId = updateId(buffer, obs.id)
+      const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+      const prevId = updateId(buffer, id)
       ctx.session.ws.send(buffer, true, false)
       buffer.set(prevId, 4)
     } else {

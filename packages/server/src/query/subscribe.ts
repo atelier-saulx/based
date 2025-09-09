@@ -20,6 +20,7 @@ export const subscribeWs = (
   }
 
   const obs = getObsAndStopRemove(server, id)
+  id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
 
   if (ctx.session.v < 2) {
     session.obs.add(id)

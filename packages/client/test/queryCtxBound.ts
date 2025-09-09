@@ -37,8 +37,9 @@ test('query ctx bound', async (t: T) => {
             console.log('SNURF -> CTX:', ctx) //
 
             const counter = setInterval(() => {
+              console.log('snurp?')
               update(++cnt)
-            }, 1000)
+            }, 100)
             return () => {
               clearInterval(counter)
             }
@@ -75,8 +76,9 @@ test('query ctx bound', async (t: T) => {
       console.log('DERPY? update', d)
     })
 
-  await wait(500)
+  await wait(1000)
 
+  console.log('--> CLOSE')
   close()
   // close2()
   t.true(true)
