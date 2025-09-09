@@ -125,59 +125,6 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     }
 }
 
-// void hll_array_union(struct selva_string *result, struct selva_string *hll_array, size_t count) {
-
-//     HyperLogLogPlusPlus *first_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[0], nullptr); //&?
-
-//     uint8_t precision = first_hll->precision;
-//     size_t num_registers = first_hll->num_registers;
-
-//     hll_init(result, precision, DENSE);
-//     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, nullptr);
-
-//     memcpy(result_hll->registers, first_hll->registers, num_registers * sizeof(result_hll->registers[0]));
-
-//     for (size_t j = 1; j < count; j++) {
-//         HyperLogLogPlusPlus *current_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(&hll_array[j], nullptr);
-//         if (current_hll->precision != precision) {
-//             db_panic("Precision mismatch is unsupported.");
-//         }
-
-// #if __ARM_NEON
-//         for (size_t i = 0; i < num_registers; i += 4) {
-//             uint32x4_t a = {
-//                 current_hll->registers[i],
-//                 current_hll->registers[i + 1],
-//                 current_hll->registers[i + 2],
-//                 current_hll->registers[i + 3],
-//             };
-//             uint32x4_t b = {
-//                 result_hll->registers[i],
-//                 result_hll->registers[i + 1],
-//                 result_hll->registers[i + 2],
-//                 result_hll->registers[i + 3],
-//             };
-//             uint32x4_t c;
-
-//             c = vmaxq_u32(a, b);
-//             result_hll->registers[i] = c[0];
-//             result_hll->registers[i + 1] = c[1];
-//             result_hll->registers[i + 2] = c[2];
-//             result_hll->registers[i + 3] = c[3];
-//         }
-// #else
-//         for (size_t i = 0; i < num_registers; i += 4) {
-//             result_hll->registers[i] = max(current_hll->registers[i], result_hll->registers[i]);
-//             result_hll->registers[i + 1] = max(current_hll->registers[i + 1], result_hll->registers[i + 1]);
-//             result_hll->registers[i + 2] = max(current_hll->registers[i + 2], result_hll->registers[i + 2]);
-//             result_hll->registers[i + 3] = max(current_hll->registers[i + 3], result_hll->registers[i + 3]);
-//         }
-// #endif
-//     }
-
-//     result_hll->dirty = true;
-// }
-
 void hll_union(struct selva_string *result, struct selva_string *hll_new) {
 
     size_t result_len, new_len;
