@@ -19,25 +19,25 @@ import { readUint24 } from '@based/utils'
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'function'>
-> = (route, spec, server, ctx, payload, requestId) => {
+> = (props, spec) => {
   if (spec.relay) {
-    const client = server.clients[spec.relay.client]
+    const client = props.server.clients[spec.relay.client]
     if (!client) {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        requestId,
+      sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+        route: props.route,
+        requestId: props.id,
         err: new Error('Cannot find client ' + spec.relay),
       })
       return
     }
 
     client
-      .call(spec.relay.target ?? spec.name, payload)
+      .call(spec.relay.target ?? spec.name, props.payload)
       .then(async (v: any) => {
-        ctx.session?.ws.send(
+        props.ctx.session?.ws.send(
           encodeFunctionResponse(
-            requestId,
-            ctx.session.v < 2
+            props.id,
+            props.ctx.session.v < 2
               ? valueToBufferV1(v, true)
               : valueToBuffer(v, true),
           ),
@@ -46,9 +46,9 @@ const sendFunction: IsAuthorizedHandler<
         )
       })
       .catch((err: Error) => {
-        sendError(server, ctx, BasedErrorCode.FunctionError, {
-          route,
-          requestId,
+        sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+          route: props.route,
+          requestId: props.id,
           err,
         })
       })
@@ -57,26 +57,27 @@ const sendFunction: IsAuthorizedHandler<
   }
 
   spec
-    .fn(server.client, payload, ctx)
+    .fn(props.server.client, props.payload, props.ctx)
     .then(async (v) => {
       // TODO: allow chunked REPLY!
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
-
-      ctx.session?.ws.send(
+      props.ctx.session?.ws.send(
         encodeFunctionResponse(
-          requestId,
-          ctx.session.v < 2 ? valueToBufferV1(v, true) : valueToBuffer(v, true),
+          props.id,
+          props.ctx.session.v < 2
+            ? valueToBufferV1(v, true)
+            : valueToBuffer(v, true),
         ),
         true,
         false,
       )
     })
     .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        requestId,
+      sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+        route: props.route,
+        requestId: props.id,
         err,
       })
     })
@@ -137,7 +138,14 @@ export const functionMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(route, route.public, server, ctx, payload, sendFunction, requestId)
+  authorize({
+    route,
+    server,
+    ctx,
+    payload,
+    authorized: sendFunction,
+    id: requestId,
+  })
 
   return true
 }

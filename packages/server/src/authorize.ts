@@ -6,84 +6,81 @@ import {
   Context,
   WebSocketSession,
   BasedRoute,
-  BasedFunctionConfig,
   isBasedRoute,
+  BasedFunctionConfig,
 } from '@based/functions'
 import { installFn } from './installFn.js'
 import { AttachedCtx } from './query/types.js'
 
 type ClientSession = HttpSession | WebSocketSession
 
+export type AuthorizeProps<
+  S extends ClientSession = ClientSession,
+  R extends BasedRoute = BasedRoute,
+  P = any,
+> = {
+  route: R
+  server: BasedServer
+  ctx: Context<S>
+  payload: P
+  authorized: IsAuthorizedHandler<S, R, P>
+  error?: AuthErrorHandler<S, R, P>
+  id?: number
+  checksum?: number
+  attachedCtx?: AttachedCtx
+  missingFunction?: AuthErrorHandler<S, R, P>
+}
+
 export type IsAuthorizedHandler<
   S extends ClientSession = ClientSession,
   R extends BasedRoute = BasedRoute,
   P = any,
 > = (
-  route: R,
+  props: AuthorizeProps<S, R, P>,
   spec: BasedFunctionConfig<R['type']>,
-  server: BasedServer,
-  ctx: Context<S>,
-  payload: P,
-  id?: number,
-  checksum?: number,
-  attachedCtx?: AttachedCtx,
 ) => void
 
 export type AuthErrorHandler<
   S extends ClientSession = ClientSession,
   R extends BasedRoute = BasedRoute,
   P = any,
-> = (
-  route: R,
-  server: BasedServer,
-  ctx: Context<S>,
-  payload: P,
-  id?: number,
-  checksum?: number,
-  err?: Error,
-) => true | void
+> = (props: AuthorizeProps<S, R, P>, err?: Error) => true | void
 
-export const defaultAuthError: AuthErrorHandler = (
-  route,
-  server,
-  ctx,
-  _payload,
-  id,
-  _checksum,
-  err,
-) => {
+export const defaultAuthError: AuthErrorHandler = (props, err) => {
   const code = err
     ? BasedErrorCode.AuthorizeFunctionError
     : BasedErrorCode.AuthorizeRejectedError
 
-  if (id && isBasedRoute('channel', route)) {
-    sendError(server, ctx, code, {
+  const route = props.route
+
+  if (props.id && isBasedRoute('channel', route)) {
+    sendError(props.server, props.ctx, code, {
       route,
       err,
-      channelId: id,
+      channelId: props.id,
     })
     return
   }
 
-  if (id && isBasedRoute('query', route)) {
-    sendError(server, ctx, code, {
+  if (props.id && isBasedRoute('query', route)) {
+    sendError(props.server, props.ctx, code, {
       route,
       err,
-      observableId: id,
+      observableId: props.id,
     })
     return
   }
 
-  if (id) {
-    sendError(server, ctx, code, {
+  if (props.id) {
+    sendError(props.server, props.ctx, code, {
       route,
       err,
-      requestId: id,
+      requestId: props.id,
     })
     return
   }
 
-  sendError(server, ctx, code, {
+  sendError(props.server, props.ctx, code, {
     route,
     err,
   })
@@ -94,57 +91,45 @@ export const authorize = <
   R extends BasedRoute = BasedRoute,
   P = any,
 >(
-  route: R,
-  publicRoute: boolean,
-  server: BasedServer,
-  ctx: Context<S>,
-  payload: P,
-  isAuthorized: IsAuthorizedHandler<S, R, P>,
-  id?: number,
-  checksum?: number,
-  attachedCtx?: AttachedCtx,
-  authError: AuthErrorHandler<S, R, P> = defaultAuthError,
+  props: AuthorizeProps<S, R, P>,
+  publicHandler: boolean = props.route.public,
 ) => {
-  if (!ctx.session) {
+  if (!props.ctx.session) {
     return
   }
-  installFn(server, ctx, route, id).then((spec) => {
+  const onAuthError = props.error ?? defaultAuthError
+  installFn(props.server, props.ctx, props.route, props.id).then((spec) => {
+    if (!props.ctx.session) {
+      return
+    }
+
     if (spec === null) {
+      if (props.missingFunction) {
+        props.missingFunction(props)
+      }
       return
     }
-    if (publicRoute === true) {
-      isAuthorized(route, spec, server, ctx, payload, id, checksum, attachedCtx)
+
+    if (publicHandler === true) {
+      props.authorized(props, spec)
       return
     }
-    const authorize = spec.authorize || server.auth.authorize
-    authorize(server.client, ctx, route.name, payload)
+
+    const authorize = spec.authorize || props.server.auth.authorize
+
+    authorize(props.server.client, props.ctx, props.route.name, props.payload)
       .then((ok) => {
-        if (!ctx.session || !ok) {
-          if (
-            ctx.session &&
-            !authError(route, server, ctx, payload, id, checksum)
-          ) {
-            defaultAuthError(route, server, ctx, payload, id, checksum)
+        if (!props.ctx.session || !ok) {
+          if (props.ctx.session && !onAuthError(props)) {
+            defaultAuthError(props)
           }
           return
         }
-        isAuthorized(
-          route,
-          spec,
-          server,
-          ctx,
-          payload,
-          id,
-          checksum,
-          attachedCtx,
-        )
+        props.authorized(props, spec)
       })
       .catch((err) => {
-        if (
-          ctx.session &&
-          !authError(route, server, ctx, payload, id, checksum, err)
-        ) {
-          defaultAuthError(route, server, ctx, payload, id, checksum, err)
+        if (props.ctx.session && !onAuthError(props, err)) {
+          defaultAuthError(props, err)
         }
       })
   })

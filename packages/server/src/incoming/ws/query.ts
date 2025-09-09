@@ -23,40 +23,48 @@ import { attachCtx } from '../../query/attachCtx.js'
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _spec, server, ctx, payload, id, checksum, attachCtx) => {
-  if (hasObs(server, id)) {
-    subscribeWs(server, id, checksum, ctx)
+> = (props) => {
+  if (hasObs(props.server, props.id)) {
+    subscribeWs(props.server, props.id, props.checksum, props.ctx)
     return
   }
-  const session = ctx.session
-  if (!session.obs.has(id)) {
+  const session = props.ctx.session
+  if (!session.obs.has(props.id)) {
     return
   }
-  if (!hasObs(server, id)) {
-    const obs = createObs(server, route.name, id, payload, false, attachCtx)
-    if (obs.attachCtx.authState) {
-      if (!ctx.session?.attachedAuthStateObs) {
-        ctx.session.attachedAuthStateObs = new Set()
+  if (!hasObs(props.server, props.id)) {
+    // use authorize props
+    const obs = createObs(
+      props.server,
+      props.route.name,
+      props.id,
+      props.payload,
+      false,
+      props.attachedCtx,
+    )
+    if (obs.attachCtx?.authState) {
+      if (!props.ctx.session?.attachedAuthStateObs) {
+        props.ctx.session.attachedAuthStateObs = new Set()
       }
-      ctx.session.attachedAuthStateObs.add(id)
+      props.ctx.session.attachedAuthStateObs.add(props.id)
     }
   }
-  subscribeWs(server, id, checksum, ctx)
+  subscribeWs(props.server, props.id, props.checksum, props.ctx)
 }
 
 export const queryIsNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, server, ctx, payload, id, checksum) => {
-  const session = ctx.session
+> = (props) => {
+  const session = props.ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
   session.unauthorizedObs.add({
-    id,
-    checksum,
-    name: route.name,
-    payload,
+    id: props.id,
+    checksum: props.checksum,
+    route: props.route,
+    payload: props.payload,
   })
 }
 
@@ -135,18 +143,17 @@ export const subscribeMessage: BinaryMessageHandler = (
 
   session.obs.add(id)
 
-  authorize(
+  authorize({
     route,
-    route.public,
     server,
     ctx,
     payload,
-    enableSubscribe,
+    authorized: enableSubscribe,
     id,
     checksum,
     attachedCtx,
-    queryIsNotAuthorized,
-  )
+    error: queryIsNotAuthorized,
+  })
 
   return true
 }
@@ -154,8 +161,8 @@ export const subscribeMessage: BinaryMessageHandler = (
 export const unsubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
-  _len,
-  _isDeflate,
+  len,
+  isDeflate,
   ctx,
   server,
 ) => {

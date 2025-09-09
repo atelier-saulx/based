@@ -12,7 +12,6 @@ import { BasedErrorCode } from '@based/errors'
 import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 import mimeTypes from 'mime-types'
 import { parseQuery } from '@based/utils'
-import { installFn } from '../../../../installFn.js'
 import { authorize } from '../../../../authorize.js'
 
 export const singleStream = (
@@ -50,42 +49,36 @@ export const singleStream = (
     extension: getExtension(type) || '',
   }
 
-  authorize(
+  authorize({
     route,
-    route.public,
     server,
     ctx,
-    streamPayload,
-    () => {
-      installFn(server, ctx, route).then((spec) => {
-        if (spec === null) {
-          stream.destroy()
-          return
-        }
-        const fn = spec.fn
-        fn(server.client, streamPayload, ctx)
-          .catch((err) => {
-            sendError(server, ctx, BasedErrorCode.FunctionError, {
-              err,
-              route,
-            })
+    payload: streamPayload,
+    authorized: ({ server, ctx, route }, spec) => {
+      if (spec === null) {
+        stream.destroy()
+        return
+      }
+      const fn = spec.fn
+      fn(server.client, streamPayload, ctx)
+        .catch((err) => {
+          sendError(server, ctx, BasedErrorCode.FunctionError, {
+            err,
+            route,
           })
-          .then((r) => {
-            if (stream.readableEnded || stream.listenerCount('data') === 0) {
+        })
+        .then((r) => {
+          if (stream.readableEnded || stream.listenerCount('data') === 0) {
+            sendHttpResponse(ctx, r)
+          } else {
+            stream.on('end', () => {
               sendHttpResponse(ctx, r)
-            } else {
-              stream.on('end', () => {
-                sendHttpResponse(ctx, r)
-              })
-            }
-          })
-      })
+            })
+          }
+        })
     },
-    undefined,
-    undefined,
-    undefined,
-    () => {
+    error: () => {
       stream.destroy()
     },
-  )
+  })
 }

@@ -17,14 +17,11 @@ import {
   extendChannel,
 } from '../../channel/index.js'
 
-export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
-  route: BasedRoute<'channel'>,
-  _spec: BasedFunctionConfig<'channel'>,
-  server,
-  ctx,
-  payload
-) => {
-  // parse channel payload / msg
+export const httpPublish: IsAuthorizedHandler<
+  HttpSession,
+  BasedRoute<'channel'>
+> = async ({ route, server, ctx, payload }) => {
+  // Parse channel payload / msg
   let msg: any
   let channelPayload: any
   if (typeof payload !== 'object') {
@@ -80,7 +77,7 @@ export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
               ? typeof status === 'string'
                 ? status
                 : String(status)
-              : undefined
+              : undefined,
           )
         }
         await spec.httpResponse(server.client, payload, undefined, send, ctx)

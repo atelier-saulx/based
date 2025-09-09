@@ -17,28 +17,30 @@ import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
 import zlib from 'node:zlib'
 import { BasedServer } from '../../server.js'
-import { readUint64, readUint24, readUint32 } from '@based/utils'
+import { readUint24, readUint32 } from '@based/utils'
 
 const startStreamFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'stream'>
-> = (route, spec, server, ctx, payload, streamRequestId) => {
+> = (props, spec) => {
   spec
-    .fn(server.client, payload, ctx)
+    .fn(props.server.client, props.payload, props.ctx)
     .then(async (v) => {
-      ctx.session?.ws.send(
+      props.ctx.session?.ws.send(
         encodeStreamFunctionResponse(
-          streamRequestId,
-          ctx.session.v < 2 ? valueToBufferV1(v, true) : valueToBuffer(v, true),
+          props.id,
+          props.ctx.session.v < 2
+            ? valueToBufferV1(v, true)
+            : valueToBuffer(v, true),
         ),
         true,
         false,
       )
     })
     .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        streamRequestId,
+      sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+        route: props.route,
+        streamRequestId: props.id,
         err,
       })
     })
@@ -174,23 +176,20 @@ export const registerStream: BinaryMessageHandler = (
 
   ctx.session.streams[reqId] = streamPayload
 
-  authorize(
+  authorize({
     route,
-    route.public,
     server,
     ctx,
-    streamPayload,
-    startStreamFunction,
-    reqId,
-    undefined,
-    undefined,
-    () => {
+    payload: streamPayload,
+    authorized: startStreamFunction,
+    id: reqId,
+    error: () => {
       if (!ctx.session) {
         return
       }
       delete ctx.session.streams[reqId]
     },
-  )
+  })
 
   return true
 }

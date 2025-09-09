@@ -81,50 +81,54 @@ const getFromExisting = (
 const isAuthorized: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _spec, server, ctx, payload, id, checksum) => {
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, checksum)
+> = (props, spec) => {
+  if (hasObs(props.server, props.id)) {
+    getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const session = ctx.session
+  const session = props.ctx.session
   if (!session) {
     return
   }
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, checksum)
+  if (hasObs(props.server, props.id)) {
+    getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const obs = createObs(server, route.name, id, payload, true)
-
-  if (server.queryEvents) {
-    server.queryEvents.get(obs, ctx)
+  const obs = createObs(
+    props.server,
+    props.route.name,
+    props.id,
+    props.payload,
+    true,
+  )
+  if (props.server.queryEvents) {
+    props.server.queryEvents.get(obs, props.ctx)
   }
-
-  if (!session.obs.has(id)) {
+  if (!session.obs.has(props.id)) {
     subscribeNext(obs, (err) => {
       if (err) {
-        sendObsGetError(server, ctx, id, err)
+        sendObsGetError(props.server, props.ctx, props.id, err)
       } else {
-        sendGetData(server, id, obs, checksum, ctx)
+        sendGetData(props.server, props.id, obs, props.checksum, props.ctx)
       }
     })
   }
-  start(server, id)
+  start(props.server, props.id)
 }
 
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _server, ctx, payload, id, checksum) => {
-  const session = ctx.session
+> = (props) => {
+  const session = props.ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
   session.unauthorizedObs.add({
-    id,
-    checksum,
-    name: route.name,
-    payload,
+    id: props.id,
+    checksum: props.checksum,
+    route: props.route,
+    payload: props.payload,
   })
 }
 
@@ -190,18 +194,17 @@ export const getMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(
+  authorize({
     route,
-    route.public,
     server,
     ctx,
     payload,
-    isAuthorized,
+    authorized: isAuthorized,
     id,
     checksum,
     attachedCtx,
-    isNotAuthorized,
-  )
+    error: isNotAuthorized,
+  })
 
   return true
 }

@@ -213,13 +213,8 @@ const getFromExisting = (
 }
 
 const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
-  route,
+  { route, server, ctx, payload, id, checksum },
   spec,
-  server,
-  ctx,
-  payload,
-  id,
-  checksum,
 ) => {
   const name = route.name
 
@@ -254,15 +249,13 @@ export const httpGet = (
   if (!ctx.session) {
     return
   }
-
-  authorize(
+  authorize({
     route,
-    route.public,
     server,
     ctx,
     payload,
-    isAuthorized,
-    genObservableId(route.name, payload),
+    authorized: isAuthorized,
+    id: genObservableId(route.name, payload),
     checksum,
-  )
+  })
 }

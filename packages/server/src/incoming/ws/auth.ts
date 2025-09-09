@@ -15,10 +15,8 @@ import {
 } from '@based/functions'
 import { BinaryMessageHandler } from './types.js'
 import { enableChannelSubscribe } from './channelSubscribe.js'
-import { installFn } from '../../installFn.js'
 import { authorize } from '../../authorize.js'
 import { unsubscribeWs } from '../../query/unsub.js'
-import { AttachedCtx } from '../../query/types.js'
 import { attachCtx } from '../../query/attachCtx.js'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) => {
@@ -61,72 +59,67 @@ export const reEvaulateUnauthorized = (
       if (attachedCtx.id !== id) {
         session.attachedAuthStateObs.delete(id)
         unsubscribeWs(server, id, ctx)
-
+        id = attachedCtx.id
         const payload = obs.payload
         const checksum = obs.checksum
-
-        id = attachedCtx.id
-
-        if (session.obs.has(id)) {
-          // Allready subscribed to this id
-          return // tmp
-        }
-
         const route: BasedRoute<'query'> = {
           name: obs.name,
           type: 'query',
         }
-
         session.obs.add(id)
-
-        authorize(
+        authorize({
           route,
-          route.public,
           server,
           ctx,
           payload,
-          enableSubscribe,
+          authorized: enableSubscribe,
           id,
           checksum,
           attachedCtx,
-          queryIsNotAuthorized,
-        )
+          error: queryIsNotAuthorized,
+        })
       }
     })
   }
 
   if (session.unauthorizedObs?.size) {
     session.unauthorizedObs.forEach((obs) => {
-      const { id, name, checksum, payload } = obs
-      const route: BasedRoute<'query'> = {
-        name,
-        type: 'query',
-      }
-      // have to check here... AND ADD EVAL
-      installFn(server, ctx, route, id).then((spec) => {
-        authorize(route, route.public, server, ctx, payload, () => {
+      const { id, route, checksum, payload } = obs
+      authorize({
+        route,
+        server,
+        ctx,
+        payload,
+        id,
+        checksum,
+        authorized: (props, spec) => {
           session.unauthorizedObs.delete(obs)
-          if (spec) {
-            enableSubscribe(route, spec, server, ctx, payload, id, checksum)
-          }
-        })
+          enableSubscribe(props, spec)
+        },
+        missingFunction: () => {
+          // handle this differently...
+          session.unauthorizedObs.delete(obs)
+        },
       })
     })
   }
   if (session.unauthorizedChannels?.size) {
     session.unauthorizedChannels.forEach((channel) => {
-      const { id, name, payload } = channel
-      const route: BasedRoute<'channel'> = {
-        name,
-        type: 'channel',
-      }
-      installFn(server, ctx, route, id).then((spec) => {
-        authorize(route, route.public, server, ctx, payload, () => {
+      const { id, route, payload } = channel
+      authorize({
+        route,
+        server,
+        ctx,
+        id,
+        payload,
+        authorized: (props, spec) => {
           session.unauthorizedChannels.delete(channel)
-          if (spec) {
-            enableChannelSubscribe(route, spec, server, ctx, payload, id)
-          }
-        })
+          enableChannelSubscribe(props, spec)
+        },
+        missingFunction: () => {
+          // handle this differently...
+          session.unauthorizedChannels.delete(channel)
+        },
       })
     })
   }
@@ -172,6 +165,8 @@ export const authMessage: BinaryMessageHandler = (
         sendAuthMessage(ctx, verified)
         return true
       }
+
+      // Make re-eval always here for ATTACH CTX
 
       reEvaulateUnauthorized(server, ctx)
 

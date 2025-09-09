@@ -37,6 +37,4 @@ export const handleFakeWs = (
       handleBinary(server, ctx, total)
     }
   })
-
-  // ctx.session.res.end('blap')
 }
