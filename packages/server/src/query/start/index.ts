@@ -6,6 +6,7 @@ import { relay } from './relay.js'
 import { isBasedFunctionConfig } from '@based/functions'
 
 export const start = (server: BasedServer, id: number) => {
+  //  really hate this look up here
   const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {
@@ -13,6 +14,7 @@ export const start = (server: BasedServer, id: number) => {
     delete obs.closeFunction
   }
 
+  // just call start as a function handler - props with optional ctx potentialy
   const spec = server.functions.specs[obs.route.name]
 
   if (!spec || !isBasedFunctionConfig('query', spec)) {

@@ -55,13 +55,13 @@ test('query ctx bound', async (t: T) => {
     },
   })
 
-  const close2 = client
-    .query('counter', {
-      myQuery: 123,
-    })
-    .subscribe((d) => {
-      console.log('DERPY?')
-    })
+  // const close2 = client
+  //   .query('counter', {
+  //     myQuery: 123,
+  //   })
+  //   .subscribe((d) => {
+  //     console.log('DERPY?')
+  //   })
 
   await wait(500)
 
@@ -72,12 +72,12 @@ test('query ctx bound', async (t: T) => {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('DERPY?')
+      console.log('DERPY? update', d)
     })
 
   await wait(500)
 
   close()
-  close2()
+  // close2()
   t.true(true)
 })

@@ -10,7 +10,8 @@
   ],
   "exports": {
     "./db-read": "./dist/db-read/read.js",
-    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js"
+    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js",
+    "./client-server": "./dist/client-server/index.js"
   },
   "scripts": {
     "build": "tsc",

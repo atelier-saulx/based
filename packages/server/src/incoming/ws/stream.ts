@@ -19,6 +19,10 @@ import zlib from 'node:zlib'
 import { BasedServer } from '../../server.js'
 import { readUint24, readUint32 } from '@based/utils'
 import { FunctionHandler } from '../../types.js'
+import {
+  FunctionClientType,
+  FunctionClientSubType,
+} from '@based/protocol/client-server'
 
 const startStreamFunction: FunctionHandler<
   WebSocketSession,
@@ -248,8 +252,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   }
 
   streamPayload.seqId = seqId === 255 ? 0 : seqId
-
-  // encoding can still be a thing for streams test with png's
 
   const chunk = !isDeflate
     ? arr.slice(infoLen + start, start + len)

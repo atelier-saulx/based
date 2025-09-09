@@ -9,7 +9,10 @@ import {
 import { handleQuery } from './query.js'
 import { handleFunction } from './function.js'
 import { readUint32 } from '@based/utils'
-import { incomingFunctionType } from '../../ws/types.js'
+import {
+  FunctionServerType,
+  FunctionServerSubType,
+} from '@based/protocol/client-server'
 
 const reader = (
   server: BasedServer,
@@ -20,7 +23,7 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint32(arr, start))
   const next = len + start
 
-  if (type === incomingFunctionType.function) {
+  if (type === FunctionServerType.function) {
     const p = handleFunction(arr, start, len, isDeflate, ctx, server)
     if (p) {
       return [next, p]
@@ -30,8 +33,8 @@ const reader = (
   }
 
   if (
-    type === incomingFunctionType.subscribe ||
-    type === incomingFunctionType.get
+    type === FunctionServerType.subscribe ||
+    type === FunctionServerType.get
   ) {
     const p = handleQuery(arr, start, len, isDeflate, ctx, server)
     if (p) {
@@ -41,19 +44,19 @@ const reader = (
     }
   }
 
-  if (type === incomingFunctionType.unsubscribe) {
+  if (type === FunctionServerType.unsubscribe) {
     return [next]
   }
 
-  if (type === incomingFunctionType.auth) {
+  if (type === FunctionServerType.auth) {
     return [next]
   }
 
-  if (type === incomingFunctionType.channelSubscribe) {
+  if (type === FunctionServerType.channelSubscribe) {
     return [next]
   }
 
-  if (type === incomingFunctionType.channelPublish) {
+  if (type === FunctionServerType.channelPublish) {
     return [next]
   }
 
