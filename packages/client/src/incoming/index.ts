@@ -303,7 +303,7 @@ export const incoming = async (client: BasedClient, data: any) => {
               handlers.onError(error)
             } else {
               console.error(
-                getTargetInfo(client, payload.observableId, 'sub'),
+                // getTargetInfo(client, payload.observableId, 'sub'),
                 error,
               )
             }

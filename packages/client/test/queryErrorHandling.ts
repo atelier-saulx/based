@@ -43,9 +43,12 @@ test('query error nested', async (t: T) => {
           type: 'query',
           fn: (based, _, update) => {
             update(1)
-            return based.query('nested').subscribe((r) => {
-              r.flap.snurp
-            })
+            return based.query('nested').subscribe(
+              (r) => {
+                r.flap.snurp
+              },
+              () => {},
+            )
           },
         },
         asyncBla: {
@@ -66,7 +69,10 @@ test('query error nested', async (t: T) => {
   const closers = []
 
   client.connect({ url: t.context.ws })
-  client.query('bla').subscribe(() => {})
+  client.query('bla').subscribe(
+    () => {},
+    () => {},
+  )
   let errs = []
   await wait(10)
   client.query('bla', { x: 1 }).subscribe(
@@ -75,9 +81,15 @@ test('query error nested', async (t: T) => {
       errs.push(err)
     },
   )
-  client.query('bla', new Uint8Array(1000)).subscribe(() => {})
+  client.query('bla', new Uint8Array(1000)).subscribe(
+    () => {},
+    () => {},
+  )
 
-  client.query('asyncBla', new Uint8Array(1000)).subscribe(() => {})
+  client.query('asyncBla', new Uint8Array(1000)).subscribe(
+    () => {},
+    () => {},
+  )
 
   client.query('asyncBla', new Uint8Array(1000)).subscribe(
     () => {},
