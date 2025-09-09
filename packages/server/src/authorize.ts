@@ -1,52 +1,13 @@
-import { BasedServer } from './server.js'
 import { sendError } from './sendError.js'
 import { BasedErrorCode } from '@based/errors'
-import {
-  HttpSession,
-  Context,
-  WebSocketSession,
-  BasedRoute,
-  isBasedRoute,
-  BasedFunctionConfig,
-} from '@based/functions'
+import { BasedRoute, isBasedRoute } from '@based/functions'
 import { installFn } from './installFn.js'
-import { AttachedCtx } from './query/types.js'
+import { ClientSession, FunctionErrorHandler, FunctionProps } from './types.js'
 
-type ClientSession = HttpSession | WebSocketSession
-
-export type AuthorizeProps<
-  S extends ClientSession = ClientSession,
-  R extends BasedRoute = BasedRoute,
-  P = any,
-> = {
-  route: R
-  server: BasedServer
-  ctx: Context<S>
-  payload: P
-  authorized: IsAuthorizedHandler<S, R, P>
-  error?: AuthErrorHandler<S, R, P>
-  id?: number
-  checksum?: number
-  attachedCtx?: AttachedCtx
-  missingFunction?: AuthErrorHandler<S, R, P>
-}
-
-export type IsAuthorizedHandler<
-  S extends ClientSession = ClientSession,
-  R extends BasedRoute = BasedRoute,
-  P = any,
-> = (
-  props: AuthorizeProps<S, R, P>,
-  spec: BasedFunctionConfig<R['type']>,
-) => void
-
-export type AuthErrorHandler<
-  S extends ClientSession = ClientSession,
-  R extends BasedRoute = BasedRoute,
-  P = any,
-> = (props: AuthorizeProps<S, R, P>, err?: Error) => true | void
-
-export const defaultAuthError: AuthErrorHandler = (props, err) => {
+export const defaultAuthError: FunctionErrorHandler<ClientSession> = (
+  props,
+  err,
+) => {
   const code = err
     ? BasedErrorCode.AuthorizeFunctionError
     : BasedErrorCode.AuthorizeRejectedError
@@ -91,7 +52,7 @@ export const authorize = <
   R extends BasedRoute = BasedRoute,
   P = any,
 >(
-  props: AuthorizeProps<S, R, P>,
+  props: FunctionProps<S, R, P, true>,
   publicHandler: boolean = props.route.public,
 ) => {
   if (!props.ctx.session) {
@@ -104,14 +65,11 @@ export const authorize = <
     }
 
     if (spec === null) {
-      if (props.missingFunction) {
-        props.missingFunction(props)
-      }
       return
     }
 
     if (publicHandler === true) {
-      props.authorized(props, spec)
+      props.next(props, spec)
       return
     }
 
@@ -125,7 +83,7 @@ export const authorize = <
           }
           return
         }
-        props.authorized(props, spec)
+        props.next(props, spec)
       })
       .catch((err) => {
         if (props.ctx.session && !onAuthError(props, err)) {

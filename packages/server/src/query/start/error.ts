@@ -26,14 +26,19 @@ export const errorListener = (
       ? createError(
           server,
           {
-            session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
+            session: {
+              type: 'query',
+              id: obs.id,
+              name: obs.route.name,
+              headers: {},
+            },
           },
           BasedErrorCode.FunctionError,
           {
             err,
             observableId: obs.id,
             route: {
-              name: obs.name,
+              name: obs.route.name,
               type: 'query',
             },
           },

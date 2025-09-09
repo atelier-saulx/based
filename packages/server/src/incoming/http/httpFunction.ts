@@ -2,9 +2,9 @@ import { HttpSession, SendHttpResponse, BasedRoute } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
-import { IsAuthorizedHandler } from '../../authorize.js'
+import { FunctionHandler } from '../../types.js'
 
-export const httpFunction: IsAuthorizedHandler<
+export const httpFunction: FunctionHandler<
   HttpSession,
   BasedRoute<'http'>
 > = async ({ route, server, ctx, payload }, spec) => {

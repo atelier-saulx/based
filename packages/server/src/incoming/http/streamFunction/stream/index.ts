@@ -54,7 +54,7 @@ export const singleStream = (
     server,
     ctx,
     payload: streamPayload,
-    authorized: ({ server, ctx, route }, spec) => {
+    next: ({ server, ctx, route }, spec) => {
       if (spec === null) {
         stream.destroy()
         return

@@ -13,10 +13,10 @@ export const start = (server: BasedServer, id: number) => {
     delete obs.closeFunction
   }
 
-  const spec = server.functions.specs[obs.name]
+  const spec = server.functions.specs[obs.route.name]
 
   if (!spec || !isBasedFunctionConfig('query', spec)) {
-    console.warn('Cannot find observable function spec!', obs.name)
+    console.warn('Cannot find observable function spec!', obs.route.name)
     return
   }
 
@@ -96,7 +96,7 @@ export const start = (server: BasedServer, id: number) => {
         (err) => {
           errorListener(server, obs, err)
         },
-        obs.attachCtx?.ctx,
+        obs.attachedCtx?.ctx,
       )
       if (r instanceof Promise) {
         r.then((close) => {

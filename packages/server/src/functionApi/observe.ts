@@ -20,7 +20,7 @@ export const observe = (
   ctx: Context,
   payload: any,
   update: ObservableUpdateFunction,
-  error: ObserveErrorListener
+  error: ObserveErrorListener,
 ): (() => void) => {
   const id = genObservableId(name, payload)
 
@@ -30,7 +30,7 @@ export const observe = (
     'query',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   if (route === null) {
@@ -60,12 +60,12 @@ export const observe = (
       error(
         createError(server, ctx, BasedErrorCode.FunctionNotFound, {
           route,
-        })
+        }),
       )
       return
     }
     if (!hasObs(server, id)) {
-      createObs(server, name, id, payload)
+      createObs({ server, route, id, payload, ctx }, spec)
     }
     subscribeFunction(server, id, update)
   })

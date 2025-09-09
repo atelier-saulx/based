@@ -9,7 +9,7 @@ import {
 } from '../../protocol.js'
 import { BasedDataStream } from '@based/functions'
 import mimeTypes from 'mime-types'
-import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { rateLimitRequest } from '../../security.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
@@ -18,8 +18,9 @@ import { BasedErrorCode } from '@based/errors'
 import zlib from 'node:zlib'
 import { BasedServer } from '../../server.js'
 import { readUint24, readUint32 } from '@based/utils'
+import { FunctionHandler } from '../../types.js'
 
-const startStreamFunction: IsAuthorizedHandler<
+const startStreamFunction: FunctionHandler<
   WebSocketSession,
   BasedRoute<'stream'>
 > = (props, spec) => {
@@ -181,7 +182,7 @@ export const registerStream: BinaryMessageHandler = (
     server,
     ctx,
     payload: streamPayload,
-    authorized: startStreamFunction,
+    next: startStreamFunction,
     id: reqId,
     error: () => {
       if (!ctx.session) {

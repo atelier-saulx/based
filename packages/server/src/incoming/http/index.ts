@@ -287,7 +287,7 @@ export const httpHandler = (
           server,
           ctx,
           payload,
-          authorized: httpPublish,
+          next: httpPublish,
         },
         route.publicPublisher || route.public,
       )
@@ -301,7 +301,7 @@ export const httpHandler = (
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
-      authorize({ route, server, ctx, payload, authorized: basicFunction })
+      authorize({ route, server, ctx, payload, next: basicFunction })
     })
   }
 
@@ -311,7 +311,7 @@ export const httpHandler = (
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
-      authorize({ route, server, ctx, payload, authorized: httpFunction })
+      authorize({ route, server, ctx, payload, next: httpFunction })
     })
   }
 }

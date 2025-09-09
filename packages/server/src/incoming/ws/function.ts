@@ -10,13 +10,14 @@ import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
-import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@based/utils'
 import { readUint24 } from '@based/utils'
+import { FunctionHandler } from '../../types.js'
 
-const sendFunction: IsAuthorizedHandler<
+const sendFunction: FunctionHandler<
   WebSocketSession,
   BasedRoute<'function'>
 > = (props, spec) => {
@@ -143,7 +144,7 @@ export const functionMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    authorized: sendFunction,
+    next: sendFunction,
     id: requestId,
   })
 

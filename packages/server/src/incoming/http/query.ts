@@ -19,12 +19,14 @@ import {
   ActiveObservable,
   start,
   genObservableId,
+  createObsNoStart,
 } from '../../query/index.js'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { promisify } from 'node:util'
-import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
+import { FunctionHandler } from '../../types.js'
 
 const inflate = promisify(zlib.inflateRaw)
 
@@ -121,7 +123,7 @@ const sendGetResponseInternal = (
     if (!obs.cache) {
       sendError(server, ctx, BasedErrorCode.NoOservableCacheAvailable, {
         observableId: id,
-        route: { name: obs.name, type: 'query' },
+        route: { name: obs.route.name, type: 'query' },
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
@@ -212,23 +214,19 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
-  { route, server, ctx, payload, id, checksum },
+const isAuthorized: FunctionHandler<HttpSession, BasedRoute<'query'>> = (
+  props,
   spec,
 ) => {
-  const name = route.name
-
+  const { route, server, ctx, id, checksum } = props
   if (hasObs(server, id)) {
     getFromExisting(server, id, ctx, route, spec, checksum)
     return
   }
-
-  const obs = createObs(server, name, id, payload, true)
-
+  const obs = createObsNoStart(props, spec)
   if (server.queryEvents) {
     server.queryEvents.get(obs, ctx)
   }
-
   subscribeNext(obs, (err) => {
     if (err) {
       sendObsGetError(server, ctx, obs.id, err)
@@ -254,7 +252,7 @@ export const httpGet = (
     server,
     ctx,
     payload,
-    authorized: isAuthorized,
+    next: isAuthorized,
     id: genObservableId(route.name, payload),
     checksum,
   })

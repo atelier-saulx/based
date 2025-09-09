@@ -50,7 +50,7 @@ export const reEvaulateUnauthorized = (
   if (session.attachedAuthStateObs?.size) {
     session.attachedAuthStateObs.forEach((id) => {
       const obs = server.activeObservablesById.get(id)
-      const prevAttachedCtx = obs.attachCtx
+      const prevAttachedCtx = obs.attachedCtx
       const attachedCtx = attachCtx(
         prevAttachedCtx.config,
         ctx,
@@ -60,21 +60,15 @@ export const reEvaulateUnauthorized = (
         session.attachedAuthStateObs.delete(id)
         unsubscribeWs(server, id, ctx)
         id = attachedCtx.id
-        const payload = obs.payload
-        const checksum = obs.checksum
-        const route: BasedRoute<'query'> = {
-          name: obs.name,
-          type: 'query',
-        }
         session.obs.add(id)
         authorize({
-          route,
+          route: obs.route,
           server,
           ctx,
-          payload,
-          authorized: enableSubscribe,
+          payload: obs.payload,
+          next: enableSubscribe,
           id,
-          checksum,
+          checksum: obs.checksum,
           attachedCtx,
           error: queryIsNotAuthorized,
         })
@@ -92,13 +86,9 @@ export const reEvaulateUnauthorized = (
         payload,
         id,
         checksum,
-        authorized: (props, spec) => {
+        next: (props, spec) => {
           session.unauthorizedObs.delete(obs)
           enableSubscribe(props, spec)
-        },
-        missingFunction: () => {
-          // handle this differently...
-          session.unauthorizedObs.delete(obs)
         },
       })
     })
@@ -112,13 +102,9 @@ export const reEvaulateUnauthorized = (
         ctx,
         id,
         payload,
-        authorized: (props, spec) => {
+        next: (props, spec) => {
           session.unauthorizedChannels.delete(channel)
           enableChannelSubscribe(props, spec)
-        },
-        missingFunction: () => {
-          // handle this differently...
-          session.unauthorizedChannels.delete(channel)
         },
       })
     })

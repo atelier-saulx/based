@@ -15,7 +15,7 @@ const functionNotFound = (
   ctx: Context,
   route: BasedRoute,
   _type?: BasedFunctionTypes,
-  id?: number
+  id?: number,
 ) => {
   if (!isClientContext(ctx)) {
     return
@@ -25,15 +25,16 @@ const functionNotFound = (
     ctx,
     BasedErrorCode.FunctionNotFound,
     { type: route.type, name: route.name },
-    id
+    id,
   )
 }
 
+// make this a function hander as well
 export const installFn = async <R extends BasedRoute>(
   server: BasedServer,
   ctx: Context,
   route: R,
-  id?: number
+  id?: number,
 ): Promise<null | BasedFunctionConfig<R['type']>> => {
   if (!route) {
     return null
@@ -60,7 +61,7 @@ export const installFn = async <R extends BasedRoute>(
         ctx,
         BasedErrorCode.FunctionIsWrongType,
         { name, type },
-        id
+        id,
       )
       return null
     }

@@ -5,11 +5,7 @@ import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { installFn } from '../../installFn.js'
-import {
-  authorize,
-  IsAuthorizedHandler,
-  AuthErrorHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import {
   hasChannel,
@@ -20,8 +16,9 @@ import {
   extendChannel,
 } from '../../channel/index.js'
 import { readUint64 } from '@based/utils'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 
-export const enableChannelSubscribe: IsAuthorizedHandler<
+export const enableChannelSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'channel'>
 > = (props, spec) => {
@@ -39,7 +36,7 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
   subscribeChannel(props.server, props.id, props.ctx)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+const isNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'channel'>
 > = (props) => {
@@ -174,7 +171,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    authorized: enableChannelSubscribe,
+    next: enableChannelSubscribe,
     id,
     error: isNotAuthorized,
   })

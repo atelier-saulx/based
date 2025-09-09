@@ -1,5 +1,5 @@
 import { BasedServer } from '../server.js'
-import { createError, } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { Context, BasedRoute } from '@based/functions'
 import {
   genObservableId,
@@ -9,6 +9,7 @@ import {
   getObsAndStopRemove,
   destroyObs,
   start,
+  createObsNoStart,
 } from '../query/index.js'
 import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
@@ -20,7 +21,7 @@ const getObsData = (
   server: BasedServer,
   id: number,
   ctx: Context,
-  route: BasedRoute<'query'>
+  route: BasedRoute<'query'>,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -34,7 +35,7 @@ const getObsData = (
         route,
         observableId: id,
         err: obs.error.message,
-      })
+      }),
     )
     return
   }
@@ -58,7 +59,7 @@ export const get = (
   server: BasedServer,
   name: string,
   ctx: Context,
-  payload: any
+  payload: any,
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
     let route: BasedRoute<'query'>
@@ -68,7 +69,7 @@ export const get = (
         server.client.ctx,
         'query',
         server.functions.route(name),
-        name
+        name,
       )
       if (route === null) {
         reject(new Error(`[${name}] No session in ctx`))
@@ -87,13 +88,12 @@ export const get = (
           reject(
             createError(server, ctx, BasedErrorCode.FunctionNotFound, {
               route,
-            })
+            }),
           )
           return
         }
-
         if (!hasObs(server, id)) {
-          createObs(server, name, id, payload, true)
+          createObsNoStart({ server, route, id, payload, ctx }, spec)
           getObsData(resolve, reject, server, id, ctx, route)
           start(server, id)
         } else {

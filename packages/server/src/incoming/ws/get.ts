@@ -11,20 +11,18 @@ import {
   ActiveObservable,
   sendObsGetError,
   AttachedCtx,
+  createObsNoStart,
 } from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
-import {
-  AuthErrorHandler,
-  authorize,
-  IsAuthorizedHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
 import { attachCtx } from '../../query/attachCtx.js'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 
 const sendGetData = (
   server: BasedServer,
@@ -78,10 +76,10 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: IsAuthorizedHandler<
-  WebSocketSession,
-  BasedRoute<'query'>
-> = (props, spec) => {
+const isAuthorized: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (
+  props,
+  spec,
+) => {
   if (hasObs(props.server, props.id)) {
     getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
@@ -94,13 +92,7 @@ const isAuthorized: IsAuthorizedHandler<
     getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const obs = createObs(
-    props.server,
-    props.route.name,
-    props.id,
-    props.payload,
-    true,
-  )
+  const obs = createObsNoStart(props, spec)
   if (props.server.queryEvents) {
     props.server.queryEvents.get(obs, props.ctx)
   }
@@ -116,7 +108,7 @@ const isAuthorized: IsAuthorizedHandler<
   start(props.server, props.id)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+const isNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
 > = (props) => {
@@ -199,10 +191,10 @@ export const getMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    authorized: isAuthorized,
     id,
     checksum,
     attachedCtx,
+    next: isAuthorized,
     error: isNotAuthorized,
   })
 

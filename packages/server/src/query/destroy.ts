@@ -5,19 +5,18 @@ import { isBasedFunctionConfig } from '@based/functions'
 
 export const updateDestroyTimer = (
   server: BasedServer,
-  channel: ActiveObservable,
+  obs: ActiveObservable,
 ) => {
-  const spec = server.functions.specs[channel.name]
+  const spec = server.functions.specs[obs.route.name]
   if (!spec || !isBasedFunctionConfig('query', spec)) {
-    console.warn('destroyObs - Cannot find obs function spec -', channel.name)
+    console.warn('destroyObs - Cannot find obs function spec -', obs.route.name)
     return
   }
   const closeAfterIdleTime =
     spec.closeAfterIdleTime ?? server.functions.config.closeAfterIdleTime.query
-  channel.timeTillDestroy = closeAfterIdleTime
-  channel.closeAfterIdleTime = closeAfterIdleTime
+  obs.timeTillDestroy = closeAfterIdleTime
+  obs.closeAfterIdleTime = closeAfterIdleTime
   const closeTime = Math.round(closeAfterIdleTime / 2)
-
   if (closeTime < server.obsCleanupCycle) {
     server.obsCleanupCycle = closeTime
   }
@@ -33,7 +32,7 @@ export const destroyObs = (server: BasedServer, id: number) => {
   }
 
   if (obs.isDestroyed) {
-    console.error('obs allready destroyed', obs.name)
+    console.error('obs allready destroyed', obs.route.name)
     return
   }
 
@@ -46,7 +45,7 @@ export const destroyObs = (server: BasedServer, id: number) => {
     if (obs.timeTillDestroy) {
       obs.timeTillDestroy = null
       console.warn(
-        `Obs being destroyed while listeners are present ${obs.name} ${obs.id}`,
+        `Obs being destroyed while listeners are present ${obs.route.name} ${obs.id}`,
         obs.payload,
       )
     }

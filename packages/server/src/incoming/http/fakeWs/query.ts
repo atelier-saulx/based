@@ -4,6 +4,7 @@ import {
   hasObs,
   subscribeNext,
   start,
+  createObsNoStart,
 } from '../../../query/index.js'
 import { FakeBinaryMessageHandler } from './types.js'
 import {
@@ -17,6 +18,7 @@ import { verifyRoute } from '../../../verifyRoute.js'
 import { createError } from '../../../error/index.js'
 import { BasedErrorCode } from '@based/errors'
 import { readUint64 } from '@based/utils'
+import { authorize } from '../../../authorize.js'
 
 const EMPTY = Buffer.allocUnsafe(0)
 
@@ -63,63 +65,71 @@ export const handleQuery: FakeBinaryMessageHandler = (
     return
   }
 
-  // COMPARE CHECKSUMS
-  return new Promise(async (resolve, reject) => {
-    const isAuth =
-      route.public ||
-      (await server.auth
-        .authorize(server.client, ctx, route.name, payload)
-        .catch(() => false))
+  // // COMPARE CHECKSUMS
+  // return new Promise(async (resolve, reject) => {
+  //   authorize({
+  //     route,
+  //     id,
+  //     checksum,
 
-    if (!isAuth) {
-      const errorData = createError(
-        server,
-        ctx,
-        BasedErrorCode.AuthorizeRejectedError,
-        {
-          route,
-          observableId: id,
-        },
-      )
-      resolve(encodeErrorResponse(valueToBuffer(errorData, true)))
-      return
-    }
+  //     error: () => {},
+  //   })
 
-    if (hasObs(server, id)) {
-      const obs = getObsAndStopRemove(server, id)
-      if (obs.cache) {
-        if (obs.checksum === checksum) {
-          resolve(EMPTY)
-          return
-        }
-        const buffer = obs.cache
-        if (obs.reusedCache) {
-          const prevId = updateId(buffer, obs.id)
-          buffer.set(prevId, 4)
-        }
-        resolve(buffer)
-      } else {
-        resolve(EMPTY)
-      }
-      return
-    }
-    const obs = createObs(server, name, id, payload, true)
-    if (server.queryEvents) {
-      server.queryEvents.get(obs, ctx)
-    }
-    subscribeNext(obs, (err) => {
-      if (err) {
-        resolve(EMPTY)
-        // console.error('NOT HANDLED')
-      } else {
-        const buffer = obs.cache
-        if (obs.reusedCache) {
-          const prevId = updateId(buffer, obs.id)
-          buffer.set(prevId, 4)
-        }
-        resolve(buffer)
-      }
-    })
-    start(server, id)
-  })
+  //   const isAuth =
+  //     route.public ||
+  //     (await server.auth
+  //       .authorize(server.client, ctx, route.name, payload)
+  //       .catch(() => false))
+
+  //   if (!isAuth) {
+  //     const errorData = createError(
+  //       server,
+  //       ctx,
+  //       BasedErrorCode.AuthorizeRejectedError,
+  //       {
+  //         route,
+  //         observableId: id,
+  //       },
+  //     )
+  //     resolve(encodeErrorResponse(valueToBuffer(errorData, true)))
+  //     return
+  //   }
+
+  //   if (hasObs(server, id)) {
+  //     const obs = getObsAndStopRemove(server, id)
+  //     if (obs.cache) {
+  //       if (obs.checksum === checksum) {
+  //         resolve(EMPTY)
+  //         return
+  //       }
+  //       const buffer = obs.cache
+  //       if (obs.reusedCache) {
+  //         const prevId = updateId(buffer, obs.id)
+  //         buffer.set(prevId, 4)
+  //       }
+  //       resolve(buffer)
+  //     } else {
+  //       resolve(EMPTY)
+  //     }
+  //     return
+  //   }
+  //   const obs = createObsNoStart(props, spec)
+  //   if (server.queryEvents) {
+  //     server.queryEvents.get(obs, ctx)
+  //   }
+  //   subscribeNext(obs, (err) => {
+  //     if (err) {
+  //       resolve(EMPTY)
+  //       // console.error('NOT HANDLED')
+  //     } else {
+  //       const buffer = obs.cache
+  //       if (obs.reusedCache) {
+  //         const prevId = updateId(buffer, obs.id)
+  //         buffer.set(prevId, 4)
+  //       }
+  //       resolve(buffer)
+  //     }
+  //   })
+  //   start(server, id)
+  // })
 }

@@ -3,13 +3,14 @@ import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { BinaryMessageHandler } from './types.js'
 import { extendChannel, hasChannel } from '../../channel/index.js'
-import { IsAuthorizedHandler, authorize } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
 import { readUint64 } from '@based/utils'
+import { FunctionHandler } from '../../types.js'
 
-const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
+const publish: FunctionHandler<WebSocketSession, BasedRoute<'channel'>> = (
   props,
   spec,
 ) => {
@@ -99,7 +100,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
         )
 
   authorize(
-    { route, server, ctx, payload, authorized: publish, id },
+    { route, server, ctx, payload, next: publish, id },
     route.publicPublisher,
   )
 

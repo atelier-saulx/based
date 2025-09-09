@@ -11,19 +11,16 @@ import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
-import {
-  authorize,
-  IsAuthorizedHandler,
-  AuthErrorHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
 import { attachCtx } from '../../query/attachCtx.js'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 
-export const enableSubscribe: IsAuthorizedHandler<
+export const enableSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (props) => {
+> = (props, spec) => {
   if (hasObs(props.server, props.id)) {
     subscribeWs(props.server, props.id, props.checksum, props.ctx)
     return
@@ -33,15 +30,7 @@ export const enableSubscribe: IsAuthorizedHandler<
     return
   }
   if (!hasObs(props.server, props.id)) {
-    // use authorize props
-    const obs = createObs(
-      props.server,
-      props.route.name,
-      props.id,
-      props.payload,
-      false,
-      props.attachedCtx,
-    )
+    const obs = createObs(props, spec)
     if (obs.attachCtx?.authState) {
       if (!props.ctx.session?.attachedAuthStateObs) {
         props.ctx.session.attachedAuthStateObs = new Set()
@@ -52,7 +41,7 @@ export const enableSubscribe: IsAuthorizedHandler<
   subscribeWs(props.server, props.id, props.checksum, props.ctx)
 }
 
-export const queryIsNotAuthorized: AuthErrorHandler<
+export const queryIsNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
 > = (props) => {
@@ -148,7 +137,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    authorized: enableSubscribe,
+    next: enableSubscribe,
     id,
     checksum,
     attachedCtx,
