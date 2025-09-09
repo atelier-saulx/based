@@ -57,48 +57,58 @@ export const authorize = <
 ): Promise<
   FunctionProps<S, R, P> & { spec: BasedFunctionConfig<R['type']> }
 > => {
-  return new Promise((resolve) => {
-    if (!props.ctx.session) {
-      return
-    }
-    const onAuthError = props.error ?? defaultAuthError
-    installFn(props).then((spec) => {
+  return {
+    // @ts-ignore (higher perf then a promise)
+    then: (resolve) => {
       if (!props.ctx.session) {
         return
       }
+      const onAuthError = props.error ?? defaultAuthError
+      installFn(props).then((spec) => {
+        if (!props.ctx.session) {
+          return
+        }
 
-      if (spec === null) {
-        return
-      }
+        if (spec === null) {
+          return
+        }
 
-      if (publicHandler === true) {
-        // @ts-ignore
-        props.spec = spec
-        // @ts-ignore
-        resolve(props)
-        return
-      }
-
-      const authorize = spec.authorize || props.server.auth.authorize
-
-      authorize(props.server.client, props.ctx, props.route.name, props.payload)
-        .then((ok) => {
-          if (!props.ctx.session || !ok) {
-            if (props.ctx.session && !onAuthError(props)) {
-              defaultAuthError(props)
-            }
-            return
-          }
+        if (publicHandler === true) {
           // @ts-ignore
           props.spec = spec
           // @ts-ignore
           resolve(props)
-        })
-        .catch((err) => {
-          if (props.ctx.session && !onAuthError(props, err)) {
-            defaultAuthError(props, err)
-          }
-        })
-    })
-  })
+          return
+        }
+
+        const authorize = spec.authorize || props.server.auth.authorize
+
+        // non async auth as option?
+
+        authorize(
+          props.server.client,
+          props.ctx,
+          props.route.name,
+          props.payload,
+        )
+          .then((ok) => {
+            if (!props.ctx.session || !ok) {
+              if (props.ctx.session && !onAuthError(props)) {
+                defaultAuthError(props)
+              }
+              return
+            }
+            // @ts-ignore
+            props.spec = spec
+            // @ts-ignore
+            resolve(props)
+          })
+          .catch((err) => {
+            if (props.ctx.session && !onAuthError(props, err)) {
+              defaultAuthError(props, err)
+            }
+          })
+      })
+    },
+  }
 }

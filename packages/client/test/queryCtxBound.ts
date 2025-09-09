@@ -12,7 +12,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test.skip('query ctx bound', async (t: T) => {
+test('query ctx bound', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
