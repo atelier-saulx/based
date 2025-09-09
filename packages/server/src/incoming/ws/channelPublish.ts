@@ -12,18 +12,17 @@ import { FunctionHandler } from '../../types.js'
 
 const publish: FunctionHandler<WebSocketSession, BasedRoute<'channel'>> = (
   props,
-  spec,
 ) => {
   const channel = props.server.activeChannelsById.get(props.id)
   if (!channel) {
     return
   }
   try {
-    if (spec.relay) {
-      const client = props.server.clients[spec.relay.client]
+    if (props.spec.relay) {
+      const client = props.server.clients[props.spec.relay.client]
       client.channel(channel.name, channel.payload).publish(props.payload)
     } else {
-      spec.publisher(
+      props.spec.publisher(
         props.server.client,
         channel.payload,
         props.payload,
@@ -99,9 +98,8 @@ export const channelPublishMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(
-    { route, server, ctx, payload, next: publish, id },
-    route.publicPublisher,
+  authorize({ route, server, ctx, payload, id }, route.publicPublisher).then(
+    publish,
   )
 
   return true

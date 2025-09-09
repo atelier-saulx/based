@@ -7,12 +7,7 @@ import {
 import { BasedServer } from '../../server.js'
 import { enableSubscribe, queryIsNotAuthorized } from './query.js'
 import { rateLimitRequest } from '../../security.js'
-import {
-  AuthState,
-  WebSocketSession,
-  Context,
-  BasedRoute,
-} from '@based/functions'
+import { AuthState, WebSocketSession, Context } from '@based/functions'
 import { BinaryMessageHandler } from './types.js'
 import { enableChannelSubscribe } from './channelSubscribe.js'
 import { authorize } from '../../authorize.js'
@@ -66,12 +61,11 @@ export const reEvaulateUnauthorized = (
           server,
           ctx,
           payload: obs.payload,
-          next: enableSubscribe,
           id,
           checksum: obs.checksum,
           attachedCtx,
           error: queryIsNotAuthorized,
-        })
+        }).then(enableSubscribe)
       }
     })
   }
@@ -86,10 +80,9 @@ export const reEvaulateUnauthorized = (
         payload,
         id,
         checksum,
-        next: (props, spec) => {
-          session.unauthorizedObs.delete(obs)
-          enableSubscribe(props, spec)
-        },
+      }).then((props) => {
+        session.unauthorizedObs.delete(obs)
+        enableSubscribe(props)
       })
     })
   }
@@ -102,10 +95,9 @@ export const reEvaulateUnauthorized = (
         ctx,
         id,
         payload,
-        next: (props, spec) => {
-          session.unauthorizedChannels.delete(channel)
-          enableChannelSubscribe(props, spec)
-        },
+      }).then((props) => {
+        session.unauthorizedChannels.delete(channel)
+        enableChannelSubscribe(props)
       })
     })
   }

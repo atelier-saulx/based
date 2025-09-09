@@ -15,7 +15,11 @@ export type FunctionHandler<
   S extends Session = Session,
   R extends BasedRoute = BasedRoute,
   P = any,
-> = (props: FunctionProps<S, R, P>, spec: BasedFunctionConfig<R['type']>) => any
+> = (
+  props: FunctionProps<S, R, P> & {
+    spec: BasedFunctionConfig<R['type']>
+  },
+) => any
 
 export type FunctionErrorHandler<
   S extends Session = Session,
@@ -27,21 +31,13 @@ export type FunctionProps<
   S extends Session = Session,
   R extends BasedRoute = BasedRoute,
   P = any,
-  needNext extends boolean = false,
 > = {
   route: R
   server: BasedServer
   ctx: Context<S>
-  payload: P
-  next?: FunctionHandler<S, R, P>
+  payload?: P
   error?: FunctionErrorHandler<S, R, P>
   id?: number
   checksum?: number
   attachedCtx?: AttachedCtx
-} & (needNext extends true
-  ? {
-      next: FunctionHandler<S, R, P>
-    }
-  : {
-      next?: FunctionHandler<S, R, P>
-    })
+}

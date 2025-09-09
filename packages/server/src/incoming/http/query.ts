@@ -214,16 +214,13 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: FunctionHandler<HttpSession, BasedRoute<'query'>> = (
-  props,
-  spec,
-) => {
+const get: FunctionHandler<HttpSession, BasedRoute<'query'>> = (props) => {
   const { route, server, ctx, id, checksum } = props
   if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, route, spec, checksum)
+    getFromExisting(server, id, ctx, route, props.spec, checksum)
     return
   }
-  const obs = createObsNoStart(props, spec)
+  const obs = createObsNoStart(props)
   if (server.queryEvents) {
     server.queryEvents.get(obs, ctx)
   }
@@ -231,7 +228,7 @@ const isAuthorized: FunctionHandler<HttpSession, BasedRoute<'query'>> = (
     if (err) {
       sendObsGetError(server, ctx, obs.id, err)
     } else {
-      sendGetResponse(route, spec, server, id, obs, checksum, ctx)
+      sendGetResponse(route, props.spec, server, id, obs, checksum, ctx)
     }
   })
   start(server, id)
@@ -252,8 +249,7 @@ export const httpGet = (
     server,
     ctx,
     payload,
-    next: isAuthorized,
     id: genObservableId(route.name, payload),
     checksum,
-  })
+  }).then(get)
 }

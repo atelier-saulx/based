@@ -6,18 +6,17 @@ import { BasedRoute, Session } from '@based/functions'
 
 export const createObs: FunctionHandler<Session, BasedRoute<'query'>> = (
   props,
-  spec,
 ): ActiveObservable => {
-  const obs = createObsNoStart(props, spec)
+  const obs = createObsNoStart(props)
   // pass spec
   start(props.server, props.id)
   return obs
 }
 
-export const createObsNoStart: FunctionHandler<Session, BasedRoute<'query'>> = (
-  { server, id, payload, route, attachedCtx },
-  spec,
-): ActiveObservable => {
+export const createObsNoStart: FunctionHandler<
+  Session,
+  BasedRoute<'query'>
+> = ({ server, id, payload, route, attachedCtx }): ActiveObservable => {
   if (hasObs(server, id)) {
     const msg = `Already has observable ${name} ${id}`
     console.error(msg)

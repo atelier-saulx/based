@@ -20,7 +20,7 @@ import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 export const enableSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (props, spec) => {
+> = (props) => {
   if (hasObs(props.server, props.id)) {
     subscribeWs(props.server, props.id, props.checksum, props.ctx)
     return
@@ -30,7 +30,7 @@ export const enableSubscribe: FunctionHandler<
     return
   }
   if (!hasObs(props.server, props.id)) {
-    const obs = createObs(props, spec)
+    const obs = createObs(props)
     if (obs.attachCtx?.authState) {
       if (!props.ctx.session?.attachedAuthStateObs) {
         props.ctx.session.attachedAuthStateObs = new Set()
@@ -137,12 +137,11 @@ export const subscribeMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    next: enableSubscribe,
     id,
     checksum,
     attachedCtx,
     error: queryIsNotAuthorized,
-  })
+  }).then(enableSubscribe)
 
   return true
 }

@@ -48,7 +48,7 @@ export const httpPublish: FunctionHandler<
   const name = route.name
   const id = genObservableId(name, channelPayload)
 
-  installFn(server, ctx, route).then(async (spec) => {
+  installFn({ server, ctx, route }).then(async (spec) => {
     if (spec === null) {
       return
     }

@@ -54,31 +54,30 @@ export const singleStream = (
     server,
     ctx,
     payload: streamPayload,
-    next: ({ server, ctx, route }, spec) => {
-      if (spec === null) {
-        stream.destroy()
-        return
-      }
-      const fn = spec.fn
-      fn(server.client, streamPayload, ctx)
-        .catch((err) => {
-          sendError(server, ctx, BasedErrorCode.FunctionError, {
-            err,
-            route,
-          })
-        })
-        .then((r) => {
-          if (stream.readableEnded || stream.listenerCount('data') === 0) {
-            sendHttpResponse(ctx, r)
-          } else {
-            stream.on('end', () => {
-              sendHttpResponse(ctx, r)
-            })
-          }
-        })
-    },
     error: () => {
       stream.destroy()
     },
+  }).then(({ server, ctx, route, spec }) => {
+    if (spec === null) {
+      stream.destroy()
+      return
+    }
+    const fn = spec.fn
+    fn(server.client, streamPayload, ctx)
+      .catch((err) => {
+        sendError(server, ctx, BasedErrorCode.FunctionError, {
+          err,
+          route,
+        })
+      })
+      .then((r) => {
+        if (stream.readableEnded || stream.listenerCount('data') === 0) {
+          sendHttpResponse(ctx, r)
+        } else {
+          stream.on('end', () => {
+            sendHttpResponse(ctx, r)
+          })
+        }
+      })
   })
 }

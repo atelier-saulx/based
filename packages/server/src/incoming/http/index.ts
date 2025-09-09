@@ -287,10 +287,9 @@ export const httpHandler = (
           server,
           ctx,
           payload,
-          next: httpPublish,
         },
         route.publicPublisher || route.public,
-      )
+      ).then(httpPublish)
     })
     return
   }
@@ -301,7 +300,7 @@ export const httpHandler = (
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
-      authorize({ route, server, ctx, payload, next: basicFunction })
+      authorize({ route, server, ctx, payload }).then(basicFunction)
     })
   }
 
@@ -311,7 +310,7 @@ export const httpHandler = (
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
-      authorize({ route, server, ctx, payload, next: httpFunction })
+      authorize({ route, server, ctx, payload }).then(httpFunction)
     })
   }
 }

@@ -21,7 +21,7 @@ import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 export const enableChannelSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'channel'>
-> = (props, spec) => {
+> = (props) => {
   if (hasChannel(props.server, props.id)) {
     subscribeChannel(props.server, props.id, props.ctx)
     return
@@ -120,7 +120,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       // This has to be done instantly so publish can be received immediatly
       const channel = createChannel(server, name, id, payload, true)
 
-      installFn(server, ctx, tmpRoute, id).then((spec) => {
+      installFn({ server, ctx, route: tmpRoute, id }).then((spec) => {
         if (spec === null) {
           channel.doesNotExist = true
         } else {
@@ -171,10 +171,9 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    next: enableChannelSubscribe,
     id,
     error: isNotAuthorized,
-  })
+  }).then(enableChannelSubscribe)
 
   return true
 }

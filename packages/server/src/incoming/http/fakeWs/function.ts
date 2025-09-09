@@ -44,52 +44,52 @@ export const handleFunction: FakeBinaryMessageHandler = (
 
   const isOldClient = ctx.session.authState.v < 2
 
-  const payload =
-    len === nameLen + 8
-      ? undefined
-      : decodePayload(
-          new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
-          isDeflate,
-          isOldClient,
-        )
+  // const payload =
+  //   len === nameLen + 8
+  //     ? undefined
+  //     : decodePayload(
+  //         new Uint8Array(arr.slice(startByte + 8 + nameLen, startByte + len)),
+  //         isDeflate,
+  //         isOldClient,
+  //       )
 
-  return installFn(server, ctx, route).then(async (spec) => {
-    const isAuth =
-      route.public ||
-      (await server.auth
-        .authorize(server.client, ctx, route.name, payload)
-        .catch(() => false))
+  // return installFn(server, ctx, route).then(async (spec) => {
+  //   const isAuth =
+  //     route.public ||
+  //     (await server.auth
+  //       .authorize(server.client, ctx, route.name, payload)
+  //       .catch(() => false))
 
-    if (!isAuth) {
-      const errorData = createError(
-        server,
-        ctx,
-        BasedErrorCode.AuthorizeRejectedError,
-        {
-          route,
-          requestId,
-        },
-      )
-      return encodeErrorResponse(valueToBuffer(errorData, true))
-    }
+  //   if (!isAuth) {
+  //     const errorData = createError(
+  //       server,
+  //       ctx,
+  //       BasedErrorCode.AuthorizeRejectedError,
+  //       {
+  //         route,
+  //         requestId,
+  //       },
+  //     )
+  //     return encodeErrorResponse(valueToBuffer(errorData, true))
+  //   }
 
-    return spec
-      .fn(server.client, payload, ctx)
-      .then((v) => {
-        return encodeFunctionResponse(requestId, valueToBuffer(v, true))
-      })
-      .catch((err) => {
-        const errorData = createError(
-          server,
-          ctx,
-          BasedErrorCode.FunctionError,
-          {
-            route,
-            requestId,
-            err,
-          },
-        )
-        return encodeErrorResponse(valueToBuffer(errorData, true))
-      })
-  })
+  //   return spec
+  //     .fn(server.client, payload, ctx)
+  //     .then((v) => {
+  //       return encodeFunctionResponse(requestId, valueToBuffer(v, true))
+  //     })
+  //     .catch((err) => {
+  //       const errorData = createError(
+  //         server,
+  //         ctx,
+  //         BasedErrorCode.FunctionError,
+  //         {
+  //           route,
+  //           requestId,
+  //           err,
+  //         },
+  //       )
+  //       return encodeErrorResponse(valueToBuffer(errorData, true))
+  //     })
+  // })
 }

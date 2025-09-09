@@ -14,6 +14,7 @@ import {
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
 
+// handle this
 export const observe = (
   server: BasedServer,
   name: string,
@@ -23,6 +24,8 @@ export const observe = (
   error: ObserveErrorListener,
 ): (() => void) => {
   const id = genObservableId(name, payload)
+
+  // handle attached
 
   const route = verifyRoute(
     server,
@@ -52,7 +55,7 @@ export const observe = (
     return close
   }
 
-  installFn(server, server.client.ctx, route).then((spec) => {
+  installFn({ server, ctx: server.client.ctx, route }).then((spec) => {
     if (isClosed) {
       return
     }
@@ -65,7 +68,7 @@ export const observe = (
       return
     }
     if (!hasObs(server, id)) {
-      createObs({ server, route, id, payload, ctx }, spec)
+      createObs({ server, route, id, payload, ctx, spec })
     }
     subscribeFunction(server, id, update)
   })

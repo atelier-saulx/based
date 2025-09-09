@@ -4,7 +4,6 @@ import { Context, BasedRoute } from '@based/functions'
 import {
   genObservableId,
   hasObs,
-  createObs,
   subscribeNext,
   getObsAndStopRemove,
   destroyObs,
@@ -62,6 +61,8 @@ export const get = (
   payload: any,
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
+    // handle attached
+
     let route: BasedRoute<'query'>
     try {
       route = verifyRoute(
@@ -83,7 +84,7 @@ export const get = (
     const id = genObservableId(name, payload)
 
     if (!hasObs(server, id)) {
-      installFn(server, server.client.ctx, route).then((spec) => {
+      installFn({ server, ctx: server.client.ctx, route }).then((spec) => {
         if (!spec) {
           reject(
             createError(server, ctx, BasedErrorCode.FunctionNotFound, {
@@ -93,7 +94,7 @@ export const get = (
           return
         }
         if (!hasObs(server, id)) {
-          createObsNoStart({ server, route, id, payload, ctx }, spec)
+          createObsNoStart({ server, route, id, payload, ctx, spec })
           getObsData(resolve, reject, server, id, ctx, route)
           start(server, id)
         } else {

@@ -7,7 +7,7 @@ import { FunctionHandler } from '../../types.js'
 export const httpFunction: FunctionHandler<
   HttpSession,
   BasedRoute<'http'>
-> = async ({ route, server, ctx, payload }, spec) => {
+> = async ({ route, server, ctx, payload, spec }) => {
   const send: SendHttpResponse = (responseData, headers, status) => {
     if (!ctx.session) {
       return

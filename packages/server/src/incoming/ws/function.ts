@@ -20,20 +20,20 @@ import { FunctionHandler } from '../../types.js'
 const sendFunction: FunctionHandler<
   WebSocketSession,
   BasedRoute<'function'>
-> = (props, spec) => {
-  if (spec.relay) {
-    const client = props.server.clients[spec.relay.client]
+> = (props) => {
+  if (props.spec.relay) {
+    const client = props.server.clients[props.spec.relay.client]
     if (!client) {
       sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
         route: props.route,
         requestId: props.id,
-        err: new Error('Cannot find client ' + spec.relay),
+        err: new Error('Cannot find client ' + props.spec.relay),
       })
       return
     }
 
     client
-      .call(spec.relay.target ?? spec.name, props.payload)
+      .call(props.spec.relay.target ?? props.spec.name, props.payload)
       .then(async (v: any) => {
         props.ctx.session?.ws.send(
           encodeFunctionResponse(
@@ -57,7 +57,7 @@ const sendFunction: FunctionHandler<
     return
   }
 
-  spec
+  props.spec
     .fn(props.server.client, props.payload, props.ctx)
     .then(async (v) => {
       // TODO: allow chunked REPLY!
@@ -144,9 +144,8 @@ export const functionMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    next: sendFunction,
     id: requestId,
-  })
+  }).then(sendFunction)
 
   return true
 }

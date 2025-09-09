@@ -23,8 +23,8 @@ import { FunctionHandler } from '../../types.js'
 const startStreamFunction: FunctionHandler<
   WebSocketSession,
   BasedRoute<'stream'>
-> = (props, spec) => {
-  spec
+> = (props) => {
+  props.spec
     .fn(props.server.client, props.payload, props.ctx)
     .then(async (v) => {
       props.ctx.session?.ws.send(
@@ -182,15 +182,14 @@ export const registerStream: BinaryMessageHandler = (
     server,
     ctx,
     payload: streamPayload,
-    next: startStreamFunction,
     id: reqId,
     error: () => {
       if (!ctx.session) {
-        return
+        return true
       }
       delete ctx.session.streams[reqId]
     },
-  })
+  }).then(startStreamFunction)
 
   return true
 }

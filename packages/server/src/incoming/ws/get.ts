@@ -1,7 +1,6 @@
 import { decodePayload, decodeName, encodeGetResponse } from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import {
-  createObs,
   destroyObs,
   subscribeNext,
   getObsAndStopRemove,
@@ -76,10 +75,7 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (
-  props,
-  spec,
-) => {
+const get: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (props) => {
   if (hasObs(props.server, props.id)) {
     getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
@@ -92,7 +88,7 @@ const isAuthorized: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (
     getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const obs = createObsNoStart(props, spec)
+  const obs = createObsNoStart(props)
   if (props.server.queryEvents) {
     props.server.queryEvents.get(obs, props.ctx)
   }
@@ -194,9 +190,8 @@ export const getMessage: BinaryMessageHandler = (
     id,
     checksum,
     attachedCtx,
-    next: isAuthorized,
     error: isNotAuthorized,
-  })
+  }).then(get)
 
   return true
 }
