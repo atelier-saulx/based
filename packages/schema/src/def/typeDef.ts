@@ -68,7 +68,7 @@ export const updateTypeDefs = (schema: StrictSchema) => {
       if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
         // FIXME Now references in edgeType are missing __isEdge
         // However, we can soon just delete weak refs
-        if (!prop.__isEdge && prop.inversePropName) {
+        if (!prop.__isEdge && !prop.inversePropName) {
           prop.__isEdge = true
         }
 

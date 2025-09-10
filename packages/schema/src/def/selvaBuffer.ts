@@ -66,7 +66,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(
-  refSet: RefSet | null,
+  refSet: RefSet,
   nodeTypeId: number,
   prop: PropDef,
   dstNodeTypeId: number,
@@ -82,7 +82,7 @@ function makeEdgeConstraintFlags(
       ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
       : 0x00
 
-  if (refSet) {
+  if (inverseProp) {
     const x = refSet.add(nodeTypeId, prop.prop, dstNodeTypeId, inverseProp.prop)
     flags |= x ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
   }
@@ -91,7 +91,7 @@ function makeEdgeConstraintFlags(
 }
 
 const propDefBuffer = (
-  refSet: RefSet | null,
+  refSet: RefSet,
   nodeTypeId: number,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
@@ -223,7 +223,7 @@ export function schemaToSelvaBuffer(schema: {
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
       0, // u8 spare1
-      ...propDefBuffer(null, t.id, schema, {
+      ...propDefBuffer(refSet, t.id, schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,
       }),
