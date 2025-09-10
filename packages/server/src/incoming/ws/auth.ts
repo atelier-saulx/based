@@ -66,10 +66,7 @@ export const reEvaulateUnauthorized = (
             id,
             checksum: obs.checksum,
             attachedCtx,
-            error: () => {
-              console.log('ERROR')
-              // prob do nothing!
-            },
+            error: queryIsNotAuthorized,
           }).then(enableSubscribe)
         }
       }
@@ -86,7 +83,6 @@ export const reEvaulateUnauthorized = (
         id = attachedCtx.id
         ctx.session.obs.add(id)
       }
-      console.log('derp ---->', attachedCtx, ctx.session)
       authorize({
         route,
         server,
@@ -96,8 +92,7 @@ export const reEvaulateUnauthorized = (
         attachedCtx,
         checksum,
         error: () => {
-          console.log('ERROR')
-          // prob do nothing!
+          // keep it here
         },
       }).then((props) => {
         session.unauthorizedObs.delete(obs)
