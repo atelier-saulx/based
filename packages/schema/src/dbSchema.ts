@@ -22,12 +22,16 @@ function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: Sc
         const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
         Object.keys(prop).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop[k])
 
-        putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        if (Object.keys(edgeProps).length > 0) {
+          putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        }
     } else if (propType === 'references') {
         const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
         Object.keys(prop.items).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop.items[k])
 
-        putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        if (Object.keys(edgeProps).length > 0) {
+          putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        }
     }
   }
 }
