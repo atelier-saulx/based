@@ -29,11 +29,11 @@ enum hll_type {
 #define DSC false
 
 typedef struct {
-    uint32_t count;
-    uint16_t num_registers;
-    uint16_t precision : 14;
     uint8_t is_sparse : 1;
+    uint16_t precision : 14;
     uint8_t dirty : 1;
+    uint16_t num_registers;
+    uint32_t count;
     uint8_t registers[];
 } HyperLogLogPlusPlus;
 
@@ -92,25 +92,20 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
 
     if (hll->is_sparse) {
         if (index > hll->num_registers && hll->num_registers <= (1ULL << precision) ) {
-            selva_string_append(hllss, 0, (index - hll->num_registers) * sizeof(uint8_t));
-            selva_string_append(hllss, nullptr, sizeof(uint8_t));
+            size_t new_num_registers = index + 1;
+
+            new_num_registers--;
+            new_num_registers |= new_num_registers >> 1;
+            new_num_registers |= new_num_registers >> 2;
+            new_num_registers |= new_num_registers >> 4;
+            new_num_registers |= new_num_registers >> 8;
+            new_num_registers |= new_num_registers >> 16;
+            new_num_registers++;
+
+            selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(hll->registers[0]));
             hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
             hll->registers[index] = rho;
-            hll->num_registers = (index + 1);
-            // size_t new_num_registers = index + 1;
-
-            // new_num_registers--;
-            // new_num_registers |= new_num_registers >> 1;
-            // new_num_registers |= new_num_registers >> 2;
-            // new_num_registers |= new_num_registers >> 4;
-            // new_num_registers |= new_num_registers >> 8;
-            // new_num_registers |= new_num_registers >> 16;
-            // new_num_registers++;
-
-            // selva_string_append(hllss, nullptr, (new_num_registers - hll->num_registers) * sizeof(hll->registers[0]));
-            // hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllss, &len);
-            // hll->registers[index] = rho;
-            // hll->num_registers = new_num_registers;
+            hll->num_registers = new_num_registers;
         }
     }
 
@@ -211,23 +206,23 @@ uint8_t *hll_count(struct selva_string *hllss) {
     double zero_count = 0.0;
 
 // #if __ARM_NEON
-    // assert(num_registers % 4 == 0);
-    // for (size_t i = 0; i < num_registers; i += 4) {
-    //     float32x4_t b = {
-    //         (float)registers[i],
-    //         (float)registers[i + 1],
-    //         (float)registers[i + 2],
-    //         (float)registers[i + 3],
-    //     };
-    //     float32x4_t r;
-    //     uint32x4_t z;
+//     assert(num_registers % 4 == 0);
+//     for (size_t i = 0; i < num_registers; i += 4) {
+//         float32x4_t b = {
+//             (float)registers[i],
+//             (float)registers[i + 1],
+//             (float)registers[i + 2],
+//             (float)registers[i + 3],
+//         };
+//         float32x4_t r;
+//         uint32x4_t z;
 
-    //     z = vceqzq_f32(b);
-    //     z = z & (uint32x4_t){1, 1, 1, 1};
-    //     zero_count += (double)(vaddvq_u32(z));
-    //     r = exp2_ps(vnegq_f32(b));
-    //     raw_estimate += vaddvq_f32(r);
-    // }
+//         z = vceqzq_f32(b); // zero mask
+//         z = z & (uint32x4_t){1, 1, 1, 1};
+//         zero_count += (double)(vaddvq_u32(z));
+//         r = exp2_ps(vnegq_f32(b));
+//         raw_estimate += vaddvq_f32(r); 
+//     }
 // #else
     for (size_t i = 0; i < num_registers; i++) {
         if (registers[i] == 0) {
