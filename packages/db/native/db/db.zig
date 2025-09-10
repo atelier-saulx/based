@@ -161,6 +161,8 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
         node,
         fieldSchema,
         id,
+        markDirtyCb,
+        ctx,
     ));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -240,6 +242,8 @@ pub fn putReferences(ctx: *modifyCtx.ModifyCtx, ids: []u32, target: Node, fieldS
         typeEntry,
         ids.ptr,
         ids.len,
+        markDirtyCb,
+        ctx,
     ));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -263,6 +267,8 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, value: Node, target: Node, fie
         te_dst,
         value,
         &ref,
+        markDirtyCb,
+        ctx,
     );
 
     if (code != selva.SELVA_EEXIST) {
