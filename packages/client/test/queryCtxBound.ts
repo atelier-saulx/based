@@ -3,7 +3,6 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
-import { listenerCount } from 'node:stream'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -13,32 +12,23 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('query ctx bound', async (t: T) => {
+test('query ctx bound on authState.token', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
-    // silent: true,
+    silent: true,
     functions: {
       configs: {
         counter: {
           type: 'query',
           ctx: ['authState.token', 'geo.country'],
-          // if ctx pass it to the thign use the ctx as extra check if incoming (not only id)
-          // on ctx change send invalidate cache command to client
-          // if this is there pass ctx as 4th argument (different ctx)
-          // add it to the payload?
-          // based.query('x', {}, ctx)
-          // 4th
-
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
-          // 4rd argument ctx?
           fn: (based, payload, update, error, ctx) => {
             let cnt = 0
-            update(cnt)
-            console.log('SNURF -> CTX:', ctx) //
+            update({ token: ctx.authState.token, cnt })
             const counter = setInterval(() => {
-              update(`${ctx.authState.token} - ${++cnt}`)
+              update({ token: ctx.authState.token, cnt: ++cnt })
             }, 100)
             return () => {
               clearInterval(counter)
@@ -56,37 +46,127 @@ test('query ctx bound', async (t: T) => {
     },
   })
 
-  // const close2 = client
-  //   .query('counter', {
-  //     myQuery: 123,
-  //   })
-  //   .subscribe((d) => {
-  //     console.log('DERPY?')
-  //   })
-
   await wait(500)
 
   await client.setAuthState({ token: '?' })
+  const results = []
 
   const close = client
     .query('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('        > incoming:', d)
+      results.push({ ...d })
     })
 
   await wait(300)
 
   await client.setAuthState({ token: '!' })
 
-  await wait(300)
+  await wait(250)
 
-  console.log('--> CLOSE')
   close()
   await wait(1000)
 
-  console.log(server.activeObservablesById)
-  // close2()
-  t.true(true)
+  t.deepEqual(
+    results,
+    [
+      { token: '?', cnt: 0 },
+      { token: '?', cnt: 1 },
+      { token: '?', cnt: 2 },
+      { token: '!', cnt: 0 },
+      { token: '!', cnt: 1 },
+      { token: '!', cnt: 2 },
+    ],
+    'Changing auth state token',
+  )
+
+  t.is(server.activeObservablesById.size, 0)
+
+  await client.destroy()
+  await server.destroy()
+})
+
+test.only('query ctx bound on authState.userId require auth', async (t: T) => {
+  const client = new BasedClient()
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    auth: {
+      authorize: async (based, ctx, name, payload) => {
+        if (ctx.session.authState.token === '🔑') {
+          // based.sendAuthState(ctx, { userId: 1 })
+          console.log('AUTH!')
+          return true
+        }
+        return false
+      },
+    },
+    functions: {
+      configs: {
+        counter: {
+          type: 'query',
+          ctx: ['authState.token'],
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: (based, payload, update, error, ctx) => {
+            console.info('yo???????', ctx)
+            let cnt = 0
+            update({ userId: ctx.authState.userId, cnt })
+            const counter = setInterval(() => {
+              update({ userId: ctx.authState.userId, cnt: ++cnt })
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  await wait(500)
+
+  const results = []
+
+  const close = client
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe((d) => {
+      results.push(d)
+    })
+
+  await wait(300)
+
+  console.log(await client.setAuthState({ token: '🔑' }))
+
+  await wait(1300)
+
+  close()
+  await wait(1000)
+
+  console.log(results)
+
+  // t.deepEqual(
+  //   results,
+  //   [
+  //     { token: '?', cnt: 2 },
+  //     { token: '?', cnt: 2 },
+  //     { token: '?', cnt: 2 },
+  //     { token: '!', cnt: 3 },
+  //     { token: '!', cnt: 3 },
+  //     { token: '!', cnt: 3 },
+  //   ],
+  //   'Changing auth state token',
+  // )
+
+  t.is(server.activeObservablesById.size, 0)
 })

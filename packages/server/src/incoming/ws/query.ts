@@ -43,15 +43,16 @@ export const queryIsNotAuthorized: FunctionErrorHandler<
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
+  // session.obs.delete(props.id)
   session.unauthorizedObs.add({
-    id: props.id,
+    id: props.attachedCtx ? props.attachedCtx.fromId : props.id,
     checksum: props.checksum,
     route: props.route,
     payload: props.payload,
   })
 }
 
-// export subscribeQuery: Func
+export const subscribeQuery: FunctionHandler = () => {}
 
 export const subscribeMessage: BinaryMessageHandler = (
   arr,
@@ -104,7 +105,6 @@ export const subscribeMessage: BinaryMessageHandler = (
   }
 
   const session = ctx.session
-
   let attachedCtx: AttachedCtx
 
   if (route.ctx) {
@@ -126,8 +126,8 @@ export const subscribeMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  // make this into a fn this can be re-used in the fakeWs implementation
-  // This is for async unsubscribe (auth / install not rdy before unsub command)
+  // TODO security risk need to reval the checksum (is this payload actually this checksum)
+
   session.obs.add(id)
   authorize({
     route,

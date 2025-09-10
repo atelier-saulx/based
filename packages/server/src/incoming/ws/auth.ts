@@ -13,6 +13,7 @@ import { enableChannelSubscribe } from './channelSubscribe.js'
 import { authorize } from '../../authorize.js'
 import { unsubscribeWs } from '../../query/unsub.js'
 import { attachCtx } from '../../query/attachCtx.js'
+import { AttachedCtx } from '../../query/types.js'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) => {
   ctx.session?.ws.send(
@@ -55,7 +56,6 @@ export const reEvaulateUnauthorized = (
         if (attachedCtx.id !== id) {
           unsubscribeWs(server, prevAttachedCtx.fromId, ctx)
           id = attachedCtx.id
-
           // This is for async unsubscribe (auth / install not rdy before unsub command)
           session.obs.add(id)
           authorize({
@@ -66,7 +66,10 @@ export const reEvaulateUnauthorized = (
             id,
             checksum: obs.checksum,
             attachedCtx,
-            error: queryIsNotAuthorized,
+            error: () => {
+              console.log('ERROR')
+              // prob do nothing!
+            },
           }).then(enableSubscribe)
         }
       }
@@ -75,14 +78,27 @@ export const reEvaulateUnauthorized = (
 
   if (session.unauthorizedObs?.size) {
     session.unauthorizedObs.forEach((obs) => {
-      const { id, route, checksum, payload } = obs
+      let { id, route, checksum, payload } = obs
+      let attachedCtx: AttachedCtx
+      if (route.ctx) {
+        attachedCtx = attachCtx(route.ctx, ctx, id)
+        ctx.session.obs.delete(id)
+        id = attachedCtx.id
+        ctx.session.obs.add(id)
+      }
+      console.log('derp ---->', attachedCtx, ctx.session)
       authorize({
         route,
         server,
         ctx,
         payload,
         id,
+        attachedCtx,
         checksum,
+        error: () => {
+          console.log('ERROR')
+          // prob do nothing!
+        },
       }).then((props) => {
         session.unauthorizedObs.delete(obs)
         enableSubscribe(props)
