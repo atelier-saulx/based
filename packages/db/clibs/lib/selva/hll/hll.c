@@ -29,11 +29,11 @@ enum hll_type {
 #define DSC false
 
 typedef struct {
-    uint32_t count;
-    uint16_t num_registers;
-    uint16_t precision : 14;
     uint8_t is_sparse : 1;
+    uint16_t precision : 14;
     uint8_t dirty : 1;
+    uint16_t num_registers;
+    uint32_t count;
     uint8_t registers[];
 } HyperLogLogPlusPlus;
 
