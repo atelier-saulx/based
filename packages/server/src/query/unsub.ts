@@ -29,25 +29,42 @@ export const unsubscribeWs = (
 ): true | void => {
   const session = ctx.session
 
-  if (!session || !session.obs.has(id)) {
+  console.log('UNSUB', id, session.obs)
+
+  if (!session) {
     return
+  }
+
+  if (!session.obs.has(id)) {
+    if (session.attachedCtxObs) {
+      let match = false
+      console.info('YO YOYO', id, session.obs, session.attachedCtxObs)
+
+      for (const attachedId of session.attachedCtxObs) {
+        const attachedObs = server.activeObservablesById.get(attachedId)
+        if (attachedObs.attachedCtx.fromId === id) {
+          session.attachedCtxObs.delete(attachedId)
+          if (session.attachedCtxObs.size === 0) {
+            delete session.attachedCtxObs
+          }
+          id = attachedId
+          match = true
+          break
+        }
+      }
+      if (!match) {
+        return
+      }
+    } else {
+      return
+    }
   }
 
   const isV1 = ctx.session.v < 2
 
   const obs = server.activeObservablesById.get(id)
 
-  if (!obs && session.attachedCtxObs) {
-    for (const attachedId of session.attachedCtxObs) {
-      const attachedObs = server.activeObservablesById.get(attachedId)
-      if (attachedObs.attachedCtx.fromId === id) {
-        server.activeObservablesById.delete(attachedId)
-        session.obs.delete(id) // stored twice so need to remove this as well (tmp)
-        id = attachedId
-        break
-      }
-    }
-  }
+  console.log('DERP', id, '-', session.obs)
 
   session.obs.delete(id)
 

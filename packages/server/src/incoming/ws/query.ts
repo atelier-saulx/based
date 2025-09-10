@@ -51,6 +51,8 @@ export const queryIsNotAuthorized: FunctionErrorHandler<
   })
 }
 
+// export subscribeQuery: Func
+
 export const subscribeMessage: BinaryMessageHandler = (
   arr,
   start,
@@ -124,8 +126,9 @@ export const subscribeMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
+  // make this into a fn this can be re-used in the fakeWs implementation
+  // This is for async unsubscribe (auth / install not rdy before unsub command)
   session.obs.add(id)
-
   authorize({
     route,
     server,
