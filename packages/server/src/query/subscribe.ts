@@ -27,11 +27,8 @@ export const subscribeWs = (
     if (!session.attachedCtxObs) {
       session.attachedCtxObs = new Set()
     }
-
     session.attachedCtxObs.add(id)
     id = obs.attachedCtx.fromId
-
-    console.log('ok hello', session.attachedCtxObs)
   }
 
   if (ctx.session.v < 2) {

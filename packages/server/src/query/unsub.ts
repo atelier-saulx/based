@@ -29,8 +29,6 @@ export const unsubscribeWs = (
 ): true | void => {
   const session = ctx.session
 
-  console.log('UNSUB', id, session.obs)
-
   if (!session) {
     return
   }
@@ -38,8 +36,6 @@ export const unsubscribeWs = (
   if (!session.obs.has(id)) {
     if (session.attachedCtxObs) {
       let match = false
-      console.info('YO YOYO', id, session.obs, session.attachedCtxObs)
-
       for (const attachedId of session.attachedCtxObs) {
         const attachedObs = server.activeObservablesById.get(attachedId)
         if (attachedObs.attachedCtx.fromId === id) {
@@ -63,9 +59,6 @@ export const unsubscribeWs = (
   const isV1 = ctx.session.v < 2
 
   const obs = server.activeObservablesById.get(id)
-
-  console.log('DERP', id, '-', session.obs)
-
   session.obs.delete(id)
 
   if (isV1) {
