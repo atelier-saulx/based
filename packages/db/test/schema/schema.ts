@@ -106,8 +106,10 @@ await test('dont accept modify with mismatch schema', async (t) => {
     },
   })
 
-  await db.create('flurp', {
-    name: 'yyy',
+  throws(() => {
+    return db.create('flurp', {
+      name: 'yyy',
+    })
   })
 
   await setSchemaPromise

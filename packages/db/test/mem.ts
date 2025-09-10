@@ -1,7 +1,7 @@
-import { fastPrng } from '@based/utils'
+import { fastPrng, wait } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { equal } from 'assert'
+import { equal } from './shared/assert.js'
 
 await test('mem', async (t) => {
   const db = new BasedDb({
@@ -71,12 +71,14 @@ await test('mem', async (t) => {
       ).length > 1,
       true,
     )
-
+    // console.log('before:', (await db.query('data').range(0, 10e6).get()).length)
+    // console.log('delete:', { amount })
     for (let i = 0; i < amount; i++) {
       db.delete('data', ids[i])
     }
 
     await db.drain()
+    // console.log('after:', (await db.query('data').range(0, 10e6).get()).length)
 
     equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
   }

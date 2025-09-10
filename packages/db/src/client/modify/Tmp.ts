@@ -25,13 +25,12 @@ const promisify = (tmp: Tmp) => {
 export const resolveTmp = (tmp: Tmp) => {
   const id = tmp.id
   if (id) {
-    tmp.resolve(tmp.id)
-  } else {
-    tmp.reject(tmp.error)
+    return tmp.resolve(tmp.id)
   }
+  return tmp.reject(tmp.error)
 }
 export const rejectTmp = (tmp: Tmp) => {
-  tmp.reject(tmp.error)
+  return tmp.reject(tmp.error)
 }
 
 export class Tmp implements Promise<number> {

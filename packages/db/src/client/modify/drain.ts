@@ -51,17 +51,20 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         if (res === null) {
           throw Error('Schema mismatch')
         }
-        batch.ready = true
         batch.res = res
-        batch.promises?.forEach(resolveTmp)
-        batch.promises = null
       })
       .catch((e) => {
-        console.error(e)
-        batch.ready = true
         batch.error = e
-        batch.promises?.forEach(rejectTmp)
-        batch.promises = null
+      })
+      .finally(() => {
+        batch.ready = true
+        if (batch.promises) {
+          const promises = batch.promises
+          batch.promises = null
+          return Promise.all(
+            promises.map(batch.error ? rejectTmp : resolveTmp),
+          ).then(() => schedule(db, ctx))
+        }
       })
   }
   return ctx.draining

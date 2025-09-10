@@ -84,6 +84,10 @@ export const migrate = async (
 
   let killed = false
   const abort = () => {
+    if (server.stopped) {
+      console.info(`server stopped during migration ${migrationId}`)
+      return true
+    }
     if (killed) {
       server.emit(
         'info',
