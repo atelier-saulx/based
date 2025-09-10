@@ -168,7 +168,8 @@ int selva_fields_references_insert(
         bool reorder,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReferenceAny *ref_out)
+        struct SelvaNodeReferenceAny *ref_out,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((access(write_only, 8)));
 
 /**
@@ -185,7 +186,8 @@ int selva_fields_references_insert_tail_wupsert(
         const struct SelvaFieldSchema *fs,
         struct SelvaTypeEntry *te_dst,
         const node_id_t ids[],
-        size_t nr_ids)
+        size_t nr_ids,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((access(read_only, 5, 6)));
 
 /**
@@ -340,7 +342,7 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct Se
  * Delete an edge from a references field.
  */
 SELVA_EXPORT
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id);
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 /**
  * Clear a references field but don't free it.
