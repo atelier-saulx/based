@@ -1,5 +1,5 @@
 import { BasedClient } from '../index.js'
-import { genObserveId } from '../genObserveId.js'
+import { genObserveId } from '@based/protocol/client-server'
 import {
   addChannelCloseToQueue,
   addChannelPublishIdentifier,

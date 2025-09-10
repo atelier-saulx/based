@@ -8,7 +8,7 @@ import {
   addObsCloseToQueue,
   addGetToQueue,
 } from '../outgoing/index.js'
-import { genObserveId } from '../genObserveId.js'
+import { genObserveId } from '@based/protocol/client-server'
 import { BasedClient } from '../index.js'
 import { removeStorage, setStorage } from '../persistentStorage/index.js'
 import { freeCacheMemory } from '../cache.js'
@@ -26,7 +26,7 @@ export class BasedQuery<P = any, K = any> {
     client: BasedClient,
     name: string,
     payload: P,
-    opts?: { persistent: boolean }
+    opts?: { persistent: boolean },
   ) {
     this.query = payload
     this.id = genObserveId(name, payload)
@@ -48,7 +48,7 @@ export class BasedQuery<P = any, K = any> {
 
   subscribe(
     onData: ObserveDataListener<K>,
-    onError?: ObserveErrorListener
+    onError?: ObserveErrorListener,
   ): CloseObserve {
     let subscriberId: number
     const cachedData = this.client.cache.get(this.id)
@@ -71,7 +71,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.c || 0
+        cachedData?.c || 0,
       )
     } else {
       const obs = this.client.observeState.get(this.id)
@@ -112,7 +112,7 @@ export class BasedQuery<P = any, K = any> {
   }
 
   async getWhen(
-    condition: (data: any, checksum: number) => boolean
+    condition: (data: any, checksum: number) => boolean,
   ): Promise<K> {
     return new Promise((resolve) => {
       const close = this.subscribe((data, checksum) => {
@@ -152,7 +152,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.c || 0
+        cachedData?.c || 0,
       )
     })
   }

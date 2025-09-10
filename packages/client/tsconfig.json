@@ -6,6 +6,10 @@
     "allowJs": true,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["./src", "./test"],
+  "include": [
+    "./src",
+    "./test",
+    "../protocol/src/client-server/genObserveId.ts"
+  ],
   "exclude": ["./test/browser", "./dist/test", "./dist/src"]
 }

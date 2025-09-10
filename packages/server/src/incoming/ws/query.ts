@@ -16,6 +16,7 @@ import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
 import { attachCtx } from '../../query/attachCtx.js'
 import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
+import { genObserveId } from '@based/protocol/client-server'
 
 export const enableSubscribe: FunctionHandler<
   WebSocketSession,
@@ -67,7 +68,7 @@ export const subscribeMessage: BinaryMessageHandler = (
   const nameLen = arr[start + 20]
   // get id maybe
 
-  let id = readUint64(arr, start + 4)
+  const id = readUint64(arr, start + 4)
   const checksum = readUint64(arr, start + 12)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
@@ -100,19 +101,22 @@ export const subscribeMessage: BinaryMessageHandler = (
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
       route,
       observableId: id,
-    })
+    }) // just call it id and add function type
     return true
   }
 
   const session = ctx.session
   let attachedCtx: AttachedCtx
 
+  let obsId: number
   if (route.ctx) {
     attachedCtx = attachCtx(route.ctx, ctx, id)
-    id = attachedCtx.id
+    obsId = attachedCtx.id
+  } else {
+    obsId = id
   }
 
-  if (session.obs.has(id)) {
+  if (session.obs.has(obsId)) {
     // Allready subscribed to this id
     return true
   }
@@ -126,15 +130,21 @@ export const subscribeMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
+  if (genObserveId(route.name, payload) !== obsId) {
+    // console.log('SPOOFING = SEC ERR')
+    ctx.session.ws.close()
+    return false
+  }
+
   // TODO security risk need to reval the checksum (is this payload actually this checksum)
 
-  session.obs.add(id)
+  session.obs.add(obsId)
   authorize({
     route,
     server,
     ctx,
     payload,
-    id,
+    id: obsId,
     checksum,
     attachedCtx,
     error: queryIsNotAuthorized,

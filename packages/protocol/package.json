@@ -29,6 +29,7 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@based/hash": "^1.0.0",
     "fflate": "0.8.2",
     "@based/utils": "^1.0.0",
     "@based/schema": "^5.0.2"
