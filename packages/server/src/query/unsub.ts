@@ -47,6 +47,9 @@ export const unsubscribeWs = (
       const attachedObs = server.activeObservablesById.get(attachedId)
       if (attachedObs.attachedCtx.fromId === id) {
         console.log(' ITS ATTACHED', id, attachedId)
+        server.activeObservablesById.delete(attachedId)
+        session.obs.delete(id) // stored twice so need to remove this as well (tmp)
+        id = attachedId
         break
       }
     }
@@ -54,10 +57,6 @@ export const unsubscribeWs = (
   }
 
   session.obs.delete(id)
-
-  if (ctx.session.attachedCtxObs?.has(id)) {
-    ctx.session.attachedCtxObs.delete(id)
-  }
 
   if (isV1) {
     ctx.session.ws.unsubscribe(String(id) + '-v1')
