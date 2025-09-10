@@ -22,9 +22,9 @@ export const writeTypeCursor = (ctx: Ctx) => {
     writeU8(ctx, SWITCH_TYPE)
     writeU8Array(ctx, ctx.schema.idUint8)
     ctx.cursor.type = ctx.schema.id
-    ctx.cursor.main = null
+    // ctx.cursor.main = null
     ctx.cursor.prop = null
-    ctx.cursor.id = null
+    // ctx.cursor.id = null
   }
 }
 
@@ -50,8 +50,11 @@ export const writeMainCursor = (ctx: Ctx) => {
   }
 }
 
+/*
 export const writeNodeCursor = (ctx: Ctx) => {
-  if (ctx.id !== ctx.cursor.id || ctx.operation !== ctx.cursor.operation) {
+
+
+  // if (ctx.id !== ctx.cursor.id || ctx.operation !== ctx.cursor.operation) {
     // TODO maybe check if toggling between unsafe and safe
     if (ctx.operation !== CREATE) {
       writeU8(ctx, SWITCH_ID_UPDATE)
@@ -65,5 +68,7 @@ export const writeNodeCursor = (ctx: Ctx) => {
     ctx.cursor.id = ctx.id
     ctx.cursor.main = null
     ctx.cursor.operation = ctx.operation
-  }
+  // }
 }
+
+*/

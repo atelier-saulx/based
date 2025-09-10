@@ -1,4 +1,9 @@
-import { StrictSchema, MigrateFns, DbSchema, SchemaChecksum } from '@based/schema'
+import {
+  StrictSchema,
+  MigrateFns,
+  DbSchema,
+  SchemaChecksum,
+} from '@based/schema'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
@@ -10,11 +15,8 @@ export type DbClientHooks = {
     schema: StrictSchema,
     transformFns?: MigrateFns,
   ): Promise<SchemaChecksum>
-  flushModify(buf: Uint8Array): Promise<{
-    offsets: Record<number, number>
-    dbWriteTime?: number
-  }>
-  getQueryBuf(buf: Uint8Array): Promise<Uint8Array>
+  flushModify(buf: Uint8Array): Promise<Uint8Array | null>
+  getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>
   subscribe(
     q: BasedDbQuery,
     onData: (buf: Uint8Array) => ReturnType<OnData>,
@@ -76,20 +78,14 @@ export const getDefaultHooks = (
       })
     },
     flushModify(buf: Uint8Array) {
-      try {
-        const d = performance.now()
-        const offsets = server.modify(buf)
-        const dbWriteTime = performance.now() - d
-        return Promise.resolve({
-          offsets,
-          dbWriteTime,
-        })
-      } catch (e) {
-        return Promise.reject(e)
+      const res = server.modify(buf)
+      if (res instanceof Promise) {
+        return res.then((res) => res && new Uint8Array(res))
       }
+      return Promise.resolve(res && new Uint8Array(res))
     },
     getQueryBuf(buf: Uint8Array) {
-      return Promise.resolve(server.getQueryBuf(buf))
+      return server.getQueryBuf(buf)
     },
   }
 }

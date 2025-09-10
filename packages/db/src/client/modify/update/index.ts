@@ -1,5 +1,10 @@
 import { Ctx } from '../Ctx.js'
-import { ModifyOpts, UPDATE, UPDATE_PARTIAL } from '../types.js'
+import {
+  ModifyOpts,
+  SWITCH_ID_UPDATE,
+  UPDATE,
+  UPDATE_PARTIAL,
+} from '../types.js'
 import { DbClient } from '../../../index.js'
 import { getValidSchema, validateId, validatePayload } from '../validate.js'
 import { langCodesMap } from '@based/schema'
@@ -11,11 +16,11 @@ import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
   writeMainCursor,
-  writeNodeCursor,
+  // writeNodeCursor,
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint32 } from '@based/utils'
-import { writeU16, writeU8 } from '../uint.js'
+import { writeU16, writeU32, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
 import { SchemaTypeDef } from '@based/schema/def'
@@ -52,6 +57,7 @@ const writeMergeMain = (ctx: Ctx) => {
 export const writeUpdate = (
   ctx: Ctx,
   schema: SchemaTypeDef,
+  id: number,
   payload: any,
   opts: ModifyOpts,
 ) => {
@@ -72,7 +78,9 @@ export const writeUpdate = (
 
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
-  writeNodeCursor(ctx)
+  writeU8(ctx, SWITCH_ID_UPDATE)
+  writeU32(ctx, id)
+  // writeNodeCursor(ctx)
   writeObject(ctx, ctx.schema.tree, payload)
   writeUpdateTs(ctx, payload)
   writeMergeMain(ctx)
@@ -90,9 +98,9 @@ export function update(
   ctx.start = ctx.index
   try {
     validateId(id)
-    ctx.id = id
-    writeUpdate(ctx, schema, payload, opts)
-    const tmp = new Tmp(ctx, id)
+    // ctx.id = id
+    writeUpdate(ctx, schema, id, payload, opts)
+    const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp
   } catch (e) {

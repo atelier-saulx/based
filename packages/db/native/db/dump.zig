@@ -11,11 +11,9 @@ pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
 
-    // TODO Replace this
-    const tst = "hello world";
     var com: selva.selva_dump_common_data = .{
-        .meta_data = tst.ptr,
-        .meta_len = tst.len,
+        .meta_data = ctx.ids.ptr,
+        .meta_len = ctx.ids.len * @sizeOf(u32),
         .errlog_buf = null,
         .errlog_size = 0,
     };
@@ -65,9 +63,9 @@ pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     _ = c.napi_create_int32(napi_env, rc, &res);
 
     if (com.meta_data != null) {
-        // TODO read this data
-        const metadata: [*]u8 = @ptrCast(@constCast(com.meta_data));
-        std.log.err("meta: {s}", .{ metadata[0..com.meta_len] });
+        const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(com.meta_data)));
+        const len = com.meta_len / @sizeOf(u32);
+        ctx.ids = ctx.allocator.dupe(u32, ptr[0..len]) catch return null;
         selva.selva_free(@constCast(com.meta_data));
     }
 
@@ -93,7 +91,6 @@ pub fn delBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c
     const start = napi.get(u32, napi_env, args[2]) catch return null;
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeId);
-
 
     selva.selva_del_block(ctx.selva, te, start);
     return null;

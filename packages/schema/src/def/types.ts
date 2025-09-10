@@ -148,10 +148,8 @@ export const BLOCK_CAPACITY_MAX = 2147483647
 export const BLOCK_CAPACITY_DEFAULT = 100_000
 
 export type SchemaTypeDef = {
-  cnt: number
   checksum: number
   type: string
-  lastId: number
   blockCapacity: number
   mainLen: number
   insertOnly: boolean // delete not allowed

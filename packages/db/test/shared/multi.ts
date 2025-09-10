@@ -28,10 +28,10 @@ export const start = async (t, clientsN = 2) => {
     async flushModify(buf) {
       buf = new Uint8Array(buf)
       await setTimeout(20)
-      let offsets = server.modify(buf)
-      offsets = offsets && { ...offsets }
+      const res = await server.modify(buf)
+      // offsets = offsets && { ...offsets }
       await setTimeout(~~(Math.random() * 100))
-      return { offsets }
+      return res
     },
     async getQueryBuf(buf) {
       buf = new Uint8Array(buf)
@@ -47,6 +47,7 @@ export const start = async (t, clientsN = 2) => {
   const clients = Array.from({ length: clientsN }).map(
     () =>
       new DbClient({
+        // debug: true,
         hooks: { ...hooks },
       }),
   )

@@ -37,20 +37,21 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
 export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
+  let maxTid = 0
   for (let i = 0; i < s.length; i++) {
     const type = server.schemaTypesParsed[types[i]]
+    maxTid = Math.max(maxTid, type.id)
     try {
-      native.updateSchemaType(
-        type.id,
-        new Uint8Array(s[i]),
-        server.dbCtxExternal,
-      )
+      native.setSchemaType(type.id, new Uint8Array(s[i]), server.dbCtxExternal)
     } catch (err) {
       throw new Error(
         `Cannot update schema on selva (native) ${type.type} ${err.message}`,
       )
     }
   }
+
+  // Init the last ids
+  native.setSchemaIds(new Uint32Array(maxTid), server.dbCtxExternal)
 
   // Insert a root node
   if (schema.types._root) {

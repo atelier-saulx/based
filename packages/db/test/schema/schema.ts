@@ -79,10 +79,9 @@ await test('dont accept modify with mismatch schema', async (t) => {
   t.after(() => db.destroy())
 
   db.client.hooks.flushModify = async (buf) => {
+    buf = new Uint8Array(buf)
     await setTimeout(100)
-    return {
-      offsets: db.server.modify(buf),
-    }
+    return db.server.modify(buf)
   }
 
   await db.setSchema({

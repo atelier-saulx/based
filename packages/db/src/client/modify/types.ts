@@ -14,6 +14,7 @@ export const EXPIRE = 14
 export const ADD_EMPTY_SORT_TEXT = 15
 export const ADD_EMPTY_SORT = 7
 export const DELETE_TEXT_FIELD = 16
+export const PADDING = 255
 
 export const SWITCH_TYPE = 2
 export const SWITCH_FIELD = 0

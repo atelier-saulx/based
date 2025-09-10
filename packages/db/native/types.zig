@@ -166,6 +166,7 @@ pub const ModOp = enum(u8) {
     ADD_EMPTY_SORT_TEXT = 15,
     DELETE_TEXT_FIELD = 16,
     UPSERT = 17,
+    PADDING = 255,
     _,
 };
 

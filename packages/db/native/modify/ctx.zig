@@ -17,20 +17,29 @@ pub const ModifyCtx = struct {
     node: ?db.Node,
     fieldType: types.Prop,
     db: *db.DbCtx,
-    idOffsets: []u8,
+    // idOffsets: []u8,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
+    batch: []u8,
 };
 
-pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
-    var j: usize = 0;
-    while (j < ctx.idOffsets.len) : (j += 6) {
-        const tId = read(u16, ctx.idOffsets, j);
-        if (tId == typeId) {
-            return read(u32, ctx.idOffsets, j + 2);
-        }
-    }
-    return 0;
+pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
+    const index = tmpId * 5;
+    return read(u32, ctx.batch, index);
 }
+
+// pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
+//     // var j: usize = 0;
+//     _ = ctx;
+//     _ = typeId;
+//     std.debug.print("TODO: getIdOffset\n", .{});
+//     // while (j < ctx.idOffsets.len) : (j += 6) {
+//     //     const tId = read(u16, ctx.idOffsets, j);
+//     //     if (tId == typeId) {
+//     //         return read(u32, ctx.idOffsets, j + 2);
+//     //     }
+//     // }
+//     return 0;
+// }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
     const blockCapacity: u64 = selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.db.selva, typeId));

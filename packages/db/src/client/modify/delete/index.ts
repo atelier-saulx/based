@@ -3,13 +3,18 @@ import { getValidSchema, validateId } from '../validate.js'
 import {
   FULL_CURSOR_SIZE,
   writeMainCursor,
-  writeNodeCursor,
+  // writeNodeCursor,
   writePropCursor,
   writeTypeCursor,
 } from '../cursor.js'
 import { reserve } from '../resize.js'
-import { DELETE_NODE, DELETE_SORT_INDEX, UPDATE } from '../types.js'
-import { writeU8 } from '../uint.js'
+import {
+  DELETE_NODE,
+  DELETE_SORT_INDEX,
+  SWITCH_ID_UPDATE,
+  UPDATE,
+} from '../types.js'
+import { writeU32, writeU8 } from '../uint.js'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'
 import { schedule } from '../drain.js'
@@ -22,7 +27,6 @@ export function del(db: DbClient, type: string, id: number) {
       throw `This type is insertOnly`
     }
 
-    ctx.id = id
     ctx.start = ctx.index
     ctx.schema = schema
     ctx.operation = UPDATE
@@ -30,15 +34,16 @@ export function del(db: DbClient, type: string, id: number) {
     validateId(id)
     reserve(ctx, FULL_CURSOR_SIZE + 2 + schema.separate.length * 12) // 12 too much?
     writeTypeCursor(ctx)
+    writeU8(ctx, SWITCH_ID_UPDATE)
+    writeU32(ctx, id)
     writeMainCursor(ctx)
-    writeNodeCursor(ctx)
     writeU8(ctx, DELETE_SORT_INDEX)
     for (const def of schema.separate) {
       writePropCursor(ctx, def)
       writeU8(ctx, DELETE_SORT_INDEX)
     }
     writeU8(ctx, DELETE_NODE)
-    const tmp = new Tmp(ctx, id)
+    const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp
   } catch (e) {

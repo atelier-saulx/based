@@ -54,7 +54,7 @@ export class DbServer extends DbShared {
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
   activeReaders = 0 // processing queries or other DB reads
-  modifyQueue: Uint8Array[] = []
+  modifyQueue: Map<Function, Uint8Array> = new Map()
   queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
   unlistenExit: ReturnType<typeof exitHook>
@@ -359,77 +359,39 @@ export class DbServer extends DbShared {
     return schema.hash
   }
 
-  modify(
-    payload: Uint8Array,
-    skipParse?: boolean,
-  ): Record<number, number> | null {
+  modify(payload: Uint8Array): Uint8Array | null | Promise<Uint8Array | null> {
     const hash = readUint64(payload, 0)
-    const contentEnd = readUint32(payload, payload.byteLength - 4)
-    let result: Record<number, number>
-
     if (this.schema?.hash !== hash) {
+      console.log('bad:', this.schema?.hash, hash)
       this.emit('info', 'Schema mismatch in write')
       return null
     }
 
-    if (!skipParse) {
-      result = {}
-      let i = payload.byteLength - 4
-      while (i > contentEnd) {
-        const typeId = readUint16(payload, i - 6)
-        const count = readUint32(payload, i - 4)
-        const typeDef = this.schemaTypesParsedById[typeId]
-
-        if (!typeDef) {
-          console.error('Missing typeDef, cancel write', { typeId, count })
-          this.emit('info', 'Missing typeDef, cancel write')
-          return null
-        }
-
-        const lastId = Math.max(
-          typeDef.lastId,
-          native.getTypeInfo(typeDef.id, this.dbCtxExternal)[1],
-        )
-
-        // TODO replace this with Ctx.created
-        const offset = lastId
-        // write the offset into payload for zig to use
-        writeUint32(payload, offset, i - 4)
-        result[typeId] = offset
-        typeDef.lastId = lastId + count
-        i -= 6
-      }
-    }
-
-    const content = payload.subarray(8, contentEnd)
-    const offsets = payload.subarray(contentEnd, payload.byteLength - 4)
     if (this.activeReaders) {
-      this.modifyQueue.push(new Uint8Array(payload))
-    } else {
-      resizeModifyDirtyRanges(this)
-      native.modify(
-        content,
-        offsets,
-        this.dbCtxExternal,
-        this.modifyDirtyRanges,
-      )
-      for (const key of this.modifyDirtyRanges) {
-        if (key === 0) break
-        this.dirtyRanges.add(key)
-      }
+      return new Promise((resolve) => {
+        this.modifyQueue.set(resolve, new Uint8Array(payload))
+      })
     }
 
-    return result
+    resizeModifyDirtyRanges(this)
+    const content = payload.subarray(8)
+    const len = native.modify(
+      content,
+      this.dbCtxExternal,
+      this.modifyDirtyRanges,
+    )
+    for (const key of this.modifyDirtyRanges) {
+      if (key === 0) {
+        break
+      }
+      this.dirtyRanges.add(key)
+    }
+    return content.subarray(0, len)
   }
 
   #expire() {
     resizeModifyDirtyRanges(this)
-    native.modify(
-      emptyUint8Array,
-      emptyUint8Array,
-      this.dbCtxExternal,
-      this.modifyDirtyRanges,
-    )
+    native.modify(emptyUint8Array, this.dbCtxExternal, this.modifyDirtyRanges)
     for (const key of this.modifyDirtyRanges) {
       if (key === 0) break
       this.dirtyRanges.add(key)
@@ -456,7 +418,7 @@ export class DbServer extends DbShared {
       console.error('Db is stopped - trying to query', buf.byteLength)
       return Promise.resolve(new Uint8Array(8))
     }
-    if (this.modifyQueue.length) {
+    if (this.modifyQueue.size) {
       return new Promise((resolve) => {
         this.addToQueryQueue(resolve, buf)
       })
@@ -506,11 +468,11 @@ export class DbServer extends DbShared {
 
   onQueryEnd() {
     if (this.activeReaders === 0) {
-      if (this.modifyQueue.length) {
+      if (this.modifyQueue.size) {
         const modifyQueue = this.modifyQueue
-        this.modifyQueue = []
-        for (const payload of modifyQueue) {
-          this.modify(payload, true)
+        this.modifyQueue = new Map()
+        for (const [resolve, payload] of modifyQueue) {
+          resolve(this.modify(payload))
         }
       }
       if (this.queryQueue.size) {

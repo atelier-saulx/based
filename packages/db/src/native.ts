@@ -38,11 +38,10 @@ const native = {
 
   modify: (
     data: Uint8Array,
-    types: Uint8Array,
     dbCtx: any,
     dirtyBlocksOut: Float64Array,
-  ): any => {
-    db.modify(data, types, dbCtx, dirtyBlocksOut)
+  ): number | null => {
+    return db.modify(data, dbCtx, dirtyBlocksOut)
   },
 
   getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
@@ -98,8 +97,12 @@ const native = {
     db.delBlock(dbCtx, typeId, block)
   },
 
-  updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
-    return db.updateSchema(prefix, buf, dbCtx)
+  setSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
+    return db.setSchemaType(prefix, buf, dbCtx)
+  },
+
+  setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
+    return db.setSchemaIds(ids, dbCtx)
   },
 
   getTypeInfo: (typeId: number, dbCtx: any) => {
@@ -161,9 +164,15 @@ const native = {
     return db.selvaStrerror(err)
   },
 
-  colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {
-    return db.colvecTest(dbCtx, typeId, field, nodeId, len);
-  }
+  colvecTest: (
+    dbCtx: any,
+    typeId: number,
+    field: number,
+    nodeId: number,
+    len: number,
+  ) => {
+    return db.colvecTest(dbCtx, typeId, field, nodeId, len)
+  },
 }
 
 global.__basedDb__native__ = native

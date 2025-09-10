@@ -6,24 +6,26 @@ import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
   writeMainCursor,
-  writeNodeCursor,
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
-import { drain, schedule } from '../drain.js'
+import { schedule } from '../drain.js'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
   CREATE,
   ModifyOpts,
+  PADDING,
+  SWITCH_ID_CREATE,
+  SWITCH_ID_CREATE_UNSAFE,
 } from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
-import { writeU8 } from '../uint.js'
+import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 
@@ -170,10 +172,21 @@ export const writeCreate = (
   ctx.overwrite = true
   ctx.unsafe = opts?.unsafe
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+  // TODO: can we remove this (and just init main buffer here?)
+  ctx.cursor.main = null
 
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
-  writeNodeCursor(ctx)
+  if (payload.id) {
+    if (ctx.unsafe) {
+      writeU8(ctx, SWITCH_ID_CREATE_UNSAFE)
+      writeU32(ctx, payload.id)
+    } else {
+      throw 'Invalid payload. "id" not allowed'
+    }
+  } else {
+    writeU8(ctx, SWITCH_ID_CREATE)
+  }
   const index = ctx.index
   writeObject(ctx, ctx.schema.tree, payload)
   if (ctx.index === index || ctx.schema.mainLen === 0) {
@@ -187,6 +200,9 @@ export const writeCreate = (
   writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)
+  while (ctx.index < ctx.start + 5) {
+    writeU8(ctx, PADDING)
+  }
 }
 
 export function create(
@@ -199,26 +215,7 @@ export function create(
   const ctx = db.modifyCtx
   ctx.start = ctx.index
   try {
-    if (payload.id) {
-      if (!opts?.unsafe) {
-        throw 'Invalid payload. "id" not allowed'
-      }
-      ctx.id = payload.id
-    } else {
-      if (!(schema.id in ctx.created)) {
-        if (ctx.cursor.upserting) {
-          drain(db, ctx)
-        }
-        ctx.created[schema.id] = 0
-        ctx.max -= 6
-        ctx.size -= 6
-      }
-      ctx.id = ctx.created[schema.id] + 1
-    }
     writeCreate(ctx, schema, payload, opts)
-    if (schema.id in ctx.created) {
-      ctx.created[schema.id]++
-    }
     const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp

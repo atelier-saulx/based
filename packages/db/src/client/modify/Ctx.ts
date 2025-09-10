@@ -11,7 +11,7 @@ export class Ctx {
     this.size = array.buffer.byteLength - 4
     writeUint64(array, schemaChecksum, 0)
   }
-  id: number
+  // id: number
   start: number
   index: number = 8
   schema: SchemaTypeDef
@@ -24,13 +24,13 @@ export class Ctx {
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
   scheduled: Promise<void>
-  created: Record<number, number> = {} // <typeId, count
+  // created: Record<number, number> = {} // <typeId, count
   locale: LangCode
   sort: number = 0
   sortText: number = 0
   defaults: number = 0
   cursor: {
-    id?: number
+    // id?: number
     type?: number
     prop?: number
     main?: number
@@ -38,8 +38,9 @@ export class Ctx {
     upserting?: boolean
   } = {}
   batch: {
+    count?: number
     promises?: Tmp[]
-    offsets?: Record<number, number>
+    res?: Uint8Array
     ready?: boolean
     error?: Error
   } = {}

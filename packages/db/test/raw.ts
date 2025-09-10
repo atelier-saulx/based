@@ -1,6 +1,5 @@
-import { wait } from '@based/utils'
 import { BasedDb } from '../src/index.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('raw', async (t) => {
@@ -32,6 +31,8 @@ await test('raw', async (t) => {
   await db.create('user', {
     uniqueSkills,
   })
+
+  console.log('??', uniqueSkills)
 
   const [a, b] = await db.query('user').get().toObject()
   deepEqual(a.uniqueSkills, b.uniqueSkills)

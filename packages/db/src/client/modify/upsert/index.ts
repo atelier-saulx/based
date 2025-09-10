@@ -11,6 +11,7 @@ import { handleError } from '../error.js'
 import { writeUpdate } from '../update/index.js'
 import { drain, schedule } from '../drain.js'
 import { TYPE_CURSOR_SIZE, writeTypeCursor } from '../cursor.js'
+import { Tmp } from '../Tmp.js'
 
 const filterAliases = (obj, tree: SchemaPropTree): QueryByAliasObj => {
   let aliases: QueryByAliasObj
@@ -121,30 +122,31 @@ export function upsert(
   ctx.schema = schema
 
   try {
-    if (schema.id in ctx.created) {
-      if (ctx.created[schema.id] > 0) {
-        drain(db, ctx)
-      }
-    } else {
-      // TODO: reconsider this, do we want to rely on the client info or on the server lastId (latter would require more waiting)?
-      ctx.created[schema.id] = 0
-      ctx.max -= 6
-      ctx.size -= 6
-    }
+    // if (schema.id in ctx.created) {
+    //   if (ctx.created[schema.id] > 0) {
+    //     drain(db, ctx)
+    //   }
+    // } else {
+    //   // TODO: reconsider this, do we want to rely on the client info or on the server lastId (latter would require more waiting)?
+    //   ctx.created[schema.id] = 0
+    //   ctx.max -= 6
+    //   ctx.size -= 6
+    // }
     reserve(ctx, TYPE_CURSOR_SIZE + 1 + 4 + 4)
     writeTypeCursor(ctx)
     writeU8(ctx, UPSERT)
     const start = ctx.index
     ctx.index += 8
-    ctx.id = 0
+    // ctx.id = 0
     writeAliases(ctx, schema.tree, payload)
     writeUint32(ctx.array, ctx.index - start, start)
     writeCreate(ctx, schema, {}, opts)
     writeUint32(ctx.array, ctx.index - start, start + 4)
-    ctx.id = 0
-    writeUpdate(ctx, schema, payload, opts)
+    // ctx.id = 0
+    writeUpdate(ctx, schema, 0, payload, opts)
     schedule(db, ctx)
-    return new Upserting(db, type, payload, schema.tree)
+    return new Tmp(ctx)
+    // return new Upserting(db, type, payload, schema.tree)
   } catch (e) {
     return handleError(db, ctx, upsert, arguments, e)
   }
