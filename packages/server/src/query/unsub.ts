@@ -29,10 +29,6 @@ export const unsubscribeWs = (
 ): true | void => {
   const session = ctx.session
 
-  console.log('yes unsub', session.obs, id)
-
-  console.log(' activeobs', server.activeObservablesById.keys())
-
   if (!session || !session.obs.has(id)) {
     return
   }
@@ -41,19 +37,16 @@ export const unsubscribeWs = (
 
   const obs = server.activeObservablesById.get(id)
 
-  if (!obs) {
-    console.log(' Attached', session.attachedCtxObs)
+  if (!obs && session.attachedCtxObs) {
     for (const attachedId of session.attachedCtxObs) {
       const attachedObs = server.activeObservablesById.get(attachedId)
       if (attachedObs.attachedCtx.fromId === id) {
-        console.log(' ITS ATTACHED', id, attachedId)
         server.activeObservablesById.delete(attachedId)
         session.obs.delete(id) // stored twice so need to remove this as well (tmp)
         id = attachedId
         break
       }
     }
-    // hello
   }
 
   session.obs.delete(id)

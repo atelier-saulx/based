@@ -38,8 +38,6 @@ export const updateListener = (
     }
   }
 
-  console.log('UPDATE', checksum)
-
   if (checksum !== obs.checksum) {
     let encodedData: Uint8Array
     if (reusedData) {

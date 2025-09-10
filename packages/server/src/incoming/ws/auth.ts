@@ -56,8 +56,10 @@ export const reEvaulateUnauthorized = (
           session.attachedCtxObs.delete(id)
           unsubscribeWs(server, id, ctx)
           id = attachedCtx.id
-          console.log('. ATTACHED ADD ID to session')
+          console.log('AUTH! . ATTACHED ADD ID to session', id)
           session.obs.add(id)
+          // Dont add original id
+          // session.obs.add(attachedCtx.fromId)
           authorize({
             route: obs.route,
             server,

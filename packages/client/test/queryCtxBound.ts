@@ -3,6 +3,7 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
+import { listenerCount } from 'node:stream'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -29,16 +30,15 @@ test('query ctx bound', async (t: T) => {
           // based.query('x', {}, ctx)
           // 4th
 
+          closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           // 4rd argument ctx?
           fn: (based, payload, update, error, ctx) => {
             let cnt = 0
             update(cnt)
             console.log('SNURF -> CTX:', ctx) //
-
             const counter = setInterval(() => {
-              console.log('snurp?')
-              update(++cnt)
+              update(`${ctx.authState.token} - ${++cnt}`)
             }, 100)
             return () => {
               clearInterval(counter)
@@ -66,20 +66,27 @@ test('query ctx bound', async (t: T) => {
 
   await wait(500)
 
-  const result = await client.setAuthState({ token: '?' })
+  await client.setAuthState({ token: '?' })
 
   const close = client
     .query('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.log('DERPY? update', d)
+      console.log('        > incoming:', d)
     })
+
+  await wait(300)
+
+  await client.setAuthState({ token: '!' })
 
   await wait(300)
 
   console.log('--> CLOSE')
   close()
+  await wait(1000)
+
+  console.log(server.activeObservablesById)
   // close2()
   t.true(true)
 })

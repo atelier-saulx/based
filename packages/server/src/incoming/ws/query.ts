@@ -21,7 +21,6 @@ export const enableSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'query'>
 > = (props) => {
-  console.log('---> enableSub', props.id)
   if (hasObs(props.server, props.id)) {
     subscribeWs(props.server, props.id, props.checksum, props.ctx)
     return
@@ -125,7 +124,6 @@ export const subscribeMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  console.info(' ADD TO session obs', id)
   session.obs.add(id)
 
   authorize({

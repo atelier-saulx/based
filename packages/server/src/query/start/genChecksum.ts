@@ -1,8 +1,13 @@
 import { hashObjectIgnoreKeyOrder, hash } from '@based/hash'
 import { hashUint8Array } from '@based/hash'
 
+const MAX_SAFE_INT = 9007199254740990
+
 export const genChecksum = (data: any): number => {
   if (typeof data === 'number') {
+    if (data === 0) {
+      data = MAX_SAFE_INT
+    }
     return data
   }
 
