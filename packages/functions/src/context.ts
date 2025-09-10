@@ -27,7 +27,7 @@ export type WebSocketSession = {
     route: BasedRoute<'channel'>
     payload: any
   }>
-  attachedAuthStateObs?: Set<number>
+  attachedCtxObs?: Set<number>
   streams?: { [reqId: string]: StreamPayload }
   headers: { [key: string]: string }
   v?: 2

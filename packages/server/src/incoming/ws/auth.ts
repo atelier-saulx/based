@@ -42,30 +42,33 @@ export const reEvaulateUnauthorized = (
     return
   }
 
-  if (session.attachedAuthStateObs?.size) {
-    session.attachedAuthStateObs.forEach((id) => {
+  if (session.attachedCtxObs?.size) {
+    session.attachedCtxObs.forEach((id) => {
       const obs = server.activeObservablesById.get(id)
-      const prevAttachedCtx = obs.attachedCtx
-      const attachedCtx = attachCtx(
-        prevAttachedCtx.config,
-        ctx,
-        prevAttachedCtx.fromId,
-      )
-      if (attachedCtx.id !== id) {
-        session.attachedAuthStateObs.delete(id)
-        unsubscribeWs(server, id, ctx)
-        id = attachedCtx.id
-        session.obs.add(id)
-        authorize({
-          route: obs.route,
-          server,
+      if (obs.attachedCtx.authState) {
+        const prevAttachedCtx = obs.attachedCtx
+        const attachedCtx = attachCtx(
+          prevAttachedCtx.config,
           ctx,
-          payload: obs.payload,
-          id,
-          checksum: obs.checksum,
-          attachedCtx,
-          error: queryIsNotAuthorized,
-        }).then(enableSubscribe)
+          prevAttachedCtx.fromId,
+        )
+        if (attachedCtx.id !== id) {
+          session.attachedCtxObs.delete(id)
+          unsubscribeWs(server, id, ctx)
+          id = attachedCtx.id
+          console.log('. ATTACHED ADD ID to session')
+          session.obs.add(id)
+          authorize({
+            route: obs.route,
+            server,
+            ctx,
+            payload: obs.payload,
+            id,
+            checksum: obs.checksum,
+            attachedCtx,
+            error: queryIsNotAuthorized,
+          }).then(enableSubscribe)
+        }
       }
     })
   }

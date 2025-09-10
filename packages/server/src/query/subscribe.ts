@@ -7,6 +7,7 @@ import { getObsAndStopRemove } from './get.js'
 import { sendErrorData } from '../sendError.js'
 import { WebSocketSession, Context } from '@based/functions'
 
+// make this a FunctionHandler
 export const subscribeWs = (
   server: BasedServer,
   id: number,
@@ -20,17 +21,24 @@ export const subscribeWs = (
   }
 
   const obs = getObsAndStopRemove(server, id)
-  id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+
+  if ('attachedCtx' in obs) {
+    if (!session.attachedCtxObs) {
+      session.attachedCtxObs = new Set()
+    }
+    session.attachedCtxObs.add(id)
+    id = obs.attachedCtx.fromId
+  }
+
+  session.obs.add(id)
 
   if (ctx.session.v < 2) {
-    session.obs.add(id)
     if (!obs.oldClients) {
       obs.oldClients = new Set()
     }
     obs.oldClients.add(session.id)
     ctx.session.ws.subscribe(String(id) + '-v1')
   } else {
-    session.obs.add(id)
     obs.clients.add(session.id)
     ctx.session.ws.subscribe(String(id))
   }

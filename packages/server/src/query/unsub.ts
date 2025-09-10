@@ -21,25 +21,42 @@ export const unsubscribeFunction = (
   }
 }
 
+// true means obs does not exist
 export const unsubscribeWs = (
   server: BasedServer,
   id: number,
   ctx: Context<WebSocketSession>,
 ): true | void => {
   const session = ctx.session
+
+  console.log('yes unsub', session.obs, id)
+
+  console.log(' activeobs', server.activeObservablesById.keys())
+
   if (!session || !session.obs.has(id)) {
     return
   }
 
   const isV1 = ctx.session.v < 2
 
-  // need to get if its a CTX bound one - extra check... map of ctx bound id to normal id
-
   const obs = server.activeObservablesById.get(id)
+
+  if (!obs) {
+    console.log(' Attached', session.attachedCtxObs)
+    for (const attachedId of session.attachedCtxObs) {
+      const attachedObs = server.activeObservablesById.get(attachedId)
+      if (attachedObs.attachedCtx.fromId === id) {
+        console.log(' ITS ATTACHED', id, attachedId)
+        break
+      }
+    }
+    // hello
+  }
+
   session.obs.delete(id)
 
-  if (ctx.session.attachedAuthStateObs?.has(id)) {
-    ctx.session.attachedAuthStateObs.delete(id)
+  if (ctx.session.attachedCtxObs?.has(id)) {
+    ctx.session.attachedCtxObs.delete(id)
   }
 
   if (isV1) {
@@ -71,6 +88,7 @@ export const unsubscribeWs = (
   }
 }
 
+// true is it does not exist
 export const unsubscribeWsIgnoreClient = (
   server: BasedServer,
   id: number,
@@ -82,6 +100,7 @@ export const unsubscribeWsIgnoreClient = (
   }
   const obs = server.activeObservablesById.get(id)
   if (!obs) {
+    // is not an obs might be a channel
     return true
   }
 

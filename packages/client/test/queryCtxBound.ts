@@ -76,7 +76,7 @@ test('query ctx bound', async (t: T) => {
       console.log('DERPY? update', d)
     })
 
-  await wait(1000)
+  await wait(300)
 
   console.log('--> CLOSE')
   close()
