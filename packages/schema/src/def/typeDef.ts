@@ -24,6 +24,7 @@ import {
   SIZE_MAP,
   REVERSE_SIZE_MAP,
   REVERSE_TYPE_INDEX_MAP,
+  CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { StrictSchema } from '../types.js'
@@ -203,6 +204,10 @@ const createSchemaTypeDef = (
         prop.vectorBaseType = schemaVectorBaseTypeToEnum(
           schemaProp.baseType ?? 'number',
         )
+      }
+      if (isPropType('cardinality', schemaProp)) {
+        schemaProp.mode ?? 'sparse'
+        schemaProp.precision ?? 14
       }
 
       if (isPropType('enum', schemaProp)) {
