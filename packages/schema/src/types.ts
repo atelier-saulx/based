@@ -19,6 +19,7 @@ export const dateDisplays = [
   'date-time',
   'date-time-text',
   'date-time-human',
+  'date-time-human-short',
   'time',
   'time-precise',
 ] as const
