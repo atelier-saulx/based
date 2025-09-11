@@ -95,7 +95,6 @@ const propDefBuffer = (
   nodeTypeId: number,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
-  isEdge?: boolean,
 ): number[] => {
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
@@ -124,7 +123,7 @@ const propDefBuffer = (
     //let eschema = []
 
     // @ts-ignore
-    buf[0] = selvaType + 2 * !!isEdge // field type
+    buf[0] = selvaType + 2 * !!prop.__isEdge // field type
     buf[1] = makeEdgeConstraintFlags(
       refSet,
       nodeTypeId,
@@ -133,12 +132,11 @@ const propDefBuffer = (
       dstType.props[prop.inversePropName],
     ) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
-    if (isEdge) {
+    if (prop.__isEdge) {
       buf[4] = 0
       view.setUint16(5, 0, true)
     } else {
       buf[4] = prop.inversePropNumber
-      // TODO meta_node_type
       view.setUint16(5, prop.edgeNodeTypeId, true) // meta_node_type
     }
 

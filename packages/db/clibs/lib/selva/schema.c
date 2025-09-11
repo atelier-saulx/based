@@ -156,10 +156,10 @@ static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaField
         enum SelvaFieldType type;
         uint8_t spare;
         node_type_t dst_node_type;
-        uint8_t pad[5]; /* Reserved for future use. */
+        uint8_t pad[3]; /* Reserved for future use. */
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 9);
+    static_assert(sizeof(constraints) == 7);
 
     if (ctx->len < sizeof(constraints)) {
         return SELVA_EINVAL;
