@@ -344,3 +344,41 @@ await test('hll', async (t) => {
     ],
   )
 })
+
+await test('switches', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      store: {
+        name: 'string',
+        visitors: {
+          type: 'cardinality',
+          precision: 10,
+          mode: 'dense',
+        },
+        visits: 'number',
+        faceRec: {
+          type: 'vector',
+          baseType: 'float32',
+          size: 5,
+        },
+      },
+    },
+  })
+
+  const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
+
+  db.create('store', {
+    // name: 'Handsome Sportsman',
+    visitors: visits,
+    // visits: visits.length,
+    // faceRec: new Float32Array([60.1, -60.3, 10, -12.3, 9.2]),
+  })
+
+  db.query('store').include('visitors').get().inspect()
+})
