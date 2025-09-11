@@ -1821,7 +1821,8 @@ static struct SelvaNode *next_ref_meta_node(struct SelvaTypeEntry *meta_type, se
     struct SelvaNode *meta;
 
     while (selva_find_node(meta_type, next_id)) {
-        /* FIXME This will loop inifinitely if all ids are used. */
+        /* FIXME This will loop infinitely if all ids are used. */
+        /* FIXME Should we use some sort of free list as a bitmap or something to speed up reuse. */
         next_id++;
     }
 
@@ -1848,26 +1849,22 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
         selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     struct SelvaTypeEntry *meta_type = selva_get_type_by_index(db, efc->meta_node_type);
-    struct SelvaNode *meta;
-    bool do_share = false;
+    struct SelvaNode *meta = nullptr;
 
     if (!meta_type) {
         return nullptr;
     }
 
-    if (ref->meta == 0) {
-        meta = (meta_id) ? selva_upsert_node(meta_type, meta_id) : next_ref_meta_node(meta_type, dirty_cb, dirty_ctx);
+    if (ref->meta == 0 || meta_id != 0) {
+        meta = (meta_id != 0) ? selva_upsert_node(meta_type, meta_id) : next_ref_meta_node(meta_type, dirty_cb, dirty_ctx);
         if (!meta) {
             return nullptr;
         }
 
         meta_id = meta->node_id;
         ref->meta = meta_id;
-        do_share = true;
-    }
-    /* FIXME Do a little refcount +2 */
+        /* FIXME Do a little refcount +2 */
 
-    if (do_share) {
         struct SelvaTypeEntry *type_dst = selva_get_type_by_index(db, efc->dst_node_type);
         const struct SelvaFieldSchema *fs_dst = selva_get_fs_by_te_field(type_dst, efc->inverse_field);
         struct SelvaFields *dst_fields = &ref->dst->fields;
