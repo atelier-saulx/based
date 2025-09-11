@@ -73,15 +73,12 @@ await test('multiple references', async (t) => {
       lat: 32.14,
     },
   })
-
   const mrYur = db.create('user', {
     name: 'Mr Yur',
   })
-
   const mrDerp = db.create('user', {
     name: 'Mr Derp',
   })
-
   await db.drain()
 
   await db.create('article', {
@@ -97,7 +94,6 @@ await test('multiple references', async (t) => {
       },
     ],
   })
-
   await db.create('article', {
     name: 'Italy',
     contributors: [
