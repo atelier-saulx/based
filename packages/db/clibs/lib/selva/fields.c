@@ -2266,19 +2266,16 @@ static void reference_meta_destroy(
 }
 
 /* TODO Better typing for sizes. It's not nice to alias the types. */
-static inline void hash_ref(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct EdgeFieldConstraint *efc, const struct SelvaNodeLargeReference *ref)
+static inline void hash_ref(selva_hash_state_t *hash_state, const struct SelvaNodeLargeReference *ref)
 {
-    if (ref->dst) {
-        selva_hash_update(hash_state, &ref->dst, sizeof(ref->dst));
-        if (selva_get_edge_field_fields_schema(db, efc) && ref->meta != 0) {
-            selva_hash_update(hash_state, &ref->meta, sizeof(ref->meta));
-        }
-    } else {
-        selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
-    }
+    node_id_t dst_id = ref->dst ? ref->dst->node_id : 0;
+    node_id_t meta_id = ref->meta;
+
+    selva_hash_update(hash_state, &dst_id, sizeof(dst_id));
+    selva_hash_update(hash_state, &meta_id, sizeof(meta_id));
 }
 
-void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = fields->nr_fields;
 
@@ -2320,7 +2317,7 @@ nil:
                     goto nil;
                 }
 
-                hash_ref(hash_state, db, efc, p);
+                hash_ref(hash_state, p);
             } else {
                 goto nil;
             }
@@ -2339,13 +2336,13 @@ nil:
                 switch (refs->size) {
                 case SELVA_NODE_REFERENCE_SMALL:
                     for (size_t i = 0; i < len; i++) {
-                        /* TODO Not super nice cast. */
-                        hash_ref(hash_state, db, efc, (struct SelvaNodeLargeReference *)&refs->small[i]);
+                        struct SelvaNodeLargeReference ref = { .dst = refs->small->dst };
+                        hash_ref(hash_state, &ref);
                     }
                     break;
                 case SELVA_NODE_REFERENCE_LARGE:
                     for (size_t i = 0; i < len; i++) {
-                        hash_ref(hash_state, db, efc, &refs->large[i]);
+                        hash_ref(hash_state, &refs->large[i]);
                     }
                     break;
                 default:
