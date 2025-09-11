@@ -3,7 +3,6 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
-import { count } from 'console'
 import { encodeAuthState } from '@based/client-old'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
@@ -48,7 +47,7 @@ test('query ctx bound on authState.token', async (t: T) => {
     },
   })
 
-  await wait(500)
+  await client.once('connect')
 
   await client.setAuthState({ token: '?' })
   const results = []
@@ -117,7 +116,6 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
-            console.info({ ctx })
             if (payload === 'error') {
               error(new Error('error time!'))
             }
@@ -142,7 +140,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
     },
   })
 
-  await wait(500)
+  await client.once('connect')
 
   const results = []
   const errs = []
@@ -206,10 +204,6 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
 
   await wait(1000)
 
-  // add http
-
-  console.log('--------------------------------')
-
   const f = await fetch(
     `${t.context.http}/counter?token=${encodeAuthState({
       token: '🔑',
@@ -217,7 +211,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   )
   const httpGetResult = await f.json()
 
-  console.log(httpGetResult)
+  t.deepEqual(httpGetResult, { userId: 1, cnt: 0 })
 
   await wait(1000)
 
