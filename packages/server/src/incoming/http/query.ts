@@ -246,36 +246,35 @@ export const httpGet = (
   if (!ctx.session) {
     return
   }
-
-  // auth first
-
-  let attachedCtx: AttachedCtx
   const id = genObserveId(route.name, payload)
-  let obsId: number = id
   if (route.ctx) {
-    attachedCtx = attachCtx(route.ctx, ctx, id)
-    obsId = attachedCtx.id
-  } else {
-    obsId = id
-  }
-
-  // problem need to eval attached AFTER auth
-  authorize({
-    route,
-    server,
-    ctx,
-    payload,
-    id: obsId,
-    checksum,
-    attachedCtx,
-  }).then((p) => {
-    if (attachedCtx && attachedCtx.authState) {
-      const attachedCtx2 = attachCtx(route.ctx, ctx, id)
-      if (attachedCtx2.id !== obsId) {
-        p.id = attachedCtx2.id
-        p.attachedCtx = attachedCtx2
+    const attachedCtx = attachCtx(route.ctx, ctx, id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      attachedCtx,
+    }).then((p) => {
+      if (attachedCtx && attachedCtx.authState) {
+        const attachedCtx2 = attachCtx(route.ctx, ctx, id)
+        if (attachedCtx2.id !== attachedCtx.id) {
+          p.id = attachedCtx2.id
+          p.attachedCtx = attachedCtx2
+        }
       }
-    }
-    return get(p)
-  })
+      return get(p)
+    })
+  } else {
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+    }).then(get)
+  }
 }
