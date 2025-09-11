@@ -697,8 +697,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
 
     switch (ref.type) {
     case SELVA_NODE_REFERENCE_LARGE:
-        /* FIXME this is not right! */
-        ref.large->meta = meta;
+        (void)selva_fields_ensure_ref_meta(db, node, &fs->edge_constraint, ref.large, meta, nullptr, nullptr);
         break;
     case SELVA_NODE_REFERENCE_NULL:
     case SELVA_NODE_REFERENCE_SMALL:
