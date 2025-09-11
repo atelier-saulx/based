@@ -36,4 +36,13 @@ await test('cardinality props', () => {
       },
     },
   })
+
+  parse({
+    props: {
+      myUniqueValuesCountSparse: {
+        type: 'cardinality',
+        precision: 2,
+      },
+    },
+  })
 })

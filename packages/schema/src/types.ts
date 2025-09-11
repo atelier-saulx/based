@@ -264,11 +264,13 @@ export type SchemaBoolean = Prop<{
   default?: boolean
 }>
 
+export type HLLRegisterRepresentation = 'sparse' | 'dense'
+
 export type SchemaCardinality = Prop<{
   type: 'cardinality'
   maxBytes?: number
   precision?: number
-  mode?: 'sparse' | 'dense'
+  mode?: HLLRegisterRepresentation
 }>
 
 type VectorDefaultType =

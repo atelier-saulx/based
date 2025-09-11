@@ -27,7 +27,7 @@ import {
   CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
-import { StrictSchema } from '../types.js'
+import { StrictSchema, HLLRegisterRepresentation } from '../types.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
 import {
@@ -205,9 +205,10 @@ const createSchemaTypeDef = (
           schemaProp.baseType ?? 'number',
         )
       }
-      if (isPropType('cardinality', schemaProp)) {
-        schemaProp.mode ?? 'sparse'
-        schemaProp.precision ?? 14
+
+      if (prop.typeIndex === CARDINALITY) {
+        prop.cardinalityMode ?? 'sparse'
+        prop.cardinalityPrecision ?? 14
       }
 
       if (isPropType('enum', schemaProp)) {

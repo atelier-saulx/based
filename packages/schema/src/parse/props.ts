@@ -638,6 +638,18 @@ p.cardinality = propParser<SchemaCardinality>(
     default(val, prop, ctx) {
       return isDefault(val, prop, ctx)
     },
+    mode(val, prop, ctx) {
+      if (!['dense', 'sparse'].includes(val)) {
+        throw Error(INVALID_VALUE)
+      }
+      p.mode = val
+    },
+    precision(val, prop, ctx) {
+      if (val < 2 || val > 16) {
+        throw Error(INVALID_VALUE)
+      }
+      p.precision = val
+    },
   },
   0,
 )
