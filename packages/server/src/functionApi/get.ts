@@ -2,7 +2,6 @@ import { BasedServer } from '../server.js'
 import { createError } from '../error/index.js'
 import { Context, BasedRoute } from '@based/functions'
 import {
-  genObservableId,
   hasObs,
   subscribeNext,
   getObsAndStopRemove,
@@ -13,6 +12,7 @@ import {
 import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
+import { genObserveId } from '@based/protocol/client-server'
 
 const getObsData = (
   resolve: (x: any) => any,
@@ -81,7 +81,7 @@ export const get = (
       return
     }
 
-    const id = genObservableId(name, payload)
+    const id = genObserveId(name, payload)
 
     if (!hasObs(server, id)) {
       installFn({ server, ctx: server.client.ctx, route }).then((spec) => {

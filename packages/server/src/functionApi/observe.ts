@@ -3,7 +3,6 @@ import { createError } from '../error/index.js'
 import { Context } from '@based/functions'
 import { verifyRoute } from '../verifyRoute.js'
 import {
-  genObservableId,
   hasObs,
   createObs,
   ObservableUpdateFunction,
@@ -13,6 +12,7 @@ import {
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
+import { genObserveId } from '@based/protocol/client-server'
 
 // handle this
 export const observe = (
@@ -23,7 +23,7 @@ export const observe = (
   update: ObservableUpdateFunction,
   error: ObserveErrorListener,
 ): (() => void) => {
-  const id = genObservableId(name, payload)
+  const id = genObserveId(name, payload)
 
   // handle attached
 

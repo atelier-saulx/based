@@ -3,7 +3,7 @@ import { sendHttpResponse } from '../../sendHttpResponse.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { installFn } from '../../installFn.js'
-import { genObservableId } from '../../query/index.js'
+import { genObserveId } from '@based/protocol/client-server'
 import {
   hasChannel,
   createChannel,
@@ -46,7 +46,7 @@ export const httpPublish: FunctionHandler<
   }
 
   const name = route.name
-  const id = genObservableId(name, channelPayload)
+  const id = genObserveId(name, channelPayload)
 
   installFn({ server, ctx, route }).then(async (spec) => {
     if (spec === null) {

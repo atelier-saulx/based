@@ -18,7 +18,6 @@ import {
   subscribeNext,
   ActiveObservable,
   start,
-  genObservableId,
   createObsNoStart,
 } from '../../query/index.js'
 import zlib from 'node:zlib'
@@ -27,6 +26,7 @@ import { sendError } from '../../sendError.js'
 import { promisify } from 'node:util'
 import { authorize } from '../../authorize.js'
 import { FunctionHandler } from '../../types.js'
+import { genObserveId } from '@based/protocol/client-server'
 
 const inflate = promisify(zlib.inflateRaw)
 
@@ -249,7 +249,7 @@ export const httpGet = (
     server,
     ctx,
     payload,
-    id: genObservableId(route.name, payload),
+    id: genObserveId(route.name, payload),
     checksum,
   }).then(get)
 }
