@@ -157,7 +157,7 @@ test('query error alternate', async (t: T) => {
     { errs, results },
     {
       errs: ['[bla] 0.'],
-      results: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      results: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     },
   )
 
@@ -235,7 +235,7 @@ test('query error alternate auth', async (t: T) => {
     { errs, results },
     {
       errs: ['[bla] 0.'],
-      results: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      results: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     },
   )
 
