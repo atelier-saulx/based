@@ -114,8 +114,11 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
           ctx: ['authState.userId'],
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
-          fn: (based, payload, update, error, ctx) => {
-            console.info('yo -> ', ctx)
+          fn: async (based, payload, update, error, ctx) => {
+            if (payload === 'error') {
+              error(new Error('error time!'))
+            }
+            console.info('yo -> ', payload, ctx)
             let cnt = 0
             update({ userId: ctx.authState.userId, cnt })
             const counter = setInterval(() => {
@@ -141,7 +144,7 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
 
   const results = []
 
-  const close = client
+  let close = client
     .query('counter', {
       myQuery: 123,
     })
@@ -153,12 +156,26 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
 
   console.log('-> userId', await client.setAuthState({ token: '🔑' }))
 
-  await wait(1300)
+  await wait(300)
+  console.log(results)
 
   close()
-  await wait(1000)
 
-  console.log(results)
+  console.log('\n------\nsubscribe next')
+  const r2 = []
+  close = client.query('counter', 'error').subscribe(
+    (d) => {
+      r2.push({ ...d })
+    },
+    (err) => {
+      console.log(err)
+    },
+  )
+
+  await wait(300)
+  console.log(r2)
+
+  close()
 
   // t.deepEqual(
   //   results,
@@ -172,6 +189,7 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
   //   ],
   //   'Changing auth state token',
   // )
+  await wait(1000)
 
   t.is(server.activeObservablesById.size, 0)
 })

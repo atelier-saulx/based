@@ -130,13 +130,11 @@ export const subscribeMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  if (genObserveId(route.name, payload) !== obsId) {
-    // console.log('SPOOFING = SEC ERR')
+  if (genObserveId(route.name, payload) !== id) {
+    // Check if the payload has been altered (to target other ids)
     ctx.session.ws.close()
     return false
   }
-
-  // TODO security risk need to reval the checksum (is this payload actually this checksum)
 
   session.obs.add(obsId)
   authorize({

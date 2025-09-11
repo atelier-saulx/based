@@ -21,6 +21,8 @@ export const errorListener = (
   obs.isDeflate = false
   obs.reusedCache = false
 
+  const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+
   obs.error =
     err instanceof Error
       ? createError(
@@ -28,7 +30,7 @@ export const errorListener = (
           {
             session: {
               type: 'query',
-              id: obs.id,
+              id,
               name: obs.route.name,
               headers: {},
             },
@@ -36,20 +38,20 @@ export const errorListener = (
           BasedErrorCode.FunctionError,
           {
             err,
-            observableId: obs.id,
+            observableId: id,
             route: {
               name: obs.route.name,
               type: 'query',
             },
           },
         )
-      : err.observableId !== obs.id
-        ? { ...err, observableId: obs.id }
+      : err.observableId !== id
+        ? { ...err, observableId: id }
         : err
 
   if (obs.clients.size) {
     server.uwsApp.publish(
-      String(obs.id),
+      String(id),
       encodeErrorResponse(valueToBuffer(obs.error, true)),
       true,
       false,
@@ -58,7 +60,7 @@ export const errorListener = (
 
   if (obs.oldClients?.size) {
     server.uwsApp.publish(
-      String(obs.id) + '-v1',
+      String(id) + '-v1',
       encodeErrorResponse(valueToBufferV1(obs.error, true)),
       true,
       false,
