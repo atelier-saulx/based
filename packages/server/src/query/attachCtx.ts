@@ -12,7 +12,7 @@ export const attachCtx = (
     ctx: {},
     id,
     authState: false,
-    config,
+    geo: false,
     fromId: id,
   }
   let hasValues = false
@@ -21,6 +21,8 @@ export const attachCtx = (
       const p = path.split('.')
       if (p[0] === 'authState') {
         attachCtx.authState = true
+      } else if (p[0] === 'geo') {
+        attachCtx.geo = true
       }
       let s = attachCtx.ctx
       let c = ctx.session

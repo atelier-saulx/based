@@ -1,4 +1,9 @@
-import { decodePayload, decodeName, encodeGetResponse } from '../../protocol.js'
+import {
+  decodePayload,
+  decodeName,
+  encodeGetResponse,
+  parseIncomingQueryPayload,
+} from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import {
   destroyObs,
@@ -167,31 +172,43 @@ export const getMessage: BinaryMessageHandler = (
     return true
   }
 
-  let attachedCtx: AttachedCtx
+  const payload = parseIncomingQueryPayload(
+    arr,
+    start,
+    nameLen + 21,
+    len,
+    ctx.session,
+    isDeflate,
+  )
+
   if (route.ctx) {
-    attachedCtx = attachCtx(route.ctx, ctx, id)
-    id = attachedCtx.id
+    const attachedCtx = attachCtx(route.ctx, ctx, id)
+    if (ctx.session.obs.has(attachedCtx.id)) {
+      // Allready subscribed to this id
+      return true
+    }
+    ctx.session.obs.add(attachedCtx.id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      error: isNotAuthorized,
+      attachedCtx,
+    }).then(get)
+  } else {
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+      error: isNotAuthorized,
+    }).then(get)
   }
-
-  const payload =
-    len === nameLen + 21
-      ? undefined
-      : decodePayload(
-          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate,
-          ctx.session.v < 2,
-        )
-
-  authorize({
-    route,
-    server,
-    ctx,
-    payload,
-    id,
-    checksum,
-    attachedCtx,
-    error: isNotAuthorized,
-  }).then(get)
 
   return true
 }

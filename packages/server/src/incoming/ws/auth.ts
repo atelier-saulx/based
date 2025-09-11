@@ -47,14 +47,13 @@ export const reEvaulateUnauthorized = (
     session.attachedCtxObs.forEach((id) => {
       const obs = server.activeObservablesById.get(id)
       if (obs.attachedCtx.authState) {
-        const prevAttachedCtx = obs.attachedCtx
         const attachedCtx = attachCtx(
-          prevAttachedCtx.config,
+          obs.route.ctx,
           ctx,
-          prevAttachedCtx.fromId,
+          obs.attachedCtx.fromId,
         )
         if (attachedCtx.id !== id) {
-          unsubscribeWs(server, prevAttachedCtx.fromId, ctx)
+          unsubscribeWs(server, obs.attachedCtx.fromId, ctx)
           id = attachedCtx.id
           // This is for async unsubscribe (auth / install not rdy before unsub command)
           session.obs.add(id)
@@ -91,9 +90,7 @@ export const reEvaulateUnauthorized = (
         id,
         attachedCtx,
         checksum,
-        error: () => {
-          // keep it here
-        },
+        error: () => {}, // Do not remove from unauthorizedObs,
       }).then((props) => {
         session.unauthorizedObs.delete(obs)
         enableSubscribe(props)

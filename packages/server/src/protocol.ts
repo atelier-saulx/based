@@ -15,6 +15,7 @@ import {
   FunctionClientType,
   FunctionServerType,
 } from '@based/protocol/client-server'
+import { WebSocketSession } from '@based/functions'
 
 export const COMPRESS_FROM_BYTES = 150
 
@@ -78,6 +79,24 @@ export const CONTENT_TYPE_VERSION_1_U8 = new Uint8Array([250])
 export const CONTENT_TYPE_DB_QUERY = new Uint8Array([249])
 
 const EMPTY_BUFFER = new Uint8Array([])
+
+export const parseIncomingQueryPayload = (
+  arr: Uint8Array,
+  start: number,
+  headerLen: number,
+  len: number,
+  session: WebSocketSession,
+  isDeflate: boolean,
+) => {
+  // headerLen:nameLen + 21
+  return len === headerLen
+    ? undefined
+    : decodePayload(
+        new Uint8Array(arr.slice(start + headerLen, start + len)),
+        isDeflate,
+        session.v < 2,
+      )
+}
 
 export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
   // 12 + 8

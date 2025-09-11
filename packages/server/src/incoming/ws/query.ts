@@ -1,4 +1,8 @@
-import { decodePayload, decodeName } from '../../protocol.js'
+import {
+  decodePayload,
+  decodeName,
+  parseIncomingQueryPayload,
+} from '../../protocol.js'
 import {
   createObs,
   unsubscribeWs,
@@ -105,48 +109,56 @@ export const subscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  const session = ctx.session
-  let attachedCtx: AttachedCtx
-
-  let obsId: number
-  if (route.ctx) {
-    attachedCtx = attachCtx(route.ctx, ctx, id)
-    obsId = attachedCtx.id
-  } else {
-    obsId = id
-  }
-
-  if (session.obs.has(obsId)) {
-    // Allready subscribed to this id
-    return true
-  }
-
-  let payload =
-    len === nameLen + 21
-      ? undefined
-      : decodePayload(
-          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate,
-          ctx.session.v < 2,
-        )
+  const payload = parseIncomingQueryPayload(
+    arr,
+    start,
+    nameLen + 21,
+    len,
+    ctx.session,
+    isDeflate,
+  )
 
   if (genObserveId(route.name, payload) !== id) {
-    // Check if the payload has been altered (to target other ids)
+    // Check if the payload has been altered (potential attack to target other ids)
     ctx.session.ws.close()
     return false
   }
+  console.log('?')
 
-  session.obs.add(obsId)
-  authorize({
-    route,
-    server,
-    ctx,
-    payload,
-    id: obsId,
-    checksum,
-    attachedCtx,
-    error: queryIsNotAuthorized,
-  }).then(enableSubscribe)
+  if (route.ctx) {
+    const attachedCtx = attachCtx(route.ctx, ctx, id)
+
+    if (ctx.session.obs.has(attachedCtx.id)) {
+      // Allready subscribed to this id
+      return true
+    }
+    ctx.session.obs.add(attachedCtx.id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      error: queryIsNotAuthorized,
+      attachedCtx,
+    }).then(enableSubscribe)
+  } else {
+    if (ctx.session.obs.has(id)) {
+      // Allready subscribed to this id
+      return true
+    }
+    ctx.session.obs.add(id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+      error: queryIsNotAuthorized,
+    }).then(enableSubscribe)
+  }
 
   return true
 }

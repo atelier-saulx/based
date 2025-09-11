@@ -46,6 +46,6 @@ export type AttachedCtx = {
   ctx: { [key: string]: any }
   id: number
   authState: boolean
-  config: BasedQueryFunctionConfig['ctx']
+  geo: boolean
   fromId: number
 }
