@@ -88,7 +88,7 @@ test('query ctx bound on authState.token', async (t: T) => {
   await server.destroy()
 })
 
-test.only('query ctx bound on authState.userId require auth', async (t: T) => {
+test('query ctx bound on authState.userId require auth', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
@@ -119,7 +119,6 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
             if (payload === 'error') {
               error(new Error('error time!'))
             }
-            // console.info('yo -> ', payload, ctx)
             let cnt = 0
             update({ userId: ctx.authState.userId, cnt })
             const counter = setInterval(() => {
@@ -144,27 +143,46 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
   await wait(500)
 
   const results = []
+  const errs = []
 
   let close = client
     .query('counter', {
       myQuery: 123,
     })
-    .subscribe((d) => {
-      results.push({ ...d })
-    })
+    .subscribe(
+      (d) => {
+        results.push({ ...d })
+      },
+      (err) => {
+        errs.push(err.message)
+      },
+    )
 
   await wait(300)
+
+  t.deepEqual(
+    errs,
+    ['[counter] Authorize rejected access.'],
+    'Changing auth state err',
+  )
+  t.deepEqual(results, [], '')
 
   await client.setAuthState({ token: '🔑' })
 
-  // console.log('-> userId',)
-
   await wait(300)
-  console.log(results)
+
+  t.deepEqual(
+    results,
+    [
+      { userId: 1, cnt: 0 },
+      { userId: 1, cnt: 1 },
+      { userId: 1, cnt: 2 },
+    ],
+    'Changing auth state token (valid auth)',
+  )
 
   close()
 
-  // console.log('\n------\nsubscribe next')
   const r2 = []
   close = client.query('counter', 'error').subscribe(
     (d) => {
@@ -176,34 +194,17 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
   )
 
   await wait(300)
-  // console.log(r2)
 
   close()
 
-  console.info(await client.query('counter').get())
+  t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
+  t.deepEqual(await client.query('counter', 'bla').get(), { userId: 1, cnt: 0 })
 
-  console.info(await client.query('counter', { x: true }).get())
+  t.throwsAsync(() => client.query('counter', 'error').get())
 
-  console.info(
-    await client
-      .query('counter', 'error')
-      .get()
-      .catch((err) => err),
-  )
-
-  // t.deepEqual(
-  //   results,
-  //   [
-  //     { token: '?', cnt: 2 },
-  //     { token: '?', cnt: 2 },
-  //     { token: '?', cnt: 2 },
-  //     { token: '!', cnt: 3 },
-  //     { token: '!', cnt: 3 },
-  //     { token: '!', cnt: 3 },
-  //   ],
-  //   'Changing auth state token',
-  // )
   await wait(1000)
 
   t.is(server.activeObservablesById.size, 0)
+  await client.destroy()
+  await server.destroy()
 })
