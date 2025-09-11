@@ -692,16 +692,20 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         }
     }
 
+    /*
+     * Load meta.
+     */
     node_id_t meta;
     io->sdb_read(&meta, sizeof(meta), 1, io); /* Always read. */
-
-    switch (ref.type) {
-    case SELVA_NODE_REFERENCE_LARGE:
-        (void)selva_fields_ensure_ref_meta(db, node, &fs->edge_constraint, ref.large, meta, nullptr, nullptr);
-        break;
-    case SELVA_NODE_REFERENCE_NULL:
-    case SELVA_NODE_REFERENCE_SMALL:
-        break;
+    if (meta) {
+        switch (ref.type) {
+        case SELVA_NODE_REFERENCE_LARGE:
+            (void)selva_fields_ensure_ref_meta(db, node, &fs->edge_constraint, ref.large, meta, nullptr, nullptr);
+            break;
+        case SELVA_NODE_REFERENCE_NULL:
+        case SELVA_NODE_REFERENCE_SMALL:
+            break;
+        }
     }
 
     return err;
