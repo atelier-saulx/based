@@ -219,3 +219,86 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   await client.destroy()
   await server.destroy()
 })
+
+test('query ctx bound on geo', async (t: T) => {
+  let currentGeo = 1
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    geo: async () => {
+      currentGeo++
+      const isDe = currentGeo % 2
+      return {
+        country: isDe ? 'DE' : 'NL',
+        ip: '192.123.123.1',
+        regions: [],
+        long: 43.12,
+        lat: 23.12,
+        accuracy: 0.1,
+      }
+    },
+    functions: {
+      configs: {
+        counter: {
+          type: 'query',
+          ctx: ['geo.country'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            if (payload === 'error') {
+              error(new Error('error time!'))
+            }
+            let cnt = 0
+            update({ geo: ctx.geo, cnt })
+            const counter = setInterval(() => {
+              update({ geo: ctx.geo, cnt: ++cnt })
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  const client2 = new BasedClient()
+
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  client2.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  await Promise.all([client.once('connect'), client2.once('connect')])
+
+  const results = []
+
+  const close = client.query('counter').subscribe((d) => {
+    results.push({ ...d })
+  })
+
+  const close2 = client.query('counter').subscribe((d) => {
+    results.push({ ...d })
+  })
+
+  await wait(250)
+
+  console.log({ results })
+
+  close()
+  close2()
+  await wait(1000)
+
+  t.is(server.activeObservablesById.size, 0)
+
+  await client.destroy()
+  await server.destroy()
+})
