@@ -4,6 +4,7 @@ import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
 import { count } from 'console'
+import { encodeAuthState } from '@based/client-old'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -60,7 +61,7 @@ test('query ctx bound on authState.token', async (t: T) => {
       results.push({ ...d })
     })
 
-  await wait(300)
+  await wait(290)
 
   await client.setAuthState({ token: '!' })
 
@@ -116,6 +117,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
+            console.info({ ctx })
             if (payload === 'error') {
               error(new Error('error time!'))
             }
@@ -158,7 +160,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
       },
     )
 
-  await wait(300)
+  await wait(290)
 
   t.deepEqual(
     errs,
@@ -169,7 +171,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
 
   await client.setAuthState({ token: '🔑' })
 
-  await wait(300)
+  await wait(290)
 
   t.deepEqual(
     results,
@@ -193,7 +195,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
     },
   )
 
-  await wait(300)
+  await wait(290)
 
   close()
 
@@ -201,6 +203,21 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   t.deepEqual(await client.query('counter', 'bla').get(), { userId: 1, cnt: 0 })
 
   t.throwsAsync(() => client.query('counter', 'error').get())
+
+  await wait(1000)
+
+  // add http
+
+  console.log('--------------------------------')
+
+  const f = await fetch(
+    `${t.context.http}/counter?token=${encodeAuthState({
+      token: '🔑',
+    })}`,
+  )
+  const httpGetResult = await f.json()
+
+  console.log(httpGetResult)
 
   await wait(1000)
 
