@@ -1,9 +1,8 @@
 import test, { ExecutionContext } from 'ava'
-import { BasedClient } from '../src/index.js'
+import { BasedClient, encodeAuthState } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
-import { encodeAuthState } from '@based/client-old'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -246,6 +245,7 @@ test('query ctx bound on geo', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
+            console.log('derp?', ctx)
             if (payload === 'error') {
               error(new Error('error time!'))
             }
