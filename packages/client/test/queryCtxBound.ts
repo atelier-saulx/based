@@ -93,10 +93,15 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
     port: t.context.port,
     silent: true,
     auth: {
+      verifyAuthState: async (_based, _ctx, authState) => {
+        if (authState?.token === '🔑') {
+          return { userId: 1, token: '🔑' }
+        }
+        return { token: 'wrong_token' }
+      },
       authorize: async (based, ctx, name, payload) => {
+        await based.renewAuthState(ctx)
         if (ctx.session.authState.token === '🔑') {
-          based.sendAuthState(ctx, { userId: 1 })
-          console.log('AUTH!?')
           return true
         }
         return false
@@ -110,7 +115,7 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: (based, payload, update, error, ctx) => {
-            console.info('yo!', ctx)
+            console.info('yo -> ', ctx)
             let cnt = 0
             update({ userId: ctx.authState.userId, cnt })
             const counter = setInterval(() => {
@@ -141,12 +146,12 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
       myQuery: 123,
     })
     .subscribe((d) => {
-      results.push(d)
+      results.push({ ...d })
     })
 
   await wait(300)
 
-  console.log(await client.setAuthState({ token: '🔑' }))
+  console.log('-> userId', await client.setAuthState({ token: '🔑' }))
 
   await wait(1300)
 
