@@ -4,6 +4,7 @@ import { handleBinary } from './handleBinary.js'
 
 const MAX_CHUNK_SIZE = 1024 * 1024
 
+// REFACTOR THIS TO USE THE SAME MESSAGE HANDLERS
 export const handleFakeWs = (
   server: BasedServer,
   ctx: Context<HttpSession>,

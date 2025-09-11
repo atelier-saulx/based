@@ -6,8 +6,8 @@ import {
   encodeAuthResponse,
   valueToBuffer,
 } from '../../../protocol.js'
-import { handleQuery } from './query.js'
-import { handleFunction } from './function.js'
+// import { handleQuery } from './query.js'
+// import { handleFunction } from './function.js'
 import { readUint32 } from '@based/utils'
 import {
   FunctionServerType,
@@ -24,24 +24,24 @@ const reader = (
   const next = len + start
 
   if (type === FunctionServerType.function) {
-    const p = handleFunction(arr, start, len, isDeflate, ctx, server)
-    if (p) {
-      return [next, p]
-    } else {
-      return [undefined]
-    }
+    // const p = handleFunction(arr, start, len, isDeflate, ctx, server)
+    // if (p) {
+    //   return [next, p]
+    // } else {
+    //   return [undefined]
+    // }
   }
 
   if (
     type === FunctionServerType.subscribe ||
     type === FunctionServerType.get
   ) {
-    const p = handleQuery(arr, start, len, isDeflate, ctx, server)
-    if (p) {
-      return [next, p]
-    } else {
-      return [undefined]
-    }
+    // const p = handleQuery(arr, start, len, isDeflate, ctx, server)
+    // if (p) {
+    //   return [next, p]
+    // } else {
+    return [undefined]
+    // }
   }
 
   if (type === FunctionServerType.unsubscribe) {

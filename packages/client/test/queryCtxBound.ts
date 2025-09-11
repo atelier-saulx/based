@@ -95,8 +95,8 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
     auth: {
       authorize: async (based, ctx, name, payload) => {
         if (ctx.session.authState.token === '🔑') {
-          // based.sendAuthState(ctx, { userId: 1 })
-          console.log('AUTH!')
+          based.sendAuthState(ctx, { userId: 1 })
+          console.log('AUTH!?')
           return true
         }
         return false
@@ -106,11 +106,11 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
       configs: {
         counter: {
           type: 'query',
-          ctx: ['authState.token'],
+          ctx: ['authState.userId'],
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: (based, payload, update, error, ctx) => {
-            console.info('yo???????', ctx)
+            console.info('yo!', ctx)
             let cnt = 0
             update({ userId: ctx.authState.userId, cnt })
             const counter = setInterval(() => {
