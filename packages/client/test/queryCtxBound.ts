@@ -3,6 +3,7 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
+import { count } from 'console'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -178,6 +179,17 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
   // console.log(r2)
 
   close()
+
+  console.info(await client.query('counter').get())
+
+  console.info(await client.query('counter', { x: true }).get())
+
+  console.info(
+    await client
+      .query('counter', 'error')
+      .get()
+      .catch((err) => err),
+  )
 
   // t.deepEqual(
   //   results,
