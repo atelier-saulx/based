@@ -118,7 +118,7 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
             if (payload === 'error') {
               error(new Error('error time!'))
             }
-            console.info('yo -> ', payload, ctx)
+            // console.info('yo -> ', payload, ctx)
             let cnt = 0
             update({ userId: ctx.authState.userId, cnt })
             const counter = setInterval(() => {
@@ -154,26 +154,28 @@ test.only('query ctx bound on authState.userId require auth', async (t: T) => {
 
   await wait(300)
 
-  console.log('-> userId', await client.setAuthState({ token: '🔑' }))
+  await client.setAuthState({ token: '🔑' })
+
+  // console.log('-> userId',)
 
   await wait(300)
   console.log(results)
 
   close()
 
-  console.log('\n------\nsubscribe next')
+  // console.log('\n------\nsubscribe next')
   const r2 = []
   close = client.query('counter', 'error').subscribe(
     (d) => {
       r2.push({ ...d })
     },
     (err) => {
-      console.log(err)
+      // console.log(err)
     },
   )
 
   await wait(300)
-  console.log(r2)
+  // console.log(r2)
 
   close()
 

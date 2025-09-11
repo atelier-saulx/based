@@ -182,6 +182,8 @@ export const getMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
+  console.log('GET?')
+
   authorize({
     route,
     server,

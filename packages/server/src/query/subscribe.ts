@@ -42,13 +42,12 @@ export const subscribeWs = (
     ctx.session.ws.subscribe(String(id))
   }
 
-  if (obs.error) {
-    sendErrorData(ctx, obs.error)
-    return
-  }
-
   if (server.queryEvents) {
     server.queryEvents.subscribe(obs, ctx)
+  }
+
+  if (obs.error) {
+    sendErrorData(ctx, obs.error)
   }
 
   if (obs.cache && obs.checksum !== checksum) {
