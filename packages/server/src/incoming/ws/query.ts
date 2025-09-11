@@ -123,13 +123,10 @@ export const subscribeMessage: BinaryMessageHandler = (
     ctx.session.ws.close()
     return false
   }
-  console.log('?')
 
   if (route.ctx) {
     const attachedCtx = attachCtx(route.ctx, ctx, id)
-
     if (ctx.session.obs.has(attachedCtx.id)) {
-      // Allready subscribed to this id
       return true
     }
     ctx.session.obs.add(attachedCtx.id)
@@ -143,9 +140,9 @@ export const subscribeMessage: BinaryMessageHandler = (
       error: queryIsNotAuthorized,
       attachedCtx,
     }).then(enableSubscribe)
+    return true
   } else {
     if (ctx.session.obs.has(id)) {
-      // Allready subscribed to this id
       return true
     }
     ctx.session.obs.add(id)

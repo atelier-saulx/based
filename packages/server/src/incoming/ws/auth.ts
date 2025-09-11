@@ -54,15 +54,13 @@ export const reEvaulateUnauthorized = (
         )
         if (attachedCtx.id !== id) {
           unsubscribeWs(server, obs.attachedCtx.fromId, ctx)
-          id = attachedCtx.id
-          // This is for async unsubscribe (auth / install not rdy before unsub command)
-          session.obs.add(id)
+          session.obs.add(attachedCtx.id)
           authorize({
             route: obs.route,
             server,
             ctx,
             payload: obs.payload,
-            id,
+            id: attachedCtx.id,
             checksum: obs.checksum,
             attachedCtx,
             error: queryIsNotAuthorized,
@@ -97,6 +95,7 @@ export const reEvaulateUnauthorized = (
       })
     })
   }
+
   if (session.unauthorizedChannels?.size) {
     session.unauthorizedChannels.forEach((channel) => {
       const { id, route, payload } = channel

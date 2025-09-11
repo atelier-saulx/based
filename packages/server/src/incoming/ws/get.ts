@@ -183,11 +183,6 @@ export const getMessage: BinaryMessageHandler = (
 
   if (route.ctx) {
     const attachedCtx = attachCtx(route.ctx, ctx, id)
-    if (ctx.session.obs.has(attachedCtx.id)) {
-      // Allready subscribed to this id
-      return true
-    }
-    ctx.session.obs.add(attachedCtx.id)
     authorize({
       route,
       server,
