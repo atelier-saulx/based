@@ -1855,7 +1855,12 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
         return nullptr;
     }
 
-    if (ref->meta == 0 || meta_id != 0) {
+    /* RFE what to do if there was an existing meta? */
+    if (ref->meta != 0 && meta_id == 0) {
+        /* FIXME Partials will require upsert here! */
+        meta = selva_find_node(meta_type, ref->meta);
+        assert(meta);
+    } else if (ref->meta == 0 || meta_id != 0) {
         meta = (meta_id != 0) ? selva_upsert_node(meta_type, meta_id) : next_ref_meta_node(meta_type, dirty_cb, dirty_ctx);
         if (!meta) {
             return nullptr;
