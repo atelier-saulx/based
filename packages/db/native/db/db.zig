@@ -399,7 +399,7 @@ pub fn writeEdgeProp(
     fieldSchema: FieldSchema,
     data: []u8,
 ) !void {
-    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
 
     try writeField(data, meta_node, fieldSchema);
     if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) == 0) {
@@ -424,7 +424,7 @@ pub fn ensureEdgePropString(
     ref: *selva.SelvaNodeLargeReference,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
-    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
     return selva.selva_fields_ensure_string(meta_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 

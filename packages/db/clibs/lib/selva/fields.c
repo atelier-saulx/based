@@ -1397,14 +1397,16 @@ int selva_fields_reference_set(
     node_id_t old_dst_id;
 
     old_dst_id = remove_reference(db, src, fs_src, 0, -1, true, dirty_cb, dirty_ctx);
-    if (old_dst_id != 0) {
-        dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, old_dst_id);
+    if (dirty_cb) {
+        if (old_dst_id != 0) {
+            dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, old_dst_id);
+        }
+        dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, dst->node_id);
     }
-    dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, dst->node_id);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         /* The new destination may have a ref to somewhere. */
         old_dst_id = remove_reference(db, dst, fs_dst, 0, -1, false, dirty_cb, dirty_ctx);
-        if (old_dst_id != 0) {
+        if (old_dst_id != 0 && dirty_cb) {
             dirty_cb(dirty_ctx, src->type, old_dst_id);
         }
     }
@@ -1813,12 +1815,37 @@ int selva_fields_references_swap(
     return 0;
 }
 
+static struct SelvaNode *next_ref_meta_node(struct SelvaTypeEntry *meta_type, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+{
+    node_id_t next_id = (meta_type->max_node) ? meta_type->max_node->node_id + 1 : 1;
+    struct SelvaNode *meta;
+
+    while (selva_find_node(meta_type, next_id)) {
+        /* FIXME This will loop inifinitely if all ids are used. */
+        next_id++;
+    }
+
+    meta = selva_upsert_node(meta_type, next_id);
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, meta_type->type, next_id);
+    }
+
+    return meta;
+}
+
 /**
  * Create meta if it's not initialized yet.
  * Most importantly this function makes sure that the object is shared between
  * both ends of the edge.
+ * @param meta_id Node id of the edge meta node. 0 if a new one should be assigned.
  */
-struct SelvaNode *selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaNode *node, const struct EdgeFieldConstraint *efc, struct SelvaNodeLargeReference *ref)
+struct SelvaNode *selva_fields_ensure_ref_meta(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct EdgeFieldConstraint *efc,
+        struct SelvaNodeLargeReference *ref,
+        node_id_t meta_id,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     struct SelvaTypeEntry *meta_type = selva_get_type_by_index(db, efc->meta_node_type);
     struct SelvaNode *meta;
@@ -1829,14 +1856,15 @@ struct SelvaNode *selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaN
     }
 
     if (ref->meta == 0) {
-        if (meta_type->max_node) {
-            ref->meta = meta_type->max_node->node_id + 1;
-        } else {
-            ref->meta = 1;
+        meta = (meta_id) ? selva_upsert_node(meta_type, meta_id) : next_ref_meta_node(meta_type, dirty_cb, dirty_ctx);
+        if (!meta) {
+            return nullptr;
         }
+
+        meta_id = meta->node_id;
+        ref->meta = meta_id;
         do_share = true;
     }
-    meta = selva_upsert_node(meta_type, ref->meta);
     /* FIXME Do a little refcount +2 */
 
     if (do_share) {
@@ -1874,6 +1902,10 @@ struct SelvaNode *selva_fields_ensure_ref_meta(struct SelvaDb *db, struct SelvaN
             }
         } else {
             db_panic("Invalid inverse field type: %d", fs_dst->type);
+        }
+
+        if (dirty_cb) {
+            dirty_cb(dirty_ctx, ref->dst->type, ref->dst->node_id);
         }
     }
 
