@@ -18,10 +18,8 @@ export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedQueryResponse.js'
 export * from './server/save.js'
 export * from './hooks.js'
-import * as n from './native.js'
 
-const native = n.default
-export { getDefaultHooks, BasedDbOpts, native }
+export { getDefaultHooks, BasedDbOpts }
 
 export class BasedDb extends Emitter {
   client: DbClient
