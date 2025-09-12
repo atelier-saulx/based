@@ -243,6 +243,7 @@ static void *SVector_InsertFast(SVector *vec, void *el) {
             vec->vec_arr_len = sz;
             vec->vec_arr = selva_malloc(VEC_SIZE(sz));
         }
+        SVector_ShiftReset(vec);
 
         ssize_t l = 0;
         ssize_t r = (ssize_t)vec->vec_last - 1;
@@ -570,6 +571,32 @@ void *SVector_Pop(SVector * restrict vec) {
         RB_REMOVE(SVector_rbtree, &vec->vec_rbhead, n);
         mempool_return(&vec->vec_rbmempool, n);
         vec->vec_last--;
+    }
+
+    return last;
+}
+
+void *SVector_PeekTail(SVector * restrict vec) {
+    const enum SVectorMode vec_mode = vec->vec_mode;
+    void *last = nullptr;
+
+    assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
+
+    if (vec_mode == SVECTOR_MODE_ARRAY) {
+        if (vec->vec_last == vec->vec_arr_shift_index) {
+            return nullptr;
+        }
+
+        assert(vec->vec_last <= vec->vec_arr_len);
+        last = vec->vec_arr[vec->vec_last - 1];
+    } else if (vec_mode == SVECTOR_MODE_RBTREE) {
+        struct SVector_rbnode *n = RB_MAX(SVector_rbtree, &vec->vec_rbhead);
+
+        if (!n) {
+            return nullptr;
+        }
+
+        last = n->p;
     }
 
     return last;

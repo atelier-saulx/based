@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 
 await test('hooks - undefined values', async (t) => {
   const db = new BasedDb({
@@ -194,4 +194,41 @@ await test('hooks - private nodes', async (t) => {
       private: false,
     },
   ])
+})
+
+await test('hooks - as SQL CHECK constraints', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          create(payload) {
+            if (payload.age < 21 && payload.city === 'Sandcity') {
+              throw new Error('Minors not allowed in Sandcity')
+            }
+          },
+        },
+        props: {
+          name: 'string',
+          age: 'uint8',
+          city: 'string',
+        },
+      },
+    },
+  })
+
+  throws(() => db.create('user', {
+    name: '',
+    age: 15,
+    city: 'Sandcity',
+  }))
+
+  deepEqual((await db.query('user').get()).length, 0)
 })

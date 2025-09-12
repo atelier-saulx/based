@@ -616,6 +616,35 @@ PU_TEST(test_peek)
     return nullptr;
 }
 
+PU_TEST(test_peek_tail)
+{
+    struct data el[] = { { 1 }, { 2 }, { 3 } };
+    int *v;
+
+    SVector_Init(&vec, 3, compar);
+    for (size_t i = 0; i < num_elem(el); i++) {
+        SVector_Insert(&vec, &el[i]);
+    }
+
+    v = SVector_PeekTail(&vec);
+    pu_assert_equal("Got the last elem", *v, 3);
+    pu_assert_ptr_equal("Pops el[2]", SVector_Pop(&vec), &el[2]);
+    SVector_ShiftReset(&vec);
+
+    v = SVector_PeekTail(&vec);
+    pu_assert_equal("Got the second elem", *v, 2);
+
+    pu_assert_ptr_equal("Pops el[1]", SVector_Pop(&vec), &el[1]);
+    v = SVector_PeekTail(&vec);
+    pu_assert_equal("Got the first elem", *v, 1);
+
+    pu_assert_ptr_equal("Pop el[0]", SVector_Pop(&vec), &el[0]);
+    v = SVector_PeekTail(&vec);
+    pu_assert_null("Nothing left", v);
+
+    return nullptr;
+}
+
 PU_TEST(test_pop)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };

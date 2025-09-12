@@ -43,37 +43,37 @@ char *selva_io_hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SE
  * Init an io structure for a file.
  * Note that flags must be valid and validated before calling this function.
  */
-static void init_io_file(struct selva_io *io, FILE *file, const char *filename, enum selva_io_flags flags)
+static int init_io_file(struct selva_io *io, FILE *file, const char *filename, enum selva_io_flags flags)
 {
-    memset(io, 0, sizeof(*io));
     io->flags = flags;
     io->file_io.filename = selva_string_createf("%s", filename);
     io->file_io.file = file;
     sdb_init(io);
 
-    if (flags & SELVA_IO_FLAGS_WRITE) {
-        sdb_write_header(io);
-    } else {
-        sdb_read_header(io);
+    int err = (flags & SELVA_IO_FLAGS_WRITE) ? sdb_write_header(io) : sdb_read_header(io);
+    if (err) {
+        selva_io_errlog(io, "%s: Failed: %s", __func__, selva_strerror(err));
     }
+
+    return err;
 }
 
 /**
  * Init an io structure for a selva_string.
  * Note that flags must be valid and validated before calling this function.
  */
-static void init_io_string(struct selva_io *io, struct selva_string *s, enum selva_io_flags flags)
+static int init_io_string(struct selva_io *io, struct selva_string *s, enum selva_io_flags flags)
 {
-    memset(io, 0, sizeof(*io));
     io->flags = flags;
     io->string_io.data = s;
     sdb_init(io);
 
-    if (flags & SELVA_IO_FLAGS_WRITE) {
-        sdb_write_header(io);
-    } else {
-        sdb_read_header(io);
+    int err = (flags & SELVA_IO_FLAGS_WRITE) ? sdb_write_header(io) : sdb_read_header(io);
+    if (err) {
+        selva_io_errlog(io, "%s: Failed: %s", __func__, selva_strerror(err));
     }
+
+    return err;
 }
 
 int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags)
@@ -116,9 +116,7 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
         flags |= SELVA_IO_FLAGS_COMPRESSED;
     }
 
-    init_io_file(io, file, filename, flags);
-
-    return 0;
+    return init_io_file(io, file, filename, flags);
 }
 
 struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags)
@@ -130,18 +128,20 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
         return nullptr;
     }
 
+    /* TODO Handle error. */
     init_io_string(io, s, flags);
 
     return s;
 }
 
-int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags)
+int selva_io_init_string_read(struct selva_io *io, struct selva_string * restrict s, enum selva_io_flags flags)
 {
     flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_READ;
     if (!valid_flags(flags)) {
         return SELVA_EINVAL;
     }
 
+    /* TODO Handle error. */
     init_io_string(io, s, flags);
 
     return 0;
@@ -194,7 +194,7 @@ int selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SI
 int selva_io_quick_verify(const char *filename)
 {
     int err;
-    struct selva_io io;
+    struct selva_io io = {};
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {

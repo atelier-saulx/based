@@ -132,7 +132,8 @@ await test('sortCardinality', async (t) => {
   ]
 
   let brazos = []
-  for (let i = 0; i < 1e6; i++) {
+  let num_brazos = 1e7
+  for (let i = 0; i < num_brazos; i++) {
     brazos.push(names[Math.floor(Math.random() * names.length)] + i)
   }
 
@@ -150,9 +151,9 @@ await test('sortCardinality', async (t) => {
         .include('brazilians')
         .get()
         .toObject()
-    )[0].brazilians - 1e6,
+    )[0].brazilians - num_brazos,
   )
-  equal(countError < 1e6 * 0.2, true, 'HLL 2% typical accuracy.')
+  equal(countError < num_brazos * 0.02, true, 'HLL 2% typical accuracy.')
 
   deepEqual(
     (

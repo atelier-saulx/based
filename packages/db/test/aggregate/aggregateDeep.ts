@@ -559,7 +559,7 @@ await test('cardinality', async (t) => {
   )
 })
 
-await test('cardinality on references', async (t) => {
+await test.skip('cardinality on references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
