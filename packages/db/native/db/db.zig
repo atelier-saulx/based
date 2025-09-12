@@ -175,6 +175,8 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
         selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer2(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
+        selva.SELVA_FIELD_TYPE_WEAK_REFERENCE => selva.selva_fields_set_weak_reference(node, fieldSchema, @bitCast(data[0..4].*)),
+        selva.SELVA_FIELD_TYPE_WEAK_REFERENCES => selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(data.ptr)), data.len / 4),
         else => selva.SELVA_EINTYPE,
     });
 }
