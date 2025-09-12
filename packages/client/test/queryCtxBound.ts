@@ -439,7 +439,7 @@ test('query ctx bound internal (nested call from call)', async (t: T) => {
   await server.destroy()
 })
 
-test.serial.only('ctxBound attachCtx perf', async (t: T) => {
+test.serial('ctxBound attachCtx perf', async (t: T) => {
   let resolve: any
   const amount = 1e5
   let cnt = 0
@@ -475,6 +475,11 @@ test.serial.only('ctxBound attachCtx perf', async (t: T) => {
             if (cnt === amount) {
               resolve()
             }
+
+            // for (let i = 0; i < 1e5; i++) {
+            //   based.query('nest', i, ctx).get()
+            // }
+
             return based.query('nest', payload, ctx).get()
           },
         },

@@ -1,16 +1,29 @@
-import { BasedQueryFunctionConfig, BasedRoute, Context } from '@based/functions'
+import { BasedRoute, Context } from '@based/functions'
 import { AttachedCtx } from './types.js'
 import { hashObjectNest } from '@based/hash'
 import { BasedServer } from '../server.js'
 
-export const optimizeConfig = (route: BasedRoute<'query'>) => {}
+export const optimizeConfig = (route: BasedRoute<'query'>) => {
+  const optimizedCtx = []
+  for (const key of route.ctx) {
+    optimizedCtx.push(key.split('.'))
+  }
+  // @ts-ignore
+  route._optmizedCtx = optimizedCtx
+}
 
 export const attachCtxInternal = (
   route: BasedRoute<'query'>,
   ctx: { [key: string]: any },
   id: number,
 ): AttachedCtx => {
-  const config = route.ctx
+  // @ts-ignore
+  if (!route._optmizedCtx) {
+    optimizeConfig(route)
+  }
+  // @ts-ignore
+  const config = route._optmizedCtx
+
   // Super slow but can be optmized later
   const attachCtx: AttachedCtx = {
     ctx: {},
@@ -19,8 +32,7 @@ export const attachCtxInternal = (
     fromId: id,
   }
   let hasValues = false
-  for (const path of config) {
-    const p = path.split('.')
+  for (const p of config) {
     let s = attachCtx.ctx
     let c = ctx
     for (let i = 0; i < p.length - 1; i++) {
@@ -57,7 +69,12 @@ export const attachCtx = (
   ctx: Context,
   id: number,
 ): AttachedCtx => {
-  const config = route.ctx
+  // @ts-ignore
+  if (!route._optmizedCtx) {
+    optimizeConfig(route)
+  }
+  // @ts-ignore
+  const config = route._optmizedCtx
   // Super slow but can be optmized later
   const attachCtx: AttachedCtx = {
     ctx: {},
@@ -68,8 +85,7 @@ export const attachCtx = (
 
   let hasValues = false
   if ('session' in ctx) {
-    for (const path of config) {
-      const p = path.split('.')
+    for (const p of config) {
       let c: any = ctx.session
       let i = 0
       if (p[0] === 'authState') {
