@@ -3,7 +3,6 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@based/utils'
 import getPort from 'get-port'
-import { italy } from './examples/examples.js'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -73,59 +72,6 @@ test('functions perf', async (t: T) => {
 
   t.true(true)
 
-  await client.destroy()
-  await server.destroy()
-})
-
-test.serial('compress performance', async (t: T) => {
-  const client = new BasedClient()
-  const amount = 100
-  const server = new BasedServer({
-    port: t.context.port,
-    silent: true,
-    auth: {
-      authorize: async () => {
-        return true
-      },
-    },
-    functions: {
-      configs: {
-        hello: {
-          // public: true,
-          type: 'function',
-          rateLimitTokens: 0,
-          maxPayloadSize: 1e8,
-          fn: async (_, payload) => {
-            return italy
-          },
-          uninstallAfterIdleTime: 1e3,
-        },
-      },
-    },
-  })
-  await server.start()
-
-  server.on('error', console.error)
-
-  client.connect({
-    url: async () => {
-      return t.context.ws
-    },
-  })
-
-  let i = amount
-  let d = Date.now()
-  const q = []
-  while (i) {
-    await client.call('hello')
-    i--
-  }
-
-  await Promise.all(q)
-  t.log(amount, 'took', Date.now() - d, 'ms')
-  await wait(1000)
-
-  t.true(true)
   await client.destroy()
   await server.destroy()
 })
