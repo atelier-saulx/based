@@ -1,7 +1,4 @@
-import { BasedServer } from '../server.js'
 import { createError } from '../error/index.js'
-import { Context } from '@based/functions'
-import { verifyRoute } from '../verifyRoute.js'
 import {
   hasObs,
   createObs,
@@ -9,42 +6,22 @@ import {
   ObserveErrorListener,
   subscribeFunction,
   unsubscribeFunction,
-  AttachedCtx,
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
-import { genObserveId } from '@based/protocol/client-server'
-import { attachCtx, attachCtxInternal } from '../query/attachCtx.js'
+import { BasedQuery } from './client/query.js'
 
 export const observe = (
-  server: BasedServer,
-  name: string,
-  ctx: Context,
-  payload: any,
+  query: BasedQuery,
   update: ObservableUpdateFunction,
   error: ObserveErrorListener,
-  attachedCtxInput?: { [key: string]: any },
 ): (() => void) => {
-  let id = genObserveId(name, payload)
-
-  const route = verifyRoute(
-    server,
-    server.client.ctx,
-    'query',
-    server.functions.route(name),
-    name,
-    id,
-  )
-
-  let attachedCtx: AttachedCtx
-  if (attachedCtxInput) {
-    attachedCtx = attachCtxInternal(attachedCtxInput, id)
-    id = attachedCtx.id
-  }
-
-  if (route === null) {
-    throw new Error(`[${name}] No session in ctx`)
-  }
+  const attachedCtx = query.attachedCtx
+  const id = attachedCtx ? attachedCtx.id : query.id
+  const server = query.ctx.session.client.server
+  const route = query.route
+  const ctx = query.ctx
+  const payload = query.payload
 
   let isClosed = false
 

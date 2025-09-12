@@ -40,7 +40,7 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
   query(
     name: string,
     payload?: any,
-    attachedCtx?: { [key: string]: any },
+    attachedCtx?: Context | { [key: string]: any },
   ): BasedQuery {
     return new BasedQuery(this.ctx, name, payload, attachedCtx)
   }

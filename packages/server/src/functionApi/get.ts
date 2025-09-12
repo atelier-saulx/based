@@ -9,10 +9,9 @@ import {
   start,
   createObsNoStart,
 } from '../query/index.js'
-import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
-import { genObserveId } from '@based/protocol/client-server'
+import { BasedQuery } from './client/query.js'
 
 const getObsData = (
   resolve: (x: any) => any,
@@ -54,47 +53,34 @@ const getObsData = (
   })
 }
 
-export const get = (
-  server: BasedServer,
-  name: string,
-  ctx: Context,
-  payload: any,
-): Promise<any> => {
+export const get = (query: BasedQuery): Promise<any> => {
   return new Promise((resolve, reject) => {
-    // handle attached
-
-    let route: BasedRoute<'query'>
-    try {
-      route = verifyRoute(
-        server,
-        server.client.ctx,
-        'query',
-        server.functions.route(name),
-        name,
-      )
-      if (route === null) {
-        reject(new Error(`[${name}] No session in ctx`))
-        return
-      }
-    } catch (err) {
-      reject(err)
-      return
-    }
-
-    const id = genObserveId(name, payload)
-
+    const attachedCtx = query.attachedCtx
+    const id = attachedCtx ? attachedCtx.id : query.id
+    const server = query.ctx.session.client.server
+    const route = query.route
+    const ctx = query.ctx
+    const payload = query.payload
     if (!hasObs(server, id)) {
-      installFn({ server, ctx: server.client.ctx, route }).then((spec) => {
+      installFn({ server, ctx, route }).then((spec) => {
         if (!spec) {
           reject(
-            createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+            createError(server, query.ctx, BasedErrorCode.FunctionNotFound, {
               route,
             }),
           )
           return
         }
         if (!hasObs(server, id)) {
-          createObsNoStart({ server, route, id, payload, ctx, spec })
+          createObsNoStart({
+            server,
+            route,
+            id,
+            payload,
+            ctx,
+            spec,
+            attachedCtx,
+          })
           getObsData(resolve, reject, server, id, ctx, route)
           start(server, id)
         } else {

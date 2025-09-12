@@ -370,3 +370,64 @@ test('query ctx bound internal (nested calls)', async (t: T) => {
   await client.destroy()
   await server.destroy()
 })
+
+test.only('query ctx bound internal (nested call from call)', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        nest: {
+          type: 'query',
+          ctx: ['authState.token'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            let cnt = 0
+            update({ ctx, cnt })
+            const counter = setInterval(() => {
+              update({ ctx, cnt: ++cnt })
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        hello: {
+          type: 'function',
+          public: true,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, ctx) => {
+            console.info('ctx=>', ctx)
+            return based.query('nest', payload, ctx).get()
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  await client.once('connect')
+  const results = []
+  results.push(await client.call('hello'))
+
+  await client.setAuthState({ token: '🔑' })
+  results.push(await client.call('hello'))
+
+  t.deepEqual(results, [
+    { ctx: { authState: {} }, cnt: 0 },
+    { ctx: { authState: { token: '🔑' } }, cnt: 0 },
+  ])
+
+  await wait(1000)
+
+  t.is(server.activeObservablesById.size, 0)
+  await client.destroy()
+  await server.destroy()
+})
