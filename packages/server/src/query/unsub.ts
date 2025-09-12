@@ -34,7 +34,6 @@ export const unsubscribeWs = (
   }
 
   if (!session.obs.has(id)) {
-    console.log('dont have dat shit')
     if (session.attachedCtxObs) {
       let match = false
       for (const attachedId of session.attachedCtxObs) {

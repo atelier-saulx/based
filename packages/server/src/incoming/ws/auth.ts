@@ -45,7 +45,6 @@ export const reEvaulateUnauthorized = (
 
   if (session.attachedCtxObs?.size) {
     session.attachedCtxObs.forEach((id) => {
-      console.info('DERP')
       const obs = server.activeObservablesById.get(id)
       if (obs.attachedCtx.authState) {
         const attachedCtx = attachCtx(
@@ -54,7 +53,6 @@ export const reEvaulateUnauthorized = (
           obs.attachedCtx.fromId,
         )
         if (attachedCtx.id !== id) {
-          console.log('yo close that shit', obs.route.name)
           unsubscribeWs(server, obs.attachedCtx.fromId, ctx)
           session.obs.add(attachedCtx.id)
           authorize({

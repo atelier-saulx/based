@@ -301,7 +301,7 @@ test('query ctx bound on geo', async (t: T) => {
   await server.destroy()
 })
 
-test.only('query ctx bound internal', async (t: T) => {
+test('query ctx bound internal (nested calls)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     silent: true,
@@ -314,14 +314,12 @@ test.only('query ctx bound internal', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
-            console.info('START NEST', ctx)
             let cnt = 0
             update({ ctx, cnt })
             const counter = setInterval(() => {
               update({ ctx, cnt: ++cnt })
             }, 100)
             return () => {
-              console.log('CLOSE NEST!')
               clearInterval(counter)
             }
           },
@@ -333,13 +331,7 @@ test.only('query ctx bound internal', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
-            console.info('START NORMAL', ctx)
-
-            const sl = based.query('nest', payload, ctx).subscribe(update)
-            return () => {
-              console.log('close! query')
-              sl()
-            }
+            return based.query('nest', payload, ctx).subscribe(update)
           },
         },
       },
@@ -357,22 +349,22 @@ test.only('query ctx bound internal', async (t: T) => {
   const close = client.query('counter').subscribe((d) => {
     results.push({ ...d })
   })
-  console.dir(results, { depth: 10 })
   await wait(250)
-
-  console.log('-----------hwere should also close!--------------')
 
   await client.setAuthState({ token: '🔑' })
 
   await wait(250)
+  t.deepEqual(results, [
+    { ctx: { authState: {} }, cnt: 0 },
+    { ctx: { authState: {} }, cnt: 1 },
+    { ctx: { authState: {} }, cnt: 2 },
+    { ctx: { authState: { token: '🔑' } }, cnt: 0 },
+    { ctx: { authState: { token: '🔑' } }, cnt: 1 },
+    { ctx: { authState: { token: '🔑' } }, cnt: 2 },
+  ])
 
-  console.dir(results, { depth: 10 })
-
-  console.log('-------------------------')
   close()
-  await wait(4000)
-
-  // console.dir(server.activeObservablesById, { depth: 10 })
+  await wait(1000)
 
   t.is(server.activeObservablesById.size, 0)
   await client.destroy()
