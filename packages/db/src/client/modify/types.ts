@@ -40,12 +40,9 @@ export const enum SIZE {
   DEFAULT_CURSOR = 11,
 }
 
-// export type ModifyErr = typeof RANGE_ERR | ModifyError | void
-
 export type ModifyOpts = {
   unsafe?: boolean
   locale?: LangName
-  overwrite?: boolean
 }
 
 export const NOEDGE_NOINDEX_REALID = 0

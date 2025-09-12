@@ -169,7 +169,6 @@ export const writeCreate = (
 
   ctx.schema = schema
   ctx.operation = CREATE
-  ctx.overwrite = true
   ctx.unsafe = opts?.unsafe
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
   // TODO: can we remove this (and just init main buffer here?)

@@ -19,7 +19,6 @@ export class Ctx {
   max: number
   size: number
   unsafe?: boolean
-  overwrite?: boolean
   operation: ModifyOp
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>

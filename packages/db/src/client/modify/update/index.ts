@@ -69,7 +69,6 @@ export const writeUpdate = (
 
   ctx.schema = schema
   ctx.operation = UPDATE
-  ctx.overwrite = opts?.overwrite
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
 
   if (ctx.main.size) {
