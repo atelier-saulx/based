@@ -283,13 +283,21 @@ test('query ctx bound on geo', async (t: T) => {
     results.push({ ...d })
   })
 
-  const close2 = client.query('counter').subscribe((d) => {
+  const close2 = client2.query('counter').subscribe((d) => {
     results.push({ ...d })
   })
 
   await wait(250)
+  t.is(server.activeObservablesById.size, 2)
 
-  console.log({ results })
+  t.deepEqual(results, [
+    { geo: { country: 'NL' }, cnt: 0 },
+    { geo: { country: 'DE' }, cnt: 0 },
+    { geo: { country: 'NL' }, cnt: 1 },
+    { geo: { country: 'DE' }, cnt: 1 },
+    { geo: { country: 'NL' }, cnt: 2 },
+    { geo: { country: 'DE' }, cnt: 2 },
+  ])
 
   close()
   close2()
