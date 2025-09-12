@@ -67,7 +67,7 @@ test('functions perf', async (t: T) => {
   }
 
   await p
-  console.log(amount, 'took', Date.now() - d, 'ms')
+  t.log(amount, 'took', Date.now() - d, 'ms')
   await wait(100 + amount * 0.005)
 
   t.true(true)

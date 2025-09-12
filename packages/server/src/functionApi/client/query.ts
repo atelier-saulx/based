@@ -51,7 +51,7 @@ export class BasedQuery extends BasedQueryAbstract {
     if (!this.route) {
       throw new Error(`Query ${this.route.name} does not exist`)
     }
-    if (attachedCtx) {
+    if (attachedCtx && this.route.ctx) {
       this.attachedCtx =
         'session' in attachedCtx
           ? attachCtx(this.route.ctx, attachedCtx, this.id)

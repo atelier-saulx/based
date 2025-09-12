@@ -78,13 +78,14 @@ export const reEvaulateUnauthorized = (
         attachedCtx = attachCtx(route.ctx, ctx, id)
         ctx.session.obs.delete(id)
         ctx.session.obs.add(attachedCtx.id)
+        id = attachedCtx.id
       }
       authorize({
         route,
         server,
         ctx,
         payload,
-        id: attachedCtx.id,
+        id,
         attachedCtx,
         checksum,
         error: () => {}, // Do not remove from unauthorizedObs,

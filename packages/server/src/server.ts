@@ -56,7 +56,7 @@ export type ServerOptions = {
   clients?: { [key: string]: any }
   port?: number
   key?: string
-  geo?: (ctx: Context) => Promise<Geo>
+  geo?: (ctx: Context) => Geo
   disableRest?: boolean
   disableWs?: boolean
   silent?: boolean
@@ -173,13 +173,13 @@ export class BasedServer {
     }
   }
 
-  public geo: (ctx: Context) => Promise<Geo> = async (ctx: Context) => {
+  public geo: (ctx: Context) => Geo = (ctx: Context) => {
     if (!ctx.session) {
       throw new Error('Session expired while parsing geo location')
     }
     if (isClientContext(ctx)) {
       return {
-        country: 'NL',
+        country: 'unknown',
         ip: ctx.session.ip,
         accuracy: 0,
         long: 0,

@@ -224,7 +224,7 @@ test('query ctx bound on geo', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     silent: true,
-    geo: async () => {
+    geo: () => {
       currentGeo++
       const isDe = currentGeo % 2
       return {
