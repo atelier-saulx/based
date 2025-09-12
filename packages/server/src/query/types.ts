@@ -46,6 +46,5 @@ export type AttachedCtx = {
   ctx: { [key: string]: any }
   id: number
   authState: boolean
-  geo: boolean
   fromId: number
 }

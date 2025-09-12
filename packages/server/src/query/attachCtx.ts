@@ -1,8 +1,10 @@
 import { BasedQueryFunctionConfig, Context } from '@based/functions'
 import { AttachedCtx } from './types.js'
 import { hashObjectNest } from '@based/hash'
+import { BasedServer } from '../server.js'
 
 export const attachCtxInternal = (
+  // serverClient
   config: BasedQueryFunctionConfig['ctx'],
   ctx: { [key: string]: any },
   id: number,
@@ -12,7 +14,6 @@ export const attachCtxInternal = (
     ctx: {},
     id,
     authState: false,
-    geo: false,
     fromId: id,
   }
   let hasValues = false
@@ -48,6 +49,8 @@ export const attachCtxInternal = (
 }
 
 export const attachCtx = (
+  // serverClient
+  server: BasedServer,
   config: BasedQueryFunctionConfig['ctx'],
   ctx: Context,
   id: number,
@@ -57,7 +60,6 @@ export const attachCtx = (
     ctx: {},
     id,
     authState: false,
-    geo: false,
     fromId: id,
   }
 
@@ -65,14 +67,15 @@ export const attachCtx = (
   if ('session' in ctx) {
     for (const path of config) {
       const p = path.split('.')
+      let c: any = ctx.session
+      let i = 0
       if (p[0] === 'authState') {
         attachCtx.authState = true
       } else if (p[0] === 'geo') {
-        attachCtx.geo = true
+        c = { geo: server.geo(ctx) }
       }
       let s = attachCtx.ctx
-      let c = ctx.session
-      for (let i = 0; i < p.length - 1; i++) {
+      for (; i < p.length - 1; i++) {
         const path = p[i]
         if (c !== undefined) {
           c = c[path]

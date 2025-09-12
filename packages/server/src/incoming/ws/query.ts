@@ -125,7 +125,7 @@ export const subscribeMessage: BinaryMessageHandler = (
   }
 
   if (route.ctx) {
-    const attachedCtx = attachCtx(route.ctx, ctx, id)
+    const attachedCtx = attachCtx(server, route.ctx, ctx, id)
     if (ctx.session.obs.has(attachedCtx.id)) {
       return true
     }
