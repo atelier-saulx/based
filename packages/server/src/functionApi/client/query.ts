@@ -14,12 +14,19 @@ export class BasedQuery extends BasedQueryAbstract {
   public query: any
   public name: string
   public ctx: Context<InternalSessionClient>
+  public attachedCtx: { [key: string]: any }
 
-  constructor(ctx: Context<InternalSessionClient>, name: string, payload: any) {
+  constructor(
+    ctx: Context<InternalSessionClient>,
+    name: string,
+    payload: any,
+    attachedCtx: { [key: string]: any },
+  ) {
     super()
     this.ctx = ctx
     this.query = payload
     this.name = name
+    this.attachedCtx = attachedCtx
   }
 
   subscribe(
@@ -76,6 +83,7 @@ export class BasedQuery extends BasedQueryAbstract {
       this.query,
       onData,
       onError,
+      this.attachedCtx,
     )
   }
 

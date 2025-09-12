@@ -14,7 +14,11 @@ export abstract class BasedFunctionClient {
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>
 
-  abstract query(name: string, payload?: any): BasedQuery
+  abstract query(
+    name: string,
+    payload?: any,
+    ctx?: { [key: string]: any },
+  ): BasedQuery
 
   abstract channel(name: string, payload?: any): BasedChannel
 

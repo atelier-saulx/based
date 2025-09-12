@@ -34,6 +34,7 @@ export const unsubscribeWs = (
   }
 
   if (!session.obs.has(id)) {
+    console.log('dont have dat shit')
     if (session.attachedCtxObs) {
       let match = false
       for (const attachedId of session.attachedCtxObs) {
@@ -53,6 +54,11 @@ export const unsubscribeWs = (
       }
     } else {
       return
+    }
+  } else if (session.attachedCtxObs?.has(id)) {
+    session.attachedCtxObs.delete(id)
+    if (session.attachedCtxObs.size === 0) {
+      delete session.attachedCtxObs
     }
   }
 

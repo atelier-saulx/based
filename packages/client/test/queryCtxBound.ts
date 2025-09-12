@@ -245,10 +245,6 @@ test('query ctx bound on geo', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
-            console.log('derp?', ctx)
-            if (payload === 'error') {
-              error(new Error('error time!'))
-            }
             let cnt = 0
             update({ geo: ctx.geo, cnt })
             const counter = setInterval(() => {
@@ -279,6 +275,8 @@ test('query ctx bound on geo', async (t: T) => {
 
   await Promise.all([client.once('connect'), client2.once('connect')])
 
+  await client.setAuthState({ token: '🔑' })
+
   const results = []
 
   const close = client.query('counter').subscribe((d) => {
@@ -299,6 +297,84 @@ test('query ctx bound on geo', async (t: T) => {
 
   t.is(server.activeObservablesById.size, 0)
 
+  await client.destroy()
+  await server.destroy()
+})
+
+test.only('query ctx bound internal', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        nest: {
+          type: 'query',
+          ctx: ['authState.token'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            console.info('START NEST', ctx)
+            let cnt = 0
+            update({ ctx, cnt })
+            const counter = setInterval(() => {
+              update({ ctx, cnt: ++cnt })
+            }, 100)
+            return () => {
+              console.log('CLOSE NEST!')
+              clearInterval(counter)
+            }
+          },
+        },
+        counter: {
+          type: 'query',
+          ctx: ['authState.token'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            console.info('START NORMAL', ctx)
+
+            const sl = based.query('nest', payload, ctx).subscribe(update)
+            return () => {
+              console.log('close! query')
+              sl()
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  await client.once('connect')
+  const results = []
+  const close = client.query('counter').subscribe((d) => {
+    results.push({ ...d })
+  })
+  console.dir(results, { depth: 10 })
+  await wait(250)
+
+  console.log('-----------hwere should also close!--------------')
+
+  await client.setAuthState({ token: '🔑' })
+
+  await wait(250)
+
+  console.dir(results, { depth: 10 })
+
+  console.log('-------------------------')
+  close()
+  await wait(4000)
+
+  // console.dir(server.activeObservablesById, { depth: 10 })
+
+  t.is(server.activeObservablesById.size, 0)
   await client.destroy()
   await server.destroy()
 })

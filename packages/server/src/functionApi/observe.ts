@@ -9,12 +9,13 @@ import {
   ObserveErrorListener,
   subscribeFunction,
   unsubscribeFunction,
+  AttachedCtx,
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
 import { genObserveId } from '@based/protocol/client-server'
+import { attachCtx, attachCtxInternal } from '../query/attachCtx.js'
 
-// handle this
 export const observe = (
   server: BasedServer,
   name: string,
@@ -22,10 +23,9 @@ export const observe = (
   payload: any,
   update: ObservableUpdateFunction,
   error: ObserveErrorListener,
+  attachedCtxInput?: { [key: string]: any },
 ): (() => void) => {
-  const id = genObserveId(name, payload)
-
-  // handle attached
+  let id = genObserveId(name, payload)
 
   const route = verifyRoute(
     server,
@@ -35,6 +35,12 @@ export const observe = (
     name,
     id,
   )
+
+  let attachedCtx: AttachedCtx
+  if (attachedCtxInput) {
+    attachedCtx = attachCtxInternal(attachedCtxInput, id)
+    id = attachedCtx.id
+  }
 
   if (route === null) {
     throw new Error(`[${name}] No session in ctx`)
@@ -68,7 +74,7 @@ export const observe = (
       return
     }
     if (!hasObs(server, id)) {
-      createObs({ server, route, id, payload, ctx, spec })
+      createObs({ server, route, id, payload, ctx, spec, attachedCtx })
     }
     subscribeFunction(server, id, update)
   })

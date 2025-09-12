@@ -2,6 +2,23 @@ import { BasedQueryFunctionConfig, Context } from '@based/functions'
 import { AttachedCtx } from './types.js'
 import { hashObjectNest } from '@based/hash'
 
+export const attachCtxInternal = (
+  ctx: { [key: string]: any },
+  id: number,
+): AttachedCtx => {
+  // Super slow but can be optmized later
+  const attachCtx: AttachedCtx = {
+    ctx,
+    id,
+    authState: false,
+    geo: false,
+    fromId: id,
+  }
+  const x = hashObjectNest(ctx, id)
+  attachCtx.id = (x[0] >>> 0) * 4096 + x[1]
+  return attachCtx
+}
+
 export const attachCtx = (
   config: BasedQueryFunctionConfig['ctx'],
   ctx: Context,

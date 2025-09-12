@@ -21,6 +21,7 @@ export const subscribeWs = (
   }
 
   const obs = getObsAndStopRemove(server, id)
+  console.log('-- ADD', obs.route.name, id, obs.attachedCtx)
   session.obs.add(id)
 
   if (obs.attachedCtx) {
