@@ -17,7 +17,7 @@ const COMPRESS_STRING_LEN = Math.ceil(COMPRESS_FROM_BYTES / 1.5)
 
 export const compress = async (
   payload: string | Buffer,
-  encoding?: string
+  encoding?: string,
 ): Promise<{ payload: Buffer | string; encoding?: string }> => {
   if (payload instanceof Buffer && payload.byteLength <= COMPRESS_FROM_BYTES) {
     return { payload }

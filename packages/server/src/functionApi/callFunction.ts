@@ -9,21 +9,21 @@ export const callFunction = async (
   server: BasedServer,
   name: string,
   ctx: Context,
-  payload: any
+  payload: any,
 ): Promise<any> => {
   const route = verifyRoute(
     server,
     server.client.ctx,
     'function',
     server.functions.route(name),
-    name
+    name,
   )
 
   if (route === null) {
     return
   }
 
-  const spec = await installFn(server, server.client.ctx, route)
+  const spec = await installFn({ server, ctx: server.client.ctx, route })
 
   if (!spec) {
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {

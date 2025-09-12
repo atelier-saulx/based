@@ -1,7 +1,11 @@
-import { decodePayload, decodeName, encodeGetResponse } from '../../protocol.js'
+import {
+  decodePayload,
+  decodeName,
+  encodeGetResponse,
+  parseIncomingQueryPayload,
+} from '../../protocol.js'
 import { BasedServer } from '../../server.js'
 import {
-  createObs,
   destroyObs,
   subscribeNext,
   getObsAndStopRemove,
@@ -10,19 +14,19 @@ import {
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
+  AttachedCtx,
+  createObsNoStart,
 } from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
-import {
-  AuthErrorHandler,
-  authorize,
-  IsAuthorizedHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
+import { attachCtx } from '../../query/attachCtx.js'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 
 const sendGetData = (
   server: BasedServer,
@@ -76,53 +80,48 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: IsAuthorizedHandler<
-  WebSocketSession,
-  BasedRoute<'query'>
-> = (route, _spec, server, ctx, payload, id, checksum) => {
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, checksum)
+const get: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (props) => {
+  if (hasObs(props.server, props.id)) {
+    getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const session = ctx.session
+  const session = props.ctx.session
   if (!session) {
     return
   }
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, checksum)
+  if (hasObs(props.server, props.id)) {
+    getFromExisting(props.server, props.id, props.ctx, props.checksum)
     return
   }
-  const obs = createObs(server, route.name, id, payload, true)
-
-  if (server.queryEvents) {
-    server.queryEvents.get(obs, ctx)
+  const obs = createObsNoStart(props)
+  if (props.server.queryEvents) {
+    props.server.queryEvents.get(obs, props.ctx)
   }
-
-  if (!session.obs.has(id)) {
+  if (!session.obs.has(props.id)) {
     subscribeNext(obs, (err) => {
       if (err) {
-        sendObsGetError(server, ctx, id, err)
+        sendObsGetError(props.server, props.ctx, props.id, err)
       } else {
-        sendGetData(server, id, obs, checksum, ctx)
+        sendGetData(props.server, props.id, obs, props.checksum, props.ctx)
       }
     })
   }
-  start(server, id)
+  start(props.server, props.id)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+const isNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _server, ctx, payload, id, checksum) => {
-  const session = ctx.session
+> = (props) => {
+  const session = props.ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
   session.unauthorizedObs.add({
-    id,
-    checksum,
-    name: route.name,
-    payload,
+    id: props.id,
+    checksum: props.checksum,
+    route: props.route,
+    payload: props.payload,
   })
 }
 
@@ -136,7 +135,7 @@ export const getMessage: BinaryMessageHandler = (
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
   const nameLen = arr[start + 20]
-  const id = readUint64(arr, start + 4)
+  let id = readUint64(arr, start + 4)
   const checksum = readUint64(arr, start + 12)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
@@ -173,26 +172,38 @@ export const getMessage: BinaryMessageHandler = (
     return true
   }
 
-  const payload =
-    len === nameLen + 21
-      ? undefined
-      : decodePayload(
-          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate,
-          ctx.session.v < 2,
-        )
-
-  authorize(
-    route,
-    server,
-    ctx,
-    payload,
-    isAuthorized,
-    id,
-    checksum,
-    false,
-    isNotAuthorized,
+  const payload = parseIncomingQueryPayload(
+    arr,
+    start,
+    nameLen + 21,
+    len,
+    ctx.session,
+    isDeflate,
   )
+
+  if (route.ctx) {
+    const attachedCtx = attachCtx(server, route, ctx, id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      error: isNotAuthorized,
+      attachedCtx,
+    }).then(get)
+  } else {
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+      error: isNotAuthorized,
+    }).then(get)
+  }
 
   return true
 }

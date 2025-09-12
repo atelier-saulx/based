@@ -27,10 +27,13 @@ export const updateListener = (
     return
   }
 
+  const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+
   if (checksum === undefined) {
     if (data === undefined) {
       checksum = 0
     } else {
+      // For db response use from the buffer!
       checksum = genChecksum(data)
     }
   }
@@ -90,16 +93,12 @@ export const updateListener = (
       }
 
       // TODO: Keep track globally of total mem usage
-      ;[encodedData, isDeflate] = encodeObservableResponse(
-        obs.id,
-        checksum,
-        buff,
-      )
+      ;[encodedData, isDeflate] = encodeObservableResponse(id, checksum, buff)
 
       if (diff) {
         const diffBuff = valueToBuffer(diff, true)
         const encodedDiffData = encodeObservableDiffResponse(
-          obs.id,
+          id,
           checksum,
           obs.previousChecksum,
           diffBuff,
@@ -118,35 +117,34 @@ export const updateListener = (
     if (obs.clients.size) {
       if (obs.diffCache) {
         if (obs.reusedCache) {
-          prevDiffId = updateId(obs.diffCache, obs.id)
+          prevDiffId = updateId(obs.diffCache, id)
         }
-        // hello
-        server.uwsApp.publish(String(obs.id), obs.diffCache, true, false)
+        server.uwsApp.publish(String(id), obs.diffCache, true, false)
       } else {
         if (obs.reusedCache) {
-          prevId = updateId(encodedData, obs.id)
+          prevId = updateId(encodedData, id)
         }
-        server.uwsApp.publish(String(obs.id), encodedData, true, false)
+        server.uwsApp.publish(String(id), encodedData, true, false)
       }
     }
 
     if (obs.oldClients?.size) {
       if (obs.diffCache) {
         if (obs.reusedCache) {
-          prevDiffId = updateId(obs.diffCache, obs.id)
+          prevDiffId = updateId(obs.diffCache, id)
         }
         server.uwsApp.publish(
-          String(obs.id) + '-v1',
+          String(id) + '-v1',
           diffV2toV1(obs.diffCache),
           true,
           false,
         )
       } else {
         if (obs.reusedCache) {
-          prevId = updateId(encodedData, obs.id)
+          prevId = updateId(encodedData, id)
         }
         server.uwsApp.publish(
-          String(obs.id) + '-v1',
+          String(id) + '-v1',
           cacheV2toV1(encodedData),
           true,
           false,

@@ -11,19 +11,19 @@ export const publish = (
   ctx: Context,
   id: number,
   payload: any,
-  msg: any
+  msg: any,
 ) => {
   const route = verifyRoute(
     server,
     server.client.ctx,
     'channel',
     server.functions.route(name),
-    name
+    name,
   )
   if (route === null) {
     return
   }
-  installFn(server, server.client.ctx, route).then((fn) => {
+  installFn({ server, ctx: server.client.ctx, route }).then((fn) => {
     if (fn === null) {
       return
     }

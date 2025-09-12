@@ -4,9 +4,9 @@ import {
   Context,
   InternalSessionClient,
 } from '@based/functions'
-import { genObservableId } from '../../query/index.js'
 import { publish } from '../publish.js'
 import { subscribeChannel } from '../channelSubscribe.js'
+import { genObserveId } from '@based/protocol/client-server'
 
 export class BasedChannel extends BasedChannelAbstract {
   public payload: any
@@ -18,13 +18,13 @@ export class BasedChannel extends BasedChannelAbstract {
     super()
     this.ctx = ctx
     this.payload = payload
-    this.id = genObservableId(name, payload)
+    this.id = genObserveId(name, payload)
     this.name = name
   }
 
   subscribe(
     onMessage: ChannelMessageFunction,
-    onError?: (err: any) => void
+    onError?: (err: any) => void,
   ): () => void {
     return subscribeChannel(
       this.ctx.session.client.server,
@@ -39,7 +39,7 @@ export class BasedChannel extends BasedChannelAbstract {
           return
         }
         onMessage(msg)
-      }
+      },
     )
   }
 
@@ -50,7 +50,7 @@ export class BasedChannel extends BasedChannelAbstract {
       ctx,
       this.id,
       this.payload,
-      message
+      message,
     )
   }
 }

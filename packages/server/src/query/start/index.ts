@@ -6,6 +6,7 @@ import { relay } from './relay.js'
 import { isBasedFunctionConfig } from '@based/functions'
 
 export const start = (server: BasedServer, id: number) => {
+  //  really hate this look up here
   const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {
@@ -13,10 +14,11 @@ export const start = (server: BasedServer, id: number) => {
     delete obs.closeFunction
   }
 
-  const spec = server.functions.specs[obs.name]
+  // just call start as a function handler - props with optional ctx potentialy
+  const spec = server.functions.specs[obs.route.name]
 
   if (!spec || !isBasedFunctionConfig('query', spec)) {
-    console.warn('Cannot find observable function spec!', obs.name)
+    console.warn('Cannot find observable function spec!', obs.route.name)
     return
   }
 
@@ -89,9 +91,15 @@ export const start = (server: BasedServer, id: number) => {
     relay(server, spec.relay, obs, client, update)
   } else {
     try {
-      const r = spec.fn(server.client, payload, update, (err) => {
-        errorListener(server, obs, err)
-      })
+      const r = spec.fn(
+        server.client,
+        payload,
+        update,
+        (err) => {
+          errorListener(server, obs, err)
+        },
+        obs.attachedCtx?.ctx,
+      )
       if (r instanceof Promise) {
         r.then((close) => {
           if (obs.isDestroyed || startId !== obs.startId) {

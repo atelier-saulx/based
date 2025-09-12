@@ -1,4 +1,5 @@
 import {
+  AttachedCtx,
   ObservableUpdateFunction,
   ObserveErrorListener,
 } from '../../query/index.js'
@@ -6,20 +7,56 @@ import { observe } from '../observe.js'
 import { get } from '../get.js'
 import {
   BasedQuery as BasedQueryAbstract,
+  BasedRoute,
   Context,
   InternalSessionClient,
 } from '@based/functions'
+import { attachCtx, attachCtxInternal } from '../../query/attachCtx.js'
+import { genObserveId } from '@based/protocol/client-server'
+import { verifyRoute } from '../../verifyRoute.js'
+import { BasedServer } from '../../server.js'
 
 export class BasedQuery extends BasedQueryAbstract {
-  public query: any
+  public payload: any
   public name: string
   public ctx: Context<InternalSessionClient>
+  public attachedCtx: AttachedCtx
+  public id: number
+  public route: BasedRoute<'query'>
 
-  constructor(ctx: Context<InternalSessionClient>, name: string, payload: any) {
+  constructor(
+    ctx: Context<InternalSessionClient>,
+    name: string,
+    payload: any,
+    attachedCtx?: { [key: string]: any } | Context,
+  ) {
     super()
+
+    const server = ctx.session.client.server
+
+    this.id = genObserveId(name, payload)
     this.ctx = ctx
-    this.query = payload
+    this.payload = payload
     this.name = name
+
+    this.route = verifyRoute(
+      server,
+      ctx,
+      'query',
+      server.functions.route(name),
+      name,
+      this.id,
+    )
+
+    if (!this.route) {
+      throw new Error(`Query ${this.route.name} does not exist`)
+    }
+    if (attachedCtx && this.route.ctx) {
+      this.attachedCtx =
+        'session' in attachedCtx
+          ? attachCtx(server, this.route, attachedCtx, this.id)
+          : attachCtxInternal(this.route, attachedCtx, this.id)
+    }
   }
 
   subscribe(
@@ -69,14 +106,7 @@ export class BasedQuery extends BasedQueryAbstract {
       onData.safe = true
     }
 
-    return observe(
-      this.ctx.session.client.server,
-      this.name,
-      this.ctx,
-      this.query,
-      onData,
-      onError,
-    )
+    return observe(this, onData, onError)
   }
 
   async getWhen(
@@ -93,6 +123,6 @@ export class BasedQuery extends BasedQueryAbstract {
   }
 
   async get(): Promise<any> {
-    return get(this.ctx.session.client.server, this.name, this.ctx, this.query)
+    return get(this)
   }
 }

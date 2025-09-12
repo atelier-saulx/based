@@ -13,7 +13,7 @@ test.beforeEach(async (t: T) => {
 })
 
 test('functions', async (t: T) => {
-  const coreClient = new BasedClient()
+  const client = new BasedClient()
 
   const server = new BasedServer({
     port: t.context.port,
@@ -56,15 +56,15 @@ test('functions', async (t: T) => {
 
   server.on('error', console.error)
 
-  coreClient.connect({
+  client.connect({
     url: async () => {
       return t.context.ws
     },
   })
 
-  coreClient.once('connect', (isConnected) => {})
+  client.once('connect', (isConnected) => {})
 
-  const power = await coreClient.call('checkPayload', {
+  const power = await client.call('checkPayload', {
     power: {
       msg: 'powerfull stuff',
     },
@@ -73,13 +73,13 @@ test('functions', async (t: T) => {
   t.is(power.msg, 'powerfull stuff')
 
   const helloResponsesX = await Promise.all([
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     }),
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     }),
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     }),
   ])
@@ -98,10 +98,10 @@ test('functions', async (t: T) => {
   t.log('Send:', ~~((str.length / 1024 / 1024) * 100) / 100, 'mb')
 
   const helloResponses = await Promise.all([
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     }),
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: str,
     }),
   ])
@@ -109,11 +109,14 @@ test('functions', async (t: T) => {
   t.true(helloResponses[0] < 20)
   t.true(helloResponses[1] > 5e6)
 
-  const bigString = await coreClient.call('lotsOfData')
+  const bigString = await client.call('lotsOfData')
 
   t.true(bigString.length > 5e6)
 
   await wait(15e3)
 
   t.is(Object.keys(server.functions.specs).length, 0)
+
+  await client.destroy()
+  await server.destroy()
 })
