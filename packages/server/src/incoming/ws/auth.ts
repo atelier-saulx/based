@@ -49,7 +49,7 @@ export const reEvaulateUnauthorized = (
       if (obs.attachedCtx.authState) {
         const attachedCtx = attachCtx(
           server,
-          obs.route.ctx,
+          obs.route,
           ctx,
           obs.attachedCtx.fromId,
         )
@@ -76,7 +76,7 @@ export const reEvaulateUnauthorized = (
       let { id, route, checksum, payload } = obs
       let attachedCtx: AttachedCtx
       if (route.ctx) {
-        attachedCtx = attachCtx(server, route.ctx, ctx, id)
+        attachedCtx = attachCtx(server, route, ctx, id)
         ctx.session.obs.delete(id)
         ctx.session.obs.add(attachedCtx.id)
         id = attachedCtx.id

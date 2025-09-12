@@ -182,7 +182,7 @@ export const getMessage: BinaryMessageHandler = (
   )
 
   if (route.ctx) {
-    const attachedCtx = attachCtx(server, route.ctx, ctx, id)
+    const attachedCtx = attachCtx(server, route, ctx, id)
     authorize({
       route,
       server,

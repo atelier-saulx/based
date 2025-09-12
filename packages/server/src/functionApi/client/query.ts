@@ -54,8 +54,8 @@ export class BasedQuery extends BasedQueryAbstract {
     if (attachedCtx && this.route.ctx) {
       this.attachedCtx =
         'session' in attachedCtx
-          ? attachCtx(server, this.route.ctx, attachedCtx, this.id)
-          : attachCtxInternal(this.route.ctx, attachedCtx, this.id)
+          ? attachCtx(server, this.route, attachedCtx, this.id)
+          : attachCtxInternal(this.route, attachedCtx, this.id)
     }
   }
 

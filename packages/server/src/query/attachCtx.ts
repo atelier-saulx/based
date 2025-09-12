@@ -1,14 +1,16 @@
-import { BasedQueryFunctionConfig, Context } from '@based/functions'
+import { BasedQueryFunctionConfig, BasedRoute, Context } from '@based/functions'
 import { AttachedCtx } from './types.js'
 import { hashObjectNest } from '@based/hash'
 import { BasedServer } from '../server.js'
 
+export const optimizeConfig = (route: BasedRoute<'query'>) => {}
+
 export const attachCtxInternal = (
-  // serverClient
-  config: BasedQueryFunctionConfig['ctx'],
+  route: BasedRoute<'query'>,
   ctx: { [key: string]: any },
   id: number,
 ): AttachedCtx => {
+  const config = route.ctx
   // Super slow but can be optmized later
   const attachCtx: AttachedCtx = {
     ctx: {},
@@ -51,10 +53,11 @@ export const attachCtxInternal = (
 export const attachCtx = (
   // serverClient
   server: BasedServer,
-  config: BasedQueryFunctionConfig['ctx'],
+  route: BasedRoute<'query'>,
   ctx: Context,
   id: number,
 ): AttachedCtx => {
+  const config = route.ctx
   // Super slow but can be optmized later
   const attachCtx: AttachedCtx = {
     ctx: {},

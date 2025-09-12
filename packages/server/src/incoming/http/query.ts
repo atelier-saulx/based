@@ -248,7 +248,7 @@ export const httpGet = (
   }
   const id = genObserveId(route.name, payload)
   if (route.ctx) {
-    const attachedCtx = attachCtx(server, route.ctx, ctx, id)
+    const attachedCtx = attachCtx(server, route, ctx, id)
     authorize({
       route,
       server,
@@ -259,7 +259,7 @@ export const httpGet = (
       attachedCtx,
     }).then((p) => {
       if (attachedCtx && attachedCtx.authState) {
-        const attachedCtx2 = attachCtx(server, route.ctx, ctx, id)
+        const attachedCtx2 = attachCtx(server, route, ctx, id)
         if (attachedCtx2.id !== attachedCtx.id) {
           p.id = attachedCtx2.id
           p.attachedCtx = attachedCtx2

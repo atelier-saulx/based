@@ -439,73 +439,73 @@ test('query ctx bound internal (nested call from call)', async (t: T) => {
   await server.destroy()
 })
 
-// test('ctxBound attachCtx perf', async (t: T) => {
-//   let resolve: any
-//   const amount = 1e5
-//   // add worker
-//   let cnt = 0
-//   const server = new BasedServer({
-//     port: t.context.port,
-//     silent: true,
-//     functions: {
-//       configs: {
-//         nest: {
-//           type: 'query',
-//           ctx: ['authState.token'],
-//           public: true,
-//           closeAfterIdleTime: 1,
-//           uninstallAfterIdleTime: 1e3,
-//           fn: async (based, payload, update, error, ctx) => {
-//             let cnt = 0
-//             update({ ctx, cnt })
-//             const counter = setInterval(() => {
-//               update({ ctx, cnt: ++cnt })
-//             }, 100)
-//             return () => {
-//               clearInterval(counter)
-//             }
-//           },
-//         },
-//         hello: {
-//           type: 'function',
-//           public: true,
-//           uninstallAfterIdleTime: 1e3,
-//           fn: async (based, payload, ctx) => {
-//             cnt++
-//             if (cnt === amount) {
-//               resolve()
-//             }
-//             return based.query('nest', payload, ctx).get()
-//           },
-//         },
-//       },
-//     },
-//   })
-//   await server.start()
-//   const client = new BasedClient()
-//   client.connect({
-//     url: async () => {
-//       return t.context.ws
-//     },
-//   })
-//   await client.once('connect')
+test.serial.only('ctxBound attachCtx perf', async (t: T) => {
+  let resolve: any
+  const amount = 1e5
+  let cnt = 0
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        nest: {
+          type: 'query',
+          ctx: ['authState.token', 'geo.country'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            let cnt = 0
+            update({ ctx, cnt })
+            const counter = setInterval(() => {
+              update({ ctx, cnt: ++cnt })
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        hello: {
+          type: 'function',
+          public: true,
+          rateLimitTokens: 0,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, ctx) => {
+            cnt++
+            if (cnt === amount) {
+              resolve()
+            }
+            return based.query('nest', payload, ctx).get()
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  await client.once('connect')
+  const p = new Promise((r) => {
+    resolve = r
+  })
+  let i = amount
+  let d = Date.now()
+  while (i) {
+    client.call('hello')
+    i--
+  }
 
-//   const p = new Promise((r) => {
-//     resolve = r
-//   })
-//   let i = amount
-//   let d = Date.now()
-//   while (i) {
-//     client.call('hello')
-//     i--
-//   }
+  await p
+  t.log(amount, 'took', Date.now() - d, 'ms')
+  await wait(100 + amount * 0.005)
 
-//   await p
-//   t.log(amount, 'took', Date.now() - d, 'ms')
-//   await wait(100 + amount * 0.005)
+  t.true(true)
+  await wait(1000)
 
-//   t.true(true)
-
-//   await client.destroy()
-//   await server.destroy()
-// })
+  await client.destroy()
+  await server.destroy()
+})
