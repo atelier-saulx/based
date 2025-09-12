@@ -106,16 +106,23 @@ await test('dont accept modify with mismatch schema', async (t) => {
     },
   })
 
-  throws(() => {
-    return db.create('flurp', {
-      name: 'yyy',
-    })
+  db.create('flurp', {
+    name: 'yyy',
   })
 
   await setSchemaPromise
+
+  throws(() => {
+    return db.create('flurp', {
+      name: 'zzz',
+    })
+  })
   const res = await db.query('flurp').get().toObject()
 
-  deepEqual(res, [{ id: 1, title: '' }])
+  deepEqual(res, [
+    { id: 1, title: '' },
+    { id: 2, title: '' },
+  ])
 })
 
 await test('set schema before start', async (t) => {
