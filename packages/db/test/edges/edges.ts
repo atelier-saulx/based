@@ -81,7 +81,7 @@ await test('multiple references', async (t) => {
   })
   await db.drain()
 
-  await db.create('article', {
+  const artStrudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -94,7 +94,7 @@ await test('multiple references', async (t) => {
       },
     ],
   })
-  await db.create('article', {
+  const artItaly = await db.create('article', {
     name: 'Italy',
     contributors: [
       {
@@ -113,12 +113,12 @@ await test('multiple references', async (t) => {
     ).toObject(),
     [
       {
-        id: 1,
+        id: artStrudel,
         contributors: [{ id: 1, $role: 'writer' }],
       },
       {
-        id: 2,
-        contributors: [{ id: 1, $bigString: italy }],
+        id: artItaly,
+        contributors: [{ id: 1, $role: undefined, $bigString: italy }],
       },
     ],
   )
@@ -129,12 +129,12 @@ await test('multiple references', async (t) => {
     ).toObject(),
     [
       {
-        id: 1,
+        id: artStrudel,
         contributors: [{ id: 1, $rating: 5 }],
       },
       {
-        id: 2,
-        contributors: [{ id: 1 }],
+        id: artItaly,
+        contributors: [{ id: 1, $rating: 0 }],
       },
     ],
   )
@@ -162,7 +162,7 @@ await test('multiple references', async (t) => {
       },
       {
         id: 2,
-        contributors: [{ id: 1 }],
+        contributors: [{ id: 1, $on: false }],
       },
     ],
   )
