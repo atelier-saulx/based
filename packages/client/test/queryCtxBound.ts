@@ -475,11 +475,6 @@ test.serial('ctxBound attachCtx perf', async (t: T) => {
             if (cnt === amount) {
               resolve()
             }
-
-            // for (let i = 0; i < 1e5; i++) {
-            //   based.query('nest', i, ctx).get()
-            // }
-
             return based.query('nest', payload, ctx).get()
           },
         },
