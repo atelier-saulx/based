@@ -5,12 +5,13 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
-import { REFERENCE, REFERENCES } from '@based/schema/def'
+import { CARDINALITY, REFERENCE, REFERENCES } from '@based/schema/def'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { DbSchema, deSerialize } from '@based/schema'
+import { wait } from '@based/utils'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -35,36 +36,41 @@ if (isMainThread) {
   setLocalClientSchema(toDb.client, toDb.server.schema)
 
   try {
-    const map: Record<number, { type: string; include: string[] }> = {}
+    const map: Record<
+      number,
+      { type: string; include: string[]; includeRaw: string[] }
+    > = {}
     for (const type in fromDb.server.schemaTypesParsed) {
       const { id, props } = fromDb.server.schemaTypesParsed[type]
-      const include = Object.keys(props)
-      let i = include.length
+      const include = []
+      const includeRaw = []
 
-      while (i--) {
-        const path = include[i]
-        if (
-          props[path].typeIndex === REFERENCE ||
-          props[path].typeIndex === REFERENCES
-        ) {
-          include[i] = `${path}.id`
-          if (props[path].edges) {
-            for (const key in props[path].edges) {
-              const prop = props[path].edges[key]
+      for (const path in props) {
+        const prop = props[path]
+        if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+          include.push(`${path}.id`)
+          if (prop.edges) {
+            for (const key in prop.edges) {
+              const edge = prop.edges[key]
               if (
-                prop.typeIndex === REFERENCE ||
-                prop.typeIndex === REFERENCES
+                edge.typeIndex === REFERENCE ||
+                edge.typeIndex === REFERENCES
               ) {
                 include.push(`${path}.${key}.id`)
+              } else if (edge.typeIndex === CARDINALITY) {
+                includeRaw.push(`${path}.${key}`)
               } else {
                 include.push(`${path}.${key}`)
               }
             }
           }
+        } else if (prop.typeIndex === CARDINALITY) {
+          includeRaw.push(path)
+        } else {
+          include.push(path)
         }
       }
-
-      map[id] = { type, include }
+      map[id] = { type, include, includeRaw }
     }
 
     for (const type in transformFns) {
@@ -77,16 +83,18 @@ if (isMainThread) {
 
       while ((msg = receiveMessageOnPort(channel))) {
         const leafData: MigrateRange = msg.message
-        const { type, include } = map[leafData.typeId]
+        const { type, include, includeRaw } = map[leafData.typeId]
         const typeTransformFn = transformFns[type]
+        const query = fromDb
+          .query(type)
+          .range(leafData.start - 1, leafData.end)
+          .include(include)
+        for (const rawProp of includeRaw) {
+          query.include(rawProp, { raw: true })
+        }
+        const nodes = query._getSync(fromCtx)
 
         if (typeTransformFn) {
-          const nodes = fromDb
-            .query(type)
-            .include(include)
-            .range(leafData.start - 1, leafData.end)
-            ._getSync(fromCtx)
-
           for (const node of nodes) {
             const res = typeTransformFn(node)
             if (res === null) {
@@ -99,11 +107,6 @@ if (isMainThread) {
             }
           }
         } else if (type in toDb.server.schemaTypesParsed) {
-          const nodes = fromDb
-            .query(type)
-            .include(include)
-            .range(leafData.start - 1, leafData.end)
-            ._getSync(fromCtx)
           for (const node of nodes) {
             toDb.create(type, node, { unsafe: true })
           }

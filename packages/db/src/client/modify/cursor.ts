@@ -27,11 +27,15 @@ export const writeTypeCursor = (ctx: Ctx) => {
   }
 }
 
-export const writePropCursor = (ctx: Ctx, def: PropDef) => {
+export const writePropCursor = (
+  ctx: Ctx,
+  def: PropDef,
+  typeIndex = def.typeIndex,
+) => {
   if (def.prop !== ctx.cursor.prop) {
     ctx.array[ctx.index] = SWITCH_FIELD
     ctx.array[ctx.index + 1] = def.prop
-    ctx.array[ctx.index + 2] = def.typeIndex
+    ctx.array[ctx.index + 2] = typeIndex
     ctx.index += 3
     ctx.cursor.prop = def.prop
   }

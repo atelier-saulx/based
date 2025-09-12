@@ -12,6 +12,7 @@ export type IncludeOpts = {
   codes?: Set<LangCode>
   fallBacks?: LangCode[]
   localeFromDef?: LangCode
+  raw?: true
 }
 
 export type IncludeField = {

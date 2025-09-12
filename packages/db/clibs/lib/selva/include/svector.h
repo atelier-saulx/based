@@ -118,6 +118,7 @@ void *SVector_Remove(SVector * restrict vec, void *key);
  * Remove the last element from the vector vec.
  */
 void *SVector_Pop(SVector * restrict vec);
+void *SVector_PeekTail(SVector * restrict vec);
 
 /**
  * Remove the first element from the vector vec.

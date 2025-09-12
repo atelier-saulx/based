@@ -1,7 +1,7 @@
 import { NonStrictSchema } from '@based/schema'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
 
 await test('migration', async (t) => {
   const db = new BasedDb({
@@ -20,6 +20,7 @@ await test('migration', async (t) => {
         lastName: 'string',
         age: 'uint8',
         email: 'string',
+        uniqueViews: 'cardinality',
       },
       person: {
         email: 'string',
@@ -34,6 +35,7 @@ await test('migration', async (t) => {
       lastName: 'Doe' + i,
       email: 'johndoe' + i + '@example.com',
       age: i + 20,
+      uniqueViews: ['a', 'b', 'c'],
     })
     db.create('person', {
       email: 'person' + i + '@example.com',
@@ -64,6 +66,7 @@ await test('migration', async (t) => {
             fullName: 'string',
             age: 'uint8',
             email: 'string',
+            uniqueViews: 'cardinality',
           },
           hooks: hooksThatShouldBeIgnoredByMigration,
         },
@@ -93,6 +96,7 @@ await test('migration', async (t) => {
             name: 'string',
             age: 'uint8',
             email: 'string',
+            uniqueViews: 'cardinality',
           },
           hooks: hooksThatShouldBeIgnoredByMigration,
         },
@@ -145,60 +149,70 @@ await test('migration', async (t) => {
       age: 29,
       name: 'John9 Doe9',
       email: 'johndoe9@example.com',
+      uniqueViews: 3,
     },
     {
       id: 2,
       age: 28,
       name: 'John8 Doe8',
       email: 'johndoe8@example.com',
+      uniqueViews: 3,
     },
     {
       id: 3,
       age: 27,
       name: 'John7 Doe7',
       email: 'johndoe7@example.com',
+      uniqueViews: 3,
     },
     {
       id: 4,
       age: 26,
       name: 'John6 Doe6',
       email: 'johndoe6@example.com',
+      uniqueViews: 3,
     },
     {
       id: 5,
       age: 25,
       name: 'John5 Doe5',
       email: 'johndoe5@example.com',
+      uniqueViews: 3,
     },
     {
       id: 6,
       age: 24,
       name: 'John4 Doe4',
       email: 'johndoe4@example.com',
+      uniqueViews: 3,
     },
     {
       id: 7,
       age: 23,
       name: 'John3 Doe3',
       email: 'johndoe3@example.com',
+      uniqueViews: 3,
     },
     {
       id: 8,
       age: 22,
       name: 'John2 Doe2',
       email: 'johndoe2@example.com',
+      uniqueViews: 3,
     },
     {
       id: 9,
       age: 21,
       name: 'John1 Doe1',
       email: 'johndoe1@example.com',
+      uniqueViews: 3,
     },
     {
       id: 10,
       age: 20,
       name: 'John0 Doe0',
       email: 'johndoe0@example.com',
+      uniqueViews: 3,
     },
   ])
 
@@ -254,4 +268,11 @@ await test('migration', async (t) => {
       emailPrimary: 'person0@example.com',
     },
   ])
+
+  const lastSchema = schemas.at(-1)
+  lastSchema.types.user.props.age = 'string'
+  const checksum1 = db.client.schema.hash
+  await db.setSchema(lastSchema)
+  const checksum2 = db.client.schema.hash
+  notEqual(checksum1, checksum2)
 })
