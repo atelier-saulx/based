@@ -117,7 +117,7 @@ test.serial('compress performance', async (t: T) => {
   let d = Date.now()
   const q = []
   while (i) {
-    q.push(client.call('hello'))
+    await client.call('hello')
     i--
   }
 
