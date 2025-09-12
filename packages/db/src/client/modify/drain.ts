@@ -61,9 +61,9 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         if (batch.promises) {
           const promises = batch.promises
           batch.promises = null
-          return Promise.all(
-            promises.map(batch.error ? rejectTmp : resolveTmp),
-          ).then(() => schedule(db, ctx))
+          // return Promise.all(
+          promises.map(batch.error ? rejectTmp : resolveTmp) //,
+          // ).then(() => schedule(db, ctx))
         }
       })
   }

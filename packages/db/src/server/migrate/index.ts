@@ -218,20 +218,15 @@ export const migrate = async (
   server.sortIndexes = {}
   setSchemaOnServer(server, toSchema)
   tmpDb.server.dbCtxExternal = fromCtx
-
   // TODO makes this SYNC
   const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
     (worker) => worker.updateCtx(toAddress),
   )
-
   promises.push(tmpDb.destroy(), worker.terminate())
-
   await Promise.all(promises)
-
   if (abort()) {
     return
   }
-
   native.membarSyncRead()
   await save(server, {
     forceFullDump: true,

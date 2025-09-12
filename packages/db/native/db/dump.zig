@@ -10,7 +10,6 @@ pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     const args = napi.getArgs(2, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
-
     var com: selva.selva_dump_common_data = .{
         .meta_data = ctx.ids.ptr,
         .meta_len = ctx.ids.len * @sizeOf(u32),

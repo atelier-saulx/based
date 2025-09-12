@@ -5,7 +5,7 @@ export const resizeModifyDirtyRanges = (server: DbServer) => {
   let maxNrChanges = 0
   for (const typeId in server.schemaTypesParsedById) {
     const def = server.schemaTypesParsedById[typeId]
-    const lastId = native.getTypeInfo(def.id, server.dbCtxExternal)[1]
+    const lastId = server.ids[def.id - 1]
     const blockCapacity = def.blockCapacity
     const tmp = lastId - +!(lastId % def.blockCapacity)
     const lastBlock = Math.ceil(

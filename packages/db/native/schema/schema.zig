@@ -20,8 +20,23 @@ pub fn setSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
     };
 }
 
+pub fn getSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getSchemaIdsInternal(env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+fn getSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(1, env, info);
+    const ctx = try napi.get(*db.DbCtx, env, args[0]);
+    var result: c.napi_value = undefined;
+    _ = c.napi_create_external_arraybuffer(env, ctx.ids.ptr, ctx.ids.len * 4, null, null, &result);
+    return result;
+}
+
 fn setSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(3, env, info);
+    const args = try napi.getArgs(2, env, info);
     const ids = try napi.get([]u32, env, args[0]);
     const ctx = try napi.get(*db.DbCtx, env, args[1]);
     ctx.ids = try ctx.allocator.dupe(u32, ids);

@@ -32,8 +32,6 @@ await test('raw', async (t) => {
     uniqueSkills,
   })
 
-  console.log('??', uniqueSkills)
-
   const [a, b] = await db.query('user').get().toObject()
   deepEqual(a.uniqueSkills, b.uniqueSkills)
 })

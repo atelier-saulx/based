@@ -105,6 +105,11 @@ const native = {
     return db.setSchemaIds(ids, dbCtx)
   },
 
+  getSchemaIds: (dbCtx: any): Uint32Array => {
+    return new Uint32Array(db.getSchemaIds(dbCtx))
+  },
+
+  // TODO: not in use, remove
   getTypeInfo: (typeId: number, dbCtx: any) => {
     return db.getTypeInfo(typeId, dbCtx)
   },

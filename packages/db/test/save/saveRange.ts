@@ -390,4 +390,6 @@ await test('large block gap', async (t) => {
       y: i % 255,
     })
   }
+
+  await db.drain()
 })

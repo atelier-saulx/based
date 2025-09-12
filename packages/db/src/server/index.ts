@@ -61,7 +61,7 @@ export class DbServer extends DbShared {
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
-
+  ids: Uint32Array
   constructor({
     path,
     debug,
@@ -362,7 +362,6 @@ export class DbServer extends DbShared {
   modify(payload: Uint8Array): Uint8Array | null | Promise<Uint8Array | null> {
     const hash = readUint64(payload, 0)
     if (this.schema?.hash !== hash) {
-      console.log('bad:', this.schema?.hash, hash)
       this.emit('info', 'Schema mismatch in write')
       return null
     }

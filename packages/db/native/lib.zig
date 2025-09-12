@@ -113,6 +113,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "getNodeRangeHash", info.nodeRangeHash) catch return null;
     registerFunction(env, exports, "setSchemaType", schema.setSchemaType) catch return null;
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
+    registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;

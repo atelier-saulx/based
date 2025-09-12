@@ -15,6 +15,7 @@ export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
   server.schemaTypesParsedById = schemaTypesParsedById
+  server.ids = native.getSchemaIds(server.dbCtxExternal)
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {

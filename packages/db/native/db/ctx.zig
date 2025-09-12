@@ -66,7 +66,7 @@ pub fn createDbCtx() !*DbCtx {
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = null,
-        .ids = undefined,
+        .ids = &[_]u32{},
     };
     for (&b.*.threadCtx) |*tctx| {
         tctx.* = .{ .threadId = 0, .decompressor = null, .libdeflateBlockState = undefined };
