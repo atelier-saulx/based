@@ -371,7 +371,7 @@ test('query ctx bound internal (nested calls)', async (t: T) => {
   await server.destroy()
 })
 
-test.only('query ctx bound internal (nested call from call)', async (t: T) => {
+test('query ctx bound internal (nested call from call)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     silent: true,
@@ -399,7 +399,6 @@ test.only('query ctx bound internal (nested call from call)', async (t: T) => {
           public: true,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, ctx) => {
-            console.info('ctx=>', ctx)
             return based.query('nest', payload, ctx).get()
           },
         },

@@ -31,32 +31,32 @@ export class BasedQuery extends BasedQueryAbstract {
     attachedCtx?: { [key: string]: any } | Context,
   ) {
     super()
-    const server = this.ctx.session.client.server
+
+    const server = ctx.session.client.server
+
     this.id = genObserveId(name, payload)
     this.ctx = ctx
     this.payload = payload
     this.name = name
+
     this.route = verifyRoute(
       server,
-      server.client.ctx,
+      ctx,
       'query',
       server.functions.route(name),
       name,
       this.id,
     )
+
     if (!this.route) {
       throw new Error(`Query ${this.route.name} does not exist`)
     }
-    console.log('flap', attachedCtx)
     if (attachedCtx) {
-      console.log('yo yo', attachedCtx)
-
       this.attachedCtx =
         'session' in attachedCtx
           ? attachCtx(this.route.ctx, attachedCtx, this.id)
           : attachCtxInternal(this.route.ctx, attachedCtx, this.id)
     }
-    console.log('made it')
   }
 
   subscribe(
