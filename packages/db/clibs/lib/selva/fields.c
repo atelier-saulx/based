@@ -2159,6 +2159,9 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     }
 
     memset(nfo2p(fields, nfo), 0, selva_fields_get_data_size(fs));
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
 
     return 0;
 }
