@@ -1,4 +1,4 @@
-import { genObserveId } from './genObserveId.js'
+import { genObserveId } from '@based/protocol/client-server'
 import { BasedClient, BasedQuery } from './index.js'
 import { CacheValue } from './types/cache.js'
 

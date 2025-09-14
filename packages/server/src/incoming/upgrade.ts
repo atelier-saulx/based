@@ -2,7 +2,6 @@ import uws from '@based/uws'
 import { parseAuthState } from '../auth/index.js'
 import { blockIncomingRequest } from '../security.js'
 import { BasedServer } from '../server.js'
-// import { BasedErrorCode } from '../error'
 
 let clientId = 0
 

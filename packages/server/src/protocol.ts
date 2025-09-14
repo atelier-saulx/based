@@ -10,12 +10,18 @@ import {
 import { BasedQueryResponse } from '@based/db'
 import { serialize } from '@based/protocol/db-read/serialize-schema'
 import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
+import {
+  FunctionClientSubType,
+  FunctionClientType,
+  FunctionServerType,
+} from '@based/protocol/client-server'
+import { WebSocketSession } from '@based/functions'
 
 export const COMPRESS_FROM_BYTES = 150
 
 export const decodeHeader = (
   nr: number,
-): { type: number; isDeflate: boolean; len: number } => {
+): { type: FunctionServerType; isDeflate: boolean; len: number } => {
   // 4 bytes
   // type (3 bits)
   //   0 = function
@@ -73,6 +79,24 @@ export const CONTENT_TYPE_VERSION_1_U8 = new Uint8Array([250])
 export const CONTENT_TYPE_DB_QUERY = new Uint8Array([249])
 
 const EMPTY_BUFFER = new Uint8Array([])
+
+export const parseIncomingQueryPayload = (
+  arr: Uint8Array,
+  start: number,
+  headerLen: number,
+  len: number,
+  session: WebSocketSession,
+  isDeflate: boolean,
+) => {
+  // headerLen:nameLen + 21
+  return len === headerLen
+    ? undefined
+    : decodePayload(
+        new Uint8Array(arr.slice(start + headerLen, start + len)),
+        isDeflate,
+        session.v < 2,
+      )
+}
 
 export const cacheV2toV1 = (buf: Uint8Array): Uint8Array => {
   // 12 + 8
@@ -280,22 +304,18 @@ export const decodePayload = (
     return decodePayloadV1(payload, isDeflate)
   }
   const contentType = payload[0]
-
   if (contentType === CONTENT_TYPE_UNDEFINED_U8[0]) {
     return undefined
   }
-
   if (contentType === CONTENT_TYPE_UINT8_ARRAY_U8[0]) {
     return payload.subarray(1)
   }
-
   if (contentType === CONTENT_TYPE_STRING_U8[0]) {
     if (isDeflate) {
       return zlib.inflateRawSync(payload.subarray(1)).toString()
     }
     return DECODER.decode(payload.subarray(1))
   }
-
   if (contentType === CONTENT_TYPE_JSON_U8[0]) {
     let str: string
     if (isDeflate) {
@@ -310,7 +330,6 @@ export const decodePayload = (
     }
     return str
   }
-
   if (contentType === CONTENT_TYPE_NULL_U8[0]) {
     return null
   }
@@ -328,7 +347,6 @@ export const encodeFunctionResponse = (
   id: number,
   val: ValueBuffer,
 ): Uint8Array => {
-  // Type 0
   // | 4 header | 3 id | * payload |
   const headerSize = 4
   const idSize = 3
@@ -336,7 +354,7 @@ export const encodeFunctionResponse = (
   if (isOld) {
     const msgSize = idSize + val.buf.byteLength
     const array = new Uint8Array(headerSize + msgSize)
-    encodeHeader(0, val.deflate, msgSize, array, 0)
+    encodeHeader(FunctionClientType.function, val.deflate, msgSize, array, 0)
     writeUint24(array, id, 4)
     if (val.buf.byteLength) {
       array.set(val.buf, 7)
@@ -345,7 +363,7 @@ export const encodeFunctionResponse = (
   } else {
     const msgSize = idSize + val.buf.byteLength + 1
     const array = new Uint8Array(headerSize + msgSize)
-    encodeHeader(0, val.deflate, msgSize, array, 0)
+    encodeHeader(FunctionClientType.function, val.deflate, msgSize, array, 0)
     writeUint24(array, id, 4)
     array[7] = val.contentByte[0]
     if (val.buf.byteLength) {
@@ -370,8 +388,8 @@ export const encodeStreamFunctionResponse = (
     if (isOld) {
       const msgSize = idSize + subTypeSize + val.buf.byteLength
       const array = new Uint8Array(headerSize + msgSize)
-      encodeHeader(7, val.deflate, msgSize, array, 0)
-      array[4] = 1
+      encodeHeader(FunctionClientType.subType, val.deflate, msgSize, array, 0)
+      array[4] = FunctionClientSubType.streamFullResponse
       writeUint24(array, id, 5)
       if (val.buf.byteLength) {
         array.set(val.buf, 8)
@@ -380,8 +398,8 @@ export const encodeStreamFunctionResponse = (
     } else {
       const msgSize = idSize + subTypeSize + val.buf.byteLength + 1
       const array = new Uint8Array(headerSize + msgSize)
-      encodeHeader(7, val.deflate, msgSize, array, 0)
-      array[4] = 1
+      encodeHeader(FunctionClientType.subType, val.deflate, msgSize, array, 0)
+      array[4] = FunctionClientSubType.streamFullResponse
       writeUint24(array, id, 5)
       array[8] = val.contentByte[0]
       if (val.buf.byteLength) {
@@ -401,25 +419,20 @@ export const encodeStreamFunctionChunkResponse = (
   code: number = 0,
   maxChunkSize: number = 0,
 ): Uint8Array => {
-  // Type 7.2
   // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize?
   let msgSize = 6
-
   if (maxChunkSize) {
     msgSize += 3
   }
-
   const array = new Uint8Array(4 + msgSize)
-  encodeHeader(7, false, msgSize, array, 0)
-  array[4] = 2
+  encodeHeader(FunctionClientType.subType, false, msgSize, array, 0)
+  array[4] = FunctionClientSubType.streamChunkResponse
   writeUint24(array, id, 5)
   array[8] = seqId
   array[9] = code
-
   if (maxChunkSize) {
     writeUint24(array, maxChunkSize, 10)
   }
-
   return array
 }
 
@@ -427,7 +440,7 @@ export const encodeGetResponse = (id: number): Uint8Array => {
   // Type 4
   // | 4 header | 8 id |
   const array = new Uint8Array(12)
-  encodeHeader(3, false, 8, array, 0)
+  encodeHeader(FunctionClientType.get, false, 8, array, 0)
   writeUint64(array, id, 4)
   return array
 }
@@ -445,12 +458,17 @@ export const encodeObservableResponse = (
 ): [Uint8Array, boolean] => {
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
-
   const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const msgSize = 16 + val.buf.byteLength
     const array = new Uint8Array(4 + msgSize)
-    encodeHeader(1, val.deflate, msgSize, array, 0)
+    encodeHeader(
+      FunctionClientType.subscriptionData,
+      val.deflate,
+      msgSize,
+      array,
+      0,
+    )
     writeUint64(array, id, 4)
     writeUint64(array, checksum, 12)
     if (val.buf.byteLength) {
@@ -460,7 +478,13 @@ export const encodeObservableResponse = (
   } else {
     const msgSize = 16 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
-    encodeHeader(1, val.deflate, msgSize, array, 0)
+    encodeHeader(
+      FunctionClientType.subscriptionData,
+      val.deflate,
+      msgSize,
+      array,
+      0,
+    )
     writeUint64(array, id, 4)
     writeUint64(array, checksum, 12)
     array[20] = val.contentByte[0]
@@ -483,7 +507,13 @@ export const encodeObservableDiffResponse = (
   if (isOld) {
     const msgSize = 24 + val.buf.byteLength
     const array = new Uint8Array(4 + msgSize)
-    encodeHeader(2, val.deflate, msgSize, array, 0)
+    encodeHeader(
+      FunctionClientType.subscriptionDiff,
+      val.deflate,
+      msgSize,
+      array,
+      0,
+    )
     writeUint64(array, id, 4)
     writeUint64(array, checksum, 12)
     writeUint64(array, previousChecksum, 20)
@@ -493,7 +523,13 @@ export const encodeObservableDiffResponse = (
   } else {
     const msgSize = 24 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
-    encodeHeader(2, val.deflate, msgSize, array, 0)
+    encodeHeader(
+      FunctionClientType.subscriptionDiff,
+      val.deflate,
+      msgSize,
+      array,
+      0,
+    )
     writeUint64(array, id, 4)
     writeUint64(array, checksum, 12)
     writeUint64(array, previousChecksum, 20)
@@ -505,9 +541,11 @@ export const encodeObservableDiffResponse = (
   }
 }
 
-const encodeSimpleResponse = (type: number, val: ValueBuffer): Uint8Array => {
+const encodeSimpleResponse = (
+  type: FunctionClientType,
+  val: ValueBuffer,
+): Uint8Array => {
   // | 4 header | * payload |
-
   const isOld = val.contentByte[0] === CONTENT_TYPE_VERSION_1_U8[0]
   if (isOld) {
     const headerSize = 4
@@ -532,13 +570,11 @@ const encodeSimpleResponse = (type: number, val: ValueBuffer): Uint8Array => {
 }
 
 export const encodeAuthResponse = (val: ValueBuffer): Uint8Array => {
-  // Type 4
-  return encodeSimpleResponse(4, val)
+  return encodeSimpleResponse(FunctionClientType.auth, val)
 }
 
 export const encodeErrorResponse = (val: ValueBuffer): Uint8Array => {
-  // Type 5
-  return encodeSimpleResponse(5, val)
+  return encodeSimpleResponse(FunctionClientType.error, val)
 }
 
 export const encodeChannelMessage = (
@@ -552,8 +588,8 @@ export const encodeChannelMessage = (
     const msgSize = 8 + val.buf.byteLength + 1
     const array = new Uint8Array(4 + msgSize)
     // sub protocol 7.0
-    array[4] = 0
-    encodeHeader(7, val.deflate, msgSize, array, 0)
+    array[4] = FunctionClientSubType.channel
+    encodeHeader(FunctionClientType.subType, val.deflate, msgSize, array, 0)
     writeUint64(array, id, 5)
     if (val.buf.byteLength) {
       array.set(val.buf, 13)
@@ -562,9 +598,8 @@ export const encodeChannelMessage = (
   } else {
     const msgSize = 8 + val.buf.byteLength + 2
     const array = new Uint8Array(4 + msgSize)
-    encodeHeader(7, val.deflate, msgSize, array, 0)
-    // sub protocol 7.0
-    array[4] = 0
+    encodeHeader(FunctionClientType.subType, val.deflate, msgSize, array, 0)
+    array[4] = FunctionClientSubType.channel
     writeUint64(array, id, 5)
     array[13] = val.contentByte[0]
     if (val.buf.byteLength) {
@@ -582,26 +617,9 @@ export const encodeReload = (type: number, seqId: number): Uint8Array => {
   // | 4 header | 1 subType | 1 type \ 1 seqId
   const msgSize = 3
   const array = new Uint8Array(4 + msgSize)
-  encodeHeader(7, false, msgSize, array, 0)
-  array[4] = 3
+  encodeHeader(FunctionClientType.subType, false, msgSize, array, 0)
+  array[4] = FunctionClientSubType.forceReload
   array[5] = type
   array[6] = seqId
   return array
-}
-
-// FIXME
-export const decode = (buffer: Uint8Array, isOldClient: boolean): any => {
-  const header = readUint32(buffer, 0)
-  const { isDeflate, len, type } = decodeHeader(header)
-  if (type === 1) {
-    // | 4 header | 8 id | 8 checksum | * payload |
-    if (len === 16) {
-      return
-    }
-    const start = 20
-    const end = len + 4
-
-    //  very wrong
-    return decodePayload(buffer.slice(start, end), isDeflate, false)
-  }
 }

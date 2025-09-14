@@ -1,30 +1,22 @@
-import {
-  HttpSession,
-  SendHttpResponse,
-  BasedRoute,
-  BasedFunctionConfig,
-} from '@based/functions'
+import { HttpSession, SendHttpResponse, BasedRoute } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse.js'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { installFn } from '../../installFn.js'
-import { IsAuthorizedHandler } from '../../authorize.js'
-import { genObservableId } from '../../query/index.js'
+import { genObserveId } from '@based/protocol/client-server'
 import {
   hasChannel,
   createChannel,
   destroyChannel,
   extendChannel,
 } from '../../channel/index.js'
+import { FunctionHandler } from '../../types.js'
 
-export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
-  route: BasedRoute<'channel'>,
-  _spec: BasedFunctionConfig<'channel'>,
-  server,
-  ctx,
-  payload
-) => {
-  // parse channel payload / msg
+export const httpPublish: FunctionHandler<
+  HttpSession,
+  BasedRoute<'channel'>
+> = async ({ route, server, ctx, payload }) => {
+  // Parse channel payload / msg
   let msg: any
   let channelPayload: any
   if (typeof payload !== 'object') {
@@ -54,9 +46,9 @@ export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
   }
 
   const name = route.name
-  const id = genObservableId(name, channelPayload)
+  const id = genObserveId(name, channelPayload)
 
-  installFn(server, ctx, route).then(async (spec) => {
+  installFn({ server, ctx, route }).then(async (spec) => {
     if (spec === null) {
       return
     }
@@ -80,7 +72,7 @@ export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
               ? typeof status === 'string'
                 ? status
                 : String(status)
-              : undefined
+              : undefined,
           )
         }
         await spec.httpResponse(server.client, payload, undefined, send, ctx)

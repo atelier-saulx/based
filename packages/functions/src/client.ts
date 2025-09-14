@@ -14,7 +14,11 @@ export abstract class BasedFunctionClient {
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>
 
-  abstract query(name: string, payload?: any): BasedQuery
+  abstract query(
+    name: string,
+    payload?: any,
+    ctx?: { [key: string]: any } | Context,
+  ): BasedQuery
 
   abstract channel(name: string, payload?: any): BasedChannel
 
@@ -26,7 +30,7 @@ export abstract class BasedFunctionClient {
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
 
-  abstract geo(ctx: Context): Promise<Geo>
+  // abstract geo(ctx: Context): Geo
 
   abstract renewAuthState(
     ctx: Context,
