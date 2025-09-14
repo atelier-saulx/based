@@ -1,4 +1,5 @@
 import type { SchemaHooks } from '@based/schema'
+
 import {
   ReaderAggregateSchema,
   ReaderPropDef,
@@ -160,6 +161,12 @@ const serializeProp = (
     options |= PROPERTY_BIT_MAP.vectorBaseType
     // Size 8
     blocks.push(new Uint8Array([prop.vectorBaseType - 1]))
+  }
+  if ('cardinalityMode' in prop) {
+    blocks.push(new Uint8Array([prop.cardinalityMode]))
+  }
+  if ('cardinalityPrecision' in prop) {
+    blocks.push(new Uint8Array([prop.cardinalityPrecision]))
   }
   if ('len' in prop) {
     options |= PROPERTY_BIT_MAP.len

@@ -97,7 +97,7 @@ export type PropDef = {
   vectorBaseType?: VectorBaseType
   vectorSize?: number
   // cardinality
-  cardinalityMode?: HLLRegisterRepresentation
+  cardinalityMode?: number
   cardinalityPrecision?: number
   // edge stuff
   edgeMainLen?: 0

@@ -8,6 +8,7 @@ import {
   TEXT,
   VECTOR,
   BINARY,
+  CARDINALITY,
 } from '@based/schema/def'
 import {
   ReaderLocales,
@@ -38,6 +39,10 @@ const createReaderPropDef = (
   if (p.typeIndex === VECTOR || p.typeIndex === COLVEC) {
     readerPropDef.vectorBaseType = p.vectorBaseType
     readerPropDef.len = p.len
+  }
+  if (p.typeIndex === CARDINALITY) {
+    readerPropDef.cardinalityMode = p.cardinalityMode
+    readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   }
   if (p.typeIndex === TEXT) {
     if (opts.codes.has(0)) {
