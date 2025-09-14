@@ -402,3 +402,39 @@ await test('switches', async (t) => {
     'update with schema optionals (dense, prec=6)',
   )
 })
+
+await test('defaultPrecision', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      stores: {
+        name: 'string',
+        customers: {
+          items: {
+            ref: 'customer',
+            prop: 'customer',
+          },
+        },
+      },
+      customer: {
+        name: 'string',
+        productsBought: 'cardinality',
+      },
+    },
+  })
+  const cus = db.create('customer', {
+    name: 'Alex Atala',
+    productsBought: ['fork', 'knife', 'knife', 'frying pan'],
+  })
+  const sto = db.create('stores', {
+    name: "Worderland's Kitchen",
+    customers: [cus],
+  })
+
+  await db.query('stores').include('*', '**').get().inspect()
+})
