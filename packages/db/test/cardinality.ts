@@ -350,7 +350,7 @@ await test('switches', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -358,27 +358,47 @@ await test('switches', async (t) => {
         name: 'string',
         visitors: {
           type: 'cardinality',
-          precision: 10,
+          precision: 6,
           mode: 'dense',
         },
         visits: 'number',
-        faceRec: {
-          type: 'vector',
-          baseType: 'float32',
-          size: 5,
-        },
       },
     },
   })
 
   const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
 
-  db.create('store', {
-    // name: 'Handsome Sportsman',
+  const store1 = db.create('store', {
+    name: 'Handsome Sportsman',
     visitors: visits,
-    // visits: visits.length,
-    // faceRec: new Float32Array([60.1, -60.3, 10, -12.3, 9.2]),
+    visits: visits.length,
   })
 
-  db.query('store').include('visitors').get().inspect()
+  deepEqual(
+    await db.query('store').include('visitors').get(),
+    [
+      {
+        id: 1,
+        visitors: 3,
+      },
+    ],
+    'create with schema optionals (dense, prec=6)',
+  )
+
+  await db.update('store', store1, {
+    visitors: 'Ennio',
+  })
+
+  await db.drain()
+
+  deepEqual(
+    await db.query('store').include('visitors').get(),
+    [
+      {
+        id: 1,
+        visitors: 4,
+      },
+    ],
+    'update with schema optionals (dense, prec=6)',
+  )
 })
