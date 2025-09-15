@@ -67,6 +67,15 @@ export const authEmail: BasedFunction<Payload> = async (
       To: email,
       Subject: `${appName} login. "${code}"`,
       HtmlBody: magicLinkTemplate({ appName, code, email, callToAction }),
+      TextBody: `${appName}
+Log in to your account
+Hey there, 
+We've just received a login attempt to ${email}, with the following code: ${code}
+
+To log in, please use the url below & make sure you see the same code on the login page.
+${callToAction}
+
+If you didn’t attempt to log in, you can ignore this email. Your account is safe.`,
     })
   } else if (type === 'invite') {
     return await postMarkClient.sendEmail({
