@@ -7,17 +7,6 @@ extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 // Only little endian for us (at least for now)
 // const native_endian = builtin.cpu.arch.endian();
 
-pub inline fn readInt(comptime T: type, buffer: []const u8, offset: usize) T {
-    if (T == f64) {
-        const value: T = @bitCast(buffer[offset .. offset + 8].*);
-        return value;
-    } else if (T == u8) {
-        return buffer[offset];
-    }
-    const value: T = @bitCast(buffer[offset..][0..@divExact(@typeInfo(T).Int.bits, 8)].*);
-    return value;
-}
-
 pub inline fn writeInt(comptime T: type, buffer: []u8, offset: usize, value: usize) void {
     const v: T = @truncate(value);
     const target = buffer[offset..][0..@sizeOf(T)];

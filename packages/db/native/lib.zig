@@ -15,6 +15,7 @@ const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
 const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
+const subscriptions = @import("./db/subscriptionCtx.zig");
 
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
@@ -138,6 +139,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
 
     registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
+
+    registerFunction(env, exports, "addIdSubscription", subscriptions.addIdSubscription) catch return null;
 
     return exports;
 }

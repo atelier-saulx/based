@@ -1,10 +1,11 @@
-import { wait } from '@based/utils'
+import { wait, writeUint16, writeUint64 } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { equal } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { getDefaultHooks } from '../../src/hooks.js'
+import native from '../../src/native.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -24,7 +25,7 @@ const start = async (t, clientsN = 2) => {
 // make a tool to test subs
 await test('subscriptionIds', async (t) => {
   const clientsN = 2
-  const { clients } = await start(t, clientsN)
+  const { clients, server } = await start(t, clientsN)
 
   await clients[0].setSchema({
     types: {
@@ -38,6 +39,22 @@ await test('subscriptionIds', async (t) => {
 
   let cnt = 0
   const id = await clients[0].create('user', { derp: 66 })
+  const fields = new Uint8Array([1, 0])
+  const subId = 66
+  const typeId = server.schemaTypesParsed['user'].id
+  // ----------------------------
+  const headerLen = 14
+  const val = new Uint8Array(headerLen + fields.byteLength)
+
+  //     server.schemaTypesParsed['user'].id,
+
+  writeUint64(val, subId, 0)
+  writeUint16(val, typeId, 8)
+  writeUint16(val, id, 10)
+  val.set(fields, headerLen)
+
+  console.log('flap', server.schemaTypesParsed['user'].id)
+  native.addIdSubscription(server.dbCtxExternal, val)
 
   const close = clients[1]
     .query('user', id)

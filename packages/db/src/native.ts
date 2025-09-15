@@ -16,6 +16,10 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
 }
 
 const native = {
+  addIdSubscription: (dbCtx: any, value: Uint8Array): void => {
+    return db.addIdSubscription(dbCtx, value)
+  },
+
   getThreadId: (): BigInt => {
     return db.getThreadId()
   },
