@@ -1,11 +1,12 @@
 import { BasedDb } from '../src/index.js'
+import { Sema } from 'async-sema'
 import test from './shared/test.js'
 import { start as startMulti } from './shared/multi.js'
 import assert from 'node:assert'
 
 const N = 1e7 // Nodes
 const N2 = 1e3 // nr filter queries
-const N3 = 1e3 // nr simple gets
+const N3 = 1e4 // nr simple gets
 
 const schema = {
   types: {
@@ -56,16 +57,20 @@ await test('test embedded', async (t) => {
   assert(res === N)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
+  const s = new Sema(512)
   start = performance.now()
-  //for (let i = 0; i < N3; i++) {
-  //    db.query('test', i + 1).get()
-  //}
-  //db.drain()
-  res = (
-    await Promise.all(
-      Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
-    )
-  ).reduce((prev, cur) => prev + cur.length, 0)
+  await Promise.all(
+    Array.from({ length: N3 }).map(async (_, i) => {
+      await s.acquire()
+      db.query('test', i + 1).get().then(() => s.release())
+    }),
+  )
+  await s.drain()
+  //res = (
+  //  await Promise.all(
+  //    Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
+  //  )
+  //).reduce((prev, cur) => prev + cur.length, 0)
   const qtime1 = performance.now() - start
   console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
 
