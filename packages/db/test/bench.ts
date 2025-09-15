@@ -5,14 +5,15 @@ import assert from 'node:assert'
 
 const N = 1e7 // Nodes
 const N2 = 1e3 // nr filter queries
-const N3 = 1e6 // nr simple gets
+const N3 = 1e3 // nr simple gets
 
 const schema = {
   types: {
     test: {
       props: {
         x: 'uint32',
-        s: 'string',
+        //s: 'string',
+        s: { type: 'string', maxBytes: 16 },
       },
     },
   },
@@ -31,7 +32,6 @@ await test('test embedded', async (t) => {
   await db.setSchema(schema)
 
   let start = performance.now()
-
   let i = N
   while (i--) {
     db.create('test', {
@@ -39,7 +39,6 @@ await test('test embedded', async (t) => {
       s: `hello ${i}`,
     })
   }
-
   await db.drain()
   const ctime = performance.now() - start
   console.log(ctime, 'ms', toxps(N, ctime), 'c/s')
@@ -58,9 +57,13 @@ await test('test embedded', async (t) => {
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
+  //for (let i = 0; i < N3; i++) {
+  //    db.query('test', i + 1).get()
+  //}
+  //db.drain()
   res = (
     await Promise.all(
-      Array.from({ length: N2 }).map((_, i) => db.query('test', i + 1).get()),
+      Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
     )
   ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime1 = performance.now() - start
@@ -108,7 +111,7 @@ await test('test client-server', async (t) => {
   start = performance.now()
   res = (
     await Promise.all(
-      Array.from({ length: N2 }).map((_, i) =>
+      Array.from({ length: N3 }).map((_, i) =>
         client1.query('test', i + 1).get(),
       ),
     )
