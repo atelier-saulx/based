@@ -70,6 +70,17 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     }
 }
 
+void hll_init_like(struct selva_string *hlla, struct selva_string *hllb){
+    if (hlla == nullptr || hllb == nullptr) {
+        db_panic("selva_string can't be null during HLL initialization");
+    }
+    size_t len;
+    HyperLogLogPlusPlus *hllFrom = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllb, &len);
+    uint8_t precision = hllFrom->precision;
+    bool is_sparse = hllFrom->is_sparse;
+    hll_init(hlla, precision, is_sparse);
+}
+
 static int count_leading_zeros(uint64_t x) {
     return (x == 0 ? 0 : __builtin_clzll(x));
 }
