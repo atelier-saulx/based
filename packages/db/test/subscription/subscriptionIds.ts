@@ -1,11 +1,11 @@
-import { wait, writeUint16, writeUint64 } from '@based/utils'
+import { wait, writeUint16, writeUint32, writeUint64 } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
-import { equal } from '../shared/assert.js'
-import { italy } from '../shared/examples.js'
 import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
+import { clientWorker } from '../shared/startWorker.js'
+import { BasedDb } from '../../src/index.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -84,4 +84,44 @@ await test('subscriptionIds', async (t) => {
 
   close()
   close2()
+})
+
+await test('subscription perf', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        // derp: 'uint32',
+        binary: { type: 'binary', maxBytes: 20 },
+        // lang: 'string',
+      },
+    },
+  })
+
+  const bin = new Uint8Array(20)
+  for (let i = 0; i < 1e6; i++) {
+    db.create('user', { binary: bin })
+  }
+
+  console.log(await db.drain())
+  let x = Date.now()
+
+  const q = db.query('user', 1)
+  const y = await q.get()
+  console.log(q.buffer, y)
+
+  let d = Date.now()
+
+  for (let i = 0; i < 1e6; i++) {
+    writeUint32(q.buffer, i + 1, 4)
+    native.getQueryBuf(q.buffer, db.server.dbCtxExternal)
+  }
+
+  // await Promise.all(p)
+  console.log(Date.now() - d)
 })
