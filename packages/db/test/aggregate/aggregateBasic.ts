@@ -61,7 +61,7 @@ await test('sum top level', async (t) => {
   // top level  ----------------------------------
   deepEqual(
     await db.query('vote').sum('NL').get().toObject(),
-    { NL: 30 },
+    { NL: { sum: 30 } },
     'sum, top level, single prop',
   )
 
@@ -72,13 +72,13 @@ await test('sum top level', async (t) => {
       .sum('NL')
       .get()
       .toObject(),
-    { NL: 20 },
+    { NL: { sum: 20 } },
     'sum with filter',
   )
 
   deepEqual(
     await db.query('vote').sum('NL', 'AU').get().toObject(),
-    { NL: 30, AU: 15 },
+    { NL: { sum: 30 }, AU: { sum: 15 } },
     'sum, top level, multiple props',
   )
 
@@ -93,13 +93,13 @@ await test('sum top level', async (t) => {
       .sum('NL')
       .get()
       .toObject(),
-    { NL: 0 },
+    { NL: { sum: 0 } },
     'sum with empty result set',
   )
 
   deepEqual(
     await db.query('vote').sum('flap.hello').get().toObject(),
-    { flap: { hello: 100 } },
+    { flap: { hello: { sum: 100 } } },
     'nested object notation',
   )
 })
@@ -128,7 +128,7 @@ await test('count top level bignumber', async (t) => {
   await db.drain()
 
   const q = await db.query('sequence').count().get()
-  equal(q.toObject().count, 1e6)
+  equal(q.toObject().count.count, 1e6) // MV
 })
 
 await test('top level count', async (t) => {
@@ -188,7 +188,7 @@ await test('top level count', async (t) => {
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
-    { count: 3 },
+    { count: { count: 3 } }, // MV
     'count, top level, prop',
   )
 
@@ -199,13 +199,13 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { count: 2 },
+    { count: { count: 2 } }, // MV
     'count with filter',
   )
 
   deepEqual(
     await db.query('vote').include('IT').count().get(),
-    { count: 3 },
+    { count: { count: 3 } },
     'count, top level, ignoring include',
   )
 
@@ -216,19 +216,19 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { count: 0 },
+    { count: { count: 0 } }, // MV
     'count, with no match filtering, string value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '=', 20).count().get(),
-    { count: 1 },
+    { count: { count: 1 } }, // MV
     'count, with filtering an int value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-    { count: 0 },
+    { count: { count: 0 } }, // MV
     'count, with no match filtering, int value',
   )
 })
@@ -298,21 +298,21 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
     {
-      NL: 15.56598856481656,
+      NL: { stddev: 15.56598856481656 },
     },
     'stddev, top level, NO groupBy, option = sample',
   )
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
     {
-      NL: 15.56598856481656,
+      NL: { stddev: 15.56598856481656 },
     },
     'stddev, top level, NO groupBy, no option (default = sample)',
   )
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'population' }).get(),
     {
-      NL: 13.922643427165687,
+      NL: { stddev: 13.922643427165687 },
     },
     'stddev, top level, NO groupBy, option = population',
   )
@@ -320,7 +320,7 @@ await test('two phase accumulation', async (t) => {
   deepEqual(
     await db.query('vote').sum('NL').get().toObject(),
     {
-      NL: 118,
+      NL: { sum: 118 },
     },
     'sum, top level, NO groupBy',
   )
@@ -334,13 +334,13 @@ await test('two phase accumulation', async (t) => {
       .toObject(),
     {
       Brazil: {
-        NL: 0,
+        NL: { stddev: 0 },
       },
       bb: {
-        NL: 6.5,
+        NL: { stddev: 6.5 },
       },
       aa: {
-        NL: 2.5,
+        NL: { stddev: 2.5 },
       },
     },
     'stddev, top level, groupBy',
@@ -355,7 +355,7 @@ await test('two phase accumulation', async (t) => {
       {
         id: 1,
         votes: {
-          NL: 13.922643427165687,
+          NL: { stddev: 13.922643427165687 },
         },
       },
     ],
@@ -374,13 +374,13 @@ await test('two phase accumulation', async (t) => {
         id: 1,
         votes: {
           Brazil: {
-            NL: 0,
+            NL: { stddev: 0 },
           },
           bb: {
-            NL: 6.5,
+            NL: { stddev: 6.5 },
           },
           aa: {
-            NL: 2.5,
+            NL: { stddev: 2.5 },
           },
         },
       },
@@ -480,16 +480,16 @@ await test('numeric types', async (t) => {
     await db.query('vote').sum('NL', 'FI').groupBy('region').get(),
     {
       bb: {
-        NL: 33,
-        FI: -1000000.3,
+        NL: { sum: 33 },
+        FI: { sum: -1000000.3 },
       },
       aa: {
-        NL: 93,
-        FI: 0,
+        NL: { sum: 93 },
+        FI: { sum: 0 },
       },
       Great: {
-        NL: 50,
-        FI: -50.999,
+        NL: { sum: 50 },
+        FI: { sum: -50.999 },
       },
     },
     'sum, main, group by',
@@ -498,13 +498,13 @@ await test('numeric types', async (t) => {
     await db.query('vote').count().groupBy('region').get(),
     {
       bb: {
-        count: 2,
+        count: { count: 2 },
       },
       aa: {
-        count: 2,
+        count: { count: 2 },
       },
       Great: {
-        count: 1,
+        count: { count: 1 },
       },
     },
     'count, main, group by',
@@ -513,19 +513,19 @@ await test('numeric types', async (t) => {
     await db.query('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
-        NL: 16.5,
-        PT: 21.5,
-        FI: -500000.15,
+        NL: { average: 16.5 },
+        PT: { average: 21.5 },
+        FI: { average: -500000.15 },
       },
       aa: {
-        NL: 46.5,
-        PT: 46.5,
-        FI: 0,
+        NL: { average: 46.5 },
+        PT: { average: 46.5 },
+        FI: { average: 0 },
       },
       Great: {
-        NL: 50,
-        PT: 50,
-        FI: -50.999,
+        NL: { average: 50 },
+        PT: { average: 50 },
+        FI: { average: -50.999 },
       },
     },
     'average, main, group by',
@@ -538,19 +538,19 @@ await test('numeric types', async (t) => {
       .get(),
     {
       bb: {
-        NL: 13.93939393939394,
-        PT: 15.348837209302324,
-        FI: 0, // harmonic mean when any of the values is 0 is 0 by definition
+        NL: { hmean: 13.93939393939394 },
+        PT: { hmean: 15.348837209302324 },
+        FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
       },
       aa: {
-        NL: 46.236559139784944,
-        PT: 46.236559139784944,
-        FI: 0, // harmonic mean when any of the values is 0 is 0 by definition
+        NL: { hmean: 46.236559139784944 },
+        PT: { hmean: 46.236559139784944 },
+        FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
       },
       Great: {
-        NL: 50,
-        PT: 50,
-        FI: -50.99900000000001, // harmonic mean is not designed for negative numbers but possible
+        NL: { hmean: 50 },
+        PT: { hmean: 50 },
+        FI: { hmean: -50.99900000000001 }, // harmonic mean is not designed for negative numbers but possible
       },
     },
     'harmonic_mean, main, group by',
@@ -563,16 +563,16 @@ await test('numeric types', async (t) => {
       .get(),
     {
       bb: {
-        NL: 6.5,
-        PL: 11.5,
+        NL: { stddev: 6.5 },
+        PL: { stddev: 11.5 },
       },
       aa: {
-        NL: 3.5,
-        PL: 11.5,
+        NL: { stddev: 3.5 },
+        PL: { stddev: 11.5 },
       },
       Great: {
-        NL: 0,
-        PL: 0,
+        NL: { stddev: 0 },
+        PL: { stddev: 0 },
       },
     },
     'stddev, main, group by',
@@ -581,16 +581,16 @@ await test('numeric types', async (t) => {
     await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
     {
       bb: {
-        NL: 9.192388155425117,
-        PL: 16.263455967290593,
+        NL: { stddev: 9.192388155425117 },
+        PL: { stddev: 16.263455967290593 },
       },
       aa: {
-        NL: 4.949747468305833,
-        PL: 16.263455967290593,
+        NL: { stddev: 4.949747468305833 },
+        PL: { stddev: 16.263455967290593 },
       },
       Great: {
-        NL: 0,
-        PL: 0,
+        NL: { stddev: 0 },
+        PL: { stddev: 0 },
       },
     },
     'stddev, main, group by',
@@ -603,16 +603,16 @@ await test('numeric types', async (t) => {
       .get(),
     {
       bb: {
-        NL: 42.25,
-        PL: 132.25,
+        NL: { variance: 42.25 },
+        PL: { variance: 132.25 },
       },
       aa: {
-        NL: 12.25,
-        PL: 132.25,
+        NL: { variance: 12.25 },
+        PL: { variance: 132.25 },
       },
       Great: {
-        NL: 0,
-        PL: 0,
+        NL: { variance: 0 },
+        PL: { variance: 0 },
       },
     },
     'variance, main, group by, population',
@@ -624,18 +624,18 @@ await test('numeric types', async (t) => {
       .groupBy('region')
       .get(),
     {
-      bb: { NL: 84.5, PL: 264.5 },
-      aa: { NL: 24.5, PL: 264.5 },
-      Great: { NL: 0, PL: 0 },
+      bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
+      aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
+      Great: { NL: { variance: 0 }, PL: { variance: 0 } },
     },
     'variance, main, group by, sample',
   )
   deepEqual(
     await db.query('vote').var('NL', 'PL').groupBy('region').get(),
     {
-      bb: { NL: 84.5, PL: 264.5 },
-      aa: { NL: 24.5, PL: 264.5 },
-      Great: { NL: 0, PL: 0 },
+      bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
+      aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
+      Great: { NL: { variance: 0 }, PL: { variance: 0 } },
     },
     'variance, main, group by, default (sample)',
   )
@@ -643,22 +643,22 @@ await test('numeric types', async (t) => {
     await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
-        NL: 23,
-        NO: -10,
-        PT: 33,
-        FI: 0,
+        NL: { max: 23 },
+        NO: { max: -10 },
+        PT: { max: 33 },
+        FI: { max: 0 },
       },
       aa: {
-        NL: 50,
-        NO: -43,
-        PT: 50,
-        FI: 0,
+        NL: { max: 50 },
+        NO: { max: -43 },
+        PT: { max: 50 },
+        FI: { max: 0 },
       },
       Great: {
-        NL: 50,
-        NO: -50,
-        PT: 50,
-        FI: -50.999,
+        NL: { max: 50 },
+        NO: { max: -50 },
+        PT: { max: 50 },
+        FI: { max: -50.999 },
       },
     },
     'max, main, group by',
@@ -667,22 +667,22 @@ await test('numeric types', async (t) => {
     await db.query('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
-        NL: 10,
-        NO: -23,
-        PT: 10,
-        FI: -1000000.3,
+        NL: { min: 10 },
+        NO: { min: -23 },
+        PT: { min: 10 },
+        FI: { min: -1000000.3 },
       },
       aa: {
-        NL: 43,
-        NO: -50,
-        PT: 43,
-        FI: 0,
+        NL: { min: 43 },
+        NO: { min: -50 },
+        PT: { min: 43 },
+        FI: { min: 0 },
       },
       Great: {
-        NL: 50,
-        NO: -50,
-        PT: 50,
-        FI: -50.999,
+        NL: { min: 50 },
+        NO: { min: -50 },
+        PT: { min: 50 },
+        FI: { min: -50.999 },
       },
     },
     'min, main, group by',
@@ -697,7 +697,7 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          NL: 176,
+          NL: { sum: 176 },
         },
       },
     ],
@@ -712,7 +712,7 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          NL: 35.2,
+          NL: { average: 35.2 },
         },
       },
     ],
@@ -728,7 +728,7 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          NL: 24.18565978675536,
+          NL: { hmean: 24.18565978675536 },
         },
       },
     ],
@@ -744,13 +744,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            NL: 33,
+            NL: { sum: 33 },
           },
           aa: {
-            NL: 93,
+            NL: { sum: 93 },
           },
           Great: {
-            NL: 50,
+            NL: { sum: 50 },
           },
         },
       },
@@ -769,15 +769,9 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          bb: {
-            count: 2,
-          },
-          aa: {
-            count: 2,
-          },
-          Great: {
-            count: 1,
-          },
+          bb: { count: { count: 2 } }, // MV
+          aa: { count: { count: 2 } },
+          Great: { count: { count: 1 } },
         },
       },
     ],
@@ -795,13 +789,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            NL: 6.5,
+            NL: { stddev: 6.5 },
           },
           aa: {
-            NL: 3.5,
+            NL: { stddev: 3.5 },
           },
           Great: {
-            NL: 0,
+            NL: { stddev: 0 },
           },
         },
       },
@@ -818,9 +812,9 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          bb: { NL: 9.192388155425117 },
-          aa: { NL: 4.949747468305833 },
-          Great: { NL: 0 },
+          bb: { NL: { stddev: 9.192388155425117 } },
+          aa: { NL: { stddev: 4.949747468305833 } },
+          Great: { NL: { stddev: 0 } },
         },
       },
     ],
@@ -839,13 +833,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            NL: 42.25,
+            NL: { variance: 42.25 },
           },
           aa: {
-            NL: 12.25,
+            NL: { variance: 12.25 },
           },
           Great: {
-            NL: 0,
+            NL: { variance: 0 },
           },
         },
       },
@@ -862,7 +856,11 @@ await test('numeric types', async (t) => {
     [
       {
         id: 1,
-        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+        votes: {
+          bb: { NL: { variance: 84.5 } },
+          aa: { NL: { variance: 24.5 } },
+          Great: { NL: { variance: 0 } },
+        },
       },
     ],
     'variance, references, group by, sample',
@@ -875,7 +873,11 @@ await test('numeric types', async (t) => {
     [
       {
         id: 1,
-        votes: { bb: { NL: 84.5 }, aa: { NL: 24.5 }, Great: { NL: 0 } },
+        votes: {
+          bb: { NL: { variance: 84.5 } },
+          aa: { NL: { variance: 24.5 } },
+          Great: { NL: { variance: 0 } },
+        },
       },
     ],
     'variance, references, group by, defaul (sample)',
@@ -891,13 +893,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            NL: 16.5,
+            NL: { average: 16.5 },
           },
           aa: {
-            NL: 46.5,
+            NL: { average: 46.5 },
           },
           Great: {
-            NL: 50,
+            NL: { average: 50 },
           },
         },
       },
@@ -915,13 +917,13 @@ await test('numeric types', async (t) => {
         id: 1,
         votes: {
           bb: {
-            NL: 13.93939393939394,
+            NL: { hmean: 13.93939393939394 },
           },
           aa: {
-            NL: 46.236559139784944,
+            NL: { hmean: 46.236559139784944 },
           },
           Great: {
-            NL: 50,
+            NL: { hmean: 50 },
           },
         },
       },
