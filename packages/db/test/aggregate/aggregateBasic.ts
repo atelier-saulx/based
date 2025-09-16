@@ -128,7 +128,7 @@ await test('count top level bignumber', async (t) => {
   await db.drain()
 
   const q = await db.query('sequence').count().get()
-  equal(q.toObject().count.count, 1e6) // MV
+  equal(q.toObject().count, 1e6)
 })
 
 await test('top level count', async (t) => {
@@ -188,7 +188,7 @@ await test('top level count', async (t) => {
 
   deepEqual(
     await db.query('vote').count().get().toObject(),
-    { count: { count: 3 } }, // MV
+    { count: 3 },
     'count, top level, prop',
   )
 
@@ -199,13 +199,12 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { count: { count: 2 } }, // MV
-    'count with filter',
+    { count: 2 },
   )
 
   deepEqual(
     await db.query('vote').include('IT').count().get(),
-    { count: { count: 3 } },
+    { count: 3 },
     'count, top level, ignoring include',
   )
 
@@ -216,19 +215,19 @@ await test('top level count', async (t) => {
       .count()
       .get()
       .toObject(),
-    { count: { count: 0 } }, // MV
+    { count: 0 },
     'count, with no match filtering, string value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '=', 20).count().get(),
-    { count: { count: 1 } }, // MV
+    { count: 1 },
     'count, with filtering an int value',
   )
 
   deepEqual(
     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-    { count: { count: 0 } }, // MV
+    { count: 0 },
     'count, with no match filtering, int value',
   )
 })
@@ -498,13 +497,13 @@ await test('numeric types', async (t) => {
     await db.query('vote').count().groupBy('region').get(),
     {
       bb: {
-        count: { count: 2 },
+        count: 2,
       },
       aa: {
-        count: { count: 2 },
+        count: 2,
       },
       Great: {
-        count: { count: 1 },
+        count: 1,
       },
     },
     'count, main, group by',
@@ -769,9 +768,9 @@ await test('numeric types', async (t) => {
       {
         id: 1,
         votes: {
-          bb: { count: { count: 2 } }, // MV
-          aa: { count: { count: 2 } },
-          Great: { count: { count: 1 } },
+          bb: { count: 2 },
+          aa: { count: 2 },
+          Great: { count: 1 },
         },
       },
     ],
