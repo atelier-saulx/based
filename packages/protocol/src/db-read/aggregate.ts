@@ -128,7 +128,11 @@ export const readAggregate = (
         } else {
           val = readDoubleLE(result, agg.resultPos + i)
         }
-        setByPath(resultKey, agg.path, val)
+        setByPath(
+          resultKey,
+          [...agg.path, AggregateType[agg.type].toLowerCase()],
+          val,
+        )
       }
       i += q.aggregate.totalResultsSize
     }
@@ -143,7 +147,11 @@ export const readAggregate = (
       } else {
         val = readDoubleLE(result, agg.resultPos + offset)
       }
-      setByPath(results, agg.path, val)
+      setByPath(
+        results,
+        [...agg.path, AggregateType[agg.type].toLowerCase()],
+        val,
+      )
     }
   }
   return results
