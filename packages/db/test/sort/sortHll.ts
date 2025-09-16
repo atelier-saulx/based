@@ -15,8 +15,14 @@ await test('sortCardinality', async (t) => {
     types: {
       article: {
         derp: 'number',
-        count: 'cardinality',
-        brazilians: 'cardinality',
+        count: {
+          type: 'cardinality',
+          precision: 14,
+        },
+        brazilians: {
+          type: 'cardinality',
+          precision: 14,
+        },
       },
     },
   })
