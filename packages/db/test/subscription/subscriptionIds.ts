@@ -6,6 +6,7 @@ import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { BasedDb } from '../../src/index.js'
+import { sentence } from '../shared/examples.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -99,14 +100,17 @@ await test('subscription perf', async (t) => {
       user: {
         // derp: 'uint32',
         binary: { type: 'binary', maxBytes: 20 },
+        flap: { type: 'string', compression: 'none' },
         // lang: 'string',
       },
     },
   })
 
+  let a = sentence + sentence + sentence + sentence
+
   const bin = new Uint8Array(20)
   for (let i = 0; i < 10e6; i++) {
-    db.create('user', { binary: bin })
+    db.create('user', { binary: bin, flap: a })
   }
 
   const dx = await db.drain()
