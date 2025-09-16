@@ -47,14 +47,11 @@ await test('subscriptionIds', async (t) => {
   const headerLen = 14
   const val = new Uint8Array(headerLen + fields.byteLength)
 
-  //     server.schemaTypesParsed['user'].id,
-
   writeUint64(val, subId, 0)
   writeUint16(val, typeId, 8)
   writeUint16(val, id, 10)
   val.set(fields, headerLen)
 
-  console.log('flap', server.schemaTypesParsed['user'].id)
   native.addIdSubscription(server.dbCtxExternal, val)
 
   const close = clients[1]
@@ -68,7 +65,8 @@ await test('subscriptionIds', async (t) => {
   for (let i = 0; i < 1e6; i++) {
     clients[0].create('user', { derp: i })
   }
-  console.log(await clients[0].drain())
+
+  await clients[0].drain()
 
   await clients[1].update('user', id, { derp: 69 })
 
@@ -79,6 +77,7 @@ await test('subscriptionIds', async (t) => {
       console.log('#1 YO UPDATE id 1 on client 1', q)
       cnt++
     })
+
   await wait(1e3)
 
   await clients[0].create('user', { derp: 99 })
