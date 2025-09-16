@@ -60,6 +60,21 @@ export const authEmail: BasedFunction<Payload> = async (
       To: email,
       Subject: `Password reset "${code}"`,
       HtmlBody: passwordResetTemplate({ appName, code, email, callToAction }),
+      TextBody: `${appName}
+Password reset request
+Hello ${email},
+
+We’ve received password reset resquest for the following app: ${appName}
+
+${code}
+
+To reset your password, please click use the link below:
+
+${callToAction}
+
+Please ignore this email if you didn’t request a password reset for this application.
+
+`,
     })
   } else if (type === 'magicLink') {
     return await postMarkClient.sendEmail({
@@ -83,6 +98,16 @@ If you didn’t attempt to log in, you can ignore this email. Your account is sa
       To: email,
       Subject: `${appName} user access.`,
       HtmlBody: inviteTemplate({ appName, email, callToAction }),
+      TextBody: `${appName}
+User access
+Hello ${email},
+
+You've been granted access to the ${appName} application.
+Please use the link below to accept the invite.
+
+${callToAction}
+
+Please ignore this email if you didn’t request access to this application.`,
     })
   }
 
