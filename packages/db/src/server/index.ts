@@ -1,6 +1,13 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { StrictSchema, langCodesMap, LangName, MigrateFns, SchemaChecksum, strictSchemaToDbSchema } from '@based/schema'
+import {
+  StrictSchema,
+  langCodesMap,
+  LangName,
+  MigrateFns,
+  SchemaChecksum,
+  strictSchemaToDbSchema,
+} from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'

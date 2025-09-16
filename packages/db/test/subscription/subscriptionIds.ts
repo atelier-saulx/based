@@ -89,6 +89,7 @@ await test('subscriptionIds', async (t) => {
 await test('subscription perf', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
+    // maxModifySize: 100e6,
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
@@ -104,11 +105,12 @@ await test('subscription perf', async (t) => {
   })
 
   const bin = new Uint8Array(20)
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 10e6; i++) {
     db.create('user', { binary: bin })
   }
 
-  console.log(await db.drain())
+  const dx = await db.drain()
+  console.log('db time 10M sets', dx, (10e6 / dx) * 1e3, 'Creates / Second')
   let x = Date.now()
 
   const q = db.query('user', 1)
@@ -119,7 +121,7 @@ await test('subscription perf', async (t) => {
 
   const p = []
   let cnt = 0
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 15; i++) {
     p.push(
       clientWorker(
         t,
@@ -131,7 +133,7 @@ await test('subscription perf', async (t) => {
           // await q.get()
           // console.log(q.buffer, y)
           client.flushTime = 11
-          for (let i = 0; i < 1e6; i++) {
+          for (let i = 0; i < 10e6; i++) {
             utils.writeUint32(buffer, i + 1, 4)
             native.getQueryBuf(buffer, dbCtx)
           }
@@ -145,5 +147,5 @@ await test('subscription perf', async (t) => {
   }
 
   await Promise.all(p)
-  console.log('multicore', Date.now() - d)
+  console.log('multicore', ((15 * 10e6) / (Date.now() - d)) * 1e3, ' / Second')
 })
