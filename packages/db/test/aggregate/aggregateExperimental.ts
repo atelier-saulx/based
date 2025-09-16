@@ -1,5 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { deepEqual } from '../shared/assert.js'
 
 await test('dev', async (t) => {
   const db = new BasedDb({
@@ -112,7 +113,7 @@ await test('dev', async (t) => {
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
 })
 
-await test('kev', async (t) => {
+await test('multiple functions', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -190,21 +191,41 @@ await test('kev', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  // ------------------------------------------------------------------------------------
+  // deepEqual(
+  //   await db.query('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
+  //   { NL: { sum: 176, max: 50, min: 10 }, NO: { sum: -176 } },
+  //   'multiple func no groupBy',
+  // )
 
-  await db
+  // deepEqual(
+  //   await db
+  //     .query('vote')
+  //     .sum('NL')
+  //     .sum('NO')
+  //     .max('NL')
+  //     .min('NL')
+  //     .groupBy('region')
+  //     .get(),
+  //   {
+  //     bb: { NL: { sum: 33, max: 23, min: 10 }, NO: { sum: -33 } },
+  //     aa: { NL: { sum: 93, max: 50, min: 43 }, NO: { sum: -93 } },
+  //     Great: { NL: { sum: 50, max: 50, min: 50 }, NO: { sum: -50 } },
+  //   },
+  //   'multiple func with groupBy',
+  // )
+
+  const multi = await db
     .query('vote')
     // .count()
-    // .sum('NL')
-    // .sum('NO')
-    .max('NL', 'NO')
-    // .min('NL') // { count: 10, NL: }
+    .sum('NL')
+    .sum('NO')
+    // .stddev('PT', 'NO')
+    .max('NL')
+    .min('NL')
     // .groupBy('region')
     .get()
-    //
-    .inspect(10)
 
-  // { NO: { sum: 0 , max: 0}, NL: { sum: 0, max: 0 }, count: 0 }
-
-  // ------------------------------------------------------------------------------------
+  console.log(multi.toObject())
+  console.log('------------------')
+  multi.inspect(10)
 })
