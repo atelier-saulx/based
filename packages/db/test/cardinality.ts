@@ -440,5 +440,5 @@ await test('defaultPrecision', async (t) => {
     customers: [cus],
   })
 
-  await db.query('stores').include('*', '**').get().inspect()
+  // await db.query('stores').include('*', '**').get().inspect()
 })
